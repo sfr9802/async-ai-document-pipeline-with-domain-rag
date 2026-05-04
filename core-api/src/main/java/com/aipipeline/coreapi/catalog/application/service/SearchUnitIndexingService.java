@@ -615,7 +615,7 @@ public class SearchUnitIndexingService {
         }
         JsonNode parsed = parseMetadata(json);
         if (!parsed.isMissingNode() && !parsed.isNull()) {
-            metadata.put(key, parsed);
+            metadata.put(key, objectMapper.convertValue(parsed, Object.class));
         }
     }
 

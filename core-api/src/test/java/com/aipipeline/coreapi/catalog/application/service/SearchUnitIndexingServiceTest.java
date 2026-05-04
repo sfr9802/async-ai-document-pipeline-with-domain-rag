@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -337,6 +338,77 @@ class SearchUnitIndexingServiceTest {
         assertThat(claimed).hasSize(1);
         assertThat(claimed.getFirst().textContent()).contains("Source: sales.xlsx");
         assertThat(claimed.getFirst().contentSha256()).isEqualTo("embedding-hash");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void claim_index_metadata_keeps_location_json_as_plain_map_not_jackson_node_shape() {
+        SearchUnitJpaEntity unit = new SearchUnitJpaEntity(
+                "unit-pdf",
+                "source-file-1",
+                "artifact-1",
+                DocumentCatalogService.SEARCH_UNIT_CHUNK,
+                "page:7:block:1",
+                "Page 7 block",
+                null,
+                7,
+                7,
+                "GDP increased.",
+                "{\"fileType\":\"pdf\",\"pageNo\":7}",
+                SearchUnitIndexingService.EMBEDDING_STATUS_PENDING,
+                "pdf-hash",
+                NOW,
+                NOW);
+        unit.applyIngestionV2(
+                "doc-1",
+                "docv-1",
+                "pa-1",
+                "report.pdf",
+                "PDF",
+                "paragraph",
+                "pdf",
+                """
+                        {
+                          "type": "pdf",
+                          "document_version_id": "docv-1",
+                          "physical_page_index": 6,
+                          "page_no": 7,
+                          "page_label": "7",
+                          "bbox": [72.0, 120.0, 510.0, 680.0],
+                          "block_type": "paragraph",
+                          "ocr_used": false,
+                          "ocr_confidence": null
+                        }
+                        """,
+                "Source: report.pdf\nPage: 7\nContent:\nGDP increased.",
+                "report.pdf\np.7\nGDP increased.",
+                "GDP increased.",
+                "report.pdf > p.7 > bbox [72.0,120.0,510.0,680.0]",
+                "{}",
+                "pymupdf",
+                "pdf-extract-v2",
+                null,
+                null,
+                "[]",
+                NOW);
+        stubCandidates(List.of(unit), List.of());
+        when(searchUnits.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(sourceFiles.findAllById(any())).thenReturn(List.of(source()));
+        when(extractedArtifacts.findAllById(any())).thenReturn(List.of(artifact()));
+
+        List<SearchUnitIndexingService.ClaimedSearchUnit> claimed = service()
+                .claimPending("worker-1", 10, Duration.ofMinutes(10), NOW);
+
+        assertThat(claimed).hasSize(1);
+        Object location = claimed.getFirst().indexMetadata().get("locationJson");
+        assertThat(location).isInstanceOf(Map.class);
+        Map<String, Object> locationMap = (Map<String, Object>) location;
+        assertThat(locationMap)
+                .containsEntry("type", "pdf")
+                .containsEntry("physical_page_index", 6)
+                .containsEntry("page_no", 7)
+                .containsEntry("block_type", "paragraph");
+        assertThat(locationMap).doesNotContainKeys("nodeType", "object", "containerNode");
     }
 
     @Test
