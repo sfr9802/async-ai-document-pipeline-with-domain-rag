@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Sequence
 
 from app.capabilities.rag.search_unit_indexing import (
     SearchUnitIndexDocument,
@@ -47,12 +47,34 @@ class SearchUnitIndexingWorker:
         worker_id: str,
         batch_size: int,
         stale_after_seconds: Optional[int] = None,
+        source_file_id: Optional[str] = None,
+        source_file_ids: Optional[Sequence[str]] = None,
+        document_version_id: Optional[str] = None,
+        document_version_ids: Optional[Sequence[str]] = None,
+        parsed_artifact_id: Optional[str] = None,
+        search_unit_ids: Optional[Sequence[str]] = None,
+        source_file_types: Optional[Sequence[str]] = None,
+        parser_versions: Optional[Sequence[str]] = None,
+        expected_index_version: Optional[str] = None,
+        limit: Optional[int] = None,
+        allow_unscoped: bool = False,
     ) -> None:
         self._core_api = core_api
         self._indexer = indexer
         self._worker_id = worker_id
         self._batch_size = int(batch_size)
         self._stale_after_seconds = stale_after_seconds
+        self._source_file_id = source_file_id
+        self._source_file_ids = list(source_file_ids or [])
+        self._document_version_id = document_version_id
+        self._document_version_ids = list(document_version_ids or [])
+        self._parsed_artifact_id = parsed_artifact_id
+        self._search_unit_ids = list(search_unit_ids or [])
+        self._source_file_types = list(source_file_types or [])
+        self._parser_versions = list(parser_versions or [])
+        self._expected_index_version = expected_index_version
+        self._limit = limit
+        self._allow_unscoped = bool(allow_unscoped)
 
     def run_once(self, *, dry_run: bool = False) -> SearchUnitIndexingRunSummary:
         if dry_run:
@@ -70,6 +92,17 @@ class SearchUnitIndexingWorker:
                 worker_id=self._worker_id,
                 batch_size=self._batch_size,
                 stale_after_seconds=self._stale_after_seconds,
+                source_file_id=self._source_file_id,
+                source_file_ids=self._source_file_ids or None,
+                document_version_id=self._document_version_id,
+                document_version_ids=self._document_version_ids or None,
+                parsed_artifact_id=self._parsed_artifact_id,
+                search_unit_ids=self._search_unit_ids or None,
+                source_file_types=self._source_file_types or None,
+                parser_versions=self._parser_versions or None,
+                expected_index_version=self._expected_index_version,
+                limit=self._limit,
+                allow_unscoped=self._allow_unscoped,
             )
         )
         docs = [
@@ -139,7 +172,7 @@ class SearchUnitIndexingWorker:
                     index_version=indexed.index_version,
                     embedding_model=indexed.info.embedding_model,
                     embedding_text_sha256=item.embedding_text_sha256,
-                    vector_id=item.index_id,
+                    vector_id=item.vector_id,
                 ),
             )
             if response.stale:

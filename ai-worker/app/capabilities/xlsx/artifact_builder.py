@@ -7,7 +7,8 @@ from typing import Any
 
 from app.capabilities.base import CapabilityOutputArtifact
 
-XLSX_PIPELINE_VERSION = "xlsx-extract-v1"
+XLSX_PIPELINE_VERSION = "xlsx-extract-v2-hidden-safe"
+XLSX_HIDDEN_POLICY_VERSION = "exclude-hidden-v1"
 XLSX_WORKBOOK_JSON = "XLSX_WORKBOOK_JSON"
 XLSX_MARKDOWN = "XLSX_MARKDOWN"
 XLSX_TABLE_JSON = "XLSX_TABLE_JSON"

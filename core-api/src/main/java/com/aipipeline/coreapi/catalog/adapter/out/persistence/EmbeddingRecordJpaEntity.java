@@ -27,7 +27,7 @@ public class EmbeddingRecordJpaEntity {
     @Column(name = "embedding_text_sha256", nullable = false, length = 128)
     private String embeddingTextSha256;
 
-    @Column(name = "vector_id", length = 512)
+    @Column(name = "vector_id", length = 1024)
     private String vectorId;
 
     @Column(name = "created_at", nullable = false)

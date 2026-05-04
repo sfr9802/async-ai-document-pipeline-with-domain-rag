@@ -79,6 +79,7 @@ def build_default_registry(settings: WorkerSettings) -> CapabilityRegistry:
     ocr_extract_registered = False
     xlsx_extract_registered = False
     pdf_extract_registered = False
+    rag_query_orchestrator_registered = False
 
     if settings.rag_enabled:
         log.info(
@@ -156,7 +157,7 @@ def build_default_registry(settings: WorkerSettings) -> CapabilityRegistry:
 
     if settings.xlsx_extract_enabled:
         log.info(
-            "XLSX_EXTRACT init: pipeline_version=xlsx-extract-v1 include_hidden=%s",
+            "XLSX_EXTRACT init: pipeline_version=xlsx-extract-v2-hidden-safe include_hidden=%s",
             settings.xlsx_extract_include_hidden,
         )
         try:
@@ -183,6 +184,24 @@ def build_default_registry(settings: WorkerSettings) -> CapabilityRegistry:
                 "PDF_EXTRACT capability NOT registered (%s: %s). "
                 "Worker still serves the other registered capabilities. "
                 "To enable PDF extraction: pip install pymupdf, then restart the worker.",
+                type(ex).__name__, ex,
+            )
+
+    if settings.rag_query_orchestrator_enabled:
+        log.info(
+            "RAG_QUERY_ORCHESTRATOR init: mode=%s backend=pure_fake_graph "
+            "feature_flag=true",
+            settings.rag_query_orchestrator_mode,
+        )
+        try:
+            registry.register(_build_rag_query_orchestrator_capability(settings))
+            rag_query_orchestrator_registered = True
+            log.info("RAG_QUERY_ORCHESTRATOR capability registered.")
+        except Exception as ex:
+            log.warning(
+                "RAG_QUERY_ORCHESTRATOR capability NOT registered (%s: %s). "
+                "Existing RAG/AGENT/AUTO/PDF_EXTRACT/XLSX_EXTRACT behavior "
+                "is unchanged.",
                 type(ex).__name__, ex,
             )
 
@@ -278,11 +297,13 @@ def build_default_registry(settings: WorkerSettings) -> CapabilityRegistry:
         )
 
     log.info(
-        "Active capabilities: %s (ocr_extract=%s xlsx_extract=%s pdf_extract=%s)",
+        "Active capabilities: %s (ocr_extract=%s xlsx_extract=%s pdf_extract=%s "
+        "rag_query_orchestrator=%s)",
         registry.available(),
         ocr_extract_registered,
         xlsx_extract_registered,
         pdf_extract_registered,
+        rag_query_orchestrator_registered,
     )
     return registry
 
@@ -366,6 +387,20 @@ def _build_pdf_extract_capability(settings: WorkerSettings) -> Capability:
             ocr_fallback_enabled=settings.pdf_extract_ocr_fallback_enabled,
             ocr_lang=settings.ocr_extract_paddle_lang,
             ocr_pdf_dpi=settings.ocr_pdf_dpi,
+        )
+    )
+
+
+def _build_rag_query_orchestrator_capability(settings: WorkerSettings) -> Capability:
+    from app.capabilities.rag_orchestrator.capability import (
+        RagQueryOrchestratorCapability,
+        RagQueryOrchestratorCapabilityConfig,
+    )
+
+    return RagQueryOrchestratorCapability(
+        config=RagQueryOrchestratorCapabilityConfig(
+            enabled=settings.rag_query_orchestrator_enabled,
+            mode=settings.rag_query_orchestrator_mode,
         )
     )
 
@@ -845,13 +880,10 @@ def _build_agent_capabilities(
     )
     from app.capabilities.agent.critic import (
         AgentCriticProvider,
-        LlmCritic,
         NoOpCritic,
-        RuleCritic,
     )
     from app.capabilities.agent.loop import LoopBudget
     from app.capabilities.agent.rewriter import (
-        LlmQueryRewriter,
         NoOpQueryRewriter,
         QueryRewriterProvider,
     )

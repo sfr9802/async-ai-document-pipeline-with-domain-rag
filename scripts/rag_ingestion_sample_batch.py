@@ -35,7 +35,16 @@ def main(argv: list[str] | None = None) -> int:
     manifest_path = Path(args.manifest)
     manifest = load_manifest(manifest_path)
     samples = manifest.get("samples") or []
+    if args.sample_id:
+        requested = set(args.sample_id)
+        samples = [sample for sample in samples if str(sample.get("sample_id") or "") in requested]
     defaults = manifest.get("default_expectations") or {}
+    defaults = {
+        **defaults,
+        "xlsx_parser_version": manifest.get("parser_version") or defaults.get("xlsx_parser_version"),
+        "hidden_policy": manifest.get("hidden_policy") or defaults.get("hidden_policy"),
+        "hidden_policy_version": manifest.get("hidden_policy_version") or defaults.get("hidden_policy_version"),
+    }
 
     report: dict[str, Any] = {
         "run_id": utc_run_id(),
@@ -43,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
         "total_samples": len(samples),
         "passed": 0,
         "failed": 0,
+        "diagnostic_only": 0,
         "samples": [],
     }
 
@@ -58,6 +68,8 @@ def main(argv: list[str] | None = None) -> int:
         report["samples"].append(sample_report)
         if sample_report["status"] == "PASSED":
             report["passed"] += 1
+        elif sample_report["status"] == "DIAGNOSTIC_ONLY":
+            report["diagnostic_only"] += 1
         else:
             report["failed"] += 1
 
@@ -75,6 +87,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--http-timeout", type=float, default=30.0)
     parser.add_argument("--poll-timeout", type=float, default=120.0)
     parser.add_argument("--poll-interval", type=float, default=1.0)
+    parser.add_argument("--sample-id", action="append", default=None, help="Run only this manifest sample id. Repeat as needed.")
     parser.add_argument("--db-container", default=DEFAULT_DB_CONTAINER)
     parser.add_argument("--db-user", default=DEFAULT_DB_USER)
     parser.add_argument("--db-name", default=DEFAULT_DB_NAME)
@@ -114,9 +127,15 @@ def run_sample(
     sample_started = time.perf_counter()
 
     try:
-        if str(sample.get("file_type") or "").lower() != "xlsx":
+        if bool(sample.get("diagnostic_only")):
+            result["status"] = "DIAGNOSTIC_ONLY"
+            result["unsupported_reason"] = sample.get("unsupported_reason")
+            return result
+        raw_path = str(sample.get("file_path") or sample.get("path") or sample.get("file") or "")
+        file_type = str(sample.get("file_type") or Path(raw_path).suffix.lstrip(".")).lower()
+        if file_type != "xlsx":
             raise ValueError("Only xlsx samples are supported by this runner")
-        path = resolve_sample_path(str(sample.get("file_path") or sample.get("path") or ""), manifest_path)
+        path = resolve_sample_path(raw_path, manifest_path)
         if not path.exists():
             raise FileNotFoundError(f"Sample file not found: {path}")
 
@@ -152,8 +171,15 @@ def run_sample(
             user=args.db_user,
             database=args.db_name,
             source_file_id=source_id,
-            expected_sheets=list(sample.get("expected_sheets") or []),
-            expected_citation_patterns=list(sample.get("expected_citation_patterns") or []),
+            expected_sheets=list(sample.get("expected_sheets")
+                                 or sample.get("expected_visible_sheets")
+                                 or []),
+            expected_citation_patterns=list(sample.get("expected_citation_patterns")
+                                            or sample.get("expected_header_hints")
+                                            or []),
+            expected_xlsx_parser_version=defaults.get("xlsx_parser_version"),
+            expected_hidden_policy=defaults.get("hidden_policy"),
+            expected_hidden_policy_version=defaults.get("hidden_policy_version"),
         )
         result["indexing_latency_seconds"] = round(time.perf_counter() - indexing_started, 3)
         result.update(db_report)
@@ -227,6 +253,9 @@ def query_sample_db_report(
     source_file_id: str,
     expected_sheets: list[str],
     expected_citation_patterns: list[str],
+    expected_xlsx_parser_version: str | None,
+    expected_hidden_policy: str | None,
+    expected_hidden_policy_version: str | None,
 ) -> dict[str, Any]:
     sheet_checks = ", ".join(
         f"jsonb_build_object('sheet_name', {sql_literal(sheet)}, 'count', "
@@ -252,6 +281,27 @@ def query_sample_db_report(
         where source_file_id = {sql_literal(source_file_id)}
           and lower(source_file_type) in ('spreadsheet', 'xlsx')
           and (parser_version is null or location_json is null or citation_text is null)
+      ),
+      'xlsx_parser_version_mismatch_count', (
+        select count(*) from search_unit
+        where source_file_id = {sql_literal(source_file_id)}
+          and lower(source_file_type) in ('spreadsheet', 'xlsx')
+          and {sql_literal(expected_xlsx_parser_version or '')} <> ''
+          and parser_version is distinct from {sql_literal(expected_xlsx_parser_version or '')}
+      ),
+      'xlsx_hidden_policy_mismatch_count', (
+        select count(*) from search_unit
+        where source_file_id = {sql_literal(source_file_id)}
+          and lower(source_file_type) in ('spreadsheet', 'xlsx')
+          and {sql_literal(expected_hidden_policy or '')} <> ''
+          and location_json->>'hidden_policy' is distinct from {sql_literal(expected_hidden_policy or '')}
+      ),
+      'xlsx_hidden_policy_version_mismatch_count', (
+        select count(*) from search_unit
+        where source_file_id = {sql_literal(source_file_id)}
+          and lower(source_file_type) in ('spreadsheet', 'xlsx')
+          and {sql_literal(expected_hidden_policy_version or '')} <> ''
+          and location_json->>'hidden_policy_version' is distinct from {sql_literal(expected_hidden_policy_version or '')}
       ),
       'xlsx_table_search_unit_count', (
         select count(*) from search_unit
@@ -288,7 +338,7 @@ def query_sample_db_report(
         where source_file_id = {sql_literal(source_file_id)}
           and formatted_value is not null
       ),
-      'hidden_search_unit_leakage_count', (
+      'hidden_content_leakage_count', (
         select count(*) from search_unit
         where source_file_id = {sql_literal(source_file_id)}
           and lower(source_file_type) in ('spreadsheet', 'xlsx')
@@ -343,6 +393,18 @@ def validate_sample_db_report(
     if missing != 0:
         raise AssertionError("missing_required_metadata_count must be 0")
 
+    parser_mismatch = int(result.get("xlsx_parser_version_mismatch_count") or 0)
+    if parser_mismatch != 0:
+        raise AssertionError("xlsx_parser_version_mismatch_count must be 0")
+
+    hidden_policy_mismatch = int(result.get("xlsx_hidden_policy_mismatch_count") or 0)
+    if hidden_policy_mismatch != 0:
+        raise AssertionError("xlsx_hidden_policy_mismatch_count must be 0")
+
+    hidden_policy_version_mismatch = int(result.get("xlsx_hidden_policy_version_mismatch_count") or 0)
+    if hidden_policy_version_mismatch != 0:
+        raise AssertionError("xlsx_hidden_policy_version_mismatch_count must be 0")
+
     if bool(defaults.get("require_table_metadata", True)):
         table_like_units = int(result.get("xlsx_table_search_unit_count") or 0)
         table_count = int(result.get("table_metadata_count") or 0)
@@ -357,9 +419,9 @@ def validate_sample_db_report(
         if cell_count <= 0:
             raise AssertionError("cell_metadata_count must be > 0")
 
-    hidden_leakage = int(result.get("hidden_search_unit_leakage_count") or 0)
+    hidden_leakage = int(result.get("hidden_content_leakage_count") or 0)
     if hidden_leakage != 0:
-        raise AssertionError("hidden_search_unit_leakage_count must be 0")
+        raise AssertionError("hidden_content_leakage_count must be 0")
 
     missing_sheets = [
         item["sheet_name"]
@@ -393,8 +455,13 @@ def add_aggregate_metrics(report: dict[str, Any]) -> None:
         for item in samples
         if item.get("missing_required_metadata_count") is not None
     )
+    parser_version_mismatch = sum(int(item.get("xlsx_parser_version_mismatch_count") or 0) for item in samples)
+    hidden_policy_mismatch = sum(int(item.get("xlsx_hidden_policy_mismatch_count") or 0) for item in samples)
+    hidden_policy_version_mismatch = sum(
+        int(item.get("xlsx_hidden_policy_version_mismatch_count") or 0) for item in samples
+    )
     missing_table_metadata = sum(int(item.get("missing_table_metadata_count") or 0) for item in samples)
-    hidden_leakage = sum(int(item.get("hidden_search_unit_leakage_count") or 0) for item in samples)
+    hidden_leakage = sum(int(item.get("hidden_content_leakage_count") or 0) for item in samples)
     parsing_latencies = [
         float(item["parsing_latency_seconds"])
         for item in samples
@@ -410,8 +477,11 @@ def add_aggregate_metrics(report: dict[str, Any]) -> None:
         "unsupported_file_rate": 0.0,
         "zero_indexable_chunk_count": zero_indexable,
         "missing_required_metadata_count": missing_metadata,
+        "xlsx_parser_version_mismatch_count": parser_version_mismatch,
+        "xlsx_hidden_policy_mismatch_count": hidden_policy_mismatch,
+        "xlsx_hidden_policy_version_mismatch_count": hidden_policy_version_mismatch,
         "missing_table_metadata_count": missing_table_metadata,
-        "hidden_search_unit_leakage_count": hidden_leakage,
+        "hidden_content_leakage_count": hidden_leakage,
         "parsing_latency_p95_seconds": percentile(parsing_latencies, 0.95),
         "indexing_latency_p95_seconds": percentile(indexing_latencies, 0.95),
         "fatal_warning_count": 0,

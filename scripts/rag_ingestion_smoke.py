@@ -33,6 +33,9 @@ DEFAULT_DB_CONTAINER = "aipipeline-postgres"
 DEFAULT_DB_USER = "aipipeline"
 DEFAULT_DB_NAME = "aipipeline"
 DEFAULT_REPORT = Path("reports/rag_ingestion_smoke_report.json")
+EXPECTED_XLSX_PARSER_VERSION = "xlsx-extract-v2-hidden-safe"
+EXPECTED_XLSX_HIDDEN_POLICY = "exclude_hidden"
+EXPECTED_XLSX_HIDDEN_POLICY_VERSION = "exclude-hidden-v1"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -195,6 +198,24 @@ def query_ingestion_report(
           and source_file_type in ('SPREADSHEET', 'PDF')
           and (parser_version is null or location_json is null or citation_text is null)
       ),
+      'xlsx_parser_version_mismatch_count', (
+        select count(*) from search_unit
+        where source_file_id = {sql_literal(source_file_id)}
+          and lower(source_file_type) in ('spreadsheet', 'xlsx')
+          and parser_version is distinct from {sql_literal(EXPECTED_XLSX_PARSER_VERSION)}
+      ),
+      'xlsx_hidden_policy_mismatch_count', (
+        select count(*) from search_unit
+        where source_file_id = {sql_literal(source_file_id)}
+          and lower(source_file_type) in ('spreadsheet', 'xlsx')
+          and location_json->>'hidden_policy' is distinct from {sql_literal(EXPECTED_XLSX_HIDDEN_POLICY)}
+      ),
+      'xlsx_hidden_policy_version_mismatch_count', (
+        select count(*) from search_unit
+        where source_file_id = {sql_literal(source_file_id)}
+          and lower(source_file_type) in ('spreadsheet', 'xlsx')
+          and location_json->>'hidden_policy_version' is distinct from {sql_literal(EXPECTED_XLSX_HIDDEN_POLICY_VERSION)}
+      ),
       'table_metadata_count', (
         select count(*) from table_metadata where source_file_id = {sql_literal(source_file_id)}
       ),
@@ -206,7 +227,7 @@ def query_ingestion_report(
         where source_file_id = {sql_literal(source_file_id)}
           and formula is not null
       ),
-      'hidden_search_unit_leakage_count', (
+      'hidden_content_leakage_count', (
         select count(*) from search_unit
         where source_file_id = {sql_literal(source_file_id)}
           and lower(source_file_type) in ('spreadsheet', 'xlsx')
@@ -266,9 +287,14 @@ def validate_report(report: dict[str, Any]) -> None:
         "search_unit_count": int(report.get("search_unit_count") or 0) >= 3,
         "v2_ready_search_unit_count": int(report.get("v2_ready_search_unit_count") or 0) >= 3,
         "missing_citation_count": int(report.get("missing_citation_count") or 0) == 0,
+        "xlsx_parser_version_mismatch_count": int(report.get("xlsx_parser_version_mismatch_count") or 0) == 0,
+        "xlsx_hidden_policy_mismatch_count": int(report.get("xlsx_hidden_policy_mismatch_count") or 0) == 0,
+        "xlsx_hidden_policy_version_mismatch_count": int(
+            report.get("xlsx_hidden_policy_version_mismatch_count") or 0
+        ) == 0,
         "table_metadata_count": int(report.get("table_metadata_count") or 0) > 0,
         "cell_metadata_count": int(report.get("cell_metadata_count") or 0) > 0,
-        "hidden_search_unit_leakage_count": int(report.get("hidden_search_unit_leakage_count") or 0) == 0,
+        "hidden_content_leakage_count": int(report.get("hidden_content_leakage_count") or 0) == 0,
     }
     failed = [name for name, ok in checks.items() if not ok]
     if failed:

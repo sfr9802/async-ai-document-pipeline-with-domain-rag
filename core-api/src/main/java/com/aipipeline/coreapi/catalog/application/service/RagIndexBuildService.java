@@ -6,10 +6,16 @@ import com.aipipeline.coreapi.catalog.adapter.out.persistence.IndexBuildJpaEntit
 import com.aipipeline.coreapi.catalog.adapter.out.persistence.IndexBuildJpaRepository;
 import com.aipipeline.coreapi.catalog.domain.EvalResultStatus;
 import com.aipipeline.coreapi.catalog.domain.IndexBuildStatus;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,11 +24,20 @@ public class RagIndexBuildService {
 
     private final IndexBuildJpaRepository indexBuilds;
     private final EvalResultJpaRepository evalResults;
+    private final ObjectMapper objectMapper;
 
+    @Autowired
     public RagIndexBuildService(IndexBuildJpaRepository indexBuilds,
-                                EvalResultJpaRepository evalResults) {
+                                EvalResultJpaRepository evalResults,
+                                ObjectMapper objectMapper) {
         this.indexBuilds = indexBuilds;
         this.evalResults = evalResults;
+        this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
+    }
+
+    RagIndexBuildService(IndexBuildJpaRepository indexBuilds,
+                         EvalResultJpaRepository evalResults) {
+        this(indexBuilds, evalResults, new ObjectMapper());
     }
 
     @Transactional
@@ -105,6 +120,7 @@ public class RagIndexBuildService {
         if (evalResult.effectiveStatus() != EvalResultStatus.PASSED) {
             throw new IllegalStateException("index build eval result must be PASSED before promotion");
         }
+        requirePromotionContractClear(build, evalResult);
 
         Optional<IndexBuildJpaEntity> activeBuild = indexBuilds.findFirstByActiveTrue()
                 .filter(active -> !active.getId().equals(build.getId()));
@@ -159,6 +175,10 @@ public class RagIndexBuildService {
         return value == null || value.isBlank() ? null : value;
     }
 
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
     private static String defaultJsonObject(String value) {
         return value == null || value.isBlank() ? "{}" : value;
     }
@@ -170,6 +190,137 @@ public class RagIndexBuildService {
         if (!equalsNonBlank(evalResult.getCandidateIndexVersion(), build.getCandidateIndexVersion())) {
             throw new IllegalStateException("eval result candidate index version must match index build");
         }
+    }
+
+    private void requirePromotionContractClear(IndexBuildJpaEntity build, EvalResultJpaEntity evalResult) {
+        JsonNode metrics = readJsonObject(evalResult.getMetricsJson(), "eval metrics_json");
+        JsonNode failures = readJson(evalResult.getFailureReasonJson(), "eval failure_reason_json");
+        List<String> blockers = new ArrayList<>();
+        addRequiredZeroCounterBlocker(blockers, metrics, "gate_input_missing_count");
+        addRequiredZeroCounterBlocker(blockers, metrics, "required_index_version_mismatch_count");
+        addRequiredZeroCounterBlocker(blockers, metrics, "embedding_status_mismatch_count");
+        addRequiredZeroCounterBlocker(blockers, metrics, "candidate_index_mismatch_count");
+        addRequiredZeroCounterBlocker(blockers, metrics, "indexing_filtered_hit_count");
+        addRequiredZeroCounterBlocker(blockers, metrics, "hidden_content_leakage_count");
+        addRequiredZeroCounterBlocker(blockers, metrics, "fatal_warning_count");
+        addRequiredZeroCounterBlocker(blockers, metrics, "missing_embedding_record_count");
+        addRequiredZeroCounterBlocker(blockers, metrics, "missing_ragmeta_chunk_count");
+        addRequiredZeroCounterBlocker(blockers, metrics, "embedding_text_sha256_mismatch_count");
+        addThresholdBlocker(blockers, metrics, "unsupported_file_rate", 0.0);
+        addThresholdBlocker(blockers, metrics, "parsing_latency_p95_seconds", 30.0);
+        if (metrics.path("candidate_snapshot_baseline").asBoolean(false)
+                || metrics.path("candidate_snapshot").asBoolean(false)) {
+            blockers.add("candidate snapshot baseline cannot be promoted");
+        }
+        String retrievalBackend = text(metrics, "retrieval_backend");
+        if (!"vector".equals(retrievalBackend)) {
+            blockers.add("retrieval_backend must be vector before promotion");
+        }
+        String requiredEmbeddingStatus = text(metrics, "required_embedding_status");
+        if (!"EMBEDDED".equals(requiredEmbeddingStatus)) {
+            blockers.add("required_embedding_status must be EMBEDDED");
+        }
+        String requiredIndexVersion = text(metrics, "required_index_version");
+        if (!equalsNonBlank(requiredIndexVersion, build.getCandidateIndexVersion())) {
+            blockers.add("required_index_version must match index build candidate version");
+        }
+        if (!equalsNonBlank(text(metrics, "candidate_index_version"), build.getCandidateIndexVersion())
+                && metrics.hasNonNull("candidate_index_version")) {
+            blockers.add("metrics candidate_index_version must match index build");
+        }
+        if (!equalsNonBlank(text(metrics, "index_version"), build.getIndexVersion())
+                && metrics.hasNonNull("index_version")) {
+            blockers.add("metrics index_version must match index build");
+        }
+        if (isBlank(text(metrics, "immutable_baseline_report_hash"))) {
+            blockers.add("immutable baseline report hash is required");
+        }
+        if (isBlank(text(metrics, "baseline_provenance"))) {
+            blockers.add("baseline provenance is required");
+        }
+        if (isBlank(text(metrics, "baseline_dataset_version"))
+                && isBlank(text(metrics, "gold_dataset_version"))
+                && isBlank(text(metrics, "eval_dataset_version"))) {
+            blockers.add("baseline dataset version is required");
+        }
+        if (hasFailurePayload(failures)) {
+            blockers.add("eval failure_reason_json must be empty before promotion");
+        }
+        if (!blockers.isEmpty()) {
+            throw new IllegalStateException("promotion hard-blocked: " + String.join("; ", blockers));
+        }
+    }
+
+    private JsonNode readJsonObject(String json, String label) {
+        JsonNode node = readJson(json, label);
+        if (!node.isObject()) {
+            throw new IllegalStateException(label + " must be a JSON object");
+        }
+        return node;
+    }
+
+    private JsonNode readJson(String json, String label) {
+        try {
+            if (json == null || json.isBlank()) {
+                return objectMapper.getNodeFactory().missingNode();
+            }
+            return objectMapper.readTree(json);
+        } catch (IOException | RuntimeException ex) {
+            throw new IllegalStateException(label + " is not valid JSON", ex);
+        }
+    }
+
+    private static void addRequiredZeroCounterBlocker(List<String> blockers, JsonNode metrics, String key) {
+        JsonNode node = metrics.path(key);
+        if (!node.isNumber()) {
+            blockers.add(key + " is required");
+        } else if (node.asLong() > 0L) {
+            blockers.add(key + " must be zero");
+        }
+    }
+
+    private static void addThresholdBlocker(List<String> blockers, JsonNode metrics, String key, double threshold) {
+        JsonNode node = metrics.path(key);
+        if (node.isNumber() && node.asDouble() > threshold) {
+            blockers.add(key + " exceeds threshold " + threshold);
+        }
+    }
+
+    private static String text(JsonNode node, String key) {
+        JsonNode value = node.path(key);
+        return value.isMissingNode() || value.isNull() ? null : value.asText();
+    }
+
+    private static boolean hasFailurePayload(JsonNode failures) {
+        if (failures == null || failures.isMissingNode() || failures.isNull()) {
+            return false;
+        }
+        if (failures.isArray()) {
+            return !failures.isEmpty();
+        }
+        if (!failures.isObject()) {
+            return false;
+        }
+        JsonNode metricFailures = failures.path("metric_threshold_failures");
+        if (metricFailures.isArray() && !metricFailures.isEmpty()) {
+            return true;
+        }
+        JsonNode bucketFailures = failures.path("bucket_level_failures");
+        if (bucketFailures.isArray() && !bucketFailures.isEmpty()) {
+            return true;
+        }
+        JsonNode distribution = failures.path("failure_reason_distribution");
+        if (distribution.isObject()) {
+            JsonNode overall = distribution.path("overall");
+            if (overall.isObject() && overall.fields().hasNext()) {
+                return true;
+            }
+            JsonNode byBucket = distribution.path("by_bucket");
+            if (byBucket.isObject() && byBucket.fields().hasNext()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean equalsNonBlank(String left, String right) {

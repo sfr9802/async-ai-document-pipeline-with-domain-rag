@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import math
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -213,6 +212,10 @@ def evaluate_gold_rows(
     gold_label_invalid_count = 0
     candidate_index_mismatch_count = 0
     indexing_filtered_hit_count = 0
+    candidate_valid_hit_count = 0
+    null_index_version_hit_count = 0
+    wrong_index_version_hit_count = 0
+    unembedded_hit_count = 0
     search_error_count = 0
     hidden_negative_pass_count = 0
     bucket_ranks: dict[str, list[int | None]] = defaultdict(list)
@@ -268,6 +271,27 @@ def evaluate_gold_rows(
             1
             for detail in hit_details
             if not detail["match_breakdown"].get("indexing_contract_match", True)
+        )
+        candidate_valid_hit_count += sum(
+            1
+            for detail in hit_details
+            if detail["match_breakdown"].get("indexing_contract_match", True)
+        )
+        null_index_version_hit_count += sum(
+            1
+            for detail in hit_details
+            if not detail.get("index_version")
+        )
+        wrong_index_version_hit_count += sum(
+            1
+            for detail in hit_details
+            if required_index_version and detail.get("index_version") not in {None, "", required_index_version}
+        )
+        unembedded_hit_count += sum(
+            1
+            for detail in hit_details
+            if required_embedding_status
+            and str(detail.get("embedding_status") or "").upper() != required_embedding_status.upper()
         )
         matched_rank: int | None = None
         location_rank: int | None = None
@@ -427,6 +451,10 @@ def evaluate_gold_rows(
             0,
         ),
         "indexing_filtered_hit_count": indexing_filtered_hit_count,
+        "candidate_valid_hit_count": candidate_valid_hit_count,
+        "null_index_version_hit_count": null_index_version_hit_count,
+        "wrong_index_version_hit_count": wrong_index_version_hit_count,
+        "unembedded_hit_count": unembedded_hit_count,
         "search_error_count": search_error_count,
         "hidden_content_leakage_count": hidden_leakage_count,
         "hidden_negative_pass_count": hidden_negative_pass_count,
@@ -790,6 +818,195 @@ def search_library(base_url: str, *, timeout_seconds: float = 60.0) -> Callable[
     return _search
 
 
+def search_vector(
+    *,
+    index_dir: str,
+    db_dsn: str,
+    embedding_model: str,
+    query_prefix: str = "",
+    passage_prefix: str = "",
+    max_seq_length: int | None = 1024,
+    batch_size: int = 32,
+    expected_index_version: str | None = None,
+) -> Callable[[str, int], list[dict[str, Any]]]:
+    """Return a FAISS/ragmeta-backed search function for D-stage eval.
+
+    This path deliberately bypasses /api/v1/library/search so reports can
+    distinguish vector-backed evidence from library-search smoke evidence.
+    """
+
+    from app.capabilities.rag.embeddings import SentenceTransformerEmbedder
+    from app.capabilities.rag.faiss_index import FaissIndex
+    from app.capabilities.rag.metadata_store import RagMetadataStore
+    from app.capabilities.rag.retriever import Retriever
+
+    embedder = SentenceTransformerEmbedder(
+        model_name=embedding_model,
+        query_prefix=query_prefix,
+        passage_prefix=passage_prefix,
+        max_seq_length=max_seq_length,
+        batch_size=batch_size,
+        show_progress_bar=False,
+    )
+    metadata = RagMetadataStore(db_dsn)
+    index = FaissIndex(Path(index_dir))
+    retriever_cache: dict[int, Retriever] = {}
+
+    def _retriever(top_k: int) -> Retriever:
+        safe_top_k = max(1, int(top_k))
+        existing = retriever_cache.get(safe_top_k)
+        if existing is not None:
+            return existing
+        retriever = Retriever(
+            embedder=embedder,
+            index=index,
+            metadata=metadata,
+            top_k=safe_top_k,
+            candidate_k=safe_top_k,
+        )
+        retriever.ensure_ready()
+        if expected_index_version and retriever._info and retriever._info.index_version != expected_index_version:
+            raise RuntimeError(
+                "Vector eval index_version mismatch: "
+                f"expected={expected_index_version!r} actual={retriever._info.index_version!r}"
+            )
+        retriever_cache[safe_top_k] = retriever
+        return retriever
+
+    def _search(query: str, top_k: int) -> list[dict[str, Any]]:
+        report = _retriever(top_k).retrieve(query)
+        return [
+            _vector_chunk_to_eval_hit(
+                chunk,
+                index_version=report.index_version,
+                embedding_model=report.embedding_model,
+                rank=rank,
+            )
+            for rank, chunk in enumerate(report.results[:top_k], start=1)
+        ]
+
+    return _search
+
+
+def _vector_chunk_to_eval_hit(chunk: Any, *, index_version: str, embedding_model: str, rank: int) -> dict[str, Any]:
+    metadata = chunk.metadata_json if isinstance(chunk.metadata_json, dict) else {}
+    location = _dict_value(metadata, "locationJson", "location_json")
+    if not isinstance(location, dict):
+        location = _json(location)
+    if not _usable_location(location):
+        location = _location_from_vector_metadata(metadata)
+    location_type = _first_value(
+        metadata,
+        "locationType",
+        "location_type",
+        default=location.get("type"),
+    )
+    chunk_type = _first_value(metadata, "chunkType", "chunk_type")
+    source_file_name = _first_value(
+        metadata,
+        "sourceFileName",
+        "source_file_name",
+        "original_filename",
+        default=chunk.source_file_name,
+    )
+    search_unit_id = _first_value(
+        metadata,
+        "searchUnitId",
+        "search_unit_id",
+        default=chunk.search_unit_id or chunk.chunk_id,
+    )
+    unit = {
+        "id": search_unit_id,
+        "searchUnitId": search_unit_id,
+        "embeddingStatus": "EMBEDDED",
+        "indexVersion": index_version,
+        "embeddingModel": embedding_model,
+        "chunkType": chunk_type,
+        "locationType": location_type,
+        "locationJson": json.dumps(location, ensure_ascii=False),
+        "citationText": _first_value(metadata, "citationText", "citation_text"),
+        "unitType": chunk.unit_type or _first_value(metadata, "unitType", "unit_type"),
+        "unitKey": chunk.unit_key or _first_value(metadata, "unitKey", "unit_key"),
+        "parserName": _first_value(metadata, "parserName", "parser_name"),
+        "parserVersion": _first_value(metadata, "parserVersion", "parser_version"),
+        "documentVersionId": _first_value(
+            metadata,
+            "documentVersionId",
+            "document_version_id",
+            default=location.get("documentVersionId") or location.get("document_version_id"),
+        ),
+    }
+    return {
+        "rank": rank,
+        "score": float(chunk.score),
+        "indexVersion": index_version,
+        "embeddingStatus": "EMBEDDED",
+        "sourceFileName": source_file_name,
+        "documentVersionId": unit["documentVersionId"],
+        "sourceFile": {
+            "id": chunk.source_file_id or chunk.doc_id,
+            "sourceFileId": chunk.source_file_id or chunk.doc_id,
+            "originalFileName": source_file_name,
+            "fileName": source_file_name,
+        },
+        "searchUnit": unit,
+        "vector": {
+            "backend": "faiss",
+            "chunkId": chunk.chunk_id,
+            "docId": chunk.doc_id,
+            "faissScore": float(chunk.score),
+        },
+    }
+
+
+def _dict_value(mapping: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        value = mapping.get(key)
+        if value is not None and value != "":
+            return value
+    return None
+
+
+def _first_value(mapping: dict[str, Any], *keys: str, default: Any = None) -> Any:
+    value = _dict_value(mapping, *keys)
+    return default if value is None else value
+
+
+def _usable_location(location: dict[str, Any]) -> bool:
+    return bool(
+        isinstance(location, dict)
+        and (
+            location.get("type")
+            or location.get("sheet_name")
+            or location.get("cell_range")
+            or location.get("physical_page_index") is not None
+        )
+    )
+
+
+def _location_from_vector_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    location_type = _first_value(metadata, "locationType", "location_type")
+    location: dict[str, Any] = {}
+    if location_type:
+        location["type"] = location_type
+    _copy_first(location, "document_version_id", metadata, "documentVersionId", "document_version_id")
+    _copy_first(location, "sheet_name", metadata, "sheetName", "sheet_name")
+    _copy_first(location, "sheet_index", metadata, "sheetIndex", "sheet_index")
+    _copy_first(location, "cell_range", metadata, "cellRange", "cell_range", "range", "usedRange")
+    _copy_first(location, "table_id", metadata, "tableId", "table_id", "tableName")
+    _copy_first(location, "physical_page_index", metadata, "physicalPageIndex", "physical_page_index")
+    _copy_first(location, "page_no", metadata, "pageNo", "page_no", "pageStart", "page_start")
+    _copy_first(location, "page_label", metadata, "pageLabel", "page_label")
+    _copy_first(location, "bbox", metadata, "bbox", "boundingBox")
+    return location
+
+
+def _copy_first(target: dict[str, Any], target_key: str, source: dict[str, Any], *source_keys: str) -> None:
+    value = _dict_value(source, *source_keys)
+    if value is not None:
+        target[target_key] = value
+
+
 def _hit_matches(row: dict[str, str], hit: dict[str, Any]) -> bool:
     source = hit.get("sourceFile") or {}
     unit = hit.get("searchUnit") or {}
@@ -1071,6 +1288,22 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--report", default="reports/rag_retrieval_eval_report.json")
     parser.add_argument("--request-timeout-seconds", type=float, default=60.0)
+    parser.add_argument(
+        "--retrieval-backend",
+        choices=("library_search", "vector"),
+        default="library_search",
+        help="library_search is ingestion smoke; vector is D-stage FAISS/ragmeta eval.",
+    )
+    parser.add_argument("--vector-index-dir", default="../rag-data")
+    parser.add_argument(
+        "--vector-db-dsn",
+        default="host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw",
+    )
+    parser.add_argument("--vector-embedding-model", default="BAAI/bge-m3")
+    parser.add_argument("--vector-query-prefix", default="")
+    parser.add_argument("--vector-passage-prefix", default="")
+    parser.add_argument("--vector-max-seq-length", type=int, default=1024)
+    parser.add_argument("--vector-batch-size", type=int, default=32)
     parser.add_argument("--candidate-index-version")
     parser.add_argument("--baseline-index-version")
     parser.add_argument(
@@ -1082,6 +1315,14 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--required-index-version",
         default=None,
         help="Only count hits from this index_version. Defaults to --candidate-index-version when provided.",
+    )
+    parser.add_argument(
+        "--promotion-evidence",
+        action="store_true",
+        help=(
+            "Mark the report as intended promotion evidence. Omit for diagnostics, canaries, "
+            "or bootstrap runs that must not satisfy the promotion gate."
+        ),
     )
     parser.add_argument("--validate-only", action="store_true")
     return parser.parse_args(argv)
@@ -1102,6 +1343,9 @@ def main(argv: list[str] | None = None) -> int:
         payload = {
             "run_id": utc_run_id(),
             "status": "PASSED" if validation.ok else "FAILED",
+            "retrieval_backend": args.retrieval_backend,
+            "promotion_evidence": bool(args.promotion_evidence),
+            "evidence_role": "promotion" if args.promotion_evidence else "diagnostic",
             "validation": validation_payload,
         }
         write_report(Path(args.report), payload)
@@ -1111,29 +1355,62 @@ def main(argv: list[str] | None = None) -> int:
         payload = {
             "run_id": utc_run_id(),
             "status": "VALIDATION_FAILED",
+            "retrieval_backend": args.retrieval_backend,
+            "promotion_evidence": bool(args.promotion_evidence),
+            "evidence_role": "promotion" if args.promotion_evidence else "diagnostic",
             "validation": validation_payload,
         }
         write_report(Path(args.report), payload)
         print_report(payload)
         return 1
 
+    required_index_version = args.required_index_version or args.candidate_index_version
+    if args.retrieval_backend == "vector":
+        search_fn = search_vector(
+            index_dir=args.vector_index_dir,
+            db_dsn=args.vector_db_dsn,
+            embedding_model=args.vector_embedding_model,
+            query_prefix=args.vector_query_prefix,
+            passage_prefix=args.vector_passage_prefix,
+            max_seq_length=args.vector_max_seq_length,
+            batch_size=args.vector_batch_size,
+            expected_index_version=required_index_version,
+        )
+        backend_identity = {
+            "backend": "faiss",
+            "index_dir": str(Path(args.vector_index_dir)),
+            "index_namespace_filter": required_index_version,
+            "db_dsn": redact_dsn(args.vector_db_dsn),
+            "filtering_mode": "vector_namespace_then_contract_filter",
+        }
+    else:
+        search_fn = search_library(args.base_url, timeout_seconds=args.request_timeout_seconds)
+        backend_identity = {
+            "endpoint": "/api/v1/library/search",
+            "filtering_mode": "score_time_contract_filter",
+        }
+
     report = evaluate_gold_rows(
         rows,
-        search_fn=search_library(args.base_url, timeout_seconds=args.request_timeout_seconds),
+        search_fn=search_fn,
         top_k=args.top_k,
         candidate_index_version=args.candidate_index_version,
         baseline_index_version=args.baseline_index_version,
         required_embedding_status=args.required_embedding_status or None,
-        required_index_version=args.required_index_version or args.candidate_index_version,
+        required_index_version=required_index_version,
     )
     report["run_id"] = utc_run_id()
     report["gold"] = str(args.gold)
     report["top_k"] = args.top_k
+    report["retrieval_backend"] = args.retrieval_backend
+    report["backend_identity"] = backend_identity
+    report["promotion_evidence"] = bool(args.promotion_evidence)
+    report["evidence_role"] = "promotion" if args.promotion_evidence else "diagnostic"
     report["candidate_index_version"] = args.candidate_index_version
     if args.baseline_index_version:
         report["baseline_index_version"] = args.baseline_index_version
     report["required_embedding_status"] = args.required_embedding_status or None
-    report["required_index_version"] = args.required_index_version or args.candidate_index_version
+    report["required_index_version"] = required_index_version
     write_report(Path(args.report), report)
     print_report(report)
     return 0 if report["validation"]["ok"] else 1
@@ -1144,6 +1421,16 @@ def _has_fatal_validation_errors(validation: GoldValidationResult) -> bool:
         error.startswith("missing required columns") or error == "gold CSV must contain at least one row"
         for error in validation.errors
     )
+
+
+def redact_dsn(dsn: str) -> str:
+    parts = []
+    for part in str(dsn or "").split():
+        if part.lower().startswith("password="):
+            parts.append("password=<redacted>")
+        else:
+            parts.append(part)
+    return " ".join(parts)
 
 
 if __name__ == "__main__":

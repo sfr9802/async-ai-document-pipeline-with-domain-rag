@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+
 from app.capabilities.rag.retrieval_contract import citation_payload
 from app.capabilities.rag.search_unit_indexing import (
     build_search_unit_embedding_text,
@@ -91,6 +93,9 @@ def test_xlsx_table_embedding_text_includes_sheet_range_header_and_table_text():
     assert chunk.extra["columnEnd"] == 6
     assert chunk.extra["embeddingModel"] == "hashing-test"
     assert chunk.extra["embeddingTextVariant"] == "retrieval_title_section_spreadsheet_v1"
+    assert chunk.extra["embeddingTextSha256"] == hashlib.sha256(doc.text_content.encode("utf-8")).hexdigest()
+    assert chunk.extra["modelInputTextSha256"] == built.sha256
+    assert chunk.extra["vectorId"] == f"idx-v1:{doc.index_id}"
 
 
 def test_xlsx_chunk_embedding_text_keeps_repeated_header_context():

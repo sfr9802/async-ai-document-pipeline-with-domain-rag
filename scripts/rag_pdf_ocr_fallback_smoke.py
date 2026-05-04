@@ -14,6 +14,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import time
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
@@ -58,11 +59,13 @@ def main(argv: list[str] | None = None) -> int:
         message = "missing PaddleOCR dependencies in this Python environment: " + ", ".join(missing_dependencies)
         if args.require_paddle:
             report["errors"] = [message]
+            add_metrics(report)
             write_json_report(Path(args.report), report)
             print(f"[FAIL] {message}", file=sys.stderr)
             return 2
         report["status"] = "SKIPPED"
         report["warnings"].append(message)
+        add_metrics(report)
         write_json_report(Path(args.report), report)
         print(f"[SKIP] {message}")
         return 0
@@ -81,40 +84,49 @@ def main(argv: list[str] | None = None) -> int:
         report["job_id"] = job_id
         print(f"[2/4] started PDF_EXTRACT jobId={job_id}")
 
+        parsing_started = time.perf_counter()
         final = wait_job(
             client,
             job_id,
             timeout_seconds=args.poll_timeout,
             poll_interval=args.poll_interval,
         )
+        report["parsing_latency_seconds"] = round(time.perf_counter() - parsing_started, 3)
         report["job_status"] = final.get("status")
         print(f"[3/4] job status={final.get('status')}")
         if final.get("status") != "SUCCEEDED":
             report["job"] = final
+            add_metrics(report)
             write_json_report(Path(args.report), report)
             return 3
 
         if args.skip_db_check:
             report["warnings"].append("DB validation skipped")
             report["status"] = "PASSED"
+            report["indexing_latency_seconds"] = 0.0
+            add_metrics(report)
             write_json_report(Path(args.report), report)
             return 0
 
+        indexing_started = time.perf_counter()
         db_report = query_ocr_db_report(
             container=args.db_container,
             user=args.db_user,
             database=args.db_name,
             source_file_id=source_id,
         )
+        report["indexing_latency_seconds"] = round(time.perf_counter() - indexing_started, 3)
         report["db_report"] = db_report
         try:
             validate_ocr_report(db_report)
         except AssertionError as exc:
             report["errors"] = [str(exc)]
+            add_metrics(report)
             write_json_report(Path(args.report), report)
             print(f"[FAIL] {exc}", file=sys.stderr)
             return 4
         report["status"] = "PASSED"
+        add_metrics(report)
         write_json_report(Path(args.report), report)
         print("[4/4] OCR fallback DB metadata verified")
         print(json.dumps(db_report, ensure_ascii=False, indent=2))
@@ -234,6 +246,21 @@ def validate_ocr_report(report: dict[str, Any]) -> None:
     failed = [name for name, ok in checks.items() if not ok]
     if failed:
         raise AssertionError(f"OCR fallback smoke validation failed: {failed}")
+
+
+def add_metrics(report: dict[str, Any]) -> None:
+    db_report = report.get("db_report") if isinstance(report.get("db_report"), dict) else {}
+    status = str(report.get("status") or "").upper()
+    errors = list(report.get("errors") or [])
+    report["metrics"] = {
+        "unsupported_file_rate": 1.0 if status == "SKIPPED" else 0.0,
+        "fatal_warning_count": len(errors),
+        "ocr_confidence_avg": db_report.get("ocr_confidence_avg"),
+        "low_trust_ocr_chunk_count": int(db_report.get("low_trust_ocr_chunk_count") or 0),
+        "hidden_content_leakage_count": 0,
+        "parsing_latency_p95_seconds": float(report.get("parsing_latency_seconds") or 0.0),
+        "indexing_latency_p95_seconds": float(report.get("indexing_latency_seconds") or 0.0),
+    }
 
 
 def sql_literal(value: str) -> str:

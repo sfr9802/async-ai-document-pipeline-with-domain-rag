@@ -1,0 +1,97 @@
+{
+  "manifest_version": "rag-pdf-ingestion-batch-v0",
+  "default_expectations": {
+    "min_search_units": 3,
+    "min_pages": 1,
+    "min_pdf_parsed_artifacts": 1,
+    "min_pdf_plaintext_artifacts": 1,
+    "require_parser_name": "pymupdf",
+    "require_parser_version": "pdf-extract-v1",
+    "require_location_json": true,
+    "require_citation_text": true,
+    "require_page_metadata": true,
+    "require_bbox_if_text_block": true
+  },
+  "samples": [
+    {
+      "sample_id": "pdf_economic_trends_2021_03",
+      "path": "datasets/golden/kovidore-economic/hf_snapshot/pdfs/2021_03_recent_economic_trends.pdf",
+      "file_type": "pdf",
+      "bucket": "pdf_native_text",
+      "expected": {
+        "min_search_units": 3,
+        "min_pages": 1
+      }
+    },
+    {
+      "sample_id": "pdf_economic_trends_2021_12",
+      "path": "datasets/golden/kovidore-economic/hf_snapshot/pdfs/2021_12_recent_economic_trends.pdf",
+      "file_type": "pdf",
+      "bucket": "pdf_multi_page",
+      "expected": {
+        "min_search_units": 3,
+        "min_pages": 1
+      }
+    },
+    {
+      "sample_id": "pdf_economic_trends_2022_06",
+      "path": "datasets/golden/kovidore-economic/hf_snapshot/pdfs/2022_06_recent_economic_trends.pdf",
+      "file_type": "pdf",
+      "bucket": "pdf_section_question",
+      "expected": {
+        "min_search_units": 3,
+        "min_pages": 1
+      }
+    },
+    {
+      "sample_id": "pdf_economic_trends_2022_12",
+      "path": "datasets/golden/kovidore-economic/hf_snapshot/pdfs/2022_12_recent_economic_trends.pdf",
+      "file_type": "pdf",
+      "bucket": "pdf_table_lookup",
+      "expected": {
+        "min_search_units": 3,
+        "min_pages": 1
+      }
+    },
+    {
+      "sample_id": "pdf_economic_trends_2023_06",
+      "path": "datasets/golden/kovidore-economic/hf_snapshot/pdfs/2023_06_recent_economic_trends.pdf",
+      "file_type": "pdf",
+      "bucket": "pdf_native_text",
+      "expected": {
+        "min_search_units": 3,
+        "min_pages": 1
+      }
+    },
+    {
+      "sample_id": "pdf_economic_trends_2023_12",
+      "path": "datasets/golden/kovidore-economic/hf_snapshot/pdfs/2023_12_recent_economic_trends.pdf",
+      "file_type": "pdf",
+      "bucket": "pdf_multi_page",
+      "expected": {
+        "min_search_units": 3,
+        "min_pages": 1
+      }
+    },
+    {
+      "sample_id": "pdf_economic_trends_2024_06",
+      "path": "datasets/golden/kovidore-economic/hf_snapshot/pdfs/2024_06_recent_economic_trends.pdf",
+      "file_type": "pdf",
+      "bucket": "pdf_section_question",
+      "expected": {
+        "min_search_units": 3,
+        "min_pages": 1
+      }
+    },
+    {
+      "sample_id": "pdf_economic_trends_2025_12",
+      "path": "datasets/golden/kovidore-economic/hf_snapshot/pdfs/2025_12_recent_economic_trends.pdf",
+      "file_type": "pdf",
+      "bucket": "pdf_table_lookup",
+      "expected": {
+        "min_search_units": 3,
+        "min_pages": 1
+      }
+    }
+  ]
+}

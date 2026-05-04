@@ -19,6 +19,7 @@ from app.clients.schemas import (
     SearchUnitIndexDocument as ClaimUnit,
 )
 from app.services.search_unit_indexing_loop import SearchUnitIndexingWorker
+from ai_worker.search_unit_indexing import _has_hard_identity_scope, _resolved_index_version, _validate_cli_args
 
 
 def _claim_unit(**overrides):
@@ -91,8 +92,10 @@ class _FakeIndexer:
                 claim_token=doc.claim_token,
                 content_sha256=doc.content_sha256,
                 index_id=doc.index_id,
+                vector_id=f"idx-v1:{doc.index_id}",
                 faiss_row_id=i,
                 embedding_text_sha256=f"embed-hash-{i}",
+                model_input_text_sha256=f"model-input-hash-{i}",
             )
             for i, doc in enumerate(docs)
         ]
@@ -191,7 +194,29 @@ def test_nonblank_search_unit_is_indexed_and_marked_embedded():
     assert core.embedded_requests[0][1].content_sha256 == "hash-1"
     assert core.embedded_requests[0][1].embedding_model == "fake"
     assert core.embedded_requests[0][1].embedding_text_sha256 == "embed-hash-0"
-    assert core.embedded_requests[0][1].vector_id == "source_file:source-1:unit:PAGE:page:1"
+    assert core.embedded_requests[0][1].vector_id == "idx-v1:source_file:source-1:unit:PAGE:page:1"
+
+
+def test_worker_forwards_claim_scope_fields():
+    core = _FakeCoreApi(units=[])
+    worker = SearchUnitIndexingWorker(
+        core_api=core,
+        indexer=_FakeIndexer(),
+        worker_id="worker-test",
+        batch_size=10,
+        source_file_id="source-1",
+        document_version_id="docv-1",
+        parsed_artifact_id="pa-1",
+        search_unit_ids=["unit-1", "unit-2"],
+    )
+
+    worker.run_once()
+
+    request = core.claim_requests[0]
+    assert request.source_file_id == "source-1"
+    assert request.document_version_id == "docv-1"
+    assert request.parsed_artifact_id == "pa-1"
+    assert request.search_unit_ids == ["unit-1", "unit-2"]
 
 
 def test_blank_claim_is_not_embedded_and_is_failed_defensively():
@@ -304,3 +329,135 @@ def test_vector_indexer_skips_duplicate_same_content_model_and_variant(tmp_path:
     assert "Title: Page 1" in embedder.passages[0]
     assert "Page: 1" in embedder.passages[0]
     assert len(metadata.index_builds) == 1
+
+
+def test_cli_defaults_index_version_to_expected_candidate_version():
+    args = _cli_args(
+        expected_index_version="rag-ingestion-v2-candidate",
+        index_version=None,
+        document_version_id="docv-1",
+    )
+
+    _validate_cli_args(args)
+
+    assert _resolved_index_version(args) == "rag-ingestion-v2-candidate"
+
+
+def test_cli_rejects_unscoped_candidate_non_dry_run():
+    args = _cli_args(expected_index_version="rag-ingestion-v2-candidate")
+
+    with pytest.raises(ValueError, match="requires a hard identity scope"):
+        _validate_cli_args(args)
+
+
+def test_cli_rejects_unscoped_candidate_index_version_non_dry_run():
+    args = _cli_args(index_version="rag-ingestion-v2-candidate")
+
+    with pytest.raises(ValueError, match="requires a hard identity scope"):
+        _validate_cli_args(args)
+
+    assert args.expected_index_version == "rag-ingestion-v2-candidate"
+
+
+@pytest.mark.parametrize(
+    "scope",
+    [
+        {"document_version_id": "docv-1"},
+        {"document_version_ids": ["docv-1"]},
+        {"source_file_id": "source-1"},
+        {"source_file_ids": ["source-1"]},
+        {"parsed_artifact_id": "parsed-1"},
+        {"search_unit_id": ["unit-1"]},
+    ],
+)
+def test_cli_accepts_hard_identity_scopes_for_candidate_indexing(scope):
+    args = _cli_args(index_version="rag-ingestion-v2-candidate", **scope)
+
+    _validate_cli_args(args)
+
+    assert args.expected_index_version == "rag-ingestion-v2-candidate"
+    assert _has_hard_identity_scope(args) is True
+
+
+def test_cli_type_parser_limit_scope_is_not_enough_for_candidate_indexing():
+    args = _cli_args(
+        index_version="rag-ingestion-v2-candidate",
+        source_file_type=["PDF"],
+        parser_version=["pdf-extract-v2"],
+        limit=10,
+    )
+
+    with pytest.raises(ValueError, match="requires a hard identity scope"):
+        _validate_cli_args(args)
+
+
+def test_cli_rejects_version_omitted_broad_live_indexing():
+    args = _cli_args(
+        source_file_type=["PDF"],
+        parser_version=["pdf-extract-v2"],
+        limit=10,
+    )
+
+    with pytest.raises(ValueError, match="without --index-version/--expected-index-version"):
+        _validate_cli_args(args)
+
+
+def test_cli_accepts_version_omitted_hard_identity_scope():
+    args = _cli_args(source_file_id="source-1")
+
+    _validate_cli_args(args)
+
+    assert _resolved_index_version(args) is None
+
+
+def test_worker_forwards_filled_expected_version_for_scoped_candidate_index():
+    args = _cli_args(
+        index_version="rag-ingestion-v2-candidate",
+        expected_index_version=None,
+        document_version_id="docv-1",
+    )
+    _validate_cli_args(args)
+    core = _FakeCoreApi(units=[])
+    worker = SearchUnitIndexingWorker(
+        core_api=core,
+        indexer=_FakeIndexer(),
+        worker_id="worker-test",
+        batch_size=10,
+        document_version_id=args.document_version_id,
+        expected_index_version=args.expected_index_version,
+    )
+
+    worker.run_once()
+
+    assert core.claim_requests[0].expected_index_version == "rag-ingestion-v2-candidate"
+
+
+def test_cli_rejects_index_version_expected_version_mismatch():
+    args = _cli_args(
+        index_version="other-index",
+        expected_index_version="rag-ingestion-v2-candidate",
+        document_version_id="docv-1",
+    )
+
+    with pytest.raises(ValueError, match="must match --expected-index-version"):
+        _validate_cli_args(args)
+
+
+def _cli_args(**overrides):
+    defaults = {
+        "index_version": None,
+        "expected_index_version": None,
+        "document_version_id": None,
+        "document_version_ids": None,
+        "source_file_id": None,
+        "source_file_ids": None,
+        "parsed_artifact_id": None,
+        "search_unit_id": None,
+        "source_file_type": None,
+        "parser_version": None,
+        "limit": None,
+        "allow_unscoped": False,
+        "dry_run": False,
+    }
+    defaults.update(overrides)
+    return type("Args", (), defaults)()

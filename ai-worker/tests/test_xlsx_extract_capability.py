@@ -16,6 +16,7 @@ from app.capabilities.base import (
     CapabilityInputArtifact,
 )
 from app.capabilities.xlsx.artifact_builder import (
+    XLSX_HIDDEN_POLICY_VERSION,
     XLSX_MARKDOWN,
     XLSX_PIPELINE_VERSION,
     XLSX_TABLE_JSON,
@@ -37,6 +38,9 @@ def test_xlsx_extract_emits_workbook_markdown_and_table_artifacts():
     body = json.loads(result.outputs[0].content)
     assert body["fileType"] == "xlsx"
     assert body["pipelineVersion"] == XLSX_PIPELINE_VERSION
+    assert body["hiddenPolicy"] == "exclude_hidden"
+    assert body["hiddenPolicyVersion"] == XLSX_HIDDEN_POLICY_VERSION
+    assert body["sanitizerVersion"] == XLSX_HIDDEN_POLICY_VERSION
     assert body["sourceRecordId"] == "source-file-1"
     assert body["workbook"]["sheetCount"] == 3
 

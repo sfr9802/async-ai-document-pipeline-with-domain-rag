@@ -20,6 +20,7 @@ from app.capabilities.base import (
     CapabilityOutput,
 )
 from app.capabilities.xlsx.artifact_builder import (
+    XLSX_HIDDEN_POLICY_VERSION,
     XLSX_PIPELINE_VERSION,
     build_output_artifacts,
 )
@@ -196,6 +197,9 @@ class XlsxExtractService:
             "fileType": file_type,
             "sourceRecordId": source_record_id,
             "pipelineVersion": self._pipeline_version,
+            "hiddenPolicy": "exclude_hidden",
+            "hiddenPolicyVersion": XLSX_HIDDEN_POLICY_VERSION,
+            "sanitizerVersion": XLSX_HIDDEN_POLICY_VERSION,
             "extractor": "openpyxl",
             "contentType": content_type,
             "filename": filename,

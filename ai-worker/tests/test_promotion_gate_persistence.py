@@ -77,6 +77,21 @@ def test_promotion_gate_rejects_candidate_snapshot_baseline():
     assert "baseline report must be an immutable baseline, not a candidate snapshot" in result.reasons
 
 
+def test_promotion_gate_rejects_baseline_without_immutable_contract():
+    baseline = {"Hit@10": 0.80, "MRR@10": 0.70}
+
+    result = gate_module.evaluate_promotion_gate(
+        index_version="candidate-v2",
+        metrics=_passing_metrics(ocr_needed=False),
+        baseline_metrics=baseline,
+    )
+
+    assert result.decision == "BLOCKED"
+    assert "baseline report must declare immutable_baseline=true" in result.reasons
+    assert "immutable baseline report hash is required" in result.reasons
+    assert "baseline dataset version is required" in result.reasons
+
+
 def test_promotion_gate_blocks_index_contract_mismatch_counts():
     metrics = _passing_metrics(ocr_needed=False) | {
         "indexing_filtered_hit_count": 1,
@@ -111,10 +126,61 @@ def test_promotion_gate_blocks_missing_gate_inputs():
     assert "gate_input_missing_count must be 0" in result.reasons
 
 
+def test_promotion_gate_blocks_missing_vector_backend_identity():
+    metrics = _passing_metrics(ocr_needed=False)
+    metrics.pop("retrieval_backend_identity")
+
+    result = gate_module.evaluate_promotion_gate(
+        index_version="candidate-v2",
+        metrics=metrics,
+        baseline_metrics=_baseline_metrics(),
+    )
+
+    assert result.decision == "BLOCKED"
+    assert "retrieval_backend_identity is required for promotion" in result.reasons
+
+
+def test_promotion_gate_blocks_diagnostic_retrieval_report():
+    metrics = _passing_metrics(ocr_needed=False) | {
+        "promotion_evidence": False,
+        "evidence_role": "diagnostic",
+    }
+
+    result = gate_module.evaluate_promotion_gate(
+        index_version="candidate-v2",
+        metrics=metrics,
+        baseline_metrics=_baseline_metrics(),
+    )
+
+    assert result.decision == "BLOCKED"
+    assert "retrieval report must declare promotion_evidence=true for promotion" in result.reasons
+
+
+def test_promotion_gate_blocks_namespace_filter_mismatch():
+    metrics = _passing_metrics(ocr_needed=False)
+    metrics["retrieval_backend_identity"] = {
+        "backend": "faiss",
+        "index_namespace_filter": "other-candidate",
+    }
+
+    result = gate_module.evaluate_promotion_gate(
+        index_version="candidate-v2",
+        metrics=metrics,
+        baseline_metrics=_baseline_metrics(),
+    )
+
+    assert result.decision == "BLOCKED"
+    assert "retrieval_backend_identity.index_namespace_filter must match promoted index_version" in result.reasons
+
+
 def test_persist_eval_result_inserts_report_only_payload_with_status():
     metrics = _passing_metrics(ocr_needed=False) | {
         "fatal_warning_count": 1,
         "required_index_version": "candidate-blocked",
+        "retrieval_backend_identity": {
+            "backend": "faiss",
+            "index_namespace_filter": "candidate-blocked",
+        },
     }
     result = gate_module.evaluate_promotion_gate(
         index_version="candidate-blocked",
@@ -234,6 +300,13 @@ def _passing_metrics(*, ocr_needed: bool) -> dict[str, object]:
         "indexing_latency_p95": 60.0,
         "fatal_warning_count": 0,
         "hidden_content_leakage_count": 0,
+        "retrieval_backend": "vector",
+        "retrieval_backend_identity": {
+            "backend": "faiss",
+            "index_namespace_filter": "candidate-v2",
+        },
+        "promotion_evidence": True,
+        "evidence_role": "promotion",
         "embedding_filtered_eval": True,
         "required_embedding_status": "EMBEDDED",
         "required_index_version": "candidate-v2",
@@ -249,8 +322,15 @@ def _passing_metrics(*, ocr_needed: bool) -> dict[str, object]:
     return metrics
 
 
-def _baseline_metrics() -> dict[str, float]:
-    return {"Hit@10": 0.80, "MRR@10": 0.70}
+def _baseline_metrics() -> dict[str, object]:
+    return {
+        "Hit@10": 0.80,
+        "MRR@10": 0.70,
+        "_baseline_immutable": True,
+        "immutable_baseline_report_hash": "hash",
+        "baseline_provenance": "previous-promoted-index",
+        "baseline_dataset_version": "strict_B_vector_v1",
+    }
 
 
 class FakeCursor:

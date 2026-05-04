@@ -55,7 +55,8 @@ import java.util.UUID;
 public class DocumentCatalogService {
 
     public static final String OCR_LITE_PIPELINE_VERSION = "ocr-lite-v1";
-    public static final String XLSX_PIPELINE_VERSION = "xlsx-extract-v1";
+    public static final String XLSX_PIPELINE_VERSION = "xlsx-extract-v2-hidden-safe";
+    public static final String XLSX_HIDDEN_POLICY_VERSION = "exclude-hidden-v1";
     public static final String PDF_PIPELINE_VERSION = "pdf-extract-v1";
     public static final String SOURCE_STATUS_UPLOADED = "UPLOADED";
     public static final String SOURCE_STATUS_PROCESSING = "PROCESSING";
@@ -795,6 +796,8 @@ public class DocumentCatalogService {
 
         ObjectNode parserPolicy = objectMapper.createObjectNode();
         parserPolicy.put("hiddenPolicy", "exclude_hidden");
+        parserPolicy.put("hiddenPolicyVersion", XLSX_HIDDEN_POLICY_VERSION);
+        parserPolicy.put("sanitizerVersion", XLSX_HIDDEN_POLICY_VERSION);
         parserPolicy.put("parserName", parserName);
         parserPolicy.put("parserVersion", parserVersion);
 
@@ -2039,6 +2042,8 @@ public class DocumentCatalogService {
             location.put("contains_formula", metadata.has("formulas") || metadata.has("formulaCount"));
             location.put("contains_merged_cell", metadata.has("mergedCells") || metadata.has("mergedCellCount"));
             location.put("hidden_policy", "exclude_hidden");
+            location.put("hidden_policy_version", XLSX_HIDDEN_POLICY_VERSION);
+            location.put("sanitizer_version", XLSX_HIDDEN_POLICY_VERSION);
             location.put("chunk_type", chunkType(canonicalType, metadata, locationType));
             return location.toString();
         }
@@ -2570,6 +2575,8 @@ public class DocumentCatalogService {
         putIfPresent(location, "table_id", tableId);
         putIfPresent(location, "cell_range", cellRange);
         putIfPresent(location, "hidden_policy", hiddenPolicy);
+        location.put("hidden_policy_version", XLSX_HIDDEN_POLICY_VERSION);
+        location.put("sanitizer_version", XLSX_HIDDEN_POLICY_VERSION);
         return location.toString();
     }
 

@@ -17,9 +17,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -56,17 +60,22 @@ public class SearchUnitIndexingService {
     private final ExtractedArtifactJpaRepository extractedArtifacts;
     private final EmbeddingRecordJpaRepository embeddingRecords;
     private final ObjectMapper objectMapper;
+    private final SearchUnitIndexingProperties properties;
 
     public SearchUnitIndexingService(SearchUnitJpaRepository searchUnits,
                                      SourceFileJpaRepository sourceFiles,
                                      ExtractedArtifactJpaRepository extractedArtifacts,
                                      EmbeddingRecordJpaRepository embeddingRecords,
-                                     ObjectMapper objectMapper) {
+                                     ObjectMapper objectMapper,
+                                     SearchUnitIndexingProperties properties) {
         this.searchUnits = searchUnits;
         this.sourceFiles = sourceFiles;
         this.extractedArtifacts = extractedArtifacts;
         this.embeddingRecords = embeddingRecords;
         this.objectMapper = objectMapper;
+        this.properties = properties == null
+                ? new SearchUnitIndexingProperties(null, null)
+                : properties;
     }
 
     @Transactional
@@ -74,24 +83,85 @@ public class SearchUnitIndexingService {
                                                 int batchSize,
                                                 Duration staleAfter,
                                                 Instant now) {
+        return claimPending(workerId, batchSize, staleAfter, now, ClaimScope.unscoped());
+    }
+
+    @Transactional
+    public List<ClaimedSearchUnit> claimPending(String workerId,
+                                                int batchSize,
+                                                Duration staleAfter,
+                                                Instant now,
+                                                ClaimScope scope) {
         int safeBatch = Math.max(1, Math.min(batchSize, MAX_BATCH_SIZE));
         Duration safeStaleAfter = staleAfter == null ? DEFAULT_STALE_AFTER : staleAfter;
+        ClaimScope safeScope = scope == null ? ClaimScope.unscoped() : scope;
+        if (!safeScope.scoped() && !safeScope.allowUnscopedClaim()) {
+            throw new IllegalArgumentException(
+                    "SearchUnit indexing claim requires source-scoped filters or allowUnscoped=true");
+        }
+        if (safeScope.expectedIndexVersion() != null
+                && !properties.candidateIndexVersion().equals(safeScope.expectedIndexVersion())) {
+            throw new IllegalArgumentException(
+                    "expectedIndexVersion must match configured candidate index version: "
+                            + properties.candidateIndexVersion());
+        }
         List<SearchUnitJpaEntity> candidates = new ArrayList<>();
-        candidates.addAll(searchUnits.findIndexingCandidates(
-                EMBEDDING_STATUS_PENDING,
-                INDEXABLE_SOURCE_STATUSES,
-                PageRequest.of(0, safeBatch * 2)));
+        if (safeScope.scoped()) {
+            candidates.addAll(searchUnits.findIndexingCandidatesScoped(
+                    EMBEDDING_STATUS_PENDING,
+                    INDEXABLE_SOURCE_STATUSES,
+                    safeScope.sourceFileIds().isEmpty(),
+                    safeScope.sourceFileIdsOrSentinel(),
+                    safeScope.documentVersionIds().isEmpty(),
+                    safeScope.documentVersionIdsOrSentinel(),
+                    safeScope.parsedArtifactId(),
+                    safeScope.searchUnitIds().isEmpty(),
+                    safeScope.searchUnitIdsOrSentinel(),
+                    safeScope.sourceFileTypes().isEmpty(),
+                    safeScope.sourceFileTypesOrSentinel(),
+                    safeScope.parserVersions().isEmpty(),
+                    safeScope.parserVersionsOrSentinel(),
+                    safeBatch * 2));
+        } else {
+            candidates.addAll(searchUnits.findIndexingCandidates(
+                    EMBEDDING_STATUS_PENDING,
+                    INDEXABLE_SOURCE_STATUSES,
+                    PageRequest.of(0, safeBatch * 2)));
+        }
 
         if (candidates.size() < safeBatch) {
-            candidates.addAll(searchUnits.findStaleIndexingClaims(
-                    EMBEDDING_STATUS_EMBEDDING,
-                    now.minus(safeStaleAfter),
-                    INDEXABLE_SOURCE_STATUSES,
-                    PageRequest.of(0, safeBatch - candidates.size())));
+            if (safeScope.scoped()) {
+                candidates.addAll(searchUnits.findStaleIndexingClaimsScoped(
+                        EMBEDDING_STATUS_EMBEDDING,
+                        now.minus(safeStaleAfter),
+                        INDEXABLE_SOURCE_STATUSES,
+                        safeScope.sourceFileIds().isEmpty(),
+                        safeScope.sourceFileIdsOrSentinel(),
+                        safeScope.documentVersionIds().isEmpty(),
+                        safeScope.documentVersionIdsOrSentinel(),
+                        safeScope.parsedArtifactId(),
+                        safeScope.searchUnitIds().isEmpty(),
+                        safeScope.searchUnitIdsOrSentinel(),
+                        safeScope.sourceFileTypes().isEmpty(),
+                        safeScope.sourceFileTypesOrSentinel(),
+                        safeScope.parserVersions().isEmpty(),
+                        safeScope.parserVersionsOrSentinel(),
+                        safeBatch - candidates.size()));
+            } else {
+                candidates.addAll(searchUnits.findStaleIndexingClaims(
+                        EMBEDDING_STATUS_EMBEDDING,
+                        now.minus(safeStaleAfter),
+                        INDEXABLE_SOURCE_STATUSES,
+                        PageRequest.of(0, safeBatch - candidates.size())));
+            }
         }
 
         LinkedHashMap<String, SearchUnitJpaEntity> distinct = new LinkedHashMap<>();
         for (SearchUnitJpaEntity candidate : candidates) {
+            if (safeScope.scoped() && !safeScope.contains(candidate)) {
+                throw new IllegalStateException(
+                        "SearchUnit claim escaped requested scope: searchUnitId=" + candidate.getId());
+            }
             distinct.putIfAbsent(candidate.getId(), candidate);
         }
 
@@ -144,16 +214,76 @@ public class SearchUnitIndexingService {
             searchUnits.save(unit);
             return CompletionResult.stale(unit.getEmbeddingStatusDetail());
         }
+        if (!EMBEDDING_STATUS_EMBEDDING.equals(unit.getEmbeddingStatus())) {
+            return CompletionResult.notApplied(
+                    "SearchUnit is not indexing-eligible for embedded callback: status="
+                            + unit.getEmbeddingStatus());
+        }
 
         String stableIndexId = stableIndexId(unit);
         if (indexId != null && !indexId.isBlank() && !stableIndexId.equals(indexId)) {
-            log.warn(
-                    "Ignoring mismatched SearchUnit index id searchUnitId={} requestedIndexId={} stableIndexId={}",
-                    unit.getId(), indexId, stableIndexId);
+            return rejectEmbeddedCallback(
+                    unit,
+                    "indexId mismatch: expected=" + stableIndexId + " actual=" + indexId,
+                    now);
         }
-        unit.markEmbedded(stableIndexId, indexVersion, contentSha256, now);
+        Embeddability embeddability = embeddability(unit);
+        if (!embeddability.indexable()) {
+            return rejectEmbeddedCallback(unit, "SearchUnit is not indexable: " + embeddability.reason(), now);
+        }
+        String normalizedIndexVersion = trimToNull(indexVersion);
+        String normalizedEmbeddingModel = trimToNull(embeddingModel);
+        String normalizedEmbeddingTextSha256 = trimToNull(embeddingTextSha256);
+        String normalizedVectorId = trimToNull(vectorId);
+        if (normalizedIndexVersion == null) {
+            return rejectEmbeddedCallback(unit, "indexVersion is required", now);
+        }
+        if (normalizedEmbeddingModel == null) {
+            return rejectEmbeddedCallback(unit, "embeddingModel is required", now);
+        }
+        if (normalizedEmbeddingTextSha256 == null) {
+            return rejectEmbeddedCallback(unit, "embeddingTextSha256 is required", now);
+        }
+        if (normalizedVectorId == null) {
+            return rejectEmbeddedCallback(unit, "vectorId is required", now);
+        }
+        if (!properties.candidateIndexVersion().equals(normalizedIndexVersion)) {
+            return rejectEmbeddedCallback(
+                    unit,
+                    "indexVersion mismatch: expected=" + properties.candidateIndexVersion()
+                            + " actual=" + normalizedIndexVersion,
+                    now);
+        }
+        if (!properties.embeddingModel().equals(normalizedEmbeddingModel)) {
+            return rejectEmbeddedCallback(
+                    unit,
+                    "embeddingModel mismatch: expected=" + properties.embeddingModel()
+                            + " actual=" + normalizedEmbeddingModel,
+                    now);
+        }
+        String expectedEmbeddingTextSha256 = sha256OrNull(firstNonBlank(unit.getEmbeddingText(), unit.getTextContent()));
+        if (!Objects.equals(expectedEmbeddingTextSha256, normalizedEmbeddingTextSha256)) {
+            return rejectEmbeddedCallback(
+                    unit,
+                    "embeddingTextSha256 mismatch for search_unit.embedding_text",
+                    now);
+        }
+        String expectedVectorId = versionedVectorId(normalizedIndexVersion, stableIndexId);
+        if (!expectedVectorId.equals(normalizedVectorId)) {
+            return rejectEmbeddedCallback(
+                    unit,
+                    "vectorId mismatch: expected=" + expectedVectorId + " actual=" + normalizedVectorId,
+                    now);
+        }
+        unit.markEmbedded(stableIndexId, normalizedIndexVersion, contentSha256, now);
         searchUnits.save(unit);
-        upsertEmbeddingRecord(unit, indexVersion, embeddingModel, embeddingTextSha256, vectorId, now);
+        upsertEmbeddingRecord(
+                unit,
+                normalizedIndexVersion,
+                normalizedEmbeddingModel,
+                normalizedEmbeddingTextSha256,
+                normalizedVectorId,
+                now);
         return CompletionResult.applied(stableIndexId);
     }
 
@@ -182,6 +312,10 @@ public class SearchUnitIndexingService {
         return "source_file:" + unit.getSourceFileId()
                 + ":unit:" + unit.getCanonicalUnitType()
                 + ":" + unit.getUnitKey();
+    }
+
+    public static String versionedVectorId(String indexVersion, String stableIndexId) {
+        return indexVersion + ":" + stableIndexId;
     }
 
     private ClaimedSearchUnit toClaim(SearchUnitJpaEntity unit,
@@ -227,6 +361,12 @@ public class SearchUnitIndexingService {
         put(metadata, "content_sha256", unit.getContentSha256());
         put(metadata, "artifact_type", artifactType);
         put(metadata, "index_id", stableIndexId(unit));
+        put(metadata, "expected_index_version", properties.candidateIndexVersion());
+        put(metadata, "expectedIndexVersion", properties.candidateIndexVersion());
+        put(metadata, "candidate_index_version", properties.candidateIndexVersion());
+        put(metadata, "candidateIndexVersion", properties.candidateIndexVersion());
+        put(metadata, "expected_embedding_model", properties.embeddingModel());
+        put(metadata, "expectedEmbeddingModel", properties.embeddingModel());
         put(metadata, "document_id", unit.getDocumentId());
         put(metadata, "documentId", unit.getDocumentId());
         put(metadata, "document_version_id", unit.getDocumentVersionId());
@@ -318,23 +458,15 @@ public class SearchUnitIndexingService {
                                        String embeddingTextSha256,
                                        String vectorId,
                                        Instant now) {
-        if (indexVersion == null || indexVersion.isBlank()) {
-            return;
-        }
-        String model = firstNonBlank(embeddingModel, "unknown");
-        String textHash = firstNonBlank(embeddingTextSha256, unit.getContentSha256());
-        if (textHash == null || textHash.isBlank()) {
-            return;
-        }
         EmbeddingRecordJpaEntity record = embeddingRecords
-                .findBySearchUnitIdAndIndexVersionAndEmbeddingModel(unit.getId(), indexVersion, model)
+                .findBySearchUnitIdAndIndexVersionAndEmbeddingModel(unit.getId(), indexVersion, embeddingModel)
                 .orElseGet(() -> new EmbeddingRecordJpaEntity(UUID.randomUUID().toString()));
         record.refresh(
                 unit.getId(),
                 indexVersion,
-                model,
-                textHash,
-                firstNonBlank(vectorId, stableIndexId(unit)),
+                embeddingModel,
+                embeddingTextSha256,
+                vectorId,
                 now);
         embeddingRecords.save(record);
     }
@@ -347,6 +479,20 @@ public class SearchUnitIndexingService {
         String normalizedType = locationType == null ? "" : locationType.trim().toLowerCase();
         String chunkType = unit.getChunkType() == null ? "" : unit.getChunkType().trim().toLowerCase();
         if ("xlsx".equals(normalizedType) || "spreadsheet".equals(normalizedType)) {
+            if (!DocumentCatalogService.XLSX_PIPELINE_VERSION.equals(unit.getParserVersion())) {
+                return "xlsx parser_version must be "
+                        + DocumentCatalogService.XLSX_PIPELINE_VERSION
+                        + " for candidate indexing";
+            }
+            if (!"exclude_hidden".equals(textOrNull(location, "hidden_policy"))) {
+                return "xlsx location_json.hidden_policy=exclude_hidden is required for candidate indexing";
+            }
+            if (!DocumentCatalogService.XLSX_HIDDEN_POLICY_VERSION.equals(
+                    textOrNull(location, "hidden_policy_version"))) {
+                return "xlsx location_json.hidden_policy_version="
+                        + DocumentCatalogService.XLSX_HIDDEN_POLICY_VERSION
+                        + " is required for candidate indexing";
+            }
             if (!"workbook_summary".equals(chunkType) && isBlank(textOrNull(location, "sheet_name"))) {
                 return "xlsx location_json.sheet_name is required for v2 SearchUnit indexing";
             }
@@ -522,9 +668,193 @@ public class SearchUnitIndexingService {
         return normalizedWorker + ":" + searchUnitId + ":" + UUID.randomUUID();
     }
 
+    private CompletionResult rejectEmbeddedCallback(SearchUnitJpaEntity unit, String detail, Instant now) {
+        String limited = limitDetail("embedding callback rejected: " + detail);
+        unit.markEmbeddingFailed(limited, now);
+        searchUnits.save(unit);
+        return CompletionResult.notApplied(limited);
+    }
+
+    private static String sha256OrNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder out = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                out.append(String.format("%02x", b));
+            }
+            return out.toString();
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 is not available", ex);
+        }
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     private static String limitDetail(String detail) {
         String normalized = detail == null || detail.isBlank() ? "SearchUnit indexing failed" : detail.trim();
         return normalized.length() <= 2000 ? normalized : normalized.substring(0, 2000);
+    }
+
+    public record ClaimScope(
+            String sourceFileId,
+            List<String> sourceFileIds,
+            String documentVersionId,
+            List<String> documentVersionIds,
+            String parsedArtifactId,
+            List<String> searchUnitIds,
+            List<String> sourceFileTypes,
+            List<String> parserVersions,
+            String expectedIndexVersion,
+            Boolean allowUnscoped
+    ) {
+        public ClaimScope {
+            sourceFileIds = normalizeIds(sourceFileId, sourceFileIds);
+            sourceFileId = sourceFileIds.isEmpty() ? null : sourceFileIds.get(0);
+            documentVersionIds = normalizeIds(documentVersionId, documentVersionIds);
+            documentVersionId = documentVersionIds.isEmpty() ? null : documentVersionIds.get(0);
+            parsedArtifactId = trimToNull(parsedArtifactId);
+            searchUnitIds = normalizeIds(searchUnitIds);
+            sourceFileTypes = normalizeUpper(sourceFileTypes);
+            parserVersions = normalizeIds(parserVersions);
+            expectedIndexVersion = trimToNull(expectedIndexVersion);
+            allowUnscoped = allowUnscoped != null && allowUnscoped;
+        }
+
+        public static ClaimScope unscoped() {
+            return new ClaimScope(
+                    null,
+                    List.of(),
+                    null,
+                    List.of(),
+                    null,
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    null,
+                    true);
+        }
+
+        boolean scoped() {
+            return !sourceFileIds.isEmpty()
+                    || !documentVersionIds.isEmpty()
+                    || parsedArtifactId != null
+                    || !searchUnitIds.isEmpty()
+                    || !sourceFileTypes.isEmpty()
+                    || !parserVersions.isEmpty();
+        }
+
+        boolean allowUnscopedClaim() {
+            return Boolean.TRUE.equals(allowUnscoped);
+        }
+
+        boolean contains(SearchUnitJpaEntity unit) {
+            if (!sourceFileIds.isEmpty() && !sourceFileIds.contains(unit.getSourceFileId())) {
+                return false;
+            }
+            if (!documentVersionIds.isEmpty() && !documentVersionIds.contains(unit.getDocumentVersionId())) {
+                return false;
+            }
+            if (parsedArtifactId != null && !parsedArtifactId.equals(unit.getParsedArtifactId())) {
+                return false;
+            }
+            if (!searchUnitIds.isEmpty() && !searchUnitIds.contains(unit.getId())) {
+                return false;
+            }
+            if (!sourceFileTypes.isEmpty()) {
+                String sourceType = unit.getSourceFileType() == null
+                        ? null
+                        : unit.getSourceFileType().trim().toUpperCase();
+                if (!sourceFileTypes.contains(sourceType)) {
+                    return false;
+                }
+            }
+            return parserVersions.isEmpty() || parserVersions.contains(unit.getParserVersion());
+        }
+
+        List<String> sourceFileIdsOrSentinel() {
+            return sourceFileIds.isEmpty() ? List.of("__no_source_file_ids__") : sourceFileIds;
+        }
+
+        List<String> documentVersionIdsOrSentinel() {
+            return documentVersionIds.isEmpty() ? List.of("__no_document_version_ids__") : documentVersionIds;
+        }
+
+        List<String> searchUnitIdsOrSentinel() {
+            return searchUnitIds.isEmpty() ? List.of("__no_search_unit_ids__") : searchUnitIds;
+        }
+
+        List<String> sourceFileTypesOrSentinel() {
+            return sourceFileTypes.isEmpty() ? List.of("__no_source_file_types__") : sourceFileTypes;
+        }
+
+        List<String> parserVersionsOrSentinel() {
+            return parserVersions.isEmpty() ? List.of("__no_parser_versions__") : parserVersions;
+        }
+
+        public ClaimScope(String sourceFileId,
+                          String documentVersionId,
+                          String parsedArtifactId,
+                          List<String> searchUnitIds) {
+            this(
+                    sourceFileId,
+                    List.of(),
+                    documentVersionId,
+                    List.of(),
+                    parsedArtifactId,
+                    searchUnitIds,
+                    List.of(),
+                    List.of(),
+                    null,
+                    true);
+        }
+
+        private static List<String> normalizeIds(String single, List<String> ids) {
+            LinkedHashSet<String> normalized = new LinkedHashSet<>();
+            String singleValue = trimToNull(single);
+            if (singleValue != null) {
+                normalized.add(singleValue);
+            }
+            normalized.addAll(normalizeIds(ids));
+            return Collections.unmodifiableList(new ArrayList<>(normalized));
+        }
+
+        private static List<String> normalizeIds(List<String> ids) {
+            if (ids == null || ids.isEmpty()) {
+                return List.of();
+            }
+            LinkedHashSet<String> normalized = new LinkedHashSet<>();
+            for (String id : ids) {
+                String value = trimToNull(id);
+                if (value != null) {
+                    normalized.add(value);
+                }
+            }
+            return Collections.unmodifiableList(new ArrayList<>(normalized));
+        }
+
+        private static List<String> normalizeUpper(List<String> ids) {
+            if (ids == null || ids.isEmpty()) {
+                return List.of();
+            }
+            LinkedHashSet<String> normalized = new LinkedHashSet<>();
+            for (String id : ids) {
+                String value = trimToNull(id);
+                if (value != null) {
+                    normalized.add(value.toUpperCase());
+                }
+            }
+            return Collections.unmodifiableList(new ArrayList<>(normalized));
+        }
     }
 
     private record Embeddability(boolean indexable, String reason) {

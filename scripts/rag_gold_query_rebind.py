@@ -52,13 +52,50 @@ def main(argv: list[str] | None = None) -> int:
     connection = connect(args.db_dsn)
     rebound_count = 0
     missing_bindings: list[str] = []
+    binding_status_by_query_id: dict[str, str] = {}
+    bound_document_version_ids: set[str] = set()
+    stale_binding_count = 0
     for row in rows:
-        rebound = rebind_row(connection, row)
+        query_id = row.get("query_id") or "<missing query_id>"
+        old_document_version_id = row.get("expected_document_version_id") or ""
+        if args.preserve_valid_current_binding and old_document_version_id:
+            current = rebind_row(
+                connection,
+                row,
+                document_version_ids=[old_document_version_id],
+                parser_versions=args.parser_version,
+                required_embedding_status=args.required_embedding_status,
+                required_index_version=args.required_index_version,
+            )
+            if current == old_document_version_id:
+                bound_document_version_ids.add(current)
+                binding_status_by_query_id[query_id] = "unchanged_current_binding"
+                continue
+
+        rebound = rebind_row(
+            connection,
+            row,
+            document_version_ids=args.document_version_id,
+            parser_versions=args.parser_version,
+            required_embedding_status=args.required_embedding_status,
+            required_index_version=args.required_index_version,
+        )
         if rebound is None:
-            missing_bindings.append(row.get("query_id") or "<missing query_id>")
+            missing_bindings.append(query_id)
+            binding_status_by_query_id[query_id] = (
+                "stale_binding" if old_document_version_id else "missing_binding"
+            )
+            if old_document_version_id:
+                stale_binding_count += 1
             continue
-        if rebound != row.get("expected_document_version_id"):
+        bound_document_version_ids.add(rebound)
+        if rebound != old_document_version_id:
             rebound_count += 1
+            if old_document_version_id:
+                stale_binding_count += 1
+            binding_status_by_query_id[query_id] = "rebound"
+        else:
+            binding_status_by_query_id[query_id] = "unchanged_current_binding"
         row["expected_document_version_id"] = rebound
 
     appended_rows: list[dict[str, str]] = []
@@ -70,10 +107,16 @@ def main(argv: list[str] | None = None) -> int:
     output = Path(args.output or args.gold)
     if args.dry_run:
         output = Path(args.output or args.gold).with_suffix(".dry-run.csv")
-    write_csv(output, rows)
+    missing_blocked = bool(missing_bindings) and not args.diagnostic_only and not args.allow_stale_bindings
+    write_output = args.dry_run or (validation.ok and not missing_blocked)
+    if write_output:
+        write_csv(output, rows)
 
     report = {
         "run_id": utc_run_id(),
+        "gold_dataset_version": args.gold_dataset_version,
+        "binding_source": "live_catalog_search_unit",
+        "binding_timestamp": datetime.now(timezone.utc).isoformat(),
         "input": str(args.gold),
         "output": str(output),
         "original_count": original_count,
@@ -82,6 +125,22 @@ def main(argv: list[str] | None = None) -> int:
         "appended_count": len(appended_rows),
         "missing_binding_count": len(missing_bindings),
         "missing_bindings": missing_bindings,
+        "stale_binding_count": stale_binding_count,
+        "binding_status_by_query_id": binding_status_by_query_id,
+        "bound_document_version_ids": sorted(bound_document_version_ids),
+        "binding_filters": {
+            "document_version_ids": args.document_version_id or [],
+            "parser_versions": args.parser_version or [],
+            "required_embedding_status": args.required_embedding_status,
+            "required_index_version": args.required_index_version,
+        },
+        "diagnostic_only": args.diagnostic_only,
+        "allow_stale_bindings": args.allow_stale_bindings,
+        "preserve_valid_current_binding": args.preserve_valid_current_binding,
+        "human_reviewed": args.human_reviewed,
+        "candidate_seed_set": args.candidate_seed_set,
+        "write_output": write_output,
+        "binding_status": "FAILED_MISSING_BINDING" if missing_blocked else "OK",
         "bucket_counts": dict(Counter(row["bucket"] for row in rows)),
         "validation": {
             "ok": validation.ok,
@@ -92,7 +151,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     write_json(Path(args.report), report)
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    return 0 if validation.ok else 1
+    return 0 if validation.ok and not missing_blocked else 1
 
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -104,6 +163,25 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--target-count", type=int, default=72)
     parser.add_argument("--no-append", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--document-version-id", action="append", default=None)
+    parser.add_argument("--parser-version", action="append", default=None)
+    parser.add_argument("--required-embedding-status", default=None)
+    parser.add_argument("--required-index-version", default=None)
+    parser.add_argument("--gold-dataset-version", default="rag-ingestion-gold-v0")
+    parser.add_argument("--diagnostic-only", action="store_true")
+    parser.add_argument("--allow-stale-bindings", action="store_true")
+    parser.add_argument(
+        "--preserve-valid-current-binding",
+        action="store_true",
+        help=(
+            "Keep a row's existing expected_document_version_id when it already "
+            "satisfies the supplied parser/status/index filters. This prevents "
+            "rebinding current PDF rows to a newer parser run just because the "
+            "file name also matches."
+        ),
+    )
+    parser.add_argument("--human-reviewed", action="store_true")
+    parser.add_argument("--candidate-seed-set", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -128,22 +206,26 @@ def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writerows([{column: row.get(column, "") for column in REQUIRED_COLUMNS} for row in rows])
 
 
-def rebind_row(connection: Any, row: dict[str, str]) -> str | None:
-    query = """
-        select document_version_id, location_json::text
-        from search_unit
-        where source_file_name = %s
-          and location_type = %s
-          and (%s = '' or chunk_type = %s)
-          and (%s = '' or location_json->>'sheet_name' = %s)
-          and (%s = '' or location_json->>'cell_range' = %s)
-          and (%s = '' or location_json->>'physical_page_index' = %s)
-          and (%s = '' or location_json->>'page_no' = %s)
-          and (%s = '' or location_json->>'page_label' = %s)
-        order by created_at desc
-        limit 20
-    """
-    params = (
+def rebind_row(
+    connection: Any,
+    row: dict[str, str],
+    *,
+    document_version_ids: list[str] | None = None,
+    parser_versions: list[str] | None = None,
+    required_embedding_status: str | None = None,
+    required_index_version: str | None = None,
+) -> str | None:
+    conditions = [
+        "source_file_name = %s",
+        "location_type = %s",
+        "(%s = '' or chunk_type = %s)",
+        "(%s = '' or location_json->>'sheet_name' = %s)",
+        "(%s = '' or location_json->>'cell_range' = %s)",
+        "(%s = '' or location_json->>'physical_page_index' = %s)",
+        "(%s = '' or location_json->>'page_no' = %s)",
+        "(%s = '' or location_json->>'page_label' = %s)",
+    ]
+    params: list[Any] = [
         row.get("expected_file_name", ""),
         row.get("expected_location_type", ""),
         row.get("expected_chunk_type", ""),
@@ -158,7 +240,27 @@ def rebind_row(connection: Any, row: dict[str, str]) -> str | None:
         row.get("expected_page_no", ""),
         row.get("expected_page_label", ""),
         row.get("expected_page_label", ""),
-    )
+    ]
+    if document_version_ids:
+        conditions.append("document_version_id = any(%s)")
+        params.append(document_version_ids)
+    if parser_versions:
+        conditions.append("parser_version = any(%s)")
+        params.append(parser_versions)
+    if required_embedding_status:
+        conditions.append("embedding_status = %s")
+        params.append(required_embedding_status)
+    if required_index_version:
+        conditions.append("index_version = %s")
+        params.append(required_index_version)
+
+    query = f"""
+        select document_version_id, location_json::text
+        from search_unit
+        where {" and ".join(conditions)}
+        order by created_at desc
+        limit 200
+    """
     with connection.cursor() as cursor:
         cursor.execute(query, params)
         candidates = cursor.fetchall()

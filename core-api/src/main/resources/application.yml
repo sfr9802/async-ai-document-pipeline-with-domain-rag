@@ -69,6 +69,9 @@ aipipeline:
     callback-base-url: ${AIPIPELINE_WORKER_CALLBACK_BASE_URL:http://localhost:8080}
   claim:
     lease-seconds: 900
+  search-unit-indexing:
+    candidate-index-version: ${AIPIPELINE_SEARCH_UNIT_INDEXING_CANDIDATE_INDEX_VERSION:rag-ingestion-v2-candidate}
+    embedding-model: ${AIPIPELINE_SEARCH_UNIT_INDEXING_EMBEDDING_MODEL:BAAI/bge-m3}
   internal:
     secret: ${AIPIPELINE_INTERNAL_SECRET:}
 

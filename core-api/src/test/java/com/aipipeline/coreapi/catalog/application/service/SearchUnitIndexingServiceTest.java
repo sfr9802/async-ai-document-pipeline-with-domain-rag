@@ -12,8 +12,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -45,6 +49,26 @@ class SearchUnitIndexingServiceTest {
                 "page text",
                 SearchUnitIndexingService.EMBEDDING_STATUS_PENDING,
                 "hash-1");
+        unit.applyIngestionV2(
+                "doc-1",
+                "docv-1",
+                "pa-1",
+                "receipt.pdf",
+                "PDF",
+                "page",
+                "pdf",
+                "{\"type\":\"pdf\",\"page_no\":1}",
+                "page text",
+                "page text",
+                "page text",
+                "receipt.pdf p.1",
+                "{}",
+                "pdf-parser",
+                "pdf-extract-v1",
+                null,
+                null,
+                "[]",
+                NOW);
         SourceFileJpaEntity source = source();
         ExtractedArtifactJpaEntity artifact = artifact();
         stubCandidates(List.of(unit), List.of());
@@ -73,6 +97,72 @@ class SearchUnitIndexingServiceTest {
                 .containsEntry("source_file_name", "receipt.png")
                 .containsEntry("sourceFileName", "receipt.png");
         assertThat(unit.getEmbeddingStatus()).isEqualTo(SearchUnitIndexingService.EMBEDDING_STATUS_EMBEDDING);
+    }
+
+    @Test
+    void scoped_claim_uses_scope_filters_instead_of_global_pending_order() {
+        SearchUnitJpaEntity unit = unit(
+                "unit-1",
+                DocumentCatalogService.SEARCH_UNIT_PAGE,
+                "page:1",
+                "page text",
+                SearchUnitIndexingService.EMBEDDING_STATUS_PENDING,
+                "hash-1");
+        unit.applyIngestionV2(
+                "doc-1",
+                "docv-1",
+                "pa-1",
+                "receipt.pdf",
+                "PDF",
+                "page",
+                "pdf",
+                "{\"type\":\"pdf\",\"page_no\":1}",
+                "page text",
+                "page text",
+                "page text",
+                "receipt.pdf p.1",
+                "{}",
+                "pdf-parser",
+                "pdf-extract-v1",
+                null,
+                null,
+                "[]",
+                NOW);
+        when(searchUnits.findIndexingCandidatesScoped(
+                eq(SearchUnitIndexingService.EMBEDDING_STATUS_PENDING),
+                anySet(),
+                eq(false),
+                eq(List.of("source-file-1")),
+                eq(false),
+                eq(List.of("docv-1")),
+                eq("pa-1"),
+                eq(false),
+                eq(List.of("unit-1", "unit-2")),
+                eq(true),
+                eq(List.of("__no_source_file_types__")),
+                eq(true),
+                eq(List.of("__no_parser_versions__")),
+                eq(20)))
+                .thenReturn(List.of(unit));
+        when(searchUnits.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(sourceFiles.findAllById(any())).thenReturn(List.of());
+        when(extractedArtifacts.findAllById(any())).thenReturn(List.of());
+
+        List<SearchUnitIndexingService.ClaimedSearchUnit> claimed = service()
+                .claimPending(
+                        "worker-1",
+                        10,
+                        Duration.ofMinutes(10),
+                        NOW,
+                        new SearchUnitIndexingService.ClaimScope(
+                                "source-file-1",
+                                "docv-1",
+                                "pa-1",
+                                List.of("unit-1", "unit-2")));
+
+        assertThat(claimed).extracting(SearchUnitIndexingService.ClaimedSearchUnit::searchUnitId)
+                .containsExactly("unit-1");
+        verify(searchUnits, never()).findIndexingCandidates(any(), anySet(), any(Pageable.class));
     }
 
     @Test
@@ -121,7 +211,8 @@ class SearchUnitIndexingServiceTest {
                           "table_id": "SalesTable",
                           "cell_range": "A1:D30",
                           "row_range": "1:30",
-                          "hidden_policy": "exclude_hidden"
+                          "hidden_policy": "exclude_hidden",
+                          "hidden_policy_version": "exclude-hidden-v1"
                         }
                         """,
                 "직원명: 홍길동",
@@ -221,7 +312,9 @@ class SearchUnitIndexingServiceTest {
                 "SPREADSHEET",
                 "row_group",
                 "xlsx",
-                "{\"type\":\"xlsx\",\"sheet_name\":\"매출\",\"cell_range\":\"A1:B2\"}",
+                "{\"type\":\"xlsx\",\"sheet_name\":\"매출\",\"cell_range\":\"A1:B2\","
+                        + "\"hidden_policy\":\"exclude_hidden\","
+                        + "\"hidden_policy_version\":\"exclude-hidden-v1\"}",
                 "Source: sales.xlsx\nSheet: 매출\nRange: A1:B2\nContent:\n직원명: 홍길동",
                 "sales.xlsx\n매출\nA1:B2\n직원명: 홍길동",
                 "직원명: 홍길동",
@@ -272,7 +365,9 @@ class SearchUnitIndexingServiceTest {
                 "SPREADSHEET",
                 "row_group",
                 "xlsx",
-                "{\"type\":\"xlsx\",\"sheet_name\":\"매출\"}",
+                "{\"type\":\"xlsx\",\"sheet_name\":\"매출\","
+                        + "\"hidden_policy\":\"exclude_hidden\","
+                        + "\"hidden_policy_version\":\"exclude-hidden-v1\"}",
                 "직원명: 홍길동",
                 "직원명: 홍길동",
                 "직원명: 홍길동",
@@ -351,7 +446,8 @@ class SearchUnitIndexingServiceTest {
                         {
                           "type": "xlsx",
                           "document_version_id": "docv-1",
-                          "hidden_policy": "exclude_hidden"
+                          "hidden_policy": "exclude_hidden",
+                          "hidden_policy_version": "exclude-hidden-v1"
                         }
                         """,
                 "full workbook text that worker-side builder must not embed as-is",
@@ -501,8 +597,16 @@ class SearchUnitIndexingServiceTest {
         when(embeddingRecords.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         SearchUnitIndexingService.CompletionResult result = service()
-                .markEmbedded("unit-1", "claim-1", "hash-table", "wrong-id", "idx-v1",
-                        "fake-model", "embed-hash-table", "vector-1", NOW);
+                .markEmbedded(
+                        "unit-1",
+                        "claim-1",
+                        "hash-table",
+                        "source_file:source-file-1:unit:TABLE:page:2:table:1",
+                        "idx-v1",
+                        "fake-model",
+                        sha256("table text"),
+                        "idx-v1:source_file:source-file-1:unit:TABLE:page:2:table:1",
+                        NOW);
 
         assertThat(result.applied()).isTrue();
         assertThat(result.indexId()).isEqualTo("source_file:source-file-1:unit:TABLE:page:2:table:1");
@@ -511,6 +615,70 @@ class SearchUnitIndexingServiceTest {
         assertThat(unit.getIndexVersion()).isEqualTo("idx-v1");
         assertThat(unit.getIndexedContentSha256()).isEqualTo("hash-table");
         verify(embeddingRecords).save(any(EmbeddingRecordJpaEntity.class));
+    }
+
+    @Test
+    void embedded_completion_rejects_mismatched_index_version_before_marking_embedded() {
+        SearchUnitJpaEntity unit = unit(
+                "unit-1",
+                DocumentCatalogService.SEARCH_UNIT_TABLE,
+                "page:2:table:1",
+                "table text",
+                SearchUnitIndexingService.EMBEDDING_STATUS_EMBEDDING,
+                "hash-table");
+        unit.claimEmbedding("claim-1", NOW.minusSeconds(1));
+        when(searchUnits.findByIdAndEmbeddingClaimToken("unit-1", "claim-1"))
+                .thenReturn(Optional.of(unit));
+        when(searchUnits.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SearchUnitIndexingService.CompletionResult result = service()
+                .markEmbedded(
+                        "unit-1",
+                        "claim-1",
+                        "hash-table",
+                        "source_file:source-file-1:unit:TABLE:page:2:table:1",
+                        "legacy-v1",
+                        "fake-model",
+                        sha256("table text"),
+                        "legacy-v1:source_file:source-file-1:unit:TABLE:page:2:table:1",
+                        NOW);
+
+        assertThat(result.applied()).isFalse();
+        assertThat(unit.getEmbeddingStatus()).isEqualTo(SearchUnitIndexingService.EMBEDDING_STATUS_FAILED);
+        assertThat(unit.getIndexVersion()).isNull();
+        verify(embeddingRecords, never()).save(any());
+    }
+
+    @Test
+    void embedded_completion_rejects_embedding_text_sha_mismatch() {
+        SearchUnitJpaEntity unit = unit(
+                "unit-1",
+                DocumentCatalogService.SEARCH_UNIT_TABLE,
+                "page:2:table:1",
+                "table text",
+                SearchUnitIndexingService.EMBEDDING_STATUS_EMBEDDING,
+                "hash-table");
+        unit.claimEmbedding("claim-1", NOW.minusSeconds(1));
+        when(searchUnits.findByIdAndEmbeddingClaimToken("unit-1", "claim-1"))
+                .thenReturn(Optional.of(unit));
+        when(searchUnits.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SearchUnitIndexingService.CompletionResult result = service()
+                .markEmbedded(
+                        "unit-1",
+                        "claim-1",
+                        "hash-table",
+                        "source_file:source-file-1:unit:TABLE:page:2:table:1",
+                        "idx-v1",
+                        "fake-model",
+                        sha256("different text"),
+                        "idx-v1:source_file:source-file-1:unit:TABLE:page:2:table:1",
+                        NOW);
+
+        assertThat(result.applied()).isFalse();
+        assertThat(unit.getEmbeddingStatus()).isEqualTo(SearchUnitIndexingService.EMBEDDING_STATUS_FAILED);
+        assertThat(unit.getIndexVersion()).isNull();
+        verify(embeddingRecords, never()).save(any());
     }
 
     @Test
@@ -575,7 +743,17 @@ class SearchUnitIndexingServiceTest {
                 sourceFiles,
                 extractedArtifacts,
                 embeddingRecords,
-                new ObjectMapper());
+                new ObjectMapper(),
+                new SearchUnitIndexingProperties("idx-v1", "fake-model"));
+    }
+
+    private static String sha256(String value) {
+        try {
+            return HexFormat.of().formatHex(
+                    MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     private static SearchUnitJpaEntity unit(String id,

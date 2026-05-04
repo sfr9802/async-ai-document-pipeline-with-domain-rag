@@ -2,6 +2,7 @@ package com.aipipeline.coreapi.catalog.adapter.in.web;
 
 import com.aipipeline.coreapi.catalog.application.service.SearchUnitIndexingService;
 import com.aipipeline.coreapi.catalog.application.service.SearchUnitIndexingService.ClaimedSearchUnit;
+import com.aipipeline.coreapi.catalog.application.service.SearchUnitIndexingService.ClaimScope;
 import com.aipipeline.coreapi.catalog.application.service.SearchUnitIndexingService.CompletionResult;
 import com.aipipeline.coreapi.common.TimeProvider;
 import jakarta.validation.Valid;
@@ -31,7 +32,9 @@ public class SearchUnitIndexingController {
 
     @PostMapping("/claim")
     public ResponseEntity<ClaimResponse> claim(@Valid @RequestBody ClaimRequest body) {
-        int batchSize = body.batchSize() == null ? 50 : body.batchSize();
+        int batchSize = body.limit() == null
+                ? (body.batchSize() == null ? 50 : body.batchSize())
+                : body.limit();
         Duration staleAfter = body.staleAfterSeconds() == null
                 ? null
                 : Duration.ofSeconds(Math.max(1, body.staleAfterSeconds()));
@@ -39,7 +42,18 @@ public class SearchUnitIndexingController {
                 body.workerId(),
                 batchSize,
                 staleAfter,
-                timeProvider.now());
+                timeProvider.now(),
+                new ClaimScope(
+                        body.sourceFileId(),
+                        body.sourceFileIds(),
+                        body.documentVersionId(),
+                        body.documentVersionIds(),
+                        body.parsedArtifactId(),
+                        body.searchUnitIds(),
+                        body.sourceFileTypes(),
+                        body.parserVersions(),
+                        body.expectedIndexVersion(),
+                        body.allowUnscoped()));
         return ResponseEntity.ok(new ClaimResponse(units));
     }
 
@@ -78,7 +92,18 @@ public class SearchUnitIndexingController {
     public record ClaimRequest(
             @NotBlank String workerId,
             Integer batchSize,
-            Long staleAfterSeconds
+            Long staleAfterSeconds,
+            String sourceFileId,
+            List<String> sourceFileIds,
+            String documentVersionId,
+            List<String> documentVersionIds,
+            String parsedArtifactId,
+            List<String> searchUnitIds,
+            List<String> sourceFileTypes,
+            List<String> parserVersions,
+            String expectedIndexVersion,
+            Integer limit,
+            Boolean allowUnscoped
     ) {}
 
     public record ClaimResponse(List<ClaimedSearchUnit> units) {}
@@ -87,10 +112,10 @@ public class SearchUnitIndexingController {
             @NotBlank String claimToken,
             @NotBlank String contentSha256,
             String indexId,
-            String indexVersion,
-            String embeddingModel,
-            String embeddingTextSha256,
-            String vectorId
+            @NotBlank String indexVersion,
+            @NotBlank String embeddingModel,
+            @NotBlank String embeddingTextSha256,
+            @NotBlank String vectorId
     ) {}
 
     public record FailedRequest(

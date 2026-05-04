@@ -264,7 +264,8 @@ class DocumentCatalogControllerTest {
                           "table_id": "SalesTable",
                           "cell_range": "A1:D30",
                           "row_range": "1:30",
-                          "hidden_policy": "exclude_hidden"
+                          "hidden_policy": "exclude_hidden",
+                          "hidden_policy_version": "exclude-hidden-v1"
                         }
                         """,
                 "embedding text",
@@ -273,7 +274,7 @@ class DocumentCatalogControllerTest {
                 "sales.xlsx > 매출 > A1:D30",
                 "{}",
                 "xlsx-openpyxl",
-                "xlsx-extract-v1",
+                DocumentCatalogService.XLSX_PIPELINE_VERSION,
                 0.92,
                 null,
                 "[]",
@@ -290,7 +291,7 @@ class DocumentCatalogControllerTest {
         assertThat(response.locationType()).isEqualTo("xlsx");
         assertThat(response.displayText()).isEqualTo("| 직원명 | 매출 |");
         assertThat(response.citationText()).isEqualTo("sales.xlsx > 매출 > A1:D30");
-        assertThat(response.parserVersion()).isEqualTo("xlsx-extract-v1");
+        assertThat(response.parserVersion()).isEqualTo(DocumentCatalogService.XLSX_PIPELINE_VERSION);
         assertThat(response.indexVersion()).isEqualTo("idx-v1");
         assertThat(response.citation().sheetName()).isEqualTo("매출");
         assertThat(response.citation().cellRange()).isEqualTo("A1:D30");

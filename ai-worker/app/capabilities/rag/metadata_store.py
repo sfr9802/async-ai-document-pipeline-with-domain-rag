@@ -261,7 +261,7 @@ class RagMetadataStore:
                       (chunk_id, doc_id, section, chunk_order, text,
                        token_count, faiss_row_id, index_version, extra_json, created_at)
                     VALUES %s
-                    ON CONFLICT (chunk_id) DO UPDATE SET
+                    ON CONFLICT (index_version, chunk_id) DO UPDATE SET
                       doc_id = EXCLUDED.doc_id,
                       section = EXCLUDED.section,
                       chunk_order = EXCLUDED.chunk_order,

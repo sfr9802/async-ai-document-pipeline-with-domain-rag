@@ -70,6 +70,47 @@ public interface SearchUnitJpaRepository extends JpaRepository<SearchUnitJpaEnti
             @Param("sourceStatuses") Set<String> sourceStatuses,
             Pageable pageable);
 
+    @Query(value = """
+            select unit.*
+            from search_unit unit
+            where unit.embedding_status = :embeddingStatus
+              and (:sourceFileIdsEmpty = true or unit.source_file_id in (:sourceFileIds))
+              and (:documentVersionIdsEmpty = true or unit.document_version_id in (:documentVersionIds))
+              and (:parsedArtifactId is null or unit.parsed_artifact_id = :parsedArtifactId)
+              and (:searchUnitIdsEmpty = true or unit.id in (:searchUnitIds))
+              and (:sourceFileTypesEmpty = true or upper(unit.source_file_type) in (:sourceFileTypes))
+              and (:parserVersionsEmpty = true or unit.parser_version in (:parserVersions))
+              and unit.embedding_text is not null
+              and btrim(unit.embedding_text) <> ''
+              and unit.citation_text is not null
+              and btrim(unit.citation_text) <> ''
+              and unit.location_json is not null
+              and exists (
+                select 1
+                from source_file sf
+                where sf.id = unit.source_file_id
+                  and sf.status in (:sourceStatuses)
+              )
+            order by unit.updated_at asc
+            limit :limit
+            for update skip locked
+            """, nativeQuery = true)
+    List<SearchUnitJpaEntity> findIndexingCandidatesScoped(
+            @Param("embeddingStatus") String embeddingStatus,
+            @Param("sourceStatuses") Set<String> sourceStatuses,
+            @Param("sourceFileIdsEmpty") boolean sourceFileIdsEmpty,
+            @Param("sourceFileIds") List<String> sourceFileIds,
+            @Param("documentVersionIdsEmpty") boolean documentVersionIdsEmpty,
+            @Param("documentVersionIds") List<String> documentVersionIds,
+            @Param("parsedArtifactId") String parsedArtifactId,
+            @Param("searchUnitIdsEmpty") boolean searchUnitIdsEmpty,
+            @Param("searchUnitIds") List<String> searchUnitIds,
+            @Param("sourceFileTypesEmpty") boolean sourceFileTypesEmpty,
+            @Param("sourceFileTypes") List<String> sourceFileTypes,
+            @Param("parserVersionsEmpty") boolean parserVersionsEmpty,
+            @Param("parserVersions") List<String> parserVersions,
+            @Param("limit") int limit);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select unit
@@ -90,4 +131,48 @@ public interface SearchUnitJpaRepository extends JpaRepository<SearchUnitJpaEnti
             @Param("claimedBefore") Instant claimedBefore,
             @Param("sourceStatuses") Set<String> sourceStatuses,
             Pageable pageable);
+
+    @Query(value = """
+            select unit.*
+            from search_unit unit
+            where unit.embedding_status = :embeddingStatus
+              and unit.embedding_claimed_at is not null
+              and unit.embedding_claimed_at < :claimedBefore
+              and (:sourceFileIdsEmpty = true or unit.source_file_id in (:sourceFileIds))
+              and (:documentVersionIdsEmpty = true or unit.document_version_id in (:documentVersionIds))
+              and (:parsedArtifactId is null or unit.parsed_artifact_id = :parsedArtifactId)
+              and (:searchUnitIdsEmpty = true or unit.id in (:searchUnitIds))
+              and (:sourceFileTypesEmpty = true or upper(unit.source_file_type) in (:sourceFileTypes))
+              and (:parserVersionsEmpty = true or unit.parser_version in (:parserVersions))
+              and unit.embedding_text is not null
+              and btrim(unit.embedding_text) <> ''
+              and unit.citation_text is not null
+              and btrim(unit.citation_text) <> ''
+              and unit.location_json is not null
+              and exists (
+                select 1
+                from source_file sf
+                where sf.id = unit.source_file_id
+                  and sf.status in (:sourceStatuses)
+              )
+            order by unit.embedding_claimed_at asc
+            limit :limit
+            for update skip locked
+            """, nativeQuery = true)
+    List<SearchUnitJpaEntity> findStaleIndexingClaimsScoped(
+            @Param("embeddingStatus") String embeddingStatus,
+            @Param("claimedBefore") Instant claimedBefore,
+            @Param("sourceStatuses") Set<String> sourceStatuses,
+            @Param("sourceFileIdsEmpty") boolean sourceFileIdsEmpty,
+            @Param("sourceFileIds") List<String> sourceFileIds,
+            @Param("documentVersionIdsEmpty") boolean documentVersionIdsEmpty,
+            @Param("documentVersionIds") List<String> documentVersionIds,
+            @Param("parsedArtifactId") String parsedArtifactId,
+            @Param("searchUnitIdsEmpty") boolean searchUnitIdsEmpty,
+            @Param("searchUnitIds") List<String> searchUnitIds,
+            @Param("sourceFileTypesEmpty") boolean sourceFileTypesEmpty,
+            @Param("sourceFileTypes") List<String> sourceFileTypes,
+            @Param("parserVersionsEmpty") boolean parserVersionsEmpty,
+            @Param("parserVersions") List<String> parserVersions,
+            @Param("limit") int limit);
 }

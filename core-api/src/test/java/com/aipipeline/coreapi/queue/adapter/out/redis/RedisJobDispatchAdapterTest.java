@@ -83,7 +83,7 @@ class RedisJobDispatchAdapterTest {
         assertThat(json.get("jobId").asText()).isEqualTo(job.getId().value());
         assertThat(json.get("capability").asText()).isEqualTo("XLSX_EXTRACT");
         assertThat(json.get("taskKind").asText()).isEqualTo("XLSX_EXTRACT");
-        assertThat(json.get("pipelineVersion").asText()).isEqualTo("xlsx-extract-v1");
+        assertThat(json.get("pipelineVersion").asText()).isEqualTo("xlsx-extract-v2-hidden-safe");
         assertThat(json.get("callbackBaseUrl").asText()).isEqualTo("http://localhost:8080");
         assertThat(json.get("inputArtifacts").isArray()).isTrue();
         assertThat(json.get("inputArtifacts").size()).isEqualTo(1);

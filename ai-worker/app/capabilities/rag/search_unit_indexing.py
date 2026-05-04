@@ -53,6 +53,7 @@ class SearchUnitEmbeddingText:
     text: str
     variant: str
     sha256: str
+    source_sha256: str
 
 
 @dataclass(frozen=True)
@@ -61,8 +62,10 @@ class IndexedSearchUnit:
     claim_token: str
     content_sha256: str
     index_id: str
+    vector_id: str
     faiss_row_id: int
     embedding_text_sha256: str
+    model_input_text_sha256: str
 
 
 @dataclass(frozen=True)
@@ -179,8 +182,10 @@ class SearchUnitVectorIndexer:
                     claim_token=doc.claim_token,
                     content_sha256=doc.content_sha256,
                     index_id=doc.index_id,
+                    vector_id=versioned_vector_id(index_version, doc.index_id),
                     faiss_row_id=faiss_row_id,
-                    embedding_text_sha256=embedding_text.sha256,
+                    embedding_text_sha256=embedding_text.source_sha256,
+                    model_input_text_sha256=embedding_text.sha256,
                 ))
                 continue
 
@@ -196,6 +201,7 @@ class SearchUnitVectorIndexer:
                     index_version=index_version,
                     embedding_model=self._embedder.model_name,
                     embedding_text=embedding_text,
+                    vector_id=versioned_vector_id(index_version, doc.index_id),
                 ))
             else:
                 final_vectors[faiss_row_id] = vector
@@ -205,6 +211,7 @@ class SearchUnitVectorIndexer:
                     index_version=index_version,
                     embedding_model=self._embedder.model_name,
                     embedding_text=embedding_text,
+                    vector_id=versioned_vector_id(index_version, doc.index_id),
                 )
 
             changed_chunks.append(final_chunks[faiss_row_id])
@@ -213,8 +220,10 @@ class SearchUnitVectorIndexer:
                 claim_token=doc.claim_token,
                 content_sha256=doc.content_sha256,
                 index_id=doc.index_id,
+                vector_id=versioned_vector_id(index_version, doc.index_id),
                 faiss_row_id=faiss_row_id,
-                embedding_text_sha256=embedding_text.sha256,
+                embedding_text_sha256=embedding_text.source_sha256,
+                model_input_text_sha256=embedding_text.sha256,
             ))
 
         if not changed_chunks:
@@ -349,7 +358,9 @@ class SearchUnitVectorIndexer:
         document_count: int,
     ) -> None:
         texts = [
-            str((chunk.extra or {}).get("embeddingTextSha256") or chunk.text)
+            str((chunk.extra or {}).get("modelInputTextSha256")
+                or (chunk.extra or {}).get("embeddingTextSha256")
+                or chunk.text)
             for chunk in chunks
         ]
         manifest = {
@@ -431,7 +442,9 @@ def to_chunk_row(
     index_version: str,
     embedding_model: Optional[str] = None,
     embedding_text: Optional[SearchUnitEmbeddingText] = None,
+    vector_id: Optional[str] = None,
 ) -> ChunkRow:
+    resolved_vector_id = vector_id or versioned_vector_id(index_version, doc.index_id)
     return ChunkRow(
         chunk_id=doc.index_id,
         doc_id=doc.source_file_id,
@@ -445,6 +458,7 @@ def to_chunk_row(
             doc,
             embedding_model=embedding_model,
             embedding_text=embedding_text,
+            vector_id=resolved_vector_id,
         ),
     )
 
@@ -454,11 +468,14 @@ def index_metadata(
     *,
     embedding_model: Optional[str] = None,
     embedding_text: Optional[SearchUnitEmbeddingText] = None,
+    vector_id: Optional[str] = None,
 ) -> dict[str, Any]:
     metadata = dict(doc.index_metadata)
     metadata.update({
         "index_id": doc.index_id,
         "indexId": doc.index_id,
+        "stable_index_id": doc.index_id,
+        "stableIndexId": doc.index_id,
         "search_unit_id": doc.search_unit_id,
         "searchUnitId": doc.search_unit_id,
         "source_file_id": doc.source_file_id,
@@ -513,14 +530,25 @@ def index_metadata(
         metadata.update({
             "embedding_text_variant": embedding_text.variant,
             "embeddingTextVariant": embedding_text.variant,
-            "embedding_text_sha256": embedding_text.sha256,
-            "embeddingTextSha256": embedding_text.sha256,
+            "embedding_text_sha256": embedding_text.source_sha256,
+            "embeddingTextSha256": embedding_text.source_sha256,
+            "model_input_text_sha256": embedding_text.sha256,
+            "modelInputTextSha256": embedding_text.sha256,
+        })
+    if vector_id:
+        metadata.update({
+            "vector_id": vector_id,
+            "vectorId": vector_id,
         })
     return {key: value for key, value in metadata.items() if value is not None}
 
 
 def stable_index_id(source_file_id: str, unit_type: str, unit_key: str) -> str:
     return f"source_file:{source_file_id}:unit:{unit_type}:{unit_key}"
+
+
+def versioned_vector_id(index_version: str, index_id: str) -> str:
+    return f"{index_version}:{index_id}"
 
 
 def is_indexable_claim(doc: SearchUnitIndexDocument) -> bool:
@@ -571,6 +599,7 @@ def build_search_unit_embedding_text(doc: SearchUnitIndexDocument) -> SearchUnit
         text=text,
         variant=variant,
         sha256=_sha256(text),
+        source_sha256=_sha256(doc.text_content),
     )
 
 
@@ -608,6 +637,13 @@ def _chunk_matches_embedding(
     embedding_model: str,
 ) -> bool:
     extra = chunk.extra or {}
+    stored_model_input_sha = _extra(
+        extra,
+        "modelInputTextSha256",
+        "model_input_text_sha256",
+    )
+    if stored_model_input_sha is None:
+        stored_model_input_sha = _extra(extra, "embeddingTextSha256", "embedding_text_sha256")
     return (
         str(_extra(extra, "sourceFileId", "source_file_id") or "") == doc.source_file_id
         and str(_extra(extra, "unitType", "unit_type") or "") == doc.unit_type
@@ -615,7 +651,7 @@ def _chunk_matches_embedding(
         and str(_extra(extra, "contentSha256", "content_sha256", "content_hash") or "") == doc.content_sha256
         and str(_extra(extra, "embeddingModel", "embedding_model") or "") == embedding_model
         and str(_extra(extra, "embeddingTextVariant", "embedding_text_variant") or "") == embedding_text.variant
-        and str(_extra(extra, "embeddingTextSha256", "embedding_text_sha256") or "") == embedding_text.sha256
+        and str(stored_model_input_sha or "") == embedding_text.sha256
     )
 
 

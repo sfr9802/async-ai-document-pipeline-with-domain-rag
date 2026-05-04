@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+from types import SimpleNamespace
 from pathlib import Path
 
 
@@ -166,6 +167,78 @@ def test_retrieval_eval_classifies_empty_results():
     assert report["metrics"]["result_empty_count"] == 1
     assert report["query_results"][0]["failure_reason"] == "search_result_empty"
     assert report["metrics"]["overall_failure_reason_counts"]["search_result_empty"] == 1
+
+
+def test_vector_chunk_conversion_preserves_index_and_location_contract():
+    chunk = SimpleNamespace(
+        chunk_id="idx:unit-1",
+        doc_id="source-1",
+        source_file_id="source-1",
+        source_file_name="sales.xlsx",
+        search_unit_id="unit-1",
+        unit_type="TABLE",
+        unit_key="sheet:0:table:0",
+        score=0.91,
+        metadata_json={
+            "chunkType": "row_group",
+            "locationType": "xlsx",
+            "documentVersionId": "docv-1",
+            "citationText": "sales.xlsx > 철도 > A1:D10",
+            "locationJson": {
+                "type": "xlsx",
+                "document_version_id": "docv-1",
+                "sheet_name": "철도",
+                "cell_range": "A1:D10",
+            },
+        },
+    )
+
+    hit = eval_module._vector_chunk_to_eval_hit(
+        chunk,
+        index_version="rag-ingestion-v2-candidate",
+        embedding_model="BAAI/bge-m3",
+        rank=1,
+    )
+
+    assert hit["indexVersion"] == "rag-ingestion-v2-candidate"
+    assert hit["searchUnit"]["embeddingStatus"] == "EMBEDDED"
+    assert hit["searchUnit"]["locationType"] == "xlsx"
+    assert eval_module._location(hit)["sheet_name"] == "철도"
+    assert hit["sourceFile"]["originalFileName"] == "sales.xlsx"
+
+
+def test_vector_chunk_conversion_recovers_location_from_top_level_metadata():
+    chunk = SimpleNamespace(
+        chunk_id="idx:unit-1",
+        doc_id="source-1",
+        source_file_id="source-1",
+        source_file_name="sales.xlsx",
+        search_unit_id="unit-1",
+        unit_type="TABLE",
+        unit_key="sheet:0:table:0",
+        score=0.91,
+        metadata_json={
+            "chunkType": "row_group",
+            "locationType": "xlsx",
+            "documentVersionId": "docv-1",
+            "sheetName": "철도",
+            "cellRange": "A1:D10",
+            "citationText": "sales.xlsx > 철도 > A1:D10",
+            "locationJson": {"nodeType": "OBJECT", "object": True},
+        },
+    )
+
+    hit = eval_module._vector_chunk_to_eval_hit(
+        chunk,
+        index_version="rag-ingestion-v2-candidate",
+        embedding_model="BAAI/bge-m3",
+        rank=1,
+    )
+
+    location = eval_module._location(hit)
+    assert location["type"] == "xlsx"
+    assert location["sheet_name"] == "철도"
+    assert location["cell_range"] == "A1:D10"
 
 
 def test_retrieval_eval_writes_report_for_invalid_gold_csv(tmp_path):

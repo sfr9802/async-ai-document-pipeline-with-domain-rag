@@ -94,6 +94,8 @@ class TestInternalSecretHeader:
                 worker_id="worker-1",
                 batch_size=2,
                 stale_after_seconds=60,
+                source_file_id="source-1",
+                search_unit_ids=["unit-1"],
             )
         )
         embedded = client.mark_search_unit_embedded(
@@ -102,6 +104,10 @@ class TestInternalSecretHeader:
                 claim_token="claim-1",
                 content_sha256="hash-1",
                 index_id="source_file:source-1:unit:PAGE:page:1",
+                index_version="idx-v1",
+                embedding_model="fake-model",
+                embedding_text_sha256="embed-hash-1",
+                vector_id="idx-v1:source_file:source-1:unit:PAGE:page:1",
             ),
         )
         failed = client.mark_search_unit_indexing_failed(
@@ -122,8 +128,15 @@ class TestInternalSecretHeader:
             "workerId": "worker-1",
             "batchSize": 2,
             "staleAfterSeconds": 60,
+            "sourceFileId": "source-1",
+            "searchUnitIds": ["unit-1"],
+            "allowUnscoped": False,
         }
         assert fake.posts[1][0] == "/api/internal/search-units/indexing/unit-1/embedded"
         assert fake.posts[1][1]["claimToken"] == "claim-1"
+        assert fake.posts[1][1]["indexVersion"] == "idx-v1"
+        assert fake.posts[1][1]["embeddingModel"] == "fake-model"
+        assert fake.posts[1][1]["embeddingTextSha256"] == "embed-hash-1"
+        assert fake.posts[1][1]["vectorId"] == "idx-v1:source_file:source-1:unit:PAGE:page:1"
         assert fake.posts[2][0] == "/api/internal/search-units/indexing/unit-1/failed"
         assert fake.posts[2][1]["detail"] == "boom"

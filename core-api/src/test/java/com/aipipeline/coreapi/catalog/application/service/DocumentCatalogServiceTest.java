@@ -760,7 +760,7 @@ class DocumentCatalogServiceTest {
                 {
                   "fileType": "xlsx",
                   "sourceRecordId": "source-file-1",
-                  "pipelineVersion": "xlsx-extract-v1",
+                  "pipelineVersion": "xlsx-extract-v2-hidden-safe",
                   "workbook": {
                     "sheetCount": 2,
                     "visibleSheetCount": 1,
@@ -822,7 +822,7 @@ class DocumentCatalogServiceTest {
                 {
                   "fileType": "xlsx",
                   "sourceRecordId": "source-file-1",
-                  "pipelineVersion": "xlsx-extract-v1",
+                  "pipelineVersion": "xlsx-extract-v2-hidden-safe",
                   "workbook": {
                     "sheetCount": 1,
                     "visibleSheetCount": 1,
@@ -859,7 +859,7 @@ class DocumentCatalogServiceTest {
                 {
                   "fileType": "xlsx",
                   "sourceRecordId": "source-file-1",
-                  "pipelineVersion": "xlsx-extract-v1",
+                  "pipelineVersion": "xlsx-extract-v2-hidden-safe",
                   "workbook": {
                     "sheetCount": 1,
                     "visibleSheetCount": 1,
@@ -895,7 +895,7 @@ class DocumentCatalogServiceTest {
                 {
                   "fileType": "xlsx",
                   "sourceRecordId": "source-file-1",
-                  "pipelineVersion": "xlsx-extract-v1",
+                  "pipelineVersion": "xlsx-extract-v2-hidden-safe",
                   "workbook": {
                     "sheetCount": 1,
                     "visibleSheetCount": 1,

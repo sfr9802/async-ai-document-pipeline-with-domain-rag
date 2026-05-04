@@ -89,6 +89,41 @@ class SearchUnitIndexClaimRequest(BaseModel):
         default=None,
         serialization_alias="staleAfterSeconds",
     )
+    source_file_id: Optional[str] = Field(default=None, serialization_alias="sourceFileId")
+    source_file_ids: Optional[list[str]] = Field(
+        default=None,
+        serialization_alias="sourceFileIds",
+    )
+    document_version_id: Optional[str] = Field(
+        default=None,
+        serialization_alias="documentVersionId",
+    )
+    document_version_ids: Optional[list[str]] = Field(
+        default=None,
+        serialization_alias="documentVersionIds",
+    )
+    parsed_artifact_id: Optional[str] = Field(
+        default=None,
+        serialization_alias="parsedArtifactId",
+    )
+    search_unit_ids: Optional[list[str]] = Field(
+        default=None,
+        serialization_alias="searchUnitIds",
+    )
+    source_file_types: Optional[list[str]] = Field(
+        default=None,
+        serialization_alias="sourceFileTypes",
+    )
+    parser_versions: Optional[list[str]] = Field(
+        default=None,
+        serialization_alias="parserVersions",
+    )
+    expected_index_version: Optional[str] = Field(
+        default=None,
+        serialization_alias="expectedIndexVersion",
+    )
+    limit: Optional[int] = None
+    allow_unscoped: bool = Field(default=False, serialization_alias="allowUnscoped")
 
     model_config = {"populate_by_name": True}
 
@@ -125,13 +160,10 @@ class SearchUnitIndexEmbeddedRequest(BaseModel):
     claim_token: str = Field(serialization_alias="claimToken")
     content_sha256: str = Field(serialization_alias="contentSha256")
     index_id: Optional[str] = Field(default=None, serialization_alias="indexId")
-    index_version: Optional[str] = Field(default=None, serialization_alias="indexVersion")
-    embedding_model: Optional[str] = Field(default=None, serialization_alias="embeddingModel")
-    embedding_text_sha256: Optional[str] = Field(
-        default=None,
-        serialization_alias="embeddingTextSha256",
-    )
-    vector_id: Optional[str] = Field(default=None, serialization_alias="vectorId")
+    index_version: str = Field(serialization_alias="indexVersion")
+    embedding_model: str = Field(serialization_alias="embeddingModel")
+    embedding_text_sha256: str = Field(serialization_alias="embeddingTextSha256")
+    vector_id: str = Field(serialization_alias="vectorId")
 
     model_config = {"populate_by_name": True}
 

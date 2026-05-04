@@ -306,6 +306,24 @@ class WorkerSettings(BaseSettings):
             "raise to flatten rank differences across rewrites."
         ),
     )
+    rag_query_orchestrator_enabled: bool = Field(
+        default=False,
+        description=(
+            "Feature flag for the query-time RAG orchestrator POC worker "
+            "capability. Default false: RAG_QUERY_ORCHESTRATOR is not "
+            "registered unless explicitly enabled. This does not add a "
+            "public endpoint and does not affect RAG/AGENT/AUTO routing."
+        ),
+    )
+    rag_query_orchestrator_mode: Literal["test", "production"] = Field(
+        default="test",
+        description=(
+            "Mode for the feature-flagged RAG_QUERY_ORCHESTRATOR POC. "
+            "'test' permits fixture policies for unit-test-only fake graph "
+            "runs. 'production' rejects requests missing user_id, tenant_id, "
+            "or acl_tags in the policy snapshot."
+        ),
+    )
 
     # --- ocr capability (phase 2) ---
     ocr_enabled: bool = Field(

@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -43,7 +44,12 @@ class SearchUnitIndexingControllerTest {
 
     @Test
     void claim_returns_search_unit_indexing_contract() throws Exception {
-        when(indexing.claimPending(eq("worker-1"), eq(2), isNull(), eq(NOW)))
+        when(indexing.claimPending(
+                eq("worker-1"),
+                eq(2),
+                isNull(),
+                eq(NOW),
+                any(SearchUnitIndexingService.ClaimScope.class)))
                 .thenReturn(List.of(new SearchUnitIndexingService.ClaimedSearchUnit(
                         "unit-1",
                         "claim-1",
@@ -76,6 +82,36 @@ class SearchUnitIndexingControllerTest {
     }
 
     @Test
+    void claim_forwards_canary_scope_to_service() throws Exception {
+        when(indexing.claimPending(
+                eq("worker-1"),
+                eq(2),
+                any(Duration.class),
+                eq(NOW),
+                argThat(scope -> scope.sourceFileId().equals("source-1")
+                        && scope.documentVersionId().equals("docv-1")
+                        && scope.parsedArtifactId().equals("pa-1")
+                        && scope.searchUnitIds().equals(List.of("unit-1", "unit-2")))))
+                .thenReturn(List.of());
+
+        mockMvc.perform(post("/api/internal/search-units/indexing/claim")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "workerId":"worker-1",
+                                  "batchSize":2,
+                                  "staleAfterSeconds":60,
+                                  "sourceFileId":"source-1",
+                                  "documentVersionId":"docv-1",
+                                  "parsedArtifactId":"pa-1",
+                                  "searchUnitIds":["unit-1","unit-2"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.units").isArray());
+    }
+
+    @Test
     void embedded_endpoint_passes_completion_request_to_service() throws Exception {
         when(indexing.markEmbedded("unit-1", "claim-1", "hash-1", "index-1", "idx-v1",
                 "fake-model", "embed-hash-1", "vector-1", NOW))
@@ -97,6 +133,23 @@ class SearchUnitIndexingControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.applied").value(true))
                 .andExpect(jsonPath("$.indexId").value("index-1"));
+    }
+
+    @Test
+    void embedded_endpoint_rejects_missing_fail_closed_fields() throws Exception {
+        mockMvc.perform(post("/api/internal/search-units/indexing/unit-1/embedded")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "claimToken":"claim-1",
+                                  "contentSha256":"hash-1",
+                                  "indexId":"index-1",
+                                  "indexVersion":"idx-v1",
+                                  "embeddingModel":"fake-model",
+                                  "embeddingTextSha256":"embed-hash-1"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

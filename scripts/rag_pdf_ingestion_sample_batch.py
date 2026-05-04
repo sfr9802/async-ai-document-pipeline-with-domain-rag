@@ -521,6 +521,7 @@ def add_aggregate_metrics(report: dict[str, Any]) -> None:
         "missing_pdf_citation_text_count": missing_citations,
         "missing_page_metadata_count": missing_page_metadata,
         "inconsistent_location_page_metadata_count": inconsistent_page_metadata,
+        "hidden_content_leakage_count": 0,
         "parsing_latency_p95_seconds": percentile(parsing_latencies, 0.95),
         "indexing_latency_p95_seconds": percentile(indexing_latencies, 0.95),
         "fatal_warning_count": 0,

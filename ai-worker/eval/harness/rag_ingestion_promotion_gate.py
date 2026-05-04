@@ -19,6 +19,7 @@ from typing import Any, Mapping
 
 DECISION_PASSED = "PASSED"
 DECISION_BLOCKED = "BLOCKED"
+VECTOR_BACKENDS = {"faiss"}
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,14 @@ def evaluate_promotion_gate(
     baseline = baseline_metrics or {}
     if baseline.get("_baseline_candidate_snapshot"):
         reasons.append("baseline report must be an immutable baseline, not a candidate snapshot")
+    if baseline and not baseline.get("_baseline_immutable"):
+        reasons.append("baseline report must declare immutable_baseline=true")
+    if baseline and not _string_metric(baseline, "immutable_baseline_report_hash"):
+        reasons.append("immutable baseline report hash is required")
+    if baseline and not _string_metric(baseline, "baseline_provenance"):
+        reasons.append("baseline provenance is required")
+    if baseline and not _string_metric(baseline, "baseline_dataset_version"):
+        reasons.append("baseline dataset version is required")
 
     _check_min(
         reasons,
@@ -216,6 +225,26 @@ def evaluate_promotion_gate(
 
     if metrics.get("embedding_filtered_eval") is not True:
         reasons.append("retrieval eval must require embedded SearchUnit results")
+    retrieval_backend = _string_metric(metrics, "retrieval_backend")
+    if retrieval_backend != "vector":
+        if retrieval_backend == "library_search":
+            reasons.append("retrieval_backend=library_search is diagnostic-only and cannot be promotion evidence")
+        else:
+            reasons.append("retrieval_backend must be vector for promotion")
+    if metrics.get("promotion_evidence") is not True:
+        reasons.append("retrieval report must declare promotion_evidence=true for promotion")
+    retrieval_backend_identity = _mapping_metric(metrics, "retrieval_backend_identity")
+    if not retrieval_backend_identity:
+        reasons.append("retrieval_backend_identity is required for promotion")
+    else:
+        identity_backend = _string_metric(retrieval_backend_identity, "backend")
+        if identity_backend not in VECTOR_BACKENDS:
+            reasons.append("retrieval_backend_identity.backend must identify a vector backend")
+        namespace_filter = _string_metric(retrieval_backend_identity, "index_namespace_filter")
+        if not namespace_filter:
+            reasons.append("retrieval_backend_identity.index_namespace_filter is required for promotion")
+        elif namespace_filter != index_version:
+            reasons.append("retrieval_backend_identity.index_namespace_filter must match promoted index_version")
     required_embedding_status = str(metrics.get("required_embedding_status") or "").upper()
     if required_embedding_status != "EMBEDDED":
         reasons.append("required_embedding_status must be EMBEDDED")
@@ -231,11 +260,22 @@ def evaluate_promotion_gate(
     _check_exact_int(reasons, metrics, "required_index_version_mismatch_count", 0)
     _check_exact_int(reasons, metrics, "embedding_status_mismatch_count", 0)
 
+    result_metrics = dict(metrics)
+    for baseline_key, metric_key in (
+        ("_baseline_candidate_snapshot", "candidate_snapshot_baseline"),
+        ("_baseline_immutable", "immutable_baseline"),
+        ("immutable_baseline_report_hash", "immutable_baseline_report_hash"),
+        ("baseline_provenance", "baseline_provenance"),
+        ("baseline_dataset_version", "baseline_dataset_version"),
+    ):
+        if baseline_key in baseline and baseline[baseline_key] not in (None, ""):
+            result_metrics[metric_key] = baseline[baseline_key]
+
     decision = DECISION_BLOCKED if reasons else DECISION_PASSED
     return PromotionGateResult(
         index_version=index_version,
         decision=decision,
-        metrics=dict(metrics),
+        metrics=result_metrics,
         thresholds=active_thresholds.to_dict(),
         baseline_metrics=dict(baseline),
         reasons=reasons,
@@ -450,8 +490,26 @@ def load_baseline_metrics(path: Path | None) -> dict[str, Any] | None:
         return None
     payload = json.loads(path.read_text(encoding="utf-8"))
     metrics = load_report_metrics(path)
-    if isinstance(payload, Mapping) and payload.get("candidate_snapshot"):
+    if isinstance(payload, Mapping) and (
+        payload.get("candidate_snapshot")
+        or payload.get("candidate_snapshot_baseline")
+        or metrics.get("candidate_snapshot_baseline")
+    ):
         metrics["_baseline_candidate_snapshot"] = True
+    metrics["_baseline_immutable"] = bool(
+        (isinstance(payload, Mapping) and payload.get("immutable_baseline") is True)
+        or metrics.get("immutable_baseline") is True
+    )
+    for key in (
+        "immutable_baseline_report_hash",
+        "baseline_provenance",
+        "baseline_dataset_version",
+        "eval_dataset_version",
+    ):
+        if isinstance(payload, Mapping) and payload.get(key) is not None and key not in metrics:
+            metrics[key] = payload[key]
+    if "baseline_dataset_version" not in metrics and metrics.get("eval_dataset_version") is not None:
+        metrics["baseline_dataset_version"] = metrics["eval_dataset_version"]
     return metrics
 
 
