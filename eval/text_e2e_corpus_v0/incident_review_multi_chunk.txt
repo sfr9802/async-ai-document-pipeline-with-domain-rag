@@ -1,0 +1,28 @@
+Incident review multi-chunk diagnostic note.
+
+Section 1: intake.
+The ingest service received a mixed batch of catalog files at 09:15. The batch included plain text notes, a policy memo, and two spreadsheet files that were intentionally excluded from the Track B text-only filter. The operator confirmed that the Track B smoke run should bind only TEXT source files. The initial check recorded the source file names, upload timestamps, and catalog status values before any retrieval query was written.
+
+Section 2: validation.
+The validation pass checked three conditions. First, every imported text file had a READY source status. Second, every expected chunk had sourceFileType TEXT. Third, every diagnostic report kept promotion_evidence false. A row that does not have source and chunk evidence must remain draft, and a row that is intended to test abstention must set allowed_abstain true.
+
+Section 3: retrieval behavior.
+The library_search backend performs lexical matching over SearchUnit text fields. It is useful for deterministic smoke diagnostics because the matched source and chunk can be inspected directly. It is not a vector-quality proof, and it does not replace candidate embedding consistency checks. When the TEXT-only filter is present, PDF and SPREADSHEET rows must be excluded from Track B results even if their text fields contain overlapping terms.
+
+Section 4: recovery notes.
+If a text import fails, the source should not be treated as READY. The operator should check the source status, the parser version, and the number of SearchUnits created. The retry boundary is intentionally conservative: only uploaded or failed-like source states should be retried. A READY source should not be re-imported without an explicit stale-unit handling path.
+
+Section 5: evidence summary.
+The successful smoke corpus should leave a small set of facts that can be used by B1 gold rows. The intake section proves the mixed batch and text-only scope. The validation section proves the required row contracts. The retrieval behavior section proves the lexical nature of library_search. The recovery notes prove the retry boundary. A multi-chunk summary query should mention intake, validation, retrieval behavior, and recovery notes together.
+
+Section 6: reviewer reminder.
+The reviewer should reject any report that describes this diagnostic corpus as production retrieval performance. The corpus is synthetic, narrow, and intentionally small. It exists to make B1, B2, and later Track B checks reproducible enough to catch contract regressions. It does not establish quality for user traffic, tenant isolation, access control, or vector promotion.
+
+Section 7: operational glossary.
+READY means the catalog source can participate in diagnostic retrieval. PENDING embedding status can still appear on text SearchUnits because B1 uses lexical library_search rather than vector search. Bound means the gold row includes current source and chunk identifiers. Draft means the row is a candidate that still needs manual review or live binding. Abstain means the expected answer is no answer from the corpus.
+
+Section 8: closing note.
+Future phases may assemble context, request an answer, check citation support, and compare summaries across runs. Those phases should keep the same diagnostic boundary. Each phase should be able to explain which backend was used, which chunks were selected, and why promotion_evidence remains false.
+
+Section 9: filler detail for chunking.
+This paragraph intentionally extends the document so that the text import path creates more than one chunk. The content repeats the same diagnostic boundary in plain language. Track B text retrieval is a smoke and diagnostic exercise. The corpus is small. The backend is lexical. The filter is source-type based. The expected rows are bound to live catalog identifiers. The reports must stay diagnostic. The work must not be mixed with XLSX or PDF promotion metrics. The same boundary is restated here to cross the chunk threshold while preserving a coherent source document. Track B text retrieval is a smoke and diagnostic exercise. The corpus is small. The backend is lexical. The filter is source-type based. The expected rows are bound to live catalog identifiers. The reports must stay diagnostic. The work must not be mixed with XLSX or PDF promotion metrics. The same boundary is restated here to cross the chunk threshold while preserving a coherent source document. Track B text retrieval is a smoke and diagnostic exercise. The corpus is small. The backend is lexical. The filter is source-type based. The expected rows are bound to live catalog identifiers. The reports must stay diagnostic. The work must not be mixed with XLSX or PDF promotion metrics.

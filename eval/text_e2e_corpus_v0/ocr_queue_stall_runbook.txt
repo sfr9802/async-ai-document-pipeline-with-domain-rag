@@ -1,0 +1,7 @@
+OCR queue stall runbook.
+
+Step 1: confirm Redis is reachable and inspect the pending queue length.
+Step 2: check whether any worker has an active claim token for the stalled job.
+Step 3: if the claim is stale, move the job back to the pending queue with the original correlation id.
+Step 4: restart the worker only after the database status and Redis queue agree.
+Escalate to the platform owner if two recovery attempts leave the same job stalled.

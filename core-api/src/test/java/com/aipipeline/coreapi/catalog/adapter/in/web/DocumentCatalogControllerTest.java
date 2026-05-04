@@ -23,9 +23,11 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -34,15 +36,17 @@ class DocumentCatalogControllerTest {
     private static final Instant NOW = Instant.parse("2026-05-02T00:00:00Z");
 
     private DocumentCatalogService catalog;
+    private ArtifactStoragePort storage;
     private JobManagementUseCase jobManagement;
+    private TimeProvider timeProvider;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         catalog = Mockito.mock(DocumentCatalogService.class);
-        ArtifactStoragePort storage = Mockito.mock(ArtifactStoragePort.class);
+        storage = Mockito.mock(ArtifactStoragePort.class);
         jobManagement = Mockito.mock(JobManagementUseCase.class);
-        TimeProvider timeProvider = Mockito.mock(TimeProvider.class);
+        timeProvider = Mockito.mock(TimeProvider.class);
 
         DocumentCatalogController controller = new DocumentCatalogController(
                 catalog,
@@ -55,6 +59,21 @@ class DocumentCatalogControllerTest {
         job.markQueued(NOW);
         when(jobManagement.createAndEnqueue(any(CreateJobCommand.class)))
                 .thenReturn(new JobCreationResult(job, List.of()));
+    }
+
+    @Test
+    void library_search_passes_source_file_type_filters_to_service() throws Exception {
+        when(catalog.search("search text", 7, List.of("TEXT", "MARKDOWN")))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/library/search")
+                        .param("query", "search text")
+                        .param("limit", "7")
+                        .param("sourceFileTypes", "TEXT")
+                        .param("sourceFileTypes", "MARKDOWN"))
+                .andExpect(status().isOk());
+
+        verify(catalog).search(eq("search text"), eq(7), eq(List.of("TEXT", "MARKDOWN")));
     }
 
     @Test
@@ -163,6 +182,71 @@ class DocumentCatalogControllerTest {
         mockMvc.perform(post("/api/v1/library/source-files/source-file-1/pdf-extract"))
                 .andExpect(status().isUnsupportedMediaType());
 
+        verify(jobManagement, never()).createAndEnqueue(any(CreateJobCommand.class));
+    }
+
+    @Test
+    void text_import_imports_supported_source_without_enqueueing_job() throws Exception {
+        SourceFileJpaEntity source = new SourceFileJpaEntity(
+                "source-file-1",
+                "notes.md",
+                "application/octet-stream",
+                "TEXT",
+                "local://notes.md",
+                DocumentCatalogService.SOURCE_STATUS_UPLOADED,
+                NOW);
+        SourceFileJpaEntity imported = new SourceFileJpaEntity(
+                "source-file-1",
+                "notes.md",
+                "application/octet-stream",
+                "TEXT",
+                "local://notes.md",
+                DocumentCatalogService.SOURCE_STATUS_READY,
+                NOW);
+        when(catalog.findSourceFile("source-file-1")).thenReturn(Optional.of(source));
+        when(catalog.supportsTextImport(source)).thenReturn(true);
+        when(catalog.canStartTextImport(source)).thenReturn(true);
+        when(timeProvider.now()).thenReturn(NOW);
+        when(catalog.importTextSourceFile("source-file-1", NOW)).thenReturn(imported);
+
+        mockMvc.perform(post("/api/v1/library/source-files/source-file-1/text-import"))
+                .andExpect(status().isOk());
+
+        verify(catalog).importTextSourceFile("source-file-1", NOW);
+        verify(jobManagement, never()).createAndEnqueue(any(CreateJobCommand.class));
+    }
+
+    @Test
+    void text_import_rejects_unsupported_source_type() throws Exception {
+        SourceFileJpaEntity source = sourceWithStatus(DocumentCatalogService.SOURCE_STATUS_UPLOADED);
+        when(catalog.findSourceFile("source-file-1")).thenReturn(Optional.of(source));
+        when(catalog.supportsTextImport(source)).thenReturn(false);
+
+        mockMvc.perform(post("/api/v1/library/source-files/source-file-1/text-import"))
+                .andExpect(status().isUnsupportedMediaType());
+
+        verify(catalog, never()).importTextSourceFile(any(), any());
+        verify(jobManagement, never()).createAndEnqueue(any(CreateJobCommand.class));
+    }
+
+    @Test
+    void ready_source_file_text_import_rerequest_is_rejected() throws Exception {
+        SourceFileJpaEntity source = new SourceFileJpaEntity(
+                "source-file-1",
+                "notes.txt",
+                "text/plain",
+                "TEXT",
+                "local://notes.txt",
+                DocumentCatalogService.SOURCE_STATUS_READY,
+                NOW);
+        when(catalog.findSourceFile("source-file-1")).thenReturn(Optional.of(source));
+        when(catalog.supportsTextImport(source)).thenReturn(true);
+        when(catalog.canStartTextImport(source)).thenReturn(false);
+
+        mockMvc.perform(post("/api/v1/library/source-files/source-file-1/text-import"))
+                .andExpect(status().isConflict());
+
+        verify(catalog, never()).importTextSourceFile(any(), any());
         verify(jobManagement, never()).createAndEnqueue(any(CreateJobCommand.class));
     }
 

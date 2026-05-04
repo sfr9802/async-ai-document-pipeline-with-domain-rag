@@ -164,12 +164,34 @@ public class DocumentCatalogController {
                 .body(JobResponses.JobCreated.from(result.job(), result.inputArtifacts()));
     }
 
+    @PostMapping("/source-files/{sourceFileId}/text-import")
+    public ResponseEntity<SourceFileResponse> importTextSource(
+            @PathVariable String sourceFileId
+    ) {
+        SourceFileJpaEntity source = catalog.findSourceFile(sourceFileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "source file not found"));
+        if (!catalog.supportsTextImport(source)) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "TEXT import supports plain text and markdown source files only.");
+        }
+        if (!catalog.canStartTextImport(source)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "TEXT import can start only when source_file.status is UPLOADED, FAILED, or EXTRACTION_FAILED.");
+        }
+
+        SourceFileJpaEntity imported = catalog.importTextSourceFile(sourceFileId, timeProvider.now());
+        return ResponseEntity.ok(SourceFileResponse.from(imported));
+    }
+
     @GetMapping("/search")
     public ResponseEntity<LibrarySearchResponse> search(
             @RequestParam("query") String query,
-            @RequestParam(value = "limit", defaultValue = "20") int limit
+            @RequestParam(value = "limit", defaultValue = "20") int limit,
+            @RequestParam(value = "sourceFileTypes", required = false) List<String> sourceFileTypes
     ) {
-        List<LibrarySearchResult> results = catalog.search(query, limit).stream()
+        List<LibrarySearchResult> results = catalog.search(query, limit, sourceFileTypes).stream()
                 .map(LibrarySearchResult::from)
                 .toList();
         return ResponseEntity.ok(new LibrarySearchResponse(query, results));

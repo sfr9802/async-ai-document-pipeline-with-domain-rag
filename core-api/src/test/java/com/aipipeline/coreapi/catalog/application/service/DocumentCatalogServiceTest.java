@@ -25,16 +25,19 @@ import com.aipipeline.coreapi.job.domain.JobCapability;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Pageable;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -75,6 +78,22 @@ class DocumentCatalogServiceTest {
         assertThat(source.getStorageUri()).isEqualTo("local://source.png");
         assertThat(source.getStatus()).isEqualTo(DocumentCatalogService.SOURCE_STATUS_PROCESSING);
         assertThat(source.getUpdatedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void create_uploaded_source_file_classifies_markdown_extension_as_text_without_text_mime() {
+        when(sourceFiles.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        SourceFileJpaEntity source = service().createUploadedSourceFile(
+                "notes.md",
+                "application/octet-stream",
+                "local://notes.md",
+                NOW);
+
+        assertThat(source.getFileType()).isEqualTo("TEXT");
+        assertThat(source.getMimeType()).isEqualTo("application/octet-stream");
+        assertThat(source.getStatus()).isEqualTo(DocumentCatalogService.SOURCE_STATUS_UPLOADED);
     }
 
     @Test
@@ -658,6 +677,148 @@ class DocumentCatalogServiceTest {
         verify(sourceFiles, never()).save(any());
     }
 
+    @Test
+    void import_text_source_file_creates_text_search_units_with_v2_fields() {
+        SourceFileJpaEntity source = new SourceFileJpaEntity(
+                "source-text-1",
+                "notes.md",
+                "application/octet-stream",
+                "UNKNOWN",
+                "local://notes.md",
+                DocumentCatalogService.SOURCE_STATUS_UPLOADED,
+                NOW);
+        when(sourceFiles.findById("source-text-1")).thenReturn(Optional.of(source));
+        when(sourceFiles.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(storage.openForRead("local://notes.md"))
+                .thenReturn(stream("Alpha beta\n\nGamma delta"));
+        when(searchUnits.findBySourceFileIdAndUnitTypeAndUnitKey(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.empty());
+        when(searchUnits.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(searchUnits.findBySourceFileId("source-text-1")).thenReturn(List.of());
+        when(documents.findById(anyString())).thenReturn(Optional.empty());
+        when(documents.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(documentVersions.findById(anyString())).thenReturn(Optional.empty());
+        when(documentVersions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SourceFileJpaEntity imported = service().importTextSourceFile("source-text-1", NOW);
+
+        assertThat(imported.getStatus()).isEqualTo(DocumentCatalogService.SOURCE_STATUS_READY);
+        assertThat(imported.getFileType()).isEqualTo("TEXT");
+
+        ArgumentCaptor<SearchUnitJpaEntity> unitCaptor = ArgumentCaptor.forClass(SearchUnitJpaEntity.class);
+        verify(searchUnits, times(2)).save(unitCaptor.capture());
+        SearchUnitJpaEntity chunk = unitCaptor.getAllValues().stream()
+                .filter(unit -> DocumentCatalogService.SEARCH_UNIT_CHUNK.equals(unit.getUnitType()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(chunk.getExtractedArtifactId()).isNull();
+        assertThat(chunk.getSourceFileType()).isEqualTo("TEXT");
+        assertThat(chunk.getLocationType()).isEqualTo("text");
+        assertThat(chunk.getLocationJson()).contains("\"type\":\"text\"");
+        assertThat(chunk.getLocationJson()).contains("\"char_start\":0");
+        assertThat(chunk.getTextContent()).contains("Alpha beta");
+        assertThat(chunk.getEmbeddingText()).contains("Alpha beta");
+        assertThat(chunk.getBm25Text()).contains("notes.md");
+        assertThat(chunk.getCitationText()).contains("notes.md > chunk 1");
+        assertThat(chunk.getParserName()).isEqualTo("text-plain");
+        assertThat(chunk.getParserVersion()).isEqualTo(DocumentCatalogService.TEXT_PIPELINE_VERSION);
+        assertThat(chunk.getEmbeddingStatus()).isEqualTo(DocumentCatalogService.EMBEDDING_STATUS_PENDING);
+    }
+
+    @Test
+    void import_text_source_file_marks_stale_units_after_successful_reimport() {
+        SourceFileJpaEntity source = new SourceFileJpaEntity(
+                "source-text-1",
+                "notes.txt",
+                "text/plain",
+                "TEXT",
+                "local://notes.txt",
+                DocumentCatalogService.SOURCE_STATUS_FAILED,
+                NOW);
+        SearchUnitJpaEntity stale = searchUnit("stale-unit", "source-text-1", "old extra chunk", "TEXT");
+        when(sourceFiles.findById("source-text-1")).thenReturn(Optional.of(source));
+        when(sourceFiles.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(storage.openForRead("local://notes.txt"))
+                .thenReturn(stream("Short replacement text"));
+        when(searchUnits.findBySourceFileIdAndUnitTypeAndUnitKey(anyString(), anyString(), anyString()))
+                .thenReturn(Optional.empty());
+        when(searchUnits.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(searchUnits.findBySourceFileId("source-text-1")).thenReturn(List.of(stale));
+        when(documents.findById(anyString())).thenReturn(Optional.empty());
+        when(documents.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(documentVersions.findById(anyString())).thenReturn(Optional.empty());
+        when(documentVersions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SourceFileJpaEntity imported = service().importTextSourceFile("source-text-1", NOW);
+
+        assertThat(imported.getStatus()).isEqualTo(DocumentCatalogService.SOURCE_STATUS_READY);
+        assertThat(stale.getEmbeddingStatus()).isEqualTo("SKIPPED");
+        assertThat(stale.getEmbeddingStatusDetail()).isEqualTo(DocumentCatalogService.STALE_TEXT_IMPORT_UNIT_DETAIL);
+        verify(searchUnits).save(stale);
+        verify(searchUnits, never()).delete(stale);
+    }
+
+    @Test
+    void import_text_source_file_marks_empty_text_failed_without_units() {
+        SourceFileJpaEntity source = new SourceFileJpaEntity(
+                "source-text-1",
+                "notes.txt",
+                "text/plain",
+                "TEXT",
+                "local://notes.txt",
+                DocumentCatalogService.SOURCE_STATUS_UPLOADED,
+                NOW);
+        when(sourceFiles.findById("source-text-1")).thenReturn(Optional.of(source));
+        when(sourceFiles.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(storage.openForRead("local://notes.txt"))
+                .thenReturn(stream("   \n  "));
+
+        SourceFileJpaEntity imported = service().importTextSourceFile("source-text-1", NOW);
+
+        assertThat(imported.getStatus()).isEqualTo(DocumentCatalogService.SOURCE_STATUS_FAILED);
+        assertThat(imported.getStatusDetail()).isEqualTo("TEXT source file is empty.");
+        verify(searchUnits, never()).save(any());
+    }
+
+    @Test
+    void search_with_source_file_types_filters_initial_and_term_fallback_queries() {
+        SearchUnitJpaEntity unit = searchUnit("unit-text", "source-file-1", "alpha beta source", "TEXT");
+        SourceFileJpaEntity source = readySource("source-file-1", "notes.md", "TEXT");
+        List<String> textAliases = List.of("TEXT", "TXT", "MARKDOWN", "MD");
+        when(searchUnits.searchByTextAndSourceFileTypes(eq("alpha beta"), eq(textAliases), any(Pageable.class)))
+                .thenReturn(List.of());
+        when(searchUnits.searchByTextAndSourceFileTypes(eq("alpha"), eq(textAliases), any(Pageable.class)))
+                .thenReturn(List.of(unit));
+        when(searchUnits.searchByTextAndSourceFileTypes(eq("beta"), eq(textAliases), any(Pageable.class)))
+                .thenReturn(List.of(unit));
+        when(sourceFiles.findAllById(any())).thenReturn(List.of(source));
+
+        List<DocumentCatalogService.SearchResult> results =
+                service().search("alpha beta", 7, List.of("text", " ", "MARKDOWN", "TEXT"));
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).searchUnit().getSourceFileType()).isEqualTo("TEXT");
+        verify(searchUnits, never()).searchByText(anyString(), any(Pageable.class));
+        verify(searchUnits).searchByTextAndSourceFileTypes(eq("alpha beta"), eq(textAliases), any(Pageable.class));
+        verify(searchUnits).searchByTextAndSourceFileTypes(eq("alpha"), eq(textAliases), any(Pageable.class));
+        verify(searchUnits).searchByTextAndSourceFileTypes(eq("beta"), eq(textAliases), any(Pageable.class));
+    }
+
+    @Test
+    void search_blank_source_file_types_uses_unfiltered_search_for_back_compat() {
+        SearchUnitJpaEntity unit = searchUnit("unit-1", "source-file-1", "alpha source", "PDF");
+        SourceFileJpaEntity source = readySource("source-file-1", "source.pdf", "PDF");
+        when(searchUnits.searchByText(eq("alpha"), any(Pageable.class))).thenReturn(List.of(unit));
+        when(sourceFiles.findAllById(any())).thenReturn(List.of(source));
+
+        List<DocumentCatalogService.SearchResult> results =
+                service().search("alpha", 7, Arrays.asList(" ", null));
+
+        assertThat(results).hasSize(1);
+        verify(searchUnits).searchByText(eq("alpha"), any(Pageable.class));
+        verify(searchUnits, never()).searchByTextAndSourceFileTypes(anyString(), any(), any(Pageable.class));
+    }
+
     private void stubSourceAndUpserts(SourceFileJpaEntity source) {
         stubSourceAndUpserts("local://source.png", source);
     }
@@ -733,6 +894,53 @@ class DocumentCatalogServiceTest {
                 "local://source.pdf",
                 DocumentCatalogService.SOURCE_STATUS_PROCESSING,
                 NOW);
+    }
+
+    private static SourceFileJpaEntity readySource(String sourceFileId, String fileName, String fileType) {
+        return new SourceFileJpaEntity(
+                sourceFileId,
+                fileName,
+                "text/plain",
+                fileType,
+                "local://" + fileName,
+                DocumentCatalogService.SOURCE_STATUS_READY,
+                NOW);
+    }
+
+    private static SearchUnitJpaEntity searchUnit(String unitId,
+                                                  String sourceFileId,
+                                                  String text,
+                                                  String sourceFileType) {
+        SearchUnitJpaEntity unit = new SearchUnitJpaEntity(
+                unitId,
+                sourceFileId,
+                "artifact-" + unitId,
+                DocumentCatalogService.SEARCH_UNIT_CHUNK,
+                text,
+                "{}",
+                DocumentCatalogService.EMBEDDING_STATUS_PENDING,
+                NOW);
+        unit.applyIngestionV2(
+                "doc-" + unitId,
+                "docv-" + unitId,
+                "pa-" + unitId,
+                "source-" + unitId,
+                sourceFileType,
+                "paragraph",
+                sourceFileType.toLowerCase(),
+                "{}",
+                text,
+                text,
+                text,
+                text,
+                "{}",
+                "fixture",
+                "fixture-v1",
+                null,
+                null,
+                "[]",
+                NOW);
+        return unit;
     }
 
     private static String validOcrJson() {

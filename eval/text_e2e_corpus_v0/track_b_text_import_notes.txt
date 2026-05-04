@@ -1,0 +1,6 @@
+Track B text import notes.
+
+The B0 and B1 text smoke path uses the core-api catalog route, not a worker `TEXT_EXTRACT` job.
+Small `.txt` and `.md` files are uploaded as source files and then imported synchronously with `text-import`.
+The import creates one document unit and at least one chunk unit with `sourceFileType=TEXT`.
+Library search remains lexical diagnostic evidence and must not be described as vector promotion evidence.

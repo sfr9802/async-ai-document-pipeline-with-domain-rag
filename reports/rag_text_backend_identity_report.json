@@ -1,0 +1,193 @@
+{
+  "run_id": "20260504T172212Z",
+  "generated_at": "2026-05-04T17:22:12.362591Z",
+  "schema_version": "rag_text_backend_identity_v1",
+  "status": "DIAGNOSTIC_COMPLETED",
+  "report_role": "rag_text_backend_identity",
+  "scope": "track_b_text_retrieval_e2e",
+  "phase": "B0",
+  "retrieval_backend": "library_search",
+  "retrieval_backend_identity": {
+    "backend": "library_search",
+    "api_route": "/api/v1/library/search",
+    "http_method": "GET",
+    "controller": "DocumentCatalogController.search(query, limit, sourceFileTypes)",
+    "service": "DocumentCatalogService.search(query, limit, sourceFileTypes)",
+    "repository_method": "SearchUnitJpaRepository.searchByText/searchByTextAndSourceFileTypes",
+    "repository": "SearchUnitJpaRepository.searchByText/searchByTextAndSourceFileTypes",
+    "query_surface": "JPQL LIKE over SearchUnit text fields",
+    "filtering_mode": "source_type_filtered_lexical_search",
+    "query_fields": [
+      "textContent",
+      "bm25Text",
+      "displayText",
+      "citationText",
+      "debugText"
+    ],
+    "limit_clamp": "1..50",
+    "source_type_request_param_supported": true,
+    "source_type_repository_filter_supported": true,
+    "embedding_status_filter_supported": false,
+    "index_version_filter_supported": false,
+    "index_version": null,
+    "artifact_dir": null,
+    "vector_namespace": null,
+    "config_sha256": "15cd1910c138683b4a17873a737bb5705a2aa0e194c52a4bd292a9c1c39f6dc1"
+  },
+  "backend_identity": {
+    "backend": "library_search",
+    "api_route": "/api/v1/library/search",
+    "http_method": "GET",
+    "controller": "DocumentCatalogController.search(query, limit, sourceFileTypes)",
+    "service": "DocumentCatalogService.search(query, limit, sourceFileTypes)",
+    "repository_method": "SearchUnitJpaRepository.searchByText/searchByTextAndSourceFileTypes",
+    "repository": "SearchUnitJpaRepository.searchByText/searchByTextAndSourceFileTypes",
+    "query_surface": "JPQL LIKE over SearchUnit text fields",
+    "filtering_mode": "source_type_filtered_lexical_search",
+    "query_fields": [
+      "textContent",
+      "bm25Text",
+      "displayText",
+      "citationText",
+      "debugText"
+    ],
+    "limit_clamp": "1..50",
+    "source_type_request_param_supported": true,
+    "source_type_repository_filter_supported": true,
+    "embedding_status_filter_supported": false,
+    "index_version_filter_supported": false,
+    "index_version": null,
+    "artifact_dir": null,
+    "vector_namespace": null,
+    "config_sha256": "15cd1910c138683b4a17873a737bb5705a2aa0e194c52a4bd292a9c1c39f6dc1"
+  },
+  "candidate_backends": {
+    "library_search": {
+      "status": "present",
+      "operational_role": "lexical_diagnostic"
+    },
+    "legacy_text_index": {
+      "status": "not_found_by_static_scan",
+      "operational_role": null
+    },
+    "vector_text_candidate": {
+      "status": "poc_wrapper_present",
+      "operational_role": "vector_poc_post_filter"
+    },
+    "manual_fixture_backend": {
+      "status": "fixture_present",
+      "operational_role": "smoke_only"
+    }
+  },
+  "vector_adjacent_identity": {
+    "backend": "faiss",
+    "default_artifact_dir": "../rag-data",
+    "production_filter_enforcement": false,
+    "text_contract_warning": "text_vector_contract_not_production_ready",
+    "library_search_used": false
+  },
+  "text_corpus_import_path": {
+    "status": "present",
+    "api_route": "/api/v1/library/source-files/{sourceFileId}/text-import",
+    "http_method": "POST",
+    "controller": "DocumentCatalogController.importTextSource",
+    "service": "DocumentCatalogService.importTextSourceFile",
+    "parser_version": "text-import-v1",
+    "canonical_source_file_type": "TEXT",
+    "extension_classification_supported": true,
+    "creates_search_units": true,
+    "worker_job_required": false
+  },
+  "text_only_filter_supported": true,
+  "post_retrieval_text_filter_possible": true,
+  "library_search_diagnostics": {
+    "route_params": [
+      "query",
+      "limit",
+      "sourceFileTypes"
+    ],
+    "limit_default": 20,
+    "limit_max": 50,
+    "searched_fields": [
+      "textContent",
+      "bm25Text",
+      "displayText",
+      "citationText",
+      "debugText"
+    ],
+    "source_file_type_aliases": [
+      "MARKDOWN",
+      "MD",
+      "TEXT",
+      "TXT"
+    ],
+    "unsupported_filters": [
+      "embedding_status",
+      "index_version",
+      "tenant_id",
+      "acl"
+    ]
+  },
+  "path_mixing": {
+    "source": "live_db_ready_search_unit_snapshot",
+    "status": "OK",
+    "counts_observed": true,
+    "source_scope": "READY source_file rows only",
+    "text_count": 15,
+    "pdf_count": 215633,
+    "xlsx_count": 23028,
+    "unknown_count": 0,
+    "other_count": 0,
+    "total_count": 238676,
+    "mixing_observed": true,
+    "exclusion_rule": "TEXT source_file_type in TEXT/TXT/MARKDOWN/MD; exclude PDF/OCR/SPREADSHEET/XLSX/XLSM/UNKNOWN"
+  },
+  "api_probe": {
+    "status": "OK",
+    "url": "http://localhost:8080/api/v1/library/search?query=trackb0textcanary20260505&limit=3&sourceFileTypes=MARKDOWN&sourceFileTypes=MD&sourceFileTypes=TEXT&sourceFileTypes=TXT",
+    "query": "trackb0textcanary20260505",
+    "limit": 3,
+    "source_file_types": [
+      "MARKDOWN",
+      "MD",
+      "TEXT",
+      "TXT"
+    ],
+    "result_count": 2,
+    "source_type_summary": {
+      "text_count": 2,
+      "pdf_count": 0,
+      "xlsx_count": 0,
+      "unknown_count": 0,
+      "total_count": 2
+    }
+  },
+  "api_result_path_mixing": {
+    "source": "live_api_probe",
+    "status": "OK",
+    "counts_observed": true,
+    "text_count": 2,
+    "pdf_count": 0,
+    "xlsx_count": 0,
+    "unknown_count": 0,
+    "other_count": 0,
+    "non_text_count": 0,
+    "mixing_observed": false,
+    "exclusion_rule": "TEXT source_file_type in TEXT/TXT/MARKDOWN/MD; exclude PDF/OCR/SPREADSHEET/XLSX/XLSM/UNKNOWN"
+  },
+  "operational_claim_allowed": false,
+  "b1_entry_allowed": true,
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "blockers": [],
+  "warnings": [
+    "DB inspection was read-only and reflects only the current local catalog state",
+    "library_search is lexical diagnostic and must not be used as vector-grade production Evidence"
+  ],
+  "important_decisions": [
+    "Use library_search as the B0 backend identity for the current Track B diagnostic path.",
+    "B1 entry is allowed for diagnostic gold rows because READY TEXT rows exist and the TEXT-filtered API probe was clean.",
+    "Do not mix this Track B report with XLSX/PDF promotion gate evidence."
+  ],
+  "next_phase_recommendation": "B0 blocker cleared; proceed to B1 gold v0 as diagnostic-only Track B work."
+}

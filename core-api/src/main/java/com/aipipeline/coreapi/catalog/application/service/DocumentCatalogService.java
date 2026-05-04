@@ -58,6 +58,7 @@ public class DocumentCatalogService {
     public static final String XLSX_PIPELINE_VERSION = "xlsx-extract-v2-hidden-safe";
     public static final String XLSX_HIDDEN_POLICY_VERSION = "exclude-hidden-v1";
     public static final String PDF_PIPELINE_VERSION = "pdf-extract-v1";
+    public static final String TEXT_PIPELINE_VERSION = "text-import-v1";
     public static final String SOURCE_STATUS_UPLOADED = "UPLOADED";
     public static final String SOURCE_STATUS_PROCESSING = "PROCESSING";
     public static final String SOURCE_STATUS_READY = "READY";
@@ -73,8 +74,13 @@ public class DocumentCatalogService {
     public static final String SEARCH_UNIT_OCR_PAGE = "ocr_page";
 
     public static final String EMBEDDING_STATUS_PENDING = "PENDING";
+    public static final String STALE_TEXT_IMPORT_UNIT_DETAIL = "STALE_TEXT_IMPORT_UNIT";
+
+    private static final List<String> TEXT_SOURCE_FILE_TYPE_ALIASES =
+            List.of("TEXT", "TXT", "MARKDOWN", "MD");
 
     private static final int DOCUMENT_TEXT_MAX_CHARS = 200_000;
+    private static final int TEXT_IMPORT_CHUNK_MAX_CHARS = 4_000;
     private static final int MAX_NORMALIZED_CELLS_PER_SHEET = 500;
     private static final int MAX_NORMALIZED_CELLS_PER_WORKBOOK = 4_000;
     private static final Logger log = LoggerFactory.getLogger(DocumentCatalogService.class);
@@ -181,6 +187,10 @@ public class DocumentCatalogService {
         return canStartOcrExtract(sourceFile);
     }
 
+    public boolean canStartTextImport(SourceFileJpaEntity sourceFile) {
+        return canStartOcrExtract(sourceFile);
+    }
+
     public boolean supportsXlsxExtract(SourceFileJpaEntity sourceFile) {
         String fileName = sourceFile.getOriginalFileName() == null
                 ? ""
@@ -203,6 +213,16 @@ public class DocumentCatalogService {
         return fileName.endsWith(".pdf")
                 || "application/pdf".equals(mimeType)
                 || "application/x-pdf".equals(mimeType);
+    }
+
+    public boolean supportsTextImport(SourceFileJpaEntity sourceFile) {
+        String fileName = sourceFile.getOriginalFileName() == null
+                ? ""
+                : sourceFile.getOriginalFileName().toLowerCase(Locale.ROOT);
+        String mimeType = normalizeMime(sourceFile.getMimeType());
+        return "TEXT".equalsIgnoreCase(sourceFile.getFileType())
+                || isTextImportFileName(fileName)
+                || isTextImportMime(mimeType);
     }
 
     @Transactional(readOnly = true)
@@ -495,19 +515,92 @@ public class DocumentCatalogService {
         sourceFiles.save(source);
     }
 
+    @Transactional
+    public SourceFileJpaEntity importTextSourceFile(String sourceFileId, Instant now) {
+        SourceFileJpaEntity source = sourceFiles.findById(sourceFileId)
+                .orElseThrow(() -> new TextCatalogImportException("source file not found"));
+        if (!supportsTextImport(source)) {
+            throw new TextCatalogImportException("TEXT import supports plain text and markdown source files only.");
+        }
+        if (!canStartTextImport(source)) {
+            throw new TextCatalogImportException(
+                    "TEXT import can start only when source_file.status is UPLOADED, FAILED, or EXTRACTION_FAILED.");
+        }
+
+        source.setFileType("TEXT");
+        transitionSource(source, SOURCE_STATUS_PROCESSING, null, now);
+        sourceFiles.save(source);
+
+        ImportPlan plan;
+        try {
+            plan = buildTextImportPlan(source);
+        } catch (TextCatalogImportException ex) {
+            log.warn("TEXT catalog import failed sourceFileId={} reason={}", source.getId(), ex.getMessage());
+            transitionSource(source, SOURCE_STATUS_FAILED, ex.getMessage(), now);
+            sourceFiles.save(source);
+            return source;
+        }
+
+        if (!plan.valid()) {
+            log.warn("TEXT catalog import failed sourceFileId={} reason={}", source.getId(), plan.errorMessage());
+            transitionSource(source, SOURCE_STATUS_FAILED, plan.errorMessage(), now);
+            sourceFiles.save(source);
+            return source;
+        }
+
+        try {
+            DocumentIngestionContext documentContext =
+                    upsertDocumentContext(source, plan, new HashMap<>(), now);
+            for (SearchUnitDraft draft : plan.searchUnits()) {
+                upsertSearchUnit(source, documentContext, draft, now);
+            }
+            markStaleTextSearchUnits(source.getId(), plan, now);
+        } catch (RuntimeException ex) {
+            log.warn("TEXT catalog import write failed sourceFileId={}: {}", source.getId(), ex.toString());
+            transitionSource(source, SOURCE_STATUS_FAILED, "TEXT catalog write failed: " + ex.getMessage(), now);
+            sourceFiles.save(source);
+            return source;
+        }
+
+        transitionSource(source, SOURCE_STATUS_READY, plan.warningMessage(), now);
+        return sourceFiles.save(source);
+    }
+
+    private void markStaleTextSearchUnits(String sourceFileId, ImportPlan plan, Instant now) {
+        Set<String> plannedKeys = new java.util.HashSet<>();
+        for (SearchUnitDraft draft : plan.searchUnits()) {
+            plannedKeys.add(searchUnitPlanKey(canonicalUnitType(draft.unitType()), draft.unitKey()));
+        }
+        for (SearchUnitJpaEntity unit : searchUnits.findBySourceFileId(sourceFileId)) {
+            String existingKey = searchUnitPlanKey(unit.getCanonicalUnitType(), unit.getUnitKey());
+            if (!plannedKeys.contains(existingKey)) {
+                unit.markEmbeddingSkipped(STALE_TEXT_IMPORT_UNIT_DETAIL, now);
+                searchUnits.save(unit);
+            }
+        }
+    }
+
+    private static String searchUnitPlanKey(String unitType, String unitKey) {
+        return (unitType == null ? "" : unitType) + "\u0000" + (unitKey == null ? "" : unitKey);
+    }
+
     @Transactional(readOnly = true)
     public List<SearchResult> search(String query, int limit) {
+        return search(query, limit, List.of());
+    }
+
+    @Transactional(readOnly = true)
+    public List<SearchResult> search(String query, int limit, List<String> sourceFileTypes) {
         String normalized = query == null ? "" : query.trim();
         if (normalized.isEmpty()) {
             return List.of();
         }
         int safeLimit = Math.max(1, Math.min(limit, 50));
-        List<SearchUnitJpaEntity> units = searchUnits.searchByText(
-                normalized,
-                PageRequest.of(0, safeLimit));
+        List<String> normalizedSourceFileTypes = normalizeSearchSourceFileTypes(sourceFileTypes);
+        List<SearchUnitJpaEntity> units = searchByText(normalized, normalizedSourceFileTypes, safeLimit);
         List<String> terms = queryTerms(normalized);
         if (terms.size() > 1) {
-            units = mergeAllTermMatches(units, terms, safeLimit);
+            units = mergeAllTermMatches(units, terms, normalizedSourceFileTypes, safeLimit);
         }
         Map<String, SourceFileJpaEntity> sourcesById = new LinkedHashMap<>();
         for (SourceFileJpaEntity source : sourceFiles.findAllById(
@@ -520,12 +613,23 @@ public class DocumentCatalogService {
                 .toList();
     }
 
+    private List<SearchUnitJpaEntity> searchByText(String query,
+                                                   List<String> sourceFileTypes,
+                                                   int safeLimit) {
+        PageRequest pageRequest = PageRequest.of(0, safeLimit);
+        if (sourceFileTypes.isEmpty()) {
+            return searchUnits.searchByText(query, pageRequest);
+        }
+        return searchUnits.searchByTextAndSourceFileTypes(query, sourceFileTypes, pageRequest);
+    }
+
     private List<SearchUnitJpaEntity> mergeAllTermMatches(List<SearchUnitJpaEntity> exactPhraseUnits,
                                                           List<String> terms,
+                                                          List<String> sourceFileTypes,
                                                           int safeLimit) {
         Map<String, SearchUnitJpaEntity> merged = new LinkedHashMap<>();
         for (String term : terms) {
-            List<SearchUnitJpaEntity> termUnits = searchUnits.searchByText(term, PageRequest.of(0, Math.max(100, safeLimit * 10)));
+            List<SearchUnitJpaEntity> termUnits = searchByText(term, sourceFileTypes, Math.max(100, safeLimit * 10));
             for (SearchUnitJpaEntity unit : termUnits) {
                 if (containsAllTerms(unit, terms)) {
                     merged.putIfAbsent(unit.getId(), unit);
@@ -538,6 +642,31 @@ public class DocumentCatalogService {
         return merged.values().stream()
                 .limit(safeLimit)
                 .toList();
+    }
+
+    private List<String> normalizeSearchSourceFileTypes(List<String> sourceFileTypes) {
+        if (sourceFileTypes == null || sourceFileTypes.isEmpty()) {
+            return List.of();
+        }
+        List<String> normalized = new ArrayList<>();
+        for (String value : sourceFileTypes) {
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            String type = value.trim().toUpperCase(Locale.ROOT);
+            if (TEXT_SOURCE_FILE_TYPE_ALIASES.contains(type)) {
+                for (String alias : TEXT_SOURCE_FILE_TYPE_ALIASES) {
+                    if (!normalized.contains(alias)) {
+                        normalized.add(alias);
+                    }
+                }
+                continue;
+            }
+            if (!normalized.contains(type)) {
+                normalized.add(type);
+            }
+        }
+        return normalized;
     }
 
     private List<String> queryTerms(String query) {
@@ -684,6 +813,24 @@ public class DocumentCatalogService {
                 ? "PDF_PARSED_JSON contained no page SearchUnits; saved artifacts only."
                 : warningFromParsedPdf(parsed.root());
         return ImportPlan.valid(source.getId(), extracted, units, warning);
+    }
+
+    private ImportPlan buildTextImportPlan(SourceFileJpaEntity source) {
+        String text = readTextSource(source);
+        if (text.isBlank()) {
+            return ImportPlan.invalid("TEXT source file is empty.");
+        }
+        List<SearchUnitDraft> units = buildTextSearchUnitDrafts(source, text);
+        return ImportPlan.valid(source.getId(), List.of(), units, null);
+    }
+
+    private String readTextSource(SourceFileJpaEntity source) {
+        try (InputStream stream = storage.openForRead(source.getStorageUri())) {
+            String raw = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+            return normalizeTextImportContent(raw);
+        } catch (IOException | RuntimeException ex) {
+            throw new TextCatalogImportException("Failed to read TEXT source file.");
+        }
     }
 
     private ParsedOcrJson readOcrResultJson(Artifact resultJsonArtifact) {
@@ -1990,6 +2137,68 @@ public class DocumentCatalogService {
         return units;
     }
 
+    private List<SearchUnitDraft> buildTextSearchUnitDrafts(SourceFileJpaEntity source, String text) {
+        List<String> chunks = textChunks(text);
+        List<SearchUnitDraft> units = new ArrayList<>();
+
+        String documentText = text;
+        boolean truncated = false;
+        if (documentText.length() > DOCUMENT_TEXT_MAX_CHARS) {
+            documentText = documentText.substring(0, DOCUMENT_TEXT_MAX_CHARS);
+            truncated = true;
+        }
+
+        ObjectNode documentMetadata = textBaseMetadata(source, "document");
+        documentMetadata.put("chunkCount", chunks.size());
+        documentMetadata.put("charCount", text.length());
+        documentMetadata.put("charStart", 0);
+        documentMetadata.put("charEnd", text.length());
+        documentMetadata.put("lineCount", countLines(text));
+        documentMetadata.put("textTruncated", truncated);
+        units.add(new SearchUnitDraft(
+                source.getId(),
+                null,
+                SEARCH_UNIT_DOCUMENT,
+                "document",
+                source.getOriginalFileName(),
+                null,
+                null,
+                null,
+                blankToNull(documentText),
+                documentMetadata.toString()));
+
+        int cursor = 0;
+        for (int i = 0; i < chunks.size(); i++) {
+            String chunk = chunks.get(i);
+            int charStart = text.indexOf(chunk, cursor);
+            if (charStart < 0) {
+                charStart = cursor;
+            }
+            int charEnd = charStart + chunk.length();
+            cursor = charEnd;
+            ObjectNode metadata = textBaseMetadata(source, "chunk");
+            metadata.put("chunkIndex", i);
+            metadata.put("chunkOrdinal", i + 1);
+            metadata.put("chunkCount", chunks.size());
+            metadata.put("charCount", chunk.length());
+            metadata.put("charStart", charStart);
+            metadata.put("charEnd", charEnd);
+            metadata.put("lineCount", countLines(chunk));
+            units.add(new SearchUnitDraft(
+                    source.getId(),
+                    null,
+                    SEARCH_UNIT_CHUNK,
+                    "chunk:" + i,
+                    source.getOriginalFileName(),
+                    "text",
+                    null,
+                    null,
+                    blankToNull(chunk),
+                    metadata.toString()));
+        }
+        return units;
+    }
+
     private SearchUnitV2Payload buildSearchUnitV2Payload(SourceFileJpaEntity source,
                                                          DocumentIngestionContext context,
                                                          SearchUnitDraft draft,
@@ -2047,6 +2256,16 @@ public class DocumentCatalogService {
             location.put("chunk_type", chunkType(canonicalType, metadata, locationType));
             return location.toString();
         }
+        if ("text".equals(locationType)) {
+            copySectionPath(location, draft.sectionPath());
+            putIntIfPresent(location, "char_start", firstText(metadata, "charStart", "char_start"));
+            putIntIfPresent(location, "char_end", firstText(metadata, "charEnd", "char_end"));
+            putIntIfPresent(location, "chunk_index", firstText(metadata, "chunkIndex", "chunk_index"));
+            putIntIfPresent(location, "chunk_ordinal", firstText(metadata, "chunkOrdinal", "chunk_ordinal"));
+            location.put("block_type", blockType(canonicalType));
+            location.put("chunk_type", chunkType(canonicalType, metadata, locationType));
+            return location.toString();
+        }
 
         Integer pageNo = draft.pageStart() == null
                 ? intOrNull(metadata, "pageNo", "pageNumber", "page")
@@ -2096,6 +2315,21 @@ public class DocumentCatalogService {
                 parts.add(range);
             } else if (draft.unitKey() != null && draft.unitKey().equals("workbook")) {
                 parts.add("workbook");
+            }
+            return String.join(" > ", parts);
+        }
+        if ("text".equals(locationType)) {
+            List<String> parts = new ArrayList<>();
+            parts.add(fileName);
+            String role = firstText(metadata, "role");
+            String chunkOrdinal = firstText(metadata, "chunkOrdinal", "chunk_ordinal");
+            if ("chunk".equals(role) && chunkOrdinal != null && !chunkOrdinal.isBlank()) {
+                parts.add("chunk " + chunkOrdinal);
+            }
+            String charStart = firstText(metadata, "charStart", "char_start");
+            String charEnd = firstText(metadata, "charEnd", "char_end");
+            if (charStart != null && charEnd != null) {
+                parts.add("chars " + charStart + "-" + charEnd);
             }
             return String.join(" > ", parts);
         }
@@ -2249,10 +2483,22 @@ public class DocumentCatalogService {
         if ("pdf".equals(normalized) && "PDF".equalsIgnoreCase(source.getFileType())) {
             return "pymupdf";
         }
+        if ("text".equals(normalized) || "TEXT".equalsIgnoreCase(source.getFileType())) {
+            return "text-plain";
+        }
         return "ocr-lite";
     }
 
     private String parserVersionFor(ImportPlan plan) {
+        Optional<String> unitParserVersion = plan.searchUnits().stream()
+                .map(SearchUnitDraft::metadataJson)
+                .map(this::metadataOrEmpty)
+                .map(metadata -> firstText(metadata, "pipelineVersion", "parserVersion", "parser_version"))
+                .filter(value -> value != null && !value.isBlank())
+                .findFirst();
+        if (unitParserVersion.isPresent()) {
+            return unitParserVersion.get();
+        }
         return plan.extractedArtifacts().stream()
                 .map(ArtifactPayload::pipelineVersion)
                 .filter(value -> value != null && !value.isBlank())
@@ -2290,6 +2536,10 @@ public class DocumentCatalogService {
             if ("pdf".equals(normalized)) {
                 return "pdf";
             }
+            if ("text".equals(normalized) || "txt".equals(normalized)
+                    || "markdown".equals(normalized) || "md".equals(normalized)) {
+                return "text";
+            }
         }
         String sourceType = source.getFileType() == null ? "" : source.getFileType().trim().toUpperCase(Locale.ROOT);
         if ("SPREADSHEET".equals(sourceType)) {
@@ -2297,6 +2547,9 @@ public class DocumentCatalogService {
         }
         if ("PDF".equals(sourceType)) {
             return "pdf";
+        }
+        if (TEXT_SOURCE_FILE_TYPE_ALIASES.contains(sourceType)) {
+            return "text";
         }
         return "ocr";
     }
@@ -2327,6 +2580,12 @@ public class DocumentCatalogService {
             if ("block".equals(role)) {
                 return firstNonBlank(firstText(metadata, "blockType", "block_type"), "paragraph");
             }
+        }
+        if ("text".equals(locationType)) {
+            if ("document".equals(role) || SEARCH_UNIT_DOCUMENT.equals(canonicalType)) {
+                return "document_summary";
+            }
+            return "paragraph";
         }
         return switch (canonicalType) {
             case SEARCH_UNIT_DOCUMENT -> "document_summary";
@@ -2525,6 +2784,17 @@ public class DocumentCatalogService {
         putIfPresent(metadata, "pipelineVersion", pipelineVersion);
         putIfPresent(metadata, "parserName", parserName);
         putIfPresent(metadata, "sourceRecordId", sourceRecordId);
+        return metadata;
+    }
+
+    private ObjectNode textBaseMetadata(SourceFileJpaEntity source, String role) {
+        ObjectNode metadata = objectMapper.createObjectNode();
+        metadata.put("fileType", "text");
+        metadata.put("pipelineVersion", TEXT_PIPELINE_VERSION);
+        metadata.put("parserName", "text-plain");
+        metadata.put("sourceRecordId", source.getId());
+        metadata.put("role", role);
+        putIfPresent(metadata, "mimeType", source.getMimeType());
         return metadata;
     }
 
@@ -3246,10 +3516,91 @@ public class DocumentCatalogService {
         if (lowerName.endsWith(".xlsx") || lowerName.endsWith(".xlsm") || lowerName.endsWith(".xls") || lowerName.endsWith(".csv")) {
             return "SPREADSHEET";
         }
-        if (mime != null && mime.startsWith("text/")) {
+        if (isTextImportMime(mime) || isTextImportFileName(lowerName)) {
             return "TEXT";
         }
         return "UNKNOWN";
+    }
+
+    private static boolean isTextImportMime(String mimeType) {
+        String mime = normalizeMime(mimeType);
+        return mime != null && (mime.startsWith("text/")
+                || "application/markdown".equals(mime)
+                || "application/x-markdown".equals(mime));
+    }
+
+    private static boolean isTextImportFileName(String lowerName) {
+        if (lowerName == null || lowerName.isBlank()) {
+            return false;
+        }
+        String name = lowerName.toLowerCase(Locale.ROOT);
+        return name.endsWith(".txt")
+                || name.endsWith(".text")
+                || name.endsWith(".md")
+                || name.endsWith(".markdown");
+    }
+
+    private static String normalizeTextImportContent(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String text = raw.replace("\r\n", "\n").replace('\r', '\n');
+        if (!text.isEmpty() && text.charAt(0) == '\uFEFF') {
+            text = text.substring(1);
+        }
+        return text.strip();
+    }
+
+    private static List<String> textChunks(String text) {
+        if (text == null || text.isBlank()) {
+            return List.of();
+        }
+        List<String> chunks = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        for (String rawParagraph : text.split("\\n\\s*\\n")) {
+            String paragraph = rawParagraph.strip();
+            if (paragraph.isBlank()) {
+                continue;
+            }
+            if (paragraph.length() > TEXT_IMPORT_CHUNK_MAX_CHARS) {
+                flushChunk(chunks, current);
+                for (int start = 0; start < paragraph.length(); start += TEXT_IMPORT_CHUNK_MAX_CHARS) {
+                    int end = Math.min(start + TEXT_IMPORT_CHUNK_MAX_CHARS, paragraph.length());
+                    chunks.add(paragraph.substring(start, end));
+                }
+                continue;
+            }
+            int separatorLength = current.isEmpty() ? 0 : 2;
+            if (current.length() + separatorLength + paragraph.length() > TEXT_IMPORT_CHUNK_MAX_CHARS) {
+                flushChunk(chunks, current);
+            }
+            if (!current.isEmpty()) {
+                current.append("\n\n");
+            }
+            current.append(paragraph);
+        }
+        flushChunk(chunks, current);
+        return chunks.isEmpty() ? List.of(text) : chunks;
+    }
+
+    private static void flushChunk(List<String> chunks, StringBuilder current) {
+        if (!current.isEmpty()) {
+            chunks.add(current.toString());
+            current.setLength(0);
+        }
+    }
+
+    private static int countLines(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0;
+        }
+        int lines = 1;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == '\n') {
+                lines++;
+            }
+        }
+        return lines;
     }
 
     private static String normalizeMime(String raw) {
@@ -3403,6 +3754,12 @@ public class DocumentCatalogService {
 
     private static class PdfCatalogImportException extends RuntimeException {
         PdfCatalogImportException(String message) {
+            super(message);
+        }
+    }
+
+    private static class TextCatalogImportException extends RuntimeException {
+        TextCatalogImportException(String message) {
             super(message);
         }
     }

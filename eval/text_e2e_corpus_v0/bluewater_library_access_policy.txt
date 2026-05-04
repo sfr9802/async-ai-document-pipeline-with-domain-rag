@@ -1,0 +1,6 @@
+Bluewater Library access policy.
+
+Standard loan items may be renewed two times when no hold is waiting.
+Reference tablets are non-circulating and must stay inside the building.
+Visitor badges expire at 18:00 local time and must be returned to the front desk.
+Community room keys are issued only after a staff member checks the reservation roster.

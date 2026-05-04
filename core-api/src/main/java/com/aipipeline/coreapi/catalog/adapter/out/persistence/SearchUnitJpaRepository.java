@@ -24,11 +24,23 @@ public interface SearchUnitJpaRepository extends JpaRepository<SearchUnitJpaEnti
     @Query("""
             select unit
             from SearchUnitJpaEntity unit
-            where lower(coalesce(unit.textContent, '')) like lower(concat('%', :query, '%'))
-               or lower(coalesce(unit.bm25Text, '')) like lower(concat('%', :query, '%'))
-               or lower(coalesce(unit.displayText, '')) like lower(concat('%', :query, '%'))
-               or lower(coalesce(unit.citationText, '')) like lower(concat('%', :query, '%'))
-               or lower(coalesce(unit.debugText, '')) like lower(concat('%', :query, '%'))
+            where exists (
+                select source.id
+                from SourceFileJpaEntity source
+                where source.id = unit.sourceFileId
+                  and source.status = 'READY'
+              )
+              and (
+                   lower(coalesce(unit.textContent, '')) like lower(concat('%', :query, '%'))
+                or lower(coalesce(unit.bm25Text, '')) like lower(concat('%', :query, '%'))
+                or lower(coalesce(unit.displayText, '')) like lower(concat('%', :query, '%'))
+                or lower(coalesce(unit.citationText, '')) like lower(concat('%', :query, '%'))
+                or lower(coalesce(unit.debugText, '')) like lower(concat('%', :query, '%'))
+              )
+              and (
+                   unit.embeddingStatusDetail is null
+                or unit.embeddingStatusDetail <> 'STALE_TEXT_IMPORT_UNIT'
+              )
             order by
               case
                 when lower(coalesce(unit.bm25Text, '')) like lower(concat(:query, '%')) then 0
@@ -49,6 +61,53 @@ public interface SearchUnitJpaRepository extends JpaRepository<SearchUnitJpaEnti
               unit.createdAt desc
             """)
     List<SearchUnitJpaEntity> searchByText(@Param("query") String query, Pageable pageable);
+
+    @Query("""
+            select unit
+            from SearchUnitJpaEntity unit
+            where upper(unit.sourceFileType) in :sourceFileTypes
+              and exists (
+                select source.id
+                from SourceFileJpaEntity source
+                where source.id = unit.sourceFileId
+                  and source.status = 'READY'
+              )
+              and (
+                   lower(coalesce(unit.textContent, '')) like lower(concat('%', :query, '%'))
+                or lower(coalesce(unit.bm25Text, '')) like lower(concat('%', :query, '%'))
+                or lower(coalesce(unit.displayText, '')) like lower(concat('%', :query, '%'))
+                or lower(coalesce(unit.citationText, '')) like lower(concat('%', :query, '%'))
+                or lower(coalesce(unit.debugText, '')) like lower(concat('%', :query, '%'))
+              )
+              and (
+                   unit.embeddingStatusDetail is null
+                or unit.embeddingStatusDetail <> 'STALE_TEXT_IMPORT_UNIT'
+              )
+            order by
+              case
+                when lower(coalesce(unit.bm25Text, '')) like lower(concat(:query, '%')) then 0
+                when lower(coalesce(unit.displayText, '')) like lower(concat(:query, '%')) then 1
+                when lower(coalesce(unit.textContent, '')) like lower(concat(:query, '%')) then 2
+                else 3
+              end,
+              case lower(coalesce(unit.chunkType, unit.unitType, ''))
+                when 'row_group' then 0
+                when 'paragraph' then 1
+                when 'table' then 2
+                when 'page' then 3
+                when 'sheet_summary' then 4
+                when 'document_summary' then 5
+                when 'workbook_summary' then 6
+                else 7
+              end,
+              unit.createdAt desc
+            """)
+    List<SearchUnitJpaEntity> searchByTextAndSourceFileTypes(
+            @Param("query") String query,
+            @Param("sourceFileTypes") List<String> sourceFileTypes,
+            Pageable pageable);
+
+    List<SearchUnitJpaEntity> findBySourceFileId(String sourceFileId);
 
     Optional<SearchUnitJpaEntity> findByIdAndEmbeddingClaimToken(String id, String embeddingClaimToken);
 
