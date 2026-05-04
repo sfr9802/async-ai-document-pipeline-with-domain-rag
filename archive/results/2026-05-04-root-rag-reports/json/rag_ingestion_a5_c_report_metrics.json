@@ -1,0 +1,97 @@
+{
+  "run_id": "2026-05-03T234050Z",
+  "status": "COMPLETED",
+  "metrics": {
+    "parser_success_rate": 1.0,
+    "unsupported_file_rate": 0.0,
+    "zero_indexable_chunk_count": 0,
+    "required_metadata_completeness": 1.0,
+    "missing_required_metadata_count": 0,
+    "xlsx_citation_location_accuracy": 0.25,
+    "pdf_citation_location_accuracy": 0.0,
+    "table_detection_accuracy": 1.0,
+    "OCR_needed_count": 2,
+    "hit_at_10": 0.75,
+    "mrr_at_10": 0.75,
+    "citation_accuracy": 0.25,
+    "citation_location_accuracy": 0.25,
+    "parsing_latency_p95_seconds": 31.641,
+    "indexing_latency_p95_seconds": 0.28,
+    "fatal_warning_count": 0,
+    "gate_input_missing_count": 3,
+    "gate_input_missing": [
+      "pdf.unsupported_file_rate",
+      "pdf.fatal_warning_count",
+      "ocr.fatal_warning_count"
+    ],
+    "hidden_content_leakage_count": 0,
+    "embedding_filtered_eval": true,
+    "required_embedding_status": "EMBEDDED",
+    "required_index_version": "rag-ingestion-v2-candidate",
+    "indexing_filtered_hit_count": 56,
+    "result_empty_count": 0,
+    "gold_label_invalid_count": 0,
+    "candidate_index_mismatch_count": 0,
+    "embedding_status_mismatch_count": 0,
+    "required_index_version_mismatch_count": 0,
+    "overall_failure_reason_counts": {
+      "expected_sheet_not_found": 1,
+      "unknown": 2
+    },
+    "bucket_failure_reason_counts": {
+      "xlsx_date_number_format": {
+        "expected_sheet_not_found": 1
+      },
+      "xlsx_lookup": {
+        "unknown": 2
+      }
+    },
+    "bucket_metrics": {
+      "xlsx_date_number_format": {
+        "Hit@10": 0.5,
+        "MRR@10": 0.5,
+        "count": 2,
+        "citation_location_accuracy": 0.5,
+        "xlsx_exact_range@10": 0.5,
+        "xlsx_file_hit@10": 1.0,
+        "xlsx_range_contains@10": 0.5,
+        "xlsx_range_overlap@10": 0.5,
+        "xlsx_sheet_hit@10": 0.5,
+        "bucket_failure_reason_counts": {
+          "expected_sheet_not_found": 1
+        }
+      },
+      "xlsx_lookup": {
+        "Hit@10": 1.0,
+        "MRR@10": 1.0,
+        "count": 2,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 1.0,
+        "xlsx_range_contains@10": 1.0,
+        "xlsx_range_overlap@10": 1.0,
+        "xlsx_sheet_hit@10": 1.0,
+        "bucket_failure_reason_counts": {
+          "unknown": 2
+        }
+      }
+    },
+    "retrieval_report_path": "reports\\strict_B_hardened_xlsx_canary_retrieval_eval_report.json",
+    "candidate_index_version": "rag-ingestion-v2-candidate",
+    "baseline_index_version": "rag-ingestion-v2-baseline",
+    "xlsx_hidden_search_unit_leakage_count": 0,
+    "pdf_missing_page_metadata_count": 0,
+    "pdf_inconsistent_location_page_metadata_count": 0,
+    "source_reports": [
+      "reports\\rag_ingestion_hardened_xlsx_canary_reimport_report.json",
+      "reports\\rag_pdf_ingestion_sample_batch_report.json",
+      "reports\\strict_B_hardened_xlsx_canary_retrieval_eval_report.json",
+      "reports\\rag_pdf_ocr_fallback_smoke_report.json"
+    ],
+    "OCR_confidence_avg": 0.9986956304073333
+  },
+  "notes": [
+    "Latency p95 values are measured by smoke runners around extract job completion and DB validation.",
+    "OCR confidence is required only when the OCR smoke report contains OCR-needed chunks."
+  ]
+}

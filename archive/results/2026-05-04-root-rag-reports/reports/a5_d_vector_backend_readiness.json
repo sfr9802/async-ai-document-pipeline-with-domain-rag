@@ -1,0 +1,35 @@
+{
+  "run_id": "2026-05-04T000234Z",
+  "status": "PASS",
+  "scope": "hardened_xlsx_canary_vector_backend",
+  "eval_report": "reports/strict_D_hardened_xlsx_canary_vector_eval_report.json",
+  "metrics_report": "reports/rag_ingestion_d_vector_canonical_metrics.json",
+  "retrieval_backend": "vector",
+  "backend_identity": {
+    "backend": "faiss",
+    "index_dir": "rag-data-canary",
+    "index_namespace_filter": "rag-ingestion-v2-candidate",
+    "db_dsn": "host=localhost port=5433 dbname=aipipeline user=aipipeline password=<redacted>",
+    "filtering_mode": "vector_namespace_then_contract_filter"
+  },
+  "validation_ok": true,
+  "gold_row_count": 4,
+  "top_k": 50,
+  "required_embedding_status": "EMBEDDED",
+  "required_index_version": "rag-ingestion-v2-candidate",
+  "hit_at_10": 1.0,
+  "mrr_at_10": 0.3482,
+  "citation_accuracy": 1.0,
+  "xlsx_citation_location_accuracy": 1.0,
+  "candidate_valid_hit_count": 200,
+  "indexing_filtered_hit_count": 0,
+  "required_index_version_mismatch_count": 0,
+  "embedding_status_mismatch_count": 0,
+  "candidate_index_mismatch_count": 0,
+  "hidden_content_leakage_count": 0,
+  "promotion_evidence": false,
+  "notes": [
+    "D vector backend is implemented and passes the hardened XLSX canary smoke.",
+    "This is not full72 readiness and not promotion evidence while immutable baseline is absent."
+  ]
+}

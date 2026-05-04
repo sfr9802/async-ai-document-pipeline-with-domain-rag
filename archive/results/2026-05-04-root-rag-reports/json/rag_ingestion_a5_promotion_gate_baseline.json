@@ -1,0 +1,17 @@
+{
+  "candidate_snapshot": true,
+  "candidate_snapshot_baseline": true,
+  "baseline_index_version": "rag-ingestion-v2-baseline",
+  "candidate_index_version": "rag-ingestion-v2-candidate",
+  "retrieval_backend": "vector",
+  "notes": [
+    "This file mirrors the current candidate retrieval metrics.",
+    "Do not use it as an immutable baseline for promotion decisions."
+  ],
+  "metrics": {
+    "Hit@10": 0.7639,
+    "MRR@10": 0.641,
+    "hit_at_10": 0.7639,
+    "mrr_at_10": 0.641
+  }
+}

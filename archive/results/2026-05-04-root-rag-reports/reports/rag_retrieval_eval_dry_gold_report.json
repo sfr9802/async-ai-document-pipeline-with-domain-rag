@@ -1,0 +1,1347 @@
+{
+  "status": "COMPLETED",
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "row_count": 72,
+    "bucket_counts": {
+      "xlsx_lookup": 18,
+      "xlsx_header_ambiguous": 4,
+      "xlsx_formula_value": 3,
+      "xlsx_date_number_format": 4,
+      "xlsx_hidden_policy": 3,
+      "xlsx_aggregation": 15,
+      "mixed_text_table": 3,
+      "pdf_page_lookup": 8,
+      "pdf_section_question": 8,
+      "pdf_table_lookup": 6
+    }
+  },
+  "metrics": {
+    "Hit@1": 0.6111,
+    "Hit@3": 0.6111,
+    "Hit@5": 0.625,
+    "Hit@10": 0.6667,
+    "MRR@10": 0.6202,
+    "hit_at_10": 0.6667,
+    "mrr_at_10": 0.6202,
+    "citation_accuracy": 0.375,
+    "citation_location_accuracy": 0.375,
+    "xlsx_citation_location_accuracy": 0.38,
+    "pdf_citation_location_accuracy": 0.3636,
+    "hidden_content_leakage_count": 0
+  },
+  "bucket_metrics": {
+    "mixed_text_table": {
+      "Hit@10": 0.0,
+      "MRR@10": 0.0,
+      "count": 3
+    },
+    "pdf_page_lookup": {
+      "Hit@10": 0.625,
+      "MRR@10": 0.5208,
+      "count": 8
+    },
+    "pdf_section_question": {
+      "Hit@10": 0.375,
+      "MRR@10": 0.2812,
+      "count": 8
+    },
+    "pdf_table_lookup": {
+      "Hit@10": 0.5,
+      "MRR@10": 0.206,
+      "count": 6
+    },
+    "xlsx_aggregation": {
+      "Hit@10": 0.9333,
+      "MRR@10": 0.9333,
+      "count": 15
+    },
+    "xlsx_date_number_format": {
+      "Hit@10": 0.75,
+      "MRR@10": 0.75,
+      "count": 4
+    },
+    "xlsx_formula_value": {
+      "Hit@10": 0.0,
+      "MRR@10": 0.0,
+      "count": 3
+    },
+    "xlsx_header_ambiguous": {
+      "Hit@10": 0.5,
+      "MRR@10": 0.5,
+      "count": 4
+    },
+    "xlsx_hidden_policy": {
+      "Hit@10": 0.0,
+      "MRR@10": 0.0,
+      "count": 3
+    },
+    "xlsx_lookup": {
+      "Hit@10": 1.0,
+      "MRR@10": 1.0,
+      "count": 18
+    }
+  },
+  "per_query": [
+    {
+      "query_id": "gq_xlsx_lookup_001",
+      "bucket": "xlsx_lookup",
+      "query": "1호선",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A2:D51"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_lookup_002",
+      "bucket": "xlsx_lookup",
+      "query": "신분당선",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A452:D501"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_lookup_003",
+      "bucket": "xlsx_lookup",
+      "query": "의정부경전철",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A552:D601"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_lookup_004",
+      "bucket": "xlsx_lookup",
+      "query": "우이신설선",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A552:D601"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_lookup_005",
+      "bucket": "xlsx_lookup",
+      "query": "경인선",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A52:D101"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_lookup_006",
+      "bucket": "xlsx_lookup",
+      "query": "수인선",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A302:D351"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_lookup_007",
+      "bucket": "xlsx_lookup",
+      "query": "청운노인요양원",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A2:J51"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_lookup_008",
+      "bucket": "xlsx_lookup",
+      "query": "부여효요양원",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A5002:J5051"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_header_ambiguous_001",
+      "bucket": "xlsx_header_ambiguous",
+      "query": "대중교통구분",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A402:D451"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_header_ambiguous_002",
+      "bucket": "xlsx_header_ambiguous",
+      "query": "승차총승객수",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A252:D301"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_header_ambiguous_003",
+      "bucket": "xlsx_header_ambiguous",
+      "query": "장기요양기관이름",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A252:J301"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_header_ambiguous_004",
+      "bucket": "xlsx_header_ambiguous",
+      "query": "시도 시군구 법정동명",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A5252:J5301"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_formula_value_001",
+      "bucket": "xlsx_formula_value",
+      "query": "증감률",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.66 > bbox [173.16,140.52,288.36,158.52]"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_formula_value_002",
+      "bucket": "xlsx_formula_value",
+      "query": "D4/E4-1",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "rag-ingestion-sales.xlsx",
+        "chunk_type": "table",
+        "location_type": "xlsx",
+        "citation_text": "rag-ingestion-sales.xlsx > 매출현황 > A3:F5"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_formula_value_003",
+      "bucket": "xlsx_formula_value",
+      "query": "D5/E5-1",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "rag-ingestion-sales.xlsx",
+        "chunk_type": "table",
+        "location_type": "xlsx",
+        "citation_text": "rag-ingestion-sales.xlsx > 매출현황 > A3:F5"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_date_number_format_001",
+      "bucket": "xlsx_date_number_format",
+      "query": "2008-06-25",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A5052:J5101"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_date_number_format_002",
+      "bucket": "xlsx_date_number_format",
+      "query": "2015-06-02",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A5002:J5051"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_date_number_format_003",
+      "bucket": "xlsx_date_number_format",
+      "query": "163443126",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": null
+    },
+    {
+      "query_id": "gq_xlsx_date_number_format_004",
+      "bucket": "xlsx_date_number_format",
+      "query": "12,000,000,000",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "rag-ingestion-sales.xlsx",
+        "chunk_type": "table",
+        "location_type": "xlsx",
+        "citation_text": "rag-ingestion-sales.xlsx > 매출현황 > A3:F5"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_hidden_policy_001",
+      "bucket": "xlsx_hidden_policy",
+      "query": "secret",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": null
+    },
+    {
+      "query_id": "gq_xlsx_hidden_policy_002",
+      "bucket": "xlsx_hidden_policy",
+      "query": "숨김",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": null
+    },
+    {
+      "query_id": "gq_xlsx_hidden_policy_003",
+      "bucket": "xlsx_hidden_policy",
+      "query": "전년매출",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": null
+    },
+    {
+      "query_id": "gq_xlsx_aggregation_001",
+      "bucket": "xlsx_aggregation",
+      "query": "버스 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "table",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 버스 > A1:C20"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_aggregation_002",
+      "bucket": "xlsx_aggregation",
+      "query": "1호선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A452:D501"
+      }
+    },
+    {
+      "query_id": "gq_xlsx_aggregation_003",
+      "bucket": "xlsx_aggregation",
+      "query": "매출 증감률",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": null
+    },
+    {
+      "query_id": "gq_mixed_text_table_001",
+      "bucket": "mixed_text_table",
+      "query": "과학기술자료실",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": null
+    },
+    {
+      "query_id": "gq_mixed_text_table_002",
+      "bucket": "mixed_text_table",
+      "query": "도서정보",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": null
+    },
+    {
+      "query_id": "gq_mixed_text_table_003",
+      "bucket": "mixed_text_table",
+      "query": "국립과천과학관",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": null
+    },
+    {
+      "query_id": "gq_pdf_page_lookup_001",
+      "bucket": "pdf_page_lookup",
+      "query": "최 근 경 제 동 향",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.1 > bbox [116.28,238.77,439.32,276.81]"
+      }
+    },
+    {
+      "query_id": "gq_pdf_page_lookup_002",
+      "bucket": "pdf_page_lookup",
+      "query": "2025. 12.",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.56 > bbox [74.88,527.37,486.87,536.76]"
+      }
+    },
+    {
+      "query_id": "gq_pdf_page_lookup_003",
+      "bucket": "pdf_page_lookup",
+      "query": "목 차",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.3 > bbox [151.2,122.99,235.2,150.95]"
+      }
+    },
+    {
+      "query_id": "gq_pdf_section_question_001",
+      "bucket": "pdf_section_question",
+      "query": "수 출(FOB)",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.61 > bbox [76.68,103.92,483.52,672.6]"
+      }
+    },
+    {
+      "query_id": "gq_pdf_section_question_002",
+      "bucket": "pdf_section_question",
+      "query": "수입(CIF)",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2023_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2023_12_recent_economic_trends.pdf > p.72 > bbox [197.4,99.69,475.74,121.21]"
+      }
+    },
+    {
+      "query_id": "gq_pdf_section_question_003",
+      "bucket": "pdf_section_question",
+      "query": "2024 6,836.1",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.61 > bbox [76.68,103.92,483.52,672.6]"
+      }
+    },
+    {
+      "query_id": "gq_pdf_table_lookup_001",
+      "bucket": "pdf_table_lookup",
+      "query": "수출입차",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.61 > bbox [76.68,103.92,483.52,672.6]"
+      }
+    },
+    {
+      "query_id": "gq_pdf_table_lookup_002",
+      "bucket": "pdf_table_lookup",
+      "query": "518.4",
+      "hit_rank": 8,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "04_광주 전북 전남 제주_최종.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "04_광주 전북 전남 제주_최종.xlsx > 398p > A2:O54"
+      }
+    },
+    {
+      "query_id": "gq_auto_009",
+      "bucket": "pdf_page_lookup",
+      "query": "기간중",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.75 > bbox [69.72,101.88,482.52,110.88]"
+      }
+    },
+    {
+      "query_id": "gq_auto_010",
+      "bucket": "pdf_section_question",
+      "query": "▪ 실업률은 모든 연령계층에서 상승",
+      "hit_rank": 4,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2021_03_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2021_03_recent_economic_trends.pdf > p.8 > bbox [63.65,121.56,227.84,131.77]"
+      }
+    },
+    {
+      "query_id": "gq_auto_011",
+      "bucket": "pdf_table_lookup",
+      "query": "2018",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.54 > bbox [73.44,169.92,493.24,178.92]"
+      }
+    },
+    {
+      "query_id": "gq_auto_012",
+      "bucket": "xlsx_aggregation",
+      "query": "5호선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A302:D351"
+      }
+    },
+    {
+      "query_id": "gq_auto_013",
+      "bucket": "xlsx_lookup",
+      "query": "진명실버홈",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A652:J701"
+      }
+    },
+    {
+      "query_id": "gq_auto_014",
+      "bucket": "pdf_page_lookup",
+      "query": "달러",
+      "hit_rank": 6,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2023_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2023_12_recent_economic_trends.pdf > p.71 > bbox [351.36,121.41,376.86,151.45]"
+      }
+    },
+    {
+      "query_id": "gq_auto_015",
+      "bucket": "pdf_section_question",
+      "query": "경상수지 추이",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.29 > bbox [242.64,77.87,312.33,88.98]"
+      }
+    },
+    {
+      "query_id": "gq_auto_016",
+      "bucket": "pdf_table_lookup",
+      "query": "2020",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.55 > bbox [74.76,199.32,488.55,208.32]"
+      }
+    },
+    {
+      "query_id": "gq_auto_017",
+      "bucket": "xlsx_aggregation",
+      "query": "우이신설선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A552:D601"
+      }
+    },
+    {
+      "query_id": "gq_auto_018",
+      "bucket": "xlsx_lookup",
+      "query": "하얀민들레노인요양원",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A702:J751"
+      }
+    },
+    {
+      "query_id": "gq_auto_019",
+      "bucket": "pdf_page_lookup",
+      "query": "기간중",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.75 > bbox [69.72,101.88,482.52,110.88]"
+      }
+    },
+    {
+      "query_id": "gq_auto_020",
+      "bucket": "pdf_section_question",
+      "query": "등으로 상승",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2024_06_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2024_06_recent_economic_trends.pdf > p.10 > bbox [87.72,127.61,250.69,140.45]"
+      }
+    },
+    {
+      "query_id": "gq_auto_021",
+      "bucket": "pdf_table_lookup",
+      "query": "2021. 1",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2024_06_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2024_06_recent_economic_trends.pdf > p.62 > bbox [76.8,209.64,527.29,219.24]"
+      }
+    },
+    {
+      "query_id": "gq_auto_022",
+      "bucket": "xlsx_aggregation",
+      "query": "9호선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A402:D451"
+      }
+    },
+    {
+      "query_id": "gq_auto_023",
+      "bucket": "xlsx_lookup",
+      "query": "해뜨는요양원2",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A752:J801"
+      }
+    },
+    {
+      "query_id": "gq_auto_024",
+      "bucket": "pdf_page_lookup",
+      "query": "광공업 생산, 서비스업 생산, 건설투자는 감소",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2021_03_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2021_03_recent_economic_trends.pdf > p.5 > bbox [82.35,150.44,313.91,162.17]"
+      }
+    },
+    {
+      "query_id": "gq_auto_025",
+      "bucket": "pdf_section_question",
+      "query": "목 차",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.47 > bbox [228.24,120.22,327.24,142.18]"
+      }
+    },
+    {
+      "query_id": "gq_auto_026",
+      "bucket": "pdf_table_lookup",
+      "query": "50.23",
+      "hit_rank": 9,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.41 > bbox [250.23,111.79,438.39,120.63]"
+      }
+    },
+    {
+      "query_id": "gq_auto_027",
+      "bucket": "xlsx_aggregation",
+      "query": "신분당선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A502:D551"
+      }
+    },
+    {
+      "query_id": "gq_auto_028",
+      "bucket": "xlsx_lookup",
+      "query": "해오름요양원",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A1952:J2001"
+      }
+    },
+    {
+      "query_id": "gq_auto_029",
+      "bucket": "pdf_page_lookup",
+      "query": "보인 가운데 환율은 글로벌 달러강세 영향으로 상승 약세 , 국고채 금리는",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2021_03_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2021_03_recent_economic_trends.pdf > p.5 > bbox [80.56,473.21,495.28,499.34]"
+      }
+    },
+    {
+      "query_id": "gq_auto_030",
+      "bucket": "pdf_section_question",
+      "query": "마. 주요국가의 환율변동 비교",
+      "hit_rank": null,
+      "hit_at_1": false,
+      "hit_at_3": false,
+      "hit_at_5": false,
+      "hit_at_10": false,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "2025_12_recent_economic_trends.pdf",
+        "chunk_type": "paragraph",
+        "location_type": "pdf",
+        "citation_text": "2025_12_recent_economic_trends.pdf > p.65 > bbox [73.68,76.45,239.52,88.45]"
+      }
+    },
+    {
+      "query_id": "gq_auto_031",
+      "bucket": "xlsx_aggregation",
+      "query": "8호선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A402:D451"
+      }
+    },
+    {
+      "query_id": "gq_auto_032",
+      "bucket": "xlsx_lookup",
+      "query": "달서한독요양원",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A852:J901"
+      }
+    },
+    {
+      "query_id": "gq_auto_033",
+      "bucket": "xlsx_lookup",
+      "query": "정성요양원",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A2502:J2551"
+      }
+    },
+    {
+      "query_id": "gq_auto_034",
+      "bucket": "xlsx_aggregation",
+      "query": "의정부경전철 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A502:D551"
+      }
+    },
+    {
+      "query_id": "gq_auto_035",
+      "bucket": "xlsx_aggregation",
+      "query": "3호선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A2:D51"
+      }
+    },
+    {
+      "query_id": "gq_auto_036",
+      "bucket": "xlsx_aggregation",
+      "query": "경인선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A52:D101"
+      }
+    },
+    {
+      "query_id": "gq_auto_037",
+      "bucket": "xlsx_aggregation",
+      "query": "안산선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A102:D151"
+      }
+    },
+    {
+      "query_id": "gq_auto_038",
+      "bucket": "xlsx_aggregation",
+      "query": "일산선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A152:D201"
+      }
+    },
+    {
+      "query_id": "gq_auto_039",
+      "bucket": "xlsx_aggregation",
+      "query": "경의선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A252:D301"
+      }
+    },
+    {
+      "query_id": "gq_auto_040",
+      "bucket": "xlsx_aggregation",
+      "query": "수인선 승차총승객수",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": false,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 > A252:D301"
+      }
+    },
+    {
+      "query_id": "gq_auto_041",
+      "bucket": "xlsx_lookup",
+      "query": "인하요양원",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A952:J1001"
+      }
+    },
+    {
+      "query_id": "gq_auto_042",
+      "bucket": "xlsx_lookup",
+      "query": "축복전문요양원",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A1002:J1051"
+      }
+    },
+    {
+      "query_id": "gq_auto_043",
+      "bucket": "xlsx_lookup",
+      "query": "신논현요양원",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A1052:J1101"
+      }
+    },
+    {
+      "query_id": "gq_auto_044",
+      "bucket": "xlsx_lookup",
+      "query": "인천은빛요양원",
+      "hit_rank": 1,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "hit_at_10": true,
+      "location_match": true,
+      "hidden_leakage": false,
+      "top_hit": {
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "chunk_type": "row_group",
+        "location_type": "xlsx",
+        "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A1102:J1151"
+      }
+    }
+  ],
+  "run_id": "2026-05-03T125257Z",
+  "gold": "eval\\gold_queries_v0.dry-run.csv",
+  "top_k": 10
+}

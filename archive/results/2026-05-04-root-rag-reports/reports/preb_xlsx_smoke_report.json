@@ -1,0 +1,94 @@
+{
+  "run_id": "2026-05-03T153624Z",
+  "status": "PASSED",
+  "source_file_id": "0c1becb1-0d94-495a-81d8-c792c6bb874d",
+  "job_id": "ed549ec6-09a7-43ac-9d08-e4a5d5a0d99d",
+  "job_status": "SUCCEEDED",
+  "db_report": {
+    "samples": [
+      {
+        "unit_type": "DOCUMENT",
+        "chunk_type": "workbook_summary",
+        "citation_text": "rag-ingestion-sales.xlsx > workbook",
+        "location_json": {
+          "type": "xlsx",
+          "chunk_type": "workbook_summary",
+          "hidden_policy": "exclude_hidden",
+          "contains_formula": false,
+          "sanitizer_version": "exclude-hidden-v1",
+          "document_version_id": "docv_8bafd560c35198d9",
+          "contains_merged_cell": false,
+          "hidden_policy_version": "exclude-hidden-v1"
+        },
+        "location_type": "xlsx",
+        "parser_version": "xlsx-extract-v2-hidden-safe"
+      },
+      {
+        "unit_type": "SECTION",
+        "chunk_type": "sheet_summary",
+        "citation_text": "rag-ingestion-sales.xlsx > 매출현황 > A1:F5",
+        "location_json": {
+          "type": "xlsx",
+          "row_range": "1:5",
+          "cell_range": "A1:F5",
+          "chunk_type": "sheet_summary",
+          "sheet_name": "매출현황",
+          "sheet_index": 0,
+          "hidden_policy": "exclude_hidden",
+          "contains_formula": true,
+          "sanitizer_version": "exclude-hidden-v1",
+          "document_version_id": "docv_8bafd560c35198d9",
+          "contains_merged_cell": true,
+          "hidden_policy_version": "exclude-hidden-v1"
+        },
+        "location_type": "xlsx",
+        "parser_version": "xlsx-extract-v2-hidden-safe"
+      },
+      {
+        "unit_type": "TABLE",
+        "chunk_type": "table",
+        "citation_text": "rag-ingestion-sales.xlsx > 매출현황 > A3:F5",
+        "location_json": {
+          "type": "xlsx",
+          "table_id": "SalesQuarterTable",
+          "row_range": "3:5",
+          "cell_range": "A3:F5",
+          "chunk_type": "table",
+          "sheet_name": "매출현황",
+          "header_path": [
+            "기간",
+            "부서",
+            "제품군",
+            "매출",
+            "증감률"
+          ],
+          "sheet_index": 0,
+          "hidden_policy": "exclude_hidden",
+          "contains_formula": false,
+          "sanitizer_version": "exclude-hidden-v1",
+          "document_version_id": "docv_8bafd560c35198d9",
+          "contains_merged_cell": false,
+          "hidden_policy_version": "exclude-hidden-v1"
+        },
+        "location_type": "xlsx",
+        "parser_version": "xlsx-extract-v2-hidden-safe"
+      }
+    ],
+    "source_status": "READY",
+    "source_file_id": "0c1becb1-0d94-495a-81d8-c792c6bb874d",
+    "search_unit_count": 3,
+    "cell_metadata_count": 16,
+    "table_metadata_count": 1,
+    "parsed_artifact_count": 1,
+    "document_version_count": 1,
+    "missing_citation_count": 0,
+    "extracted_artifact_count": 3,
+    "v2_ready_search_unit_count": 3,
+    "formula_cell_metadata_count": 2,
+    "hidden_search_unit_leakage_count": 0,
+    "xlsx_hidden_policy_mismatch_count": 0,
+    "xlsx_parser_version_mismatch_count": 0,
+    "xlsx_hidden_policy_version_mismatch_count": 0
+  },
+  "warnings": []
+}

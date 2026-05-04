@@ -1,0 +1,48 @@
+{
+  "run_id": "2026-05-03T140103Z",
+  "input": "eval\\gold_queries_v0.csv",
+  "output": "eval\\gold_queries_v0.csv",
+  "original_count": 72,
+  "final_count": 72,
+  "rebound_count": 65,
+  "appended_count": 0,
+  "missing_binding_count": 7,
+  "missing_bindings": [
+    "gq_mixed_text_table_001",
+    "gq_mixed_text_table_002",
+    "gq_mixed_text_table_003",
+    "gq_auto_011",
+    "gq_auto_016",
+    "gq_auto_021",
+    "gq_auto_026"
+  ],
+  "bucket_counts": {
+    "xlsx_lookup": 18,
+    "xlsx_header_ambiguous": 4,
+    "xlsx_formula_value": 3,
+    "xlsx_date_number_format": 4,
+    "xlsx_hidden_policy": 3,
+    "xlsx_aggregation": 15,
+    "mixed_text_table": 3,
+    "pdf_page_lookup": 8,
+    "pdf_section_question": 8,
+    "pdf_table_lookup": 6
+  },
+  "validation": {
+    "ok": true,
+    "errors": [],
+    "row_count": 72,
+    "bucket_counts": {
+      "xlsx_lookup": 18,
+      "xlsx_header_ambiguous": 4,
+      "xlsx_formula_value": 3,
+      "xlsx_date_number_format": 4,
+      "xlsx_hidden_policy": 3,
+      "xlsx_aggregation": 15,
+      "mixed_text_table": 3,
+      "pdf_page_lookup": 8,
+      "pdf_section_question": 8,
+      "pdf_table_lookup": 6
+    }
+  }
+}

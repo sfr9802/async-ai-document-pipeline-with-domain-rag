@@ -1,0 +1,278 @@
+2026-05-03T21:10:33 INFO [__main__] Starting worker id=worker-local-1 core_api=http://localhost:8080
+2026-05-03T21:10:33 INFO [app.capabilities.registry] LLM chat backend disabled (noop).
+2026-05-03T21:10:34 INFO [app.capabilities.registry] RAG init: configured_model=BAAI/bge-m3 query_prefix='' passage_prefix='' index_dir=../rag-data top_k=5 generator=extractive reranker=off candidate_k=30 use_mmr=False mmr_lambda=0.700 query_parser=off rrf_k=60 llm_backend=noop
+2026-05-03T21:10:34 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-05-03T21:10:34 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-05-03T21:10:34 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-05-03T21:10:34 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-05-03T21:10:34 INFO [faiss] Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
+2026-05-03T21:10:34 INFO [app.capabilities.registry] RAG reranker disabled (noop).
+2026-05-03T21:10:34 INFO [app.capabilities.registry] RAG query parser disabled (noop).
+2026-05-03T21:10:34 INFO [app.capabilities.rag.faiss_index] Loaded FAISS index v-1776943665 (model=BAAI/bge-m3, dim=1024, vectors=111)
+2026-05-03T21:10:34 INFO [app.capabilities.rag.embeddings] Set PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+2026-05-03T21:10:34 INFO [app.capabilities.rag.embeddings] Loading sentence-transformers model: BAAI/bge-m3
+2026-05-03T21:10:39 INFO [sentence_transformers.SentenceTransformer] Use pytorch device_name: cuda:0
+2026-05-03T21:10:39 INFO [sentence_transformers.SentenceTransformer] Load pretrained SentenceTransformer: BAAI/bge-m3
+2026-05-03T21:10:44 INFO [app.capabilities.rag.embeddings] Embedding model ready (dim=1024, max_seq_length=1024, batch_size=32, oom_fallback_batch_size=16)
+2026-05-03T21:10:44 INFO [app.capabilities.rag.embeddings] CUDA mem [after model load]: allocated=2165.9 MiB · reserved=2186.0 MiB · max_reserved=2186.0 MiB · max_allocated=2165.9 MiB
+2026-05-03T21:10:44 INFO [app.capabilities.rag.retriever] Retriever readiness check: configured_model='BAAI/bge-m3' index_model='BAAI/bge-m3' configured_dim=1024 index_dim=1024 index_version=v-1776943665 chunk_count=111 reranker=noop candidate_k=30 top_k=5 parser=noop rrf_k=60
+2026-05-03T21:10:44 WARNING [app.capabilities.registry] RAG capability NOT registered (RuntimeError: Ingest manifest missing: runtime embedding_text_variant='retrieval_title_section', but no ingest_manifest.json was found next to build.json. Rebuild the index with the current ingest path before serving RAG.). Worker still serves the MOCK capability. To enable RAG: rebuild the FAISS index with the configured embedding model (python -m scripts.build_rag_index --fixture), ensure the ragmeta schema exists, then restart the worker.
+2026-05-03T21:10:44 INFO [app.capabilities.registry] OCR init: languages=eng pdf_dpi=200 tesseract_cmd=<PATH> min_conf_warn=40.0 max_pages=100
+2026-05-03T21:10:44 WARNING [app.capabilities.registry] OCR capability NOT registered (OcrError: pytesseract is not installed. Run `pip install pytesseract` in the worker environment.). Worker still serves the other registered capabilities. To enable OCR: install Tesseract (https://tesseract-ocr.github.io/), pip install pytesseract pymupdf, make sure the configured language packs are present, then restart the worker.
+2026-05-03T21:10:44 INFO [app.capabilities.registry] OCR_EXTRACT init: provider=fixture pipeline_version=ocr-lite-v1
+2026-05-03T21:10:44 INFO [app.capabilities.registry] OCR_EXTRACT capability registered.
+2026-05-03T21:10:44 INFO [app.capabilities.registry] XLSX_EXTRACT init: pipeline_version=xlsx-extract-v1 include_hidden=False
+2026-05-03T21:10:44 INFO [app.capabilities.registry] XLSX_EXTRACT capability registered.
+2026-05-03T21:10:44 INFO [app.capabilities.registry] PDF_EXTRACT init: pipeline_version=pdf-extract-v1 parser=pymupdf
+2026-05-03T21:10:44 INFO [app.capabilities.registry] PDF_EXTRACT capability registered.
+2026-05-03T21:10:44 INFO [app.capabilities.registry] AUTO / AGENT capabilities NOT registered: no downstream capabilities (RAG / OCR / MULTIMODAL) are available. Enable at least one, then restart the worker. MOCK remains registered.
+2026-05-03T21:10:44 INFO [app.capabilities.registry] Active capabilities: ['MOCK', 'OCR_EXTRACT', 'PDF_EXTRACT', 'XLSX_EXTRACT'] (ocr_extract=True xlsx_extract=True pdf_extract=True)
+2026-05-03T21:10:44 INFO [app.queue.redis_consumer] Queue consumer started key=aipipeline:jobs:pending block_timeout=5s
+2026-05-03T21:11:04 INFO [app.services.task_runner] Received dispatch jobId=03fb1777-b273-4c72-9825-238ba99ecd21 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:11:04 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:11:04 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=03fb1777-b273-4c72-9825-238ba99ecd21 artifact=1618b52e-29b8-409d-9b57-d254b01c330f fileType=xlsx
+2026-05-03T21:11:04 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:11:04 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:11:04 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:11:04 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:11:04 INFO [app.services.task_runner] Job 03fb1777-b273-4c72-9825-238ba99ecd21 SUCCEEDED
+2026-05-03T21:11:09 INFO [app.services.task_runner] Received dispatch jobId=95408779-5804-4d56-8b00-2aef35996a37 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:11:09 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:11:09 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=95408779-5804-4d56-8b00-2aef35996a37 artifact=195b0379-aa8f-4dd2-9f18-a5f34ee9cd98 fileType=xlsx
+2026-05-03T21:11:12 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:11:12 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:11:12 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:12:00 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:12:00 INFO [app.services.task_runner] Job 95408779-5804-4d56-8b00-2aef35996a37 SUCCEEDED
+2026-05-03T21:12:00 INFO [app.services.task_runner] Received dispatch jobId=173f649e-0e48-423a-95cd-98b83ebd5581 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:12:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:12:01 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=173f649e-0e48-423a-95cd-98b83ebd5581 artifact=dff15157-a074-4651-a189-e86809243046 fileType=xlsx
+2026-05-03T21:12:12 ERROR [app.services.task_runner] Job 173f649e-0e48-423a-95cd-98b83ebd5581 crashed unexpectedly
+Traceback (most recent call last):
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_transports\default.py", line 72, in map_httpcore_exceptions
+    yield
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_transports\default.py", line 236, in handle_request
+    resp = self._pool.handle_request(req)
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+        pool_request.request
+    )
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\connection.py", line 103, in handle_request
+    return self._connection.handle_request(request)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\http11.py", line 136, in handle_request
+    raise exc
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\http11.py", line 106, in handle_request
+    ) = self._receive_response_headers(**kwargs)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\http11.py", line 177, in _receive_response_headers
+    event = self._receive_event(timeout=timeout)
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\http11.py", line 217, in _receive_event
+    data = self._network_stream.read(
+        self.READ_NUM_BYTES, timeout=timeout
+    )
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_backends\sync.py", line 126, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadError: [WinError 10053] 현재 연결은 사용자의 호스트 시스템의 소프트웨어의 의해 중단되었습니다
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\async-ocr-rag-multimodal-pipeline\ai-worker\app\services\task_runner.py", line 107, in handle
+    uploaded = self._upload_outputs(message.job_id, output)
+  File "D:\async-ocr-rag-multimodal-pipeline\ai-worker\app\services\task_runner.py", line 150, in _upload_outputs
+    response = self._core_api.upload_output_artifact(
+        job_id=job_id,
+    ...<3 lines>...
+        content=artifact.content,
+    )
+  File "D:\async-ocr-rag-multimodal-pipeline\ai-worker\app\clients\core_api_client.py", line 81, in upload_output_artifact
+    response = self._client.post("/api/internal/artifacts", data=data, files=files)
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 1157, in post
+    return self.request(
+           ~~~~~~~~~~~~^
+        "POST",
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 837, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 926, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 954, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 991, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 1027, in _send_single_request
+    response = transport.handle_request(request)
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_transports\default.py", line 235, in handle_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\sfr99\miniconda3\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_transports\default.py", line 89, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadError: [WinError 10053] 현재 연결은 사용자의 호스트 시스템의 소프트웨어의 의해 중단되었습니다
+2026-05-03T21:12:13 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:12:14 INFO [app.services.task_runner] Received dispatch jobId=49279aaf-744f-4868-8648-a14953dbe89b capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:12:14 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:12:14 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=49279aaf-744f-4868-8648-a14953dbe89b artifact=13a335b7-a094-4883-9813-1f0cf8ab794e fileType=xlsx
+2026-05-03T21:12:25 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:12:25 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:12:26 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:13:26 WARNING [app.services.task_runner] Callback delivery failed jobId=49279aaf-744f-4868-8648-a14953dbe89b outcome=SUCCEEDED attempt=1/3; retrying in 1.0s: timed out
+2026-05-03T21:14:09 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:14:09 INFO [app.services.task_runner] Job 49279aaf-744f-4868-8648-a14953dbe89b SUCCEEDED
+2026-05-03T21:14:11 INFO [app.services.task_runner] Received dispatch jobId=fdf34e20-aadc-43b6-91e6-1dd087932144 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:14:11 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:14:11 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=fdf34e20-aadc-43b6-91e6-1dd087932144 artifact=58985c85-862d-4c15-8027-f53260dca537 fileType=xlsx
+2026-05-03T21:14:19 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:14:19 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:14:19 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:15:19 WARNING [app.services.task_runner] Callback delivery failed jobId=fdf34e20-aadc-43b6-91e6-1dd087932144 outcome=SUCCEEDED attempt=1/3; retrying in 1.0s: timed out
+2026-05-03T21:16:20 WARNING [app.services.task_runner] Callback delivery failed jobId=fdf34e20-aadc-43b6-91e6-1dd087932144 outcome=SUCCEEDED attempt=2/3; retrying in 2.0s: timed out
+2026-05-03T21:16:27 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:16:27 INFO [app.services.task_runner] Job fdf34e20-aadc-43b6-91e6-1dd087932144 SUCCEEDED
+2026-05-03T21:16:27 INFO [app.services.task_runner] Received dispatch jobId=bfaa9df0-e16c-4665-8fa8-5445e46a806c capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:16:27 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:16:27 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=bfaa9df0-e16c-4665-8fa8-5445e46a806c artifact=8d9d8d13-ad91-4d6c-bdb1-b8b527c8064e fileType=xlsx
+2026-05-03T21:16:39 ERROR [app.services.task_runner] Job bfaa9df0-e16c-4665-8fa8-5445e46a806c crashed unexpectedly
+Traceback (most recent call last):
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_transports\default.py", line 72, in map_httpcore_exceptions
+    yield
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_transports\default.py", line 236, in handle_request
+    resp = self._pool.handle_request(req)
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+        pool_request.request
+    )
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\connection.py", line 103, in handle_request
+    return self._connection.handle_request(request)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\http11.py", line 136, in handle_request
+    raise exc
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\http11.py", line 106, in handle_request
+    ) = self._receive_response_headers(**kwargs)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\http11.py", line 177, in _receive_response_headers
+    event = self._receive_event(timeout=timeout)
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_sync\http11.py", line 217, in _receive_event
+    data = self._network_stream.read(
+        self.READ_NUM_BYTES, timeout=timeout
+    )
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_backends\sync.py", line 126, in read
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadError: [WinError 10053] 현재 연결은 사용자의 호스트 시스템의 소프트웨어의 의해 중단되었습니다
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\async-ocr-rag-multimodal-pipeline\ai-worker\app\services\task_runner.py", line 107, in handle
+    uploaded = self._upload_outputs(message.job_id, output)
+  File "D:\async-ocr-rag-multimodal-pipeline\ai-worker\app\services\task_runner.py", line 150, in _upload_outputs
+    response = self._core_api.upload_output_artifact(
+        job_id=job_id,
+    ...<3 lines>...
+        content=artifact.content,
+    )
+  File "D:\async-ocr-rag-multimodal-pipeline\ai-worker\app\clients\core_api_client.py", line 81, in upload_output_artifact
+    response = self._client.post("/api/internal/artifacts", data=data, files=files)
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 1157, in post
+    return self.request(
+           ~~~~~~~~~~~~^
+        "POST",
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 837, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 926, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 954, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 991, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_client.py", line 1027, in _send_single_request
+    response = transport.handle_request(request)
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_transports\default.py", line 235, in handle_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\sfr99\miniconda3\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\sfr99\miniconda3\Lib\site-packages\httpx\_transports\default.py", line 89, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadError: [WinError 10053] 현재 연결은 사용자의 호스트 시스템의 소프트웨어의 의해 중단되었습니다
+2026-05-03T21:16:40 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:16:40 INFO [app.services.task_runner] Received dispatch jobId=bfaa9df0-e16c-4665-8fa8-5445e46a806c capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:16:40 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:16:40 INFO [app.services.task_runner] Claim denied jobId=bfaa9df0-e16c-4665-8fa8-5445e46a806c reason=JOB_TERMINAL status=FAILED
+2026-05-03T21:16:40 INFO [app.services.task_runner] Received dispatch jobId=bfaa9df0-e16c-4665-8fa8-5445e46a806c capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:16:40 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:16:40 INFO [app.services.task_runner] Claim denied jobId=bfaa9df0-e16c-4665-8fa8-5445e46a806c reason=JOB_TERMINAL status=FAILED
+2026-05-03T21:16:41 INFO [app.services.task_runner] Received dispatch jobId=81ba117e-f84a-49f9-80ce-afcd0049316c capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:16:41 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:16:41 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=81ba117e-f84a-49f9-80ce-afcd0049316c artifact=edf379ed-b010-4c2f-8c90-c10a771b3336 fileType=xlsx
+2026-05-03T21:16:41 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:16:41 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:16:41 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:16:41 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:16:41 INFO [app.services.task_runner] Job 81ba117e-f84a-49f9-80ce-afcd0049316c SUCCEEDED
+2026-05-03T21:16:42 INFO [app.services.task_runner] Received dispatch jobId=f102efa2-0216-443f-a527-10be6d4cea02 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:16:42 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:16:42 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=f102efa2-0216-443f-a527-10be6d4cea02 artifact=30c6873f-7d09-40a4-b6fc-c5deaf0ff49d fileType=xlsx
+2026-05-03T21:16:45 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:16:45 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:16:45 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:17:04 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:17:04 INFO [app.services.task_runner] Job f102efa2-0216-443f-a527-10be6d4cea02 SUCCEEDED
+2026-05-03T21:17:05 INFO [app.services.task_runner] Received dispatch jobId=6f05ac0d-f4f0-4ec9-aa96-89943f3ac71d capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:17:05 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:17:05 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=6f05ac0d-f4f0-4ec9-aa96-89943f3ac71d artifact=c5ad8467-7121-438c-92ea-f67f36c2386b fileType=xlsx
+2026-05-03T21:17:05 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:17:05 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:17:05 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:17:10 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:17:10 INFO [app.services.task_runner] Job 6f05ac0d-f4f0-4ec9-aa96-89943f3ac71d SUCCEEDED

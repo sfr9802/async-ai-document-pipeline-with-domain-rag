@@ -1,0 +1,29 @@
+{
+  "run_id": "2026-05-04-a5-c4",
+  "generated_at": "2026-05-03T23:41:26.917103+00:00",
+  "status": "PASS",
+  "implemented_in": "core-api/src/main/java/com/aipipeline/coreapi/catalog/application/service/RagIndexBuildService.java",
+  "verified_by": [
+    "mvn -f core-api/pom.xml test \"-Dtest=SearchUnitIndexingServiceTest,SearchUnitIndexingControllerTest,IndexPromotionGateTest,EvalResultPersistenceTest\""
+  ],
+  "hard_blocks_checked": [
+    "retrieval_backend must be vector",
+    "candidate snapshot baseline rejected",
+    "immutable baseline hash/provenance required",
+    "gate/input/index/callback/leakage counters must be zero",
+    "eval result indexVersion and candidateIndexVersion must match the build"
+  ],
+  "promotion_gate_decision": "BLOCKED",
+  "promotion_gate_reasons": [
+    "baseline report must be an immutable baseline, not a candidate snapshot",
+    "xlsx_citation_location_accuracy must be >= 0.90",
+    "pdf_citation_location_accuracy must be >= 0.85",
+    "citation_accuracy must be >= 0.85",
+    "parsing_latency_p95 must be <= 30.00",
+    "gate_input_missing_count must be 0",
+    "indexing_filtered_hit_count must be 0"
+  ],
+  "notes": [
+    "C4 implementation is PASS, while promotion remains BLOCKED because current metrics contain hard blockers."
+  ]
+}

@@ -1,0 +1,182 @@
+{
+  "run_id": "2026-05-04T020117Z",
+  "manifest": "reports\\full72_missing_xlsx_care_retry_manifest.json",
+  "total_samples": 1,
+  "passed": 1,
+  "failed": 0,
+  "diagnostic_only": 0,
+  "samples": [
+    {
+      "sample_id": "full72_xlsx_care_facility_001",
+      "status": "PASSED",
+      "source_file_id": "b8868e42-602f-46d5-90d2-4ca1ea2616e9",
+      "job_id": "c082cc78-156e-45f6-8bc9-26f64cce4b40",
+      "search_unit_count": 202,
+      "missing_required_metadata_count": 0,
+      "warnings": [],
+      "errors": [],
+      "parsing_latency_seconds": 22.194,
+      "job_status": "SUCCEEDED",
+      "indexing_latency_seconds": 0.223,
+      "sample_units": [
+        {
+          "unit_type": "CHUNK",
+          "chunk_type": "row_group",
+          "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A2:J51",
+          "location_json": {
+            "type": "xlsx",
+            "row_range": "2:51",
+            "cell_range": "A2:J51",
+            "chunk_type": "row_group",
+            "sheet_name": "일반현황",
+            "header_path": [
+              "11,111,000,006",
+              "청운노인요양원",
+              "03001",
+              "11",
+              "110",
+              "182",
+              "서울특별시 종로구 구기동",
+              "2008-06-25",
+              "2008-06-25",
+              "서울특별시 종로구 비봉길 76 (구기동)"
+            ],
+            "sheet_index": 0,
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_7bddd99c39ffdf1a",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        },
+        {
+          "unit_type": "CHUNK",
+          "chunk_type": "row_group",
+          "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A5002:J5051",
+          "location_json": {
+            "type": "xlsx",
+            "row_range": "5002:5051",
+            "cell_range": "A5002:J5051",
+            "chunk_type": "row_group",
+            "sheet_name": "일반현황",
+            "sheet_index": 0,
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_7bddd99c39ffdf1a",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        },
+        {
+          "unit_type": "CHUNK",
+          "chunk_type": "row_group",
+          "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A5052:J5101",
+          "location_json": {
+            "type": "xlsx",
+            "row_range": "5052:5101",
+            "cell_range": "A5052:J5101",
+            "chunk_type": "row_group",
+            "sheet_name": "일반현황",
+            "sheet_index": 0,
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_7bddd99c39ffdf1a",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        },
+        {
+          "unit_type": "CHUNK",
+          "chunk_type": "row_group",
+          "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A5102:J5151",
+          "location_json": {
+            "type": "xlsx",
+            "row_range": "5102:5151",
+            "cell_range": "A5102:J5151",
+            "chunk_type": "row_group",
+            "sheet_name": "일반현황",
+            "sheet_index": 0,
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_7bddd99c39ffdf1a",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        },
+        {
+          "unit_type": "CHUNK",
+          "chunk_type": "row_group",
+          "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 > A5152:J5201",
+          "location_json": {
+            "type": "xlsx",
+            "row_range": "5152:5201",
+            "cell_range": "A5152:J5201",
+            "chunk_type": "row_group",
+            "sheet_name": "일반현황",
+            "sheet_index": 0,
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_7bddd99c39ffdf1a",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        }
+      ],
+      "cell_metadata_count": 500,
+      "table_metadata_count": 200,
+      "expected_sheet_counts": [
+        {
+          "count": 201,
+          "sheet_name": "일반현황"
+        }
+      ],
+      "citation_pattern_counts": [
+        {
+          "count": 201,
+          "pattern": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황"
+        },
+        {
+          "count": 1,
+          "pattern": "A2:J51"
+        },
+        {
+          "count": 1,
+          "pattern": "A5002:J5051"
+        }
+      ],
+      "formula_cell_metadata_count": 0,
+      "hidden_content_leakage_count": 0,
+      "missing_table_metadata_count": 0,
+      "xlsx_table_search_unit_count": 200,
+      "formatted_cell_metadata_count": 500,
+      "xlsx_hidden_policy_mismatch_count": 0,
+      "xlsx_parser_version_mismatch_count": 0,
+      "xlsx_hidden_policy_version_mismatch_count": 0,
+      "total_latency_seconds": 22.637
+    }
+  ],
+  "metrics": {
+    "parser_success_rate": 1.0,
+    "unsupported_file_rate": 0.0,
+    "zero_indexable_chunk_count": 0,
+    "missing_required_metadata_count": 0,
+    "xlsx_parser_version_mismatch_count": 0,
+    "xlsx_hidden_policy_mismatch_count": 0,
+    "xlsx_hidden_policy_version_mismatch_count": 0,
+    "missing_table_metadata_count": 0,
+    "hidden_content_leakage_count": 0,
+    "parsing_latency_p95_seconds": 22.194,
+    "indexing_latency_p95_seconds": 0.223,
+    "fatal_warning_count": 0
+  }
+}

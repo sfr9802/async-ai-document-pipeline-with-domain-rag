@@ -1,0 +1,709 @@
+{
+  "index_version": "rag-ingestion-v2-candidate",
+  "decision": "BLOCKED",
+  "metrics": {
+    "xlsx.parser_success_rate": 1.0,
+    "xlsx.unsupported_file_rate": 0.0,
+    "xlsx.fatal_warning_count": 0,
+    "xlsx.zero_indexable_chunk_count": 0,
+    "xlsx.missing_required_metadata_count": 0,
+    "xlsx.hidden_content_leakage_count": null,
+    "xlsx.parsing_latency_p95_seconds": 26.516,
+    "xlsx.indexing_latency_p95_seconds": 0.28,
+    "pdf.parser_success_rate": 1.0,
+    "pdf.unsupported_file_rate": 0.0,
+    "pdf.fatal_warning_count": 0,
+    "pdf.zero_indexable_chunk_count": 0,
+    "pdf.missing_required_metadata_count": 0,
+    "pdf.missing_page_metadata_count": 0,
+    "pdf.inconsistent_location_page_metadata_count": 0,
+    "pdf.invalid_pdf_location_count": 0,
+    "pdf.missing_pdf_citation_text_count": 0,
+    "pdf.hidden_content_leakage_count": 0,
+    "pdf.parsing_latency_p95_seconds": 38.468,
+    "pdf.indexing_latency_p95_seconds": 0.469,
+    "ocr.unsupported_file_rate": 0.0,
+    "ocr.fatal_warning_count": 0,
+    "ocr.ocr_confidence_avg": 0.9986956304073333,
+    "ocr.low_trust_ocr_chunk_count": 1,
+    "ocr.hidden_content_leakage_count": 0,
+    "ocr.parsing_latency_p95_seconds": 39.161,
+    "ocr.indexing_latency_p95_seconds": 0.386,
+    "retrieval.Hit@10": 0.7639,
+    "retrieval.MRR@10": 0.641,
+    "retrieval.citation_accuracy": 0.4306,
+    "retrieval.hidden_content_leakage_count": 0,
+    "retrieval.indexing_filtered_hit_count": 0,
+    "retrieval.required_index_version_mismatch_count": 0,
+    "retrieval.embedding_status_mismatch_count": 0,
+    "retrieval.candidate_index_mismatch_count": 0,
+    "source_qualified_metrics": {
+      "xlsx": {
+        "parser_success_rate": 1.0,
+        "unsupported_file_rate": 0.0,
+        "fatal_warning_count": 0,
+        "zero_indexable_chunk_count": 0,
+        "missing_required_metadata_count": 0,
+        "hidden_content_leakage_count": null,
+        "parsing_latency_p95_seconds": 26.516,
+        "indexing_latency_p95_seconds": 0.28
+      },
+      "pdf": {
+        "parser_success_rate": 1.0,
+        "unsupported_file_rate": 0.0,
+        "fatal_warning_count": 0,
+        "zero_indexable_chunk_count": 0,
+        "missing_required_metadata_count": 0,
+        "missing_page_metadata_count": 0,
+        "inconsistent_location_page_metadata_count": 0,
+        "invalid_pdf_location_count": 0,
+        "missing_pdf_citation_text_count": 0,
+        "hidden_content_leakage_count": 0,
+        "parsing_latency_p95_seconds": 38.468,
+        "indexing_latency_p95_seconds": 0.469
+      },
+      "ocr": {
+        "unsupported_file_rate": 0.0,
+        "fatal_warning_count": 0,
+        "ocr_confidence_avg": 0.9986956304073333,
+        "low_trust_ocr_chunk_count": 1,
+        "hidden_content_leakage_count": 0,
+        "parsing_latency_p95_seconds": 39.161,
+        "indexing_latency_p95_seconds": 0.386
+      },
+      "retrieval": {
+        "Hit@10": 0.7639,
+        "MRR@10": 0.641,
+        "citation_accuracy": 0.4306,
+        "hidden_content_leakage_count": 0,
+        "indexing_filtered_hit_count": 0,
+        "required_index_version_mismatch_count": 0,
+        "embedding_status_mismatch_count": 0,
+        "candidate_index_mismatch_count": 0
+      }
+    },
+    "canonical_metric_names": [
+      "ocr.fatal_warning_count",
+      "ocr.hidden_content_leakage_count",
+      "ocr.indexing_latency_p95_seconds",
+      "ocr.low_trust_ocr_chunk_count",
+      "ocr.ocr_confidence_avg",
+      "ocr.parsing_latency_p95_seconds",
+      "ocr.unsupported_file_rate",
+      "pdf.fatal_warning_count",
+      "pdf.hidden_content_leakage_count",
+      "pdf.inconsistent_location_page_metadata_count",
+      "pdf.indexing_latency_p95_seconds",
+      "pdf.invalid_pdf_location_count",
+      "pdf.missing_page_metadata_count",
+      "pdf.missing_pdf_citation_text_count",
+      "pdf.missing_required_metadata_count",
+      "pdf.parser_success_rate",
+      "pdf.parsing_latency_p95_seconds",
+      "pdf.unsupported_file_rate",
+      "pdf.zero_indexable_chunk_count",
+      "retrieval.Hit@10",
+      "retrieval.MRR@10",
+      "retrieval.candidate_index_mismatch_count",
+      "retrieval.citation_accuracy",
+      "retrieval.embedding_status_mismatch_count",
+      "retrieval.hidden_content_leakage_count",
+      "retrieval.indexing_filtered_hit_count",
+      "retrieval.required_index_version_mismatch_count",
+      "xlsx.fatal_warning_count",
+      "xlsx.hidden_content_leakage_count",
+      "xlsx.indexing_latency_p95_seconds",
+      "xlsx.missing_required_metadata_count",
+      "xlsx.parser_success_rate",
+      "xlsx.parsing_latency_p95_seconds",
+      "xlsx.unsupported_file_rate",
+      "xlsx.zero_indexable_chunk_count"
+    ],
+    "derived_metric_sources": {
+      "xlsx.hidden_content_leakage_count": "diagnostic_only:0"
+    },
+    "parser_success_rate": 1.0,
+    "unsupported_file_rate": 0.0,
+    "zero_indexable_chunk_count": 0,
+    "required_metadata_completeness": 1.0,
+    "missing_required_metadata_count": 0,
+    "xlsx_citation_location_accuracy": 0.62,
+    "pdf_citation_location_accuracy": 0.0,
+    "table_detection_accuracy": 1.0,
+    "OCR_needed_count": 2,
+    "hit_at_10": 0.7639,
+    "mrr_at_10": 0.641,
+    "Hit@10": 0.7639,
+    "MRR@10": 0.641,
+    "citation_accuracy": 0.4306,
+    "citation_location_accuracy": 0.4306,
+    "parsing_latency_p95_seconds": 39.161,
+    "indexing_latency_p95_seconds": 0.469,
+    "fatal_warning_count": 0,
+    "hidden_content_leakage_count": 0,
+    "embedding_filtered_eval": true,
+    "required_embedding_status": "EMBEDDED",
+    "required_index_version": "rag-ingestion-v2-candidate",
+    "indexing_filtered_hit_count": 0,
+    "result_empty_count": 0,
+    "gold_label_invalid_count": 0,
+    "candidate_index_mismatch_count": 0,
+    "embedding_status_mismatch_count": 0,
+    "required_index_version_mismatch_count": 0,
+    "overall_failure_reason_counts": {
+      "expected_file_not_found": 13,
+      "expected_page_not_found": 20,
+      "expected_range_not_found": 5,
+      "expected_table_not_found": 2,
+      "unknown": 1
+    },
+    "bucket_failure_reason_counts": {
+      "mixed_text_table": {
+        "expected_range_not_found": 3
+      },
+      "pdf_page_lookup": {
+        "expected_page_not_found": 8
+      },
+      "pdf_section_question": {
+        "expected_file_not_found": 2,
+        "expected_page_not_found": 6
+      },
+      "pdf_table_lookup": {
+        "expected_page_not_found": 6
+      },
+      "xlsx_aggregation": {
+        "expected_file_not_found": 1,
+        "expected_range_not_found": 1
+      },
+      "xlsx_date_number_format": {
+        "expected_file_not_found": 4
+      },
+      "xlsx_formula_value": {
+        "expected_file_not_found": 3
+      },
+      "xlsx_header_ambiguous": {
+        "expected_range_not_found": 1,
+        "expected_table_not_found": 2,
+        "unknown": 1
+      },
+      "xlsx_hidden_policy": {
+        "expected_file_not_found": 3
+      }
+    },
+    "bucket_metrics": {
+      "mixed_text_table": {
+        "Hit@10": 1.0,
+        "MRR@10": 0.8333,
+        "count": 3,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 1.0,
+        "xlsx_range_contains@10": 0.0,
+        "xlsx_range_overlap@10": 0.0,
+        "xlsx_sheet_hit@10": 1.0,
+        "bucket_failure_reason_counts": {
+          "expected_range_not_found": 3
+        }
+      },
+      "pdf_page_lookup": {
+        "Hit@10": 1.0,
+        "MRR@10": 0.8542,
+        "count": 8,
+        "citation_location_accuracy": 0.0,
+        "pdf_bbox_overlap@10": 0.0,
+        "pdf_exact_bbox@10": 0.0,
+        "pdf_file_hit@10": 1.0,
+        "pdf_page_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_page_not_found": 8
+        }
+      },
+      "pdf_section_question": {
+        "Hit@10": 0.5,
+        "MRR@10": 0.2054,
+        "count": 8,
+        "citation_location_accuracy": 0.0,
+        "pdf_bbox_overlap@10": 0.0,
+        "pdf_exact_bbox@10": 0.0,
+        "pdf_file_hit@10": 0.75,
+        "pdf_page_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_file_not_found": 2,
+          "expected_page_not_found": 6
+        }
+      },
+      "pdf_table_lookup": {
+        "Hit@10": 1.0,
+        "MRR@10": 0.5294,
+        "count": 6,
+        "citation_location_accuracy": 0.0,
+        "pdf_bbox_overlap@10": 0.0,
+        "pdf_exact_bbox@10": 0.0,
+        "pdf_file_hit@10": 1.0,
+        "pdf_page_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_page_not_found": 6
+        }
+      },
+      "xlsx_aggregation": {
+        "Hit@10": 0.9333,
+        "MRR@10": 0.8444,
+        "count": 15,
+        "citation_location_accuracy": 0.8667,
+        "xlsx_exact_range@10": 0.8667,
+        "xlsx_file_hit@10": 0.9333,
+        "xlsx_range_contains@10": 0.8667,
+        "xlsx_range_overlap@10": 0.8667,
+        "xlsx_sheet_hit@10": 0.9333,
+        "xlsx_table_hit@10": 0.5,
+        "bucket_failure_reason_counts": {
+          "expected_file_not_found": 1,
+          "expected_range_not_found": 1
+        }
+      },
+      "xlsx_date_number_format": {
+        "Hit@10": 0.0,
+        "MRR@10": 0.0,
+        "count": 4,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 0.0,
+        "xlsx_range_contains@10": 0.0,
+        "xlsx_range_overlap@10": 0.0,
+        "xlsx_sheet_hit@10": 0.0,
+        "xlsx_table_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_file_not_found": 4
+        }
+      },
+      "xlsx_formula_value": {
+        "Hit@10": 0.0,
+        "MRR@10": 0.0,
+        "count": 3,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 0.0,
+        "xlsx_range_contains@10": 0.0,
+        "xlsx_range_overlap@10": 0.0,
+        "xlsx_sheet_hit@10": 0.0,
+        "xlsx_table_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_file_not_found": 3
+        }
+      },
+      "xlsx_header_ambiguous": {
+        "Hit@10": 0.5,
+        "MRR@10": 0.5,
+        "count": 4,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 1.0,
+        "xlsx_range_contains@10": 0.25,
+        "xlsx_range_overlap@10": 0.25,
+        "xlsx_sheet_hit@10": 1.0,
+        "xlsx_table_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_range_not_found": 1,
+          "expected_table_not_found": 2,
+          "unknown": 1
+        }
+      },
+      "xlsx_hidden_policy": {
+        "Hit@10": 0.0,
+        "MRR@10": 0.0,
+        "count": 3,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 0.0,
+        "xlsx_range_contains@10": 0.0,
+        "xlsx_range_overlap@10": 0.0,
+        "xlsx_sheet_hit@10": 0.0,
+        "xlsx_table_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_file_not_found": 3
+        }
+      },
+      "xlsx_lookup": {
+        "Hit@10": 1.0,
+        "MRR@10": 0.963,
+        "count": 18,
+        "citation_location_accuracy": 1.0,
+        "xlsx_exact_range@10": 1.0,
+        "xlsx_file_hit@10": 1.0,
+        "xlsx_range_contains@10": 1.0,
+        "xlsx_range_overlap@10": 1.0,
+        "xlsx_sheet_hit@10": 1.0
+      }
+    },
+    "retrieval_report_path": "reports\\rag_retrieval_eval_full72_vector_diagnostic_report.json",
+    "retrieval_backend": "vector",
+    "retrieval_backend_identity": {
+      "backend": "faiss",
+      "index_dir": "rag-data-canary",
+      "index_namespace_filter": "rag-ingestion-v2-candidate",
+      "db_dsn": "host=localhost port=5433 dbname=aipipeline user=aipipeline password=<redacted>",
+      "filtering_mode": "vector_namespace_then_contract_filter"
+    },
+    "promotion_evidence": false,
+    "evidence_role": "diagnostic",
+    "candidate_valid_hit_count": 720,
+    "null_index_version_hit_count": 0,
+    "wrong_index_version_hit_count": 0,
+    "unembedded_hit_count": 0,
+    "candidate_index_version": "rag-ingestion-v2-candidate",
+    "baseline_index_version": "rag-ingestion-v2-baseline",
+    "pdf_missing_page_metadata_count": 0,
+    "pdf_inconsistent_location_page_metadata_count": 0,
+    "source_reports": [
+      "reports\\rag_ingestion_hardened_xlsx_canary_reimport_report.json",
+      "reports\\rag_pdf_ingestion_sample_batch_report.json",
+      "reports\\rag_retrieval_eval_full72_vector_diagnostic_report.json",
+      "reports\\rag_pdf_ocr_fallback_smoke_report.json"
+    ],
+    "gate_input_missing_count": 1,
+    "gate_input_missing": [
+      "xlsx.hidden_content_leakage_count"
+    ],
+    "OCR_confidence_avg": 0.9986956304073333,
+    "immutable_baseline": true,
+    "immutable_baseline_report_hash": "02e9bc764c456714915b2392c2b64409eb5a1bcfed2a4d6236aa446fc855b64a",
+    "baseline_provenance": "initial-bootstrap:initial-full72-vector-baseline-v0:rag-ingestion-v2-candidate:02e9bc764c456714",
+    "baseline_dataset_version": "full72_vector_diagnostic_v0"
+  },
+  "thresholds": {
+    "parser_success_rate": {
+      "op": ">=",
+      "value": 0.95
+    },
+    "unsupported_file_rate": {
+      "op": "<=",
+      "value": 0.05
+    },
+    "zero_indexable_chunk_count": {
+      "op": "==",
+      "value": 0
+    },
+    "required_metadata_completeness": {
+      "op": ">=",
+      "value": 0.98
+    },
+    "missing_required_metadata_count": {
+      "op": "==",
+      "value": 0
+    },
+    "xlsx_citation_location_accuracy": {
+      "op": ">=",
+      "value": 0.9
+    },
+    "pdf_citation_location_accuracy": {
+      "op": ">=",
+      "value": 0.85
+    },
+    "table_detection_accuracy": {
+      "op": ">=",
+      "value": 0.8
+    },
+    "OCR_confidence_avg": {
+      "op": ">=",
+      "value": 0.75
+    },
+    "Hit@10": {
+      "op": ">= baseline + delta",
+      "value": -0.05
+    },
+    "MRR@10": {
+      "op": ">= baseline + delta",
+      "value": -0.05
+    },
+    "citation_accuracy": {
+      "op": ">=",
+      "value": 0.85
+    },
+    "parsing_latency_p95": {
+      "op": "<=",
+      "value": 30.0
+    },
+    "indexing_latency_p95": {
+      "op": "<=",
+      "value": 60.0
+    },
+    "fatal_warning_count": {
+      "op": "==",
+      "value": 0
+    }
+  },
+  "baseline_metrics": {
+    "Hit@10": 0.7639,
+    "MRR@10": 0.641,
+    "hit_at_10": 0.7639,
+    "mrr_at_10": 0.641,
+    "citation_accuracy": 0.4306,
+    "citation_location_accuracy": 0.4306,
+    "xlsx_citation_location_accuracy": 0.62,
+    "pdf_citation_location_accuracy": 0.0,
+    "_baseline_immutable": true,
+    "immutable_baseline_report_hash": "02e9bc764c456714915b2392c2b64409eb5a1bcfed2a4d6236aa446fc855b64a",
+    "baseline_provenance": "initial-bootstrap:initial-full72-vector-baseline-v0:rag-ingestion-v2-candidate:02e9bc764c456714",
+    "baseline_dataset_version": "full72_vector_diagnostic_v0",
+    "eval_dataset_version": "full72_vector_diagnostic_v0"
+  },
+  "reasons": [
+    "xlsx_citation_location_accuracy must be >= 0.90",
+    "pdf_citation_location_accuracy must be >= 0.85",
+    "citation_accuracy must be >= 0.85",
+    "parsing_latency_p95 must be <= 30.00",
+    "retrieval report must declare promotion_evidence=true for promotion",
+    "gate_input_missing_count must be 0"
+  ],
+  "failure_reason_json": {
+    "metric_threshold_failures": [
+      "xlsx_citation_location_accuracy must be >= 0.90",
+      "pdf_citation_location_accuracy must be >= 0.85",
+      "citation_accuracy must be >= 0.85",
+      "parsing_latency_p95 must be <= 30.00",
+      "retrieval report must declare promotion_evidence=true for promotion",
+      "gate_input_missing_count must be 0"
+    ],
+    "bucket_level_failures": [
+      {
+        "bucket": "mixed_text_table",
+        "failure_reason_counts": {
+          "expected_range_not_found": 3
+        },
+        "metrics": {
+          "Hit@10": 1.0,
+          "MRR@10": 0.8333,
+          "count": 3,
+          "citation_location_accuracy": 0.0,
+          "xlsx_exact_range@10": 0.0,
+          "xlsx_file_hit@10": 1.0,
+          "xlsx_range_contains@10": 0.0,
+          "xlsx_range_overlap@10": 0.0,
+          "xlsx_sheet_hit@10": 1.0,
+          "bucket_failure_reason_counts": {
+            "expected_range_not_found": 3
+          }
+        }
+      },
+      {
+        "bucket": "pdf_page_lookup",
+        "failure_reason_counts": {
+          "expected_page_not_found": 8
+        },
+        "metrics": {
+          "Hit@10": 1.0,
+          "MRR@10": 0.8542,
+          "count": 8,
+          "citation_location_accuracy": 0.0,
+          "pdf_bbox_overlap@10": 0.0,
+          "pdf_exact_bbox@10": 0.0,
+          "pdf_file_hit@10": 1.0,
+          "pdf_page_hit@10": 0.0,
+          "bucket_failure_reason_counts": {
+            "expected_page_not_found": 8
+          }
+        }
+      },
+      {
+        "bucket": "pdf_section_question",
+        "failure_reason_counts": {
+          "expected_file_not_found": 2,
+          "expected_page_not_found": 6
+        },
+        "metrics": {
+          "Hit@10": 0.5,
+          "MRR@10": 0.2054,
+          "count": 8,
+          "citation_location_accuracy": 0.0,
+          "pdf_bbox_overlap@10": 0.0,
+          "pdf_exact_bbox@10": 0.0,
+          "pdf_file_hit@10": 0.75,
+          "pdf_page_hit@10": 0.0,
+          "bucket_failure_reason_counts": {
+            "expected_file_not_found": 2,
+            "expected_page_not_found": 6
+          }
+        }
+      },
+      {
+        "bucket": "pdf_table_lookup",
+        "failure_reason_counts": {
+          "expected_page_not_found": 6
+        },
+        "metrics": {
+          "Hit@10": 1.0,
+          "MRR@10": 0.5294,
+          "count": 6,
+          "citation_location_accuracy": 0.0,
+          "pdf_bbox_overlap@10": 0.0,
+          "pdf_exact_bbox@10": 0.0,
+          "pdf_file_hit@10": 1.0,
+          "pdf_page_hit@10": 0.0,
+          "bucket_failure_reason_counts": {
+            "expected_page_not_found": 6
+          }
+        }
+      },
+      {
+        "bucket": "xlsx_aggregation",
+        "failure_reason_counts": {
+          "expected_file_not_found": 1,
+          "expected_range_not_found": 1
+        },
+        "metrics": {
+          "Hit@10": 0.9333,
+          "MRR@10": 0.8444,
+          "count": 15,
+          "citation_location_accuracy": 0.8667,
+          "xlsx_exact_range@10": 0.8667,
+          "xlsx_file_hit@10": 0.9333,
+          "xlsx_range_contains@10": 0.8667,
+          "xlsx_range_overlap@10": 0.8667,
+          "xlsx_sheet_hit@10": 0.9333,
+          "xlsx_table_hit@10": 0.5,
+          "bucket_failure_reason_counts": {
+            "expected_file_not_found": 1,
+            "expected_range_not_found": 1
+          }
+        }
+      },
+      {
+        "bucket": "xlsx_date_number_format",
+        "failure_reason_counts": {
+          "expected_file_not_found": 4
+        },
+        "metrics": {
+          "Hit@10": 0.0,
+          "MRR@10": 0.0,
+          "count": 4,
+          "citation_location_accuracy": 0.0,
+          "xlsx_exact_range@10": 0.0,
+          "xlsx_file_hit@10": 0.0,
+          "xlsx_range_contains@10": 0.0,
+          "xlsx_range_overlap@10": 0.0,
+          "xlsx_sheet_hit@10": 0.0,
+          "xlsx_table_hit@10": 0.0,
+          "bucket_failure_reason_counts": {
+            "expected_file_not_found": 4
+          }
+        }
+      },
+      {
+        "bucket": "xlsx_formula_value",
+        "failure_reason_counts": {
+          "expected_file_not_found": 3
+        },
+        "metrics": {
+          "Hit@10": 0.0,
+          "MRR@10": 0.0,
+          "count": 3,
+          "citation_location_accuracy": 0.0,
+          "xlsx_exact_range@10": 0.0,
+          "xlsx_file_hit@10": 0.0,
+          "xlsx_range_contains@10": 0.0,
+          "xlsx_range_overlap@10": 0.0,
+          "xlsx_sheet_hit@10": 0.0,
+          "xlsx_table_hit@10": 0.0,
+          "bucket_failure_reason_counts": {
+            "expected_file_not_found": 3
+          }
+        }
+      },
+      {
+        "bucket": "xlsx_header_ambiguous",
+        "failure_reason_counts": {
+          "expected_range_not_found": 1,
+          "expected_table_not_found": 2,
+          "unknown": 1
+        },
+        "metrics": {
+          "Hit@10": 0.5,
+          "MRR@10": 0.5,
+          "count": 4,
+          "citation_location_accuracy": 0.0,
+          "xlsx_exact_range@10": 0.0,
+          "xlsx_file_hit@10": 1.0,
+          "xlsx_range_contains@10": 0.25,
+          "xlsx_range_overlap@10": 0.25,
+          "xlsx_sheet_hit@10": 1.0,
+          "xlsx_table_hit@10": 0.0,
+          "bucket_failure_reason_counts": {
+            "expected_range_not_found": 1,
+            "expected_table_not_found": 2,
+            "unknown": 1
+          }
+        }
+      },
+      {
+        "bucket": "xlsx_hidden_policy",
+        "failure_reason_counts": {
+          "expected_file_not_found": 3
+        },
+        "metrics": {
+          "Hit@10": 0.0,
+          "MRR@10": 0.0,
+          "count": 3,
+          "citation_location_accuracy": 0.0,
+          "xlsx_exact_range@10": 0.0,
+          "xlsx_file_hit@10": 0.0,
+          "xlsx_range_contains@10": 0.0,
+          "xlsx_range_overlap@10": 0.0,
+          "xlsx_sheet_hit@10": 0.0,
+          "xlsx_table_hit@10": 0.0,
+          "bucket_failure_reason_counts": {
+            "expected_file_not_found": 3
+          }
+        }
+      }
+    ],
+    "failure_reason_distribution": {
+      "overall": {
+        "expected_file_not_found": 13,
+        "expected_page_not_found": 20,
+        "expected_range_not_found": 5,
+        "expected_table_not_found": 2,
+        "unknown": 1
+      },
+      "by_bucket": {
+        "mixed_text_table": {
+          "expected_range_not_found": 3
+        },
+        "pdf_page_lookup": {
+          "expected_page_not_found": 8
+        },
+        "pdf_section_question": {
+          "expected_file_not_found": 2,
+          "expected_page_not_found": 6
+        },
+        "pdf_table_lookup": {
+          "expected_page_not_found": 6
+        },
+        "xlsx_aggregation": {
+          "expected_file_not_found": 1,
+          "expected_range_not_found": 1
+        },
+        "xlsx_date_number_format": {
+          "expected_file_not_found": 4
+        },
+        "xlsx_formula_value": {
+          "expected_file_not_found": 3
+        },
+        "xlsx_header_ambiguous": {
+          "expected_range_not_found": 1,
+          "expected_table_not_found": 2,
+          "unknown": 1
+        },
+        "xlsx_hidden_policy": {
+          "expected_file_not_found": 3
+        }
+      }
+    },
+    "eval_result_id": null,
+    "retrieval_report_path": "reports\\rag_retrieval_eval_full72_vector_diagnostic_report.json",
+    "gate_report_path": "reports\\rag_ingestion_a5_promotion_gate_report.json",
+    "candidate_index_version": "rag-ingestion-v2-candidate",
+    "baseline_index_version": "rag-ingestion-v2-baseline"
+  },
+  "gate_report": "reports\\rag_ingestion_a5_promotion_gate_report.json",
+  "eval_result_id": null
+}

@@ -1,0 +1,23 @@
+{
+  "run_id": "2026-05-04-a5-hardened-xlsx-canary",
+  "document_version_ids": [
+    "docv_ea483b5a43086e05",
+    "docv_b24282189b1610cb"
+  ],
+  "required_index_version": "rag-ingestion-v2-candidate",
+  "embedding_model": "BAAI/bge-m3",
+  "scoped_count": 151,
+  "status_counts": {
+    "EMBEDDED": 151
+  },
+  "candidate_index_count": 151,
+  "embedding_record_missing_count": 0,
+  "candidate_chunk_missing_count": 0,
+  "embedding_record_sha_mismatch_count": 0,
+  "chunk_sha_mismatch_count": 0,
+  "vector_namespace_mismatch_count": 0,
+  "missing_required_v2_metadata_count": 0,
+  "hidden_leakage_count": 0,
+  "outside_scope_recent_embedded_count": 0,
+  "pass": true
+}

@@ -1,0 +1,19 @@
+{
+  "run_id": "2026-05-04T054227Z",
+  "status": "PASS",
+  "baseline_report": "reports\\initial_immutable_vector_baseline_descriptor.json",
+  "baseline_report_hash": "34a3ad4f88fc2731cd9633bf56481dd0b6c5ac9c77f96f18ede77addf7ed2d49",
+  "baseline_type": "INITIAL_BASELINE_BOOTSTRAP",
+  "bootstrap_status": "BOOTSTRAP_READY_NOT_PROMOTION",
+  "baseline_index_version": "initial-full72-vector-baseline-v0",
+  "candidate_index_version": "rag-ingestion-v2-candidate",
+  "candidate_snapshot": false,
+  "immutable_baseline": true,
+  "eval_dataset_version": "full72_vector_diagnostic_v0",
+  "retrieval_backend": "vector",
+  "baseline_provenance": "initial-bootstrap:initial-full72-vector-baseline-v0:rag-ingestion-v2-candidate:02e9bc764c456714",
+  "promotion_evidence": false,
+  "usable_as_baseline_for_future_candidates": true,
+  "reasons": [],
+  "write_immutable_baseline": false
+}

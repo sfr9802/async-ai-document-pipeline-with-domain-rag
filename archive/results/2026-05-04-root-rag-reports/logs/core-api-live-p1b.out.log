@@ -1,0 +1,135 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< com.aipipeline:core-api >-----------------------
+[INFO] Building core-api 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.0.3:run (default-cli) > test-compile @ core-api >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ core-api ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 8 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ core-api ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ core-api ---
+[INFO] skip non existing resourceDirectory D:\async-ocr-rag-multimodal-pipeline\core-api\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ core-api ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.0.3:run (default-cli) < test-compile @ core-api <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.0.3:run (default-cli) @ core-api ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.3)
+
+2026-05-03T21:20:08.091+09:00  INFO 23864 --- [core-api] [           main] c.aipipeline.coreapi.CoreApiApplication  : Starting CoreApiApplication using Java 21.0.8 with PID 23864 (D:\async-ocr-rag-multimodal-pipeline\core-api\target\classes started by sfr99 in D:\async-ocr-rag-multimodal-pipeline\core-api)
+2026-05-03T21:20:08.093+09:00  INFO 23864 --- [core-api] [           main] c.aipipeline.coreapi.CoreApiApplication  : No active profile set, falling back to 1 default profile: "default"
+2026-05-03T21:20:08.500+09:00  INFO 23864 --- [core-api] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-05-03T21:20:08.501+09:00  INFO 23864 --- [core-api] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-03T21:20:08.578+09:00  INFO 23864 --- [core-api] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 71 ms. Found 13 JPA repository interfaces.
+2026-05-03T21:20:08.598+09:00  INFO 23864 --- [core-api] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-05-03T21:20:08.599+09:00  INFO 23864 --- [core-api] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-05-03T21:20:08.610+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.artifact.adapter.out.persistence.ArtifactJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.612+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.CellMetadataJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.612+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.DocumentV2JpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.613+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.DocumentVersionJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.613+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.EvalResultJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.614+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.ExtractedArtifactJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.614+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.IndexBuildJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.615+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.ParsedArtifactV2JpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.616+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.PdfPageMetadataJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.616+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.SearchUnitJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.618+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.SourceFileJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.618+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.catalog.adapter.out.persistence.TableMetadataJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.619+09:00  INFO 23864 --- [core-api] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.aipipeline.coreapi.job.adapter.out.persistence.JobJpaRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2026-05-03T21:20:08.619+09:00  INFO 23864 --- [core-api] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 15 ms. Found 0 Redis repository interfaces.
+2026-05-03T21:20:08.869+09:00  INFO 23864 --- [core-api] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-05-03T21:20:08.876+09:00  INFO 23864 --- [core-api] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-03T21:20:08.877+09:00  INFO 23864 --- [core-api] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.18]
+2026-05-03T21:20:08.908+09:00  INFO 23864 --- [core-api] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 790 ms
+2026-05-03T21:20:09.107+09:00  INFO 23864 --- [core-api] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-03T21:20:09.204+09:00  INFO 23864 --- [core-api] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@7be7c052
+2026-05-03T21:20:09.205+09:00  INFO 23864 --- [core-api] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-03T21:20:09.237+09:00  INFO 23864 --- [core-api] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5433/aipipeline (PostgreSQL 18.3)
+2026-05-03T21:20:09.393+09:00  INFO 23864 --- [core-api] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 8 migrations (execution time 00:00.106s)
+2026-05-03T21:20:09.417+09:00  INFO 23864 --- [core-api] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 8
+2026-05-03T21:20:09.420+09:00  INFO 23864 --- [core-api] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-05-03T21:20:09.468+09:00  INFO 23864 --- [core-api] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-05-03T21:20:09.488+09:00  INFO 23864 --- [core-api] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.4.Final
+2026-05-03T21:20:09.663+09:00  INFO 23864 --- [core-api] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-03T21:20:09.717+09:00  INFO 23864 --- [core-api] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:5433/aipipeline]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 18.3
+	Default catalog/schema: aipipeline/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-03T21:20:10.198+09:00  INFO 23864 --- [core-api] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-03T21:20:10.278+09:00  INFO 23864 --- [core-api] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-03T21:20:10.314+09:00  INFO 23864 --- [core-api] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-03T21:20:10.386+09:00  INFO 23864 --- [core-api] [           main] .c.s.a.o.l.LocalFilesystemStorageAdapter : Local storage root: D:\async-ocr-rag-multimodal-pipeline\local-storage
+2026-05-03T21:20:11.440+09:00  INFO 23864 --- [core-api] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-05-03T21:20:11.472+09:00  INFO 23864 --- [core-api] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-05-03T21:20:11.477+09:00  INFO 23864 --- [core-api] [           main] c.aipipeline.coreapi.CoreApiApplication  : Started CoreApiApplication in 3.598 seconds (process running for 3.844)
+2026-05-03T21:20:11.648+09:00  INFO 23864 --- [core-api] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-03T21:20:11.649+09:00  INFO 23864 --- [core-api] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-03T21:20:11.650+09:00  INFO 23864 --- [core-api] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-05-03T21:20:56.951+09:00  INFO 23864 --- [core-api] [nio-8080-exec-5] c.a.c.q.a.o.r.RedisJobDispatchAdapter    : Dispatched job 6f7f2a58-5e93-40e1-b7fa-ed25e1e5d1f5 onto aipipeline:jobs:pending
+2026-05-03T21:20:56.967+09:00  WARN 23864 --- [core-api] [nio-8080-exec-7] c.a.c.c.w.InternalSecretAuthInterceptor  : aipipeline.internal.secret is not configured — /api/internal/** requests are unauthenticated (dev mode)
+2026-05-03T21:20:57.042+09:00  INFO 23864 --- [core-api] [nio-8080-exec-7] c.a.c.j.a.service.JobExecutionService    : Claim granted jobId=6f7f2a58-5e93-40e1-b7fa-ed25e1e5d1f5 workerToken=worker-local-1
+2026-05-03T21:20:57.249+09:00  INFO 23864 --- [core-api] [nio-8080-exec-2] c.a.c.j.a.service.JobExecutionService    : Callback applied jobId=6f7f2a58-5e93-40e1-b7fa-ed25e1e5d1f5 outcome=SUCCEEDED status=SUCCEEDED
+2026-05-03T21:21:02.203+09:00  INFO 23864 --- [core-api] [nio-8080-exec-5] c.a.c.q.a.o.r.RedisJobDispatchAdapter    : Dispatched job 1e400c74-b7b7-4180-a4db-daa7070b9805 onto aipipeline:jobs:pending
+2026-05-03T21:21:02.210+09:00  INFO 23864 --- [core-api] [nio-8080-exec-8] c.a.c.j.a.service.JobExecutionService    : Claim granted jobId=1e400c74-b7b7-4180-a4db-daa7070b9805 workerToken=worker-local-1
+2026-05-03T21:21:12.685+09:00  INFO 23864 --- [core-api] [io-8080-exec-10] c.a.c.j.a.service.JobExecutionService    : Callback applied jobId=1e400c74-b7b7-4180-a4db-daa7070b9805 outcome=SUCCEEDED status=SUCCEEDED
+2026-05-03T21:21:16.531+09:00  INFO 23864 --- [core-api] [nio-8080-exec-9] c.a.c.q.a.o.r.RedisJobDispatchAdapter    : Dispatched job ff2c8d2b-00f2-4409-a82e-2c86b8fd6773 onto aipipeline:jobs:pending
+2026-05-03T21:21:16.538+09:00  INFO 23864 --- [core-api] [nio-8080-exec-6] c.a.c.j.a.service.JobExecutionService    : Claim granted jobId=ff2c8d2b-00f2-4409-a82e-2c86b8fd6773 workerToken=worker-local-1
+2026-05-03T21:21:41.556+09:00  INFO 23864 --- [core-api] [nio-8080-exec-7] c.a.c.j.a.service.JobExecutionService    : Callback applied jobId=ff2c8d2b-00f2-4409-a82e-2c86b8fd6773 outcome=SUCCEEDED status=SUCCEEDED
+2026-05-03T21:21:44.920+09:00  INFO 23864 --- [core-api] [nio-8080-exec-8] c.a.c.q.a.o.r.RedisJobDispatchAdapter    : Dispatched job 68da6d27-6a29-4c6c-a48a-c9597011c354 onto aipipeline:jobs:pending
+2026-05-03T21:21:44.927+09:00  INFO 23864 --- [core-api] [nio-8080-exec-9] c.a.c.j.a.service.JobExecutionService    : Claim granted jobId=68da6d27-6a29-4c6c-a48a-c9597011c354 workerToken=worker-local-1
+2026-05-03T21:22:04.497+09:00  INFO 23864 --- [core-api] [nio-8080-exec-5] c.a.c.j.a.service.JobExecutionService    : Callback applied jobId=68da6d27-6a29-4c6c-a48a-c9597011c354 outcome=SUCCEEDED status=SUCCEEDED
+2026-05-03T21:22:08.260+09:00  INFO 23864 --- [core-api] [nio-8080-exec-6] c.a.c.q.a.o.r.RedisJobDispatchAdapter    : Dispatched job 2c61b460-89f6-4a40-bf7c-9f428bcb2c42 onto aipipeline:jobs:pending
+2026-05-03T21:22:08.290+09:00  INFO 23864 --- [core-api] [nio-8080-exec-2] c.a.c.j.a.service.JobExecutionService    : Claim granted jobId=2c61b460-89f6-4a40-bf7c-9f428bcb2c42 workerToken=worker-local-1
+2026-05-03T21:22:25.156+09:00  INFO 23864 --- [core-api] [nio-8080-exec-7] c.a.c.j.a.service.JobExecutionService    : Callback applied jobId=2c61b460-89f6-4a40-bf7c-9f428bcb2c42 outcome=SUCCEEDED status=SUCCEEDED
+2026-05-03T21:22:28.630+09:00  INFO 23864 --- [core-api] [nio-8080-exec-6] c.a.c.q.a.o.r.RedisJobDispatchAdapter    : Dispatched job 306e40f4-568f-490f-af3a-255dbba67595 onto aipipeline:jobs:pending
+2026-05-03T21:22:28.638+09:00  INFO 23864 --- [core-api] [nio-8080-exec-3] c.a.c.j.a.service.JobExecutionService    : Claim granted jobId=306e40f4-568f-490f-af3a-255dbba67595 workerToken=worker-local-1
+2026-05-03T21:22:52.050+09:00  INFO 23864 --- [core-api] [nio-8080-exec-9] c.a.c.j.a.service.JobExecutionService    : Callback applied jobId=306e40f4-568f-490f-af3a-255dbba67595 outcome=SUCCEEDED status=SUCCEEDED
+2026-05-03T21:22:55.987+09:00  INFO 23864 --- [core-api] [nio-8080-exec-7] c.a.c.q.a.o.r.RedisJobDispatchAdapter    : Dispatched job c63070ea-bdb6-4db2-895f-1e94281764eb onto aipipeline:jobs:pending
+2026-05-03T21:22:55.993+09:00  INFO 23864 --- [core-api] [nio-8080-exec-1] c.a.c.j.a.service.JobExecutionService    : Claim granted jobId=c63070ea-bdb6-4db2-895f-1e94281764eb workerToken=worker-local-1
+2026-05-03T21:22:56.287+09:00  INFO 23864 --- [core-api] [io-8080-exec-10] c.a.c.j.a.service.JobExecutionService    : Callback applied jobId=c63070ea-bdb6-4db2-895f-1e94281764eb outcome=SUCCEEDED status=SUCCEEDED
+2026-05-03T21:22:57.243+09:00  INFO 23864 --- [core-api] [nio-8080-exec-8] c.a.c.q.a.o.r.RedisJobDispatchAdapter    : Dispatched job c4b1015a-8ff2-47b7-99b3-0f491790b0d7 onto aipipeline:jobs:pending
+2026-05-03T21:22:57.249+09:00  INFO 23864 --- [core-api] [nio-8080-exec-7] c.a.c.j.a.service.JobExecutionService    : Claim granted jobId=c4b1015a-8ff2-47b7-99b3-0f491790b0d7 workerToken=worker-local-1
+2026-05-03T21:23:05.863+09:00  INFO 23864 --- [core-api] [nio-8080-exec-9] c.a.c.j.a.service.JobExecutionService    : Callback applied jobId=c4b1015a-8ff2-47b7-99b3-0f491790b0d7 outcome=SUCCEEDED status=SUCCEEDED
+2026-05-03T21:23:07.505+09:00  INFO 23864 --- [core-api] [nio-8080-exec-5] c.a.c.q.a.o.r.RedisJobDispatchAdapter    : Dispatched job 8945a740-5c55-4ea4-a2c7-f028a2d2db0d onto aipipeline:jobs:pending
+2026-05-03T21:23:07.512+09:00  INFO 23864 --- [core-api] [nio-8080-exec-8] c.a.c.j.a.service.JobExecutionService    : Claim granted jobId=8945a740-5c55-4ea4-a2c7-f028a2d2db0d workerToken=worker-local-1
+2026-05-03T21:23:08.617+09:00  INFO 23864 --- [core-api] [nio-8080-exec-3] c.a.c.j.a.service.JobExecutionService    : Callback applied jobId=8945a740-5c55-4ea4-a2c7-f028a2d2db0d outcome=SUCCEEDED status=SUCCEEDED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  03:48 min
+[INFO] Finished at: 2026-05-03T21:23:54+09:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.0.3:run (default-cli) on project core-api: Process terminated with exit code: -1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

@@ -1,0 +1,350 @@
+2026-05-03T21:20:31 INFO [__main__] Starting worker id=worker-local-1 core_api=http://localhost:8080
+2026-05-03T21:20:31 INFO [app.capabilities.registry] LLM chat backend disabled (noop).
+2026-05-03T21:20:31 INFO [app.capabilities.registry] RAG init: configured_model=BAAI/bge-m3 query_prefix='' passage_prefix='' index_dir=../rag-data top_k=5 generator=extractive reranker=off candidate_k=30 use_mmr=False mmr_lambda=0.700 query_parser=off rrf_k=60 llm_backend=noop
+2026-05-03T21:20:31 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-05-03T21:20:31 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-05-03T21:20:31 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-05-03T21:20:31 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-05-03T21:20:31 INFO [faiss] Failed to load GPU Faiss: name 'GpuIndexIVFFlat' is not defined. Will not load constructor refs for GPU indexes. This is only an error if you're trying to use GPU Faiss.
+2026-05-03T21:20:31 INFO [app.capabilities.registry] RAG reranker disabled (noop).
+2026-05-03T21:20:31 INFO [app.capabilities.registry] RAG query parser disabled (noop).
+2026-05-03T21:20:31 INFO [app.capabilities.rag.faiss_index] Loaded FAISS index v-1776943665 (model=BAAI/bge-m3, dim=1024, vectors=111)
+2026-05-03T21:20:31 INFO [app.capabilities.rag.embeddings] Set PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+2026-05-03T21:20:31 INFO [app.capabilities.rag.embeddings] Loading sentence-transformers model: BAAI/bge-m3
+2026-05-03T21:20:36 INFO [sentence_transformers.SentenceTransformer] Use pytorch device_name: cuda:0
+2026-05-03T21:20:36 INFO [sentence_transformers.SentenceTransformer] Load pretrained SentenceTransformer: BAAI/bge-m3
+2026-05-03T21:20:41 INFO [app.capabilities.rag.embeddings] Embedding model ready (dim=1024, max_seq_length=1024, batch_size=32, oom_fallback_batch_size=16)
+2026-05-03T21:20:41 INFO [app.capabilities.rag.embeddings] CUDA mem [after model load]: allocated=2165.9 MiB ¡¤ reserved=2186.0 MiB ¡¤ max_reserved=2186.0 MiB ¡¤ max_allocated=2165.9 MiB
+2026-05-03T21:20:41 INFO [app.capabilities.rag.retriever] Retriever readiness check: configured_model='BAAI/bge-m3' index_model='BAAI/bge-m3' configured_dim=1024 index_dim=1024 index_version=v-1776943665 chunk_count=111 reranker=noop candidate_k=30 top_k=5 parser=noop rrf_k=60
+2026-05-03T21:20:41 WARNING [app.capabilities.registry] RAG capability NOT registered (RuntimeError: Ingest manifest missing: runtime embedding_text_variant='retrieval_title_section', but no ingest_manifest.json was found next to build.json. Rebuild the index with the current ingest path before serving RAG.). Worker still serves the MOCK capability. To enable RAG: rebuild the FAISS index with the configured embedding model (python -m scripts.build_rag_index --fixture), ensure the ragmeta schema exists, then restart the worker.
+2026-05-03T21:20:41 INFO [app.capabilities.registry] OCR init: languages=eng pdf_dpi=200 tesseract_cmd=<PATH> min_conf_warn=40.0 max_pages=100
+2026-05-03T21:20:41 WARNING [app.capabilities.registry] OCR capability NOT registered (OcrError: pytesseract is not installed. Run `pip install pytesseract` in the worker environment.). Worker still serves the other registered capabilities. To enable OCR: install Tesseract (https://tesseract-ocr.github.io/), pip install pytesseract pymupdf, make sure the configured language packs are present, then restart the worker.
+2026-05-03T21:20:41 INFO [app.capabilities.registry] OCR_EXTRACT init: provider=fixture pipeline_version=ocr-lite-v1
+2026-05-03T21:20:41 INFO [app.capabilities.registry] OCR_EXTRACT capability registered.
+2026-05-03T21:20:41 INFO [app.capabilities.registry] XLSX_EXTRACT init: pipeline_version=xlsx-extract-v1 include_hidden=False
+2026-05-03T21:20:41 INFO [app.capabilities.registry] XLSX_EXTRACT capability registered.
+2026-05-03T21:20:41 INFO [app.capabilities.registry] PDF_EXTRACT init: pipeline_version=pdf-extract-v1 parser=pymupdf
+2026-05-03T21:20:41 INFO [app.capabilities.registry] PDF_EXTRACT capability registered.
+2026-05-03T21:20:42 INFO [app.capabilities.registry] AUTO / AGENT capabilities NOT registered: no downstream capabilities (RAG / OCR / MULTIMODAL) are available. Enable at least one, then restart the worker. MOCK remains registered.
+2026-05-03T21:20:42 INFO [app.capabilities.registry] Active capabilities: ['MOCK', 'OCR_EXTRACT', 'PDF_EXTRACT', 'XLSX_EXTRACT'] (ocr_extract=True xlsx_extract=True pdf_extract=True)
+2026-05-03T21:20:42 INFO [app.queue.redis_consumer] Queue consumer started key=aipipeline:jobs:pending block_timeout=5s
+2026-05-03T21:20:56 INFO [app.services.task_runner] Received dispatch jobId=6f7f2a58-5e93-40e1-b7fa-ed25e1e5d1f5 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:20:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:20:57 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=6f7f2a58-5e93-40e1-b7fa-ed25e1e5d1f5 artifact=0cb93c1d-17c7-4e47-819f-496238d0aed8 fileType=xlsx
+2026-05-03T21:20:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:20:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:20:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:20:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:20:57 INFO [app.services.task_runner] Job 6f7f2a58-5e93-40e1-b7fa-ed25e1e5d1f5 SUCCEEDED
+2026-05-03T21:21:02 INFO [app.services.task_runner] Received dispatch jobId=1e400c74-b7b7-4180-a4db-daa7070b9805 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:21:02 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:21:02 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=1e400c74-b7b7-4180-a4db-daa7070b9805 artifact=115ec3e3-64a7-4f3f-a59f-29a1d7a2d54c fileType=xlsx
+2026-05-03T21:21:05 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:21:05 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:21:05 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:21:15 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:21:15 INFO [app.services.task_runner] Job 1e400c74-b7b7-4180-a4db-daa7070b9805 SUCCEEDED
+2026-05-03T21:21:16 INFO [app.services.task_runner] Received dispatch jobId=ff2c8d2b-00f2-4409-a82e-2c86b8fd6773 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:21:16 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:21:16 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=ff2c8d2b-00f2-4409-a82e-2c86b8fd6773 artifact=550a98be-e834-4266-bf21-9885aebd125b fileType=xlsx
+2026-05-03T21:21:28 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:21:28 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:21:28 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:21:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:21:44 INFO [app.services.task_runner] Job ff2c8d2b-00f2-4409-a82e-2c86b8fd6773 SUCCEEDED
+2026-05-03T21:21:44 INFO [app.services.task_runner] Received dispatch jobId=68da6d27-6a29-4c6c-a48a-c9597011c354 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:21:45 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:21:45 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=68da6d27-6a29-4c6c-a48a-c9597011c354 artifact=762b5954-9a47-44df-93ec-b2b068768871 fileType=xlsx
+2026-05-03T21:21:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:21:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:21:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:22:07 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:22:07 INFO [app.services.task_runner] Job 68da6d27-6a29-4c6c-a48a-c9597011c354 SUCCEEDED
+2026-05-03T21:22:08 INFO [app.services.task_runner] Received dispatch jobId=2c61b460-89f6-4a40-bf7c-9f428bcb2c42 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:22:08 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:22:08 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=2c61b460-89f6-4a40-bf7c-9f428bcb2c42 artifact=bdb588ac-69a2-4440-8cf0-8d9ef719eab4 fileType=xlsx
+2026-05-03T21:22:16 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:22:16 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:22:16 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:22:28 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:22:28 INFO [app.services.task_runner] Job 2c61b460-89f6-4a40-bf7c-9f428bcb2c42 SUCCEEDED
+2026-05-03T21:22:28 INFO [app.services.task_runner] Received dispatch jobId=306e40f4-568f-490f-af3a-255dbba67595 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:22:28 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:22:28 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=306e40f4-568f-490f-af3a-255dbba67595 artifact=8805682c-cdd9-466d-bb42-a2f1241432dc fileType=xlsx
+2026-05-03T21:22:40 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:22:41 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:22:41 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:22:55 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:22:55 INFO [app.services.task_runner] Job 306e40f4-568f-490f-af3a-255dbba67595 SUCCEEDED
+2026-05-03T21:22:55 INFO [app.services.task_runner] Received dispatch jobId=c63070ea-bdb6-4db2-895f-1e94281764eb capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:22:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:22:56 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=c63070ea-bdb6-4db2-895f-1e94281764eb artifact=0e9b1146-4e5b-491d-8b55-1b64ac565651 fileType=xlsx
+2026-05-03T21:22:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:22:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:22:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:22:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:22:56 INFO [app.services.task_runner] Job c63070ea-bdb6-4db2-895f-1e94281764eb SUCCEEDED
+2026-05-03T21:22:57 INFO [app.services.task_runner] Received dispatch jobId=c4b1015a-8ff2-47b7-99b3-0f491790b0d7 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:22:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:22:57 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=c4b1015a-8ff2-47b7-99b3-0f491790b0d7 artifact=b4c4882b-2002-4b52-9dca-c43c93c20f17 fileType=xlsx
+2026-05-03T21:23:00 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:23:00 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:23:00 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:23:07 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:23:07 INFO [app.services.task_runner] Job c4b1015a-8ff2-47b7-99b3-0f491790b0d7 SUCCEEDED
+2026-05-03T21:23:07 INFO [app.services.task_runner] Received dispatch jobId=8945a740-5c55-4ea4-a2c7-f028a2d2db0d capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:23:07 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:23:07 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=8945a740-5c55-4ea4-a2c7-f028a2d2db0d artifact=d9e96428-3e43-40d5-858d-716c4f638237 fileType=xlsx
+2026-05-03T21:23:07 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:23:07 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:23:07 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:23:09 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:23:09 INFO [app.services.task_runner] Job 8945a740-5c55-4ea4-a2c7-f028a2d2db0d SUCCEEDED
+2026-05-03T21:24:56 INFO [app.services.task_runner] Received dispatch jobId=523c4975-e743-4d46-8d9e-369557be4243 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:24:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:24:56 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=523c4975-e743-4d46-8d9e-369557be4243 artifact=72a32356-11e6-4f65-8707-3ea11e301f88 fileType=xlsx
+2026-05-03T21:25:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:25:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:25:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:25:11 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:25:11 INFO [app.services.task_runner] Job 523c4975-e743-4d46-8d9e-369557be4243 SUCCEEDED
+2026-05-03T21:25:13 INFO [app.services.task_runner] Received dispatch jobId=df179202-15a7-4fb8-ba82-bf9457b1db55 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:25:13 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:25:13 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=df179202-15a7-4fb8-ba82-bf9457b1db55 artifact=1d0b5447-b3eb-44db-bacb-b5137fcb57db fileType=xlsx
+2026-05-03T21:25:25 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:25:25 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:25:25 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:25:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:25:44 INFO [app.services.task_runner] Job df179202-15a7-4fb8-ba82-bf9457b1db55 SUCCEEDED
+2026-05-03T21:25:44 INFO [app.services.task_runner] Received dispatch jobId=a1638498-0f88-417c-9930-901961a580fe capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:25:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:25:44 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=a1638498-0f88-417c-9930-901961a580fe artifact=bf6f9a52-2cd6-4664-ba3d-e12b2660b86b fileType=xlsx
+2026-05-03T21:25:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:25:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:25:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:26:08 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:26:08 INFO [app.services.task_runner] Job a1638498-0f88-417c-9930-901961a580fe SUCCEEDED
+2026-05-03T21:26:08 INFO [app.services.task_runner] Received dispatch jobId=32707af0-a8b9-4f46-802c-c60be7c932e4 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:26:09 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:26:09 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=32707af0-a8b9-4f46-802c-c60be7c932e4 artifact=77406bad-d86a-45b2-9d3b-7a830500e06f fileType=xlsx
+2026-05-03T21:26:16 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:26:17 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:26:17 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:26:29 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:26:29 INFO [app.services.task_runner] Job 32707af0-a8b9-4f46-802c-c60be7c932e4 SUCCEEDED
+2026-05-03T21:26:29 INFO [app.services.task_runner] Received dispatch jobId=90e9e688-5025-4a83-a8fe-163247fd7677 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:26:29 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:26:29 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=90e9e688-5025-4a83-a8fe-163247fd7677 artifact=3cf9ff25-4e80-48de-ae87-bf78795027e8 fileType=xlsx
+2026-05-03T21:26:43 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:26:43 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:26:43 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:26:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:26:57 INFO [app.services.task_runner] Job 90e9e688-5025-4a83-a8fe-163247fd7677 SUCCEEDED
+2026-05-03T21:26:57 INFO [app.services.task_runner] Received dispatch jobId=9f4b6225-8e63-43eb-a823-26aa1962a7f4 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:26:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:26:57 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=9f4b6225-8e63-43eb-a823-26aa1962a7f4 artifact=9409a494-f125-4972-9550-59a5f6766ab3 fileType=xlsx
+2026-05-03T21:26:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:26:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:26:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:26:58 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:26:58 INFO [app.services.task_runner] Job 9f4b6225-8e63-43eb-a823-26aa1962a7f4 SUCCEEDED
+2026-05-03T21:26:58 INFO [app.services.task_runner] Received dispatch jobId=2b2e1489-64a9-4344-a8be-697bb648876a capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:26:59 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:26:59 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=2b2e1489-64a9-4344-a8be-697bb648876a artifact=bc0f4d32-0626-4504-b537-06bf1fda3220 fileType=xlsx
+2026-05-03T21:27:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:09 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:27:09 INFO [app.services.task_runner] Job 2b2e1489-64a9-4344-a8be-697bb648876a SUCCEEDED
+2026-05-03T21:27:10 INFO [app.services.task_runner] Received dispatch jobId=6b621891-3431-4bb0-96fd-ad374e5a3002 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:27:10 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:27:10 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=6b621891-3431-4bb0-96fd-ad374e5a3002 artifact=1afeebf4-6816-4519-9586-f7724ce86782 fileType=xlsx
+2026-05-03T21:27:10 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:10 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:10 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:11 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:27:11 INFO [app.services.task_runner] Job 6b621891-3431-4bb0-96fd-ad374e5a3002 SUCCEEDED
+2026-05-03T21:27:21 INFO [app.services.task_runner] Received dispatch jobId=7126bf74-33cf-47d5-b352-8383d3786b3e capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:27:21 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:27:21 INFO [app.capabilities.pdf.service] PDF extract start jobId=7126bf74-33cf-47d5-b352-8383d3786b3e artifact=64396c41-3223-4af4-b1f9-90edaab2c26d fileType=pdf
+2026-05-03T21:27:21 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:21 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:22 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:27:22 INFO [app.services.task_runner] Job 7126bf74-33cf-47d5-b352-8383d3786b3e SUCCEEDED
+2026-05-03T21:27:43 INFO [app.services.task_runner] Received dispatch jobId=adea89e4-53ee-411c-be08-814a4b963468 capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:27:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:27:44 INFO [app.capabilities.pdf.service] PDF extract start jobId=adea89e4-53ee-411c-be08-814a4b963468 artifact=f4454500-74c0-4ad2-b757-3b81d08e6bff fileType=pdf
+2026-05-03T21:27:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:55 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:27:55 INFO [app.services.task_runner] Job adea89e4-53ee-411c-be08-814a4b963468 SUCCEEDED
+2026-05-03T21:27:56 INFO [app.services.task_runner] Received dispatch jobId=1c0bfafe-04d6-47f2-a491-e8f2bd8de865 capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:27:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:27:56 INFO [app.capabilities.pdf.service] PDF extract start jobId=1c0bfafe-04d6-47f2-a491-e8f2bd8de865 artifact=6f8803f6-be55-4a25-accb-32c8cb76e8f0 fileType=pdf
+2026-05-03T21:27:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:27:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:28:07 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:28:07 INFO [app.services.task_runner] Job 1c0bfafe-04d6-47f2-a491-e8f2bd8de865 SUCCEEDED
+2026-05-03T21:28:07 INFO [app.services.task_runner] Received dispatch jobId=da07092e-5f50-48fb-a5c9-1c8ae2a3c318 capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:28:07 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:28:07 INFO [app.capabilities.pdf.service] PDF extract start jobId=da07092e-5f50-48fb-a5c9-1c8ae2a3c318 artifact=ebcff041-5d46-4946-8146-43da1ce2bbc0 fileType=pdf
+2026-05-03T21:28:07 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:28:07 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:28:18 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:28:18 INFO [app.services.task_runner] Job da07092e-5f50-48fb-a5c9-1c8ae2a3c318 SUCCEEDED
+2026-05-03T21:28:19 INFO [app.services.task_runner] Received dispatch jobId=5a86e2d3-53c8-4fcd-a47c-88d25cdc4d6e capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:28:19 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:28:19 INFO [app.capabilities.pdf.service] PDF extract start jobId=5a86e2d3-53c8-4fcd-a47c-88d25cdc4d6e artifact=3b7a83ec-b3a7-46cb-a24c-aea2cab8cbcb fileType=pdf
+2026-05-03T21:28:20 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:28:20 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:28:29 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:28:29 INFO [app.services.task_runner] Job 5a86e2d3-53c8-4fcd-a47c-88d25cdc4d6e SUCCEEDED
+2026-05-03T21:28:31 INFO [app.services.task_runner] Received dispatch jobId=e26ff151-c698-494d-aff6-7983fa004f76 capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:28:31 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:28:31 INFO [app.capabilities.pdf.service] PDF extract start jobId=e26ff151-c698-494d-aff6-7983fa004f76 artifact=eab250c3-a4c2-496b-9157-88225e733316 fileType=pdf
+2026-05-03T21:28:31 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:28:31 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:28:41 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:28:41 INFO [app.services.task_runner] Job e26ff151-c698-494d-aff6-7983fa004f76 SUCCEEDED
+2026-05-03T21:28:42 INFO [app.services.task_runner] Received dispatch jobId=3c4f7ef6-a1a4-4d5a-b899-b8405a4491ce capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:28:42 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:28:42 INFO [app.capabilities.pdf.service] PDF extract start jobId=3c4f7ef6-a1a4-4d5a-b899-b8405a4491ce artifact=aea888ce-11fc-4bb4-8f20-d437c7061dc5 fileType=pdf
+2026-05-03T21:28:42 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:28:42 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:28:53 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:28:53 INFO [app.services.task_runner] Job 3c4f7ef6-a1a4-4d5a-b899-b8405a4491ce SUCCEEDED
+2026-05-03T21:28:54 INFO [app.services.task_runner] Received dispatch jobId=53ad6ef4-19bc-4fa5-a9e8-fa7ea053a485 capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:28:54 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:28:54 INFO [app.capabilities.pdf.service] PDF extract start jobId=53ad6ef4-19bc-4fa5-a9e8-fa7ea053a485 artifact=42f4130c-cf9b-43bc-be28-5b43c6a8f727 fileType=pdf
+2026-05-03T21:28:55 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:28:55 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:29:05 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:29:05 INFO [app.services.task_runner] Job 53ad6ef4-19bc-4fa5-a9e8-fa7ea053a485 SUCCEEDED
+2026-05-03T21:29:06 INFO [app.services.task_runner] Received dispatch jobId=7f78bab0-adf8-4b23-8181-51c3c62dc9ec capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:29:06 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:29:06 INFO [app.capabilities.pdf.service] PDF extract start jobId=7f78bab0-adf8-4b23-8181-51c3c62dc9ec artifact=152f42e3-db8e-4592-8439-fc18b141b722 fileType=pdf
+2026-05-03T21:29:06 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:29:06 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:29:16 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:29:16 INFO [app.services.task_runner] Job 7f78bab0-adf8-4b23-8181-51c3c62dc9ec SUCCEEDED
+2026-05-03T21:54:42 INFO [app.services.task_runner] Received dispatch jobId=ac8c7528-8db5-4b87-b18b-8095545948ce capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:54:42 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:54:42 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=ac8c7528-8db5-4b87-b18b-8095545948ce artifact=f7e26c83-358c-4bbf-bea1-bbb6e55f4ba7 fileType=xlsx
+2026-05-03T21:54:46 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:54:46 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:54:46 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:54:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:54:56 INFO [app.services.task_runner] Job ac8c7528-8db5-4b87-b18b-8095545948ce SUCCEEDED
+2026-05-03T21:54:57 INFO [app.services.task_runner] Received dispatch jobId=0ab025f8-6ae3-4746-9b63-5946dff99afc capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:54:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:54:57 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=0ab025f8-6ae3-4746-9b63-5946dff99afc artifact=cfb8abf2-effc-4ec1-83c4-ae2e02f28ea2 fileType=xlsx
+2026-05-03T21:55:11 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:55:11 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:55:11 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:55:27 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:55:27 INFO [app.services.task_runner] Job 0ab025f8-6ae3-4746-9b63-5946dff99afc SUCCEEDED
+2026-05-03T21:55:27 INFO [app.services.task_runner] Received dispatch jobId=4203cd21-00e3-495c-a6b5-d103da76cf06 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:55:27 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:55:27 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=4203cd21-00e3-495c-a6b5-d103da76cf06 artifact=32f1df02-85c5-4bea-8546-b4a03406d7c7 fileType=xlsx
+2026-05-03T21:55:40 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:55:40 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:55:40 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:55:51 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:55:51 INFO [app.services.task_runner] Job 4203cd21-00e3-495c-a6b5-d103da76cf06 SUCCEEDED
+2026-05-03T21:55:52 INFO [app.services.task_runner] Received dispatch jobId=f5493c36-9b67-4b33-89f2-ca140960c056 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:55:52 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:55:52 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=f5493c36-9b67-4b33-89f2-ca140960c056 artifact=725cde4d-6576-4708-8c0a-7a2a3b6de5f6 fileType=xlsx
+2026-05-03T21:56:02 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:02 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:02 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:13 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:56:13 INFO [app.services.task_runner] Job f5493c36-9b67-4b33-89f2-ca140960c056 SUCCEEDED
+2026-05-03T21:56:14 INFO [app.services.task_runner] Received dispatch jobId=d5c56818-f6de-400b-87d1-ace269f5180f capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:56:14 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:56:14 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=d5c56818-f6de-400b-87d1-ace269f5180f artifact=a3784ab7-1096-42f5-922e-0346578e4310 fileType=xlsx
+2026-05-03T21:56:29 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:29 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:29 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:42 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:56:42 INFO [app.services.task_runner] Job d5c56818-f6de-400b-87d1-ace269f5180f SUCCEEDED
+2026-05-03T21:56:43 INFO [app.services.task_runner] Received dispatch jobId=534cdae8-13c3-40f4-9ad8-0eb956a4c121 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:56:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:56:44 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=534cdae8-13c3-40f4-9ad8-0eb956a4c121 artifact=8384ec21-4517-4959-bd35-28fc2f064bde fileType=xlsx
+2026-05-03T21:56:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:44 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:56:44 INFO [app.services.task_runner] Job 534cdae8-13c3-40f4-9ad8-0eb956a4c121 SUCCEEDED
+2026-05-03T21:56:45 INFO [app.services.task_runner] Received dispatch jobId=1db91c11-3a61-4488-bee9-493eba7db268 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:56:45 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:56:45 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=1db91c11-3a61-4488-bee9-493eba7db268 artifact=78fc0132-7452-4698-961c-d4c11d591cf4 fileType=xlsx
+2026-05-03T21:56:48 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:48 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:48 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:56:56 INFO [app.services.task_runner] Job 1db91c11-3a61-4488-bee9-493eba7db268 SUCCEEDED
+2026-05-03T21:56:56 INFO [app.services.task_runner] Received dispatch jobId=8850755b-4dba-4c72-955f-c65b750f90d2 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v1 attempt=1
+2026-05-03T21:56:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:56:56 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=8850755b-4dba-4c72-955f-c65b750f90d2 artifact=0230ab37-25b9-4b1c-8a28-1b957b7f6a03 fileType=xlsx
+2026-05-03T21:56:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:56 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:56:57 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:56:57 INFO [app.services.task_runner] Job 8850755b-4dba-4c72-955f-c65b750f90d2 SUCCEEDED
+2026-05-03T21:57:09 INFO [app.services.task_runner] Received dispatch jobId=3af74500-5773-4992-a2ae-3e49a815dd73 capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:57:09 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:57:09 INFO [app.capabilities.pdf.service] PDF extract start jobId=3af74500-5773-4992-a2ae-3e49a815dd73 artifact=5a2a680c-567d-4ed5-a1f4-9a88202afd64 fileType=pdf
+2026-05-03T21:57:10 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:57:10 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:57:22 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:57:22 INFO [app.services.task_runner] Job 3af74500-5773-4992-a2ae-3e49a815dd73 SUCCEEDED
+2026-05-03T21:57:23 INFO [app.services.task_runner] Received dispatch jobId=c2e9c74a-c68e-49e2-a64b-6b86d492b129 capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:57:23 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:57:23 INFO [app.capabilities.pdf.service] PDF extract start jobId=c2e9c74a-c68e-49e2-a64b-6b86d492b129 artifact=1969d72b-3337-4381-968b-c0754d76a39f fileType=pdf
+2026-05-03T21:57:23 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:57:23 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:57:35 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:57:35 INFO [app.services.task_runner] Job c2e9c74a-c68e-49e2-a64b-6b86d492b129 SUCCEEDED
+2026-05-03T21:57:36 INFO [app.services.task_runner] Received dispatch jobId=5eea282a-0f48-4ff1-a43e-fb2f9ccb1f1c capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:57:36 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:57:36 INFO [app.capabilities.pdf.service] PDF extract start jobId=5eea282a-0f48-4ff1-a43e-fb2f9ccb1f1c artifact=cb059762-0552-4404-8208-70dfecaa067c fileType=pdf
+2026-05-03T21:57:36 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:57:36 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:57:48 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:57:48 INFO [app.services.task_runner] Job 5eea282a-0f48-4ff1-a43e-fb2f9ccb1f1c SUCCEEDED
+2026-05-03T21:57:49 INFO [app.services.task_runner] Received dispatch jobId=ee30e911-2a69-479f-9df8-fc1ec804585f capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:57:49 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:57:49 INFO [app.capabilities.pdf.service] PDF extract start jobId=ee30e911-2a69-479f-9df8-fc1ec804585f artifact=dd8df6a7-e45a-4c19-b5e7-4ffd3d9cd303 fileType=pdf
+2026-05-03T21:57:50 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:57:50 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:58:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:58:01 INFO [app.services.task_runner] Job ee30e911-2a69-479f-9df8-fc1ec804585f SUCCEEDED
+2026-05-03T21:58:02 INFO [app.services.task_runner] Received dispatch jobId=73ada915-d524-4a2c-99b0-80376d2bec46 capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:58:02 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:58:02 INFO [app.capabilities.pdf.service] PDF extract start jobId=73ada915-d524-4a2c-99b0-80376d2bec46 artifact=15311f7b-ef61-4dcf-8354-f46e614d6131 fileType=pdf
+2026-05-03T21:58:02 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:58:02 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:58:13 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:58:13 INFO [app.services.task_runner] Job 73ada915-d524-4a2c-99b0-80376d2bec46 SUCCEEDED
+2026-05-03T21:58:14 INFO [app.services.task_runner] Received dispatch jobId=f99d5ab4-45ad-4824-83f2-676521df7b9d capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:58:14 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:58:14 INFO [app.capabilities.pdf.service] PDF extract start jobId=f99d5ab4-45ad-4824-83f2-676521df7b9d artifact=2652010f-7e58-45b2-87c8-ecd6daf4e373 fileType=pdf
+2026-05-03T21:58:14 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:58:14 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:58:26 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:58:26 INFO [app.services.task_runner] Job f99d5ab4-45ad-4824-83f2-676521df7b9d SUCCEEDED
+2026-05-03T21:58:26 INFO [app.services.task_runner] Received dispatch jobId=33d6c72d-7111-49cf-8eb3-6f10d72d32f0 capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:58:26 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:58:26 INFO [app.capabilities.pdf.service] PDF extract start jobId=33d6c72d-7111-49cf-8eb3-6f10d72d32f0 artifact=7daa8263-952e-4629-ac18-f843b9ce0499 fileType=pdf
+2026-05-03T21:58:27 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:58:27 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:58:37 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:58:37 INFO [app.services.task_runner] Job 33d6c72d-7111-49cf-8eb3-6f10d72d32f0 SUCCEEDED
+2026-05-03T21:58:38 INFO [app.services.task_runner] Received dispatch jobId=090c43f8-0eb7-4730-a7eb-56396dd5482c capability=PDF_EXTRACT taskKind=PDF_EXTRACT pipelineVersion=pdf-extract-v1 attempt=1
+2026-05-03T21:58:38 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-03T21:58:38 INFO [app.capabilities.pdf.service] PDF extract start jobId=090c43f8-0eb7-4730-a7eb-56396dd5482c artifact=f3b37112-5b00-4d6a-bf9a-e6da893a9c47 fileType=pdf
+2026-05-03T21:58:38 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:58:38 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-03T21:58:48 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-03T21:58:48 INFO [app.services.task_runner] Job 090c43f8-0eb7-4730-a7eb-56396dd5482c SUCCEEDED

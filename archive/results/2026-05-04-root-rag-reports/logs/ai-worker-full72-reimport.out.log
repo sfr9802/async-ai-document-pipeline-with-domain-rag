@@ -1,0 +1,31 @@
+2026-05-04T10:59:05 INFO [__main__] Starting worker id=worker-local-1 core_api=http://localhost:8080
+2026-05-04T10:59:05 INFO [app.capabilities.registry] LLM chat backend disabled (noop).
+2026-05-04T10:59:05 INFO [app.capabilities.registry] XLSX_EXTRACT init: pipeline_version=xlsx-extract-v2-hidden-safe include_hidden=False
+2026-05-04T10:59:05 INFO [app.capabilities.registry] XLSX_EXTRACT capability registered.
+2026-05-04T10:59:05 INFO [app.capabilities.registry] AUTO / AGENT capabilities NOT registered: no downstream capabilities (RAG / OCR / MULTIMODAL) are available. Enable at least one, then restart the worker. MOCK remains registered.
+2026-05-04T10:59:05 INFO [app.capabilities.registry] Active capabilities: ['MOCK', 'XLSX_EXTRACT'] (ocr_extract=False xlsx_extract=True pdf_extract=False)
+2026-05-04T10:59:05 INFO [app.queue.redis_consumer] Queue consumer started key=aipipeline:jobs:pending block_timeout=5s
+2026-05-04T10:59:27 INFO [app.services.task_runner] Received dispatch jobId=904b2b45-044e-444e-978e-8db111ed1d6e capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v2-hidden-safe attempt=1
+2026-05-04T10:59:28 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-04T10:59:28 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=904b2b45-044e-444e-978e-8db111ed1d6e artifact=a2b389a5-f3b8-4e48-9469-e953c24f6316 fileType=xlsx
+2026-05-04T10:59:28 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T10:59:28 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T10:59:28 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T10:59:29 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-04T10:59:29 INFO [app.services.task_runner] Job 904b2b45-044e-444e-978e-8db111ed1d6e SUCCEEDED
+2026-05-04T10:59:32 INFO [app.services.task_runner] Received dispatch jobId=e9f37bf9-0e15-42c8-8810-e4977c3942bf capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v2-hidden-safe attempt=1
+2026-05-04T10:59:32 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-04T10:59:32 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=e9f37bf9-0e15-42c8-8810-e4977c3942bf artifact=1f7b65ea-e09a-41d8-bda9-237f274f2ae0 fileType=xlsx
+2026-05-04T10:59:35 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T10:59:35 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T10:59:35 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T10:59:46 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-04T10:59:46 INFO [app.services.task_runner] Job e9f37bf9-0e15-42c8-8810-e4977c3942bf SUCCEEDED
+2026-05-04T11:01:17 INFO [app.services.task_runner] Received dispatch jobId=c082cc78-156e-45f6-8bc9-26f64cce4b40 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v2-hidden-safe attempt=1
+2026-05-04T11:01:17 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-04T11:01:17 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=c082cc78-156e-45f6-8bc9-26f64cce4b40 artifact=348f11f7-1f27-40c7-8a48-ff96a90c2162 fileType=xlsx
+2026-05-04T11:01:23 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T11:01:23 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T11:01:23 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T11:01:37 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-04T11:01:37 INFO [app.services.task_runner] Job c082cc78-156e-45f6-8bc9-26f64cce4b40 SUCCEEDED

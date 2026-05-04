@@ -1,0 +1,446 @@
+{
+  "run_id": "2026-05-04T021326Z",
+  "generated_at": "2026-05-04T02:13:26.551255+00:00",
+  "run_started_at": "2026-05-04T02:04:02.827045+00:00",
+  "status": "PASS",
+  "scope": "full72_document_version_scoped_candidate_indexing",
+  "documentVersionIds": [
+    "docv_2bc2cb4df8c629e4",
+    "docv_7bddd99c39ffdf1a",
+    "docv_88368b8b12ba3f38",
+    "docv_8b23a58c27c5518a",
+    "docv_8bafd560c35198d9",
+    "docv_f39c6a5b56da9ad8",
+    "docv_fe2470815512a395"
+  ],
+  "sourceFileTypes": [
+    "SPREADSHEET",
+    "PDF"
+  ],
+  "parserVersions": [
+    "xlsx-extract-v2-hidden-safe",
+    "pdf-extract-v1",
+    "pdf-extract-v2"
+  ],
+  "expectedIndexVersion": "rag-ingestion-v2-candidate",
+  "allowUnscoped": false,
+  "dryRun": false,
+  "batchSize": 200,
+  "limit": 200,
+  "maxCycles": 80,
+  "cycles": [
+    {
+      "cycle": 1,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 2,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 3,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 4,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 5,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 6,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 7,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 8,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 9,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 10,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 11,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 12,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 13,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 14,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 15,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 16,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 17,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 18,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 19,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 20,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 21,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 22,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 23,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 24,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 25,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 26,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 27,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 28,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 29,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 30,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 31,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 32,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 33,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 34,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 35,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 36,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 37,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 38,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 39,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 40,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 41,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 42,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 43,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 44,
+      "claimed": 15,
+      "indexed": 15,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 45,
+      "claimed": 0,
+      "indexed": 0,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    }
+  ],
+  "totals": {
+    "claimed": 8615,
+    "indexed": 8615,
+    "failed": 0,
+    "stale": 0,
+    "skipped_local": 0
+  },
+  "blockers": []
+}

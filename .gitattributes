@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Archived runtime logs preserve command output verbatim. Treat them as opaque
+# artifacts so whitespace checks do not rewrite historical logs.
+archive/results/**/*.log -text -diff

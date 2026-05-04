@@ -1,0 +1,236 @@
+{
+  "run_id": "2026-05-04T015927Z",
+  "manifest": "reports\\full72_missing_xlsx_reimport_manifest.json",
+  "total_samples": 2,
+  "passed": 1,
+  "failed": 1,
+  "diagnostic_only": 0,
+  "samples": [
+    {
+      "sample_id": "full72_xlsx_care_facility_001",
+      "status": "FAILED",
+      "source_file_id": "65dd8390-b531-4bbb-9482-f4df4c72cb97",
+      "job_id": "904b2b45-044e-444e-978e-8db111ed1d6e",
+      "search_unit_count": 1,
+      "missing_required_metadata_count": 0,
+      "warnings": [],
+      "errors": [
+        "search_unit_count 1 < expected 3"
+      ],
+      "parsing_latency_seconds": 4.314,
+      "job_status": "SUCCEEDED",
+      "indexing_latency_seconds": 0.78,
+      "sample_units": [
+        {
+          "unit_type": "DOCUMENT",
+          "chunk_type": "workbook_summary",
+          "citation_text": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > workbook",
+          "location_json": {
+            "type": "xlsx",
+            "chunk_type": "workbook_summary",
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_7c0868960147f9ac",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        }
+      ],
+      "cell_metadata_count": 0,
+      "table_metadata_count": 0,
+      "expected_sheet_counts": [
+        {
+          "count": 0,
+          "sheet_name": "일반현황"
+        }
+      ],
+      "citation_pattern_counts": [
+        {
+          "count": 0,
+          "pattern": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황"
+        },
+        {
+          "count": 0,
+          "pattern": "A2:J51"
+        },
+        {
+          "count": 0,
+          "pattern": "A5002:J5051"
+        }
+      ],
+      "formula_cell_metadata_count": 0,
+      "hidden_content_leakage_count": 0,
+      "missing_table_metadata_count": 0,
+      "xlsx_table_search_unit_count": 0,
+      "formatted_cell_metadata_count": 0,
+      "xlsx_hidden_policy_mismatch_count": 0,
+      "xlsx_parser_version_mismatch_count": 0,
+      "xlsx_hidden_policy_version_mismatch_count": 0,
+      "total_latency_seconds": 5.355
+    },
+    {
+      "sample_id": "full72_xlsx_book_info_001",
+      "status": "PASSED",
+      "source_file_id": "e6218456-929e-4ddd-8889-c43e02052c5f",
+      "job_id": "e9f37bf9-0e15-42c8-8810-e4977c3942bf",
+      "search_unit_count": 202,
+      "missing_required_metadata_count": 0,
+      "warnings": [],
+      "errors": [],
+      "parsing_latency_seconds": 14.181,
+      "job_status": "SUCCEEDED",
+      "indexing_latency_seconds": 0.145,
+      "sample_units": [
+        {
+          "unit_type": "CHUNK",
+          "chunk_type": "row_group",
+          "citation_text": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx > Sheet1 > A2:J51",
+          "location_json": {
+            "type": "xlsx",
+            "row_range": "2:51",
+            "cell_range": "A2:J51",
+            "chunk_type": "row_group",
+            "sheet_name": "Sheet1",
+            "header_path": [
+              "(한민족 문화 원류의 원천) 구들과학문화",
+              "최영택 저",
+              "한국논단",
+              "2006"
+            ],
+            "sheet_index": 0,
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_2bc2cb4df8c629e4",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        },
+        {
+          "unit_type": "CHUNK",
+          "chunk_type": "row_group",
+          "citation_text": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx > Sheet1 > A5002:J5051",
+          "location_json": {
+            "type": "xlsx",
+            "row_range": "5002:5051",
+            "cell_range": "A5002:J5051",
+            "chunk_type": "row_group",
+            "sheet_name": "Sheet1",
+            "sheet_index": 0,
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_2bc2cb4df8c629e4",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        },
+        {
+          "unit_type": "CHUNK",
+          "chunk_type": "row_group",
+          "citation_text": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx > Sheet1 > A5052:J5101",
+          "location_json": {
+            "type": "xlsx",
+            "row_range": "5052:5101",
+            "cell_range": "A5052:J5101",
+            "chunk_type": "row_group",
+            "sheet_name": "Sheet1",
+            "sheet_index": 0,
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_2bc2cb4df8c629e4",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        },
+        {
+          "unit_type": "CHUNK",
+          "chunk_type": "row_group",
+          "citation_text": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx > Sheet1 > A5102:J5151",
+          "location_json": {
+            "type": "xlsx",
+            "row_range": "5102:5151",
+            "cell_range": "A5102:J5151",
+            "chunk_type": "row_group",
+            "sheet_name": "Sheet1",
+            "sheet_index": 0,
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_2bc2cb4df8c629e4",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        },
+        {
+          "unit_type": "CHUNK",
+          "chunk_type": "row_group",
+          "citation_text": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx > Sheet1 > A5152:J5201",
+          "location_json": {
+            "type": "xlsx",
+            "row_range": "5152:5201",
+            "cell_range": "A5152:J5201",
+            "chunk_type": "row_group",
+            "sheet_name": "Sheet1",
+            "sheet_index": 0,
+            "hidden_policy": "exclude_hidden",
+            "contains_formula": false,
+            "sanitizer_version": "exclude-hidden-v1",
+            "document_version_id": "docv_2bc2cb4df8c629e4",
+            "contains_merged_cell": false,
+            "hidden_policy_version": "exclude-hidden-v1"
+          },
+          "parser_version": "xlsx-extract-v2-hidden-safe"
+        }
+      ],
+      "cell_metadata_count": 500,
+      "table_metadata_count": 200,
+      "expected_sheet_counts": [
+        {
+          "count": 201,
+          "sheet_name": "Sheet1"
+        }
+      ],
+      "citation_pattern_counts": [
+        {
+          "count": 201,
+          "pattern": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx > Sheet1"
+        },
+        {
+          "count": 1,
+          "pattern": "A2:J51"
+        }
+      ],
+      "formula_cell_metadata_count": 0,
+      "hidden_content_leakage_count": 0,
+      "missing_table_metadata_count": 0,
+      "xlsx_table_search_unit_count": 200,
+      "formatted_cell_metadata_count": 500,
+      "xlsx_hidden_policy_mismatch_count": 0,
+      "xlsx_parser_version_mismatch_count": 0,
+      "xlsx_hidden_policy_version_mismatch_count": 0,
+      "total_latency_seconds": 14.378
+    }
+  ],
+  "metrics": {
+    "parser_success_rate": 1.0,
+    "unsupported_file_rate": 0.0,
+    "zero_indexable_chunk_count": 0,
+    "missing_required_metadata_count": 0,
+    "xlsx_parser_version_mismatch_count": 0,
+    "xlsx_hidden_policy_mismatch_count": 0,
+    "xlsx_hidden_policy_version_mismatch_count": 0,
+    "missing_table_metadata_count": 0,
+    "hidden_content_leakage_count": 0,
+    "parsing_latency_p95_seconds": 14.181,
+    "indexing_latency_p95_seconds": 0.78,
+    "fatal_warning_count": 0
+  }
+}

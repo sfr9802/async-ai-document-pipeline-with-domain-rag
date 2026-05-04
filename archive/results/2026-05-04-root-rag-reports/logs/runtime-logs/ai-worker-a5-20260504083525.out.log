@@ -1,0 +1,23 @@
+2026-05-04T08:35:26 INFO [__main__] Starting worker id=worker-local-1 core_api=http://localhost:8080
+2026-05-04T08:35:26 INFO [app.capabilities.registry] LLM chat backend disabled (noop).
+2026-05-04T08:35:26 INFO [app.capabilities.registry] XLSX_EXTRACT init: pipeline_version=xlsx-extract-v2-hidden-safe include_hidden=False
+2026-05-04T08:35:26 INFO [app.capabilities.registry] XLSX_EXTRACT capability registered.
+2026-05-04T08:35:27 INFO [app.capabilities.registry] AUTO / AGENT capabilities NOT registered: no downstream capabilities (RAG / OCR / MULTIMODAL) are available. Enable at least one, then restart the worker. MOCK remains registered.
+2026-05-04T08:35:27 INFO [app.capabilities.registry] Active capabilities: ['MOCK', 'XLSX_EXTRACT'] (ocr_extract=False xlsx_extract=True pdf_extract=False)
+2026-05-04T08:35:27 INFO [app.queue.redis_consumer] Queue consumer started key=aipipeline:jobs:pending block_timeout=5s
+2026-05-04T08:35:55 INFO [app.services.task_runner] Received dispatch jobId=3f0f9b5c-7f15-46d0-a3bf-fe6b5df85828 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v2-hidden-safe attempt=1
+2026-05-04T08:35:55 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-04T08:35:55 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=3f0f9b5c-7f15-46d0-a3bf-fe6b5df85828 artifact=7ef635ea-c34a-476c-a2c7-1284939bc3d9 fileType=xlsx
+2026-05-04T08:36:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T08:36:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T08:36:01 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T08:36:20 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-04T08:36:20 INFO [app.services.task_runner] Job 3f0f9b5c-7f15-46d0-a3bf-fe6b5df85828 SUCCEEDED
+2026-05-04T08:36:21 INFO [app.services.task_runner] Received dispatch jobId=519d2e48-719a-4f22-92f8-ed1b8d19b2a3 capability=XLSX_EXTRACT taskKind=XLSX_EXTRACT pipelineVersion=xlsx-extract-v2-hidden-safe attempt=1
+2026-05-04T08:36:21 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/claim "HTTP/1.1 200 "
+2026-05-04T08:36:21 INFO [app.capabilities.xlsx.service] XLSX extract start jobId=519d2e48-719a-4f22-92f8-ed1b8d19b2a3 artifact=ca55a8a2-8b0c-4fc8-bdfa-92ad92514d08 fileType=xlsx
+2026-05-04T08:36:22 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T08:36:22 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T08:36:22 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/artifacts "HTTP/1.1 200 "
+2026-05-04T08:36:24 INFO [httpx] HTTP Request: POST http://localhost:8080/api/internal/jobs/callback "HTTP/1.1 200 "
+2026-05-04T08:36:24 INFO [app.services.task_runner] Job 519d2e48-719a-4f22-92f8-ed1b8d19b2a3 SUCCEEDED

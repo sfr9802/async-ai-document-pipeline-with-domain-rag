@@ -1,0 +1,248 @@
+{
+  "generated_at": "2026-05-04T01:56:28.540295+00:00",
+  "scope": {
+    "documentVersionIds": [
+      "docv_154d379a5bc66fa3",
+      "docv_5100e8a29cb45d87",
+      "docv_855a38a33b2f9eb2",
+      "docv_88368b8b12ba3f38",
+      "docv_8b23a58c27c5518a",
+      "docv_afb3922c61912678",
+      "docv_fe2470815512a395"
+    ],
+    "sourceFileTypes": [
+      "SPREADSHEET",
+      "PDF"
+    ],
+    "parserVersions": [
+      "xlsx-extract-v2-hidden-safe",
+      "pdf-extract-v1",
+      "pdf-extract-v2"
+    ],
+    "apply": true
+  },
+  "policy": {
+    "global_delete": false,
+    "repair_policy": "for scoped rows only, restore missing embedding_text from source/citation/page metadata and set content_sha256 to sha256(embedding_text)"
+  },
+  "warnings": [],
+  "before": {
+    "missing_embedding_text_or_content_sha_count": 15,
+    "missing_embedding_text_count": 15,
+    "missing_content_sha256_count": 15,
+    "repairable_count": 15,
+    "by_document_version_id": {
+      "docv_88368b8b12ba3f38": {
+        "rows": 5,
+        "missing_embedding_text": 5,
+        "missing_content_sha256": 5,
+        "repairable": 5
+      },
+      "docv_8b23a58c27c5518a": {
+        "rows": 5,
+        "missing_embedding_text": 5,
+        "missing_content_sha256": 5,
+        "repairable": 5
+      },
+      "docv_fe2470815512a395": {
+        "rows": 5,
+        "missing_embedding_text": 5,
+        "missing_content_sha256": 5,
+        "repairable": 5
+      }
+    }
+  },
+  "after": {
+    "missing_embedding_text_or_content_sha_count": 0,
+    "missing_embedding_text_count": 0,
+    "missing_content_sha256_count": 0,
+    "repairable_count": 0,
+    "by_document_version_id": {}
+  },
+  "samples": [
+    {
+      "search_unit_id": "40f5b127-be79-4ffe-961f-f28cacdffedb",
+      "document_version_id": "docv_88368b8b12ba3f38",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v1",
+      "chunk_type": "page",
+      "page_start": 4,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "4ddd4d85-7793-4084-b6ce-9cf760b2a100",
+      "document_version_id": "docv_88368b8b12ba3f38",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v1",
+      "chunk_type": "page",
+      "page_start": 48,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "a9bedfce-5c54-44f3-a76a-6a9dbb0d29e4",
+      "document_version_id": "docv_88368b8b12ba3f38",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v1",
+      "chunk_type": "page",
+      "page_start": 2,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "dcb842e1-1063-4b87-ae1c-053a3aa634be",
+      "document_version_id": "docv_88368b8b12ba3f38",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v1",
+      "chunk_type": "page",
+      "page_start": 44,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "f82e9c8c-82ef-4107-a193-37c1c67d211b",
+      "document_version_id": "docv_88368b8b12ba3f38",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v1",
+      "chunk_type": "page",
+      "page_start": 46,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "60c0099d-d442-4cec-8886-dc6fbd019d77",
+      "document_version_id": "docv_8b23a58c27c5518a",
+      "source_file_name": "2025_12_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v2",
+      "chunk_type": "page",
+      "page_start": 46,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "ab3feef1-6393-47c8-9eea-58249fb7cd3f",
+      "document_version_id": "docv_8b23a58c27c5518a",
+      "source_file_name": "2025_12_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v2",
+      "chunk_type": "page",
+      "page_start": 48,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "b86931b7-2bea-4022-a7a4-9ba86d37cc3e",
+      "document_version_id": "docv_8b23a58c27c5518a",
+      "source_file_name": "2025_12_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v2",
+      "chunk_type": "page",
+      "page_start": 44,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "cd1873b1-8035-467f-8787-7a6fc5a1dd62",
+      "document_version_id": "docv_8b23a58c27c5518a",
+      "source_file_name": "2025_12_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v2",
+      "chunk_type": "page",
+      "page_start": 2,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "d1972b57-2d2e-409e-97e7-b82370bc4049",
+      "document_version_id": "docv_8b23a58c27c5518a",
+      "source_file_name": "2025_12_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v2",
+      "chunk_type": "page",
+      "page_start": 4,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "6a177705-358a-4dcf-aa50-d2ce7d268846",
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v2",
+      "chunk_type": "page",
+      "page_start": 44,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "708fcd08-a91d-47ab-a8f0-00452cc79d9f",
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v2",
+      "chunk_type": "page",
+      "page_start": 2,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "ae59edf2-51ac-477f-a4f3-7240b9d3e15e",
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v2",
+      "chunk_type": "page",
+      "page_start": 4,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "b10ae9f2-646e-49e2-a3bd-bfbc5644e34d",
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v2",
+      "chunk_type": "page",
+      "page_start": 46,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    },
+    {
+      "search_unit_id": "f5fe7070-419b-4941-81a3-3e0b81d13842",
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "parser_version": "pdf-extract-v2",
+      "chunk_type": "page",
+      "page_start": 48,
+      "missing_embedding_text": true,
+      "missing_content_sha256": true,
+      "repairable": true,
+      "repair_reason": null
+    }
+  ],
+  "repairable_count": 15,
+  "applied_count": 15,
+  "status": "PASS",
+  "blockers": []
+}
