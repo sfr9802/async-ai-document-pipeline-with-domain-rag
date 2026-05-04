@@ -173,6 +173,54 @@ def test_promotion_gate_blocks_namespace_filter_mismatch():
     assert "retrieval_backend_identity.index_namespace_filter must match promoted index_version" in result.reasons
 
 
+def test_promotion_gate_blocks_filtered_promotion_evidence():
+    metrics = _passing_metrics(ocr_needed=False) | {
+        "row_filter": {
+            "expected_location_types": ["xlsx"],
+            "buckets": [],
+            "bucket_prefixes": [],
+            "original_row_count": 72,
+            "filtered_row_count": 50,
+        }
+    }
+
+    result = gate_module.evaluate_promotion_gate(
+        index_version="candidate-v2",
+        metrics=metrics,
+        baseline_metrics=_baseline_metrics(),
+    )
+
+    assert result.decision == "BLOCKED"
+    assert "filtered retrieval eval cannot be promotion evidence" in result.reasons
+
+
+def test_promotion_gate_blocks_eval_dataset_mismatch():
+    metrics = _passing_metrics(ocr_needed=False) | {
+        "eval_dataset_id": "gold_queries_xlsx_v1",
+        "eval_dataset_version": "xlsx_v1_reviewed_positive_35",
+        "eval_dataset_sha256": "xlsx-sha",
+        "gold_query_row_count": 35,
+    }
+
+    result = gate_module.evaluate_promotion_gate(
+        index_version="candidate-v2",
+        metrics=metrics,
+        baseline_metrics=_baseline_metrics(),
+    )
+
+    assert result.decision == "BLOCKED"
+    assert "candidate eval_dataset_version must match baseline_dataset_version" in result.reasons
+    assert "candidate eval_dataset_id must match baseline eval_dataset_id" in result.reasons
+    assert "candidate eval_dataset_sha256 must match baseline eval_dataset_sha256" in result.reasons
+    assert "candidate gold_query_row_count must match baseline gold_query_row_count" in result.reasons
+    assert result.metrics["eval_dataset_id"] == "gold_queries_xlsx_v1"
+    assert result.metrics["eval_dataset_sha256"] == "xlsx-sha"
+    assert result.metrics["gold_query_row_count"] == 35
+    assert result.metrics["baseline_eval_dataset_id"] == "gold_queries_v0"
+    assert result.metrics["baseline_eval_dataset_sha256"] == "gold-sha"
+    assert result.metrics["baseline_gold_query_row_count"] == 72
+
+
 def test_persist_eval_result_inserts_report_only_payload_with_status():
     metrics = _passing_metrics(ocr_needed=False) | {
         "fatal_warning_count": 1,
@@ -315,6 +363,10 @@ def _passing_metrics(*, ocr_needed: bool) -> dict[str, object]:
         "candidate_index_mismatch_count": 0,
         "required_index_version_mismatch_count": 0,
         "embedding_status_mismatch_count": 0,
+        "eval_dataset_id": "gold_queries_v0",
+        "eval_dataset_version": "strict_B_vector_v1",
+        "eval_dataset_sha256": "gold-sha",
+        "gold_query_row_count": 72,
     }
     if ocr_needed:
         metrics["OCR_needed_count"] = 1
@@ -330,6 +382,9 @@ def _baseline_metrics() -> dict[str, object]:
         "immutable_baseline_report_hash": "hash",
         "baseline_provenance": "previous-promoted-index",
         "baseline_dataset_version": "strict_B_vector_v1",
+        "eval_dataset_id": "gold_queries_v0",
+        "eval_dataset_sha256": "gold-sha",
+        "gold_query_row_count": 72,
     }
 
 

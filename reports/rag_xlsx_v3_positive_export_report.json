@@ -1,0 +1,60 @@
+{
+  "run_id": "2026-05-04T150652Z",
+  "generated_at": "2026-05-04T15:06:52.891494+00:00",
+  "status": "COMPLETED",
+  "report_role": "xlsx_v3_positive_export_report",
+  "promotion_evidence": false,
+  "evidence_role": "positive_diagnostic_manifest_export",
+  "source_xlsx_v2": "eval\\gold_queries_xlsx_v2.csv",
+  "source_naturalized_csv": "eval\\gold_queries_xlsx_v3_naturalized.csv",
+  "source_naturalized_sha256": "4379462e531b3f1ba71730556d777a03b88370bc0116c38bec9553ce10f4051d",
+  "output_csv": "eval\\gold_queries_xlsx_v3_positive.csv",
+  "output_sha256": "50db742e57121c6ffbf88a7a8ec41383a2a6377db40c4611f7705e83ca60b4ba",
+  "source_row_count": 50,
+  "naturalized_row_count": 50,
+  "positive_row_count": 35,
+  "include_filter": {
+    "v2_label_status": "positive",
+    "label_status": "bound",
+    "expected_location_type": "xlsx"
+  },
+  "excluded_v2_label_status_distribution": {
+    "deferred": 8,
+    "excluded": 5,
+    "negative_hidden_policy": 2
+  },
+  "excluded_query_ids": [
+    "gq_xlsx_header_ambiguous_001",
+    "gq_xlsx_header_ambiguous_002",
+    "gq_xlsx_header_ambiguous_003",
+    "gq_xlsx_header_ambiguous_004",
+    "gq_xlsx_formula_value_001",
+    "gq_xlsx_formula_value_002",
+    "gq_xlsx_formula_value_003",
+    "gq_xlsx_date_number_format_002",
+    "gq_xlsx_date_number_format_004",
+    "gq_xlsx_hidden_policy_001",
+    "gq_xlsx_hidden_policy_002",
+    "gq_mixed_text_table_001",
+    "gq_mixed_text_table_002",
+    "gq_mixed_text_table_003",
+    "gq_auto_027"
+  ],
+  "validation": {
+    "ok": true,
+    "row_count": 35,
+    "error_count": 0,
+    "row_error_count": 0,
+    "bucket_counts": {
+      "xlsx_lookup": 18,
+      "xlsx_date_number_format": 2,
+      "xlsx_hidden_policy": 1,
+      "xlsx_aggregation": 14
+    },
+    "sample_errors": []
+  },
+  "notes": [
+    "Negative hidden-policy, deferred, and excluded rows are not included in this positive diagnostic manifest.",
+    "This export does not run promotion and does not mark promotion_evidence=true."
+  ]
+}

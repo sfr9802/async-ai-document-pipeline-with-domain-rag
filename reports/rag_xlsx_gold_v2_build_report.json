@@ -1,0 +1,139 @@
+{
+  "run_id": "2026-05-04T142230Z",
+  "generated_at": "2026-05-04T14:22:30.997227+00:00",
+  "status": "COMPLETED",
+  "report_role": "xlsx_gold_v2_build_report",
+  "promotion_evidence": false,
+  "evidence_role": "gold_v2_candidate_manifest",
+  "source_gold_v0": "eval\\gold_queries_v0.csv",
+  "source_xlsx_v1": "eval\\gold_queries_xlsx_v1.csv",
+  "source_review_decisions": "reports\\rag_xlsx_query_evidence_review_decisions.json",
+  "source_diagnostic_report": "reports\\rag_retrieval_eval_xlsx_vector_diagnostic_report.json",
+  "source_ingest_manifest": "rag-data-xlsx-candidate-v1\\ingest_manifest.json",
+  "dataset": {
+    "path": "eval\\gold_queries_xlsx_v2.csv",
+    "dataset_id": "gold_queries_xlsx_v2",
+    "version": "xlsx_v2_candidate_manifest_50",
+    "row_count": 50,
+    "sha256": "ce01932657352a7c8ad74983090bb9355687c0d6c91cdaa6bf39eee82beb51da"
+  },
+  "row_count": 50,
+  "positive_v1_source_count": 35,
+  "excluded_or_deferred_source_count": 13,
+  "non_positive_source_count": 15,
+  "reclassified_from_v1_exclusion_count": 15,
+  "hidden_negative_count": 2,
+  "bucket_distribution": {
+    "mixed_text_table": 3,
+    "xlsx_aggregation": 15,
+    "xlsx_date_number_format": 4,
+    "xlsx_formula_value": 3,
+    "xlsx_header_ambiguous": 4,
+    "xlsx_hidden_policy": 3,
+    "xlsx_lookup": 18
+  },
+  "v2_label_status_distribution": {
+    "deferred": 8,
+    "excluded": 5,
+    "negative_hidden_policy": 2,
+    "positive": 35
+  },
+  "harness_label_status_distribution": {
+    "bound": 50
+  },
+  "eval_purpose_distribution": {
+    "chunk_granularity": 5,
+    "date_number_format": 4,
+    "formula_display_value": 3,
+    "hidden_policy_negative": 2,
+    "retrieval_positive": 33,
+    "table_range_policy": 3
+  },
+  "v2_range_match_policy_distribution": {
+    "CONTAINS_EXPECTED": 10,
+    "EXACT_RANGE": 37,
+    "NONE": 2,
+    "OVERLAP_RANGE": 1
+  },
+  "harness_range_match_policy_distribution": {
+    "contains_expected": 10,
+    "exact_match": 37,
+    "none": 2,
+    "overlaps_expected": 1
+  },
+  "review_decision_distribution": {
+    "EXCLUDE_FROM_PROMOTION_EVAL": 5,
+    "KEEP_AS_POSITIVE": 35,
+    "REBIND_EXPECTED_SHEET_OR_RANGE": 2,
+    "RELABEL_AS_NEGATIVE_HIDDEN_POLICY": 2,
+    "RELAX_MATCH_POLICY_TO_RANGE_OVERLAP": 1,
+    "REQUIRE_CHUNK_GRANULARITY_FIX": 5
+  },
+  "missing_review_decision_query_ids": [],
+  "current_harness_validation": {
+    "ok": true,
+    "row_count": 50,
+    "error_count": 0,
+    "row_error_count": 0,
+    "bucket_counts": {
+      "xlsx_lookup": 18,
+      "xlsx_header_ambiguous": 4,
+      "xlsx_formula_value": 3,
+      "xlsx_date_number_format": 4,
+      "xlsx_hidden_policy": 3,
+      "xlsx_aggregation": 15,
+      "mixed_text_table": 3
+    },
+    "sample_errors": []
+  },
+  "required_user_v2_columns": [
+    "query_id",
+    "bucket",
+    "query",
+    "expected_file_name",
+    "expected_document_version_id",
+    "expected_location_type",
+    "expected_sheet_name",
+    "expected_cell_range",
+    "v2_range_match_policy",
+    "expected_answer_text",
+    "must_contain_terms",
+    "source_sample_id",
+    "v2_label_status",
+    "policy_label",
+    "eval_purpose",
+    "review_status",
+    "notes"
+  ],
+  "generated_reports": {
+    "hidden_negative_eval_plan": "reports\\rag_xlsx_hidden_negative_eval_plan.json",
+    "formula_date_contract_review": "reports\\rag_xlsx_formula_date_contract_review.json",
+    "chunk_granularity_review": "reports\\rag_xlsx_chunk_granularity_review.json"
+  },
+  "baseline_status": {
+    "promotion_executed": false,
+    "promotion_evidence": false,
+    "immutable_baseline_descriptor_modified": false,
+    "baseline_artifact_or_hash_modified": false,
+    "gold_queries_v0_modified": false,
+    "gold_queries_xlsx_v1_modified": false
+  },
+  "important_decisions": [
+    "V2 is a candidate manifest containing positive, hidden-negative, excluded, and deferred labels.",
+    "Hidden-negative rows are separated from positive retrieval metrics.",
+    "Current harness columns remain valid; v2 label/range design values live in v2_label_status and v2_range_match_policy.",
+    "Formula/date rows are classified by raw formula, cached value, display formatted value, or date/number format contract.",
+    "No thresholds, hybrid search, reranking, parser features, promotion flags, or immutable baseline files are changed."
+  ],
+  "warnings": [
+    "Do not run this full v2 manifest as a positive retrieval eval without filtering v2_label_status=positive.",
+    "Rows marked negative_hidden_policy require separate hidden leakage metrics, not Hit@K.",
+    "Rows marked deferred or excluded need manual contract resolution before promotion-grade positive scoring."
+  ],
+  "notes": [
+    "The source diagnostic report remains diagnostic-only.",
+    "This builder does not call scripts/rag_retrieval_eval.py.",
+    "CSV output uses utf-8-sig to match existing gold CSV readers."
+  ],
+  "dataset_sha256": "ce01932657352a7c8ad74983090bb9355687c0d6c91cdaa6bf39eee82beb51da"
+}

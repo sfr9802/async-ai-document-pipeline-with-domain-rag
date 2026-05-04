@@ -1,0 +1,76 @@
+{
+  "run_id": "2026-05-04T104305Z",
+  "status": "BLOCKED",
+  "report_role": "promotion_grade_vector_eval_readiness",
+  "promotion_evidence": false,
+  "candidate_index_version": "rag-ingestion-v2-candidate",
+  "baseline_index_version": "initial-full72-vector-baseline-v0",
+  "current_retrieval_report": "reports\\rag_retrieval_eval_full72_vector_diagnostic_report.json",
+  "quality_breakdown_report": "reports\\rag_retrieval_full72_vector_quality_breakdown.json",
+  "cleanup_plan": "reports\\rag_full72_query_evidence_cleanup_plan.json",
+  "metrics_report": "reports\\rag_ingestion_a5_promotion_gate_metrics.json",
+  "source_qualified_readiness_report": "reports\\a5_c2_source_qualified_report_contract_readiness.json",
+  "candidate_embedding_consistency_report": "reports\\pdf_xlsx_candidate_embedding_consistency_report.json",
+  "candidate_scope_path_readiness_report": "reports\\rag_candidate_scope_path_readiness.json",
+  "c3_immutable_baseline_readiness_report": "reports\\a5_c3_immutable_baseline_readiness.json",
+  "promotion_gate_report": "reports\\rag_ingestion_a5_promotion_gate_report.json",
+  "readiness_summary": {
+    "vector_backend": "vector",
+    "backend_identity": {
+      "backend": "faiss",
+      "index_dir": "rag-data-canary",
+      "index_namespace_filter": "rag-ingestion-v2-candidate",
+      "db_dsn": "host=localhost port=5433 dbname=aipipeline user=aipipeline password=<redacted>",
+      "filtering_mode": "vector_namespace_then_contract_filter"
+    },
+    "current_report_promotion_evidence": false,
+    "current_report_evidence_role": "diagnostic",
+    "source_qualified_gate_input_missing_count": 0,
+    "source_qualified_readiness_status": "PASS",
+    "cleanup_status": "NEEDS_CLEANUP",
+    "unresolved_query_count": 41,
+    "candidate_embedding_consistency_status": "PASS",
+    "candidate_scope_status": "PASS",
+    "c3_status": "PASS",
+    "gate_decision": "BLOCKED",
+    "quality_threshold_reasons": [
+      "xlsx_citation_location_accuracy must be >= 0.90",
+      "pdf_citation_location_accuracy must be >= 0.85",
+      "citation_accuracy must be >= 0.85",
+      "parsing_latency_p95 must be <= 30.00"
+    ]
+  },
+  "source_qualified_gate_input": {
+    "status": "PASS",
+    "gate_input_missing_count": 0,
+    "gate_input_missing": [],
+    "readiness_status": "PASS",
+    "readiness_gate_input_missing_count": 0,
+    "readiness_gate_input_missing": [],
+    "readiness_derived_metric_sources": {},
+    "source_reports": [
+      "archive\\results\\2026-05-04-root-rag-reports\\reports\\rag_ingestion_hardened_xlsx_c2_reimport_report.json",
+      "archive\\results\\2026-05-04-root-rag-reports\\reports\\rag_pdf_ingestion_sample_batch_report.json",
+      "reports\\rag_retrieval_eval_full72_vector_diagnostic_report.json",
+      "archive\\results\\2026-05-04-root-rag-reports\\reports\\rag_pdf_ocr_fallback_smoke_report.json"
+    ]
+  },
+  "global_path_hygiene_separation": {
+    "candidate_scope_status": "PASS",
+    "decision": "Candidate promotion-scope readiness is checked here. Global legacy parser/path drift belongs to the separate hygiene backlog and is not mixed into this readiness status."
+  },
+  "blockers": [
+    "current retrieval report is diagnostic-only; rerun with --promotion-evidence after cleanup",
+    "source-qualified retrieval metrics are not promotion evidence",
+    "query-level evidence cleanup must have unresolved_query_count=0"
+  ],
+  "warnings": [
+    "current retrieval report evidence_role=diagnostic and is usable only for cleanup analysis"
+  ],
+  "next_allowed_step": "After query cleanup resolves to zero unresolved rows, rerun vector eval with --promotion-evidence and rebuild source-qualified metrics. Do not use this diagnostic report as promotion evidence.",
+  "notes": [
+    "This readiness check does not execute promotion.",
+    "It does not relax thresholds, add hybrid search, add reranking, or change parser behavior.",
+    "Library-search reports and candidate snapshots are rejected as promotion-grade vector evidence."
+  ]
+}

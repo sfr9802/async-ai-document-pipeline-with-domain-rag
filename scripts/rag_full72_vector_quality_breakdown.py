@@ -32,6 +32,8 @@ def main(argv: list[str] | None = None) -> int:
         global_hygiene=global_hygiene,
         retrieval_report_path=Path(args.retrieval_report),
         gold_path=Path(args.gold),
+        candidate_scope_readiness_path=Path(args.candidate_scope_readiness),
+        global_path_hygiene_path=Path(args.global_path_hygiene),
     )
     write_json(Path(args.output), payload)
     print_report(payload)
@@ -46,6 +48,8 @@ def build_breakdown(
     global_hygiene: Mapping[str, Any],
     retrieval_report_path: Path,
     gold_path: Path,
+    candidate_scope_readiness_path: Path = DEFAULT_CANDIDATE_SCOPE_READINESS,
+    global_path_hygiene_path: Path = DEFAULT_GLOBAL_PATH_HYGIENE,
 ) -> dict[str, Any]:
     gold_by_id = {row.get("query_id", ""): row for row in gold_rows}
     query_results = list(retrieval.get("query_results") or [])
@@ -82,6 +86,11 @@ def build_breakdown(
             "failure_category_counts": dict(counts),
             "suspect_group_counts": dict(by_bucket_group[bucket]),
         }
+    xlsx_rows = [
+        row for row in classified_rows
+        if str(row.get("bucket") or "").startswith("xlsx") or row.get("bucket") == "mixed_text_table"
+    ]
+    metrics = retrieval.get("metrics") or {}
 
     return {
         "run_id": utc_run_id(),
@@ -95,10 +104,26 @@ def build_breakdown(
         "evidence_role": retrieval.get("evidence_role"),
         "top_k": retrieval.get("top_k"),
         "query_count": len(query_results),
-        "metrics": retrieval.get("metrics") or {},
+        "metrics": metrics,
+        "xlsx_only_metrics": {
+            key: metrics.get(key)
+            for key in (
+                "Hit@10",
+                "MRR@10",
+                "xlsx_file_hit@10",
+                "xlsx_sheet_hit@10",
+                "xlsx_range_overlap@10",
+                "xlsx_range_contains@10",
+                "xlsx_exact_range@10",
+                "xlsx_citation_location_accuracy",
+                "hidden_content_leakage_count",
+            )
+            if key in metrics
+        },
         "bucket_metrics": bucket_metrics,
         "failure_category_counts": dict(category_counts),
         "suspect_group_counts": dict(suspect_group_counts),
+        "xlsx_failure_buckets": xlsx_failure_buckets(xlsx_rows),
         "bucket_breakdown": bucket_breakdown,
         "pdf_page_bbox_failure_breakdown": {
             "query_count": sum(1 for row in classified_rows if str(row.get("bucket") or "").startswith("pdf")),
@@ -112,11 +137,7 @@ def build_breakdown(
             ),
         },
         "xlsx_sheet_range_failure_breakdown": {
-            "query_count": sum(
-                1
-                for row in classified_rows
-                if str(row.get("bucket") or "").startswith("xlsx") or row.get("bucket") == "mixed_text_table"
-            ),
+            "query_count": len(xlsx_rows),
             "category_counts": {
                 key: value
                 for key, value in category_counts.items()
@@ -130,9 +151,9 @@ def build_breakdown(
         "policy_matching_rule_suspect_rows": compact_rows(classified_rows, "policy_or_matching_rule_suspect"),
         "classified_query_rows": classified_rows,
         "readiness_separation": {
-            "candidate_scope_readiness_report": str(DEFAULT_CANDIDATE_SCOPE_READINESS),
+            "candidate_scope_readiness_report": str(candidate_scope_readiness_path),
             "candidate_scope_status": candidate_scope.get("status"),
-            "global_path_hygiene_report": str(DEFAULT_GLOBAL_PATH_HYGIENE),
+            "global_path_hygiene_report": str(global_path_hygiene_path),
             "global_path_hygiene_status": global_hygiene.get("status"),
             "decision": (
                 "Candidate promotion-scope readiness and global path hygiene are reported separately. "
@@ -166,19 +187,24 @@ def classify_query(row: Mapping[str, Any], gold: Mapping[str, str]) -> dict[str,
     bbox_missing_hits = [hit for hit in page_no_hits if expected_bbox and not location(hit).get("bbox")]
 
     flags: list[str] = []
+    supporting_hits: list[Mapping[str, Any]] = []
     if row.get("location_match") is True:
         category = "ok"
         group = "matched"
+        supporting_hits = [hit for hit in top_hits if breakdown(hit).get("location_match")][:3]
     elif expected_type in {"pdf", "ocr"}:
         if not file_hits:
             category = "pdf_expected_file_absent_in_top10"
             group = "retrieval_text_or_ranking_suspect"
+            supporting_hits = top_hits[:3]
         elif not docv_hits:
             category = "pdf_gold_docv_or_duplicate_file_binding_mismatch"
             group = "gold_binding_or_label_suspect"
+            supporting_hits = file_hits[:3]
         elif page_policy_hits:
             category = "pdf_page_policy_missing_physical_or_label"
             group = "policy_or_matching_rule_suspect"
+            supporting_hits = page_policy_hits[:3]
             if expected_physical is not None and any(location(hit).get("physical_page_index") is None for hit in page_policy_hits):
                 flags.append("correct_page_no_hit_but_missing_physical_page_index")
             if expected_bbox and bbox_missing_hits:
@@ -186,34 +212,43 @@ def classify_query(row: Mapping[str, Any], gold: Mapping[str, str]) -> dict[str,
         elif expected_page_no is not None and not page_no_hits:
             category = "pdf_expected_page_absent_in_top10"
             group = "retrieval_text_or_ranking_suspect"
+            supporting_hits = docv_hits[:3]
         elif expected_bbox and not any(breakdown(hit).get("pdf_bbox_overlap") for hit in page_no_hits):
             category = "pdf_bbox_policy_or_chunk_granularity_mismatch"
             group = "policy_or_matching_rule_suspect"
             flags.append("page_hit_without_bbox_overlap")
+            supporting_hits = page_no_hits[:3]
         else:
             category = "pdf_other_location_mismatch"
             group = "gold_binding_or_label_suspect"
+            supporting_hits = docv_hits[:3]
     else:
         if not file_hits:
             category = "xlsx_expected_file_absent_in_top10"
             group = "retrieval_text_or_ranking_suspect"
+            supporting_hits = top_hits[:3]
         elif not docv_hits:
             category = "xlsx_gold_docv_or_duplicate_file_binding_mismatch"
             group = "gold_binding_or_label_suspect"
+            supporting_hits = file_hits[:3]
         elif expected_table and range_hits and not any(breakdown(hit).get("xlsx_table_match") for hit in range_hits):
             category = "xlsx_table_metadata_or_gold_binding_mismatch"
             group = "gold_binding_or_label_suspect"
             flags.append("expected_table_id_not_present_on_range_hit")
+            supporting_hits = range_hits[:3]
         elif expected_sheet and sheet_hits and expected_range and not range_hits:
             category = "xlsx_range_ranking_or_chunk_granularity_mismatch"
             group = "chunk_granularity_suspect"
             flags.append("expected_sheet_hit_but_expected_range_absent")
+            supporting_hits = sheet_hits[:3]
         elif expected_sheet and not sheet_hits:
             category = "xlsx_sheet_ranking_mismatch"
             group = "retrieval_text_or_ranking_suspect"
+            supporting_hits = docv_hits[:3]
         else:
             category = "xlsx_other_location_mismatch"
             group = "gold_binding_or_label_suspect"
+            supporting_hits = docv_hits[:3]
 
     return {
         "query_id": row.get("query_id"),
@@ -226,6 +261,7 @@ def classify_query(row: Mapping[str, Any], gold: Mapping[str, str]) -> dict[str,
         "failure_category": category,
         "suspect_group": group,
         "diagnostic_flags": flags,
+        "supporting_hit_ranks": [hit.get("rank") for hit in supporting_hits],
         "expected": {
             "file_name": row.get("expected_file_name") or gold.get("expected_file_name"),
             "document_version_id": gold.get("expected_document_version_id"),
@@ -240,6 +276,7 @@ def classify_query(row: Mapping[str, Any], gold: Mapping[str, str]) -> dict[str,
             "bbox": gold.get("expected_bbox") or row.get("expected_bbox"),
         },
         "top_hits": summarize_hits(top_hits[:5]),
+        "supporting_hits": summarize_hits(supporting_hits),
     }
 
 
@@ -285,9 +322,49 @@ def compact_rows(classified_rows: list[dict[str, Any]], group: str) -> list[dict
             "location_rank": row.get("location_rank"),
             "expected": row.get("expected"),
             "top_hits": row.get("top_hits"),
+            "supporting_hit_ranks": row.get("supporting_hit_ranks"),
+            "supporting_hits": row.get("supporting_hits"),
         }
         for row in rows
     ]
+
+
+def xlsx_failure_buckets(classified_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    buckets: dict[str, list[str]] = {
+        "matched": [],
+        "retrieval_ranking_suspect": [],
+        "formula_or_date_content_absent": [],
+        "hidden_policy_negative": [],
+        "visible_control_rebind_review": [],
+        "table_range_label_strictness": [],
+        "chunk_granularity_suspect": [],
+        "gold_binding_suspect": [],
+    }
+    for row in classified_rows:
+        query_id = str(row.get("query_id") or "")
+        bucket = str(row.get("bucket") or "")
+        category = str(row.get("failure_category") or "")
+        group = str(row.get("suspect_group") or "")
+        if category == "ok":
+            buckets["matched"].append(query_id)
+        elif bucket in {"xlsx_formula_value", "xlsx_date_number_format"} and category != "ok":
+            buckets["formula_or_date_content_absent"].append(query_id)
+        elif bucket == "xlsx_hidden_policy" and category == "ok":
+            buckets["hidden_policy_negative"].append(query_id)
+        elif bucket == "xlsx_hidden_policy":
+            buckets["visible_control_rebind_review"].append(query_id)
+        elif category == "xlsx_table_metadata_or_gold_binding_mismatch":
+            buckets["table_range_label_strictness"].append(query_id)
+        elif group == "chunk_granularity_suspect":
+            buckets["chunk_granularity_suspect"].append(query_id)
+        elif group == "gold_binding_or_label_suspect":
+            buckets["gold_binding_suspect"].append(query_id)
+        else:
+            buckets["retrieval_ranking_suspect"].append(query_id)
+    return {
+        "bucket_counts": {key: len(value) for key, value in buckets.items()},
+        "bucket_query_ids": buckets,
+    }
 
 
 def breakdown(hit: Mapping[str, Any]) -> Mapping[str, Any]:

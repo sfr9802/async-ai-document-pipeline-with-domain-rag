@@ -77,6 +77,20 @@ public service without a separate security review.
 | `scripts/rag_gold_query_rebind.py` | Rebinds RAG ingestion gold queries from the live catalog DB. |
 | `scripts/rag_prepare_immutable_baseline.py` | Validates/materializes immutable RAG-ingestion baseline evidence. |
 | `scripts/rag_bootstrap_initial_vector_baseline.py` | Bootstrap helper for the first immutable vector baseline descriptor. |
+| `scripts/rag_query_evidence_cleanup_plan.py` | Report-only full72 query evidence cleanup planner. |
+| `scripts/rag_source_qualified_gate_input_readiness.py` | Source-qualified promotion-gate input contract readiness check. |
+| `scripts/rag_candidate_index_lineage_report.py` | Diagnostic-only lineage report for immutable baseline and candidate vector artifacts. |
+| `scripts/rag_promotion_grade_vector_eval_readiness.py` | Fail-closed readiness check for a future full72 promotion-grade vector eval. |
+| `scripts/rag_xlsx_gold_quality_audit.py` | XLSX gold/query quality audit. |
+| `scripts/rag_xlsx_gold_v2_builder.py` | Builds the mixed XLSX v2 manifest without promotion evidence. |
+| `scripts/rag_xlsx_natural_query_builder.py` | Builds the XLSX v3 naturalized and positive-only query manifests. |
+| `scripts/rag_xlsx_natural_query_quality_audit.py` | Audits XLSX v3 naturalized query quality. |
+| `scripts/rag_xlsx_dataset_canary_report.py` | Reports requested XLSX dataset inventory and canary sample selection. |
+| `scripts/rag_xlsx_query_evidence_review.py` | Applies reviewed XLSX query-evidence decisions. |
+| `scripts/rag_xlsx_promotion_grade_eval_readiness.py` | Fail-closed readiness check for a future XLSX-only promotion-grade vector eval. |
+| `scripts/rag_xlsx_v3_vector_quality_breakdown.py` | XLSX v3 positive vector diagnostic breakdown. |
+| `scripts/xlsx_candidate_scope_report.py` | XLSX-only hidden-safe candidate scope report. |
+| `scripts/xlsx_candidate_embedding_consistency.py` | XLSX-only candidate embedding consistency report. |
 
 ## Archive Policy
 

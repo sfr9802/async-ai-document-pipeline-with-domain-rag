@@ -1,0 +1,92 @@
+{
+  "schema": "rag-initial-vector-baseline-bootstrap-v1",
+  "baseline_type": "INITIAL_BASELINE_BOOTSTRAP",
+  "bootstrap_status": "BOOTSTRAP_READY_NOT_PROMOTION",
+  "immutable_baseline": true,
+  "candidate_snapshot": false,
+  "candidate_snapshot_baseline": false,
+  "baseline_index_version": "initial-full72-vector-baseline-v0",
+  "source_candidate_index_version": "rag-ingestion-v2-candidate",
+  "retrieval_backend": "vector",
+  "backend_identity": {
+    "backend": "faiss",
+    "index_dir": "rag-data-canary",
+    "index_namespace_filter": "rag-ingestion-v2-candidate",
+    "db_dsn": "host=localhost port=5433 dbname=aipipeline user=aipipeline password=<redacted>",
+    "filtering_mode": "vector_namespace_then_contract_filter"
+  },
+  "candidate_namespace_filter": "rag-ingestion-v2-candidate",
+  "eval_dataset_id": "gold_queries_v0",
+  "eval_dataset_version": "full72_vector_diagnostic_v0",
+  "baseline_dataset_version": "full72_vector_diagnostic_v0",
+  "eval_dataset_sha256": "e2e85678ddbf83c03927e69d2a75b825f20048f12f4ac50bb7f9b820c289f8ef",
+  "gold_query_row_count": 72,
+  "document_version_scope": {
+    "source": "consistency_report",
+    "document_version_id_count": 7,
+    "document_version_ids": [
+      "docv_2bc2cb4df8c629e4",
+      "docv_7bddd99c39ffdf1a",
+      "docv_88368b8b12ba3f38",
+      "docv_8b23a58c27c5518a",
+      "docv_8bafd560c35198d9",
+      "docv_f39c6a5b56da9ad8",
+      "docv_fe2470815512a395"
+    ]
+  },
+  "embedding_model": "BAAI/bge-m3",
+  "embedding_text_variant": "retrieval_title_section",
+  "embedding_text_builder_version": "v4-1",
+  "embedding_text_sha256": "9579dd8f108d5550366da084906509c48b15013c91637ff3d81673d188a6e292",
+  "vector_index_hash": "30c40bce415538cc4aa09549dae74b349bab72330d5b9a815e84d943e08d1a98",
+  "faiss_artifact_hash": "6167ffde029c5490e49fb4e27e55469d6f6702395cde816ec00be11fd077a964",
+  "faiss_artifact_hashes": {
+    "faiss.index": "6167ffde029c5490e49fb4e27e55469d6f6702395cde816ec00be11fd077a964",
+    "build.json": "0e9342cc095d73ad5f5b7851b667ef96e9c6137cc4fe7edc6a072f13cb8caca5",
+    "ingest_manifest.json": "2f94558e3320eb446e156a1c2df07e0e8e9c792d5681bdaf0670cef0953eb9c0"
+  },
+  "retrieval_report_path": "reports\\rag_retrieval_eval_full72_vector_diagnostic_report.json",
+  "retrieval_report_sha256": "6d69284ffafbda18d08622adfd5d8e41186309e1f70441cb9c3b40d79132873c",
+  "immutable_baseline_report_hash": "6d69284ffafbda18d08622adfd5d8e41186309e1f70441cb9c3b40d79132873c",
+  "metrics_report_path": "reports\\rag_ingestion_a5_promotion_gate_metrics.json",
+  "metrics_report_sha256": "05821ffb6f620c7edd652b38ff8b6c5cbb4c6ba4e0d82f6af5ff2a808d791b88",
+  "consistency_report_path": "reports\\pdf_xlsx_candidate_embedding_consistency_report.json",
+  "consistency_report_sha256": "c6c2fcdc40fa46636cb7c7650d85f65ad1c19c6cfba3a185e848758a8dfa629c",
+  "candidate_scope_readiness_report_path": "reports\\rag_candidate_scope_path_readiness.json",
+  "candidate_scope_readiness_report_sha256": "1b0f67eea26f640c0c971c7b9e715f3c9a9f75fe194c5bddff825a175a07e8d3",
+  "created_at": "2026-05-04T103039Z",
+  "created_by": "codex",
+  "bootstrap_actor": "codex",
+  "bootstrap_reason": "No prior immutable promoted vector baseline exists for the full72 PDF/XLSX scope.",
+  "baseline_provenance": "initial-bootstrap:initial-full72-vector-baseline-v0:rag-ingestion-v2-candidate:6d69284ffafbda18",
+  "promotion_evidence": false,
+  "promotion_gate_effect": "none",
+  "bootstrap_is_not_promotion": true,
+  "current_candidate_promotion_evidence": false,
+  "usable_as_baseline_for_future_candidates": true,
+  "metrics": {
+    "Hit@10": 0.7639,
+    "MRR@10": 0.641,
+    "hit_at_10": 0.7639,
+    "mrr_at_10": 0.641,
+    "citation_accuracy": 0.4306,
+    "citation_location_accuracy": 0.4306,
+    "xlsx_citation_location_accuracy": 0.62,
+    "pdf_citation_location_accuracy": 0.0
+  },
+  "source_reports": [
+    "reports\\rag_retrieval_eval_full72_vector_diagnostic_report.json",
+    "reports\\rag_ingestion_a5_promotion_gate_metrics.json",
+    "reports\\pdf_xlsx_candidate_embedding_consistency_report.json",
+    "reports\\rag_candidate_scope_path_readiness.json"
+  ],
+  "guardrails": [
+    "promotion_evidence=false is required",
+    "library_search is rejected",
+    "candidate snapshot baselines are rejected",
+    "baseline_index_version must differ from source_candidate_index_version",
+    "descriptor hashes retrieval, metrics, gold, and FAISS artifacts"
+  ],
+  "candidate_scope_readiness_status": "PASS",
+  "candidate_embedding_consistency_status": "PASS"
+}

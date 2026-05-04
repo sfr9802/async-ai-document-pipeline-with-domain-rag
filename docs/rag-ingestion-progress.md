@@ -1516,3 +1516,854 @@ Create a concrete `INITIAL_BASELINE_BOOTSTRAP` path for the first immutable vect
 - PDF `page_no` sometimes appears in top hits while `physical_page_index` or `bbox` is missing from vector-returned location metadata, so current `pdf_page_hit@10=0.0` mixes ranking failures with metadata/matching-policy failures.
 - Some XLSX formula/date/hidden-policy rows appear to ask for content not currently present in indexed embedding text; treating those as pure retrieval failures would be misleading.
 - Hidden negative rows are not yet isolated as `hidden_policy=negative`; current hidden bucket scores as positive retrieval failures.
+
+## 2026-05-04 - query evidence cleanup and promotion-grade vector readiness preflight
+
+### Goal
+
+Move from diagnostic-only full72 vector evidence to a concrete query-level cleanup and readiness path: source-qualified gate input must be clean, current diagnostic evidence must not be promoted, and the next promotion-grade vector eval must be blocked until unresolved query evidence is handled.
+
+### Completed
+
+- Regenerated full72 candidate-scope evidence after git cleanup:
+  - `reports/pdf_xlsx_candidate_embedding_consistency_report.json`.
+  - `reports/rag_candidate_scope_path_readiness.json`.
+  - `reports/rag_retrieval_eval_full72_vector_diagnostic_report.json`.
+  - `reports/rag_retrieval_full72_vector_quality_breakdown.json`.
+- Added `scripts/rag_query_evidence_cleanup_plan.py`.
+  - Writes `reports/rag_full72_query_evidence_cleanup_plan.json`.
+  - Keeps gold cleanup, retrieval/ranking, PDF metadata/matching policy, chunk granularity, and hidden-policy rows separate.
+  - Does not modify `eval/gold_queries_v0.csv`.
+- Added `scripts/rag_source_qualified_gate_input_readiness.py`.
+  - Writes `reports/a5_c2_source_qualified_report_contract_readiness.json`.
+  - Checks canonical source-qualified metric presence only.
+  - Allows diagnostic C2 completeness to PASS with an explicit warning that it is not promotion evidence.
+- Added `scripts/rag_promotion_grade_vector_eval_readiness.py`.
+  - Writes `reports/rag_promotion_grade_vector_eval_readiness.json`.
+  - Requires vector backend identity, candidate namespace, C2 readiness, C3 readiness, candidate consistency, candidate-scope readiness, gate report presence, and zero unresolved query cleanup rows.
+  - Blocks diagnostic-only retrieval metrics from being used as promotion-grade evidence.
+- Hardened `scripts/rag_full72_vector_quality_breakdown.py`.
+  - Adds `supporting_hit_ranks` and `supporting_hits` so PDF page/bbox classifications show the hit that triggered the policy/metadata diagnosis.
+- Updated `ai-worker/tests/test_rag_ingestion_scaffolding.py` and `docs/repo-structure.md`.
+- Used two read-only subagent reviews:
+  - Akeboshi Himari reviewed query cleanup taxonomy and highlighted hidden-policy and supporting-hit evidence gaps.
+  - Prana reviewed gate/readiness contracts and highlighted fail-close gaps for missing C2/gate inputs.
+
+### Current Evidence
+
+- `reports/pdf_xlsx_candidate_embedding_consistency_report.json`: `PASS`.
+  - Scoped rows: `8627`; candidate scoped rows: `8618`; policy-excluded rows: `9`.
+  - `not_embedded_count=0`.
+  - `index_version_mismatch_count=0`.
+  - `embedding_record_missing_count=0`.
+  - `candidate_chunk_missing_count=0`.
+  - `vector_namespace_mismatch_count=0`.
+  - `chunk_sha_mismatch_count=0`.
+  - `hidden_leakage_count=0`.
+- `reports/rag_candidate_scope_path_readiness.json`: `PASS`.
+  - document versions: `7`.
+  - scoped rows: `8627`.
+  - `legacy_or_wrong_parser_row_count=0`.
+  - `path_mixing_count=0`.
+  - `missing_location_json_count=0`.
+  - `hidden_leakage_count=0`.
+- `reports/rag_retrieval_eval_full72_vector_diagnostic_report.json`: `COMPLETED`.
+  - `retrieval_backend=vector`.
+  - `promotion_evidence=false`.
+  - `evidence_role=diagnostic`.
+  - `Hit@10=0.7639`.
+  - `MRR@10=0.641`.
+  - `citation_accuracy=0.4306`.
+  - `xlsx_citation_location_accuracy=0.62`.
+  - `pdf_citation_location_accuracy=0.0`.
+  - index/version/filtering counters remain `0`.
+- `reports/rag_full72_query_evidence_cleanup_plan.json`: `NEEDS_CLEANUP`.
+  - query count: `72`.
+  - ready for future promotion eval as-is: `31`.
+  - unresolved: `41`.
+  - actions:
+    - `keep_for_promotion_eval=31`.
+    - `pdf_location_metadata_projection_or_matching_rule=10`.
+    - `retrieval_text_or_ranking_investigation=13`.
+    - `chunk_granularity_or_range_policy_review=5`.
+    - `gold_query_contract_review_required=7`.
+    - `gold_binding_review_required=2`.
+    - `xlsx_table_chunk_ranking_or_query_contract_review=1`.
+    - `gold_policy_negative_relabel_or_exclude=2`.
+    - `hidden_policy_visible_control_rebind_review=1`.
+- PDF page/bbox split:
+  - PDF query count: `22`.
+  - metadata/matching-policy rows: `10`.
+  - retrieval/ranking rows: `12`.
+  - `correct_page_no_hit_but_missing_physical_page_index=10`.
+  - `correct_page_no_hit_but_missing_bbox=5`.
+- `reports/a5_c2_source_qualified_report_contract_readiness.json`: `PASS`.
+  - `gate_input_missing_count=0`.
+  - missing canonical metric count: `0`.
+  - derived metric sources: empty.
+  - warning: retrieval metrics are diagnostic-only and do not imply promotion.
+
+### Gate/Baseline Status
+
+- `reports/initial_baseline_bootstrap_readiness.json`: `PASS`.
+  - `baseline_type=INITIAL_BASELINE_BOOTSTRAP`.
+  - `bootstrap_status=BOOTSTRAP_READY_NOT_PROMOTION`.
+  - `promotion_evidence=false`.
+- `reports/a5_c3_immutable_baseline_readiness.json`: `PASS`.
+  - Candidate snapshot remains false and rejected as a baseline type elsewhere.
+- `reports/rag_ingestion_a5_promotion_gate_report.json`: `BLOCKED`.
+  - Remaining reasons:
+    - `xlsx_citation_location_accuracy must be >= 0.90`.
+    - `pdf_citation_location_accuracy must be >= 0.85`.
+    - `citation_accuracy must be >= 0.85`.
+    - `parsing_latency_p95 must be <= 30.00`.
+    - `retrieval report must declare promotion_evidence=true for promotion`.
+- `reports/rag_promotion_grade_vector_eval_readiness.json`: `BLOCKED`.
+  - `source_qualified_gate_input.status=PASS`.
+  - blockers:
+    - current retrieval report is diagnostic-only.
+    - source-qualified retrieval metrics are not promotion evidence.
+    - query-level cleanup still has unresolved rows.
+
+### Verification
+
+- Python syntax check:
+  - `python -m py_compile scripts/rag_prepare_immutable_baseline.py scripts/rag_retrieval_eval.py scripts/rag_build_promotion_gate_metrics.py scripts/rag_bootstrap_initial_vector_baseline.py scripts/rag_full72_vector_quality_breakdown.py scripts/rag_query_evidence_cleanup_plan.py scripts/rag_promotion_grade_vector_eval_readiness.py scripts/rag_source_qualified_gate_input_readiness.py ai-worker/eval/harness/rag_ingestion_promotion_gate.py`
+  - result: passed.
+- Python targeted tests:
+  - `python -m pytest ai-worker/tests/test_retrieval_eval_harness.py ai-worker/tests/test_rag_ingestion_scaffolding.py ai-worker/tests/test_promotion_gate_persistence.py`
+  - result: `61 passed`.
+- Java promotion gate tests:
+  - `mvn -f core-api/pom.xml test "-Dtest=IndexPromotionGateTest"`
+  - result: `11 passed`.
+- Report reruns:
+  - full72 vector diagnostic regenerated as diagnostic-only.
+  - source-qualified C2 readiness regenerated as `PASS`.
+  - promotion-grade vector eval readiness regenerated as expected `BLOCKED`.
+
+### Important Decisions
+
+- The current full72 vector result remains diagnostic-only and cannot be used as promotion evidence.
+- Source-qualified gate input completeness is now separated from promotion readiness. C2 can PASS while promotion-grade readiness remains BLOCKED.
+- Query evidence cleanup is the active blocker, not candidate indexing/path consistency.
+- PDF `page_no` hits with missing `physical_page_index`/`bbox` are classified as metadata projection or matching-policy issues, not pure ranking misses.
+- Hidden-policy rows are not all equivalent:
+  - two rows need negative hidden-policy relabel or exclusion.
+  - one row is a visible-control rebind/review candidate.
+- Global legacy path hygiene remains separate from candidate promotion-scope readiness.
+- No promotion, threshold relaxation, hybrid search, reranking, parser expansion, or gold CSV mutation was performed.
+
+### Remaining Work
+
+- Decide the cleanup route for the 41 unresolved query rows:
+  - relabel or exclude hidden negative rows,
+  - rebind visible-control hidden-policy row,
+  - review XLSX formula/date query contracts,
+  - review XLSX table-chunk ranking versus table gold contracts,
+  - fix or explicitly scope PDF metadata projection/matching policy,
+  - separate generic PDF query ambiguity from true retrieval/ranking failures.
+- After unresolved query evidence reaches zero, rerun vector eval with explicit `--promotion-evidence`, then rebuild source-qualified metrics and readiness.
+- Only after a promotion-evidence vector report exists should promotion gate be evaluated as a candidate pass/fail decision.
+
+### Risks
+
+- The diagnostic vector result has good `Hit@10` but weak citation/location accuracy, so treating it as promotion-grade evidence would hide citation quality problems.
+- PDF location accuracy is currently dominated by missing returned `physical_page_index`/`bbox` metadata, so tuning retrieval before fixing evidence interpretation may optimize the wrong thing.
+- Some gold rows are ambiguous or policy-shaped rather than pure positive relevance labels; using them unchanged in promotion eval would make threshold results noisy.
+- C2 source-qualified completeness PASS is necessary but not sufficient; it only proves canonical metric inputs are present.
+
+## 2026-05-04 - xlsx-only candidate embedding expansion and vector diagnostic
+
+### Goal
+
+- Expand only the XLSX ingestion v2 candidate embedding scope into a new candidate namespace.
+- Keep `initial-full72-vector-baseline-v0` and the existing `rag-data-canary` immutable baseline artifacts frozen.
+- Generate XLSX-only scope, indexing, consistency, vector diagnostic, quality breakdown, and query cleanup reports without promotion.
+
+### Completed
+
+- Added `scripts/xlsx_candidate_scope_report.py`.
+- Added `scripts/xlsx_candidate_embedding_consistency.py`.
+- Added XLSX-only row filtering to the retrieval eval harness via `--expected-location-type xlsx`.
+- Added XLSX-only metric/failure bucket output to `scripts/rag_full72_vector_quality_breakdown.py`.
+- Fixed `scripts/rag_scoped_candidate_indexing.py` append-default handling so explicit source/parser filters can stay XLSX-only.
+- Requeued only hidden-safe v2 XLSX candidate SearchUnits and indexed them through the existing SearchUnit candidate indexing path:
+  - `allowUnscoped=false`.
+  - `sourceFileTypes=["SPREADSHEET"]`.
+  - `parserVersions=["xlsx-extract-v2-hidden-safe"]`.
+  - `expectedIndexVersion=rag-ingestion-v2-xlsx-candidate-v1`.
+  - `indexVersion=rag-ingestion-v2-xlsx-candidate-v1`.
+  - explicit `documentVersionIds` from `reports/xlsx_candidate_scope_report.json`.
+- Built new FAISS/vector artifact directory: `rag-data-xlsx-candidate-v1`.
+- Stopped the temporary core-api process after indexing.
+
+### Current Evidence
+
+- `reports/xlsx_candidate_scope_report.json`: `PASS`.
+  - hidden-safe v2 XLSX rows: `710`.
+  - candidate rows: `710`.
+  - legacy/wrong-parser XLSX rows excluded: `22318`.
+  - hidden leakage: `0`.
+  - hidden policy/version/sanitizer mismatch: `0`.
+  - missing sheet/range/table metadata: `0`.
+- `reports/xlsx_candidate_indexing_report.json`: `PASS`.
+  - claimed: `710`.
+  - indexed: `710`.
+  - failed: `0`.
+  - stale: `0`.
+  - skipped local: `0`.
+- `reports/xlsx_candidate_embedding_consistency_report.json`: `PASS`.
+  - scoped rows: `710`.
+  - candidate rows: `710`.
+  - not embedded: `0`.
+  - index version mismatch: `0`.
+  - embedding record missing: `0`.
+  - candidate chunk missing: `0`.
+  - vector namespace mismatch: `0`.
+  - chunk SHA mismatch: `0`.
+  - hidden leakage: `0`.
+- `reports/rag_retrieval_eval_xlsx_vector_diagnostic_report.json`: `COMPLETED`.
+  - row filter: `expected_location_type=xlsx`, `50/72` rows.
+  - retrieval backend: `vector`.
+  - `promotion_evidence=false`.
+  - `evidence_role=diagnostic`.
+  - candidate namespace/index version: `rag-ingestion-v2-xlsx-candidate-v1`.
+  - `Hit@10=0.84`.
+  - `MRR@10=0.7183`.
+  - `xlsx_file_hit@10=0.9`.
+  - `xlsx_sheet_hit@10=0.9`.
+  - `xlsx_range_overlap@10=0.74`.
+  - `xlsx_range_contains@10=0.72`.
+  - `xlsx_exact_range@10=0.7`.
+  - `xlsx_citation_location_accuracy=0.7`.
+  - `hidden_content_leakage_count=0`.
+- `reports/rag_xlsx_vector_quality_breakdown.json`: `COMPLETED`.
+  - query count: `50`.
+  - matched: `35`.
+  - formula/date content absent: `5`.
+  - visible control rebind review: `2`.
+  - table/range label strictness: `2`.
+  - chunk granularity suspect: `5`.
+  - gold binding suspect: `1`.
+- `reports/rag_xlsx_query_evidence_cleanup_plan.json`: `NEEDS_CLEANUP`.
+  - query count: `50`.
+  - ready as-is: `35`.
+  - unresolved: `15`.
+
+### Gate/Baseline Status
+
+- Existing initial baseline descriptor was not rewritten.
+- Existing `rag-data-canary` baseline files were not rewritten.
+- Baseline hash checks after XLSX indexing:
+  - `reports/initial_immutable_vector_baseline_descriptor.json`: `3B9F09B078F01E2A9AB557DACB6059245BF3357DDB1092E834B3C52D7240662A`.
+  - `rag-data-canary/faiss.index`: `6167FFDE029C5490E49FB4E27E55469D6F6702395CDE816EC00BE11FD077A964`.
+  - `rag-data-canary/build.json`: `0E9342CC095D73AD5F5B7851B667EF96E9C6137CC4FE7EDC6A072F13CB8CACA5`.
+  - `rag-data-canary/ingest_manifest.json`: `2F94558E3320EB446E156A1C2DF07E0E8E9C792D5681BDAF0670CEF0953EB9C0`.
+- New XLSX-only candidate artifact:
+  - `rag-data-xlsx-candidate-v1/build.json`.
+  - `index_version=rag-ingestion-v2-xlsx-candidate-v1`.
+  - `chunk_count=710`.
+- Promotion was not run.
+- No report was marked `promotion_evidence=true`.
+- No threshold relaxation, hybrid search, reranking, parser expansion, or gold CSV mutation was performed.
+
+### Verification
+
+- Python syntax check:
+  - `python -m py_compile scripts/xlsx_candidate_scope_report.py scripts/xlsx_candidate_embedding_consistency.py scripts/rag_retrieval_eval.py scripts/rag_query_evidence_cleanup_plan.py ai-worker/ai_worker/search_unit_indexing.py ai-worker/eval/harness/rag_ingestion_retrieval_eval.py ai-worker/eval/harness/rag_ingestion_promotion_gate.py`
+  - result: passed.
+- Existing related syntax check:
+  - `python -m py_compile scripts/pdf_xlsx_candidate_embedding_consistency.py scripts/rag_build_promotion_gate_metrics.py scripts/rag_prepare_immutable_baseline.py scripts/rag_bootstrap_initial_vector_baseline.py`
+  - result: passed.
+- Touched helper syntax check:
+  - `python -m py_compile scripts/rag_scoped_candidate_indexing.py scripts/rag_full72_vector_quality_breakdown.py`
+  - result: passed.
+- Python targeted tests:
+  - `python -m pytest ai-worker/tests/test_retrieval_eval_harness.py ai-worker/tests/test_rag_ingestion_scaffolding.py ai-worker/tests/test_promotion_gate_persistence.py ai-worker/tests/test_search_unit_indexing_loop.py`
+  - result: `83 passed`.
+- Java promotion gate tests:
+  - `mvn -f core-api/pom.xml test "-Dtest=IndexPromotionGateTest"`
+  - result: `11 passed`.
+- Diff hygiene:
+  - `git diff --check`
+  - result: passed, with line-ending warnings only.
+
+### Important Decisions
+
+- XLSX-only expansion used a new candidate namespace: `rag-ingestion-v2-xlsx-candidate-v1`.
+- The existing baseline namespace/artifacts stayed frozen; the new vectors live in `rag-data-xlsx-candidate-v1`.
+- XLSX scope was constrained to hidden-safe v2 rows only:
+  - `parser_version=xlsx-extract-v2-hidden-safe`.
+  - `hidden_policy=exclude_hidden`.
+  - `hidden_policy_version=exclude-hidden-v1`.
+  - `sanitizer_version=exclude-hidden-v1`.
+- Legacy `xlsx-extract-v1`, hidden-policy drift, sanitizer drift, and hidden leakage rows were kept outside the XLSX candidate scope.
+- Existing EMBEDDED hidden-safe XLSX rows had to be requeued so the official SearchUnit claim/index/callback path could write the new index version and embedding records.
+- XLSX-only vector diagnostic is still diagnostic evidence, not gate evidence.
+
+### Remaining Work
+
+- Resolve the 15 XLSX cleanup rows before any promotion-evidence XLSX eval:
+  - formula/date contract rows: `5`.
+  - hidden-policy visible/negative review rows: `2`.
+  - table/range strictness rows: `2`.
+  - chunk granularity rows: `5`.
+  - gold binding row: `1`.
+- Decide whether XLSX-only candidate namespace should remain as a separate diagnostic index or become one input to a later PDF+XLSX candidate promotion path.
+- Re-run full PDF+XLSX candidate consistency after PDF metadata/matching cleanup if the combined candidate path is the next gate target.
+
+### Risks
+
+- SearchUnit rows for hidden-safe XLSX scope now point to the new candidate index version; the old baseline artifact files remain frozen, but old mixed full72 DB-level consistency reports are now historical snapshots.
+- XLSX-only `Hit@10` improved, but `xlsx_citation_location_accuracy=0.7` is still below promotion-grade expectations.
+- Formula/date and hidden-policy rows still contain evidence-contract cleanup, so promotion should remain blocked.
+- `rag-data-xlsx-candidate-v1` is a candidate diagnostic artifact, not an immutable baseline.
+
+## 2026-05-04 - xlsx query evidence cleanup and candidate lineage stabilization
+
+### Goal
+
+- Review the XLSX unresolved 15 query rows without running promotion.
+- Preserve `promotion_evidence=false` and `evidence_role=diagnostic`.
+- Record immutable baseline vs XLSX-only candidate lineage.
+- Mark mixed full72 reports as historical snapshots relative to the current XLSX-only candidate DB state.
+- Produce a reviewed XLSX eval overlay and cleaned XLSX eval set for a later diagnostic rerun.
+
+### Completed
+
+- Added `scripts/rag_candidate_index_lineage_report.py`.
+- Added `scripts/rag_xlsx_query_evidence_review.py`.
+- Added `scripts/rag_xlsx_promotion_grade_eval_readiness.py`.
+- Hardened promotion-gate input safety:
+  - `scripts/rag_build_promotion_gate_metrics.py` now propagates retrieval `row_filter` and eval dataset identity fields.
+  - `ai-worker/eval/harness/rag_ingestion_promotion_gate.py` now blocks filtered promotion-evidence retrieval reports.
+  - The promotion gate now checks candidate eval dataset id/version/hash/row count against immutable baseline dataset fields when present.
+- Generated `reports/rag_candidate_index_lineage_report.json`.
+- Generated `reports/rag_xlsx_query_evidence_review_decisions.json`.
+- Generated `eval/gold_queries_xlsx_v1.csv`.
+- Generated `reports/rag_xlsx_promotion_grade_eval_readiness.json`.
+- Did not overwrite `eval/gold_queries_v0.csv`.
+- Did not rerun promotion, set `promotion_evidence=true`, relax thresholds, add hybrid search, add reranking, expand parsers, or rewrite baseline artifacts.
+
+### Current Evidence
+
+- `reports/rag_candidate_index_lineage_report.json`: `PASS_WITH_WARNINGS`.
+  - Baseline descriptor hash check: `MATCH`.
+  - Baseline artifact hash checks: `MATCH`.
+  - XLSX candidate index version: `rag-ingestion-v2-xlsx-candidate-v1`.
+  - XLSX candidate namespace: `rag-ingestion-v2-xlsx-candidate-v1`.
+  - XLSX candidate artifact dir: `rag-data-xlsx-candidate-v1`.
+  - XLSX candidate artifact chunk count: `710`.
+  - `diagnostic_only=true`.
+  - `promotion_evidence=false`.
+  - mixed full72 DB-level reports marked historical: `true`.
+- Current SearchUnit distribution for hidden-safe XLSX candidate rows:
+  - `SPREADSHEET / xlsx-extract-v2-hidden-safe / rag-ingestion-v2-xlsx-candidate-v1 / EMBEDDED = 710`.
+- Historical reports explicitly marked:
+  - `reports/rag_retrieval_eval_full72_vector_diagnostic_report.json`.
+  - `reports/pdf_xlsx_candidate_embedding_consistency_report.json`.
+- `reports/rag_xlsx_query_evidence_review_decisions.json`: `READY_FOR_CLEANED_DIAGNOSTIC_RERUN`.
+  - XLSX query count: `50`.
+  - source ready query count: `35`.
+  - source unresolved query count: `15`.
+  - reviewed unresolved query count: `15`.
+  - unreviewed unresolved query count: `0`.
+  - promotion eval eligible count: `35`.
+  - excluded or deferred count: `15`.
+- Review decision counts:
+  - `KEEP_AS_POSITIVE`: `35`.
+  - `EXCLUDE_FROM_PROMOTION_EVAL`: `5`.
+  - `REBIND_EXPECTED_SHEET_OR_RANGE`: `2`.
+  - `RELABEL_AS_NEGATIVE_HIDDEN_POLICY`: `2`.
+  - `RELAX_MATCH_POLICY_TO_RANGE_OVERLAP`: `1`.
+  - `REQUIRE_CHUNK_GRANULARITY_FIX`: `5`.
+- Review category counts:
+  - `matched`: `35`.
+  - `formula_date_contract`: `5`.
+  - `chunk_granularity`: `5`.
+  - `table_range_strictness`: `2`.
+  - `hidden_policy_contract`: `2`.
+  - `gold_binding`: `1`.
+- Cleaned XLSX eval set:
+  - path: `eval/gold_queries_xlsx_v1.csv`.
+  - eval dataset id: `gold_queries_xlsx_v1`.
+  - eval dataset version: `xlsx_v1_reviewed_positive_35`.
+  - row count: `35`.
+  - sha256: `f3555bc302559a693de285013cc41cba0c30d212c1cd9f7fdc8902d5cd77573f`.
+  - selection rule: `promotion_eval_eligible=true` from the review overlay.
+- `reports/rag_xlsx_promotion_grade_eval_readiness.json`: `BLOCKED`.
+  - This means the cleaned XLSX v1 set is ready for a future diagnostic rerun, but not promotion-grade comparable against the current full72 immutable baseline.
+  - source unresolved query count: `15`.
+  - review unresolved query count: `0`.
+  - candidate consistency status: `PASS`.
+  - hidden leakage count: `0`.
+  - candidate namespace present: `true`.
+  - diagnostic report promotion evidence: `false`.
+  - range policy missing query ids: `[]`.
+  - dataset compatibility blockers:
+    - cleaned eval dataset id must match baseline `eval_dataset_id`.
+    - cleaned eval dataset version must match baseline `baseline_dataset_version`.
+    - cleaned eval dataset sha256 must match baseline `eval_dataset_sha256`.
+    - cleaned eval row count must match baseline `gold_query_row_count`.
+
+### Gate/Baseline Status
+
+- Promotion was not run.
+- No report was marked `promotion_evidence=true`.
+- Existing initial immutable baseline descriptor was not rewritten.
+- Existing `rag-data-canary` baseline artifacts were not rewritten.
+- Baseline descriptor hash remained:
+  - `3b9f09b078f01e2a9ab557dacb6059245bf3357ddb1092e834b3c52d7240662a`.
+- Baseline artifact hashes remained:
+  - `rag-data-canary/faiss.index`: `6167ffde029c5490e49fb4e27e55469d6f6702395cde816ec00be11fd077a964`.
+  - `rag-data-canary/build.json`: `0e9342cc095d73ad5f5b7851b667ef96e9c6137cc4fe7edc6a072f13cb8caca5`.
+  - `rag-data-canary/ingest_manifest.json`: `2f94558e3320eb446e156a1c2df07e0e8e9c792d5681bdaf0670cef0953eb9c0`.
+- `rag-data-xlsx-candidate-v1` remains a candidate diagnostic artifact, not an immutable baseline.
+- The old mixed full72 vector diagnostic and mixed consistency reports remain useful as baseline bootstrap history, not current XLSX candidate live-state evidence.
+
+### Verification
+
+- Python syntax check:
+  - `python -m py_compile scripts/rag_candidate_index_lineage_report.py scripts/rag_xlsx_query_evidence_review.py scripts/rag_retrieval_eval.py scripts/rag_query_evidence_cleanup_plan.py scripts/rag_full72_vector_quality_breakdown.py scripts/xlsx_candidate_scope_report.py scripts/xlsx_candidate_embedding_consistency.py ai-worker/eval/harness/rag_ingestion_retrieval_eval.py ai-worker/eval/harness/rag_ingestion_promotion_gate.py`
+  - result: passed.
+- Additional readiness syntax check:
+  - `python -m py_compile scripts/rag_xlsx_promotion_grade_eval_readiness.py`
+  - result: passed.
+- Additional gate guardrail syntax check:
+  - `python -m py_compile scripts/rag_build_promotion_gate_metrics.py`
+  - result: passed.
+- Targeted guardrail tests:
+  - `python -m pytest ai-worker/tests/test_promotion_gate_persistence.py ai-worker/tests/test_rag_ingestion_scaffolding.py`
+  - result: `48 passed`.
+- Python targeted tests:
+  - `python -m pytest ai-worker/tests/test_retrieval_eval_harness.py ai-worker/tests/test_rag_ingestion_scaffolding.py ai-worker/tests/test_promotion_gate_persistence.py ai-worker/tests/test_search_unit_indexing_loop.py`
+  - result: `83 passed`.
+- Java promotion gate tests:
+  - `mvn -f core-api/pom.xml test "-Dtest=IndexPromotionGateTest"`
+  - result: `11 passed`.
+- Diff hygiene:
+  - `git diff --check`
+  - result: passed, with line-ending warnings only.
+
+### Important Decisions
+
+- The XLSX unresolved 15 rows are resolved as review decisions, not by mutating gold v0 in place.
+- `eval/gold_queries_xlsx_v1.csv` contains only `promotion_eval_eligible=true` rows.
+- Excluded, relabeled, rebind, range-policy, and chunk-granularity rows remain preserved in `reports/rag_xlsx_query_evidence_review_decisions.json`.
+- `RELAX_MATCH_POLICY_TO_RANGE_OVERLAP` is recorded as a review decision only; no matching policy was changed in code or eval execution.
+- The readiness preflight treats original cleanup unresolved rows and reviewed cleaned eval readiness separately:
+  - original cleanup: unresolved `15`.
+  - review overlay for cleaned v1: unresolved `0`.
+- XLSX cleaned v1 promotion-grade readiness is intentionally `BLOCKED` against the current immutable baseline because the baseline dataset is `gold_queries_v0/full72_vector_diagnostic_v0` with `72` rows while the cleaned XLSX v1 set has `35` rows.
+- Filtered retrieval reports are now rejected by the promotion gate when marked `promotion_evidence=true`.
+- Candidate lineage now records that mixed full72 reports are historical relative to the current XLSX-only candidate DB/index state.
+
+### Remaining Work
+
+- If accepted, run a diagnostic-only XLSX v1 vector eval using `eval/gold_queries_xlsx_v1.csv`.
+- Decide whether deferred formula/date, hidden-policy negative, table/range, and chunk-granularity rows should become separate eval buckets or remain excluded from promotion input.
+- For any future promotion-grade XLSX eval, first create or select a compatible immutable baseline for the same cleaned XLSX dataset, then explicitly rerun without diagnostic row filters before considering `promotion_evidence=true`.
+- Reconcile XLSX-only readiness with the broader PDF+XLSX promotion plan after PDF metadata/matching-policy cleanup.
+
+### Risks
+
+- `reports/rag_xlsx_promotion_grade_eval_readiness.json` is `BLOCKED` for promotion-grade comparison because the current immutable baseline is full72, not cleaned XLSX v1.
+- The cleaned set has `35` rows, so it is narrower than the original `50` XLSX diagnostic rows.
+- Negative hidden-policy rows are preserved in review decisions but excluded from the cleaned positive eval CSV until negative-policy evaluation is explicitly supported.
+- Formula/date and chunk-granularity rows remain deferred; excluding them can make a future rerun cleaner but less comprehensive.
+
+## 2026-05-04 - xlsx gold v2 quality audit and dataset reconstruction
+
+### Goal
+
+- Audit `eval/gold_queries_xlsx_v1.csv` as a reviewed positive subset, not a final promotion baseline.
+- Preserve all 15 excluded/deferred XLSX rows by reclassifying them into v2 eval buckets.
+- Keep hidden-policy negatives separate from positive retrieval metrics.
+- Record formula/date value-surface contracts and table/range match policies without changing parser, retrieval, thresholds, promotion evidence, or immutable baselines.
+
+### Completed
+
+- Added `scripts/rag_xlsx_gold_quality_audit.py`.
+- Added `scripts/rag_xlsx_gold_v2_builder.py`.
+- Generated `reports/rag_xlsx_gold_quality_audit.json`.
+- Generated `eval/gold_queries_xlsx_v2.csv`.
+- Generated `reports/rag_xlsx_gold_v2_build_report.json`.
+- Generated `reports/rag_xlsx_hidden_negative_eval_plan.json`.
+- Generated `reports/rag_xlsx_formula_date_contract_review.json`.
+- Generated `reports/rag_xlsx_chunk_granularity_review.json`.
+- Did not overwrite `eval/gold_queries_v0.csv`.
+- Did not overwrite `eval/gold_queries_xlsx_v1.csv`.
+- Did not run promotion or set any new report to `promotion_evidence=true`.
+
+### Current Evidence
+
+- `reports/rag_xlsx_gold_quality_audit.json`:
+  - `quality_status=FAIL` for final/promotion-grade gold readiness.
+  - v1 row count: `35`.
+  - v1 bucket distribution: `xlsx_lookup=18`, `xlsx_aggregation=14`, `xlsx_date_number_format=2`, `xlsx_hidden_policy=1`.
+  - excluded bucket coverage gap: `15`.
+  - hidden negative missing count: `2`.
+  - formula/date missing count: `5`.
+  - chunk granularity missing count: `5`.
+  - table/range policy missing count: `3`.
+- `eval/gold_queries_xlsx_v2.csv`:
+  - row count: `50`.
+  - v2 label distribution: `positive=35`, `negative_hidden_policy=2`, `deferred=8`, `excluded=5`.
+  - current harness label distribution: `bound=50`.
+  - eval purpose distribution: `retrieval_positive=33`, `chunk_granularity=5`, `date_number_format=4`, `table_range_policy=3`, `formula_display_value=3`, `hidden_policy_negative=2`.
+  - v2 range policy distribution: `EXACT_RANGE=37`, `CONTAINS_EXPECTED=10`, `OVERLAP_RANGE=1`, `NONE=2`.
+  - current harness validation: `ok=true`, `error_count=0`.
+  - sha256: `ce01932657352a7c8ad74983090bb9355687c0d6c91cdaa6bf39eee82beb51da`.
+- `reports/rag_xlsx_hidden_negative_eval_plan.json`:
+  - hidden negative query ids: `gq_xlsx_hidden_policy_001`, `gq_xlsx_hidden_policy_002`.
+  - `positive_retrieval_metric_mix_allowed=false`.
+  - primary metric contract: `hidden_content_leakage_count == 0`.
+- `reports/rag_xlsx_formula_date_contract_review.json`:
+  - row count: `7`.
+  - surface distribution: `RAW_FORMULA=3`, `DATE_FORMATTED_VALUE=2`, `DISPLAY_FORMATTED_VALUE=2`.
+  - parser expansion and gold rewrite were not implemented.
+- `reports/rag_xlsx_chunk_granularity_review.json`:
+  - row count: `5`.
+  - primary issue distribution: `chunking_granularity=4`, `query_specificity=1`.
+
+### Gate/Baseline Status
+
+- Promotion was not run.
+- No generated report uses `promotion_evidence=true`.
+- Existing immutable baseline descriptor/artifact/hash files were not modified.
+- `eval/gold_queries_v0.csv` and `eval/gold_queries_xlsx_v1.csv` were not overwritten.
+- `gold_queries_xlsx_v2` is a candidate manifest, not a promotion-grade baseline input.
+- Hidden negative rows must not be mixed into positive `Hit@K` or `MRR@K` metrics.
+
+### Verification
+
+- Python syntax check:
+  - `python -m py_compile scripts/rag_xlsx_gold_quality_audit.py scripts/rag_xlsx_gold_v2_builder.py scripts/rag_xlsx_query_evidence_review.py scripts/rag_query_evidence_cleanup_plan.py scripts/rag_retrieval_eval.py ai-worker/eval/harness/rag_ingestion_retrieval_eval.py ai-worker/eval/harness/rag_ingestion_promotion_gate.py`
+  - result: passed.
+- Existing related script syntax check:
+  - `python -m py_compile scripts/xlsx_candidate_scope_report.py scripts/xlsx_candidate_embedding_consistency.py scripts/rag_candidate_index_lineage_report.py scripts/rag_xlsx_promotion_grade_eval_readiness.py`
+  - result: passed.
+- Python targeted tests:
+  - `python -m pytest ai-worker/tests/test_retrieval_eval_harness.py ai-worker/tests/test_rag_ingestion_scaffolding.py ai-worker/tests/test_promotion_gate_persistence.py ai-worker/tests/test_search_unit_indexing_loop.py`
+  - result: `85 passed`, `1 warning`.
+- Java promotion gate tests:
+  - `mvn -f core-api/pom.xml test "-Dtest=IndexPromotionGateTest"`
+  - result: `11 passed`.
+- Diff hygiene:
+  - `git diff --check`
+  - result: passed, with line-ending warnings only.
+
+### Important Decisions
+
+- `gold_queries_xlsx_v1` remains a safe positive subset but is explicitly not final gold quality.
+- The 15 non-v1 rows are preserved in v2 rather than dropped.
+- `RELABEL_AS_NEGATIVE_HIDDEN_POLICY` rows are moved to `hidden_policy_negative`, not positive retrieval scoring.
+- Formula/date rows record whether the query expects raw formula, cached value, or display/formatted value.
+- Current harness columns remain valid; v2 design labels and range policies are stored separately as `v2_label_status` and `v2_range_match_policy`.
+- `OVERLAP_RANGE` is recorded only as a candidate gold/report policy; no matching code was changed.
+
+### Remaining Work
+
+- Decide which v2 rows can graduate from `deferred` or `excluded` into positive retrieval after manual contract review.
+- Add a separate hidden-negative eval harness or report path before using hidden-policy rows as gate evidence.
+- Prove formula/date surfaces from full `embedding_text`, not only ingest manifest previews, before promotion-grade inclusion.
+- Revisit chunk granularity suspects and split them into query rewrite, gold range rebinding, or chunking fixes.
+- Only after v2 is finalized, create a compatible immutable baseline lineage before considering any promotion evidence.
+
+### Risks
+
+- `eval/gold_queries_xlsx_v2.csv` contains non-positive rows and must not be run as an unfiltered positive retrieval eval.
+- The formula/date contract report has limited embedding-text evidence because the diagnostic report does not contain full `embedding_text`.
+- The v2 range policy enum is a design manifest surface; the current harness still reads lower-case `range_match_policy`.
+- The worktree already contains unrelated or prior modified/untracked RAG files, so staging should remain narrow if this slice is committed later.
+
+## 2026-05-04 - xlsx naturalized query v3 manifest and diagnostic rerun
+
+### Goal
+
+- Convert the XLSX v2 query surface from keyword/cell-value seeds into natural Korean questions without running promotion.
+- Preserve the v2 mixed manifest semantics, expected file/sheet/range/document bindings, and range policies.
+- Export a positive-only diagnostic manifest using only `v2_label_status=positive`, `label_status=bound`, and `expected_location_type=xlsx`.
+
+### Completed
+
+- Added `scripts/rag_xlsx_natural_query_builder.py`.
+- Added `scripts/rag_xlsx_natural_query_quality_audit.py`.
+- Added `scripts/rag_xlsx_v3_vector_quality_breakdown.py`.
+- Generated `eval/gold_queries_xlsx_v3_naturalized.csv`.
+  - row count: `50`.
+  - preserves `positive=35`, `negative_hidden_policy=2`, `deferred=8`, `excluded=5`.
+  - preserves original query values in `original_query` and `query_seed`.
+  - sha256: `04956ccb1e8889ddf4298a27087ebb8c752f900a7608f7fc22756be997143113`.
+- Generated `eval/gold_queries_xlsx_v3_positive.csv`.
+  - row count: `35`.
+  - includes only positive retrieval diagnostic rows.
+  - sha256: `5152fd453832f0cd280feb146f25fb5755f1047390db5536d97a822bfe001eba`.
+- Generated reports:
+  - `reports/rag_xlsx_natural_query_build_report.json`.
+  - `reports/rag_xlsx_v3_positive_export_report.json`.
+  - `reports/rag_xlsx_natural_query_quality_audit.json`.
+  - `reports/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json`.
+  - `reports/rag_xlsx_v3_vector_quality_breakdown.json`.
+
+### Current Evidence
+
+- Natural query quality audit:
+  - `quality_status=PASS`.
+  - `empty_query_count=0`.
+  - `query_same_as_seed_count=0`.
+  - `anchor_term_missing_count=0`.
+  - `hidden_value_in_positive_query_count=0`.
+  - `formula_contract_violation_count=0`.
+  - `date_format_contract_violation_count=0`.
+  - `range_policy_missing_count=0`.
+  - `expected_binding_changed_count=0`.
+- v3 positive vector diagnostic:
+  - `retrieval_backend=vector`.
+  - `promotion_evidence=false`.
+  - `evidence_role=diagnostic`.
+  - `candidate_index_version=rag-ingestion-v2-xlsx-candidate-v1`.
+  - `required_index_version=rag-ingestion-v2-xlsx-candidate-v1`.
+  - `Hit@10=1.0`.
+  - `MRR@10=0.7429`.
+  - `xlsx_file_hit@10=1.0`.
+  - `xlsx_sheet_hit@10=1.0`.
+  - `xlsx_range_overlap@10=0.9429`.
+  - `xlsx_range_contains@10=0.9429`.
+  - `xlsx_exact_range@10=0.9143`.
+  - `xlsx_citation_location_accuracy=0.9143`.
+  - `hidden_content_leakage_count=0`.
+- v2 positive-only subset comparison for the same 35 query ids:
+  - v2 positive subset `Hit@10=1.0`, v3 positive `Hit@10=1.0`, delta `0.0`.
+  - v2 positive subset `MRR@10=0.8643`, v3 positive `MRR@10=0.7429`, delta `-0.1214`.
+  - v2 positive subset `xlsx_citation_location_accuracy=1.0`, v3 positive `0.9143`, delta `-0.0857`.
+  - location match was lost after naturalization for `gq_xlsx_lookup_002`, `gq_auto_033`, and `gq_auto_042`.
+
+### Gate/Baseline Status
+
+- Promotion was not run.
+- No report generated in this slice sets `promotion_evidence=true`.
+- Existing immutable baseline descriptor/artifact/hash files were not modified.
+- `eval/gold_queries_v0.csv`, `eval/gold_queries_xlsx_v1.csv`, and `eval/gold_queries_xlsx_v2.csv` were not overwritten.
+- `gold_queries_xlsx_v3_naturalized` is a candidate naturalized manifest, not a baseline gold artifact.
+- Hidden negative rows remain in the mixed manifest only and are excluded from `gold_queries_xlsx_v3_positive.csv`.
+
+### Verification
+
+- Gold row validation:
+  - `eval/gold_queries_xlsx_v3_naturalized.csv`: `ok=true`, `row_count=50`, `error_count=0`.
+  - `eval/gold_queries_xlsx_v3_positive.csv`: `ok=true`, `row_count=35`, `error_count=0`.
+- Python syntax check:
+  - `python -m py_compile scripts/rag_xlsx_natural_query_builder.py scripts/rag_xlsx_natural_query_quality_audit.py scripts/rag_xlsx_v3_vector_quality_breakdown.py scripts/rag_xlsx_gold_quality_audit.py scripts/rag_xlsx_gold_v2_builder.py scripts/rag_retrieval_eval.py ai-worker/eval/harness/rag_ingestion_retrieval_eval.py ai-worker/eval/harness/rag_ingestion_promotion_gate.py`
+  - result: passed.
+- Existing related script syntax check:
+  - `python -m py_compile scripts/xlsx_candidate_scope_report.py scripts/xlsx_candidate_embedding_consistency.py scripts/rag_candidate_index_lineage_report.py scripts/rag_xlsx_promotion_grade_eval_readiness.py`
+  - result: passed.
+- Python targeted tests:
+  - `python -m pytest ai-worker/tests/test_retrieval_eval_harness.py ai-worker/tests/test_rag_ingestion_scaffolding.py ai-worker/tests/test_promotion_gate_persistence.py ai-worker/tests/test_search_unit_indexing_loop.py`
+  - result: `85 passed`, `1 warning`.
+- Java promotion gate tests:
+  - `mvn -f core-api/pom.xml test "-Dtest=IndexPromotionGateTest"`
+  - result: `11 passed`.
+- Diff hygiene:
+  - `git diff --check`
+  - result: passed, with line-ending warnings only.
+
+### Important Decisions
+
+- v3 changes only the user query surface; expected bindings and range policies remain copied from v2.
+- `original_query` and `query_seed` preserve the keyword/cell-value seeds.
+- Positive retrieval diagnostics use `gold_queries_xlsx_v3_positive.csv`, not the full mixed v3 manifest.
+- Hidden negative naturalized questions remain policy probes and are not mixed into Hit@K/MRR.
+- Formula/date rows keep raw formula, formatted date, or display value intent visible in the naturalized query.
+- The v3 score movement is diagnostic evidence for human-like questions, not a promotion gate decision.
+
+### Remaining Work
+
+- Review the three v3 positive rows that lost location match after naturalization.
+- Decide whether those rows need query wording refinement, gold binding review, or chunking/indexing follow-up.
+- Build a separate hidden-negative eval path before treating hidden-policy probes as gate evidence.
+- Keep v3 out of promotion until the candidate manifest is deliberately promoted through a separate baseline lineage step.
+
+### Risks
+
+- Naturalized questions can lower rank or location accuracy even when anchors are preserved.
+- `gold_queries_xlsx_v3_naturalized.csv` remains mixed and must not be used directly as a positive retrieval eval.
+- The v2 vs v3 comparison is most meaningful on the 35-row positive subset; the older 50-row v2 report includes deferred, excluded, and hidden-negative rows.
+- The worktree still contains unrelated or prior modified/untracked RAG files, so staging should remain narrow if this slice is committed later.
+
+## 2026-05-05 - xlsx v3 less-explicit natural query pass
+
+### Goal
+
+- Make the v3 XLSX naturalized queries less leading and less reviewer-friendly.
+- Keep them human-like and search-box-like without falling back to raw keyword-only seeds.
+- Preserve v2 binding, hidden policy, formula/date contracts, and positive-only diagnostic separation.
+
+### Completed
+
+- Reworked the manual query map in `scripts/rag_xlsx_natural_query_builder.py`.
+  - Example: `1호선의 승차총승객수는 얼마인가요?` -> `1호선 승차 쪽 찾아줘.`
+  - Example: `신분당선 승차총승객수 정보를 확인할 수 있는 행을 찾아줘.` -> `신분당선 어디쯤 있어?`
+  - Example: `진명실버홈 장기요양기관 정보가 있는 행을 찾아줘.` -> `진명실버홈 행 찾아줘.`
+- Adjusted v3 natural-query audit anchor detection so whitespace-separated parts inside seed phrases count as anchors.
+  - This lets `5호선 승차 쪽 찾아줘.` retain the `5호선` anchor from `5호선 승차총승객수`.
+- Regenerated:
+  - `eval/gold_queries_xlsx_v3_naturalized.csv`
+  - `eval/gold_queries_xlsx_v3_positive.csv`
+  - `reports/rag_xlsx_natural_query_build_report.json`
+  - `reports/rag_xlsx_v3_positive_export_report.json`
+  - `reports/rag_xlsx_natural_query_quality_audit.json`
+  - `reports/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json`
+  - `reports/rag_xlsx_v3_vector_quality_breakdown.json`
+
+### Current Evidence
+
+- `eval/gold_queries_xlsx_v3_naturalized.csv`
+  - row count: `50`
+  - sha256: `4379462e531b3f1ba71730556d777a03b88370bc0116c38bec9553ce10f4051d`
+- `eval/gold_queries_xlsx_v3_positive.csv`
+  - row count: `35`
+  - sha256: `50db742e57121c6ffbf88a7a8ec41383a2a6377db40c4611f7705e83ca60b4ba`
+- Natural query quality audit:
+  - `quality_status=PASS`
+  - `anchor_term_missing_count=0`
+  - `hidden_value_in_positive_query_count=0`
+  - `formula_contract_violation_count=0`
+  - `date_format_contract_violation_count=0`
+  - `expected_binding_changed_count=0`
+  - `duplicate_or_near_duplicate_query_count=0`
+- v3 positive vector diagnostic:
+  - `retrieval_backend=vector`
+  - `promotion_evidence=false`
+  - `evidence_role=diagnostic`
+  - `Hit@10=1.0`
+  - `MRR@10=0.8857`
+  - `xlsx_file_hit@10=1.0`
+  - `xlsx_sheet_hit@10=1.0`
+  - `xlsx_range_overlap@10=0.9143`
+  - `xlsx_range_contains@10=0.9143`
+  - `xlsx_exact_range@10=0.8857`
+  - `xlsx_citation_location_accuracy=0.8857`
+  - `hidden_content_leakage_count=0`
+- v3 failure rows after the less-explicit pass:
+  - `gq_xlsx_lookup_002`
+  - `gq_xlsx_date_number_format_001`
+  - `gq_auto_041`
+  - `gq_auto_042`
+
+### Gate/Baseline Status
+
+- Promotion was not run.
+- No report generated in this pass sets `promotion_evidence=true`.
+- Existing immutable baseline descriptor/artifact/hash files were not modified.
+- `eval/gold_queries_v0.csv`, `eval/gold_queries_xlsx_v1.csv`, and `eval/gold_queries_xlsx_v2.csv` were not overwritten.
+- `gold_queries_xlsx_v3_naturalized` remains a candidate naturalized manifest, not a baseline gold artifact.
+
+### Verification
+
+- Python syntax check:
+  - `python -m py_compile scripts/rag_xlsx_natural_query_builder.py scripts/rag_xlsx_natural_query_quality_audit.py scripts/rag_xlsx_v3_vector_quality_breakdown.py`
+  - result: passed.
+- Gold row validation:
+  - `eval/gold_queries_xlsx_v3_naturalized.csv`: `ok=true`, `row_count=50`, `error_count=0`.
+  - `eval/gold_queries_xlsx_v3_positive.csv`: `ok=true`, `row_count=35`, `error_count=0`.
+
+### Important Decisions
+
+- The less-explicit pass intentionally removes some column/value hints from positive queries.
+- Anchor validation now accepts meaningful subterms from seed phrases instead of requiring a full seed phrase copy.
+- Formula/date rows still keep enough surface intent to avoid raw/display/date contract drift.
+- Hidden negative probes remain excluded from positive retrieval metrics.
+
+### Remaining Work
+
+- Decide whether the four location-miss rows should stay as realistic hard cases or receive small wording adjustments.
+- Keep this as diagnostic-only evidence unless a later task explicitly promotes a finalized gold/baseline lineage.
+
+### Risks
+
+- The less-explicit wording is closer to real user behavior but can make expected range matching less stable.
+- The audit is a query-surface quality check; it is not proof of promotion-grade retrieval quality.
+
+## 2026-05-05 - xlsx additional dataset canary selection
+
+### Goal
+
+- Add the requested XLSX datasets to the hardened XLSX candidate path without promotion or broad indexing.
+- Keep the next step canary-sized instead of importing every file at once.
+- Check whether the requested data is broad enough for the next XLSX canary.
+
+### Completed
+
+- Updated `samples/rag_ingestion_hardened_xlsx_manifest.json` to `manifest_version=2026-05-05-a1`.
+- Added six new non-diagnostic canary samples:
+  - `xlsx_hardened_surgery_major_indicators_001`
+  - `xlsx_hardened_surgery_laparoscopic_001`
+  - `xlsx_hardened_election_advance_turnout_001`
+  - `xlsx_hardened_election_age_gender_001`
+  - `xlsx_hardened_employment_sentiment_2019_001`
+  - `xlsx_hardened_employment_sentiment_2020_001`
+- Added `scripts/rag_xlsx_dataset_canary_report.py`.
+- Generated `reports/rag_xlsx_additional_dataset_canary_report.json`.
+
+### Current Evidence
+
+- Requested dataset inventory:
+  - dataset count: `3`
+  - XLSX files: `62`
+  - XLSX size: `16.9679 MiB`
+  - HWP companion files: `2`
+- Selected canary distribution:
+  - surgery statistics: `2`
+  - election turnout: `2`
+  - employment sentiment labels: `2`
+- Selected workbook sheet counts:
+  - surgery major indicators: `73`
+  - surgery laparoscopic: `35`
+  - election advance turnout: `9`
+  - election age/gender turnout: `16`
+  - employment sentiment 2019-05: `1`
+  - employment sentiment 2020-04: `1`
+- Sufficiency assessment:
+  - `SUFFICIENT_FOR_NEXT_CANARY`
+
+### Gate/Baseline Status
+
+- Promotion was not run.
+- No report generated in this pass sets `promotion_evidence=true`.
+- No candidate embedding or index namespace was rebuilt in this pass.
+- Existing immutable baseline descriptor/artifact/hash files were not modified.
+- Existing v0/v1/v2/v3 gold CSVs were not overwritten.
+
+### Verification
+
+- Manifest JSON parse:
+  - `python -m json.tool samples/rag_ingestion_hardened_xlsx_manifest.json`
+  - result: passed.
+- Python syntax check:
+  - `python -m py_compile scripts/rag_xlsx_dataset_canary_report.py`
+  - result: passed.
+- Canary report generation:
+  - `python scripts/rag_xlsx_dataset_canary_report.py`
+  - result: `selected_sample_count=6`, `missing_sample_ids=[]`, `missing_files=[]`.
+
+### Important Decisions
+
+- The requested datasets are enough for the next XLSX canary; no additional data is required before the next import/indexing experiment.
+- The two HWP files in the surgery folder are out of scope for `XLSX_EXTRACT` and were not added as canary inputs.
+- Election data was selected for multi-sheet, merged-header, percent/numeric turnout tables.
+- Employment sentiment data was selected for text-heavy rows, URL cells, date-like numeric values, and labeler score matrices.
+- Surgery 5장/8장 were selected to extend the already-present surgery sample with major indicators and hidden-row laparoscopic tables.
+
+### Remaining Work
+
+- Run manifest-driven XLSX_EXTRACT canary reimport for the six new samples only.
+- If embedding is needed, create a new candidate namespace/index version rather than mutating the existing candidate index.
+- Build new dataset-specific gold rows only after fresh document_version/search_unit bindings exist.
+
+### Risks
+
+- The current candidate vector index still reflects the previous embedded corpus until a deliberate reimport/reindex pass is run.
+- Election workbooks contain many merged ranges, so range-level citation quality may need separate review after import.
+- Employment sentiment rows are text-heavy and URL-heavy; chunking may need scrutiny, but parser behavior was not expanded in this pass.

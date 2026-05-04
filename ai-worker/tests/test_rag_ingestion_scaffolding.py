@@ -61,6 +61,18 @@ quality_breakdown_module = load_module(
     "rag_full72_vector_quality_breakdown",
     ROOT / "scripts" / "rag_full72_vector_quality_breakdown.py",
 )
+query_cleanup_module = load_module(
+    "rag_query_evidence_cleanup_plan",
+    ROOT / "scripts" / "rag_query_evidence_cleanup_plan.py",
+)
+promotion_eval_readiness_module = load_module(
+    "rag_promotion_grade_vector_eval_readiness",
+    ROOT / "scripts" / "rag_promotion_grade_vector_eval_readiness.py",
+)
+source_qualified_readiness_module = load_module(
+    "rag_source_qualified_gate_input_readiness",
+    ROOT / "scripts" / "rag_source_qualified_gate_input_readiness.py",
+)
 
 
 def test_promotion_gate_blocks_missing_required_metadata():
@@ -123,6 +135,10 @@ def test_promotion_gate_passes_clean_candidate_with_baseline_margin():
             "candidate_index_mismatch_count": 0,
             "required_index_version_mismatch_count": 0,
             "embedding_status_mismatch_count": 0,
+            "eval_dataset_id": "gold_queries_v0",
+            "eval_dataset_version": "strict_B_vector_v1",
+            "eval_dataset_sha256": "gold-sha",
+            "gold_query_row_count": 72,
         },
         baseline_metrics={
             "Hit@10": 0.80,
@@ -131,6 +147,9 @@ def test_promotion_gate_passes_clean_candidate_with_baseline_margin():
             "immutable_baseline_report_hash": "hash",
             "baseline_provenance": "previous-promoted-index",
             "baseline_dataset_version": "strict_B_vector_v1",
+            "eval_dataset_id": "gold_queries_v0",
+            "eval_dataset_sha256": "gold-sha",
+            "gold_query_row_count": 72,
         },
     )
 
@@ -657,6 +676,347 @@ def test_quality_breakdown_separates_pdf_metadata_projection_from_ranking():
     assert payload["suspect_group_counts"]["policy_or_matching_rule_suspect"] == 1
     row = payload["policy_matching_rule_suspect_rows"][0]
     assert "correct_page_no_hit_but_missing_physical_page_index" in row["diagnostic_flags"]
+    assert row["supporting_hit_ranks"] == [1]
+    assert row["supporting_hits"][0]["page_no"] == 1
+
+
+def test_query_cleanup_plan_keeps_pdf_bbox_and_hidden_policy_separate():
+    breakdown = {
+        "classified_query_rows": [
+            {
+                "query_id": "q-ok",
+                "bucket": "xlsx_lookup",
+                "query": "visible",
+                "failure_category": "ok",
+                "suspect_group": "matched",
+                "diagnostic_flags": [],
+            },
+            {
+                "query_id": "q-pdf",
+                "bucket": "pdf_page_lookup",
+                "query": "page",
+                "failure_category": "pdf_page_policy_missing_physical_or_label",
+                "suspect_group": "policy_or_matching_rule_suspect",
+                "diagnostic_flags": [
+                    "correct_page_no_hit_but_missing_physical_page_index",
+                    "correct_page_no_hit_but_missing_bbox",
+                ],
+            },
+            {
+                "query_id": "q-hidden-negative",
+                "bucket": "xlsx_hidden_policy",
+                "query": "hidden",
+                "failure_category": "xlsx_expected_file_absent_in_top10",
+                "suspect_group": "retrieval_text_or_ranking_suspect",
+                "diagnostic_flags": [],
+            },
+            {
+                "query_id": "q-hidden-visible",
+                "bucket": "xlsx_hidden_policy",
+                "query": "visible",
+                "failure_category": "xlsx_expected_file_absent_in_top10",
+                "suspect_group": "retrieval_text_or_ranking_suspect",
+                "diagnostic_flags": [],
+            },
+        ],
+    }
+    gold_rows = [
+        {"query_id": "q-ok", "hidden_policy": "exclude_hidden"},
+        {"query_id": "q-pdf", "expected_location_type": "pdf", "expected_bbox": "[1,2,3,4]"},
+        {
+            "query_id": "q-hidden-negative",
+            "hidden_policy": "exclude_hidden",
+            "must_not_contain_terms": "secret",
+            "notes": "negative hidden leakage query",
+        },
+        {
+            "query_id": "q-hidden-visible",
+            "hidden_policy": "exclude_hidden",
+            "must_contain_terms": "visible",
+            "notes": "visible control query",
+        },
+    ]
+
+    payload = query_cleanup_module.build_cleanup_plan(
+        breakdown=breakdown,
+        gold_rows=gold_rows,
+        quality_breakdown_path=Path("breakdown.json"),
+        gold_path=Path("gold.csv"),
+    )
+
+    assert payload["status"] == "NEEDS_CLEANUP"
+    assert payload["ready_query_count"] == 1
+    assert payload["unresolved_query_count"] == 3
+    assert payload["cleanup_action_counts"]["pdf_location_metadata_projection_or_matching_rule"] == 1
+    assert payload["cleanup_action_counts"]["gold_policy_negative_relabel_or_exclude"] == 1
+    assert payload["cleanup_action_counts"]["hidden_policy_visible_control_rebind_review"] == 1
+    assert payload["pdf_page_bbox_resolution"]["metadata_projection_or_matching_policy_count"] == 1
+    assert payload["promotion_grade_vector_eval_input"]["ready_now"] is False
+
+
+def test_query_cleanup_plan_keeps_hidden_negative_rows_when_policy_is_explicit():
+    breakdown = {
+        "classified_query_rows": [
+            {
+                "query_id": "q-hidden-negative",
+                "bucket": "xlsx_hidden_policy",
+                "query": "secret",
+                "failure_category": "xlsx_expected_file_absent_in_top10",
+                "suspect_group": "retrieval_text_or_ranking_suspect",
+                "diagnostic_flags": [],
+            },
+        ],
+    }
+    gold_rows = [{
+        "query_id": "q-hidden-negative",
+        "hidden_policy": "negative",
+        "must_not_contain_terms": "secret",
+    }]
+
+    payload = query_cleanup_module.build_cleanup_plan(
+        breakdown=breakdown,
+        gold_rows=gold_rows,
+        quality_breakdown_path=Path("breakdown.json"),
+        gold_path=Path("gold.csv"),
+    )
+
+    assert payload["status"] == "READY"
+    assert payload["ready_query_count"] == 1
+    assert payload["cleanup_action_counts"]["keep_hidden_negative_policy_check"] == 1
+
+
+def test_query_cleanup_plan_splits_table_chunk_ranking_from_gold_binding():
+    breakdown = {
+        "classified_query_rows": [
+            {
+                "query_id": "q-table",
+                "bucket": "xlsx_header_ambiguous",
+                "query": "header",
+                "failure_category": "xlsx_table_metadata_or_gold_binding_mismatch",
+                "suspect_group": "gold_binding_or_label_suspect",
+                "diagnostic_flags": ["expected_table_id_not_present_on_range_hit"],
+                "top_hits": [
+                    {
+                        "rank": 1,
+                        "xlsx_range_policy_match": True,
+                        "xlsx_table_match": False,
+                    }
+                ],
+            },
+        ],
+    }
+    gold_rows = [{
+        "query_id": "q-table",
+        "expected_chunk_type": "table",
+        "expected_table_id": "DetectedTable1",
+    }]
+
+    payload = query_cleanup_module.build_cleanup_plan(
+        breakdown=breakdown,
+        gold_rows=gold_rows,
+        quality_breakdown_path=Path("breakdown.json"),
+        gold_path=Path("gold.csv"),
+    )
+
+    assert payload["cleanup_action_counts"]["xlsx_table_chunk_ranking_or_query_contract_review"] == 1
+    assert payload["owner_counts"]["query_contract_or_ranking"] == 1
+
+
+def test_promotion_grade_vector_readiness_rejects_diagnostic_report_and_unresolved_cleanup(tmp_path):
+    retrieval = tmp_path / "retrieval.json"
+    cleanup = tmp_path / "cleanup.json"
+    metrics = tmp_path / "metrics.json"
+    source_qualified = tmp_path / "c2.json"
+    consistency = tmp_path / "consistency.json"
+    scope = tmp_path / "scope.json"
+    c3 = tmp_path / "c3.json"
+    breakdown = tmp_path / "breakdown.json"
+    gate = tmp_path / "gate.json"
+    output = tmp_path / "readiness.json"
+    retrieval.write_text(json.dumps({
+        "retrieval_backend": "vector",
+        "backend_identity": {"backend": "faiss", "index_namespace_filter": "candidate-v2"},
+        "promotion_evidence": False,
+        "evidence_role": "diagnostic",
+    }), encoding="utf-8")
+    cleanup.write_text(json.dumps({
+        "status": "NEEDS_CLEANUP",
+        "promotion_evidence": False,
+        "unresolved_query_count": 1,
+    }), encoding="utf-8")
+    metrics.write_text(json.dumps({
+        "metrics": {
+            "gate_input_missing_count": 0,
+            "gate_input_missing": [],
+            "retrieval_backend": "vector",
+            "promotion_evidence": False,
+            "source_reports": ["xlsx.json", "pdf.json", "retrieval.json"],
+        }
+    }), encoding="utf-8")
+    source_qualified.write_text(json.dumps({
+        "status": "PASS",
+        "gate_input_missing_count": 0,
+        "gate_input_missing": [],
+        "derived_metric_sources": {},
+        "retrieval_backend": "vector",
+    }), encoding="utf-8")
+    consistency.write_text(json.dumps({"status": "PASS"}), encoding="utf-8")
+    scope.write_text(json.dumps({"status": "PASS"}), encoding="utf-8")
+    c3.write_text(json.dumps({
+        "status": "PASS",
+        "candidate_snapshot": False,
+        "baseline_type": "INITIAL_BASELINE_BOOTSTRAP",
+        "promotion_evidence": False,
+    }), encoding="utf-8")
+    breakdown.write_text(json.dumps({"status": "COMPLETED"}), encoding="utf-8")
+    gate.write_text(json.dumps({"decision": "BLOCKED", "reasons": ["citation_accuracy must be >= 0.85"]}), encoding="utf-8")
+
+    rc = promotion_eval_readiness_module.main([
+        "--retrieval-report", str(retrieval),
+        "--quality-breakdown", str(breakdown),
+        "--cleanup-plan", str(cleanup),
+        "--metrics-report", str(metrics),
+        "--source-qualified-readiness-report", str(source_qualified),
+        "--consistency-report", str(consistency),
+        "--candidate-scope-report", str(scope),
+        "--c3-readiness-report", str(c3),
+        "--gate-report", str(gate),
+        "--output", str(output),
+        "--candidate-index-version", "candidate-v2",
+        "--baseline-index-version", "baseline-v1",
+    ])
+
+    assert rc == 2
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["status"] == "BLOCKED"
+    assert payload["source_qualified_gate_input"]["status"] == "PASS"
+    assert "current retrieval report is diagnostic-only; rerun with --promotion-evidence after cleanup" in payload["blockers"]
+    assert "source-qualified retrieval metrics are not promotion evidence" in payload["blockers"]
+    assert "query-level evidence cleanup must have unresolved_query_count=0" in payload["blockers"]
+    assert payload["global_path_hygiene_separation"]["candidate_scope_status"] == "PASS"
+
+
+def test_promotion_grade_vector_readiness_fails_closed_without_gate_report(tmp_path):
+    retrieval = tmp_path / "retrieval.json"
+    cleanup = tmp_path / "cleanup.json"
+    metrics = tmp_path / "metrics.json"
+    source_qualified = tmp_path / "c2.json"
+    consistency = tmp_path / "consistency.json"
+    scope = tmp_path / "scope.json"
+    c3 = tmp_path / "c3.json"
+    breakdown = tmp_path / "breakdown.json"
+    output = tmp_path / "readiness.json"
+    retrieval.write_text(json.dumps({
+        "retrieval_backend": "vector",
+        "backend_identity": {"backend": "faiss", "index_namespace_filter": "candidate-v2"},
+        "promotion_evidence": True,
+        "evidence_role": "promotion",
+    }), encoding="utf-8")
+    cleanup.write_text(json.dumps({
+        "status": "READY",
+        "promotion_evidence": False,
+        "unresolved_query_count": 0,
+    }), encoding="utf-8")
+    metrics.write_text(json.dumps({
+        "metrics": {
+            "gate_input_missing_count": 0,
+            "gate_input_missing": [],
+            "retrieval_backend": "vector",
+            "promotion_evidence": True,
+        }
+    }), encoding="utf-8")
+    source_qualified.write_text(json.dumps({
+        "status": "PASS",
+        "gate_input_missing_count": 0,
+        "gate_input_missing": [],
+        "derived_metric_sources": {},
+        "retrieval_backend": "vector",
+    }), encoding="utf-8")
+    consistency.write_text(json.dumps({"status": "PASS"}), encoding="utf-8")
+    scope.write_text(json.dumps({"status": "PASS"}), encoding="utf-8")
+    c3.write_text(json.dumps({
+        "status": "PASS",
+        "candidate_snapshot": False,
+        "baseline_type": "INITIAL_BASELINE_BOOTSTRAP",
+        "promotion_evidence": False,
+    }), encoding="utf-8")
+    breakdown.write_text(json.dumps({"status": "COMPLETED"}), encoding="utf-8")
+
+    rc = promotion_eval_readiness_module.main([
+        "--retrieval-report", str(retrieval),
+        "--quality-breakdown", str(breakdown),
+        "--cleanup-plan", str(cleanup),
+        "--metrics-report", str(metrics),
+        "--source-qualified-readiness-report", str(source_qualified),
+        "--consistency-report", str(consistency),
+        "--candidate-scope-report", str(scope),
+        "--c3-readiness-report", str(c3),
+        "--gate-report", str(tmp_path / "missing-gate.json"),
+        "--output", str(output),
+        "--candidate-index-version", "candidate-v2",
+        "--baseline-index-version", "baseline-v1",
+    ])
+
+    assert rc == 2
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert f"gate_report missing: {tmp_path / 'missing-gate.json'}" in payload["blockers"]
+
+
+def test_source_qualified_gate_input_readiness_passes_diagnostic_vector_contract(tmp_path):
+    required = source_qualified_readiness_module.required_canonical_names()
+    metrics_report = tmp_path / "metrics.json"
+    output = tmp_path / "c2.json"
+    metrics_report.write_text(json.dumps({
+        "metrics": {
+            "canonical_metric_names": required,
+            "gate_input_missing_count": 0,
+            "gate_input_missing": [],
+            "derived_metric_sources": {},
+            "retrieval_backend": "vector",
+            "promotion_evidence": False,
+            "source_reports": ["xlsx.json", "pdf.json", "retrieval.json"],
+        }
+    }), encoding="utf-8")
+
+    rc = source_qualified_readiness_module.main([
+        "--metrics-report", str(metrics_report),
+        "--output", str(output),
+    ])
+
+    assert rc == 0
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["status"] == "PASS"
+    assert payload["promotion_evidence"] is False
+    assert payload["gate_input_missing_count"] == 0
+    assert payload["warnings"] == [
+        "retrieval metrics are diagnostic-only; C2 source-qualified input can PASS without implying promotion"
+    ]
+
+
+def test_source_qualified_gate_input_readiness_rejects_library_search_and_derived_sources(tmp_path):
+    required = source_qualified_readiness_module.required_canonical_names()
+    metrics_report = tmp_path / "metrics.json"
+    output = tmp_path / "c2.json"
+    metrics_report.write_text(json.dumps({
+        "metrics": {
+            "canonical_metric_names": required,
+            "gate_input_missing_count": 0,
+            "gate_input_missing": [],
+            "derived_metric_sources": {"xlsx.hidden_content_leakage_count": "diagnostic_only:0"},
+            "retrieval_backend": "library_search",
+            "promotion_evidence": True,
+        }
+    }), encoding="utf-8")
+
+    rc = source_qualified_readiness_module.main([
+        "--metrics-report", str(metrics_report),
+        "--output", str(output),
+    ])
+
+    assert rc == 2
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert "derived_metric_sources must be empty for source-qualified readiness" in payload["blockers"]
+    assert "library_search report cannot be source-qualified promotion-grade vector input" in payload["blockers"]
 
 
 def test_path_separation_readiness_fails_on_candidate_contract_gaps():
@@ -977,4 +1337,8 @@ def _clean_gate_metrics(index_version: str) -> dict[str, object]:
         "candidate_index_mismatch_count": 0,
         "required_index_version_mismatch_count": 0,
         "embedding_status_mismatch_count": 0,
+        "eval_dataset_id": "gold_queries_v0",
+        "eval_dataset_version": "strict_B_vector_v1",
+        "eval_dataset_sha256": "gold-sha",
+        "gold_query_row_count": 72,
     }

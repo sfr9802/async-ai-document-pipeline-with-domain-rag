@@ -114,6 +114,7 @@ def evaluate_promotion_gate(
         reasons.append("baseline provenance is required")
     if baseline and not _string_metric(baseline, "baseline_dataset_version"):
         reasons.append("baseline dataset version is required")
+    _check_eval_dataset_compatibility(reasons, metrics, baseline)
 
     _check_min(
         reasons,
@@ -233,6 +234,8 @@ def evaluate_promotion_gate(
             reasons.append("retrieval_backend must be vector for promotion")
     if metrics.get("promotion_evidence") is not True:
         reasons.append("retrieval report must declare promotion_evidence=true for promotion")
+    if metrics.get("promotion_evidence") is True and _row_filter_active(_mapping_metric(metrics, "row_filter")):
+        reasons.append("filtered retrieval eval cannot be promotion evidence")
     retrieval_backend_identity = _mapping_metric(metrics, "retrieval_backend_identity")
     if not retrieval_backend_identity:
         reasons.append("retrieval_backend_identity is required for promotion")
@@ -267,6 +270,9 @@ def evaluate_promotion_gate(
         ("immutable_baseline_report_hash", "immutable_baseline_report_hash"),
         ("baseline_provenance", "baseline_provenance"),
         ("baseline_dataset_version", "baseline_dataset_version"),
+        ("eval_dataset_id", "baseline_eval_dataset_id"),
+        ("eval_dataset_sha256", "baseline_eval_dataset_sha256"),
+        ("gold_query_row_count", "baseline_gold_query_row_count"),
     ):
         if baseline_key in baseline and baseline[baseline_key] not in (None, ""):
             result_metrics[metric_key] = baseline[baseline_key]
@@ -322,6 +328,49 @@ def _bucket_level_failures(metrics: Mapping[str, Any]) -> list[dict[str, Any]]:
                 "metrics": dict(bucket_payload),
             })
     return failures
+
+
+def _check_eval_dataset_compatibility(
+    reasons: list[str],
+    metrics: Mapping[str, Any],
+    baseline: Mapping[str, Any],
+) -> None:
+    if not baseline:
+        return
+    baseline_version = _string_metric(baseline, "baseline_dataset_version") or _string_metric(
+        baseline,
+        "eval_dataset_version",
+    )
+    candidate_version = _string_metric(metrics, "eval_dataset_version")
+    if baseline_version:
+        if not candidate_version:
+            reasons.append("eval_dataset_version is required when baseline declares baseline_dataset_version")
+        elif candidate_version != baseline_version:
+            reasons.append("candidate eval_dataset_version must match baseline_dataset_version")
+
+    for key, label in (
+        ("eval_dataset_id", "eval_dataset_id"),
+        ("eval_dataset_sha256", "eval_dataset_sha256"),
+        ("gold_query_row_count", "gold_query_row_count"),
+    ):
+        baseline_value = baseline.get(key)
+        if baseline_value in (None, ""):
+            continue
+        candidate_value = metrics.get(key)
+        if candidate_value in (None, ""):
+            reasons.append(f"{label} is required when baseline declares {label}")
+        elif str(candidate_value) != str(baseline_value):
+            reasons.append(f"candidate {label} must match baseline {label}")
+
+
+def _row_filter_active(row_filter: Mapping[str, Any]) -> bool:
+    if not row_filter:
+        return False
+    if row_filter.get("expected_location_types") or row_filter.get("buckets") or row_filter.get("bucket_prefixes"):
+        return True
+    original = row_filter.get("original_row_count")
+    filtered = row_filter.get("filtered_row_count")
+    return original is not None and filtered is not None and int(original) != int(filtered)
 
 
 def _mapping_metric(metrics: Mapping[str, Any], key: str) -> dict[str, Any]:
@@ -504,7 +553,10 @@ def load_baseline_metrics(path: Path | None) -> dict[str, Any] | None:
         "immutable_baseline_report_hash",
         "baseline_provenance",
         "baseline_dataset_version",
+        "eval_dataset_id",
         "eval_dataset_version",
+        "eval_dataset_sha256",
+        "gold_query_row_count",
     ):
         if isinstance(payload, Mapping) and payload.get(key) is not None and key not in metrics:
             metrics[key] = payload[key]

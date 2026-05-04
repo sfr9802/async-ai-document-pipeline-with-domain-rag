@@ -1,0 +1,454 @@
+{
+  "run_id": "2026-05-04T103027Z",
+  "status": "COMPLETED",
+  "metrics": {
+    "xlsx.parser_success_rate": 1.0,
+    "xlsx.unsupported_file_rate": 0.0,
+    "xlsx.fatal_warning_count": 0,
+    "xlsx.zero_indexable_chunk_count": 0,
+    "xlsx.missing_required_metadata_count": 0,
+    "xlsx.hidden_content_leakage_count": 0,
+    "xlsx.parsing_latency_p95_seconds": 28.41,
+    "xlsx.indexing_latency_p95_seconds": 1.015,
+    "pdf.parser_success_rate": 1.0,
+    "pdf.unsupported_file_rate": 0.0,
+    "pdf.fatal_warning_count": 0,
+    "pdf.zero_indexable_chunk_count": 0,
+    "pdf.missing_required_metadata_count": 0,
+    "pdf.missing_page_metadata_count": 0,
+    "pdf.inconsistent_location_page_metadata_count": 0,
+    "pdf.invalid_pdf_location_count": 0,
+    "pdf.missing_pdf_citation_text_count": 0,
+    "pdf.hidden_content_leakage_count": 0,
+    "pdf.parsing_latency_p95_seconds": 38.468,
+    "pdf.indexing_latency_p95_seconds": 0.469,
+    "ocr.unsupported_file_rate": 0.0,
+    "ocr.fatal_warning_count": 0,
+    "ocr.ocr_confidence_avg": 0.9986956304073333,
+    "ocr.low_trust_ocr_chunk_count": 1,
+    "ocr.hidden_content_leakage_count": 0,
+    "ocr.parsing_latency_p95_seconds": 39.161,
+    "ocr.indexing_latency_p95_seconds": 0.386,
+    "retrieval.Hit@10": 0.7639,
+    "retrieval.MRR@10": 0.641,
+    "retrieval.citation_accuracy": 0.4306,
+    "retrieval.hidden_content_leakage_count": 0,
+    "retrieval.indexing_filtered_hit_count": 0,
+    "retrieval.required_index_version_mismatch_count": 0,
+    "retrieval.embedding_status_mismatch_count": 0,
+    "retrieval.candidate_index_mismatch_count": 0,
+    "source_qualified_metrics": {
+      "xlsx": {
+        "parser_success_rate": 1.0,
+        "unsupported_file_rate": 0.0,
+        "fatal_warning_count": 0,
+        "zero_indexable_chunk_count": 0,
+        "missing_required_metadata_count": 0,
+        "hidden_content_leakage_count": 0,
+        "parsing_latency_p95_seconds": 28.41,
+        "indexing_latency_p95_seconds": 1.015
+      },
+      "pdf": {
+        "parser_success_rate": 1.0,
+        "unsupported_file_rate": 0.0,
+        "fatal_warning_count": 0,
+        "zero_indexable_chunk_count": 0,
+        "missing_required_metadata_count": 0,
+        "missing_page_metadata_count": 0,
+        "inconsistent_location_page_metadata_count": 0,
+        "invalid_pdf_location_count": 0,
+        "missing_pdf_citation_text_count": 0,
+        "hidden_content_leakage_count": 0,
+        "parsing_latency_p95_seconds": 38.468,
+        "indexing_latency_p95_seconds": 0.469
+      },
+      "ocr": {
+        "unsupported_file_rate": 0.0,
+        "fatal_warning_count": 0,
+        "ocr_confidence_avg": 0.9986956304073333,
+        "low_trust_ocr_chunk_count": 1,
+        "hidden_content_leakage_count": 0,
+        "parsing_latency_p95_seconds": 39.161,
+        "indexing_latency_p95_seconds": 0.386
+      },
+      "retrieval": {
+        "Hit@10": 0.7639,
+        "MRR@10": 0.641,
+        "citation_accuracy": 0.4306,
+        "hidden_content_leakage_count": 0,
+        "indexing_filtered_hit_count": 0,
+        "required_index_version_mismatch_count": 0,
+        "embedding_status_mismatch_count": 0,
+        "candidate_index_mismatch_count": 0
+      }
+    },
+    "canonical_metric_names": [
+      "ocr.fatal_warning_count",
+      "ocr.hidden_content_leakage_count",
+      "ocr.indexing_latency_p95_seconds",
+      "ocr.low_trust_ocr_chunk_count",
+      "ocr.ocr_confidence_avg",
+      "ocr.parsing_latency_p95_seconds",
+      "ocr.unsupported_file_rate",
+      "pdf.fatal_warning_count",
+      "pdf.hidden_content_leakage_count",
+      "pdf.inconsistent_location_page_metadata_count",
+      "pdf.indexing_latency_p95_seconds",
+      "pdf.invalid_pdf_location_count",
+      "pdf.missing_page_metadata_count",
+      "pdf.missing_pdf_citation_text_count",
+      "pdf.missing_required_metadata_count",
+      "pdf.parser_success_rate",
+      "pdf.parsing_latency_p95_seconds",
+      "pdf.unsupported_file_rate",
+      "pdf.zero_indexable_chunk_count",
+      "retrieval.Hit@10",
+      "retrieval.MRR@10",
+      "retrieval.candidate_index_mismatch_count",
+      "retrieval.citation_accuracy",
+      "retrieval.embedding_status_mismatch_count",
+      "retrieval.hidden_content_leakage_count",
+      "retrieval.indexing_filtered_hit_count",
+      "retrieval.required_index_version_mismatch_count",
+      "xlsx.fatal_warning_count",
+      "xlsx.hidden_content_leakage_count",
+      "xlsx.indexing_latency_p95_seconds",
+      "xlsx.missing_required_metadata_count",
+      "xlsx.parser_success_rate",
+      "xlsx.parsing_latency_p95_seconds",
+      "xlsx.unsupported_file_rate",
+      "xlsx.zero_indexable_chunk_count"
+    ],
+    "derived_metric_sources": {},
+    "parser_success_rate": 1.0,
+    "unsupported_file_rate": 0.0,
+    "zero_indexable_chunk_count": 0,
+    "required_metadata_completeness": 1.0,
+    "missing_required_metadata_count": 0,
+    "xlsx_citation_location_accuracy": 0.62,
+    "pdf_citation_location_accuracy": 0.0,
+    "table_detection_accuracy": 1.0,
+    "OCR_needed_count": 2,
+    "hit_at_10": 0.7639,
+    "mrr_at_10": 0.641,
+    "Hit@10": 0.7639,
+    "MRR@10": 0.641,
+    "citation_accuracy": 0.4306,
+    "citation_location_accuracy": 0.4306,
+    "parsing_latency_p95_seconds": 39.161,
+    "indexing_latency_p95_seconds": 1.015,
+    "fatal_warning_count": 0,
+    "hidden_content_leakage_count": 0,
+    "embedding_filtered_eval": true,
+    "required_embedding_status": "EMBEDDED",
+    "required_index_version": "rag-ingestion-v2-candidate",
+    "indexing_filtered_hit_count": 0,
+    "result_empty_count": 0,
+    "gold_label_invalid_count": 0,
+    "candidate_index_mismatch_count": 0,
+    "embedding_status_mismatch_count": 0,
+    "required_index_version_mismatch_count": 0,
+    "overall_failure_reason_counts": {
+      "expected_file_not_found": 13,
+      "expected_page_not_found": 20,
+      "expected_range_not_found": 5,
+      "expected_table_not_found": 2,
+      "unknown": 1
+    },
+    "bucket_failure_reason_counts": {
+      "mixed_text_table": {
+        "expected_range_not_found": 3
+      },
+      "pdf_page_lookup": {
+        "expected_page_not_found": 8
+      },
+      "pdf_section_question": {
+        "expected_file_not_found": 2,
+        "expected_page_not_found": 6
+      },
+      "pdf_table_lookup": {
+        "expected_page_not_found": 6
+      },
+      "xlsx_aggregation": {
+        "expected_file_not_found": 1,
+        "expected_range_not_found": 1
+      },
+      "xlsx_date_number_format": {
+        "expected_file_not_found": 4
+      },
+      "xlsx_formula_value": {
+        "expected_file_not_found": 3
+      },
+      "xlsx_header_ambiguous": {
+        "expected_range_not_found": 1,
+        "expected_table_not_found": 2,
+        "unknown": 1
+      },
+      "xlsx_hidden_policy": {
+        "expected_file_not_found": 3
+      }
+    },
+    "bucket_metrics": {
+      "mixed_text_table": {
+        "Hit@10": 1.0,
+        "MRR@10": 0.8333,
+        "count": 3,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 1.0,
+        "xlsx_range_contains@10": 0.0,
+        "xlsx_range_overlap@10": 0.0,
+        "xlsx_sheet_hit@10": 1.0,
+        "bucket_failure_reason_counts": {
+          "expected_range_not_found": 3
+        }
+      },
+      "pdf_page_lookup": {
+        "Hit@10": 1.0,
+        "MRR@10": 0.8542,
+        "count": 8,
+        "citation_location_accuracy": 0.0,
+        "pdf_bbox_overlap@10": 0.0,
+        "pdf_exact_bbox@10": 0.0,
+        "pdf_file_hit@10": 1.0,
+        "pdf_page_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_page_not_found": 8
+        }
+      },
+      "pdf_section_question": {
+        "Hit@10": 0.5,
+        "MRR@10": 0.2054,
+        "count": 8,
+        "citation_location_accuracy": 0.0,
+        "pdf_bbox_overlap@10": 0.0,
+        "pdf_exact_bbox@10": 0.0,
+        "pdf_file_hit@10": 0.75,
+        "pdf_page_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_file_not_found": 2,
+          "expected_page_not_found": 6
+        }
+      },
+      "pdf_table_lookup": {
+        "Hit@10": 1.0,
+        "MRR@10": 0.5294,
+        "count": 6,
+        "citation_location_accuracy": 0.0,
+        "pdf_bbox_overlap@10": 0.0,
+        "pdf_exact_bbox@10": 0.0,
+        "pdf_file_hit@10": 1.0,
+        "pdf_page_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_page_not_found": 6
+        }
+      },
+      "xlsx_aggregation": {
+        "Hit@10": 0.9333,
+        "MRR@10": 0.8444,
+        "count": 15,
+        "citation_location_accuracy": 0.8667,
+        "xlsx_exact_range@10": 0.8667,
+        "xlsx_file_hit@10": 0.9333,
+        "xlsx_range_contains@10": 0.8667,
+        "xlsx_range_overlap@10": 0.8667,
+        "xlsx_sheet_hit@10": 0.9333,
+        "xlsx_table_hit@10": 0.5,
+        "bucket_failure_reason_counts": {
+          "expected_file_not_found": 1,
+          "expected_range_not_found": 1
+        }
+      },
+      "xlsx_date_number_format": {
+        "Hit@10": 0.0,
+        "MRR@10": 0.0,
+        "count": 4,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 0.0,
+        "xlsx_range_contains@10": 0.0,
+        "xlsx_range_overlap@10": 0.0,
+        "xlsx_sheet_hit@10": 0.0,
+        "xlsx_table_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_file_not_found": 4
+        }
+      },
+      "xlsx_formula_value": {
+        "Hit@10": 0.0,
+        "MRR@10": 0.0,
+        "count": 3,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 0.0,
+        "xlsx_range_contains@10": 0.0,
+        "xlsx_range_overlap@10": 0.0,
+        "xlsx_sheet_hit@10": 0.0,
+        "xlsx_table_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_file_not_found": 3
+        }
+      },
+      "xlsx_header_ambiguous": {
+        "Hit@10": 0.5,
+        "MRR@10": 0.5,
+        "count": 4,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 1.0,
+        "xlsx_range_contains@10": 0.25,
+        "xlsx_range_overlap@10": 0.25,
+        "xlsx_sheet_hit@10": 1.0,
+        "xlsx_table_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_range_not_found": 1,
+          "expected_table_not_found": 2,
+          "unknown": 1
+        }
+      },
+      "xlsx_hidden_policy": {
+        "Hit@10": 0.0,
+        "MRR@10": 0.0,
+        "count": 3,
+        "citation_location_accuracy": 0.0,
+        "xlsx_exact_range@10": 0.0,
+        "xlsx_file_hit@10": 0.0,
+        "xlsx_range_contains@10": 0.0,
+        "xlsx_range_overlap@10": 0.0,
+        "xlsx_sheet_hit@10": 0.0,
+        "xlsx_table_hit@10": 0.0,
+        "bucket_failure_reason_counts": {
+          "expected_file_not_found": 3
+        }
+      },
+      "xlsx_lookup": {
+        "Hit@10": 1.0,
+        "MRR@10": 0.963,
+        "count": 18,
+        "citation_location_accuracy": 1.0,
+        "xlsx_exact_range@10": 1.0,
+        "xlsx_file_hit@10": 1.0,
+        "xlsx_range_contains@10": 1.0,
+        "xlsx_range_overlap@10": 1.0,
+        "xlsx_sheet_hit@10": 1.0
+      }
+    },
+    "retrieval_report_path": "reports\\rag_retrieval_eval_full72_vector_diagnostic_report.json",
+    "retrieval_backend": "vector",
+    "retrieval_backend_identity": {
+      "backend": "faiss",
+      "index_dir": "rag-data-canary",
+      "index_namespace_filter": "rag-ingestion-v2-candidate",
+      "db_dsn": "host=localhost port=5433 dbname=aipipeline user=aipipeline password=<redacted>",
+      "filtering_mode": "vector_namespace_then_contract_filter"
+    },
+    "promotion_evidence": false,
+    "evidence_role": "diagnostic",
+    "candidate_valid_hit_count": 720,
+    "null_index_version_hit_count": 0,
+    "wrong_index_version_hit_count": 0,
+    "unembedded_hit_count": 0,
+    "candidate_index_version": "rag-ingestion-v2-candidate",
+    "baseline_index_version": "initial-full72-vector-baseline-v0",
+    "pdf_missing_page_metadata_count": 0,
+    "pdf_inconsistent_location_page_metadata_count": 0,
+    "source_reports": [
+      "archive\\results\\2026-05-04-root-rag-reports\\reports\\rag_ingestion_hardened_xlsx_c2_reimport_report.json",
+      "archive\\results\\2026-05-04-root-rag-reports\\reports\\rag_pdf_ingestion_sample_batch_report.json",
+      "reports\\rag_retrieval_eval_full72_vector_diagnostic_report.json",
+      "archive\\results\\2026-05-04-root-rag-reports\\reports\\rag_pdf_ocr_fallback_smoke_report.json"
+    ],
+    "gate_input_missing_count": 0,
+    "gate_input_missing": [],
+    "OCR_confidence_avg": 0.9986956304073333
+  },
+  "source_qualified_metrics": {
+    "xlsx": {
+      "parser_success_rate": 1.0,
+      "unsupported_file_rate": 0.0,
+      "fatal_warning_count": 0,
+      "zero_indexable_chunk_count": 0,
+      "missing_required_metadata_count": 0,
+      "hidden_content_leakage_count": 0,
+      "parsing_latency_p95_seconds": 28.41,
+      "indexing_latency_p95_seconds": 1.015
+    },
+    "pdf": {
+      "parser_success_rate": 1.0,
+      "unsupported_file_rate": 0.0,
+      "fatal_warning_count": 0,
+      "zero_indexable_chunk_count": 0,
+      "missing_required_metadata_count": 0,
+      "missing_page_metadata_count": 0,
+      "inconsistent_location_page_metadata_count": 0,
+      "invalid_pdf_location_count": 0,
+      "missing_pdf_citation_text_count": 0,
+      "hidden_content_leakage_count": 0,
+      "parsing_latency_p95_seconds": 38.468,
+      "indexing_latency_p95_seconds": 0.469
+    },
+    "ocr": {
+      "unsupported_file_rate": 0.0,
+      "fatal_warning_count": 0,
+      "ocr_confidence_avg": 0.9986956304073333,
+      "low_trust_ocr_chunk_count": 1,
+      "hidden_content_leakage_count": 0,
+      "parsing_latency_p95_seconds": 39.161,
+      "indexing_latency_p95_seconds": 0.386
+    },
+    "retrieval": {
+      "Hit@10": 0.7639,
+      "MRR@10": 0.641,
+      "citation_accuracy": 0.4306,
+      "hidden_content_leakage_count": 0,
+      "indexing_filtered_hit_count": 0,
+      "required_index_version_mismatch_count": 0,
+      "embedding_status_mismatch_count": 0,
+      "candidate_index_mismatch_count": 0
+    }
+  },
+  "canonical_metrics": {
+    "xlsx.parser_success_rate": 1.0,
+    "xlsx.unsupported_file_rate": 0.0,
+    "xlsx.fatal_warning_count": 0,
+    "xlsx.zero_indexable_chunk_count": 0,
+    "xlsx.missing_required_metadata_count": 0,
+    "xlsx.hidden_content_leakage_count": 0,
+    "xlsx.parsing_latency_p95_seconds": 28.41,
+    "xlsx.indexing_latency_p95_seconds": 1.015,
+    "pdf.parser_success_rate": 1.0,
+    "pdf.unsupported_file_rate": 0.0,
+    "pdf.fatal_warning_count": 0,
+    "pdf.zero_indexable_chunk_count": 0,
+    "pdf.missing_required_metadata_count": 0,
+    "pdf.missing_page_metadata_count": 0,
+    "pdf.inconsistent_location_page_metadata_count": 0,
+    "pdf.invalid_pdf_location_count": 0,
+    "pdf.missing_pdf_citation_text_count": 0,
+    "pdf.hidden_content_leakage_count": 0,
+    "pdf.parsing_latency_p95_seconds": 38.468,
+    "pdf.indexing_latency_p95_seconds": 0.469,
+    "ocr.unsupported_file_rate": 0.0,
+    "ocr.fatal_warning_count": 0,
+    "ocr.ocr_confidence_avg": 0.9986956304073333,
+    "ocr.low_trust_ocr_chunk_count": 1,
+    "ocr.hidden_content_leakage_count": 0,
+    "ocr.parsing_latency_p95_seconds": 39.161,
+    "ocr.indexing_latency_p95_seconds": 0.386,
+    "retrieval.Hit@10": 0.7639,
+    "retrieval.MRR@10": 0.641,
+    "retrieval.citation_accuracy": 0.4306,
+    "retrieval.hidden_content_leakage_count": 0,
+    "retrieval.indexing_filtered_hit_count": 0,
+    "retrieval.required_index_version_mismatch_count": 0,
+    "retrieval.embedding_status_mismatch_count": 0,
+    "retrieval.candidate_index_mismatch_count": 0
+  },
+  "gate_input_missing_count": 0,
+  "gate_input_missing": [],
+  "notes": [
+    "Canonical source-qualified metric names are authoritative for C2 readiness.",
+    "Legacy aggregate metrics remain only for older gate compatibility.",
+    "Derived metrics record their source and are not treated as silent defaults."
+  ]
+}

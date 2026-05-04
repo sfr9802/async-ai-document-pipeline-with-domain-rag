@@ -1,0 +1,99 @@
+{
+  "run_id": "2026-05-04T135108Z",
+  "generated_at": "2026-05-04T13:51:08.498270+00:00",
+  "status": "BLOCKED",
+  "report_role": "xlsx_promotion_grade_eval_readiness_preflight",
+  "promotion_evidence": false,
+  "candidate_index_version": "rag-ingestion-v2-xlsx-candidate-v1",
+  "candidate_namespace": "rag-ingestion-v2-xlsx-candidate-v1",
+  "baseline_index_version": "initial-full72-vector-baseline-v0",
+  "lineage_report": "reports\\rag_candidate_index_lineage_report.json",
+  "review_decisions": "reports\\rag_xlsx_query_evidence_review_decisions.json",
+  "cleaned_eval_dataset": {
+    "path": "eval\\gold_queries_xlsx_v1.csv",
+    "exists": true,
+    "eval_dataset_id": "gold_queries_xlsx_v1",
+    "eval_dataset_version": "xlsx_v1_reviewed_positive_35",
+    "sha256": "f3555bc302559a693de285013cc41cba0c30d212c1cd9f7fdc8902d5cd77573f",
+    "row_count": 35
+  },
+  "readiness_summary": {
+    "source_unresolved_query_count": 15,
+    "review_unresolved_query_count": 0,
+    "promotion_eval_eligible_count": 35,
+    "xlsx_candidate_consistency_status": "PASS",
+    "hidden_leakage_count": 0,
+    "candidate_namespace_present": true,
+    "candidate_namespace": "rag-ingestion-v2-xlsx-candidate-v1",
+    "baseline_descriptor_hash_check": {
+      "status": "MATCH",
+      "observed_sha256": "3b9f09b078f01e2a9ab557dacb6059245bf3357ddb1092e834b3c52d7240662a",
+      "expected_sha256": "3b9f09b078f01e2a9ab557dacb6059245bf3357ddb1092e834b3c52d7240662a"
+    },
+    "baseline_artifact_hash_checks": [
+      {
+        "name": "build.json",
+        "expected_sha256": "0e9342cc095d73ad5f5b7851b667ef96e9c6137cc4fe7edc6a072f13cb8caca5",
+        "observed_sha256": "0e9342cc095d73ad5f5b7851b667ef96e9c6137cc4fe7edc6a072f13cb8caca5",
+        "status": "MATCH"
+      },
+      {
+        "name": "faiss.index",
+        "expected_sha256": "6167ffde029c5490e49fb4e27e55469d6f6702395cde816ec00be11fd077a964",
+        "observed_sha256": "6167ffde029c5490e49fb4e27e55469d6f6702395cde816ec00be11fd077a964",
+        "status": "MATCH"
+      },
+      {
+        "name": "ingest_manifest.json",
+        "expected_sha256": "2f94558e3320eb446e156a1c2df07e0e8e9c792d5681bdaf0670cef0953eb9c0",
+        "observed_sha256": "2f94558e3320eb446e156a1c2df07e0e8e9c792d5681bdaf0670cef0953eb9c0",
+        "status": "MATCH"
+      }
+    ],
+    "diagnostic_report_promotion_evidence": false,
+    "diagnostic_report_evidence_role": "diagnostic",
+    "diagnostic_not_promotion_evidence": true,
+    "range_policy_missing_query_ids": [],
+    "mixed_full72_reports_are_historical": true,
+    "baseline_eval_dataset_id": "gold_queries_v0",
+    "baseline_dataset_version": "full72_vector_diagnostic_v0",
+    "baseline_eval_dataset_sha256": "e2e85678ddbf83c03927e69d2a75b825f20048f12f4ac50bb7f9b820c289f8ef",
+    "baseline_gold_query_row_count": 72,
+    "baseline_dataset_compatible_with_cleaned_xlsx_v1": false
+  },
+  "next_diagnostic_rerun": [
+    "python",
+    "scripts/rag_retrieval_eval.py",
+    "--gold",
+    "eval\\gold_queries_xlsx_v1.csv",
+    "--retrieval-backend",
+    "vector",
+    "--vector-index-dir",
+    "rag-data-xlsx-candidate-v1",
+    "--candidate-index-version",
+    "rag-ingestion-v2-xlsx-candidate-v1",
+    "--required-index-version",
+    "rag-ingestion-v2-xlsx-candidate-v1",
+    "--required-embedding-status",
+    "EMBEDDED",
+    "--top-k",
+    "10",
+    "--report",
+    "reports/rag_retrieval_eval_xlsx_v1_vector_diagnostic_report.json"
+  ],
+  "blockers": [
+    "cleaned eval dataset id must match baseline eval_dataset_id",
+    "cleaned eval dataset version must match baseline baseline_dataset_version",
+    "cleaned eval dataset sha256 must match baseline eval_dataset_sha256",
+    "cleaned eval row count must match baseline gold_query_row_count"
+  ],
+  "warnings": [
+    "source cleanup plan still has unresolved rows; reviewed cleaned XLSX v1 is the rerun input"
+  ],
+  "notes": [
+    "READY means ready for a future XLSX-only rerun from the cleaned eval set, not that promotion was executed.",
+    "Promotion-grade readiness remains blocked when the immutable baseline dataset differs from the cleaned XLSX dataset.",
+    "This report does not set promotion_evidence=true.",
+    "Thresholds, hybrid search, reranking, parser behavior, baseline descriptor, and baseline artifacts are unchanged."
+  ]
+}

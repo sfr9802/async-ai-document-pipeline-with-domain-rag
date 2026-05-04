@@ -1,0 +1,84 @@
+{
+  "run_id": "2026-05-04T131450Z",
+  "generated_at": "2026-05-04T13:14:50.274531+00:00",
+  "run_started_at": "2026-05-04T13:13:02.418479+00:00",
+  "status": "PASS",
+  "scope": "full72_document_version_scoped_candidate_indexing",
+  "documentVersionIds": [
+    "docv_2bc2cb4df8c629e4",
+    "docv_655f9714bea7c341",
+    "docv_7bddd99c39ffdf1a",
+    "docv_7c0868960147f9ac",
+    "docv_8bafd560c35198d9",
+    "docv_b24282189b1610cb",
+    "docv_ea483b5a43086e05",
+    "docv_f39c6a5b56da9ad8"
+  ],
+  "sourceFileTypes": [
+    "SPREADSHEET"
+  ],
+  "parserVersions": [
+    "xlsx-extract-v2-hidden-safe"
+  ],
+  "expectedIndexVersion": "rag-ingestion-v2-xlsx-candidate-v1",
+  "allowUnscoped": false,
+  "dryRun": false,
+  "batchSize": 200,
+  "limit": 200,
+  "maxCycles": 20,
+  "cycles": [
+    {
+      "cycle": 1,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 2,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 3,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 4,
+      "claimed": 110,
+      "indexed": 110,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 5,
+      "claimed": 0,
+      "indexed": 0,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    }
+  ],
+  "totals": {
+    "claimed": 710,
+    "indexed": 710,
+    "failed": 0,
+    "stale": 0,
+    "skipped_local": 0
+  },
+  "blockers": []
+}

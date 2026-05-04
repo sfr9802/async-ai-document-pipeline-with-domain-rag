@@ -269,6 +269,7 @@ ai-worker/eval/eval_queries/_generation_log_*.jsonl
 # FAISS index + build manifest are rebuilt from fixtures via
 # scripts/build_rag_index.py; keep them out of git.
 rag-data-canary/
+rag-data-xlsx-candidate-v*/
 rag-data/*.index
 rag-data/build.json
 

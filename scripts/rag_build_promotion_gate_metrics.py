@@ -202,8 +202,16 @@ def main(argv: list[str] | None = None) -> int:
         "retrieval_report_path": str(args.retrieval_report),
         "retrieval_backend": retrieval.get("retrieval_backend"),
         "retrieval_backend_identity": dict(retrieval.get("backend_identity") or {}),
+        "row_filter": dict(retrieval.get("row_filter") or {}),
+        "retrieval_row_filter_active": row_filter_active(retrieval.get("row_filter") or {}),
+        "retrieval_original_row_count": optional_int(dict(retrieval.get("row_filter") or {}), "original_row_count"),
+        "retrieval_filtered_row_count": optional_int(dict(retrieval.get("row_filter") or {}), "filtered_row_count"),
         "promotion_evidence": bool(retrieval.get("promotion_evidence")),
         "evidence_role": retrieval.get("evidence_role") or "diagnostic",
+        "eval_dataset_id": retrieval.get("eval_dataset_id"),
+        "eval_dataset_version": retrieval.get("eval_dataset_version"),
+        "eval_dataset_sha256": retrieval.get("eval_dataset_sha256"),
+        "gold_query_row_count": retrieval.get("gold_query_row_count") or (retrieval.get("validation") or {}).get("row_count"),
         "candidate_valid_hit_count": optional_int(dict(retrieval.get("metrics") or {}), "candidate_valid_hit_count"),
         "null_index_version_hit_count": optional_int(dict(retrieval.get("metrics") or {}), "null_index_version_hit_count"),
         "wrong_index_version_hit_count": optional_int(dict(retrieval.get("metrics") or {}), "wrong_index_version_hit_count"),
@@ -422,6 +430,16 @@ def optional_int(metrics: dict[str, Any], key: str, default: int = 0) -> int:
     if value is None or value == "":
         return default
     return int(value)
+
+
+def row_filter_active(row_filter: Any) -> bool:
+    if not isinstance(row_filter, dict):
+        return False
+    if row_filter.get("expected_location_types") or row_filter.get("buckets") or row_filter.get("bucket_prefixes"):
+        return True
+    original = row_filter.get("original_row_count")
+    filtered = row_filter.get("filtered_row_count")
+    return original is not None and filtered is not None and int(original) != int(filtered)
 
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:

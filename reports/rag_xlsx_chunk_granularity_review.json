@@ -1,0 +1,346 @@
+{
+  "run_id": "2026-05-04T142230Z",
+  "generated_at": "2026-05-04T14:22:30.997182+00:00",
+  "status": "NEEDS_CHUNK_OR_QUERY_REVIEW",
+  "report_role": "xlsx_chunk_granularity_review",
+  "promotion_evidence": false,
+  "evidence_role": "gold_v2_contract_design",
+  "source_paths": {
+    "gold_v0": "eval\\gold_queries_v0.csv",
+    "review_decisions": "reports\\rag_xlsx_query_evidence_review_decisions.json",
+    "diagnostic_report": "reports\\rag_retrieval_eval_xlsx_vector_diagnostic_report.json"
+  },
+  "row_count": 5,
+  "primary_issue_distribution": {
+    "chunking_granularity": 4,
+    "query_specificity": 1
+  },
+  "rows": [
+    {
+      "query_id": "gq_xlsx_header_ambiguous_004",
+      "bucket": "xlsx_header_ambiguous",
+      "query": "시도 시군구 법정동명",
+      "expected_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+      "expected_sheet_name": "일반현황",
+      "expected_range": "A5052:J5101",
+      "current_top_ranges": [
+        {
+          "rank": 1,
+          "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+          "sheet_name": "일반현황",
+          "cell_range": "A8902:J8951",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 2,
+          "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+          "sheet_name": "일반현황",
+          "cell_range": "A852:J901",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 3,
+          "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+          "sheet_name": "일반현황",
+          "cell_range": "A6102:J6151",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 4,
+          "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+          "sheet_name": "일반현황",
+          "cell_range": "A2502:J2551",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 5,
+          "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+          "sheet_name": "일반현황",
+          "cell_range": "A6802:J6851",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        }
+      ],
+      "range_relation": {
+        "exact": false,
+        "contains_expected": false,
+        "overlap": false,
+        "supporting_hit_ranks": []
+      },
+      "v2_range_match_policy": "CONTAINS_EXPECTED",
+      "range_match_policy": "contains_expected",
+      "harness_range_match_policy": "contains_expected",
+      "primary_issue": "chunking_granularity",
+      "chunking_fix_needed": true,
+      "gold_range_policy_only": false,
+      "query_specificity_fix_needed": false,
+      "notes": "multi-token header lookup; v2_review=deferred_chunk_granularity; review_reason=same_sheet_hit_but_expected_range_absent; range policy candidate only; no harness behavior changed"
+    },
+    {
+      "query_id": "gq_mixed_text_table_001",
+      "bucket": "mixed_text_table",
+      "query": "과학기술자료실",
+      "expected_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+      "expected_sheet_name": "Sheet1",
+      "expected_range": "A2:J51",
+      "current_top_ranges": [
+        {
+          "rank": 1,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": null,
+          "cell_range": null,
+          "xlsx_sheet_match": false,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 2,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A8702:J8751",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 3,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A9102:J9151",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 4,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A7002:J7051",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 5,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A8152:J8201",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        }
+      ],
+      "range_relation": {
+        "exact": false,
+        "contains_expected": false,
+        "overlap": false,
+        "supporting_hit_ranks": []
+      },
+      "v2_range_match_policy": "CONTAINS_EXPECTED",
+      "range_match_policy": "contains_expected",
+      "harness_range_match_policy": "contains_expected",
+      "primary_issue": "chunking_granularity",
+      "chunking_fix_needed": true,
+      "gold_range_policy_only": false,
+      "query_specificity_fix_needed": false,
+      "notes": "mixed text-table workbook sample; v2_review=deferred_chunk_granularity; review_reason=same_sheet_hit_but_expected_range_absent; range policy candidate only; no harness behavior changed"
+    },
+    {
+      "query_id": "gq_mixed_text_table_002",
+      "bucket": "mixed_text_table",
+      "query": "도서정보",
+      "expected_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+      "expected_sheet_name": "Sheet1",
+      "expected_range": "A2:J51",
+      "current_top_ranges": [
+        {
+          "rank": 1,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A7402:J7451",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 2,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A4752:J4801",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 3,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A7302:J7351",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 4,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A6702:J6751",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 5,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A6602:J6651",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        }
+      ],
+      "range_relation": {
+        "exact": false,
+        "contains_expected": false,
+        "overlap": false,
+        "supporting_hit_ranks": []
+      },
+      "v2_range_match_policy": "CONTAINS_EXPECTED",
+      "range_match_policy": "contains_expected",
+      "harness_range_match_policy": "contains_expected",
+      "primary_issue": "chunking_granularity",
+      "chunking_fix_needed": true,
+      "gold_range_policy_only": false,
+      "query_specificity_fix_needed": false,
+      "notes": "mixed text-table workbook sample; v2_review=deferred_chunk_granularity; review_reason=same_sheet_hit_but_expected_range_absent; range policy candidate only; no harness behavior changed"
+    },
+    {
+      "query_id": "gq_mixed_text_table_003",
+      "bucket": "mixed_text_table",
+      "query": "국립과천과학관",
+      "expected_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+      "expected_sheet_name": "Sheet1",
+      "expected_range": "A2:J51",
+      "current_top_ranges": [
+        {
+          "rank": 1,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A7902:J7951",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 2,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A9602:J9651",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 3,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A9802:J9851",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 4,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A9052:J9101",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 5,
+          "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+          "sheet_name": "Sheet1",
+          "cell_range": "A6002:J6051",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        }
+      ],
+      "range_relation": {
+        "exact": false,
+        "contains_expected": false,
+        "overlap": false,
+        "supporting_hit_ranks": []
+      },
+      "v2_range_match_policy": "CONTAINS_EXPECTED",
+      "range_match_policy": "contains_expected",
+      "harness_range_match_policy": "contains_expected",
+      "primary_issue": "chunking_granularity",
+      "chunking_fix_needed": true,
+      "gold_range_policy_only": false,
+      "query_specificity_fix_needed": false,
+      "notes": "mixed text-table workbook sample; v2_review=deferred_chunk_granularity; review_reason=same_sheet_hit_but_expected_range_absent; range policy candidate only; no harness behavior changed"
+    },
+    {
+      "query_id": "gq_auto_027",
+      "bucket": "xlsx_aggregation",
+      "query": "신분당선 승차총승객수",
+      "expected_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+      "expected_sheet_name": "철도",
+      "expected_range": "A502:D551",
+      "current_top_ranges": [
+        {
+          "rank": 1,
+          "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+          "sheet_name": "철도",
+          "cell_range": "A202:D251",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 2,
+          "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+          "sheet_name": "철도",
+          "cell_range": "A202:D251",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 3,
+          "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+          "sheet_name": "철도",
+          "cell_range": "A102:D151",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 4,
+          "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+          "sheet_name": "철도",
+          "cell_range": "A102:D151",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        },
+        {
+          "rank": 5,
+          "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+          "sheet_name": "철도",
+          "cell_range": "A252:D301",
+          "xlsx_sheet_match": true,
+          "xlsx_range_policy_match": false
+        }
+      ],
+      "range_relation": {
+        "exact": false,
+        "contains_expected": false,
+        "overlap": false,
+        "supporting_hit_ranks": []
+      },
+      "v2_range_match_policy": "CONTAINS_EXPECTED",
+      "range_match_policy": "contains_expected",
+      "harness_range_match_policy": "contains_expected",
+      "primary_issue": "query_specificity",
+      "chunking_fix_needed": false,
+      "gold_range_policy_only": false,
+      "query_specificity_fix_needed": true,
+      "notes": "auto-bound seed from current normalized XLSX search_unit; v2_review=deferred_chunk_granularity; review_reason=same_sheet_hit_but_expected_range_absent; range policy candidate only; no harness behavior changed"
+    }
+  ],
+  "policy": {
+    "chunking_changed": false,
+    "gold_range_policy_changed_in_harness": false,
+    "query_rewrite_implemented": false,
+    "decision": "Rows remain deferred until the issue is resolved as query specificity, gold range policy, or chunking granularity."
+  }
+}

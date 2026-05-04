@@ -1,0 +1,1853 @@
+{
+  "report_id": "rag_xlsx_additional_dataset_canary_report",
+  "generated_at": "2026-05-04T15:23:21.353628+00:00",
+  "manifest_path": "samples/rag_ingestion_hardened_xlsx_manifest.json",
+  "manifest_version": "2026-05-05-a1",
+  "scope": "additional_requested_xlsx_datasets",
+  "promotion_evidence": false,
+  "evidence_role": "dataset_canary_selection",
+  "indexing_performed": false,
+  "promotion_performed": false,
+  "dataset_inventory": {
+    "election_turnout_20200415": {
+      "requested_name": "중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415",
+      "domain": "election turnout statistics",
+      "root": "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415",
+      "exists": true,
+      "xlsx_file_count": 22,
+      "xlsx_size_bytes": 5113972,
+      "xlsx_size_mib": 4.8771,
+      "hwp_file_count": 0,
+      "hwp_size_bytes": 0,
+      "hwp_size_mib": 0.0,
+      "other_file_count": 0,
+      "other_size_bytes": 0,
+      "other_size_mib": 0.0,
+      "xlsx_files_sample": [
+        "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/01_전체 선거인 표본조사/01_전체 선거인 표본조사.xlsx",
+        "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/01_전체 선거인 표본조사/02_성별·연령대별 투표율(구시군별).xlsx",
+        "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/01_전체 선거인 표본조사/03_선거인의 성별·연령대별 분포(구시군별).xlsx",
+        "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/01_전체 선거인 표본조사/04_투표자의 성별·연령대별 분포(구시군별).xlsx",
+        "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/01_전체 선거인 표본조사/05_성별·연령대별 투표율(선거구별).xlsx",
+        "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/01_전체 선거인 표본조사/06_선거인의 성별·연령대별 분포(선거구별).xlsx",
+        "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/01_전체 선거인 표본조사/07_투표자의 성별·연령대별 분포(선거구별).xlsx",
+        "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/02_선거일 투표/01-선거일 투표.xlsx"
+      ]
+    },
+    "employment_sentiment_20201229": {
+      "requested_name": "국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229",
+      "domain": "employment news sentiment labels",
+      "root": "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229",
+      "exists": true,
+      "xlsx_file_count": 32,
+      "xlsx_size_bytes": 1383652,
+      "xlsx_size_mib": 1.3196,
+      "hwp_file_count": 0,
+      "hwp_size_bytes": 0,
+      "hwp_size_mib": 0.0,
+      "other_file_count": 0,
+      "other_size_bytes": 0,
+      "other_size_mib": 0.0,
+      "xlsx_files_sample": [
+        "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2018/통계청_감성지수라벨링자료2018년01월_20201229.xlsx",
+        "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2018/통계청_감성지수라벨링자료2018년02월_20201229.xlsx",
+        "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2018/통계청_감성지수라벨링자료2018년03월_20201229.xlsx",
+        "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2018/통계청_감성지수라벨링자료2018년04월_20201229.xlsx",
+        "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2018/통계청_감성지수라벨링자료2018년05월_20201229.xlsx",
+        "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2018/통계청_감성지수라벨링자료2018년06월_20201229.xlsx",
+        "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2018/통계청_감성지수라벨링자료2018년07월_20201229.xlsx",
+        "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2018/통계청_감성지수라벨링자료2018년08월_20201229.xlsx"
+      ]
+    },
+    "surgery_statistics_2024": {
+      "requested_name": "2024_주요수술통계연보(한글,_엑셀)",
+      "domain": "healthcare surgery statistics",
+      "root": "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)",
+      "exists": true,
+      "xlsx_file_count": 8,
+      "xlsx_size_bytes": 11294506,
+      "xlsx_size_mib": 10.7713,
+      "hwp_file_count": 2,
+      "hwp_size_bytes": 5054464,
+      "hwp_size_mib": 4.8203,
+      "other_file_count": 0,
+      "other_size_bytes": 0,
+      "other_size_mib": 0.0,
+      "xlsx_files_sample": [
+        "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_1장 연령별 성별 수술현황(2024).xlsx",
+        "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_2장 시도별 의료기관종별 수술현황(2024).xlsx",
+        "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_3장 수진월별 수술 현황(2024).xlsx",
+        "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_4장 의료기관시도별 수술현황(2024).xlsx",
+        "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_5장 주요 수술통계지표(2024).xlsx",
+        "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_6장 다빈도 질환별 순위(2024).xlsx",
+        "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_7장 외래수술현황(2024).xlsx",
+        "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_8장 복강경수술현황(2024).xlsx"
+      ]
+    }
+  },
+  "dataset_totals": {
+    "dataset_count": 3,
+    "xlsx_file_count": 62,
+    "xlsx_size_bytes": 17792130,
+    "xlsx_size_mib": 16.9679,
+    "hwp_file_count": 2
+  },
+  "selection_summary": {
+    "selected_sample_count": 6,
+    "selected_by_dataset": {
+      "surgery_statistics_2024": 2,
+      "election_turnout_20200415": 2,
+      "employment_sentiment_20201229": 2
+    },
+    "missing_sample_ids": [],
+    "missing_files": []
+  },
+  "selected_samples": [
+    {
+      "sample_id": "xlsx_hardened_surgery_major_indicators_001",
+      "dataset_id": "surgery_statistics_2024",
+      "file": "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_5장 주요 수술통계지표(2024).xlsx",
+      "exists": true,
+      "priority": "high",
+      "diagnostic_only": false,
+      "buckets": [
+        "multi_sheet",
+        "merged_header",
+        "wide_table",
+        "decimal_number_format",
+        "large_sheet_count"
+      ],
+      "expected_visible_sheets": [
+        "제5장 주요수술통계 지표",
+        "294",
+        "296",
+        "298"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "제5장 주요수술통계 지표",
+          "range": "A1:R18",
+          "note": "chapter title and section overview"
+        },
+        {
+          "sheet": "294",
+          "range": "A1:BG155",
+          "note": "major indicators by surgery and institution type"
+        },
+        {
+          "sheet": "296",
+          "range": "A1:BG69",
+          "note": "patients per 100,000 population by age, gender, and institution type"
+        }
+      ],
+      "candidate_query_hints": [
+        "주요 수술통계 지표",
+        "인구 10만명당 수술",
+        "백내장수술 지표"
+      ],
+      "workbook_probe": {
+        "sheet_count": 73,
+        "sheet_names_sample": [
+          "제5장 주요수술통계 지표",
+          "294",
+          "296",
+          "298",
+          "300",
+          "302",
+          "304",
+          "306",
+          "308",
+          "310",
+          "312",
+          "314"
+        ],
+        "total_hidden_row_count": 0,
+        "total_hidden_col_count": 0,
+        "total_merged_range_count": 501,
+        "sheet_probes": [
+          {
+            "sheet": "제5장 주요수술통계 지표",
+            "dimension": "A1:R18",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 2,
+            "sample_rows": [
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "제5장   주요 수술통계 지표"
+              ],
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Major Indicators of Operation Statistics"
+              ]
+            ]
+          },
+          {
+            "sheet": "294",
+            "dimension": "A1:BG155",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 6,
+            "sample_rows": [
+              [
+                "구     분 Division",
+                null,
+                "계 (Total)",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "백내장수술(Cataract Surgery)"
+              ],
+              [
+                null,
+                null,
+                "계 T",
+                "상급종합 병원 T.H",
+                "종합 병원 G.H",
+                "병원 H",
+                "의원 C",
+                "치과 병원 D.H",
+                "보건 기관 H.C",
+                "한방 병원 O.H",
+                "계 T",
+                "상급종합 병원 T.H"
+              ],
+              [
+                "계",
+                "T",
+                "3205.7710792743014",
+                "624.3324423507931",
+                "874.0080599001101",
+                "738.8417871012616",
+                "1032.1011077004077",
+                "0.24717369148134552",
+                "0",
+                "0.06603877253318391",
+                "842.3792615008597",
+                "69.90298413741137"
+              ],
+              [
+                "남자",
+                "M",
+                "2769.397656623156",
+                "579.9209109182467",
+                "824.7921786162295",
+                "501.84207462437064",
+                "922.5020925973773",
+                "0.24161326384334522",
+                "0",
+                "0.018876036237761344",
+                "785.4469686822397",
+                "67.8782263109898"
+              ]
+            ]
+          },
+          {
+            "sheet": "296",
+            "dimension": "A1:BG69",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 7,
+            "sample_rows": [
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "연령별 성별 의료기관종별",
+                "인구 10만명당 수술인원수 현황"
+              ],
+              [
+                null,
+                null,
+                "Number of Patients per 100,000 population by",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Age, Gender and Type of Medical Institution"
+              ],
+              [
+                "구     분 Division",
+                null,
+                "경피적 관상동맥 중재술(스텐트 삽입술) (Percutaneous Coronary Interventions(with stenting))",
+                null,
+                null,
+                null,
+                null,
+                "관상동맥 우회수술 (Coronary Bypass)",
+                null,
+                null,
+                "정맥류 결찰 및 제거수술 (Ligation/Stripping of Varicose Veins)"
+              ],
+              [
+                null,
+                null,
+                "계 T",
+                "상급종합 병원 T.H",
+                "종합병원 G.H",
+                "병원 H",
+                "의원 C",
+                "계 T",
+                "상급종합 병원 T.H",
+                "종합병원 G.H",
+                "계 T",
+                "상급종합 병원 T.H"
+              ]
+            ]
+          },
+          {
+            "sheet": "298",
+            "dimension": "A1:BH69",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 8,
+            "sample_rows": [
+              [
+                "구     분 Division",
+                null,
+                "심박조율장치의 삽입,교체,제거 및 교정 (Pacemakers)",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "담낭절제술(복강경적 담낭절제술 포함) (Cholecystectomy (Including Laparoscopic Cholecystectomy))"
+              ],
+              [
+                null,
+                null,
+                "계 T",
+                "상급종합 병원 T.H",
+                "종합병원 G.H",
+                "병원 H",
+                "의원 C",
+                "치과 병원 D.H",
+                "한방 병원 O.H",
+                "계 T",
+                "상급종합 병원 T.H",
+                "종합병원 G.H"
+              ],
+              [
+                "계",
+                "T",
+                "35.923205435979675",
+                "22.94186957802809",
+                "13.11341340301795",
+                "0.13019072299399115",
+                "0.0018868220723766834",
+                "0.0018868220723766834",
+                "0.0018868220723766834",
+                "178.20091062561585",
+                "39.527035594219136",
+                "121.37171662770254"
+              ],
+              [
+                "남자",
+                "M",
+                "38.46936185255762",
+                "24.61057604679324",
+                "13.972042023190946",
+                "0.1585587043971953",
+                "0",
+                "0",
+                "0",
+                "175.85292879823226",
+                "39.00544128171004",
+                "120.30452935774815"
+              ]
+            ]
+          },
+          {
+            "sheet": "300",
+            "dimension": "A1:BF70",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 6,
+            "sample_rows": [
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "연령별 성별 의료기관종별",
+                "인구 10만명당 수술인원수 현황"
+              ],
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Number of Patients per 100,000 population by",
+                "Age, Gender and Type of Medical Institution"
+              ],
+              [
+                "구     분 Division",
+                null,
+                "경요도 전립선 절제술 (Prostatectomy (transurethral))",
+                null,
+                null,
+                null,
+                null,
+                "전립선 절제술 (Prostatectomy (excluding transurethral))",
+                null,
+                null,
+                null,
+                "자궁절제술 (Hysterectomy)"
+              ],
+              [
+                null,
+                null,
+                "계 T",
+                "상급종합 병원 T.H",
+                "종합병원 G.H",
+                "병원 H",
+                "의원 C",
+                "계 T",
+                "상급종합 병원 T.H",
+                "종합병원 G.H",
+                "병원 H",
+                "계 T"
+              ]
+            ]
+          },
+          {
+            "sheet": "302",
+            "dimension": "A1:BG70",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 8,
+            "sample_rows": [
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "연령별 성별 의료기관종별"
+              ],
+              [
+                null,
+                null,
+                "Number of Patients per 100,000 population by"
+              ],
+              [
+                "구     분 Division",
+                null,
+                "고관절 치환술 (Hip Replacement)",
+                null,
+                null,
+                null,
+                null,
+                "슬관절 치환술 (Knee Replacement)"
+              ],
+              [
+                null,
+                null,
+                "계 T",
+                "상급종합 병원 T.H",
+                "종합병원 G.H",
+                "병원 H",
+                "의원 C",
+                "계 T",
+                "상급종합 병원 T.H",
+                "종합병원 G.H",
+                "병원 H",
+                "의원 C"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "xlsx_hardened_surgery_laparoscopic_001",
+      "dataset_id": "surgery_statistics_2024",
+      "file": "datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_8장 복강경수술현황(2024).xlsx",
+      "exists": true,
+      "priority": "high",
+      "diagnostic_only": false,
+      "buckets": [
+        "multi_sheet",
+        "hidden_rows_columns",
+        "merged_header",
+        "wide_table",
+        "date_number_currency_format"
+      ],
+      "expected_visible_sheets": [
+        "제8장",
+        "490",
+        "492",
+        "494"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "제8장",
+          "range": "A1:Z107",
+          "note": "chapter title and overview"
+        },
+        {
+          "sheet": "490",
+          "range": "A1:AQ149",
+          "note": "laparoscopic surgery by age and gender"
+        },
+        {
+          "sheet": "492",
+          "range": "A1:AK97",
+          "note": "laparoscopic hernia and hysterectomy by age and gender"
+        },
+        {
+          "sheet": "494",
+          "range": "A1:CS145",
+          "note": "contains hidden rows; use visible-row queries only"
+        }
+      ],
+      "candidate_query_hints": [
+        "복강경 충수절제술",
+        "복강경 담낭절제술",
+        "복강경 자궁절제술"
+      ],
+      "workbook_probe": {
+        "sheet_count": 35,
+        "sheet_names_sample": [
+          "제8장",
+          "490",
+          "492",
+          "494",
+          "496",
+          "498",
+          "500",
+          "502",
+          "504",
+          "506",
+          "508",
+          "510"
+        ],
+        "total_hidden_row_count": 260,
+        "total_hidden_col_count": 0,
+        "total_merged_range_count": 280,
+        "sheet_probes": [
+          {
+            "sheet": "제8장",
+            "dimension": "A1:Z107",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 1,
+            "sample_rows": [
+              [
+                "제8장  복강경수술 현황(충수절제술, 담낭절제술, 서혜 및 대퇴허니아수술, 자궁절제술)"
+              ]
+            ]
+          },
+          {
+            "sheet": "490",
+            "dimension": "A1:AQ149",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 5,
+            "sample_rows": [
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "연령별 성별",
+                "수술현황"
+              ],
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Surgery by age",
+                "and gender"
+              ],
+              [
+                "구     분 Division",
+                null,
+                "계 (Total)",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "복강경 충수절제술 (Laparoscopic appendectomy)"
+              ],
+              [
+                null,
+                null,
+                "수술인원수 Patients who received surgery",
+                "수술건수 Number of surgeries",
+                "입원일수 Days of hospitalization",
+                "요양급여일수 Reimbursed Days",
+                "진료비 Medical expenses",
+                "급여비 Benefits",
+                "수술인원수 Patients who received surgery",
+                "수술건수 Number of surgeries",
+                "입원일수 Days of hospitalization",
+                "요양급여일수 Reimbursed Days"
+              ]
+            ]
+          },
+          {
+            "sheet": "492",
+            "dimension": "A1:AK97",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 4,
+            "sample_rows": [
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "연령별 성별",
+                "수술현황"
+              ],
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Surgery by age",
+                "and gender"
+              ],
+              [
+                "구     분 Division",
+                null,
+                "복강경 서혜 및 대퇴허니아 수술 (Laparoscopic inguinal and femoral hernia surgery)",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "복강경 자궁절제술 (Laparoscopic hysterectomy)"
+              ],
+              [
+                null,
+                null,
+                "수술인원수 Patients who received surgery",
+                "수술건수 Number of surgeries",
+                "입원일수 Days of hospitalization",
+                "요양급여일수 Reimbursed Days",
+                "진료비 Medical expenses",
+                "급여비 Benefits",
+                "수술인원수 Patients who received surgery",
+                "수술건수 Number of surgeries",
+                "입원일수 Days of hospitalization",
+                "요양급여일수 Reimbursed Days"
+              ]
+            ]
+          },
+          {
+            "sheet": "494",
+            "dimension": "A1:CS145",
+            "hidden_row_count": 32,
+            "hidden_col_count": 0,
+            "merged_range_count": 4,
+            "sample_rows": [
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "시도별 의료기관종별",
+                "(복강경 충수절제술)"
+              ],
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Surgery by Province and Type of Medical",
+                "Institution (Laparoscopic appendectomy)"
+              ],
+              [
+                "구     분                   Division",
+                null,
+                "계 (Total)",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "상급종합병원(Tertiary Hospital)"
+              ],
+              [
+                null,
+                null,
+                "수술인원수 Patients who received surgery",
+                "수술건수 Number of surgeries",
+                "입원일수 Days of hospitalization",
+                "요양급여일수 Reimbursed Days",
+                "진료비 Medical expenses",
+                "급여비 Benefits",
+                "수술인원수 Patients who received surgery",
+                "수술건수 Number of surgeries",
+                "입원일수 Days of hospitalization",
+                "요양급여일수 Reimbursed Days"
+              ]
+            ]
+          },
+          {
+            "sheet": "496",
+            "dimension": "A1:CY145",
+            "hidden_row_count": 32,
+            "hidden_col_count": 0,
+            "merged_range_count": 5,
+            "sample_rows": [
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "시도별 의료기관종별",
+                "(복강경 충수절제술)"
+              ],
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Surgery by Province and Type of Medical",
+                "Institution (Laparoscopic appendectomy)"
+              ],
+              [
+                "구     분                   Division",
+                null,
+                "종합병원(General Hospital)",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "병원(Hospital)"
+              ],
+              [
+                null,
+                null,
+                "수술인원수 Patients who received surgery",
+                "수술건수 Number of surgeries",
+                "입원일수 Days of hospitalization",
+                "요양급여일수 Reimbursed Days",
+                "진료비 Medical expenses",
+                "급여비 Benefits",
+                "수술인원수 Patients who received surgery",
+                "수술건수 Number of surgeries",
+                "입원일수 Days of hospitalization",
+                "요양급여일수 Reimbursed Days"
+              ]
+            ]
+          },
+          {
+            "sheet": "498",
+            "dimension": "A1:CS145",
+            "hidden_row_count": 32,
+            "hidden_col_count": 0,
+            "merged_range_count": 6,
+            "sample_rows": [
+              [
+                "시도별 의료기관종별",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "(복강경 담낭절제술)"
+              ],
+              [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Surgery by Province and Type of Medical",
+                "Institution (Laparoscopic cholecystectomy)"
+              ],
+              [
+                "구     분                   Division",
+                null,
+                "계 (Total)",
+                null,
+                null,
+                null,
+                null,
+                null,
+                "상급종합병원(Tertiary Hospital)"
+              ],
+              [
+                null,
+                null,
+                "수술인원수 Patients who received surgery",
+                "수술건수 Number of surgeries",
+                "입원일수 Days of hospitalization",
+                "요양급여일수 Reimbursed Days",
+                "진료비 Medical expenses",
+                "급여비 Benefits",
+                "수술인원수 Patients who received surgery",
+                "수술건수 Number of surgeries",
+                "입원일수 Days of hospitalization",
+                "요양급여일수 Reimbursed Days"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "xlsx_hardened_election_advance_turnout_001",
+      "dataset_id": "election_turnout_20200415",
+      "file": "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/03_사전투표/01-전체투표율과 사전투표율.xlsx",
+      "exists": true,
+      "priority": "high",
+      "diagnostic_only": false,
+      "buckets": [
+        "multi_sheet",
+        "merged_header",
+        "wide_table",
+        "date_number_percent_format",
+        "large_row_group"
+      ],
+      "expected_visible_sheets": [
+        "1.시도별",
+        "2.구시군별",
+        "3.시도별-성별연령대별",
+        "7.구시군별-성별연령대별"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "1.시도별",
+          "range": "A1:W27",
+          "note": "overall and advance turnout by province"
+        },
+        {
+          "sheet": "2.구시군별",
+          "range": "A1:X272",
+          "note": "overall and advance turnout by city/county/district"
+        },
+        {
+          "sheet": "7.구시군별-성별연령대별",
+          "range": "A1:P2415",
+          "note": "large row group by city/county/district, gender, and age"
+        }
+      ],
+      "candidate_query_hints": [
+        "전국 사전투표율",
+        "서울특별시 사전투표",
+        "구시군별 투표율"
+      ],
+      "workbook_probe": {
+        "sheet_count": 9,
+        "sheet_names_sample": [
+          "1.시도별",
+          "2.구시군별",
+          "3.시도별-성별연령대별",
+          "4.시도이동_성별연령별",
+          "5.구시군이동_성별연령별",
+          "6.동일구시군내이동_성별연령별",
+          "7.구시군별-성별연령대별",
+          "8.행정구역크기별(도통)-성별연령대별",
+          "9.선거구별-성별연령대별"
+        ],
+        "total_hidden_row_count": 0,
+        "total_hidden_col_count": 0,
+        "total_merged_range_count": 2003,
+        "sheet_probes": [
+          {
+            "sheet": "1.시도별",
+            "dimension": "A1:W27",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 7,
+            "sample_rows": [
+              [
+                "1. 전체투표율과 사전투표율(종합)- 가. 시‧도별 (전체)"
+              ],
+              [
+                "구분",
+                "선거인 구조",
+                null,
+                null,
+                null,
+                "전체투표 결과",
+                null,
+                "사전투표 결과",
+                null,
+                null,
+                null,
+                "선거일투표 결과"
+              ],
+              [
+                null,
+                "인구수",
+                "선거인수 (A)",
+                "구성비",
+                "인구대비 선거인비율",
+                "투표자수 (B)",
+                "투표율",
+                "투표자수 (C)",
+                "구성비",
+                "투표율 (D) D=C/A",
+                "투표율 (E) E=C/B",
+                "투표자수 (F)"
+              ],
+              [
+                "전국",
+                "51843268",
+                "43994247",
+                "100",
+                "84.9",
+                "29127311",
+                "66.2",
+                "11742677",
+                "100",
+                "26.7",
+                "40.3",
+                "17247978"
+              ]
+            ]
+          },
+          {
+            "sheet": "2.구시군별",
+            "dimension": "A1:X272",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 8,
+            "sample_rows": [
+              [
+                "1. 전체투표율과 사전투표율(종합) - 나. 구‧시‧군별 (전체)"
+              ],
+              [
+                "시도명",
+                "구시군명",
+                "선거인 구조",
+                null,
+                null,
+                null,
+                "전체투표 결과",
+                null,
+                "사전투표 결과"
+              ],
+              [
+                null,
+                null,
+                "인구수",
+                "선거인수 (A)",
+                "구성비",
+                "인구대비 선거인비율",
+                "투표자수 (B)",
+                "투표율",
+                "투표자수 ( C )",
+                "구성비",
+                "투표율 (D) D=C/A",
+                "투표율 (E) E=C/B"
+              ],
+              [
+                "전국",
+                null,
+                "51843268",
+                "43994247",
+                "100",
+                "84.9",
+                "29127311",
+                "66.2",
+                "11742677",
+                "100",
+                "26.7",
+                "40.3"
+              ]
+            ]
+          },
+          {
+            "sheet": "3.시도별-성별연령대별",
+            "dimension": "A1:AJ192",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 85,
+            "sample_rows": [
+              [
+                "2. 시·도별 사전투표율 - 가. 성별, 연령대별 사전투표율 (전체)"
+              ],
+              [
+                "구분",
+                null,
+                null,
+                "합계",
+                "18세",
+                "19세",
+                "20~24세",
+                "25~29세",
+                "30~34세",
+                "35~39세",
+                "40~49세",
+                "50~59세"
+              ],
+              [
+                "전국",
+                "계",
+                "선거인수",
+                "43994247",
+                "534355",
+                "619415",
+                "3298720",
+                "3499042",
+                "3149685",
+                "3846732",
+                "8363988",
+                "8657808"
+              ],
+              [
+                null,
+                null,
+                "사전투표자수",
+                "11742677",
+                "102300",
+                "161205",
+                "907963",
+                "812039",
+                "695139",
+                "799128",
+                "2074663",
+                "2576527"
+              ]
+            ]
+          },
+          {
+            "sheet": "4.시도이동_성별연령별",
+            "dimension": "A1:O318",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 85,
+            "sample_rows": [
+              [
+                "2. 시·도별 사전투표율 - 나. 1) 주소지 기준 시‧도 이동 사전투표자의 성별‧연령대별 투표율(과천시→종로구)(전체)"
+              ],
+              [
+                "구분",
+                null,
+                null,
+                "합계",
+                "18세",
+                "19세",
+                "20~24세",
+                "25~29세",
+                "30~34세",
+                "35~39세",
+                "40~49세",
+                "50~59세"
+              ],
+              [
+                "전국",
+                "계",
+                "선거인수",
+                "43994247",
+                "534355",
+                "619415",
+                "3298720",
+                "3499042",
+                "3149685",
+                "3846732",
+                "8363988",
+                "8657808"
+              ],
+              [
+                null,
+                null,
+                "사전투표자수",
+                "11742677",
+                "102300",
+                "161205",
+                "907963",
+                "812039",
+                "695139",
+                "799128",
+                "2074663",
+                "2576527"
+              ]
+            ]
+          },
+          {
+            "sheet": "5.구시군이동_성별연령별",
+            "dimension": "A1:O318",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 85,
+            "sample_rows": [
+              [
+                "2. 시도별 사전투표율 - 나. 2) 주소지 기준 구‧시‧군 이동 사전투표자의 성별‧연령대별 투표율(과천시→안양시)(전체)"
+              ],
+              [
+                "구분",
+                null,
+                null,
+                "합계",
+                "18세",
+                "19세",
+                "20~24세",
+                "25~29세",
+                "30~34세",
+                "35~39세",
+                "40~49세",
+                "50~59세"
+              ],
+              [
+                "전국",
+                "계",
+                "선거인수",
+                "43994247",
+                "534355",
+                "619415",
+                "3298720",
+                "3499042",
+                "3149685",
+                "3846732",
+                "8363988",
+                "8657808"
+              ],
+              [
+                null,
+                null,
+                "사전투표자수",
+                "11742677",
+                "102300",
+                "161205",
+                "907963",
+                "812039",
+                "695139",
+                "799128",
+                "2074663",
+                "2576527"
+              ]
+            ]
+          },
+          {
+            "sheet": "6.동일구시군내이동_성별연령별",
+            "dimension": "A1:O318",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 85,
+            "sample_rows": [
+              [
+                "2. 시도별 사전투표율 - 나. 3) 주소지 기준 동일 구‧시‧군내 선거구 이동 사전투표자의 성별‧연령대별 투표율(서울 노원구갑→서울 노원..."
+              ],
+              [
+                "구분",
+                null,
+                null,
+                "합계",
+                "18세",
+                "19세",
+                "20~24세",
+                "25~29세",
+                "30~34세",
+                "35~39세",
+                "40~49세",
+                "50~59세"
+              ],
+              [
+                "전국",
+                "계",
+                "선거인수",
+                "43994247",
+                "534355",
+                "619415",
+                "3298720",
+                "3499042",
+                "3149685",
+                "3846732",
+                "8363988",
+                "8657808"
+              ],
+              [
+                null,
+                null,
+                "사전투표자수",
+                "11742677",
+                "102300",
+                "161205",
+                "907963",
+                "812039",
+                "695139",
+                "799128",
+                "2074663",
+                "2576527"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "xlsx_hardened_election_age_gender_001",
+      "dataset_id": "election_turnout_20200415",
+      "file": "datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/01_전체 선거인 표본조사/02_성별·연령대별 투표율(구시군별).xlsx",
+      "exists": true,
+      "priority": "high",
+      "diagnostic_only": false,
+      "buckets": [
+        "multi_sheet",
+        "merged_header",
+        "wide_table",
+        "regional_sheet_names",
+        "date_number_percent_format"
+      ],
+      "expected_visible_sheets": [
+        "서울",
+        "부산",
+        "대구",
+        "인천"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "서울",
+          "range": "A1:O219",
+          "note": "gender and age turnout by district"
+        },
+        {
+          "sheet": "부산",
+          "range": "A1:O156",
+          "note": "gender and age turnout by district"
+        },
+        {
+          "sheet": "대구",
+          "range": "A1:O84",
+          "note": "gender and age turnout by district"
+        },
+        {
+          "sheet": "인천",
+          "range": "A1:O93",
+          "note": "gender and age turnout by district"
+        }
+      ],
+      "candidate_query_hints": [
+        "서울 연령대 투표율",
+        "부산 성별 투표자수",
+        "구시군별 투표율"
+      ],
+      "workbook_probe": {
+        "sheet_count": 16,
+        "sheet_names_sample": [
+          "서울",
+          "부산",
+          "대구",
+          "인천",
+          "광주",
+          "대전",
+          "울산",
+          "경기",
+          "강원",
+          "충북",
+          "충남",
+          "전북"
+        ],
+        "total_hidden_row_count": 0,
+        "total_hidden_col_count": 0,
+        "total_merged_range_count": 1040,
+        "sheet_probes": [
+          {
+            "sheet": "서울",
+            "dimension": "A1:O219",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 99,
+            "sample_rows": [
+              [
+                "성별·연령대별 투표율(구시군별)"
+              ],
+              [
+                "구분",
+                null,
+                null,
+                "합계",
+                "18세",
+                "19세",
+                "20-24세",
+                "25-29세",
+                "30-34세",
+                "35-39세",
+                "40-49세",
+                "50-59세"
+              ],
+              [
+                "전체",
+                "합계",
+                "선거인수",
+                "732082",
+                "7752",
+                "9369",
+                "54831",
+                "70096",
+                "63369",
+                "67926",
+                "134695",
+                "132177"
+              ],
+              [
+                null,
+                null,
+                "투표자수",
+                "498290",
+                "5848",
+                "6571",
+                "35253",
+                "43255",
+                "39489",
+                "42180",
+                "88757",
+                "93580"
+              ]
+            ]
+          },
+          {
+            "sheet": "부산",
+            "dimension": "A1:O156",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 71,
+            "sample_rows": [
+              [
+                "성별·연령대별 투표율(구시군별)"
+              ],
+              [
+                "구분",
+                null,
+                null,
+                "합계",
+                "18세",
+                "19세",
+                "20-24세",
+                "25-29세",
+                "30-34세",
+                "35-39세",
+                "40-49세",
+                "50-59세"
+              ],
+              [
+                "전체",
+                "합계",
+                "선거인수",
+                "286435",
+                "2860",
+                "3397",
+                "19585",
+                "22003",
+                "19772",
+                "24130",
+                "49352",
+                "54777"
+              ],
+              [
+                null,
+                null,
+                "투표자수",
+                "193506",
+                "2086",
+                "2343",
+                "11821",
+                "12254",
+                "11283",
+                "13976",
+                "31092",
+                "39296"
+              ]
+            ]
+          },
+          {
+            "sheet": "대구",
+            "dimension": "A1:O84",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 39,
+            "sample_rows": [
+              [
+                "성별·연령대별 투표율(구시군별)"
+              ],
+              [
+                "구분",
+                null,
+                null,
+                "합계",
+                "18세",
+                "19세",
+                "20-24세",
+                "25-29세",
+                "30-34세",
+                "35-39세",
+                "40-49세",
+                "50-59세"
+              ],
+              [
+                "전체",
+                "합계",
+                "선거인수",
+                "211309",
+                "2753",
+                "2910",
+                "15756",
+                "16249",
+                "14243",
+                "18427",
+                "41019",
+                "43187"
+              ],
+              [
+                null,
+                null,
+                "투표자수",
+                "141537",
+                "1878",
+                "1999",
+                "9893",
+                "9060",
+                "7813",
+                "10424",
+                "25880",
+                "31281"
+              ]
+            ]
+          },
+          {
+            "sheet": "인천",
+            "dimension": "A1:O93",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 43,
+            "sample_rows": [
+              [
+                "성별·연령대별 투표율(구시군별)"
+              ],
+              [
+                "구분",
+                null,
+                null,
+                "합계",
+                "18세",
+                "19세",
+                "20-24세",
+                "25-29세",
+                "30-34세",
+                "35-39세",
+                "40-49세",
+                "50-59세"
+              ],
+              [
+                "전체",
+                "합계",
+                "선거인수",
+                "191661",
+                "2091",
+                "2468",
+                "14991",
+                "17529",
+                "14769",
+                "17752",
+                "36338",
+                "38144"
+              ],
+              [
+                null,
+                null,
+                "투표자수",
+                "121239",
+                "1542",
+                "1643",
+                "8813",
+                "9671",
+                "7910",
+                "9631",
+                "21673",
+                "25815"
+              ]
+            ]
+          },
+          {
+            "sheet": "광주",
+            "dimension": "A1:O48",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 23,
+            "sample_rows": [
+              [
+                "성별·연령대별 투표율(구시군별)"
+              ],
+              [
+                "구분",
+                null,
+                null,
+                "합계",
+                "18세",
+                "19세",
+                "20-24세",
+                "25-29세",
+                "30-34세",
+                "35-39세",
+                "40-49세",
+                "50-59세"
+              ],
+              [
+                "전체",
+                "합계",
+                "선거인수",
+                "99362",
+                "1460",
+                "1685",
+                "9287",
+                "8639",
+                "7042",
+                "9030",
+                "19708",
+                "19164"
+              ],
+              [
+                null,
+                null,
+                "투표자수",
+                "66078",
+                "1088",
+                "1198",
+                "5827",
+                "4823",
+                "3767",
+                "5126",
+                "12670",
+                "14049"
+              ]
+            ]
+          },
+          {
+            "sheet": "대전",
+            "dimension": "A1:O30",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 15,
+            "sample_rows": [
+              [
+                "성별·연령대별 투표율(구시군별)"
+              ],
+              [
+                "구분",
+                null,
+                null,
+                "합계",
+                "18세",
+                "19세",
+                "20-24세",
+                "25-29세",
+                "30-34세",
+                "35-39세",
+                "40-49세",
+                "50-59세"
+              ],
+              [
+                "전체",
+                "합계",
+                "선거인수",
+                "33295",
+                "452",
+                "598",
+                "3187",
+                "2587",
+                "2057",
+                "2664",
+                "6188",
+                "6433"
+              ],
+              [
+                null,
+                null,
+                "투표자수",
+                "20965",
+                "333",
+                "359",
+                "1814",
+                "1387",
+                "1063",
+                "1390",
+                "3629",
+                "4341"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "xlsx_hardened_employment_sentiment_2019_001",
+      "dataset_id": "employment_sentiment_20201229",
+      "file": "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2019/통계청_감성지수라벨링자료2019년05월_20201229.xlsx",
+      "exists": true,
+      "priority": "medium",
+      "diagnostic_only": false,
+      "buckets": [
+        "large_row_group",
+        "mixed_text_table",
+        "date_number_format",
+        "url_text",
+        "label_matrix"
+      ],
+      "expected_visible_sheets": [
+        "20190501_10"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "20190501_10",
+          "range": "A1:I3226",
+          "note": "employment news title, URL, and six labeler scores"
+        }
+      ],
+      "candidate_query_hints": [
+        "2019년 5월 고용기사",
+        "최저임금 기사 라벨",
+        "청년혁신 창업기업"
+      ],
+      "workbook_probe": {
+        "sheet_count": 1,
+        "sheet_names_sample": [
+          "20190501_10"
+        ],
+        "total_hidden_row_count": 0,
+        "total_hidden_col_count": 0,
+        "total_merged_range_count": 0,
+        "sheet_probes": [
+          {
+            "sheet": "20190501_10",
+            "dimension": "A1:I3226",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 0,
+            "sample_rows": [
+              [
+                "날짜",
+                "제목",
+                "URL",
+                "라벨러1",
+                "라벨러2",
+                "라벨러3",
+                "라벨러4",
+                "라벨러5",
+                "라벨러6"
+              ],
+              [
+                "20190501",
+                "경기도_ 청년혁신 창업기업 특례지원 확대",
+                "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=102&oid=003&aid=00...",
+                "4",
+                "4",
+                "4",
+                "4",
+                "4",
+                "3"
+              ],
+              [
+                "20190508",
+                "정부 취약층 일자리 10명중 7명꼴 노인",
+                "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=102&oid=020&aid=00...",
+                "2",
+                "2",
+                "2",
+                "3",
+                "4",
+                "3"
+              ],
+              [
+                "20190509",
+                "최저임금 1만원 인상시 일자리 62만개 실종..한경연 보고서",
+                "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=101&oid=014&aid=00...",
+                "4",
+                "3",
+                "2",
+                "2",
+                "4",
+                "3"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "sample_id": "xlsx_hardened_employment_sentiment_2020_001",
+      "dataset_id": "employment_sentiment_20201229",
+      "file": "datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2020/통계청_감성지수라벨링자료2020년04월_20201229.xlsx",
+      "exists": true,
+      "priority": "medium",
+      "diagnostic_only": false,
+      "buckets": [
+        "large_row_group",
+        "mixed_text_table",
+        "date_number_format",
+        "url_text",
+        "label_matrix"
+      ],
+      "expected_visible_sheets": [
+        "20200401_15"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "20200401_15",
+          "range": "A1:I839",
+          "note": "employment news title, URL, and six labeler scores"
+        }
+      ],
+      "candidate_query_hints": [
+        "2020년 4월 고용기사",
+        "고용률 일자리 목표",
+        "통계행정 조사 개선"
+      ],
+      "workbook_probe": {
+        "sheet_count": 1,
+        "sheet_names_sample": [
+          "20200401_15"
+        ],
+        "total_hidden_row_count": 0,
+        "total_hidden_col_count": 0,
+        "total_merged_range_count": 0,
+        "sheet_probes": [
+          {
+            "sheet": "20200401_15",
+            "dimension": "A1:I839",
+            "hidden_row_count": 0,
+            "hidden_col_count": 0,
+            "merged_range_count": 0,
+            "sample_rows": [
+              [
+                "날짜",
+                "제목",
+                "URL",
+                "라벨러1",
+                "라벨러2",
+                "라벨러3",
+                "라벨러4",
+                "라벨러5",
+                "라벨러6"
+              ],
+              [
+                "20200401",
+                "통계청_ 국민 아이디어 담아 통계행정 조사 개선한다",
+                "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=101&oid=018&aid=00...",
+                "4",
+                "3",
+                "3",
+                "3",
+                "3",
+                "3"
+              ],
+              [
+                "20200401",
+                "고용률 75.8% 취업자 3만6600명 창녕군_ 올 일자리 목표 공시",
+                "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=102&oid=003&aid=00...",
+                "4",
+                "4",
+                "4",
+                "4",
+                "4",
+                "4"
+              ],
+              [
+                "20200402",
+                "대기업 직원수 증가 1위는 LG전자...전체직원수 1위는 삼성전자",
+                "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=101&oid=003&aid=00...",
+                "4",
+                "4",
+                "5",
+                "4",
+                "4",
+                "4"
+              ]
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "sufficiency_assessment": {
+    "status": "SUFFICIENT_FOR_NEXT_CANARY",
+    "rationale": [
+      "Requested datasets cover election turnout, employment news sentiment labels, and healthcare surgery statistics.",
+      "The selection adds multi-sheet merged election tables, text-heavy URL/label matrices, wide healthcare indicator tables, and hidden-row surgery sheets.",
+      "The HWP companion files in the surgery dataset are outside the XLSX_EXTRACT scope and are not counted as XLSX canary input."
+    ]
+  },
+  "recommended_next_steps": [
+    "Run manifest-driven XLSX_EXTRACT canary reimport for these six selected samples only.",
+    "Create a new candidate namespace/index version if the additional documents are embedded.",
+    "Build dataset-specific gold rows only from visible cells after reimport proves document_version/search_unit bindings."
+  ]
+}

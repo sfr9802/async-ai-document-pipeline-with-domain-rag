@@ -1,0 +1,215 @@
+{
+  "run_id": "2026-05-04T131516Z",
+  "generated_at": "2026-05-04T13:15:16.877950+00:00",
+  "status": "PASS",
+  "report_role": "xlsx_candidate_scope_readiness",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "allowUnscoped": false,
+  "db_dsn": "host=localhost port=5433 dbname=aipipeline user=aipipeline password=<redacted>",
+  "baseline": {
+    "descriptor_path": "reports\\initial_immutable_vector_baseline_descriptor.json",
+    "baseline_index_version": "initial-full72-vector-baseline-v0",
+    "vector_index_hash": "30c40bce415538cc4aa09549dae74b349bab72330d5b9a815e84d943e08d1a98",
+    "faiss_artifact_hash": "6167ffde029c5490e49fb4e27e55469d6f6702395cde816ec00be11fd077a964",
+    "promotion_evidence": false
+  },
+  "candidate_contract": {
+    "candidate_index_version": "rag-ingestion-v2-xlsx-candidate-v1",
+    "candidate_namespace_filter": "rag-ingestion-v2-xlsx-candidate-v1",
+    "source_file_type": "SPREADSHEET",
+    "parser_version": "xlsx-extract-v2-hidden-safe",
+    "hidden_policy": "exclude_hidden",
+    "hidden_policy_version": "exclude-hidden-v1",
+    "sanitizer_version": "exclude-hidden-v1"
+  },
+  "gold_scope": {
+    "path": "eval\\gold_queries_v0.csv",
+    "exists": true,
+    "gold_row_count": 72,
+    "xlsx_query_count": 50,
+    "xlsx_bucket_counts": {
+      "mixed_text_table": 3,
+      "xlsx_aggregation": 15,
+      "xlsx_date_number_format": 4,
+      "xlsx_formula_value": 3,
+      "xlsx_header_ambiguous": 4,
+      "xlsx_hidden_policy": 3,
+      "xlsx_lookup": 18
+    },
+    "xlsx_document_version_ids": [
+      "docv_2bc2cb4df8c629e4",
+      "docv_7bddd99c39ffdf1a",
+      "docv_8bafd560c35198d9",
+      "docv_f39c6a5b56da9ad8"
+    ]
+  },
+  "summary": {
+    "hidden_safe_v2_rows": 710,
+    "candidate_rows": 710,
+    "legacy_or_wrong_parser_rows_excluded": 22318,
+    "hidden_policy_mismatch_count": 0,
+    "hidden_policy_version_mismatch_count": 0,
+    "sanitizer_version_mismatch_count": 0,
+    "missing_embedding_text_count": 0,
+    "missing_citation_text_count": 0,
+    "missing_location_json_count": 0,
+    "missing_sheet_name_count": 0,
+    "missing_cell_range_count": 0,
+    "missing_table_metadata_count": 0,
+    "hidden_leakage_count": 0,
+    "source_not_ready_count": 0
+  },
+  "status_counts": {
+    "EMBEDDED": 710
+  },
+  "index_version_counts": {
+    "rag-ingestion-v2-xlsx-candidate-v1": 710
+  },
+  "chunk_type_counts": {
+    "row_group": 558,
+    "sheet_summary": 75,
+    "table": 69,
+    "workbook_summary": 8
+  },
+  "candidate_document_version_ids": [
+    "docv_2bc2cb4df8c629e4",
+    "docv_655f9714bea7c341",
+    "docv_7bddd99c39ffdf1a",
+    "docv_7c0868960147f9ac",
+    "docv_8bafd560c35198d9",
+    "docv_b24282189b1610cb",
+    "docv_ea483b5a43086e05",
+    "docv_f39c6a5b56da9ad8"
+  ],
+  "candidate_source_file_ids": [
+    "01fbd2a8-4704-449e-a371-49a5a5d58801",
+    "0c1becb1-0d94-495a-81d8-c792c6bb874d",
+    "632c83f2-df65-4b53-bf0a-e88ea23fe3b9",
+    "65dd8390-b531-4bbb-9482-f4df4c72cb97",
+    "6f03eb1b-8f1d-4241-ba04-b00f8485d489",
+    "b8868e42-602f-46d5-90d2-4ca1ea2616e9",
+    "c7191bcb-7b2f-42d1-90a5-5adaac2bb897",
+    "e6218456-929e-4ddd-8889-c43e02052c5f"
+  ],
+  "document_scope_details": [
+    {
+      "document_version_id": "docv_2bc2cb4df8c629e4",
+      "source_file_id": "e6218456-929e-4ddd-8889-c43e02052c5f",
+      "source_file_name": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+      "scoped_rows": 202,
+      "candidate_rows": 202,
+      "pending_rows": 0,
+      "embedded_rows": 202,
+      "rows_at_new_candidate_index_version": 202
+    },
+    {
+      "document_version_id": "docv_655f9714bea7c341",
+      "source_file_id": "01fbd2a8-4704-449e-a371-49a5a5d58801",
+      "source_file_name": "제_1장 연령별 성별 수술현황(2024).xlsx",
+      "scoped_rows": 134,
+      "candidate_rows": 134,
+      "pending_rows": 0,
+      "embedded_rows": 134,
+      "rows_at_new_candidate_index_version": 134
+    },
+    {
+      "document_version_id": "docv_7bddd99c39ffdf1a",
+      "source_file_id": "b8868e42-602f-46d5-90d2-4ca1ea2616e9",
+      "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+      "scoped_rows": 202,
+      "candidate_rows": 202,
+      "pending_rows": 0,
+      "embedded_rows": 202,
+      "rows_at_new_candidate_index_version": 202
+    },
+    {
+      "document_version_id": "docv_7c0868960147f9ac",
+      "source_file_id": "65dd8390-b531-4bbb-9482-f4df4c72cb97",
+      "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+      "scoped_rows": 1,
+      "candidate_rows": 1,
+      "pending_rows": 0,
+      "embedded_rows": 1,
+      "rows_at_new_candidate_index_version": 1
+    },
+    {
+      "document_version_id": "docv_8bafd560c35198d9",
+      "source_file_id": "0c1becb1-0d94-495a-81d8-c792c6bb874d",
+      "source_file_name": "rag-ingestion-sales.xlsx",
+      "scoped_rows": 3,
+      "candidate_rows": 3,
+      "pending_rows": 0,
+      "embedded_rows": 3,
+      "rows_at_new_candidate_index_version": 3
+    },
+    {
+      "document_version_id": "docv_b24282189b1610cb",
+      "source_file_id": "6f03eb1b-8f1d-4241-ba04-b00f8485d489",
+      "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+      "scoped_rows": 17,
+      "candidate_rows": 17,
+      "pending_rows": 0,
+      "embedded_rows": 17,
+      "rows_at_new_candidate_index_version": 17
+    },
+    {
+      "document_version_id": "docv_ea483b5a43086e05",
+      "source_file_id": "632c83f2-df65-4b53-bf0a-e88ea23fe3b9",
+      "source_file_name": "제_1장 연령별 성별 수술현황(2024).xlsx",
+      "scoped_rows": 134,
+      "candidate_rows": 134,
+      "pending_rows": 0,
+      "embedded_rows": 134,
+      "rows_at_new_candidate_index_version": 134
+    },
+    {
+      "document_version_id": "docv_f39c6a5b56da9ad8",
+      "source_file_id": "c7191bcb-7b2f-42d1-90a5-5adaac2bb897",
+      "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+      "scoped_rows": 17,
+      "candidate_rows": 17,
+      "pending_rows": 0,
+      "embedded_rows": 17,
+      "rows_at_new_candidate_index_version": 17
+    }
+  ],
+  "indexing_cli_scope": {
+    "sourceFileTypes": [
+      "SPREADSHEET"
+    ],
+    "parserVersions": [
+      "xlsx-extract-v2-hidden-safe"
+    ],
+    "documentVersionIds": [
+      "docv_2bc2cb4df8c629e4",
+      "docv_655f9714bea7c341",
+      "docv_7bddd99c39ffdf1a",
+      "docv_7c0868960147f9ac",
+      "docv_8bafd560c35198d9",
+      "docv_b24282189b1610cb",
+      "docv_ea483b5a43086e05",
+      "docv_f39c6a5b56da9ad8"
+    ],
+    "sourceFileIds": [
+      "01fbd2a8-4704-449e-a371-49a5a5d58801",
+      "0c1becb1-0d94-495a-81d8-c792c6bb874d",
+      "632c83f2-df65-4b53-bf0a-e88ea23fe3b9",
+      "65dd8390-b531-4bbb-9482-f4df4c72cb97",
+      "6f03eb1b-8f1d-4241-ba04-b00f8485d489",
+      "b8868e42-602f-46d5-90d2-4ca1ea2616e9",
+      "c7191bcb-7b2f-42d1-90a5-5adaac2bb897",
+      "e6218456-929e-4ddd-8889-c43e02052c5f"
+    ],
+    "expectedIndexVersion": "rag-ingestion-v2-xlsx-candidate-v1",
+    "indexVersion": "rag-ingestion-v2-xlsx-candidate-v1",
+    "allowUnscoped": false
+  },
+  "blockers": [],
+  "warnings": [],
+  "notes": [
+    "XLSX-only scope includes only hidden-safe v2 SearchUnits.",
+    "Legacy xlsx-extract-v1, hidden-policy drift, sanitizer drift, and hidden leakage are excluded.",
+    "This report is diagnostic scope evidence only and is not promotion evidence."
+  ]
+}

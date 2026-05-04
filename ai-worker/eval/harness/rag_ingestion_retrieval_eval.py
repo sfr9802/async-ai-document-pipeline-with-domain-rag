@@ -1284,6 +1284,24 @@ def utc_run_id() -> str:
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gold", default="eval/gold_queries_v0.csv")
+    parser.add_argument(
+        "--expected-location-type",
+        action="append",
+        default=None,
+        help="Restrict diagnostic rows by expected_location_type. Repeat for multiple values.",
+    )
+    parser.add_argument(
+        "--bucket",
+        action="append",
+        default=None,
+        help="Restrict diagnostic rows to an exact bucket. Repeat for multiple buckets.",
+    )
+    parser.add_argument(
+        "--bucket-prefix",
+        action="append",
+        default=None,
+        help="Restrict diagnostic rows to buckets with this prefix. Repeat for multiple prefixes.",
+    )
     parser.add_argument("--base-url", default="http://localhost:8080")
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--report", default="reports/rag_retrieval_eval_report.json")
@@ -1330,7 +1348,13 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    rows = load_gold_csv(Path(args.gold))
+    all_rows = load_gold_csv(Path(args.gold))
+    rows = filter_gold_rows(
+        all_rows,
+        expected_location_types=args.expected_location_type,
+        buckets=args.bucket,
+        bucket_prefixes=args.bucket_prefix,
+    )
     validation = validate_gold_rows(rows, require_live_bound=False)
     validation_payload = {
         "ok": validation.ok,
@@ -1346,6 +1370,7 @@ def main(argv: list[str] | None = None) -> int:
             "retrieval_backend": args.retrieval_backend,
             "promotion_evidence": bool(args.promotion_evidence),
             "evidence_role": "promotion" if args.promotion_evidence else "diagnostic",
+            "row_filter": row_filter_payload(args, len(all_rows), len(rows)),
             "validation": validation_payload,
         }
         write_report(Path(args.report), payload)
@@ -1358,6 +1383,7 @@ def main(argv: list[str] | None = None) -> int:
             "retrieval_backend": args.retrieval_backend,
             "promotion_evidence": bool(args.promotion_evidence),
             "evidence_role": "promotion" if args.promotion_evidence else "diagnostic",
+            "row_filter": row_filter_payload(args, len(all_rows), len(rows)),
             "validation": validation_payload,
         }
         write_report(Path(args.report), payload)
@@ -1406,6 +1432,7 @@ def main(argv: list[str] | None = None) -> int:
     report["backend_identity"] = backend_identity
     report["promotion_evidence"] = bool(args.promotion_evidence)
     report["evidence_role"] = "promotion" if args.promotion_evidence else "diagnostic"
+    report["row_filter"] = row_filter_payload(args, len(all_rows), len(rows))
     report["candidate_index_version"] = args.candidate_index_version
     if args.baseline_index_version:
         report["baseline_index_version"] = args.baseline_index_version
@@ -1421,6 +1448,43 @@ def _has_fatal_validation_errors(validation: GoldValidationResult) -> bool:
         error.startswith("missing required columns") or error == "gold CSV must contain at least one row"
         for error in validation.errors
     )
+
+
+def filter_gold_rows(
+    rows: list[dict[str, str]],
+    *,
+    expected_location_types: list[str] | None,
+    buckets: list[str] | None,
+    bucket_prefixes: list[str] | None,
+) -> list[dict[str, str]]:
+    allowed_types = {item.strip().lower() for item in expected_location_types or [] if item.strip()}
+    allowed_buckets = {item.strip() for item in buckets or [] if item.strip()}
+    prefixes = [item.strip() for item in bucket_prefixes or [] if item.strip()]
+    if not allowed_types and not allowed_buckets and not prefixes:
+        return rows
+    filtered = []
+    for row in rows:
+        location_type = (row.get("expected_location_type") or "").strip().lower()
+        bucket = (row.get("bucket") or "").strip()
+        if allowed_types and location_type in allowed_types:
+            filtered.append(row)
+            continue
+        if allowed_buckets and bucket in allowed_buckets:
+            filtered.append(row)
+            continue
+        if prefixes and any(bucket.startswith(prefix) for prefix in prefixes):
+            filtered.append(row)
+    return filtered
+
+
+def row_filter_payload(args: argparse.Namespace, original_count: int, filtered_count: int) -> dict[str, Any]:
+    return {
+        "expected_location_types": list(args.expected_location_type or []),
+        "buckets": list(args.bucket or []),
+        "bucket_prefixes": list(args.bucket_prefix or []),
+        "original_row_count": int(original_count),
+        "filtered_row_count": int(filtered_count),
+    }
 
 
 def redact_dsn(dsn: str) -> str:

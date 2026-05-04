@@ -199,8 +199,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--gold", default=str(DEFAULT_GOLD))
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
     parser.add_argument("--document-version-id", action="append", default=None)
-    parser.add_argument("--source-file-type", action="append", default=list(DEFAULT_SOURCE_FILE_TYPES))
-    parser.add_argument("--parser-version", action="append", default=list(DEFAULT_PARSER_VERSIONS))
+    parser.add_argument("--source-file-type", action="append", default=None)
+    parser.add_argument("--parser-version", action="append", default=None)
     parser.add_argument("--expected-index-version", default=DEFAULT_INDEX_VERSION)
     parser.add_argument("--batch-size", type=int, default=200)
     parser.add_argument("--limit", type=int, default=200)
@@ -208,7 +208,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--stale-after-seconds", type=int, default=None)
     parser.add_argument("--allow-unscoped", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.source_file_type is None:
+        args.source_file_type = list(DEFAULT_SOURCE_FILE_TYPES)
+    if args.parser_version is None:
+        args.parser_version = list(DEFAULT_PARSER_VERSIONS)
+    return args
 
 
 if __name__ == "__main__":
