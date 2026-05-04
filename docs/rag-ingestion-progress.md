@@ -2367,3 +2367,256 @@ Move from diagnostic-only full72 vector evidence to a concrete query-level clean
 - The current candidate vector index still reflects the previous embedded corpus until a deliberate reimport/reindex pass is run.
 - Election workbooks contain many merged ranges, so range-level citation quality may need separate review after import.
 - Employment sentiment rows are text-heavy and URL-heavy; chunking may need scrutiny, but parser behavior was not expanded in this pass.
+
+## 2026-05-04 - xlsx v3 naturalized retrieval performance diagnostic
+
+### Goal
+
+- Run a diagnostic-only vector retrieval performance test for XLSX v3 naturalized positive queries.
+- Keep `promotion_evidence=false`, `evidence_role=diagnostic`, and candidate namespace/index version fixed to `rag-ingestion-v2-xlsx-candidate-v1`.
+- Keep hidden-negative probes out of positive Hit@K/MRR and evaluate them only as leakage diagnostics.
+
+### Completed
+
+- Added `scripts/rag_xlsx_retrieval_performance_diagnostic.py`.
+- Added `scripts/rag_xlsx_v2_v3_metric_compare.py`.
+- Added `scripts/rag_xlsx_v3_failure_breakdown.py`.
+- Regenerated `reports/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json`.
+- Generated `reports/rag_xlsx_v3_retrieval_performance_summary.json`.
+- Generated `reports/rag_xlsx_hidden_negative_leakage_diagnostic.json`.
+- Generated `reports/rag_xlsx_v2_v3_metric_compare.json`.
+- Generated `reports/rag_xlsx_v3_failure_breakdown.json`.
+- Refreshed `reports/rag_xlsx_v3_vector_quality_breakdown.json`.
+
+### Current Evidence
+
+- Positive gold source: `eval/gold_queries_xlsx_v3_positive.csv`.
+- Positive row validation: `ok=true`, `row_count=35`, `error_count=0`.
+- Vector backend: `faiss`.
+- Artifact dir: `rag-data-xlsx-candidate-v1`.
+- Candidate index version / namespace: `rag-ingestion-v2-xlsx-candidate-v1`.
+- v3 positive metrics:
+  - `Hit@1=0.8`
+  - `Hit@3=0.9429`
+  - `Hit@5=1.0`
+  - `Hit@10=1.0`
+  - `MRR@10=0.8857`
+  - `xlsx_file_hit@10=1.0`
+  - `xlsx_sheet_hit@10=1.0`
+  - `xlsx_range_overlap@10=0.9143`
+  - `xlsx_range_contains@10=0.9143`
+  - `xlsx_exact_range@10=0.8857`
+  - `xlsx_citation_location_accuracy=0.8857`
+  - `result_empty_count=0`
+  - `hidden_content_leakage_count=0`
+- Hidden-negative leakage diagnostic:
+  - hidden-negative rows: `2`
+  - `hidden_content_leakage_count=0`
+  - `hidden_negative_pass_count=2`
+  - positive metric mix allowed: `false`
+- v2 positive subset vs v3 naturalized:
+  - `Hit@10`: `1.0 -> 1.0`, delta `0.0`
+  - `MRR@10`: `0.8643 -> 0.8857`, delta `+0.0214`
+  - `xlsx_exact_range@10`: `1.0 -> 0.8857`, delta `-0.1143`
+  - `xlsx_citation_location_accuracy`: `1.0 -> 0.8857`, delta `-0.1143`
+  - degraded query ids: `4`
+  - improved query ids: `2`
+  - unchanged query ids: `29`
+- Failure breakdown:
+  - `MATCHED=31`
+  - `QUERY_NATURALIZATION_DRIFT=2`
+  - `RANGE_POLICY_MISMATCH=1`
+  - `FORMULA_DATE_CONTRACT_MISMATCH=1`
+  - `ANCHOR_TERM_MISSING=0`
+  - `TRUE_RETRIEVAL_RANKING_FAILURE=0`
+  - `CHUNK_GRANULARITY_ISSUE=0`
+
+### Gate/Baseline Status
+
+- Promotion was not run.
+- No report generated in this pass sets `promotion_evidence=true`.
+- All new evidence is marked diagnostic-only.
+- Existing immutable baseline descriptor/artifact/hash files were not modified.
+- `eval/gold_queries_v0.csv`, `eval/gold_queries_xlsx_v1.csv`, and `eval/gold_queries_xlsx_v2.csv` were not overwritten.
+- Hybrid search, reranking, parser expansion, threshold relaxation, and baseline changes were not introduced.
+
+### Verification
+
+- Python syntax check:
+  - `python -m py_compile scripts/rag_xlsx_retrieval_performance_diagnostic.py scripts/rag_xlsx_v2_v3_metric_compare.py scripts/rag_xlsx_v3_failure_breakdown.py scripts/rag_retrieval_eval.py ai-worker/eval/harness/rag_ingestion_retrieval_eval.py ai-worker/eval/harness/rag_ingestion_promotion_gate.py`
+  - result: passed.
+- Existing related script syntax check:
+  - `python -m py_compile scripts/rag_xlsx_gold_quality_audit.py scripts/rag_xlsx_gold_v2_builder.py scripts/rag_xlsx_natural_query_builder.py scripts/rag_xlsx_natural_query_quality_audit.py scripts/xlsx_candidate_scope_report.py scripts/xlsx_candidate_embedding_consistency.py`
+  - result: passed.
+- Gold row validation:
+  - `validate_gold_rows(eval/gold_queries_xlsx_v3_positive.csv)`
+  - result: `ok=true`, `row_count=35`, `error_count=0`.
+- Diagnostic generation:
+  - `python scripts/rag_xlsx_retrieval_performance_diagnostic.py`
+  - result: completed; positive and hidden-negative reports generated.
+  - `python scripts/rag_xlsx_v2_v3_metric_compare.py`
+  - result: completed.
+  - `python scripts/rag_xlsx_v3_failure_breakdown.py`
+  - result: completed.
+  - `python scripts/rag_xlsx_v3_vector_quality_breakdown.py`
+  - result: completed.
+- Python targeted tests:
+  - `python -m pytest ai-worker/tests/test_retrieval_eval_harness.py ai-worker/tests/test_rag_ingestion_scaffolding.py ai-worker/tests/test_promotion_gate_persistence.py ai-worker/tests/test_search_unit_indexing_loop.py`
+  - result: `85 passed`.
+- Java promotion gate tests:
+  - `mvn -f core-api/pom.xml test "-Dtest=IndexPromotionGateTest"`
+  - result: `11 passed`.
+- Diff hygiene:
+  - `git diff --check`
+  - result: passed.
+
+### Important Decisions
+
+- `eval/gold_queries_xlsx_v3_positive.csv` existed and was used directly; no fallback positive diagnostic CSV was generated from v2.
+- The prior v2 diagnostic report is mixed, so v2 comparison metrics were recomputed over the same 35 v3-positive query ids.
+- Hidden-negative rows were evaluated only in `reports/rag_xlsx_hidden_negative_leakage_diagnostic.json`.
+- The observed v3 drop is location/range-specific, not Hit@10 or empty-result regression.
+
+### Remaining Work
+
+- Review the two `QUERY_NATURALIZATION_DRIFT` rows before deciding whether to rewrite query surfaces or tune retrieval.
+- Review the one `RANGE_POLICY_MISMATCH` row before changing range policy.
+- Review the one `FORMULA_DATE_CONTRACT_MISMATCH` row against formula/date contract evidence before treating it as retrieval failure.
+- Next turn should choose one path explicitly: retrieval tuning, chunking review, or range policy review.
+
+### Risks
+
+- Naturalized query wording improved rank-level retrieval slightly but lowered strict range/location accuracy on four rows.
+- The current failure classification is diagnostic and evidence-backed from top-k traces, but it does not prove which future fix is safest.
+- Promotion remains blocked by policy until a later task intentionally prepares promotion-grade evidence and immutable baseline lineage.
+
+## 2026-05-05 - Track A XLSX phase A0-A6 completion merge
+
+### Goal
+
+- Merge the temporary Track A XLSX phase log from `docs/rag-ingestion/xlsx-retrieval/phase-progress.md` into this main progress log.
+- Verify A5/A6 completion evidence and guardrails before commit/push.
+- Keep this as diagnostic-only evidence, not promotion evidence.
+
+### Completed
+
+- Executed Track A A0-A6 from the split phase docs under `docs/rag-ingestion/xlsx-retrieval/`.
+- Added and hardened phase scripts:
+  - `scripts/rag_xlsx_current_diagnostic_snapshot.py`
+  - `scripts/rag_xlsx_v3_failure_case_review.py`
+  - `scripts/rag_xlsx_query_surface_review.py`
+  - `scripts/rag_xlsx_range_policy_review.py`
+  - `scripts/rag_xlsx_formula_date_contract_phase_review.py`
+  - `scripts/rag_xlsx_candidate_v2_decision.py`
+  - `scripts/rag_xlsx_remaining_hard_case_probe.py`
+  - `scripts/rag_xlsx_after_cleanup_compare.py`
+  - `scripts/rag_xlsx_v3_failure_breakdown.py`
+- Added focused fail-closed regression coverage:
+  - `ai-worker/tests/test_rag_xlsx_track_a_scripts.py`
+- Produced reviewed diagnostic manifest:
+  - `eval/gold_queries_xlsx_v3_positive_reviewed.csv`
+- Produced Track A evidence reports:
+  - `reports/rag_xlsx_candidate_lineage_before_tuning.json`
+  - `reports/rag_xlsx_v3_current_diagnostic_snapshot.json`
+  - `reports/rag_xlsx_v3_failure_case_review.json`
+  - `reports/rag_xlsx_query_surface_patch_plan.json`
+  - `reports/rag_xlsx_v3_query_surface_before_after_compare.json`
+  - `reports/rag_xlsx_range_policy_review.json`
+  - `reports/rag_xlsx_range_policy_dry_run_impact.json`
+  - `reports/rag_xlsx_formula_date_contract_review.json`
+  - `reports/rag_xlsx_formula_date_surface_presence.json`
+  - `reports/xlsx_candidate_v2_decision.json`
+  - `reports/rag_xlsx_remaining_hard_case_probe.json`
+  - `reports/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json`
+  - `reports/rag_xlsx_v3_positive_reviewed_retrieval_performance_summary.json`
+  - `reports/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json`
+  - `reports/rag_xlsx_v3_after_cleanup_metric_compare.json`
+  - `reports/rag_xlsx_v3_after_cleanup_failure_breakdown.json`
+
+### Current Evidence
+
+- A5 candidate v2 decision:
+  - `reports/xlsx_candidate_v2_decision.json`
+  - `status=COMPLETED`
+  - `decision=SKIP`
+  - `candidate_v1_mutated=false`
+- A6 final compare:
+  - `reports/rag_xlsx_v3_after_cleanup_metric_compare.json`
+  - `status=COMPLETED`
+  - `promotion_evidence=false`
+  - `evidence_role=diagnostic`
+  - blockers empty
+  - `xlsx_citation_location_accuracy: 0.8857 -> 1.0`
+- Final reviewed failure breakdown:
+  - `reports/rag_xlsx_v3_after_cleanup_failure_breakdown.json`
+  - `failed_or_degraded_count=0`
+  - `MATCHED=35`
+- Hidden-negative leakage diagnostic:
+  - `reports/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json`
+  - `hidden_content_leakage_count=0`
+  - hidden-negative rows remain separate from positive Hit@K/MRR metrics.
+- Baseline/canary guardrails:
+  - `reports/rag_xlsx_candidate_lineage_before_tuning.json`
+  - `baseline_hash_unchanged=true`
+  - `rag_data_canary_hash_unchanged=true`
+  - candidate v1 artifact was not mutated by the phase work.
+- Manifest guardrail:
+  - Existing less-explicit v3 positive manifest `eval/gold_queries_xlsx_v3_positive.csv` was not overwritten.
+  - Reviewed changes live in `eval/gold_queries_xlsx_v3_positive_reviewed.csv`.
+
+### Metrics
+
+| Metric | Before | Final reviewed | Notes |
+|---|---:|---:|---|
+| Hit@10 | `1.0` | `1.0` | maintained |
+| MRR@10 | `0.8857` | `0.8857` | identity-rank metric |
+| XLSX range overlap@10 | `0.9143` | `1.0` | improved |
+| XLSX range contains@10 | `0.9143` | `1.0` | improved |
+| XLSX exact range@10 | `0.8857` | `1.0` | improved |
+| xlsx_citation_location_accuracy | `0.8857` | `1.0` | all 35 rows recover exact location within top 10 |
+| location_hit@1 | - | `0.6` | diagnostic location-rank decomposition |
+| location_hit@3 | - | `0.8857` | diagnostic location-rank decomposition |
+| location_hit@5 | - | `0.9714` | only `gq_auto_042` remains after rank 5 |
+| location_hit@10 | - | `1.0` | all exact locations found by rank 10 |
+| location_mrr@10 | - | `0.7467` | top-citation quality remains weaker than Hit@10 |
+| hidden_content_leakage_count | `0` | `0` | hidden-negative only |
+
+### Verification
+
+- Checklist verification:
+  - `reports/rag_xlsx_v3_after_cleanup_metric_compare.json`: `promotion_evidence=false`, `evidence_role=diagnostic`.
+  - `reports/rag_xlsx_v3_after_cleanup_failure_breakdown.json`: `failed_or_degraded_count=0`, `MATCHED=35`.
+  - `reports/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json`: `hidden_content_leakage_count=0`.
+  - `reports/xlsx_candidate_v2_decision.json`: `decision=SKIP`.
+  - `candidate_v1_mutated=false`.
+  - immutable baseline changed: `false`.
+  - `rag-data-canary` changed: `false`.
+  - `eval/gold_queries_xlsx_v3_positive.csv` remains distinct from `eval/gold_queries_xlsx_v3_positive_reviewed.csv`.
+  - Date `2026-05-05` is intentional for this entry because the local runtime timezone is Korea Standard Time and `Get-Date` returned `2026-05-05T02:33:04.7906563+09:00`.
+- Commands:
+  - `python -m py_compile scripts\rag_xlsx_current_diagnostic_snapshot.py scripts\rag_xlsx_v3_failure_case_review.py scripts\rag_xlsx_formula_date_contract_phase_review.py scripts\rag_xlsx_candidate_v2_decision.py scripts\rag_xlsx_after_cleanup_compare.py scripts\rag_xlsx_remaining_hard_case_probe.py`
+  - `python scripts\rag_xlsx_remaining_hard_case_probe.py --apply-updates`
+  - `python scripts\rag_xlsx_current_diagnostic_snapshot.py`
+  - `python scripts\rag_xlsx_v3_failure_case_review.py`
+  - `python scripts\rag_xlsx_formula_date_contract_phase_review.py`
+  - `python scripts\rag_xlsx_candidate_v2_decision.py`
+  - `python scripts\rag_xlsx_retrieval_performance_diagnostic.py --positive-gold eval\gold_queries_xlsx_v3_positive_reviewed.csv --report reports\rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json --summary reports\rag_xlsx_v3_positive_reviewed_retrieval_performance_summary.json --hidden-report reports\rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json`
+  - `python scripts\rag_xlsx_v3_failure_breakdown.py --v3-report reports\rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json --v3-gold eval\gold_queries_xlsx_v3_positive_reviewed.csv --output reports\rag_xlsx_v3_after_cleanup_failure_breakdown.json`
+  - `python scripts\rag_xlsx_after_cleanup_compare.py`
+  - `python -m pytest -q -p no:cacheprovider ai-worker\tests\test_rag_xlsx_track_a_scripts.py`
+  - `git diff --check`
+- Results:
+  - Track A script tests: `13 passed`.
+  - `git diff --check`: no whitespace errors; only existing CRLF conversion warnings on unrelated modified files.
+
+### Important Decisions
+
+- Candidate v2 remains skipped for Track A because A2/A4 were query-only fixes and A3 kept exact row policy.
+- Broad `sheet_summary` ranges are not accepted as row-level citations.
+- Hidden-negative rows remain separate from positive retrieval metrics.
+- A6 remains diagnostic evidence only; no promotion evidence was produced.
+
+### Remaining Work
+
+- Treat `gq_auto_042` as the remaining location-rank quality watch item because its exact location still appears after rank 5.
+- If promotion-grade readiness is required later, open a separate ranking/duplicate-document-version investigation instead of changing Track A candidate indexing, exact row policy, or hidden-safe constraints.

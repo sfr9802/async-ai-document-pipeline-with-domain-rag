@@ -1,0 +1,59 @@
+{
+  "run_id": "2026-05-04T162949Z",
+  "generated_at": "2026-05-04T16:29:49.869130+00:00",
+  "status": "COMPLETED",
+  "report_role": "xlsx_range_policy_dry_run_impact",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "source_a1_review": "reports\\rag_xlsx_v3_failure_case_review.json",
+  "source_snapshot": "reports\\rag_xlsx_v3_current_diagnostic_snapshot.json",
+  "reviewed_query_id": "gq_auto_041",
+  "positive_row_count": 35,
+  "before_xlsx_citation_location_accuracy": 0.8857,
+  "before_location_match_count_estimate": 31,
+  "policy_impacts": [
+    {
+      "policy": "EXACT_RANGE",
+      "range_only_pass": false,
+      "chunk_aware_pass": false,
+      "first_matching_rank": null,
+      "first_matching_chunk_type": null,
+      "first_matching_cell_range": null
+    },
+    {
+      "policy": "CONTAINS_EXPECTED",
+      "range_only_pass": true,
+      "chunk_aware_pass": false,
+      "first_matching_rank": 2,
+      "first_matching_chunk_type": "sheet_summary",
+      "first_matching_cell_range": "A1:J30761"
+    },
+    {
+      "policy": "OVERLAP_RANGE",
+      "range_only_pass": true,
+      "chunk_aware_pass": false,
+      "first_matching_rank": 2,
+      "first_matching_chunk_type": "sheet_summary",
+      "first_matching_cell_range": "A1:J30761"
+    }
+  ],
+  "range_only_acceptance": {
+    "would_recover_target": true,
+    "after_location_match_count_estimate": 32,
+    "after_xlsx_citation_location_accuracy_estimate": 0.9143,
+    "risk": "inflates metric by accepting sheet_summary evidence for a row-level query"
+  },
+  "chunk_aware_acceptance": {
+    "would_recover_target": false,
+    "after_location_match_count_estimate": 31,
+    "after_xlsx_citation_location_accuracy_estimate": 0.8857,
+    "risk": "low, but no chunk-aware alternate policy pass was observed"
+  },
+  "guardrails": {
+    "promotion_evidence_true_set": false,
+    "global_policy_relaxed": false,
+    "gold_v0_changed": false,
+    "immutable_baseline_changed": false,
+    "candidate_v1_mutated": false
+  }
+}

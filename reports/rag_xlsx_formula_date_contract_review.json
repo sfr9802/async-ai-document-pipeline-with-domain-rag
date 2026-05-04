@@ -1,31 +1,33 @@
 {
-  "run_id": "2026-05-04T142230Z",
-  "generated_at": "2026-05-04T14:22:30.996873+00:00",
-  "status": "NEEDS_CONTRACT_REVIEW",
+  "run_id": "2026-05-04T165247Z",
+  "generated_at": "2026-05-04T16:52:47.989615+00:00",
+  "status": "COMPLETED",
   "report_role": "xlsx_formula_date_contract_review",
   "promotion_evidence": false,
-  "evidence_role": "gold_v2_contract_design",
-  "source_paths": {
-    "gold_v0": "eval\\gold_queries_v0.csv",
-    "review_decisions": "reports\\rag_xlsx_query_evidence_review_decisions.json",
-    "diagnostic_report": "reports\\rag_retrieval_eval_xlsx_vector_diagnostic_report.json",
-    "ingest_manifest": "rag-data-xlsx-candidate-v1\\ingest_manifest.json"
-  },
-  "diagnostic_promotion_evidence": false,
-  "ingest_manifest_sample_count": 5,
-  "row_count": 7,
-  "surface_distribution": {
-    "DATE_FORMATTED_VALUE": 2,
-    "DISPLAY_FORMATTED_VALUE": 2,
-    "RAW_FORMULA": 3
-  },
-  "embedding_text_surface_status_distribution": {
-    "NOT_OBSERVED_IN_REPORT_INPUT": 4,
-    "PARTIAL_IN_INGEST_MANIFEST_SAMPLE": 3
-  },
-  "parser_or_gold_contract_action_distribution": {
-    "defer_until_display_formatted_surface_is_proven": 4,
-    "defer_until_raw_formula_surface_is_proven_or_gold_query_is_rewritten": 3
+  "evidence_role": "diagnostic",
+  "source_a1_review": "reports\\rag_xlsx_v3_failure_case_review.json",
+  "source_prior_contract_review": "reports\\rag_xlsx_formula_date_contract_review.json",
+  "source_surface_presence": "reports\\rag_xlsx_formula_date_surface_presence.json",
+  "reviewed_gold": "eval\\gold_queries_xlsx_v3_positive_reviewed.csv",
+  "reviewed_query_id": "gq_xlsx_date_number_format_001",
+  "expected_surface": "DATE_FORMATTED_VALUE",
+  "surface_presence_matrix_present": true,
+  "next_action": "QUERY_REWRITE",
+  "decision_reason": "The exact SearchUnit already contains the formatted date, label, and entity in embedding/bm25 text. The miss is better explained by date collision from an entity-free query than by an embedding contract gap.",
+  "query_only_fix_sufficient": true,
+  "embedding_contract_change_proven": false,
+  "candidate_v2_required_now": false,
+  "recommended_query_rewrite": "청운노인요양원 지정일자 찾아줘.",
+  "target_evidence": {
+    "query": "2008-06-25 지정일자 찾아줘.",
+    "expected_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+    "expected_sheet_name": "일반현황",
+    "expected_cell_range": "A2:J51",
+    "failure_reason": "expected_range_not_found",
+    "category_rationale": "formula/date contract review already marks this row as contract-sensitive",
+    "prior_contract_value_surface": "DATE_FORMATTED_VALUE",
+    "prior_embedding_text_surface_status": "NOT_OBSERVED_IN_REPORT_INPUT",
+    "prior_parser_or_gold_contract_action": "defer_until_display_formatted_surface_is_proven"
   },
   "rows": [
     {
@@ -190,13 +192,88 @@
       "notes": "currency-like large number formatting; v2_review=excluded_from_positive_pending_formula_date_contract; review_reason=formula_or_date_value_not_proven_in_current_indexed_text_contract; range policy candidate only; no harness behavior changed"
     }
   ],
-  "policy": {
-    "parser_expansion_implemented": false,
-    "gold_query_rewrite_implemented": false,
-    "decision": "Keep formula/date rows deferred or contract-scoped until raw formula vs cached/display value surfaces are proven."
+  "track_a_a4_review": {
+    "reviewed_query_id": "gq_xlsx_date_number_format_001",
+    "expected_surface": "DATE_FORMATTED_VALUE",
+    "surface_presence_matrix": [
+      {
+        "surface": "RAW_FORMULA",
+        "expected_for_query": false,
+        "embedding_text": "NOT_REQUIRED",
+        "bm25_text": "UNKNOWN_NOT_AVAILABLE",
+        "display_text": "UNKNOWN_NOT_AVAILABLE",
+        "citation_text": "NOT_OBSERVED_IN_TOP_K_EXPECTED_ROW_ABSENT",
+        "prior_report_status": "NOT_EXPECTED"
+      },
+      {
+        "surface": "CACHED_VALUE",
+        "expected_for_query": false,
+        "embedding_text": "UNKNOWN_NOT_AVAILABLE",
+        "bm25_text": "UNKNOWN_NOT_AVAILABLE",
+        "display_text": "UNKNOWN_NOT_AVAILABLE",
+        "citation_text": "NOT_OBSERVED_IN_TOP_K_EXPECTED_ROW_ABSENT",
+        "prior_report_status": "NOT_EXPECTED"
+      },
+      {
+        "surface": "DISPLAY_FORMATTED_VALUE",
+        "expected_for_query": false,
+        "embedding_text": "PRESENT_AS_PART_OF_DATE_FORMATTED_ROW",
+        "bm25_text": "PRESENT_AS_PART_OF_DATE_FORMATTED_ROW",
+        "display_text": "INFERRED_FROM_EMBEDDING_TEXT",
+        "citation_text": "PRESENT_FOR_EXACT_SEARCH_UNIT",
+        "prior_report_status": "The required surface was not observed in diagnostic report or ingest manifest preview samples."
+      },
+      {
+        "surface": "DATE_FORMATTED_VALUE",
+        "expected_for_query": true,
+        "embedding_text": "PRESENT",
+        "bm25_text": "PRESENT",
+        "display_text": "INFERRED_PRESENT_FROM_INDEXED_DISPLAY_ROW",
+        "citation_text": "PRESENT_FOR_EXACT_SEARCH_UNIT",
+        "prior_report_status": "The required surface was not observed in diagnostic report or ingest manifest preview samples."
+      },
+      {
+        "surface": "RAW_SERIAL_VALUE",
+        "expected_for_query": false,
+        "embedding_text": "NOT_REQUIRED",
+        "bm25_text": "UNKNOWN_NOT_AVAILABLE",
+        "display_text": "UNKNOWN_NOT_AVAILABLE",
+        "citation_text": "NOT_OBSERVED_IN_TOP_K_EXPECTED_ROW_ABSENT",
+        "prior_report_status": "NOT_EXPECTED"
+      }
+    ],
+    "next_action": "QUERY_REWRITE",
+    "recommended_query_rewrite": "청운노인요양원 지정일자 찾아줘."
+  },
+  "completion_criteria": {
+    "target_row_found": true,
+    "reviewed_query_id": "gq_xlsx_date_number_format_001",
+    "expected_surface_valid": true,
+    "surface_presence_report_completed": true,
+    "surface_presence_matrix_present": true,
+    "db_surface_evidence_completed": true,
+    "expected_document_version_row_found": true,
+    "indexed_surface_present": true,
+    "next_action_valid": true,
+    "reviewed_gold_updated": true
+  },
+  "blockers": [],
+  "guardrails": {
+    "promotion_evidence_true_set": false,
+    "candidate_v1_mutated": false,
+    "candidate_v2_created": false,
+    "raw_formula_added_to_embedding": false,
+    "hidden_value_added_to_embedding": false,
+    "parser_changed": false
   },
   "notes": [
-    "Full embedding_text was not available in the diagnostic report; ingest manifest previews are used only as limited evidence.",
-    "This report classifies contracts but does not change parser output."
-  ]
+    "Prior contract rows are preserved so existing failure-breakdown classification inputs remain available.",
+    "This phase does not add raw formula, hidden values, or date surfaces to embedding text."
+  ],
+  "reviewed_gold_update": {
+    "path": "eval\\gold_queries_xlsx_v3_positive_reviewed.csv",
+    "updated": true,
+    "query_id": "gq_xlsx_date_number_format_001",
+    "query": "청운노인요양원 지정일자 찾아줘."
+  }
 }

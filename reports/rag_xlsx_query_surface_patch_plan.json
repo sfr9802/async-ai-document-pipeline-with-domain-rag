@@ -1,0 +1,113 @@
+{
+  "run_id": "2026-05-04T163106Z",
+  "generated_at": "2026-05-04T16:31:06.153742+00:00",
+  "status": "COMPLETED",
+  "report_role": "xlsx_query_surface_patch_plan",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "source_positive_gold": "eval\\gold_queries_xlsx_v3_positive.csv",
+  "source_a1_review": "reports\\rag_xlsx_v3_failure_case_review.json",
+  "output_reviewed_gold": "eval\\gold_queries_xlsx_v3_positive_reviewed.csv",
+  "reviewed_query_count": 2,
+  "rows": [
+    {
+      "query_id": "gq_xlsx_lookup_002",
+      "category": "QUERY_NATURALIZATION_DRIFT",
+      "current_query": "신분당선 어디쯤 있어?",
+      "original_query": "신분당선",
+      "query_seed": "신분당선",
+      "expected_cell_range": "A502:D551",
+      "candidate_queries": [
+        {
+          "query": "신분당선 승차총승객수 찾아줘.",
+          "audit": {
+            "query": "신분당선 승차총승객수 찾아줘.",
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": []
+          }
+        },
+        {
+          "query": "신분당선 월별 승차 자료 찾아줘.",
+          "audit": {
+            "query": "신분당선 월별 승차 자료 찾아줘.",
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": []
+          }
+        },
+        {
+          "query": "신분당선 승차 현황 알려줘.",
+          "audit": {
+            "query": "신분당선 승차 현황 알려줘.",
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": []
+          }
+        }
+      ],
+      "selected_query": "신분당선 승차총승객수 찾아줘.",
+      "selection_reason": "The current wording keeps only the line name and asks where it is; adding the metric anchor keeps a realistic query while pointing at the expected row group.",
+      "expected_effect": "Improve range anchor without changing candidate namespace or gold binding."
+    },
+    {
+      "query_id": "gq_auto_042",
+      "category": "QUERY_NATURALIZATION_DRIFT",
+      "current_query": "축복전문요양원 행 찾아줘.",
+      "original_query": "축복전문요양원",
+      "query_seed": "축복전문요양원",
+      "expected_cell_range": "A1002:J1051",
+      "candidate_queries": [
+        {
+          "query": "축복전문요양원 장기요양기관 정보 찾아줘.",
+          "audit": {
+            "query": "축복전문요양원 장기요양기관 정보 찾아줘.",
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": []
+          }
+        },
+        {
+          "query": "축복전문요양원 시설 정보 찾아줘.",
+          "audit": {
+            "query": "축복전문요양원 시설 정보 찾아줘.",
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": []
+          }
+        },
+        {
+          "query": "축복전문요양원 기관 정보 찾아줘.",
+          "audit": {
+            "query": "축복전문요양원 기관 정보 찾아줘.",
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": []
+          }
+        }
+      ],
+      "selected_query": "축복전문요양원 장기요양기관 정보 찾아줘.",
+      "selection_reason": "The current wording asks for a generic row; adding a weak domain anchor keeps the query natural without exposing file, sheet, or cell range.",
+      "expected_effect": "Improve range anchor without changing candidate namespace or gold binding."
+    }
+  ],
+  "query_quality_audit": {
+    "pass": true,
+    "failed_count": 0,
+    "failed": [],
+    "checks": [
+      "no cell range literal",
+      "no exact sheet name",
+      "no exact file name or file stem",
+      "no hidden-policy terms from must_not_contain_terms"
+    ]
+  },
+  "guardrails": {
+    "promotion_evidence_true_set": false,
+    "candidate_v1_mutated": false,
+    "candidate_namespace_created": false,
+    "immutable_baseline_changed": false,
+    "rag_data_canary_changed": false,
+    "hidden_negative_in_positive_metrics": false
+  }
+}

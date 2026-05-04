@@ -1,0 +1,1878 @@
+{
+  "run_id": "2026-05-04T165828Z",
+  "generated_at": "2026-05-04T16:58:28.730472+00:00",
+  "status": "COMPLETED",
+  "report_role": "xlsx_remaining_hard_case_probe",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "source_reviewed_gold": "eval\\gold_queries_xlsx_v3_positive_reviewed.csv",
+  "retrieval_backend": "vector",
+  "candidate_index_version": "rag-ingestion-v2-xlsx-candidate-v1",
+  "namespace": "rag-ingestion-v2-xlsx-candidate-v1",
+  "top_k": 10,
+  "apply_updates": true,
+  "selected_queries": {
+    "gq_xlsx_lookup_002": "신분당선 2019년 5월 승차총승객수 알려줘.",
+    "gq_auto_041": "인하요양원 소재지 정보 찾아줘."
+  },
+  "selected_updates": {},
+  "semantic_metadata_updates": {
+    "gq_auto_041": {
+      "expected_answer_text": "인하요양원 소재지",
+      "must_contain_terms": "인하요양원;소재지"
+    }
+  },
+  "recovered_query_count": 0,
+  "rows": [
+    {
+      "query_id": "gq_xlsx_lookup_002",
+      "current_query": "신분당선 2019년 5월 승차총승객수 알려줘.",
+      "semantic_anchor_terms": [
+        "신분당선",
+        "승차총승객수"
+      ],
+      "expected_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+      "expected_sheet_name": "철도",
+      "expected_cell_range": "A502:D551",
+      "variants": [
+        {
+          "query": "신분당선",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "신분당선",
+              "승차총승객수"
+            ],
+            "missing_required_terms": [
+              "승차총승객수"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": true,
+          "hit_rank": 1,
+          "location_rank": 7,
+          "failure_reason": null,
+          "top1": {
+            "rank": 1,
+            "score": 0.4835452735424042,
+            "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+            "sheet_name": "철도",
+            "cell_range": "A152:D201",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.4835452735424042,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A152:D201",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.4835452735424042,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A152:D201",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.47905999422073364,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A102:D151",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.47905999422073364,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A102:D151",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.47538110613822937,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "신분당선 2019년 승차총승객수 찾아줘.",
+          "audit": {
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "신분당선",
+              "승차총승객수"
+            ],
+            "missing_required_terms": [],
+            "semantic_anchor_preserved": true
+          },
+          "location_match": false,
+          "hit_rank": 1,
+          "location_rank": null,
+          "failure_reason": "expected_range_not_found",
+          "top1": {
+            "rank": 1,
+            "score": 0.5939069390296936,
+            "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+            "sheet_name": "철도",
+            "cell_range": "A202:D251",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.5939069390296936,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.5939069390296936,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.58530193567276,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "버스",
+              "cell_range": "A1:C20",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.58530193567276,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "버스",
+              "cell_range": "A1:C20",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.582056999206543,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A252:D301",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "신분당선 2019년 5월 승차총승객수 알려줘.",
+          "audit": {
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "신분당선",
+              "승차총승객수"
+            ],
+            "missing_required_terms": [],
+            "semantic_anchor_preserved": true
+          },
+          "location_match": true,
+          "hit_rank": 1,
+          "location_rank": 3,
+          "failure_reason": null,
+          "top1": {
+            "rank": 1,
+            "score": 0.5669941902160645,
+            "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+            "sheet_name": "철도",
+            "cell_range": "A202:D251",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.5669941902160645,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.5669941902160645,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.5639987587928772,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A502:D551",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": true,
+              "range_contains": true,
+              "range_overlap": true,
+              "range_policy_match": true
+            },
+            {
+              "rank": 4,
+              "score": 0.5639987587928772,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A502:D551",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": true,
+              "range_contains": true,
+              "range_overlap": true,
+              "range_policy_match": true
+            },
+            {
+              "rank": 5,
+              "score": 0.5566478967666626,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "버스",
+              "cell_range": "A1:C20",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "신분당선 2018년 12월 승차총승객수 찾아줘.",
+          "audit": {
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "신분당선",
+              "승차총승객수"
+            ],
+            "missing_required_terms": [],
+            "semantic_anchor_preserved": true
+          },
+          "location_match": false,
+          "hit_rank": 1,
+          "location_rank": null,
+          "failure_reason": "expected_range_not_found",
+          "top1": {
+            "rank": 1,
+            "score": 0.5693285465240479,
+            "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+            "sheet_name": "철도",
+            "cell_range": "A202:D251",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.5693285465240479,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.5693285465240479,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.5632107257843018,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A252:D301",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.5632107257843018,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A252:D301",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.5630362033843994,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A552:D601",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "신분당선 월별 승차총승객수 보여줘.",
+          "audit": {
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "신분당선",
+              "승차총승객수"
+            ],
+            "missing_required_terms": [],
+            "semantic_anchor_preserved": true
+          },
+          "location_match": false,
+          "hit_rank": 3,
+          "location_rank": null,
+          "failure_reason": "expected_range_not_found",
+          "top1": {
+            "rank": 1,
+            "score": 0.5798746943473816,
+            "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+            "sheet_name": "버스",
+            "cell_range": "A1:C20",
+            "chunk_type": "sheet_summary",
+            "file_match": true,
+            "sheet_match": false,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.5798746943473816,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "버스",
+              "cell_range": "A1:C20",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.5798746943473816,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "버스",
+              "cell_range": "A1:C20",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.5752763152122498,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A252:D301",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.5752763152122498,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A252:D301",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.5745147466659546,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "신분당선 승차 자료 찾아줘.",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "신분당선",
+              "승차총승객수"
+            ],
+            "missing_required_terms": [
+              "승차총승객수"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": true,
+          "hit_rank": 2,
+          "location_rank": 7,
+          "failure_reason": null,
+          "top1": {
+            "rank": 1,
+            "score": 0.5691532492637634,
+            "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+            "sheet_name": "철도",
+            "cell_range": "A602:D602",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.5691532492637634,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A602:D602",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.5691531896591187,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A602:D602",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.5635607242584229,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": null,
+              "cell_range": null,
+              "chunk_type": "workbook_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.5635607242584229,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": null,
+              "cell_range": null,
+              "chunk_type": "workbook_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.561976432800293,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "버스",
+              "cell_range": "A1:C20",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "신분당선 월별 승차 찾아줘.",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "신분당선",
+              "승차총승객수"
+            ],
+            "missing_required_terms": [
+              "승차총승객수"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": false,
+          "hit_rank": 1,
+          "location_rank": null,
+          "failure_reason": "expected_range_not_found",
+          "top1": {
+            "rank": 1,
+            "score": 0.538560152053833,
+            "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+            "sheet_name": "철도",
+            "cell_range": "A152:D201",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.538560152053833,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A152:D201",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.538560152053833,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A152:D201",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.5376526117324829,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A602:D602",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.5376524925231934,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A602:D602",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.5351653099060059,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A252:D301",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "신분당선 승차총승객수 찾아줘.",
+          "audit": {
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "신분당선",
+              "승차총승객수"
+            ],
+            "missing_required_terms": [],
+            "semantic_anchor_preserved": true
+          },
+          "location_match": false,
+          "hit_rank": 1,
+          "location_rank": null,
+          "failure_reason": "expected_range_not_found",
+          "top1": {
+            "rank": 1,
+            "score": 0.6133513450622559,
+            "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+            "sheet_name": "철도",
+            "cell_range": "A202:D251",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.6133513450622559,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.6133513450622559,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.6088818907737732,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "버스",
+              "cell_range": "A1:C20",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.6088818907737732,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "버스",
+              "cell_range": "A1:C20",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.6078468561172485,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A252:D301",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "신분당선 이용 현황 찾아줘.",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "신분당선",
+              "승차총승객수"
+            ],
+            "missing_required_terms": [
+              "승차총승객수"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": false,
+          "hit_rank": 1,
+          "location_rank": null,
+          "failure_reason": "expected_range_not_found",
+          "top1": {
+            "rank": 1,
+            "score": 0.6181561946868896,
+            "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+            "sheet_name": "철도",
+            "cell_range": "A102:D151",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.6181561946868896,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A102:D151",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.6181561946868896,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A102:D151",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.6074508428573608,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A252:D301",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.6074508428573608,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A252:D301",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.5994089841842651,
+              "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+              "sheet_name": "철도",
+              "cell_range": "A202:D251",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        }
+      ],
+      "selected_query": "신분당선 2019년 5월 승차총승객수 알려줘.",
+      "selected_reason": "CURRENT_QUERY_ALREADY_RECOVERS"
+    },
+    {
+      "query_id": "gq_auto_041",
+      "current_query": "인하요양원 소재지 정보 찾아줘.",
+      "semantic_anchor_terms": [
+        "인하요양원",
+        "소재지"
+      ],
+      "expected_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+      "expected_sheet_name": "일반현황",
+      "expected_cell_range": "A952:J1001",
+      "variants": [
+        {
+          "query": "인하요양원",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "인하요양원",
+              "소재지"
+            ],
+            "missing_required_terms": [
+              "소재지"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": true,
+          "hit_rank": 1,
+          "location_rank": 10,
+          "failure_reason": null,
+          "top1": {
+            "rank": 1,
+            "score": 0.5670673847198486,
+            "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+            "sheet_name": "일반현황",
+            "cell_range": "A1602:J1651",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.5670673847198486,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1602:J1651",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.5419942140579224,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A3152:J3201",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.5413379073143005,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A902:J951",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.5393637418746948,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A4302:J4351",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.5353626608848572,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A302:J351",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "인하요양원 장기요양기관 정보 찾아줘.",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "인하요양원",
+              "소재지"
+            ],
+            "missing_required_terms": [
+              "소재지"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": false,
+          "hit_rank": 4,
+          "location_rank": null,
+          "failure_reason": "expected_range_not_found",
+          "top1": {
+            "rank": 1,
+            "score": 0.6552509665489197,
+            "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+            "sheet_name": null,
+            "cell_range": null,
+            "chunk_type": "workbook_summary",
+            "file_match": true,
+            "sheet_match": false,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.6552509665489197,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": null,
+              "cell_range": null,
+              "chunk_type": "workbook_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.6540259122848511,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": null,
+              "cell_range": null,
+              "chunk_type": "workbook_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.638232946395874,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1:J30761",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": true,
+              "range_overlap": true,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.6358841061592102,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1602:J1651",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.6311452388763428,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A9502:J9551",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "인하요양원 시설 정보 찾아줘.",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "인하요양원",
+              "소재지"
+            ],
+            "missing_required_terms": [
+              "소재지"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": true,
+          "hit_rank": 3,
+          "location_rank": 8,
+          "failure_reason": null,
+          "top1": {
+            "rank": 1,
+            "score": 0.6167708039283752,
+            "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+            "sheet_name": null,
+            "cell_range": null,
+            "chunk_type": "workbook_summary",
+            "file_match": true,
+            "sheet_match": false,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.6167708039283752,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": null,
+              "cell_range": null,
+              "chunk_type": "workbook_summary",
+              "file_match": true,
+              "sheet_match": false,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.6143666505813599,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1:J30761",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": true,
+              "range_overlap": true,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.6138041019439697,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1952:J2001",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.6133590936660767,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1602:J1651",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.6080169677734375,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A7802:J7851",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "인하요양원 기관 정보 찾아줘.",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "인하요양원",
+              "소재지"
+            ],
+            "missing_required_terms": [
+              "소재지"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": true,
+          "hit_rank": 2,
+          "location_rank": 8,
+          "failure_reason": null,
+          "top1": {
+            "rank": 1,
+            "score": 0.6252242922782898,
+            "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+            "sheet_name": "일반현황",
+            "cell_range": "A1:J30761",
+            "chunk_type": "sheet_summary",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": true,
+            "range_overlap": true,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.6252242922782898,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1:J30761",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": true,
+              "range_overlap": true,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.6245409250259399,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1602:J1651",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.6242183446884155,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1952:J2001",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.6154534816741943,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A7802:J7851",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.6145822405815125,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A9502:J9551",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "인하요양원 주소 정보 찾아줘.",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "인하요양원",
+              "소재지"
+            ],
+            "missing_required_terms": [
+              "소재지"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": true,
+          "hit_rank": 1,
+          "location_rank": 7,
+          "failure_reason": null,
+          "top1": {
+            "rank": 1,
+            "score": 0.6427525281906128,
+            "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+            "sheet_name": "일반현황",
+            "cell_range": "A1602:J1651",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.6427525281906128,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1602:J1651",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.6255200505256653,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1:J30761",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": true,
+              "range_overlap": true,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.6212112903594971,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A302:J351",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.6203677654266357,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1952:J2001",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.6200053691864014,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A9502:J9551",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "인하요양원 상세주소 알려줘.",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "인하요양원",
+              "소재지"
+            ],
+            "missing_required_terms": [
+              "소재지"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": true,
+          "hit_rank": 1,
+          "location_rank": 8,
+          "failure_reason": null,
+          "top1": {
+            "rank": 1,
+            "score": 0.6605385541915894,
+            "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+            "sheet_name": "일반현황",
+            "cell_range": "A1602:J1651",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.6605385541915894,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1602:J1651",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.6404122710227966,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1:J30761",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": true,
+              "range_overlap": true,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.6334120035171509,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A302:J351",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.6310303807258606,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A902:J951",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.6309069991111755,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A2:J51",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "인하요양원 소재지 정보 찾아줘.",
+          "audit": {
+            "pass": true,
+            "failures": [],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "인하요양원",
+              "소재지"
+            ],
+            "missing_required_terms": [],
+            "semantic_anchor_preserved": true
+          },
+          "location_match": true,
+          "hit_rank": 1,
+          "location_rank": 3,
+          "failure_reason": null,
+          "top1": {
+            "rank": 1,
+            "score": 0.623034656047821,
+            "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+            "sheet_name": "일반현황",
+            "cell_range": "A1602:J1651",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.623034656047821,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1602:J1651",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.6152903437614441,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1:J30761",
+              "chunk_type": "sheet_summary",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": true,
+              "range_overlap": true,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.6094442009925842,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A952:J1001",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": true,
+              "range_contains": true,
+              "range_overlap": true,
+              "range_policy_match": true
+            },
+            {
+              "rank": 4,
+              "score": 0.6093088388442993,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1402:J1451",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.6076502799987793,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A4302:J4351",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        },
+        {
+          "query": "인하요양원 지정일자와 주소 알려줘.",
+          "audit": {
+            "pass": false,
+            "failures": [
+              "semantic_anchor_missing"
+            ],
+            "hidden_term_hits": [],
+            "required_terms": [
+              "인하요양원",
+              "소재지"
+            ],
+            "missing_required_terms": [
+              "소재지"
+            ],
+            "semantic_anchor_preserved": false
+          },
+          "location_match": false,
+          "hit_rank": 1,
+          "location_rank": null,
+          "failure_reason": "expected_range_not_found",
+          "top1": {
+            "rank": 1,
+            "score": 0.6509283185005188,
+            "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+            "sheet_name": "일반현황",
+            "cell_range": "A1602:J1651",
+            "chunk_type": "row_group",
+            "file_match": true,
+            "sheet_match": true,
+            "range_exact": false,
+            "range_contains": false,
+            "range_overlap": false,
+            "range_policy_match": false
+          },
+          "top_k_summary": [
+            {
+              "rank": 1,
+              "score": 0.6509283185005188,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1602:J1651",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 2,
+              "score": 0.6374675035476685,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A7752:J7801",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 3,
+              "score": 0.6334071159362793,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A2502:J2551",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 4,
+              "score": 0.6332629919052124,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A9502:J9551",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            },
+            {
+              "rank": 5,
+              "score": 0.6331729888916016,
+              "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+              "sheet_name": "일반현황",
+              "cell_range": "A1852:J1901",
+              "chunk_type": "row_group",
+              "file_match": true,
+              "sheet_match": true,
+              "range_exact": false,
+              "range_contains": false,
+              "range_overlap": false,
+              "range_policy_match": false
+            }
+          ]
+        }
+      ],
+      "selected_query": "인하요양원 소재지 정보 찾아줘.",
+      "selected_reason": "CURRENT_QUERY_ALREADY_RECOVERS"
+    }
+  ],
+  "guardrails": {
+    "promotion_evidence_true_set": false,
+    "candidate_v1_mutated": false,
+    "candidate_v2_created": false,
+    "global_policy_relaxed": false,
+    "hidden_negative_in_positive_metrics": false,
+    "file_sheet_range_hidden_leakage_allowed": false
+  }
+}

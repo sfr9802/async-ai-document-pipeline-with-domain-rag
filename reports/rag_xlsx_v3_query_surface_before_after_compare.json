@@ -1,0 +1,116 @@
+{
+  "run_id": "2026-05-04T163106Z",
+  "generated_at": "2026-05-04T16:31:06.162824+00:00",
+  "status": "COMPLETED",
+  "report_role": "xlsx_v3_query_surface_before_after_compare",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "source_before_report": "reports\\rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json",
+  "source_after_report": "reports\\rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json",
+  "source_original_gold": "eval\\gold_queries_xlsx_v3_positive.csv",
+  "source_reviewed_gold": "eval\\gold_queries_xlsx_v3_positive_reviewed.csv",
+  "reviewed_query_count": 2,
+  "recovered_location_match_count": 1,
+  "regressed_location_match_count": 0,
+  "metrics": {
+    "before": {
+      "Hit@10": 1.0,
+      "MRR@10": 0.8857,
+      "xlsx_range_overlap@10": 0.9143,
+      "xlsx_range_contains@10": 0.9143,
+      "xlsx_exact_range@10": 0.8857,
+      "xlsx_citation_location_accuracy": 0.8857,
+      "hidden_content_leakage_count": 0
+    },
+    "after": {
+      "Hit@10": 1.0,
+      "MRR@10": 0.8857,
+      "xlsx_range_overlap@10": 0.9714,
+      "xlsx_range_contains@10": 0.9714,
+      "xlsx_exact_range@10": 0.9429,
+      "xlsx_citation_location_accuracy": 0.9429,
+      "hidden_content_leakage_count": 0
+    },
+    "delta": {
+      "Hit@10": 0.0,
+      "MRR@10": 0.0,
+      "xlsx_range_overlap@10": 0.0571,
+      "xlsx_range_contains@10": 0.0571,
+      "xlsx_exact_range@10": 0.0572,
+      "xlsx_citation_location_accuracy": 0.0572,
+      "hidden_content_leakage_count": 0.0
+    }
+  },
+  "rows": [
+    {
+      "query_id": "gq_xlsx_lookup_002",
+      "before_query": "신분당선 어디쯤 있어?",
+      "after_query": "신분당선 승차총승객수 찾아줘.",
+      "before_hit_rank": 1,
+      "after_hit_rank": 1,
+      "before_location_rank": null,
+      "after_location_rank": null,
+      "before_location_match": false,
+      "after_location_match": false,
+      "before_failure_reason": "expected_range_not_found",
+      "after_failure_reason": "expected_range_not_found",
+      "before_top1": {
+        "rank": 1,
+        "score": 0.46307024359703064,
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "sheet_name": "철도",
+        "cell_range": "A102:D151",
+        "chunk_type": "row_group",
+        "range_policy_match": false
+      },
+      "after_top1": {
+        "rank": 1,
+        "score": 0.6133513450622559,
+        "source_file_name": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "sheet_name": "철도",
+        "cell_range": "A202:D251",
+        "chunk_type": "row_group",
+        "range_policy_match": false
+      }
+    },
+    {
+      "query_id": "gq_auto_042",
+      "before_query": "축복전문요양원 행 찾아줘.",
+      "after_query": "축복전문요양원 장기요양기관 정보 찾아줘.",
+      "before_hit_rank": 1,
+      "after_hit_rank": 1,
+      "before_location_rank": null,
+      "after_location_rank": 10,
+      "before_location_match": false,
+      "after_location_match": true,
+      "before_failure_reason": "expected_range_not_found",
+      "after_failure_reason": null,
+      "before_top1": {
+        "rank": 1,
+        "score": 0.6000298261642456,
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "sheet_name": "일반현황",
+        "cell_range": "A1202:J1251",
+        "chunk_type": "row_group",
+        "range_policy_match": false
+      },
+      "after_top1": {
+        "rank": 1,
+        "score": 0.6521577835083008,
+        "source_file_name": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "sheet_name": "일반현황",
+        "cell_range": "A1202:J1251",
+        "chunk_type": "row_group",
+        "range_policy_match": false
+      }
+    }
+  ],
+  "guardrails": {
+    "promotion_evidence_true_set": false,
+    "candidate_v1_mutated": false,
+    "candidate_namespace_created": false,
+    "immutable_baseline_changed": false,
+    "rag_data_canary_changed": false,
+    "hidden_negative_in_positive_metrics": false
+  }
+}
