@@ -20,6 +20,11 @@ frontend/app/bundle.html
 # scheduled-task lockfiles, session logs, slash commands).
 .claude/
 
+# ---- Local agent tooling ----
+# Per-user agent config, skills, and handoff notes should not be committed.
+.agents/
+AGENT.md
+
 # ---- Java / Maven ----
 core-api/target/
 core-api/.mvn/wrapper/maven-wrapper.jar
@@ -241,6 +246,7 @@ infra/minio/data/
 # The full 1,764-title namu-wiki sample lives outside the repo; if a
 # contributor stages it locally, keep it out of git. We commit only the
 # 300-title reservoir sample at fixtures/anime_corpus_kr.jsonl (~17 MB).
+datasets/
 ai-worker/fixtures/corpus_anime_full/
 # sample_check.py HTML reports + reviewer annotation JSONs are local.
 review/
@@ -262,6 +268,7 @@ ai-worker/eval/eval_queries/_generation_log_*.jsonl
 # ---- RAG build artifacts (local-only) ----
 # FAISS index + build manifest are rebuilt from fixtures via
 # scripts/build_rag_index.py; keep them out of git.
+rag-data-canary/
 rag-data/*.index
 rag-data/build.json
 
