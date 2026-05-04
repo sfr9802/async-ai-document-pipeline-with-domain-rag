@@ -1,93 +1,105 @@
-# Track A - XLSX Retrieval 개선 재계획
+# Track A - XLSX Retrieval Diagnostic 완료 기록
 
 ## 목적
 
-이 문서 묶음은 XLSX 전용 후보 인덱스에서 자연어 질의 기반 검색의 range/location 정확도를 개선하기 위한 phase plan입니다. 현재 증거상 검색 자체가 무너진 상태는 아닙니다. `Hit@10=1.0`, XLSX file/sheet hit는 `1.0`, hidden leakage는 `0`, `TRUE_RETRIEVAL_RANKING_FAILURE=0`입니다.
+이 문서는 XLSX retrieval Track A의 완료 아카이브입니다.
 
-따라서 Track A의 초점은 broad retrieval tuning이 아니라 다음 4개 location miss를 원인별로 분리하고 최소 수정하는 것입니다.
+Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content mixing, candidate reindexing을 하지 않았습니다. XLSX v3 positive retrieval evidence 위에서 citation/location accuracy와 phase script fail-closed gate를 좁게 검증한 diagnostic-only cleanup입니다.
 
-| Category | Count | 우선 처리 |
-|---|---:|---|
-| `QUERY_NATURALIZATION_DRIFT` | 2 | 자연어 query surface 검토 |
-| `RANGE_POLICY_MISMATCH` | 1 | range match policy 검토 |
-| `FORMULA_DATE_CONTRACT_MISMATCH` | 1 | formula/date value surface contract 검토 |
-| `TRUE_RETRIEVAL_RANKING_FAILURE` | 0 | 현재 phase에서는 알고리즘 튜닝 대상 아님 |
+## 최종 상태
 
-## 현재 기준값
-
-| 항목 | 현재 값 |
-|---|---:|
-| Gold source | `eval/gold_queries_xlsx_v3_positive.csv` |
-| Positive row count | `35` |
+| 항목 | 결과 |
+|---|---|
+| Phase status | A0-A6 `COMPLETED` |
+| Evidence role | `promotion_evidence=false`, `evidence_role=diagnostic` |
+| Positive reviewed gold | `eval/gold_queries_xlsx_v3_positive_reviewed.csv` |
+| Original positive gold | `eval/gold_queries_xlsx_v3_positive.csv` 보존, 덮어쓰기 없음 |
 | Candidate index version | `rag-ingestion-v2-xlsx-candidate-v1` |
-| Vector artifact dir | `rag-data-xlsx-candidate-v1` |
-| Hit@10 | `1.0` |
-| MRR@10 | `0.8857` |
-| XLSX file hit@10 | `1.0` |
-| XLSX sheet hit@10 | `1.0` |
-| XLSX range overlap@10 | `0.9143` |
-| XLSX range contains@10 | `0.9143` |
-| XLSX exact range@10 | `0.8857` |
-| XLSX citation location accuracy | `0.8857` |
-| Hidden content leakage count | `0` |
+| Candidate v2 decision | `reports/xlsx_candidate_v2_decision.json` -> `SKIP` |
+| Candidate v1 mutated | `false` |
+| Candidate v2 created | `false` |
+| Immutable baseline changed | `false` |
+| `rag-data-canary` changed | `false` |
+| Hidden content leakage | `0` |
 
-Degraded query ids는 현재 breakdown 기준으로 다음 4개입니다.
+## 최종 지표
 
-| Query id | Category | Phase |
-|---|---|---|
-| `gq_xlsx_lookup_002` | `QUERY_NATURALIZATION_DRIFT` | [A2](phases/a2-query-surface-review.md) |
-| `gq_auto_042` | `QUERY_NATURALIZATION_DRIFT` | [A2](phases/a2-query-surface-review.md) |
-| `gq_auto_041` | `RANGE_POLICY_MISMATCH` | [A3](phases/a3-range-policy-review.md) |
-| `gq_xlsx_date_number_format_001` | `FORMULA_DATE_CONTRACT_MISMATCH` | [A4](phases/a4-formula-date-contract-review.md) |
+| Metric | Before | Final reviewed | Notes |
+|---|---:|---:|---|
+| Hit@10 | `1.0` | `1.0` | 유지 |
+| MRR@10 | `0.8857` | `0.8857` | identity-rank metric, location-rank metric 아님 |
+| XLSX range overlap@10 | `0.9143` | `1.0` | 개선 |
+| XLSX range contains@10 | `0.9143` | `1.0` | 개선 |
+| XLSX exact range@10 | `0.8857` | `1.0` | 개선 |
+| xlsx_citation_location_accuracy | `0.8857` | `1.0` | 35개 positive 모두 top 10 안에서 exact location 확인 |
+| hidden_content_leakage_count | `0` | `0` | hidden-negative diagnostic only |
 
-## 공통 원칙
+최종 failure breakdown:
 
-1. 모든 신규/갱신 report는 `promotion_evidence=false`, `evidence_role=diagnostic`을 유지합니다.
-2. `initial-full72-vector-baseline-v0`, `rag-data-canary`, 기존 immutable baseline descriptor/hash는 변경하지 않습니다.
-3. 기존 `rag-ingestion-v2-xlsx-candidate-v1`과 `rag-data-xlsx-candidate-v1`은 직접 mutate하지 않습니다.
-4. hidden-negative row는 leakage diagnostic으로만 평가하고 positive Hit@K/MRR에는 섞지 않습니다.
-5. `source_file -> extracted_artifact -> search_unit` path를 유지합니다.
-6. XLSX SearchUnit은 `parser_version`, `location_json`, `citation_text`, `embedding_text`가 없으면 candidate indexing 대상이 아닙니다.
-7. hidden sheet/row/column content는 SearchUnit text, normalized metadata, embedding text, vector metadata에 들어가면 안 됩니다.
-8. hybrid search, reranking, parser expansion, answer generation 변경은 이 Track A phase의 기본 범위가 아닙니다.
+| Field | Value |
+|---|---:|
+| `query_count` | `35` |
+| `failed_or_degraded_count` | `0` |
+| `category_counts.MATCHED` | `35` |
 
-## Phase 의존성
+## Location-Rank 주의점
 
-```text
-A0 evidence freeze
-  -> A1 failure case review
-      -> A2 query surface review
-      -> A3 range policy review
-      -> A4 formula/date contract review
-          -> A5 candidate v2 decision, only if needed
-              -> A6 rerun and compare
-```
+이 결과는 promotion pass가 아닙니다. 모든 reviewed positive query가 top 10 안에서 exact XLSX citation location을 찾는다는 점은 증명했지만, top-citation quality는 아직 별도 관리가 필요합니다.
 
-A2, A3, A4는 A1의 evidence가 고정된 뒤 병렬로 진행할 수 있습니다. A5는 항상 실행하는 phase가 아니라 decision gate입니다.
+| Metric | Value |
+|---|---:|
+| location_hit@1 | `0.6` |
+| location_hit@3 | `0.8857` |
+| location_hit@5 | `0.9714` |
+| location_hit@10 | `1.0` |
+| location_mrr@10 | `0.7467` |
 
-## Phase 문서
+`gq_auto_042`는 exact location이 여전히 rank 5 이후에 있으므로 watch item으로 남깁니다. 이후 promotion-grade readiness가 필요하면 Track A candidate indexing, exact row policy, hidden-safe constraint를 바꾸지 말고 별도의 ranking 또는 duplicate-document-version 조사를 열어야 합니다.
 
-| Phase | 문서 | 완료 시 얻는 것 |
-|---|---|---|
-| A0 | [evidence freeze](phases/a0-evidence-freeze.md) | 비교 가능한 현재 상태 snapshot |
-| A1 | [failure case review](phases/a1-failure-case-review.md) | 4개 degraded query의 row별 next action |
-| A2 | [query surface review](phases/a2-query-surface-review.md) | 자연어 wording 수정 여부와 reviewed CSV 후보 |
-| A3 | [range policy review](phases/a3-range-policy-review.md) | range policy 유지/변경 결정 |
-| A4 | [formula/date contract review](phases/a4-formula-date-contract-review.md) | raw/display/date/formula surface 계약 결정 |
-| A5 | [candidate v2 decision](phases/a5-candidate-v2-decision.md) | v2 namespace 생성 또는 명시적 skip 결정 |
-| A6 | [rerun and compare](phases/a6-rerun-and-compare.md) | 최종 diagnostic summary와 hidden leakage 재확인 |
+## Phase 요약
 
-Phase별 실제 진행 내역은 [phase-progress.md](phase-progress.md)에 기록합니다. Track A 작업이 끝나면 해당 로그를 `docs/rag-ingestion-progress.md`에 합병하고 이 임시 로그는 정리합니다.
+| Phase | Status | Evidence/report | Result |
+|---|---|---|---|
+| A0 evidence freeze | `COMPLETED` | `reports/rag_xlsx_candidate_lineage_before_tuning.json`, `reports/rag_xlsx_v3_current_diagnostic_snapshot.json` | baseline/canary hash unchanged, hidden leakage 0 |
+| A1 failure case review | `COMPLETED` | `reports/rag_xlsx_v3_failure_case_review.json` | 4 degraded rows classified, true retrieval ranking failure 0 |
+| A2 query surface review | `COMPLETED` | `reports/rag_xlsx_query_surface_patch_plan.json`, `reports/rag_xlsx_v3_query_surface_before_after_compare.json` | safe query-only reviewed manifest created |
+| A3 range policy review | `COMPLETED` | `reports/rag_xlsx_range_policy_review.json`, `reports/rag_xlsx_range_policy_dry_run_impact.json` | exact row policy kept |
+| A4 formula/date contract review | `COMPLETED` | `reports/rag_xlsx_formula_date_contract_review.json`, `reports/rag_xlsx_formula_date_surface_presence.json` | expected surface existed; query rewrite, not candidate v2 |
+| A5 candidate v2 decision | `COMPLETED` | `reports/xlsx_candidate_v2_decision.json` | `SKIP` |
+| A6 rerun and compare | `COMPLETED` | `reports/rag_xlsx_v3_after_cleanup_metric_compare.json`, `reports/rag_xlsx_v3_after_cleanup_failure_breakdown.json` | `MATCHED=35`, degraded 0 |
 
-## 공통 산출물 네이밍
+## Reviewed hard-case 업데이트
 
-Track A 산출물은 다음 규칙을 따릅니다.
+| Query id | Reviewed query | Reviewed expected metadata | Result |
+|---|---|---|---|
+| `gq_xlsx_lookup_002` | `신분당선 2019년 5월 승차총승객수 알려줘.` | `expected_answer_text=신분당선 승차총승객수`, `must_contain_terms=신분당선;승차총승객수` | exact location recovered at `location_rank=3` |
+| `gq_auto_041` | `인하요양원 소재지 정보 찾아줘.` | `expected_answer_text=인하요양원 소재지`, `must_contain_terms=인하요양원;소재지` | exact location recovered at `location_rank=3` |
 
-```text
-reports/rag_xlsx_*                    # XLSX 전용 diagnostic/report
-eval/gold_queries_xlsx_v3_*           # XLSX v3 query manifest 계열
-rag-ingestion-v2-xlsx-candidate-*     # XLSX-only candidate index_version
-rag-data-xlsx-candidate-*             # XLSX-only vector artifact dir
-```
+기존 less-explicit v3 positive manifest는 덮어쓰지 않았습니다. Reviewed 변경은 `eval/gold_queries_xlsx_v3_positive_reviewed.csv`에만 있습니다.
 
-`full72`, `promotion`, `baseline` 이름이 들어간 산출물은 이 Track A 결과를 직접 승격하는 용도로 사용하지 않습니다.
+## Guardrails
+
+1. 모든 Track A report는 diagnostic-only입니다: `promotion_evidence=false`, `evidence_role=diagnostic`.
+2. Hidden-negative rows는 leakage diagnostic에만 쓰며 positive Hit@K/MRR에는 섞지 않습니다.
+3. `rag-ingestion-v2-xlsx-candidate-v1`과 `rag-data-xlsx-candidate-v1`은 mutate하지 않았습니다.
+4. Candidate v2 namespace는 생성하지 않았습니다.
+5. Immutable baseline artifacts, `rag-data-canary`, full72 promotion-gate inputs는 변경하지 않았습니다.
+6. Hybrid search, reranking, parser expansion, answer generation, broad reindex, global range-policy relaxation은 도입하지 않았습니다.
+
+## Evidence 위치
+
+- [Consolidated progress](../../rag-ingestion-progress.md) - 2026-05-05 Track A entries에 user-facing phase merge가 기록되어 있습니다.
+- [Phase progress archive](phase-progress.md) - A0-A6 실행 상세 기록입니다.
+- [A0 evidence freeze](phases/a0-evidence-freeze.md)
+- [A1 failure case review](phases/a1-failure-case-review.md)
+- [A2 query surface review](phases/a2-query-surface-review.md)
+- [A3 range policy review](phases/a3-range-policy-review.md)
+- [A4 formula/date contract review](phases/a4-formula-date-contract-review.md)
+- [A5 candidate v2 decision](phases/a5-candidate-v2-decision.md)
+- [A6 rerun and compare](phases/a6-rerun-and-compare.md)
+
+## 다음 작업
+
+1. `gq_auto_042`를 location-rank quality watch item으로 유지합니다.
+2. Promotion-grade 작업은 Track A diagnostic evidence와 분리합니다.
+3. Text/PDF diagnostic tracks는 XLSX Track A를 promotion evidence로 재사용하지 않고 별도 진행합니다.

@@ -5,9 +5,9 @@ Spring Boot API 서버와 FastAPI Worker를 분리하여, RAG 검색 및 AI 처�
 이 프로젝트는 단순한 LLM API 호출 예제가 아니라, **AI 작업을 백엔드 서비스 구조 안에서 안정적으로 처리하는 방식**을 실험하는 데 목적이 있습니다.  
 작업 요청은 PostgreSQL 기반 Job 상태로 관리하고, Worker는 queue 신호만으로 바로 실행하지 않고 `claim-before-execute` 방식으로 작업 소유권을 확보한 뒤 실행합니다.
 
-현재 구현 범위는 **비동기 작업 파이프라인 + Text RAG + 검색 평가/튜닝**이며,  
-RAG 검색 품질은 **Phase 7까지 진행**되어 retrieval-title embedding A/B, reranker A/B 하네스, 신뢰도 검출기, controlled recovery loop를 갖추고 있습니다.  
-OCR, file parsing, multimodal capability는 이후 phase에서 확장할 예정입니다.
+현재 구현 범위는 **비동기 작업 파이프라인 + Text RAG / Phase 7 평가 + RAG ingestion v2 문서 수집 경로 + XLSX-only retrieval diagnostic**까지 확장되었습니다.
+Text RAG는 retrieval-title embedding A/B, reranker A/B 하네스, 신뢰도 검출기, controlled recovery loop를 갖추고 있습니다.
+RAG ingestion v2는 `source_file -> extracted_artifact -> search_unit -> vector metadata` 계약을 검증하는 방향으로 진행 중이며, XLSX Track A는 diagnostic-only 범위에서 완료했습니다. Multimodal retrieval과 real LLM generation은 아직 production capability가 아니라 후속 roadmap입니다.
 
 ---
 
@@ -50,8 +50,11 @@ OCR, file parsing, multimodal capability는 이후 phase에서 확장할 예정�
 | Production embedding-text 승격 (Phase 7.2) | Done | ingest 기본값 = `retrieval_title_section`, manifest sidecar로 검증 |
 | Retrieval confidence detector (Phase 7.3) | Done | per-query 신뢰도 라벨 + recovery action 추천 |
 | Controlled recovery loop (Phase 7.4) | Done (silver) | hybrid(BM25+RRF) / query rewrite, oracle vs production-like 분기 |
-| OCR input | Planned | file / PDF → OCR_TEXT |
-| Multimodal capability | Planned | image / document understanding |
+| Document extraction jobs | In progress | `OCR_EXTRACT`, `XLSX_EXTRACT`, `PDF_EXTRACT` catalog/import paths |
+| RAG ingestion v2 contracts | In progress | `source_file -> extracted_artifact -> search_unit` provenance, citation/location metadata, hidden-safe checks |
+| XLSX retrieval Track A | Done (diagnostic) | reviewed manifest 기준 location accuracy `0.8857 -> 1.0`, hidden leakage `0`, candidate v2 `SKIP` |
+| PDF/Text retrieval tracks | In progress | 별도 Track B/C diagnostic 준비, promotion evidence로는 아직 사용하지 않음 |
+| Multimodal capability | Experimental | OCR + vision + existing text-RAG fusion path, not promotion/default |
 | Real LLM generation | Planned | local/API provider abstraction |
 
 ---
@@ -138,18 +141,26 @@ Spring Core API → Cloud Tasks / Pub/Sub / SQS → FastAPI Worker
 
 Worker는 capability 단위로 AI 작업을 실행합니다.
 
-현재 구현된 capability:
+현재 코드에 존재하는 주요 capability / job path:
 
 - `MOCK`
 - `RAG`
+- `OCR_EXTRACT`
+- `XLSX_EXTRACT`
+- `PDF_EXTRACT`
+- `OCR`, `AUTO`, `AGENT`, `MULTIMODAL`은 dependency와 settings 준비 여부에 따라 registry에 등록됩니다.
+
+RAG ingestion v2는 runtime capability를 넓히는 것보다 문서 수집 계약을 먼저 고정하는 트랙입니다.
+
+- XLSX Track A: candidate-v1을 보존한 상태에서 reviewed query/citation diagnostic 완료
+- PDF/Text: 별도 diagnostic track에서 evidence와 promotion 조건 분리
 
 확장 예정 capability:
 
-- `OCR`
-- `MULTIMODAL`
+- multimodal retrieval / fusion의 production 승격
 - real LLM generation
 
-Capability 구조를 분리해두었기 때문에, 향후 OCR이나 multimodal processing을 추가하더라도 job / artifact / claim / callback 흐름은 유지할 수 있습니다.
+Capability 구조를 분리해두었기 때문에, 향후 extraction provider, multimodal processing, generation provider를 추가하더라도 job / artifact / claim / callback 흐름은 유지할 수 있습니다.
 
 ---
 
@@ -227,6 +238,7 @@ Redis BRPOP
 - retrieval evaluation harness (paired A/B, hit@k / MRR / NDCG / latency)
 - retrieval confidence detector (Phase 7.3)
 - controlled recovery loop: hybrid(BM25+RRF) / query rewrite (Phase 7.4, eval-only)
+- RAG ingestion v2 diagnostics: XLSX citation/location metadata, hidden-safe leakage checks, candidate lineage guardrails
 - Optuna tuning workflow
 
 ---
@@ -283,9 +295,43 @@ Redis BRPOP
     ├── architecture.md
     ├── local-run.md
     ├── api-summary.md
+    ├── rag-ingestion-progress.md
+    ├── rag-ingestion/
+    │   └── xlsx-retrieval/
     ├── tuning.md
     └── optuna-tuning-plan.md
 ```
+
+---
+
+## RAG ingestion v2 / XLSX Track A
+
+RAG ingestion v2는 검색 성능 숫자만 보는 트랙이 아니라, `source_file -> extracted_artifact -> search_unit -> vector metadata` provenance와 citation/location metadata가 promotion-safe한지 확인하는 트랙입니다.
+
+XLSX Track A는 broad retrieval tuning이 아니라 candidate-v1을 보존한 diagnostic cleanup으로 마무리했습니다.
+
+| Item | Result |
+|---|---|
+| Evidence role | `promotion_evidence=false`, `evidence_role=diagnostic` |
+| Reviewed gold | `eval/gold_queries_xlsx_v3_positive_reviewed.csv` |
+| Original manifest | `eval/gold_queries_xlsx_v3_positive.csv` preserved, not overwritten |
+| Candidate decision | `reports/xlsx_candidate_v2_decision.json` = `SKIP` |
+| Candidate mutation | `candidate_v1_mutated=false`, `candidate_v2_created=false` |
+| Location accuracy | `xlsx_citation_location_accuracy` `0.8857 -> 1.0` |
+| Failure breakdown | `failed_or_degraded_count=0`, `MATCHED=35` |
+| Hidden leakage | `hidden_content_leakage_count=0` |
+| Baseline/canary | immutable baseline unchanged, `rag-data-canary` unchanged |
+
+Location-rank decomposition still matters: `location_hit@10=1.0`, but `location_hit@5=0.9714`, with `gq_auto_042` remaining after rank 5. Promotion-grade readiness should therefore be handled in a separate ranking/duplicate-version investigation rather than by broad XLSX candidate reindexing.
+
+Detailed phase evidence:
+
+- `docs/rag-ingestion-progress.md`
+- `docs/rag-ingestion/xlsx-retrieval/README.md`
+- `docs/rag-ingestion/xlsx-retrieval/phase-progress.md`
+- `reports/rag_xlsx_v3_after_cleanup_metric_compare.json`
+- `reports/rag_xlsx_v3_after_cleanup_failure_breakdown.json`
+- `reports/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json`
 
 ---
 
@@ -599,8 +645,8 @@ AIPIPELINE_WORKER_S3_SECRET_KEY=...
 
 ## Demo
 
-`scripts/demo.py`는 샘플 PDF를 생성하고 capability pipeline을 실행하는 데모 스크립트입니다.  
-현재 OCR / multimodal capability는 planned 상태이므로, 실제 사용 가능 범위는 현재 구현 상태에 맞춰 확인해야 합니다.
+`scripts/demo.py`는 샘플 PDF를 생성하고 capability pipeline 흐름을 확인하는 보조 스크립트입니다.
+현재 authoritative 상태는 위 `Current status` 표이며, OCR/multimodal 데모는 환경과 구현 범위를 확인한 뒤 실행해야 합니다.
 
 <details>
 <summary><b>실행 명령어</b></summary>
@@ -609,7 +655,6 @@ AIPIPELINE_WORKER_S3_SECRET_KEY=...
 pip install reportlab rich
 
 python scripts/demo.py
-python scripts/demo.py --capability OCR --question "What metrics are shown?"
 python scripts/demo.py --self-test
 ```
 
@@ -633,7 +678,8 @@ python scripts/demo.py --self-test
 | Phase 7.2 | production ingest 기본값을 `retrieval_title_section`으로 승격 + manifest sidecar |
 | Phase 7.3 | retrieval confidence detector / failure classifier (CONFIDENT / AMBIGUOUS / LOW_CONFIDENCE / FAILED) |
 | Phase 7.4 | controlled recovery loop (BM25+RRF hybrid / query rewrite, oracle vs production-like) |
-| Phase 2.1 | OCR + file input flow |
+| RAG ingestion v2 Track A | XLSX-only candidate diagnostic A0-A6 완료: location accuracy `0.8857 -> 1.0`, hidden leakage `0`, candidate v2 `SKIP` |
+| RAG ingestion v2 Track B/C | Text/PDF diagnostic과 embedding/candidate-scope evidence 준비, promotion은 별도 gate |
 | Phase 3+ | multimodal capability, real LLM generation, MinIO/S3 adapter, retry orchestration, K8s manifests |
 
 ---
@@ -645,9 +691,9 @@ python scripts/demo.py --self-test
 - silver-set 한계 극복: human-audit gold seed 확보 + silver_500 확장 (Phase 7.x 후속)
 - Phase 7.1 reranker full run (GPU 시간 확보 시): 풀 cross-encoder A/B + default-on 기준 평가
 - Phase 7.3 신뢰도 임계값 튜닝 (특히 `min_margin`이 200쿼리 중 183개에서 발화하는 over-fire 문제)
-- OCR capability 추가
-- file / PDF input pipeline 구성
-- `INPUT_FILE → OCR_TEXT → RAG` 재소비 흐름 구현
+- RAG ingestion v2 Track B/C: Text E2E identity/gold validation과 PDF embedding/candidate-scope diagnostics
+- XLSX post-Track-A: `gq_auto_042` location-rank watch item 및 duplicate/document-version ranking 조사
+- promotion readiness: full72/canary/baseline을 건드리기 전에 candidate consistency와 hidden-safe 조건을 별도 gate로 검증
 - real LLM generation provider 추가
 - tuning workflow 문서 개선
 
@@ -684,6 +730,12 @@ python scripts/demo.py --self-test
 - `ai-worker/eval/corpora/anime_namu_v3/README.md` — historical v3 namu-wiki anime corpus schema
 - `ai-worker/eval/eval_queries/README.md` — retrieval eval query sets
 
+### RAG ingestion
+
+- `docs/rag-ingestion-progress.md` — consolidated RAG ingestion progress and evidence log
+- `docs/rag-ingestion/xlsx-retrieval/README.md` — XLSX Track A diagnostic completion archive
+- `docs/rag-ingestion/xlsx-retrieval/phase-progress.md` — phase-level execution details for A0-A6
+
 ### Tuning
 
 - `docs/tuning.md` — Optuna + Claude interpreter loop guide
@@ -702,9 +754,10 @@ python scripts/demo.py --self-test
 AI 작업을 안정적으로 실행할 수 있는 **백엔드 파이프라인 구조**와  
 RAG 검색 품질을 측정하고 개선할 수 있는 **평가/튜닝 기반**을 만드는 것입니다.
 
-따라서 OCR / multimodal / real LLM generation은 roadmap으로 남겨두고,  
-현재는 다음 세 가지를 우선 검증했습니다.
+따라서 multimodal retrieval의 production 승격과 real LLM generation은 roadmap으로 남겨두고,
+현재는 다음 네 가지를 우선 검증했습니다.
 
 1. 비동기 작업 처리 구조가 안정적으로 동작하는가
 2. RAG 검색 파이프라인을 평가하고 개선할 수 있는가 (Phase 7.0 dense embedding A/B로 hit@1 +22pt)
 3. 검색이 실패했을 때 *언제* 그리고 *어떻게* recovery할지 결정론적으로 분류·실행할 수 있는가 (Phase 7.3 / 7.4)
+4. 문서 ingestion 결과가 search-unit/citation/location/hidden-safe 계약을 만족하는가 (RAG ingestion v2, XLSX Track A diagnostic)
