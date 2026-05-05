@@ -1,0 +1,429 @@
+{
+  "run_id": "2026-05-05T045314Z",
+  "generated_at": "2026-05-05T04:53:14.231325+00:00",
+  "run_started_at": "2026-05-05T04:39:38.687821+00:00",
+  "status": "PASS",
+  "scope": "explicit_scoped_candidate_indexing",
+  "documentVersionIds": [
+    "docv_88368b8b12ba3f38",
+    "docv_8b23a58c27c5518a",
+    "docv_fe2470815512a395"
+  ],
+  "sourceFileIds": [
+    "105eb112-2bc4-4f35-a877-f0a6dd487288",
+    "2847f7af-cfe4-41de-8393-58912df2dba9",
+    "80ee7b61-102e-425d-80dc-d4d693bf8be8"
+  ],
+  "sourceFileTypes": [
+    "PDF"
+  ],
+  "parserVersions": [
+    "pdf-extract-v1",
+    "pdf-extract-v2"
+  ],
+  "expectedIndexVersion": "rag-ingestion-v2-pdf-candidate-v1",
+  "artifactDir": "eval\\indexes\\rag-data-pdf-candidate-v1",
+  "allowUnscoped": false,
+  "dryRun": false,
+  "batchSize": 200,
+  "limit": 200,
+  "maxCycles": 60,
+  "scopeReport": {
+    "path": "eval\\reports\\rag-ingestion\\pdf_candidate_scope_report.json",
+    "exists": true,
+    "sha256": "3d8dba892d50bfa10dd62f33404c06ae517a4f2cb3fedca7fa1971956c55244a"
+  },
+  "consistencyReport": "eval\\reports\\rag-ingestion\\pdf_candidate_embedding_consistency_report.json",
+  "existingArtifactPolicy": {
+    "allowExistingArtifact": false,
+    "artifactDirExistsBeforeRun": false
+  },
+  "cycles": [
+    {
+      "cycle": 1,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 2,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 3,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 4,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 5,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 6,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 7,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 8,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 9,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 10,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 11,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 12,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 13,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 14,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 15,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 16,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 17,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 18,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 19,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 20,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 21,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 22,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 23,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 24,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 25,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 26,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 27,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 28,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 29,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 30,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 31,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 32,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 33,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 34,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 35,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 36,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 37,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 38,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 39,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 40,
+      "claimed": 200,
+      "indexed": 200,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 41,
+      "claimed": 194,
+      "indexed": 194,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    },
+    {
+      "cycle": 42,
+      "claimed": 0,
+      "indexed": 0,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0,
+      "dry_run": false
+    }
+  ],
+  "totals": {
+    "claimed": 8194,
+    "indexed": 8194,
+    "failed": 0,
+    "stale": 0,
+    "skipped_local": 0
+  },
+  "blockers": []
+}

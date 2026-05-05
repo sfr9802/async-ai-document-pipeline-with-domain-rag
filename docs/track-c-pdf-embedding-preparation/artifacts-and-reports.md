@@ -10,6 +10,7 @@
 | C1 | `ai-worker/scripts/pdf_candidate_scope_report.py` | PDF candidate scope, parser version, documentVersionId 범위 확인 |
 | C2 | `ai-worker/scripts/pdf_vector_metadata_projection_readiness.py` | vector hit에서 page/bbox/location metadata 복원 가능 여부 확인 |
 | C3 | `ai-worker/scripts/rag_pdf_embedding_text_contract_audit.py` | embedding_text/bm25/display/citation surface audit |
+| C4 | `ai-worker/scripts/pdf_candidate_clean_rebuild_prepare.py` | 기존 PDF candidate namespace DB rows와 artifact dir 상태가 불일치할 때 C1 scope 안에서만 clean rebuild 준비 |
 | C4 | `ai-worker/scripts/pdf_candidate_embedding_consistency.py` | PDF candidate rows, embedding_record, ragmeta chunks, namespace consistency 확인 |
 | C5 | `ai-worker/scripts/rag_pdf_vector_diagnostic.py` | PDF-only vector diagnostic 실행 |
 | C6 | `ai-worker/scripts/rag_pdf_vector_quality_breakdown.py` | page/bbox/gold/ranking failure 분해 |
@@ -24,6 +25,7 @@
 | C1 | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json` | scope, parser, block type, OCR 분포와 completeness counters recorded |
 | C2 | `ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json` | metadata projection blocker count 0 |
 | C3 | `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json` | text contract blocker count 0 |
+| C4 | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_clean_rebuild_prepare_report.json` | C1 scoped stale candidate rows cleaned without broad/global delete |
 | C4 | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_indexing_report.json` | claimed=indexed, failed=0 |
 | C4 | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json` | embedding/chunk/namespace/hash mismatch count 0 |
 | C5 | `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json` | PDF-only vector diagnostic metrics recorded |

@@ -201,7 +201,7 @@ def _validate_cli_args(args: argparse.Namespace) -> None:
             f"(index_version={args.index_version!r}, expected_index_version={args.expected_index_version!r})"
         )
     resolved_index_version = _resolved_index_version(args)
-    if resolved_index_version == "rag-ingestion-v2-candidate" and not args.expected_index_version:
+    if _is_candidate_index_version(resolved_index_version) and not args.expected_index_version:
         args.expected_index_version = resolved_index_version
     if args.dry_run:
         return
@@ -215,11 +215,11 @@ def _validate_cli_args(args: argparse.Namespace) -> None:
                 "requires a hard identity scope, or explicit --allow-unscoped"
             )
         return
-    if resolved_index_version != "rag-ingestion-v2-candidate":
+    if not _is_candidate_index_version(resolved_index_version):
         return
     if not has_hard_identity_scope:
         raise ValueError(
-            "non-dry-run candidate indexing with rag-ingestion-v2-candidate "
+            f"non-dry-run candidate indexing with {resolved_index_version} "
             "requires a hard identity scope (--document-version-id/--document-version-ids, "
             "--source-file-id/--source-file-ids, --parsed-artifact-id, or --search-unit-id), "
             "or explicit --allow-unscoped"
@@ -237,6 +237,13 @@ def _has_hard_identity_scope(args: argparse.Namespace) -> bool:
             bool(args.search_unit_id),
         )
     )
+
+
+def _is_candidate_index_version(index_version: str | None) -> bool:
+    if not index_version:
+        return False
+    normalized = str(index_version).strip().lower()
+    return normalized.startswith("rag-ingestion-") and "candidate" in normalized
 
 
 if __name__ == "__main__":  # pragma: no cover

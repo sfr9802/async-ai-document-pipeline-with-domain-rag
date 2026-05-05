@@ -359,6 +359,15 @@ def test_cli_rejects_unscoped_candidate_index_version_non_dry_run():
     assert args.expected_index_version == "rag-ingestion-v2-candidate"
 
 
+def test_cli_rejects_unscoped_pdf_candidate_index_version_non_dry_run():
+    args = _cli_args(index_version="rag-ingestion-v2-pdf-candidate-v1")
+
+    with pytest.raises(ValueError, match="requires a hard identity scope"):
+        _validate_cli_args(args)
+
+    assert args.expected_index_version == "rag-ingestion-v2-pdf-candidate-v1"
+
+
 @pytest.mark.parametrize(
     "scope",
     [
@@ -382,6 +391,18 @@ def test_cli_accepts_hard_identity_scopes_for_candidate_indexing(scope):
 def test_cli_type_parser_limit_scope_is_not_enough_for_candidate_indexing():
     args = _cli_args(
         index_version="rag-ingestion-v2-candidate",
+        source_file_type=["PDF"],
+        parser_version=["pdf-extract-v2"],
+        limit=10,
+    )
+
+    with pytest.raises(ValueError, match="requires a hard identity scope"):
+        _validate_cli_args(args)
+
+
+def test_cli_type_parser_limit_scope_is_not_enough_for_pdf_candidate_indexing():
+    args = _cli_args(
+        index_version="rag-ingestion-v2-pdf-candidate-v1",
         source_file_type=["PDF"],
         parser_version=["pdf-extract-v2"],
         limit=10,

@@ -25,7 +25,7 @@ explicit documentVersionIds 사용
 ## 작업
 
 1. C1 scope report에서 explicit `documentVersionIds`를 추출한다.
-2. 필요한 경우 PDF scoped rows만 requeue한다.
+2. 필요한 경우 PDF scoped rows만 requeue하거나 PDF candidate namespace의 stale DB rows를 C1 scope 안에서만 clean rebuild 준비한다.
 3. PDF candidate indexing을 실행한다.
 4. claimed, indexed, failed count를 확인한다.
 5. embedding_record 생성 여부를 확인한다.
@@ -35,6 +35,7 @@ explicit documentVersionIds 사용
 
 ## 산출물
 
+- `ai-worker/eval/reports/rag-ingestion/pdf_candidate_clean_rebuild_prepare_report.json` (필요한 경우)
 - `ai-worker/eval/reports/rag-ingestion/pdf_candidate_indexing_report.json`
 - `ai-worker/eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json`
 

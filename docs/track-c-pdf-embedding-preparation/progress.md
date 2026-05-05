@@ -27,7 +27,7 @@ Last updated: `2026-05-05`
 | C1 Candidate Scope Report | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json` (`status=PASS_WITH_WARNINGS`, sha256 `3d8dba892d50bfa10dd62f33404c06ae517a4f2cb3fedca7fa1971956c55244a`) | Use explicit PDF scope for C2/C3; keep structured warnings visible |
 | C2 Metadata Projection Readiness | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json` (`status=PASS_WITH_WARNINGS`, sha256 `113c064589ece17e3f36696c754445ebbc7c8ced5dc69bad7dc6fac3abb647cc`) | Proceed to C4; stored PDF candidate ragmeta projection remains deferred until C4 |
 | C3 Embedding Text Contract Audit | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json` (`status=PASS_WITH_WARNINGS`, sha256 `c470521af3d6a05cfba0f5cfc06bcce3c4d37e35a421ef84b572b37baec32646`) | Proceed to C4; keep skipped/policy-excluded rows visible |
-| C4 Candidate Indexing Consistency | `PLANNED` | No PDF-only candidate indexing report yet | Run scoped PDF candidate indexing and implement/run the C4 consistency report |
+| C4 Candidate Indexing Consistency | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json` (`status=PASS_WITH_WARNINGS`, sha256 `a415714de21b5bf5cde4d32171a29773c68b214491455fc937a987d99c927f6b`); `ai-worker/eval/reports/rag-ingestion/pdf_candidate_indexing_report.json` (`status=PASS`, sha256 `e13a2ae539963fb95c027727a8ae9fbdafd39a8d7090900c49817723b80503f2`) | C5 may run as PDF-only diagnostic; carry C4 warnings forward |
 | C5 PDF-only Vector Diagnostic | `PLANNED` | No PDF-only vector diagnostic report yet | Run diagnostic after C4 consistency passes |
 | C6 Failure Breakdown | `PLANNED` | No PDF failure taxonomy report yet | Split metadata/ranking/gold/policy failures |
 | C7 Gold Policy Review | `PLANNED` | No gold policy report yet | Review page/table/OCR/bbox policy after C6 |
@@ -579,3 +579,104 @@ Last updated: `2026-05-05`
 - C2 currently has no stored PDF candidate ragmeta chunks to compare because C4 has not created the candidate namespace yet.
 - The local DB now has repaired SearchUnits in `PENDING`; running unrelated broad indexing before C4 could consume those rows outside the intended PDF candidate flow.
 - C4 consistency is not proven until the PDF-only candidate index and report exist.
+
+## 2026-05-05 - Track C C4 PDF candidate indexing consistency
+
+### Goal
+
+- Complete C4 with explicit PDF scope only.
+- Prevent broad/unscoped worker indexing from consuming repaired PDF SearchUnits outside the PDF candidate namespace.
+- Produce the PDF candidate embedding consistency report before allowing C5.
+
+### Completed
+
+- Hardened candidate indexing CLI guardrails so candidate-like namespaces require hard identity scope unless `--allow-unscoped` is explicitly set.
+- Added `ai-worker/scripts/pdf_candidate_clean_rebuild_prepare.py` to handle the non-gold stale namespace blocker with C1-scoped deletes only.
+- Cleaned the stale PDF candidate namespace rows after confirming all 8194 stale chunks/records matched C1 scope and out-of-scope count was 0.
+- Ran C4 scoped PDF candidate indexing into namespace `rag-ingestion-v2-pdf-candidate-v1`.
+- Added and ran `ai-worker/scripts/pdf_candidate_embedding_consistency.py`.
+- Added/updated C4 tests for PDF candidate consistency and candidate indexing guardrails.
+- Updated C4 status to `PASS_WITH_WARNINGS`.
+
+### Current Evidence
+
+- C4 clean rebuild prepare:
+  - path: `ai-worker/eval/reports/rag-ingestion/pdf_candidate_clean_rebuild_prepare_report.json`
+  - status: `PASS`
+  - run_id: `2026-05-05T043923Z`
+  - sha256: `759580aab9f875a6673db7f23ea1ee5275a826d004fab01d170c333d32004720`
+  - mutation scope: C1 `documentVersionIds` + `sourceFileIds` + `source_file_type=PDF` + parser versions only
+  - deleted scoped stale candidate chunks: `8194`
+  - deleted scoped embedding records: `8194`
+  - deleted PDF candidate index_build rows: `1`
+  - reset indexable SearchUnits to PENDING: `8194`
+- C4 scoped indexing:
+  - path: `ai-worker/eval/reports/rag-ingestion/pdf_candidate_indexing_report.json`
+  - status: `PASS`
+  - run_id: `2026-05-05T045314Z`
+  - sha256: `e13a2ae539963fb95c027727a8ae9fbdafd39a8d7090900c49817723b80503f2`
+  - totals: `claimed=8194`, `indexed=8194`, `failed=0`, `stale=0`, `skipped_local=0`
+- C4 consistency:
+  - path: `ai-worker/eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json`
+  - status: `PASS_WITH_WARNINGS`
+  - run_id: `2026-05-05T045335Z`
+  - sha256: `a415714de21b5bf5cde4d32171a29773c68b214491455fc937a987d99c927f6b`
+  - scoped SearchUnits: `8203`
+  - indexable SearchUnits: `8194`
+  - policy-excluded SearchUnits: `9`
+  - candidate namespace chunk count: `8194`
+  - candidate chunk count matches indexable rows: `true`
+  - unexpected sourceFileId count: `0`
+  - unexpected documentVersionId count: `0`
+  - non-PDF row count: `0`
+  - policy-excluded leakage count: `0`
+  - metadata projection blocker counters: all `0`
+  - embedding text contract blocker counters: all `0`
+  - `c5_ready=true`
+
+### Gate/Baseline Status
+
+- Promotion was not run.
+- Retrieval was not run by C4 scripts.
+- `promotion_evidence=false`.
+- `evidence_role=diagnostic`.
+- PDF candidate namespace: `rag-ingestion-v2-pdf-candidate-v1`.
+- PDF artifact dir: `ai-worker/eval/indexes/rag-data-pdf-candidate-v1`.
+- Immutable baseline changed: `false`.
+- XLSX candidate artifact changed: `false`.
+- Carried warnings:
+  - OCR confidence missing rows are policy-excluded before C4: `6`
+  - document summaries are policy-excluded before C4: `3`
+  - skipped searchable rows remain visible for C4 exclusion: `9`
+  - current PDF table gold rows have no table-like SearchUnits: `6`
+
+### Verification
+
+- Command:
+  - `python scripts/pdf_candidate_clean_rebuild_prepare.py --output eval/reports/rag-ingestion/pdf_candidate_clean_rebuild_prepare_report.json --apply`
+  - result: `status=PASS`; post-cleanup namespace chunks `0`; scoped indexable PENDING `8194`; policy-excluded SKIPPED `9`.
+- Command:
+  - `python scripts/rag_scoped_candidate_indexing.py --scope-report eval/reports/rag-ingestion/pdf_candidate_scope_report.json --source-file-type PDF --parser-version pdf-extract-v1 --parser-version pdf-extract-v2 --expected-index-version rag-ingestion-v2-pdf-candidate-v1 --artifact-dir eval/indexes/rag-data-pdf-candidate-v1 --output eval/reports/rag-ingestion/pdf_candidate_indexing_report.json --batch-size 200 --limit 200 --max-cycles 60`
+  - result: `status=PASS`; `claimed=8194`; `indexed=8194`; `failed=0`.
+- Command:
+  - `python scripts/pdf_candidate_embedding_consistency.py --output eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json`
+  - result: `status=PASS_WITH_WARNINGS`; chunk count `8194`; leakage counters `0`; `c5_ready=true`.
+
+### Important Decisions
+
+- Existing DB rows for `rag-ingestion-v2-pdf-candidate-v1` without the artifact dir were treated as a non-gold C4 consistency blocker, not as user policy input.
+- Clean rebuild was allowed because the stale data was limited to the PDF candidate namespace and all stale chunks/records matched the C1 explicit PDF scope.
+- Deletion scope was kept to C1 scoped stable SearchUnit chunk ids and PDF candidate namespace only; no global candidate cleanup or broad indexing was run.
+- PDF table gold warning stayed non-blocking for C4; table gold policy remains a C6/C7 matter if later diagnostics require it.
+
+### Remaining Work
+
+- Run C5 PDF-only vector diagnostic against `rag-ingestion-v2-pdf-candidate-v1`.
+- Keep C6/C7 planned until C5 produces PDF-only vector diagnostic evidence.
+- Carry C1/C2/C3/C4 warnings forward into C5/C6.
+
+### Risks
+
+- C4 is diagnostic evidence only and does not prove promotion readiness.
+- PDF table gold rows still have no table-like SearchUnits; this is intentionally not a C4 blocker.
+- C5 may still reveal ranking, page, bbox, or gold-policy failures even though candidate indexing consistency passed.

@@ -63,24 +63,31 @@ python scripts/rag_pdf_search_unit_surface_repair.py \
 
 ## C4 Candidate Indexing
 
-Do not run C4 while C2 or C3 is `FAIL`. The current indexing wrapper does not
-consume the C1 scope report directly, so pass the C1 document-version scope
-explicitly or implement a C1 `--scope-report` wrapper before broad use.
+Do not run C4 while C2 or C3 is `FAIL`. Use the C1 `--scope-report` path so
+the command carries `documentVersionIds`, `sourceFileIds`, parser versions,
+`allowUnscoped=false`, and the PDF candidate namespace together.
+
+If the DB has stale PDF candidate namespace rows but
+`eval/indexes/rag-data-pdf-candidate-v1` does not contain a matching C4
+artifact, prepare a scoped clean rebuild before indexing:
+
+```bash
+python scripts/pdf_candidate_clean_rebuild_prepare.py \
+  --scope-report eval/reports/rag-ingestion/pdf_candidate_scope_report.json \
+  --output eval/reports/rag-ingestion/pdf_candidate_clean_rebuild_prepare_report.json \
+  --apply
+```
 
 ```bash
 python scripts/rag_scoped_candidate_indexing.py \
-  --document-version-id docv_88368b8b12ba3f38 \
-  --document-version-id docv_8b23a58c27c5518a \
-  --document-version-id docv_fe2470815512a395 \
+  --scope-report eval/reports/rag-ingestion/pdf_candidate_scope_report.json \
   --source-file-type PDF \
   --parser-version pdf-extract-v1 \
   --parser-version pdf-extract-v2 \
   --expected-index-version rag-ingestion-v2-pdf-candidate-v1 \
+  --artifact-dir eval/indexes/rag-data-pdf-candidate-v1 \
   --output eval/reports/rag-ingestion/pdf_candidate_indexing_report.json
 ```
-
-The consistency script is still a C4 TODO. Do not treat this command as
-available until `scripts/pdf_candidate_embedding_consistency.py` exists.
 
 ```bash
 python scripts/pdf_candidate_embedding_consistency.py \
@@ -118,7 +125,9 @@ python -m py_compile \
   scripts/pdf_candidate_scope_report.py \
   scripts/pdf_vector_metadata_projection_readiness.py \
   scripts/rag_pdf_embedding_text_contract_audit.py \
-  scripts/rag_pdf_search_unit_surface_repair.py
+  scripts/rag_pdf_search_unit_surface_repair.py \
+  scripts/pdf_candidate_clean_rebuild_prepare.py \
+  scripts/pdf_candidate_embedding_consistency.py
 ```
 
 ## Future Phase Syntax Check
@@ -127,6 +136,7 @@ Run this only after the C4~C7 scripts in the command exist.
 
 ```bash
 python -m py_compile \
+  scripts/pdf_candidate_clean_rebuild_prepare.py \
   scripts/pdf_candidate_embedding_consistency.py \
   scripts/rag_pdf_vector_diagnostic.py \
   scripts/rag_pdf_vector_quality_breakdown.py \
