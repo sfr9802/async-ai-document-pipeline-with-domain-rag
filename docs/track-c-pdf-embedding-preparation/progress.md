@@ -28,8 +28,8 @@ Last updated: `2026-05-05`
 | C2 Metadata Projection Readiness | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json` (`status=PASS_WITH_WARNINGS`, sha256 `113c064589ece17e3f36696c754445ebbc7c8ced5dc69bad7dc6fac3abb647cc`) | Proceed to C4; stored PDF candidate ragmeta projection remains deferred until C4 |
 | C3 Embedding Text Contract Audit | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json` (`status=PASS_WITH_WARNINGS`, sha256 `c470521af3d6a05cfba0f5cfc06bcce3c4d37e35a421ef84b572b37baec32646`) | Proceed to C4; keep skipped/policy-excluded rows visible |
 | C4 Candidate Indexing Consistency | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json` (`status=PASS_WITH_WARNINGS`, sha256 `a415714de21b5bf5cde4d32171a29773c68b214491455fc937a987d99c927f6b`); `ai-worker/eval/reports/rag-ingestion/pdf_candidate_indexing_report.json` (`status=PASS`, sha256 `e13a2ae539963fb95c027727a8ae9fbdafd39a8d7090900c49817723b80503f2`) | C5 may run as PDF-only diagnostic; carry C4 warnings forward |
-| C5 PDF-only Vector Diagnostic | `PLANNED` | No PDF-only vector diagnostic report yet | Run diagnostic after C4 consistency passes |
-| C6 Failure Breakdown | `PLANNED` | No PDF failure taxonomy report yet | Split metadata/ranking/gold/policy failures |
+| C5 PDF-only Vector Diagnostic | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json` (`status=PASS_WITH_WARNINGS`, sha256 `b49c93870e59fa1c40493ae2ba01e20ab030a27ab2c77049e80983c6cf226211`) | C6 may run using query-level results; carry C5 warnings forward |
+| C6 Failure Breakdown | `PLANNED` | No PDF failure taxonomy report yet | Split metadata/ranking/gold/policy failures from C5 |
 | C7 Gold Policy Review | `PLANNED` | No gold policy report yet | Review page/table/OCR/bbox policy after C6 |
 
 ## Merge Policy
@@ -680,3 +680,113 @@ Last updated: `2026-05-05`
 - C4 is diagnostic evidence only and does not prove promotion readiness.
 - PDF table gold rows still have no table-like SearchUnits; this is intentionally not a C4 blocker.
 - C5 may still reveal ranking, page, bbox, or gold-policy failures even though candidate indexing consistency passed.
+
+## 2026-05-05 - Track C C5 PDF-only vector diagnostic
+
+### Goal
+
+- Resolve the C4 next-step risk by running C5 against the PDF candidate namespace only.
+- Keep C5 diagnostic-only and produce query-level detail for C6 failure breakdown.
+- Verify that no broad indexing, promotion, immutable baseline mutation, or XLSX candidate mutation is involved.
+
+### Completed
+
+- Added `ai-worker/scripts/rag_pdf_vector_diagnostic.py`.
+- Added `ai-worker/tests/test_rag_pdf_vector_diagnostic.py`.
+- Started local Docker Desktop/Postgres after the first live diagnostic showed DB connection refusal.
+- Re-ran C5 with local Postgres healthy and generated the PDF-only vector diagnostic report.
+- Updated C5 status to `PASS_WITH_WARNINGS`.
+
+### Current Evidence
+
+- C5 PDF-only vector diagnostic:
+  - path: `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json`
+  - status: `PASS_WITH_WARNINGS`
+  - sha256: `b49c93870e59fa1c40493ae2ba01e20ab030a27ab2c77049e80983c6cf226211`
+  - namespace: `rag-ingestion-v2-pdf-candidate-v1`
+  - artifact dir: `ai-worker/eval/indexes/rag-data-pdf-candidate-v1`
+  - selected PDF positive gold rows: `22`
+  - query-level results available: `true`
+  - query result count: `22`
+  - candidate namespace chunk count: `8194`
+  - scope leakage detected: `false`
+  - non-PDF row count: `0`
+  - policy-excluded leakage count: `0`
+- PDF vector metrics:
+  - `pdf_file_hit@10=0.9545`
+  - `pdf_page_hit@10=0.4091`
+  - `pdf_bbox_overlap@10=0.2353`
+  - `pdf_exact_bbox@10=0.2353`
+  - `pdf_citation_location_accuracy=0.3182`
+  - `result_empty_count=0`
+  - `search_error_count=0`
+- Contract counters:
+  - `candidate_index_mismatch_count=0`
+  - `embedding_status_mismatch_count=0`
+  - `required_index_version_mismatch_count=0`
+  - `indexing_filtered_hit_count=0`
+  - `top_k_non_pdf_hit_count=0`
+  - `top_k_raw_source_file_type_missing_count=220`
+  - `top_k_source_file_type_inferred_count=220`
+  - `top_k_missing_source_file_type_count=0`
+  - `top_k_wrong_index_version_hit_count=0`
+  - `top_k_unembedded_hit_count=0`
+  - `top_k_missing_location_json_count=0`
+- Failure separation:
+  - `metadata_projection_failure_count=4`
+  - `true_retrieval_ranking_failure_count=15`
+  - `unclassified_failure_count=1`
+  - failure reasons: `expected_page_not_found=12`, `bbox_mismatch=1`, `expected_file_not_found=1`, `unknown=1`
+  - table gold policy candidate warning count: `6`
+
+### Gate/Baseline Status
+
+- Promotion was not run.
+- Indexing was not run by C5.
+- Broad/unscoped indexing was not run.
+- `promotion_evidence=false`.
+- `evidence_role=diagnostic`.
+- PDF candidate namespace: `rag-ingestion-v2-pdf-candidate-v1`.
+- PDF artifact dir: `ai-worker/eval/indexes/rag-data-pdf-candidate-v1`.
+- Immutable baseline changed: `false`.
+- XLSX candidate artifact changed: `false`.
+- `c6_ready=true`.
+- Carried warnings:
+  - OCR confidence missing rows are policy-excluded before C4: `6`
+  - document summaries are policy-excluded before C4: `3`
+  - skipped searchable rows remain visible for C4 exclusion: `9`
+  - current PDF table gold rows have no table-like SearchUnits: `6`
+
+### Verification
+
+- Command:
+  - `python -m py_compile ai-worker/scripts/rag_pdf_vector_diagnostic.py`
+  - result: passed.
+- Command:
+  - `python -m pytest ai-worker/tests/test_rag_pdf_vector_diagnostic.py`
+  - result: `8 passed`.
+- Command:
+  - `docker compose up -d postgres`
+  - result: `aipipeline-postgres` running and health became `healthy`.
+- Command:
+  - `python ai-worker/scripts/rag_pdf_vector_diagnostic.py --gold ai-worker/eval/eval_queries/gold_queries_v0.csv --expected-location-type pdf --index-version rag-ingestion-v2-pdf-candidate-v1 --artifact-dir ai-worker/eval/indexes/rag-data-pdf-candidate-v1 --promotion-evidence false --evidence-role diagnostic --report ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json`
+  - result: `status=PASS_WITH_WARNINGS`; `query_result_count=22`; `search_error_count=0`; `c6_ready=true`.
+
+### Important Decisions
+
+- The first live C5 attempt failed because local Postgres on `localhost:5433` was not running. This was classified as environment/runtime, not gold semantics, and handled directly by starting local infra.
+- `search_error_count` is now fail-closed in the C5 script so DB/vector runtime failures cannot be silently reported as C5 pass.
+- C5 now records raw missing vector `source_file_type` hits separately and infers PDF type from `location_json.type=pdf`; unresolved source type remains fail-closed.
+- `unknown` retrieval failures are included in the C6 handoff count as unclassified retrieval failures.
+- C5 treats `metadata_projection_failure_count>0` as separated diagnostic evidence for C6, not a C5 blocker, matching the phase rule `0 or separated`.
+- PDF table gold policy remains deferred; no user gold-policy judgment is needed at C5.
+
+### Remaining Work
+
+- Run C6 PDF vector failure breakdown using the C5 query-level results.
+- Decide PDF table/page/OCR/bbox gold policy only if C6 shows failures that require human gold-policy judgment.
+
+### Risks
+
+- C5 is still diagnostic-only and not promotion evidence.
+- Ranking/page/bbox quality is measured but not yet explained or accepted; C6 must classify the 15 failed query ids and separate ranking, metadata, parser, and gold-policy causes.
