@@ -128,7 +128,8 @@ python -m py_compile \
   scripts/rag_pdf_search_unit_surface_repair.py \
   scripts/pdf_candidate_clean_rebuild_prepare.py \
   scripts/pdf_candidate_embedding_consistency.py \
-  scripts/rag_pdf_vector_diagnostic.py
+  scripts/rag_pdf_vector_diagnostic.py \
+  scripts/rag_pdf_vector_quality_breakdown.py
 ```
 
 ## Future Phase Syntax Check
@@ -155,7 +156,8 @@ python -m pytest \
   ai-worker/tests/test_rag_pdf_embedding_text_contract_audit.py \
   ai-worker/tests/test_rag_pdf_search_unit_surface_repair.py \
   ai-worker/tests/test_pdf_candidate_embedding_consistency.py \
-  ai-worker/tests/test_rag_pdf_vector_diagnostic.py
+  ai-worker/tests/test_rag_pdf_vector_diagnostic.py \
+  ai-worker/tests/test_rag_pdf_vector_quality_breakdown.py
 ```
 
 ```bash

@@ -29,8 +29,8 @@ Last updated: `2026-05-05`
 | C3 Embedding Text Contract Audit | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json` (`status=PASS_WITH_WARNINGS`, sha256 `c470521af3d6a05cfba0f5cfc06bcce3c4d37e35a421ef84b572b37baec32646`) | Proceed to C4; keep skipped/policy-excluded rows visible |
 | C4 Candidate Indexing Consistency | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json` (`status=PASS_WITH_WARNINGS`, sha256 `a415714de21b5bf5cde4d32171a29773c68b214491455fc937a987d99c927f6b`); `ai-worker/eval/reports/rag-ingestion/pdf_candidate_indexing_report.json` (`status=PASS`, sha256 `e13a2ae539963fb95c027727a8ae9fbdafd39a8d7090900c49817723b80503f2`) | C5 may run as PDF-only diagnostic; carry C4 warnings forward |
 | C5 PDF-only Vector Diagnostic | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json` (`status=PASS_WITH_WARNINGS`, sha256 `b49c93870e59fa1c40493ae2ba01e20ab030a27ab2c77049e80983c6cf226211`) | C6 may run using query-level results; carry C5 warnings forward |
-| C6 Failure Breakdown | `PLANNED` | No PDF failure taxonomy report yet | Split metadata/ranking/gold/policy failures from C5 |
-| C7 Gold Policy Review | `PLANNED` | No gold policy report yet | Review page/table/OCR/bbox policy after C6 |
+| C6 Failure Breakdown | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json` (`status=PASS_WITH_WARNINGS`, sha256 `9d9d0d50a4b39910581f4e3167aa7290b8c4850c8f8767c02fdbfd079bf085c1`) | C7 should review recorded gold-policy candidates before retrieval tuning |
+| C7 Gold Policy Review | `PLANNED` | No gold policy report yet | Review C6 gold/page/table/bbox policy candidates |
 
 ## Merge Policy
 
@@ -790,3 +790,97 @@ Last updated: `2026-05-05`
 
 - C5 is still diagnostic-only and not promotion evidence.
 - Ranking/page/bbox quality is measured but not yet explained or accepted; C6 must classify the 15 failed query ids and separate ranking, metadata, parser, and gold-policy causes.
+
+## 2026-05-05 - Track C C6 PDF vector failure breakdown
+
+### Goal
+
+- Classify C5 PDF-only vector diagnostic failures by query.
+- Separate ranking, metadata, parser/chunk contract, bbox policy, and gold-policy candidates.
+- Keep C6 diagnostic-only and avoid turning C5 vector evidence into promotion evidence.
+
+### Completed
+
+- Added `ai-worker/scripts/rag_pdf_vector_quality_breakdown.py`.
+- Added `ai-worker/tests/test_rag_pdf_vector_quality_breakdown.py`.
+- Generated `ai-worker/eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json`.
+- Updated C6 status to `PASS_WITH_WARNINGS`.
+
+### Current Evidence
+
+- C6 PDF vector quality breakdown:
+  - path: `ai-worker/eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json`
+  - status: `PASS_WITH_WARNINGS`
+  - sha256: `9d9d0d50a4b39910581f4e3167aa7290b8c4850c8f8767c02fdbfd079bf085c1`
+  - source C5 report: `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json`
+  - query count: `22`
+  - failed query count: `15`
+  - unknown failure count: `0`
+  - matched query count: `7`
+- Failure type counts:
+  - `MATCHED=7`
+  - `PDF_TABLE_GOLD_BINDING_MISMATCH=6`
+  - `PDF_EXPECTED_PAGE_ABSENT_IN_TOP10=6`
+  - `PDF_EXPECTED_FILE_ABSENT_IN_TOP10=1`
+  - `PDF_BBOX_POLICY_MISMATCH=1`
+  - `PDF_CHUNK_GRANULARITY_ISSUE=1`
+- Primary disposition counts:
+  - `matched=7`
+  - `parser_chunk_contract=8`
+  - `gold_policy=7`
+- C6 handoff counters:
+  - metadata projection primary failure count: `0`
+  - parser/chunk contract candidate count: `8`
+  - gold-policy candidate count: `14`
+  - chunk granularity candidate count: `1`
+  - retrieval/ranking failure count: `0`
+  - retrieval/ranking candidates present: `false`
+  - `c7_ready=true`
+  - `retrieval_tuning_ready=false`
+
+### Gate/Baseline Status
+
+- Promotion was not run.
+- Retrieval was not run by C6.
+- Indexing was not run by C6.
+- `promotion_evidence=false`.
+- `evidence_role=diagnostic`.
+- PDF candidate namespace: `rag-ingestion-v2-pdf-candidate-v1`.
+- PDF artifact dir: `ai-worker/eval/indexes/rag-data-pdf-candidate-v1`.
+- C5 vector/index contract counters remain `0`.
+- Immutable baseline changed: `false`.
+- XLSX candidate artifact changed: `false`.
+
+### Verification
+
+- Command:
+  - `python -m py_compile ai-worker/scripts/rag_pdf_vector_quality_breakdown.py`
+  - result: passed.
+- Command:
+  - `python -m pytest ai-worker/tests/test_rag_pdf_vector_quality_breakdown.py`
+  - result: `5 passed`.
+- Command:
+  - `python ai-worker/scripts/rag_pdf_vector_quality_breakdown.py --eval-report ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json --report ai-worker/eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json`
+  - result: `status=PASS_WITH_WARNINGS`; `failed_query_count=15`; `unknown_failure_count=0`; `retrieval_ranking_failure_count=0`; `c7_ready=true`.
+
+### Important Decisions
+
+- C5 `true_retrieval_ranking_failure_count=15` was not reused as final C6 truth.
+- Generic or weak query surfaces such as `기간중`, `목 차`, numeric table labels, and broad table labels were treated as C7 gold-policy candidates before ranking interpretation.
+- All 6 `pdf_table_lookup` failures were classified as table binding/parser-chunk contract candidates and also carried as C7 policy candidates.
+- `gq_auto_020` was classified as `PDF_CHUNK_GRANULARITY_ISSUE` because the hit matched file/doc/page but failed identity through `expected_chunk_type=page` versus paragraph hits.
+- `gq_pdf_page_lookup_002` was classified as bbox/page-chunk policy rather than metadata projection, because the expected page appears through a page-level hit without bbox.
+- No clean retrieval/ranking failures remain after C6 classification.
+- Hidden content leakage is fail-closed in C6 before any taxonomy interpretation.
+- `retrieval_tuning_ready` remains false while C7 gold-policy or parser/chunk contract candidates exist.
+- No user gold-policy judgment was requested in C6; C7 is the phase that should ask if table/page/bbox policy must change.
+
+### Remaining Work
+
+- Run C7 gold policy review for the recorded C6 candidates.
+- Ask the user only if C7 requires a human decision on PDF table/page/bbox gold policy or expected evidence semantics.
+
+### Risks
+
+- C6 does not fix ranking, parser output, or gold policy; it only classifies diagnostic evidence.
+- Retrieval tuning should not start yet because C6 found gold-policy and parser/chunk contract candidates and `retrieval_tuning_ready=false`.
