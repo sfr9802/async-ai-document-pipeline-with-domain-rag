@@ -13,11 +13,14 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 
-DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_text_namu_v4_v0.csv")
-DEFAULT_CORPUS_DIR = Path("ai-worker/eval/corpora/namu-v4-structured-combined")
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_text_namu_v4_gold_validate_report.json")
+AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = AI_WORKER_ROOT.parent
+
+DEFAULT_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
+DEFAULT_CORPUS_DIR = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined"
+DEFAULT_REPORT = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_gold_validate_report.json"
 EXPECTED_SOURCE_DATASET = (
-    "eval/reports/phase7/seeds/gold_seed_50_manual_curated/gold_seed_50_candidates.jsonl"
+    "ai-worker/eval/reports/phase7/seeds/gold_seed_50_manual_curated/gold_seed_50_candidates.jsonl"
 )
 DEFAULT_EXPECTED_ROW_COUNT = 50
 DEFAULT_EXPECTED_POSITIVE_ROW_COUNT = 47
@@ -466,7 +469,11 @@ def is_empty(value: Any) -> bool:
 
 
 def normalise_path(path: Path) -> str:
-    return str(path).replace("\\", "/")
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        return resolved.as_posix()
 
 
 def normalise_path_text(value: str) -> str:

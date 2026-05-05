@@ -13,12 +13,16 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 
+AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = AI_WORKER_ROOT.parent
+
 DEFAULT_SOURCE = Path(
-    "eval/reports/phase7/seeds/gold_seed_50_manual_curated/gold_seed_50_candidates.jsonl"
+    AI_WORKER_ROOT / "eval" / "reports" / "phase7" / "seeds"
+    / "gold_seed_50_manual_curated" / "gold_seed_50_candidates.jsonl"
 )
-DEFAULT_CORPUS_DIR = Path("ai-worker/eval/corpora/namu-v4-structured-combined")
-DEFAULT_OUTPUT_CSV = Path("eval/eval_queries/gold_queries_text_namu_v4_v0.csv")
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_text_namu_v4_gold_build_report.json")
+DEFAULT_CORPUS_DIR = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined"
+DEFAULT_OUTPUT_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
+DEFAULT_REPORT = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_gold_build_report.json"
 
 GOLD_FIELDNAMES = [
     "query_id",
@@ -384,7 +388,11 @@ def is_empty(value: Any) -> bool:
 
 
 def normalise_path(path: Path) -> str:
-    return str(path).replace("\\", "/")
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        return resolved.as_posix()
 
 
 def sha256_file(path: Path) -> str:

@@ -1,6 +1,6 @@
 {
-  "run_id": "20260505T024110Z",
-  "generated_at": "2026-05-05T02:41:10.766648+00:00",
+  "run_id": "20260505T042059Z",
+  "generated_at": "2026-05-05T04:20:59.102114+00:00",
   "schema_version": "rag_text_namu_v4_corpus_inventory_v2",
   "hardening_revision": "r2_aux_consistency_raw_context_and_split_count_v2",
   "status": "PASS",

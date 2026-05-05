@@ -172,6 +172,34 @@ def test_inventory_blocks_when_r3_is_not_passed(tmp_path: Path):
     assert report["r5_entry"]["allowed"] is False
 
 
+def test_discovery_includes_rag_ingestion_diagnostics_but_excludes_r5_outputs(tmp_path: Path):
+    phase7 = tmp_path / "phase7"
+    rag_ingestion = tmp_path / "rag-ingestion"
+    phase7.mkdir()
+    rag_ingestion.mkdir()
+    phase7_emit = phase7 / "retrieval_cand_title_section_top10_gold.jsonl"
+    b_app_report = rag_ingestion / "rag_text_retrieval_diagnostic_report.json"
+    xlsx_report = rag_ingestion / "rag_retrieval_eval_xlsx_vector_diagnostic_report.json"
+    r4_report = rag_ingestion / "rag_text_namu_v4_retrieval_emit_inventory_report.json"
+    r5_emit = rag_ingestion / "rag_text_namu_v4_retrieval_emit.jsonl"
+    r5_report = rag_ingestion / "rag_text_namu_v4_retrieval_diagnostic_report.json"
+    for path in [phase7_emit, b_app_report, xlsx_report, r4_report, r5_emit, r5_report]:
+        path.write_text("{}\n", encoding="utf-8")
+
+    discovered = inventory.discover_candidate_paths(
+        [phase7, rag_ingestion],
+        output_report=r4_report,
+    )
+
+    names = {path.name for path in discovered}
+    assert phase7_emit.name in names
+    assert b_app_report.name in names
+    assert xlsx_report.name in names
+    assert r4_report.name not in names
+    assert r5_emit.name not in names
+    assert r5_report.name not in names
+
+
 def write_corpus(tmp_path: Path) -> Path:
     corpus = tmp_path / "namu-v4-structured-combined"
     corpus.mkdir()

@@ -1,28 +1,36 @@
 # Track B — TEXT Retrieval E2E Progress Log
 
-This document tracks phase-level execution progress for Track B TEXT retrieval E2E diagnostics.
-It follows the style of `docs/rag-ingestion-progress.md`, but stays local to this Track B directory until the work is complete and ready to merge back into the main progress log.
+This document is the unified Track B progress log.
+It tracks the overall history, the relationship between `B-app` smoke evidence and the `B-namu` mainline, and the detailed R0-R9 phase status, evidence judgment, and gate/blocker state.
 
 ## Merge Note
 
-This is a temporary phase-local progress log.
-After Track B phases are completed or intentionally paused, merge the durable entries into `docs/rag-ingestion-progress.md` and keep this file as either an archive or remove it during the docs consolidation pass.
+This log stays local to Track B until a stable checkpoint or intentional pause.
+At that point, merge durable entries into `docs/rag-ingestion-progress.md` and keep this file as the Track B archive/overview.
+`docs/track_b_text_retrieval_e2e/phases/phase_progress.md` is maintained as a phase-local R-status mirror for current R6/R7 handoff notes; this file remains the durable Track B overview.
+
+## Source Of Truth
+
+- This file is the durable source-of-truth for Track B status, B-app smoke history, B-namu mainline status, R0-R9 phase status, and summary entries.
+- Keep `phases/phase_progress.md` phase-local and consistent with this overview when a task explicitly asks for R-phase status updates.
+- Canonical artifact paths are repo-root relative under `ai-worker/eval/...` and `ai-worker/scripts/...`; `reports/...`, `scripts/...`, and bare `eval/...` in older entries are historical shorthand.
+- `B-app` B0/B1/B2 evidence is smoke-only diagnostic evidence. Do not cite B-app smoke metrics as B-namu, namu-v4, or production-style TEXT retrieval evidence.
 
 ## Phase Status Board
 
 | Phase | Status | Current Evidence | Next Action |
 |---|---|---|---|
-| B-app B0 backend identity | `diagnostic_completed / smoke_only` | `reports/rag_text_backend_identity_report.json` has `b1_entry_allowed=true`, `blockers=[]`, READY TEXT `text_count=15`, and clean TEXT-filtered API probe | Preserve as app-catalog smoke identity |
-| B-app B1 gold v0 | `diagnostic_completed / smoke_only` | `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv` has 12 rows; `reports/rag_text_e2e_gold_validate_report.json` passed with live READY TEXT bindings | Do not use as Track B representative corpus |
-| B2-app retrieval diagnostic | `diagnostic_completed / smoke_only` | `reports/rag_text_retrieval_diagnostic_report.json` exists; Hit@10=0.0, MRR@10=0.0, result_empty_count=12, path_mixing_count=0 | Cite with `reports/rag_text_b2_scope_correction_report.json` |
-| R0 B2 scope correction | `diagnostic_completed` | `reports/rag_text_b2_scope_correction_report.json`; `phases/phase_progress.md` | Start R1 query routing matrix |
-| R1 query routing matrix | `needs_review` | `ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv`, `reports/rag_query_intent_routing_matrix_report.json` | Future namu gold is present, but current routing matrix still excludes future inputs from observed lane coverage |
-| R2 namu-v4 corpus inventory | `diagnostic_completed` | `reports/rag_text_namu_v4_corpus_inventory_report.json` schema v2 hardened PASS with split-count check | Use `rag_chunks.jsonl` + `chunk_text`; keep auxiliary/split/raw-context checks as R3-R8 gate |
-| R3 namu-v4 gold binding | `diagnostic_completed` | `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv`, `reports/rag_text_namu_v4_gold_build_report.json`, `reports/rag_text_namu_v4_gold_validate_report.json`; validator current-seed policy PASSED | Keep as R5 entry gate |
-| R4 retrieval emit inventory | `diagnostic_completed` | `reports/rag_text_namu_v4_retrieval_emit_inventory_report.json` says `NO_REUSABLE_EXISTING_EMIT` | Do not reuse old emits; R5 needs fresh diagnostic retrieval |
-| B2-namu retrieval diagnostic | `ready_for_fresh_diagnostic` | R4 decision `RUN_FRESH_DIAGNOSTIC_RETRIEVAL`, `retrieval_metrics_computed=false` | Generate true TEXT retrieval metrics against namu-v4 with a fresh emit |
-| B3-namu context assembly | `blocked_on_B2_namu` | `phases/phase_r6_b3_namu_context_assembly.md` | Assemble raw `chunk_text` contexts |
-| B4-namu LLM answer eval | `blocked_on_B3_namu` | `phases/phase_r7_b4_namu_answer_eval.md` | Run deterministic checks and optional judge after context report exists |
+| B-app B0 backend identity | `diagnostic_completed / smoke_only` | `ai-worker/eval/reports/rag-ingestion/rag_text_backend_identity_report.json` has `b1_entry_allowed=true`, `blockers=[]`, READY TEXT `text_count=15`, and clean TEXT-filtered API probe | Preserve as app-catalog smoke identity only |
+| B-app B1 gold v0 | `diagnostic_completed / smoke_only` | `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv` has 12 rows; `ai-worker/eval/reports/rag-ingestion/rag_text_e2e_gold_validate_report.json` passed with live READY TEXT bindings | Do not use as Track B representative corpus |
+| B2-app retrieval diagnostic | `diagnostic_completed / smoke_only` | `ai-worker/eval/reports/rag-ingestion/rag_text_retrieval_diagnostic_report.json` exists; Hit@10=0.0, MRR@10=0.0, result_empty_count=12, path_mixing_count=0 | Cite only with `ai-worker/eval/reports/rag-ingestion/rag_text_b2_scope_correction_report.json` |
+| R0 B2 scope correction | `diagnostic_completed` | `ai-worker/eval/reports/rag-ingestion/rag_text_b2_scope_correction_report.json` | Preserve as interpretation layer for legacy B2-app |
+| R1 query routing matrix | `needs_review` | `ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv`, `ai-worker/eval/reports/rag-ingestion/rag_query_intent_routing_matrix_report.json` | Keep needs_review; do not force observed coverage with future namu rows |
+| R2 namu-v4 corpus inventory | `diagnostic_completed` | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_corpus_inventory_report.json` schema v2 hardened PASS with split-count check | Use `rag_chunks.jsonl` + `chunk_text`; keep auxiliary/split/raw-context checks as R3-R8 gate |
+| R3 namu-v4 gold binding | `diagnostic_completed` | `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv`, `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_gold_build_report.json`, `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_gold_validate_report.json`; validator current-seed policy PASSED | Keep as R5/R6 entry gate |
+| R4 retrieval emit inventory | `diagnostic_completed` | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_emit_inventory_report.json` says `NO_REUSABLE_EXISTING_EMIT` | Do not reuse old emits |
+| B2-namu retrieval diagnostic | `diagnostic_completed` | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_emit.jsonl`, `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_diagnostic_report.json`; status `PASS_WITH_WARNINGS` | Use as diagnostic-only input to B3-namu/R6 |
+| B3-namu context assembly | `diagnostic_completed` | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_context_assembly.jsonl`, `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_context_assembly_report.json`; status `PASS_WITH_WARNINGS` | Use as diagnostic-only input to B4-namu/R7 |
+| B4-namu LLM answer eval | `planned` | `phases/phase_r7_b4_namu_answer_eval.md`; R6 report exists | Run deterministic checks and optional judge in a later R7 task |
 | B5-namu citation support | `blocked_on_B4_namu` | `phases/phase_r8_b5_namu_citation_support.md` | Validate claim-level support after answer report exists |
 | R9 lane readiness | `planned` | `phases/phase_r9_file_content_lane_readiness.md` | Generate FILE vs CONTENT readiness report |
 | B6 summary/regression | `blocked_on_B5_namu` | `phase_b6_summary_regression.md` retained as follow-up | Summarize Track B after B5-namu |
@@ -679,7 +687,7 @@ Copy this template for each work turn.
 | Phase | Previous | Current | Evidence |
 |---|---|---|---|
 | B2-app retrieval diagnostic | `diagnostic_completed / smoke_only` | `diagnostic_completed / smoke_only` | `reports/rag_text_retrieval_diagnostic_report.json` preserved |
-| R0 B2 scope correction | `planned` | `diagnostic_completed` | `reports/rag_text_b2_scope_correction_report.json`, `phases/phase_progress.md` |
+| R0 B2 scope correction | `planned` | `diagnostic_completed` | `reports/rag_text_b2_scope_correction_report.json`, unified progress log |
 | R1 query routing matrix | `planned` | `planned` | `phases/phase_r1_query_intent_routing_matrix.md` |
 | R2 namu-v4 corpus inventory | `planned` | `planned` | `phases/phase_r2_namu_v4_corpus_inventory.md` |
 | B2-namu retrieval diagnostic | `blocked_on_R3_R4` | `blocked_on_R3_R4` | Do not use B2-app metrics as B-namu evidence |
@@ -688,7 +696,7 @@ Copy this template for each work turn.
 ### Completed
 
 - Added phase-local progress tracking:
-  - `docs/track_b_text_retrieval_e2e/phases/phase_progress.md`
+  - `docs/track_b_text_retrieval_e2e/rag_text_retrieval_e2e_progress.md`
 - Added R0 scope-correction report:
   - `reports/rag_text_b2_scope_correction_report.json`
 - Added a direct R0 scope note to the legacy B2-app phase doc:
@@ -779,7 +787,7 @@ Copy this template for each work turn.
   - `ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv`
   - `reports/rag_query_intent_routing_matrix_report.json`
 - Updated phase-local progress:
-  - `docs/track_b_text_retrieval_e2e/phases/phase_progress.md`
+  - `docs/track_b_text_retrieval_e2e/rag_text_retrieval_e2e_progress.md`
 
 ### Current Evidence
 
@@ -1154,3 +1162,232 @@ Copy this template for each work turn.
 ### Next Recommended Step
 
 - Run R5 fresh B2-namu retrieval diagnostic.
+
+## 2026-05-05 - B/R Source Split Aligned and R5 Fresh Diagnostic Completed
+
+### Goal
+
+- Record the then-current B/R source split before the later progress-log merge.
+- Keep B-app smoke and B-namu mainline separation explicit.
+- Run R5 without reusing old emits and without promotion, indexing, tuning, answer eval, or citation eval.
+
+### Phase Status Update
+
+| Phase | Previous | Current | Evidence |
+|---|---|---|---|
+| R1 query routing matrix | `needs_review` | `needs_review` | `ai-worker/eval/reports/rag-ingestion/rag_query_intent_routing_matrix_report.json` |
+| R5/B2-namu retrieval diagnostic | `ready_for_fresh_diagnostic` | `diagnostic_completed` | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_diagnostic_report.json` |
+| R6/B3-namu context assembly | `blocked_on_B2_namu` | `planned` | R5 fresh emit exists |
+
+### Completed
+
+- Added canonical path policy to the Track B README and both progress logs.
+- Clarified that B-app B0/B1/B2 are smoke-only diagnostics and cannot be cited as B-namu/namu-v4/production-style TEXT evidence.
+- Added and ran R5 fresh diagnostic retrieval:
+  - fresh emit: `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_emit.jsonl`
+  - report: `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_diagnostic_report.json`
+
+### Current Evidence
+
+- R5 status is `PASS_WITH_WARNINGS`.
+- R5 denominator is fixed to `47` positive rows.
+- R3 `needs_review` rows `gold_seed_0048`, `gold_seed_0049`, and `gold_seed_0050` are excluded from the positive denominator.
+- Existing emit reuse is explicitly false.
+- R5 metrics:
+  - `Hit@1=0.574468085106383`
+  - `Hit@3=0.6808510638297872`
+  - `Hit@5=0.7446808510638298`
+  - `Hit@10=0.7872340425531915`
+  - `MRR@10=0.6378250591016549`
+  - `wrong_source_count=10`
+  - `missing_expected_chunk_count=18`
+  - `retrieval_error_count=0`
+
+### Gate/Baseline Status
+
+- All Track B/R reports remain `promotion_evidence=false` and `evidence_role=diagnostic`.
+- No `rag-data-canary`, immutable baseline, XLSX/PDF candidate artifact, broad indexing, tuning, answer eval, or citation eval was modified/run.
+
+### Verification
+
+- R5 script compile: passed.
+- R5 focused tests: 3 passed.
+- R2/R3/R4/R5 regeneration commands: passed.
+- JSON contract assertion over R3/R4/R5: passed.
+
+### Important Decisions
+
+- Use repo-root canonical paths under `ai-worker/eval/...` and `ai-worker/scripts/...`.
+- Keep R1 as `needs_review`; future namu gold does not become observed routing lane coverage.
+- Treat R5 as diagnostic-only `PASS_WITH_WARNINGS`; the quality misses are retrieval diagnostics, not gold semantics blockers.
+
+### Remaining Work
+
+- Start R6 context assembly from the R5 fresh emit.
+- Analyze R5 quality misses before drawing answer/citation conclusions.
+
+### Risks
+
+- R5 is a fresh lexical diagnostic run, not promotion evidence.
+- This entry's source-split note is historical. The later "Progress Logs Merged" entry supersedes it.
+
+### Next Recommended Step
+
+- Proceed to R6/B3-namu context assembly using the fresh R5 emit.
+
+## 2026-05-05 - R6 B3-namu Context Assembly Completed
+
+### Goal
+
+- Run Track B/R6 as file-based diagnostic context assembly while Track C/C4 proceeds separately.
+- Use only the R5 fresh emit and R2 `rag_chunks.jsonl` `chunk_text` joins.
+- Keep C4 files, DB, indexing, namespace, worker claim, SearchUnit state, promotion, tuning, R7 answer eval, and citation eval out of scope.
+
+### Phase Status Update
+
+| Phase | Previous | Current | Evidence |
+|---|---|---|---|
+| R5/B2-namu retrieval diagnostic | `diagnostic_completed` | `diagnostic_completed` | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_diagnostic_report.json` |
+| R6/B3-namu context assembly | `planned` | `diagnostic_completed` | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_context_assembly_report.json` |
+| R7/B4-namu answer eval | `blocked_on_B3_namu` | `planned` | R6 report exists; answer eval not run |
+
+### Completed
+
+- Added R6 context assembly script:
+  - `ai-worker/scripts/rag_text_namu_v4_context_assembly.py`
+- Added focused R6 tests:
+  - `ai-worker/tests/test_rag_text_namu_v4_context_assembly.py`
+- Generated R6 artifacts:
+  - `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_context_assembly.jsonl`
+  - `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_context_assembly_report.json`
+
+### Current Evidence
+
+- R6 status is `PASS_WITH_WARNINGS`.
+- `promotion_evidence=false`, `evidence_role=diagnostic`.
+- `parallel_with_track_c_c4=true`, `c4_files_touched=false`.
+- `db_mutation_run=false`, `indexing_run=false`, `worker_claim_run=false`, `promotion_run=false`.
+- `llm_answer_eval_run=false`, `citation_eval_run=false`.
+- `context_field=chunk_text`; disallowed fields are `embedding_text`, `text_for_embedding`, and `debug_text`.
+- `positive_denominator_count=47`, `needs_review_excluded_count=3`.
+- Excluded `needs_review` rows:
+  - `gold_seed_0048`
+  - `gold_seed_0049`
+  - `gold_seed_0050`
+- R6 taxonomy:
+  - `expected_context_present_count=29`
+  - `context_empty_count=0`
+  - `missing_retrieval_result_count=0`
+  - `missing_expected_source_count=10`
+  - `missing_expected_chunk_count=8`
+  - `missing_corpus_chunk_join_count=0`
+  - `empty_chunk_text_count=0`
+  - `context_truncated_count=0`
+  - `duplicate_chunk_dedup_count=0`
+- R5 warning carry-over:
+  - `wrong_source_count=10`
+  - `missing_expected_chunk_count=18`
+  - `empty_result_count=0`
+  - `retrieval_error_count=0`
+
+### Gate/Baseline Status
+
+- No C4/PDF candidate artifacts, DB state, indexing namespace, SearchUnit claim/status, `rag-data-canary`, immutable baseline, promotion, tuning, R7 answer eval, or citation eval was modified/run.
+- `phases/phase_progress.md` was restored for the R6/R7 handoff as a phase-local status mirror; this unified log remains the durable overview.
+
+### Verification
+
+- Command:
+  - `git status --short`
+  - result: captured initial dirty/untracked state and kept C4 files out of R6 edits.
+- Command:
+  - `python -m py_compile ai-worker\scripts\rag_text_namu_v4_context_assembly.py`
+  - result: passed.
+- Command:
+  - `python -m pytest -q ai-worker\tests\test_rag_text_namu_v4_context_assembly.py`
+  - result: 9 passed.
+- Command:
+  - `python ai-worker\scripts\rag_text_namu_v4_gold_validator.py`
+  - result: `status=PASSED`, `positive_row_count=47`, `needs_review_row_count=3`.
+- Command:
+  - `python ai-worker\scripts\rag_text_namu_v4_context_assembly.py`
+  - result: R6 report `status=PASS_WITH_WARNINGS`, `r7_ready=true`.
+- Command:
+  - JSON contract assertion over R2/R3/R5/R6 reports.
+  - result: passed.
+
+### Important Decisions
+
+- Use R2 corpus `rag_chunks.jsonl` as the context join source rather than trusting R5 emit text fields.
+- Preserve R5 rank order and do not rerank or source-group contexts.
+- Use deterministic duplicate policy: first `chunk_id` rank wins.
+- Keep the restored `phases/phase_progress.md` as a compact R-phase status mirror; this unified progress log remains the durable Track B overview.
+
+### Remaining Work
+
+- Proceed to R7 planning/answer eval in a later task using R6 context output.
+- R5/R6 retrieval misses remain diagnostic warnings and should be analyzed before answer/citation conclusions.
+
+### Risks
+
+- R6 is diagnostic-only context assembly, not answer quality evidence or promotion evidence.
+- `PASS_WITH_WARNINGS` is caused by retrieval misses carried from R5, not by corpus join failure or context-field misuse.
+
+### Next Recommended Step
+
+- Start R7/B4-namu answer eval only after accepting R6 diagnostic context artifacts as the input.
+
+## 2026-05-05 - Progress Log Cleanup Completed
+
+### Goal
+
+- Remove the two-log source-of-truth split that could cause future drift.
+- Delete the unused old R-phase progress log instead of keeping a stub.
+- Historical note: this cleanup state was later superseded for the R6/R7 handoff, where `phases/phase_progress.md` was restored as a compact phase-local status mirror.
+
+### Phase Status Update
+
+| Area | Previous | Current | Evidence |
+|---|---|---|---|
+| Track B progress source | split between overview and R-phase log | unified in this file | `docs/track_b_text_retrieval_e2e/rag_text_retrieval_e2e_progress.md` |
+| R-phase progress source | `phases/phase_progress.md` | deleted at cleanup time; later restored as phase-local mirror | R6 handoff updates now keep the file present |
+| README guidance | two-layer split | single progress log; old file deleted | `docs/track_b_text_retrieval_e2e/README.md` |
+
+### Completed
+
+- Promoted this file to the single Track B progress source-of-truth.
+- Preserved R0-R9 status board, B-app smoke separation, B-namu mainline state, canonical path policy, and R5 fresh diagnostic evidence in this file.
+- Deleted `phases/phase_progress.md` with no redirect/stub file left behind.
+
+### Current Evidence
+
+- Unified log path:
+  - `docs/track_b_text_retrieval_e2e/rag_text_retrieval_e2e_progress.md`
+- R-phase mirror path restored after this cleanup:
+  - `docs/track_b_text_retrieval_e2e/phases/phase_progress.md`
+- Current R5 evidence remains:
+  - `status=PASS_WITH_WARNINGS`
+  - `positive_denominator_count=47`
+  - `needs_review_excluded_count=3`
+  - `existing_emit_reused=false`
+  - `promotion_evidence=false`
+  - `evidence_role=diagnostic`
+
+### Important Decisions
+
+- Do not maintain separate progress histories for Track B overview and R-phase details.
+- The deletion decision was superseded by the R6 handoff requirement to maintain a compact phase-local mirror.
+- Keep durable merge policy unchanged: merge into `docs/rag-ingestion-progress.md` only at a stable checkpoint or intentional pause.
+
+### Remaining Work
+
+- Use this file for durable Track B progress entries.
+- Keep `phases/phase_progress.md` compact and phase-local when explicitly updated.
+
+### Risks
+
+- Older dated entries inside this unified file may still mention the former split as historical context. The current source-of-truth section and this dated entry supersede those older notes.
+
+### Next Recommended Step
+
+- Proceed to R6/B3-namu context assembly using the fresh R5 emit.

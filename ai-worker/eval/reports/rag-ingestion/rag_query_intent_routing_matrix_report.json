@@ -1,12 +1,12 @@
 {
-  "run_id": "20260505T024208Z",
-  "generated_at": "2026-05-05T02:42:08.368908+00:00",
+  "run_id": "20260505T042054Z",
+  "generated_at": "2026-05-05T04:20:54.451673+00:00",
   "schema_version": "rag_query_intent_routing_matrix_v1",
   "status": "NEEDS_REVIEW",
   "report_role": "rag_query_intent_routing_matrix",
   "scope": "track_b_text_retrieval_e2e",
   "phase": "R1",
-  "output_csv": "eval/query_intent_routing_matrix_v0.csv",
+  "output_csv": "eval/eval_queries/query_intent_routing_matrix_v0.csv",
   "row_count": 204,
   "lane_counts": {
     "B_NAMU_TEXT_CONTENT": 0,
@@ -145,7 +145,7 @@
   },
   "inputs": [
     {
-      "path": "eval/gold_queries_text_e2e_v0.csv",
+      "path": "eval/eval_queries/gold_queries_text_e2e_v0.csv",
       "source_manifest": "gold_queries_text_e2e_v0",
       "role": "current_candidate",
       "exists": true,
@@ -171,7 +171,7 @@
       "error": null
     },
     {
-      "path": "eval/gold_queries_xlsx_v3_naturalized.csv",
+      "path": "eval/eval_queries/gold_queries_xlsx_v3_naturalized.csv",
       "source_manifest": "gold_queries_xlsx_v3_naturalized",
       "role": "current_candidate",
       "exists": true,
@@ -229,7 +229,7 @@
       "error": null
     },
     {
-      "path": "eval/gold_queries_xlsx_v3_positive.csv",
+      "path": "eval/eval_queries/gold_queries_xlsx_v3_positive.csv",
       "source_manifest": "gold_queries_xlsx_v3_positive",
       "role": "current_candidate",
       "exists": true,
@@ -287,7 +287,7 @@
       "error": null
     },
     {
-      "path": "eval/gold_queries_xlsx_v3_positive_reviewed.csv",
+      "path": "eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv",
       "source_manifest": "gold_queries_xlsx_v3_positive_reviewed",
       "role": "current_candidate",
       "exists": true,
@@ -345,7 +345,7 @@
       "error": null
     },
     {
-      "path": "eval/gold_queries_v0.csv",
+      "path": "eval/eval_queries/gold_queries_v0.csv",
       "source_manifest": "gold_queries_v0",
       "role": "current_candidate",
       "exists": true,
@@ -384,7 +384,7 @@
   ],
   "future_inputs": [
     {
-      "path": "eval/gold_queries_text_namu_v4_v0.csv",
+      "path": "eval/eval_queries/gold_queries_text_namu_v4_v0.csv",
       "source_manifest": "gold_queries_text_namu_v4_v0",
       "role": "future_namu_candidate",
       "exists": true,
@@ -414,7 +414,7 @@
   "missing_future_inputs": [],
   "missing_input_policy": {
     "current_candidates": "Missing current candidate inputs are recorded and skipped; at least one usable input is required.",
-    "future_namu_candidate": "Missing eval/gold_queries_text_namu_v4_v0.csv is expected before R2/R3 and does not fail R1."
+    "future_namu_candidate": "Missing eval/eval_queries/gold_queries_text_namu_v4_v0.csv is expected before R2/R3 and does not fail R1."
   },
   "completion_criteria": {
     "csv_schema_matches_phase_doc": true,

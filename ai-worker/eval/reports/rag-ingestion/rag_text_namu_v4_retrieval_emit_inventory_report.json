@@ -1,13 +1,13 @@
 {
-  "run_id": "20260505T025552Z",
-  "generated_at": "2026-05-05T02:55:52.172620+00:00",
+  "run_id": "20260505T043008Z",
+  "generated_at": "2026-05-05T04:30:08.279527+00:00",
   "schema_version": "rag_text_namu_v4_retrieval_emit_inventory_v1",
   "status": "NO_REUSABLE_EXISTING_EMIT",
   "decision": "RUN_FRESH_DIAGNOSTIC_RETRIEVAL",
   "report_role": "rag_text_namu_v4_retrieval_emit_inventory",
   "scope": "track_b_text_retrieval_e2e",
   "phase": "R4",
-  "gold_csv": "eval/gold_queries_text_namu_v4_v0.csv",
+  "gold_csv": "ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv",
   "gold_row_count": 50,
   "gold_query_id_count": 50,
   "gold_columns": [
@@ -27,9 +27,9 @@
     "notes"
   ],
   "corpus_dir": "ai-worker/eval/corpora/namu-v4-structured-combined",
-  "r3_validation_report": "reports/rag_text_namu_v4_gold_validate_report.json",
+  "r3_validation_report": "ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_gold_validate_report.json",
   "r3_validation_status": "PASSED",
-  "candidate_emit_count": 46,
+  "candidate_emit_count": 45,
   "reusable_emit_count": 0,
   "existing_emit_paths": [
     "ai-worker/eval/reports/phase7/7.8_retrieval_sanity/retrieval_results.jsonl",
@@ -73,11 +73,10 @@
     "ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/retrieval_cand_top10_candk30_silver.jsonl",
     "ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/retrieval_cand_top10_mmr_lambda07_gold.jsonl",
     "ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/retrieval_cand_top10_mmr_lambda07_silver.jsonl",
-    "reports/rag_retrieval_eval_full72_vector_diagnostic_report.json",
-    "reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json",
-    "reports/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json",
-    "reports/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json",
-    "reports/rag_retrieval_eval_xlsx_vector_diagnostic_report.json"
+    "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_full72_vector_diagnostic_report.json",
+    "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json",
+    "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json",
+    "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_vector_diagnostic_report.json"
   ],
   "reusable_emit_paths": [],
   "fresh_retrieval_required": true,
@@ -2880,7 +2879,7 @@
       ]
     },
     {
-      "path": "reports/rag_retrieval_eval_full72_vector_diagnostic_report.json",
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_full72_vector_diagnostic_report.json",
       "candidate_detected": true,
       "reusable": false,
       "row_count": 72,
@@ -2963,86 +2962,7 @@
       ]
     },
     {
-      "path": "reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json",
-      "candidate_detected": true,
-      "reusable": false,
-      "row_count": 22,
-      "query_id_count": 22,
-      "sample_query_ids": [
-        "gq_auto_009",
-        "gq_auto_010",
-        "gq_auto_011",
-        "gq_auto_014",
-        "gq_auto_015"
-      ],
-      "query_id_match_gold_csv": false,
-      "missing_gold_query_id_count": 50,
-      "extra_query_id_count": 22,
-      "missing_gold_query_ids_sample": [
-        "gold_seed_0001",
-        "gold_seed_0002",
-        "gold_seed_0003",
-        "gold_seed_0004",
-        "gold_seed_0005",
-        "gold_seed_0006",
-        "gold_seed_0007",
-        "gold_seed_0008",
-        "gold_seed_0009",
-        "gold_seed_0010"
-      ],
-      "extra_query_ids_sample": [
-        "gq_auto_009",
-        "gq_auto_010",
-        "gq_auto_011",
-        "gq_auto_014",
-        "gq_auto_015",
-        "gq_auto_016",
-        "gq_auto_019",
-        "gq_auto_020",
-        "gq_auto_021",
-        "gq_auto_024"
-      ],
-      "hit_count": 220,
-      "resolved_chunk_id_count": 0,
-      "missing_chunk_resolution_count": 186,
-      "missing_chunk_ids_sample": [
-        "01356234-6cdc-497a-aaf0-dc780e131f04",
-        "022f08cb-f5f6-4c6c-be70-9d0ee328a6e9",
-        "02d65d4e-57f2-46a9-bea1-8bc515d9672f",
-        "033959b4-8f77-4a1b-9913-340c3e62035d",
-        "06068a8e-e6d7-4ac1-898f-9001663aeefa",
-        "063fddd1-151b-428f-84d4-5eed0944f570",
-        "06f831ef-2da7-45b7-811b-d10252b35284",
-        "090013ba-89c1-4207-8112-87e146bf58d7",
-        "0a64ead0-5d5c-426b-aff2-04cc9ab620bf",
-        "0a8f4214-fcd6-47db-92bf-88163eeb22dd"
-      ],
-      "chunk_doc_id_page_join_missing_count": 0,
-      "page_join_missing_chunk_ids_sample": [],
-      "context_field_hit_count": 0,
-      "context_traceable_to_chunk_text_count": 0,
-      "score_field_count": 220,
-      "non_numeric_score_count": 0,
-      "top_k_recorded": true,
-      "observed_top_k": 10,
-      "retriever_identity_recorded": true,
-      "retriever_identity": {
-        "retrieval_backend": "vector"
-      },
-      "chunk_id_fields_observed": [
-        "search_unit_id"
-      ],
-      "artifact_exclusion_reasons": [
-        "pdf_artifact"
-      ],
-      "non_reusable_reasons": [
-        "query_id_mismatch",
-        "missing_chunk_resolution",
-        "pdf_artifact"
-      ]
-    },
-    {
-      "path": "reports/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json",
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json",
       "candidate_detected": true,
       "reusable": false,
       "row_count": 35,
@@ -3121,7 +3041,7 @@
       ]
     },
     {
-      "path": "reports/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json",
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json",
       "candidate_detected": true,
       "reusable": false,
       "row_count": 35,
@@ -3200,7 +3120,7 @@
       ]
     },
     {
-      "path": "reports/rag_retrieval_eval_xlsx_vector_diagnostic_report.json",
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_vector_diagnostic_report.json",
       "candidate_detected": true,
       "reusable": false,
       "row_count": 50,
@@ -3280,11 +3200,11 @@
     }
   ],
   "non_reusable_reason_counts": {
-    "missing_chunk_resolution": 5,
+    "missing_chunk_resolution": 4,
     "mixed_full72_artifact": 1,
-    "pdf_artifact": 2,
+    "pdf_artifact": 1,
     "phase7_tuning_or_sanity_artifact": 41,
-    "query_id_mismatch": 46,
+    "query_id_mismatch": 45,
     "retriever_identity_not_recorded": 1,
     "xlsx_artifact": 4
   },

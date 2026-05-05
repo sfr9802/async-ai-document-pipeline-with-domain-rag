@@ -13,14 +13,31 @@
 
 ## Progress Log
 
-Phase별 진행 내역은 [rag_text_retrieval_e2e_progress.md](rag_text_retrieval_e2e_progress.md)에 기록한다. R0-R9 실행 로그는 [phases/phase_progress.md](phases/phase_progress.md)에 함께 기록한다. Track B가 완료되거나 안정 checkpoint에 도달하면 durable entry를 `docs/rag-ingestion-progress.md`로 합병한다.
+Phase별 진행 내역은 [rag_text_retrieval_e2e_progress.md](rag_text_retrieval_e2e_progress.md) 하나로 통합한다.
+
+- 이 파일이 Track B 전체 이력, `B-app` smoke / `B-namu` mainline 관계, R0-R9 세부 phase 상태, evidence 판단, gate/blocker 판단의 source-of-truth다.
+- 기존 `phases/phase_progress.md`는 중복 source-of-truth라 삭제했다.
+- Track B가 stable checkpoint에 도달하거나 intentionally paused 되었을 때 durable entry를 `docs/rag-ingestion-progress.md`로 병합한다.
+
+## Canonical Paths
+
+경로 표기는 repo root 기준 상대경로를 canonical로 쓴다. `ai-worker` 안에서 스크립트를 실행할 때만 괄호 안의 `ai-worker` cwd 기준 경로를 사용한다.
+
+| Artifact | Canonical repo-root path | `ai-worker` cwd path |
+|---|---|---|
+| R1 routing matrix CSV | `ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv` | `eval/eval_queries/query_intent_routing_matrix_v0.csv` |
+| R3 namu-v4 gold CSV | `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv` | `eval/eval_queries/gold_queries_text_namu_v4_v0.csv` |
+| Track B reports | `ai-worker/eval/reports/rag-ingestion/*.json` | `eval/reports/rag-ingestion/*.json` |
+| Track B scripts | `ai-worker/scripts/*.py` | `scripts/*.py` |
+
+Historical shorthand such as `reports/...`, `scripts/...`, or bare `eval/...` must be read with this table before citing an artifact.
 
 ## Lane Map
 
 | Lane | 목적 | 대표 corpus/backend | 현재 상태 |
 |---|---|---|---|
-| `B-app` | app catalog TEXT import/search smoke | small TEXT canary + `library_search` | 완료, smoke-only |
-| `B-namu` | 단순 텍스트 문서 검색/QA 본선 | `namu-v4-structured-combined` | R2 hardened PASS, R3 gold binding PASSED, R4 emit inventory completed; R5 needs fresh diagnostic retrieval |
+| `B-app` | app catalog TEXT import/search smoke | small TEXT canary + `library_search` | 완료, smoke-only; B-namu/namu-v4/production-style TEXT evidence로 인용 금지 |
+| `B-namu` | 단순 텍스트 문서 검색/QA 본선 | `namu-v4-structured-combined` | R6 context assembly completed with `PASS_WITH_WARNINGS`; R7 answer eval planned, not run |
 | `XLSX_CONTENT` | XLSX 내부 내용 검색 | XLSX vector candidate | diagnostic-ready |
 | `XLSX_FILE` | XLSX 파일 자체 검색 | file/document metadata index | not ready |
 | `PDF_CONTENT` | PDF 내부 내용 검색 | PDF vector candidate + page/bbox metadata | blocked on Track C |
@@ -35,9 +52,9 @@ Phase별 진행 내역은 [rag_text_retrieval_e2e_progress.md](rag_text_retrieva
 | R2 | [phase_r2_namu_v4_corpus_inventory.md](phases/phase_r2_namu_v4_corpus_inventory.md) | namu-v4 corpus 구조/hash/context field 검증 | inventory PASS |
 | R3 | [phase_r3_namu_v4_gold_binding.md](phases/phase_r3_namu_v4_gold_binding.md) | namu-v4 query/gold seed를 corpus에 bind | gold validator PASSED |
 | R4 | [phase_r4_namu_v4_retrieval_emit_inventory.md](phases/phase_r4_namu_v4_retrieval_emit_inventory.md) | 기존 retrieval emit 재사용 가능성 판단 | existing emit 사용 또는 fresh run 결정 |
-| R5 | [phase_r5_b2_namu_retrieval_diagnostic.md](phases/phase_r5_b2_namu_retrieval_diagnostic.md) | 실제 B2-namu retrieval-only metric 생성 | diagnostic report 존재, denominator 명시 |
-| R6 | [phase_r6_b3_namu_context_assembly.md](phases/phase_r6_b3_namu_context_assembly.md) | retrieval top-k를 raw chunk_text context로 조립 | context report 존재 |
-| R7 | [phase_r7_b4_namu_answer_eval.md](phases/phase_r7_b4_namu_answer_eval.md) | LLM answer correctness와 guardrail 평가 | answer report 존재 |
+| R5 | [phase_r5_b2_namu_retrieval_diagnostic.md](phases/phase_r5_b2_namu_retrieval_diagnostic.md) | 실제 B2-namu retrieval-only metric 생성 | 완료: fresh emit/report 존재, denominator 명시 |
+| R6 | [phase_r6_b3_namu_context_assembly.md](phases/phase_r6_b3_namu_context_assembly.md) | retrieval top-k를 raw chunk_text context로 조립 | 완료: context emit/report 존재 |
+| R7 | [phase_r7_b4_namu_answer_eval.md](phases/phase_r7_b4_namu_answer_eval.md) | LLM answer correctness와 guardrail 평가 | planned/ready; R6 report를 입력으로 사용 |
 | R8 | [phase_r8_b5_namu_citation_support.md](phases/phase_r8_b5_namu_citation_support.md) | answer claim의 citation support 검증 | claim-level support report 존재 |
 | R9 | [phase_r9_file_content_lane_readiness.md](phases/phase_r9_file_content_lane_readiness.md) | XLSX/PDF/TEXT FILE vs CONTENT lane readiness 분리 | readiness report 존재 |
 
@@ -76,7 +93,8 @@ Phase별 진행 내역은 [rag_text_retrieval_e2e_progress.md](rag_text_retrieva
 | namu-v4 gold CSV | `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv` |
 | namu-v4 gold reports | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_gold_build_report.json`, `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_gold_validate_report.json` |
 | namu-v4 retrieval emit inventory | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_emit_inventory_report.json` |
-| B2-namu retrieval diagnostic | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_diagnostic_report.json` |
+| B2-namu retrieval diagnostic emit | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_emit.jsonl` |
+| B2-namu retrieval diagnostic report | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_retrieval_diagnostic_report.json` |
 | B3-namu contexts | `ai-worker/eval/eval_queries/text_namu_v4_contexts_v0.jsonl`, `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_context_assembly_report.json` |
 | B4-namu answers | `ai-worker/eval/eval_queries/text_namu_v4_answers_v0.jsonl`, `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_answer_eval_report.json` |
 | B5-namu citation support | `ai-worker/eval/reports/rag-ingestion/rag_text_namu_v4_citation_support_report.json` |

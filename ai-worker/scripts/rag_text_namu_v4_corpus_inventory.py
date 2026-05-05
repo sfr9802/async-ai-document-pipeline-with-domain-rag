@@ -17,8 +17,11 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 
 
-DEFAULT_CORPUS_DIR = Path("ai-worker/eval/corpora/namu-v4-structured-combined")
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_text_namu_v4_corpus_inventory_report.json")
+AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = AI_WORKER_ROOT.parent
+
+DEFAULT_CORPUS_DIR = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined"
+DEFAULT_REPORT = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_corpus_inventory_report.json"
 
 REQUIRED_FILES = ["pages_v4.jsonl", "chunks_v4.jsonl", "rag_chunks.jsonl"]
 HARDENED_AUXILIARY_FILES = ["validation_report.json", "split_manifest.json", "split_manifest.report.json"]
@@ -753,7 +756,11 @@ def is_json_like_text(value: str) -> bool:
 
 
 def normalise_path(path: Path) -> str:
-    return str(path).replace("\\", "/")
+    resolved = path.resolve()
+    try:
+        return resolved.relative_to(REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        return resolved.as_posix()
 
 
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
