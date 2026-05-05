@@ -12,14 +12,14 @@ Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content m
 |---|---|
 | Phase status | A0-A6 `COMPLETED` |
 | Evidence role | `promotion_evidence=false`, `evidence_role=diagnostic` |
-| Positive reviewed gold | `eval/gold_queries_xlsx_v3_positive_reviewed.csv` |
-| Original positive gold | `eval/gold_queries_xlsx_v3_positive.csv` 보존, 덮어쓰기 없음 |
+| Positive reviewed gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv` |
+| Original positive gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv` 보존, 덮어쓰기 없음 |
 | Candidate index version | `rag-ingestion-v2-xlsx-candidate-v1` |
-| Candidate v2 decision | `reports/xlsx_candidate_v2_decision.json` -> `SKIP` |
+| Candidate v2 decision | `ai-worker/eval/reports/rag-ingestion/xlsx_candidate_v2_decision.json` -> `SKIP` |
 | Candidate v1 mutated | `false` |
 | Candidate v2 created | `false` |
 | Immutable baseline changed | `false` |
-| `rag-data-canary` changed | `false` |
+| `ai-worker/eval/indexes/rag-data-canary` changed | `false` |
 | Hidden content leakage | `0` |
 
 ## 최종 지표
@@ -60,13 +60,13 @@ Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content m
 
 | Phase | Status | Evidence/report | Result |
 |---|---|---|---|
-| A0 evidence freeze | `COMPLETED` | `reports/rag_xlsx_candidate_lineage_before_tuning.json`, `reports/rag_xlsx_v3_current_diagnostic_snapshot.json` | baseline/canary hash unchanged, hidden leakage 0 |
-| A1 failure case review | `COMPLETED` | `reports/rag_xlsx_v3_failure_case_review.json` | 4 degraded rows classified, true retrieval ranking failure 0 |
-| A2 query surface review | `COMPLETED` | `reports/rag_xlsx_query_surface_patch_plan.json`, `reports/rag_xlsx_v3_query_surface_before_after_compare.json` | safe query-only reviewed manifest created |
-| A3 range policy review | `COMPLETED` | `reports/rag_xlsx_range_policy_review.json`, `reports/rag_xlsx_range_policy_dry_run_impact.json` | exact row policy kept |
-| A4 formula/date contract review | `COMPLETED` | `reports/rag_xlsx_formula_date_contract_review.json`, `reports/rag_xlsx_formula_date_surface_presence.json` | expected surface existed; query rewrite, not candidate v2 |
-| A5 candidate v2 decision | `COMPLETED` | `reports/xlsx_candidate_v2_decision.json` | `SKIP` |
-| A6 rerun and compare | `COMPLETED` | `reports/rag_xlsx_v3_after_cleanup_metric_compare.json`, `reports/rag_xlsx_v3_after_cleanup_failure_breakdown.json` | `MATCHED=35`, degraded 0 |
+| A0 evidence freeze | `COMPLETED` | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_candidate_lineage_before_tuning.json`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_current_diagnostic_snapshot.json` | baseline/canary hash unchanged, hidden leakage 0 |
+| A1 failure case review | `COMPLETED` | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_failure_case_review.json` | 4 degraded rows classified, true retrieval ranking failure 0 |
+| A2 query surface review | `COMPLETED` | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_query_surface_patch_plan.json`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_query_surface_before_after_compare.json` | safe query-only reviewed manifest created |
+| A3 range policy review | `COMPLETED` | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_range_policy_review.json`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_range_policy_dry_run_impact.json` | exact row policy kept |
+| A4 formula/date contract review | `COMPLETED` | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_formula_date_contract_review.json`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_formula_date_surface_presence.json` | expected surface existed; query rewrite, not candidate v2 |
+| A5 candidate v2 decision | `COMPLETED` | `ai-worker/eval/reports/rag-ingestion/xlsx_candidate_v2_decision.json` | `SKIP` |
+| A6 rerun and compare | `COMPLETED` | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_metric_compare.json`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_failure_breakdown.json` | `MATCHED=35`, degraded 0 |
 
 ## Reviewed hard-case 업데이트
 
@@ -75,15 +75,15 @@ Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content m
 | `gq_xlsx_lookup_002` | `신분당선 2019년 5월 승차총승객수 알려줘.` | `expected_answer_text=신분당선 승차총승객수`, `must_contain_terms=신분당선;승차총승객수` | exact location recovered at `location_rank=3` |
 | `gq_auto_041` | `인하요양원 소재지 정보 찾아줘.` | `expected_answer_text=인하요양원 소재지`, `must_contain_terms=인하요양원;소재지` | exact location recovered at `location_rank=3` |
 
-기존 less-explicit v3 positive manifest는 덮어쓰지 않았습니다. Reviewed 변경은 `eval/gold_queries_xlsx_v3_positive_reviewed.csv`에만 있습니다.
+기존 less-explicit v3 positive manifest는 덮어쓰지 않았습니다. Reviewed 변경은 `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv`에만 있습니다.
 
 ## Guardrails
 
 1. 모든 Track A report는 diagnostic-only입니다: `promotion_evidence=false`, `evidence_role=diagnostic`.
 2. Hidden-negative rows는 leakage diagnostic에만 쓰며 positive Hit@K/MRR에는 섞지 않습니다.
-3. `rag-ingestion-v2-xlsx-candidate-v1`과 `rag-data-xlsx-candidate-v1`은 mutate하지 않았습니다.
+3. `rag-ingestion-v2-xlsx-candidate-v1`과 `ai-worker/eval/indexes/rag-data-xlsx-candidate-v1`은 mutate하지 않았습니다.
 4. Candidate v2 namespace는 생성하지 않았습니다.
-5. Immutable baseline artifacts, `rag-data-canary`, full72 promotion-gate inputs는 변경하지 않았습니다.
+5. Immutable baseline artifacts, `ai-worker/eval/indexes/rag-data-canary`, full72 promotion-gate inputs는 변경하지 않았습니다.
 6. Hybrid search, reranking, parser expansion, answer generation, broad reindex, global range-policy relaxation은 도입하지 않았습니다.
 
 ## Evidence 위치

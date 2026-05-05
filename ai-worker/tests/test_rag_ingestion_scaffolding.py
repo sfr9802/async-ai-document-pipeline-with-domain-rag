@@ -27,51 +27,51 @@ gate_module = load_module(
 )
 batch_module = load_module(
     "rag_ingestion_sample_batch",
-    ROOT / "scripts" / "rag_ingestion_sample_batch.py",
+    ROOT / "ai-worker" / "scripts" / "rag_ingestion_sample_batch.py",
 )
 pdf_module = load_module(
     "rag_pdf_ingestion_smoke",
-    ROOT / "scripts" / "rag_pdf_ingestion_smoke.py",
+    ROOT / "ai-worker" / "scripts" / "rag_pdf_ingestion_smoke.py",
 )
 pdf_batch_module = load_module(
     "rag_pdf_ingestion_sample_batch",
-    ROOT / "scripts" / "rag_pdf_ingestion_sample_batch.py",
+    ROOT / "ai-worker" / "scripts" / "rag_pdf_ingestion_sample_batch.py",
 )
 promotion_metrics_module = load_module(
     "rag_build_promotion_gate_metrics",
-    ROOT / "scripts" / "rag_build_promotion_gate_metrics.py",
+    ROOT / "ai-worker" / "scripts" / "rag_build_promotion_gate_metrics.py",
 )
 path_readiness_module = load_module(
     "rag_path_separation_readiness",
-    ROOT / "scripts" / "rag_path_separation_readiness.py",
+    ROOT / "ai-worker" / "scripts" / "rag_path_separation_readiness.py",
 )
 embedding_consistency_module = load_module(
     "pdf_xlsx_candidate_embedding_consistency",
-    ROOT / "scripts" / "pdf_xlsx_candidate_embedding_consistency.py",
+    ROOT / "ai-worker" / "scripts" / "pdf_xlsx_candidate_embedding_consistency.py",
 )
 immutable_baseline_module = load_module(
     "rag_prepare_immutable_baseline",
-    ROOT / "scripts" / "rag_prepare_immutable_baseline.py",
+    ROOT / "ai-worker" / "scripts" / "rag_prepare_immutable_baseline.py",
 )
 bootstrap_baseline_module = load_module(
     "rag_bootstrap_initial_vector_baseline",
-    ROOT / "scripts" / "rag_bootstrap_initial_vector_baseline.py",
+    ROOT / "ai-worker" / "scripts" / "rag_bootstrap_initial_vector_baseline.py",
 )
 quality_breakdown_module = load_module(
     "rag_full72_vector_quality_breakdown",
-    ROOT / "scripts" / "rag_full72_vector_quality_breakdown.py",
+    ROOT / "ai-worker" / "scripts" / "rag_full72_vector_quality_breakdown.py",
 )
 query_cleanup_module = load_module(
     "rag_query_evidence_cleanup_plan",
-    ROOT / "scripts" / "rag_query_evidence_cleanup_plan.py",
+    ROOT / "ai-worker" / "scripts" / "rag_query_evidence_cleanup_plan.py",
 )
 promotion_eval_readiness_module = load_module(
     "rag_promotion_grade_vector_eval_readiness",
-    ROOT / "scripts" / "rag_promotion_grade_vector_eval_readiness.py",
+    ROOT / "ai-worker" / "scripts" / "rag_promotion_grade_vector_eval_readiness.py",
 )
 source_qualified_readiness_module = load_module(
     "rag_source_qualified_gate_input_readiness",
-    ROOT / "scripts" / "rag_source_qualified_gate_input_readiness.py",
+    ROOT / "ai-worker" / "scripts" / "rag_source_qualified_gate_input_readiness.py",
 )
 
 
@@ -265,13 +265,13 @@ def test_promotion_gate_blocks_vector_namespace_mismatch():
 
 
 def test_batch_manifest_resolves_paths_from_cwd_fallback():
-    manifest_path = ROOT / "samples" / "rag_ingestion_manifest.json"
+    manifest_path = ROOT / "ai-worker" / "fixtures" / "manifests" / "rag_ingestion_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     sample = manifest["samples"][0]
 
     resolved = batch_module.resolve_sample_path(sample["file_path"], manifest_path)
 
-    assert resolved == ROOT / sample["file_path"]
+    assert resolved == ROOT / "ai-worker" / sample["file_path"]
 
 
 def test_batch_db_report_validation_fails_on_missing_metadata():
@@ -311,7 +311,7 @@ def test_pdf_report_validation_requires_metadata_and_locations():
 
 
 def test_pdf_batch_manifest_resolves_real_sample_paths():
-    manifest_path = ROOT / "samples" / "rag_pdf_ingestion_manifest.json"
+    manifest_path = ROOT / "ai-worker" / "fixtures" / "manifests" / "rag_pdf_ingestion_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert len(manifest["samples"]) >= 8
 

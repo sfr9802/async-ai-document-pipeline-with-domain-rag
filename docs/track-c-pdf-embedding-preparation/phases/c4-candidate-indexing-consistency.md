@@ -6,7 +6,7 @@ PDF 전용 candidate namespace에 명시 scope만 indexing하고, candidate rows
 
 ## 입력
 
-- `reports/pdf_candidate_scope_report.json`
+- `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json`
 - C2 metadata projection readiness report
 - C3 embedding text contract audit report
 - explicit PDF `documentVersionIds`
@@ -35,8 +35,8 @@ explicit documentVersionIds 사용
 
 ## 산출물
 
-- `reports/pdf_candidate_indexing_report.json`
-- `reports/pdf_candidate_embedding_consistency_report.json`
+- `ai-worker/eval/reports/rag-ingestion/pdf_candidate_indexing_report.json`
+- `ai-worker/eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json`
 
 ## 완료 기준
 

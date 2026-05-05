@@ -38,59 +38,47 @@ public service without a separate security review.
 | `ai-worker/ai_worker/` | active | Operational packages such as SearchUnit indexing and golden-retrieval fixture/eval helpers. |
 | `ai-worker/eval/` | active but isolated | Eval harnesses and historical eval material. Production runtime should not import from here. |
 | `ai-worker/scripts/` | mixed active/eval | Eval, tuning, dataset, fixture, and report-generation helpers. |
-| `scripts/` | active operational helpers | Root-level smoke, ingestion, readiness, promotion-gate, repair, baseline, and candidate indexing scripts. |
+| `ai-worker/fixtures/` | active worker fixtures | Small committed fixtures and ingestion manifests used by worker scripts and tests. |
+| `ai-worker/eval/eval_queries/` | active eval input | RAG ingestion gold/query CSVs and routing matrices. |
+| `ai-worker/eval/corpora/` | active eval input | Text corpora used by Track B and related retrieval diagnostics. |
+| `ai-worker/eval/datasets/` | active/reference data | Dataset snapshots and benchmark material, including KoViDoRe, sample, and XLSX canary inputs. |
+| `ai-worker/eval/reports/rag-ingestion/` | generated working evidence | Default RAG ingestion diagnostic/readiness report location. |
+| `ai-worker/eval/indexes/` | generated vector/index data | Worker-local FAISS/vector artifacts such as `rag-data`, `rag-data-canary`, and candidate indexes. |
 | `docs/` | active docs | Architecture, local run, RAG ingestion progress/plans, and structure docs. |
-| `eval/` | active eval input | Root gold query CSVs used by RAG ingestion tests and scripts. |
-| `samples/` | active inputs | Smoke/sample manifests used by scripts and tests. |
-| `datasets/` | active/reference data | Dataset snapshots and benchmark material, including KoViDoRe and XLSX canary inputs. |
-| `reports/` | generated working evidence | Default output location for root RAG scripts. Old generated outputs may be moved to `archive/results/`. |
-| `rag-data/` | runtime/index data | Default RAG index directory from worker configuration. |
-| `rag-data-canary/` | generated workflow artifact | Candidate/canary vector artifact. Workflow-blocking, not production-imported. |
 | `local-storage/` | runtime data | Local artifact blob storage default for core API and worker. |
 | `archive/` | historical | Preserved generated outputs and future retired material. See `archive/README.md` and `archive/MANIFEST.md`. |
 
-## Active Root Scripts
+Root-level `scripts/`, `eval/`, `samples/`, `datasets/`, `reports/`, and
+`rag-data*` directories are no longer active paths. If an old command recreates
+one of them, treat it as a compatibility bug and move the input/output back
+under `ai-worker/`.
+
+## Worker Scripts
 
 | Script | Purpose |
 |---|---|
-| `scripts/demo.py` | Compatibility wrapper for `scripts/operational/demo.py`. |
-| `scripts/e2e_smoke.py` | Compatibility wrapper for `scripts/operational/e2e_smoke.py`. |
-| `scripts/smoke_all.py` | Compatibility wrapper for `scripts/operational/smoke_all.py`. |
-| `scripts/operational/demo.py` | One-command platform demo. |
-| `scripts/operational/e2e_smoke.py` | End-to-end async pipeline smoke test. |
-| `scripts/operational/smoke_all.py` | Delegates to the worker smoke runner. |
-| `scripts/rag_ingestion_smoke.py` | XLSX RAG ingestion v2 smoke. |
-| `scripts/rag_ingestion_sample_batch.py` | Manifest-driven XLSX ingestion sample batch runner. |
-| `scripts/rag_pdf_ingestion_smoke.py` | PDF RAG ingestion metadata smoke. |
-| `scripts/rag_pdf_ingestion_sample_batch.py` | Manifest-driven PDF ingestion sample batch runner. |
-| `scripts/rag_pdf_ocr_fallback_smoke.py` | PDF OCR fallback smoke. |
-| `scripts/rag_retrieval_eval.py` | CLI wrapper for the active RAG ingestion retrieval eval harness. |
-| `scripts/rag_build_promotion_gate_metrics.py` | Builds promotion-gate metrics from generated smoke/eval reports. |
-| `scripts/rag_path_separation_readiness.py` | Read-only TEXT/PDF/XLSX path-separation readiness report. |
-| `scripts/rag_candidate_scope_path_readiness.py` | Candidate-scope PDF/XLSX path readiness report. |
-| `scripts/pdf_xlsx_candidate_embedding_consistency.py` | Read-only PDF/XLSX candidate embedding consistency report. |
-| `scripts/rag_full72_docv_scope_classification.py` | Full72 gold document-version scope classification and planning. |
-| `scripts/rag_full72_vector_quality_breakdown.py` | Full72 vector diagnostic breakdown. |
-| `scripts/rag_scoped_candidate_indexing.py` | Scoped candidate SearchUnit indexing runner. |
-| `scripts/rag_scoped_search_unit_text_repair.py` | Scoped live-DB repair for missing SearchUnit text fields. |
-| `scripts/rag_candidate_namespace_cleanup.py` | Scoped candidate namespace cleanup/retire helper. |
-| `scripts/rag_gold_query_rebind.py` | Rebinds RAG ingestion gold queries from the live catalog DB. |
-| `scripts/rag_prepare_immutable_baseline.py` | Validates/materializes immutable RAG-ingestion baseline evidence. |
-| `scripts/rag_bootstrap_initial_vector_baseline.py` | Bootstrap helper for the first immutable vector baseline descriptor. |
-| `scripts/rag_query_evidence_cleanup_plan.py` | Report-only full72 query evidence cleanup planner. |
-| `scripts/rag_source_qualified_gate_input_readiness.py` | Source-qualified promotion-gate input contract readiness check. |
-| `scripts/rag_candidate_index_lineage_report.py` | Diagnostic-only lineage report for immutable baseline and candidate vector artifacts. |
-| `scripts/rag_promotion_grade_vector_eval_readiness.py` | Fail-closed readiness check for a future full72 promotion-grade vector eval. |
-| `scripts/rag_xlsx_gold_quality_audit.py` | XLSX gold/query quality audit. |
-| `scripts/rag_xlsx_gold_v2_builder.py` | Builds the mixed XLSX v2 manifest without promotion evidence. |
-| `scripts/rag_xlsx_natural_query_builder.py` | Builds the XLSX v3 naturalized and positive-only query manifests. |
-| `scripts/rag_xlsx_natural_query_quality_audit.py` | Audits XLSX v3 naturalized query quality. |
-| `scripts/rag_xlsx_dataset_canary_report.py` | Reports requested XLSX dataset inventory and canary sample selection. |
-| `scripts/rag_xlsx_query_evidence_review.py` | Applies reviewed XLSX query-evidence decisions. |
-| `scripts/rag_xlsx_promotion_grade_eval_readiness.py` | Fail-closed readiness check for a future XLSX-only promotion-grade vector eval. |
-| `scripts/rag_xlsx_v3_vector_quality_breakdown.py` | XLSX v3 positive vector diagnostic breakdown. |
-| `scripts/xlsx_candidate_scope_report.py` | XLSX-only hidden-safe candidate scope report. |
-| `scripts/xlsx_candidate_embedding_consistency.py` | XLSX-only candidate embedding consistency report. |
+| `ai-worker/scripts/operational/demo.py` | One-command platform demo. |
+| `ai-worker/scripts/operational/e2e_smoke.py` | End-to-end async pipeline smoke test. |
+| `ai-worker/scripts/operational/smoke_all.py` | Delegates to the worker smoke runner. |
+| `ai-worker/scripts/rag_ingestion_smoke.py` | XLSX RAG ingestion v2 smoke. |
+| `ai-worker/scripts/rag_ingestion_sample_batch.py` | Manifest-driven XLSX ingestion sample batch runner. |
+| `ai-worker/scripts/rag_pdf_ingestion_smoke.py` | PDF RAG ingestion metadata smoke. |
+| `ai-worker/scripts/rag_pdf_ingestion_sample_batch.py` | Manifest-driven PDF ingestion sample batch runner. |
+| `ai-worker/scripts/rag_pdf_ocr_fallback_smoke.py` | PDF OCR fallback smoke. |
+| `ai-worker/scripts/rag_retrieval_eval.py` | CLI wrapper for the active RAG ingestion retrieval eval harness. |
+| `ai-worker/scripts/rag_build_promotion_gate_metrics.py` | Builds promotion-gate metrics from generated smoke/eval reports. |
+| `ai-worker/scripts/rag_path_separation_readiness.py` | Read-only TEXT/PDF/XLSX path-separation readiness report. |
+| `ai-worker/scripts/rag_candidate_scope_path_readiness.py` | Candidate-scope PDF/XLSX path readiness report. |
+| `ai-worker/scripts/pdf_xlsx_candidate_embedding_consistency.py` | Read-only PDF/XLSX candidate embedding consistency report. |
+| `ai-worker/scripts/rag_scoped_candidate_indexing.py` | Scoped candidate SearchUnit indexing runner. |
+| `ai-worker/scripts/rag_scoped_search_unit_text_repair.py` | Scoped live-DB repair for missing SearchUnit text fields. |
+| `ai-worker/scripts/rag_candidate_namespace_cleanup.py` | Scoped candidate namespace cleanup/retire helper. |
+| `ai-worker/scripts/rag_gold_query_rebind.py` | Rebinds RAG ingestion gold queries from the live catalog DB. |
+| `ai-worker/scripts/rag_prepare_immutable_baseline.py` | Validates/materializes immutable RAG-ingestion baseline evidence. |
+| `ai-worker/scripts/rag_candidate_index_lineage_report.py` | Diagnostic-only lineage report for immutable baseline and candidate vector artifacts. |
+| `ai-worker/scripts/rag_xlsx_*` | XLSX query/evidence/candidate diagnostic helpers. |
+| `ai-worker/scripts/rag_text_*` | TEXT Track B diagnostic helpers. |
+| `ai-worker/scripts/rag_pdf_*` and `ai-worker/scripts/pdf_*` | PDF diagnostic/readiness helpers. |
 
 ## Archive Policy
 
@@ -98,20 +86,17 @@ Use `archive/` only for material that is no longer active. When a file is
 uncertain, keep it in place or mark it as `needs_review`; do not move it merely
 because it looks old.
 
-During the 2026-05-04 cleanup, only generated root outputs were moved. The
-following were intentionally kept because they are active, test-blocking,
-workflow-blocking, or runtime defaults:
+During the 2026-05-05 cleanup, worker-owned scripts, eval inputs, dataset
+snapshots, manifests, generated reports, and FAISS/vector artifacts were moved
+under `ai-worker/`. The remaining active root directories are service or
+workspace boundaries: `core-api/`, `ai-worker/`, `frontend/`, `docs/`,
+`local-storage/`, and `archive/`.
 
-- `eval/gold_queries_v0.csv`
-- `samples/*.json`
-- `datasets/**`
-- `rag-data-canary/`
-- `local-storage/`
-- `rag-data/`
-- root `scripts/*.py`
-- all `core-api/**`, `ai-worker/app/**`, `ai-worker/ai_worker/**`, and `ai-worker/tests/**`
+Keep future worker artifacts inside the worker tree:
 
-The second cleanup pass moved only clean tracked operational scripts into
-`scripts/operational/` and left root compatibility wrappers in place. Modified
-or untracked RAG scripts were not relocated to avoid bundling unrelated active
-work into the structure commit.
+- scripts and command helpers: `ai-worker/scripts/`
+- manifests and small fixtures: `ai-worker/fixtures/`
+- gold/query inputs: `ai-worker/eval/eval_queries/`
+- corpora and dataset snapshots: `ai-worker/eval/corpora/` or `ai-worker/eval/datasets/`
+- RAG ingestion reports: `ai-worker/eval/reports/rag-ingestion/`
+- FAISS/vector artifacts: `ai-worker/eval/indexes/`

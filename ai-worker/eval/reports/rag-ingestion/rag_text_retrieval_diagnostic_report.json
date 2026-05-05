@@ -1,0 +1,558 @@
+{
+  "run_id": "20260505T010053Z",
+  "generated_at": "2026-05-05T01:00:53.692176Z",
+  "schema_version": "rag_text_retrieval_diagnostic_v1",
+  "status": "COMPLETED",
+  "report_role": "rag_text_retrieval_diagnostic",
+  "scope": "track_b_text_retrieval_e2e",
+  "phase": "B2",
+  "retrieval_backend": "library_search",
+  "retrieval_backend_identity": {
+    "backend": "library_search",
+    "api_route": "/api/v1/library/search",
+    "http_method": "GET",
+    "controller": "DocumentCatalogController.search(query, limit, sourceFileTypes)",
+    "service": "DocumentCatalogService.search(query, limit, sourceFileTypes)",
+    "repository_method": "SearchUnitJpaRepository.searchByText/searchByTextAndSourceFileTypes",
+    "repository": "SearchUnitJpaRepository.searchByText/searchByTextAndSourceFileTypes",
+    "query_surface": "JPQL LIKE over SearchUnit text fields",
+    "filtering_mode": "source_type_filtered_lexical_search",
+    "query_fields": [
+      "textContent",
+      "bm25Text",
+      "displayText",
+      "citationText",
+      "debugText"
+    ],
+    "limit_clamp": "1..50",
+    "source_type_request_param_supported": true,
+    "source_type_repository_filter_supported": true,
+    "embedding_status_filter_supported": false,
+    "index_version_filter_supported": false,
+    "index_version": null,
+    "artifact_dir": null,
+    "vector_namespace": null,
+    "config_sha256": "15cd1910c138683b4a17873a737bb5705a2aa0e194c52a4bd292a9c1c39f6dc1"
+  },
+  "backend_identity_report": "reports/rag_text_backend_identity_report.json",
+  "backend_identity_status": "DIAGNOSTIC_COMPLETED",
+  "gold_csv": "eval/gold_queries_text_e2e_v0.csv",
+  "gold_csv_sha256": "a1a48f5f6817ac320cb91694bd4efd70e387f5bc834c2f893190cba4adf1333e",
+  "gold_columns": [
+    "query_id",
+    "bucket",
+    "query",
+    "expected_answer_summary",
+    "expected_source_ids",
+    "expected_chunk_ids",
+    "expected_citation_texts",
+    "must_contain_terms",
+    "must_not_contain_terms",
+    "allowed_abstain",
+    "answer_type",
+    "difficulty",
+    "label_status",
+    "notes"
+  ],
+  "top_k": 10,
+  "source_file_types": [
+    "MARKDOWN",
+    "MD",
+    "TEXT",
+    "TXT"
+  ],
+  "api_url": "http://localhost:8080/api/v1/library/search",
+  "smoke_only": false,
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "validation": {
+    "ok": true,
+    "row_count": 12,
+    "missing_required_columns": [],
+    "duplicate_query_ids": [],
+    "row_errors": {},
+    "bucket_counts": {
+      "text_abstain_required": 2,
+      "text_comparison": 1,
+      "text_fact_lookup": 3,
+      "text_multi_chunk_summary": 1,
+      "text_policy_question": 3,
+      "text_procedure": 2
+    }
+  },
+  "metrics": {
+    "query_count": 12,
+    "evidence_query_count": 10,
+    "abstain_query_count": 2,
+    "Hit@1": 0.0,
+    "Hit@3": 0.0,
+    "Hit@5": 0.0,
+    "Hit@10": 0.0,
+    "MRR@10": 0.0,
+    "overall_hit_policy": "expected source OR expected chunk",
+    "source_Hit@1": 0.0,
+    "source_Hit@3": 0.0,
+    "source_Hit@5": 0.0,
+    "source_Hit@10": 0.0,
+    "source_MRR@10": 0.0,
+    "chunk_Hit@1": 0.0,
+    "chunk_Hit@3": 0.0,
+    "chunk_Hit@5": 0.0,
+    "chunk_Hit@10": 0.0,
+    "chunk_MRR@10": 0.0,
+    "source_recall@10": 0.0,
+    "chunk_recall@10": 0.0,
+    "result_empty_count": 12,
+    "wrong_source_top1_count": 0,
+    "path_mixing_count": 0,
+    "path_mixing_result_count": 0,
+    "search_error_count": 0,
+    "overall_failure_reason_counts": {
+      "search_result_empty": 10
+    },
+    "bucket_failure_reason_counts": {
+      "text_comparison": {
+        "search_result_empty": 1
+      },
+      "text_fact_lookup": {
+        "search_result_empty": 3
+      },
+      "text_multi_chunk_summary": {
+        "search_result_empty": 1
+      },
+      "text_policy_question": {
+        "search_result_empty": 3
+      },
+      "text_procedure": {
+        "search_result_empty": 2
+      }
+    }
+  },
+  "bucket_metrics": {
+    "text_comparison": {
+      "count": 1,
+      "Hit@1": 0.0,
+      "Hit@3": 0.0,
+      "Hit@5": 0.0,
+      "Hit@10": 0.0,
+      "MRR@10": 0.0,
+      "overall_hit_policy": "expected source OR expected chunk",
+      "source_Hit@10": 0.0,
+      "source_MRR@10": 0.0,
+      "chunk_Hit@10": 0.0,
+      "chunk_MRR@10": 0.0,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "bucket_failure_reason_counts": {
+        "search_result_empty": 1
+      }
+    },
+    "text_fact_lookup": {
+      "count": 3,
+      "Hit@1": 0.0,
+      "Hit@3": 0.0,
+      "Hit@5": 0.0,
+      "Hit@10": 0.0,
+      "MRR@10": 0.0,
+      "overall_hit_policy": "expected source OR expected chunk",
+      "source_Hit@10": 0.0,
+      "source_MRR@10": 0.0,
+      "chunk_Hit@10": 0.0,
+      "chunk_MRR@10": 0.0,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "bucket_failure_reason_counts": {
+        "search_result_empty": 3
+      }
+    },
+    "text_multi_chunk_summary": {
+      "count": 1,
+      "Hit@1": 0.0,
+      "Hit@3": 0.0,
+      "Hit@5": 0.0,
+      "Hit@10": 0.0,
+      "MRR@10": 0.0,
+      "overall_hit_policy": "expected source OR expected chunk",
+      "source_Hit@10": 0.0,
+      "source_MRR@10": 0.0,
+      "chunk_Hit@10": 0.0,
+      "chunk_MRR@10": 0.0,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "bucket_failure_reason_counts": {
+        "search_result_empty": 1
+      }
+    },
+    "text_policy_question": {
+      "count": 3,
+      "Hit@1": 0.0,
+      "Hit@3": 0.0,
+      "Hit@5": 0.0,
+      "Hit@10": 0.0,
+      "MRR@10": 0.0,
+      "overall_hit_policy": "expected source OR expected chunk",
+      "source_Hit@10": 0.0,
+      "source_MRR@10": 0.0,
+      "chunk_Hit@10": 0.0,
+      "chunk_MRR@10": 0.0,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "bucket_failure_reason_counts": {
+        "search_result_empty": 3
+      }
+    },
+    "text_procedure": {
+      "count": 2,
+      "Hit@1": 0.0,
+      "Hit@3": 0.0,
+      "Hit@5": 0.0,
+      "Hit@10": 0.0,
+      "MRR@10": 0.0,
+      "overall_hit_policy": "expected source OR expected chunk",
+      "source_Hit@10": 0.0,
+      "source_MRR@10": 0.0,
+      "chunk_Hit@10": 0.0,
+      "chunk_MRR@10": 0.0,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "bucket_failure_reason_counts": {
+        "search_result_empty": 2
+      }
+    }
+  },
+  "query_results": [
+    {
+      "query_id": "gq_text_fact_001",
+      "bucket": "text_fact_lookup",
+      "query": "How many times can standard loan items be renewed?",
+      "allowed_abstain": false,
+      "label_status": "bound",
+      "expected_source_ids": [
+        "ef8f2adb-f32f-428a-845d-3cdb9a5858d5"
+      ],
+      "expected_chunk_ids": [
+        "fcf39aae-7c4d-47a1-aa86-546a70182e95"
+      ],
+      "has_expected_evidence": true,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_matched",
+      "failure_reason": "search_result_empty",
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_fact_002",
+      "bucket": "text_fact_lookup",
+      "query": "When do visitor badges expire?",
+      "allowed_abstain": false,
+      "label_status": "bound",
+      "expected_source_ids": [
+        "ef8f2adb-f32f-428a-845d-3cdb9a5858d5"
+      ],
+      "expected_chunk_ids": [
+        "fcf39aae-7c4d-47a1-aa86-546a70182e95"
+      ],
+      "has_expected_evidence": true,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_matched",
+      "failure_reason": "search_result_empty",
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_policy_001",
+      "bucket": "text_policy_question",
+      "query": "Can reference tablets leave the building?",
+      "allowed_abstain": false,
+      "label_status": "bound",
+      "expected_source_ids": [
+        "ef8f2adb-f32f-428a-845d-3cdb9a5858d5"
+      ],
+      "expected_chunk_ids": [
+        "fcf39aae-7c4d-47a1-aa86-546a70182e95"
+      ],
+      "has_expected_evidence": true,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_matched",
+      "failure_reason": "search_result_empty",
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_policy_002",
+      "bucket": "text_policy_question",
+      "query": "What does bound label status mean in the catalog field reference?",
+      "allowed_abstain": false,
+      "label_status": "bound",
+      "expected_source_ids": [
+        "169d53bf-f666-470a-80e4-8b55b12db62d"
+      ],
+      "expected_chunk_ids": [
+        "2c5cfd86-8954-4302-91fd-4a13814c40a7"
+      ],
+      "has_expected_evidence": true,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_matched",
+      "failure_reason": "search_result_empty",
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_procedure_001",
+      "bucket": "text_procedure",
+      "query": "What is the first check for an OCR queue stall?",
+      "allowed_abstain": false,
+      "label_status": "bound",
+      "expected_source_ids": [
+        "932f6d9b-420d-4a3c-8eb1-70a3ee4157f4"
+      ],
+      "expected_chunk_ids": [
+        "306894f8-2ab0-4650-87f1-4ea023f274bd"
+      ],
+      "has_expected_evidence": true,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_matched",
+      "failure_reason": "search_result_empty",
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_procedure_002",
+      "bucket": "text_procedure",
+      "query": "When should the worker be restarted during OCR queue recovery?",
+      "allowed_abstain": false,
+      "label_status": "bound",
+      "expected_source_ids": [
+        "932f6d9b-420d-4a3c-8eb1-70a3ee4157f4"
+      ],
+      "expected_chunk_ids": [
+        "306894f8-2ab0-4650-87f1-4ea023f274bd"
+      ],
+      "has_expected_evidence": true,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_matched",
+      "failure_reason": "search_result_empty",
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_fact_003",
+      "bucket": "text_fact_lookup",
+      "query": "Which route does the Track B text smoke path use?",
+      "allowed_abstain": false,
+      "label_status": "bound",
+      "expected_source_ids": [
+        "62a21210-0307-4405-af4d-40421f331628"
+      ],
+      "expected_chunk_ids": [
+        "be44ae44-53ff-4438-b8e9-2e77c5e61422"
+      ],
+      "has_expected_evidence": true,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_matched",
+      "failure_reason": "search_result_empty",
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_policy_003",
+      "bucket": "text_policy_question",
+      "query": "Why should library search not be described as vector promotion evidence?",
+      "allowed_abstain": false,
+      "label_status": "bound",
+      "expected_source_ids": [
+        "62a21210-0307-4405-af4d-40421f331628"
+      ],
+      "expected_chunk_ids": [
+        "be44ae44-53ff-4438-b8e9-2e77c5e61422"
+      ],
+      "has_expected_evidence": true,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_matched",
+      "failure_reason": "search_result_empty",
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_comparison_001",
+      "bucket": "text_comparison",
+      "query": "Compare library_search with vector_text_candidate for Track B B0 and B1.",
+      "allowed_abstain": false,
+      "label_status": "bound",
+      "expected_source_ids": [
+        "83baa374-b807-482a-876a-b8139bd30835"
+      ],
+      "expected_chunk_ids": [
+        "447ab352-80e3-40cf-8e1b-d0cef50e210a"
+      ],
+      "has_expected_evidence": true,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_matched",
+      "failure_reason": "search_result_empty",
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_multi_001",
+      "bucket": "text_multi_chunk_summary",
+      "query": "Summarize the incident review across intake validation retrieval behavior and recovery notes.",
+      "allowed_abstain": false,
+      "label_status": "bound",
+      "expected_source_ids": [
+        "b04c88db-4f39-45fb-9030-be3fe1209b7f"
+      ],
+      "expected_chunk_ids": [
+        "78e50f34-8fd1-489b-aeb1-3cbc510d9f04",
+        "c7f01be8-9419-4809-9822-e65a97a037eb"
+      ],
+      "has_expected_evidence": true,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": 0.0,
+      "chunk_recall@10": 0.0,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_matched",
+      "failure_reason": "search_result_empty",
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_abstain_001",
+      "bucket": "text_abstain_required",
+      "query": "Which GPU model served the Track B text import run?",
+      "allowed_abstain": true,
+      "label_status": "draft",
+      "expected_source_ids": [],
+      "expected_chunk_ids": [],
+      "has_expected_evidence": false,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": null,
+      "chunk_recall@10": null,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_evaluable_no_expected_evidence",
+      "failure_reason": null,
+      "search_error": null
+    },
+    {
+      "query_id": "gq_text_abstain_002",
+      "bucket": "text_abstain_required",
+      "query": "Which customer tenant owns Bluewater Library?",
+      "allowed_abstain": true,
+      "label_status": "draft",
+      "expected_source_ids": [],
+      "expected_chunk_ids": [],
+      "has_expected_evidence": false,
+      "result_count": 0,
+      "top_k_results": [],
+      "hit_rank": null,
+      "source_hit_rank": null,
+      "chunk_hit_rank": null,
+      "source_recall@10": null,
+      "chunk_recall@10": null,
+      "wrong_source_top1": false,
+      "path_mixing": false,
+      "path_mixing_result_count": 0,
+      "final_match_outcome": "not_evaluable_no_expected_evidence",
+      "failure_reason": null,
+      "search_error": null
+    }
+  ],
+  "blockers": [],
+  "warnings": [
+    "library_search is lexical diagnostic evidence and not vector promotion evidence.",
+    "B2 measures retrieval only; answer correctness and citation support are out of scope.",
+    "B1 gold ids are local live-catalog bindings and may need rebind on a clean DB.",
+    "Overall Hit@K/MRR use expected source OR expected chunk; source_* and chunk_* metrics keep those dimensions separate."
+  ],
+  "done_criteria": {
+    "query_results_exist": true,
+    "hit_at_k_and_mrr_calculated": true,
+    "source_chunk_hit_separated": true,
+    "failure_reason_exists_for_miss_cases": true,
+    "retrieval_backend_identity_included": true,
+    "promotion_evidence_false": true
+  },
+  "next_phase_recommendation": "B2 completed, but no expected evidence was retrieved; review lexical query matching before B3."
+}

@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODULE_PATH = ROOT / "scripts" / "rag_pdf_current_diagnostic_snapshot.py"
+MODULE_PATH = ROOT / "ai-worker" / "scripts" / "rag_pdf_current_diagnostic_snapshot.py"
 
 
 def load_module():

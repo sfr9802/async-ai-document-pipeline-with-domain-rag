@@ -6,7 +6,7 @@ PDF vector diagnostic 실패를 retrieval, metadata, gold policy, chunk granular
 
 ## 입력
 
-- `reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json`
 - C5 query-level result detail
 - C2 metadata projection readiness report
 - C7 후보 gold rows
@@ -36,7 +36,7 @@ PDF vector diagnostic 실패를 retrieval, metadata, gold policy, chunk granular
 
 ## 산출물
 
-- `reports/rag_pdf_vector_quality_breakdown.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json`
 
 ## 완료 기준
 

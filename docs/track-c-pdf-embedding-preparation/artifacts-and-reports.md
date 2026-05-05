@@ -6,30 +6,30 @@
 
 | Phase | 스크립트 | 목적 |
 |---|---|---|
-| C0 | `scripts/rag_pdf_current_diagnostic_snapshot.py` | 현재 full72/PDF diagnostic hash와 counter freeze |
-| C1 | `scripts/pdf_candidate_scope_report.py` | PDF candidate scope, parser version, documentVersionId 범위 확인 |
-| C2 | `scripts/pdf_vector_metadata_projection_readiness.py` | vector hit에서 page/bbox/location metadata 복원 가능 여부 확인 |
-| C3 | `scripts/rag_pdf_embedding_text_contract_audit.py` | embedding_text/bm25/display/citation surface audit |
-| C4 | `scripts/pdf_candidate_embedding_consistency.py` | PDF candidate rows, embedding_record, ragmeta chunks, namespace consistency 확인 |
-| C5 | `scripts/rag_pdf_vector_diagnostic.py` | PDF-only vector diagnostic 실행 |
-| C6 | `scripts/rag_pdf_vector_quality_breakdown.py` | page/bbox/gold/ranking failure 분해 |
-| C7 | `scripts/rag_pdf_gold_policy_review.py` | PDF page/table/OCR gold row policy review |
-| C2/C3/C7 | `scripts/rag_pdf_ocr_trust_readiness.py` | OCR confidence/trust metadata readiness 확인 |
+| C0 | `ai-worker/scripts/rag_pdf_current_diagnostic_snapshot.py` | 현재 full72/PDF diagnostic hash와 counter freeze |
+| C1 | `ai-worker/scripts/pdf_candidate_scope_report.py` | PDF candidate scope, parser version, documentVersionId 범위 확인 |
+| C2 | `ai-worker/scripts/pdf_vector_metadata_projection_readiness.py` | vector hit에서 page/bbox/location metadata 복원 가능 여부 확인 |
+| C3 | `ai-worker/scripts/rag_pdf_embedding_text_contract_audit.py` | embedding_text/bm25/display/citation surface audit |
+| C4 | `ai-worker/scripts/pdf_candidate_embedding_consistency.py` | PDF candidate rows, embedding_record, ragmeta chunks, namespace consistency 확인 |
+| C5 | `ai-worker/scripts/rag_pdf_vector_diagnostic.py` | PDF-only vector diagnostic 실행 |
+| C6 | `ai-worker/scripts/rag_pdf_vector_quality_breakdown.py` | page/bbox/gold/ranking failure 분해 |
+| C7 | `ai-worker/scripts/rag_pdf_gold_policy_review.py` | PDF page/table/OCR gold row policy review |
+| C2/C3/C7 | `ai-worker/scripts/rag_pdf_ocr_trust_readiness.py` | OCR confidence/trust metadata readiness 확인 |
 
 ## Report Matrix
 
 | Phase | 리포트 | 완료 신호 |
 |---|---|---|
-| C0 | `reports/rag_pdf_current_diagnostic_snapshot.json` | baseline hash와 current PDF failure counters recorded |
-| C1 | `reports/pdf_candidate_scope_report.json` | scope, parser, block type, OCR 분포와 completeness counters recorded |
-| C2 | `reports/pdf_vector_metadata_projection_readiness.json` | metadata projection blocker count 0 |
-| C3 | `reports/rag_pdf_embedding_text_contract_audit.json` | text contract blocker count 0 |
-| C4 | `reports/pdf_candidate_indexing_report.json` | claimed=indexed, failed=0 |
-| C4 | `reports/pdf_candidate_embedding_consistency_report.json` | embedding/chunk/namespace/hash mismatch count 0 |
-| C5 | `reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json` | PDF-only vector diagnostic metrics recorded |
-| C6 | `reports/rag_pdf_vector_quality_breakdown.json` | UNKNOWN failure 0, query별 next_action present |
-| C7 | `reports/rag_pdf_gold_policy_review.json` | invalid/ambiguous gold policy counters 0 |
-| C2/C3/C7 | `reports/rag_pdf_ocr_trust_readiness.json` | OCR confidence/trust blocker count 0 |
+| C0 | `ai-worker/eval/reports/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json` | baseline hash와 current PDF failure counters recorded |
+| C1 | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json` | scope, parser, block type, OCR 분포와 completeness counters recorded |
+| C2 | `ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json` | metadata projection blocker count 0 |
+| C3 | `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json` | text contract blocker count 0 |
+| C4 | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_indexing_report.json` | claimed=indexed, failed=0 |
+| C4 | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json` | embedding/chunk/namespace/hash mismatch count 0 |
+| C5 | `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json` | PDF-only vector diagnostic metrics recorded |
+| C6 | `ai-worker/eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json` | UNKNOWN failure 0, query별 next_action present |
+| C7 | `ai-worker/eval/reports/rag-ingestion/rag_pdf_gold_policy_review.json` | invalid/ambiguous gold policy counters 0 |
+| C2/C3/C7 | `ai-worker/eval/reports/rag-ingestion/rag_pdf_ocr_trust_readiness.json` | OCR confidence/trust blocker count 0 |
 
 ## Report 공통 필드
 
@@ -42,7 +42,7 @@
   "promotion_evidence": false,
   "evidence_role": "diagnostic",
   "index_version": "rag-ingestion-v2-pdf-candidate-v1",
-  "artifact_dir": "rag-data-pdf-candidate-v1",
+  "artifact_dir": "ai-worker/eval/indexes/rag-data-pdf-candidate-v1",
   "generated_at": "...",
   "input_artifacts": [],
   "scope": {

@@ -21,7 +21,7 @@
 
 ## 산출물
 
-- `reports/rag_pdf_current_diagnostic_snapshot.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json`
 
 ## 완료 기준
 

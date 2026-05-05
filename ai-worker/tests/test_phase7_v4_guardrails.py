@@ -34,14 +34,14 @@ FORBIDDEN_ACTIVE_STRINGS = (
 
 LEGACY_V3_SCRIPT_PATHS = (
     Path("eval/tune_eval_offline.py"),
-    Path("scripts/eval_full_silver_minimal_sweep.py"),
-    Path("scripts/eval_wide_mmr_titlecap_sweep.py"),
-    Path("scripts/confirm_wide_mmr_best_configs.py"),
-    Path("scripts/confirm_embedding_text_variant.py"),
-    Path("scripts/confirm_reranker_input_format.py"),
-    Path("scripts/confirm_rerank_input_cap_policy.py"),
-    Path("scripts/build_legacy_baseline_final.py"),
-    Path("scripts/eval_agent_loop_ab_baseline.py"),
+    Path("ai-worker/scripts/eval_full_silver_minimal_sweep.py"),
+    Path("ai-worker/scripts/eval_wide_mmr_titlecap_sweep.py"),
+    Path("ai-worker/scripts/confirm_wide_mmr_best_configs.py"),
+    Path("ai-worker/scripts/confirm_embedding_text_variant.py"),
+    Path("ai-worker/scripts/confirm_reranker_input_format.py"),
+    Path("ai-worker/scripts/confirm_rerank_input_cap_policy.py"),
+    Path("ai-worker/scripts/build_legacy_baseline_final.py"),
+    Path("ai-worker/scripts/eval_agent_loop_ab_baseline.py"),
 )
 
 

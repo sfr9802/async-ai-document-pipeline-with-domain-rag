@@ -1,8 +1,11 @@
-# B2 — Retrieval-Only Diagnostic
+# B2-app — App-Catalog Retrieval Smoke
+
+> Replan note: this document now describes the legacy `B-app` smoke result. It is not the representative `B-namu` retrieval diagnostic. Use [phases/phase_r5_b2_namu_retrieval_diagnostic.md](phases/phase_r5_b2_namu_retrieval_diagnostic.md) for the namu-v4 Track B mainline.
+> R0 scope correction: [reports/rag_text_b2_scope_correction_report.json](../../reports/rag_text_b2_scope_correction_report.json) is the authoritative interpretation layer for this legacy B2 report.
 
 ## Goal
 
-LLM 호출 전에 retrieval이 expected evidence를 top-k 안에 가져오는지 확인한다.
+LLM 호출 전에 app catalog `library_search`가 imported TEXT canary에 대해 expected evidence를 top-k 안에 가져오는지 확인한다. 이 phase는 diagnostic smoke이며, namu-v4 TEXT retrieval 성능이나 production-style TEXT E2E 성능을 대표하지 않는다.
 
 ## Inputs
 
@@ -36,6 +39,8 @@ LLM 호출 전에 retrieval이 expected evidence를 top-k 안에 가져오는지
 
 `reports/rag_text_retrieval_diagnostic_report.json`
 
+This report is preserved as historical B-app diagnostic evidence. Do not cite it as namu-v4, `B-namu`, production-style TEXT retrieval, or promotion evidence without the R0 scope-correction report.
+
 필수 fields:
 
 ```json
@@ -61,6 +66,7 @@ source/chunk hit is separated where ids are available
 failure_reason exists for miss cases
 retrieval backend identity is included
 promotion_evidence=false
+legacy result is scoped to B2-app smoke, not B2-namu
 ```
 
 ## Verification Command

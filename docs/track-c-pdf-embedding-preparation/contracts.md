@@ -111,7 +111,7 @@ PDF 전용 candidate namespace:
 
 ```text
 index_version = rag-ingestion-v2-pdf-candidate-v1
-artifact_dir   = rag-data-pdf-candidate-v1
+artifact_dir   = ai-worker/eval/indexes/rag-data-pdf-candidate-v1
 ```
 
 지원 parser scope:

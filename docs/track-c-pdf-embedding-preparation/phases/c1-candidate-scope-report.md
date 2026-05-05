@@ -16,7 +16,7 @@ PDF 전용 candidate scope를 확정한다. 이 phase는 어떤 `documentVersion
 
 ```text
 index_version = rag-ingestion-v2-pdf-candidate-v1
-artifact_dir   = rag-data-pdf-candidate-v1
+artifact_dir   = ai-worker/eval/indexes/rag-data-pdf-candidate-v1
 parser_versions = pdf-extract-v1, pdf-extract-v2
 source_file_type = PDF
 ```
@@ -33,7 +33,7 @@ source_file_type = PDF
 
 ## 산출물
 
-- `reports/pdf_candidate_scope_report.json`
+- `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json`
 
 ## 완료 기준
 

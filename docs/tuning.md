@@ -116,7 +116,7 @@ capability 설정에는 살지만 `WorkerSettings` 에 환경변수로 아직 wi
 
 이것들은 trial 마다 FAISS 인덱스를 재빌드. 인덱스 캐시
 (`(embedding_model, chunk_size, overlap)` 으로 key 된
-`rag-data/<hash>/{faiss.index, build.json}`) 가 빌드될 때까지 활성화
+`eval/indexes/rag-data/<hash>/{faiss.index, build.json}`) 가 빌드될 때까지 활성화
 하지 마세요:
 
 - `rag_embedding_model` — bge-m3 ↔ multilingual-e5-small 전환은 풀

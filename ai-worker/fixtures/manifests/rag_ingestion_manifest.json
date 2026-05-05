@@ -1,0 +1,102 @@
+{
+  "manifest_version": "rag-ingestion-batch-v0",
+  "default_expectations": {
+    "min_search_units": 3,
+    "require_parser_version": true,
+    "xlsx_parser_version": "xlsx-extract-v2-hidden-safe",
+    "require_location_json": true,
+    "require_citation_text": true,
+    "hidden_policy": "exclude_hidden",
+    "hidden_policy_version": "exclude-hidden-v1"
+  },
+  "samples": [
+    {
+      "sample_id": "xlsx_public_region_001",
+      "file_path": "eval/datasets/xlsx/01_전국시도_최종.xlsx",
+      "file_type": "xlsx",
+      "bucket": "xlsx_lookup",
+      "expected_sheets": ["22p"],
+      "expected_min_search_units": 3,
+      "expected_citation_patterns": ["01_전국시도_최종.xlsx > 22p >"],
+      "features": ["real_sample", "regional_table", "merged_cells", "formula_cells", "multiple_sheets"],
+      "notes": "public-data regional workbook"
+    },
+    {
+      "sample_id": "xlsx_public_region_002",
+      "file_path": "eval/datasets/xlsx/02_서울 인천 경기 강원_최종.xlsx",
+      "file_type": "xlsx",
+      "bucket": "xlsx_lookup",
+      "expected_sheets": ["7-1(2)"],
+      "expected_min_search_units": 3,
+      "expected_citation_patterns": ["02_서울 인천 경기 강원_최종.xlsx > 7-1(2) >"],
+      "features": ["real_sample", "regional_table", "merged_cells", "formula_cells", "multiple_sheets"],
+      "notes": "public-data regional workbook"
+    },
+    {
+      "sample_id": "xlsx_public_region_003",
+      "file_path": "eval/datasets/xlsx/03_대전 충북 충남 세종_최종.xlsx",
+      "file_type": "xlsx",
+      "bucket": "xlsx_header_ambiguous",
+      "expected_sheets": ["280p"],
+      "expected_min_search_units": 3,
+      "expected_citation_patterns": ["03_대전 충북 충남 세종_최종.xlsx > 280p >"],
+      "features": ["real_sample", "regional_table", "merged_cells", "formula_cells", "multiple_sheets"],
+      "notes": "public-data regional workbook"
+    },
+    {
+      "sample_id": "xlsx_public_region_004",
+      "file_path": "eval/datasets/xlsx/04_광주 전북 전남 제주_최종.xlsx",
+      "file_type": "xlsx",
+      "bucket": "xlsx_header_ambiguous",
+      "expected_sheets": ["382p"],
+      "expected_min_search_units": 3,
+      "expected_citation_patterns": ["04_광주 전북 전남 제주_최종.xlsx > 382p >"],
+      "features": ["real_sample", "regional_table", "merged_cells", "formula_cells", "multiple_sheets"],
+      "notes": "public-data regional workbook"
+    },
+    {
+      "sample_id": "xlsx_public_region_005",
+      "file_path": "eval/datasets/xlsx/05_부산 대구 울산 경북 경남_최종.xlsx",
+      "file_type": "xlsx",
+      "bucket": "mixed_text_table",
+      "expected_sheets": ["484p보험료"],
+      "expected_min_search_units": 3,
+      "expected_citation_patterns": ["05_부산 대구 울산 경북 경남_최종.xlsx > 484p보험료 >"],
+      "features": ["real_sample", "regional_table", "merged_cells", "formula_cells", "multiple_sheets"],
+      "notes": "public-data regional workbook"
+    },
+    {
+      "sample_id": "xlsx_vehicle_registration_001",
+      "file_path": "eval/datasets/xlsx/자동차등록현황보고_자동차등록대수현황 시도별 (201101 ~ 202603).xlsx",
+      "file_type": "xlsx",
+      "bucket": "xlsx_lookup",
+      "expected_sheets": ["자동차등록현황보고자동차등록대수현황 시도별 (201101 "],
+      "expected_min_search_units": 2,
+      "expected_citation_patterns": ["자동차등록현황보고_자동차등록대수현황 시도별 (201101 ~ 202603).xlsx > 자동차등록현황보고자동차등록대수현황 시도별 (201101  >"],
+      "features": ["real_sample", "simple_table", "merged_cells"],
+      "notes": "public-data vehicle registration workbook"
+    },
+    {
+      "sample_id": "xlsx_care_facility_001",
+      "file_path": "eval/datasets/xlsx/국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+      "file_type": "xlsx",
+      "bucket": "xlsx_lookup",
+      "expected_sheets": ["일반현황"],
+      "expected_min_search_units": 3,
+      "expected_citation_patterns": ["국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx > 일반현황 >"],
+      "features": ["real_sample", "large_table", "multiple_sheets"],
+      "notes": "public-data care facility workbook"
+    },
+    {
+      "sample_id": "xlsx_transit_001",
+      "file_path": "eval/datasets/xlsx/서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+      "file_type": "xlsx",
+      "bucket": "xlsx_formula_value",
+      "expected_sheets": ["철도"],
+      "expected_min_search_units": 3,
+      "expected_citation_patterns": ["서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx > 철도 >"],
+      "features": ["real_sample", "date_number_format"],
+      "notes": "public-data transit usage workbook"
+    }
+  ]
+}

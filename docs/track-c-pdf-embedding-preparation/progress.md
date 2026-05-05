@@ -23,10 +23,10 @@ Last updated: `2026-05-05`
 
 | Phase | Status | Evidence | Next Action |
 |---|---|---|---|
-| C0 Evidence Freeze | `PASS` | `reports/rag_pdf_current_diagnostic_snapshot.json` (`status=PASS`, sha256 `a680a2d096237b7cc0f7318377f0790cd29d558a7ac11a772246ee7daa4ebd63`) | Use snapshot as C1 input |
-| C1 Candidate Scope Report | `PASS_WITH_WARNINGS` | `reports/pdf_candidate_scope_report.json` (`status=PASS_WITH_WARNINGS`, sha256 `3d8dba892d50bfa10dd62f33404c06ae517a4f2cb3fedca7fa1971956c55244a`) | Use explicit PDF scope for C2/C3; keep structured warnings visible |
-| C2 Metadata Projection Readiness | `PASS_WITH_WARNINGS` | `reports/pdf_vector_metadata_projection_readiness.json` (`status=PASS_WITH_WARNINGS`, sha256 `113c064589ece17e3f36696c754445ebbc7c8ced5dc69bad7dc6fac3abb647cc`) | Proceed to C4; stored PDF candidate ragmeta projection remains deferred until C4 |
-| C3 Embedding Text Contract Audit | `PASS_WITH_WARNINGS` | `reports/rag_pdf_embedding_text_contract_audit.json` (`status=PASS_WITH_WARNINGS`, sha256 `c470521af3d6a05cfba0f5cfc06bcce3c4d37e35a421ef84b572b37baec32646`) | Proceed to C4; keep skipped/policy-excluded rows visible |
+| C0 Evidence Freeze | `PASS` | `ai-worker/eval/reports/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json` (`status=PASS`, sha256 `a680a2d096237b7cc0f7318377f0790cd29d558a7ac11a772246ee7daa4ebd63`) | Use snapshot as C1 input |
+| C1 Candidate Scope Report | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json` (`status=PASS_WITH_WARNINGS`, sha256 `3d8dba892d50bfa10dd62f33404c06ae517a4f2cb3fedca7fa1971956c55244a`) | Use explicit PDF scope for C2/C3; keep structured warnings visible |
+| C2 Metadata Projection Readiness | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json` (`status=PASS_WITH_WARNINGS`, sha256 `113c064589ece17e3f36696c754445ebbc7c8ced5dc69bad7dc6fac3abb647cc`) | Proceed to C4; stored PDF candidate ragmeta projection remains deferred until C4 |
+| C3 Embedding Text Contract Audit | `PASS_WITH_WARNINGS` | `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json` (`status=PASS_WITH_WARNINGS`, sha256 `c470521af3d6a05cfba0f5cfc06bcce3c4d37e35a421ef84b572b37baec32646`) | Proceed to C4; keep skipped/policy-excluded rows visible |
 | C4 Candidate Indexing Consistency | `PLANNED` | No PDF-only candidate indexing report yet | Run scoped PDF candidate indexing and implement/run the C4 consistency report |
 | C5 PDF-only Vector Diagnostic | `PLANNED` | No PDF-only vector diagnostic report yet | Run diagnostic after C4 consistency passes |
 | C6 Failure Breakdown | `PLANNED` | No PDF failure taxonomy report yet | Split metadata/ranking/gold/policy failures |
@@ -65,7 +65,7 @@ Last updated: `2026-05-05`
 - `promotion_evidence=false`.
 - `evidence_role=diagnostic`.
 - PDF candidate namespace: `rag-ingestion-v2-pdf-candidate-v1`.
-- PDF artifact dir: `rag-data-pdf-candidate-v1`.
+- PDF artifact dir: `ai-worker/eval/indexes/rag-data-pdf-candidate-v1`.
 - Immutable baseline changed: `false`.
 - XLSX candidate artifact changed: `false`.
 
@@ -158,20 +158,20 @@ Last updated: `2026-05-05`
 
 ### Completed
 
-- Added `scripts/rag_pdf_current_diagnostic_snapshot.py`.
+- Added `ai-worker/scripts/rag_pdf_current_diagnostic_snapshot.py`.
 - Added the C0 command to `docs/track-c-pdf-embedding-preparation/runbook.md`.
-- Generated `reports/rag_pdf_current_diagnostic_snapshot.json`.
+- Generated `ai-worker/eval/reports/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json`.
 - Updated the current phase table so only C0 is marked `PASS`.
 
 ### Current Evidence
 
 - C0 snapshot:
-  - path: `reports/rag_pdf_current_diagnostic_snapshot.json`
+  - path: `ai-worker/eval/reports/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json`
   - status: `PASS`
   - run_id: `2026-05-04T163332Z`
   - sha256: `a680a2d096237b7cc0f7318377f0790cd29d558a7ac11a772246ee7daa4ebd63`
 - Input full72 vector diagnostic:
-  - path: `reports/rag_retrieval_eval_full72_vector_diagnostic_report.json`
+  - path: `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_full72_vector_diagnostic_report.json`
   - sha256: `6d69284ffafbda18d08622adfd5d8e41186309e1f70441cb9c3b40d79132873c`
   - `promotion_evidence=false`
   - `evidence_role=diagnostic`
@@ -202,20 +202,20 @@ Last updated: `2026-05-05`
 - `promotion_evidence=false`.
 - `evidence_role=diagnostic`.
 - PDF candidate namespace: `rag-ingestion-v2-pdf-candidate-v1`.
-- PDF artifact dir: `rag-data-pdf-candidate-v1`.
+- PDF artifact dir: `ai-worker/eval/indexes/rag-data-pdf-candidate-v1`.
 - Immutable baseline changed: `false`.
 - XLSX candidate artifact changed: `false`.
 
 ### Verification
 
 - Command:
-  - `python -m py_compile scripts/rag_pdf_current_diagnostic_snapshot.py`
+  - `python -m py_compile ai-worker/scripts/rag_pdf_current_diagnostic_snapshot.py`
   - result: passed.
 - Command:
   - `python -m pytest ai-worker/tests/test_rag_pdf_current_diagnostic_snapshot.py`
   - result: `6 passed`.
 - Command:
-  - `python scripts/rag_pdf_current_diagnostic_snapshot.py --output reports/rag_pdf_current_diagnostic_snapshot.json`
+  - `python ai-worker/scripts/rag_pdf_current_diagnostic_snapshot.py --output ai-worker/eval/reports/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json`
   - result: `status=PASS`; PDF query count `22`; query coverage complete `true`; page_no hit `10`; missing physical page index `10`; missing bbox `5`; PDF candidate artifact exists `false`; immutable baseline changed `false`; XLSX candidate artifact changed `false`.
 - Command:
   - `rg -n "[ \\t]+$" docs\\track-c-pdf-embedding-preparation scripts\\rag_pdf_current_diagnostic_snapshot.py ai-worker\\tests\\test_rag_pdf_current_diagnostic_snapshot.py reports\\rag_pdf_current_diagnostic_snapshot.json`
@@ -226,15 +226,15 @@ Last updated: `2026-05-05`
 
 ### Important Decisions
 
-- C0 is intentionally file-based: it reads existing reports/CSV/artifacts and does not connect to the DB.
+- C0 is intentionally file-based: it reads existing ai-worker/eval/reports/rag-ingestion/CSV/artifacts and does not connect to the DB.
 - The current PDF metric state is frozen as diagnostic evidence only. It is not interpreted as ranking failure until C2/C3/C4 pass.
 - C1 should start from the explicit PDF document scope recorded by C0, not from a broad unscoped PDF scan.
-- Existing `rag-data-pdf-candidate-v1` now fails C0 unless a future workflow explicitly introduces a controlled override.
+- Existing `ai-worker/eval/indexes/rag-data-pdf-candidate-v1` now fails C0 unless a future workflow explicitly introduces a controlled override.
 
 ### Remaining Work
 
-- Implement and run `scripts/pdf_candidate_scope_report.py` for C1.
-- Keep C2/C3 blocked until C1 produces `reports/pdf_candidate_scope_report.json`.
+- Implement and run `ai-worker/scripts/pdf_candidate_scope_report.py` for C1.
+- Keep C2/C3 blocked until C1 produces `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json`.
 - Keep C4/C5/C6/C7 blocked until their documented prerequisite reports exist.
 
 ### Risks
@@ -252,9 +252,9 @@ Last updated: `2026-05-05`
 
 ### Completed
 
-- Added `scripts/pdf_candidate_scope_report.py`.
+- Added `ai-worker/scripts/pdf_candidate_scope_report.py`.
 - Added `ai-worker/tests/test_pdf_candidate_scope_report.py`.
-- Generated `reports/pdf_candidate_scope_report.json`.
+- Generated `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json`.
 - Updated `docs/track-c-pdf-embedding-preparation/runbook.md` with the C1 syntax/test command.
 - Updated the C4 runbook command so future indexing consumes the C1 explicit scope report.
 - Updated the current phase table so C1 is marked `PASS_WITH_WARNINGS`.
@@ -262,7 +262,7 @@ Last updated: `2026-05-05`
 ### Current Evidence
 
 - C1 scope report:
-  - path: `reports/pdf_candidate_scope_report.json`
+  - path: `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json`
   - status: `PASS_WITH_WARNINGS`
   - run_id: `2026-05-04T165009Z`
   - sha256: `3d8dba892d50bfa10dd62f33404c06ae517a4f2cb3fedca7fa1971956c55244a`
@@ -309,7 +309,7 @@ Last updated: `2026-05-05`
 - `indexing_execution=not_run_by_this_script`.
 - `promotion_execution=not_run_by_this_script`.
 - PDF candidate namespace: `rag-ingestion-v2-pdf-candidate-v1`.
-- PDF artifact dir: `rag-data-pdf-candidate-v1`.
+- PDF artifact dir: `ai-worker/eval/indexes/rag-data-pdf-candidate-v1`.
 - `allowUnscoped=false`.
 - Existing PDF candidate artifact dir: `false`.
 - Immutable baseline changed: `false`.
@@ -318,10 +318,10 @@ Last updated: `2026-05-05`
 ### Verification
 
 - Command:
-  - `python -m py_compile scripts/pdf_candidate_scope_report.py ai-worker/tests/test_pdf_candidate_scope_report.py`
+  - `python -m py_compile ai-worker/scripts/pdf_candidate_scope_report.py ai-worker/tests/test_pdf_candidate_scope_report.py`
   - result: passed.
 - Command:
-  - `python scripts/pdf_candidate_scope_report.py --output reports/pdf_candidate_scope_report.json`
+  - `python ai-worker/scripts/pdf_candidate_scope_report.py --output ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json`
   - result: `status=PASS_WITH_WARNINGS`; scoped SearchUnits `8203`; candidate rows `8203`; all required C1 blocker counters `0`; OCR confidence missing `6`.
 - Command:
   - `python -m pytest ai-worker/tests/test_pdf_candidate_scope_report.py`
@@ -336,13 +336,13 @@ Last updated: `2026-05-05`
 - C1 includes PDF gold rows only when `expected_location_type=pdf`; pdf bucket/location mismatches are blockers.
 - OCR confidence gaps are a visible C1 warning, not a C1 blocker. C2/C3 must classify them before C4 indexing.
 - `missing_required_bbox_count=3` remains visible for C2/C3 readiness even though the documented C1 blocker counters passed.
-- C1 remains diagnostic-only and does not create `rag-data-pdf-candidate-v1`.
-- C4 indexing must consume `reports/pdf_candidate_scope_report.json` or an equivalent explicit `documentVersionIds`/`sourceFileIds` scope.
+- C1 remains diagnostic-only and does not create `ai-worker/eval/indexes/rag-data-pdf-candidate-v1`.
+- C4 indexing must consume `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json` or an equivalent explicit `documentVersionIds`/`sourceFileIds` scope.
 
 ### Remaining Work
 
-- Implement and run `scripts/pdf_vector_metadata_projection_readiness.py` for C2.
-- Implement and run `scripts/rag_pdf_embedding_text_contract_audit.py` for C3.
+- Implement and run `ai-worker/scripts/pdf_vector_metadata_projection_readiness.py` for C2.
+- Implement and run `ai-worker/scripts/rag_pdf_embedding_text_contract_audit.py` for C3.
 - Keep C4 blocked until C2/C3 explicitly pass or resolve their warnings.
 
 ### Risks
@@ -360,12 +360,12 @@ Last updated: `2026-05-05`
 
 ### Completed
 
-- Added `scripts/pdf_vector_metadata_projection_readiness.py`.
-- Added `scripts/rag_pdf_embedding_text_contract_audit.py`.
+- Added `ai-worker/scripts/pdf_vector_metadata_projection_readiness.py`.
+- Added `ai-worker/scripts/rag_pdf_embedding_text_contract_audit.py`.
 - Added `ai-worker/tests/test_pdf_vector_metadata_projection_readiness.py`.
 - Added `ai-worker/tests/test_rag_pdf_embedding_text_contract_audit.py`.
-- Generated `reports/pdf_vector_metadata_projection_readiness.json`.
-- Generated `reports/rag_pdf_embedding_text_contract_audit.json`.
+- Generated `ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json`.
+- Generated `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json`.
 - Updated `docs/track-c-pdf-embedding-preparation/runbook.md` with C0~C3 syntax/test commands and the focused Java guardrail command.
 - Updated this progress table so C2/C3 are `FAIL` and C4 is `BLOCKED`.
 - Fixed the future SearchUnit claim metadata path so `locationJson` is projected as a plain JSON map instead of a Jackson `JsonNode` shape.
@@ -373,7 +373,7 @@ Last updated: `2026-05-05`
 ### Current Evidence
 
 - C2 metadata projection readiness:
-  - path: `reports/pdf_vector_metadata_projection_readiness.json`
+  - path: `ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json`
   - status: `FAIL`
   - run_id: `2026-05-04T175858Z`
   - sha256: `fbc6749941fc03da324e94b05257e83bed2a331b44bd279cb9f5642d997f3edb`
@@ -389,7 +389,7 @@ Last updated: `2026-05-05`
   - expected PDF candidate namespace chunk count: `0` before C4
   - sample blocker rows: `25` current-ragmeta Jackson-shape projection examples
 - C3 embedding text contract audit:
-  - path: `reports/rag_pdf_embedding_text_contract_audit.json`
+  - path: `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json`
   - status: `FAIL`
   - run_id: `2026-05-04T175857Z`
   - sha256: `9f5f79e1a2416c7e93defd240557757f36fc0d47d5efd17db71a290e438305bd`
@@ -421,7 +421,7 @@ Last updated: `2026-05-05`
 - `indexing_execution=not_run_by_this_script`.
 - `promotion_execution=not_run_by_this_script`.
 - PDF candidate namespace: `rag-ingestion-v2-pdf-candidate-v1`.
-- PDF artifact dir: `rag-data-pdf-candidate-v1`.
+- PDF artifact dir: `ai-worker/eval/indexes/rag-data-pdf-candidate-v1`.
 - `allowUnscoped=false`.
 - Immutable baseline changed: `false`.
 - XLSX candidate artifact changed: `false`.
@@ -430,16 +430,16 @@ Last updated: `2026-05-05`
 ### Verification
 
 - Command:
-  - `python -m py_compile scripts/pdf_vector_metadata_projection_readiness.py scripts/rag_pdf_embedding_text_contract_audit.py ai-worker/tests/test_pdf_vector_metadata_projection_readiness.py ai-worker/tests/test_rag_pdf_embedding_text_contract_audit.py`
+  - `python -m py_compile ai-worker/scripts/pdf_vector_metadata_projection_readiness.py ai-worker/scripts/rag_pdf_embedding_text_contract_audit.py ai-worker/tests/test_pdf_vector_metadata_projection_readiness.py ai-worker/tests/test_rag_pdf_embedding_text_contract_audit.py`
   - result: passed.
 - Command:
   - `python -m pytest ai-worker/tests/test_pdf_vector_metadata_projection_readiness.py ai-worker/tests/test_rag_pdf_embedding_text_contract_audit.py`
   - result: `11 passed`.
 - Command:
-  - `python scripts/pdf_vector_metadata_projection_readiness.py --output reports/pdf_vector_metadata_projection_readiness.json`
+  - `python ai-worker/scripts/pdf_vector_metadata_projection_readiness.py --output ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json`
   - result: `status=FAIL`; exit code `2` as expected for blocker evidence; report written.
 - Command:
-  - `python scripts/rag_pdf_embedding_text_contract_audit.py --output reports/rag_pdf_embedding_text_contract_audit.json`
+  - `python ai-worker/scripts/rag_pdf_embedding_text_contract_audit.py --output ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json`
   - result: `status=FAIL`; exit code `2` as expected for blocker evidence; report written.
 - Command:
   - `python -m pytest ai-worker/tests/test_rag_pdf_current_diagnostic_snapshot.py ai-worker/tests/test_pdf_candidate_scope_report.py ai-worker/tests/test_pdf_vector_metadata_projection_readiness.py ai-worker/tests/test_rag_pdf_embedding_text_contract_audit.py`
@@ -477,7 +477,7 @@ Last updated: `2026-05-05`
 
 ### Completed
 
-- Added `scripts/rag_pdf_search_unit_surface_repair.py`.
+- Added `ai-worker/scripts/rag_pdf_search_unit_surface_repair.py`.
 - Added `ai-worker/tests/test_rag_pdf_search_unit_surface_repair.py`.
 - Hardened the repair scope to C1 `document_version_ids`, `source_file_ids`, `source_file_type=PDF`, and C1 parser versions.
 - Ran repair dry-run, reviewed scoped mutation samples, and applied the repair to the local DB.
@@ -488,7 +488,7 @@ Last updated: `2026-05-05`
 ### Current Evidence
 
 - C3 repair:
-  - path: `reports/rag_pdf_search_unit_surface_repair_report.json`
+  - path: `ai-worker/eval/reports/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json`
   - status: `PASS`
   - run_id: `2026-05-04T181038Z`
   - sha256: `ad720a7172b702745db86a915efa3f1a2ee5a48b71474110705eb7f3c66deec6`
@@ -499,7 +499,7 @@ Last updated: `2026-05-05`
   - deleted embedding records: `0`
   - deleted ragmeta chunks: `0`
 - C2 metadata projection readiness:
-  - path: `reports/pdf_vector_metadata_projection_readiness.json`
+  - path: `ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json`
   - status: `PASS_WITH_WARNINGS`
   - run_id: `2026-05-04T181046Z`
   - sha256: `113c064589ece17e3f36696c754445ebbc7c8ced5dc69bad7dc6fac3abb647cc`
@@ -508,7 +508,7 @@ Last updated: `2026-05-05`
   - current ragmeta joined embedded rows: `0`
   - expected PDF candidate namespace chunk count: `0` before C4
 - C3 embedding text contract audit:
-  - path: `reports/rag_pdf_embedding_text_contract_audit.json`
+  - path: `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json`
   - status: `PASS_WITH_WARNINGS`
   - run_id: `2026-05-04T181046Z`
   - sha256: `c470521af3d6a05cfba0f5cfc06bcce3c4d37e35a421ef84b572b37baec32646`
@@ -530,7 +530,7 @@ Last updated: `2026-05-05`
 - `indexing_execution=not_run_by_this_script`.
 - `promotion_execution=not_run_by_this_script`.
 - PDF candidate namespace: `rag-ingestion-v2-pdf-candidate-v1`.
-- PDF artifact dir: `rag-data-pdf-candidate-v1`.
+- PDF artifact dir: `ai-worker/eval/indexes/rag-data-pdf-candidate-v1`.
 - `allowUnscoped=false`.
 - Immutable baseline changed: `false`.
 - XLSX candidate artifact changed: `false`.
@@ -539,22 +539,22 @@ Last updated: `2026-05-05`
 ### Verification
 
 - Command:
-  - `python -m py_compile scripts/rag_pdf_current_diagnostic_snapshot.py scripts/pdf_candidate_scope_report.py scripts/pdf_vector_metadata_projection_readiness.py scripts/rag_pdf_embedding_text_contract_audit.py scripts/rag_pdf_search_unit_surface_repair.py ai-worker/tests/test_rag_pdf_current_diagnostic_snapshot.py ai-worker/tests/test_pdf_candidate_scope_report.py ai-worker/tests/test_pdf_vector_metadata_projection_readiness.py ai-worker/tests/test_rag_pdf_embedding_text_contract_audit.py ai-worker/tests/test_rag_pdf_search_unit_surface_repair.py`
+  - `python -m py_compile ai-worker/scripts/rag_pdf_current_diagnostic_snapshot.py ai-worker/scripts/pdf_candidate_scope_report.py ai-worker/scripts/pdf_vector_metadata_projection_readiness.py ai-worker/scripts/rag_pdf_embedding_text_contract_audit.py ai-worker/scripts/rag_pdf_search_unit_surface_repair.py ai-worker/tests/test_rag_pdf_current_diagnostic_snapshot.py ai-worker/tests/test_pdf_candidate_scope_report.py ai-worker/tests/test_pdf_vector_metadata_projection_readiness.py ai-worker/tests/test_rag_pdf_embedding_text_contract_audit.py ai-worker/tests/test_rag_pdf_search_unit_surface_repair.py`
   - result: passed.
 - Command:
   - `python -m pytest ai-worker/tests/test_rag_pdf_current_diagnostic_snapshot.py ai-worker/tests/test_pdf_candidate_scope_report.py ai-worker/tests/test_pdf_vector_metadata_projection_readiness.py ai-worker/tests/test_rag_pdf_embedding_text_contract_audit.py ai-worker/tests/test_rag_pdf_search_unit_surface_repair.py`
   - result: `29 passed`.
 - Command:
-  - `python scripts/rag_pdf_search_unit_surface_repair.py --output reports/rag_pdf_search_unit_surface_repair_report.json`
+  - `python ai-worker/scripts/rag_pdf_search_unit_surface_repair.py --output ai-worker/eval/reports/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json`
   - result: `status=PASS_WITH_WARNINGS`; dry-run reported `mutation_needed_count=8194`.
 - Command:
-  - `python scripts/rag_pdf_search_unit_surface_repair.py --apply --output reports/rag_pdf_search_unit_surface_repair_report.json`
+  - `python ai-worker/scripts/rag_pdf_search_unit_surface_repair.py --apply --output ai-worker/eval/reports/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json`
   - result: `status=PASS`; `updated_search_unit_count=8194`; post-apply `mutation_needed_count=0`.
 - Command:
-  - `python scripts/pdf_vector_metadata_projection_readiness.py --output reports/pdf_vector_metadata_projection_readiness.json`
+  - `python ai-worker/scripts/pdf_vector_metadata_projection_readiness.py --output ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json`
   - result: `status=PASS_WITH_WARNINGS`; exit code `0`.
 - Command:
-  - `python scripts/rag_pdf_embedding_text_contract_audit.py --output reports/rag_pdf_embedding_text_contract_audit.json`
+  - `python ai-worker/scripts/rag_pdf_embedding_text_contract_audit.py --output ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json`
   - result: `status=PASS_WITH_WARNINGS`; exit code `0`.
 - Command:
   - `mvn -f core-api/pom.xml test "-Dtest=SearchUnitIndexingServiceTest#claim_index_metadata_keeps_location_json_as_plain_map_not_jackson_node_shape"`
@@ -570,7 +570,7 @@ Last updated: `2026-05-05`
 ### Remaining Work
 
 - Run scoped C4 candidate indexing for `rag-ingestion-v2-pdf-candidate-v1`.
-- Implement or finish `scripts/pdf_candidate_embedding_consistency.py` before calling C4 complete.
+- Implement or finish `ai-worker/scripts/pdf_candidate_embedding_consistency.py` before calling C4 complete.
 - Verify PDF candidate ragmeta chunk metadata after C4, including plain `locationJson`/`location_json`, citation text, page index, bbox, and chunk identity.
 - Decide in C7 or a dedicated parser/gold policy step whether PDF table gold rows require table-like SearchUnits or can remain paragraph/page-backed.
 

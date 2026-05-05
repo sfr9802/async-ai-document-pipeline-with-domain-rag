@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODULE_PATH = ROOT / "scripts" / "rag_text_e2e_gold_validator.py"
+MODULE_PATH = ROOT / "ai-worker" / "scripts" / "rag_text_e2e_gold_validator.py"
 
 
 def load_module():
@@ -58,7 +58,7 @@ def test_build_report_keeps_diagnostic_flags_and_blocks_failed_db_check():
     )
 
     report = validator.build_report(
-        gold=Path("eval/gold_queries_text_e2e_v0.csv"),
+        gold=Path("eval/eval_queries/gold_queries_text_e2e_v0.csv"),
         validation=validation,
         db_check={"status": "FAILED", "blockers": ["missing chunk id: c1"]},
         min_rows=10,
@@ -102,7 +102,7 @@ def test_build_report_marks_skip_db_as_schema_only_not_passed():
     )
 
     report = validator.build_report(
-        gold=Path("eval/gold_queries_text_e2e_v0.csv"),
+        gold=Path("eval/eval_queries/gold_queries_text_e2e_v0.csv"),
         validation=validation,
         db_check={"status": "SCHEMA_ONLY", "reason": "skip_db requested; live binding was not verified"},
         min_rows=10,

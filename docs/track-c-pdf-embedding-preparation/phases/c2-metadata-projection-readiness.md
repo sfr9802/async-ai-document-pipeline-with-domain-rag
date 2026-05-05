@@ -6,7 +6,7 @@ SearchUnit DB에 있는 PDF location metadata가 vector hit 결과에서도 복�
 
 ## 입력
 
-- `reports/pdf_candidate_scope_report.json`
+- `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json`
 - SearchUnit `location_json`
 - ragmeta chunk metadata
 - vector hit conversion 결과
@@ -36,8 +36,8 @@ SearchUnit DB에 있는 PDF location metadata가 vector hit 결과에서도 복�
 
 ## 산출물
 
-- `reports/pdf_vector_metadata_projection_readiness.json`
-- 필요 시 `reports/rag_pdf_ocr_trust_readiness.json`
+- `ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json`
+- 필요 시 `ai-worker/eval/reports/rag-ingestion/rag_pdf_ocr_trust_readiness.json`
 
 ## 완료 기준
 

@@ -1,0 +1,97 @@
+{
+  "run_id": "20260505T025929Z",
+  "generated_at": "2026-05-05T02:59:29.626753+00:00",
+  "schema_version": "rag_text_namu_v4_gold_validate_v1",
+  "status": "PASSED",
+  "report_role": "rag_text_namu_v4_gold_validation",
+  "scope": "track_b_text_retrieval_e2e",
+  "phase": "R3",
+  "gold": "eval/gold_queries_text_namu_v4_v0.csv",
+  "corpus_dir": "ai-worker/eval/corpora/namu-v4-structured-combined",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "validation": {
+    "ok": true,
+    "row_count": 50,
+    "positive_row_count": 47,
+    "needs_review_row_count": 3,
+    "abstain_or_review_row_count": 3,
+    "bucket_counts": {
+      "text_fact_lookup": 31,
+      "text_multi_chunk_summary": 16,
+      "text_policy_question": 3
+    },
+    "label_status_counts": {
+      "bound": 47,
+      "needs_review": 3
+    },
+    "missing_required_columns": [],
+    "duplicate_query_ids": [],
+    "missing_page_ids": [],
+    "missing_chunk_ids": [],
+    "missing_section_ids": [],
+    "source_dataset_counts": {
+      "ai-worker/eval/reports/phase7/seeds/gold_seed_50_manual_curated/gold_seed_50_candidates.jsonl": 50
+    },
+    "allowed_abstain_true_count": 0,
+    "section_path_mismatch_count": 0,
+    "row_errors": {},
+    "row_warnings": {
+      "gold_seed_0048": [
+        "needs_review row is excluded from positive retrieval denominator"
+      ],
+      "gold_seed_0049": [
+        "needs_review row is excluded from positive retrieval denominator"
+      ],
+      "gold_seed_0050": [
+        "needs_review row is excluded from positive retrieval denominator"
+      ]
+    }
+  },
+  "current_seed_policy": {
+    "expected_source_dataset": "ai-worker/eval/reports/phase7/seeds/gold_seed_50_manual_curated/gold_seed_50_candidates.jsonl",
+    "expected_row_count": 50,
+    "expected_positive_row_count": 47,
+    "expected_needs_review_row_count": 3,
+    "allowed_abstain_true_count": 0,
+    "fabricated_abstain_row_count": 0,
+    "section_path_mismatch_count": 0
+  },
+  "positive_denominator_policy": {
+    "include_label_status": [
+      "bound"
+    ],
+    "exclude_label_status": [
+      "needs_review"
+    ],
+    "exclude_allowed_abstain_true": true,
+    "positive_row_count": 47,
+    "needs_review_row_count": 3,
+    "abstain_or_review_row_count": 3,
+    "allowed_abstain_true_count": 0
+  },
+  "done_criteria": {
+    "row_count_at_least_min": true,
+    "current_seed_row_count_matches_expected": true,
+    "current_seed_positive_row_count_matches_expected": true,
+    "current_seed_needs_review_row_count_matches_expected": true,
+    "required_columns_exist": true,
+    "query_id_unique": true,
+    "source_dataset_is_manual_curated_seed": true,
+    "all_allowed_abstain_false": true,
+    "positive_rows_have_bindings": true,
+    "all_expected_page_ids_resolve": true,
+    "all_expected_chunk_ids_resolve": true,
+    "all_expected_section_ids_resolve": true,
+    "section_path_mismatch_is_blocker": true,
+    "needs_review_rows_excluded_from_positive_denominator": true,
+    "promotion_evidence_false": true
+  },
+  "failed_done_criteria": [],
+  "blockers": [],
+  "warnings": [
+    "R3 validates gold binding only; it does not run retrieval, indexing, answer generation, or citation scoring.",
+    "Rows with label_status=needs_review or allowed_abstain=true are excluded from positive retrieval denominators."
+  ],
+  "next_phase_recommendation": "Proceed to R4 retrieval emit inventory."
+}

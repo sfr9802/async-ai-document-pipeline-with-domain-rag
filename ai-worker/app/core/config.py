@@ -171,7 +171,7 @@ class WorkerSettings(BaseSettings):
         ),
     )
     rag_index_dir: str = Field(
-        default="../rag-data",
+        default="eval/indexes/rag-data",
         description="Directory holding the FAISS index file and build metadata. Resolved relative to the worker's CWD.",
     )
     rag_embedding_text_variant: str = Field(

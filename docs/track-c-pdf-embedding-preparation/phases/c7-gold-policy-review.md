@@ -6,7 +6,7 @@ PDF page, bbox, table, OCR row의 expected label이 평가 가능한지 확인�
 
 ## 입력
 
-- `reports/rag_pdf_vector_quality_breakdown.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json`
 - PDF gold/query rows
 - PDF page metadata
 - table block metadata
@@ -32,7 +32,7 @@ PDF page, bbox, table, OCR row의 expected label이 평가 가능한지 확인�
 
 ## 산출물
 
-- `reports/rag_pdf_gold_policy_review.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_pdf_gold_policy_review.json`
 - 필요 시 relabel 후보 목록
 
 ## 완료 기준

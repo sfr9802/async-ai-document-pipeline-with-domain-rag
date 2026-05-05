@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODULE_PATH = ROOT / "scripts" / "rag_text_backend_identity.py"
+MODULE_PATH = ROOT / "ai-worker" / "scripts" / "rag_text_backend_identity.py"
 
 
 def load_module():

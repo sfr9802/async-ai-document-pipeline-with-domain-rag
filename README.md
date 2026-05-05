@@ -283,12 +283,11 @@ Redis BRPOP
 │   │       ├── ingest.py             JSONL → chunks → FAISS
 │   │       └── retriever.py          query → retrieved chunks
 │   │
-│   ├── scripts/build_rag_index.py    indexing CLI
-│   ├── eval/                         evaluation harness
-│   └── fixtures/                     small committed fixtures
+│   ├── scripts/                      worker smoke / ingestion / eval CLIs
+│   ├── eval/                         eval inputs, reports, datasets, indexes
+│   └── fixtures/                     small committed fixtures and manifests
 │
 ├── frontend/                         minimal HTML test client
-├── scripts/e2e_smoke.py              end-to-end smoke test
 ├── docker-compose.yml                Redis / PostgreSQL / MinIO profiles
 ├── .env.example                      environment variable reference
 └── docs/
@@ -313,14 +312,14 @@ XLSX Track A는 broad retrieval tuning이 아니라 candidate-v1을 보존한 di
 | Item | Result |
 |---|---|
 | Evidence role | `promotion_evidence=false`, `evidence_role=diagnostic` |
-| Reviewed gold | `eval/gold_queries_xlsx_v3_positive_reviewed.csv` |
-| Original manifest | `eval/gold_queries_xlsx_v3_positive.csv` preserved, not overwritten |
-| Candidate decision | `reports/xlsx_candidate_v2_decision.json` = `SKIP` |
+| Reviewed gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv` |
+| Original manifest | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv` preserved, not overwritten |
+| Candidate decision | `ai-worker/eval/reports/rag-ingestion/xlsx_candidate_v2_decision.json` = `SKIP` |
 | Candidate mutation | `candidate_v1_mutated=false`, `candidate_v2_created=false` |
 | Location accuracy | `xlsx_citation_location_accuracy` `0.8857 -> 1.0` |
 | Failure breakdown | `failed_or_degraded_count=0`, `MATCHED=35` |
 | Hidden leakage | `hidden_content_leakage_count=0` |
-| Baseline/canary | immutable baseline unchanged, `rag-data-canary` unchanged |
+| Baseline/canary | immutable baseline unchanged, `ai-worker/eval/indexes/rag-data-canary` unchanged |
 
 Location-rank decomposition still matters: `location_hit@10=1.0`, but `location_hit@5=0.9714`, with `gq_auto_042` remaining after rank 5. Promotion-grade readiness should therefore be handled in a separate ranking/duplicate-version investigation rather than by broad XLSX candidate reindexing.
 
@@ -329,9 +328,9 @@ Detailed phase evidence:
 - `docs/rag-ingestion-progress.md`
 - `docs/rag-ingestion/xlsx-retrieval/README.md`
 - `docs/rag-ingestion/xlsx-retrieval/phase-progress.md`
-- `reports/rag_xlsx_v3_after_cleanup_metric_compare.json`
-- `reports/rag_xlsx_v3_after_cleanup_failure_breakdown.json`
-- `reports/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_metric_compare.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_failure_breakdown.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json`
 
 ---
 
@@ -591,9 +590,9 @@ cd ../ai-worker
 pip install -r requirements.txt
 python -m app.main
 
-# 4. Run smoke test
-cd ..
-python scripts/e2e_smoke.py
+# 4. Run smoke test (new terminal)
+cd ai-worker
+python scripts/operational/e2e_smoke.py
 ```
 
 </details>
@@ -645,7 +644,7 @@ AIPIPELINE_WORKER_S3_SECRET_KEY=...
 
 ## Demo
 
-`scripts/demo.py`는 샘플 PDF를 생성하고 capability pipeline 흐름을 확인하는 보조 스크립트입니다.
+`ai-worker/scripts/operational/demo.py`는 샘플 PDF를 생성하고 capability pipeline 흐름을 확인하는 보조 스크립트입니다.
 현재 authoritative 상태는 위 `Current status` 표이며, OCR/multimodal 데모는 환경과 구현 범위를 확인한 뒤 실행해야 합니다.
 
 <details>
@@ -654,8 +653,9 @@ AIPIPELINE_WORKER_S3_SECRET_KEY=...
 ```bash
 pip install reportlab rich
 
-python scripts/demo.py
-python scripts/demo.py --self-test
+cd ai-worker
+python scripts/operational/demo.py
+python scripts/operational/demo.py --self-test
 ```
 
 </details>

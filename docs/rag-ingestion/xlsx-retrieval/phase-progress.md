@@ -10,20 +10,20 @@ Track A가 완료되면 이 파일의 확정 내용을 `docs/rag-ingestion-progr
 2. `promotion_evidence=false`, `evidence_role=diagnostic` 여부를 매 entry마다 확인합니다.
 3. hidden-negative leakage는 positive metric과 분리해서 적습니다.
 4. candidate v1 artifact를 mutate했는지 여부를 명시합니다.
-5. immutable baseline, `rag-data-canary`, full72 promotion gate 입력 변경 여부를 명시합니다.
+5. immutable baseline, `ai-worker/eval/indexes/rag-data-canary`, full72 promotion gate 입력 변경 여부를 명시합니다.
 6. 완료/보류/차단 상태를 구분하고, 차단 사유는 다음 action과 함께 남깁니다.
 
 ## Phase Status
 
 | Phase | Status | Last update | Evidence/report | Notes |
 |---|---|---|---|---|
-| A0 evidence freeze | `COMPLETED` | 2026-05-05 | `reports/rag_xlsx_candidate_lineage_before_tuning.json`, `reports/rag_xlsx_v3_current_diagnostic_snapshot.json` | current diagnostic evidence frozen; guardrail hash/status checks pass; positive row count 35; hidden leakage 0 |
-| A1 failure case review | `COMPLETED` | 2026-05-05 | `reports/rag_xlsx_v3_failure_case_review.json` | 4 degraded rows reviewed; true retrieval ranking failure count 0; unreviewed degraded ids now fail closed |
-| A2 query surface review | `COMPLETED` | 2026-05-05 | `reports/rag_xlsx_query_surface_patch_plan.json`, `eval/gold_queries_xlsx_v3_positive_reviewed.csv`, `reports/rag_xlsx_v3_query_surface_before_after_compare.json`, `reports/rag_xlsx_remaining_hard_case_probe.json` | semantic-anchor probe recovered `gq_xlsx_lookup_002`; `gq_auto_042` remains recovered |
-| A3 range policy review | `COMPLETED` | 2026-05-05 | `reports/rag_xlsx_range_policy_review.json`, `reports/rag_xlsx_range_policy_dry_run_impact.json` | exact policy kept; sheet_summary contains/overlap is metric inflation risk |
-| A4 formula/date contract review | `COMPLETED` | 2026-05-05 | `reports/rag_xlsx_formula_date_contract_review.json`, `reports/rag_xlsx_formula_date_surface_presence.json` | expected surface exists in exact SearchUnit; next action was query rewrite, not candidate v2 |
-| A5 candidate v2 decision | `COMPLETED` | 2026-05-05 | `reports/xlsx_candidate_v2_decision.json` | `SKIP`; A2/A4 were query-only and A3 kept policy |
-| A6 rerun and compare | `COMPLETED` | 2026-05-05 | `reports/rag_xlsx_v3_after_cleanup_metric_compare.json`, `reports/rag_xlsx_v3_after_cleanup_failure_breakdown.json` | diagnostic rerun completed; location accuracy `0.8857 -> 1.0`; `MATCHED=35`; hidden leakage 0 |
+| A0 evidence freeze | `COMPLETED` | 2026-05-05 | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_candidate_lineage_before_tuning.json`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_current_diagnostic_snapshot.json` | current diagnostic evidence frozen; guardrail hash/status checks pass; positive row count 35; hidden leakage 0 |
+| A1 failure case review | `COMPLETED` | 2026-05-05 | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_failure_case_review.json` | 4 degraded rows reviewed; true retrieval ranking failure count 0; unreviewed degraded ids now fail closed |
+| A2 query surface review | `COMPLETED` | 2026-05-05 | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_query_surface_patch_plan.json`, `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_query_surface_before_after_compare.json`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_remaining_hard_case_probe.json` | semantic-anchor probe recovered `gq_xlsx_lookup_002`; `gq_auto_042` remains recovered |
+| A3 range policy review | `COMPLETED` | 2026-05-05 | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_range_policy_review.json`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_range_policy_dry_run_impact.json` | exact policy kept; sheet_summary contains/overlap is metric inflation risk |
+| A4 formula/date contract review | `COMPLETED` | 2026-05-05 | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_formula_date_contract_review.json`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_formula_date_surface_presence.json` | expected surface exists in exact SearchUnit; next action was query rewrite, not candidate v2 |
+| A5 candidate v2 decision | `COMPLETED` | 2026-05-05 | `ai-worker/eval/reports/rag-ingestion/xlsx_candidate_v2_decision.json` | `SKIP`; A2/A4 were query-only and A3 kept policy |
+| A6 rerun and compare | `COMPLETED` | 2026-05-05 | `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_metric_compare.json`, `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_failure_breakdown.json` | diagnostic rerun completed; location accuracy `0.8857 -> 1.0`; `MATCHED=35`; hidden leakage 0 |
 
 ## Current Baseline Snapshot
 
@@ -31,10 +31,10 @@ This section summarizes the existing evidence that motivated the phase split. It
 
 | 항목 | 현재 값 |
 |---|---:|
-| Positive gold | `eval/gold_queries_xlsx_v3_positive.csv` |
+| Positive gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv` |
 | Positive row count | `35` |
 | Candidate index version | `rag-ingestion-v2-xlsx-candidate-v1` |
-| Vector artifact dir | `rag-data-xlsx-candidate-v1` |
+| Vector artifact dir | `ai-worker/eval/indexes/rag-data-xlsx-candidate-v1` |
 | Hit@10 | `1.0` |
 | MRR@10 | `0.8857` |
 | XLSX range overlap@10 | `0.9143` |
@@ -142,7 +142,7 @@ Known degraded rows:
 
 - Execute Track A phases A2 through A6 after A1 evidence was fixed.
 - Keep all changes diagnostic-only and candidate-v1 based.
-- Do not create candidate v2, mutate `rag-data-xlsx-candidate-v1`, run broad reindexing, or change immutable baseline/canary artifacts.
+- Do not create candidate v2, mutate `ai-worker/eval/indexes/rag-data-xlsx-candidate-v1`, run broad reindexing, or change immutable baseline/canary artifacts.
 
 #### Changes
 
@@ -157,19 +157,19 @@ Known degraded rows:
 - Added A6 metric compare script:
   - `scripts/rag_xlsx_after_cleanup_compare.py`.
 - Generated/updated reviewed manifest and diagnostic reports:
-  - `eval/gold_queries_xlsx_v3_positive_reviewed.csv`.
-  - `reports/rag_xlsx_query_surface_patch_plan.json`.
-  - `reports/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json`.
-  - `reports/rag_xlsx_v3_positive_reviewed_retrieval_performance_summary.json`.
-  - `reports/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json`.
-  - `reports/rag_xlsx_v3_query_surface_before_after_compare.json`.
-  - `reports/rag_xlsx_range_policy_review.json`.
-  - `reports/rag_xlsx_range_policy_dry_run_impact.json`.
-  - `reports/rag_xlsx_formula_date_contract_review.json`.
-  - `reports/rag_xlsx_formula_date_surface_presence.json`.
-  - `reports/xlsx_candidate_v2_decision.json`.
-  - `reports/rag_xlsx_v3_after_cleanup_metric_compare.json`.
-  - `reports/rag_xlsx_v3_after_cleanup_failure_breakdown.json`.
+  - `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_query_surface_patch_plan.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_retrieval_performance_summary.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_query_surface_before_after_compare.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_range_policy_review.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_range_policy_dry_run_impact.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_formula_date_contract_review.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_formula_date_surface_presence.json`.
+  - `ai-worker/eval/reports/rag-ingestion/xlsx_candidate_v2_decision.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_metric_compare.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_failure_breakdown.json`.
 
 #### Evidence
 
@@ -216,7 +216,7 @@ Known degraded rows:
 - Candidate v1 mutated: `false`.
 - Candidate v2 created: `false`.
 - Immutable baseline changed: `false`.
-- `rag-data-canary` changed: `false`.
+- `ai-worker/eval/indexes/rag-data-canary` changed: `false`.
 - Hidden-negative rows remain separate from positive retrieval metrics.
 - No hybrid search, reranking, parser expansion, answer generation, broad reindex, or global range-policy relaxation was introduced.
 
@@ -263,19 +263,19 @@ Known degraded rows:
 - Added A1 review script:
   - `scripts/rag_xlsx_v3_failure_case_review.py`.
 - Generated A0 reports:
-  - `reports/rag_xlsx_candidate_lineage_before_tuning.json`.
-  - `reports/rag_xlsx_v3_current_diagnostic_snapshot.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_candidate_lineage_before_tuning.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_current_diagnostic_snapshot.json`.
 - Generated A1 report:
-  - `reports/rag_xlsx_v3_failure_case_review.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_failure_case_review.json`.
 
 #### Evidence
 
 - A0 lineage/snapshot inputs:
-  - `eval/gold_queries_xlsx_v3_positive.csv`.
-  - `reports/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json`.
-  - `reports/rag_xlsx_v3_retrieval_performance_summary.json`.
-  - `reports/rag_xlsx_v3_failure_breakdown.json`.
-  - `reports/rag_xlsx_hidden_negative_leakage_diagnostic.json`.
+  - `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_retrieval_performance_summary.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_failure_breakdown.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_hidden_negative_leakage_diagnostic.json`.
 - A0 completion markers:
   - `positive_row_count=35`.
   - `candidate_index_version=rag-ingestion-v2-xlsx-candidate-v1`.
@@ -309,7 +309,7 @@ Known degraded rows:
 - `evidence_role=diagnostic`.
 - Candidate v1 mutated: `false`.
 - Immutable baseline changed: `false`.
-- `rag-data-canary` changed: `false`.
+- `ai-worker/eval/indexes/rag-data-canary` changed: `false`.
 - Hidden-negative rows remain separate from positive retrieval metrics.
 
 #### Validation
@@ -361,16 +361,16 @@ Known degraded rows:
 
 - This entry only reorganizes the plan. It does not claim that A0-A6 have been executed.
 - The current evidence snapshot remains based on existing XLSX v3 positive diagnostic outputs:
-  - `reports/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json`.
-  - `reports/rag_xlsx_v3_retrieval_performance_summary.json`.
-  - `reports/rag_xlsx_v3_failure_breakdown.json`.
-  - `reports/rag_xlsx_hidden_negative_leakage_diagnostic.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_retrieval_performance_summary.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_failure_breakdown.json`.
+  - `ai-worker/eval/reports/rag-ingestion/rag_xlsx_hidden_negative_leakage_diagnostic.json`.
 
 #### Guardrails
 
 - `promotion_evidence=true` was not introduced.
 - No immutable baseline artifact was changed.
-- `rag-data-canary` was not changed.
+- `ai-worker/eval/indexes/rag-data-canary` was not changed.
 - `rag-ingestion-v2-xlsx-candidate-v1` was not mutated.
 - Hidden-negative rows remain separate from positive retrieval metrics.
 
@@ -382,8 +382,8 @@ Known degraded rows:
 
 #### Next
 
-1. Execute A0 and generate `reports/rag_xlsx_candidate_lineage_before_tuning.json`.
-2. Execute A1 and generate `reports/rag_xlsx_v3_failure_case_review.json`.
+1. Execute A0 and generate `ai-worker/eval/reports/rag-ingestion/rag_xlsx_candidate_lineage_before_tuning.json`.
+2. Execute A1 and generate `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_failure_case_review.json`.
 3. Only after A1, decide whether A2/A3/A4 can proceed independently.
 
 ## Entry Template
@@ -404,7 +404,7 @@ Use this template for future phase work:
 #### Evidence
 
 - Reports:
-  - `reports/...`
+  - `ai-worker/eval/reports/rag-ingestion/...`
 - CSV/manifests:
   - `eval/...`
 
@@ -423,7 +423,7 @@ Use this template for future phase work:
 - `evidence_role=diagnostic`.
 - Candidate v1 mutated: `false`.
 - Immutable baseline changed: `false`.
-- `rag-data-canary` changed: `false`.
+- `ai-worker/eval/indexes/rag-data-canary` changed: `false`.
 
 #### Validation
 

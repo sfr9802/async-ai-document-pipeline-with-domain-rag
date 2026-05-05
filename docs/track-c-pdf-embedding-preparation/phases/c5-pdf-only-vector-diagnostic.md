@@ -6,10 +6,10 @@ metadata projection과 PDF candidate indexing consistency가 통과한 뒤, PDF-
 
 ## 입력
 
-- `reports/pdf_candidate_scope_report.json`
-- `reports/pdf_vector_metadata_projection_readiness.json`
-- `reports/rag_pdf_embedding_text_contract_audit.json`
-- `reports/pdf_candidate_embedding_consistency_report.json`
+- `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json`
+- `ai-worker/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json`
+- `ai-worker/eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json`
 - PDF gold rows
 
 ## Gold Filter
@@ -38,7 +38,7 @@ hidden/policy negative 제외
 ## 작업
 
 1. PDF-only gold filter를 적용한다.
-2. `rag-ingestion-v2-pdf-candidate-v1` index와 `rag-data-pdf-candidate-v1` artifact만 사용한다.
+2. `rag-ingestion-v2-pdf-candidate-v1` index와 `ai-worker/eval/indexes/rag-data-pdf-candidate-v1` artifact만 사용한다.
 3. vector backend로 diagnostic을 실행한다.
 4. report에 `promotion_evidence=false`, `evidence_role=diagnostic`을 기록한다.
 5. index/version/filtering mismatch counters를 확인한다.
@@ -46,7 +46,7 @@ hidden/policy negative 제외
 
 ## 산출물
 
-- `reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json`
 - C6 입력용 query-level result detail
 
 ## 완료 기준
@@ -56,7 +56,7 @@ retrieval_backend=vector
 promotion_evidence=false
 evidence_role=diagnostic
 index_version=rag-ingestion-v2-pdf-candidate-v1
-artifact_dir=rag-data-pdf-candidate-v1
+artifact_dir=ai-worker/eval/indexes/rag-data-pdf-candidate-v1
 index/version/filtering mismatch counters=0
 metadata_projection_failure_count=0 또는 분리 기록
 query_level_results_available=true

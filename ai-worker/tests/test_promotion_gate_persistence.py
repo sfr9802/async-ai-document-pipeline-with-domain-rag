@@ -243,7 +243,7 @@ def test_persist_eval_result_inserts_report_only_payload_with_status():
         dataset_id="gold-v0",
         result=result,
         baseline_index_version="baseline-v1",
-        report_path="reports/rag_gate.json",
+        report_path="eval/reports/rag-ingestion/rag_gate.json",
         report_uri="s3://bucket/rag_gate.json",
         eval_result_id="eval-result-1",
         created_at=created_at,
@@ -271,7 +271,7 @@ def test_persist_eval_result_inserts_report_only_payload_with_status():
     assert failure_payload["candidate_index_version"] == "candidate-blocked"
     assert params[9] is False
     assert params[10] == "BLOCKED"
-    assert params[11] == "reports/rag_gate.json"
+    assert params[11] == "eval/reports/rag-ingestion/rag_gate.json"
     assert params[12] == "s3://bucket/rag_gate.json"
     assert params[13] == created_at
 
@@ -303,7 +303,7 @@ def test_write_gate_report_can_include_persisted_eval_result_id(tmp_path):
 def test_failure_reason_payload_includes_bucket_distribution():
     metrics = _passing_metrics(ocr_needed=False) | {
         "candidate_index_version": "candidate-v2",
-        "retrieval_report_path": "reports/rag_retrieval_eval_report.json",
+        "retrieval_report_path": "eval/reports/rag-ingestion/rag_retrieval_eval_report.json",
         "overall_failure_reason_counts": {"expected_range_not_found": 2},
         "bucket_failure_reason_counts": {"xlsx_lookup": {"expected_range_not_found": 2}},
         "bucket_metrics": {
@@ -322,13 +322,13 @@ def test_failure_reason_payload_includes_bucket_distribution():
     payload = gate_module.build_failure_reason_payload(
         result,
         eval_result_id="eval-result-1",
-        gate_report_path="reports/gate.json",
+        gate_report_path="eval/reports/rag-ingestion/gate.json",
         retrieval_report_path=metrics["retrieval_report_path"],
     )
 
     assert payload["failure_reason_distribution"]["overall"]["expected_range_not_found"] == 2
     assert payload["bucket_level_failures"][0]["bucket"] == "xlsx_lookup"
-    assert payload["retrieval_report_path"] == "reports/rag_retrieval_eval_report.json"
+    assert payload["retrieval_report_path"] == "eval/reports/rag-ingestion/rag_retrieval_eval_report.json"
 
 
 def _passing_metrics(*, ocr_needed: bool) -> dict[str, object]:

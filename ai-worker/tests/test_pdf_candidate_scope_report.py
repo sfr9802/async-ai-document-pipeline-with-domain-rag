@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODULE_PATH = ROOT / "scripts" / "pdf_candidate_scope_report.py"
+MODULE_PATH = ROOT / "ai-worker" / "scripts" / "pdf_candidate_scope_report.py"
 
 
 def load_module():

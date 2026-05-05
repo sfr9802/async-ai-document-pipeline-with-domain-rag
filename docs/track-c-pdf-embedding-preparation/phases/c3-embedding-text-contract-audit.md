@@ -6,7 +6,7 @@ PDF 검색 질의가 page, section, table, OCR evidence를 찾을 수 있도록 
 
 ## 입력
 
-- `reports/pdf_candidate_scope_report.json`
+- `ai-worker/eval/reports/rag-ingestion/pdf_candidate_scope_report.json`
 - PDF SearchUnit rows
 - embedding/bm25/display/citation text surfaces
 - OCR confidence/trust metadata
@@ -34,8 +34,8 @@ PDF 검색 질의가 page, section, table, OCR evidence를 찾을 수 있도록 
 
 ## 산출물
 
-- `reports/rag_pdf_embedding_text_contract_audit.json`
-- 필요 시 `reports/rag_pdf_ocr_trust_readiness.json`
+- `ai-worker/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json`
+- 필요 시 `ai-worker/eval/reports/rag-ingestion/rag_pdf_ocr_trust_readiness.json`
 
 ## 완료 기준
 

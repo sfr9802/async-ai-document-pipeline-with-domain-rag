@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MODULE_PATH = ROOT / "scripts" / "rag_pdf_search_unit_surface_repair.py"
+MODULE_PATH = ROOT / "ai-worker" / "scripts" / "rag_pdf_search_unit_surface_repair.py"
 
 
 def load_module():

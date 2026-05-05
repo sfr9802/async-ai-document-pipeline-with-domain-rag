@@ -1,0 +1,65 @@
+{
+  "run_id": "20260505T104047KST",
+  "generated_at": "2026-05-05T10:40:47.9274139+09:00",
+  "schema_version": "rag_text_b2_scope_correction_v1",
+  "status": "COMPLETED",
+  "scope_correction": true,
+  "report_role": "rag_text_b2_scope_correction",
+  "track": "track_b_text_retrieval_e2e",
+  "phase": "R0",
+  "previous_b2_label": "retrieval diagnostic",
+  "new_b2_label": "B-app app-catalog TEXT canary smoke",
+  "representative_of_namu_v4": false,
+  "representative_of_existing_text_retrieval": false,
+  "b2_app_report_path": "reports/rag_text_retrieval_diagnostic_report.json",
+  "b2_app_report_preserved": true,
+  "b2_app_report_modified_by_scope_correction": false,
+  "b2_app_report_observed_smoke_only_field": false,
+  "b2_app_report_interpretation": "Superseded by this R0 scope correction: treat the legacy B2 report as B-app smoke-only diagnostic evidence, not B-namu or namu-v4 retrieval evidence.",
+  "b2_namu_status": "NOT_STARTED",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "phase_status_board": {
+    "B2 app-catalog retrieval diagnostic": "diagnostic_completed / smoke_only",
+    "B2-namu corpus inventory": "planned",
+    "B2-namu retrieval diagnostic": "blocked_on_B2_namu_inventory",
+    "B3 context assembly": "blocked_on_B2_namu_retrieval"
+  },
+  "preserved_b2_app_metric_summary": {
+    "Hit@10": 0.0,
+    "MRR@10": 0.0,
+    "result_empty_count": 12,
+    "path_mixing_count": 0,
+    "search_error_count": 0
+  },
+  "scope_boundaries": {
+    "proves": [
+      "app catalog TEXT import/search smoke executed",
+      "TEXT-only filter executed without path mixing in the B2-app diagnostic",
+      "current B1 synthetic natural query surface did not match lexical library_search"
+    ],
+    "does_not_prove": [
+      "namu-v4-structured-combined existing TEXT retrieval performance",
+      "production-style text retrieval emit performance",
+      "actual TEXT E2E performance including LLM answers"
+    ]
+  },
+  "acceptance_criteria": {
+    "existing_b2_metrics_deleted": false,
+    "b2_zero_score_interpreted_as_namu_v4": false,
+    "promotion_evidence_false_preserved": true,
+    "evidence_role_diagnostic_preserved": true,
+    "b3_b4_b5_follow_b2_namu_not_b2_app": true
+  },
+  "source_documents": [
+    "docs/track_b_text_retrieval_e2e/phases/phase_r0_b2_scope_correction.md",
+    "docs/track_b_text_retrieval_e2e/phase_b2_retrieval_diagnostic.md",
+    "docs/track_b_text_retrieval_e2e/rag_text_retrieval_e2e_progress.md",
+    "docs/track_b_text_retrieval_e2e/phases/phase_progress.md"
+  ],
+  "warnings": [
+    "Do not cite reports/rag_text_retrieval_diagnostic_report.json as B-namu or namu-v4 evidence without this scope correction.",
+    "The legacy B2 report's original smoke_only field is preserved as-is; this R0 report owns the corrected interpretation."
+  ],
+  "next_recommended_phase": "R1 query intent routing matrix"
+}

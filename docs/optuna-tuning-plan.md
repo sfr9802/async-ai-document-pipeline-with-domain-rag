@@ -44,7 +44,7 @@ trial 파라미터를 고르고, Claude 는 결과를 분석하고 정제를 제
 
 ## Phase 3 — Claude Code 통합
 
-- `.claude/commands/tune-round.md` — `scripts/tune.py` 를 감싸고,
+- `.claude/commands/tune-round.md` — `ai-worker/scripts/tune.py` 를 감싸고,
   자동으로 summarize 호출, gitignore 된 `study.db` 를 제외한
   `studies/<id>/` 커밋.
 - `.claude/commands/analyze-study.md` — study.db + `summary.md` 읽고,
@@ -65,14 +65,14 @@ trial 파라미터를 고르고, Claude 는 결과를 분석하고 정제를 제
 - `embedding_model`, chunk `MIN_CH/MAX_CH/OVERLAP`, query/passage
   prefix 를 탐색 공간에 추가.
 - `(embedding_model, chunk_size, overlap)` 해시로 key 된 인덱스 캐시가
-  `rag-data/<hash>/{faiss.index, build.json}` 에 필요 — trial 들이
+  `ai-worker/eval/indexes/rag-data/<hash>/{faiss.index, build.json}` 에 필요 — trial 들이
   재빌드가 아니라 재사용.
 - 2-phase study 패턴: 외부 expensive sweep 이 Pareto 후보를 선정,
   내부 cheap sweep 이 각각을 정제.
 
 ## 가드레일 (코드 + 명령 문서에 인코딩)
 
-- `scripts/tune.py` 는 `--resume` 이 전달되지 않으면 기존 `study.db`
+- `ai-worker/scripts/tune.py` 는 `--resume` 이 전달되지 않으면 기존 `study.db`
   덮어쓰기를 거부.
 - `propose-next` 명령은 Claude 에게 명시적으로 diff 를 출력하라고
   지시, 절대 `active.yaml` 에 직접 `Edit` 호출하지 않음.

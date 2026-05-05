@@ -147,8 +147,8 @@ INFO [app.queue.redis_consumer] Queue consumer started key=aipipeline:jobs:pendi
 ### 터미널 4 — 스모크 테스트
 
 ```bash
-cd <repo-root>
-python scripts/e2e_smoke.py
+cd <repo-root>/ai-worker
+python scripts/operational/e2e_smoke.py
 ```
 
 기대 출력:
@@ -348,7 +348,7 @@ worker 프로세스에 로드합니다. 그 전에 다음이 필요:
    메모리에 로드하므로, rebuild 는 worker 재시작이 필요. 다음과 같은
    출력이 보여야 함:
    ```
-   RAG init: configured_model=BAAI/bge-m3 query_prefix='' passage_prefix='' index_dir=../rag-data top_k=5
+   RAG init: configured_model=BAAI/bge-m3 query_prefix='' passage_prefix='' index_dir=eval/indexes/rag-data top_k=5
    Loaded FAISS index v-... (model=BAAI/bge-m3, dim=1024, vectors=...)
    Retriever readiness check: configured_model='BAAI/bge-m3' index_model='BAAI/bge-m3' configured_dim=1024 index_dim=1024 index_version=v-... chunk_count=...
    Retriever ready: model=BAAI/bge-m3 dim=1024 index_version=v-...
@@ -671,7 +671,7 @@ python -m app.main
 모든 의존성이 갖춰진 건강한 시작에서 다음과 같은 출력이 보임:
 
 ```
-RAG init: configured_model=BAAI/bge-m3 query_prefix='' passage_prefix='' index_dir=../rag-data top_k=5
+RAG init: configured_model=BAAI/bge-m3 query_prefix='' passage_prefix='' index_dir=eval/indexes/rag-data top_k=5
 ...
 RAG capability registered.
 OCR init: languages=eng pdf_dpi=200 tesseract_cmd=<PATH> min_conf_warn=40.0 max_pages=100
@@ -975,7 +975,7 @@ python -m scripts.doctor
 [PASS] redis                  Redis reachable at redis://localhost:6379/0 (2 ms)
 [PASS] postgres               PostgreSQL reachable. (12 ms)
 [PASS] schemas                aipipeline + ragmeta schemas / tables present. (8 ms)
-[PASS] faiss_index            FAISS index files present in ../rag-data (0 ms)
+[PASS] faiss_index            FAISS index files present in eval/indexes/rag-data (0 ms)
 [PASS] build_json             build.json parseable (version=v-1776253724). (0 ms)
 [PASS] runtime_model_match    Runtime model matches index (BAAI/bge-m3). (0 ms)
 [PASS] tesseract              Tesseract 5.3.3 available (languages: ['eng']). (40 ms)
@@ -1018,10 +1018,10 @@ cd ai-worker
 python -m scripts.smoke_runner
 ```
 
-또는 repo 루트에서 얇은 wrapper 경유:
+또는 worker-local operational wrapper 경유:
 
 ```bash
-python scripts/smoke_all.py
+python scripts/operational/smoke_all.py
 ```
 
 플래그:
@@ -1129,7 +1129,7 @@ cats", SMOKE TEST placeholder PNG) 은 plumbing 을 운동시키기 위해
 3. `cd ai-worker && python -m scripts.build_rag_index --fixture` —
    1회 또는 모델/데이터셋 변경 후
 4. `python -m scripts.make_ocr_sample_fixtures` — 1회,
-   `eval/datasets/samples/` 아래 커밋된 PNG 생성
+   `eval/datasets/samples/` 아래 worker-local PNG 생성
 5. `python -m scripts.doctor` — 진행 전 모든 행이 green 이어야 함
 6. `python -m app.main` — fresh 터미널에서 worker 시작; `Active
    capabilities: ['MOCK', 'MULTIMODAL', 'OCR', 'RAG']` 확인

@@ -1,0 +1,528 @@
+{
+  "manifest_id": "rag_ingestion_hardened_xlsx_manifest",
+  "manifest_version": "2026-05-05-a1",
+  "readiness_scope": "hardened_xlsx_only",
+  "parser_version": "xlsx-extract-v2-hidden-safe",
+  "hidden_policy": "exclude_hidden",
+  "hidden_policy_version": "exclude-hidden-v1",
+  "sanitizer_version": "exclude-hidden-v1",
+  "notes": [
+    "Use these files to create new hardened source_file/document_version/search_unit rows.",
+    "Do not use stale xlsx-extract-v1 rows as candidate readiness evidence.",
+    "Do not put hidden terms into gold query text or expected answers; hidden probes belong only in leakage SQL/report checks."
+  ],
+  "samples": [
+    {
+      "sample_id": "xlsx_hardened_surgery_hidden_rows_001",
+      "file": "eval/datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_1장 연령별 성별 수술현황(2024).xlsx",
+      "buckets": [
+        "hidden_rows_columns",
+        "merged_header",
+        "wide_table",
+        "date_number_currency_format"
+      ],
+      "expected_visible_sheets": [
+        "2p"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "2p",
+          "range": "A1:T69",
+          "note": "contains a hidden row; use visible-row queries only"
+        }
+      ],
+      "expected_header_hints": [
+        "연령별",
+        "성별",
+        "수술현황"
+      ],
+      "expected_hidden_policy": "exclude hidden rows; hidden terms only in leakage probes",
+      "must_not_contain_terms_ref": [
+        "hidden_probe:surgery_chapter_1"
+      ],
+      "candidate_query_hints": [
+        "연령별 수술 건수",
+        "성별 수술 현황",
+        "수술 통계 연령 구간"
+      ],
+      "priority": "high",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_surgery_hidden_rows_002",
+      "file": "eval/datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_2장 시도별 의료기관종별 수술현황(2024).xlsx",
+      "buckets": [
+        "hidden_rows_columns",
+        "merged_header",
+        "wide_table"
+      ],
+      "expected_visible_sheets": [],
+      "expected_visible_ranges": [
+        {
+          "sheet": "자동차등록현황보고자동차등록대수현황 시도별 (201101 ",
+          "range": "A1:W282",
+          "note": "observed nonempty range; verify during import"
+        }
+      ],
+      "expected_header_hints": [
+        "시도별",
+        "의료기관종별",
+        "수술현황"
+      ],
+      "expected_hidden_policy": "exclude hidden rows; hidden terms only in leakage probes",
+      "must_not_contain_terms_ref": [
+        "hidden_probe:surgery_chapter_2"
+      ],
+      "candidate_query_hints": [
+        "시도별 수술 현황",
+        "의료기관종별 수술 건수",
+        "지역별 수술 통계"
+      ],
+      "priority": "high",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_surgery_major_indicators_001",
+      "file": "eval/datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_5장 주요 수술통계지표(2024).xlsx",
+      "buckets": [
+        "multi_sheet",
+        "merged_header",
+        "wide_table",
+        "decimal_number_format",
+        "large_sheet_count"
+      ],
+      "expected_visible_sheets": [
+        "제5장 주요수술통계 지표",
+        "294",
+        "296",
+        "298"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "제5장 주요수술통계 지표",
+          "range": "A1:R18",
+          "note": "chapter title and section overview"
+        },
+        {
+          "sheet": "294",
+          "range": "A1:BG155",
+          "note": "major indicators by surgery and institution type"
+        },
+        {
+          "sheet": "296",
+          "range": "A1:BG69",
+          "note": "patients per 100,000 population by age, gender, and institution type"
+        }
+      ],
+      "expected_header_hints": [
+        "주요 수술통계 지표",
+        "인구 10만명당",
+        "백내장수술",
+        "담낭절제술"
+      ],
+      "expected_hidden_policy": "index visible cells only",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [
+        "주요 수술통계 지표",
+        "인구 10만명당 수술",
+        "백내장수술 지표"
+      ],
+      "priority": "high",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_surgery_laparoscopic_001",
+      "file": "eval/datasets/xlsx/2024_주요수술통계연보(한글,_엑셀)/제_8장 복강경수술현황(2024).xlsx",
+      "buckets": [
+        "multi_sheet",
+        "hidden_rows_columns",
+        "merged_header",
+        "wide_table",
+        "date_number_currency_format"
+      ],
+      "expected_visible_sheets": [
+        "제8장",
+        "490",
+        "492",
+        "494"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "제8장",
+          "range": "A1:Z107",
+          "note": "chapter title and overview"
+        },
+        {
+          "sheet": "490",
+          "range": "A1:AQ149",
+          "note": "laparoscopic surgery by age and gender"
+        },
+        {
+          "sheet": "492",
+          "range": "A1:AK97",
+          "note": "laparoscopic hernia and hysterectomy by age and gender"
+        },
+        {
+          "sheet": "494",
+          "range": "A1:CS145",
+          "note": "contains hidden rows; use visible-row queries only"
+        }
+      ],
+      "expected_header_hints": [
+        "복강경수술",
+        "충수절제술",
+        "담낭절제술",
+        "자궁절제술"
+      ],
+      "expected_hidden_policy": "exclude hidden rows; hidden terms only in leakage probes",
+      "must_not_contain_terms_ref": [
+        "hidden_probe:surgery_chapter_8"
+      ],
+      "candidate_query_hints": [
+        "복강경 충수절제술",
+        "복강경 담낭절제술",
+        "복강경 자궁절제술"
+      ],
+      "priority": "high",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_election_advance_turnout_001",
+      "file": "eval/datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/03_사전투표/01-전체투표율과 사전투표율.xlsx",
+      "buckets": [
+        "multi_sheet",
+        "merged_header",
+        "wide_table",
+        "date_number_percent_format",
+        "large_row_group"
+      ],
+      "expected_visible_sheets": [
+        "1.시도별",
+        "2.구시군별",
+        "3.시도별-성별연령대별",
+        "7.구시군별-성별연령대별"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "1.시도별",
+          "range": "A1:W27",
+          "note": "overall and advance turnout by province"
+        },
+        {
+          "sheet": "2.구시군별",
+          "range": "A1:X272",
+          "note": "overall and advance turnout by city/county/district"
+        },
+        {
+          "sheet": "7.구시군별-성별연령대별",
+          "range": "A1:P2415",
+          "note": "large row group by city/county/district, gender, and age"
+        }
+      ],
+      "expected_header_hints": [
+        "전체투표율",
+        "사전투표율",
+        "투표자수",
+        "선거인수",
+        "구시군명"
+      ],
+      "expected_hidden_policy": "index visible cells only",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [
+        "전국 사전투표율",
+        "서울특별시 사전투표",
+        "구시군별 투표율"
+      ],
+      "priority": "high",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_election_age_gender_001",
+      "file": "eval/datasets/xlsx/중앙선거관리위원회_제21대 국회의원선거 투표율 분석_20200415/01_전체 선거인 표본조사/02_성별·연령대별 투표율(구시군별).xlsx",
+      "buckets": [
+        "multi_sheet",
+        "merged_header",
+        "wide_table",
+        "regional_sheet_names",
+        "date_number_percent_format"
+      ],
+      "expected_visible_sheets": [
+        "서울",
+        "부산",
+        "대구",
+        "인천"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "서울",
+          "range": "A1:O219",
+          "note": "gender and age turnout by district"
+        },
+        {
+          "sheet": "부산",
+          "range": "A1:O156",
+          "note": "gender and age turnout by district"
+        },
+        {
+          "sheet": "대구",
+          "range": "A1:O84",
+          "note": "gender and age turnout by district"
+        },
+        {
+          "sheet": "인천",
+          "range": "A1:O93",
+          "note": "gender and age turnout by district"
+        }
+      ],
+      "expected_header_hints": [
+        "성별",
+        "연령대별",
+        "투표율",
+        "선거인수",
+        "투표자수"
+      ],
+      "expected_hidden_policy": "index visible cells only",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [
+        "서울 연령대 투표율",
+        "부산 성별 투표자수",
+        "구시군별 투표율"
+      ],
+      "priority": "high",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_employment_sentiment_2019_001",
+      "file": "eval/datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2019/통계청_감성지수라벨링자료2019년05월_20201229.xlsx",
+      "buckets": [
+        "large_row_group",
+        "mixed_text_table",
+        "date_number_format",
+        "url_text",
+        "label_matrix"
+      ],
+      "expected_visible_sheets": [
+        "20190501_10"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "20190501_10",
+          "range": "A1:I3226",
+          "note": "employment news title, URL, and six labeler scores"
+        }
+      ],
+      "expected_header_hints": [
+        "날짜",
+        "제목",
+        "URL",
+        "라벨러1",
+        "라벨러6"
+      ],
+      "expected_hidden_policy": "index visible cells only",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [
+        "2019년 5월 고용기사",
+        "최저임금 기사 라벨",
+        "청년혁신 창업기업"
+      ],
+      "priority": "medium",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_employment_sentiment_2020_001",
+      "file": "eval/datasets/xlsx/국가데이터처_인공지능 학습을 위한 고용기사 감성지수 라벨링 데이터_20201229/2020/통계청_감성지수라벨링자료2020년04월_20201229.xlsx",
+      "buckets": [
+        "large_row_group",
+        "mixed_text_table",
+        "date_number_format",
+        "url_text",
+        "label_matrix"
+      ],
+      "expected_visible_sheets": [
+        "20200401_15"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "20200401_15",
+          "range": "A1:I839",
+          "note": "employment news title, URL, and six labeler scores"
+        }
+      ],
+      "expected_header_hints": [
+        "날짜",
+        "제목",
+        "URL",
+        "라벨러1",
+        "라벨러6"
+      ],
+      "expected_hidden_policy": "index visible cells only",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [
+        "2020년 4월 고용기사",
+        "고용률 일자리 목표",
+        "통계행정 조사 개선"
+      ],
+      "priority": "medium",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_transit_date_001",
+      "file": "eval/datasets/xlsx/서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+      "buckets": [
+        "multi_sheet",
+        "date_number_currency_format"
+      ],
+      "expected_visible_sheets": [
+        "철도",
+        "버스"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "철도",
+          "range": "A1:D602"
+        },
+        {
+          "sheet": "버스",
+          "range": "A1:C20"
+        }
+      ],
+      "expected_header_hints": [
+        "대중교통",
+        "철도",
+        "버스",
+        "이용"
+      ],
+      "expected_hidden_policy": "index visible sheets only",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [
+        "철도 이용 현황",
+        "버스 이용 현황",
+        "대중교통 월별 이용"
+      ],
+      "priority": "medium",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_statistics_merged_001",
+      "file": "eval/datasets/xlsx/통계표_03185834.xlsx",
+      "buckets": [
+        "merged_header",
+        "date_number_currency_format"
+      ],
+      "expected_visible_sheets": [
+        "Sheet1"
+      ],
+      "expected_visible_ranges": [
+        {
+          "sheet": "Sheet1",
+          "range": "A1:G935"
+        }
+      ],
+      "expected_header_hints": [
+        "통계표"
+      ],
+      "expected_hidden_policy": "index visible cells only",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [
+        "통계표 항목별 수치",
+        "연도별 통계 수치",
+        "표 머리글 기준 통계"
+      ],
+      "priority": "medium",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_culture_large_text_001",
+      "file": "eval/datasets/xlsx/한국문화예술위원회_2006 문예연감_시각예술_20210121.xlsx",
+      "buckets": [
+        "multi_sheet",
+        "large_row_group",
+        "mixed_text_table"
+      ],
+      "expected_visible_sheets": [
+        "지역별 전시회(서울)",
+        "지역별 전시회(부산)",
+        "지역별 전시회(대구)",
+        "지역별 전시회(인천)",
+        "지역별 전시회(광주)",
+        "지역별 전시회(대전)",
+        "지역별 전시회(울산)"
+      ],
+      "expected_visible_ranges": [],
+      "expected_header_hints": [
+        "지역별",
+        "전시회",
+        "시각예술"
+      ],
+      "expected_hidden_policy": "index visible regional exhibition sheets only",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [
+        "지역별 전시회 현황",
+        "서울 전시회 기록",
+        "시각예술 전시 정보"
+      ],
+      "priority": "medium",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_vehicle_merged_001",
+      "file": "eval/datasets/xlsx/자동차등록현황보고_자동차등록대수현황 시도별 (201101 ~ 202603).xlsx",
+      "buckets": [
+        "merged_header",
+        "date_number_currency_format"
+      ],
+      "expected_visible_sheets": [],
+      "expected_visible_ranges": [],
+      "expected_header_hints": [
+        "자동차등록",
+        "등록대수",
+        "시도별"
+      ],
+      "expected_hidden_policy": "verify actual used range during import",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [
+        "시도별 자동차 등록대수",
+        "월별 자동차 등록 현황",
+        "자동차 등록 통계"
+      ],
+      "priority": "medium",
+      "diagnostic_only": false
+    },
+    {
+      "sample_id": "xlsx_hardened_book_info_unsupported_001",
+      "file": "eval/datasets/xlsx/과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx",
+      "buckets": [
+        "unsupported_file_rate"
+      ],
+      "expected_visible_sheets": [],
+      "expected_visible_ranges": [],
+      "expected_header_hints": [
+        "도서정보"
+      ],
+      "expected_hidden_policy": "diagnostic only; file is CSV-like text and not ZIP XLSX",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [],
+      "priority": "diagnostic",
+      "diagnostic_only": true,
+      "unsupported_reason": "csv_like_not_zip_xlsx"
+    },
+    {
+      "sample_id": "xlsx_hardened_rail_news_xls_001",
+      "file": "eval/datasets/xlsx/해외철도뉴스 _공공데이터 목록 (철도산업정보센터).xls",
+      "buckets": [
+        "legacy_xls_unsupported"
+      ],
+      "expected_visible_sheets": [],
+      "expected_visible_ranges": [],
+      "expected_header_hints": [
+        "해외철도뉴스"
+      ],
+      "expected_hidden_policy": "diagnostic only until legacy .xls support or conversion exists",
+      "must_not_contain_terms_ref": [],
+      "candidate_query_hints": [],
+      "priority": "diagnostic",
+      "diagnostic_only": true,
+      "unsupported_reason": "legacy_xls_unsupported"
+    }
+  ]
+}
