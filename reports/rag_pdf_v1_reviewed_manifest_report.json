@@ -1,0 +1,66 @@
+{
+  "run_id": "2026-05-05T020923Z",
+  "generated_at": "2026-05-05T02:09:23.378222+00:00",
+  "status": "PASS",
+  "track": "C",
+  "phase": "C7.1",
+  "report_role": "pdf_v1_reviewed_manifest",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "pdf_candidate_namespace": "rag-ingestion-v2-pdf-candidate-v1",
+  "pdf_artifact_dir": "rag-data-pdf-candidate-v1",
+  "source_gold": {
+    "path": "eval\\gold_queries_v0.csv",
+    "exists": true,
+    "sha256": "e2e85678ddbf83c03927e69d2a75b825f20048f12f4ac50bb7f9b820c289f8ef"
+  },
+  "output_manifest": "eval\\gold_queries_pdf_v1_reviewed.csv",
+  "output_report": "reports\\rag_pdf_v1_reviewed_manifest_report.json",
+  "gold_v0_mutated": false,
+  "total_pdf_rows": 22,
+  "table_deferred_count": 6,
+  "reviewed_positive_metric_eligible_count": 16,
+  "excluded_count": 0,
+  "pdf_review_label_counts": {
+    "positive_reviewed": 16,
+    "table_deferred": 6
+  },
+  "review_decision_counts": {
+    "ACCEPT_CHUNK_TYPE_POLICY_RELABEL": 1,
+    "ACCEPT_PAGE_WITH_OPTIONAL_BBOX": 1,
+    "DEFER_TO_TABLE_EXTRACTION": 6,
+    "KEEP_REVIEWED_POSITIVE": 14
+  },
+  "positive_metric_eligible_query_ids": [
+    "gq_pdf_page_lookup_001",
+    "gq_pdf_page_lookup_002",
+    "gq_pdf_page_lookup_003",
+    "gq_pdf_section_question_001",
+    "gq_pdf_section_question_002",
+    "gq_pdf_section_question_003",
+    "gq_auto_009",
+    "gq_auto_010",
+    "gq_auto_014",
+    "gq_auto_015",
+    "gq_auto_019",
+    "gq_auto_020",
+    "gq_auto_024",
+    "gq_auto_025",
+    "gq_auto_029",
+    "gq_auto_030"
+  ],
+  "table_deferred_query_ids": [
+    "gq_pdf_table_lookup_001",
+    "gq_pdf_table_lookup_002",
+    "gq_auto_011",
+    "gq_auto_016",
+    "gq_auto_021",
+    "gq_auto_026"
+  ],
+  "blockers": [],
+  "warnings": [],
+  "notes": [
+    "This manifest is separate from eval/gold_queries_v0.csv.",
+    "Table-deferred rows are preserved for investigation but excluded from reviewed positive metrics."
+  ]
+}

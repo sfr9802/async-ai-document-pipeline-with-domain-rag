@@ -61,28 +61,49 @@ python scripts/rag_pdf_search_unit_surface_repair.py \
 ## C4 Candidate Indexing
 
 Do not run C4 while C2 or C3 is `FAIL`. The current indexing wrapper does not
-consume the C1 scope report directly, so pass the C1 document-version scope
-explicitly or implement a C1 `--scope-report` wrapper before broad use.
+fall back to the full72 gold scope for Track C. Consume the C1 PDF scope
+report directly so the run stays restricted to the PDF document/source/parser
+scope.
+
+Runtime prerequisites:
+
+- Core API must be configured with
+  `AIPIPELINE_SEARCH_UNIT_INDEXING_CANDIDATE_INDEX_VERSION=rag-ingestion-v2-pdf-candidate-v1`.
+- Worker must write the PDF artifact dir, for example
+  `AIPIPELINE_WORKER_RAG_INDEX_DIR=rag-data-pdf-candidate-v1`.
+- If the default Core API on port `8080` is still configured for the legacy
+  candidate namespace, run a separate local Core API port for C4 and point the
+  worker at it with `AIPIPELINE_WORKER_CORE_API_BASE_URL`.
 
 ```bash
 python scripts/rag_scoped_candidate_indexing.py \
-  --document-version-id docv_88368b8b12ba3f38 \
-  --document-version-id docv_8b23a58c27c5518a \
-  --document-version-id docv_fe2470815512a395 \
+  --scope-report reports/pdf_candidate_scope_report.json \
   --source-file-type PDF \
   --parser-version pdf-extract-v1 \
   --parser-version pdf-extract-v2 \
   --expected-index-version rag-ingestion-v2-pdf-candidate-v1 \
+  --artifact-dir rag-data-pdf-candidate-v1 \
   --output reports/pdf_candidate_indexing_report.json
 ```
 
-The consistency script is still a C4 TODO. Do not treat this command as
-available until `scripts/pdf_candidate_embedding_consistency.py` exists.
+To refresh report-only artifact identity after a completed C4 indexing run,
+use metadata enrichment instead of re-indexing:
+
+```bash
+python scripts/rag_scoped_candidate_indexing.py \
+  --scope-report reports/pdf_candidate_scope_report.json \
+  --artifact-dir rag-data-pdf-candidate-v1 \
+  --enrich-existing-report \
+  --output reports/pdf_candidate_indexing_report.json
+```
 
 ```bash
 python scripts/pdf_candidate_embedding_consistency.py \
+  --scope-report reports/pdf_candidate_scope_report.json \
+  --c2-report reports/pdf_vector_metadata_projection_readiness.json \
+  --c3-report reports/rag_pdf_embedding_text_contract_audit.json \
+  --indexing-report reports/pdf_candidate_indexing_report.json \
   --expected-index-version rag-ingestion-v2-pdf-candidate-v1 \
-  --artifact-dir rag-data-pdf-candidate-v1 \
   --report reports/pdf_candidate_embedding_consistency_report.json
 ```
 
@@ -91,6 +112,7 @@ python scripts/pdf_candidate_embedding_consistency.py \
 ```bash
 python scripts/rag_pdf_vector_diagnostic.py \
   --gold eval/gold_queries_v0.csv \
+  --c4-consistency-report reports/pdf_candidate_embedding_consistency_report.json \
   --expected-location-type pdf \
   --index-version rag-ingestion-v2-pdf-candidate-v1 \
   --artifact-dir rag-data-pdf-candidate-v1 \
@@ -104,8 +126,56 @@ python scripts/rag_pdf_vector_diagnostic.py \
 ```bash
 python scripts/rag_pdf_vector_quality_breakdown.py \
   --eval-report reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json \
+  --gold eval/gold_queries_v0.csv \
+  --c2-report reports/pdf_vector_metadata_projection_readiness.json \
   --report reports/rag_pdf_vector_quality_breakdown.json
 ```
+
+## C7 Gold Policy Review
+
+```bash
+python scripts/rag_pdf_gold_policy_review.py \
+  --quality-breakdown reports/rag_pdf_vector_quality_breakdown.json \
+  --gold eval/gold_queries_v0.csv \
+  --c1-report reports/pdf_candidate_scope_report.json \
+  --c2-report reports/pdf_vector_metadata_projection_readiness.json \
+  --c3-report reports/rag_pdf_embedding_text_contract_audit.json \
+  --report reports/rag_pdf_gold_policy_review.json
+```
+
+## C8 Case-Level Diagnostic Review
+
+Use these only after C7.1, C6.1, and C5.1 reviewed diagnostics are complete.
+These commands are diagnostic-only and must not be treated as promotion
+evidence or broad retrieval tuning.
+
+```bash
+python scripts/rag_pdf_retrieval_tuning_case_pack.py
+```
+
+```bash
+python scripts/rag_pdf_c8_case_investigation.py
+```
+
+```bash
+python scripts/rag_pdf_c8_rank_probe.py
+```
+
+```bash
+python scripts/rag_pdf_c8_case_level_review.py
+```
+
+```bash
+python scripts/rag_pdf_c8_case_decision_overlay.py
+```
+
+Guardrails for C8.4:
+
+- It writes only `reports/rag_pdf_c8_case_decision_overlay.json`.
+- It does not write a candidate CSV manifest.
+- It requires the current reviewed manifest hash to match the C8.3 input manifest hash.
+- It requires reviewed manifest denominator counts to stay `22/16/6/0` for total/positive/table-deferred/excluded.
+- It records query rewrites as overlay proposals only.
 
 ## C0~C3 Syntax Check
 
@@ -139,7 +209,11 @@ python -m pytest \
   ai-worker/tests/test_pdf_candidate_scope_report.py \
   ai-worker/tests/test_pdf_vector_metadata_projection_readiness.py \
   ai-worker/tests/test_rag_pdf_embedding_text_contract_audit.py \
-  ai-worker/tests/test_rag_pdf_search_unit_surface_repair.py
+  ai-worker/tests/test_rag_pdf_search_unit_surface_repair.py \
+  ai-worker/tests/test_pdf_candidate_embedding_consistency.py \
+  ai-worker/tests/test_rag_pdf_vector_diagnostic.py \
+  ai-worker/tests/test_rag_pdf_vector_quality_breakdown.py \
+  ai-worker/tests/test_rag_pdf_gold_policy_review.py
 ```
 
 ```bash

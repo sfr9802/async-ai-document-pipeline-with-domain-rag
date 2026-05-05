@@ -1,0 +1,6 @@
+{
+  "index_version": "rag-ingestion-v2-pdf-candidate-v1",
+  "embedding_model": "BAAI/bge-m3",
+  "dimension": 1024,
+  "chunk_count": 8194
+}

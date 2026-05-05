@@ -1,0 +1,368 @@
+{
+  "run_id": "2026-05-05T012530Z",
+  "generated_at": "2026-05-05T01:25:30.081050+00:00",
+  "status": "PASS",
+  "track": "C",
+  "phase": "C4",
+  "report_role": "pdf_candidate_embedding_consistency",
+  "source_file_type": "PDF",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "index_version": "rag-ingestion-v2-pdf-candidate-v1",
+  "expected_index_version": "rag-ingestion-v2-pdf-candidate-v1",
+  "artifact_dir": "rag-data-pdf-candidate-v1",
+  "allowUnscoped": false,
+  "retrieval_execution": "not_run_by_this_script",
+  "promotion_execution": "not_run_by_this_script",
+  "db_dsn": "host=localhost port=5433 dbname=aipipeline user=aipipeline password=<redacted>",
+  "input_artifacts": [
+    {
+      "path": "reports\\pdf_candidate_scope_report.json",
+      "exists": true,
+      "sha256": "3d8dba892d50bfa10dd62f33404c06ae517a4f2cb3fedca7fa1971956c55244a"
+    },
+    {
+      "path": "reports\\pdf_vector_metadata_projection_readiness.json",
+      "exists": true,
+      "sha256": "113c064589ece17e3f36696c754445ebbc7c8ced5dc69bad7dc6fac3abb647cc"
+    },
+    {
+      "path": "reports\\rag_pdf_embedding_text_contract_audit.json",
+      "exists": true,
+      "sha256": "c470521af3d6a05cfba0f5cfc06bcce3c4d37e35a421ef84b572b37baec32646"
+    },
+    {
+      "path": "reports\\pdf_candidate_indexing_report.json",
+      "exists": true,
+      "sha256": "7f4853897e2a184e06e55025931d6924e7933f46aceb013550100b7caa785a6c"
+    }
+  ],
+  "c1_scope": {
+    "path": "reports\\pdf_candidate_scope_report.json",
+    "status": "PASS_WITH_WARNINGS",
+    "sha256": "3d8dba892d50bfa10dd62f33404c06ae517a4f2cb3fedca7fa1971956c55244a",
+    "document_version_ids": [
+      "docv_88368b8b12ba3f38",
+      "docv_8b23a58c27c5518a",
+      "docv_fe2470815512a395"
+    ],
+    "source_file_ids": [
+      "105eb112-2bc4-4f35-a877-f0a6dd487288",
+      "2847f7af-cfe4-41de-8393-58912df2dba9",
+      "80ee7b61-102e-425d-80dc-d4d693bf8be8"
+    ],
+    "parser_versions": [
+      "pdf-extract-v1",
+      "pdf-extract-v2"
+    ]
+  },
+  "c2_report": {
+    "path": "reports\\pdf_vector_metadata_projection_readiness.json",
+    "exists": true,
+    "sha256": "113c064589ece17e3f36696c754445ebbc7c8ced5dc69bad7dc6fac3abb647cc",
+    "status": "PASS_WITH_WARNINGS",
+    "promotion_evidence": false,
+    "evidence_role": "diagnostic",
+    "allowUnscoped": false
+  },
+  "c3_report": {
+    "path": "reports\\rag_pdf_embedding_text_contract_audit.json",
+    "exists": true,
+    "sha256": "c470521af3d6a05cfba0f5cfc06bcce3c4d37e35a421ef84b572b37baec32646",
+    "status": "PASS_WITH_WARNINGS",
+    "promotion_evidence": false,
+    "evidence_role": "diagnostic",
+    "allowUnscoped": false
+  },
+  "indexing_report": {
+    "path": "reports\\pdf_candidate_indexing_report.json",
+    "exists": true,
+    "sha256": "7f4853897e2a184e06e55025931d6924e7933f46aceb013550100b7caa785a6c",
+    "status": "PASS",
+    "promotion_evidence": false,
+    "evidence_role": "diagnostic",
+    "allowUnscoped": false,
+    "index_version": "rag-ingestion-v2-pdf-candidate-v1",
+    "artifact_dir": "rag-data-pdf-candidate-v1",
+    "resolvedIndexDir": "rag-data-pdf-candidate-v1",
+    "dryRun": false,
+    "totals": {
+      "claimed": 8193,
+      "indexed": 8193,
+      "failed": 0,
+      "stale": 0,
+      "skipped_local": 0
+    },
+    "artifact_contract": {
+      "artifact_dir": "rag-data-pdf-candidate-v1",
+      "exists": true,
+      "expected_index_version": "rag-ingestion-v2-pdf-candidate-v1",
+      "build_json": {
+        "path": "rag-data-pdf-candidate-v1\\build.json",
+        "exists": true,
+        "size": 143,
+        "sha256": "9ca90cfe739fb668b5a154420b1cc6c73fcd61a728c0c0b368866799c5d1ee91"
+      },
+      "ingest_manifest_json": {
+        "path": "rag-data-pdf-candidate-v1\\ingest_manifest.json",
+        "exists": true,
+        "size": 2207,
+        "sha256": "4c055ba195d66e504951d78b295218cdbd9f563c62467149ad1340bb29b4437b"
+      },
+      "faiss_index": {
+        "path": "rag-data-pdf-candidate-v1\\faiss.index",
+        "exists": true,
+        "size": 33562669,
+        "sha256": "25b03739c2831391a01023f7c49a7420d08073312e26f7665d4e72addc30b480"
+      },
+      "build_index_version": "rag-ingestion-v2-pdf-candidate-v1",
+      "manifest_index_version": "rag-ingestion-v2-pdf-candidate-v1",
+      "build_matches_expected_index_version": true,
+      "manifest_matches_expected_index_version": true
+    }
+  },
+  "indexing_reconciliation": {
+    "claimed_count": 8193,
+    "newly_indexed_count": 8193,
+    "final_embedded_candidate_count": 8194,
+    "previously_embedded_count": 1
+  },
+  "scoped_summary": {
+    "scoped_rows": 8203,
+    "candidate_rows": 8194,
+    "policy_excluded_rows": 9,
+    "missing_embedding_text_count": 0,
+    "missing_location_json_count": 0,
+    "missing_citation_text_count": 0,
+    "not_embedded_count": 0,
+    "failed_count": 0,
+    "embedding_claimed_count": 0,
+    "index_version_mismatch_count": 0,
+    "embedding_record_missing_count": 0,
+    "embedding_text_sha_mismatch_count": 0,
+    "candidate_chunk_missing_count": 0,
+    "vector_namespace_mismatch_count": 0,
+    "chunk_sha_mismatch_count": 0,
+    "chunk_location_json_mismatch_count": 0,
+    "chunk_citation_text_mismatch_count": 0,
+    "source_file_type_mismatch_count": 0,
+    "parser_version_mismatch_count": 0,
+    "outside_scope_pdf_candidate_count": 0
+  },
+  "status_counts": {
+    "EMBEDDED": 8194,
+    "SKIPPED": 9
+  },
+  "index_version_counts": {
+    "UNKNOWN": 9,
+    "rag-ingestion-v2-pdf-candidate-v1": 8194
+  },
+  "parser_version_counts": {
+    "pdf-extract-v1": 2863,
+    "pdf-extract-v2": 5340
+  },
+  "document_scope_details": [
+    {
+      "document_version_id": "docv_88368b8b12ba3f38",
+      "source_file_ids": [
+        "80ee7b61-102e-425d-80dc-d4d693bf8be8"
+      ],
+      "source_file_names": [
+        "2021_03_recent_economic_trends.pdf"
+      ],
+      "scoped_rows": 2863,
+      "candidate_rows": 2862,
+      "embedded_rows": 2862,
+      "expected_index_version_rows": 2862,
+      "embedding_record_rows": 2862,
+      "ragmeta_chunk_rows": 2862
+    },
+    {
+      "document_version_id": "docv_8b23a58c27c5518a",
+      "source_file_ids": [
+        "105eb112-2bc4-4f35-a877-f0a6dd487288"
+      ],
+      "source_file_names": [
+        "2025_12_recent_economic_trends.pdf"
+      ],
+      "scoped_rows": 2474,
+      "candidate_rows": 2471,
+      "embedded_rows": 2471,
+      "expected_index_version_rows": 2471,
+      "embedding_record_rows": 2471,
+      "ragmeta_chunk_rows": 2471
+    },
+    {
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_ids": [
+        "2847f7af-cfe4-41de-8393-58912df2dba9"
+      ],
+      "source_file_names": [
+        "2021_03_recent_economic_trends.pdf"
+      ],
+      "scoped_rows": 2866,
+      "candidate_rows": 2861,
+      "embedded_rows": 2861,
+      "expected_index_version_rows": 2861,
+      "embedding_record_rows": 2861,
+      "ragmeta_chunk_rows": 2861
+    }
+  ],
+  "sample_failures": [],
+  "sample_outside_scope_pdf_candidates": [],
+  "sample_policy_exclusions": [
+    {
+      "id": "6ab4c72e-ac14-4793-b57b-ccae63dbcd01",
+      "document_version_id": "docv_88368b8b12ba3f38",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "unit_type": "DOCUMENT",
+      "chunk_type": "document_summary",
+      "page_no": 1,
+      "ocr_used": false,
+      "ocr_confidence": null,
+      "embedding_status": "SKIPPED",
+      "embedding_status_detail": "DOCUMENT SearchUnit is not embedded directly; use PAGE/SECTION/TABLE/CHUNK"
+    },
+    {
+      "id": "1b288783-b07f-4b3f-a448-c0acc2a0771a",
+      "document_version_id": "docv_8b23a58c27c5518a",
+      "source_file_name": "2025_12_recent_economic_trends.pdf",
+      "unit_type": "DOCUMENT",
+      "chunk_type": "document_summary",
+      "page_no": 1,
+      "ocr_used": false,
+      "ocr_confidence": null,
+      "embedding_status": "SKIPPED",
+      "embedding_status_detail": "DOCUMENT SearchUnit is not embedded directly; use PAGE/SECTION/TABLE/CHUNK"
+    },
+    {
+      "id": "4de2763d-f88a-4ff4-a793-6f5bd596de94",
+      "document_version_id": "docv_8b23a58c27c5518a",
+      "source_file_name": "2025_12_recent_economic_trends.pdf",
+      "unit_type": "CHUNK",
+      "chunk_type": "paragraph",
+      "page_no": 45,
+      "ocr_used": true,
+      "ocr_confidence": null,
+      "embedding_status": "SKIPPED",
+      "embedding_status_detail": "ocr location_json.ocr_confidence is required for lower-trust indexing"
+    },
+    {
+      "id": "e340980e-70f2-403d-9dd7-52fc72c85378",
+      "document_version_id": "docv_8b23a58c27c5518a",
+      "source_file_name": "2025_12_recent_economic_trends.pdf",
+      "unit_type": "CHUNK",
+      "chunk_type": "paragraph",
+      "page_no": 45,
+      "ocr_used": true,
+      "ocr_confidence": null,
+      "embedding_status": "SKIPPED",
+      "embedding_status_detail": "ocr location_json.ocr_confidence is required for lower-trust indexing"
+    },
+    {
+      "id": "0d0adbbb-1c81-429f-8a4a-9ab1cad70981",
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "unit_type": "CHUNK",
+      "chunk_type": "paragraph",
+      "page_no": 45,
+      "ocr_used": true,
+      "ocr_confidence": null,
+      "embedding_status": "SKIPPED",
+      "embedding_status_detail": "ocr location_json.ocr_confidence is required for lower-trust indexing"
+    },
+    {
+      "id": "6d5ca0bd-d176-44ff-994b-bac355e4c61d",
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "unit_type": "CHUNK",
+      "chunk_type": "paragraph",
+      "page_no": 1,
+      "ocr_used": true,
+      "ocr_confidence": null,
+      "embedding_status": "SKIPPED",
+      "embedding_status_detail": "ocr location_json.ocr_confidence is required for lower-trust indexing"
+    },
+    {
+      "id": "94d3a2a9-73e0-4c37-bff5-3b07a05165db",
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "unit_type": "DOCUMENT",
+      "chunk_type": "document_summary",
+      "page_no": 1,
+      "ocr_used": false,
+      "ocr_confidence": null,
+      "embedding_status": "SKIPPED",
+      "embedding_status_detail": "DOCUMENT SearchUnit is not embedded directly; use PAGE/SECTION/TABLE/CHUNK"
+    },
+    {
+      "id": "abd6441f-eb3a-43a9-9425-f755a777eae0",
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "unit_type": "CHUNK",
+      "chunk_type": "paragraph",
+      "page_no": 1,
+      "ocr_used": true,
+      "ocr_confidence": null,
+      "embedding_status": "SKIPPED",
+      "embedding_status_detail": "ocr location_json.ocr_confidence is required for lower-trust indexing"
+    },
+    {
+      "id": "c448e5d0-9a4d-4332-a279-5c9e70ed93e3",
+      "document_version_id": "docv_fe2470815512a395",
+      "source_file_name": "2021_03_recent_economic_trends.pdf",
+      "unit_type": "CHUNK",
+      "chunk_type": "paragraph",
+      "page_no": 45,
+      "ocr_used": true,
+      "ocr_confidence": null,
+      "embedding_status": "SKIPPED",
+      "embedding_status_detail": "ocr location_json.ocr_confidence is required for lower-trust indexing"
+    }
+  ],
+  "artifact_guardrails": {
+    "xlsx_candidate_artifact": {
+      "path": "rag-data-xlsx-candidate-v1",
+      "exists": true,
+      "sha256": "a9af039d2fee9e2a8b006153a9ce859d629ed15b9e3dbdc8fab7d1de244dc211",
+      "files": [
+        {
+          "path": "build.json",
+          "size": 143,
+          "sha256": "340720615091a3e7416ee3c0c3c59dd03904264deb836d30583d36eec1d1341d"
+        },
+        {
+          "path": "faiss.index",
+          "size": 2908205,
+          "sha256": "2e88409cbfc1b3997103fe867f334f6bf1a781c2f6fe5bc515d519d1e6849bcc"
+        },
+        {
+          "path": "ingest_manifest.json",
+          "size": 2796,
+          "sha256": "9fcecf3f7e58e1663bdba47a1dc3def6c01e2d34893ac87ed1664c2bf9995691"
+        }
+      ]
+    },
+    "immutable_baseline": {
+      "path": "reports\\initial_immutable_vector_baseline_descriptor.json",
+      "exists": true,
+      "sha256": "3b9f09b078f01e2a9ab557dacb6059245bf3357ddb1092e834b3c52d7240662a"
+    },
+    "xlsx_artifact_changed": false,
+    "immutable_baseline_changed": false,
+    "reason": "This C4 consistency script is read-only and does not write XLSX artifacts or baseline descriptors."
+  },
+  "blockers": [],
+  "warnings": [
+    "ocr_confidence_missing_count=6; C2/C3 OCR trust readiness must classify this",
+    "missing_required_bbox_count=3; C2/C3 location contract readiness must classify this",
+    "ocr_bbox_missing_count=3; C2/C3 OCR location readiness must classify this",
+    "embedding_status_counts.SKIPPED=9; C2/C3 embedding eligibility must classify skipped rows"
+  ],
+  "next_action": "C4 consistency passed; C5 PDF-only vector diagnostic may run separately.",
+  "notes": [
+    "This report proves PDF-only candidate namespace consistency, not retrieval ranking quality.",
+    "Promotion evidence remains false and immutable baseline artifacts are not updated.",
+    "Policy-excluded document summaries and lower-trust OCR rows remain visible but are not C4 candidate rows."
+  ]
+}

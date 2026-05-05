@@ -359,6 +359,15 @@ def test_cli_rejects_unscoped_candidate_index_version_non_dry_run():
     assert args.expected_index_version == "rag-ingestion-v2-candidate"
 
 
+def test_cli_rejects_unscoped_pdf_candidate_index_version_non_dry_run():
+    args = _cli_args(index_version="rag-ingestion-v2-pdf-candidate-v1")
+
+    with pytest.raises(ValueError, match="rag-ingestion-v2-pdf-candidate-v1"):
+        _validate_cli_args(args)
+
+    assert args.expected_index_version == "rag-ingestion-v2-pdf-candidate-v1"
+
+
 @pytest.mark.parametrize(
     "scope",
     [
@@ -430,6 +439,28 @@ def test_worker_forwards_filled_expected_version_for_scoped_candidate_index():
     worker.run_once()
 
     assert core.claim_requests[0].expected_index_version == "rag-ingestion-v2-candidate"
+
+
+def test_worker_forwards_filled_expected_version_for_scoped_pdf_candidate_index():
+    args = _cli_args(
+        index_version="rag-ingestion-v2-pdf-candidate-v1",
+        expected_index_version=None,
+        document_version_id="docv-1",
+    )
+    _validate_cli_args(args)
+    core = _FakeCoreApi(units=[])
+    worker = SearchUnitIndexingWorker(
+        core_api=core,
+        indexer=_FakeIndexer(),
+        worker_id="worker-test",
+        batch_size=10,
+        document_version_id=args.document_version_id,
+        expected_index_version=args.expected_index_version,
+    )
+
+    worker.run_once()
+
+    assert core.claim_requests[0].expected_index_version == "rag-ingestion-v2-pdf-candidate-v1"
 
 
 def test_cli_rejects_index_version_expected_version_mismatch():
