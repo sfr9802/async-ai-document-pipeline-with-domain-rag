@@ -10,7 +10,7 @@ Track B, XLSX, PDF, file lookup, content lookup query를 같은 retrieval metric
 scripts/rag_query_intent_routing_matrix.py
 ai-worker/tests/test_rag_query_intent_routing_matrix.py
 reports/rag_query_intent_routing_matrix_report.json
-eval/query_intent_routing_matrix_v0.csv
+ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv
 ```
 
 ## Inputs
@@ -18,17 +18,17 @@ eval/query_intent_routing_matrix_v0.csv
 우선 아래 파일들을 입력 후보로 둔다. 존재하지 않는 파일은 missing input으로 기록하고 fail/skip policy를 명시한다.
 
 ```text
-eval/gold_queries_text_e2e_v0.csv
-eval/gold_queries_xlsx_v3_naturalized.csv
-eval/gold_queries_xlsx_v3_positive.csv
-eval/gold_queries_xlsx_v3_positive_reviewed.csv
-eval/gold_queries_v0.csv
+ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv
+ai-worker/eval/eval_queries/gold_queries_xlsx_v3_naturalized.csv
+ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv
+ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv
+ai-worker/eval/eval_queries/gold_queries_v0.csv
 ```
 
 B-namu용 query/gold 파일은 R2/R3 이후 별도로 확정한다.
 
 ```text
-eval/gold_queries_text_namu_v4_v0.csv
+ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv
 ```
 
 ## Output CSV Schema

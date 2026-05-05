@@ -10,7 +10,7 @@ B2-namu top-k retrieval output을 LLM 입력 context로 조립한다.
 scripts/rag_text_namu_v4_context_assembly.py
 ai-worker/tests/test_rag_text_namu_v4_context_assembly.py
 reports/rag_text_namu_v4_context_assembly_report.json
-eval/text_namu_v4_contexts_v0.jsonl
+ai-worker/eval/eval_queries/text_namu_v4_contexts_v0.jsonl
 ```
 
 ## Context Item Schema

@@ -13,12 +13,12 @@ After Track B phases are completed or intentionally paused, merge the durable en
 | Phase | Status | Current Evidence | Next Action |
 |---|---|---|---|
 | B-app B0 backend identity | `diagnostic_completed / smoke_only` | `reports/rag_text_backend_identity_report.json` has `b1_entry_allowed=true`, `blockers=[]`, READY TEXT `text_count=15`, and clean TEXT-filtered API probe | Preserve as app-catalog smoke identity |
-| B-app B1 gold v0 | `diagnostic_completed / smoke_only` | `eval/gold_queries_text_e2e_v0.csv` has 12 rows; `reports/rag_text_e2e_gold_validate_report.json` passed with live READY TEXT bindings | Do not use as Track B representative corpus |
+| B-app B1 gold v0 | `diagnostic_completed / smoke_only` | `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv` has 12 rows; `reports/rag_text_e2e_gold_validate_report.json` passed with live READY TEXT bindings | Do not use as Track B representative corpus |
 | B2-app retrieval diagnostic | `diagnostic_completed / smoke_only` | `reports/rag_text_retrieval_diagnostic_report.json` exists; Hit@10=0.0, MRR@10=0.0, result_empty_count=12, path_mixing_count=0 | Cite with `reports/rag_text_b2_scope_correction_report.json` |
 | R0 B2 scope correction | `diagnostic_completed` | `reports/rag_text_b2_scope_correction_report.json`; `phases/phase_progress.md` | Start R1 query routing matrix |
-| R1 query routing matrix | `needs_review` | `eval/query_intent_routing_matrix_v0.csv`, `reports/rag_query_intent_routing_matrix_report.json` | Future namu gold is present, but current routing matrix still excludes future inputs from observed lane coverage |
+| R1 query routing matrix | `needs_review` | `ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv`, `reports/rag_query_intent_routing_matrix_report.json` | Future namu gold is present, but current routing matrix still excludes future inputs from observed lane coverage |
 | R2 namu-v4 corpus inventory | `diagnostic_completed` | `reports/rag_text_namu_v4_corpus_inventory_report.json` schema v2 hardened PASS with split-count check | Use `rag_chunks.jsonl` + `chunk_text`; keep auxiliary/split/raw-context checks as R3-R8 gate |
-| R3 namu-v4 gold binding | `diagnostic_completed` | `eval/gold_queries_text_namu_v4_v0.csv`, `reports/rag_text_namu_v4_gold_build_report.json`, `reports/rag_text_namu_v4_gold_validate_report.json`; validator current-seed policy PASSED | Keep as R5 entry gate |
+| R3 namu-v4 gold binding | `diagnostic_completed` | `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv`, `reports/rag_text_namu_v4_gold_build_report.json`, `reports/rag_text_namu_v4_gold_validate_report.json`; validator current-seed policy PASSED | Keep as R5 entry gate |
 | R4 retrieval emit inventory | `diagnostic_completed` | `reports/rag_text_namu_v4_retrieval_emit_inventory_report.json` says `NO_REUSABLE_EXISTING_EMIT` | Do not reuse old emits; R5 needs fresh diagnostic retrieval |
 | B2-namu retrieval diagnostic | `ready_for_fresh_diagnostic` | R4 decision `RUN_FRESH_DIAGNOSTIC_RETRIEVAL`, `retrieval_metrics_computed=false` | Generate true TEXT retrieval metrics against namu-v4 with a fresh emit |
 | B3-namu context assembly | `blocked_on_B2_namu` | `phases/phase_r6_b3_namu_context_assembly.md` | Assemble raw `chunk_text` contexts |
@@ -419,7 +419,7 @@ Copy this template for each work turn.
 | Phase | Previous | Current | Evidence |
 |---|---|---|---|
 | B0 backend identity | `diagnostic_completed` with live corpus blocker | `diagnostic_completed` with blocker cleared | `reports/rag_text_backend_identity_report.json` has `b1_entry_allowed=true` and `blockers=[]` |
-| B1 gold v0 | `blocked_on_B0` | `diagnostic_completed` | `eval/gold_queries_text_e2e_v0.csv`, `reports/rag_text_e2e_gold_validate_report.json` |
+| B1 gold v0 | `blocked_on_B0` | `diagnostic_completed` | `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv`, `reports/rag_text_e2e_gold_validate_report.json` |
 | B2 retrieval diagnostic | `blocked_on_B1` | `planned` | B1 validation passed; B2 report not generated yet |
 
 ### Completed
@@ -435,7 +435,7 @@ Copy this template for each work turn.
   - `eval/text_e2e_corpus_v0/manifest.json`
 - Imported those corpus files through the same app path and bound B1 rows to live source/chunk ids.
 - Added B1 gold:
-  - `eval/gold_queries_text_e2e_v0.csv`
+  - `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv`
 - Added B1 validator and tests:
   - `scripts/rag_text_e2e_gold_validator.py`
   - `ai-worker/tests/test_rag_text_e2e_gold_validator.py`
@@ -509,7 +509,7 @@ Copy this template for each work turn.
 
 ### Next Recommended Step
 
-- Start B2 retrieval diagnostic using `eval/gold_queries_text_e2e_v0.csv` and the TEXT-only library-search filter.
+- Start B2 retrieval diagnostic using `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv` and the TEXT-only library-search filter.
 
 ## 2026-05-05 - B2 retrieval-only diagnostic completed
 
@@ -764,7 +764,7 @@ Copy this template for each work turn.
 
 | Phase | Previous | Current | Evidence |
 |---|---|---|---|
-| R1 query routing matrix | `planned` | `needs_review` | `eval/query_intent_routing_matrix_v0.csv`, `reports/rag_query_intent_routing_matrix_report.json` |
+| R1 query routing matrix | `planned` | `needs_review` | `ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv`, `reports/rag_query_intent_routing_matrix_report.json` |
 | R2 namu-v4 corpus inventory | `planned` | `planned` | R1 records missing namu gold as future input |
 | B2-namu retrieval diagnostic | `blocked_on_R3_R4` | `blocked_on_R3_R4` | `B_NAMU_TEXT_CONTENT=0` until R2/R3 create namu gold |
 | R9 file/content lane readiness | `planned` | `planned` | FILE lanes explicit, current candidate inputs contain zero FILE rows |
@@ -776,7 +776,7 @@ Copy this template for each work turn.
 - Added tests:
   - `ai-worker/tests/test_rag_query_intent_routing_matrix.py`
 - Generated artifacts:
-  - `eval/query_intent_routing_matrix_v0.csv`
+  - `ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv`
   - `reports/rag_query_intent_routing_matrix_report.json`
 - Updated phase-local progress:
   - `docs/track_b_text_retrieval_e2e/phases/phase_progress.md`
@@ -838,7 +838,7 @@ Copy this template for each work turn.
   - `python scripts\rag_query_intent_routing_matrix.py`
   - result: wrote `204` routing rows with report `status=NEEDS_REVIEW` and no blockers
 - Command:
-  - `python -B -c "import csv,json,pathlib; report=json.loads(pathlib.Path('reports/rag_query_intent_routing_matrix_report.json').read_text(encoding='utf-8')); rows=list(csv.DictReader(pathlib.Path('eval/query_intent_routing_matrix_v0.csv').open(encoding='utf-8-sig', newline=''))); group=report['positive_denominator_policy']['eligible_denominator_groups_by_lane']['XLSX_CONTENT']; assert report['status']=='NEEDS_REVIEW'; assert report['blockers']==[]; assert report['promotion_evidence'] is False; assert report['evidence_role']=='diagnostic'; assert report['row_count']==len(rows)==204; assert report['lane_counts']['APP_TEXT_SMOKE']==12; assert report['lane_counts']['XLSX_CONTENT']==170; assert report['lane_counts']['PDF_CONTENT']==22; assert report['completion_criteria']['observed_required_lane_coverage_complete'] is False; assert report['positive_denominator_policy']['must_group_by']==['retrieval_lane']; assert 'PDF_CONTENT' in report['positive_denominator_policy']['exclude_retrieval_lanes']; assert group['row_count']==35; assert len(group['query_ids'])==35; assert report['denominator_exclusion_counts']['source manifest is not the reviewed XLSX positive set']==135"`
+  - `python -B -c "import csv,json,pathlib; report=json.loads(pathlib.Path('reports/rag_query_intent_routing_matrix_report.json').read_text(encoding='utf-8')); rows=list(csv.DictReader(pathlib.Path('ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv').open(encoding='utf-8-sig', newline=''))); group=report['positive_denominator_policy']['eligible_denominator_groups_by_lane']['XLSX_CONTENT']; assert report['status']=='NEEDS_REVIEW'; assert report['blockers']==[]; assert report['promotion_evidence'] is False; assert report['evidence_role']=='diagnostic'; assert report['row_count']==len(rows)==204; assert report['lane_counts']['APP_TEXT_SMOKE']==12; assert report['lane_counts']['XLSX_CONTENT']==170; assert report['lane_counts']['PDF_CONTENT']==22; assert report['completion_criteria']['observed_required_lane_coverage_complete'] is False; assert report['positive_denominator_policy']['must_group_by']==['retrieval_lane']; assert 'PDF_CONTENT' in report['positive_denominator_policy']['exclude_retrieval_lanes']; assert group['row_count']==35; assert len(group['query_ids'])==35; assert report['denominator_exclusion_counts']['source manifest is not the reviewed XLSX positive set']==135"`
   - result: passed
 - Command:
   - `rg -n "[ \t]+$" docs\track_b_text_retrieval_e2e scripts\rag_query_intent_routing_matrix.py ai-worker\tests\test_rag_query_intent_routing_matrix.py`
@@ -849,9 +849,9 @@ Copy this template for each work turn.
 
 ### Important Decisions
 
-- `eval/gold_queries_text_e2e_v0.csv` is `APP_TEXT_SMOKE`, not B-namu evidence.
+- `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv` is `APP_TEXT_SMOKE`, not B-namu evidence.
 - Row-level expected location/content metadata takes priority over weak file-like wording such as `찾아줘`.
-- Missing `eval/gold_queries_text_namu_v4_v0.csv` is recorded as a future input because R2/R3 have not created it yet.
+- Missing `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv` is recorded as a future input because R2/R3 have not created it yet.
 - Do not claim full observed lane coverage until B-namu/file/unknown rows are actually present or intentionally fixture-tested.
 
 ### Remaining Work
@@ -982,7 +982,7 @@ Copy this template for each work turn.
 |---|---|---|---|
 | R1 query routing matrix | `needs_review` | `needs_review` | `reports/rag_query_intent_routing_matrix_report.json` records future namu gold exists with `row_count=50` |
 | R2 namu-v4 corpus inventory | `diagnostic_completed` | `diagnostic_completed` | `reports/rag_text_namu_v4_corpus_inventory_report.json` schema v2 hardened PASS with split-count check |
-| R3 namu-v4 gold binding | `planned` | `diagnostic_completed` | `eval/gold_queries_text_namu_v4_v0.csv`, build/validate reports |
+| R3 namu-v4 gold binding | `planned` | `diagnostic_completed` | `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv`, build/validate reports |
 | R4 retrieval emit inventory | `blocked_on_R3` | `planned` | R3 validator PASSED |
 | B2-namu retrieval diagnostic | `blocked_on_R3_R4` | `blocked_on_R4` | Waits for R4 retrieval emit inventory |
 

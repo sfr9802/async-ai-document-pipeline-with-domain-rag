@@ -53,6 +53,6 @@ As of 2026-05-05:
 - Decision: `RUN_FRESH_DIAGNOSTIC_RETRIEVAL`
 - Candidate emits inventoried: `46`
 - Reusable emits: `0`
-- Main blocker for reuse: all candidate emits have `query_id_mismatch` against `eval/gold_queries_text_namu_v4_v0.csv`.
+- Main blocker for reuse: all candidate emits have `query_id_mismatch` against `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv`.
 - R5 entry: allowed only as a fresh diagnostic retrieval run; do not reuse Phase 7 tuning/sanity, B-app smoke, XLSX, PDF, or file lookup artifacts as R5 metric input.
 - Diagnostic-only: `promotion_evidence=false`, `evidence_role=diagnostic`, `retrieval_metrics_computed=false`.

@@ -9,7 +9,7 @@ LLM 호출 전에 app catalog `library_search`가 imported TEXT canary에 대해
 
 ## Inputs
 
-- `eval/gold_queries_text_e2e_v0.csv`
+- `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv`
 - `reports/rag_text_backend_identity_report.json`
 - `retrieval_backend`
 - `retrieval_backend_identity`
@@ -47,7 +47,7 @@ This report is preserved as historical B-app diagnostic evidence. Do not cite it
 {
   "retrieval_backend": "...",
   "retrieval_backend_identity": "...",
-  "gold_csv": "eval/gold_queries_text_e2e_v0.csv",
+  "gold_csv": "ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv",
   "gold_csv_sha256": "...",
   "top_k": 10,
   "promotion_evidence": false,
@@ -73,7 +73,7 @@ legacy result is scoped to B2-app smoke, not B2-namu
 
 ```bash
 python scripts/rag_text_retrieval_diagnostic.py \
-  --gold eval/gold_queries_text_e2e_v0.csv \
+  --gold ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv \
   --backend library_search \
   --source-file-type TEXT \
   --top-k 10 \

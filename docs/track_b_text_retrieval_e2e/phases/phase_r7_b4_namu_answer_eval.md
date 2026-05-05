@@ -10,7 +10,7 @@ TEXT retrieval + context + LLM answer까지 포함한 E2E 성능을 기록한다
 scripts/rag_text_namu_v4_answer_eval.py
 ai-worker/tests/test_rag_text_namu_v4_answer_eval.py
 reports/rag_text_namu_v4_answer_eval_report.json
-eval/text_namu_v4_answers_v0.jsonl
+ai-worker/eval/eval_queries/text_namu_v4_answers_v0.jsonl
 ```
 
 ## Evaluation Order

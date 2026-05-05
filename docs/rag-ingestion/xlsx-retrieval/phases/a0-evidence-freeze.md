@@ -10,7 +10,7 @@
 
 | 입력 | 기준 |
 |---|---|
-| Positive gold | `eval/gold_queries_xlsx_v3_positive.csv` |
+| Positive gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv` |
 | Diagnostic report | `reports/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json` |
 | Performance summary | `reports/rag_xlsx_v3_retrieval_performance_summary.json` |
 | Failure breakdown | `reports/rag_xlsx_v3_failure_breakdown.json` |
@@ -48,7 +48,7 @@ rag_data_canary_hash_unchanged=true
 
 ## 금지 사항
 
-- `eval/gold_queries_v0.csv` 수정 금지.
+- `ai-worker/eval/eval_queries/gold_queries_v0.csv` 수정 금지.
 - immutable baseline descriptor/hash 수정 금지.
 - candidate v1 vector artifact mutate 금지.
 - missing row를 맞추기 위해 broad reindex 실행 금지.

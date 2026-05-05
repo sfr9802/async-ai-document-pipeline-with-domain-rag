@@ -44,6 +44,7 @@ eval/
 │   ├── rag_sample.jsonl            ← 커밋된 RAG 픽스처에 대한 6개 query
 │   ├── ocr_sample.jsonl            ← 3개 OCR 행; 이미지는 helper 가 생성
 │   └── multimodal_sample.jsonl     ← PLACEHOLDER 스키마 (아직 harness 없음)
+├── golden_retrieval/                ← SearchUnit golden retrieval runner + fixtures
 ├── corpora/                        ← `retrieval` 모드용 retrieval 코퍼스
 │   └── anime_namu_v3/              ← legacy v3 namu-wiki anime 샘플
 ├── eval_queries/                   ← retrieval-eval query 셋 (smoke / silver / gold)

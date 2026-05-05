@@ -15,9 +15,9 @@ It follows the dated-entry structure used by `docs/rag-ingestion-progress.md` so
 | Phase | Status | Current Evidence | Next Action |
 |---|---|---|---|
 | R0 B2 scope correction | `diagnostic_completed` | `reports/rag_text_b2_scope_correction_report.json` | Use correction report when citing legacy B2-app metrics |
-| R1 query routing matrix | `needs_review` | `eval/query_intent_routing_matrix_v0.csv`, `reports/rag_query_intent_routing_matrix_report.json` | Future namu gold is present, but current routing matrix still excludes future inputs from observed lane coverage |
+| R1 query routing matrix | `needs_review` | `ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv`, `reports/rag_query_intent_routing_matrix_report.json` | Future namu gold is present, but current routing matrix still excludes future inputs from observed lane coverage |
 | R2 namu-v4 corpus inventory | `diagnostic_completed` | `reports/rag_text_namu_v4_corpus_inventory_report.json` schema v2 hardened PASS with split-count check | Use `rag_chunks.jsonl` + `chunk_text`; keep auxiliary/split/raw-context checks as R3-R8 gate |
-| R3 namu-v4 gold binding | `diagnostic_completed` | `eval/gold_queries_text_namu_v4_v0.csv`, `reports/rag_text_namu_v4_gold_build_report.json`, `reports/rag_text_namu_v4_gold_validate_report.json`; validator current-seed policy PASSED | R4 completed; keep as R5 entry gate |
+| R3 namu-v4 gold binding | `diagnostic_completed` | `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv`, `reports/rag_text_namu_v4_gold_build_report.json`, `reports/rag_text_namu_v4_gold_validate_report.json`; validator current-seed policy PASSED | R4 completed; keep as R5 entry gate |
 | R4 retrieval emit inventory | `diagnostic_completed` | `reports/rag_text_namu_v4_retrieval_emit_inventory_report.json` says `NO_REUSABLE_EXISTING_EMIT` | R5 must generate a fresh diagnostic retrieval emit |
 | R5 B2-namu retrieval diagnostic | `ready_for_fresh_diagnostic` | R4 decision `RUN_FRESH_DIAGNOSTIC_RETRIEVAL`, `retrieval_metrics_computed=false` | Generate true namu-v4 retrieval-only metrics with fresh emit |
 | R6 B3-namu context assembly | `blocked_on_R5` | `phase_r6_b3_namu_context_assembly.md` | Assemble raw `chunk_text` contexts |
@@ -137,7 +137,7 @@ It follows the dated-entry structure used by `docs/rag-ingestion-progress.md` so
 | Phase | Previous | Current | Evidence |
 |---|---|---|---|
 | R0 B2 scope correction | `diagnostic_completed` | `diagnostic_completed` | `reports/rag_text_b2_scope_correction_report.json` |
-| R1 query routing matrix | `planned` | `needs_review` | `eval/query_intent_routing_matrix_v0.csv`, `reports/rag_query_intent_routing_matrix_report.json` |
+| R1 query routing matrix | `planned` | `needs_review` | `ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv`, `reports/rag_query_intent_routing_matrix_report.json` |
 | R2 namu-v4 corpus inventory | `planned` | `planned` | R1 shows `B_NAMU_TEXT_CONTENT=0`; future namu gold is not created yet |
 | R3-R8 B-namu mainline | `blocked_on_R2/R3/R4/R5/R6/R7` | `blocked_on_R2/R3/R4/R5/R6/R7` | Do not proceed from B-app smoke rows |
 | R9 file/content lane readiness | `planned` | `planned` | FILE lanes are explicit but current candidate inputs contain no file lookup rows |
@@ -149,7 +149,7 @@ It follows the dated-entry structure used by `docs/rag-ingestion-progress.md` so
 - Added focused unit/CLI coverage:
   - `ai-worker/tests/test_rag_query_intent_routing_matrix.py`
 - Generated routing artifacts:
-  - `eval/query_intent_routing_matrix_v0.csv`
+  - `ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv`
   - `reports/rag_query_intent_routing_matrix_report.json`
 
 ### Current Evidence
@@ -215,7 +215,7 @@ It follows the dated-entry structure used by `docs/rag-ingestion-progress.md` so
   - `python scripts\rag_query_intent_routing_matrix.py`
   - result: wrote `204` routing rows with report `status=NEEDS_REVIEW` and no blockers
 - Command:
-  - `python -B -c "import csv,json,pathlib; report=json.loads(pathlib.Path('reports/rag_query_intent_routing_matrix_report.json').read_text(encoding='utf-8')); rows=list(csv.DictReader(pathlib.Path('eval/query_intent_routing_matrix_v0.csv').open(encoding='utf-8-sig', newline=''))); group=report['positive_denominator_policy']['eligible_denominator_groups_by_lane']['XLSX_CONTENT']; assert report['status']=='NEEDS_REVIEW'; assert report['blockers']==[]; assert report['promotion_evidence'] is False; assert report['evidence_role']=='diagnostic'; assert report['row_count']==len(rows)==204; assert report['lane_counts']['APP_TEXT_SMOKE']==12; assert report['lane_counts']['XLSX_CONTENT']==170; assert report['lane_counts']['PDF_CONTENT']==22; assert report['completion_criteria']['observed_required_lane_coverage_complete'] is False; assert report['positive_denominator_policy']['must_group_by']==['retrieval_lane']; assert 'PDF_CONTENT' in report['positive_denominator_policy']['exclude_retrieval_lanes']; assert group['row_count']==35; assert len(group['query_ids'])==35; assert report['denominator_exclusion_counts']['source manifest is not the reviewed XLSX positive set']==135"`
+  - `python -B -c "import csv,json,pathlib; report=json.loads(pathlib.Path('reports/rag_query_intent_routing_matrix_report.json').read_text(encoding='utf-8')); rows=list(csv.DictReader(pathlib.Path('ai-worker/eval/eval_queries/query_intent_routing_matrix_v0.csv').open(encoding='utf-8-sig', newline=''))); group=report['positive_denominator_policy']['eligible_denominator_groups_by_lane']['XLSX_CONTENT']; assert report['status']=='NEEDS_REVIEW'; assert report['blockers']==[]; assert report['promotion_evidence'] is False; assert report['evidence_role']=='diagnostic'; assert report['row_count']==len(rows)==204; assert report['lane_counts']['APP_TEXT_SMOKE']==12; assert report['lane_counts']['XLSX_CONTENT']==170; assert report['lane_counts']['PDF_CONTENT']==22; assert report['completion_criteria']['observed_required_lane_coverage_complete'] is False; assert report['positive_denominator_policy']['must_group_by']==['retrieval_lane']; assert 'PDF_CONTENT' in report['positive_denominator_policy']['exclude_retrieval_lanes']; assert group['row_count']==35; assert len(group['query_ids'])==35; assert report['denominator_exclusion_counts']['source manifest is not the reviewed XLSX positive set']==135"`
   - result: passed
 - Command:
   - `rg -n "[ \t]+$" docs\track_b_text_retrieval_e2e scripts\rag_query_intent_routing_matrix.py ai-worker\tests\test_rag_query_intent_routing_matrix.py`
@@ -226,10 +226,10 @@ It follows the dated-entry structure used by `docs/rag-ingestion-progress.md` so
 
 ### Important Decisions
 
-- Treat `eval/gold_queries_text_e2e_v0.csv` as `APP_TEXT_SMOKE`, not `B_NAMU_TEXT_CONTENT`.
+- Treat `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv` as `APP_TEXT_SMOKE`, not `B_NAMU_TEXT_CONTENT`.
 - Let row-level location metadata override weak file-like wording such as `찾아줘` when the row is clearly content-bound.
 - Keep FILE lanes explicit even when current candidate inputs have zero FILE rows.
-- Record missing `eval/gold_queries_text_namu_v4_v0.csv` as a future input, not an R1 failure, because R2/R3 have not produced it yet.
+- Record missing `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv` as a future input, not an R1 failure, because R2/R3 have not produced it yet.
 - Do not claim full observed lane coverage until B-namu/file/unknown rows are actually present or intentionally fixture-tested.
 
 ### Remaining Work
@@ -368,9 +368,9 @@ It follows the dated-entry structure used by `docs/rag-ingestion-progress.md` so
 
 | Phase | Previous | Current | Evidence |
 |---|---|---|---|
-| R1 query routing matrix | `needs_review` | `needs_review` | Retry now records `eval/gold_queries_text_namu_v4_v0.csv` as an existing future input with `row_count=50` |
+| R1 query routing matrix | `needs_review` | `needs_review` | Retry now records `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv` as an existing future input with `row_count=50` |
 | R2 namu-v4 corpus inventory | `diagnostic_completed` | `diagnostic_completed` | `reports/rag_text_namu_v4_corpus_inventory_report.json` schema v2 hardened PASS with split-count check |
-| R3 namu-v4 gold binding | `planned` | `diagnostic_completed` | `eval/gold_queries_text_namu_v4_v0.csv`, build/validate reports |
+| R3 namu-v4 gold binding | `planned` | `diagnostic_completed` | `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv`, build/validate reports |
 | R4 retrieval emit inventory | `blocked_on_R3` | `planned` | R3 validator PASSED, so R4 can decide emit reuse/fresh retrieval |
 | R5 B2-namu retrieval diagnostic | `blocked_on_R3_R4` | `blocked_on_R4` | Waits for R4 retrieval emit inventory |
 
@@ -384,7 +384,7 @@ It follows the dated-entry structure used by `docs/rag-ingestion-progress.md` so
   - `scripts/rag_text_namu_v4_gold_validator.py`
   - `ai-worker/tests/test_rag_text_namu_v4_gold_validator.py`
 - Generated R3 artifacts:
-  - `eval/gold_queries_text_namu_v4_v0.csv`
+  - `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv`
   - `reports/rag_text_namu_v4_gold_build_report.json`
   - `reports/rag_text_namu_v4_gold_validate_report.json`
 - Re-ran R1 after R3:
@@ -523,7 +523,7 @@ It follows the dated-entry structure used by `docs/rag-ingestion-progress.md` so
   - `promotion_evidence=false`
   - `evidence_role=diagnostic`
 - Reuse blocker:
-  - all candidate emits have `query_id_mismatch` against `eval/gold_queries_text_namu_v4_v0.csv`
+  - all candidate emits have `query_id_mismatch` against `ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv`
   - Phase 7 tuning/sanity candidates use `v4-llm-silver-*`, not `gold_seed_*`
 
 ### Gate/Baseline Status

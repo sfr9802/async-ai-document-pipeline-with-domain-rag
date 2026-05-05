@@ -540,7 +540,7 @@ ocr_policy_ambiguous_count=0
 
 ```bash
 python scripts/pdf_candidate_scope_report.py \
-  --gold eval/gold_queries_v0.csv \
+  --gold ai-worker/eval/eval_queries/gold_queries_v0.csv \
   --expected-location-type pdf \
   --parser-versions pdf-extract-v1 pdf-extract-v2 \
   --report reports/pdf_candidate_scope_report.json
@@ -567,7 +567,7 @@ python scripts/pdf_candidate_embedding_consistency.py \
   --report reports/pdf_candidate_embedding_consistency_report.json
 
 python scripts/rag_pdf_vector_diagnostic.py \
-  --gold eval/gold_queries_v0.csv \
+  --gold ai-worker/eval/eval_queries/gold_queries_v0.csv \
   --expected-location-type pdf \
   --index-version rag-ingestion-v2-pdf-candidate-v1 \
   --artifact-dir rag-data-pdf-candidate-v1 \

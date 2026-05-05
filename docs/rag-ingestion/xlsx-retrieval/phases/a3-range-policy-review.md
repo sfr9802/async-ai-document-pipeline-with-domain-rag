@@ -56,4 +56,4 @@ metric_inflation_risk_reviewed=true
 
 - 전체 range policy threshold를 완화하지 않습니다.
 - policy 변경을 promotion evidence로 취급하지 않습니다.
-- `eval/gold_queries_v0.csv` 또는 immutable baseline 관련 파일을 건드리지 않습니다.
+- `ai-worker/eval/eval_queries/gold_queries_v0.csv` 또는 immutable baseline 관련 파일을 건드리지 않습니다.

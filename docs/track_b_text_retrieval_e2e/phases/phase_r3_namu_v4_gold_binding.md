@@ -10,7 +10,7 @@ namu-v4 retrieval-only 및 answer E2E에 사용할 query/gold seed를 corpus에 
 scripts/rag_text_namu_v4_gold_builder.py
 scripts/rag_text_namu_v4_gold_validator.py
 ai-worker/tests/test_rag_text_namu_v4_gold_validator.py
-eval/gold_queries_text_namu_v4_v0.csv
+ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv
 reports/rag_text_namu_v4_gold_build_report.json
 reports/rag_text_namu_v4_gold_validate_report.json
 ```

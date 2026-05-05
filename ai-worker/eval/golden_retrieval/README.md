@@ -6,11 +6,11 @@ not run RAG answer generation.
 Run from `ai-worker/`:
 
 ```bash
-python -m ai_worker.evals.golden_retrieval.run \
-  --queries evals/golden_retrieval/golden_queries.jsonl \
-  --manifest evals/golden_retrieval/source_manifest.json \
+python -m eval.golden_retrieval.run \
+  --queries eval/golden_retrieval/golden_queries.jsonl \
+  --manifest eval/golden_retrieval/source_manifest.json \
   --top-k 5 \
-  --out evals/golden_retrieval/eval_report.json
+  --out eval/golden_retrieval/eval_report.json
 ```
 
 Primary matching uses `sourceFileName + unitType + unitKey`; fallbacks include
@@ -26,11 +26,11 @@ operating ingestion; `corpus.markdown` and `elements` are treated as an
 already-extracted `OCR_RESULT_JSON` artifact.
 
 ```bash
-python -m ai_worker.evals.golden_retrieval.adapters.kovidore \
+python -m eval.golden_retrieval.adapters.kovidore \
   --dataset-path ../datasets/golden/kovidore-economic/raw \
   --limit-docs 20 \
   --limit-queries 163 \
-  --out-dir evals/golden_retrieval/fixtures/kovidore-economic
+  --out-dir eval/golden_retrieval/fixtures/kovidore-economic
 ```
 
 Explicit local files are also supported via `--corpus`, `--queries`, `--qrels`,
@@ -56,8 +56,8 @@ command below. The importer is idempotent and does not call the OCR callback
 path.
 
 ```bash
-python -m ai_worker.evals.golden_retrieval.import_kovidore \
-  --fixture-dir evals/golden_retrieval/fixtures/kovidore-economic \
+python -m eval.golden_retrieval.import_kovidore \
+  --fixture-dir eval/golden_retrieval/fixtures/kovidore-economic \
   --core-api-url http://localhost:8080 \
   --batch-size 100
 ```
@@ -65,11 +65,11 @@ python -m ai_worker.evals.golden_retrieval.import_kovidore \
 Then index and run retrieval eval:
 
 ```bash
-python -m ai_worker.search_unit_indexing --once --batch-size 100
+python -m app.cli.search_unit_indexing --once --batch-size 100
 
-python -m ai_worker.evals.golden_retrieval.run \
-  --queries evals/golden_retrieval/fixtures/kovidore-economic/golden_queries.jsonl \
-  --manifest evals/golden_retrieval/fixtures/kovidore-economic/source_manifest.json \
+python -m eval.golden_retrieval.run \
+  --queries eval/golden_retrieval/fixtures/kovidore-economic/golden_queries.jsonl \
+  --manifest eval/golden_retrieval/fixtures/kovidore-economic/source_manifest.json \
   --top-k 5 \
-  --out evals/golden_retrieval/fixtures/kovidore-economic/eval_report.json
+  --out eval/golden_retrieval/fixtures/kovidore-economic/eval_report.json
 ```

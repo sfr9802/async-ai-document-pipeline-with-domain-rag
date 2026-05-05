@@ -12,7 +12,7 @@ claim-before-execute `TaskRunner` path.
 | `core-api/src/main/java/com/aipipeline/coreapi/CoreApiApplication.java` | active | Spring Boot API entrypoint. Owns job state, catalog state, Flyway migrations, internal claim/callback endpoints, and Redis dispatch. |
 | `ai-worker/app/main.py` | active primary worker | Foreground worker process. Run from `ai-worker/` with `python -m app.main`; consumes Redis and calls `TaskRunner.handle`. |
 | `ai-worker/app/api.py` | active but narrow FastAPI surface | Defines `create_app()` and `POST /internal/tasks/ocr-extract`. The route wraps the same `TaskRunner` path and currently supports only `OCR_EXTRACT`. |
-| `ai-worker/ai_worker/search_unit_indexing.py` | active operational CLI | SearchUnit indexing loop. Not a FastAPI route and not the Redis job consumer. |
+| `ai-worker/app/cli/search_unit_indexing.py` | active operational CLI | SearchUnit indexing loop. Not a FastAPI route and not the Redis job consumer. |
 | `docker-compose.yml` | local infra | Starts PostgreSQL and Redis by default; optional MinIO and Ollama profiles. It does not start `core-api` or `ai-worker`. |
 
 ## FastAPI Boundary
@@ -35,8 +35,8 @@ public service without a separate security review.
 | `core-api/` | active | Spring service, DB migrations, catalog/indexing services, internal worker endpoints, Redis dispatch, tests. |
 | `ai-worker/app/` | active | Worker runtime, capabilities, queue consumer, clients, storage resolver, FastAPI endpoint. |
 | `ai-worker/app/capabilities/` | active | Capability implementations for RAG, OCR, PDF, XLSX, multimodal, agent, and RAG orchestrator work. |
-| `ai-worker/ai_worker/` | active | Operational packages such as SearchUnit indexing and golden-retrieval fixture/eval helpers. |
-| `ai-worker/eval/` | active but isolated | Eval harnesses and historical eval material. Production runtime should not import from here. |
+| `ai-worker/app/cli/` | active | Operational CLI entrypoints such as SearchUnit indexing. |
+| `ai-worker/eval/` | active but isolated | Eval harnesses, golden-retrieval helpers, eval datasets, reports, and historical eval material. Production runtime should not import from here. |
 | `ai-worker/scripts/` | mixed active/eval | Eval, tuning, dataset, fixture, and report-generation helpers. |
 | `ai-worker/fixtures/` | active worker fixtures | Small committed fixtures and ingestion manifests used by worker scripts and tests. |
 | `ai-worker/eval/eval_queries/` | active eval input | RAG ingestion gold/query CSVs and routing matrices. |
@@ -48,10 +48,12 @@ public service without a separate security review.
 | `local-storage/` | runtime data | Local artifact blob storage default for core API and worker. |
 | `archive/` | historical | Preserved generated outputs and future retired material. See `archive/README.md` and `archive/MANIFEST.md`. |
 
-Root-level `scripts/`, `eval/`, `samples/`, `datasets/`, `reports/`, and
-`rag-data*` directories are no longer active paths. If an old command recreates
-one of them, treat it as a compatibility bug and move the input/output back
-under `ai-worker/`.
+Root-level `scripts/`, `eval/`, `evals/`, `samples`, `datasets/`, `reports/`,
+and `rag-data*` directories are no longer active paths. The old
+`ai-worker/evals/` data directory and `ai-worker/ai_worker/` Python package
+have also been retired. If an old command recreates one of those paths, treat it
+as a compatibility bug and move the input/output back under the canonical
+`ai-worker/eval/`, `ai-worker/scripts/`, or `ai-worker/app/cli/` location.
 
 ## Worker Scripts
 

@@ -108,7 +108,7 @@ User query
 ### 파일
 
 ```text
-eval/gold_queries_text_e2e_v0.csv
+ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv
 ```
 
 ### 권장 컬럼
@@ -380,7 +380,7 @@ reports/rag_text_retrieval_diagnostic_report.json
 {
   "retrieval_backend": "...",
   "retrieval_backend_identity": "...",
-  "gold_csv": "eval/gold_queries_text_e2e_v0.csv",
+  "gold_csv": "ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv",
   "gold_csv_sha256": "...",
   "top_k": 10,
   "metrics": {
@@ -506,7 +506,7 @@ E2E 평가가 가능한 최소 gold set을 만든다.
 
 ### 산출물
 
-- `eval/gold_queries_text_e2e_v0.csv`
+- `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv`
 - `reports/rag_text_e2e_gold_validate_report.json`
 
 ### 완료 기준
@@ -667,18 +667,18 @@ promotion_evidence=false 유지
 
 ```bash
 python scripts/rag_text_e2e_gold_validator.py \
-  --gold eval/gold_queries_text_e2e_v0.csv \
+  --gold ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv \
   --report reports/rag_text_e2e_gold_validate_report.json
 
 python scripts/rag_text_retrieval_diagnostic.py \
-  --gold eval/gold_queries_text_e2e_v0.csv \
+  --gold ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv \
   --backend library_search \
   --source-file-type TEXT \
   --top-k 10 \
   --report reports/rag_text_retrieval_diagnostic_report.json
 
 python scripts/rag_text_e2e_answer_eval.py \
-  --gold eval/gold_queries_text_e2e_v0.csv \
+  --gold ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv \
   --retrieval-report reports/rag_text_retrieval_diagnostic_report.json \
   --prompt-template prompts/rag_text_e2e_v0.md \
   --temperature 0 \

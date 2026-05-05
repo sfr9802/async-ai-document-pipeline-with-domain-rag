@@ -8,9 +8,9 @@ A2-A5 결과를 diagnostic-only로 재평가하고, positive metric과 hidden-ne
 
 | 세트 | 목적 |
 |---|---|
-| `eval/gold_queries_xlsx_v3_positive.csv` | 기존 v3 positive 기준 |
-| `eval/gold_queries_xlsx_v3_positive_reviewed.csv` | query/policy review 후 기준 |
-| `eval/gold_queries_xlsx_v3_hidden_negative.csv` 또는 hidden-negative report input | leakage 확인 전용 |
+| `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv` | 기존 v3 positive 기준 |
+| `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv` | query/policy review 후 기준 |
+| `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_hidden_negative.csv` 또는 hidden-negative report input | leakage 확인 전용 |
 
 ## 평가 지표
 
@@ -77,7 +77,7 @@ python -m py_compile \
 
 python scripts/rag_retrieval_eval.py \
   --validate-only \
-  --gold eval/gold_queries_xlsx_v3_positive_reviewed.csv \
+  --gold ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv \
   --report reports/rag_xlsx_v3_positive_reviewed_validate_report.json
 
 python scripts/rag_xlsx_retrieval_performance_diagnostic.py

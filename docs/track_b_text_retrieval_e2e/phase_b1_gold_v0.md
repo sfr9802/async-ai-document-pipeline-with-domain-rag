@@ -6,7 +6,7 @@ TEXT E2E smoke 평가용 gold set을 10-20개 만든다. 처음부터 human-revi
 
 ## Gold File
 
-`eval/gold_queries_text_e2e_v0.csv`
+`ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv`
 
 ## Required Columns
 
@@ -36,7 +36,7 @@ query_id,bucket,query,expected_answer_summary,expected_source_ids,expected_chunk
 
 ## Output
 
-- `eval/gold_queries_text_e2e_v0.csv`
+- `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv`
 - `reports/rag_text_e2e_gold_validate_report.json`
 
 ## Done Criteria
@@ -55,6 +55,6 @@ gold validation report exists
 
 ```bash
 python scripts/rag_text_e2e_gold_validator.py \
-  --gold eval/gold_queries_text_e2e_v0.csv \
+  --gold ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv \
   --report reports/rag_text_e2e_gold_validate_report.json
 ```

@@ -1,7 +1,7 @@
 """Audit the reviewed XLSX-only gold v1 set without running promotion.
 
 The audit is intentionally report-only. It records why
-eval/gold_queries_xlsx_v1.csv is a useful positive subset but not a final
+eval/eval_queries/gold_queries_xlsx_v1.csv is a useful positive subset but not a final
 promotion-grade XLSX gold baseline.
 """
 

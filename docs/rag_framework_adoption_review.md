@@ -68,7 +68,7 @@ LangGraph: 제한적 추천.
 
 `SearchUnitIndexingService.claimPending()`은 scoped claim과 `expectedIndexVersion`을 사용한다. claim scope에는 `sourceFileIds`, `documentVersionIds`, `parsedArtifactId`, `searchUnitIds`, `sourceFileTypes`, `parserVersions`가 있다.
 
-worker entrypoint는 `python -m ai_worker.search_unit_indexing`이다. worker는 core-api에서 SearchUnit을 claim하고, canonical embedding text를 만들고, FAISS와 `ragmeta.chunks`를 갱신한 뒤, core-api에 embedded/failed callback을 보낸다.
+worker entrypoint는 `python -m app.cli.search_unit_indexing`이다. worker는 core-api에서 SearchUnit을 claim하고, canonical embedding text를 만들고, FAISS와 `ragmeta.chunks`를 갱신한 뒤, core-api에 embedded/failed callback을 보낸다.
 
 ### Vector Retrieval / FAISS / ragmeta.chunks
 
@@ -457,7 +457,7 @@ Spring DB는 ingestion/index/promotion source of truth로 유지한다. LangGrap
 - `ai-worker/app/capabilities/xlsx/*`
 - `ai-worker/app/capabilities/rag/search_unit_indexing.py`
 - `ai-worker/app/services/search_unit_indexing_loop.py`
-- `ai-worker/ai_worker/search_unit_indexing.py`
+- `ai-worker/app/cli/search_unit_indexing.py`
 - `ai-worker/eval/harness/rag_ingestion_promotion_gate.py`
 - `scripts/rag_build_promotion_gate_metrics.py`
 

@@ -54,7 +54,7 @@
     "termsNote": "Keep generated fixtures traceable to this manifest and the original dataset source."
   },
   "adapter": {
-    "module": "ai_worker.evals.golden_retrieval.adapters.kovidore",
+    "module": "eval.golden_retrieval.adapters.kovidore",
     "outputs": [
       "source_files.jsonl",
       "search_units.jsonl",

@@ -298,7 +298,7 @@ from search_unit;
 
 ## 7. gold query v0를 실제 평가셋으로 확장
 
-현재 `eval/gold_queries_v0.csv`는 seed 수준이다.
+현재 `ai-worker/eval/eval_queries/gold_queries_v0.csv`는 seed 수준이다.
 P1에서는 CSV를 “샘플 질문 파일”이 아니라 실제 평가 가능한 라벨 파일로 바꾼다.
 
 ### 7.1 추천 CSV 컬럼
@@ -408,7 +408,7 @@ reports/rag_retrieval_smoke_report.json
 
 ```text
 input:
-- eval/gold_queries_v0.csv
+- ai-worker/eval/eval_queries/gold_queries_v0.csv
 
 output:
 - reports/rag_retrieval_smoke_report.json
@@ -652,7 +652,7 @@ limit 200;
 
 ```text
 input:
-- eval/gold_queries_v0.csv
+- ai-worker/eval/eval_queries/gold_queries_v0.csv
 
 output:
 - reports/rag_retrieval_smoke_report.json
@@ -715,7 +715,7 @@ P1로 넘어가서 실제 PDF batch smoke, normalized metadata writes, gold quer
    - `pdf_page_metadata` from PDF parsed artifact
    - `table_metadata` from XLSX/PDF parsed artifacts
    - keep `cell_metadata` selective for formula/merged/header/citation cells only
-5. Expand `eval/gold_queries_v0.csv` toward 70-80 rows and bind rows to live:
+5. Expand `ai-worker/eval/eval_queries/gold_queries_v0.csv` toward 70-80 rows and bind rows to live:
    - document_version_id
    - search_unit_id
    - location_json fields
@@ -800,7 +800,7 @@ Move from ingestion smoke success to evaluated, promotable RAG ingestion workflo
 - Added real PDF batch smoke manifest and runner.
 - Populated `pdf_page_metadata` from `PDF_PARSED_JSON`.
 - Populated `table_metadata` from XLSX/PDF parsed artifacts.
-- Expanded `eval/gold_queries_v0.csv` with live document/search_unit/location ids.
+- Expanded `ai-worker/eval/eval_queries/gold_queries_v0.csv` with live document/search_unit/location ids.
 - Added retrieval smoke runner.
 - Added report-only promotion gate skeleton.
 

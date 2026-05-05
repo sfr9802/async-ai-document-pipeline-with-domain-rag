@@ -1283,7 +1283,7 @@ def utc_run_id() -> str:
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--gold", default="eval/gold_queries_v0.csv")
+    parser.add_argument("--gold", default="eval/eval_queries/gold_queries_v0.csv")
     parser.add_argument(
         "--expected-location-type",
         action="append",

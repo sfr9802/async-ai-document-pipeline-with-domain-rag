@@ -178,7 +178,7 @@ def build_audit(
         "hidden_value_terms_used_for_positive_scan": sorted(hidden_terms),
         "notes": [
             "This audit checks query-surface quality only and does not run retrieval or promotion.",
-            "Expected binding comparison uses v2 query_id rows when eval/gold_queries_xlsx_v2.csv is available.",
+            "Expected binding comparison uses v2 query_id rows when eval/eval_queries/gold_queries_xlsx_v2.csv is available.",
             "Hidden negative rows remain valid in the mixed manifest but must be excluded from positive retrieval metrics.",
         ],
     }

@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from ai_worker.evals.golden_retrieval.matching import matches_result
+from eval.golden_retrieval.matching import matches_result
 
 
 def ndcg_at_k(

@@ -15,7 +15,7 @@ reports/rag_text_namu_v4_retrieval_diagnostic_report.json
 ## Inputs
 
 ```text
-eval/gold_queries_text_namu_v4_v0.csv
+ai-worker/eval/eval_queries/gold_queries_text_namu_v4_v0.csv
 ai-worker/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl
 existing retrieval emit OR fresh diagnostic retrieval output
 ```

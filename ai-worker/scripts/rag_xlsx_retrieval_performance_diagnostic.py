@@ -146,7 +146,7 @@ def resolve_positive_rows(args: argparse.Namespace) -> tuple[Path, list[dict[str
             "mode": "v3_positive_file",
             "source_path": str(positive_path),
             "fallback_generated": False,
-            "selection_rule": "use eval/gold_queries_xlsx_v3_positive.csv when present",
+            "selection_rule": "use eval/eval_queries/gold_queries_xlsx_v3_positive.csv when present",
         }
 
     v2_path = Path(args.v2_gold)

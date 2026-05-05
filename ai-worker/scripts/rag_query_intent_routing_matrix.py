@@ -523,7 +523,7 @@ def build_report(
         "missing_future_inputs": missing_future,
         "missing_input_policy": {
             "current_candidates": "Missing current candidate inputs are recorded and skipped; at least one usable input is required.",
-            "future_namu_candidate": "Missing eval/gold_queries_text_namu_v4_v0.csv is expected before R2/R3 and does not fail R1.",
+            "future_namu_candidate": "Missing eval/eval_queries/gold_queries_text_namu_v4_v0.csv is expected before R2/R3 and does not fail R1.",
         },
         "completion_criteria": completion_criteria,
         "blockers": blockers,

@@ -22,7 +22,7 @@ Track A는 이번 diagnostic pass 기준으로 완료되었습니다.
 | Final location accuracy | `xlsx_citation_location_accuracy 0.8857 -> 1.0` |
 | Hidden leakage | `hidden_content_leakage_count=0` |
 
-강해진 XLSX location 결과는 여전히 diagnostic vector evidence이며 promotion evidence가 아닙니다. 기존 less-explicit manifest `eval/gold_queries_xlsx_v3_positive.csv`는 보존했고, reviewed 변경은 `eval/gold_queries_xlsx_v3_positive_reviewed.csv`에만 있습니다.
+강해진 XLSX location 결과는 여전히 diagnostic vector evidence이며 promotion evidence가 아닙니다. 기존 less-explicit manifest `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv`는 보존했고, reviewed 변경은 `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv`에만 있습니다.
 
 ## 남은 watch item
 

@@ -6,7 +6,7 @@
 
 ## Inputs
 
-- `eval/gold_queries_text_e2e_v0.csv`
+- `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv`
 - `reports/rag_text_retrieval_diagnostic_report.json`
 - `reports/rag_text_context_assembly_report.json`
 - `prompts/rag_text_e2e_v0.md`
@@ -75,7 +75,7 @@ LLM judge output is separated from deterministic checks
 
 ```bash
 python scripts/rag_text_e2e_answer_eval.py \
-  --gold eval/gold_queries_text_e2e_v0.csv \
+  --gold ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv \
   --retrieval-report reports/rag_text_retrieval_diagnostic_report.json \
   --context-report reports/rag_text_context_assembly_report.json \
   --prompt-template prompts/rag_text_e2e_v0.md \

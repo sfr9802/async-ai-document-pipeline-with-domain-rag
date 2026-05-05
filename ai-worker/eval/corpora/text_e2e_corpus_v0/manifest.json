@@ -12,7 +12,7 @@
     "text_import_route": "POST /api/v1/library/source-files/{sourceFileId}/text-import",
     "worker_job_required": false
   },
-  "rebind_note": "On a clean DB, import each file through the routes above, then update eval/gold_queries_text_e2e_v0.csv expected_source_ids and expected_chunk_ids from the resulting READY TEXT SearchUnits before running scripts/rag_text_e2e_gold_validator.py.",
+  "rebind_note": "On a clean DB, import each file through the routes above, then update eval/eval_queries/gold_queries_text_e2e_v0.csv expected_source_ids and expected_chunk_ids from the resulting READY TEXT SearchUnits before running scripts/rag_text_e2e_gold_validator.py.",
   "current_live_binding_note": "These IDs are local live-catalog bindings from the 2026-05-05 B1 run and are expected to change on a clean DB.",
   "files": [
     {

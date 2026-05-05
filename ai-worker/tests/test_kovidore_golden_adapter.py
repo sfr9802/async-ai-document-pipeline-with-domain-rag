@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from ai_worker.evals.golden_retrieval.adapters.kovidore import (
+from eval.golden_retrieval.adapters.kovidore import (
     KovidoreQrel,
     KovidoreQuery,
     convert_kovidore_dataset,
@@ -13,12 +13,12 @@ from ai_worker.evals.golden_retrieval.adapters.kovidore import (
     parse_corpus_row,
     qrels_to_golden_queries,
 )
-from ai_worker.evals.golden_retrieval.import_kovidore import (
+from eval.golden_retrieval.import_kovidore import (
     load_fixture_bundle,
     upsert_fixture_rows,
 )
-from ai_worker.evals.golden_retrieval.matching import matches_result
-from ai_worker.evals.golden_retrieval.run import (
+from eval.golden_retrieval.matching import matches_result
+from eval.golden_retrieval.run import (
     GoldenQuery,
     evaluate_golden_queries,
     result_matches_spec,

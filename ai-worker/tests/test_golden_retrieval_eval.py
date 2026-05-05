@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from ai_worker.evals.golden_retrieval.run import (
+from eval.golden_retrieval.run import (
     GoldenQuery,
     evaluate_golden_queries,
     load_golden_queries,

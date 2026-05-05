@@ -100,7 +100,7 @@ def build_cleanup_plan(
         "notes": [
             "This is diagnostic cleanup evidence only.",
             "It keeps gold cleanup, retrieval/ranking, bbox policy, and chunk granularity separate.",
-            "It does not modify eval/gold_queries_v0.csv.",
+            "It does not modify eval/eval_queries/gold_queries_v0.csv.",
         ],
     }
 

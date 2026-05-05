@@ -22,7 +22,7 @@ ROOT = AI_WORKER.parent
 if str(AI_WORKER) not in sys.path:
     sys.path.insert(0, str(AI_WORKER))
 
-from ai_worker.search_unit_indexing import _validate_cli_args  # noqa: E402
+from app.cli.search_unit_indexing import _validate_cli_args  # noqa: E402
 from app.capabilities.rag.embeddings import SentenceTransformerEmbedder, resolve_max_seq_length  # noqa: E402
 from app.capabilities.rag.faiss_index import FaissIndex  # noqa: E402
 from app.capabilities.rag.metadata_store import RagMetadataStore  # noqa: E402

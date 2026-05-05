@@ -36,7 +36,7 @@ major failure taxonomy gaps are understood
 
 ## Outputs
 
-- `eval/gold_queries_text_e2e_v0.csv` expanded to 50-100 rows
+- `ai-worker/eval/eval_queries/gold_queries_text_e2e_v0.csv` expanded to 50-100 rows
 - `reports/rag_text_e2e_summary.json`
 - `reports/rag_text_e2e_regression_compare.json`
 - optional `reports/rag_text_e2e_gold_quality_notes.md`

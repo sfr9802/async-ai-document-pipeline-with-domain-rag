@@ -19,7 +19,7 @@ from app.clients.schemas import (
     SearchUnitIndexDocument as ClaimUnit,
 )
 from app.services.search_unit_indexing_loop import SearchUnitIndexingWorker
-from ai_worker.search_unit_indexing import _has_hard_identity_scope, _resolved_index_version, _validate_cli_args
+from app.cli.search_unit_indexing import _has_hard_identity_scope, _resolved_index_version, _validate_cli_args
 
 
 def _claim_unit(**overrides):

@@ -522,7 +522,7 @@ Goal: start an evaluation loop for real XLSX/PDF samples.
 Add:
 
 ```text
-eval/gold_queries_v0.csv
+ai-worker/eval/eval_queries/gold_queries_v0.csv
 ```
 
 CSV schema:
@@ -651,7 +651,7 @@ Likely new files:
 samples/rag_ingestion_manifest.json
 scripts/rag_ingestion_sample_batch.py
 scripts/rag_pdf_ingestion_smoke.py
-eval/gold_queries_v0.csv
+ai-worker/eval/eval_queries/gold_queries_v0.csv
 reports/.gitkeep
 ```
 
@@ -785,7 +785,7 @@ Your P0 tasks, in order:
 3. Add a real-sample XLSX batch smoke runner using samples/rag_ingestion_manifest.json.
 4. Add native PDF text extraction v1 with PyMuPDF/page/block/bbox metadata, without OCR optimization.
 5. Add a PDF smoke runner that verifies parser_version, location_json, and citation_text for PDF search units.
-6. Add eval/gold_queries_v0.csv template and seed rows if real sample labels are available.
+6. Add ai-worker/eval/eval_queries/gold_queries_v0.csv template and seed rows if real sample labels are available.
 7. Add a candidate index promotion gate skeleton that blocks promotion when required citation metadata is missing.
 8. Add or update targeted tests.
 9. Append a progress-log entry.

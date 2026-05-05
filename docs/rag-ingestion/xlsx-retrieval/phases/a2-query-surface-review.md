@@ -37,7 +37,7 @@ expected range를 직접 알려주지 않는다.
 2. 기존 query, original query, query seed를 비교합니다.
 3. 후보 query 2-3개를 작성합니다.
 4. anchor audit를 실행해서 title/file/sheet/range leakage가 없는지 확인합니다.
-5. `eval/gold_queries_xlsx_v3_positive_reviewed.csv`를 별도 생성합니다.
+5. `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv`를 별도 생성합니다.
 6. candidate v1을 그대로 사용해 diagnostic-only vector eval을 재실행합니다.
 7. before/after rank와 location match를 row별로 비교합니다.
 
@@ -46,7 +46,7 @@ expected range를 직접 알려주지 않는다.
 | 파일 | 역할 |
 |---|---|
 | `reports/rag_xlsx_query_surface_patch_plan.json` | 후보 wording, anchor audit, 기대 효과 |
-| `eval/gold_queries_xlsx_v3_positive_reviewed.csv` | reviewed positive diagnostic manifest 후보 |
+| `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv` | reviewed positive diagnostic manifest 후보 |
 | `reports/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json` | reviewed CSV diagnostic report |
 | `reports/rag_xlsx_v3_query_surface_before_after_compare.json` | query별 before/after 비교 |
 
@@ -66,5 +66,5 @@ hidden_content_leakage_count=0 유지
 ## 금지 사항
 
 - query에 cell range, table id, hidden value를 넣지 않습니다.
-- `eval/gold_queries_xlsx_v3_positive.csv`를 바로 overwrite하지 않습니다.
+- `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv`를 바로 overwrite하지 않습니다.
 - candidate namespace를 새로 만들지 않습니다. Query-only 검토는 기존 v1 artifact로 충분합니다.

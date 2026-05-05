@@ -1,6 +1,6 @@
 """Rebind and extend RAG ingestion gold queries from the live catalog DB.
 
-This helper keeps eval/gold_queries_v0.csv useful after repeated smoke runs.
+This helper keeps eval/eval_queries/gold_queries_v0.csv useful after repeated smoke runs.
 It updates expected_document_version_id/page/bbox bindings against the latest
 ingested document version for each file and can append conservative,
 location-bound seed queries up to a target row count.

@@ -85,7 +85,7 @@ def evaluate_golden_queries(
     top_k: int,
     manifest: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
-    from ai_worker.evals.golden_retrieval.metrics import ndcg_at_k
+    from eval.golden_retrieval.metrics import ndcg_at_k
 
     manifest = manifest or {}
     rows: list[dict[str, Any]] = []

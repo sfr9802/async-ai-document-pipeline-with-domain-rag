@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
-from ai_worker.evals.golden_retrieval.adapters.base import AdapterSummary
+from eval.golden_retrieval.adapters.base import AdapterSummary
 
 
 DATASET_ID = "kovidore-v2-economic-beir"

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ai_worker.evals.golden_retrieval.run import result_matches_spec
+from eval.golden_retrieval.run import result_matches_spec
 
 
 def matches_result(
