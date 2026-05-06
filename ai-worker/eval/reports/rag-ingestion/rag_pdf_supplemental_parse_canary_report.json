@@ -1,0 +1,69 @@
+{
+  "schema_version": "pdf_supplemental_parse_canary_report_v1",
+  "run_id": "20260506T_supplemental_diag",
+  "generated_at": "2026-05-06T05:41:45.635412+00:00",
+  "status": "PASS_WITH_OCR_NEEDED_CANDIDATES",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "official_denominator_changed": false,
+  "codex_gold_policy_decision_applied": false,
+  "pdf_c7_policy_decision_applied": false,
+  "synthetic_diagnostic_only": true,
+  "xlsx_scope_excluded": true,
+  "pdf_scope_only": true,
+  "external_cloud_llm_run": false,
+  "live_llm_answer_generation_run": false,
+  "optional_judge_run": false,
+  "retrieval_tuning_applied": false,
+  "reranking_applied": false,
+  "parser_expansion_applied": false,
+  "threshold_relaxation_applied": false,
+  "db_mutation_applied": false,
+  "searchunit_mutation_applied": false,
+  "candidate_artifact_changed": false,
+  "immutable_baseline_changed": false,
+  "bbox_contract_success_not_claimed": true,
+  "table_semantics_success_not_claimed": true,
+  "source_directories": [
+    "ai-worker/eval/datasets/elec",
+    "ai-worker/eval/datasets/lh"
+  ],
+  "ocr_execution": "not_run_by_this_script",
+  "parser_execution": "file_based_pymupdf_parse_only",
+  "input_artifacts": [
+    {
+      "path": "ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/supplemental_pdf_manifest.json",
+      "exists": true
+    }
+  ],
+  "output_artifacts": {
+    "json_report": "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_parse_canary_report.json",
+    "csv_report": "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_parse_canary.csv",
+    "parsed_pages_jsonl": "ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/parsed_pages.jsonl",
+    "parsed_blocks_jsonl": "ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/parsed_blocks.jsonl"
+  },
+  "counts": {
+    "pdf_count": 40,
+    "parse_success_count": 40,
+    "parse_failure_count": 0,
+    "native_text_pdf_count": 30,
+    "table_centered_pdf_count": 19,
+    "ocr_needed_candidate_count": 10,
+    "page_count_total": 778,
+    "block_count_total": 23573,
+    "block_with_bbox_count": 23573,
+    "table_like_block_candidate_count": 1919,
+    "empty_text_page_count": 24,
+    "dataset_source_pdf_counts": {
+      "elec": 27,
+      "lh": 13
+    }
+  },
+  "blockers": [],
+  "warnings": [],
+  "notes": [
+    "This canary parses files directly with PyMuPDF and does not import to DB.",
+    "Table-like blocks are heuristic candidates only, not table semantics success.",
+    "OCR-needed candidates are marked without executing OCR."
+  ]
+}

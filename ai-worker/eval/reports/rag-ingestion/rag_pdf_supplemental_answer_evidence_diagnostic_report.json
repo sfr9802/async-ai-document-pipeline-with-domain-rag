@@ -1,0 +1,76 @@
+{
+  "schema_version": "pdf_supplemental_answer_evidence_diagnostic_report_v1",
+  "generated_at": "2026-05-06T05:41:56.624408+00:00",
+  "status": "PASS",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "official_denominator_changed": false,
+  "codex_gold_policy_decision_applied": false,
+  "pdf_c7_policy_decision_applied": false,
+  "synthetic_diagnostic_only": true,
+  "xlsx_scope_excluded": true,
+  "pdf_scope_only": true,
+  "external_cloud_llm_run": false,
+  "live_llm_answer_generation_run": false,
+  "optional_judge_run": false,
+  "retrieval_tuning_applied": false,
+  "reranking_applied": false,
+  "parser_expansion_applied": false,
+  "threshold_relaxation_applied": false,
+  "db_mutation_applied": false,
+  "searchunit_mutation_applied": false,
+  "candidate_artifact_changed": false,
+  "immutable_baseline_changed": false,
+  "bbox_contract_success_not_claimed": true,
+  "table_semantics_success_not_claimed": true,
+  "answer_generation_execution": "not_run_by_this_script",
+  "local_llm_run": false,
+  "actual_generated_answer_output": false,
+  "answer_evidence_object_is_actual_answer": false,
+  "input_artifacts": [
+    {
+      "path": "ai-worker/eval/eval_queries/gold_queries_pdf_supplemental_elec_lh_synthetic_diagnostic.csv",
+      "exists": true
+    },
+    {
+      "path": "ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/parsed_blocks.jsonl",
+      "exists": true
+    },
+    {
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_pageindex_diagnostic.csv",
+      "exists": true
+    }
+  ],
+  "output_artifacts": {
+    "answer_evidence_objects_jsonl": "ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/answer_evidence_objects.jsonl",
+    "json_report": "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_answer_evidence_diagnostic_report.json",
+    "csv_report": "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_answer_evidence_diagnostic.csv"
+  },
+  "counts": {
+    "evidence_object_count": 150,
+    "answer_allowed_count": 150,
+    "locator_only_object_count": 0,
+    "paragraph_context_present_count": 112,
+    "section_context_present_count": 150,
+    "nearby_context_present_count": 150,
+    "table_like_context_candidate_count": 102,
+    "keyword_only_risk_count": 112,
+    "page_only_risk_count": 0,
+    "bbox_only_risk_count": 0,
+    "answer_evidence_ready_rate": 1.0,
+    "answer_generation_run": false,
+    "local_llm_run": false,
+    "optional_judge_run": false,
+    "dataset_source_counts": {
+      "elec": 85,
+      "lh": 65
+    }
+  },
+  "blockers": [],
+  "warnings": [],
+  "notes": [
+    "Evidence objects diagnose whether content around parser anchors can support answer generation.",
+    "No final answer, local LLM call, cloud LLM call, or judge run is performed.",
+    "Table-like contexts remain heuristic candidates only."
+  ]
+}

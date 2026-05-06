@@ -1,0 +1,96 @@
+{
+  "schema_version": "pdf_supplemental_anchor_query_build_report_v1",
+  "generated_at": "2026-05-06T05:41:49.700860+00:00",
+  "status": "PASS",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "official_denominator_changed": false,
+  "codex_gold_policy_decision_applied": false,
+  "pdf_c7_policy_decision_applied": false,
+  "synthetic_diagnostic_only": true,
+  "xlsx_scope_excluded": true,
+  "pdf_scope_only": true,
+  "external_cloud_llm_run": false,
+  "live_llm_answer_generation_run": false,
+  "optional_judge_run": false,
+  "retrieval_tuning_applied": false,
+  "reranking_applied": false,
+  "parser_expansion_applied": false,
+  "threshold_relaxation_applied": false,
+  "db_mutation_applied": false,
+  "searchunit_mutation_applied": false,
+  "candidate_artifact_changed": false,
+  "immutable_baseline_changed": false,
+  "bbox_contract_success_not_claimed": true,
+  "table_semantics_success_not_claimed": true,
+  "anchor_generation_mode": "deterministic_parser_derived_synthetic",
+  "query_gold_status": "diagnostic_only",
+  "synthetic_rows_are_gold": false,
+  "existing_gold_csv_overwritten": false,
+  "protected_gold_sources_mutated": false,
+  "protected_source_hashes": {
+    "ai-worker/eval/eval_queries/gold_queries_pdf_v0.csv": {
+      "path": "ai-worker/eval/eval_queries/gold_queries_pdf_v0.csv",
+      "exists": true,
+      "expected_sha256": "cf582fbf0629962ba035ad121d4e9dd7fbea2ee4b7251c51dce2a0a31ea22e29",
+      "actual_sha256": "cf582fbf0629962ba035ad121d4e9dd7fbea2ee4b7251c51dce2a0a31ea22e29",
+      "matches_expected": true
+    },
+    "ai-worker/eval/eval_queries/gold_queries_pdf_v1_review_draft.csv": {
+      "path": "ai-worker/eval/eval_queries/gold_queries_pdf_v1_review_draft.csv",
+      "exists": true,
+      "expected_sha256": "5bea29e2ba1bd1787e37afdfd4c42b350773eb8ebab87a4041f280ab45f9b694",
+      "actual_sha256": "5bea29e2ba1bd1787e37afdfd4c42b350773eb8ebab87a4041f280ab45f9b694",
+      "matches_expected": true
+    },
+    "ai-worker/eval/eval_queries/official_denominator_registry.json": {
+      "path": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+      "exists": true,
+      "expected_sha256": "089ea205cdb090e2b546ce46bbb518039581c85f710e5956788fddd270f54275",
+      "actual_sha256": "089ea205cdb090e2b546ce46bbb518039581c85f710e5956788fddd270f54275",
+      "matches_expected": true
+    }
+  },
+  "output_path_findings": {},
+  "input_artifacts": [
+    {
+      "path": "ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/parsed_blocks.jsonl",
+      "exists": true
+    },
+    {
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_parse_canary_report.json",
+      "exists": true
+    }
+  ],
+  "output_artifacts": {
+    "query_csv": "ai-worker/eval/eval_queries/gold_queries_pdf_supplemental_elec_lh_synthetic_diagnostic.csv",
+    "review_pack_csv": "ai-worker/eval/review/pdf_supplemental_elec_lh/pdf_supplemental_anchor_review_pack.csv",
+    "json_report": "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_anchor_query_build_report.json"
+  },
+  "counts": {
+    "parsed_block_count": 23515,
+    "synthetic_anchor_count": 150,
+    "max_anchors_per_pdf": 5,
+    "max_total_anchors": 220,
+    "anchor_type_counts": {
+      "paragraph_candidate": 8,
+      "section_title_candidate": 23,
+      "semantic_anchor_candidate": 17,
+      "table_like_block": 102
+    },
+    "dataset_source_counts": {
+      "elec": 85,
+      "lh": 65
+    },
+    "diagnostic_only_count": 150,
+    "promotion_evidence_true_count": 0,
+    "blank_user_decision_field_count": 150
+  },
+  "blockers": [],
+  "warnings": [],
+  "notes": [
+    "Synthetic anchor rows are diagnostic_only and parser-derived.",
+    "Expected page and bbox are parser locators, not user-reviewed expected evidence.",
+    "User decision columns are intentionally blank."
+  ]
+}

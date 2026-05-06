@@ -2746,6 +2746,103 @@ Move from diagnostic-only full72 vector evidence to a concrete query-level clean
   relaxation, reranking, parser expansion, retrieval tuning, or promotion was
   applied.
 
+## 2026-05-06 - Supplemental elec/lh PDF diagnostic dataset inventory and PageIndex/answer-evidence canary
+
+### Summary
+
+- Added `elec` and `lh` PDFs as a supplemental diagnostic dataset only.
+- Kept the new PDFs out of Track C official gold, official denominator,
+  promotion evidence, and C7 policy decisions.
+- Built file-based diagnostics for parser inventory, PyMuPDF page/block parse,
+  synthetic diagnostic anchors, fail-closed PageIndex navigation, and answer
+  evidence object readiness.
+- PageIndex remains a PDF page/section navigator candidate only. The default
+  supplemental run did not execute PageIndex because no explicit local run
+  flags, local model, or localhost base URL were supplied.
+- Answer evidence objects were generated as diagnostic input-shape artifacts;
+  no actual answer generation, local/cloud LLM call, or judge run was executed.
+
+### Evidence
+
+- New scripts:
+  - `ai-worker/scripts/rag_pdf_supplemental_common.py`
+  - `ai-worker/scripts/rag_pdf_supplemental_dataset_inventory.py`
+  - `ai-worker/scripts/rag_pdf_supplemental_parse_canary.py`
+  - `ai-worker/scripts/rag_pdf_supplemental_anchor_query_builder.py`
+  - `ai-worker/scripts/rag_pdf_supplemental_pageindex_diagnostic.py`
+  - `ai-worker/scripts/rag_pdf_supplemental_answer_evidence_diagnostic.py`
+  - `ai-worker/scripts/rag_pdf_supplemental_summary.py`
+- Inventory:
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_elec_lh_inventory.json`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_elec_lh_inventory.csv`
+  - `ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/supplemental_pdf_manifest.json`
+- Parse canary:
+  - `ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/parsed_pages.jsonl`
+  - `ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/parsed_blocks.jsonl`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_parse_canary_report.json`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_parse_canary.csv`
+- Synthetic anchor pack:
+  - `ai-worker/eval/eval_queries/gold_queries_pdf_supplemental_elec_lh_synthetic_diagnostic.csv`
+  - `ai-worker/eval/review/pdf_supplemental_elec_lh/pdf_supplemental_anchor_review_pack.csv`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_anchor_query_build_report.json`
+- Supplemental PageIndex diagnostic:
+  - `ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/pageindex_trees/`
+  - `ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/pageindex_run_manifest.json`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_pageindex_diagnostic_report.json`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_pageindex_diagnostic.csv`
+- Answer evidence diagnostic:
+  - `ai-worker/eval/artifacts/eval_runs/pdf_supplemental_elec_lh_20260506T_supplemental_diag/answer_evidence_objects.jsonl`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_answer_evidence_diagnostic_report.json`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_answer_evidence_diagnostic.csv`
+- Summary:
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_elec_lh_summary.json`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_elec_lh_summary.md`
+
+### Key Counts
+
+- Supplemental PDFs: `40` total; `elec=27`, `lh=13`.
+- Page count total: `778`.
+- Text-layer present PDFs: `30`.
+- OCR-needed candidates: `10`; OCR was not executed.
+- Parse success count: `40`; parse failure count: `0`.
+- Parsed block count: `23573`; table-like block candidates: `1919`.
+- Synthetic diagnostic anchors: `150`.
+- Synthetic anchor rows are all `label_status=diagnostic_only`; user decision
+  columns remain blank.
+- PageIndex live/local run: `false`/`false`; supplemental query count: `150`.
+- PageIndex improvement claimed: `false`.
+- Answer evidence objects: `150`; answer allowed count: `150`; actual answer
+  generation run: `false`.
+
+### Guardrails
+
+- `promotion_evidence=false`; `evidence_role=diagnostic`.
+- `official_denominator_changed=false`.
+- `codex_gold_policy_decision_applied=false`.
+- `pdf_c7_policy_decision_applied=false`.
+- `synthetic_diagnostic_only=true`.
+- `xlsx_scope_excluded=true`; `pdf_scope_only=true`.
+- `external_cloud_llm_run=false`.
+- `live_llm_answer_generation_run=false`; `optional_judge_run=false`.
+- `retrieval_tuning_applied=false`; `reranking_applied=false`.
+- `parser_expansion_applied=false`; `threshold_relaxation_applied=false`.
+- `db_mutation_applied=false`; `searchunit_mutation_applied=false`.
+- `candidate_artifact_changed=false`; `immutable_baseline_changed=false`.
+- No gold CSV, official denominator registry, existing review pack, DB,
+  SearchUnit, candidate artifact, or immutable baseline was modified.
+- bbox/table/value semantics success and PDF C7 resolution were not claimed.
+
+### Next Steps
+
+- Manually review the supplemental anchor pack before any future gold
+  inclusion/exclusion decision.
+- Use the parse canary and answer-evidence object diagnostics to decide whether
+  a separate OCR fallback, table-context extraction, or section-context task is
+  warranted.
+- Run supplemental PageIndex only in a separate local-only pass with
+  `--allow-local-run`, an explicit local/open-source model, and a localhost
+  base URL.
+
 ## 2026-05-06 - XLSX Answer Context Assembly Repair
 
 ### Summary
