@@ -16,7 +16,7 @@
 Phase별 진행 내역은 [rag_text_retrieval_e2e_progress.md](rag_text_retrieval_e2e_progress.md) 하나로 통합한다.
 
 - 이 파일이 Track B 전체 이력, `B-app` smoke / `B-namu` mainline 관계, R0-R9 세부 phase 상태, evidence 판단, gate/blocker 판단의 source-of-truth다.
-- 기존 `phases/phase_progress.md`는 중복 source-of-truth라 삭제했다.
+- `phases/phase_progress.md`는 R6/R7 handoff를 위한 compact phase-local mirror로 유지한다. 이 README와 `rag_text_retrieval_e2e_progress.md`가 충돌하면 `rag_text_retrieval_e2e_progress.md`를 우선한다.
 - Track B가 stable checkpoint에 도달하거나 intentionally paused 되었을 때 durable entry를 `docs/rag-ingestion-progress.md`로 병합한다.
 
 ## Canonical Paths
@@ -37,7 +37,7 @@ Historical shorthand such as `reports/...`, `scripts/...`, or bare `eval/...` mu
 | Lane | 목적 | 대표 corpus/backend | 현재 상태 |
 |---|---|---|---|
 | `B-app` | app catalog TEXT import/search smoke | small TEXT canary + `library_search` | 완료, smoke-only; B-namu/namu-v4/production-style TEXT evidence로 인용 금지 |
-| `B-namu` | 단순 텍스트 문서 검색/QA 본선 | `namu-v4-structured-combined` | R6 context assembly completed with `PASS_WITH_WARNINGS`; R7 answer eval planned, not run |
+| `B-namu` | 단순 텍스트 문서 검색/QA 본선 | `namu-v4-structured-combined` | R7 deterministic answer eval completed with `PASS_WITH_WARNINGS`; R8 citation support planned; live LLM not run |
 | `XLSX_CONTENT` | XLSX 내부 내용 검색 | XLSX vector candidate | diagnostic-ready |
 | `XLSX_FILE` | XLSX 파일 자체 검색 | file/document metadata index | not ready |
 | `PDF_CONTENT` | PDF 내부 내용 검색 | PDF vector candidate + page/bbox metadata | blocked on Track C |
@@ -54,8 +54,8 @@ Historical shorthand such as `reports/...`, `scripts/...`, or bare `eval/...` mu
 | R4 | [phase_r4_namu_v4_retrieval_emit_inventory.md](phases/phase_r4_namu_v4_retrieval_emit_inventory.md) | 기존 retrieval emit 재사용 가능성 판단 | existing emit 사용 또는 fresh run 결정 |
 | R5 | [phase_r5_b2_namu_retrieval_diagnostic.md](phases/phase_r5_b2_namu_retrieval_diagnostic.md) | 실제 B2-namu retrieval-only metric 생성 | 완료: fresh emit/report 존재, denominator 명시 |
 | R6 | [phase_r6_b3_namu_context_assembly.md](phases/phase_r6_b3_namu_context_assembly.md) | retrieval top-k를 raw chunk_text context로 조립 | 완료: context emit/report 존재 |
-| R7 | [phase_r7_b4_namu_answer_eval.md](phases/phase_r7_b4_namu_answer_eval.md) | LLM answer correctness와 guardrail 평가 | planned/ready; R6 report를 입력으로 사용 |
-| R8 | [phase_r8_b5_namu_citation_support.md](phases/phase_r8_b5_namu_citation_support.md) | answer claim의 citation support 검증 | claim-level support report 존재 |
+| R7 | [phase_r7_b4_namu_answer_eval.md](phases/phase_r7_b4_namu_answer_eval.md) | deterministic answerability와 answer coverage 평가 | 완료: R7 answer eval report exists; live LLM not run |
+| R8 | [phase_r8_b5_namu_citation_support.md](phases/phase_r8_b5_namu_citation_support.md) | answer claim의 citation support 검증 | planned; accept the 29 deterministic answerable rows before claim-level support |
 | R9 | [phase_r9_file_content_lane_readiness.md](phases/phase_r9_file_content_lane_readiness.md) | XLSX/PDF/TEXT FILE vs CONTENT lane readiness 분리 | readiness report 존재 |
 
 ## Supporting Docs
