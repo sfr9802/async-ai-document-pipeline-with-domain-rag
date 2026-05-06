@@ -2620,3 +2620,69 @@ Move from diagnostic-only full72 vector evidence to a concrete query-level clean
 
 - Treat `gq_auto_042` as the remaining location-rank quality watch item because its exact location still appears after rank 5.
 - If promotion-grade readiness is required later, open a separate ranking/duplicate-document-version investigation instead of changing Track A candidate indexing, exact row policy, or hidden-safe constraints.
+
+## 2026-05-06 - PDF/XLSX Local LLM Answer Shape Diagnostic
+
+### Summary
+
+- Added a diagnostic-only PDF/XLSX answer generation input builder, local LLM
+  runner, and deterministic answer-shape evaluator.
+- Built `72` PDF/XLSX answer-generation input rows with content context, not
+  only sheet/range/page/bbox locators.
+- Used the local Docker llama.cpp service
+  `http://localhost:8081/v1` with model `gemma4-e2b-local`.
+- Ran actual local LLM answer generation for all `72` rows. The run is local
+  diagnostic evidence only: `external_live_llm_run=false`,
+  `optional_judge_run=false`, and `promotion_evidence=false`.
+- Kept official PDF/XLSX answer denominators at `0`; the local run only
+  populates `diagnostic_shape_eval_count`.
+- The generated answer-shape report status is
+  `DIAGNOSTIC_COMPLETED_WITH_SHAPE_FAILURES`, reflecting invalid JSON/output
+  format and answer-shape failures rather than a quality or promotion pass.
+
+### Evidence
+
+- Input builder:
+  - `ai-worker/scripts/rag_pdf_xlsx_answer_generation_input_builder.py`
+- Local LLM runner:
+  - `ai-worker/scripts/rag_pdf_xlsx_local_llm_answer_runner.py`
+- Deterministic evaluator:
+  - `ai-worker/scripts/rag_pdf_xlsx_answer_shape_evaluator.py`
+- Local run artifact:
+  - `ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_local_llm_20260506T015846Z/manifest.json`
+  - `ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_local_llm_20260506T015846Z/answer_generation_inputs.jsonl`
+  - `ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_local_llm_20260506T015846Z/local_llm_answers.jsonl`
+  - `ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_local_llm_20260506T015846Z/source_xlsx_gold_review_pack_used.csv`
+- Shape report:
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_xlsx_answer_shape_local_llm_report.json`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_xlsx_answer_shape_local_llm.csv`
+- Prompt repair plan:
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_xlsx_answer_prompt_repair_plan.json`
+
+### Key Counts
+
+- Input rows: PDF `22`, XLSX `50`, total `72`.
+- Local LLM generated rows: `72`.
+- JSON parse-ok rows: `39`; invalid JSON/output-format rows: `33`.
+- Diagnostic shape eval count: `39`.
+- Diagnostic rate denominator: `23`.
+- Keyword echo only count: `2`.
+- Location-only without content count: `0`.
+- Table or cell context missing count: `10`.
+- PDF section summary missing count: `1`.
+- Context-supported but underanswered count: `2`.
+- Citation attached to keyword, not claim count: `3`.
+- PDF answer denominator: `0`.
+- XLSX answer denominator: `0`.
+
+### Guardrails
+
+- No promotion was executed.
+- No `promotion_evidence=true` report was generated.
+- No external/cloud live LLM call was made; only the local Docker llama.cpp
+  endpoint was used.
+- No optional judge was called.
+- No R8 or citation-support denominator was promoted automatically.
+- No retrieval tuning, reranking, parser expansion, threshold relaxation,
+  broad indexing, DB mutation, SearchUnit mutation, immutable baseline change,
+  candidate artifact change, or existing gold CSV overwrite was performed.

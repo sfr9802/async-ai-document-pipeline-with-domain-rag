@@ -1,0 +1,126 @@
+{
+  "schema_version": "rag_pdf_xlsx_answer_shape_local_llm_eval_v1",
+  "run_id": "20260506T024555Z",
+  "generated_at": "2026-05-06T02:45:55.158642+00:00",
+  "status": "DIAGNOSTIC_COMPLETED_WITH_SHAPE_FAILURES",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "local_llm_run": true,
+  "external_live_llm_run": false,
+  "optional_judge_run": false,
+  "actual_answer_output_missing": false,
+  "answer_output_complete": true,
+  "answer_output_coverage_errors": [],
+  "dry_run_preview_used_as_actual_answer": false,
+  "xlsx_answer_eval_denominator": 0,
+  "pdf_answer_eval_denominator": 0,
+  "official_answer_denominator": 0,
+  "official_answer_denominator_registry": {
+    "path": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+    "exists": true,
+    "checked": true,
+    "observed_answer_denominator_fields": [],
+    "pdf_xlsx_answer_denominator_nonzero": false,
+    "errors": []
+  },
+  "diagnostic_shape_eval_count": 39,
+  "diagnostic_shape_rate_denominator": 23,
+  "xlsx_retrieval_diagnostic_preserved": true,
+  "pdf_policy_pending": true,
+  "keyword_echo_only_is_failure": true,
+  "location_only_answer_is_failure": true,
+  "r8_or_citation_support_blocked_until_answer_shape_alignment": true,
+  "no_r8_or_citation_denominator_promoted_automatically": true,
+  "source_inputs": {
+    "answer_generation_inputs": {
+      "path": "ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_local_llm_20260506T015846Z/answer_generation_inputs.jsonl",
+      "exists": true,
+      "sha256": "582e4382ebe8633307614ff3d9915c03d15feb2529c5117525fa1c20f2fc0679"
+    },
+    "local_llm_answers": {
+      "path": "ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_local_llm_20260506T015846Z/local_llm_answers.jsonl",
+      "exists": true,
+      "sha256": "b29007e2c53c58f23937ea6a73d4351968ed9b1b9d4ff958aac99cab86e2aabc"
+    },
+    "official_denominator_registry": {
+      "path": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+      "exists": true,
+      "sha256": "089ea205cdb090e2b546ce46bbb518039581c85f710e5956788fddd270f54275"
+    }
+  },
+  "output_csv": {
+    "path": "ai-worker/eval/reports/rag-ingestion/rag_pdf_xlsx_answer_shape_local_llm.csv",
+    "exists": true,
+    "sha256": "72d9421c87a7d7a3566032d356e1bfd37911017876df78e6363d4dd0fade8bab"
+  },
+  "repair_plan": {
+    "path": "ai-worker/eval/reports/rag-ingestion/rag_pdf_xlsx_answer_prompt_repair_plan.json",
+    "exists": true,
+    "sha256": "140576ba2f67e5ec6c39d68304e02502ee56d8eda02ffb23d48a857e59a5df08"
+  },
+  "metrics": {
+    "keyword_echo_only_count": 2,
+    "location_only_without_content_count": 0,
+    "content_target_match_rate": 0.4348,
+    "answer_shape_match_rate": 0.0435,
+    "table_or_cell_context_missing_count": 10,
+    "pdf_section_summary_missing_count": 1,
+    "context_supported_but_underanswered_count": 2,
+    "citation_attached_to_keyword_not_claim_count": 3,
+    "abstain_count": 24,
+    "invalid_json_answer_count": 33,
+    "citation_missing_count": 1,
+    "claim_without_citation_count": 0,
+    "answer_contains_locator_but_no_claim_count": 1,
+    "diagnostic_shape_eval_count": 39,
+    "diagnostic_shape_rate_denominator": 23,
+    "actual_answer_output_missing": false
+  },
+  "keyword_echo_only_count": 2,
+  "location_only_without_content_count": 0,
+  "content_target_match_rate": 0.4348,
+  "answer_shape_match_rate": 0.0435,
+  "table_or_cell_context_missing_count": 10,
+  "pdf_section_summary_missing_count": 1,
+  "context_supported_but_underanswered_count": 2,
+  "citation_attached_to_keyword_not_claim_count": 3,
+  "abstain_count": 24,
+  "invalid_json_answer_count": 33,
+  "citation_missing_count": 1,
+  "claim_without_citation_count": 0,
+  "answer_contains_locator_but_no_claim_count": 1,
+  "row_count_by_track": {
+    "PDF": 22,
+    "XLSX": 50
+  },
+  "failure_reason_counts": {
+    "LOCAL_LLM_OUTPUT_INVALID": 33,
+    "NOT_ANSWERABLE_OR_POLICY_PENDING": 16,
+    "GOLD_OR_POLICY_BLOCKED": 7,
+    "CONTEXT_ASSEMBLY_FAILURE": 16
+  },
+  "assertions": {
+    "pdf_answer_denominator_is_0": true,
+    "xlsx_answer_denominator_is_0": true,
+    "official_answer_denominator_registry_checked": true,
+    "official_answer_denominator_registry_has_no_pdf_xlsx_answer_denominator": true,
+    "promotion_evidence_false": true,
+    "external_live_llm_run_false": true,
+    "optional_judge_run_false": true,
+    "no_r8_or_citation_denominator_promoted_automatically": true,
+    "dry_run_preview_not_actual_answer": true,
+    "answer_rows_cover_input_rows": true
+  },
+  "guardrails": {
+    "retrieval_tuning_run": false,
+    "reranking_run": false,
+    "parser_expansion_run": false,
+    "threshold_relaxation_run": false,
+    "broad_indexing_run": false,
+    "db_mutation_run": false,
+    "searchunit_mutation_run": false,
+    "immutable_baseline_changed": false,
+    "candidate_artifact_changed": false,
+    "existing_gold_csv_overwritten": false
+  }
+}

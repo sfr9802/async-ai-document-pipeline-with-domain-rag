@@ -43,6 +43,9 @@ ai-worker/**/*.pyc
 ai-worker/.pytest_cache/
 ai-worker/.mypy_cache/
 ai-worker/*.egg-info/
+__pycache__/
+*.py[cod]
+*$py.class
 # Pytest also runs from the repo root in some flows (e.g. when the
 # user picks the workspace as basetemp). The artifacts are pure cache
 # / fixture scratch — never committed.
@@ -51,6 +54,7 @@ ai-worker/*.egg-info/
 .tmp/
 **/__pycache__/
 **/*.pyc
+**/*.pyo
 
 # ---- Scratch tests / scripts / harnesses ----
 # Forward-looking patterns: anything matching is treated as personal
@@ -238,6 +242,8 @@ data/
 local-storage/
 !local-storage/.gitkeep
 *.log
+*.log.*
+**/runtime-logs/
 
 # ---- Docker volumes (if bound locally) ----
 infra/postgres/data/
