@@ -1,6 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# PDF evidence files are binary artifacts even when a particular PDF happens
+# to contain no NUL bytes and Git would otherwise try a text diff.
+*.pdf binary
+
 # Archived runtime logs preserve command output verbatim. Treat them as opaque
 # artifacts so whitespace checks do not rewrite historical logs.
 archive/results/**/*.log -text -diff
