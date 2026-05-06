@@ -23,13 +23,24 @@ eval_module = load_module()
 
 
 def test_gold_query_csv_has_required_schema_and_live_bound_rows():
-    rows = eval_module.load_gold_csv(ROOT / "ai-worker" / "eval" / "eval_queries" / "gold_queries_v0.csv")
+    rows = eval_module.load_gold_csv(
+        ROOT / "ai-worker" / "eval" / "eval_queries" / "gold_queries_xlsx_v3_positive_reviewed.csv"
+    )
 
     result = eval_module.validate_gold_rows(rows, require_live_bound=True)
 
     assert result.ok, result.errors
-    assert result.row_count >= 30
+    assert result.row_count == 35
     assert result.bucket_counts["xlsx_lookup"] >= 5
+
+
+def test_pdf_denominator_csv_has_required_schema_and_live_bound_rows():
+    rows = eval_module.load_gold_csv(ROOT / "ai-worker" / "eval" / "eval_queries" / "gold_queries_pdf_v0.csv")
+
+    result = eval_module.validate_gold_rows(rows, require_live_bound=True)
+
+    assert result.ok, result.errors
+    assert result.row_count == 22
     assert result.bucket_counts["pdf_page_lookup"] >= 1
 
 

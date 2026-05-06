@@ -32,14 +32,14 @@ from eval.harness.rag_ingestion_retrieval_eval import (  # noqa: E402
 XLSX_CANDIDATE_INDEX_VERSION = "rag-ingestion-v2-xlsx-candidate-v1"
 XLSX_CANDIDATE_NAMESPACE = "rag-ingestion-v2-xlsx-candidate-v1"
 XLSX_CANDIDATE_ARTIFACT_DIR = Path("eval/indexes/rag-data-xlsx-candidate-v1")
+LEGACY_CSV_ARCHIVE = ROOT / "archive" / "results" / "2026-05-05-eval-query-lineage-cleanup" / "csv"
 
-DEFAULT_V3_POSITIVE_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive.csv")
-DEFAULT_V3_NATURALIZED_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_naturalized.csv")
-DEFAULT_V2_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v2.csv")
-DEFAULT_FALLBACK_POSITIVE_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_diagnostic_from_v2.csv")
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json")
-DEFAULT_SUMMARY = Path("eval/reports/rag-ingestion/rag_xlsx_v3_retrieval_performance_summary.json")
-DEFAULT_HIDDEN_REPORT = Path("eval/reports/rag-ingestion/rag_xlsx_hidden_negative_leakage_diagnostic.json")
+DEFAULT_V3_POSITIVE_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
+DEFAULT_V3_NATURALIZED_GOLD = LEGACY_CSV_ARCHIVE / "gold_queries_xlsx_v3_naturalized.csv"
+DEFAULT_V2_GOLD = LEGACY_CSV_ARCHIVE / "gold_queries_xlsx_v2.csv"
+DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
+DEFAULT_SUMMARY = Path("eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_retrieval_performance_summary.json")
+DEFAULT_HIDDEN_REPORT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json")
 
 METRIC_KEYS = [
     "Hit@1",
@@ -143,23 +143,16 @@ def resolve_positive_rows(args: argparse.Namespace) -> tuple[Path, list[dict[str
     if positive_path.exists():
         rows = [row for row in load_gold_csv(positive_path) if not is_hidden_negative(row)]
         return positive_path, rows, {
-            "mode": "v3_positive_file",
+            "mode": "reviewed_positive_file",
             "source_path": str(positive_path),
             "fallback_generated": False,
-            "selection_rule": "use eval/eval_queries/gold_queries_xlsx_v3_positive.csv when present",
+            "selection_rule": "use eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv when present",
         }
 
-    v2_path = Path(args.v2_gold)
-    rows = [row for row in load_gold_csv(v2_path) if is_positive_row(row)]
-    fallback_path = Path(args.fallback_positive_gold)
-    write_csv(fallback_path, rows)
-    return fallback_path, rows, {
-        "mode": "v2_positive_filter_fallback",
-        "source_path": str(v2_path),
-        "fallback_generated": True,
-        "fallback_path": str(fallback_path),
-        "selection_rule": "v2_label_status=positive and hidden_policy!=negative",
-    }
+    raise FileNotFoundError(
+        "official XLSX reviewed positive gold is required; refusing to regenerate "
+        f"an active positive CSV from archived v2/v3 manifests: {positive_path}"
+    )
 
 
 def resolve_hidden_rows(args: argparse.Namespace) -> tuple[Path, list[dict[str, str]]]:
@@ -423,7 +416,6 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--positive-gold", default=str(DEFAULT_V3_POSITIVE_GOLD))
     parser.add_argument("--naturalized-gold", default=str(DEFAULT_V3_NATURALIZED_GOLD))
     parser.add_argument("--v2-gold", default=str(DEFAULT_V2_GOLD))
-    parser.add_argument("--fallback-positive-gold", default=str(DEFAULT_FALLBACK_POSITIVE_GOLD))
     parser.add_argument("--report", default=str(DEFAULT_REPORT))
     parser.add_argument("--summary", default=str(DEFAULT_SUMMARY))
     parser.add_argument("--hidden-report", default=str(DEFAULT_HIDDEN_REPORT))

@@ -20,10 +20,8 @@ from typing import Any, Iterable, Mapping
 
 DEFAULT_INPUTS = [
     Path("eval/eval_queries/gold_queries_text_e2e_v0.csv"),
-    Path("eval/eval_queries/gold_queries_xlsx_v3_naturalized.csv"),
-    Path("eval/eval_queries/gold_queries_xlsx_v3_positive.csv"),
     Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv"),
-    Path("eval/eval_queries/gold_queries_v0.csv"),
+    Path("eval/eval_queries/gold_queries_pdf_v0.csv"),
 ]
 DEFAULT_FUTURE_INPUTS = [Path("eval/eval_queries/gold_queries_text_namu_v4_v0.csv")]
 DEFAULT_OUTPUT_CSV = Path("eval/eval_queries/query_intent_routing_matrix_v0.csv")

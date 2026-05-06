@@ -22,12 +22,12 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_v0.csv")
+DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_pdf_v0.csv")
 DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/candidate_namespace_cleanup_upsert_report.json")
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
-DEFAULT_INDEX_VERSION = "rag-ingestion-v2-candidate"
-DEFAULT_SOURCE_FILE_TYPES = ("SPREADSHEET", "PDF")
-DEFAULT_PARSER_VERSIONS = ("xlsx-extract-v2-hidden-safe", "pdf-extract-v1", "pdf-extract-v2")
+DEFAULT_INDEX_VERSION = "rag-ingestion-v2-pdf-candidate-v1"
+DEFAULT_SOURCE_FILE_TYPES = ("PDF",)
+DEFAULT_PARSER_VERSIONS = ("pdf-extract-v1", "pdf-extract-v2")
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -12,9 +12,12 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
+AI_WORKER = Path(__file__).resolve().parents[1]
+ROOT = AI_WORKER.parent
 DEFAULT_BEFORE_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json")
 DEFAULT_AFTER_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
-DEFAULT_BEFORE_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive.csv")
+LEGACY_CSV_ARCHIVE = ROOT / "archive" / "results" / "2026-05-05-eval-query-lineage-cleanup" / "csv"
+DEFAULT_BEFORE_GOLD = LEGACY_CSV_ARCHIVE / "gold_queries_xlsx_v3_positive.csv"
 DEFAULT_AFTER_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
 DEFAULT_HIDDEN_REPORT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json")
 DEFAULT_CANDIDATE_DECISION = Path("eval/reports/rag-ingestion/xlsx_candidate_v2_decision.json")

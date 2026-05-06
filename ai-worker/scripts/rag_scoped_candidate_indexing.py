@@ -2,8 +2,8 @@
 
 This is a reporting wrapper around the existing worker components. It refuses
 unscoped candidate indexing unless --allow-unscoped is explicitly supplied,
-and its default scope is the unique expected_document_version_id values from
-the full72 gold CSV.
+and its default scope is the Track C PDF candidate scope report. XLSX or mixed
+candidate runs must pass explicit scope/index arguments.
 """
 
 from __future__ import annotations
@@ -34,12 +34,12 @@ from app.core.logging import configure_logging  # noqa: E402
 from app.services.search_unit_indexing_loop import SearchUnitIndexingWorker  # noqa: E402
 
 
-DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_v0.csv")
+DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_pdf_v0.csv")
 DEFAULT_SCOPE_REPORT = Path("eval/reports/rag-ingestion/pdf_candidate_scope_report.json")
 DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/scoped_candidate_indexing_report.json")
-DEFAULT_INDEX_VERSION = "rag-ingestion-v2-candidate"
-DEFAULT_SOURCE_FILE_TYPES = ("SPREADSHEET", "PDF")
-DEFAULT_PARSER_VERSIONS = ("xlsx-extract-v2-hidden-safe", "pdf-extract-v1", "pdf-extract-v2")
+DEFAULT_INDEX_VERSION = "rag-ingestion-v2-pdf-candidate-v1"
+DEFAULT_SOURCE_FILE_TYPES = ("PDF",)
+DEFAULT_PARSER_VERSIONS = ("pdf-extract-v1", "pdf-extract-v2")
 
 
 def main(argv: list[str] | None = None) -> int:

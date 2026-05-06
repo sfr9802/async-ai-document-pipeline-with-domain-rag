@@ -13,12 +13,12 @@ from typing import Any, Mapping
 
 
 DEFAULT_V2_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_vector_diagnostic_report.json")
-DEFAULT_V3_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json")
-DEFAULT_V3_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive.csv")
+DEFAULT_V3_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
+DEFAULT_V3_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
 DEFAULT_QUALITY_AUDIT = Path("eval/reports/rag-ingestion/rag_xlsx_natural_query_quality_audit.json")
 DEFAULT_FORMULA_DATE_REVIEW = Path("eval/reports/rag-ingestion/rag_xlsx_formula_date_contract_review.json")
 DEFAULT_CHUNK_REVIEW = Path("eval/reports/rag-ingestion/rag_xlsx_chunk_granularity_review.json")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_failure_breakdown.json")
+DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_failure_breakdown.json")
 
 CATEGORIES = {
     "MATCHED",

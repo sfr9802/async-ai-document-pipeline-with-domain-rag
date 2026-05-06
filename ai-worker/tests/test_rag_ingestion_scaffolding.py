@@ -9,6 +9,13 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
+LINEAGE_ARCHIVE_SCRIPTS = (
+    ROOT
+    / "archive"
+    / "results"
+    / "2026-05-05-eval-query-lineage-cleanup"
+    / "scripts"
+)
 
 
 def load_module(name: str, path: Path):
@@ -47,7 +54,7 @@ path_readiness_module = load_module(
 )
 embedding_consistency_module = load_module(
     "pdf_xlsx_candidate_embedding_consistency",
-    ROOT / "ai-worker" / "scripts" / "pdf_xlsx_candidate_embedding_consistency.py",
+    LINEAGE_ARCHIVE_SCRIPTS / "pdf_xlsx_candidate_embedding_consistency.py",
 )
 immutable_baseline_module = load_module(
     "rag_prepare_immutable_baseline",
@@ -55,19 +62,19 @@ immutable_baseline_module = load_module(
 )
 bootstrap_baseline_module = load_module(
     "rag_bootstrap_initial_vector_baseline",
-    ROOT / "ai-worker" / "scripts" / "rag_bootstrap_initial_vector_baseline.py",
+    LINEAGE_ARCHIVE_SCRIPTS / "rag_bootstrap_initial_vector_baseline.py",
 )
 quality_breakdown_module = load_module(
     "rag_full72_vector_quality_breakdown",
-    ROOT / "ai-worker" / "scripts" / "rag_full72_vector_quality_breakdown.py",
+    LINEAGE_ARCHIVE_SCRIPTS / "rag_full72_vector_quality_breakdown.py",
 )
 query_cleanup_module = load_module(
     "rag_query_evidence_cleanup_plan",
-    ROOT / "ai-worker" / "scripts" / "rag_query_evidence_cleanup_plan.py",
+    LINEAGE_ARCHIVE_SCRIPTS / "rag_query_evidence_cleanup_plan.py",
 )
 promotion_eval_readiness_module = load_module(
     "rag_promotion_grade_vector_eval_readiness",
-    ROOT / "ai-worker" / "scripts" / "rag_promotion_grade_vector_eval_readiness.py",
+    LINEAGE_ARCHIVE_SCRIPTS / "rag_promotion_grade_vector_eval_readiness.py",
 )
 source_qualified_readiness_module = load_module(
     "rag_source_qualified_gate_input_readiness",

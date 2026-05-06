@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-DEFAULT_POSITIVE_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive.csv")
+DEFAULT_POSITIVE_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
 DEFAULT_REVIEWED_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
 DEFAULT_A1_REVIEW = Path("eval/reports/rag-ingestion/rag_xlsx_v3_failure_case_review.json")
-DEFAULT_BEFORE_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json")
+DEFAULT_BEFORE_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
 DEFAULT_REVIEWED_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
 DEFAULT_PATCH_PLAN = Path("eval/reports/rag-ingestion/rag_xlsx_query_surface_patch_plan.json")
 DEFAULT_COMPARE_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_query_surface_before_after_compare.json")

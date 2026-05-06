@@ -10,6 +10,13 @@ haystack, query 가 needle + 정답 키.
 > 남아 있으며, 새 Phase 7 tuning/eval 기본 경로가 아닙니다.
 > v4 production retrieval join 은 `rag_chunks.jsonl` 을 기준으로 합니다.
 
+> **Active denominator registry:** promotion, baseline comparison, and
+> diagnostic denominator selection must start from
+> `official_denominator_registry.json`. Legacy/intermediate CSVs are archived
+> outside this active directory for provenance only and must not be used as
+> default denominators. The removed active legacy paths are also listed in the
+> registry so they are not recreated as implicit inputs.
+
 > ⚠️ **엄격한 코퍼스 / query 분리**: 코퍼스 문서를 여기 두지 마세요.
 > 코퍼스 행은 `eval/corpora/<name>/corpus.jsonl` 아래에 살고, query
 > 행의 `expected_doc_ids` 는 어느 코퍼스의 id 를 인용함.

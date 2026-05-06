@@ -37,3 +37,21 @@ Default script inputs and outputs should stay inside `ai-worker/`:
 Root-level `scripts/`, `eval/`, `samples/`, `datasets/`, `reports/`, and
 `rag-data*` directories are legacy/compatibility locations. Do not add new
 defaults that write there.
+
+## Lineage Policy
+
+Active eval scripts must not default to archived gold-query CSVs. Official
+diagnostic denominators are fixed in:
+
+```text
+eval/eval_queries/official_denominator_registry.json
+```
+
+Legacy full72/XLSX v1-v3 builder and comparison scripts were moved to:
+
+```text
+../archive/results/2026-05-05-eval-query-lineage-cleanup/scripts/
+```
+
+Keep those scripts provenance-only unless a follow-up explicitly restores or
+ports one to the current denominator registry.
