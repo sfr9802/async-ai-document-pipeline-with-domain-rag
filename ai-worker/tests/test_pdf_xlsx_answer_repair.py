@@ -34,6 +34,10 @@ evaluator = load_module(
     AI_WORKER_ROOT / "scripts" / "rag_pdf_xlsx_answer_shape_evaluator.py",
     "rag_pdf_xlsx_answer_shape_evaluator_for_repair_tests",
 )
+llm_probe = load_module(
+    AI_WORKER_ROOT / "scripts" / "rag_pdf_xlsx_llm_answer_probe.py",
+    "rag_pdf_xlsx_llm_answer_probe_for_repair_tests",
+)
 
 
 def test_missing_content_summary_abstains_without_counting_content_match():
@@ -501,6 +505,224 @@ def test_serialized_rows_are_jsonl_roundtrip_safe():
     assert loaded_compiled["compiled_answer"]["citations"]
 
 
+def test_llm_answer_probe_prompt_excludes_gold_fields():
+    source_row = xlsx_probe_source_row()
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    compiled_row["compiled_answer"]["expected_answer_text"] = "GoldOnlyValue"
+    compiled_row["compiled_answer"]["must_contain_terms"] = ["GoldOnlyMust"]
+    compiled_row["compiled_answer"]["label_status"] = "gold-only"
+    compiled_row["compiled_answer"]["citations"][0]["locator"]["gold_label"] = "gold-only"
+
+    probe_row = llm_probe.build_llm_answer_probe_input_row(
+        evidence_row=evidence_row,
+        compiled_row=compiled_row,
+        run_id="probe",
+    )
+    prompt_blob = json.dumps(
+        {
+            "prompt": probe_row["answer_prompt"],
+            "payload": probe_row["answer_prompt_payload"],
+        },
+        ensure_ascii=False,
+    )
+
+    assert probe_row["answer_allowed"] is True
+    assert "expected_answer_text" not in prompt_blob
+    assert "must_contain_terms" not in prompt_blob
+    assert "expected_evidence_location" not in prompt_blob
+    assert "label_status" not in prompt_blob
+    assert "gold_label" not in prompt_blob
+    assert "GoldOnlyValue" not in prompt_blob
+    assert "GoldOnlyMust" not in prompt_blob
+
+
+def test_llm_answer_probe_evidence_only_answer_passes_checks():
+    source_row = xlsx_probe_source_row(expected_answer_text="GoldOnlyValue", must_terms=["GoldOnlyMust"])
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    probe_row = llm_probe.build_llm_answer_probe_input_row(
+        evidence_row=evidence_row,
+        compiled_row=compiled_row,
+        run_id="probe",
+    )
+    parsed = {
+        "query_id": "q_probe",
+        "answer": "Station A row / Total column value is 123.",
+        "answer_type": "CELL_VALUE",
+        "citations": [{"sheet": "Sheet1", "range": "A1:B2", "source": "selected_searchunit_payload"}],
+        "used_evidence_fields": ["evidence.row_values"],
+        "unsupported_claims": [],
+        "abstain_reason": "",
+        "confidence": "high",
+    }
+
+    checks = llm_probe.answer_checks(probe_input=probe_row, parsed_answer=parsed, source_row=source_row)
+
+    assert checks["llm_unsupported_claim_count"] == 0
+    assert checks["llm_gold_leakage_suspected"] is False
+    assert checks["llm_citation_missing"] is False
+
+
+def test_gold_intent_role_probe_sees_gold_fields_but_does_not_write_answer_evidence():
+    source_row = xlsx_probe_source_row(expected_answer_text="123", must_terms=["Station A", "Total", "123"])
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    probe_row = llm_probe.build_llm_answer_probe_input_row(
+        evidence_row=evidence_row,
+        compiled_row=compiled_row,
+        run_id="probe",
+    )
+    answer_output = {
+        "query_id": "q_probe",
+        "answer": "Station A row / Total column value is 123.",
+    }
+
+    role_row = llm_probe.build_gold_intent_role_row(
+        source_row=source_row,
+        probe_input=probe_row,
+        answer_output=answer_output,
+    )
+
+    assert role_row["expected_answer_text_role"] == "EXACT_ANSWER_VALUE"
+    assert role_row["gold_intent_probe_used_for_scoring"] is False
+    assert role_row["answer_evidence_updated"] is False
+    assert "evidence_object" not in role_row
+
+
+def test_gold_only_must_term_in_llm_answer_is_flagged_as_leakage():
+    source_row = xlsx_probe_source_row(expected_answer_text="GoldOnlyValue", must_terms=["GoldOnlyMust"])
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    probe_row = llm_probe.build_llm_answer_probe_input_row(
+        evidence_row=evidence_row,
+        compiled_row=compiled_row,
+        run_id="probe",
+    )
+    parsed = {
+        "query_id": "q_probe",
+        "answer": "GoldOnlyMust",
+        "answer_type": "ROW_SUMMARY",
+        "citations": [{"sheet": "Sheet1", "range": "A1:B2", "source": "selected_searchunit_payload"}],
+        "used_evidence_fields": [],
+        "unsupported_claims": [],
+        "abstain_reason": "",
+        "confidence": "low",
+    }
+
+    checks = llm_probe.answer_checks(probe_input=probe_row, parsed_answer=parsed, source_row=source_row)
+
+    assert checks["llm_gold_leakage_suspected"] is True
+    assert "GoldOnlyMust" in checks["gold_leakage_terms"]
+
+
+def test_policy_pending_rows_are_not_sent_to_answer_generation_llm(tmp_path):
+    source_row = xlsx_probe_source_row()
+    source_row["policy"] = {
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "hidden_policy_blocked": True,
+    }
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    inputs = tmp_path / "answer_generation_inputs.jsonl"
+    evidence = tmp_path / "evidence_objects.jsonl"
+    compiled = tmp_path / "compiled_answers.jsonl"
+    write_jsonl(inputs, [source_row])
+    write_jsonl(evidence, [evidence_row])
+    write_jsonl(compiled, [compiled_row])
+    calls = []
+
+    report = llm_probe.run_probe(
+        source_artifact_dir=tmp_path,
+        inputs_path=inputs,
+        evidence_objects_path=evidence,
+        compiled_answers_path=compiled,
+        output_root=tmp_path,
+        run_id="probe",
+        run_prefix="probe",
+        backend="llamacpp",
+        base_url="http://localhost:8081/v1",
+        model="fake-local",
+        temperature=0.0,
+        timeout_seconds=1,
+        max_tokens=50,
+        llm_client=lambda prompt: calls.append(prompt) or "{}",
+    )
+
+    assert calls == []
+    assert report["llm_answer_probe_row_count"] == 1
+    assert report["llm_abstain_count"] == 1
+
+
+def test_policy_pending_flag_overrides_inconsistent_allowed_flags():
+    source_row = xlsx_probe_source_row()
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    evidence_row["policy_pending"] = True
+    evidence_row["answer_allowed"] = True
+    evidence_row["answer_generation_allowed"] = True
+    evidence_row["fail_closed_reason"] = ""
+
+    probe_row = llm_probe.build_llm_answer_probe_input_row(
+        evidence_row=evidence_row,
+        compiled_row=compiled_row,
+        run_id="probe",
+    )
+
+    assert probe_row["answer_allowed"] is False
+    assert probe_row["llm_requested"] is False
+    assert probe_row["answer_prompt"] == ""
+    assert probe_row["fail_closed_reason"] == "XLSX_POLICY_PENDING"
+
+
+def test_llm_probe_report_keeps_official_denominator_and_promotion_false(tmp_path):
+    source_row = xlsx_probe_source_row()
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    inputs = tmp_path / "answer_generation_inputs.jsonl"
+    evidence = tmp_path / "evidence_objects.jsonl"
+    compiled = tmp_path / "compiled_answers.jsonl"
+    write_jsonl(inputs, [source_row])
+    write_jsonl(evidence, [evidence_row])
+    write_jsonl(compiled, [compiled_row])
+
+    report = llm_probe.run_probe(
+        source_artifact_dir=tmp_path,
+        inputs_path=inputs,
+        evidence_objects_path=evidence,
+        compiled_answers_path=compiled,
+        output_root=tmp_path,
+        run_id="probe2",
+        run_prefix="probe",
+        backend="llamacpp",
+        base_url="http://localhost:8081/v1",
+        model="fake-local",
+        temperature=0.0,
+        timeout_seconds=1,
+        max_tokens=50,
+        llm_client=lambda prompt: json.dumps(
+            {
+                "query_id": "q_probe",
+                "answer": "Station A row / Total column value is 123.",
+                "answer_type": "CELL_VALUE",
+                "citations": [
+                    {"sheet": "Sheet1", "range": "A1:B2", "source": "selected_searchunit_payload"}
+                ],
+                "used_evidence_fields": ["evidence.row_values"],
+                "unsupported_claims": [],
+                "abstain_reason": "",
+                "confidence": "high",
+            }
+        ),
+    )
+
+    assert report["official_xlsx_answer_eval_denominator"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["expected_answer_text_used_in_answer_prompt"] is False
+    assert report["must_contain_terms_used_in_answer_prompt"] is False
+
+
 def answer_row_from_compiled(compiled_row: dict) -> dict:
     return {
         "track": compiled_row["track"],
@@ -529,3 +751,46 @@ def answer_row_from_compiled(compiled_row: dict) -> dict:
         "promotion_evidence": False,
         "evidence_role": "diagnostic",
     }
+
+
+def xlsx_probe_source_row(expected_answer_text="GoldOnlyValue", must_terms=None):
+    return {
+        "run_id": "source",
+        "row_index": 21,
+        "track": "XLSX",
+        "query_id": "q_probe",
+        "query": "station total",
+        "expected_answer_shape": "TABLE_ROW_VALUE",
+        "expected_answer_text": expected_answer_text,
+        "must_contain_terms": must_terms if must_terms is not None else ["GoldOnlyMust"],
+        "expected_evidence_location": "Sheet1!A1:B2",
+        "policy": {"diagnostic_only": True, "promotion_evidence": False},
+        "context": {
+            "context_type": "xlsx",
+            "file_name": "sample.xlsx",
+            "sheet_name": "Sheet1",
+            "cell_range": "A1:B2",
+            "locator": {"file": "sample.xlsx", "sheet": "Sheet1", "range": "A1:B2"},
+            "row_label": "Station A",
+            "column_label": "Total",
+            "header_context": ["Station", "Total"],
+            "value_context": [
+                {
+                    "cell": "B2",
+                    "row_label": "Station A",
+                    "column_label": "Total",
+                    "value": "123",
+                }
+            ],
+            "nearby_table_context": ["Station: Station A | Total: 123"],
+            "context_available": True,
+            "context_has_expected_terms": True,
+            "context_errors": [],
+        },
+    }
+
+
+def write_jsonl(path: Path, rows: list[dict]) -> None:
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
