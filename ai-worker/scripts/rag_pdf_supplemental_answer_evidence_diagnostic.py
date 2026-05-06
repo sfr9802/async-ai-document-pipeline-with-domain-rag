@@ -56,6 +56,8 @@ CSV_FIELDS = [
     "evidence_navigation_signal_present",
     "evidence_text_excerpt",
     "citation",
+    "ocr_evidence_used",
+    "lower_trust_ocr",
     "promotion_evidence",
     "label_status",
 ]
@@ -199,6 +201,7 @@ def build_evidence_row(
     section_context_present = bool(section_title)
     nearby_context_present = bool(nearby_context)
     table_like = truthy(block.get("table_like_block_candidate")) or anchor.get("anchor_type") == "table_like_block"
+    ocr_evidence_used = truthy(block.get("ocr_used"))
     content_available = paragraph_context_present or section_context_present or nearby_context_present
     locator_available = bool(page_no or bbox)
     locator_only = bool(locator_available and not content_available)
@@ -217,6 +220,10 @@ def build_evidence_row(
         "bbox": anchor.get("parser_derived_bbox"),
         "relative_path": relative_path,
     }
+    if ocr_evidence_used:
+        citation["ocr_used"] = True
+        citation["ocr_engine"] = block.get("ocr_engine")
+        citation["ocr_confidence"] = block.get("ocr_confidence")
     return {
         "schema_version": "pdf_supplemental_answer_evidence_object_v1",
         "query_id": anchor.get("query_id"),
@@ -232,6 +239,10 @@ def build_evidence_row(
         "section_context_present": section_context_present,
         "nearby_context_present": nearby_context_present,
         "table_like_context_candidate": table_like,
+        "ocr_evidence_used": ocr_evidence_used,
+        "lower_trust_ocr": ocr_evidence_used,
+        "ocr_engine": block.get("ocr_engine") if ocr_evidence_used else None,
+        "ocr_confidence": block.get("ocr_confidence") if ocr_evidence_used else None,
         "keyword_only_risk": keyword_only_risk,
         "page_only_risk": page_only_risk,
         "bbox_only_risk": bbox_only_risk,
@@ -246,6 +257,7 @@ def build_evidence_row(
             "candidate": table_like,
             "heuristic_only": True,
             "row_column_value_semantics_claimed": False,
+            "ocr_table_semantics_claimed": False,
         },
         "citation": citation,
         "promotion_evidence": False,
@@ -302,6 +314,8 @@ def build_counts(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
         "section_context_present_count": sum(1 for row in rows if row.get("section_context_present") is True),
         "nearby_context_present_count": sum(1 for row in rows if row.get("nearby_context_present") is True),
         "table_like_context_candidate_count": sum(1 for row in rows if row.get("table_like_context_candidate") is True),
+        "ocr_evidence_object_count": sum(1 for row in rows if row.get("ocr_evidence_used") is True),
+        "lower_trust_ocr_object_count": sum(1 for row in rows if row.get("lower_trust_ocr") is True),
         "keyword_only_risk_count": sum(1 for row in rows if row.get("keyword_only_risk") is True),
         "page_only_risk_count": sum(1 for row in rows if row.get("page_only_risk") is True),
         "bbox_only_risk_count": sum(1 for row in rows if row.get("bbox_only_risk") is True),

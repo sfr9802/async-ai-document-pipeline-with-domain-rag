@@ -193,7 +193,7 @@ def fixture_paths(tmp_path: Path, monkeypatch) -> dict[str, Path]:
     monkeypatch.setattr(c5_module, "AI_WORKER", ai_worker)
     reports = ai_worker / "eval" / "reports" / "rag-ingestion"
     reports.mkdir(parents=True)
-    gold = ai_worker / "eval" / "eval_queries" / "gold_queries_v0.csv"
+    gold = ai_worker / "eval" / "eval_queries" / "gold_queries_pdf_v0.csv"
     artifact = ai_worker / "eval" / "indexes" / "rag-data-pdf-candidate-v1"
     artifact.mkdir(parents=True)
     (artifact / "faiss.index").write_text("index", encoding="utf-8")

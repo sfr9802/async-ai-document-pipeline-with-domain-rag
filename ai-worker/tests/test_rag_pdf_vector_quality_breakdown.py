@@ -187,7 +187,7 @@ def fixture_paths(tmp_path: Path, monkeypatch) -> dict[str, Path]:
     paths = {
         "c5": ai_worker / "eval" / "reports" / "rag-ingestion" / "rag_retrieval_eval_pdf_vector_diagnostic_report.json",
         "c2": ai_worker / "eval" / "reports" / "rag-ingestion" / "pdf_vector_metadata_projection_readiness.json",
-        "gold": ai_worker / "eval" / "eval_queries" / "gold_queries_v0.csv",
+        "gold": ai_worker / "eval" / "eval_queries" / "gold_queries_pdf_v0.csv",
     }
     for path in paths.values():
         path.parent.mkdir(parents=True, exist_ok=True)

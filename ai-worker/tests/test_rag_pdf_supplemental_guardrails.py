@@ -22,6 +22,7 @@ def load_module(name: str):
 
 common = load_module("rag_pdf_supplemental_common")
 pageindex = load_module("rag_pdf_supplemental_pageindex_diagnostic")
+parse_canary = load_module("rag_pdf_supplemental_parse_canary")
 
 
 def test_supplemental_output_paths_reject_protected_and_non_supplemental_names():
@@ -107,3 +108,81 @@ def test_pageindex_manifest_identity_allows_explicit_fail_closed_manifest(tmp_pa
     )
 
     assert blockers == []
+
+
+def test_parse_canary_merges_existing_ocr_fallback_as_lower_trust_diagnostic():
+    pdf_row = {
+        "dataset_source": "elec",
+        "relative_path": "ai-worker/eval/datasets/elec/sample.pdf",
+        "file_name": "sample.pdf",
+        "sha256": "abc",
+    }
+    csv_row = {
+        "ocr_fallback_attempted": True,
+        "ocr_fallback_success": False,
+        "ocr_fallback_unavailable": False,
+        "ocr_used_page_count": 0,
+        "ocr_used_block_count": 0,
+        "ocr_engine": "",
+        "ocr_confidence_avg": None,
+        "ocr_warning_codes": [],
+        "ocr_fallback_error": None,
+        "block_count": 0,
+        "block_with_bbox_count": 0,
+        "table_like_block_candidate_count": 0,
+        "empty_text_page_count": 1,
+    }
+    page_rows = [
+        {
+            "page_no": 1,
+            "page_text": "",
+            "page_text_excerpt": "",
+            "text_char_count": 0,
+            "empty_text_page": True,
+            "block_count": 0,
+            "ocr_used": False,
+        }
+    ]
+    block_rows: list[dict[str, object]] = []
+
+    parse_canary.merge_existing_ocr_payload(
+        pdf_row=pdf_row,
+        payload={
+            "parser_name": "pymupdf+paddleocr",
+            "parser_version": "pdf-extract-v2",
+            "warnings": [],
+            "pages": [
+                {
+                    "page_no": 1,
+                    "physical_page_index": 0,
+                    "ocr_used": True,
+                    "ocr_engine": "paddleocr",
+                    "ocr_confidence_avg": 0.91,
+                    "blocks": [
+                        {
+                            "text": "OCR fallback text 123",
+                            "bbox": [1, 2, 100, 30],
+                            "ocr_used": True,
+                            "ocr_engine": "paddleocr",
+                            "ocr_language": "korean",
+                            "ocr_confidence": 0.91,
+                        }
+                    ],
+                }
+            ],
+        },
+        csv_row=csv_row,
+        page_rows=page_rows,
+        block_rows=block_rows,
+    )
+
+    assert csv_row["ocr_fallback_success"] is True
+    assert csv_row["ocr_used_page_count"] == 1
+    assert csv_row["ocr_used_block_count"] == 1
+    assert csv_row["ocr_engine"] == "paddleocr"
+    assert csv_row["ocr_confidence_avg"] == 0.91
+    assert page_rows[0]["ocr_used"] is True
+    assert page_rows[0]["lower_trust_ocr"] is True
+    assert block_rows[0]["ocr_used"] is True
+    assert block_rows[0]["lower_trust_ocr"] is True
+    assert block_rows[0]["promotion_evidence"] is False

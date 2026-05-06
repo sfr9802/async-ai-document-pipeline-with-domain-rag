@@ -22,7 +22,7 @@ from typing import Any, Mapping
 
 DEFAULT_RETRIEVAL_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_full72_vector_diagnostic_report.json")
 DEFAULT_QUALITY_BREAKDOWN = Path("eval/reports/rag-ingestion/rag_retrieval_full72_vector_quality_breakdown.json")
-DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_v0.csv")
+DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_pdf_v0.csv")
 DEFAULT_BASELINE_DESCRIPTOR = Path("eval/reports/rag-ingestion/initial_immutable_vector_baseline_descriptor.json")
 DEFAULT_BASELINE_ARTIFACT_DIR = Path("eval/indexes/rag-data-canary")
 DEFAULT_LINEAGE_REPORT = Path("eval/reports/rag-ingestion/rag_candidate_index_lineage_report.json")
