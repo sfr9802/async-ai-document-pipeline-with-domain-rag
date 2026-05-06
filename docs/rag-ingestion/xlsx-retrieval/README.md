@@ -13,7 +13,7 @@ Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content m
 | Phase status | A0-A6 `COMPLETED` |
 | Evidence role | `promotion_evidence=false`, `evidence_role=diagnostic` |
 | Positive reviewed gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv` |
-| Original positive gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv` 보존, 덮어쓰기 없음 |
+| Archived original positive gold | `archive/results/2026-05-05-eval-query-lineage-cleanup/csv/gold_queries_xlsx_v3_positive.csv` 보존, active denominator 아님 |
 | Candidate index version | `rag-ingestion-v2-xlsx-candidate-v1` |
 | Candidate v2 decision | `ai-worker/eval/reports/rag-ingestion/xlsx_candidate_v2_decision.json` -> `SKIP` |
 | Candidate v1 mutated | `false` |
@@ -75,7 +75,7 @@ Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content m
 | `gq_xlsx_lookup_002` | `신분당선 2019년 5월 승차총승객수 알려줘.` | `expected_answer_text=신분당선 승차총승객수`, `must_contain_terms=신분당선;승차총승객수` | exact location recovered at `location_rank=3` |
 | `gq_auto_041` | `인하요양원 소재지 정보 찾아줘.` | `expected_answer_text=인하요양원 소재지`, `must_contain_terms=인하요양원;소재지` | exact location recovered at `location_rank=3` |
 
-기존 less-explicit v3 positive manifest는 덮어쓰지 않았습니다. Reviewed 변경은 `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv`에만 있습니다.
+기존 less-explicit v3 positive manifest는 active eval-query 디렉토리에서 archive로 이동했습니다. Reviewed denominator는 `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv` 하나만 사용합니다.
 
 ## Guardrails
 

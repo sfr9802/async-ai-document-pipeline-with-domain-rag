@@ -1,763 +1,149 @@
-# Async AI Document Pipeline with Domain RAG
+# Async OCR/RAG Multimodal Pipeline
 
-Spring Boot API 서버와 FastAPI Worker를 분리하여, RAG 검색 및 AI 처리 작업을 비동기 파이프라인으로 실행하는 포트폴리오 프로젝트입니다.
+Spring Boot `core-api`와 Python `ai-worker`를 분리한 비동기 AI 문서 처리 파이프라인입니다. PostgreSQL이 job/catalog/indexing 상태의 source of truth이고, Redis는 worker를 깨우는 dispatch signal로만 사용합니다.
 
-이 프로젝트는 단순한 LLM API 호출 예제가 아니라, **AI 작업을 백엔드 서비스 구조 안에서 안정적으로 처리하는 방식**을 실험하는 데 목적이 있습니다.  
-작업 요청은 PostgreSQL 기반 Job 상태로 관리하고, Worker는 queue 신호만으로 바로 실행하지 않고 `claim-before-execute` 방식으로 작업 소유권을 확보한 뒤 실행합니다.
+이 저장소는 단순 LLM 호출 데모가 아니라, OCR/RAG/multimodal/LLM 기반 작업을 백엔드 서비스 구조 안에서 안정적으로 실행하고 검증하는 프로젝트입니다.
 
-현재 구현 범위는 **비동기 작업 파이프라인 + Text RAG / Phase 7 평가 + RAG ingestion v2 문서 수집 경로 + XLSX-only retrieval diagnostic**까지 확장되었습니다.
-Text RAG는 retrieval-title embedding A/B, reranker A/B 하네스, 신뢰도 검출기, controlled recovery loop를 갖추고 있습니다.
-RAG ingestion v2는 `source_file -> extracted_artifact -> search_unit -> vector metadata` 계약을 검증하는 방향으로 진행 중이며, XLSX Track A는 diagnostic-only 범위에서 완료했습니다. Multimodal retrieval과 real LLM generation은 아직 production capability가 아니라 후속 roadmap입니다.
+## Performance Snapshot
 
----
+| Area | Current Evidence | Interpretation |
+|---|---:|---|
+| Text retrieval hit@1 | `0.595 -> 0.815` | v4 silver-200 A/B에서 embedding text 개선 효과 확인 |
+| Text retrieval hit@10 | `0.795 -> 0.985` | 같은 코퍼스/쿼리셋 안에서의 paired 비교 |
+| Text retrieval MRR@10 | `0.663 -> 0.882` | 순위 품질도 함께 개선 |
+| Selected retrieval config | `top_k=10`, `candidate_k=40`, MMR `lambda=0.70` | 운영 적용 후보는 정해졌고, latency는 canary 모니터링 대상 |
+| XLSX citation/location | `0.8857 -> 1.0`, hidden leakage `0` | diagnostic evidence; answer promotion과는 분리 |
+| TEXT citation support | `29/29` supported on deterministic diagnostic denominator | live LLM answer 품질 증명은 아님 |
 
-## What this project demonstrates
+주의: 위 숫자는 각각의 검증 범위 안에서만 해석해야 합니다. 특히 silver/eval/diagnostic 결과를 human-gold accuracy나 production answer quality로 부풀리지 않습니다.
 
-이 저장소는 다음 질문에 답하기 위해 만들었습니다.
+## Current Status
 
-> RAG, OCR, multimodal 같은 AI 작업을 단순 함수 호출이 아니라  
-> 운영 가능한 백엔드 작업 흐름으로 설계하려면 어떤 구조가 필요한가?
-
-핵심 설계 포인트는 다음과 같습니다.
-
-- Spring Boot 기반 `core-api`와 Python/FastAPI 기반 `ai-worker` 분리
-- PostgreSQL을 Job 상태의 Source of Truth로 사용
-- Redis는 상태 저장소가 아니라 dispatch signal 역할로 제한
-- Worker 실행 전 `claim`을 통한 작업 소유권 확보
-- callback 기반 결과 반영
-- artifact 기반 입력/출력 관리
-- RAG capability를 독립 모듈로 구성
-- FAISS + sentence-transformers 기반 vector retrieval
-- cross-encoder reranker 평가
-- hit@k, MRR, NDCG, latency 기반 검색 품질 측정
-- Optuna 기반 retrieval parameter tuning 실험
-
----
-
-## Current status
-
-| Area | Status | Notes |
+| Area | State | Notes |
 |---|---|---|
-| Async job pipeline | Done | job / artifact / claim / callback |
-| Local worker dispatch | Done | Redis BRPOP 기반 dispatch |
-| Job state management | Done | PostgreSQL이 Source of Truth |
-| Text RAG | Done | FAISS + sentence-transformers |
-| Reranker evaluation | Done | `BAAI/bge-reranker-v2-m3` |
-| Retrieval evaluation | Done | hit@k, MRR, NDCG, latency |
-| Optuna tuning | In progress | retrieval parameter tuning 실험 |
-| Retrieval embedding A/B (Phase 7.0) | Done | `retrieval_title_section` 변형이 v4 silver 200 기준 hit@1 +22pt |
-| Reranker A/B harness (Phase 7.1) | Done (run pending) | 하네스/CLI/테스트 완비, 풀 cross-encoder 실행은 GPU 일정 대기 |
-| Production embedding-text 승격 (Phase 7.2) | Done | ingest 기본값 = `retrieval_title_section`, manifest sidecar로 검증 |
-| Retrieval confidence detector (Phase 7.3) | Done | per-query 신뢰도 라벨 + recovery action 추천 |
-| Controlled recovery loop (Phase 7.4) | Done (silver) | hybrid(BM25+RRF) / query rewrite, oracle vs production-like 분기 |
-| Document extraction jobs | In progress | `OCR_EXTRACT`, `XLSX_EXTRACT`, `PDF_EXTRACT` catalog/import paths |
-| RAG ingestion v2 contracts | In progress | `source_file -> extracted_artifact -> search_unit` provenance, citation/location metadata, hidden-safe checks |
-| XLSX retrieval Track A | Done (diagnostic) | reviewed manifest 기준 location accuracy `0.8857 -> 1.0`, hidden leakage `0`, candidate v2 `SKIP` |
-| PDF/Text retrieval tracks | In progress | 별도 Track B/C diagnostic 준비, promotion evidence로는 아직 사용하지 않음 |
-| Multimodal capability | Experimental | OCR + vision + existing text-RAG fusion path, not promotion/default |
-| Real LLM generation | Planned | local/API provider abstraction |
+| Async job pipeline | active | job/artifact/claim/callback, PostgreSQL state, Redis BRPOP dispatch |
+| Worker capabilities | active | `MOCK`, `RAG`, `OCR_EXTRACT`, `XLSX_EXTRACT`, `PDF_EXTRACT`; optional `OCR`, `MULTIMODAL`, `AUTO`, `AGENT` are dependency-gated |
+| Text RAG | active | FAISS + `bge-m3`; current embedding text defaults to `retrieval_title_section` |
+| RAG ingestion v2 | active diagnostics | SearchUnit identity, citation/location metadata, hidden-content guardrails |
+| Local LLM path | optional and wired | llama.cpp GGUF profile + OpenAI-compatible provider; Claude also supported |
+| Multimodal path | opt-in | OCR + vision + existing text-RAG fusion; not the default promoted retrieval path |
+| Legacy eval paths | retired | current eval home is `ai-worker/eval/`; v2/v3 numbers are historical only |
 
----
+## What This Demonstrates
+
+- Durable async AI jobs: submit, persist, dispatch, claim, execute, upload artifacts, callback.
+- Clear state ownership: PostgreSQL owns durable truth; Redis never owns job status.
+- Capability isolation: optional RAG/OCR/PDF/XLSX/multimodal/agent paths register independently and fail closed.
+- Retrieval measurement: paired retrieval A/B, selected retrieval config, confidence/answerability scaffolding, latency caveats.
+- Document ingestion hardening: SearchUnit identity, scoped indexing, citation/location metadata, and hidden-content protection.
+- Local-first LLM experimentation: llama.cpp/GGUF and Claude share one provider seam while diagnostics stay separate from promotion claims.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Client[Client / Frontend] --> Core[Spring Boot Core API]
-
-    Core -->|create job / update state| DB[(PostgreSQL)]
-    Core -->|dispatch signal| Redis[(Redis Queue)]
-
-    Worker[FastAPI AI Worker] -->|BRPOP signal| Redis
-    Worker -->|claim job| Core
-    Worker -->|fetch input / metadata| Core
-
-    Worker --> RAG[RAG Capability]
-    RAG --> Embed[Embedding Provider]
-    RAG --> FAISS[(FAISS Index)]
-    RAG --> Reranker[Cross-Encoder Reranker]
-    RAG --> DB
-
-    Worker -->|upload artifact| Core
-    Worker -->|callback result| Core
-    Core -->|persist result state| DB
+    Client[Client / test frontend] --> Core[core-api<br/>Spring Boot]
+    Core -->|job, artifact, catalog state| DB[(PostgreSQL)]
+    Core -->|dispatch signal only| Redis[(Redis)]
+    Redis -->|BRPOP| Worker[ai-worker<br/>Python]
+    Worker -->|claim / fetch / callback| Core
+    Worker --> Capabilities[RAG / OCR / PDF / XLSX / MULTIMODAL / AGENT]
+    Capabilities --> Index[(FAISS + ragmeta)]
+    Capabilities --> Storage[(local FS / S3-MinIO)]
+    Capabilities --> LLM[optional llama.cpp / Claude]
 ```
 
----
+The primary worker runtime is `python -m app.main`, which consumes Redis and drives `TaskRunner`. SearchUnit indexing is an operational CLI, not a public route.
 
-## Design principles
+## Local Run
 
-### 1. PostgreSQL owns job state
-
-Redis는 queue 신호를 전달할 뿐, 작업 상태를 소유하지 않습니다.  
-실제 Job 상태는 PostgreSQL에 저장되며, Worker는 실행 전 core-api에 claim을 요청합니다.
-
-이 구조를 통해 다음 문제를 줄입니다.
-
-- 같은 작업이 여러 Worker에서 중복 실행되는 문제
-- queue 재전송으로 인해 결과가 중복 반영되는 문제
-- callback 실패 후 재시도 시 상태가 꼬이는 문제
-- Worker 장애 이후 작업 상태를 추적하기 어려운 문제
-
----
-
-### 2. Claim before execute
-
-Worker는 Redis에서 작업 신호를 받더라도 즉시 실행하지 않습니다.  
-먼저 core-api에 claim을 요청하고, claim에 성공한 작업만 실행합니다.
-
-```text
-Redis signal
-  → Worker receives job id
-  → Worker requests claim
-  → Core API checks current job state
-  → Claim succeeds or fails
-  → Worker executes only if claim succeeds
-```
-
-이 방식은 queue가 at-least-once delivery 성격을 가지더라도, 실제 실행 소유권은 DB 상태로 제어할 수 있게 합니다.
-
----
-
-### 3. Queue is replaceable
-
-현재 구현은 로컬 재현성과 GPU 비용 절감을 위해 Redis 기반 dispatch를 사용합니다.
-
-다만 Redis는 작업 상태를 소유하지 않고 dispatch signal 역할만 수행하므로, 구조적으로는 Cloud Tasks, Pub/Sub, SQS 같은 managed queue로 교체할 수 있습니다.
-
-```text
-Current:
-Spring Core API → Redis → FastAPI Worker
-
-Possible production adapter:
-Spring Core API → Cloud Tasks / Pub/Sub / SQS → FastAPI Worker
-```
-
-이 저장소는 실제 클라우드 GPU 배포보다, **로컬/단일 머신 환경에서 전체 비동기 AI 처리 흐름을 재현하는 것**을 우선했습니다.
-
----
-
-### 4. Capability is pluggable
-
-Worker는 capability 단위로 AI 작업을 실행합니다.
-
-현재 코드에 존재하는 주요 capability / job path:
-
-- `MOCK`
-- `RAG`
-- `OCR_EXTRACT`
-- `XLSX_EXTRACT`
-- `PDF_EXTRACT`
-- `OCR`, `AUTO`, `AGENT`, `MULTIMODAL`은 dependency와 settings 준비 여부에 따라 registry에 등록됩니다.
-
-RAG ingestion v2는 runtime capability를 넓히는 것보다 문서 수집 계약을 먼저 고정하는 트랙입니다.
-
-- XLSX Track A: candidate-v1을 보존한 상태에서 reviewed query/citation diagnostic 완료
-- PDF/Text: 별도 diagnostic track에서 evidence와 promotion 조건 분리
-
-확장 예정 capability:
-
-- multimodal retrieval / fusion의 production 승격
-- real LLM generation
-
-Capability 구조를 분리해두었기 때문에, 향후 extraction provider, multimodal processing, generation provider를 추가하더라도 job / artifact / claim / callback 흐름은 유지할 수 있습니다.
-
----
-
-## Core components
-
-### core-api
-
-Spring Boot 기반 백엔드 API 서버입니다.
-
-역할:
-
-- Job 생성
-- Job 상태 관리
-- Worker claim 처리
-- artifact metadata 관리
-- callback 수신
-- 내부 API 인증
-- RAG metadata schema 관리
-
-구조:
-
-```text
-domain
-application
-  ├── port
-  └── service
-adapter
-  ├── in/web
-  ├── out/persistence
-  ├── out/queue
-  └── out/storage
-```
-
----
-
-### ai-worker
-
-Python/FastAPI 기반 AI Worker입니다.
-
-역할:
-
-- Redis queue 신호 수신
-- core-api에 claim 요청
-- 입력 artifact 로드
-- capability 실행
-- 결과 artifact 업로드
-- callback 전송
-
-기본 실행 흐름:
-
-```text
-Redis BRPOP
-  → claim
-  → fetch input
-  → execute capability
-  → upload output artifact
-  → callback
-```
-
----
-
-### RAG capability
-
-현재 가장 많이 구현된 capability입니다.
-
-구성 요소:
-
-- JSONL corpus ingestion
-- token-aware chunking
-- sentence-transformers embedding (`retrieval_title_section` 변형이 production 기본값, Phase 7.2)
-- FAISS `IndexFlatIP`
-- vector retrieval
-- optional cross-encoder reranking
-- extractive generation provider
-- retrieval evaluation harness (paired A/B, hit@k / MRR / NDCG / latency)
-- retrieval confidence detector (Phase 7.3)
-- controlled recovery loop: hybrid(BM25+RRF) / query rewrite (Phase 7.4, eval-only)
-- RAG ingestion v2 diagnostics: XLSX citation/location metadata, hidden-safe leakage checks, candidate lineage guardrails
-- Optuna tuning workflow
-
----
-
-## Tech stack
-
-| Area | Stack |
-|---|---|
-| Backend | Java 21, Spring Boot 4.0.3, Maven |
-| Worker | Python 3.12, FastAPI |
-| Database | PostgreSQL 18 |
-| Queue / Dispatch | Redis |
-| Vector Search | FAISS `IndexFlatIP` |
-| Embedding | `bge-m3`, embedding-text variant = `retrieval_title_section` (default) |
-| Reranker | `BAAI/bge-reranker-v2-m3` |
-| Hybrid retrieval (recovery only) | BM25 + RRF (eval-only, Phase 7.4) |
-| Evaluation | hit@k, recall@k, MRR, NDCG, latency |
-| Infra | Docker Compose |
-| Storage | Local filesystem, S3/MinIO adapter-ready |
-
----
-
-## Repository structure
-
-```text
-.
-├── core-api/                        Spring Boot — jobs / artifacts / claim / callback
-│   └── src/main/resources/db/migration/
-│       ├── V1__init.sql             pipeline schema
-│       └── V2__ragmeta_schema.sql   RAG metadata schema
-│
-├── ai-worker/                       Python worker
-│   ├── app/capabilities/
-│   │   ├── mock_processor.py         MOCK capability
-│   │   └── rag/                      RAG capability
-│   │       ├── capability.py         entry point
-│   │       ├── chunker.py            chunking logic
-│   │       ├── embeddings.py         embedding provider
-│   │       ├── generation.py         generation provider
-│   │       ├── faiss_index.py        FAISS wrapper
-│   │       ├── metadata_store.py     ragmeta DAO
-│   │       ├── ingest.py             JSONL → chunks → FAISS
-│   │       └── retriever.py          query → retrieved chunks
-│   │
-│   ├── scripts/                      worker smoke / ingestion / eval CLIs
-│   ├── eval/                         eval inputs, reports, datasets, indexes
-│   └── fixtures/                     small committed fixtures and manifests
-│
-├── frontend/                         minimal HTML test client
-├── docker-compose.yml                Redis / PostgreSQL / MinIO profiles
-├── .env.example                      environment variable reference
-└── docs/
-    ├── architecture.md
-    ├── local-run.md
-    ├── api-summary.md
-    ├── rag-ingestion-progress.md
-    ├── rag-ingestion/
-    │   └── xlsx-retrieval/
-    ├── tuning.md
-    └── optuna-tuning-plan.md
-```
-
----
-
-## RAG ingestion v2 / XLSX Track A
-
-RAG ingestion v2는 검색 성능 숫자만 보는 트랙이 아니라, `source_file -> extracted_artifact -> search_unit -> vector metadata` provenance와 citation/location metadata가 promotion-safe한지 확인하는 트랙입니다.
-
-XLSX Track A는 broad retrieval tuning이 아니라 candidate-v1을 보존한 diagnostic cleanup으로 마무리했습니다.
-
-| Item | Result |
-|---|---|
-| Evidence role | `promotion_evidence=false`, `evidence_role=diagnostic` |
-| Reviewed gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv` |
-| Original manifest | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive.csv` preserved, not overwritten |
-| Candidate decision | `ai-worker/eval/reports/rag-ingestion/xlsx_candidate_v2_decision.json` = `SKIP` |
-| Candidate mutation | `candidate_v1_mutated=false`, `candidate_v2_created=false` |
-| Location accuracy | `xlsx_citation_location_accuracy` `0.8857 -> 1.0` |
-| Failure breakdown | `failed_or_degraded_count=0`, `MATCHED=35` |
-| Hidden leakage | `hidden_content_leakage_count=0` |
-| Baseline/canary | immutable baseline unchanged, `ai-worker/eval/indexes/rag-data-canary` unchanged |
-
-Location-rank decomposition still matters: `location_hit@10=1.0`, but `location_hit@5=0.9714`, with `gq_auto_042` remaining after rank 5. Promotion-grade readiness should therefore be handled in a separate ranking/duplicate-version investigation rather than by broad XLSX candidate reindexing.
-
-Detailed phase evidence:
-
-- `docs/rag-ingestion-progress.md`
-- `docs/rag-ingestion/xlsx-retrieval/README.md`
-- `docs/rag-ingestion/xlsx-retrieval/phase-progress.md`
-- `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_metric_compare.json`
-- `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_failure_breakdown.json`
-- `ai-worker/eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json`
-
----
-
-## RAG evaluation results
-
-현재 active retrieval/eval 기준선은 **Phase 7 dataset v4**입니다.
-아래 Phase 0-2 표와 `legacy-baseline-final/` 수치는 historical v3/v2 계열
-재현 자료이며, 다음 Phase 7 튜닝의 source of truth 로 사용하지 않습니다.
-
-검색 성능은 `anime_silver_200` 데이터셋을 기준으로 평가했습니다.
-
-- Corpus: 1,764 documents
-- Queries: 200 deterministic synthetic queries
-- Environment: RTX 5080 16GB
-- Embedder: `bge-m3`
-- Vector index: FAISS `IndexFlatIP`
-- Reranker: `BAAI/bge-reranker-v2-m3`
-
-상세 리포트는 `ai-worker/eval/reports/` 아래 phase별 하위 디렉토리에 JSON과 Markdown으로 커밋되어 있습니다.
-
----
-
-### Phase 0 — fixture baseline
-
-Small committed fixtures 기준 baseline입니다.
-
-| dataset | hit@5 | recall@5 | MRR | dup_rate | topk_gap | p50/p95 ret (ms) |
-|---|---:|---:|---:|---:|---:|---:|
-| anime (en, 8 docs) | 1.000 | 1.000 | 1.000 | 0.433 | 0.236 | 8.6 / 24.9 |
-| kr_sample (kr, 10) | 1.000 | 1.000 | 1.000 | 0.340 | 0.233 | 8.7 / 27.4 |
-
-OCR row는 현재 환경에 Tesseract / 언어팩이 없어 측정하지 않았습니다.
-
----
-
-### Phase 2A — silver-200 cross-encoder reranker progression
-
-| run | hit@1 | hit@3 | hit@5 | MRR@10 | NDCG@10 | rerank p95 ms |
-|---|---:|---:|---:|---:|---:|---:|
-| B1 dense (combined-old) | 0.560 | 0.670 | 0.685 | 0.617 | 0.643 | – |
-| B2 dense (token-aware-v1) | 0.540 | 0.665 | 0.680 | 0.604 | 0.631 | – |
-| **B2 + rerank top20** | 0.605 | 0.680 | 0.700 | 0.653 | 0.675 | 706 |
-| **B2 + rerank top50** | **0.615** | **0.700** | **0.715** | **0.666** | **0.689** | 1840 |
-
-Reranker 적용 결과 dense baseline 대비 hit@1, hit@5, MRR@10, NDCG@10이 개선되었습니다.  
-다만 rerank top50은 품질은 가장 좋지만 p95 latency가 커지므로, 실제 서비스 적용 시에는 품질과 지연 시간의 trade-off를 고려해야 합니다.
-
----
-
-### Candidate-recall ceiling
-
-Reranker는 후보 문서의 순서를 재배치할 뿐, dense retrieval 단계에서 후보에 들어오지 않은 문서는 복구할 수 없습니다.  
-따라서 dense top-N의 recall은 reranker 성능의 상한선입니다.
-
-B2 dense top-50 기준:
-
-| metric | value |
-|---|---:|
-| hit@10 | 0.715 |
-| hit@20 | 0.770 |
-| hit@50 | 0.800 |
-
----
-
-### Selected baseline
-
-`legacy-baseline-final/` 기준 selected baseline:
-
-| metric | value |
-|---|---:|
-| hit@1 | 0.620 |
-| hit@3 | 0.675 |
-| hit@5 | 0.705 |
-| MRR@10 | 0.654 |
-| total query p95 | 350 ms |
-
-이 baseline은 agent loop legacy backend의 reference manifest로 사용됩니다.
-
----
-
-### Phase 7 — v4 corpus, retrieval-title embedding A/B
-
-Phase 6.3에서 만든 v4 namu 코퍼스 (`namu-v4-structured-combined-2008-2026-04-phase6_3_title_alias_quality`) 위에서 진행한 검색 실험입니다.  
-이전 phase들과는 다른 코퍼스이므로 절대 수치를 직접 비교하지 마시고, **변형 간 차이(Δ)** 만 비교 대상으로 보십시오.
-
-- Corpus: 4,314 documents / 135,602 chunks (v4 page-level, Phase 6.3 산출물)
-- Queries: 200 deterministic v4 silver queries (`subpage_generic` 90 / `main_work` 60 / `subpage_named` 50, seed=42)
-- Index: FAISS `IndexFlatIP`, bge-m3, max_seq_length=512, dense-only
-- 평가는 silver 쿼리 셋이며, 사람 검수 gold가 아닙니다 — 절대 정확도가 아니라 변형 간 비교에 한정해 해석해야 합니다.
-
-#### Phase 7.0 — `retrieval_title_section` embedding A/B
-
-| metric | baseline (`title_section`) | candidate (`retrieval_title_section`) | Δ |
-|---|---:|---:|---:|
-| hit@1 | 0.595 | **0.815** | **+0.220** |
-| hit@3 | 0.710 | **0.935** | **+0.225** |
-| hit@5 | 0.740 | **0.960** | **+0.220** |
-| hit@10 | 0.795 | **0.985** | **+0.190** |
-| MRR@10 | 0.663 | **0.882** | **+0.219** |
-| nDCG@10 | 0.695 | **0.907** | **+0.213** |
-
-improved : regressed = **74 : 3**.  
-효과는 `subpage_generic` (등장인물 / 평가 / 음악 등 generic page_title) 버킷에 집중되며 (+40pt hit@1), `main_work` 버킷은 설계상 무영향(±0pt)으로 확인되었습니다.  
-상세는 `ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/PHASE7_0_FINAL_REPORT.md`에 있습니다.
-
-#### Phase 7.2 — production ingest 승격
-
-Phase 7.0의 후보 변형을 ingest 기본값으로 끌어올렸습니다.
-
-- 공통 builder: `app/capabilities/rag/embedding_text_builder.py` (ingest와 v4 eval harness가 동일 함수 호출)
-- `ingest_manifest.json` sidecar에 variant / builder version / per-chunk SHA를 기록해 export와 byte-for-byte 검증 가능
-- config 키: `rag_embedding_text_variant` (default: `retrieval_title_section`, rollback: `title_section`)
-
-#### Phase 7.3 — retrieval confidence detector
-
-Phase 7.0/7.1의 per-query 산출물을 후처리해, 쿼리 단위로 신뢰도 라벨과 recovery 액션을 산출합니다.
-
-| label | n | share |
-|---|---:|---:|
-| CONFIDENT | 8 | 4.0% |
-| AMBIGUOUS | 177 | 88.5% |
-| LOW_CONFIDENCE | 12 | 6.0% |
-| FAILED | 3 | 1.5% |
-
-추천 액션: `ANSWER` 8 / `ANSWER_WITH_CAUTION` 177 / `HYBRID_RECOVERY` 4 / `QUERY_REWRITE` 7 / `INSUFFICIENT_EVIDENCE` 4.  
-판단 근거(top-1 score, top1-top2 margin, page-id consistency, generic-section 충돌, gold rank, title/section-intent matching, 옵션으로 Phase 7.1의 rerank-demoted-gold)는 모두 출력 JSONL의 `signals` 블록에 노출됩니다.  
-production 검색 경로는 변경되지 않았으며, 분류기 출력만 별도 산출물로 떨어집니다.
-
-#### Phase 7.4 — controlled recovery loop (eval-only)
-
-Phase 7.3 verdict를 입력 받아 ATTEMPT 분기에 한해 결정론적 recovery를 실행합니다.
-
-- `INSUFFICIENT_EVIDENCE` → 거절 (검색 시도 안 함)
-- `ANSWER_WITH_CAUTION` → 이번 phase에서는 calibration 용도로만 보존, recovery 미수행
-- `HYBRID_RECOVERY` → 신선 색인의 BM25 풀과 Phase 7.0 dense top-N을 RRF 융합
-- `QUERY_REWRITE` → **oracle**(`expected_title` 사용, 상한선 측정용)과 **production-like**(top-N 후보 canonical title만 사용) 두 모드. strict 모드에서 production-like가 `expected_title`을 보면 `LabelLeakageError` 발생
-
-silver-set 결과: 207 verdicts 중 ATTEMPT 11 (HYBRID 4, REWRITE 7), recovered 0, regressed 1, BM25 retrieve p50 833 ms / p99 1,737 ms.  
-production retrieval 코드는 손대지 않았고 LLM rewriter도 사용하지 않으므로, 모든 시도는 입력만으로 재현 가능합니다.
-
-> **참고.** 7.3 / 7.4의 절대 수치는 silver 쿼리 셋 기준이며 사람 검수 gold가 아닙니다. 휴먼 audit / silver_500 확장은 차기 phase 작업입니다.
-
----
-
-## Reproduce evaluation
-
-모든 명령은 `ai-worker/` 디렉토리에서 실행합니다. (`cd ai-worker`)  
-Phase 7 이후 작업은 v4 코퍼스와 `eval/reports/phase7/` 산출물을 우선
-사용합니다. 아래 Phase 0-2 명령은 historical reproduction 용도이며,
-현재 tuning/eval 기본 경로로 사용하지 않습니다.
-phase별 절차는 아래 토글을 펼쳐 확인합니다.
-
-<details>
-<summary><b>Historical Phase 0 — fixture baseline</b></summary>
+Default compose starts infrastructure only: PostgreSQL on host `5433` and Redis on `6379`.
 
 ```bash
-python -m eval.run_eval rag \
-    --dataset eval/datasets/rag_sample_kr.jsonl \
-    --offline-corpus fixtures/kr_sample.jsonl \
-    --out-json eval/reports/phase0/baseline.json
-```
-
-</details>
-
-<details>
-<summary><b>Historical Phase 2A — candidate recall (legacy v3)</b></summary>
-
-```bash
-python -m eval.run_eval retrieval \
-    --corpus  eval/corpora/anime_namu_v3_token_chunked/corpus.combined.token-aware-v1.jsonl \
-    --dataset eval/eval_queries/anime_silver_200.jsonl \
-    --top-k 50 \
-    --extra-hit-k 10 \
-    --extra-hit-k 20 \
-    --extra-hit-k 50 \
-    --out-dir eval/reports/phase2/2a_reranker/candidate-recall-b2
-```
-
-</details>
-
-<details>
-<summary><b>Historical Phase 2A — rerank sweep (legacy v3)</b></summary>
-
-```bash
-for N in 20 50; do
-  python -m eval.run_eval retrieval-rerank \
-      --corpus  eval/corpora/anime_namu_v3_token_chunked/corpus.combined.token-aware-v1.jsonl \
-      --dataset eval/eval_queries/anime_silver_200.jsonl \
-      --dense-top-n $N \
-      --final-top-k 10 \
-      --reranker-model BAAI/bge-reranker-v2-m3 \
-      --reranker-batch-size 16 \
-      --out-dir eval/reports/_archive/silver200/token-aware-v1-rerank-top$N
-done
-```
-
-</details>
-
-<details>
-<summary><b>Phase 7.0 — retrieval-title embedding A/B (v4)</b></summary>
-
-전체 파이프라인을 한 번에 돌리는 orchestrator입니다. 부분 재실행은 `--skip-export / --skip-diff / --skip-index-build / --skip-ab` 플래그로 제어합니다.
-
-```bash
-python -m scripts.run_phase7_0_retrieval_title_ab \
-    --src-chunks <Phase 6.3 rag_chunks.jsonl> \
-    --pages-v4   <Phase 6.3 pages_v4.jsonl> \
-    --report-dir eval/reports/phase7/7.0_retrieval_title_ab \
-    --target-queries 200
-```
-
-</details>
-
-<details>
-<summary><b>Phase 7.3 / 7.4 — confidence + controlled recovery</b></summary>
-
-```bash
-# Phase 7.3 — confidence labelling on top of Phase 7.0 outputs
-python -m scripts.run_phase7_3_confidence_eval \
-    --per-query      eval/reports/phase7/7.0_retrieval_title_ab/per_query_comparison.jsonl \
-    --chunks         eval/reports/phase7/7.0_retrieval_title_ab/rag_chunks_retrieval_title_section.jsonl \
-    --silver-queries eval/reports/phase7/7.0_retrieval_title_ab/queries_v4_silver.jsonl \
-    --report-dir     eval/reports/phase7/7.3_confidence_eval \
-    --side candidate
-
-# Phase 7.4 — controlled recovery loop (oracle vs production-like)
-python -m scripts.run_phase7_4_controlled_recovery \
-    --per-query        eval/reports/phase7/7.3_confidence_eval/per_query_confidence.jsonl \
-    --chunks-jsonl     eval/reports/phase7/7.0_retrieval_title_ab/rag_chunks_retrieval_title_section.jsonl \
-    --report-dir       eval/reports/phase7/7.4_controlled_recovery \
-    --rewrite-mode both \
-    --strict-label-leakage
-```
-
-</details>
-
----
-
-## Local run
-
-기본 로컬 인프라는 `docker compose up -d`로 PostgreSQL과 Redis를 함께 띄웁니다.
-PostgreSQL은 호스트 `:5433`에 노출되며, 자세한 내용은 `docs/local-run.md`를 참고합니다.
-
-<details>
-<summary><b>실행 명령어 (infra → core-api → ai-worker → smoke test)</b></summary>
-
-```bash
-# 1. Start local infra
 docker compose up -d
+```
 
-# 2. Start core-api
+Start `core-api`:
+
+```bash
 cd core-api
 mvn spring-boot:run
+```
 
-# 3. Start ai-worker
-cd ../ai-worker
+Start `ai-worker`:
+
+```bash
+cd ai-worker
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
 python -m app.main
+```
 
-# 4. Run smoke test (new terminal)
+Smoke test:
+
+```bash
 cd ai-worker
 python scripts/operational/e2e_smoke.py
 ```
 
-</details>
+Optional local LLM:
 
----
+```bash
+docker compose --profile llm up -d
 
-## Internal endpoint authentication
+AIPIPELINE_WORKER_LLM_BACKEND=llamacpp
+AIPIPELINE_WORKER_LLM_LLAMACPP_BASE_URL=http://localhost:8081/v1
+AIPIPELINE_WORKER_LLM_LLAMACPP_MODEL=gemma4-e2b-local
+```
 
-`/api/internal/**` 엔드포인트는 `X-Internal-Secret`으로 게이팅합니다.
+Full setup notes are in [`docs/local-run.md`](docs/local-run.md).
 
-| Service | Environment variable |
+## Repository Map
+
+```text
+.
+├── core-api/          Spring Boot API, job/catalog/indexing state, Flyway migrations
+├── ai-worker/
+│   ├── app/           Worker runtime, capabilities, clients, storage, CLI
+│   ├── scripts/       Operational, ingestion, diagnostic, and eval helper CLIs
+│   ├── eval/          Canonical eval inputs, corpora, reports, indexes, harnesses
+│   └── fixtures/      Small worker fixtures and manifests
+├── docs/              Architecture, local run, RAG ingestion, eval policies
+├── frontend/          Minimal test client
+├── local-storage/     Default local artifact storage
+├── archive/           Historical generated outputs and retired material
+└── docker-compose.yml Local infra plus optional MinIO and llama.cpp profiles
+```
+
+Current worker-owned paths:
+
+| Material | Current home |
 |---|---|
-| core-api | `AIPIPELINE_INTERNAL_SECRET` |
-| ai-worker | `AIPIPELINE_WORKER_INTERNAL_SECRET` |
+| Worker scripts | `ai-worker/scripts/` |
+| SearchUnit indexing CLI | `ai-worker/app/cli/search_unit_indexing.py` |
+| Eval harness and reports | `ai-worker/eval/` |
+| RAG ingestion reports | `ai-worker/eval/reports/rag-ingestion/` |
+| FAISS/vector artifacts | `ai-worker/eval/indexes/` |
 
-두 서비스의 secret 값은 동일해야 합니다.  
-둘 다 미설정인 경우 core-api는 개발 편의를 위해 WARN 로그를 남긴 뒤 pass-through합니다.
+Root-level `scripts/`, `eval/`, `evals/`, `samples/`, `datasets/`, `reports/`, `rag-data*`, `ai-worker/evals/`, and `ai-worker/ai_worker/` are retired path families.
 
----
+## Docs
 
-## Storage
-
-기본 storage backend는 local filesystem입니다.
-
-S3 / MinIO 전환을 위해 storage port가 분리되어 있습니다.
-
-<details>
-<summary><b>MinIO 부팅 + 환경변수</b></summary>
-
-```bash
-docker compose --profile minio up -d minio minio-bootstrap
-```
-
-MinIO 사용 시 주요 환경변수:
-
-```bash
-AIPIPELINE_STORAGE_BACKEND=s3
-AIPIPELINE_STORAGE_S3_ENDPOINT=...
-AIPIPELINE_WORKER_S3_ENDPOINT=...
-AIPIPELINE_WORKER_S3_ACCESS_KEY=...
-AIPIPELINE_WORKER_S3_SECRET_KEY=...
-```
-
-자세한 환경변수 목록은 `.env.example`을 참고합니다.
-
-</details>
-
----
-
-## Demo
-
-`ai-worker/scripts/operational/demo.py`는 샘플 PDF를 생성하고 capability pipeline 흐름을 확인하는 보조 스크립트입니다.
-현재 authoritative 상태는 위 `Current status` 표이며, OCR/multimodal 데모는 환경과 구현 범위를 확인한 뒤 실행해야 합니다.
-
-<details>
-<summary><b>실행 명령어</b></summary>
-
-```bash
-pip install reportlab rich
-
-cd ai-worker
-python scripts/operational/demo.py
-python scripts/operational/demo.py --self-test
-```
-
-</details>
-
----
-
-## Development phases
-
-| Phase | Description |
+| Topic | Document |
 |---|---|
-| Phase 1 | 비동기 skeleton: job / artifact / claim / callback / Redis dispatch / MOCK |
-| Phase 1.1 | target stack 안정화: Spring Boot 4.0.3 / Java 21 / PostgreSQL 18 / Python 3.12 / Redis |
-| Phase 2 | text-RAG capability: FAISS + sentence-transformers + extractive generator + ragmeta schema |
-| Phase 1B | namu-wiki corpus prefix / inline-edit-marker strip |
-| Phase 1C | token-aware chunker: 1024-token hard cap, avg ctx tokens 531 → 293 |
-| Phase 2A | `bge-reranker-v2-m3` cross-encoder reranker evaluation |
-| Phase 6.3 | v4 namu corpus: title / alias 정합성, retrieval_title 도입, page_id 안정화 |
-| Phase 7.0 | `retrieval_title_section` embedding A/B over v4 silver 200 — hit@1 +22pt, MRR +21.9pt |
-| Phase 7.1 | reranker A/B 하네스 (cross-encoder full run은 GPU 일정 대기) |
-| Phase 7.2 | production ingest 기본값을 `retrieval_title_section`으로 승격 + manifest sidecar |
-| Phase 7.3 | retrieval confidence detector / failure classifier (CONFIDENT / AMBIGUOUS / LOW_CONFIDENCE / FAILED) |
-| Phase 7.4 | controlled recovery loop (BM25+RRF hybrid / query rewrite, oracle vs production-like) |
-| RAG ingestion v2 Track A | XLSX-only candidate diagnostic A0-A6 완료: location accuracy `0.8857 -> 1.0`, hidden leakage `0`, candidate v2 `SKIP` |
-| RAG ingestion v2 Track B/C | Text/PDF diagnostic과 embedding/candidate-scope evidence 준비, promotion은 별도 gate |
-| Phase 3+ | multimodal capability, real LLM generation, MinIO/S3 adapter, retry orchestration, K8s manifests |
+| Architecture | [`docs/architecture.md`](docs/architecture.md) |
+| Local run | [`docs/local-run.md`](docs/local-run.md) |
+| Repository/path policy | [`docs/repo-structure.md`](docs/repo-structure.md) |
+| API contracts | [`docs/api-summary.md`](docs/api-summary.md) |
+| Eval harness | [`ai-worker/eval/README.md`](ai-worker/eval/README.md) |
+| RAG ingestion progress | [`docs/rag-ingestion-progress.md`](docs/rag-ingestion-progress.md) |
+| Eval policies | [`docs/eval/`](docs/eval/) |
 
----
+## Boundaries
 
-## Roadmap
-
-### Near-term
-
-- silver-set 한계 극복: human-audit gold seed 확보 + silver_500 확장 (Phase 7.x 후속)
-- Phase 7.1 reranker full run (GPU 시간 확보 시): 풀 cross-encoder A/B + default-on 기준 평가
-- Phase 7.3 신뢰도 임계값 튜닝 (특히 `min_margin`이 200쿼리 중 183개에서 발화하는 over-fire 문제)
-- RAG ingestion v2 Track B/C: Text E2E identity/gold validation과 PDF embedding/candidate-scope diagnostics
-- XLSX post-Track-A: `gq_auto_042` location-rank watch item 및 duplicate/document-version ranking 조사
-- promotion readiness: full72/canary/baseline을 건드리기 전에 candidate consistency와 hidden-safe 조건을 별도 gate로 검증
-- real LLM generation provider 추가
-- tuning workflow 문서 개선
-
-### Mid-term
-
-- multimodal capability 추가
-- S3 / MinIO artifact storage 안정화
-- capability별 dispatch lane 분리
-- retry orchestration 고도화
-- frontend 개선
-
-### Later
-
-- Cloud Tasks / Pub/Sub / SQS adapter 검토
-- Kubernetes manifest 추가
-- GPU worker deployment 전략 정리
-- production-like observability 추가
-
----
-
-## Documentation
-
-### Design / Operations / API
-
-- `docs/architecture.md` — system architecture, design decisions, capability flows, trace schema
-- `docs/api-summary.md` — HTTP endpoints, request/response shape, error codes
-- `docs/local-run.md` — local bootstrap, troubleshooting, capability activation guide
-
-### Evaluation
-
-- `ai-worker/eval/README.md` — eval harness overview, metric definitions, recommended sequence
-- `ai-worker/eval/datasets/README.md` — eval dataset catalog
-- `ai-worker/eval/corpora/README.md` — retrieval corpus directory convention
-- `ai-worker/eval/corpora/anime_namu_v3/README.md` — historical v3 namu-wiki anime corpus schema
-- `ai-worker/eval/eval_queries/README.md` — retrieval eval query sets
-
-### RAG ingestion
-
-- `docs/rag-ingestion-progress.md` — consolidated RAG ingestion progress and evidence log
-- `docs/rag-ingestion/xlsx-retrieval/README.md` — XLSX Track A diagnostic completion archive
-- `docs/rag-ingestion/xlsx-retrieval/phase-progress.md` — phase-level execution details for A0-A6
-
-### Tuning
-
-- `docs/tuning.md` — Optuna + Claude interpreter loop guide
-- `docs/optuna-tuning-plan.md` — tuning pipeline roadmap
-- `ai-worker/eval/experiments/README.md` — round-refinement workspace
-
-### Frontend
-
-- `frontend/app/README.md` — Vite + React + TypeScript setup notes
-
----
-
-## Notes
-
-이 프로젝트의 현재 초점은 “모든 AI capability를 완성하는 것”이 아니라,  
-AI 작업을 안정적으로 실행할 수 있는 **백엔드 파이프라인 구조**와  
-RAG 검색 품질을 측정하고 개선할 수 있는 **평가/튜닝 기반**을 만드는 것입니다.
-
-따라서 multimodal retrieval의 production 승격과 real LLM generation은 roadmap으로 남겨두고,
-현재는 다음 네 가지를 우선 검증했습니다.
-
-1. 비동기 작업 처리 구조가 안정적으로 동작하는가
-2. RAG 검색 파이프라인을 평가하고 개선할 수 있는가 (Phase 7.0 dense embedding A/B로 hit@1 +22pt)
-3. 검색이 실패했을 때 *언제* 그리고 *어떻게* recovery할지 결정론적으로 분류·실행할 수 있는가 (Phase 7.3 / 7.4)
-4. 문서 ingestion 결과가 search-unit/citation/location/hidden-safe 계약을 만족하는가 (RAG ingestion v2, XLSX Track A diagnostic)
+- Diagnostic PASS does not mean production promotion.
+- Silver/eval metrics do not mean human-gold accuracy.
+- Local llama.cpp diagnostics do not prove external/cloud LLM production quality.
+- PageIndex tree success is not bbox/table/citation success.
+- Multimodal is available as an opt-in path, not the default promoted retrieval/generation path.
