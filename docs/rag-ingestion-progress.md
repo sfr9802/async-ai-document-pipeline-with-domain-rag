@@ -2686,3 +2686,62 @@ Move from diagnostic-only full72 vector evidence to a concrete query-level clean
 - No retrieval tuning, reranking, parser expansion, threshold relaxation,
   broad indexing, DB mutation, SearchUnit mutation, immutable baseline change,
   candidate artifact change, or existing gold CSV overwrite was performed.
+
+## 2026-05-06 - PDF PageIndex Oracle Coverage Breakdown
+
+### Summary
+
+- Added a diagnostic-only oracle coverage analyzer for the local PDF PageIndex
+  canary.
+- Reframed the canary result from tree build success/failure into:
+  tree oracle coverage, selected-node query navigation, invalid tree ranges,
+  and downstream bbox/table/C7 scope.
+- The analyzer reads the existing local canary comparator report plus the
+  PageIndex tree artifacts; it does not run PageIndex, retrieval, reranking,
+  parser expansion, indexing, DB mutation, SearchUnit mutation, or promotion.
+- The five canary rows all have an expected page present in the tree and an
+  oracle node, but only one selected node contains the expected page.
+
+### Evidence
+
+- New analyzer:
+  - `ai-worker/scripts/rag_pdf_pageindex_oracle_coverage_analyzer.py`
+- Oracle coverage report:
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_pageindex_oracle_coverage_report.json`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_pageindex_oracle_coverage.csv`
+- Source local canary report:
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_pageindex_local_canary_report.json`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_pageindex_local_canary.csv`
+
+### Key Counts
+
+- Canary candidate count: `5`.
+- Tree build success count: `5`.
+- Invalid range generated count: `30` across the two canary tree documents.
+- Expected page present in tree count: `5`.
+- Oracle node found count: `5`.
+- Oracle node width median: `2`.
+- Selected node width median: `2.0`.
+- Selected contains expected page count: `1`.
+- Oracle exists but navigation missed count: `4`.
+- Expected page not present in tree count: `0`.
+- Page-section OK but bbox/table still unsolved count: `0`.
+- Gold policy still blocked count: `0`.
+- Likely bottleneck counts:
+  - `NAVIGATION_MISSED_EXISTING_ORACLE_NODE`: `3`
+  - `TREE_RANGE_INVALID`: `2`
+
+### Guardrails
+
+- `promotion_evidence=false`; `evidence_role=diagnostic`.
+- `xlsx_scope_excluded=true`; `pdf_scope_only=true`.
+- `external_cloud_llm_run=false`.
+- `bbox_contract_success_not_claimed=true`.
+- `table_semantics_success_not_claimed=true`.
+- `pdf_c7_policy_decision_applied=false`.
+- `official_denominator_changed=false`.
+- `retrieval_tuning_applied=false`; `parser_expansion_applied=false`.
+- No XLSX PageIndex adapter, PDF C7 policy decision, immutable baseline change,
+  candidate artifact mutation, SearchUnit mutation, DB mutation, threshold
+  relaxation, reranking, parser expansion, retrieval tuning, or promotion was
+  applied.

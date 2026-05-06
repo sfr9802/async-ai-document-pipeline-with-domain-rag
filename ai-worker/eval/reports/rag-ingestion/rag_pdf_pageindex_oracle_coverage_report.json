@@ -1,0 +1,689 @@
+{
+  "schema_version": "pdf_pageindex_oracle_coverage_report_v1",
+  "run_id": "20260506T034023Z",
+  "generated_at": "2026-05-06T04:59:09.201350+00:00",
+  "status": "DIAGNOSTIC_COMPLETED_WITH_TREE_RANGE_INVALID",
+  "track": "C",
+  "phase": "PageIndex PDF oracle coverage diagnostic",
+  "source_file_type": "PDF",
+  "promotion_evidence": false,
+  "evidence_role": "diagnostic",
+  "xlsx_scope_excluded": true,
+  "pdf_scope_only": true,
+  "external_cloud_llm_run": false,
+  "bbox_contract_success_not_claimed": true,
+  "table_semantics_success_not_claimed": true,
+  "pdf_c7_policy_decision_applied": false,
+  "official_denominator_changed": false,
+  "retrieval_tuning_applied": false,
+  "parser_expansion_applied": false,
+  "live_pageindex_run": true,
+  "local_pageindex_run": true,
+  "pageindex_role": "pdf_page_section_navigator_candidate_only",
+  "oracle_selection_rule": "smallest_1_based_inclusive_page_width_node_containing_expected_page",
+  "likely_bottleneck_values": [
+    "GOLD_POLICY_STILL_BLOCKED",
+    "NAVIGATION_MISSED_EXISTING_ORACLE_NODE",
+    "PAGEINDEX_RUN_UNAVAILABLE",
+    "PAGE_SECTION_NAVIGATION_OK_BBOX_OR_TABLE_STILL_UNSOLVED",
+    "TREE_GRANULARITY_TOO_COARSE",
+    "TREE_MISSING_EXPECTED_PAGE",
+    "TREE_RANGE_INVALID"
+  ],
+  "promotion_execution": "not_run_by_this_script",
+  "retrieval_execution": "not_run_by_this_script",
+  "indexing_execution": "not_run_by_this_script",
+  "parser_execution": "not_run_by_this_script",
+  "input_artifacts": [
+    {
+      "path": "ai-worker/eval/artifacts/eval_runs/pdf_pageindex_comparison_20260506T034023Z/pageindex_pdf_input_manifest.json",
+      "exists": true
+    },
+    {
+      "path": "ai-worker/eval/artifacts/eval_runs/pdf_pageindex_comparison_20260506T034023Z/pageindex_run_manifest.json",
+      "exists": true
+    },
+    {
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_pdf_pageindex_local_canary_report.json",
+      "exists": true
+    },
+    {
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_pdf_pageindex_local_canary.csv",
+      "exists": true
+    },
+    {
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json",
+      "exists": true
+    },
+    {
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json",
+      "exists": true
+    },
+    {
+      "path": "ai-worker/eval/reports/rag-ingestion/rag_pdf_gold_policy_review.json",
+      "exists": true
+    }
+  ],
+  "output_artifacts": {
+    "json_report": "ai-worker/eval/reports/rag-ingestion/rag_pdf_pageindex_oracle_coverage_report.json",
+    "csv_report": "ai-worker/eval/reports/rag-ingestion/rag_pdf_pageindex_oracle_coverage.csv"
+  },
+  "source_local_canary_counts": {
+    "query_count": 22,
+    "live_pageindex_run": true,
+    "local_pageindex_run": true,
+    "external_cloud_llm_run": false,
+    "canary_candidate_count": 5,
+    "tree_build_success_count": 5,
+    "tree_build_failure_count": 0,
+    "query_navigation_success_count": 2,
+    "selected_page_range_extractable_count": 2,
+    "expected_page_range_overlap_count": 1,
+    "vector_page_hit_count": 9,
+    "pageindex_improves_over_vector_count": 0,
+    "pageindex_regresses_from_vector_count": 1,
+    "vector_already_sufficient_count": 1,
+    "c7_policy_pending_preserved_count": 15,
+    "bbox_or_table_still_unsolved_count": 11,
+    "gold_policy_still_blocked_count": 15,
+    "pageindex_run_unavailable_count": 1,
+    "comparison_status_counts": {
+      "BBOX_OR_TABLE_STILL_UNSOLVED": 3,
+      "GOLD_POLICY_STILL_BLOCKED": 15,
+      "PAGEINDEX_QUERY_NAVIGATION_FAILED": 2,
+      "PAGEINDEX_RUN_UNAVAILABLE": 1,
+      "VECTOR_ALREADY_SUFFICIENT": 1
+    },
+    "bucket_comparison_status_counts": {
+      "pdf_page_lookup": {
+        "BBOX_OR_TABLE_STILL_UNSOLVED": 2,
+        "GOLD_POLICY_STILL_BLOCKED": 5,
+        "PAGEINDEX_QUERY_NAVIGATION_FAILED": 1
+      },
+      "pdf_section_question": {
+        "BBOX_OR_TABLE_STILL_UNSOLVED": 1,
+        "GOLD_POLICY_STILL_BLOCKED": 4,
+        "PAGEINDEX_QUERY_NAVIGATION_FAILED": 1,
+        "PAGEINDEX_RUN_UNAVAILABLE": 1,
+        "VECTOR_ALREADY_SUFFICIENT": 1
+      },
+      "pdf_table_lookup": {
+        "GOLD_POLICY_STILL_BLOCKED": 6
+      }
+    }
+  },
+  "counts": {
+    "canary_candidate_count": 5,
+    "tree_build_success_count": 5,
+    "invalid_range_generated_count": 30,
+    "expected_page_present_in_tree_count": 5,
+    "oracle_node_found_count": 5,
+    "oracle_node_width_median": 2,
+    "selected_node_width_median": 2.0,
+    "selected_contains_expected_page_count": 1,
+    "oracle_exists_but_navigation_missed_count": 4,
+    "expected_page_not_present_in_tree_count": 0,
+    "page_section_ok_but_bbox_or_table_unsolved_count": 0,
+    "gold_policy_still_blocked_count": 0,
+    "likely_bottleneck_counts": {
+      "NAVIGATION_MISSED_EXISTING_ORACLE_NODE": 3,
+      "TREE_RANGE_INVALID": 2
+    }
+  },
+  "query_results": [
+    {
+      "query_id": "gq_pdf_page_lookup_001",
+      "expected_page_no": 1,
+      "tree_build_success": true,
+      "invalid_range_count": 15,
+      "invalid_range_examples": [
+        {
+          "node_id": "0002",
+          "title": "부문별 동향",
+          "page_range": [
+            6,
+            6
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0003",
+          "title": "고용",
+          "page_range": [
+            6,
+            9
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0004",
+          "title": "물가",
+          "page_range": [
+            10,
+            13
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0005",
+          "title": "재정",
+          "page_range": [
+            14,
+            15
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0006",
+          "title": "해외경제",
+          "page_range": [
+            16,
+            19
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        }
+      ],
+      "expected_page_present_in_tree": true,
+      "oracle_node_id": "0000",
+      "oracle_node_title": "Preface",
+      "oracle_node_page_range": [
+        1,
+        4
+      ],
+      "oracle_node_page_width": 4,
+      "selected_node_id": null,
+      "selected_node_title": null,
+      "selected_page_range": null,
+      "selected_page_width": null,
+      "selected_contains_expected_page": false,
+      "oracle_exists_but_navigation_missed": true,
+      "likely_bottleneck": "NAVIGATION_MISSED_EXISTING_ORACLE_NODE"
+    },
+    {
+      "query_id": "gq_auto_010",
+      "expected_page_no": 8,
+      "tree_build_success": true,
+      "invalid_range_count": 15,
+      "invalid_range_examples": [
+        {
+          "node_id": "0003",
+          "title": "고용",
+          "page_range": [
+            6,
+            9
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0002",
+          "title": "부문별 동향",
+          "page_range": [
+            6,
+            6
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0004",
+          "title": "물가",
+          "page_range": [
+            10,
+            13
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0005",
+          "title": "재정",
+          "page_range": [
+            14,
+            15
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0006",
+          "title": "해외경제",
+          "page_range": [
+            16,
+            19
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        }
+      ],
+      "expected_page_present_in_tree": true,
+      "oracle_node_id": "0003",
+      "oracle_node_title": "고용",
+      "oracle_node_page_range": [
+        6,
+        9
+      ],
+      "oracle_node_page_width": 4,
+      "selected_node_id": null,
+      "selected_node_title": null,
+      "selected_page_range": null,
+      "selected_page_width": null,
+      "selected_contains_expected_page": false,
+      "oracle_exists_but_navigation_missed": true,
+      "likely_bottleneck": "TREE_RANGE_INVALID"
+    },
+    {
+      "query_id": "gq_auto_015",
+      "expected_page_no": 29,
+      "tree_build_success": true,
+      "invalid_range_count": 15,
+      "invalid_range_examples": [
+        {
+          "node_id": "0011",
+          "title": "국제수지",
+          "page_range": [
+            28,
+            29
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0002",
+          "title": "부문별 동향",
+          "page_range": [
+            6,
+            6
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0003",
+          "title": "고용",
+          "page_range": [
+            6,
+            9
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0004",
+          "title": "물가",
+          "page_range": [
+            10,
+            13
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0005",
+          "title": "재정",
+          "page_range": [
+            14,
+            15
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        }
+      ],
+      "expected_page_present_in_tree": true,
+      "oracle_node_id": "0011",
+      "oracle_node_title": "국제수지",
+      "oracle_node_page_range": [
+        28,
+        29
+      ],
+      "oracle_node_page_width": 2,
+      "selected_node_id": "0011",
+      "selected_node_title": "국제수지",
+      "selected_page_range": [
+        28,
+        29
+      ],
+      "selected_page_width": 2,
+      "selected_contains_expected_page": true,
+      "oracle_exists_but_navigation_missed": false,
+      "likely_bottleneck": "TREE_RANGE_INVALID"
+    },
+    {
+      "query_id": "gq_auto_024",
+      "expected_page_no": 5,
+      "tree_build_success": true,
+      "invalid_range_count": 15,
+      "invalid_range_examples": [
+        {
+          "node_id": "0002",
+          "title": "부문별 동향",
+          "page_range": [
+            6,
+            6
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0003",
+          "title": "고용",
+          "page_range": [
+            6,
+            9
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0004",
+          "title": "물가",
+          "page_range": [
+            10,
+            13
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0005",
+          "title": "재정",
+          "page_range": [
+            14,
+            15
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0006",
+          "title": "해외경제",
+          "page_range": [
+            16,
+            19
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        }
+      ],
+      "expected_page_present_in_tree": true,
+      "oracle_node_id": "0001",
+      "oracle_node_title": "종합 평가",
+      "oracle_node_page_range": [
+        5,
+        5
+      ],
+      "oracle_node_page_width": 1,
+      "selected_node_id": "0012",
+      "selected_node_title": "광공업 생산",
+      "selected_page_range": [
+        30,
+        31
+      ],
+      "selected_page_width": 2,
+      "selected_contains_expected_page": false,
+      "oracle_exists_but_navigation_missed": true,
+      "likely_bottleneck": "NAVIGATION_MISSED_EXISTING_ORACLE_NODE"
+    },
+    {
+      "query_id": "gq_auto_029",
+      "expected_page_no": 5,
+      "tree_build_success": true,
+      "invalid_range_count": 15,
+      "invalid_range_examples": [
+        {
+          "node_id": "0002",
+          "title": "부문별 동향",
+          "page_range": [
+            6,
+            6
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0003",
+          "title": "고용",
+          "page_range": [
+            6,
+            9
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0004",
+          "title": "물가",
+          "page_range": [
+            10,
+            13
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0005",
+          "title": "재정",
+          "page_range": [
+            14,
+            15
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        },
+        {
+          "node_id": "0006",
+          "title": "해외경제",
+          "page_range": [
+            16,
+            19
+          ],
+          "range_source": "start_index/end_index",
+          "parent_node_id": "0001",
+          "parent_page_range": [
+            5,
+            5
+          ],
+          "reasons": [
+            "CHILD_RANGE_OUTSIDE_PARENT"
+          ]
+        }
+      ],
+      "expected_page_present_in_tree": true,
+      "oracle_node_id": "0001",
+      "oracle_node_title": "종합 평가",
+      "oracle_node_page_range": [
+        5,
+        5
+      ],
+      "oracle_node_page_width": 1,
+      "selected_node_id": null,
+      "selected_node_title": null,
+      "selected_page_range": null,
+      "selected_page_width": null,
+      "selected_contains_expected_page": false,
+      "oracle_exists_but_navigation_missed": true,
+      "likely_bottleneck": "NAVIGATION_MISSED_EXISTING_ORACLE_NODE"
+    }
+  ],
+  "blockers": [],
+  "warnings": [],
+  "notes": [
+    "This report decomposes the local PageIndex canary into tree oracle coverage, query navigation, and downstream bbox/table/C7 scope.",
+    "PageIndex output is not claimed as bbox overlap success or table/value semantics success.",
+    "C7 policy decisions remain user-owned and were not applied by this script.",
+    "XLSX remains excluded; no XLSX PageIndex adapter was implemented."
+  ]
+}
