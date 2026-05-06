@@ -343,7 +343,11 @@ def test_xlsx_expected_only_content_summary_is_not_allowed():
 
     assert evidence_row["answer_allowed"] is False
     assert evidence_row["content_summary"] == ""
-    assert evidence_row["fail_closed_reason"] in {"XLSX_NO_TABLE_CONTEXT", "XLSX_NO_CONTENT_WINDOW"}
+    assert evidence_row["fail_closed_reason"] in {
+        "XLSX_NO_TABLE_CONTEXT",
+        "XLSX_NO_CONTENT_WINDOW",
+        "XLSX_CONTENT_PRESENT_BUT_UNSUPPORTED_SHAPE",
+    }
     assert compiled_row["compiled_answer"]["answer"] == ""
 
 

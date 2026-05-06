@@ -171,7 +171,17 @@ def compile_allowed_answer(
             reason="Evidence was present but did not contain the required row/column/value or summary fields.",
             failure_mode="INSUFFICIENT_CONTEXT",
         )
+    if track == "XLSX":
+        answer = preserve_xlsx_bound_entity_anchor(evidence, answer)
     citation = citation_for(evidence, answer)
+    if track == "XLSX":
+        preservation_failures = xlsx_compiled_answer_preservation_failures(evidence, answer, citation)
+        if preservation_failures:
+            return abstain_answer(
+                shape=POLICY_SHAPE,
+                reason="Compiled XLSX answer dropped a bound query anchor, target header, value, or source citation.",
+                failure_mode=";".join(preservation_failures),
+            )
     return {
         "answer": answer,
         "answer_shape": expected_shape,
@@ -183,30 +193,42 @@ def compile_allowed_answer(
 
 
 def compile_table_row_value(evidence: Mapping[str, Any]) -> str:
-    row_label = clean(evidence.get("row_label"))
-    column_label = clean(evidence.get("column_label")) or first_nonempty(string_list(evidence.get("column_labels")))
-    value = clean(evidence.get("value"))
-    if not value:
-        for row_value in mapping_list(evidence.get("row_values")):
-            value = clean(row_value.get("value"))
-            if value:
-                break
-    if not (row_label and column_label and value):
+    bound_values = query_bound_values(evidence)
+    if not bound_values:
         return ""
+    binding = evidence.get("query_binding") if isinstance(evidence.get("query_binding"), Mapping) else {}
+    if not string_list(binding.get("matched_header_labels")):
+        row_text = clean(first_content_value(bound_values).get("row_text"))
+        if row_text:
+            return f"Matched row context: {row_text}. {xlsx_scope(evidence)}".strip()
+        return ""
+    first_value = first_content_value(bound_values)
+    if not first_value:
+        return ""
+    row_text = clean(first_value.get("row_text"))
+    row_label = clean(first_value.get("row_label"))
+    column_label = clean(first_value.get("column_label"))
+    value = clean(first_value.get("value"))
     scope = xlsx_scope(evidence)
+    if not (row_label and column_label and value):
+        if row_text:
+            return f"Matched row context: {row_text}. {scope}".strip()
+        return ""
     return f"{row_label} row / {column_label} column value is {value}. {scope}".strip()
 
 
 def compile_table_range_context(evidence: Mapping[str, Any]) -> str:
-    summary = clean(evidence.get("content_summary"))
+    bound_values = query_bound_values(evidence)
+    if not bound_values:
+        return ""
     headers = string_list(evidence.get("header_context"))
     inferred = clean(evidence.get("inferred_table_context"))
     scope = xlsx_scope(evidence)
-    row_values = mapping_list(evidence.get("row_values"))
-    if not summary and row_values:
-        summary = "; ".join(clean(item.get("row_text") or item.get("value")) for item in row_values if clean(item.get("row_text") or item.get("value")))
-    if not summary:
+    examples = [xlsx_bound_value_text(item) for item in bound_values[:3]]
+    examples = [example for example in examples if example]
+    if not examples:
         return ""
+    summary = "Matched table context: " + "; ".join(examples) + "."
     if inferred and inferred not in summary:
         summary = f"{summary} Inferred table context: {inferred}."
     header_text = f" Major headers: {', '.join(headers[:8])}." if headers else ""
@@ -240,11 +262,15 @@ def compile_pdf_table_value(evidence: Mapping[str, Any]) -> str:
 
 
 def compile_location_plus_content(evidence: Mapping[str, Any], *, track: str) -> str:
+    if track == "XLSX":
+        values = query_bound_values(evidence)
+        summary = "; ".join(xlsx_bound_value_text(item) for item in values[:3] if xlsx_bound_value_text(item))
+        if not summary:
+            return ""
+        return f"Matched content: {summary}. {xlsx_scope(evidence)}".strip()
     summary = clean(evidence.get("content_summary")) or clean(evidence.get("paragraph_block_text"))
     if not summary:
         return ""
-    if track == "XLSX":
-        return f"{summary} {xlsx_scope(evidence)}".strip()
     page = clean(evidence.get("page") or evidence.get("page_label"))
     suffix = f" Page {page}." if page else ""
     return f"{summary}{suffix}".strip()
@@ -255,6 +281,32 @@ def compile_yes_no_with_evidence(evidence: Mapping[str, Any]) -> str:
     if not summary:
         return ""
     return f"Yes. {summary}"
+
+
+def query_bound_values(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
+    binding = evidence.get("query_binding") if isinstance(evidence.get("query_binding"), Mapping) else {}
+    return mapping_list(binding.get("query_bound_values"))
+
+
+def first_content_value(values: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
+    for value in values:
+        if clean(value.get("value")) or clean(value.get("row_text")):
+            return dict(value)
+    return {}
+
+
+def xlsx_bound_value_text(item: Mapping[str, Any]) -> str:
+    row_label = clean(item.get("row_label"))
+    column_label = clean(item.get("column_label"))
+    value = clean(item.get("value"))
+    row_text = clean(item.get("row_text"))
+    if row_label and column_label and value:
+        return f"{row_label} / {column_label}: {value}"
+    if column_label and value:
+        return f"{column_label}: {value}"
+    if row_text:
+        return row_text
+    return value
 
 
 def xlsx_scope(evidence: Mapping[str, Any]) -> str:
@@ -281,6 +333,70 @@ def citation_for(evidence: Mapping[str, Any], claim: str) -> dict[str, Any]:
         "supports_claim": True,
         "claim": claim,
     }
+
+
+def preserve_xlsx_bound_entity_anchor(evidence: Mapping[str, Any], answer: str) -> str:
+    binding = evidence.get("query_binding") if isinstance(evidence.get("query_binding"), Mapping) else {}
+    entity_terms = string_list(nested_mapping(binding, "query_anchors").get("entity_anchors"))
+    if not entity_terms or has_any_term(answer, entity_terms):
+        return answer
+    matched_entities = string_list(binding.get("matched_entity_values"))
+    for term in entity_terms:
+        if any(has_any_term(match, [term]) for match in matched_entities):
+            return f"{answer} Matched entity: {term}.".strip()
+    return answer
+
+
+def xlsx_compiled_answer_preservation_failures(
+    evidence: Mapping[str, Any],
+    answer: str,
+    citation: Mapping[str, Any],
+) -> list[str]:
+    binding = evidence.get("query_binding") if isinstance(evidence.get("query_binding"), Mapping) else {}
+    failures: list[str] = []
+    entity_terms = [
+        *string_list(nested_mapping(binding, "query_anchors").get("entity_anchors")),
+        *string_list(binding.get("matched_entity_values")),
+    ]
+    if entity_terms and not has_any_term(answer, entity_terms):
+        failures.append("XLSX_COMPILED_ANSWER_DROPS_BOUND_ENTITY")
+
+    header_terms = string_list(binding.get("matched_header_labels"))
+    if header_terms and not all(has_any_term(answer, [header]) for header in header_terms):
+        failures.append("XLSX_COMPILED_ANSWER_DROPS_BOUND_HEADER")
+
+    value_terms = []
+    for item in query_bound_values(evidence):
+        value_terms.extend([clean(item.get("value")), clean(item.get("row_text"))])
+    value_terms = [term for term in value_terms if term]
+    if value_terms and not any(has_any_term(answer, [term]) for term in value_terms):
+        failures.append("XLSX_COMPILED_ANSWER_DROPS_BOUND_VALUE")
+
+    citation_locator = citation.get("locator") if isinstance(citation.get("locator"), Mapping) else {}
+    source_locator = (
+        evidence.get("content_source_locator")
+        if isinstance(evidence.get("content_source_locator"), Mapping)
+        else {}
+    )
+    if source_locator and not same_xlsx_locator(source_locator, citation_locator):
+        failures.append("XLSX_COMPILED_ANSWER_SOURCE_CITATION_MISMATCH")
+    return failures
+
+
+def same_xlsx_locator(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    if not left or not right:
+        return True
+    for key in ("file", "document_version_id", "sheet", "range"):
+        left_value = normalize(left.get(key))
+        right_value = normalize(right.get(key))
+        if left_value and right_value and left_value != right_value:
+            return False
+    return True
+
+
+def has_any_term(text: str, terms: Iterable[str]) -> bool:
+    folded = normalize(text)
+    return any(normalize(term) and normalize(term) in folded for term in terms)
 
 
 def used_content_terms(row: Mapping[str, Any], evidence: Mapping[str, Any], answer: str) -> list[str]:
@@ -384,6 +500,11 @@ def mapping_list(value: object) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     return [dict(item) for item in value if isinstance(item, Mapping)]
+
+
+def nested_mapping(value: Mapping[str, Any], key: str) -> Mapping[str, Any]:
+    nested = value.get(key)
+    return nested if isinstance(nested, Mapping) else {}
 
 
 def string_list(value: object) -> list[str]:

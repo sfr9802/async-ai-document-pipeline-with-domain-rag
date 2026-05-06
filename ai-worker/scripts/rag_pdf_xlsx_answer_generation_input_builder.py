@@ -337,22 +337,24 @@ def build_xlsx_context(
     sheet_name = clean(locator.get("sheet") or row.get("expected_sheet_name"))
     cell_range = clean(locator.get("range") or row.get("expected_cell_range"))
     table_id = clean(locator.get("table") or row.get("expected_table_id"))
+    expected_locator_diagnostic_only = compact_dict(
+        {
+            "file": file_name,
+            "sheet": sheet_name,
+            "range": cell_range,
+            "cell": clean(locator.get("cell")),
+            "table": table_id,
+            "document_version_id": clean(locator.get("docv") or row.get("expected_document_version_id")),
+        }
+    )
     context: dict[str, Any] = {
         "context_type": "xlsx",
         "file_name": file_name,
-        "sheet_name": sheet_name,
-        "cell_range": cell_range,
-        "table_id": table_id,
-        "locator": compact_dict(
-            {
-                "file": file_name,
-                "sheet": sheet_name,
-                "range": cell_range,
-                "cell": clean(locator.get("cell")),
-                "table": table_id,
-                "document_version_id": clean(locator.get("docv") or row.get("expected_document_version_id")),
-            }
-        ),
+        "sheet_name": "",
+        "cell_range": "",
+        "table_id": "",
+        "locator": {},
+        "expected_evidence_locator_diagnostic_only": expected_locator_diagnostic_only,
         "row_label": "",
         "column_label": "",
         "header_context": [],
@@ -636,11 +638,7 @@ def build_prompt_context(
         "query": clean(row.get("query")),
         "expected_answer_shape": clean(row.get("expected_answer_shape")),
         "answer_instruction": answer_instruction(row, policy),
-        "content_target_needed": clean(row.get("content_target_needed")),
-        "expected_answer_text": clean(row.get("expected_answer_text")),
-        "must_contain_terms": split_terms(row.get("must_contain_terms")),
-        "expected_evidence_location": locator,
-        "citation_policy": clean(row.get("citation_target_policy")),
+        "citation_policy": "cite_only_bound_context_locator",
         "policy": policy,
         "context": context,
     }
@@ -760,8 +758,7 @@ def load_xlsx_searchunit_content_index(
         for hit in row.get("top_k_results") or []:
             if not isinstance(hit, Mapping):
                 continue
-            selected_id = clean(hit.get("search_unit_id") or hit.get("searchUnitId"))
-            if selected_id:
+            for selected_id in retrieval_hit_identity_candidates(hit):
                 selected_ids.add(selected_id)
             location = hit.get("location_json") if isinstance(hit.get("location_json"), Mapping) else {}
             docv = clean(location.get("document_version_id") or hit.get("document_version_id"))
@@ -788,12 +785,13 @@ def load_xlsx_searchunit_content_index(
                       FROM search_unit
                      WHERE (
                             id = ANY(%s)
+                            OR index_id = ANY(%s)
                             OR document_version_id = ANY(%s)
                            )
                        AND parser_version = 'xlsx-extract-v2-hidden-safe'
                        AND index_version = 'rag-ingestion-v2-xlsx-candidate-v1'
                     """,
-                    (list(selected_ids), list(docv_ids)),
+                    (list(selected_ids), list(selected_ids), list(docv_ids)),
                 )
                 rows = [dict(row) for row in cur.fetchall()]
     except Exception as exc:
@@ -805,6 +803,9 @@ def load_xlsx_searchunit_content_index(
         unit_id = clean(row.get("id"))
         if unit_id:
             by_id[unit_id] = row
+        index_id = clean(row.get("index_id"))
+        if index_id:
+            by_id[index_id] = row
         by_docv.setdefault(clean(row.get("document_version_id")), []).append(row)
     return {
         "enabled": True,
@@ -859,15 +860,16 @@ def find_joined_xlsx_searchunit(
 ) -> tuple[dict[str, Any] | None, str, str]:
     by_id = searchunit_index.get("by_id") if isinstance(searchunit_index.get("by_id"), Mapping) else {}
     by_docv = searchunit_index.get("by_docv") if isinstance(searchunit_index.get("by_docv"), Mapping) else {}
-    hit_id = clean(hit.get("search_unit_id") or hit.get("node_id") or hit.get("chunk_id"))
-    if hit_id:
+    for hit_id in retrieval_hit_identity_candidates(hit):
         unit = by_id.get(hit_id)
         if not isinstance(unit, Mapping):
-            return None, "", f"rank {clean(hit.get('rank')) or '?'} search_unit_id not loaded"
+            continue
         join_type = safe_xlsx_join_type(hit, unit)
         if not join_type:
-            return None, "", f"rank {clean(hit.get('rank')) or '?'} search_unit_id was not safe answer evidence"
+            return None, "", f"rank {clean(hit.get('rank')) or '?'} selected SearchUnit id was not safe answer evidence"
         return dict(unit), join_type, ""
+    if retrieval_hit_identity_candidates(hit):
+        return None, "", f"rank {clean(hit.get('rank')) or '?'} selected SearchUnit id not loaded"
 
     hit_loc = xlsx_location(hit.get("location_json") if isinstance(hit.get("location_json"), Mapping) else {})
     docv = hit_loc.get("document_version_id")
@@ -919,6 +921,29 @@ def safe_xlsx_join_type(hit: Mapping[str, Any], unit: Mapping[str, Any]) -> str:
     return ""
 
 
+def retrieval_hit_identity_candidates(hit: Mapping[str, Any]) -> list[str]:
+    candidates = [
+        hit.get("search_unit_id"),
+        hit.get("searchUnitId"),
+        hit.get("node_id"),
+        hit.get("nodeId"),
+        hit.get("chunk_id"),
+        hit.get("chunkId"),
+        hit.get("index_id"),
+        hit.get("indexId"),
+        hit.get("id"),
+    ]
+    seen: set[str] = set()
+    identities: list[str] = []
+    for value in candidates:
+        identity = clean(value)
+        if not identity or identity in seen:
+            continue
+        seen.add(identity)
+        identities.append(identity)
+    return identities
+
+
 def context_from_joined_xlsx_searchunit(
     unit: Mapping[str, Any],
     hit: Mapping[str, Any],
@@ -946,6 +971,14 @@ def context_from_joined_xlsx_searchunit(
     )
     first_row_value = parsed["row_values"][0] if parsed["row_values"] else {}
     context = {
+        "file_name": locator.get("file", ""),
+        "sheet_name": locator.get("sheet", ""),
+        "cell_range": locator.get("range", ""),
+        "table_id": locator.get("table", ""),
+        "selected_search_unit_id": locator.get("search_unit_id", ""),
+        "selected_searchunit_locator": locator,
+        "content_source_locator": locator,
+        "citation_locator": locator,
         "retrieval_text": truncate(clean_whitespace(text), 2400),
         "table_context": parsed["table_context"],
         "nearby_rows": parsed["nearby_rows"],

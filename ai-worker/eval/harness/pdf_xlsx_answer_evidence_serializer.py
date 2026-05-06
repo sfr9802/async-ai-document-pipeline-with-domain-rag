@@ -44,6 +44,34 @@ PDF_ALLOWED_SHAPES = {
     "EVIDENCE_LOCATOR_WITH_CONTENT",
     "YES_NO_WITH_EVIDENCE",
 }
+LANGUAGE_INTENT_STOPWORDS = frozenset(
+    {
+        "찾아줘",
+        "찾아",
+        "알려줘",
+        "알려",
+        "어디야",
+        "어디",
+        "쪽",
+        "자료",
+        "정보",
+        "관련",
+        "위치",
+        "행",
+        "값",
+        "좀",
+        "주세요",
+        "뭐야",
+        "뭐",
+        "몇",
+        "어느",
+        "find",
+        "show",
+        "info",
+        "row",
+    }
+)
+STOPWORD_SOURCE = "language_intent"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -176,6 +204,22 @@ def serialize_input_row(
         "evidence_quality": evidence_quality,
         "content_summary": content_summary,
         "evidence_object": evidence,
+        "selected_search_unit_id": clean(evidence.get("selected_search_unit_id")),
+        "selected_searchunit_locator": evidence.get("selected_searchunit_locator")
+        if isinstance(evidence.get("selected_searchunit_locator"), Mapping)
+        else {},
+        "content_source_locator": evidence.get("content_source_locator")
+        if isinstance(evidence.get("content_source_locator"), Mapping)
+        else {},
+        "citation_locator": evidence.get("citation_locator")
+        if isinstance(evidence.get("citation_locator"), Mapping)
+        else {},
+        "expected_evidence_locator_diagnostic_only": context.get("expected_evidence_locator_diagnostic_only")
+        if isinstance(context.get("expected_evidence_locator_diagnostic_only"), Mapping)
+        else {},
+        "xlsx_answer_guard": evidence.get("xlsx_answer_guard")
+        if isinstance(evidence.get("xlsx_answer_guard"), Mapping)
+        else {},
         "context_available": parse_bool(context.get("context_available")),
         "context_has_expected_terms": parse_bool(context.get("context_has_expected_terms")),
         "context_errors": string_list(context.get("context_errors")),
@@ -199,6 +243,34 @@ def xlsx_evidence_object(
     max_summary_chars: int,
 ) -> dict[str, Any]:
     locator = context.get("locator") if isinstance(context.get("locator"), Mapping) else {}
+    context_locator = xlsx_locator_from_mapping(
+        {
+            "file": context.get("file_name") or locator.get("file"),
+            "sheet": context.get("sheet_name") or locator.get("sheet"),
+            "range": context.get("cell_range") or locator.get("range") or locator.get("cell"),
+            "cell": locator.get("cell"),
+            "document_version_id": locator.get("document_version_id") or locator.get("docv"),
+            "search_unit_id": locator.get("search_unit_id"),
+        }
+    )
+    citation_locator = xlsx_locator_from_mapping(
+        context.get("citation_locator") if isinstance(context.get("citation_locator"), Mapping) else locator
+    )
+    content_source_locator = xlsx_locator_from_mapping(
+        context.get("content_source_locator")
+        if isinstance(context.get("content_source_locator"), Mapping)
+        else citation_locator
+    )
+    selected_searchunit_locator = xlsx_locator_from_mapping(
+        context.get("selected_searchunit_locator")
+        if isinstance(context.get("selected_searchunit_locator"), Mapping)
+        else content_source_locator
+    )
+    expected_locator_diagnostic_only = xlsx_locator_from_mapping(
+        context.get("expected_evidence_locator_diagnostic_only")
+        if isinstance(context.get("expected_evidence_locator_diagnostic_only"), Mapping)
+        else {}
+    )
     extracted = empty_xlsx_extraction() if policy_pending else extract_xlsx_content_fields(row, context)
     value_context = [] if policy_pending else mapping_list(context.get("value_context"))
     first_value = value_context[0] if value_context else {}
@@ -241,8 +313,8 @@ def xlsx_evidence_object(
     value = clean(first_value.get("value")) or first_mapping_value(row_values, "value") or first_mapping_value(
         cell_values, "value"
     )
-    sheet = clean(context.get("sheet_name") or locator.get("sheet"))
-    cell_range = clean(context.get("cell_range") or locator.get("range") or locator.get("cell"))
+    sheet = clean(content_source_locator.get("sheet") or citation_locator.get("sheet"))
+    cell_range = clean(content_source_locator.get("range") or citation_locator.get("range") or citation_locator.get("cell"))
     table_title = clean(context.get("table_id")) or clean(locator.get("table"))
     inferred_table_context = infer_xlsx_table_context(table_title, header_context, [*table_context, *nearby_rows])
     summary = summarize_xlsx_content(
@@ -271,15 +343,18 @@ def xlsx_evidence_object(
             ),
         ]
     )
-    return compact_dict(
+    evidence = compact_dict(
         {
             "evidence_type": "xlsx",
             "matched_keyword": matched_keyword,
-            "file_name": clean(context.get("file_name") or locator.get("file")),
-            "document_version_id": clean(locator.get("document_version_id") or locator.get("docv")),
+            "file_name": clean(content_source_locator.get("file") or citation_locator.get("file")),
+            "document_version_id": clean(
+                content_source_locator.get("document_version_id")
+                or citation_locator.get("document_version_id")
+            ),
             "sheet": sheet,
             "range": cell_range,
-            "cell": clean(locator.get("cell") or first_value.get("cell")),
+            "cell": clean(citation_locator.get("cell") or first_value.get("cell")),
             "table_title": table_title,
             "inferred_table_context": inferred_table_context,
             "row_label": row_label,
@@ -294,13 +369,30 @@ def xlsx_evidence_object(
             "nearby_row_context": nearby_rows[:8],
             "nearby_rows": nearby_rows[:8],
             "content_summary": summary,
-            "locator": compact_dict(dict(locator)),
+            "locator": citation_locator,
+            "selected_search_unit_id": clean(context.get("selected_search_unit_id") or citation_locator.get("search_unit_id")),
+            "selected_searchunit_locator": selected_searchunit_locator,
+            "content_source_locator": content_source_locator,
+            "citation_locator": citation_locator,
             "content_source": first_nonempty(content_source_fields),
             "content_source_fields": content_source_fields,
             "unsupported_content_field_count": extracted["unsupported_content_field_count"],
             "candidate_content_field_count": extracted["candidate_content_field_count"],
         }
     )
+    guard = xlsx_answer_guard(
+        row=row,
+        evidence=evidence,
+        context_locator=context_locator,
+        content_source_locator=content_source_locator,
+        citation_locator=citation_locator,
+        selected_searchunit_locator=selected_searchunit_locator,
+        expected_locator_diagnostic_only=expected_locator_diagnostic_only,
+    )
+    evidence["query_anchors"] = guard["query_anchors"]
+    evidence["query_binding"] = guard["query_binding"]
+    evidence["xlsx_answer_guard"] = guard
+    return compact_dict(evidence)
 
 
 def pdf_evidence_object(
@@ -350,6 +442,502 @@ def pdf_evidence_object(
             else "",
         }
     )
+
+
+def xlsx_answer_guard(
+    *,
+    row: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    context_locator: Mapping[str, Any],
+    content_source_locator: Mapping[str, Any],
+    citation_locator: Mapping[str, Any],
+    selected_searchunit_locator: Mapping[str, Any],
+    expected_locator_diagnostic_only: Mapping[str, Any],
+) -> dict[str, Any]:
+    failure_codes: list[str] = []
+    locator_checks = {
+        "content_source_matches_citation": same_xlsx_locator(content_source_locator, citation_locator),
+        "context_matches_citation": same_xlsx_locator(context_locator, citation_locator),
+        "selected_matches_content_source": same_xlsx_locator(selected_searchunit_locator, content_source_locator),
+        "expected_locator_promoted": locator_promoted_from_expected(
+            context_locator=context_locator,
+            content_source_locator=content_source_locator,
+            citation_locator=citation_locator,
+            expected_locator=expected_locator_diagnostic_only,
+        ),
+    }
+    if not locator_checks["content_source_matches_citation"]:
+        failure_codes.append("XLSX_CONTEXT_CITATION_LOCATOR_MISMATCH")
+    if context_locator and citation_locator and not locator_checks["context_matches_citation"]:
+        failure_codes.append("XLSX_CONTEXT_CITATION_LOCATOR_MISMATCH")
+    if not locator_checks["selected_matches_content_source"]:
+        failure_codes.append("XLSX_SELECTED_SEARCHUNIT_EXPECTED_LOCATOR_MISMATCH")
+    if locator_checks["expected_locator_promoted"]:
+        failure_codes.append("XLSX_EXPECTED_LOCATOR_PROMOTED")
+        failure_codes.append("XLSX_SELECTED_SEARCHUNIT_EXPECTED_LOCATOR_MISMATCH")
+
+    query_binding = xlsx_query_binding(row, evidence)
+    content_shape_candidate = xlsx_content_shape_candidate(evidence)
+    if content_shape_candidate:
+        failure_codes.extend(query_binding["failure_codes"])
+    return {
+        "failure_codes": unique_strings(failure_codes),
+        "query_anchors": query_binding["query_anchors"],
+        "query_binding": query_binding,
+        "locator_checks": locator_checks,
+        "content_shape_candidate": content_shape_candidate,
+        "query_bound_answer_candidate": not failure_codes and bool(query_binding["query_bound_values"]),
+        "source_workbook_promoted_evidence": False,
+        "gold_leakage": False,
+        "expected_locator_promoted": locator_checks["expected_locator_promoted"],
+        "broad_fallback_promoted": False,
+    }
+
+
+def xlsx_query_binding(row: Mapping[str, Any], evidence: Mapping[str, Any]) -> dict[str, Any]:
+    query = clean(row.get("query"))
+    vocabulary = xlsx_workbook_vocabulary(evidence)
+    candidates = extract_xlsx_query_candidate_terms(query)
+    anchors = bind_xlsx_query_anchors(candidates, vocabulary)
+    content_text = xlsx_evidence_content_text(evidence)
+    normalized_content = normalize_anchor(content_text)
+    normalized_digits = normalize_digits(content_text)
+
+    missing_entities = [
+        anchor for anchor in anchors["entity_anchors"] if normalize_anchor(anchor) not in normalized_content
+    ]
+    missing_dates = [
+        anchor for anchor in anchors["date_anchors"] if normalize_digits(anchor) not in normalized_digits
+    ]
+    missing_numbers = [
+        anchor for anchor in anchors["number_anchors"] if normalize_digits(anchor) not in normalized_digits
+    ]
+
+    row_values = xlsx_binding_row_values(evidence)
+    row_candidates = [
+        item
+        for item in row_values
+        if xlsx_row_matches_anchors(
+            item,
+            entity_anchors=anchors["entity_anchors"],
+            date_anchors=anchors["date_anchors"],
+            number_anchors=anchors["number_anchors"],
+        )
+    ]
+    has_bound_row_anchor = bool(
+        anchors["entity_anchors"] or anchors["date_anchors"] or anchors["number_anchors"]
+    )
+    if not has_bound_row_anchor:
+        row_candidates = row_values
+
+    target_column_bound = True
+    query_bound_values: list[dict[str, str]] = []
+    if anchors["header_anchors"]:
+        target_column_bound = bool(anchors["matched_header_labels"])
+        if target_column_bound:
+            for item in row_candidates:
+                if any(
+                    header_matches(clean(item.get("column_label")), header)
+                    for header in anchors["matched_header_labels"]
+                ):
+                    query_bound_values.append({key: clean(value) for key, value in item.items() if clean(value)})
+    elif row_candidates and has_bound_row_anchor:
+        query_bound_values = [
+            {key: clean(value) for key, value in item.items() if clean(value)}
+            for item in row_candidates[:3]
+        ]
+
+    failure_codes: list[str] = []
+    if not (
+        anchors["entity_anchors"]
+        or anchors["date_anchors"]
+        or anchors["number_anchors"]
+        or anchors["header_anchors"]
+    ):
+        failure_codes.append("XLSX_QUERY_ANCHOR_MISSING")
+    if anchors["unbound_query_terms"]:
+        failure_codes.append("XLSX_QUERY_TERM_NOT_IN_WORKBOOK_VOCABULARY")
+    if missing_entities or missing_dates or missing_numbers:
+        failure_codes.append("XLSX_QUERY_ANCHOR_MISMATCH")
+    if anchors["entity_anchors"] and (missing_entities or not row_candidates):
+        failure_codes.append("XLSX_TARGET_ROW_NOT_BOUND")
+    if anchors["header_anchors"] and (not target_column_bound or not query_bound_values):
+        failure_codes.append("XLSX_TARGET_COLUMN_NOT_BOUND")
+    if row_values and len(row_values) > 1 and not query_bound_values and not failure_codes:
+        failure_codes.append("XLSX_MULTIROW_FIRST_VALUE_FALLBACK")
+
+    return {
+        "query": query,
+        "candidate_terms": candidates,
+        "query_anchors": anchors,
+        "workbook_vocabulary_source": "retrieved_searchunit_payload",
+        "workbook_vocabulary_counts": xlsx_workbook_vocabulary_counts(vocabulary),
+        "stopword_source": STOPWORD_SOURCE,
+        "ignored_stopwords": candidates["ignored_stopwords"],
+        "matched_header_labels": anchors["matched_header_labels"],
+        "matched_entity_values": anchors["matched_entity_values"],
+        "query_bound_values": query_bound_values[:8],
+        "row_candidate_count": len(row_candidates),
+        "target_column_bound": target_column_bound,
+        "unbound_query_terms": anchors["unbound_query_terms"],
+        "missing_entity_anchors": missing_entities,
+        "missing_date_anchors": missing_dates,
+        "missing_number_anchors": missing_numbers,
+        "failure_codes": unique_strings(failure_codes),
+    }
+
+
+def extract_xlsx_query_candidate_terms(query: str) -> dict[str, Any]:
+    raw_tokens = [clean(token) for token in re.findall(r"[가-힣A-Za-z0-9,]+", query)]
+    date_anchors = [
+        f"{match.group(1)}{int(match.group(2)):02d}"
+        for match in re.finditer(r"(\d{4})\s*년\s*(\d{1,2})\s*월", query)
+    ]
+    number_anchors = [
+        normalize_digits(match.group(0))
+        for match in re.finditer(r"(?<![A-Za-z가-힣])\d[\d,]{2,}(?![A-Za-z가-힣])", query)
+        if normalize_digits(match.group(0)) not in {anchor[:4] for anchor in date_anchors}
+    ]
+    text_terms: list[str] = []
+    ignored_stopwords: list[str] = []
+    for token in raw_tokens:
+        if not token:
+            continue
+        if query_token_is_noise(token):
+            ignored_stopwords.append(token)
+            continue
+        if re.fullmatch(r"[\d,]+", token):
+            continue
+        if date_fragment_token(token):
+            continue
+        if len(normalize_anchor(token)) >= 2:
+            text_terms.append(token)
+    return {
+        "text_terms": unique_strings(text_terms),
+        "date_anchors": unique_strings(date_anchors),
+        "number_anchors": unique_strings(number_anchors),
+        "ignored_stopwords": unique_strings(ignored_stopwords),
+        "stopword_source": STOPWORD_SOURCE,
+    }
+
+
+def bind_xlsx_query_anchors(
+    candidates: Mapping[str, Any],
+    vocabulary: Mapping[str, list[str]],
+) -> dict[str, list[str]]:
+    header_anchors: list[str] = []
+    entity_anchors: list[str] = []
+    matched_headers: list[str] = []
+    matched_entities: list[str] = []
+    unbound_terms: list[str] = []
+    headers = vocabulary.get("headers", [])
+    entity_values = xlsx_entity_vocabulary_values(vocabulary)
+    for term in string_list(candidates.get("text_terms")):
+        header_matches_for_term = [header for header in headers if header_matches(term, header)]
+        if header_matches_for_term:
+            header_anchors.append(term)
+            matched_headers.extend(header_matches_for_term)
+            continue
+        entity_matches = [
+            value for value in entity_values if workbook_value_matches(term, value)
+        ]
+        if entity_matches:
+            entity_anchors.append(term)
+            matched_entities.extend(entity_matches)
+            continue
+        unbound_terms.append(term)
+    date_anchors = [
+        anchor
+        for anchor in string_list(candidates.get("date_anchors"))
+        if workbook_digits_match(anchor, xlsx_numeric_vocabulary_values(vocabulary))
+    ]
+    number_anchors = [
+        anchor
+        for anchor in string_list(candidates.get("number_anchors"))
+        if workbook_digits_match(anchor, xlsx_numeric_vocabulary_values(vocabulary))
+    ]
+    missing_date_terms = [
+        anchor for anchor in string_list(candidates.get("date_anchors")) if anchor not in date_anchors
+    ]
+    missing_number_terms = [
+        anchor for anchor in string_list(candidates.get("number_anchors")) if anchor not in number_anchors
+    ]
+    return {
+        "entity_anchors": unique_strings(entity_anchors),
+        "date_anchors": unique_strings(date_anchors),
+        "number_anchors": unique_strings(number_anchors),
+        "header_anchors": unique_strings(header_anchors),
+        "matched_header_labels": unique_strings(matched_headers),
+        "matched_entity_values": unique_strings(matched_entities),
+        "unbound_query_terms": unique_strings([*unbound_terms, *missing_date_terms, *missing_number_terms]),
+    }
+
+
+def xlsx_workbook_vocabulary(evidence: Mapping[str, Any]) -> dict[str, list[str]]:
+    headers = xlsx_header_labels(evidence)
+    row_labels = [
+        clean(evidence.get("row_label")),
+        *(clean(item.get("row_label")) for item in mapping_list(evidence.get("row_values"))),
+        *(clean(item.get("row_label")) for item in mapping_list(evidence.get("cell_values"))),
+    ]
+    cell_values = [
+        clean(evidence.get("value")),
+        *(clean(item.get("value")) for item in mapping_list(evidence.get("row_values"))),
+        *(clean(item.get("value")) for item in mapping_list(evidence.get("cell_values"))),
+        *(clean(item.get("value")) for item in mapping_list(evidence.get("column_values"))),
+    ]
+    row_texts = [
+        *(clean(item.get("row_text")) for item in mapping_list(evidence.get("row_values"))),
+        *string_list(evidence.get("table_context")),
+        *string_list(evidence.get("nearby_rows")),
+    ]
+    sheet_names = [
+        clean(evidence.get("sheet")),
+        clean(nested_mapping(evidence, "content_source_locator").get("sheet")),
+        clean(nested_mapping(evidence, "citation_locator").get("sheet")),
+    ]
+    table_titles = [
+        clean(evidence.get("table_title")),
+        clean(evidence.get("inferred_table_context")),
+    ]
+    locators = []
+    for locator_key in ("locator", "content_source_locator", "citation_locator", "selected_searchunit_locator"):
+        locator = evidence.get(locator_key) if isinstance(evidence.get(locator_key), Mapping) else {}
+        locators.extend(clean(value) for value in locator.values() if not isinstance(value, (Mapping, list)))
+    return {
+        "headers": unique_strings(headers),
+        "row_labels": unique_strings(row_labels),
+        "cell_values": unique_strings(cell_values),
+        "row_texts": unique_strings(row_texts),
+        "sheet_names": unique_strings(sheet_names),
+        "table_titles": unique_strings(table_titles),
+        "citation_locators": unique_strings(locators),
+    }
+
+
+def xlsx_workbook_vocabulary_counts(vocabulary: Mapping[str, list[str]]) -> dict[str, int]:
+    return {key: len(string_list(value)) for key, value in vocabulary.items()}
+
+
+def xlsx_entity_vocabulary_values(vocabulary: Mapping[str, list[str]]) -> list[str]:
+    values: list[str] = []
+    for key in ("row_labels", "cell_values", "row_texts", "sheet_names", "table_titles", "citation_locators"):
+        values.extend(string_list(vocabulary.get(key)))
+    return unique_strings(values)
+
+
+def xlsx_numeric_vocabulary_values(vocabulary: Mapping[str, list[str]]) -> list[str]:
+    values: list[str] = []
+    for items in vocabulary.values():
+        values.extend(string_list(items))
+    return unique_strings(values)
+
+
+def xlsx_locator_from_mapping(value: Mapping[str, Any]) -> dict[str, str]:
+    return compact_dict(
+        {
+            "file": clean(value.get("file") or value.get("file_name") or value.get("source_file_name")),
+            "sheet": clean(value.get("sheet") or value.get("sheet_name") or value.get("sheetName")),
+            "range": clean(value.get("range") or value.get("cell_range") or value.get("cellRange")),
+            "cell": clean(value.get("cell") or value.get("cell_ref") or value.get("cellRef")),
+            "document_version_id": clean(value.get("document_version_id") or value.get("docv")),
+            "search_unit_id": clean(value.get("search_unit_id") or value.get("searchUnitId")),
+            "chunk_type": clean(value.get("chunk_type")),
+            "join_type": clean(value.get("join_type")),
+            "rank": clean(value.get("rank")),
+        }
+    )
+
+
+def same_xlsx_locator(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    if not left or not right:
+        return True
+    for key in ("file", "document_version_id", "sheet", "range"):
+        left_value = normalize_anchor(left.get(key))
+        right_value = normalize_anchor(right.get(key))
+        if left_value and right_value and left_value != right_value:
+            return False
+    return True
+
+
+def locator_promoted_from_expected(
+    *,
+    context_locator: Mapping[str, Any],
+    content_source_locator: Mapping[str, Any],
+    citation_locator: Mapping[str, Any],
+    expected_locator: Mapping[str, Any],
+) -> bool:
+    if not expected_locator:
+        return False
+    expected_sheet = normalize_anchor(expected_locator.get("sheet"))
+    expected_range = normalize_anchor(expected_locator.get("range"))
+    if not (expected_sheet or expected_range):
+        return False
+    content_differs = not same_xlsx_locator(expected_locator, content_source_locator)
+    citation_differs = not same_xlsx_locator(expected_locator, citation_locator)
+    context_matches_expected = same_xlsx_locator(context_locator, expected_locator)
+    return bool(context_matches_expected and (content_differs or citation_differs))
+
+
+def xlsx_content_shape_candidate(evidence: Mapping[str, Any]) -> bool:
+    return bool(
+        clean(evidence.get("content_summary"))
+        or mapping_list(evidence.get("row_values"))
+        or mapping_list(evidence.get("cell_values"))
+        or mapping_list(evidence.get("column_values"))
+        or string_list(evidence.get("table_context"))
+        or string_list(evidence.get("nearby_rows"))
+    )
+
+
+def xlsx_evidence_content_text(evidence: Mapping[str, Any]) -> str:
+    parts = [
+        clean(evidence.get("content_summary")),
+        clean(evidence.get("row_label")),
+        clean(evidence.get("column_label")),
+        clean(evidence.get("value")),
+        *string_list(evidence.get("header_context")),
+        *string_list(evidence.get("table_context")),
+        *string_list(evidence.get("nearby_rows")),
+    ]
+    for item in [
+        *mapping_list(evidence.get("row_values")),
+        *mapping_list(evidence.get("cell_values")),
+        *mapping_list(evidence.get("column_values")),
+    ]:
+        parts.extend(clean(value) for value in item.values() if not isinstance(value, (Mapping, list)))
+    return " ".join(part for part in parts if part)
+
+
+def xlsx_header_labels(evidence: Mapping[str, Any]) -> list[str]:
+    headers = [*string_list(evidence.get("header_context")), *string_list(evidence.get("column_labels"))]
+    for item in [
+        *mapping_list(evidence.get("row_values")),
+        *mapping_list(evidence.get("cell_values")),
+        *mapping_list(evidence.get("column_values")),
+    ]:
+        headers.append(clean(item.get("column_label")))
+    return unique_strings(headers)
+
+
+def xlsx_binding_row_values(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:
+    values = mapping_list(evidence.get("row_values"))
+    parsed: list[dict[str, str]] = []
+    for item in values:
+        parsed.extend(parse_xlsx_row_text_values(clean(item.get("row_text"))))
+    parsed.extend({key: clean(value) for key, value in item.items() if clean(value)} for item in values)
+    if parsed:
+        return unique_mappings(parsed)
+    for row_text in [*string_list(evidence.get("table_context")), *string_list(evidence.get("nearby_rows"))]:
+        parsed.extend(parse_xlsx_row_text_values(row_text))
+    return unique_mappings(parsed)
+
+
+def parse_xlsx_row_text_values(row_text: str) -> list[dict[str, str]]:
+    text = clean(row_text)
+    if not text:
+        return []
+    pairs = []
+    for segment in text.split("|"):
+        if ":" not in segment:
+            continue
+        key, value = segment.split(":", 1)
+        key = clean(key)
+        value = clean(value)
+        if key and value:
+            pairs.append((key, value))
+    if not pairs:
+        return []
+    row_label = pairs[0][1]
+    return [
+        compact_dict(
+            {
+                "row_label": row_label,
+                "column_label": key,
+                "value": value,
+                "row_text": text,
+                "source_field": "derived_from_row_text",
+            }
+        )
+        for key, value in pairs
+    ]
+
+
+def matched_header_labels(anchors: Iterable[str], headers: Iterable[str]) -> list[str]:
+    return unique_strings(
+        header for anchor in anchors for header in headers if header_matches(anchor, header)
+    )
+
+
+def header_matches(anchor: object, header: object) -> bool:
+    anchor_norm = normalize_anchor(anchor)
+    header_norm = normalize_anchor(header)
+    if not (anchor_norm and header_norm):
+        return False
+    candidates = {anchor_norm, anchor_norm.rstrip("s")}
+    if any(candidate and candidate == header_norm for candidate in candidates):
+        return True
+    return any(
+        candidate
+        and len(candidate) >= 3
+        and len(header_norm) >= 3
+        and (candidate in header_norm or header_norm in candidate)
+        for candidate in candidates
+    )
+
+
+def workbook_value_matches(anchor: object, value: object) -> bool:
+    anchor_norm = normalize_anchor(anchor)
+    value_norm = normalize_anchor(value)
+    if not (anchor_norm and value_norm):
+        return False
+    if anchor_norm == value_norm:
+        return True
+    if len(anchor_norm) < 2 or len(value_norm) < 2:
+        return False
+    return anchor_norm in value_norm or value_norm in anchor_norm
+
+
+def workbook_digits_match(anchor: object, values: Iterable[str]) -> bool:
+    anchor_digits = normalize_digits(anchor)
+    if not anchor_digits:
+        return False
+    for value in values:
+        value_digits = normalize_digits(value)
+        if value_digits and anchor_digits in value_digits:
+            return True
+    return False
+
+
+def xlsx_row_matches_anchors(
+    item: Mapping[str, Any],
+    *,
+    entity_anchors: Iterable[str],
+    date_anchors: Iterable[str],
+    number_anchors: Iterable[str],
+) -> bool:
+    text = " ".join(clean(value) for value in item.values() if not isinstance(value, (Mapping, list)))
+    normalized_text = normalize_anchor(text)
+    digit_text = normalize_digits(text)
+    return all(normalize_anchor(anchor) in normalized_text for anchor in entity_anchors) and all(
+        normalize_digits(anchor) in digit_text for anchor in [*date_anchors, *number_anchors]
+    )
+
+
+def query_token_is_noise(token: str) -> bool:
+    return normalize_anchor(token) in {normalize_anchor(item) for item in LANGUAGE_INTENT_STOPWORDS}
+
+
+def date_fragment_token(token: str) -> bool:
+    return bool(re.fullmatch(r"\d{4}년|\d{1,2}월", clean(token)))
+
+
+def normalize_anchor(value: object) -> str:
+    return re.sub(r"[^0-9A-Za-z가-힣]+", "", clean(value)).lower()
+
+
+def normalize_digits(value: object) -> str:
+    return re.sub(r"\D+", "", clean(value))
 
 
 def summarize_xlsx_content(
@@ -684,6 +1272,20 @@ def fail_closed_reason_for(
         return "PDF_UNSUPPORTED_TASK_TYPE"
     if keyword_only:
         return f"{track}_KEYWORD_ONLY"
+    if track == "XLSX":
+        for code in (
+            "XLSX_CONTEXT_CITATION_LOCATOR_MISMATCH",
+            "XLSX_EXPECTED_LOCATOR_PROMOTED",
+            "XLSX_SELECTED_SEARCHUNIT_EXPECTED_LOCATOR_MISMATCH",
+            "XLSX_QUERY_ANCHOR_MISSING",
+            "XLSX_QUERY_TERM_NOT_IN_WORKBOOK_VOCABULARY",
+            "XLSX_QUERY_ANCHOR_MISMATCH",
+            "XLSX_TARGET_ROW_NOT_BOUND",
+            "XLSX_TARGET_COLUMN_NOT_BOUND",
+            "XLSX_MULTIROW_FIRST_VALUE_FALLBACK",
+        ):
+            if code in string_list(evidence_quality.get("failure_codes")):
+                return code
     if locator_only and track != "XLSX":
         return f"{track}_LOCATOR_ONLY"
     if content_available and (track != "XLSX" or xlsx_shape_content_available(expected_shape, evidence)):
@@ -724,6 +1326,7 @@ def evidence_quality_flags(
     locator_only: bool,
     malformed_input: bool,
 ) -> dict[str, Any]:
+    guard = evidence.get("xlsx_answer_guard") if isinstance(evidence.get("xlsx_answer_guard"), Mapping) else {}
     row_values = mapping_list(evidence.get("row_values"))
     column_values = mapping_list(evidence.get("column_values"))
     cell_values = mapping_list(evidence.get("cell_values"))
@@ -755,6 +1358,13 @@ def evidence_quality_flags(
         "has_locator": evidence_has_locator(evidence),
         "has_concrete_content": has_concrete_content,
         "content_bearing_field_count": len(string_list(evidence.get("content_source_fields"))),
+        "content_shape_candidate": parse_bool(guard.get("content_shape_candidate")),
+        "query_bound_answer_candidate": parse_bool(guard.get("query_bound_answer_candidate")),
+        "failure_codes": string_list(guard.get("failure_codes")),
+        "expected_locator_promoted": parse_bool(guard.get("expected_locator_promoted")),
+        "source_workbook_promoted_evidence": parse_bool(guard.get("source_workbook_promoted_evidence")),
+        "gold_leakage": parse_bool(guard.get("gold_leakage")),
+        "broad_fallback_promoted": parse_bool(guard.get("broad_fallback_promoted")),
         "candidate_content_field_count": candidate_count,
         "unsupported_content_field_count": unsupported_count,
         "content_present_but_unsupported_shape": candidate_count > 0 and not has_concrete_content,
@@ -1163,14 +1773,8 @@ def policy_pending_state(row: Mapping[str, Any], policy: Mapping[str, Any]) -> t
 
 
 def content_is_keyword_only(content_summary: str, row: Mapping[str, Any]) -> bool:
-    summary = normalize(content_summary)
-    if not summary:
-        return False
-    terms = [clean(row.get("expected_answer_text")), *string_list(row.get("must_contain_terms"))]
-    normalized_terms = [normalize(term) for term in terms if normalize(term)]
-    if not normalized_terms:
-        return False
-    return summary in normalized_terms or (len(summary) <= 40 and any(summary == term for term in normalized_terms))
+    del content_summary, row
+    return False
 
 
 def evidence_has_locator(evidence: Mapping[str, Any]) -> bool:
@@ -1222,6 +1826,11 @@ def mapping_list(value: object) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     return [dict(item) for item in value if isinstance(item, Mapping)]
+
+
+def nested_mapping(value: Mapping[str, Any], key: str) -> Mapping[str, Any]:
+    nested = value.get(key)
+    return nested if isinstance(nested, Mapping) else {}
 
 
 def string_list(value: object) -> list[str]:

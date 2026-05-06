@@ -173,7 +173,9 @@ def run_evaluator(
         "answer_output_complete": answer_output_complete,
         "answer_output_coverage_errors": coverage_errors,
         "dry_run_preview_used_as_actual_answer": False,
-        "xlsx_answer_eval_denominator": evidence_metrics["answer_allowed_count_by_track"].get("XLSX", 0),
+        "xlsx_answer_eval_denominator": 0,
+        "official_xlsx_answer_eval_denominator": 0,
+        "promotion_denominator": 0,
         "pdf_answer_eval_denominator": evidence_metrics["answer_allowed_count_by_track"].get("PDF", 0),
         "official_answer_denominator": 0,
         "official_answer_denominator_registry": official_denominator_snapshot,
@@ -205,9 +207,9 @@ def run_evaluator(
         "compiler_status_counts": evidence_metrics["compiler_status_counts"],
         "content_source_field_counts": evidence_metrics["content_source_field_counts"],
         "denominator_policy_explanation": (
-            "Rows with answer_allowed=true form only this diagnostic answer-shape denominator. "
+            "Rows with answer_allowed=true form only the query-bound diagnostic answer candidate count. "
             "Official promotion denominators remain governed by official_denominator_registry; "
-            "promotion_evidence stays false."
+            "official_xlsx_answer_eval_denominator and promotion_denominator stay 0."
         ),
         "conservative_decisions": [
             "No retrieval, parser, chunking, gold labels, expected answers, relevance labels, or answerability policy were changed.",
@@ -486,9 +488,15 @@ def metrics_from_rows(rows: list[Mapping[str, Any]], actual_answer_output_missin
     answer_shape_match_count = sum(1 for row in non_policy_rows if parse_bool(row.get("answer_shape_match")))
     allowed_content_match_count = sum(1 for row in allowed_non_policy_rows if parse_bool(row.get("content_target_match")))
     allowed_shape_match_count = sum(1 for row in allowed_non_policy_rows if parse_bool(row.get("answer_shape_match")))
+    location_only_without_content_count = count_bool(parsed_rows, "location_only_without_content")
+    answer_contains_locator_but_no_claim_count = count_bool(
+        parsed_rows, "answer_contains_locator_but_no_claim"
+    )
     return {
         "keyword_echo_only_count": count_bool(parsed_rows, "keyword_echo_only"),
-        "location_only_without_content_count": count_bool(parsed_rows, "location_only_without_content"),
+        "location_only_without_content_count": location_only_without_content_count,
+        "locator_only_answer_count": location_only_without_content_count
+        + answer_contains_locator_but_no_claim_count,
         "content_target_match_rate": rate(content_target_match_count, denominator),
         "answer_shape_match_rate": rate(answer_shape_match_count, denominator),
         "allowed_answer_denominator": allowed_denominator,
@@ -526,9 +534,7 @@ def metrics_from_rows(rows: list[Mapping[str, Any]], actual_answer_output_missin
         "context_missing_abstain_count": count_bool(parsed_rows, "context_missing_abstain"),
         "citation_missing_count": count_bool(parsed_rows, "citation_missing"),
         "claim_without_citation_count": count_bool(parsed_rows, "claim_without_citation"),
-        "answer_contains_locator_but_no_claim_count": count_bool(
-            parsed_rows, "answer_contains_locator_but_no_claim"
-        ),
+        "answer_contains_locator_but_no_claim_count": answer_contains_locator_but_no_claim_count,
         "diagnostic_shape_eval_count": len(parsed_rows),
         "diagnostic_shape_rate_denominator": denominator,
         "actual_answer_output_missing": actual_answer_output_missing,
@@ -587,6 +593,13 @@ def evidence_metrics_from_rows(
         for row in allowed_answer_rows
         if clean(nested_mapping(row, "parsed_answer").get("abstain_reason"))
     ]
+    compiled_failure_modes = [
+        clean(
+            nested_mapping(row, "parsed_answer").get("failure_mode_if_any")
+            or nested_mapping(row, "compiled_answer").get("failure_mode_if_any")
+        )
+        for row in answer_rows
+    ]
     return {
         "answer_allowed_count": sum(answer_allowed_by_track.values()),
         "answer_allowed_count_by_track": dict(answer_allowed_by_track),
@@ -611,6 +624,15 @@ def evidence_metrics_from_rows(
         "xlsx_fail_closed_reason_counts": dict(xlsx_fail_counts),
         "compiler_status_counts": dict(compiler_counts),
         "content_source_field_counts": dict(source_counts),
+        "compiled_answer_drops_bound_entity_count": count_failure_mode(
+            compiled_failure_modes, "XLSX_COMPILED_ANSWER_DROPS_BOUND_ENTITY"
+        ),
+        "compiled_answer_drops_bound_header_count": count_failure_mode(
+            compiled_failure_modes, "XLSX_COMPILED_ANSWER_DROPS_BOUND_HEADER"
+        ),
+        "compiled_answer_drops_bound_value_count": count_failure_mode(
+            compiled_failure_modes, "XLSX_COMPILED_ANSWER_DROPS_BOUND_VALUE"
+        ),
     }
 
 
@@ -672,6 +694,28 @@ def xlsx_context_assembly_metrics(
         if clean(row.get("track")).upper() == "XLSX"
         and (parse_bool(row.get("answer_allowed")) or parse_bool(row.get("answer_generation_allowed")))
     )
+    current_content_shape_candidate = sum(
+        1
+        for row in evidence_rows
+        if clean(row.get("track")).upper() == "XLSX"
+        and parse_bool(nested_mapping(row, "evidence_quality").get("content_shape_candidate"))
+    )
+    previous_content_shape_candidate = sum(
+        1
+        for row in previous_evidence_rows
+        if clean(row.get("track")).upper() == "XLSX"
+        and (
+            parse_bool(nested_mapping(row, "evidence_quality").get("content_shape_candidate"))
+            or parse_bool(nested_mapping(row, "evidence_quality").get("has_concrete_content"))
+            or bool(string_items(row.get("content_source_fields")))
+        )
+    )
+    failure_code_counts: Counter[str] = Counter()
+    for row in evidence_rows:
+        if clean(row.get("track")).upper() != "XLSX":
+            continue
+        for code in string_items(nested_mapping(row, "evidence_quality").get("failure_codes")):
+            failure_code_counts[code] += 1
     return {
         "xlsx_rows": len(xlsx_rows),
         "xlsx_policy_pending_rows": len(policy_pending_rows),
@@ -679,16 +723,49 @@ def xlsx_context_assembly_metrics(
         "xlsx_exact_locator_join_count": exact_join_count,
         "xlsx_safe_range_overlap_join_count": overlap_join_count,
         "xlsx_failed_join_count": failed_join_count,
+        "content_joined_count_before": previous_xlsx_has_values,
+        "content_joined_count_after": len(joined_rows),
+        "content_joined_count": len(joined_rows),
+        "content_shape_candidate_count_before": previous_content_shape_candidate,
+        "content_shape_candidate_count_after": current_content_shape_candidate,
+        "content_shape_candidate_count": current_content_shape_candidate,
+        "query_bound_answer_allowed_count_before": previous_xlsx_allowed,
+        "query_bound_answer_allowed_count_after": current_xlsx_allowed,
+        "query_bound_answer_allowed_count": current_xlsx_allowed,
+        "official_xlsx_answer_eval_denominator_before": 0,
+        "official_xlsx_answer_eval_denominator_after": 0,
+        "official_xlsx_answer_eval_denominator": 0,
+        "promotion_denominator": 0,
         "xlsx_answer_input_has_values_count_before": previous_xlsx_has_values,
         "xlsx_answer_input_has_values_count_after": answer_input_has_values_after,
         "answer_input_has_values_count_before": previous_xlsx_has_values,
         "answer_input_has_values_count_after": answer_input_has_values_after,
         "answer_allowed_count_before": previous_xlsx_allowed,
         "answer_allowed_count_after": current_xlsx_allowed,
-        "xlsx_answer_eval_denominator_before": previous_xlsx_allowed,
-        "xlsx_answer_eval_denominator_after": current_xlsx_allowed,
+        "xlsx_answer_eval_denominator_before": 0,
+        "xlsx_answer_eval_denominator_after": 0,
+        "rows_still_fail_closed_count": len(xlsx_rows) - current_xlsx_allowed,
+        "rows_still_fail_closed_reason_counts": dict(
+            Counter(
+                clean(row.get("fail_closed_reason") or row.get("answer_disallowed_reason") or row.get("answer_generation_blocker"))
+                for row in evidence_rows
+                if clean(row.get("track")).upper() == "XLSX"
+                and not (parse_bool(row.get("answer_allowed")) or parse_bool(row.get("answer_generation_allowed")))
+            )
+        ),
+        "xlsx_failure_code_counts": dict(failure_code_counts),
+        "xlsx_query_anchor_mismatch_count": failure_code_counts.get("XLSX_QUERY_ANCHOR_MISMATCH", 0),
+        "xlsx_context_citation_locator_mismatch_count": failure_code_counts.get(
+            "XLSX_CONTEXT_CITATION_LOCATOR_MISMATCH", 0
+        ),
+        "xlsx_expected_locator_promoted_count": failure_code_counts.get("XLSX_EXPECTED_LOCATOR_PROMOTED", 0),
+        "xlsx_target_column_not_bound_count": failure_code_counts.get("XLSX_TARGET_COLUMN_NOT_BOUND", 0),
+        "xlsx_multirow_first_value_fallback_count": failure_code_counts.get(
+            "XLSX_MULTIROW_FIRST_VALUE_FALLBACK", 0
+        ),
         "source_workbook_promoted_evidence_count": source_promoted,
         "gold_leakage_count": gold_leakage,
+        "expected_locator_promoted_count": failure_code_counts.get("XLSX_EXPECTED_LOCATOR_PROMOTED", 0),
         "broad_fallback_promoted_evidence_count": broad_promoted,
     }
 
@@ -1174,6 +1251,10 @@ def normalize(value: object) -> str:
 
 def count_bool(rows: Iterable[Mapping[str, Any]], field: str) -> int:
     return sum(1 for row in rows if parse_bool(row.get(field)))
+
+
+def count_failure_mode(values: Iterable[str], code: str) -> int:
+    return sum(1 for value in values if code in clean(value))
 
 
 def rate(numerator: int, denominator: int) -> float | None:
