@@ -1,4 +1,4 @@
-"""Tests for the LlmChatProvider seam + NoOp / Ollama / Claude providers.
+"""Tests for the LlmChatProvider seam + local / remote providers.
 
 Everything runs offline. The Ollama tests monkeypatch ``httpx.Client``
 (inside the llm_chat module) with a fake session that returns canned
@@ -25,6 +25,11 @@ Scenario coverage per backend:
     - enable_thinking is silently ignored when capabilities.thinking=False
     - schema_hint reminder is appended to the last system message
     - capabilities() reports thinking=True only for gemma4-family models
+
+  OpenAI-compatible
+    - chat_json posts to /v1/chat/completions with JSON mode
+    - chat_tools normalizes OpenAI tool_calls
+    - chat_vision sends an OpenAI Vision-style data URL block
 
   Claude
     - chat_json happy path (dict parsed from response text block)
@@ -61,6 +66,7 @@ from app.clients.llm_chat import (
     LlmChatError,
     NoOpChatProvider,
     OllamaChatProvider,
+    OpenAICompatibleChatProvider,
 )
 
 
@@ -115,7 +121,7 @@ class _FakeClient:
     def __exit__(self, *exc):
         return False
 
-    def post(self, url, json=None):  # noqa: A002 - matches httpx signature
+    def post(self, url, json=None, **kwargs):  # noqa: A002 - matches httpx signature
         self.recorded_urls.append(url)
         self.recorded_payloads.append(json)
         if self._raise_on_post is not None:
@@ -462,6 +468,110 @@ def test_ollama_empty_messages_raises():
     provider = _ollama_provider()
     with pytest.raises(LlmChatError):
         provider.chat_json([], schema_hint="{}")
+
+
+# ---------------------------------------------------------------------------
+# OpenAI-compatible provider
+# ---------------------------------------------------------------------------
+
+
+def _openai_compatible_provider() -> OpenAICompatibleChatProvider:
+    return OpenAICompatibleChatProvider(
+        base_url="http://localhost:8081/v1",
+        model="gemma4-e2b-local",
+        api_key="EMPTY",
+        provider_label="llamacpp",
+    )
+
+
+def test_openai_compatible_chat_json_happy_path(monkeypatch):
+    body = {
+        "choices": [
+            {"message": {"role": "assistant", "content": json.dumps({"ok": True})}}
+        ],
+        "usage": {"prompt_tokens": 9, "completion_tokens": 4},
+    }
+    client = _FakeClient(_FakeResponse(body=body))
+    _install_fake_httpx(monkeypatch, lambda timeout=None: client)
+
+    provider = _openai_compatible_provider()
+    parsed = provider.chat_json(
+        [ChatMessage(role="user", content="return json")],
+        schema_hint='{"ok": true}',
+    )
+
+    assert parsed == {"ok": True}
+    assert client.recorded_urls == ["http://localhost:8081/v1/chat/completions"]
+    payload = client.recorded_payloads[0]
+    assert payload["model"] == "gemma4-e2b-local"
+    assert payload["response_format"] == {"type": "json_object"}
+    assert payload["messages"][0]["role"] == "system"
+
+
+def test_openai_compatible_chat_tools_normalizes_tool_call(monkeypatch):
+    body = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "tool_calls": [
+                        {
+                            "function": {
+                                "name": "route_job",
+                                "arguments": json.dumps({"action": "rag"}),
+                            }
+                        }
+                    ],
+                }
+            }
+        ],
+        "usage": {"prompt_tokens": 11, "completion_tokens": 6},
+    }
+    client = _FakeClient(_FakeResponse(body=body))
+    _install_fake_httpx(monkeypatch, lambda timeout=None: client)
+
+    provider = _openai_compatible_provider()
+    result = provider.chat_tools(
+        [ChatMessage(role="user", content="route this")],
+        tools=[
+            ChatToolSpec(
+                name="route_job",
+                description="pick route",
+                parameters={"type": "object"},
+            )
+        ],
+    )
+
+    assert result.text is None
+    assert result.tool_call == {"name": "route_job", "arguments": {"action": "rag"}}
+    assert result.tokens_in == 11
+    assert result.tokens_out == 6
+    payload = client.recorded_payloads[0]
+    assert payload["tools"][0]["function"]["name"] == "route_job"
+    assert payload["tool_choice"] == "auto"
+
+
+def test_openai_compatible_chat_vision_sends_data_url(monkeypatch):
+    body = {
+        "choices": [
+            {"message": {"role": "assistant", "content": "A small diagram."}}
+        ],
+    }
+    client = _FakeClient(_FakeResponse(body=body))
+    _install_fake_httpx(monkeypatch, lambda timeout=None: client)
+
+    provider = _openai_compatible_provider()
+    text = provider.chat_vision(
+        prompt="describe",
+        image_bytes=b"png-bytes",
+        mime_type="image/png",
+    )
+
+    assert text == "A small diagram."
+    content = client.recorded_payloads[0]["messages"][0]["content"]
+    assert content[0] == {"type": "text", "text": "describe"}
+    assert content[1]["type"] == "image_url"
+    assert content[1]["image_url"]["url"].startswith("data:image/png;base64,")
 
 
 # ---------------------------------------------------------------------------

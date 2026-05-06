@@ -68,8 +68,8 @@ def build_default_registry(settings: WorkerSettings) -> CapabilityRegistry:
 
     # Build the shared LlmChatProvider once per registry build so that
     # the query parser today and the agent router / critic / rewriter
-    # in later phases share a single client (and, crucially, a single
-    # keep-alive slot against Ollama). Failures are logged and
+    # in later phases share a single client (and, for local llama.cpp,
+    # a single OpenAI-compatible HTTP endpoint). Failures are logged and
     # downgraded to NoOpChatProvider — RAG falls back to regex; the
     # worker never crashes because of a broken LLM backend.
     _get_shared_llm_chat(settings)
@@ -665,6 +665,9 @@ def _get_shared_llm_chat(settings: WorkerSettings):
         settings.llm_ollama_base_url,
         settings.llm_ollama_model,
         settings.llm_ollama_keep_alive,
+        settings.llm_llamacpp_base_url,
+        settings.llm_llamacpp_model,
+        settings.llm_llamacpp_api_key,
         settings.llm_claude_model,
         settings.llm_timeout_seconds,
     )
@@ -676,6 +679,7 @@ def _get_shared_llm_chat(settings: WorkerSettings):
         ClaudeChatProvider,
         NoOpChatProvider,
         OllamaChatProvider,
+        OpenAICompatibleChatProvider,
     )
 
     backend = (settings.llm_backend or "noop").strip().lower()
@@ -704,10 +708,37 @@ def _get_shared_llm_chat(settings: WorkerSettings):
             log.warning(
                 "LLM chat backend init failed (ollama, %s: %s). "
                 "Falling back to NoOpChatProvider — dependent consumers "
-                "will use their offline fallback path. Ensure Ollama is "
-                "running (docker compose --profile llm up -d ollama "
-                "ollama-bootstrap) and AIPIPELINE_WORKER_LLM_OLLAMA_BASE_URL "
-                "points at it.",
+                "will use their offline fallback path. Ollama is a legacy "
+                "backend in this repo; prefer llm_backend='llamacpp' unless "
+                "you start Ollama yourself.",
+                type(ex).__name__, ex,
+            )
+            provider = NoOpChatProvider()
+    elif backend in ("llamacpp", "llama.cpp", "llama-cpp", "openai-compatible"):
+        try:
+            provider = OpenAICompatibleChatProvider(
+                base_url=settings.llm_llamacpp_base_url,
+                model=settings.llm_llamacpp_model,
+                api_key=settings.llm_llamacpp_api_key,
+                provider_label="llamacpp",
+                supports_vision=True,
+                supports_tools=True,
+                supports_audio=False,
+            )
+            log.info(
+                "LLM chat backend active: llama.cpp base_url=%s model=%s "
+                "timeout=%.1fs",
+                settings.llm_llamacpp_base_url,
+                settings.llm_llamacpp_model,
+                settings.llm_timeout_seconds,
+            )
+        except Exception as ex:
+            log.warning(
+                "LLM chat backend init failed (llamacpp, %s: %s). "
+                "Falling back to NoOpChatProvider — dependent consumers "
+                "will use their offline fallback path. Ensure llama.cpp "
+                "is running (docker compose --profile llm up -d) and "
+                "AIPIPELINE_WORKER_LLM_LLAMACPP_BASE_URL points at it.",
                 type(ex).__name__, ex,
             )
             provider = NoOpChatProvider()
@@ -745,7 +776,7 @@ def _get_shared_llm_chat(settings: WorkerSettings):
     else:
         log.warning(
             "Unknown llm_backend=%r. Falling back to NoOpChatProvider. "
-            "Supported: 'noop', 'ollama', 'claude'.",
+            "Supported: 'noop', 'ollama', 'llamacpp', 'claude'.",
             settings.llm_backend,
         )
         provider = NoOpChatProvider()
@@ -908,7 +939,7 @@ def _build_agent_capabilities(
             log.warning(
                 "AUTO/AGENT router requested=llm but llm_backend is noop "
                 "(or downgraded). Falling back to rule-based router — "
-                "set AIPIPELINE_WORKER_LLM_BACKEND=ollama|claude and "
+                "set AIPIPELINE_WORKER_LLM_BACKEND=llamacpp|claude and "
                 "ensure the backend is reachable to re-enable the LLM "
                 "router."
             )
@@ -1087,7 +1118,7 @@ def _build_agent_critic(settings: WorkerSettings, chat):
             log.warning(
                 "AGENT critic requested=llm but llm_backend is noop. "
                 "Falling back to rule critic — set "
-                "AIPIPELINE_WORKER_LLM_BACKEND=ollama|claude to re-enable."
+                "AIPIPELINE_WORKER_LLM_BACKEND=llamacpp|claude to re-enable."
             )
             return RuleCritic()
         log.info("AGENT critic: llm (backend=%s)", chat.name)
@@ -1129,8 +1160,8 @@ def _build_vision_provider(settings: WorkerSettings):
     Supported values for multimodal_vision_provider:
       - 'heuristic' (default): deterministic Pillow-based fallback
       - 'claude': Claude Vision via Anthropic API (requires API key)
-      - 'gemma': reuses the shared LlmChatProvider (Ollama gemma4:e2b
-        by default). Auto-downgrades to the heuristic provider with a
+      - 'gemma': reuses the shared LlmChatProvider (llama.cpp Gemma 4
+        GGUF locally, or legacy Ollama). Auto-downgrades to the heuristic provider with a
         warning if the chat backend does not advertise vision
         capability — this keeps MULTIMODAL registrable even when the
         LLM backend is NoOp or a text-only Ollama tag.
@@ -1167,8 +1198,9 @@ def _build_vision_provider(settings: WorkerSettings):
                 "shared chat backend %r does not advertise vision "
                 "capability (capabilities=%r). Falling back to the "
                 "heuristic vision provider — set "
-                "AIPIPELINE_WORKER_LLM_BACKEND=ollama with a multimodal "
-                "model tag (e.g. gemma4:e2b) to enable gemma vision.",
+                "AIPIPELINE_WORKER_LLM_BACKEND=llamacpp with the local "
+                "Gemma 4 GGUF service, or a legacy multimodal Ollama "
+                "tag, to enable gemma vision.",
                 chat.name, chat.capabilities,
             )
             return HeuristicVisionProvider()

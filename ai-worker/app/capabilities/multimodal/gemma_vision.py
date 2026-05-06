@@ -1,12 +1,12 @@
 """GemmaVisionProvider — vision over the shared LlmChatProvider seam.
 
-Gemma 4 E2B is natively multimodal: the same /api/chat endpoint that
-drives the agent router / critic / rewriter / query parser also accepts
-image bytes alongside the text prompt. Wiring this provider in makes
+Gemma 4 E2B is natively multimodal: the same chat endpoint that drives
+the agent router / critic / rewriter / query parser also accepts image
+bytes alongside the text prompt. Wiring this provider in makes
 the whole stack — router, critic, rewriter, parser, vision — reachable
 through a single local model. Single-model on-prem deployment is the
-story; `multimodal_vision_provider=gemma` + `llm_backend=ollama` is
-the knob.
+story; `multimodal_vision_provider=gemma` + `llm_backend=llamacpp` is
+the preferred local knob.
 
 The provider is the minimal adapter between
 ``VisionDescriptionProvider`` (bytes in → caption out) and
@@ -68,7 +68,7 @@ class GemmaVisionProvider(VisionDescriptionProvider):
     """Vision provider that reuses the shared LlmChatProvider.
 
     The chat argument MUST advertise ``capabilities['vision'] is True``.
-    Passing a non-vision chat provider (NoOp, a text-only Ollama tag,
+    Passing a non-vision chat provider (NoOp, a text-only model tag,
     …) raises ``ValueError`` at init — the registry catches it and
     downgrades to the heuristic provider with a warning.
     """

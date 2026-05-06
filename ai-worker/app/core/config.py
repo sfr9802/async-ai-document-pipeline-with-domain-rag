@@ -451,8 +451,9 @@ class WorkerSettings(BaseSettings):
             "is shared by the LLM-backed query parser today and by the "
             "agent router / critic / rewriter in later phases. Options: "
             "'noop' (default, every chat call raises — consumers fall "
-            "back to their offline path), 'ollama' (local Ollama server, "
-            "gemma4:e2b by default, see llm_ollama_* knobs below), "
+            "back to their offline path), 'ollama' (legacy local Ollama "
+            "server), 'llamacpp' (local llama.cpp OpenAI-compatible "
+            "server, see llm_llamacpp_* knobs below), "
             "'claude' (Anthropic API, requires anthropic_api_key). "
             "Init failure downgrades to noop with a warning; RAG never "
             "goes down because of a broken LLM backend."
@@ -477,9 +478,9 @@ class WorkerSettings(BaseSettings):
     llm_ollama_model: str = Field(
         default="gemma4:e2b",
         description=(
-            "Model tag served by Ollama. The bootstrap companion in "
-            "docker-compose.yml pulls this model on first compose up. "
-            "Switch to a smaller gemma4/llama variant on CPU-only hosts."
+            "Model tag served by a legacy Ollama backend. The default "
+            "compose stack no longer starts Ollama; prefer llm_backend="
+            "'llamacpp' for the local GGUF path."
         ),
     )
     llm_ollama_keep_alive: str = Field(
@@ -489,6 +490,32 @@ class WorkerSettings(BaseSettings):
             "(forwarded as the 'keep_alive' field on every /api/chat "
             "call). Shorter reclaims VRAM sooner; longer avoids cold "
             "loads for bursty workloads."
+        ),
+    )
+    llm_llamacpp_base_url: str = Field(
+        default="http://localhost:8081/v1",
+        description=(
+            "OpenAI-compatible llama.cpp server base URL. Use "
+            "http://llama-cpp:8080/v1 when the worker runs inside the "
+            "compose network alongside the llama-cpp service; use "
+            "http://localhost:8081/v1 when the worker runs on the host "
+            "and the service is exposed through docker-compose."
+        ),
+    )
+    llm_llamacpp_model: str = Field(
+        default="gemma4-e2b-local",
+        description=(
+            "Model alias served by the local llama.cpp server. The "
+            "docker-compose llm profile exposes the Gemma 4 E2B GGUF "
+            "checkpoint under this alias."
+        ),
+    )
+    llm_llamacpp_api_key: str = Field(
+        default="EMPTY",
+        description=(
+            "Bearer token sent to the llama.cpp OpenAI-compatible API. "
+            "The local compose service does not require auth by default; "
+            "set this only if you start llama-server with an API key."
         ),
     )
     llm_claude_model: str = Field(
@@ -519,8 +546,8 @@ class WorkerSettings(BaseSettings):
             "'heuristic' (deterministic Pillow-based fallback, no API "
             "key needed), 'claude' (Claude Vision via Anthropic API — "
             "requires anthropic_api_key), 'gemma' (reuses the shared "
-            "LlmChatProvider; requires llm_backend=ollama with a "
-            "vision-capable model such as gemma4:e2b). Default is "
+            "LlmChatProvider; requires llm_backend=ollama or llamacpp "
+            "with a vision-capable Gemma 4 model). Default is "
             "'heuristic' for CI/offline compatibility. When 'gemma' is "
             "selected but the chat backend does not advertise vision, "
             "the registry downgrades to heuristic with a warning."

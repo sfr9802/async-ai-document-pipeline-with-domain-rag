@@ -89,31 +89,57 @@ services:
   # profile is selected, so CPU-only dev machines that don't want a
   # resident model can skip it entirely.
   #
-  #   docker compose --profile llm up -d ollama ollama-bootstrap
+  #   docker compose --profile llm up -d
   #
-  # The bootstrap companion is a one-shot container that pulls
-  # gemma4:e2b (~5 GB on first run) and exits cleanly — the same pattern
-  # minio-bootstrap uses for bucket creation. Re-running it is a
-  # no-op once the model is already pulled.
-  #
-  # GPU reservation is OPTIONAL. On a CPU-only host either (a) comment
-  # out the deploy block below, or (b) start ollama with a compose
-  # override: `docker compose -f docker-compose.yml
-  # -f docker-compose.cpu.yml --profile llm up -d ollama
-  # ollama-bootstrap`. See docs/local-run.md "LLM stack (Ollama)" for
-  # the override file contents.
-  ollama:
-    image: ollama/ollama:latest
-    container_name: aipipeline-ollama
+  # Gemma 4 E2B runs from local GGUF files through llama.cpp's
+  # OpenAI-compatible API. The sibling mmproj file is mounted too, so
+  # image inputs work for MULTIMODAL vision without using Ollama.
+  llama-cpp:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda-b8840
+    container_name: aipipeline-llama-cpp-gemma4
     restart: unless-stopped
     profiles: ["llm"]
     ports:
-      - "11434:11434"
+      - "${AIPIPELINE_LLAMACPP_BIND_HOST:-127.0.0.1}:${AIPIPELINE_LLAMACPP_PORT:-8081}:8080"
     volumes:
-      - ollama_data:/root/.ollama
-    environment:
-      - OLLAMA_KEEP_ALIVE=30m
-      - OLLAMA_HOST=0.0.0.0
+      - type: bind
+        source: ${AIPIPELINE_LLAMACPP_MODEL_DIR:-C:/llm/gguf/gemma-4-e2b-it-gguf}
+        target: /models/gemma4-e2b
+        read_only: true
+    command:
+      - --model
+      - /models/gemma4-e2b/gemma-4-e2b-it-edited-q4_0.gguf
+      - --mmproj
+      - /models/gemma4-e2b/mmproj-gemma-4-e2b-it-q4_0.gguf
+      - --alias
+      - gemma4-e2b-local
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - "${AIPIPELINE_LLAMACPP_CTX_SIZE:-8192}"
+      - --cache-type-k
+      - "${AIPIPELINE_LLAMACPP_CACHE_TYPE_K:-f16}"
+      - --cache-type-v
+      - "${AIPIPELINE_LLAMACPP_CACHE_TYPE_V:-f16}"
+      - --n-gpu-layers
+      - "${AIPIPELINE_LLAMACPP_GPU_LAYERS:-99}"
+      - --jinja
+      - --reasoning
+      - "off"
+      - --image-min-tokens
+      - "${AIPIPELINE_LLAMACPP_IMAGE_TOKENS:-280}"
+      - --image-max-tokens
+      - "${AIPIPELINE_LLAMACPP_IMAGE_TOKENS:-280}"
+      - --metrics
+      - --props
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
     deploy:
       resources:
         reservations:
@@ -122,23 +148,7 @@ services:
               count: all
               capabilities: [gpu]
 
-  ollama-bootstrap:
-    image: ollama/ollama:latest
-    container_name: aipipeline-ollama-bootstrap
-    profiles: ["llm"]
-    depends_on:
-      ollama:
-        condition: service_started
-    entrypoint: >
-      /bin/sh -c "
-      sleep 3 &&
-      OLLAMA_HOST=http://ollama:11434 ollama pull gemma4:e2b &&
-      echo 'Model gemma4:e2b pulled and ready'
-      "
-    restart: "no"
-
 volumes:
   aipipeline-redis-data:
   aipipeline-postgres-data:
   aipipeline-minio-data:
-  ollama_data:

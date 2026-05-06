@@ -20,7 +20,7 @@ This file is provider-shaped, not use-case-shaped. Two call modes:
       backend's native tools API or a prompt-engineered JSON contract.
       Returns a ChatResult with either `text` or `tool_call` populated.
 
-Three backends ship here:
+Four backends ship here:
 
   * NoOpChatProvider — the default. Every method raises LlmChatError.
     CI and env-unset deployments hit this — downstream consumers are
@@ -31,6 +31,10 @@ Three backends ship here:
     Ollama HTTP API. Supports thinking mode (<|think|> prefix) when the
     model advertises it, and Ollama's native tools parameter for
     function calls.
+
+  * OpenAICompatibleChatProvider — local OpenAI-compatible HTTP APIs
+    such as llama.cpp or vLLM. This is the preferred path for GGUF
+    models served by llama-server.
 
   * ClaudeChatProvider — remote Anthropic API. Uses the same anthropic
     SDK already shipped for ClaudeGenerationProvider / ClaudeVisionProvider.
@@ -565,6 +569,268 @@ def _coerce_arguments(raw: Any) -> dict:
         if isinstance(parsed, dict):
             return parsed
     return {}
+
+
+# ---------------------------------------------------------------------------
+# OpenAI-compatible local servers — llama.cpp / vLLM
+# ---------------------------------------------------------------------------
+
+
+class OpenAICompatibleChatProvider(LlmChatProvider):
+    """OpenAI-compatible chat provider for local servers.
+
+    This intentionally avoids the OpenAI SDK so local deployments do not
+    gain another required dependency. It talks to ``POST
+    {base_url}/chat/completions`` and normalizes the response into the
+    same ``LlmChatProvider`` contract used by Ollama and Claude.
+    """
+
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        model: str,
+        api_key: str = "EMPTY",
+        provider_label: str = "openai-compatible",
+        supports_vision: bool = True,
+        supports_tools: bool = True,
+        supports_audio: bool = False,
+    ) -> None:
+        self._base_url = base_url.rstrip("/")
+        self._model = model
+        self._api_key = api_key
+        self._provider_label = provider_label
+        self._supports_vision = bool(supports_vision)
+        self._supports_tools = bool(supports_tools)
+        self._supports_audio = bool(supports_audio)
+
+    @property
+    def name(self) -> str:
+        return f"{self._provider_label}-{self._model}"
+
+    @property
+    def capabilities(self) -> dict:
+        return {
+            "function_calling": self._supports_tools,
+            "thinking": False,
+            "json_mode": True,
+            "vision": self._supports_vision,
+            "audio": self._supports_audio,
+        }
+
+    def chat_json(
+        self,
+        messages: Sequence[ChatMessage],
+        *,
+        schema_hint: str,
+        max_tokens: int = 512,
+        temperature: float = 0.0,
+        timeout_s: float = 15.0,
+        enable_thinking: bool = False,
+    ) -> dict:
+        prepared = self._prepare_text_messages(messages, schema_hint=schema_hint)
+        payload = {
+            "model": self._model,
+            "messages": prepared,
+            "response_format": {"type": "json_object"},
+            "stream": False,
+            "max_tokens": int(max_tokens),
+            "temperature": float(temperature),
+        }
+        body = self._post_chat(payload, timeout_s=timeout_s)
+        content = self._first_message_content(body)
+        if not isinstance(content, str) or not content.strip():
+            raise LlmChatError(
+                f"{self.name} returned an empty chat_json message content."
+            )
+        try:
+            parsed = json.loads(content)
+        except json.JSONDecodeError as ex:
+            raise LlmChatError(
+                f"{self.name} returned non-JSON content: {ex}"
+            ) from ex
+        if not isinstance(parsed, dict):
+            raise LlmChatError(
+                f"{self.name} JSON response must be an object; "
+                f"got {type(parsed).__name__}."
+            )
+        return parsed
+
+    def chat_tools(
+        self,
+        messages: Sequence[ChatMessage],
+        tools: Sequence[ChatToolSpec],
+        *,
+        max_tokens: int = 512,
+        temperature: float = 0.0,
+        timeout_s: float = 15.0,
+        enable_thinking: bool = False,
+    ) -> ChatResult:
+        if not self._supports_tools:
+            raise LlmChatError(f"{self.name} does not support tool calling.")
+
+        payload = {
+            "model": self._model,
+            "messages": self._prepare_text_messages(messages, schema_hint=None),
+            "tools": [_tool_spec_to_openai(t) for t in tools],
+            "tool_choice": "auto",
+            "stream": False,
+            "max_tokens": int(max_tokens),
+            "temperature": float(temperature),
+        }
+        started_at = time.perf_counter()
+        body = self._post_chat(payload, timeout_s=timeout_s)
+        elapsed_ms = (time.perf_counter() - started_at) * 1000.0
+
+        message = self._first_message(body)
+        tool_calls = message.get("tool_calls") or []
+        if tool_calls:
+            first = tool_calls[0] or {}
+            fn = first.get("function") or {}
+            return ChatResult(
+                text=None,
+                tool_call={
+                    "name": fn.get("name", ""),
+                    "arguments": _coerce_arguments(fn.get("arguments")),
+                },
+                raw=body,
+                tokens_in=self._usage_int(body, "prompt_tokens"),
+                tokens_out=self._usage_int(body, "completion_tokens"),
+                latency_ms=elapsed_ms,
+            )
+
+        content = message.get("content") or ""
+        if not isinstance(content, str) or not content.strip():
+            raise LlmChatError(
+                f"{self.name} tools call returned neither tool_calls nor content."
+            )
+        return ChatResult(
+            text=content,
+            tool_call=None,
+            raw=body,
+            tokens_in=self._usage_int(body, "prompt_tokens"),
+            tokens_out=self._usage_int(body, "completion_tokens"),
+            latency_ms=elapsed_ms,
+        )
+
+    def chat_vision(
+        self,
+        *,
+        prompt: str,
+        image_bytes: bytes,
+        mime_type: str = "image/png",
+        max_tokens: int = 280,
+        temperature: float = 0.2,
+        timeout_s: float = 60.0,
+    ) -> str:
+        if not self._supports_vision:
+            raise LlmChatError(f"{self.name} does not support vision input.")
+
+        import base64 as _b64
+
+        b64 = _b64.standard_b64encode(image_bytes).decode("ascii")
+        payload = {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{b64}",
+                            },
+                        },
+                    ],
+                }
+            ],
+            "stream": False,
+            "max_tokens": int(max_tokens),
+            "temperature": float(temperature),
+        }
+        body = self._post_chat(payload, timeout_s=timeout_s)
+        content = self._first_message_content(body)
+        if not isinstance(content, str) or not content.strip():
+            raise LlmChatError(f"{self.name} vision returned empty content.")
+        return content
+
+    def _prepare_text_messages(
+        self,
+        messages: Sequence[ChatMessage],
+        *,
+        schema_hint: Optional[str],
+    ) -> list[dict]:
+        if not messages:
+            raise LlmChatError("messages must not be empty")
+        out = [{"role": m.role, "content": m.content} for m in messages]
+        if schema_hint:
+            reminder = f"Respond ONLY with a JSON object matching: {schema_hint}"
+            last_system_idx = _last_system_index(out)
+            if last_system_idx is None:
+                out.insert(0, {"role": "system", "content": reminder})
+            else:
+                out[last_system_idx]["content"] = (
+                    out[last_system_idx]["content"].rstrip() + "\n" + reminder
+                )
+        return out
+
+    def _post_chat(self, payload: dict, *, timeout_s: float) -> dict:
+        import httpx
+
+        url = f"{self._base_url}/chat/completions"
+        headers = {"Content-Type": "application/json"}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+
+        try:
+            with httpx.Client(timeout=timeout_s) as client:
+                response = client.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except httpx.TimeoutException as ex:
+            raise LlmChatError(
+                f"{self.name} timed out after {timeout_s}s at {url}: {ex}"
+            ) from ex
+        except httpx.HTTPStatusError as ex:
+            raise LlmChatError(
+                f"{self.name} HTTP {ex.response.status_code} at {url}: "
+                f"{ex.response.text[:256]}"
+            ) from ex
+        except httpx.HTTPError as ex:
+            raise LlmChatError(f"{self.name} network error at {url}: {ex}") from ex
+        except json.JSONDecodeError as ex:
+            raise LlmChatError(f"{self.name} returned non-JSON body: {ex}") from ex
+
+    def _first_message(self, body: dict) -> dict:
+        choices = body.get("choices") or []
+        if not choices:
+            raise LlmChatError(f"{self.name} response had no choices.")
+        message = (choices[0] or {}).get("message") or {}
+        if not isinstance(message, dict):
+            raise LlmChatError(f"{self.name} response message was malformed.")
+        return message
+
+    def _first_message_content(self, body: dict) -> Any:
+        return self._first_message(body).get("content")
+
+    def _usage_int(self, body: dict, key: str) -> int:
+        usage = body.get("usage") or {}
+        try:
+            return int(usage.get(key) or 0)
+        except (TypeError, ValueError):
+            return 0
+
+
+def _tool_spec_to_openai(tool: ChatToolSpec) -> dict:
+    return {
+        "type": "function",
+        "function": {
+            "name": tool.name,
+            "description": tool.description,
+            "parameters": tool.parameters,
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
