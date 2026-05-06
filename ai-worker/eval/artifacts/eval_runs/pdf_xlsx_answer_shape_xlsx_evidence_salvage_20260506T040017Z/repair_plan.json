@@ -1,7 +1,7 @@
 {
   "schema_version": "rag_pdf_xlsx_answer_prompt_repair_plan_v1",
-  "run_id": "20260506T050420Z",
-  "generated_at": "2026-05-06T05:04:20.204141+00:00",
+  "run_id": "20260506T040848Z",
+  "generated_at": "2026-05-06T04:08:48.453322+00:00",
   "status": "COMPLETED_DIAGNOSTIC_ONLY_FAIL_CLOSED",
   "promotion_evidence": false,
   "evidence_role": "diagnostic",
@@ -12,14 +12,14 @@
   "dry_run_preview_used_as_actual_answer": false,
   "source_inputs": {
     "answer_generation_inputs": {
-      "path": "ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_xlsx_answer_context_assembly_20260506T050304Z/answer_generation_inputs_with_xlsx_content.jsonl",
+      "path": "ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_local_llm_20260506T015846Z/answer_generation_inputs.jsonl",
       "exists": true,
-      "sha256": "1045820cf8edd8fe9ae1770e2394114e38baa3346fe9650d5ccc31ad4f08148b"
+      "sha256": "582e4382ebe8633307614ff3d9915c03d15feb2529c5117525fa1c20f2fc0679"
     },
     "local_llm_answers": {
-      "path": "ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_xlsx_answer_context_assembly_20260506T050304Z/local_llm_repaired_answers.jsonl",
+      "path": "ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_xlsx_evidence_salvage_20260506T040017Z/local_llm_repaired_answers.jsonl",
       "exists": true,
-      "sha256": "403a0c6c1c159e99149064370ef9ef3ff1fcda89cd554e318412df1b45bc3369"
+      "sha256": "00917c4f3fdbb62c0c6e31a0768be4e91d4fbd1f623e37988e16178ce286da32"
     }
   },
   "prompt_only_rows": [],
@@ -30,7 +30,7 @@
       "query": "1호선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -41,7 +41,7 @@
       "query": "신분당선 2019년 5월 승차총승객수 알려줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -52,7 +52,7 @@
       "query": "의정부경전철 승차 자료 어디야?",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -63,7 +63,7 @@
       "query": "우이신설선 201905 행 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -74,7 +74,7 @@
       "query": "경인선 월별 승차 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -85,7 +85,7 @@
       "query": "수인선 월별 승차 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -96,7 +96,7 @@
       "query": "청운노인요양원 주소 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -107,7 +107,7 @@
       "query": "부여효요양원 주소 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -118,7 +118,7 @@
       "query": "청운노인요양원 지정일자 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -129,7 +129,7 @@
       "query": "163,443,126 승객수 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -151,7 +151,7 @@
       "query": "1호선 승객 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -173,7 +173,7 @@
       "query": "5호선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -184,7 +184,7 @@
       "query": "진명실버홈 행 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -195,7 +195,7 @@
       "query": "우이신설선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -206,7 +206,7 @@
       "query": "하얀민들레노인요양원 행 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -217,7 +217,7 @@
       "query": "9호선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -228,7 +228,7 @@
       "query": "해뜨는요양원2 행 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -239,7 +239,7 @@
       "query": "해오름요양원 행 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -250,7 +250,7 @@
       "query": "8호선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -261,7 +261,7 @@
       "query": "달서한독요양원 행 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -272,7 +272,7 @@
       "query": "정성요양원 행 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -283,7 +283,7 @@
       "query": "의정부경전철 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -294,7 +294,7 @@
       "query": "3호선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -305,7 +305,7 @@
       "query": "경인선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -316,7 +316,7 @@
       "query": "안산선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -327,7 +327,7 @@
       "query": "일산선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -338,7 +338,7 @@
       "query": "경의선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -349,7 +349,7 @@
       "query": "수인선 승차 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -360,7 +360,7 @@
       "query": "인하요양원 소재지 정보 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -371,7 +371,7 @@
       "query": "축복전문요양원 장기요양기관 정보 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -382,7 +382,7 @@
       "query": "신논현요양원 행 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -393,7 +393,7 @@
       "query": "인천은빛요양원 행 찾아줘.",
       "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
-      "fail_closed_reason": "",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
       "policy_blocker_reason": "xlsx_answer_quality_blocked",
       "retrieval_failure_reason": "MATCHED"
@@ -1068,6 +1068,116 @@
     },
     {
       "track": "XLSX",
+      "query_id": "gq_xlsx_lookup_001",
+      "query": "1호선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_xlsx_lookup_002",
+      "query": "신분당선 2019년 5월 승차총승객수 알려줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_xlsx_lookup_003",
+      "query": "의정부경전철 승차 자료 어디야?",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_xlsx_lookup_004",
+      "query": "우이신설선 201905 행 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_xlsx_lookup_005",
+      "query": "경인선 월별 승차 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_xlsx_lookup_006",
+      "query": "수인선 월별 승차 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_xlsx_lookup_007",
+      "query": "청운노인요양원 주소 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_xlsx_lookup_008",
+      "query": "부여효요양원 주소 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_xlsx_date_number_format_001",
+      "query": "청운노인요양원 지정일자 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_xlsx_date_number_format_003",
+      "query": "163,443,126 승객수 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
       "query_id": "gq_xlsx_hidden_policy_003",
       "query": "증감률 보이는 데 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
@@ -1090,9 +1200,251 @@
     },
     {
       "track": "XLSX",
+      "query_id": "gq_xlsx_aggregation_002",
+      "query": "1호선 승객 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
       "query_id": "gq_xlsx_aggregation_003",
       "query": "매출 증감률 수식 쪽 찾아줘.",
       "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_012",
+      "query": "5호선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_013",
+      "query": "진명실버홈 행 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_017",
+      "query": "우이신설선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_018",
+      "query": "하얀민들레노인요양원 행 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_022",
+      "query": "9호선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_023",
+      "query": "해뜨는요양원2 행 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_028",
+      "query": "해오름요양원 행 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_031",
+      "query": "8호선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_032",
+      "query": "달서한독요양원 행 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_033",
+      "query": "정성요양원 행 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_034",
+      "query": "의정부경전철 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_035",
+      "query": "3호선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_036",
+      "query": "경인선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_037",
+      "query": "안산선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_038",
+      "query": "일산선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_039",
+      "query": "경의선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_040",
+      "query": "수인선 승차 쪽 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_041",
+      "query": "인하요양원 소재지 정보 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_042",
+      "query": "축복전문요양원 장기요양기관 정보 찾아줘.",
+      "expected_answer_shape": "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_043",
+      "query": "신논현요양원 행 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
+      "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
+      "fail_closed_reason": "XLSX_LOCATOR_ONLY",
+      "secondary_failure_reasons": "",
+      "policy_blocker_reason": "xlsx_answer_quality_blocked",
+      "retrieval_failure_reason": "MATCHED"
+    },
+    {
+      "track": "XLSX",
+      "query_id": "gq_auto_044",
+      "query": "인천은빛요양원 행 찾아줘.",
+      "expected_answer_shape": "TABLE_ROW_VALUE",
       "failure_reason": "CONTEXT_ASSEMBLY_FAILURE",
       "fail_closed_reason": "XLSX_LOCATOR_ONLY",
       "secondary_failure_reasons": "",
@@ -1272,7 +1624,7 @@
     "pdf_c7_user_policy_blocked_rows": 22,
     "xlsx_hidden_formula_date_policy_blocked_rows": 8,
     "diagnostic_shape_failure_rows": 0,
-    "fail_closed_abstain_rows": 40
+    "fail_closed_abstain_rows": 72
   },
   "notes": [
     "Rows are diagnostic-only and do not change official answer denominators.",

@@ -2745,3 +2745,66 @@ Move from diagnostic-only full72 vector evidence to a concrete query-level clean
   candidate artifact mutation, SearchUnit mutation, DB mutation, threshold
   relaxation, reranking, parser expansion, retrieval tuning, or promotion was
   applied.
+
+## 2026-05-06 - XLSX Answer Context Assembly Repair
+
+### Summary
+
+- Repaired the diagnostic PDF/XLSX answer-generation input builder so XLSX
+  retrieval-selected SearchUnit content is carried into answer inputs when it
+  can be joined safely.
+- Retrieval ranking, parser/chunking, SearchUnit payloads, vector embeddings,
+  DB contents, and gold CSVs were not modified.
+- The join is read-only and evidence-scoped:
+  `search_unit_id`/`node_id`/`chunk_id` exact join first, then
+  `document_version_id + sheet + exact range`, then safe range overlap only
+  when the selected retrieval hit has no ID join.
+- Broad sheet/workbook fallbacks are not promoted. Workbook probing remains
+  diagnostic-only and is not used as answer evidence.
+- Expected answers, must-contain terms, gold evidence, relevance labels, and
+  answerability labels are not used as evidence. Policy-pending XLSX rows stay
+  denominator-excluded.
+
+### Evidence
+
+- New run:
+  - `ai-worker/eval/artifacts/eval_runs/pdf_xlsx_answer_shape_xlsx_answer_context_assembly_20260506T050304Z/`
+- Updated diagnostic report:
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_xlsx_answer_shape_repair_report.json`
+  - `ai-worker/eval/reports/rag-ingestion/rag_pdf_xlsx_answer_shape_repair.csv`
+
+### Key Counts
+
+- XLSX rows: `50`.
+- XLSX policy-pending rows: `8`.
+- Retrieval-selected XLSX rows joined to SearchUnit content: `32`.
+- Exact locator joins: `32`.
+- Safe range-overlap joins: `0`.
+- Failed joins with retrieval context: `2`.
+- XLSX answer input has values: `0 -> 32`.
+- XLSX answer_allowed count: `0 -> 32`.
+- XLSX diagnostic answer denominator: `0 -> 32`.
+- Still fail-closed XLSX rows:
+  - `XLSX_POLICY_PENDING`: `8`
+  - `XLSX_LOCATOR_ONLY`: `10`
+- `keyword_echo_only_count`: `0`.
+- `location_only_without_content_count`: `0`.
+- `claim_without_citation_count`: `0`.
+- `source_workbook_promoted_evidence_count`: `0`.
+- `gold_leakage_count`: `0`.
+- `broad_fallback_promoted_evidence_count`: `0`.
+- `promotion_evidence=false`, `external_live_llm_run=false`,
+  `optional_judge_run=false`.
+
+### Guardrails And Decision
+
+- The denominator is now non-zero only for rows with concrete content-bearing
+  evidence carried from retrieval-selected SearchUnit payloads into the
+  answer-generation input and then into evidence objects.
+- The 10 remaining non-policy XLSX fail-closed rows are not used for answer
+  evaluation because the selected retrieval context could not be joined to
+  concrete content under the exact/overlap policy.
+- Re-chunking or re-embedding is still not justified by this trace alone:
+  parser and index payload values existed upstream, and the repaired failure
+  was answer-context assembly/serialization rather than missing indexed XLSX
+  content.

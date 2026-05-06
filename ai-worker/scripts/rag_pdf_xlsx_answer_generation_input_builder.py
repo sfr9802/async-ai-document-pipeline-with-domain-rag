@@ -12,6 +12,7 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 import re
 import shutil
 import sys
@@ -43,7 +44,20 @@ DEFAULT_PDF_C7_REPORT = REPORT_DIR / "rag_pdf_gold_policy_review.json"
 
 SCHEMA_VERSION = "rag_pdf_xlsx_answer_generation_inputs_v1"
 RUN_PREFIX = "pdf_xlsx_answer_shape_local_llm"
+DEFAULT_DB_DSN = os.environ.get(
+    "RAG_DB_DSN",
+    "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw",
+)
 ANSWER_SHAPE_POLICY_PENDING = "NOT_ANSWERABLE_OR_POLICY_PENDING"
+XLSX_ALLOWED_EVIDENCE_CHUNK_TYPES = {
+    "cell",
+    "key_value",
+    "row",
+    "row_group",
+    "table",
+    "table_region",
+}
+XLSX_BROAD_EVIDENCE_CHUNK_TYPES = {"sheet_summary", "workbook_summary"}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -62,7 +76,11 @@ def main(argv: list[str] | None = None) -> int:
         pdf_c7_report=Path(args.pdf_c7_report),
         output_root=Path(args.output_root),
         run_id=args.run_id,
+        run_prefix=args.run_prefix,
         max_context_chars=args.max_context_chars,
+        db_dsn=args.db_dsn,
+        xlsx_searchunit_content_join=not args.disable_xlsx_searchunit_content_join,
+        enriched_inputs_alias=Path(args.enriched_inputs_alias).name if args.enriched_inputs_alias else "",
     )
     print_json(
         {
@@ -99,7 +117,19 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--pdf-c7-report", default=str(DEFAULT_PDF_C7_REPORT))
     parser.add_argument("--output-root", default=str(EVAL_RUNS_DIR))
     parser.add_argument("--run-id", default="")
+    parser.add_argument("--run-prefix", default=RUN_PREFIX)
     parser.add_argument("--max-context-chars", type=int, default=6000)
+    parser.add_argument("--db-dsn", default=DEFAULT_DB_DSN)
+    parser.add_argument(
+        "--disable-xlsx-searchunit-content-join",
+        action="store_true",
+        help="Disable the read-only join from selected XLSX retrieval hits to SearchUnit payload text.",
+    )
+    parser.add_argument(
+        "--enriched-inputs-alias",
+        default="",
+        help="Optional extra filename in the artifact dir for the same answer-generation inputs.",
+    )
     return parser.parse_args(argv)
 
 
@@ -118,13 +148,18 @@ def run_builder(
     pdf_c7_report: Path,
     output_root: Path,
     run_id: str = "",
+    run_prefix: str = RUN_PREFIX,
     max_context_chars: int = 6000,
+    db_dsn: str = DEFAULT_DB_DSN,
+    xlsx_searchunit_content_join: bool = True,
+    enriched_inputs_alias: str = "",
 ) -> dict[str, Any]:
     run_id = run_id or utc_run_id()
     generated_at = utc_timestamp()
-    artifact_dir = output_root / f"{RUN_PREFIX}_{run_id}"
+    artifact_dir = output_root / f"{run_prefix}_{run_id}"
     manifest_path = artifact_dir / "manifest.json"
     inputs_path = artifact_dir / "answer_generation_inputs.jsonl"
+    enriched_inputs_alias_path = artifact_dir / enriched_inputs_alias if enriched_inputs_alias else None
 
     plan_payload = read_json_object(plan)
     diagnostic_rows = list(plan_payload.get("diagnostic_rows") or []) if plan_payload else []
@@ -145,6 +180,13 @@ def run_builder(
         pdf_retrieval_report=pdf_retrieval_report,
         pdf_c6_report=pdf_c6_report,
     )
+    xlsx_searchunit_index = (
+        load_xlsx_searchunit_content_index(retrieval_maps["xlsx"], db_dsn=db_dsn)
+        if xlsx_searchunit_content_join
+        else empty_xlsx_searchunit_content_index("disabled_by_cli")
+    )
+    if xlsx_searchunit_index.get("error"):
+        warnings.append(f"xlsx SearchUnit content join unavailable: {xlsx_searchunit_index['error']}")
     dataset_index = build_dataset_index(DATASET_DIR)
     extraction_cache: dict[str, Any] = {}
 
@@ -169,6 +211,7 @@ def run_builder(
                 dataset_index=dataset_index,
                 cache=extraction_cache,
                 retrieval_maps=retrieval_maps,
+                xlsx_searchunit_index=xlsx_searchunit_index,
                 policy=policy,
             )
         elif track == "PDF":
@@ -245,12 +288,15 @@ def run_builder(
     if xlsx_review_used.exists():
         shutil.copy2(xlsx_review_used, xlsx_review_snapshot)
     write_jsonl(inputs_path, input_rows)
+    if enriched_inputs_alias_path is not None:
+        write_jsonl(enriched_inputs_alias_path, input_rows)
     manifest = build_manifest(
         run_id=run_id,
         generated_at=generated_at,
         artifact_dir=artifact_dir,
         manifest_path=manifest_path,
         inputs_path=inputs_path,
+        enriched_inputs_alias_path=enriched_inputs_alias_path,
         rows=input_rows,
         source_paths={
             "contract": contract,
@@ -270,6 +316,7 @@ def run_builder(
         warnings=warnings,
         xlsx_external_used=xlsx_external_used,
         xlsx_external_basename=xlsx_external_review.name if xlsx_external_review else "",
+        xlsx_searchunit_index=xlsx_searchunit_index,
     )
     write_json(manifest_path, manifest)
     return manifest
@@ -282,6 +329,7 @@ def build_xlsx_context(
     dataset_index: Mapping[str, list[Path]],
     cache: dict[str, Any],
     retrieval_maps: Mapping[str, Mapping[str, Any]],
+    xlsx_searchunit_index: Mapping[str, Any],
     policy: Mapping[str, bool],
 ) -> dict[str, Any]:
     query_id = clean(row.get("query_id"))
@@ -321,31 +369,32 @@ def build_xlsx_context(
         or clean(row.get("expected_answer_shape")) == ANSWER_SHAPE_POLICY_PENDING
     ):
         context["context_errors"].append("content extraction skipped for policy-pending/not-answerable row")
+        context["xlsx_searchunit_content_join"] = {
+            "status": "SKIPPED_POLICY_PENDING",
+            "answer_evidence_used": False,
+        }
         return context
+
+    join_context = xlsx_searchunit_answer_context(
+        retrieval_context=context["retrieval_context"],
+        searchunit_index=xlsx_searchunit_index,
+    )
+    if join_context.get("context_available"):
+        context.update(join_context)
+        context["context_has_expected_terms"] = False
+        return context
+    context["xlsx_searchunit_content_join"] = join_context.get(
+        "xlsx_searchunit_content_join",
+        {"status": "NO_JOIN", "answer_evidence_used": False},
+    )
 
     source_path = resolve_dataset_file(file_name, dataset_index)
     if source_path is None:
         context["context_errors"].append(f"source workbook not found under {repo_relative(DATASET_DIR)}")
-        return context
-    context["source_path"] = repo_relative(source_path)
-    try:
-        extracted = extract_xlsx_context(
-            source_path=source_path,
-            sheet_name=sheet_name,
-            cell_range=cell_range,
-            expected_terms=split_terms(row.get("must_contain_terms")) + [clean(row.get("expected_answer_text"))],
-            cache=cache,
-        )
-    except Exception as exc:  # pragma: no cover - diagnostic fallback
-        context["context_errors"].append(f"xlsx extraction failed: {type(exc).__name__}: {exc}")
-        return context
-
-    context.update(extracted)
-    context["context_available"] = bool(
-        context.get("nearby_table_context") or context.get("value_context") or context.get("header_context")
-    )
-    context["context_has_expected_terms"] = has_any_term(
-        json.dumps(extracted, ensure_ascii=False), split_terms(row.get("must_contain_terms"))
+    else:
+        context["source_path"] = repo_relative(source_path)
+    context["context_errors"].append(
+        "no selected SearchUnit content joined; source workbook probing is diagnostic-only and not promoted"
     )
     return context
 
@@ -656,10 +705,18 @@ def retrieval_context_for(
                 {
                     "rank": result.get("rank"),
                     "score": result.get("score"),
+                    "search_unit_id": result.get("search_unit_id") or result.get("searchUnitId"),
+                    "node_id": result.get("node_id") or result.get("nodeId"),
+                    "chunk_id": result.get("chunk_id") or result.get("chunkId"),
                     "source_file_name": result.get("source_file_name"),
+                    "source_file_type": result.get("source_file_type"),
                     "chunk_type": result.get("chunk_type"),
                     "citation_text": result.get("citation_text"),
                     "location_json": location,
+                    "parser_name": result.get("parser_name"),
+                    "parser_version": result.get("parser_version"),
+                    "index_version": result.get("index_version"),
+                    "embedding_status": result.get("embedding_status"),
                     "match_breakdown": result.get("match_breakdown"),
                 }
             )
@@ -675,6 +732,424 @@ def retrieval_context_for(
             "supporting_hits": classified.get("supporting_hits"),
         }
     )
+
+
+def empty_xlsx_searchunit_content_index(error: str = "") -> dict[str, Any]:
+    return {
+        "enabled": False,
+        "status": "DISABLED" if error else "EMPTY",
+        "error": error,
+        "by_id": {},
+        "by_docv": {},
+        "selected_search_unit_id_count": 0,
+        "loaded_search_unit_count": 0,
+    }
+
+
+def load_xlsx_searchunit_content_index(
+    retrieval_maps: Mapping[str, Mapping[str, Any]],
+    *,
+    db_dsn: str,
+) -> dict[str, Any]:
+    query_results = retrieval_maps.get("query_results") or {}
+    selected_ids: set[str] = set()
+    docv_ids: set[str] = set()
+    for row in query_results.values():
+        if not isinstance(row, Mapping):
+            continue
+        for hit in row.get("top_k_results") or []:
+            if not isinstance(hit, Mapping):
+                continue
+            selected_id = clean(hit.get("search_unit_id") or hit.get("searchUnitId"))
+            if selected_id:
+                selected_ids.add(selected_id)
+            location = hit.get("location_json") if isinstance(hit.get("location_json"), Mapping) else {}
+            docv = clean(location.get("document_version_id") or hit.get("document_version_id"))
+            if docv:
+                docv_ids.add(docv)
+    if not selected_ids and not docv_ids:
+        return empty_xlsx_searchunit_content_index("no_selected_xlsx_searchunit_or_docv_ids")
+    try:
+        import psycopg2
+        import psycopg2.extras
+    except Exception as exc:  # pragma: no cover - optional dependency
+        return empty_xlsx_searchunit_content_index(f"psycopg2 unavailable: {type(exc).__name__}: {exc}")
+
+    try:
+        with psycopg2.connect(db_dsn, cursor_factory=psycopg2.extras.RealDictCursor) as conn:
+            conn.set_session(readonly=True, autocommit=True)
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, index_id, document_version_id, source_file_id, source_file_name,
+                           unit_type, unit_key, chunk_type, location_json, text_content,
+                           embedding_text, bm25_text, display_text, debug_text, citation_text,
+                           parser_name, parser_version, index_version, embedding_status
+                      FROM search_unit
+                     WHERE (
+                            id = ANY(%s)
+                            OR document_version_id = ANY(%s)
+                           )
+                       AND parser_version = 'xlsx-extract-v2-hidden-safe'
+                       AND index_version = 'rag-ingestion-v2-xlsx-candidate-v1'
+                    """,
+                    (list(selected_ids), list(docv_ids)),
+                )
+                rows = [dict(row) for row in cur.fetchall()]
+    except Exception as exc:
+        return empty_xlsx_searchunit_content_index(f"{type(exc).__name__}: {exc}")
+
+    by_id: dict[str, dict[str, Any]] = {}
+    by_docv: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        unit_id = clean(row.get("id"))
+        if unit_id:
+            by_id[unit_id] = row
+        by_docv.setdefault(clean(row.get("document_version_id")), []).append(row)
+    return {
+        "enabled": True,
+        "status": "LOADED",
+        "error": "",
+        "by_id": by_id,
+        "by_docv": by_docv,
+        "selected_search_unit_id_count": len(selected_ids),
+        "selected_document_version_id_count": len(docv_ids),
+        "loaded_search_unit_count": len(rows),
+    }
+
+
+def xlsx_searchunit_answer_context(
+    *,
+    retrieval_context: Mapping[str, Any],
+    searchunit_index: Mapping[str, Any],
+) -> dict[str, Any]:
+    join_meta: dict[str, Any] = {
+        "status": "NO_JOIN",
+        "answer_evidence_used": False,
+        "join_type": "",
+        "rank": None,
+        "search_unit_id": "",
+        "failed_join_reasons": [],
+    }
+    if not parse_bool(searchunit_index.get("enabled")):
+        join_meta["status"] = "JOIN_UNAVAILABLE"
+        join_meta["failed_join_reasons"].append(clean(searchunit_index.get("error")) or "join disabled")
+        return {"context_available": False, "xlsx_searchunit_content_join": join_meta}
+
+    for hit in retrieval_context.get("top_k_results") or []:
+        if not isinstance(hit, Mapping):
+            continue
+        unit, join_type, reason = find_joined_xlsx_searchunit(hit, searchunit_index)
+        if not unit:
+            if reason:
+                join_meta["failed_join_reasons"].append(reason)
+            continue
+        content = context_from_joined_xlsx_searchunit(unit, hit, join_type=join_type)
+        if content.get("context_available"):
+            return content
+        join_meta["failed_join_reasons"].append(
+            f"rank {clean(hit.get('rank')) or '?'} joined but had no concrete content"
+        )
+    return {"context_available": False, "xlsx_searchunit_content_join": join_meta}
+
+
+def find_joined_xlsx_searchunit(
+    hit: Mapping[str, Any],
+    searchunit_index: Mapping[str, Any],
+) -> tuple[dict[str, Any] | None, str, str]:
+    by_id = searchunit_index.get("by_id") if isinstance(searchunit_index.get("by_id"), Mapping) else {}
+    by_docv = searchunit_index.get("by_docv") if isinstance(searchunit_index.get("by_docv"), Mapping) else {}
+    hit_id = clean(hit.get("search_unit_id") or hit.get("node_id") or hit.get("chunk_id"))
+    if hit_id:
+        unit = by_id.get(hit_id)
+        if not isinstance(unit, Mapping):
+            return None, "", f"rank {clean(hit.get('rank')) or '?'} search_unit_id not loaded"
+        join_type = safe_xlsx_join_type(hit, unit)
+        if not join_type:
+            return None, "", f"rank {clean(hit.get('rank')) or '?'} search_unit_id was not safe answer evidence"
+        return dict(unit), join_type, ""
+
+    hit_loc = xlsx_location(hit.get("location_json") if isinstance(hit.get("location_json"), Mapping) else {})
+    docv = hit_loc.get("document_version_id")
+    candidates = by_docv.get(docv) if docv else []
+    if not isinstance(candidates, list):
+        return None, "", f"rank {clean(hit.get('rank')) or '?'} has no document_version candidates"
+
+    exact_matches: list[tuple[dict[str, Any], str]] = []
+    overlap_matches: list[tuple[dict[str, Any], str]] = []
+    for candidate in candidates:
+        if not isinstance(candidate, Mapping):
+            continue
+        join_type = safe_xlsx_join_type(hit, candidate)
+        if join_type == "exact_locator":
+            exact_matches.append((dict(candidate), join_type))
+        elif join_type == "safe_range_overlap":
+            overlap_matches.append((dict(candidate), join_type))
+    if exact_matches:
+        return exact_matches[0][0], exact_matches[0][1], ""
+    if overlap_matches:
+        return overlap_matches[0][0], overlap_matches[0][1], ""
+    return None, "", f"rank {clean(hit.get('rank')) or '?'} had no exact or safe range-overlap SearchUnit"
+
+
+def safe_xlsx_join_type(hit: Mapping[str, Any], unit: Mapping[str, Any]) -> str:
+    chunk_type = clean(unit.get("chunk_type") or hit.get("chunk_type") or unit.get("unit_type")).lower()
+    if chunk_type in XLSX_BROAD_EVIDENCE_CHUNK_TYPES:
+        return ""
+    if chunk_type and chunk_type not in XLSX_ALLOWED_EVIDENCE_CHUNK_TYPES:
+        return ""
+    hit_loc = xlsx_location(hit.get("location_json") if isinstance(hit.get("location_json"), Mapping) else {})
+    unit_loc = xlsx_location(unit.get("location_json") if isinstance(unit.get("location_json"), Mapping) else {})
+    hit_docv = hit_loc.get("document_version_id")
+    unit_docv = clean(unit.get("document_version_id") or unit_loc.get("document_version_id"))
+    if hit_docv and unit_docv and hit_docv != unit_docv:
+        return ""
+    if not hit_loc.get("sheet") or not unit_loc.get("sheet"):
+        return ""
+    if hit_loc["sheet"] != unit_loc["sheet"]:
+        return ""
+    hit_range = parse_cell_range(hit_loc.get("range", ""))
+    unit_range = parse_cell_range(unit_loc.get("range", ""))
+    if not hit_range or not unit_range:
+        return ""
+    if hit_range == unit_range:
+        return "exact_locator"
+    if ranges_overlap(hit_range, unit_range):
+        return "safe_range_overlap"
+    return ""
+
+
+def context_from_joined_xlsx_searchunit(
+    unit: Mapping[str, Any],
+    hit: Mapping[str, Any],
+    *,
+    join_type: str,
+) -> dict[str, Any]:
+    content_field, text = first_searchunit_content(unit)
+    if not xlsx_text_has_content(text):
+        return {"context_available": False}
+    location = xlsx_location(unit.get("location_json") if isinstance(unit.get("location_json"), Mapping) else {})
+    parsed = parse_xlsx_payload_text(text, source_field=f"search_unit.{content_field}")
+    if not (parsed["row_values"] or parsed["cell_values"] or parsed["table_context"]):
+        return {"context_available": False}
+    locator = compact_dict(
+        {
+            "file": clean(unit.get("source_file_name") or hit.get("source_file_name")),
+            "sheet": location.get("sheet"),
+            "range": location.get("range"),
+            "document_version_id": clean(unit.get("document_version_id") or location.get("document_version_id")),
+            "search_unit_id": clean(unit.get("id")),
+            "chunk_type": clean(unit.get("chunk_type") or hit.get("chunk_type")),
+            "join_type": join_type,
+            "rank": hit.get("rank"),
+        }
+    )
+    first_row_value = parsed["row_values"][0] if parsed["row_values"] else {}
+    context = {
+        "retrieval_text": truncate(clean_whitespace(text), 2400),
+        "table_context": parsed["table_context"],
+        "nearby_rows": parsed["nearby_rows"],
+        "nearby_table_context": parsed["table_context"],
+        "header_context": parsed["headers"],
+        "headers": parsed["headers"],
+        "row_values": parsed["row_values"],
+        "cell_values": parsed["cell_values"],
+        "column_values": parsed["column_values"],
+        "value_context": parsed["row_values"][:8],
+        "row_label": clean(first_row_value.get("row_label")),
+        "column_label": clean(first_row_value.get("column_label")),
+        "value": clean(first_row_value.get("value")),
+        "content_summary": parsed["content_summary"],
+        "citation_locator": locator,
+        "locator": locator,
+        "retrieval_context_joined_hit": compact_dict(
+            {
+                "rank": hit.get("rank"),
+                "score": hit.get("score"),
+                "search_unit_id": clean(unit.get("id")),
+                "join_type": join_type,
+                "content_source_field": f"search_unit.{content_field}",
+            }
+        ),
+        "xlsx_searchunit_content_join": {
+            "status": "JOINED",
+            "answer_evidence_used": True,
+            "join_type": join_type,
+            "rank": hit.get("rank"),
+            "search_unit_id": clean(unit.get("id")),
+            "content_source_field": f"search_unit.{content_field}",
+            "chunk_type": clean(unit.get("chunk_type") or hit.get("chunk_type")),
+            "source_workbook_promoted_evidence": False,
+            "gold_leakage": False,
+            "broad_fallback_promoted": False,
+        },
+        "context_available": True,
+        "context_errors": [],
+    }
+    return compact_dict(context)
+
+
+def first_searchunit_content(unit: Mapping[str, Any]) -> tuple[str, str]:
+    for field in ("display_text", "text_content", "bm25_text", "debug_text", "embedding_text"):
+        text = clean(unit.get(field))
+        if xlsx_text_has_content(text):
+            return field, text
+    return "", ""
+
+
+def parse_xlsx_payload_text(text: str, *, source_field: str) -> dict[str, Any]:
+    lines = normalized_xlsx_content_lines(text)
+    rows: list[str] = []
+    headers: list[str] = []
+    row_values: list[dict[str, str]] = []
+    cell_values: list[dict[str, str]] = []
+    column_values: list[dict[str, str]] = []
+    for line in lines:
+        pairs = key_value_pairs_from_line(line)
+        if not pairs:
+            continue
+        rows.append(line)
+        row_label = clean(pairs[0][1])
+        ordered_pairs = pairs[1:] if len(pairs) > 1 else pairs
+        for header, _value in pairs:
+            if header and header not in headers:
+                headers.append(header)
+        for header, value in ordered_pairs:
+            if header and header not in headers:
+                headers.append(header)
+            if not xlsx_text_has_content(value):
+                continue
+            item = compact_dict(
+                {
+                    "row_label": row_label,
+                    "column_label": header,
+                    "value": value,
+                    "row_text": line,
+                    "source_field": source_field,
+                }
+            )
+            row_values.append(item)
+            cell_values.append(item)
+            column_values.append(
+                compact_dict(
+                    {
+                        "column_label": header,
+                        "value": value,
+                        "column_text": f"{header}: {value}",
+                        "source_field": source_field,
+                    }
+                )
+            )
+    summary = f"Retrieved SearchUnit content: {rows[0]}" if rows else ""
+    return {
+        "headers": headers[:16],
+        "nearby_rows": rows[:8],
+        "table_context": rows[:8],
+        "row_values": row_values[:24],
+        "cell_values": cell_values[:24],
+        "column_values": column_values[:16],
+        "content_summary": truncate(summary, 1200),
+    }
+
+
+def normalized_xlsx_content_lines(text: str) -> list[str]:
+    normalized: list[str] = []
+    for raw_line in re.split(r"[\r\n]+", clean(text)):
+        line = clean(raw_line)
+        if not line:
+            continue
+        folded = line.lower()
+        if folded.startswith(("[sheet:", "[range:", "source:", "content:")):
+            continue
+        if "|" not in line and line.count(":") < 1:
+            continue
+        if xlsx_text_has_content(line):
+            normalized.append(line)
+    if not normalized and "|" in text:
+        line = clean_whitespace(text)
+        if xlsx_text_has_content(line):
+            normalized.append(line)
+    return normalized[:16]
+
+
+def key_value_pairs_from_line(line: str) -> list[tuple[str, str]]:
+    pairs: list[tuple[str, str]] = []
+    for segment in line.split("|"):
+        if ":" not in segment:
+            continue
+        key, value = segment.split(":", 1)
+        key = clean(key)
+        value = clean(value)
+        if not key or not value:
+            continue
+        if looks_like_locator_only(key) or looks_like_locator_only(value):
+            continue
+        pairs.append((key, value))
+    return pairs
+
+
+def xlsx_location(value: Mapping[str, Any]) -> dict[str, str]:
+    return compact_dict(
+        {
+            "document_version_id": clean(value.get("document_version_id")),
+            "sheet": clean(value.get("sheet_name") or value.get("sheetName") or value.get("sheet")),
+            "range": clean(value.get("cell_range") or value.get("cellRange") or value.get("range")),
+            "cell": clean(value.get("cell") or value.get("cell_ref") or value.get("cellRef")),
+        }
+    )
+
+
+def parse_cell_range(value: str) -> tuple[int, int, int, int] | None:
+    text = clean(value)
+    if not text:
+        return None
+    try:
+        from openpyxl.utils.cell import range_boundaries
+
+        min_col, min_row, max_col, max_row = range_boundaries(text)
+        return min_col, min_row, max_col, max_row
+    except Exception:
+        return None
+
+
+def ranges_overlap(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> bool:
+    a_min_col, a_min_row, a_max_col, a_max_row = a
+    b_min_col, b_min_row, b_max_col, b_max_row = b
+    return not (
+        a_max_col < b_min_col
+        or b_max_col < a_min_col
+        or a_max_row < b_min_row
+        or b_max_row < a_min_row
+    )
+
+
+def xlsx_text_has_content(value: object) -> bool:
+    text = clean(value)
+    if len(text) < 2:
+        return False
+    if looks_like_locator_only(text):
+        return False
+    return bool(re.search(r"[A-Za-z0-9가-힣]", text))
+
+
+def looks_like_locator_only(value: object) -> bool:
+    folded = re.sub(r"\s+", "", clean(value)).lower()
+    if not folded:
+        return True
+    patterns = (
+        r"^[a-z]{1,3}\d+(:[a-z]{1,3}\d+)?$",
+        r"^sheet\d*$",
+        r"^.+\.xlsx$",
+        r"^docv_[0-9a-f]+$",
+    )
+    return any(re.match(pattern, folded) for pattern in patterns)
+
+
+def truncate(value: str, limit: int) -> str:
+    text = clean(value)
+    if limit <= 0 or len(text) <= limit:
+        return text
+    return text[: max(limit - 3, 0)] + "..."
 
 
 def policy_flags(row: Mapping[str, Any]) -> dict[str, bool]:
@@ -724,12 +1199,14 @@ def build_manifest(
     artifact_dir: Path,
     manifest_path: Path,
     inputs_path: Path,
+    enriched_inputs_alias_path: Path | None,
     rows: list[Mapping[str, Any]],
     source_paths: Mapping[str, Path],
     plan_payload: Mapping[str, Any],
     warnings: list[str],
     xlsx_external_used: bool,
     xlsx_external_basename: str,
+    xlsx_searchunit_index: Mapping[str, Any],
 ) -> dict[str, Any]:
     track_counts = Counter(clean(row.get("track")) for row in rows)
     shape_counts = Counter(clean(row.get("expected_answer_shape")) for row in rows)
@@ -769,7 +1246,13 @@ def build_manifest(
         "artifact_dir": repo_relative(artifact_dir),
         "manifest_path": repo_relative(manifest_path),
         "answer_generation_inputs_path": repo_relative(inputs_path),
+        "answer_generation_inputs_with_xlsx_content_path": repo_relative(enriched_inputs_alias_path)
+        if enriched_inputs_alias_path
+        else "",
         "answer_generation_inputs_sha256": sha256_file(inputs_path),
+        "answer_generation_inputs_with_xlsx_content_sha256": sha256_file(enriched_inputs_alias_path)
+        if enriched_inputs_alias_path and enriched_inputs_alias_path.exists()
+        else "",
         "promotion_evidence": False,
         "evidence_role": "diagnostic",
         "local_llm_run": False,
@@ -789,6 +1272,17 @@ def build_manifest(
         "keyword_echo_only_is_failure": True,
         "location_only_answer_is_failure": True,
         "r8_or_citation_support_blocked_until_answer_shape_alignment": True,
+        "xlsx_searchunit_content_join": {
+            "enabled": parse_bool(xlsx_searchunit_index.get("enabled")),
+            "status": clean(xlsx_searchunit_index.get("status")),
+            "error": clean(xlsx_searchunit_index.get("error")),
+            "selected_search_unit_id_count": xlsx_searchunit_index.get("selected_search_unit_id_count", 0),
+            "loaded_search_unit_count": xlsx_searchunit_index.get("loaded_search_unit_count", 0),
+            "join_policy": "selected_hit_exact_id_or_safe_sheet_range_overlap_no_sheet_or_workbook_broad_fallback",
+            "source_workbook_promoted_evidence_count": 0,
+            "gold_leakage_count": 0,
+            "broad_fallback_promoted_evidence_count": 0,
+        },
         "source_review_paths": {
             "pdf": repo_relative(source_paths["pdf_review"]),
             "xlsx": repo_relative(source_paths["xlsx_review_snapshot"])
