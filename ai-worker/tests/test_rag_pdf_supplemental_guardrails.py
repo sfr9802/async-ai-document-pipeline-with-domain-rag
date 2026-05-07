@@ -23,6 +23,7 @@ def load_module(name: str):
 common = load_module("rag_pdf_supplemental_common")
 pageindex = load_module("rag_pdf_supplemental_pageindex_diagnostic")
 parse_canary = load_module("rag_pdf_supplemental_parse_canary")
+failure_summary = load_module("rag_pdf_supplemental_evidence_failure_analysis_summary")
 
 
 def test_supplemental_output_paths_reject_protected_and_non_supplemental_names():
@@ -186,3 +187,30 @@ def test_parse_canary_merges_existing_ocr_fallback_as_lower_trust_diagnostic():
     assert block_rows[0]["ocr_used"] is True
     assert block_rows[0]["lower_trust_ocr"] is True
     assert block_rows[0]["promotion_evidence"] is False
+
+
+def test_failure_summary_rejects_upstream_llm_or_table_success_claims():
+    blockers: list[str] = []
+    payload = {
+        **failure_summary.REQUIRED_GUARDRAILS,
+        "actual_llm_answer_generation_run": True,
+        "actual_generated_answer_output": False,
+        "answer_draft_is_actual_generated_llm_answer": False,
+        "table_semantics_success_claimed": True,
+        "row_column_value_semantics_claimed": False,
+    }
+
+    failure_summary.validate_guardrails("draft_shape_audit", payload, blockers)
+
+    assert any("actual_llm_answer_generation_run" in blocker for blocker in blockers)
+    assert any("table_semantics_success_claimed" in blocker for blocker in blockers)
+
+
+def test_failure_summary_required_csv_missing_fails_closed(tmp_path: Path):
+    blockers: list[str] = []
+    missing_csv = tmp_path / "rag_pdf_supplemental_missing.csv"
+
+    rows = failure_summary.required_read_csv(missing_csv, blockers, "table_like_csv")
+
+    assert rows == []
+    assert blockers == [f"table_like_csv missing: {failure_summary.display_path(missing_csv)}"]
