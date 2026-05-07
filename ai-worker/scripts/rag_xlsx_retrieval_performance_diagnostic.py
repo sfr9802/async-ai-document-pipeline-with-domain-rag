@@ -1,4 +1,4 @@
-"""Run diagnostic-only XLSX v3 positive vector retrieval evaluation.
+"""Run diagnostic-only XLSX human-review vector retrieval evaluation.
 
 This script intentionally does not run promotion and never marks the report as
 promotion evidence. It keeps hidden-negative probes in a separate leakage
@@ -18,14 +18,23 @@ from typing import Any, Mapping
 
 AI_WORKER = Path(__file__).resolve().parents[1]
 ROOT = AI_WORKER.parent
+SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(AI_WORKER) not in sys.path:
     sys.path.insert(0, str(AI_WORKER))
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 from eval.harness.rag_ingestion_retrieval_eval import (  # noqa: E402
     evaluate_gold_rows,
     load_gold_csv,
     search_vector,
     validate_gold_rows,
+)
+from rag_xlsx_pre_silver_risk_closure import (  # noqa: E402
+    XlsxPreSilverRiskError,
+    resolve_current_xlsx_human_review_artifacts,
+    validate_diagnostic_agentic_xlsx_config,
+    validate_official_xlsx_eval_route,
 )
 
 
@@ -34,12 +43,25 @@ XLSX_CANDIDATE_NAMESPACE = "rag-ingestion-v2-xlsx-candidate-v1"
 XLSX_CANDIDATE_ARTIFACT_DIR = Path("eval/indexes/rag-data-xlsx-candidate-v1")
 LEGACY_CSV_ARCHIVE = ROOT / "archive" / "results" / "2026-05-05-eval-query-lineage-cleanup" / "csv"
 
-DEFAULT_V3_POSITIVE_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
+DEFAULT_HUMAN_REVIEW_OFFICIAL_RETRIEVAL_GOLD = Path(
+    "eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv"
+)
+LEGACY_V3_POSITIVE_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
+DEFAULT_V3_POSITIVE_GOLD = DEFAULT_HUMAN_REVIEW_OFFICIAL_RETRIEVAL_GOLD
 DEFAULT_V3_NATURALIZED_GOLD = LEGACY_CSV_ARCHIVE / "gold_queries_xlsx_v3_naturalized.csv"
 DEFAULT_V2_GOLD = LEGACY_CSV_ARCHIVE / "gold_queries_xlsx_v2.csv"
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
-DEFAULT_SUMMARY = Path("eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_retrieval_performance_summary.json")
-DEFAULT_HIDDEN_REPORT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json")
+DEFAULT_REPORT = Path(
+    "eval/reports/rag-ingestion/"
+    "rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report.json"
+)
+DEFAULT_SUMMARY = Path(
+    "eval/reports/rag-ingestion/"
+    "rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary.json"
+)
+DEFAULT_HIDDEN_REPORT = Path(
+    "eval/reports/rag-ingestion/"
+    "rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic.json"
+)
 
 METRIC_KEYS = [
     "Hit@1",
@@ -60,6 +82,55 @@ METRIC_KEYS = [
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    try:
+        validate_official_xlsx_eval_route(
+            eval_mode=args.eval_mode,
+            track="XLSX",
+            agent_orchestrator_enabled=args.agent_orchestrator_enabled,
+            retrieval_backend=args.retrieval_backend,
+            namespace=XLSX_CANDIDATE_NAMESPACE,
+            vector_index_dir=args.vector_index_dir,
+            positive_gold=args.positive_gold,
+            candidate_index_version=args.candidate_index_version,
+            required_index_version=args.required_index_version,
+            combined_retrieval_enabled=args.combined_retrieval_enabled,
+        )
+        validate_diagnostic_agentic_xlsx_config(
+            eval_mode=args.eval_mode,
+            track="XLSX",
+            namespace=XLSX_CANDIDATE_NAMESPACE,
+            agent_orchestrator_enabled=args.agent_orchestrator_enabled,
+            diagnostic_agentic_allow=args.diagnostic_agentic_allow,
+            retriever_names=args.diagnostic_agentic_retriever_name,
+            global_fallback_enabled=args.global_fallback_enabled,
+            external_search_enabled=args.external_search_enabled,
+            max_iterations=args.diagnostic_agentic_max_iterations,
+        )
+        if args.diagnostic_agentic_allow:
+            raise XlsxPreSilverRiskError(
+                "diagnostic XLSX agentic E2E runner is not implemented in this wrapper; "
+                "the explicit allow flag is accepted only after a runner records validated iterations"
+            )
+        if Path(args.positive_gold).name == DEFAULT_HUMAN_REVIEW_OFFICIAL_RETRIEVAL_GOLD.name:
+            resolve_current_xlsx_human_review_artifacts(
+                registry_path=Path(args.official_registry),
+                require_source_snapshot=False,
+            )
+    except XlsxPreSilverRiskError as exc:
+        payload = {
+            "run_id": utc_run_id(),
+            "generated_at": utc_timestamp(),
+            "status": "ROUTE_GUARD_FAILED",
+            "track": "XLSX",
+            "eval_mode": args.eval_mode,
+            "promotion_evidence": False,
+            "evidence_role": "diagnostic",
+            "error": str(exc),
+            "official_xlsx_answer_generation_denominator": 0,
+        }
+        write_json(Path(args.report), payload)
+        print_json(payload)
+        return 2
     candidate_index_version = args.candidate_index_version
     required_index_version = args.required_index_version or candidate_index_version
     positive_gold_path, positive_rows, positive_source = resolve_positive_rows(args)
@@ -142,11 +213,26 @@ def resolve_positive_rows(args: argparse.Namespace) -> tuple[Path, list[dict[str
     positive_path = Path(args.positive_gold)
     if positive_path.exists():
         rows = [row for row in load_gold_csv(positive_path) if not is_hidden_negative(row)]
+        if positive_path.name == DEFAULT_HUMAN_REVIEW_OFFICIAL_RETRIEVAL_GOLD.name:
+            return positive_path, rows, {
+                "mode": "human_review_official_positive_retrieval_projection",
+                "source_path": str(positive_path),
+                "fallback_generated": False,
+                "selection_rule": (
+                    "use the projected XLSX human-review official positive retrieval/evidence denominator; "
+                    "answer-generation denominator remains zero"
+                ),
+                "denominator_kind": "xlsx_retrieval_evidence_diagnostic",
+                "official_xlsx_answer_generation_denominator": 0,
+                "legacy_default_positive_gold": str(LEGACY_V3_POSITIVE_GOLD),
+            }
         return positive_path, rows, {
             "mode": "reviewed_positive_file",
             "source_path": str(positive_path),
             "fallback_generated": False,
-            "selection_rule": "use eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv when present",
+            "selection_rule": "use caller-supplied reviewed positive retrieval CSV when present",
+            "denominator_kind": "caller_supplied_retrieval_evidence_diagnostic",
+            "official_xlsx_answer_generation_denominator": 0,
         }
 
     raise FileNotFoundError(
@@ -252,6 +338,15 @@ def base_report_payload(
         "top_k": args.top_k,
         "retrieval_backend": "vector",
         "backend_identity": backend_identity(args, required_index_version),
+        "eval_mode": args.eval_mode,
+        "official_route_guard": {
+            "generic_agent_orchestrator_allowed": False,
+            "agent_orchestrator_enabled": args.agent_orchestrator_enabled,
+            "combined_retrieval_enabled": args.combined_retrieval_enabled,
+            "diagnostic_agentic_allow": args.diagnostic_agentic_allow,
+            "diagnostic_agentic_runner_available": False,
+            "message": "official XLSX eval uses the XLSX wrapper/retrieval-evidence path only",
+        },
         "promotion_evidence": False,
         "evidence_role": "diagnostic",
         "row_filter": {
@@ -287,10 +382,18 @@ def write_summary(
         "run_id": utc_run_id(),
         "generated_at": utc_timestamp(),
         "status": status,
-        "report_role": "xlsx_v3_retrieval_performance_summary",
+        "report_role": "xlsx_human_review_official_positive_v0_retrieval_performance_summary",
         "promotion_evidence": False,
         "evidence_role": "diagnostic",
+        "eval_mode": args.eval_mode,
         "retrieval_backend": "vector",
+        "official_route_guard": {
+            "generic_agent_orchestrator_allowed": False,
+            "agent_orchestrator_enabled": args.agent_orchestrator_enabled,
+            "combined_retrieval_enabled": args.combined_retrieval_enabled,
+            "diagnostic_agentic_allow": args.diagnostic_agentic_allow,
+            "diagnostic_agentic_runner_available": False,
+        },
         "candidate_index_version": args.candidate_index_version,
         "namespace": XLSX_CANDIDATE_NAMESPACE,
         "artifact_dir": str(Path(args.vector_index_dir)),
@@ -413,6 +516,19 @@ def utc_timestamp() -> str:
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--eval-mode", choices=["official", "diagnostic"], default="official")
+    parser.add_argument("--retrieval-backend", default="vector")
+    parser.add_argument("--agent-orchestrator-enabled", action="store_true")
+    parser.add_argument("--diagnostic-agentic-allow", action="store_true")
+    parser.add_argument("--diagnostic-agentic-retriever-name", action="append", default=[])
+    parser.add_argument("--diagnostic-agentic-max-iterations", type=int, default=1)
+    parser.add_argument("--global-fallback-enabled", action="store_true")
+    parser.add_argument("--external-search-enabled", action="store_true")
+    parser.add_argument("--combined-retrieval-enabled", action="store_true")
+    parser.add_argument(
+        "--official-registry",
+        default="ai-worker/eval/eval_queries/official_denominator_registry.json",
+    )
     parser.add_argument("--positive-gold", default=str(DEFAULT_V3_POSITIVE_GOLD))
     parser.add_argument("--naturalized-gold", default=str(DEFAULT_V3_NATURALIZED_GOLD))
     parser.add_argument("--v2-gold", default=str(DEFAULT_V2_GOLD))

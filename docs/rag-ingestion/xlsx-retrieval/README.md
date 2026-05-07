@@ -4,7 +4,7 @@
 
 이 문서는 XLSX retrieval Track A의 완료 아카이브입니다.
 
-Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content mixing, candidate reindexing을 하지 않았습니다. XLSX v3 positive retrieval evidence 위에서 citation/location accuracy와 phase script fail-closed gate를 좁게 검증한 diagnostic-only cleanup입니다.
+Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content mixing, candidate reindexing을 하지 않았습니다. 2026-05-07 strict pre-silver 기준으로 현재 XLSX wrapper의 공식 retrieval/evidence denominator는 human-review projection 23행이며, legacy XLSX v3 35행은 historical diagnostic 비교용으로만 보존합니다.
 
 ## 최종 상태
 
@@ -12,7 +12,12 @@ Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content m
 |---|---|
 | Phase status | A0-A6 `COMPLETED` |
 | Evidence role | `promotion_evidence=false`, `evidence_role=diagnostic` |
-| Positive reviewed gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv` |
+| Current XLSX wrapper positive gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv` |
+| Current XLSX wrapper official retrieval/evidence denominator | `23` |
+| Current XLSX answer-generation official denominator | `0` |
+| Strict pre-silver status | `APPROVED_FOR_XLSX_SILVER_GENERATION_STRICT` |
+| Strict pre-silver report | `ai-worker/eval/reports/rag-ingestion/xlsx_pre_silver_risk_closure_20260507.md` |
+| Legacy v3 positive reviewed gold | `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv` |
 | Archived original positive gold | `archive/results/2026-05-05-eval-query-lineage-cleanup/csv/gold_queries_xlsx_v3_positive.csv` 보존, active denominator 아님 |
 | Candidate index version | `rag-ingestion-v2-xlsx-candidate-v1` |
 | Candidate v2 decision | `ai-worker/eval/reports/rag-ingestion/xlsx_candidate_v2_decision.json` -> `SKIP` |
@@ -22,7 +27,18 @@ Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content m
 | `ai-worker/eval/indexes/rag-data-canary` changed | `false` |
 | Hidden content leakage | `0` |
 
-## 최종 지표
+## 현재 Strict Pre-Silver 지표
+
+| Metric | Value | Notes |
+|---|---:|---|
+| Denominator | `23` | human-review official positive retrieval/evidence projection |
+| Hit@10 | `1.0` | live XLSX retrieval smoke |
+| MRR@10 | `0.942` | live XLSX retrieval smoke |
+| xlsx_citation_location_accuracy | `1.0` | current wrapper namespace/index |
+| XLSX answer-generation denominator | `0` | LLM smoke remains diagnostic-only |
+| Retrieval repeatability | `stable` | candidate ids and metrics matched repeat run |
+
+## Legacy v3 A0-A6 지표
 
 | Metric | Before | Final reviewed | Notes |
 |---|---:|---:|---|
@@ -75,7 +91,7 @@ Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content m
 | `gq_xlsx_lookup_002` | `신분당선 2019년 5월 승차총승객수 알려줘.` | `expected_answer_text=신분당선 승차총승객수`, `must_contain_terms=신분당선;승차총승객수` | exact location recovered at `location_rank=3` |
 | `gq_auto_041` | `인하요양원 소재지 정보 찾아줘.` | `expected_answer_text=인하요양원 소재지`, `must_contain_terms=인하요양원;소재지` | exact location recovered at `location_rank=3` |
 
-기존 less-explicit v3 positive manifest는 active eval-query 디렉토리에서 archive로 이동했습니다. Reviewed denominator는 `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv` 하나만 사용합니다.
+2026-05-07 preflight 이후 XLSX retrieval wrapper의 기본 positive denominator는 human-review official projection인 `ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv`입니다. Legacy v3 reviewed manifest `ai-worker/eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv`는 과거 Track A evidence와 비교용으로 보존하지만, wrapper default는 아닙니다.
 
 ## Guardrails
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 import re
@@ -95,8 +96,21 @@ ROLE_FIELDNAMES = [
 
 REPORT_FIELDNAMES = [
     "query_id",
+    "trace_id",
+    "track",
+    "eval_mode",
     "answer_allowed",
     "fail_closed_reason",
+    "llm_smoke_status",
+    "raw_output_status",
+    "parser_status",
+    "content_shape_status",
+    "citation_validation_status",
+    "official_metric_included",
+    "answer_generation_denominator_included",
+    "failure_reason",
+    "prompt_hash",
+    "context_hash",
     "answer_type",
     "answer",
     "abstain_reason",
@@ -104,6 +118,9 @@ REPORT_FIELDNAMES = [
     "unsupported_claim_count",
     "gold_leakage_suspected",
     "citation_missing",
+    "citation_not_in_context",
+    "citation_support_status",
+    "citation_failure_reasons",
     "locator_only_answer",
     "keyword_echo_only",
 ]
@@ -142,7 +159,11 @@ def main(argv: list[str] | None = None) -> int:
             "official_xlsx_answer_eval_denominator": report["official_xlsx_answer_eval_denominator"],
         }
     )
-    return 0 if report["status"] in {"PASS", "PASS_WITH_WARNINGS"} else 2
+    if report["status"] == "PASS":
+        return 0
+    if args.allow_diagnostic_failures and report["status"] == "PASS_WITH_WARNINGS":
+        return 0
+    return 2
 
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -169,6 +190,11 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--timeout-seconds", type=int, default=120)
     parser.add_argument("--max-tokens", type=int, default=900)
     parser.add_argument("--max-rows", type=int, default=0, help="0 means all XLSX rows")
+    parser.add_argument(
+        "--allow-diagnostic-failures",
+        action="store_true",
+        help="Return 0 for schema-valid diagnostic failures; official metrics still remain excluded.",
+    )
     return parser.parse_args(argv)
 
 
@@ -379,7 +405,9 @@ def build_llm_answer_probe_input_row(
         "llm_skipped_reason": "" if answer_allowed else (fail_closed_reason or "answer_generation_not_allowed"),
         "prompt_version": PROMPT_VERSION,
         "answer_prompt_payload": prompt_payload or {},
+        "answer_prompt_payload_sha256": stable_sha256(prompt_payload or {}),
         "answer_prompt": prompt_text,
+        "answer_prompt_sha256": stable_sha256(prompt_text),
         "external_live_llm_run": False,
         "optional_judge_run": False,
         "promotion_evidence": False,
@@ -492,7 +520,7 @@ Return exactly one JSON object and no markdown:
   "answer": "...",
   "answer_type": "CELL_VALUE|ROW_SUMMARY|RANGE_SUMMARY|LOCATION_PLUS_CONTENT|ABSTAIN",
   "citations": [
-    {{"sheet": "...", "range": "...", "source": "selected_searchunit_payload"}}
+    {{"file": "...", "sheet": "...", "range": "...", "source": "selected_searchunit_payload", "search_unit_id": "...", "document_version_id": "..."}}
   ],
   "used_evidence_fields": [],
   "unsupported_claims": [],
@@ -503,6 +531,7 @@ Return exactly one JSON object and no markdown:
 Rules:
 - Answer only from supplied evidence, compiled deterministic draft, and selected SearchUnit content fields.
 - Include a citation for every content claim.
+- If citation locators include file, search_unit_id, or document_version_id, copy those identity fields exactly.
 - Do not add claims not present in supplied evidence.
 - If evidence is insufficient, set answer_type to ABSTAIN, answer to "", citations to [], and fill abstain_reason.
 - Do not mention or infer any expected answer, must-contain term, gold evidence, relevance label, answerability label, or user gold decision.
@@ -630,24 +659,39 @@ def output_row_from_llm(
 ) -> dict[str, Any]:
     normalized = normalize_probe_answer(parsed_answer, fallback_query_id=clean(probe_input.get("query_id")))
     checks = answer_checks(probe_input=probe_input, parsed_answer=normalized, source_row=source_row)
+    diagnostic_fields = llm_diagnostic_status_fields(
+        probe_input=probe_input,
+        parsed_answer=normalized,
+        parse_ok=parse_ok and is_probe_answer_schema(normalized),
+        checks=checks,
+        raw_answer=raw_answer,
+        llm_error=llm_error,
+    )
     return {
         "schema_version": OUTPUT_SCHEMA_VERSION,
         "run_id": clean(probe_input.get("run_id")),
+        "trace_id": diagnostic_fields["trace_id"],
         "query_id": clean(probe_input.get("query_id")),
         "track": "XLSX",
+        "eval_mode": "diagnostic",
         "query": clean(probe_input.get("query")),
         "expected_answer_shape": clean(probe_input.get("expected_answer_shape")),
         "answer_allowed": parse_bool(probe_input.get("answer_allowed")),
+        "answer_generation_allowed": parse_bool(probe_input.get("answer_generation_allowed")),
         "fail_closed_reason": clean(probe_input.get("fail_closed_reason")),
         "answer_json_raw": raw_answer,
         "parsed_answer": normalized,
-        "parse_ok": parse_ok and is_probe_answer_schema(normalized),
+        "parse_ok": diagnostic_fields["parser_status"] == "RAW_JSON_VALID",
         "llm_requested": parse_bool(probe_input.get("llm_requested")),
         "llm_error": llm_error,
         "local_llm_run": True,
         "external_live_llm_run": False,
         "optional_judge_run": False,
         "promotion_evidence": False,
+        "diagnostic_generation_only": True,
+        "official_scoring_allowed": False,
+        "official_metric_included": False,
+        "answer_generation_denominator_included": False,
         "gold_intent_probe_used_for_scoring": False,
         "llm_model": model,
         "llm_backend": backend,
@@ -660,6 +704,7 @@ def output_row_from_llm(
         "unsupported_claims": checks["unsupported_claims"],
         "abstain_reason": normalized["abstain_reason"],
         "confidence": normalized["confidence"],
+        **diagnostic_fields,
         **checks,
     }
 
@@ -676,14 +721,32 @@ def output_row_from_abstain(
     local_llm_run: bool,
 ) -> dict[str, Any]:
     parsed = abstain_probe_answer(clean(probe_input.get("query_id")), reason)
+    diagnostic_fields = llm_diagnostic_status_fields(
+        probe_input=probe_input,
+        parsed_answer=parsed,
+        parse_ok=parse_ok,
+        checks={
+            "llm_unsupported_claim_count": 0,
+            "llm_gold_leakage_suspected": False,
+            "llm_citation_missing": False,
+            "llm_citation_not_in_context": False,
+            "llm_locator_only_answer": False,
+            "llm_keyword_echo_only": False,
+        },
+        raw_answer=json.dumps(parsed, ensure_ascii=False, sort_keys=True),
+        llm_error="",
+    )
     return {
         "schema_version": OUTPUT_SCHEMA_VERSION,
         "run_id": clean(probe_input.get("run_id")),
+        "trace_id": diagnostic_fields["trace_id"],
         "query_id": clean(probe_input.get("query_id")),
         "track": "XLSX",
+        "eval_mode": "diagnostic",
         "query": clean(probe_input.get("query")),
         "expected_answer_shape": clean(probe_input.get("expected_answer_shape")),
         "answer_allowed": parse_bool(probe_input.get("answer_allowed")),
+        "answer_generation_allowed": parse_bool(probe_input.get("answer_generation_allowed")),
         "fail_closed_reason": clean(probe_input.get("fail_closed_reason")),
         "answer_json_raw": json.dumps(parsed, ensure_ascii=False, sort_keys=True),
         "parsed_answer": parsed,
@@ -694,6 +757,10 @@ def output_row_from_abstain(
         "external_live_llm_run": False,
         "optional_judge_run": False,
         "promotion_evidence": False,
+        "diagnostic_generation_only": True,
+        "official_scoring_allowed": False,
+        "official_metric_included": False,
+        "answer_generation_denominator_included": False,
         "gold_intent_probe_used_for_scoring": False,
         "llm_model": model,
         "llm_backend": backend,
@@ -709,8 +776,85 @@ def output_row_from_abstain(
         "llm_unsupported_claim_count": 0,
         "llm_gold_leakage_suspected": False,
         "llm_citation_missing": False,
+        "llm_citation_not_in_context": False,
+        "llm_citation_support_status": "NOT_APPLICABLE",
+        "llm_citation_failure_reasons": [],
         "llm_locator_only_answer": False,
         "llm_keyword_echo_only": False,
+        **diagnostic_fields,
+    }
+
+
+def llm_diagnostic_status_fields(
+    *,
+    probe_input: Mapping[str, Any],
+    parsed_answer: Mapping[str, Any],
+    parse_ok: bool,
+    checks: Mapping[str, Any],
+    raw_answer: str,
+    llm_error: str,
+) -> dict[str, Any]:
+    query_id = clean(probe_input.get("query_id"))
+    run_id = clean(probe_input.get("run_id"))
+    answer = clean(parsed_answer.get("answer"))
+    keyword_only = parse_bool(checks.get("llm_keyword_echo_only"))
+    locator_only = parse_bool(checks.get("llm_locator_only_answer"))
+    citation_missing = parse_bool(checks.get("llm_citation_missing"))
+    citation_not_in_context = parse_bool(checks.get("llm_citation_not_in_context"))
+    unsupported = int_or_zero(checks.get("llm_unsupported_claim_count")) > 0
+    gold_leakage = parse_bool(checks.get("llm_gold_leakage_suspected"))
+    raw_output_status = "RAW_JSON_VALID" if parse_ok else "MODEL_OUTPUT_INVALID_JSON"
+    parser_status = "RAW_JSON_VALID" if parse_ok else "JSON_REPAIR_FAILED"
+    if keyword_only or locator_only:
+        content_shape_status = "KEYWORD_ONLY_REJECTED"
+    elif not parse_ok or not answer:
+        content_shape_status = "DIAGNOSTIC_FAILURE"
+    else:
+        content_shape_status = "GROUNDED_DIAGNOSTIC_PASS"
+    if citation_missing:
+        citation_validation_status = "CITATION_MISSING"
+    elif citation_not_in_context:
+        citation_validation_status = "CITATION_NOT_IN_CONTEXT"
+    elif parse_ok and answer:
+        citation_validation_status = "GROUNDED_DIAGNOSTIC_PASS"
+    else:
+        citation_validation_status = "DIAGNOSTIC_FAILURE"
+
+    failure_reason = ""
+    if not parse_ok:
+        failure_reason = "MODEL_OUTPUT_INVALID_JSON" if raw_answer or not llm_error else "DIAGNOSTIC_FAILURE"
+    elif keyword_only or locator_only:
+        failure_reason = "KEYWORD_ONLY_REJECTED"
+    elif citation_missing:
+        failure_reason = "CITATION_MISSING"
+    elif citation_not_in_context:
+        failure_reason = "CITATION_NOT_IN_CONTEXT"
+    elif unsupported:
+        failure_reason = "UNSUPPORTED_ANSWER"
+    elif gold_leakage:
+        failure_reason = "GOLD_LEAKAGE_SUSPECTED"
+    elif not answer:
+        failure_reason = clean(parsed_answer.get("abstain_reason")) or clean(probe_input.get("fail_closed_reason")) or "DIAGNOSTIC_FAILURE"
+
+    passed = (
+        parse_ok
+        and bool(answer)
+        and not any([keyword_only, locator_only, citation_missing, citation_not_in_context, unsupported, gold_leakage])
+    )
+    return {
+        "trace_id": f"{run_id}:{query_id}:llm_smoke",
+        "eval_mode": "diagnostic",
+        "llm_smoke_status": "GROUNDED_DIAGNOSTIC_PASS" if passed else "DIAGNOSTIC_FAILURE",
+        "raw_output_status": raw_output_status,
+        "parser_status": parser_status,
+        "content_shape_status": content_shape_status,
+        "citation_validation_status": citation_validation_status,
+        "official_metric_included": False,
+        "answer_generation_denominator_included": False,
+        "failure_reason": failure_reason,
+        "prompt_hash": clean(probe_input.get("answer_prompt_sha256")),
+        "context_hash": clean(probe_input.get("answer_prompt_payload_sha256")),
+        "raw_output_present": bool(clean(raw_answer)),
     }
 
 
@@ -721,16 +865,19 @@ def answer_checks(
     source_row: Mapping[str, Any],
 ) -> dict[str, Any]:
     answer = clean(parsed_answer.get("answer"))
+    prompt_payload = probe_input.get("answer_prompt_payload") if isinstance(probe_input.get("answer_prompt_payload"), Mapping) else {}
     if not answer:
         return {
             "llm_unsupported_claim_count": 0,
             "llm_gold_leakage_suspected": False,
             "llm_citation_missing": False,
+            "llm_citation_not_in_context": False,
+            "llm_citation_support_status": "NOT_APPLICABLE",
+            "llm_citation_failure_reasons": [],
             "llm_locator_only_answer": False,
             "llm_keyword_echo_only": False,
             "unsupported_claims": [],
         }
-    prompt_payload = probe_input.get("answer_prompt_payload") if isinstance(probe_input.get("answer_prompt_payload"), Mapping) else {}
     evidence_text = flatten_text(prompt_payload)
     unsupported = []
     if not text_supported_by(answer, evidence_text):
@@ -738,12 +885,16 @@ def answer_checks(
     leaked_terms = gold_terms_only_in_answer(answer=answer, evidence_text=evidence_text, source_row=source_row)
     citations = parsed_answer.get("citations") if isinstance(parsed_answer.get("citations"), list) else []
     citation_missing = not citations or any(not valid_probe_citation(citation) for citation in citations)
+    citation_support = validate_probe_citations(citations, prompt_payload)
     locator_only = looks_like_locator_only_answer(answer, probe_input)
     keyword_echo = looks_like_keyword_echo_only(answer, clean(probe_input.get("query")), source_row)
     return {
         "llm_unsupported_claim_count": len(unsupported),
         "llm_gold_leakage_suspected": bool(leaked_terms),
         "llm_citation_missing": citation_missing,
+        "llm_citation_not_in_context": citation_support["unsupported_count"] > 0,
+        "llm_citation_support_status": citation_support["status"],
+        "llm_citation_failure_reasons": citation_support["failure_reasons"],
         "llm_locator_only_answer": locator_only,
         "llm_keyword_echo_only": keyword_echo,
         "unsupported_claims": unsupported,
@@ -909,9 +1060,17 @@ def metrics_from_outputs(
         "llm_answer_count": answer_count,
         "llm_abstain_count": abstain_count,
         "llm_invalid_json_count": sum(1 for row in answer_outputs if not parse_bool(row.get("parse_ok"))),
+        "llm_shape_failure_count": sum(
+            1
+            for row in answer_outputs
+            if clean(row.get("llm_smoke_status")) == "DIAGNOSTIC_FAILURE"
+        ),
         "llm_unsupported_claim_count": sum(int_or_zero(row.get("llm_unsupported_claim_count")) for row in answer_outputs),
         "llm_gold_leakage_suspected_count": sum(1 for row in answer_outputs if parse_bool(row.get("llm_gold_leakage_suspected"))),
         "llm_citation_missing_count": sum(1 for row in answer_outputs if parse_bool(row.get("llm_citation_missing"))),
+        "llm_citation_not_in_context_count": sum(
+            1 for row in answer_outputs if parse_bool(row.get("llm_citation_not_in_context"))
+        ),
         "llm_locator_only_answer_count": sum(1 for row in answer_outputs if parse_bool(row.get("llm_locator_only_answer"))),
         "llm_keyword_echo_only_count": sum(1 for row in answer_outputs if parse_bool(row.get("llm_keyword_echo_only"))),
         "expected_answer_text_role_counts": dict(expected_role_counts),
@@ -965,7 +1124,18 @@ def build_report(
     llm_meta: Mapping[str, Any],
     input_errors: list[str],
 ) -> dict[str, Any]:
-    status = "PASS" if not input_errors and not llm_meta.get("blockers") else "PASS_WITH_WARNINGS"
+    diagnostic_grounding_failure_count = sum(
+        int_or_zero(generated_metrics.get(key))
+        for key in (
+            "llm_invalid_json_count",
+            "llm_unsupported_claim_count",
+            "llm_citation_missing_count",
+            "llm_citation_not_in_context_count",
+            "llm_locator_only_answer_count",
+            "llm_keyword_echo_only_count",
+        )
+    )
+    status = "PASS" if not input_errors and not llm_meta.get("blockers") and not diagnostic_grounding_failure_count else "PASS_WITH_WARNINGS"
     return {
         "schema_version": REPORT_SCHEMA_VERSION,
         "run_id": run_id,
@@ -1002,6 +1172,9 @@ def build_report(
         "expected_evidence_location_used_in_answer_prompt": False,
         "answer_prompt_leakage_errors": input_errors,
         "llm_blockers": list(llm_meta.get("blockers") or []),
+        "grounding_validation_status": "PASS" if diagnostic_grounding_failure_count == 0 else "DIAGNOSTIC_FAILURE",
+        "diagnostic_grounding_failure_count": diagnostic_grounding_failure_count,
+        "llm_shape_failure_count": generated_metrics.get("llm_shape_failure_count", 0),
         "guardrails": diagnostic_guardrails(),
         **dict(generated_metrics),
     }
@@ -1052,9 +1225,41 @@ def parse_probe_answer_json(value: object, *, fallback_query_id: str) -> tuple[d
         except json.JSONDecodeError:
             continue
         if isinstance(parsed, Mapping):
+            raw_schema_ok = is_raw_probe_answer_schema(parsed, fallback_query_id=fallback_query_id)
             normalized = normalize_probe_answer(parsed, fallback_query_id=fallback_query_id)
-            return normalized, is_probe_answer_schema(normalized)
+            return normalized, raw_schema_ok and is_probe_answer_schema(normalized)
     return abstain_probe_answer(fallback_query_id, "invalid JSON"), False
+
+
+def is_raw_probe_answer_schema(value: Mapping[str, Any], *, fallback_query_id: str) -> bool:
+    required = {
+        "query_id",
+        "answer",
+        "answer_type",
+        "citations",
+        "used_evidence_fields",
+        "unsupported_claims",
+        "abstain_reason",
+        "confidence",
+    }
+    if not required.issubset(set(value.keys())):
+        return False
+    if clean(value.get("query_id")) != fallback_query_id:
+        return False
+    answer_type = clean(value.get("answer_type")).upper()
+    if answer_type not in ANSWER_TYPES:
+        return False
+    if not isinstance(value.get("citations"), list):
+        return False
+    if not isinstance(value.get("used_evidence_fields"), list):
+        return False
+    if not isinstance(value.get("unsupported_claims"), list):
+        return False
+    if clean(value.get("confidence")).lower() not in {"low", "medium", "high"}:
+        return False
+    if answer_type == "ABSTAIN":
+        return bool(clean(value.get("abstain_reason")) or not clean(value.get("answer")))
+    return bool(clean(value.get("answer")))
 
 
 def normalize_probe_answer(value: Mapping[str, Any], *, fallback_query_id: str) -> dict[str, Any]:
@@ -1116,14 +1321,191 @@ def abstain_probe_answer(query_id: str, reason: str) -> dict[str, Any]:
 def normalize_probe_citation(value: Mapping[str, Any]) -> dict[str, str]:
     locator = value.get("locator") if isinstance(value.get("locator"), Mapping) else {}
     return {
+        "file": clean(value.get("file") or locator.get("file")),
         "sheet": clean(value.get("sheet") or locator.get("sheet")),
         "range": clean(value.get("range") or value.get("cell") or locator.get("range") or locator.get("cell")),
-        "source": clean(value.get("source") or "selected_searchunit_payload"),
+        "source": clean(value.get("source") or locator.get("source")),
+        "search_unit_id": clean(value.get("search_unit_id") or locator.get("search_unit_id")),
+        "document_version_id": clean(value.get("document_version_id") or locator.get("document_version_id")),
     }
 
 
 def valid_probe_citation(value: Mapping[str, Any]) -> bool:
     return bool(clean(value.get("sheet")) and clean(value.get("range")) and clean(value.get("source")))
+
+
+def validate_probe_citations(citations: list[Any], prompt_payload: Mapping[str, Any]) -> dict[str, Any]:
+    if not citations:
+        return {
+            "status": "citation_missing",
+            "unsupported_count": 0,
+            "failure_reasons": ["citation_missing"],
+        }
+    supported_locators = prompt_supported_locators(prompt_payload)
+    if not supported_locators:
+        return {
+            "status": "prompt_locator_missing",
+            "unsupported_count": len(citations),
+            "failure_reasons": ["prompt_locator_missing"],
+        }
+
+    unsupported_count = 0
+    reasons: list[str] = []
+    for citation in citations:
+        if not isinstance(citation, Mapping) or not valid_probe_citation(citation):
+            unsupported_count += 1
+            reasons.append("citation_missing_required_fields")
+            continue
+        support_reason = citation_support_failure_reason(citation, supported_locators)
+        if support_reason:
+            unsupported_count += 1
+            reasons.append(support_reason)
+    reasons = unique_clean(reasons)
+    return {
+        "status": "PASS" if unsupported_count == 0 else "citation_not_in_retrieved_context",
+        "unsupported_count": unsupported_count,
+        "failure_reasons": reasons,
+    }
+
+
+def prompt_supported_locators(prompt_payload: Mapping[str, Any]) -> list[dict[str, str]]:
+    locators: list[dict[str, str]] = []
+
+    def add(value: object) -> None:
+        locator = safe_citation_locator(value)
+        if clean(locator.get("sheet")) and (clean(locator.get("range")) or clean(locator.get("cell"))):
+            locators.append(locator)
+
+    add(prompt_payload.get("citation_locator"))
+    add(prompt_payload.get("sheet_range_cell_locator"))
+    evidence = prompt_payload.get("evidence") if isinstance(prompt_payload.get("evidence"), Mapping) else {}
+    add(evidence.get("locator"))
+    add(evidence.get("selected_searchunit_locator"))
+    add(evidence.get("content_source_locator"))
+    add(
+        {
+            "file": evidence.get("file_name"),
+            "sheet": evidence.get("sheet"),
+            "range": evidence.get("range"),
+            "cell": evidence.get("cell"),
+            "search_unit_id": evidence.get("selected_search_unit_id"),
+        }
+    )
+    return unique_locators(locators)
+
+
+def citation_support_failure_reason(citation: Mapping[str, Any], locators: list[Mapping[str, str]]) -> str:
+    citation_sheet = normalize_locator_sheet(citation.get("sheet"))
+    citation_range = clean(citation.get("range"))
+    same_sheet_locators = [
+        locator for locator in locators if normalize_locator_sheet(locator.get("sheet")) == citation_sheet
+    ]
+    if not same_sheet_locators:
+        return "wrong_sheet_citation"
+    identity_reason = citation_identity_failure_reason(citation, same_sheet_locators)
+    if identity_reason:
+        return identity_reason
+    for locator in same_sheet_locators:
+        if ranges_exact_match(citation_range, locator.get("range")) or ranges_exact_match(citation_range, locator.get("cell")):
+            return ""
+    for locator in same_sheet_locators:
+        if ranges_overlap(citation_range, locator.get("range")) or ranges_overlap(citation_range, locator.get("cell")):
+            return "partial_range_overlap"
+    return "wrong_range_citation"
+
+
+def citation_identity_failure_reason(citation: Mapping[str, Any], locators: list[Mapping[str, str]]) -> str:
+    supplied_fields = [
+        ("file", "wrong_file_citation"),
+        ("document_version_id", "wrong_document_version_citation"),
+        ("search_unit_id", "wrong_search_unit_citation"),
+    ]
+    for field, reason in supplied_fields:
+        if any(clean(locator.get(field)) for locator in locators) and not clean(citation.get(field)):
+            return f"missing_{field}_citation"
+        value = clean(citation.get(field))
+        if not value:
+            continue
+        if not any(locator_identity_matches(field, value, locator.get(field)) for locator in locators):
+            return reason
+    return ""
+
+
+def locator_identity_matches(field: str, left: object, right: object) -> bool:
+    left_text = clean(left)
+    right_text = clean(right)
+    if not left_text or not right_text:
+        return False
+    if field == "file":
+        return Path(left_text).name.casefold() == Path(right_text).name.casefold()
+    return left_text == right_text
+
+
+def ranges_exact_match(left: object, right: object) -> bool:
+    left_text = normalize_range_text(left)
+    right_text = normalize_range_text(right)
+    return bool(left_text and right_text and left_text == right_text)
+
+
+def ranges_overlap(left: str, right: str) -> bool:
+    left_bounds = a1_bounds(left)
+    right_bounds = a1_bounds(right)
+    if left_bounds and right_bounds:
+        l_min_col, l_min_row, l_max_col, l_max_row = left_bounds
+        r_min_col, r_min_row, r_max_col, r_max_row = right_bounds
+        return not (
+            l_max_col < r_min_col
+            or r_max_col < l_min_col
+            or l_max_row < r_min_row
+            or r_max_row < l_min_row
+        )
+    return normalize_range_text(left) == normalize_range_text(right)
+
+
+def a1_bounds(value: str) -> tuple[int, int, int, int] | None:
+    text = clean(value).replace("$", "")
+    if "!" in text:
+        text = text.rsplit("!", 1)[1]
+    match = re.fullmatch(r"([A-Za-z]{1,4})(\d+)(?::([A-Za-z]{1,4})(\d+))?", text)
+    if not match:
+        return None
+    start_col = column_number(match.group(1))
+    start_row = int(match.group(2))
+    end_col = column_number(match.group(3) or match.group(1))
+    end_row = int(match.group(4) or match.group(2))
+    min_col, max_col = sorted([start_col, end_col])
+    min_row, max_row = sorted([start_row, end_row])
+    return min_col, min_row, max_col, max_row
+
+
+def column_number(value: str) -> int:
+    number = 0
+    for char in clean(value).upper():
+        number = number * 26 + (ord(char) - ord("A") + 1)
+    return number
+
+
+def normalize_locator_sheet(value: object) -> str:
+    return clean(value).casefold()
+
+
+def normalize_range_text(value: object) -> str:
+    return clean(value).replace("$", "").upper()
+
+
+def unique_locators(locators: Iterable[Mapping[str, str]]) -> list[dict[str, str]]:
+    seen: set[tuple[str, str, str]] = set()
+    out: list[dict[str, str]] = []
+    for locator in locators:
+        key = (
+            clean(locator.get("file")),
+            normalize_locator_sheet(locator.get("sheet")),
+            normalize_range_text(locator.get("range") or locator.get("cell")),
+        )
+        if key not in seen:
+            seen.add(key)
+            out.append(dict(locator))
+    return out
 
 
 def xlsx_locator(evidence: Mapping[str, Any]) -> dict[str, str]:
@@ -1422,8 +1804,21 @@ def report_csv_rows(rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
     return [
         {
             "query_id": clean(row.get("query_id")),
+            "trace_id": clean(row.get("trace_id")),
+            "track": clean(row.get("track")),
+            "eval_mode": clean(row.get("eval_mode")),
             "answer_allowed": parse_bool(row.get("answer_allowed")),
             "fail_closed_reason": clean(row.get("fail_closed_reason")),
+            "llm_smoke_status": clean(row.get("llm_smoke_status")),
+            "raw_output_status": clean(row.get("raw_output_status")),
+            "parser_status": clean(row.get("parser_status")),
+            "content_shape_status": clean(row.get("content_shape_status")),
+            "citation_validation_status": clean(row.get("citation_validation_status")),
+            "official_metric_included": parse_bool(row.get("official_metric_included")),
+            "answer_generation_denominator_included": parse_bool(row.get("answer_generation_denominator_included")),
+            "failure_reason": clean(row.get("failure_reason")),
+            "prompt_hash": clean(row.get("prompt_hash")),
+            "context_hash": clean(row.get("context_hash")),
             "answer_type": clean(row.get("answer_type")),
             "answer": clean(row.get("answer")),
             "abstain_reason": clean(row.get("abstain_reason")),
@@ -1431,6 +1826,9 @@ def report_csv_rows(rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
             "unsupported_claim_count": int_or_zero(row.get("llm_unsupported_claim_count")),
             "gold_leakage_suspected": parse_bool(row.get("llm_gold_leakage_suspected")),
             "citation_missing": parse_bool(row.get("llm_citation_missing")),
+            "citation_not_in_context": parse_bool(row.get("llm_citation_not_in_context")),
+            "citation_support_status": clean(row.get("llm_citation_support_status")),
+            "citation_failure_reasons": json.dumps(row.get("llm_citation_failure_reasons") or [], ensure_ascii=False),
             "locator_only_answer": parse_bool(row.get("llm_locator_only_answer")),
             "keyword_echo_only": parse_bool(row.get("llm_keyword_echo_only")),
         }
@@ -1443,6 +1841,7 @@ def artifact_entry(path: Path) -> dict[str, Any]:
         "path": repo_relative(path),
         "exists": path.exists(),
         "bytes": path.stat().st_size if path.exists() else 0,
+        "sha256": sha256_file(path) if path.exists() and path.is_file() else None,
     }
 
 
@@ -1450,6 +1849,7 @@ def diagnostic_guardrails() -> dict[str, bool]:
     return {
         "retrieval_ranking_modified": False,
         "parser_modified": False,
+        "diagnostic_llm_output_schema_hardened": True,
         "chunking_modified": False,
         "embeddings_modified": False,
         "db_mutation_run": False,
@@ -1473,6 +1873,22 @@ def compact_mapping(value: object) -> dict[str, Any]:
             continue
         compact[str(key)] = item
     return compact
+
+
+def stable_sha256(value: object) -> str:
+    if isinstance(value, str):
+        payload = value
+    else:
+        payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def mapping_list(value: object) -> list[dict[str, Any]]:

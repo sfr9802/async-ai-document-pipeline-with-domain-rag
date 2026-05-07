@@ -34,14 +34,14 @@ FORBIDDEN_ACTIVE_STRINGS = (
 
 LEGACY_V3_SCRIPT_PATHS = (
     Path("eval/tune_eval_offline.py"),
-    Path("ai-worker/scripts/eval_full_silver_minimal_sweep.py"),
-    Path("ai-worker/scripts/eval_wide_mmr_titlecap_sweep.py"),
-    Path("ai-worker/scripts/confirm_wide_mmr_best_configs.py"),
-    Path("ai-worker/scripts/confirm_embedding_text_variant.py"),
-    Path("ai-worker/scripts/confirm_reranker_input_format.py"),
-    Path("ai-worker/scripts/confirm_rerank_input_cap_policy.py"),
-    Path("ai-worker/scripts/build_legacy_baseline_final.py"),
-    Path("ai-worker/scripts/eval_agent_loop_ab_baseline.py"),
+    Path("scripts/eval_full_silver_minimal_sweep.py"),
+    Path("scripts/eval_wide_mmr_titlecap_sweep.py"),
+    Path("scripts/confirm_wide_mmr_best_configs.py"),
+    Path("scripts/confirm_embedding_text_variant.py"),
+    Path("scripts/confirm_reranker_input_format.py"),
+    Path("scripts/confirm_rerank_input_cap_policy.py"),
+    Path("scripts/build_legacy_baseline_final.py"),
+    Path("scripts/eval_agent_loop_ab_baseline.py"),
 )
 
 
@@ -135,6 +135,15 @@ def test_active_yaml_is_phase7_v4_active_template_without_legacy_defaults():
 
     config = tune_mod.load_active_config(ACTIVE_YAML)
     tune_mod.assert_active_config_runnable(config)
+    assert tune_mod.tuning_sweep_disabled_reason(config) == (
+        "_meta.execution_policy.allow_tuning_sweep=false"
+    )
+
+
+def test_active_yaml_blocks_tune_sweep_even_when_config_parses():
+    config = tune_mod.load_active_config(ACTIVE_YAML)
+    with pytest.raises(SystemExit, match="disables tuning sweeps"):
+        tune_mod.assert_tuning_sweep_allowed(config)
 
 
 @pytest.mark.parametrize(

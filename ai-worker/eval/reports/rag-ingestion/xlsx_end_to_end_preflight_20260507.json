@@ -1,0 +1,219 @@
+{
+  "approval_scope": "XLSX retrieval/evidence silver generation only; not retrieval tuning and not official XLSX answer generation",
+  "artifacts": {
+    "llm_smoke_repeat_report": "ai-worker/eval/artifacts/eval_runs/xlsx_preflight_llm_answer_probe_20260507Tpreflight_live_repeat/llm_answer_probe_report.json",
+    "llm_smoke_report": "ai-worker/eval/artifacts/eval_runs/xlsx_preflight_llm_answer_probe_20260507Tpreflight_live/llm_answer_probe_report.json",
+    "normalization_report": "ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_gold_normalization_report.json",
+    "normalized_xlsx_gold_csv": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.csv",
+    "normalized_xlsx_gold_jsonl": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.jsonl",
+    "official_denominator_registry": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+    "official_positive_human_review_csv": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0.csv",
+    "official_positive_retrieval_projection_csv": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv",
+    "retrieval_repeat_report": "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report_repeat.json",
+    "retrieval_report": "ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report.json",
+    "retrieval_summary": "ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary.json",
+    "strict_llm_smoke_repeat_report": "ai-worker/eval/artifacts/eval_runs/xlsx_pre_silver_llm_answer_probe_20260507Tpre_silver_strict_live_repeat/llm_answer_probe_report.json",
+    "strict_llm_smoke_report": "ai-worker/eval/artifacts/eval_runs/xlsx_pre_silver_llm_answer_probe_20260507Tpre_silver_strict_live/llm_answer_probe_report.json",
+    "strict_pre_silver_report": "ai-worker/eval/reports/rag-ingestion/xlsx_pre_silver_risk_closure_20260507.json"
+  },
+  "cache_and_state_isolation": {
+    "conversation_memory_used_for_benchmark": false,
+    "global_fallback_used": false,
+    "prompt_cache_observation": "LLM probe now records source input sha256 plus per-row answer_prompt_payload_sha256 and answer_prompt_sha256.",
+    "residual_risk": "Generic app agent/orchestrator loops still need policy-carrying retrieval guards before they are used for official gold/promotion eval.",
+    "retrieval_cache_observation": "Repeated vector eval returned identical denominator, namespace, top candidate ids, and metrics."
+  },
+  "commands_run": [
+    "python -m py_compile ai-worker/eval/harness/rag_ingestion_retrieval_eval.py ai-worker/scripts/rag_xlsx_human_review_gold_normalizer.py ai-worker/scripts/rag_xlsx_retrieval_performance_diagnostic.py ai-worker/scripts/rag_pdf_xlsx_llm_answer_probe.py ai-worker/scripts/tune.py",
+    "python -m pytest tests/test_rag_xlsx_human_review_gold_normalizer.py tests/test_rag_xlsx_track_a_scripts.py tests/test_pdf_xlsx_answer_repair.py tests/test_phase7_v4_guardrails.py tests/test_retrieval_eval_harness.py tests/test_tune.py tests/test_promotion_gate_persistence.py tests/test_rag_query_orchestrator_vector_tools.py -q",
+    "python scripts/rag_xlsx_human_review_gold_normalizer.py --review-pack eval/artifacts/eval_runs/xlsx_human_review_gold_normalization_20260507T091500Z/source_xlsx_gold_human_review_pack_used.csv --run-id 20260507Tpreflight --source-label xlsx_human_review_preflight_source_snapshot --update-registry",
+    "python scripts/rag_xlsx_retrieval_performance_diagnostic.py --top-k 10 --report eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report.json --summary eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary.json --hidden-report eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic.json",
+    "python scripts/rag_xlsx_retrieval_performance_diagnostic.py --top-k 10 --report eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report_repeat.json --summary eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary_repeat.json --hidden-report eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic_repeat.json",
+    "python scripts/rag_pdf_xlsx_llm_answer_probe.py --source-artifact-dir eval/artifacts/eval_runs/pdf_xlsx_answer_shape_xlsx_generalization_audit_20260506T061055Z --max-rows 10 --run-id 20260507Tpreflight_live --run-prefix xlsx_preflight_llm_answer_probe --temperature 0.0 --max-tokens 300 --timeout-seconds 120",
+    "python scripts/rag_pdf_xlsx_llm_answer_probe.py --source-artifact-dir eval/artifacts/eval_runs/pdf_xlsx_answer_shape_xlsx_generalization_audit_20260506T061055Z --max-rows 10 --run-id 20260507Tpreflight_live_repeat --run-prefix xlsx_preflight_llm_answer_probe --temperature 0.0 --max-tokens 300 --timeout-seconds 120"
+  ],
+  "date": "2026-05-07",
+  "denominators": {
+    "diagnostic_only_count": 3,
+    "excluded_count": 14,
+    "normalized_xlsx_row_count": 50,
+    "official_xlsx_answer_generation_denominator": 0,
+    "official_xlsx_retrieval_evidence_denominator": 23,
+    "pending_source_verification_count": 10,
+    "silver_rows_in_official_denominator": 0,
+    "special_rows_not_official": [
+      "gq_xlsx_date_number_format_003",
+      "gq_xlsx_aggregation_001"
+    ]
+  },
+  "final_status": "APPROVED_FOR_XLSX_SILVER_GENERATION",
+  "live_retrieval_smoke": {
+    "embedding_status_mismatch_count": 0,
+    "evidence_role": "diagnostic",
+    "hidden_content_leakage_count": 0,
+    "hit_at_1": 0.913,
+    "hit_at_10": 1.0,
+    "hit_at_3": 1.0,
+    "mrr_at_10": 0.942,
+    "namespace": "rag-ingestion-v2-xlsx-candidate-v1",
+    "promotion_evidence": false,
+    "required_index_version_mismatch_count": 0,
+    "row_count": 23,
+    "search_error_count": 0,
+    "status": "COMPLETED",
+    "xlsx_citation_location_accuracy": 1.0
+  },
+  "llm_diagnostic_smoke": {
+    "answer_allowed_xlsx_rows": 6,
+    "decision": "diagnostic warning only; does not block retrieval/evidence silver generation and must not be promoted to official answer scoring",
+    "diagnostic_grounding_failure_count": 4,
+    "grounding_validation_status": "DIAGNOSTIC_FAILURE",
+    "llm_abstain_count": 6,
+    "llm_answer_count": 4,
+    "llm_citation_missing_count": 0,
+    "llm_citation_not_in_context_count": 0,
+    "llm_invalid_json_count": 2,
+    "llm_keyword_echo_only_count": 4,
+    "local_llm_run": true,
+    "official_xlsx_answer_eval_denominator": 0,
+    "promotion_evidence": false,
+    "row_count": 10,
+    "status": "PASS_WITH_WARNINGS"
+  },
+  "phase_guardrails": {
+    "llm_response_metrics_are_diagnostic_only": true,
+    "official_xlsx_answer_generation_denominator_created": false,
+    "pdf_behavior_changed": false,
+    "private_chain_of_thought_logged": false,
+    "retrieval_tuning_performed": false,
+    "silver_data_generated": false,
+    "text_namu_behavior_changed": false
+  },
+  "query_to_answer_pipeline": [
+    "XLSX official retrieval projection CSV validates against eval.harness.rag_ingestion_retrieval_eval.REQUIRED_COLUMNS.",
+    "rag_xlsx_retrieval_performance_diagnostic.py creates a vector search function pinned to rag-ingestion-v2-xlsx-candidate-v1.",
+    "evaluate_gold_rows records identity, index-version, embedding-status, and XLSX locator match breakdown.",
+    "XLSX answer probe reads XLSX evidence rows only, builds answer_prompt_payload with file/sheet/range/search_unit_id/document_version_id locators, hashes prompt payload and prompt text, and calls only local LLM backends.",
+    "LLM citation validation compares model citations against prompt-side locators and rejects missing source, wrong sheet, wrong range, partial range overlap, wrong file, wrong document_version_id, and wrong search_unit_id.",
+    "LLM answer outputs remain diagnostic-only; no official XLSX answer denominator is created."
+  ],
+  "reconciled_decisions": [
+    {
+      "action": "Preserved denominator_kind=xlsx_retrieval_evidence_diagnostic and answer denominator 0.",
+      "agents": [
+        "DenominatorRegistryAgent",
+        "RedTeamReviewerAgent",
+        "DenominatorConflictResolutionAgent"
+      ],
+      "decision": "23 is official XLSX retrieval/evidence denominator, not answer-generation denominator.",
+      "issue": "23-row XLSX denominator meaning",
+      "status": "resolved"
+    },
+    {
+      "action": "Generated gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv and defaulted XLSX wrapper to it.",
+      "agents": [
+        "DenominatorRegistryAgent",
+        "PatchSurfaceAgent",
+        "VerificationDenominatorAgent"
+      ],
+      "decision": "Create separate 23-row retrieval projection CSV.",
+      "issue": "Human-review official CSV was not retrieval-harness schema",
+      "status": "resolved"
+    },
+    {
+      "action": "Strengthened citation validator and added focused tests.",
+      "agents": [
+        "LLMGroundingAgent",
+        "VerificationGroundingAgent",
+        "VerificationContextPromptAgent"
+      ],
+      "decision": "Reject missing source, partial-overlap ranges, and wrong identity fields.",
+      "issue": "LLM citation parser accepted invented or weak locators",
+      "status": "resolved"
+    },
+    {
+      "action": "Added guard test that XLSX diagnostic wrapper does not import agent-loop components.",
+      "agents": [
+        "AgenticLoopAgent",
+        "VerificationAgenticLoopAgent"
+      ],
+      "decision": "Current XLSX eval bypasses generic loop; keep generic loop as residual future-use risk.",
+      "issue": "Generic agent loop can drop track/namespace constraints",
+      "status": "accepted_residual_risk"
+    },
+    {
+      "action": "Added assert_tuning_sweep_allowed and tests.",
+      "agents": [
+        "CacheRepeatabilityAgent",
+        "TestAndCIReviewAgent"
+      ],
+      "decision": "scripts.tune must honor _meta.execution_policy.allow_tuning_sweep=false.",
+      "issue": "Tuning sweep disabled in active.yaml but not enforced",
+      "status": "resolved"
+    }
+  ],
+  "repeatability": {
+    "llm_repeat_hash": "1e2a5fa3a7b2bb9f",
+    "llm_repeat_stable_for_parser_and_validator_status": true,
+    "retrieval_repeat_hash": "07a6a065094578d7",
+    "retrieval_repeat_stable_ignoring_run_metadata": true
+  },
+  "residual_risks": [
+    "LLM answer smoke is deterministic but diagnostic-failing due keyword-only answers and invalid JSON; do not use it for official answer-generation metrics.",
+    "Generic AGENT and orchestrator loops remain unsafe for official XLSX gold/promotion eval until they carry explicit track/namespace/index policy through every rewrite/retry/tool call.",
+    "Old answer_generation_inputs.prompt_context artifacts can be mixed/truncated; current preflight answer probe uses structured XLSX evidence payload instead.",
+    "Direct shared harness CLI defaults remain generic; official XLSX eval should use the XLSX wrapper or explicit vector/XLSX flags."
+  ],
+  "route_map": {
+    "pdf": {
+      "changed": false,
+      "entrypoint": "ai-worker/scripts/rag_pdf_vector_diagnostic.py",
+      "namespace": "rag-ingestion-v2-pdf-candidate-v1"
+    },
+    "text_namu": {
+      "backend": "local lexical diagnostic",
+      "changed": false,
+      "corpus": "eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl",
+      "entrypoint": "ai-worker/scripts/rag_text_namu_v4_retrieval_diagnostic.py"
+    },
+    "xlsx": {
+      "backend": "FAISS plus ragmeta metadata store",
+      "entrypoint": "ai-worker/scripts/rag_xlsx_retrieval_performance_diagnostic.py",
+      "fallback_policy": "missing official projection fails; no generated fallback and no global/TEXT/PDF fallback",
+      "gold_default": "eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv",
+      "index_dir": "eval/indexes/rag-data-xlsx-candidate-v1",
+      "namespace": "rag-ingestion-v2-xlsx-candidate-v1"
+    }
+  },
+  "schema_version": "xlsx_end_to_end_preflight_v1",
+  "subagents": {
+    "followup_resolution": [
+      "DenominatorConflictResolutionAgent",
+      "PatchSurfaceAgent"
+    ],
+    "phase_a_read_only": [
+      "RouteMapAgent",
+      "DenominatorRegistryAgent",
+      "ContextPromptAgent",
+      "AgenticLoopAgent",
+      "CacheRepeatabilityAgent",
+      "LLMGroundingAgent",
+      "TestAndCIReviewAgent",
+      "RedTeamReviewerAgent"
+    ],
+    "phase_e_verification": [
+      "VerificationRouteAgent",
+      "VerificationDenominatorAgent",
+      "VerificationContextPromptAgent",
+      "VerificationAgenticLoopAgent",
+      "VerificationGroundingAgent",
+      "VerificationTestAgent"
+    ]
+  },
+  "superseded_for_strict_pre_silver_risk_closure": {
+    "official_retrieval_evidence_approval_scope_remains": "retrieval/evidence only",
+    "reason": "This earlier preflight report points to pre-hardening LLM smoke artifacts. Use the strict pre-silver report and xlsx_pre_silver_llm_answer_probe artifacts for schema-valid diagnostic LLM proof.",
+    "status": "SUPERSEDED_FOR_LLM_SHAPE_PROOF_ONLY",
+    "strict_report": "ai-worker/eval/reports/rag-ingestion/xlsx_pre_silver_risk_closure_20260507.json"
+  }
+}

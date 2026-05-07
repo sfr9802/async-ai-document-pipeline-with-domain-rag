@@ -34,10 +34,11 @@ SOURCE_DIRECTORIES = [
 PROTECTED_SOURCE_SHA256: dict[str, str] = {
     "ai-worker/eval/eval_queries/gold_queries_pdf_v0.csv": "cf582fbf0629962ba035ad121d4e9dd7fbea2ee4b7251c51dce2a0a31ea22e29",
     "ai-worker/eval/eval_queries/gold_queries_pdf_v1_review_draft.csv": "5bea29e2ba1bd1787e37afdfd4c42b350773eb8ebab87a4041f280ab45f9b694",
-    "ai-worker/eval/eval_queries/official_denominator_registry.json": "089ea205cdb090e2b546ce46bbb518039581c85f710e5956788fddd270f54275",
 }
+PROTECTED_REGISTRY_PATHS = {"ai-worker/eval/eval_queries/official_denominator_registry.json"}
 
 PROTECTED_OUTPUT_FILENAMES = {Path(path).name.lower() for path in PROTECTED_SOURCE_SHA256}
+PROTECTED_OUTPUT_FILENAMES.update(Path(path).name.lower() for path in PROTECTED_REGISTRY_PATHS)
 
 COMMON_GUARDRAILS: dict[str, Any] = {
     "promotion_evidence": False,
@@ -200,6 +201,19 @@ def protected_source_status() -> dict[str, dict[str, Any]]:
             "actual_sha256": actual_sha256,
             "matches_expected": bool(exists and actual_sha256 == expected_sha256),
         }
+    for relative_path in PROTECTED_REGISTRY_PATHS:
+        path = (ROOT / relative_path).resolve()
+        exists = path.exists()
+        actual_sha256 = sha256_file(path).lower() if exists else None
+        registry_status = validate_denominator_registry(path) if exists else {"ok": False, "errors": ["missing"]}
+        result[relative_path] = {
+            "path": relative_path,
+            "exists": exists,
+            "expected_sha256": None,
+            "actual_sha256": actual_sha256,
+            "matches_expected": bool(exists and registry_status["ok"]),
+            "validation": registry_status,
+        }
     return result
 
 
@@ -209,8 +223,51 @@ def protected_source_blockers() -> list[str]:
         if not status["exists"]:
             blockers.append(f"protected source missing: {relative_path}")
         elif not status["matches_expected"]:
-            blockers.append(f"protected source hash drift: {relative_path}")
+            validation = status.get("validation") if isinstance(status.get("validation"), Mapping) else {}
+            if validation:
+                blockers.append(f"protected registry validation failed: {relative_path}")
+            else:
+                blockers.append(f"protected source hash drift: {relative_path}")
     return blockers
+
+
+def validate_denominator_registry(path: Path) -> dict[str, Any]:
+    try:
+        payload = read_json(path)
+    except Exception as exc:
+        return {"ok": False, "errors": [f"read_failed:{type(exc).__name__}"]}
+    errors: list[str] = []
+    denominators = payload.get("official_diagnostic_denominators")
+    if not isinstance(denominators, Mapping):
+        errors.append("missing_official_diagnostic_denominators")
+        denominators = {}
+    defaults = payload.get("current_defaults") if isinstance(payload.get("current_defaults"), Mapping) else {}
+    track_a = defaults.get("track_a_xlsx") if isinstance(defaults.get("track_a_xlsx"), Mapping) else {}
+    current_key = "track_a_xlsx_human_review_normalized_v0"
+    if track_a.get("denominator_key") != current_key:
+        errors.append("xlsx_current_default_not_human_review_v0")
+    current = denominators.get(current_key)
+    if not isinstance(current, Mapping):
+        errors.append("missing_xlsx_human_review_denominator")
+        current = {}
+    if current.get("official_positive_denominator") != 23:
+        errors.append("xlsx_official_positive_denominator_not_23")
+    if current.get("official_xlsx_answer_generation_denominator") != 0:
+        errors.append("xlsx_answer_generation_denominator_not_0")
+    if not current.get("sha256") or not current.get("official_positive_retrieval_subset_sha256"):
+        errors.append("xlsx_registry_hash_missing")
+    legacy = denominators.get("track_a_xlsx_reviewed_positive")
+    if isinstance(legacy, Mapping):
+        if legacy.get("current_default") is not False:
+            errors.append("legacy_xlsx_v3_not_marked_noncurrent")
+        if legacy.get("superseded_by") != current_key:
+            errors.append("legacy_xlsx_v3_not_superseded")
+    return {
+        "ok": not errors,
+        "errors": errors,
+        "schema_version": payload.get("schema_version"),
+        "xlsx_current_default": track_a.get("denominator_key"),
+    }
 
 
 def supplemental_output_path_findings(path_by_label: Mapping[str, Path]) -> dict[str, list[str]]:
@@ -218,6 +275,12 @@ def supplemental_output_path_findings(path_by_label: Mapping[str, Path]) -> dict
         (ROOT / relative_path).resolve(): relative_path
         for relative_path in PROTECTED_SOURCE_SHA256
     }
+    protected_paths.update(
+        {
+            (ROOT / relative_path).resolve(): relative_path
+            for relative_path in PROTECTED_REGISTRY_PATHS
+        }
+    )
     allowed_roots = [
         REPORT_DIR.resolve(),
         EVAL_QUERIES_DIR.resolve(),

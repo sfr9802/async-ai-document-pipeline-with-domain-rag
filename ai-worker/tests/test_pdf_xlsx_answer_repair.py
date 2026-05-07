@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import csv
 import json
 import sys
 from pathlib import Path
@@ -550,7 +551,7 @@ def test_llm_answer_probe_evidence_only_answer_passes_checks():
         "query_id": "q_probe",
         "answer": "Station A row / Total column value is 123.",
         "answer_type": "CELL_VALUE",
-        "citations": [{"sheet": "Sheet1", "range": "A1:B2", "source": "selected_searchunit_payload"}],
+        "citations": [{"file": "sample.xlsx", "sheet": "Sheet1", "range": "A1:B2", "source": "selected_searchunit_payload"}],
         "used_evidence_fields": ["evidence.row_values"],
         "unsupported_claims": [],
         "abstain_reason": "",
@@ -562,6 +563,210 @@ def test_llm_answer_probe_evidence_only_answer_passes_checks():
     assert checks["llm_unsupported_claim_count"] == 0
     assert checks["llm_gold_leakage_suspected"] is False
     assert checks["llm_citation_missing"] is False
+    assert checks["llm_citation_not_in_context"] is False
+    assert checks["llm_citation_support_status"] == "PASS"
+
+
+def test_llm_response_rejects_hallucinated_locator():
+    source_row = xlsx_probe_source_row(expected_answer_text="GoldOnlyValue", must_terms=["GoldOnlyMust"])
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    probe_row = llm_probe.build_llm_answer_probe_input_row(
+        evidence_row=evidence_row,
+        compiled_row=compiled_row,
+        run_id="probe",
+    )
+    parsed = {
+        "query_id": "q_probe",
+        "answer": "Station A row / Total column value is 123.",
+        "answer_type": "CELL_VALUE",
+        "citations": [{"sheet": "OtherSheet", "range": "Z9:Z9", "source": "selected_searchunit_payload"}],
+        "used_evidence_fields": ["evidence.row_values"],
+        "unsupported_claims": [],
+        "abstain_reason": "",
+        "confidence": "high",
+    }
+
+    checks = llm_probe.answer_checks(probe_input=probe_row, parsed_answer=parsed, source_row=source_row)
+
+    assert checks["llm_citation_missing"] is False
+    assert checks["llm_citation_not_in_context"] is True
+    assert checks["llm_citation_support_status"] == "citation_not_in_retrieved_context"
+    assert checks["llm_citation_failure_reasons"] == ["wrong_sheet_citation"]
+
+
+def test_llm_response_citations_must_come_from_retrieved_context():
+    result = llm_probe.validate_probe_citations(
+        [{"file": "sample.xlsx", "sheet": "Sheet1", "range": "Z9:Z9", "source": "selected_searchunit_payload"}],
+        {"citation_locator": {"file": "sample.xlsx", "sheet": "Sheet1", "range": "A1:B2"}},
+    )
+
+    assert result["status"] == "citation_not_in_retrieved_context"
+    assert result["failure_reasons"] == ["wrong_range_citation"]
+
+
+def test_llm_response_citation_missing_source_is_not_invented():
+    source_row = xlsx_probe_source_row(expected_answer_text="GoldOnlyValue", must_terms=["GoldOnlyMust"])
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    probe_row = llm_probe.build_llm_answer_probe_input_row(
+        evidence_row=evidence_row,
+        compiled_row=compiled_row,
+        run_id="probe",
+    )
+    parsed = llm_probe.normalize_probe_answer(
+        {
+            "query_id": "q_probe",
+            "answer": "Station A row / Total column value is 123.",
+            "answer_type": "CELL_VALUE",
+            "citations": [{"sheet": "Sheet1", "range": "A1:B2"}],
+            "used_evidence_fields": ["evidence.row_values"],
+            "unsupported_claims": [],
+            "abstain_reason": "",
+            "confidence": "high",
+        },
+        fallback_query_id="q_probe",
+    )
+
+    assert parsed["citations"][0]["source"] == ""
+
+    checks = llm_probe.answer_checks(probe_input=probe_row, parsed_answer=parsed, source_row=source_row)
+
+    assert checks["llm_citation_missing"] is True
+    assert checks["llm_citation_not_in_context"] is True
+    assert checks["llm_citation_failure_reasons"] == ["citation_missing_required_fields"]
+
+
+def test_llm_response_parser_does_not_invent_locator():
+    parsed = llm_probe.normalize_probe_answer(
+        {
+            "query_id": "q_probe",
+            "answer": "Station A row / Total column value is 123.",
+            "answer_type": "CELL_VALUE",
+            "citations": [{"sheet": "Sheet1", "range": "A1:B2"}],
+            "used_evidence_fields": ["evidence.row_values"],
+            "unsupported_claims": [],
+            "abstain_reason": "",
+            "confidence": "high",
+        },
+        fallback_query_id="q_probe",
+    )
+
+    assert parsed["citations"][0]["file"] == ""
+    assert parsed["citations"][0]["search_unit_id"] == ""
+    assert parsed["citations"][0]["document_version_id"] == ""
+
+
+def test_llm_response_rejects_partial_overlap_locator():
+    source_row = xlsx_probe_source_row(expected_answer_text="GoldOnlyValue", must_terms=["GoldOnlyMust"])
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    probe_row = llm_probe.build_llm_answer_probe_input_row(
+        evidence_row=evidence_row,
+        compiled_row=compiled_row,
+        run_id="probe",
+    )
+    parsed = {
+        "query_id": "q_probe",
+        "answer": "Station A row / Total column value is 123.",
+        "answer_type": "CELL_VALUE",
+        "citations": [{"file": "sample.xlsx", "sheet": "Sheet1", "range": "B2:B2", "source": "selected_searchunit_payload"}],
+        "used_evidence_fields": ["evidence.row_values"],
+        "unsupported_claims": [],
+        "abstain_reason": "",
+        "confidence": "high",
+    }
+
+    checks = llm_probe.answer_checks(probe_input=probe_row, parsed_answer=parsed, source_row=source_row)
+
+    assert checks["llm_citation_missing"] is False
+    assert checks["llm_citation_not_in_context"] is True
+    assert checks["llm_citation_failure_reasons"] == ["partial_range_overlap"]
+
+
+def test_llm_response_rejects_wrong_locator_identity_fields():
+    prompt_payload = {
+        "citation_locator": {
+            "file": "sample.xlsx",
+            "sheet": "Sheet1",
+            "range": "A1:B2",
+            "document_version_id": "docv-1",
+            "search_unit_id": "unit-1",
+        }
+    }
+
+    wrong_file = llm_probe.validate_probe_citations(
+        [
+            {
+                "file": "other.xlsx",
+                "sheet": "Sheet1",
+                "range": "A1:B2",
+                "source": "selected_searchunit_payload",
+                "document_version_id": "docv-1",
+                "search_unit_id": "unit-1",
+            }
+        ],
+        prompt_payload,
+    )
+    wrong_docv = llm_probe.validate_probe_citations(
+        [
+            {
+                "file": "sample.xlsx",
+                "sheet": "Sheet1",
+                "range": "A1:B2",
+                "source": "selected_searchunit_payload",
+                "document_version_id": "docv-other",
+                "search_unit_id": "unit-1",
+            }
+        ],
+        prompt_payload,
+    )
+    wrong_unit = llm_probe.validate_probe_citations(
+        [
+            {
+                "file": "sample.xlsx",
+                "sheet": "Sheet1",
+                "range": "A1:B2",
+                "source": "selected_searchunit_payload",
+                "document_version_id": "docv-1",
+                "search_unit_id": "unit-other",
+            }
+        ],
+        prompt_payload,
+    )
+
+    assert wrong_file["failure_reasons"] == ["wrong_file_citation"]
+    assert wrong_docv["failure_reasons"] == ["wrong_document_version_citation"]
+    assert wrong_unit["failure_reasons"] == ["wrong_search_unit_citation"]
+
+
+def test_validate_probe_citations_rejects_same_sheet_nonoverlap():
+    result = llm_probe.validate_probe_citations(
+        [{"sheet": "Sheet1", "range": "Z9:Z9", "source": "selected_searchunit_payload"}],
+        {"citation_locator": {"sheet": "Sheet1", "range": "A1:B2"}},
+    )
+
+    assert result["status"] == "citation_not_in_retrieved_context"
+    assert result["failure_reasons"] == ["wrong_range_citation"]
+
+
+def test_normalized_probe_citation_preserves_nested_locator_identity():
+    normalized = llm_probe.normalize_probe_citation(
+        {
+            "source": "selected_searchunit_payload",
+            "locator": {
+                "file": "sample.xlsx",
+                "sheet": "Sheet1",
+                "range": "A1:B2",
+                "document_version_id": "docv-1",
+                "search_unit_id": "unit-1",
+            },
+        }
+    )
+
+    assert normalized["file"] == "sample.xlsx"
+    assert normalized["document_version_id"] == "docv-1"
+    assert normalized["search_unit_id"] == "unit-1"
 
 
 def test_gold_intent_role_probe_sees_gold_fields_but_does_not_write_answer_evidence():
@@ -603,7 +808,7 @@ def test_gold_only_must_term_in_llm_answer_is_flagged_as_leakage():
         "query_id": "q_probe",
         "answer": "GoldOnlyMust",
         "answer_type": "ROW_SUMMARY",
-        "citations": [{"sheet": "Sheet1", "range": "A1:B2", "source": "selected_searchunit_payload"}],
+        "citations": [{"file": "sample.xlsx", "sheet": "Sheet1", "range": "A1:B2", "source": "selected_searchunit_payload"}],
         "used_evidence_fields": [],
         "unsupported_claims": [],
         "abstain_reason": "",
@@ -707,7 +912,7 @@ def test_llm_probe_report_keeps_official_denominator_and_promotion_false(tmp_pat
                 "answer": "Station A row / Total column value is 123.",
                 "answer_type": "CELL_VALUE",
                 "citations": [
-                    {"sheet": "Sheet1", "range": "A1:B2", "source": "selected_searchunit_payload"}
+                    {"file": "sample.xlsx", "sheet": "Sheet1", "range": "A1:B2", "source": "selected_searchunit_payload"}
                 ],
                 "used_evidence_fields": ["evidence.row_values"],
                 "unsupported_claims": [],
@@ -721,6 +926,232 @@ def test_llm_probe_report_keeps_official_denominator_and_promotion_false(tmp_pat
     assert report["promotion_evidence"] is False
     assert report["expected_answer_text_used_in_answer_prompt"] is False
     assert report["must_contain_terms_used_in_answer_prompt"] is False
+
+
+def test_llm_probe_report_marks_grounding_failure_diagnostic(tmp_path):
+    source_row = xlsx_probe_source_row()
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    inputs = tmp_path / "answer_generation_inputs.jsonl"
+    evidence = tmp_path / "evidence_objects.jsonl"
+    compiled = tmp_path / "compiled_answers.jsonl"
+    write_jsonl(inputs, [source_row])
+    write_jsonl(evidence, [evidence_row])
+    write_jsonl(compiled, [compiled_row])
+
+    report = llm_probe.run_probe(
+        source_artifact_dir=tmp_path,
+        inputs_path=inputs,
+        evidence_objects_path=evidence,
+        compiled_answers_path=compiled,
+        output_root=tmp_path,
+        run_id="probe_grounding_failure",
+        run_prefix="probe",
+        backend="llamacpp",
+        base_url="http://localhost:8081/v1",
+        model="fake-local",
+        temperature=0.0,
+        timeout_seconds=1,
+        max_tokens=50,
+        llm_client=lambda prompt: json.dumps(
+            {
+                "query_id": "q_probe",
+                "answer": "Station A row / Total column value is 123.",
+                "answer_type": "CELL_VALUE",
+                "citations": [
+                    {"sheet": "OtherSheet", "range": "A1:B2", "source": "selected_searchunit_payload"}
+                ],
+                "used_evidence_fields": ["evidence.row_values"],
+                "unsupported_claims": [],
+                "abstain_reason": "",
+                "confidence": "high",
+            }
+        ),
+    )
+
+    assert report["status"] == "PASS_WITH_WARNINGS"
+    assert report["grounding_validation_status"] == "DIAGNOSTIC_FAILURE"
+    assert report["diagnostic_grounding_failure_count"] > 0
+    rows = read_csv(tmp_path / "probe_probe_grounding_failure" / "llm_answer_probe_report.csv")
+    assert rows[0]["citation_not_in_context"] == "True"
+    assert report["official_xlsx_answer_eval_denominator"] == 0
+
+
+def test_llm_smoke_final_record_schema_valid_on_invalid_json(tmp_path):
+    source_row = xlsx_probe_source_row()
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    inputs = tmp_path / "answer_generation_inputs.jsonl"
+    evidence = tmp_path / "evidence_objects.jsonl"
+    compiled = tmp_path / "compiled_answers.jsonl"
+    write_jsonl(inputs, [source_row])
+    write_jsonl(evidence, [evidence_row])
+    write_jsonl(compiled, [compiled_row])
+
+    report = llm_probe.run_probe(
+        source_artifact_dir=tmp_path,
+        inputs_path=inputs,
+        evidence_objects_path=evidence,
+        compiled_answers_path=compiled,
+        output_root=tmp_path,
+        run_id="invalid_json",
+        run_prefix="probe",
+        backend="llamacpp",
+        base_url="http://localhost:8081/v1",
+        model="fake-local",
+        temperature=0.0,
+        timeout_seconds=1,
+        max_tokens=50,
+        llm_client=lambda prompt: "keyword answer without json",
+    )
+
+    row = read_jsonl(tmp_path / "probe_invalid_json" / "llm_answer_probe_outputs.jsonl")[0]
+    required = {
+        "query_id",
+        "track",
+        "eval_mode",
+        "llm_smoke_status",
+        "raw_output_status",
+        "parser_status",
+        "content_shape_status",
+        "citation_validation_status",
+        "official_metric_included",
+        "answer_generation_denominator_included",
+        "failure_reason",
+        "trace_id",
+        "prompt_hash",
+        "context_hash",
+    }
+
+    assert required.issubset(row)
+    assert row["raw_output_status"] == "MODEL_OUTPUT_INVALID_JSON"
+    assert row["parser_status"] == "JSON_REPAIR_FAILED"
+    assert row["llm_smoke_status"] == "DIAGNOSTIC_FAILURE"
+    assert row["official_metric_included"] is False
+    assert row["answer_generation_denominator_included"] is False
+    assert report["official_xlsx_answer_eval_denominator"] == 0
+
+
+def test_llm_smoke_keyword_only_answer_rejected(tmp_path):
+    source_row = xlsx_probe_source_row(expected_answer_text="station total", must_terms=["station total"])
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    inputs = tmp_path / "answer_generation_inputs.jsonl"
+    evidence = tmp_path / "evidence_objects.jsonl"
+    compiled = tmp_path / "compiled_answers.jsonl"
+    write_jsonl(inputs, [source_row])
+    write_jsonl(evidence, [evidence_row])
+    write_jsonl(compiled, [compiled_row])
+
+    llm_json = json.dumps(
+        {
+            "query_id": "q_probe",
+            "answer": "station total",
+            "answer_type": "ROW_SUMMARY",
+            "citations": [
+                {"file": "sample.xlsx", "sheet": "Sheet1", "range": "A1:B2", "source": "selected_searchunit_payload"}
+            ],
+            "used_evidence_fields": ["evidence.row_values"],
+            "unsupported_claims": [],
+            "abstain_reason": "",
+            "confidence": "low",
+        }
+    )
+    report = llm_probe.run_probe(
+        source_artifact_dir=tmp_path,
+        inputs_path=inputs,
+        evidence_objects_path=evidence,
+        compiled_answers_path=compiled,
+        output_root=tmp_path,
+        run_id="keyword_only",
+        run_prefix="probe",
+        backend="llamacpp",
+        base_url="http://localhost:8081/v1",
+        model="fake-local",
+        temperature=0.0,
+        timeout_seconds=1,
+        max_tokens=50,
+        llm_client=lambda prompt: llm_json,
+    )
+
+    row = read_jsonl(tmp_path / "probe_keyword_only" / "llm_answer_probe_outputs.jsonl")[0]
+
+    assert row["content_shape_status"] == "KEYWORD_ONLY_REJECTED"
+    assert row["failure_reason"] == "KEYWORD_ONLY_REJECTED"
+    assert row["llm_smoke_status"] == "DIAGNOSTIC_FAILURE"
+    assert row["official_metric_included"] is False
+    assert row["answer_generation_denominator_included"] is False
+    assert report["official_xlsx_answer_eval_denominator"] == 0
+
+
+def test_llm_smoke_diagnostic_failure_not_official_metric(tmp_path):
+    source_row = xlsx_probe_source_row()
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    inputs = tmp_path / "answer_generation_inputs.jsonl"
+    evidence = tmp_path / "evidence_objects.jsonl"
+    compiled = tmp_path / "compiled_answers.jsonl"
+    write_jsonl(inputs, [source_row])
+    write_jsonl(evidence, [evidence_row])
+    write_jsonl(compiled, [compiled_row])
+
+    report = llm_probe.run_probe(
+        source_artifact_dir=tmp_path,
+        inputs_path=inputs,
+        evidence_objects_path=evidence,
+        compiled_answers_path=compiled,
+        output_root=tmp_path,
+        run_id="not_official",
+        run_prefix="probe",
+        backend="llamacpp",
+        base_url="http://localhost:8081/v1",
+        model="fake-local",
+        temperature=0.0,
+        timeout_seconds=1,
+        max_tokens=50,
+        llm_client=lambda prompt: "not json",
+    )
+    row = read_jsonl(tmp_path / "probe_not_official" / "llm_answer_probe_outputs.jsonl")[0]
+
+    assert report["grounding_validation_status"] == "DIAGNOSTIC_FAILURE"
+    assert report["promotion_evidence"] is False
+    assert report["official_xlsx_answer_eval_denominator"] == 0
+    assert row["official_metric_included"] is False
+    assert row["answer_generation_denominator_included"] is False
+
+
+def test_llm_e2e_metrics_are_diagnostic_only(tmp_path):
+    source_row = xlsx_probe_source_row()
+    evidence_row = serializer.serialize_input_rows([source_row], run_id="probe")[0]
+    compiled_row = compiler.compile_evidence_rows([evidence_row], run_id="probe")[0]
+    inputs = tmp_path / "answer_generation_inputs.jsonl"
+    evidence = tmp_path / "evidence_objects.jsonl"
+    compiled = tmp_path / "compiled_answers.jsonl"
+    write_jsonl(inputs, [source_row])
+    write_jsonl(evidence, [evidence_row])
+    write_jsonl(compiled, [compiled_row])
+
+    report = llm_probe.run_probe(
+        source_artifact_dir=tmp_path,
+        inputs_path=inputs,
+        evidence_objects_path=evidence,
+        compiled_answers_path=compiled,
+        output_root=tmp_path,
+        run_id="diagnostic_only",
+        run_prefix="probe",
+        backend="llamacpp",
+        base_url="http://localhost:8081/v1",
+        model="fake-local",
+        temperature=0.0,
+        timeout_seconds=1,
+        max_tokens=50,
+        llm_client=lambda prompt: "not json",
+    )
+
+    assert report["promotion_evidence"] is False
+    assert report["official_answer_denominator"] == 0
+    assert report["promotion_denominator"] == 0
+    assert report["official_xlsx_answer_eval_denominator"] == 0
 
 
 def answer_row_from_compiled(compiled_row: dict) -> dict:
@@ -794,3 +1225,13 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
     with path.open("w", encoding="utf-8", newline="\n") as handle:
         for row in rows:
             handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def read_jsonl(path: Path) -> list[dict]:
+    with path.open("r", encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle if line.strip()]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -56,6 +57,7 @@ def test_protected_source_blockers_fail_closed_on_missing_or_hash_drift(tmp_path
 
     monkeypatch.setattr(common, "ROOT", tmp_path)
     monkeypatch.setattr(common, "PROTECTED_SOURCE_SHA256", {protected_rel: digest})
+    monkeypatch.setattr(common, "PROTECTED_REGISTRY_PATHS", set())
 
     assert common.protected_source_blockers() == []
 
@@ -64,6 +66,54 @@ def test_protected_source_blockers_fail_closed_on_missing_or_hash_drift(tmp_path
 
     protected_path.unlink()
     assert common.protected_source_blockers() == [f"protected source missing: {protected_rel}"]
+
+
+def test_protected_registry_uses_policy_validation_not_static_hash(tmp_path: Path, monkeypatch):
+    registry_rel = "ai-worker/eval/eval_queries/official_denominator_registry.json"
+    registry_path = tmp_path / registry_rel
+    registry_path.parent.mkdir(parents=True)
+    registry_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "official_denominator_registry_v1",
+                "current_defaults": {
+                    "track_a_xlsx": {
+                        "denominator_key": "track_a_xlsx_human_review_normalized_v0",
+                    }
+                },
+                "official_diagnostic_denominators": {
+                    "track_a_xlsx_human_review_normalized_v0": {
+                        "official_positive_denominator": 23,
+                        "official_xlsx_answer_generation_denominator": 0,
+                        "sha256": "normalized-sha",
+                        "official_positive_retrieval_subset_sha256": "retrieval-sha",
+                    },
+                    "track_a_xlsx_reviewed_positive": {
+                        "row_count": 35,
+                        "current_default": False,
+                        "superseded_by": "track_a_xlsx_human_review_normalized_v0",
+                    },
+                },
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(common, "ROOT", tmp_path)
+    monkeypatch.setattr(common, "PROTECTED_SOURCE_SHA256", {})
+    monkeypatch.setattr(common, "PROTECTED_REGISTRY_PATHS", {registry_rel})
+
+    assert common.protected_source_blockers() == []
+
+    payload = json.loads(registry_path.read_text(encoding="utf-8"))
+    payload["official_diagnostic_denominators"]["track_a_xlsx_human_review_normalized_v0"][
+        "official_positive_denominator"
+    ] = 24
+    registry_path.write_text(json.dumps(payload, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    assert common.protected_source_blockers() == [f"protected registry validation failed: {registry_rel}"]
 
 
 def test_pageindex_manifest_identity_rejects_stale_or_mismatched_manifest(tmp_path: Path):

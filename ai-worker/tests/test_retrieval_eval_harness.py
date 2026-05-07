@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from types import SimpleNamespace
 from pathlib import Path
@@ -133,6 +134,31 @@ def test_retrieval_eval_classifies_required_index_version_mismatch():
     assert report["metrics"]["required_index_version_mismatch_count"] == 1
 
 
+def test_generic_harness_rejects_current_official_xlsx_denominator(tmp_path: Path):
+    report_path = tmp_path / "report.json"
+
+    code = eval_module.main(
+        [
+            "--gold",
+            "eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv",
+            "--retrieval-backend",
+            "library_search",
+            "--promotion-evidence",
+            "--validate-only",
+            "--report",
+            str(report_path),
+        ]
+    )
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+
+    assert code == 2
+    assert payload["status"] == "ROUTE_GUARD_FAILED"
+    assert payload["promotion_evidence"] is False
+    assert payload["requested_promotion_evidence"] is True
+    assert payload["official_xlsx_answer_generation_denominator"] == 0
+    assert "official XLSX eval uses the XLSX wrapper/retrieval-evidence path only" in payload["error"]
+
+
 def test_retrieval_eval_scores_negative_hidden_policy_without_positive_denominator():
     row = _row()
     row["hidden_policy"] = "negative"
@@ -167,6 +193,34 @@ def test_retrieval_eval_classifies_empty_results():
     assert report["metrics"]["result_empty_count"] == 1
     assert report["query_results"][0]["failure_reason"] == "search_result_empty"
     assert report["metrics"]["overall_failure_reason_counts"]["search_result_empty"] == 1
+
+
+def test_retrieval_eval_classifies_search_errors_without_unknown_bucket():
+    def fail_search(_query: str, _top_k: int):
+        raise RuntimeError("db unavailable")
+
+    report = eval_module.evaluate_gold_rows([_row()], search_fn=fail_search, top_k=10)
+
+    assert report["metrics"]["search_error_count"] == 1
+    assert report["query_results"][0]["final_match_outcome"] == "search_error"
+    assert report["query_results"][0]["failure_reason"] == "search_error"
+    assert report["metrics"]["overall_failure_reason_counts"] == {"search_error": 1}
+
+
+def test_retrieval_eval_classifies_hidden_negative_search_errors_without_pass():
+    row = _row()
+    row["hidden_policy"] = "negative"
+
+    def fail_search(_query: str, _top_k: int):
+        raise RuntimeError("db unavailable")
+
+    report = eval_module.evaluate_gold_rows([row], search_fn=fail_search, top_k=10)
+
+    assert report["metrics"]["search_error_count"] == 1
+    assert report["metrics"]["hidden_negative_pass_count"] == 0
+    assert report["query_results"][0]["final_match_outcome"] == "search_error"
+    assert report["query_results"][0]["failure_reason"] == "search_error"
+    assert report["metrics"]["overall_failure_reason_counts"] == {"search_error": 1}
 
 
 def test_vector_chunk_conversion_preserves_index_and_location_contract():

@@ -20,6 +20,11 @@ from typing import Any, Callable, Iterable
 import httpx
 
 
+CURRENT_XLSX_OFFICIAL_GOLD_NAMES = {
+    "gold_queries_xlsx_human_review_official_positive_v0.csv",
+    "gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv",
+}
+
 REQUIRED_COLUMNS = [
     "query_id",
     "bucket",
@@ -77,6 +82,7 @@ FAILURE_REASONS = {
     "candidate_index_mismatch",
     "embedding_status_mismatch",
     "required_index_version_mismatch",
+    "search_error",
     "unsupported_bucket",
     "match_policy_error",
     "unknown",
@@ -313,14 +319,14 @@ def evaluate_gold_rows(
             result_empty_count += 1
 
         if is_negative:
-            failure_reason = "unknown" if search_error else ("hidden_content_returned" if hidden_leakage else None)
+            failure_reason = "search_error" if search_error else ("hidden_content_returned" if hidden_leakage else None)
             final_outcome = "search_error" if search_error else ("hidden_negative_failed" if hidden_leakage else "hidden_negative_pass")
             if hidden_leakage:
                 bucket_failure_reason_counts[bucket]["hidden_content_returned"] += 1
                 overall_failure_reason_counts["hidden_content_returned"] += 1
             elif search_error:
-                bucket_failure_reason_counts[bucket]["unknown"] += 1
-                overall_failure_reason_counts["unknown"] += 1
+                bucket_failure_reason_counts[bucket]["search_error"] += 1
+                overall_failure_reason_counts["search_error"] += 1
             else:
                 hidden_negative_pass_count += 1
             query_results.append(
@@ -382,7 +388,7 @@ def evaluate_gold_rows(
             failure_reason = "hidden_content_returned"
             final_outcome = "hidden_content_returned"
         elif search_error:
-            failure_reason = "unknown"
+            failure_reason = "search_error"
             final_outcome = "search_error"
         elif not location_ok:
             failure_reason = _classify_failure_reason(
@@ -1348,6 +1354,22 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    route_blocker = current_official_xlsx_generic_eval_blocker(Path(args.gold))
+    if route_blocker:
+        payload = {
+            "run_id": utc_run_id(),
+            "status": "ROUTE_GUARD_FAILED",
+            "retrieval_backend": args.retrieval_backend,
+            "promotion_evidence": False,
+            "requested_promotion_evidence": bool(args.promotion_evidence),
+            "evidence_role": "diagnostic",
+            "gold": str(args.gold),
+            "error": route_blocker,
+            "official_xlsx_answer_generation_denominator": 0,
+        }
+        write_report(Path(args.report), payload)
+        print_report(payload)
+        return 2
     all_rows = load_gold_csv(Path(args.gold))
     rows = filter_gold_rows(
         all_rows,
@@ -1447,6 +1469,15 @@ def _has_fatal_validation_errors(validation: GoldValidationResult) -> bool:
     return any(
         error.startswith("missing required columns") or error == "gold CSV must contain at least one row"
         for error in validation.errors
+    )
+
+
+def current_official_xlsx_generic_eval_blocker(gold_path: Path) -> str:
+    if gold_path.name not in CURRENT_XLSX_OFFICIAL_GOLD_NAMES:
+        return ""
+    return (
+        "official XLSX eval uses the XLSX wrapper/retrieval-evidence path only; "
+        "the generic retrieval eval harness cannot run the current human-review XLSX official denominator"
     )
 
 

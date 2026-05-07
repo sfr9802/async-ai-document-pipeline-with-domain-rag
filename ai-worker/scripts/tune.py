@@ -395,6 +395,7 @@ def run_study(
     import optuna  # local import so `--help` works without optuna installed
 
     assert_active_config_runnable(config)
+    assert_tuning_sweep_allowed(config)
 
     study_dir = studies_root / config.experiment_id
     study_dir.mkdir(parents=True, exist_ok=True)
@@ -503,6 +504,26 @@ def assert_active_config_runnable(config: ActiveConfig) -> None:
         raise SystemExit(
             "active.yaml is fail-closed and must not be used for a "
             f"tune run: {reason}"
+        )
+
+
+def tuning_sweep_disabled_reason(config: ActiveConfig) -> Optional[str]:
+    """Return a reason when ``active.yaml`` explicitly forbids tuning sweeps."""
+    execution_policy = config.meta.get("execution_policy") or {}
+    if not isinstance(execution_policy, Mapping):
+        return "_meta.execution_policy must be a mapping when present"
+    if execution_policy.get("allow_tuning_sweep") is False:
+        return "_meta.execution_policy.allow_tuning_sweep=false"
+    return None
+
+
+def assert_tuning_sweep_allowed(config: ActiveConfig) -> None:
+    """Raise ``SystemExit`` when an active template permits parsing but blocks tuning."""
+    reason = tuning_sweep_disabled_reason(config)
+    if reason:
+        raise SystemExit(
+            "active.yaml explicitly disables tuning sweeps and must not "
+            f"drive scripts.tune: {reason}"
         )
 
 

@@ -29,6 +29,7 @@ a4_contract = load_script("rag_xlsx_formula_date_contract_phase_review")
 a5_decision = load_script("rag_xlsx_candidate_v2_decision")
 a6_compare = load_script("rag_xlsx_after_cleanup_compare")
 hard_case_probe = load_script("rag_xlsx_remaining_hard_case_probe")
+retrieval_diagnostic = load_script("rag_xlsx_retrieval_performance_diagnostic")
 
 
 def test_a0_blocks_canary_artifact_hash_drift(tmp_path: Path):
@@ -132,6 +133,87 @@ def test_a1_cli_returns_nonzero_when_review_is_incomplete(tmp_path: Path):
 
     assert code == 1
     assert read_json(output_path)["status"] == "NEEDS_REVIEW"
+
+
+def test_xlsx_retrieval_diagnostic_defaults_to_human_review_projection(tmp_path: Path):
+    gold_path = tmp_path / retrieval_diagnostic.DEFAULT_HUMAN_REVIEW_OFFICIAL_RETRIEVAL_GOLD.name
+    write_csv(
+        gold_path,
+        [
+            {
+                "query_id": "q1",
+                "query": "lookup",
+                "hidden_policy": "exclude_hidden",
+                "expected_location_type": "xlsx",
+            }
+        ],
+    )
+
+    path, rows, source = retrieval_diagnostic.resolve_positive_rows(
+        SimpleNamespace(positive_gold=str(gold_path))
+    )
+
+    assert path == gold_path
+    assert [row["query_id"] for row in rows] == ["q1"]
+    assert source["mode"] == "human_review_official_positive_retrieval_projection"
+    assert source["denominator_kind"] == "xlsx_retrieval_evidence_diagnostic"
+    assert source["official_xlsx_answer_generation_denominator"] == 0
+
+
+def test_xlsx_retrieval_diagnostic_parse_args_defaults_to_human_review_projection():
+    args = retrieval_diagnostic.parse_args([])
+
+    assert args.positive_gold == str(retrieval_diagnostic.DEFAULT_HUMAN_REVIEW_OFFICIAL_RETRIEVAL_GOLD)
+    assert "human_review_official_positive_v0" in args.report
+    assert "human_review_official_positive_v0" in args.summary
+    assert "human_review_official_positive_v0" in args.hidden_report
+
+
+def test_official_xlsx_eval_rejects_generic_agent_orchestrator(tmp_path: Path):
+    report = tmp_path / "route_guard.json"
+
+    code = retrieval_diagnostic.main(
+        [
+            "--agent-orchestrator-enabled",
+            "--report",
+            str(report),
+        ]
+    )
+    payload = read_json(report)
+
+    assert code == 2
+    assert payload["status"] == "ROUTE_GUARD_FAILED"
+    assert "official XLSX eval uses the XLSX wrapper/retrieval-evidence path only" in payload["error"]
+
+
+def test_official_xlsx_eval_rejects_wrong_index_versions(tmp_path: Path):
+    for flag in ("--candidate-index-version", "--required-index-version"):
+        report = tmp_path / f"{flag.strip('-')}.json"
+
+        code = retrieval_diagnostic.main(
+            [
+                flag,
+                "rag-ingestion-v2-text",
+                "--report",
+                str(report),
+            ]
+        )
+        payload = read_json(report)
+
+        assert code == 2
+        assert payload["status"] == "ROUTE_GUARD_FAILED"
+        assert "official XLSX eval requires XLSX" in payload["error"]
+
+
+def test_xlsx_retrieval_diagnostic_does_not_import_agent_loop_components():
+    source = (ROOT / "ai-worker" / "scripts" / "rag_xlsx_retrieval_performance_diagnostic.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "AgentCapability" not in source
+    assert "AgentLoopRunner" not in source
+    assert "QueryRewriter" not in source
+    assert "rag_orchestrator" not in source
 
 
 def test_a4_requires_db_surface_evidence_and_redacts_uri_credentials():

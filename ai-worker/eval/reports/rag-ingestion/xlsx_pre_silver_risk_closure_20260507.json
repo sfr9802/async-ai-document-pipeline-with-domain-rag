@@ -1,0 +1,365 @@
+{
+  "artifact_resolution_summary": {
+    "canonical_artifact_paths_required": true,
+    "normalization_report": "ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_gold_normalization_report.json",
+    "normalization_report_registry_hash_synced": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22",
+    "normalized_csv": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.csv",
+    "official_positive_csv": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0.csv",
+    "official_positive_retrieval_csv": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv",
+    "registry_hashes_match_current_files": true,
+    "registry_hashes_required": true
+  },
+  "commands_run": [
+    "python -m py_compile ai-worker\\scripts\\rag_xlsx_pre_silver_risk_closure.py ai-worker\\scripts\\rag_xlsx_retrieval_performance_diagnostic.py ai-worker\\scripts\\rag_pdf_xlsx_llm_answer_probe.py ai-worker\\scripts\\rag_xlsx_human_review_gold_normalizer.py ai-worker\\scripts\\rag_pdf_supplemental_common.py ai-worker\\eval\\harness\\rag_ingestion_retrieval_eval.py",
+    "python -m pytest ai-worker\\tests\\test_rag_xlsx_pre_silver_risk_closure.py ai-worker\\tests\\test_rag_xlsx_track_a_scripts.py ai-worker\\tests\\test_rag_xlsx_human_review_gold_normalizer.py ai-worker\\tests\\test_pdf_xlsx_answer_repair.py ai-worker\\tests\\test_rag_xlsx_answer_context_assembly.py ai-worker\\tests\\test_rag_xlsx_content_drop_trace.py ai-worker\\tests\\test_retrieval_eval_harness.py ai-worker\\tests\\test_phase7_v4_guardrails.py ai-worker\\tests\\test_rag_pdf_supplemental_guardrails.py -q",
+    "python scripts\\rag_xlsx_human_review_gold_normalizer.py --review-pack eval\\artifacts\\eval_runs\\xlsx_human_review_gold_normalization_20260507T091500Z\\source_xlsx_gold_human_review_pack_used.csv --run-id 20260507Tpreflight --source-label xlsx_human_review_preflight_source_snapshot --update-registry",
+    "python scripts\\rag_xlsx_retrieval_performance_diagnostic.py --top-k 10 --report eval\\reports\\rag-ingestion\\rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report.json --summary eval\\reports\\rag-ingestion\\rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary.json --hidden-report eval\\reports\\rag-ingestion\\rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic.json",
+    "python scripts\\rag_xlsx_retrieval_performance_diagnostic.py --top-k 10 --report eval\\reports\\rag-ingestion\\rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report_repeat.json --summary eval\\reports\\rag-ingestion\\rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary_repeat.json --hidden-report eval\\reports\\rag-ingestion\\rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic_repeat.json",
+    "python scripts\\rag_pdf_xlsx_llm_answer_probe.py --source-artifact-dir eval\\artifacts\\eval_runs\\pdf_xlsx_answer_shape_xlsx_generalization_audit_20260506T061055Z --max-rows 10 --run-id 20260507Tpre_silver_strict_live --run-prefix xlsx_pre_silver_llm_answer_probe --temperature 0.0 --max-tokens 300 --timeout-seconds 120 --allow-diagnostic-failures",
+    "python scripts\\rag_pdf_xlsx_llm_answer_probe.py --source-artifact-dir eval\\artifacts\\eval_runs\\pdf_xlsx_answer_shape_xlsx_generalization_audit_20260506T061055Z --max-rows 10 --run-id 20260507Tpre_silver_strict_live_repeat --run-prefix xlsx_pre_silver_llm_answer_probe --temperature 0.0 --max-tokens 300 --timeout-seconds 120 --allow-diagnostic-failures"
+  ],
+  "current_denominator_lineage": {
+    "answer_generation_denominator": 0,
+    "current_default_key": "track_a_xlsx_human_review_normalized_v0",
+    "legacy_v3_current_default": false,
+    "legacy_v3_row_count": 35,
+    "legacy_v3_superseded_by": "track_a_xlsx_human_review_normalized_v0",
+    "no_silver_rows_official": true,
+    "normalized_rows": 50,
+    "official_positive_retrieval_rows": 23,
+    "official_positive_rows": 23,
+    "special_rows_non_official": [
+      "gq_xlsx_date_number_format_003",
+      "gq_xlsx_aggregation_001"
+    ]
+  },
+  "decision_table": [
+    {
+      "action": "Implemented route guard and tests.",
+      "agents": [
+        "OrchestratorRiskAgent",
+        "RedTeamRiskClosureAgent"
+      ],
+      "decision": "Fail closed for eval_mode=official track=XLSX when AGENT/orchestrator or combined retrieval is selected.",
+      "evidence": [
+        "scripts/rag_xlsx_retrieval_performance_diagnostic.py",
+        "scripts/rag_xlsx_pre_silver_risk_closure.py"
+      ],
+      "issue": "Official XLSX eval can accidentally use generic AGENT/orchestrator",
+      "status": "closed"
+    },
+    {
+      "action": "Implemented config and iteration validators plus tests.",
+      "agents": [
+        "OrchestratorRiskAgent"
+      ],
+      "decision": "Diagnostic agentic path requires explicit allow flag and per-iteration XLSX namespace checks.",
+      "evidence": [
+        "scripts/rag_xlsx_pre_silver_risk_closure.py"
+      ],
+      "issue": "Diagnostic agentic XLSX loop can lose track/namespace",
+      "status": "closed"
+    },
+    {
+      "action": "Implemented schema fields, status classification, and focused tests.",
+      "agents": [
+        "LLMShapeRiskAgent",
+        "RedTeamRiskClosureAgent"
+      ],
+      "decision": "Always emit schema-valid diagnostic rows; invalid JSON and keyword-only are diagnostic failures, never official metrics.",
+      "evidence": [
+        "scripts/rag_pdf_xlsx_llm_answer_probe.py",
+        "tests/test_pdf_xlsx_answer_repair.py"
+      ],
+      "issue": "Invalid LLM JSON / keyword-only answers can leak as unstructured success",
+      "status": "closed"
+    },
+    {
+      "action": "Updated registry/default metadata, normalizer writer, tests, and wrapper report names.",
+      "agents": [
+        "DenominatorLineageAgent",
+        "ArtifactResolutionAgent",
+        "RedTeamRiskClosureAgent"
+      ],
+      "decision": "Current XLSX wrapper default is 23-row human-review retrieval/evidence denominator; v3 35-row is retained only as legacy diagnostic.",
+      "evidence": [
+        "eval/eval_queries/official_denominator_registry.json",
+        "scripts/rag_xlsx_human_review_gold_normalizer.py"
+      ],
+      "issue": "23-row human-review denominator vs legacy 35-row v3 ambiguity",
+      "status": "closed"
+    },
+    {
+      "action": "Implemented resolver/hash checks and tests.",
+      "agents": [
+        "ArtifactResolutionAgent"
+      ],
+      "decision": "Strict pre-silver resolver verifies registry hashes and row counts; canonical reports/source snapshot are allowlisted.",
+      "evidence": [
+        "scripts/rag_xlsx_pre_silver_risk_closure.py",
+        ".gitignore"
+      ],
+      "issue": "Artifact resolver can silently miss/tamper current artifacts",
+      "status": "closed"
+    },
+    {
+      "action": "Documented residual risk in strict report.",
+      "agents": [
+        "RedTeamRiskClosureAgent"
+      ],
+      "decision": "Residual warning, not blocker for 23-row retrieval/evidence silver generation: excluded rows are not in official denominator and no silver rows were generated. Add normalized excluded leakage probe before answer-generation/promotion.",
+      "evidence": [
+        "scripts/rag_xlsx_retrieval_performance_diagnostic.py",
+        "human-review normalized artifact"
+      ],
+      "issue": "Normalized excluded-row hidden leakage was not fully reprobed",
+      "status": "residual_warning"
+    },
+    {
+      "action": "Confirmed protected_source_blockers() returns [] for current registry and added regression coverage.",
+      "agents": [
+        "DenominatorLineageAgent",
+        "VerificationDenominatorAgent"
+      ],
+      "decision": "Protect registry by policy validation instead of a static SHA pin; require current XLSX 23-row default and answer denominator 0.",
+      "evidence": [
+        "scripts/rag_pdf_supplemental_common.py",
+        "tests/test_rag_pdf_supplemental_guardrails.py"
+      ],
+      "issue": "Protected registry hash bridge could drift after mutable denominator metadata updates",
+      "status": "closed"
+    },
+    {
+      "action": "Added outputs_written/write_skipped_reason and sentinel overwrite regression test.",
+      "agents": [
+        "VerificationTestAgent"
+      ],
+      "decision": "Validation failures write FAIL reports only and skip normalized/official/jsonl artifact writes.",
+      "evidence": [
+        "scripts/rag_xlsx_human_review_gold_normalizer.py",
+        "tests/test_rag_xlsx_human_review_gold_normalizer.py"
+      ],
+      "issue": "Normalizer validation failure could overwrite existing official artifacts before failing",
+      "status": "closed"
+    },
+    {
+      "action": "Documented diagnostic_agentic_runner_available=false in route guard output.",
+      "agents": [
+        "VerificationAgenticLoopAgent"
+      ],
+      "decision": "Current XLSX wrapper has no diagnostic agentic runner; explicit allow now fails closed after config validation.",
+      "evidence": [
+        "scripts/rag_xlsx_retrieval_performance_diagnostic.py",
+        "tests/test_rag_xlsx_pre_silver_risk_closure.py"
+      ],
+      "issue": "Diagnostic agentic allow flag could imply a working runner without runtime wiring",
+      "status": "closed"
+    },
+    {
+      "action": "Extended route guard and added direct/wrapper regression tests.",
+      "agents": [
+        "VerificationRouteAgent"
+      ],
+      "decision": "Official XLSX eval now requires candidate_index_version and required_index_version to equal rag-ingestion-v2-xlsx-candidate-v1.",
+      "evidence": [
+        "scripts/rag_xlsx_pre_silver_risk_closure.py",
+        "scripts/rag_xlsx_retrieval_performance_diagnostic.py",
+        "tests/test_rag_xlsx_pre_silver_risk_closure.py",
+        "tests/test_rag_xlsx_track_a_scripts.py"
+      ],
+      "issue": "Official XLSX wrapper accepted mismatched candidate_index_version / required_index_version strings",
+      "status": "closed"
+    },
+    {
+      "action": "Added ROUTE_GUARD_FAILED path before loading/searching current XLSX official gold.",
+      "agents": [
+        "VerificationRouteAgent"
+      ],
+      "decision": "The generic harness now fails closed for current XLSX human-review official gold filenames and reports no promotion evidence.",
+      "evidence": [
+        "eval/harness/rag_ingestion_retrieval_eval.py",
+        "tests/test_retrieval_eval_harness.py"
+      ],
+      "issue": "Generic retrieval eval CLI could validate current XLSX official denominator as library_search promotion evidence",
+      "status": "closed"
+    },
+    {
+      "action": "Updated tests_and_commands and added report consistency regression tests.",
+      "agents": [
+        "VerificationTestAgent"
+      ],
+      "decision": "Command-result summaries must agree with structured probe counts and verification_results.",
+      "evidence": [
+        "eval/reports/rag-ingestion/xlsx_pre_silver_risk_closure_20260507.json",
+        "tests/test_rag_xlsx_pre_silver_risk_closure.py"
+      ],
+      "issue": "Strict JSON report had stale duplicated command-result text for LLM invalid JSON count and pytest count",
+      "status": "closed"
+    }
+  ],
+  "diagnostic_llm_metric_included_in_official": false,
+  "final_recommendation": "proceed to XLSX retrieval/evidence silver generation only; do not start XLSX answer-generation official scoring",
+  "generated_at": "2026-05-07T11:39:59+00:00",
+  "generic_agent_orchestrator_allowed_for_official_xlsx": false,
+  "hard_boundaries_observed": {
+    "official_answer_generation_denominator_created": false,
+    "pdf_behavior_modified": false,
+    "private_chain_of_thought_logged": false,
+    "retrieval_tuned": false,
+    "text_namu_behavior_modified": false,
+    "xlsx_silver_generated": false
+  },
+  "llm_diagnostic_smoke": {
+    "answer_generation_denominator_included_values": [
+      false
+    ],
+    "content_shape_status_counts": {
+      "DIAGNOSTIC_FAILURE": 5,
+      "KEYWORD_ONLY_REJECTED": 5
+    },
+    "llm_invalid_json_count": 3,
+    "llm_keyword_only_rejected_count": 5,
+    "llm_smoke_status_counts": {
+      "DIAGNOSTIC_FAILURE": 10
+    },
+    "note": "Diagnostic-only. PASS_WITH_WARNINGS means local model failures were captured as schema-valid diagnostic failure rows and excluded from official metrics.",
+    "official_metric_included_values": [
+      false
+    ],
+    "official_xlsx_answer_eval_denominator": 0,
+    "promotion_evidence": false,
+    "raw_output_status_counts": {
+      "MODEL_OUTPUT_INVALID_JSON": 3,
+      "RAW_JSON_VALID": 7
+    },
+    "repeat_status": "PASS_WITH_WARNINGS",
+    "repeat_status_signature_stable": true,
+    "row_count": 10,
+    "row_schema_valid": true,
+    "status": "PASS_WITH_WARNINGS"
+  },
+  "official_xlsx_answer_generation_denominator": 0,
+  "official_xlsx_retrieval_evidence_denominator": 23,
+  "residual_risks": [
+    "Legacy Track A v3 scripts remain as historical diagnostic entrypoints. Strict approval applies to the current XLSX wrapper/retrieval-evidence path.",
+    "Normalized human-review EXCLUDED/PENDING rows are excluded from official metrics, but a separate normalized excluded-row leakage probe should be added before any future answer-generation or promotion lane.",
+    "Local LLM answer quality remains diagnostic-only; invalid JSON and keyword-only outputs are captured as diagnostic failures and must not be used as official XLSX answer-generation evidence.",
+    "Current artifacts are verified in this workspace and allowlisted from .gitignore; repository durability still depends on committing/preserving the generated registry, artifacts, reports, and tests."
+  ],
+  "retrieval_smoke": {
+    "candidate_order_stable": true,
+    "denominator_row_count": 23,
+    "metrics": {
+      "Hit@1": 0.913,
+      "Hit@10": 1.0,
+      "Hit@3": 1.0,
+      "Hit@5": 1.0,
+      "MRR@10": 0.942,
+      "search_error_count": 0,
+      "xlsx_citation_location_accuracy": 1.0
+    },
+    "repeatability_stable": true,
+    "status": "COMPLETED"
+  },
+  "route_guard_summary": {
+    "agent_orchestrator_enabled": false,
+    "candidate_index_version": "rag-ingestion-v2-xlsx-candidate-v1",
+    "combined_retrieval_enabled": false,
+    "diagnostic_agentic_allow": false,
+    "diagnostic_agentic_runner_available": false,
+    "namespace": "rag-ingestion-v2-xlsx-candidate-v1",
+    "required_index_version": "rag-ingestion-v2-xlsx-candidate-v1",
+    "retrieval_backend": "vector",
+    "wrapper_eval_mode": "official"
+  },
+  "schema_version": "xlsx_pre_silver_risk_closure_v1",
+  "scope": "XLSX retrieval/evidence silver generation only; XLSX answer generation remains blocked at official denominator 0",
+  "status": "APPROVED_FOR_XLSX_SILVER_GENERATION_STRICT",
+  "subagents": [
+    {
+      "main_findings": [
+        "Current XLSX wrapper bypasses generic AGENT/orchestrator",
+        "Generic harness/AGENT/orchestrator remains unsafe for official XLSX unless fail-closed",
+        "Need official route guard and no-global fallback checks"
+      ],
+      "nickname": "Misono Mika the 2nd",
+      "role": "OrchestratorRiskAgent"
+    },
+    {
+      "main_findings": [
+        "Invalid JSON already became diagnostic rows but status accounting was too loose",
+        "Keyword-only answers were flagged but needed explicit rejection/classification",
+        "LLM output is isolated from official metrics and denominator remains 0"
+      ],
+      "nickname": "Iochi Mari the 2nd",
+      "role": "LLMShapeRiskAgent"
+    },
+    {
+      "main_findings": [
+        "23-row human-review denominator exists beside legacy 35-row v3",
+        "Registry needed current default and superseded markers",
+        "Diagnostic answer-generation flags must not be official denominator fields"
+      ],
+      "nickname": "Yurizono Seia the 2nd",
+      "role": "DenominatorLineageAgent"
+    },
+    {
+      "main_findings": [
+        "Current artifact hashes existed but consumers did not enforce them",
+        "Source snapshot and current reports needed gitignore allowlisting",
+        "mtime latest source selection is unsafe for preflight lanes"
+      ],
+      "nickname": "Takanashi Hoshino the 2nd",
+      "role": "ArtifactResolutionAgent"
+    },
+    {
+      "main_findings": [
+        "Do not call repo-wide denominator current while old scripts remain legacy",
+        "LLM diagnostic failures must not look like green official gates",
+        "Hidden leakage coverage should be scoped as residual warning unless normalized excluded rows are probed"
+      ],
+      "nickname": "Hayase Yuuka the 2nd",
+      "role": "RedTeamRiskClosureAgent"
+    }
+  ],
+  "tests_and_commands": [
+    {
+      "command": "python -m py_compile ai-worker\\scripts\\rag_xlsx_pre_silver_risk_closure.py ai-worker\\scripts\\rag_xlsx_retrieval_performance_diagnostic.py ai-worker\\scripts\\rag_pdf_xlsx_llm_answer_probe.py ai-worker\\scripts\\rag_xlsx_human_review_gold_normalizer.py ai-worker\\scripts\\rag_pdf_supplemental_common.py ai-worker\\eval\\harness\\rag_ingestion_retrieval_eval.py",
+      "result": "passed"
+    },
+    {
+      "command": "python -m pytest ai-worker\\tests\\test_rag_xlsx_pre_silver_risk_closure.py ai-worker\\tests\\test_rag_xlsx_track_a_scripts.py ai-worker\\tests\\test_rag_xlsx_human_review_gold_normalizer.py ai-worker\\tests\\test_pdf_xlsx_answer_repair.py ai-worker\\tests\\test_rag_xlsx_answer_context_assembly.py ai-worker\\tests\\test_rag_xlsx_content_drop_trace.py ai-worker\\tests\\test_retrieval_eval_harness.py ai-worker\\tests\\test_phase7_v4_guardrails.py ai-worker\\tests\\test_rag_pdf_supplemental_guardrails.py -q",
+      "result": "145 passed, 1 warning"
+    },
+    {
+      "command": "python scripts\\rag_xlsx_human_review_gold_normalizer.py --review-pack eval\\artifacts\\eval_runs\\xlsx_human_review_gold_normalization_20260507T091500Z\\source_xlsx_gold_human_review_pack_used.csv --run-id 20260507Tpreflight --source-label xlsx_human_review_preflight_source_snapshot --update-registry",
+      "result": "passed; normalized=50; official_positive=23; answer_denominator=0"
+    },
+    {
+      "command": "python scripts\\rag_xlsx_retrieval_performance_diagnostic.py --top-k 10 --report eval\\reports\\rag-ingestion\\rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report.json --summary eval\\reports\\rag-ingestion\\rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary.json --hidden-report eval\\reports\\rag-ingestion\\rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic.json",
+      "result": "passed; Hit@10=1.0; MRR@10=0.942; XLSX citation/location=1.0"
+    },
+    {
+      "command": "python scripts\\rag_xlsx_retrieval_performance_diagnostic.py --top-k 10 --report eval\\reports\\rag-ingestion\\rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report_repeat.json --summary eval\\reports\\rag-ingestion\\rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary_repeat.json --hidden-report eval\\reports\\rag-ingestion\\rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic_repeat.json",
+      "result": "passed; repeat metrics and candidate order stable"
+    },
+    {
+      "command": "python scripts\\rag_pdf_xlsx_llm_answer_probe.py --source-artifact-dir eval\\artifacts\\eval_runs\\pdf_xlsx_answer_shape_xlsx_generalization_audit_20260506T061055Z --max-rows 10 --run-id 20260507Tpre_silver_strict_live --run-prefix xlsx_pre_silver_llm_answer_probe --temperature 0.0 --max-tokens 300 --timeout-seconds 120 --allow-diagnostic-failures",
+      "result": "passed as diagnostic; PASS_WITH_WARNINGS; invalid_json=3; keyword_only_rejected=5; official answer denominator=0"
+    },
+    {
+      "command": "python scripts\\rag_pdf_xlsx_llm_answer_probe.py --source-artifact-dir eval\\artifacts\\eval_runs\\pdf_xlsx_answer_shape_xlsx_generalization_audit_20260506T061055Z --max-rows 10 --run-id 20260507Tpre_silver_strict_live_repeat --run-prefix xlsx_pre_silver_llm_answer_probe --temperature 0.0 --max-tokens 300 --timeout-seconds 120 --allow-diagnostic-failures",
+      "result": "passed as diagnostic; repeat status signature stable"
+    }
+  ],
+  "verification_results": {
+    "diagnostic_llm_smoke": "PASS_WITH_WARNINGS diagnostic-only; schema-valid failure rows; official denominator 0",
+    "focused_pytest": "145 passed, 1 warning",
+    "generic_current_xlsx_guard": "ROUTE_GUARD_FAILED for library_search + --promotion-evidence on current XLSX official gold",
+    "protected_source_blockers": "[]",
+    "py_compile": "passed",
+    "registry_sanity": "passed",
+    "retrieval_repeatability": "stable",
+    "retrieval_smoke": "passed"
+  }
+}
