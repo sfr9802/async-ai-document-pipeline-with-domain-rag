@@ -6,6 +6,12 @@ Outputs from `scripts/eval_agent_loop_ab.py` land in
 (LangGraph backend) on the same query set, **without** going through
 Redis, the TaskRunner, or core-api callbacks.
 
+The `_indexes/`, `_logs/`, and `legacy-vs-graph-*` directories are ignored
+local cache/run payloads, not active Phase 7 source of truth. The 2026-05-07
+workspace storage cleanup externalized the historical copies; restore them from
+the external archive manifest only when reproducing that legacy run, or rerun the
+legacy harness to regenerate them.
+
 ## Output files
 
 * `raw_results.jsonl` — one JSON object per input query. Each row carries

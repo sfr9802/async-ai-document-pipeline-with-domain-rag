@@ -6,7 +6,10 @@ evaluation, tuning, or promotion evidence.
 
 The archive is intentionally conservative. Active service code, active tests,
 current migrations, current fixtures, and workflow-blocking inputs stay outside
-this directory until a separate review proves they are safe to move.
+this directory until a separate review proves they are safe to move. Do not add
+new large generated payloads here; workspace cleanup uses an external archive
+under `../_external_workspace_archive/<repo-name>/<timestamp>/` with a checksum
+manifest instead.
 
 ## Layout
 
@@ -17,6 +20,11 @@ this directory until a separate review proves they are safe to move.
 | `experiments/` | Historical or dry-run experiment artifacts. |
 | `scripts/` | Reserved for future legacy, one-off, deprecated, or needs-review scripts. |
 
+Large generated payloads that are no longer active evidence should be moved to
+the external archive, not into this tree. Existing entries stay here only as
+small provenance records unless a future review proves they should also be
+externalized.
+
 ## Active Locations
 
 These locations remain part of the active repository surface:
@@ -25,20 +33,18 @@ These locations remain part of the active repository surface:
 |---|---|
 | `core-api/` | Spring Boot API, catalog/indexing services, DB migrations, Redis dispatch, worker callbacks. |
 | `ai-worker/app/` | Python worker runtime, FastAPI task endpoint, queue consumer, capability registry, TaskRunner path. |
-| `ai-worker/ai_worker/` | Operational Python packages, including SearchUnit indexing and golden-retrieval helpers. |
-| `ai-worker/eval/` | Active and legacy eval harnesses with their own internal organization. |
-| `scripts/` | Operational smoke, ingestion, readiness, promotion-gate, and baseline helpers. |
-| `eval/` | Root RAG ingestion gold query inputs. |
-| `samples/` | Smoke/sample manifests used by active scripts and tests. |
-| `datasets/` | Source datasets and benchmark fixtures. |
-| `rag-data/`, `local-storage/` | Runtime default paths from configuration. |
-| `rag-data-canary/` | Current generated canary/vector artifact used by RAG verification workflows. |
-| `scripts/operational/` | Canonical location for repeatable demo and smoke commands. |
+| `ai-worker/scripts/` | Worker-owned smoke, ingestion, readiness, promotion-gate, baseline, and report helpers. |
+| `ai-worker/eval/` | Active and legacy eval harnesses, gold/review inputs, current reports, datasets, corpora, and local vector artifacts. |
+| `ai-worker/eval/eval_queries/official_denominator_registry.json` | Current denominator source of truth. |
+| `ai-worker/eval/reports/rag-ingestion/` | Active RAG ingestion working-evidence summaries. |
+| `ai-worker/eval/indexes/rag-data-canary/`, `rag-data-xlsx-candidate-v1/`, `rag-data-pdf-candidate-v1/` | Current baseline/candidate vector artifacts guarded by descriptors and reports. |
+| `local-storage/` | Runtime default path shared by core-api and worker; large stale blobs require DB/job-state review before externalization. |
 
 ## Rules
 
 - Do not delete archived files as part of cleanup work.
-- Add a row to `MANIFEST.md` for every archived file.
+- Add a row to `MANIFEST.md` for every file newly moved into this internal
+  archive, but prefer the external archive for generated payloads.
 - Treat archived reports as historical evidence only. Regenerate from active
   scripts before using them for current promotion or rollout decisions.
 - Mark uncertain material as `needs_review` instead of moving active code or

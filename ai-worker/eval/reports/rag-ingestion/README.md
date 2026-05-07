@@ -22,8 +22,30 @@ defaults and documentation references are updated in the same change.
    generated manifest references this path.
 2. Move local process logs under `runtime-logs/<run-name>/`; logs are ignored by
    git and should not be mixed with report JSON.
-3. Archive retired generated reports under `archive/results/<date>-<topic>/`
-   only after proving they are no longer active evidence. Add archive manifest
-   rows when doing that.
+3. Do not create new repo-internal archive folders for retired generated
+   reports. Large historical payloads should move to an external archive with a
+   manifest and per-file checksums, preserving the repo-relative path. Existing
+   `archive/results/...` entries are provenance-only and are not a dumping
+   ground for new run output.
 4. If a report is ambiguous, keep it in place and mark the cleanup decision as
   `needs_review` rather than moving it aggressively.
+
+## Runtime Output Policy
+
+Generated raw artifacts should default outside the repository when a workflow is
+not producing a small current summary, denominator registry, baseline descriptor,
+or human-review/gold artifact. Preferred roots are:
+
+| Env var | Intended payload |
+|---|---|
+| `RAG_ARTIFACT_ROOT` | Raw `eval_runs/` bundles and diagnostic payloads. |
+| `RAG_REPORT_ROOT` | Re-runnable report output that is not current evidence. |
+| `RAG_VECTOR_ARTIFACT_ROOT` | FAISS/vector cache directories not protected by an active baseline or candidate descriptor. |
+| `RAG_DATASET_CACHE_ROOT` | Generated dataset caches and temporary parsed exports. |
+| `RAG_PAGEINDEX_ARTIFACT_ROOT` | PageIndex manifests, trees, and local canary bundles. |
+| `RAG_LLM_IO_ARTIFACT_ROOT` | Prompt/input/raw-answer JSONL from local LLM diagnostics. |
+
+Default external runtime root: `../_external_runtime_artifacts/<repo-name>/`.
+If a script has not yet been migrated to these env vars, pass an explicit
+`--report`, `--report-dir`, `--output`, or run-artifact path instead of letting
+large diagnostics accumulate here.
