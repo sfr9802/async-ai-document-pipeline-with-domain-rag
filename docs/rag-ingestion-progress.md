@@ -182,3 +182,14 @@ report file and link it here.
 - Verification: `python ai-worker\scripts\rag_answer_recovery_diagnostic.py --reports-dir ai-worker\eval\reports\rag-ingestion` passed; focused pytest returned `20 passed, 5 skipped`; official denominator registry diff remained empty.
 - Result: no answer denominator promotion, no production index mutation, no broad indexing, no frozen-gold training/profile selection; `tuned_text_section_boost_bm25` remains diagnostic-only and PDF FILE lookup remains file identity only.
 - Next: wire this bridge behind a diagnostic runtime flag in the live RAG answer path, then compare recovered citations against human-reviewed answer-shape cases before any denominator discussion.
+
+
+## 2026-05-09 - Expanded answer recovery diagnostics
+
+- Status: `expanded_diagnostic_eval_complete`.
+- Scope: scaled the answer sufficiency/recovery harness from smoke cases to lane-separated diagnostic cases using existing reviewed/silver/diagnostic artifacts only, and kept all answer denominator, profile, shadow-lane, and index-mutation guardrails closed.
+- Evidence: `ai-worker/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.md`, `ai-worker/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_expanded_trace.jsonl`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_lane_breakdown.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_failure_taxonomy.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_wrongly_supported_review.csv`.
+- Counts: total `185`; TEXT `75`, XLSX `38`, PDF CONTENT `40`, PDF FILE lookup `28`, OCR `1`, IDP `2`, multimodal `1`; recovered after loop `5`; wrongly supported `10` silver PDF FILE hard-negative identity cases; unsupported correctly blocked `18`; hidden XLSX attempts blocked `3`; PDF FILE content-mixing attempts blocked `4`; diagnostic-only evidence blocked `8`.
+- Verification: `python ai-worker\scripts\rag_answer_recovery_diagnostic.py` passed; `python -m pytest ai-worker/tests/test_rag_answer_recovery_bridge.py` returned `15 passed`; official denominator registry diff remained empty.
+- Result: `tuned_text_section_boost_bm25` remains diagnostic-only; PDF FILE lookup remains file identity only with no content/page/bbox/table/row/column/value success claim; explicit file-identity intent now prevents filename marker false positives such as `전기요금표`.
+- Next: review the `wrongly_supported` PDF FILE hard-negative rows, then add identity-correctness checks before treating file-identity answer sufficiency as anything beyond diagnostic.

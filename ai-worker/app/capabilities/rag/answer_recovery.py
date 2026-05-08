@@ -757,6 +757,8 @@ def is_ambiguous_query(query: str, lane: str, metadata: Mapping[str, Any]) -> bo
 
 
 def asks_for_content_answer(query: str, metadata: Mapping[str, Any]) -> bool:
+    if metadata.get("answer_intent") in {"file_identity", "document_identity"}:
+        return False
     if metadata.get("answer_intent") in {"content", "page", "bbox", "table", "row", "column", "value"}:
         return True
     joined = f"{query} {metadata.get('answer_shape', '')} {metadata.get('expected_answer_shape', '')}".lower()

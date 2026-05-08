@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import importlib.util
 import json
 import subprocess
 import sys
@@ -9,9 +11,11 @@ from app.capabilities.rag.answer_recovery import (
     ADJACENT_CONTEXT_EXPANSION,
     AGENTIC_RETRIEVAL_LOOP,
     AMBIGUOUS_QUERY,
+    IDP_SHADOW,
     INSUFFICIENT_EVIDENCE,
     INSUFFICIENT_RETRIEVAL,
     LANE_MISMATCH,
+    MULTIMODAL_SHADOW,
     NEEDS_CLARIFICATION,
     NEEDS_RECOVERY,
     OCR_SHADOW,
@@ -189,6 +193,27 @@ def test_pdf_file_lookup_cannot_support_content_or_page_answers():
     assert route.target_lane == PDF_CONTENT
 
 
+def test_pdf_file_lookup_file_identity_intent_ignores_filename_table_marker():
+    decision = AnswerSufficiencyJudge().evaluate(
+        user_query="2024년 4월 전기요금표 자료를 파일 목록에서 찾아줘",
+        lane=PDF_FILE_LOOKUP,
+        draft_answer="The answer identifies the requested PDF file identity only.",
+        retrieved_evidence_candidates=[
+            _candidate(
+                lane=PDF_FILE_LOOKUP,
+                trust=NATIVE_TEXT_HIGH,
+                citation="2024년 4월 전기요금표.pdf",
+                location={"type": "file_identity"},
+            )
+        ],
+        answer_shape_metadata={"answer_intent": "file_identity"},
+    )
+
+    assert decision.sufficiency_status == SUPPORTED
+    assert decision.official_support is True
+    assert PDF_FILE_LOOKUP not in decision.blocked_lanes
+
+
 def test_native_pdf_text_outranks_ocr_fallback():
     ranked = rank_candidates_by_trust(
         [
@@ -284,13 +309,130 @@ def test_diagnostic_harness_emits_reports_and_trace(tmp_path: Path):
 
     assert "PASS" in result.stdout
     report = json.loads((tmp_path / "answer_sufficiency_diagnostic_report.json").read_text(encoding="utf-8"))
+    expanded = json.loads((tmp_path / "answer_sufficiency_expanded_diagnostic_report.json").read_text(encoding="utf-8"))
     trace = (tmp_path / "answer_recovery_trace.jsonl").read_text(encoding="utf-8").strip().splitlines()
+    expanded_trace = (tmp_path / "answer_recovery_expanded_trace.jsonl").read_text(encoding="utf-8").strip().splitlines()
     assert report["policy"]["official_denominator_registry_changed"] is False
     assert report["policy"]["production_index_mutation"] is False
     assert report["counts"]["total_evaluated"] > 0
+    assert expanded["policy"]["official_answer_denominator_opened"] is False
+    assert expanded["policy"]["official_denominator_registry_changed"] is False
+    assert expanded["policy"]["production_index_mutation"] is False
+    assert expanded["counts"]["total_evaluated"] > report["counts"]["total_evaluated"]
     assert trace
+    assert expanded_trace
+    assert (tmp_path / "answer_recovery_lane_breakdown.md").exists()
+    assert (tmp_path / "answer_recovery_failure_taxonomy.md").exists()
+    assert (tmp_path / "answer_recovery_wrongly_supported_review.csv").exists()
     if registry_before is not None:
         assert registry.read_text(encoding="utf-8") == registry_before
+
+
+def test_expanded_sampler_keeps_lanes_separate_and_pdf_file_identity_only():
+    module = _load_diagnostic_script()
+    cases, sampler = module.expanded_diagnostic_cases()
+
+    assert sampler["official_answer_denominator_opened"] is False
+    assert sampler["official_denominator_registry_changed"] is False
+    assert sampler["lane_counts"][TEXT] >= 50
+    assert sampler["lane_counts"][XLSX] >= 30
+    assert sampler["lane_counts"][PDF_CONTENT] >= 30
+    assert sampler["lane_counts"][PDF_FILE_LOOKUP] >= 15
+    assert {OCR_SHADOW, IDP_SHADOW, MULTIMODAL_SHADOW}.issubset(sampler["lane_counts"].keys())
+    assert all(case.metadata.get("denominator_role") in {"DIAGNOSTIC_EVAL_ONLY", "DIAGNOSTIC_ONLY"} for case in cases)
+    assert all(case.metadata.get("official_answer_denominator_opened") is False for case in cases)
+
+    pdf_file_cases = [case for case in cases if case.lane == PDF_FILE_LOOKUP]
+    assert pdf_file_cases
+    for case in pdf_file_cases:
+        assert case.metadata.get("answer_intent") in {"file_identity", "table"}
+        for item in case.evidence:
+            assert item.location_json.get("type") == "file_identity"
+            assert not any(
+                key in item.location_json
+                for key in ("page_success", "bbox_success", "table_success", "row_success", "column_success", "value_success")
+            )
+
+
+def test_expanded_report_surfaces_taxonomy_and_blocks_diagnostic_evidence():
+    module = _load_diagnostic_script()
+    expanded = module.run_expanded_diagnostic_cases()
+    report = expanded["report"]
+
+    assert report["counts"]["wrongly_supported_count"] == len(expanded["wrongly_supported_rows"])
+    assert "wrongly_supported_count" in report["counts"]
+    assert "unsupported_correctly_blocked_count" in report["counts"]
+    assert "recovery_success_by_lane" in report["failure_taxonomy"]
+    assert "clarification_by_failure_type" in report["failure_taxonomy"]
+    assert "loop_iteration_distribution" in report["failure_taxonomy"]
+    assert "citation_coverage_delta_by_lane" in report["failure_taxonomy"]
+    assert report["counts"]["diagnostic_only_evidence_blocked_count"] >= 3
+    assert report["counts"]["hidden_xlsx_surface_attempt_count"] >= 1
+    assert report["counts"]["pdf_file_lookup_content_mixing_attempt_count"] >= 1
+    assert report["policy"]["production_index_mutation"] is False
+    assert report["policy"]["broad_indexing"] is False
+    assert report["policy"]["max_loop_iterations"] == 2
+    assert all(
+        int(iteration_count) <= report["policy"]["max_loop_iterations"]
+        for iteration_count in report["failure_taxonomy"]["loop_iteration_distribution"].keys()
+    )
+    assert report["policy"]["pdf_file_lookup_success_claims"] == {
+        "content": False,
+        "page": False,
+        "bbox": False,
+        "table": False,
+        "row": False,
+        "column": False,
+        "value": False,
+    }
+
+
+def test_expanded_wrongly_supported_review_csv_has_schema(tmp_path: Path):
+    module = _load_diagnostic_script()
+    expanded = module.run_expanded_diagnostic_cases()
+    path = tmp_path / "answer_recovery_wrongly_supported_review.csv"
+    module.write_csv(
+        path,
+        expanded["wrongly_supported_rows"],
+        fieldnames=[
+            "case_id",
+            "lane",
+            "case_type",
+            "source_artifact",
+            "failure_type",
+            "support_score",
+            "citation_coverage",
+            "diagnostic_reason",
+        ],
+    )
+
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        assert reader.fieldnames == [
+            "case_id",
+            "lane",
+            "case_type",
+            "source_artifact",
+            "failure_type",
+            "support_score",
+            "citation_coverage",
+            "diagnostic_reason",
+        ]
+        assert len(list(reader)) == report_count(expanded, "wrongly_supported_count")
+
+
+def _load_diagnostic_script():
+    module_path = REPO_ROOT / "ai-worker" / "scripts" / "rag_answer_recovery_diagnostic.py"
+    spec = importlib.util.spec_from_file_location("rag_answer_recovery_diagnostic_for_test", module_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def report_count(expanded: dict, key: str) -> int:
+    return int(expanded["report"]["counts"][key])
 
 
 def _candidate(
