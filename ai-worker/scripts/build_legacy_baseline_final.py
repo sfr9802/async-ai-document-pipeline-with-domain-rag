@@ -608,7 +608,7 @@ def build(sweep_dir: Path, out_dir: Path, selected: str = _SELECTED_TIER) -> Non
     readme_lines.append("```bash")
     readme_lines.append("# Stub-mode smoke (no FAISS / no GPU needed)")
     readme_lines.append("python -m scripts.eval_agent_loop_ab \\")
-    readme_lines.append("    --queries eval/agent_loop_ab/smoke.jsonl \\")
+    readme_lines.append("    --queries eval/legacy_agent_loop_ab/smoke.jsonl \\")
     readme_lines.append("    --mode stub --run-name smoke")
     readme_lines.append("")
     readme_lines.append("# Live registry-mode A/B against the silver-200 set")
@@ -624,7 +624,7 @@ def build(sweep_dir: Path, out_dir: Path, selected: str = _SELECTED_TIER) -> Non
     readme_lines.append("```")
     readme_lines.append("")
     readme_lines.append(
-        "Outputs land in `eval/agent_loop_ab/<run-name>/` "
+        "Outputs land in `eval/legacy_agent_loop_ab/<run-name>/` "
         "(`raw_results.jsonl`, `summary.csv`, "
         "`comparison_summary.json`). The legacy arm of the comparison "
         "must reproduce the metrics in this directory; if it doesn't, "

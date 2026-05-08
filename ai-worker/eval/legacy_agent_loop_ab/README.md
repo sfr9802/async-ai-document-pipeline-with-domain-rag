@@ -1,7 +1,7 @@
-# agent_loop_ab — offline A/B harness output
+# legacy_agent_loop_ab — offline A/B harness output
 
 Outputs from `scripts/eval_agent_loop_ab.py` land in
-`eval/agent_loop_ab/<run-name>/`. The harness compares the legacy
+`eval/legacy_agent_loop_ab/<run-name>/`. The harness compares the legacy
 `AgentLoopController` against the experimental `AgentLoopGraph`
 (LangGraph backend) on the same query set, **without** going through
 Redis, the TaskRunner, or core-api callbacks.
@@ -45,7 +45,7 @@ embedded as a `metadata` column with stringified JSON.
 `smoke.jsonl` is a tiny offline-safe fixture (uses the stub retriever):
 
     python -m scripts.eval_agent_loop_ab \
-        --queries eval/agent_loop_ab/smoke.jsonl \
+        --queries eval/legacy_agent_loop_ab/smoke.jsonl \
         --mode stub --run-name smoke
 
 The smoke run takes a few hundred ms and exercises every output path

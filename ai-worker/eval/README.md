@@ -35,32 +35,55 @@ flat 파일을 능가할 때 교체 — `app/` 안의 어느 것도 여기 어�
 
 ## 디렉토리 구조
 
-```
-eval/
-├── __init__.py
-├── README.md                       ← 이 파일
-├── run_eval.py                     ← CLI: `python -m eval.run_eval ...`
-├── datasets/                       ← legacy `rag` / `ocr` / `multimodal` 모드
-│   ├── rag_sample.jsonl            ← 커밋된 RAG 픽스처에 대한 6개 query
-│   ├── ocr_sample.jsonl            ← 3개 OCR 행; 이미지는 helper 가 생성
-│   └── multimodal_sample.jsonl     ← PLACEHOLDER 스키마 (아직 harness 없음)
-├── golden_retrieval/                ← SearchUnit golden retrieval runner + fixtures
-├── corpora/                        ← `retrieval` 모드용 retrieval 코퍼스
-│   └── anime_namu_v3/              ← legacy v3 namu-wiki anime 샘플
-├── eval_queries/                   ← retrieval-eval query 셋 (smoke / silver / gold)
-├── reports/                        ← 생성됨 — 커밋하지 마세요
-└── harness/
-    ├── __init__.py                 ← public API 재 export
-    ├── metrics.py                  ← CER/WER/hit@k/MRR/keyword coverage + retrieval 진단
-    ├── io_utils.py                 ← JSONL loader + JSON/CSV writer
-    ├── rag_eval.py                 ← text RAG harness (legacy `rag` 모드)
-    ├── ocr_eval.py                 ← OCR harness
-    ├── retrieval_eval.py           ← retrieval-quality harness (`retrieval` 모드)
-    ├── miss_analysis.py            ← retrieval 실행에 대한 doc/keyword cross-tab
-    ├── baseline_comparison.py      ← 3-slice 비교 (det vs det-without-X vs opus)
-    ├── analyze_corpus_lengths.py   ← tokenizer 기반 char/token 길이 분석기
-    └── generate_eval_queries.py    ← 결정적 + LLM 합성-query 생성기
-```
+`eval/` 아래는 "코드", "source-of-truth 입력", "현재 evidence", "재생성
+가능한 대형 산출물"이 섞이기 쉬우므로 아래 표를 기준으로 찾습니다.
+디렉토리 이름이 비슷해도 역할이 다르면 병합하지 않습니다.
+
+| Path | 역할 | 현재 판단 |
+|---|---|---|
+| `harness/` | 공통 eval 라이브러리: metrics, JSONL/CSV I/O, retrieval/PDF/XLSX/TEXT scoring helpers. | Source code. 이동 금지. |
+| `run_eval.py`, `tune_eval.py`, `tune_eval_offline.py` | legacy CLI entrypoint와 offline tuning runner. | 유지. v3/v4 혼동 주의. |
+| `eval_queries/` | 공식/후보 query set, denominator registry, gold/review CSV/JSONL. | Source-of-truth. gold/label/policy는 내용 변경 금지. |
+| `datasets/` | raw benchmark/source dataset과 HF snapshot. | Source-of-truth 또는 protected fixture. 임의 외부화 금지. |
+| `corpora/` | retrieval corpus material. `namu-v4-structured-combined/`가 active Phase 7 v4 기준. | Active v4는 유지. legacy v3 대형 payload는 외부 archive 가능. |
+| `indexes/` | FAISS/vector artifacts. `rag-data-*`와 promoted `retrieval-title-section`은 active/protected. | 대형이지만 descriptor/report 참조 확인 전 이동 금지. |
+| `reports/` | 사람이 읽는 summary, current evidence, historical diagnostic report. | 작은 current summary는 유지. raw/generated bulk는 외부 archive 후보. |
+| `artifacts/` | `eval_runs/<run_id>/` raw JSONL, local LLM I/O, parsed blocks/pages, PageIndex payload. | 대부분 diagnostic/generated. active report 참조가 없을 때만 외부 archive. |
+| `review/` | human review pack, reviewer-facing CSV/MD, manual decision aids. | gold/review 성격이면 보호. |
+| `golden_retrieval/` | SearchUnit golden retrieval runner와 fixtures. | 테스트/fixture surface. 이동 금지. |
+| `legacy_agent_loop_ab/` | legacy/experimental agent-loop A/B harness fixture and docs. | `_indexes`, `_logs`, run outputs are externalized/regenerable. |
+| `experiments/` | Optuna/tuning experiments, study summaries, local run outputs. | summary/config만 의미 있음. DB/plots/run output은 generated. |
+| `legacy/` | retired v3 path 설명과 compatibility notes. | Historical reference only. active default로 쓰지 않음. |
+
+### 빠른 길찾기
+
+- XLSX/PDF/TEXT current report를 찾을 때:
+  `eval/reports/rag-ingestion/`
+- official denominator/gold query를 찾을 때:
+  `eval/eval_queries/official_denominator_registry.json`
+- active Phase 7 corpus를 찾을 때:
+  `eval/corpora/namu-v4-structured-combined/`
+- active promoted Phase 7 index를 찾을 때:
+  `eval/indexes/namu-v4-2008-2026-04-retrieval-title-section-mseq512/`
+- generated run payload를 찾을 때:
+  `eval/artifacts/eval_runs/<run_id>/`
+- legacy v3 reproduction note를 찾을 때:
+  `eval/legacy/v3/README.md`
+
+### 보존/외부화 규칙
+
+1. `eval_queries/`, human-review/gold files, official denominator registry,
+   active v4 corpus, active vector baseline/candidate, and current summary
+   reports are protected.
+2. `artifacts/eval_runs/`, local LLM raw output, PageIndex trees, parsed
+   blocks/pages, old diagnostic report bundles, and legacy v3 generated payloads
+   should move to the external archive when no active path requires them.
+3. Existing references to an externalized path should be treated as historical
+   provenance unless active code opens that path. Restore from the external
+   archive manifest for reproduction.
+4. New large raw outputs should prefer
+   `../_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/` or an
+   explicit `RAG_*_ROOT` env var rather than accumulating under `eval/`.
 
 ## 데이터셋 스키마
 

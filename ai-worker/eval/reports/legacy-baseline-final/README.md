@@ -64,7 +64,7 @@ Once this baseline is locked, run the offline A/B harness to compare the legacy 
 ```bash
 # Stub-mode smoke (no FAISS / no GPU needed)
 python -m scripts.eval_agent_loop_ab \
-    --queries eval/agent_loop_ab/smoke.jsonl \
+    --queries eval/legacy_agent_loop_ab/smoke.jsonl \
     --mode stub --run-name smoke
 
 # Live registry-mode A/B against the silver-200 set
@@ -79,7 +79,7 @@ python -m scripts.eval_agent_loop_ab \
     --max-llm-tokens 4000 --min-confidence 0.75
 ```
 
-Outputs land in `eval/agent_loop_ab/<run-name>/` (`raw_results.jsonl`, `summary.csv`, `comparison_summary.json`). The legacy arm of the comparison must reproduce the metrics in this directory; if it doesn't, treat that as a regression — re-anchor before reading the graph results.
+Outputs land in `eval/legacy_agent_loop_ab/<run-name>/` (`raw_results.jsonl`, `summary.csv`, `comparison_summary.json`). The legacy arm of the comparison must reproduce the metrics in this directory; if it doesn't, treat that as a regression — re-anchor before reading the graph results.
 
 **silver_200 schema:** the loader in ``eval/harness/agent_loop_ab.py`` accepts both the singular (``expected_doc_id`` / ``expected_keywords``) and the silver_200 plural (``expected_doc_ids[0]`` / ``expected_section_keywords``) shapes, so ``anime_silver_200.jsonl`` plugs in directly with full per-row hit@k / keyword metrics — no projection step needed. When both shapes are present the singular fields win, so an operator can override the fallback inline.
 

@@ -2,7 +2,7 @@
 
 Runs both backends in-process against the same query set and emits
 ``raw_results.jsonl``, ``summary.csv``, and ``comparison_summary.json``
-under ``eval/agent_loop_ab/<run-name>/``. Side-effect-free with respect
+under ``eval/legacy_agent_loop_ab/<run-name>/``. Side-effect-free with respect
 to the operational stack:
 
   * No Redis queue / TaskRunner involved.
@@ -90,7 +90,7 @@ log = logging.getLogger("scripts.eval_agent_loop_ab")
 # Default output root. Overridable via --output-dir; the run-name nests
 # the run-level directory underneath so the operator can keep multiple
 # runs side-by-side without manual mkdir.
-_DEFAULT_OUTPUT_ROOT = Path("eval/agent_loop_ab")
+_DEFAULT_OUTPUT_ROOT = Path("eval/legacy_agent_loop_ab")
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -206,7 +206,7 @@ def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
         "--queries",
         type=Path,
         required=True,
-        help="Path to JSONL or CSV query file (see eval/agent_loop_ab/README).",
+        help="Path to JSONL or CSV query file (see eval/legacy_agent_loop_ab/README).",
     )
     parser.add_argument(
         "--run-name",
