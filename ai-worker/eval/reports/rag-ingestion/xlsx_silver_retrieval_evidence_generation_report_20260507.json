@@ -1,0 +1,565 @@
+{
+  "answer_shape_distribution": {
+    "AGGREGATION_RESULT": 54,
+    "CELL_VALUE": 111,
+    "DATE_NUMBER_FORMAT": 40,
+    "HEADER_SCHEMA_LOOKUP": 20,
+    "RANGE_LOCATION_SUMMARY": 170,
+    "ROW_SUMMARY": 105
+  },
+  "artifact_paths": {
+    "candidates_csv": "ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.csv",
+    "candidates_jsonl": "ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.jsonl",
+    "dev_csv": "ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.csv",
+    "dev_jsonl": "ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl",
+    "holdout_csv": "ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.csv",
+    "holdout_jsonl": "ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl",
+    "manifest": "ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_manifest_v0.json",
+    "report_json": "ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.json",
+    "report_md": "ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.md",
+    "selected_csv": "ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.csv",
+    "selected_jsonl": "ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.jsonl",
+    "validation_report": "ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_validation_report_v0.json"
+  },
+  "bucket_distribution": {
+    "aggregation_result_lookup": 54,
+    "date_number_format_lookup": 40,
+    "direct_cell_lookup": 111,
+    "header_schema_lookup": 20,
+    "range_location_summary": 170,
+    "row_summary": 105
+  },
+  "candidate_pool_count": 702,
+  "denominator_guard_result": {
+    "official_xlsx_retrieval_evidence_denominator_after": 23,
+    "official_xlsx_retrieval_evidence_denominator_before": 23,
+    "promotion_evidence_true_rows": 0,
+    "silver_rows_in_answer_generation_denominator": 0,
+    "silver_rows_in_official_gold_denominator": 0,
+    "status": "PASS",
+    "xlsx_answer_generation_denominator_after": 0,
+    "xlsx_answer_generation_denominator_before": 0
+  },
+  "dev_count": 350,
+  "duplicate_near_duplicate_findings": {
+    "dev_holdout_exact_locator_overlap_count": 0,
+    "dev_holdout_query_id_overlap": [],
+    "dev_holdout_source_overlap": {
+      "overlap_counts": {
+        "citation_text": 0,
+        "source_content_sha256": 0,
+        "source_display_text_sha256": 0,
+        "workbook_sheet_range": 0
+      },
+      "status": "PASS"
+    },
+    "duplicate_locator_count": 0,
+    "duplicate_query_count": 0,
+    "near_duplicate_query_pairs_split_across_dev_holdout": 0
+  },
+  "evidence_role": "diagnostic_silver_generation",
+  "generated_at": "2026-05-08T02:53:41.341522+00:00",
+  "hidden_content_leakage_result": {
+    "blocked_hidden_text_term_hits": [],
+    "check_scope": "SearchUnit metadata, hidden_policy flags, parser_version, citation_text/display_text blocked-term scan",
+    "hidden_flagged_source_units": 0,
+    "residual_risk": "Raw workbook payloads were not reopened during this generation-only phase; pre-silver hidden-safe parser status is treated as the source contract.",
+    "status": "PASS_METADATA_ONLY",
+    "workbook_reopen_probe": "not_run"
+  },
+  "holdout_count": 150,
+  "limitations": [
+    "FORMULA_VALUE target was redistributed because current visible SearchUnit metadata does not expose explicit safe formula/value evidence.",
+    "Generation validates locators against SearchUnit metadata, not by re-opening source workbooks.",
+    "No retrieval baseline, answer scoring, broad indexing, or official registry mutation was run."
+  ],
+  "locator_type_distribution": {
+    "cell": 111,
+    "sheet_range": 365,
+    "table_range": 24
+  },
+  "manifest_hash_result": {
+    "artifact_hash_count": 9,
+    "manifest": "ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_manifest_v0.json",
+    "status": "PASS"
+  },
+  "preconditions": {
+    "answer_denominator_before": 0,
+    "current_xlsx_artifacts": {
+      "artifacts": {
+        "normalization_report": {
+          "bytes": 9921,
+          "exists": true,
+          "path": "ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_gold_normalization_report.json",
+          "sha256": "65d1a937935aaec828bd28dd2075c7b228fb639fe88727856de39e32501dcc3c"
+        },
+        "normalized": {
+          "bytes": 244508,
+          "exists": true,
+          "expected_sha256": "c57076406cc48983c82fbd043a7e0e4e855a9f1121035d6899576c0eb6bfba63",
+          "hash_matches_registry": true,
+          "path": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.csv",
+          "sha256": "c57076406cc48983c82fbd043a7e0e4e855a9f1121035d6899576c0eb6bfba63"
+        },
+        "official_positive": {
+          "bytes": 159634,
+          "exists": true,
+          "expected_sha256": "24b4c3ba50b9a11ab87bba7d2c4da98648674d99cb2d01a9c8bf2e360a473f3f",
+          "hash_matches_registry": true,
+          "path": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0.csv",
+          "sha256": "24b4c3ba50b9a11ab87bba7d2c4da98648674d99cb2d01a9c8bf2e360a473f3f"
+        },
+        "official_positive_retrieval": {
+          "bytes": 12966,
+          "exists": true,
+          "expected_sha256": "a5164c0f418f1eb8841b897218bfca845b2029ae8386a76af46fc764c655e0b8",
+          "hash_matches_registry": true,
+          "path": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv",
+          "sha256": "a5164c0f418f1eb8841b897218bfca845b2029ae8386a76af46fc764c655e0b8"
+        }
+      },
+      "denominator_key": "track_a_xlsx_human_review_normalized_v0",
+      "legacy_v3_superseded": true,
+      "no_silver_rows_in_official_denominator": true,
+      "normalized_row_count": 50,
+      "official_positive_retrieval_row_count": 23,
+      "official_positive_row_count": 23,
+      "official_xlsx_answer_generation_denominator": 0,
+      "source_snapshot": {
+        "bytes": 217462,
+        "exists": true,
+        "expected_sha256": "66c883037214dd0679f6e5e05011b1189a71b23c820c0e655accc494e6747073",
+        "hash_matches_registry": true,
+        "path": "ai-worker/eval/artifacts/eval_runs/xlsx_human_review_gold_normalization_20260507Tpreflight/source_xlsx_gold_human_review_pack_used.csv",
+        "sha256": "66c883037214dd0679f6e5e05011b1189a71b23c820c0e655accc494e6747073"
+      },
+      "special_non_official_query_ids": [
+        "gq_xlsx_aggregation_001",
+        "gq_xlsx_date_number_format_003"
+      ]
+    },
+    "official_denominator_before": 23,
+    "pre_silver_report": {
+      "bytes": 21087,
+      "exists": true,
+      "path": "ai-worker/eval/reports/rag-ingestion/xlsx_pre_silver_risk_closure_20260507.json",
+      "sha256": "53d63a331a01fb8aacfb1fb5452e553ddc70e015ca27508296645c91acf6224b"
+    },
+    "registry_before": {
+      "bytes": 8455,
+      "exists": true,
+      "path": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+      "sha256": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22"
+    },
+    "status": "APPROVED_FOR_XLSX_SILVER_GENERATION_STRICT",
+    "strict_wrapper": {
+      "allowUnscoped": false,
+      "generic_agent_orchestrator_used": false,
+      "global_retriever_used": false,
+      "namespace": "rag-ingestion-v2-xlsx-candidate-v1",
+      "positive_gold": "ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv",
+      "retrieval_backend": "vector",
+      "route": "xlsx_human_review_retrieval_projection",
+      "text_pdf_namespace_used": false
+    }
+  },
+  "promotion_evidence": false,
+  "query_locator_leakage_result": {
+    "exact_range_or_cell_in_query_count": 0,
+    "sample_query_ids": [],
+    "status": "PASS"
+  },
+  "recommended_next_step": "run XLSX silver retrieval baseline",
+  "rejected_candidate_reason_counts": {
+    "synthetic_label_not_source_bound": 3
+  },
+  "rejected_rows_count": 3,
+  "route_guard_result": {
+    "allowUnscoped": false,
+    "generic_agent_orchestrator_used": false,
+    "global_retriever_used": false,
+    "namespace": "rag-ingestion-v2-xlsx-candidate-v1",
+    "status": "PASS",
+    "strict_wrapper_path_used": true,
+    "text_pdf_namespace_used": false
+  },
+  "schema_version": "xlsx_silver_retrieval_evidence_v0_generation_report",
+  "scope": "XLSX retrieval/evidence silver generation only",
+  "selected_silver_count": 500,
+  "selection_issues": [],
+  "sheet_distribution": {
+    "10p": 3,
+    "12p": 3,
+    "14p": 2,
+    "16p": 1,
+    "18p": 3,
+    "20p": 7,
+    "22p": 2,
+    "24p": 2,
+    "26p": 3,
+    "28p": 3,
+    "2p": 4,
+    "30p": 3,
+    "32p": 4,
+    "34p": 2,
+    "36p": 2,
+    "38p": 4,
+    "40p": 4,
+    "42p": 1,
+    "44p": 5,
+    "46p": 2,
+    "48p": 2,
+    "4p": 4,
+    "50p": 3,
+    "52p": 2,
+    "54p": 2,
+    "56p": 4,
+    "58p": 4,
+    "60p": 3,
+    "62p": 3,
+    "64p": 2,
+    "66p": 3,
+    "6p": 3,
+    "8p": 4,
+    "Sheet1": 183,
+    "매출현황": 2,
+    "버스": 1,
+    "일반현황": 201,
+    "제1장 연령별 성별 수술현황": 2,
+    "철도": 12
+  },
+  "source_inventory": {
+    "candidate_generation_constraints": [
+      "Use only XLSX SearchUnits from rag-ingestion-v2-xlsx-candidate-v1.",
+      "Exclude workbook summaries without sheet/range locators.",
+      "Generate formula-value rows only when explicit visible formula/value evidence exists; current corpus has no safe formula-value denominator.",
+      "Do not read legacy v3/v1 artifacts as source of truth."
+    ],
+    "chunk_type_counts": {
+      "row_group": 558,
+      "sheet_summary": 75,
+      "table": 69
+    },
+    "eligible_source_unit_count": 702,
+    "hidden_content_leakage_risks": {
+      "blocked_hidden_text_term_hits": [],
+      "hidden_flagged_source_units": 0,
+      "policy": "exclude hidden sheets/rows/columns/cells; require xlsx-extract-v2-hidden-safe"
+    },
+    "ineligible_reason_counts": {
+      "missing_or_invalid_range_locator": 8,
+      "missing_sheet_locator": 8,
+      "workbook_summary_without_stable_locator": 8
+    },
+    "ineligible_source_unit_count": 8,
+    "ineligible_source_units": [
+      {
+        "chunk_type": "workbook_summary",
+        "range": "",
+        "reasons": [
+          "missing_sheet_locator",
+          "missing_or_invalid_range_locator",
+          "workbook_summary_without_stable_locator"
+        ],
+        "sheet": "",
+        "source_search_unit_id": "67c56824-c5aa-4c1f-afb1-f5c4769dc5a4",
+        "source_workbook": "rag-ingestion-sales.xlsx"
+      },
+      {
+        "chunk_type": "workbook_summary",
+        "range": "",
+        "reasons": [
+          "missing_sheet_locator",
+          "missing_or_invalid_range_locator",
+          "workbook_summary_without_stable_locator"
+        ],
+        "sheet": "",
+        "source_search_unit_id": "cc15404d-4b7e-4f1e-88cf-36a785257403",
+        "source_workbook": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx"
+      },
+      {
+        "chunk_type": "workbook_summary",
+        "range": "",
+        "reasons": [
+          "missing_sheet_locator",
+          "missing_or_invalid_range_locator",
+          "workbook_summary_without_stable_locator"
+        ],
+        "sheet": "",
+        "source_search_unit_id": "88fa2f40-b3be-41d4-9608-74091f251bee",
+        "source_workbook": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx"
+      },
+      {
+        "chunk_type": "workbook_summary",
+        "range": "",
+        "reasons": [
+          "missing_sheet_locator",
+          "missing_or_invalid_range_locator",
+          "workbook_summary_without_stable_locator"
+        ],
+        "sheet": "",
+        "source_search_unit_id": "81d465d9-2fab-486f-b6c0-5a6ebae3441f",
+        "source_workbook": "제_1장 연령별 성별 수술현황(2024).xlsx"
+      },
+      {
+        "chunk_type": "workbook_summary",
+        "range": "",
+        "reasons": [
+          "missing_sheet_locator",
+          "missing_or_invalid_range_locator",
+          "workbook_summary_without_stable_locator"
+        ],
+        "sheet": "",
+        "source_search_unit_id": "a2fa7d97-9bd9-4ba3-b108-1ed6250a139d",
+        "source_workbook": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx"
+      },
+      {
+        "chunk_type": "workbook_summary",
+        "range": "",
+        "reasons": [
+          "missing_sheet_locator",
+          "missing_or_invalid_range_locator",
+          "workbook_summary_without_stable_locator"
+        ],
+        "sheet": "",
+        "source_search_unit_id": "324ef666-af7a-4fe5-af9e-2f6142c98fbf",
+        "source_workbook": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx"
+      },
+      {
+        "chunk_type": "workbook_summary",
+        "range": "",
+        "reasons": [
+          "missing_sheet_locator",
+          "missing_or_invalid_range_locator",
+          "workbook_summary_without_stable_locator"
+        ],
+        "sheet": "",
+        "source_search_unit_id": "e2e63a32-168c-4341-ac02-d166f87a27e9",
+        "source_workbook": "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx"
+      },
+      {
+        "chunk_type": "workbook_summary",
+        "range": "",
+        "reasons": [
+          "missing_sheet_locator",
+          "missing_or_invalid_range_locator",
+          "workbook_summary_without_stable_locator"
+        ],
+        "sheet": "",
+        "source_search_unit_id": "3c294f3e-edf2-41f5-acc0-bb2f6d3d1214",
+        "source_workbook": "제_1장 연령별 성별 수술현황(2024).xlsx"
+      }
+    ],
+    "locator_type_counts": {
+      "sheet_range": 633,
+      "table_range": 69
+    },
+    "metadata_coverage_counts": {
+      "cell_derivable": 702,
+      "citation_text": 702,
+      "location_json": 702,
+      "parser_version": 702,
+      "range": 702,
+      "sheet": 702
+    },
+    "sheet_counts": {
+      "10p": 8,
+      "12p": 8,
+      "14p": 8,
+      "16p": 8,
+      "18p": 8,
+      "20p": 8,
+      "22p": 8,
+      "24p": 8,
+      "26p": 8,
+      "28p": 8,
+      "2p": 8,
+      "30p": 8,
+      "32p": 8,
+      "34p": 8,
+      "36p": 8,
+      "38p": 8,
+      "40p": 8,
+      "42p": 8,
+      "44p": 8,
+      "46p": 8,
+      "48p": 8,
+      "4p": 8,
+      "50p": 8,
+      "52p": 8,
+      "54p": 8,
+      "56p": 8,
+      "58p": 8,
+      "60p": 8,
+      "62p": 8,
+      "64p": 8,
+      "66p": 8,
+      "6p": 8,
+      "8p": 8,
+      "Sheet1": 201,
+      "매출현황": 2,
+      "버스": 4,
+      "일반현황": 201,
+      "제1장 연령별 성별 수술현황": 2,
+      "철도": 28
+    },
+    "source_index_version": "rag-ingestion-v2-xlsx-candidate-v1",
+    "source_unit_count": 710,
+    "workbook_counts": {
+      "rag-ingestion-sales.xlsx": 2,
+      "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx": 201,
+      "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx": 201,
+      "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx": 32,
+      "제_1장 연령별 성별 수술현황(2024).xlsx": 266
+    }
+  },
+  "source_workbook_distribution": {
+    "rag-ingestion-sales.xlsx": 2,
+    "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx": 183,
+    "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx": 201,
+    "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx": 13,
+    "제_1장 연령별 성별 수술현황(2024).xlsx": 101
+  },
+  "split_distribution": {
+    "dev_answer_shape": {
+      "AGGREGATION_RESULT": 43,
+      "CELL_VALUE": 76,
+      "DATE_NUMBER_FORMAT": 27,
+      "HEADER_SCHEMA_LOOKUP": 17,
+      "RANGE_LOCATION_SUMMARY": 121,
+      "ROW_SUMMARY": 66
+    },
+    "dev_bucket": {
+      "aggregation_result_lookup": 43,
+      "date_number_format_lookup": 27,
+      "direct_cell_lookup": 76,
+      "header_schema_lookup": 17,
+      "range_location_summary": 121,
+      "row_summary": 66
+    },
+    "holdout_answer_shape": {
+      "AGGREGATION_RESULT": 11,
+      "CELL_VALUE": 35,
+      "DATE_NUMBER_FORMAT": 13,
+      "HEADER_SCHEMA_LOOKUP": 3,
+      "RANGE_LOCATION_SUMMARY": 49,
+      "ROW_SUMMARY": 39
+    },
+    "holdout_bucket": {
+      "aggregation_result_lookup": 11,
+      "date_number_format_lookup": 13,
+      "direct_cell_lookup": 35,
+      "header_schema_lookup": 3,
+      "range_location_summary": 49,
+      "row_summary": 39
+    }
+  },
+  "status": "XLSX_SILVER_GENERATION_COMPLETE",
+  "target_redistribution": {
+    "original_targets": {
+      "AGGREGATION_RESULT": 50,
+      "CELL_VALUE": 100,
+      "DATE_NUMBER_FORMAT": 30,
+      "FORMULA_VALUE": 50,
+      "HEADER_SCHEMA_LOOKUP": 20,
+      "RANGE_LOCATION_SUMMARY": 150,
+      "ROW_SUMMARY": 100
+    },
+    "redistribution": {
+      "FORMULA_VALUE": {
+        "feasible_count": 0,
+        "original_target": 50,
+        "reason": "no explicit visible formula/value evidence in current hidden-safe SearchUnit payloads",
+        "redistributed_to": {
+          "CELL_VALUE": 10,
+          "DATE_NUMBER_FORMAT": 10,
+          "RANGE_LOCATION_SUMMARY": 20,
+          "ROW_SUMMARY": 10
+        }
+      }
+    },
+    "selected_targets_used": {
+      "AGGREGATION_RESULT": 50,
+      "CELL_VALUE": 110,
+      "DATE_NUMBER_FORMAT": 40,
+      "FORMULA_VALUE": 0,
+      "HEADER_SCHEMA_LOOKUP": 20,
+      "RANGE_LOCATION_SUMMARY": 170,
+      "ROW_SUMMARY": 110
+    }
+  },
+  "template_design": [
+    {
+      "answer_shape": "CELL_VALUE",
+      "bucket": "direct_cell_lookup",
+      "required_fields": [
+        "sheet",
+        "range",
+        "cell",
+        "citation_locator",
+        "citation_text"
+      ],
+      "risk": "cell is derived from top-left visible row metadata; validated to stay inside source range",
+      "template_id": "xlsx_cell_value_visible_anchor_v0"
+    },
+    {
+      "answer_shape": "ROW_SUMMARY",
+      "bucket": "row_summary",
+      "required_fields": [
+        "visible row values",
+        "sheet",
+        "range",
+        "citation_text"
+      ],
+      "risk": "expected answer is concise first-row summary, not full row copying",
+      "template_id": "xlsx_row_summary_visible_anchor_v0"
+    },
+    {
+      "answer_shape": "RANGE_LOCATION_SUMMARY",
+      "bucket": "range_location_summary",
+      "required_fields": [
+        "sheet",
+        "range",
+        "workbook",
+        "source_search_unit_id"
+      ],
+      "risk": "query includes anchor but not full expected locator string",
+      "template_id": "xlsx_range_location_summary_v0"
+    },
+    {
+      "answer_shape": "AGGREGATION_RESULT",
+      "bucket": "aggregation_result_lookup",
+      "required_fields": [
+        "visible parsed row count",
+        "range",
+        "citation_text"
+      ],
+      "risk": "aggregation is deterministic row-count only, not numeric metric tuning",
+      "template_id": "xlsx_visible_row_count_aggregation_v0"
+    },
+    {
+      "answer_shape": "DATE_NUMBER_FORMAT",
+      "bucket": "date_number_format_lookup",
+      "required_fields": [
+        "visible date or comma-formatted number",
+        "range",
+        "citation_text"
+      ],
+      "risk": "format anchor is copied only to expected answer and must_contain_terms, not as full answer in query",
+      "template_id": "xlsx_date_number_visible_format_v0"
+    },
+    {
+      "answer_shape": "HEADER_SCHEMA_LOOKUP",
+      "bucket": "header_schema_lookup",
+      "required_fields": [
+        "headers",
+        "sheet",
+        "range",
+        "citation_text"
+      ],
+      "risk": "header terms must be visible in source display text",
+      "template_id": "xlsx_header_schema_lookup_v0"
+    }
+  ],
+  "valid_rows_count": 699
+}

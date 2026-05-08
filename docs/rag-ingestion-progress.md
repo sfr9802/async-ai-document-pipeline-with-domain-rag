@@ -77,6 +77,29 @@ External archive manifests:
 - `D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260507_212609\external_archive_manifest.json`
 - `D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260507_212609\external_archive_manifest.csv`
 
+## 2026-05-08 - XLSX strict silver generation v0
+
+- Status: `XLSX_SILVER_GENERATION_COMPLETE`.
+- Scope: generated XLSX retrieval/evidence silver only through the strict
+  XLSX wrapper path; no retrieval tuning, answer scoring, broad indexing,
+  official denominator mutation, or TEXT/PDF behavior change.
+- Evidence:
+  `ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.json`,
+  `ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.md`,
+  `ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_manifest_v0.json`,
+  `ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_validation_report_v0.json`.
+- Counts: generated candidates `702`; valid rows `699`; rejected rows `3`
+  (`synthetic_label_not_source_bound`); selected silver rows `500`; dev
+  rows `350`; holdout rows `150`; official XLSX retrieval/evidence denominator
+  `23 -> 23`; XLSX answer-generation denominator `0 -> 0`.
+- Verification: generation CLI regenerated the bundle; py_compile passed;
+  focused pytest passed `48 passed`; route guard passed; denominator guard
+  passed; manifest hashes passed; exact range/cell query leakage `0`; dev/holdout
+  source-content/citation/range overlap `0`; hidden check is
+  `PASS_METADATA_ONLY` with workbook reopen not run in this phase.
+- Next: run an XLSX silver retrieval baseline against `silver_dev`, keeping
+  `silver_holdout` sealed for later tuning verification.
+
 ## Short History
 
 | Date | Milestone |

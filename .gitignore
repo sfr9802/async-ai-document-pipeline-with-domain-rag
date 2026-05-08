@@ -312,6 +312,20 @@ ai-worker/eval/eval_queries/*_silver_*.jsonl
 ai-worker/eval/eval_queries/*_synthetic_*.jsonl
 ai-worker/eval/eval_queries/_generation_log_*.jsonl
 
+# XLSX strict silver retrieval/evidence v0 is a reviewable generated bundle.
+!ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.csv
+!ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.jsonl
+!ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.csv
+!ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.jsonl
+!ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.csv
+!ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl
+!ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.csv
+!ai-worker/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl
+!ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_manifest_v0.json
+!ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_validation_report_v0.json
+!ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.json
+!ai-worker/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.md
+
 # ---- RAG build artifacts (local-only) ----
 # FAISS index + build manifest are rebuilt from fixtures via
 # ai-worker/scripts/build_rag_index.py; keep them under ai-worker/eval/indexes.
