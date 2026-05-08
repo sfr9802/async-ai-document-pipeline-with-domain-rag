@@ -1,0 +1,437 @@
+{
+  "generated_at": "2026-05-08T16:23:29.234778+00:00",
+  "guard": {
+    "checks": {
+      "frozen_cleaned_gold_candidate_row_count": 98,
+      "official_denominator_registry_changed": false,
+      "silver_leakage": {
+        "duplicate_silver_queries": [
+          "단체 설정이 나오는 문서 찾아줘",
+          "시간도 촉박하고 어느 한쪽을 포기할 수 없는 마당인데, 상대는 온 우주와 전 차원의 절대적인 법칙을 아우르는 존재 중 하나인 군주였다 이런 장면 나오는 애니 뭐였지?",
+          "쿠로미즈 관련 캐릭터 정리 찾아줘",
+          "영사 설정이 나오는 문서 찾아줘",
+          "원작이랑 비교해서 원작 연재가 시작된지 2년 밖에 안된 상태에서 이례적으로 빠르게 애니화가 이뤄져 누적된 스토리가 부족했기 때문에 이런 설명 있던 문서 찾아줘",
+          "연출 역시 크게 위화감이 들거나 하는 부분은 보이지 않으며 전반적으로 원작초월 수준은 못되더라도 원작 팬이 실망은 안 할 애니화 정도는 된다 이런 평가 받던 애니 뭐였지?",
+          "어스그랜너 일본 지부 관련 캐릭터 정리 찾아줘",
+          "스토리와 설정의 충실한 연계 설정이 나오는 문서 찾아줘",
+          "갑자기 들어오는 정체불명의 신호에 그만두고 위성을 신호에 집중한다 이런 장면 나오는 애니 뭐였지?",
+          "아이돌 마스터 라이브 애니 기본 정보 찾아줘",
+          "코니 뭐? 아르민 그건 엘런이 꾸며낸 거짓말이라고 봐. 미카사 내가 가끔 두통에 시달리는 건 사실이잖아 이런 장면 나오는 애니 뭐였지?",
+          "디럭스 설정이 나오는 문서 찾아줘",
+          "전쟁을 막기 위해, 웰베르의 왕 하이델은 그의 공주 리타를 이웃 국가 산가트라스의 왕자 게르니아와 혼인시킨다 이런 장면 나오는 애니 뭐였지?",
+          "호불호 있는 작화와 빈약하고 부족한 스토리로 인해 평가가 좋지 않다 이런 평가 받던 애니 뭐였지?",
+          "1990년대 2000년대 설정이 나오는 문서 찾아줘",
+          "중동 연합 설정이 나오는 문서 찾아줘",
+          "시리즈 이후 5년만에 재결합한 사카이 카즈오와 하나다 줏키 콤비의 역량이 다시 한 번 빛을 발휘했고 방영전부터 여러모로 준비를 많이한 프로젝트로서 예상 이상의... 이런 평가 받던 애니 뭐였지?",
+          "캐피털 테리토리 설정이 나오는 문서 찾아줘",
+          "적우도 설정이 나오는 문서 찾아줘",
+          "가난하고 가혹한 환경을 거쳐가며 사람들이 즐겁게 살아가는 세계 이런 장면 나오는 애니 뭐였지?",
+          "의료 설정이 나오는 문서 찾아줘",
+          "완결 이후 평가 문서 찾아줘",
+          "심안크림슨즈 관련 캐릭터 정리 찾아줘",
+          "빅샷 레코드 설정이 나오는 문서 찾아줘",
+          "등장인물 및 주요 성우진 관련 캐릭터 정리 찾아줘",
+          "거인이 된 라이너는 손 끝과 발 끝을 경질화 하여 벽을 올라온다 이런 장면 나오는 애니 뭐였지?",
+          "타이밍 애니 원작 정보 찾아줘",
+          "초반에는 1화부터 원작과 비교해 크게 달라진 작화와 떨어지는 촬영 퀄리티가 지적을 받았다 이런 평가 받던 애니 뭐였지?",
+          "스파이가 위장 가족을 만드는 애니 찾아줘",
+          "천원돌파 그렌라간 나암편 이름으로 찾을 수 있는 애니 문서 찾아줘",
+          "고향에서 후배 여고생이 자신에게 긴장하며 말을 거는 것을 보고 인생 첫 고백인가 하고 긴장하지만, 알고보니 가출하고 총을 든 이야기에 관심을 가진... 이런 장면 나오는 애니 뭐였지?",
+          "오리비 관련 캐릭터 정리 찾아줘",
+          "메메치 성격이 정리된 캐릭터 문서 찾아줘",
+          "그러자 갑자기 쿠즈하와 시치미야가 나와서 이게 대체 어떻게 된거냐고 소리친다 이런 장면 나오는 애니 뭐였지?",
+          "메르헨 설정이 나오는 문서 찾아줘",
+          "납득 못하는 사람도 있겠지만 난 이걸 했다는 점을 좋게 평가하고 싶다. 라고 평했다 이런 평가 받던 애니 뭐였지?",
+          "무기 설정이 나오는 문서 찾아줘",
+          "그다음에 나오는 엘사는 완전히 다섯 번째 정령으로 각성한 정령 엘사이다 이런 장면 나오는 애니 뭐였지?",
+          "제인의 모자를 가져가서 남아있는 츄러스를 가린 다음에, 츄러스를 모자에 대어 마치 권총을 쥔 것처럼 연기했다 이런 장면 나오는 애니 뭐였지?",
+          "크레용 신짱 외전 응가맨 시리즈 관련 캐릭터 정리 찾아줘",
+          "기영네 외가 관련 캐릭터 정리 찾아줘",
+          "미소녀 전사 세일러 애니 원작 정보 찾아줘",
+          "이때 쇼코가 입고 있는 유카타를 잘 보면 허리띠인 오비가 없다 이런 장면 나오는 애니 뭐였지?",
+          "상어 떼 관련 캐릭터 정리 찾아줘",
+          "글럼골드의 수하들 관련 캐릭터 정리 찾아줘",
+          "프로냘드 세계 설정이 나오는 문서 찾아줘",
+          "프리큐어 올스타즈 뉴 애니 기본 정보 찾아줘",
+          "멀티 설정이 나오는 문서 찾아줘",
+          "아이돌마스터 영화 애니 기본 정보 찾아줘",
+          "광명계 및 암흑계 관련 캐릭터 정리 찾아줘"
+        ],
+        "duplicate_silver_query_count": 95,
+        "duplicate_silver_query_policy": "allowed for deliberate positive/hard-negative training pairs",
+        "expected_id_overlap_count": 0,
+        "expected_id_overlaps": [],
+        "query_id_overlap_count": 0,
+        "query_id_overlaps": [],
+        "query_text_overlap_count": 0,
+        "query_text_overlaps": [],
+        "source_query_id_overlap_count": 0,
+        "source_query_id_overlaps": [],
+        "status": "PASS"
+      },
+      "silver_row_count": 237
+    },
+    "failures": [],
+    "manifest": "ai-worker/eval/reports/rag-ingestion/denominator_manifest.json",
+    "status": "PASS"
+  },
+  "lanes": {
+    "PDF_FILE_LOOKUP": {
+      "lane": "PDF_FILE_LOOKUP",
+      "metrics": {
+        "Hit@1": 0.3333333333333333,
+        "Hit@10": 0.9333333333333333,
+        "Hit@3": 0.5333333333333333,
+        "Hit@5": 0.8666666666666667,
+        "MRR@10": 0.48500000000000004,
+        "false_positive_patterns": {
+          "expected_file_identity_not_found": 1
+        },
+        "file_identity_confusion_rate": 0.6666666666666666,
+        "page_bbox_table_row_column_value_success_claimed": false,
+        "pdf_file_lookup_semantics": "file_identity_only",
+        "recall@10": 0.9333333333333333,
+        "row_count": 15
+      },
+      "profile": "baseline_pdf_file_identity_tokens",
+      "sample_failures": [
+        {
+          "expected_file_name": "20210101(total).pdf",
+          "failure_reason": "expected_file_identity_not_found",
+          "query_id": "pdf_file_lookup_content_anchor_007",
+          "rank": null,
+          "top_files": [
+            "2023년도+11월+9일+시행+전기요금표(주택용고압)_출력용.pdf",
+            "2023년도+11월+9일+시행+전기요금표(주택용저압)_출력용.pdf",
+            "2024년도+10월+24일+시행+전기요금표(종합).pdf"
+          ]
+        }
+      ]
+    },
+    "PDF_FILE_LOOKUP_DIAGNOSTIC": {
+      "lane": "PDF_FILE_LOOKUP_DIAGNOSTIC",
+      "metrics": {
+        "Hit@1": 0.25,
+        "Hit@10": 0.25,
+        "Hit@3": 0.25,
+        "Hit@5": 0.25,
+        "MRR@10": 0.25,
+        "diagnostic_only": true,
+        "false_positive_patterns": {
+          "expected_file_identity_not_found": 3
+        },
+        "file_identity_confusion_rate": 0.75,
+        "official_denominator_count": 0,
+        "page_bbox_table_row_column_value_success_claimed": false,
+        "pdf_file_lookup_semantics": "file_identity_only",
+        "recall@10": 0.25,
+        "row_count": 4
+      },
+      "profile": "baseline_pdf_file_identity_tokens",
+      "sample_failures": [
+        {
+          "expected_file_name": "file.pdf",
+          "failure_reason": "expected_file_identity_not_found",
+          "query_id": "pdf_file_lookup_content_anchor_011",
+          "rank": null,
+          "top_files": [
+            "20210101(low).pdf",
+            "20210101(total).pdf",
+            "20220401(high).pdf"
+          ]
+        },
+        {
+          "expected_file_name": "file (3).pdf",
+          "failure_reason": "expected_file_identity_not_found",
+          "query_id": "pdf_file_lookup_content_anchor_019",
+          "rank": null,
+          "top_files": [
+            "20210101(low).pdf",
+            "20210101(total).pdf",
+            "20220401(high).pdf"
+          ]
+        },
+        {
+          "expected_file_name": "file (5).pdf",
+          "failure_reason": "expected_file_identity_not_found",
+          "query_id": "pdf_file_lookup_content_anchor_021",
+          "rank": null,
+          "top_files": [
+            "20210101(low).pdf",
+            "20210101(total).pdf",
+            "20220401(high).pdf"
+          ]
+        }
+      ]
+    },
+    "TEXT_ABSTAIN_DIAGNOSTIC": {
+      "lane": "TEXT_ABSTAIN_DIAGNOSTIC",
+      "metrics": {
+        "abstain_retrieval_behavior": "diagnostic_only_not_main_positive",
+        "any_result_rate": 1.0,
+        "diagnostic_expected_hit@10": 0.5,
+        "official_denominator_count": 0,
+        "row_count": 10
+      },
+      "profile": "baseline_text_title_section_bm25",
+      "sample_rows": [
+        {
+          "expected_rank": null,
+          "query_id": "text_namu_v2_0046",
+          "result_count": 10,
+          "top_id": "c37e11329a1ab6b3"
+        },
+        {
+          "expected_rank": null,
+          "query_id": "text_namu_v2_0047",
+          "result_count": 10,
+          "top_id": "1710eb8ac0781ad2"
+        },
+        {
+          "expected_rank": null,
+          "query_id": "text_namu_v2_0048",
+          "result_count": 10,
+          "top_id": "8273e3774f887072"
+        },
+        {
+          "expected_rank": null,
+          "query_id": "text_namu_v2_0049",
+          "result_count": 10,
+          "top_id": "1710eb8ac0781ad2"
+        },
+        {
+          "expected_rank": null,
+          "query_id": "text_namu_v2_0050",
+          "result_count": 10,
+          "top_id": "d7b6570d63239187"
+        },
+        {
+          "expected_rank": 1,
+          "query_id": "text_namu_v2_0096",
+          "result_count": 10,
+          "top_id": "764fad47dcce946e"
+        },
+        {
+          "expected_rank": 1,
+          "query_id": "text_namu_v2_0097",
+          "result_count": 10,
+          "top_id": "8decca9bd3829340"
+        },
+        {
+          "expected_rank": 1,
+          "query_id": "text_namu_v2_0098",
+          "result_count": 10,
+          "top_id": "e95dc9953c2e6f40"
+        },
+        {
+          "expected_rank": 1,
+          "query_id": "text_namu_v2_0099",
+          "result_count": 10,
+          "top_id": "b65eab1fe1ebcf70"
+        },
+        {
+          "expected_rank": 1,
+          "query_id": "text_namu_v2_0100",
+          "result_count": 10,
+          "top_id": "3cb46ccdd0e44cfc"
+        }
+      ]
+    },
+    "TEXT_MAIN_POSITIVE": {
+      "lane": "TEXT_MAIN_POSITIVE",
+      "metrics": {
+        "Hit@1": 0.7101449275362319,
+        "Hit@10": 0.8695652173913043,
+        "Hit@3": 0.7971014492753623,
+        "Hit@5": 0.8405797101449275,
+        "MRR@10": 0.7605475040257649,
+        "false_positive_patterns": {
+          "expected_source_missing": 9
+        },
+        "recall@10": 0.8695652173913043,
+        "row_count": 69
+      },
+      "profile": "baseline_text_title_section_bm25",
+      "sample_failures": [
+        {
+          "expected_chunk_ids": [
+            "c4265b87b17af252"
+          ],
+          "expected_document_ids": [
+            "2a648550805994ef"
+          ],
+          "failure_reason": "expected_source_missing",
+          "hit_at_10": false,
+          "query_id": "text_namu_v2_0001",
+          "rank": null,
+          "top_ids": [
+            "c6c1c53a4675247f",
+            "4dcc027ded0c04e4",
+            "1c479c340ac97cf0"
+          ]
+        },
+        {
+          "expected_chunk_ids": [
+            "a648c3a062d55aa3"
+          ],
+          "expected_document_ids": [
+            "4fb4c291efb8b088"
+          ],
+          "failure_reason": "expected_source_missing",
+          "hit_at_10": false,
+          "query_id": "text_namu_v2_0005",
+          "rank": null,
+          "top_ids": [
+            "941ff213693b82c0",
+            "941ff213693b82c0",
+            "9d2dcc41142624f9"
+          ]
+        },
+        {
+          "expected_chunk_ids": [
+            "4977eb3ffeb4cf67"
+          ],
+          "expected_document_ids": [
+            "474e24d5441aeacd"
+          ],
+          "failure_reason": "expected_source_missing",
+          "hit_at_10": false,
+          "query_id": "text_namu_v2_0012",
+          "rank": null,
+          "top_ids": [
+            "401bfd338308fddc",
+            "1f1a266385080650",
+            "af385fa29f1f309e"
+          ]
+        },
+        {
+          "expected_chunk_ids": [
+            "75efaf71e58c55d3"
+          ],
+          "expected_document_ids": [
+            "2cef1d63a844aae7"
+          ],
+          "failure_reason": "expected_source_missing",
+          "hit_at_10": false,
+          "query_id": "text_namu_v2_0026",
+          "rank": null,
+          "top_ids": [
+            "aae4ae45c861035c",
+            "3d5dfbfa4a43c5f9",
+            "9a13f7ac00e6bab1"
+          ]
+        },
+        {
+          "expected_chunk_ids": [
+            "2d7f439e83d4a29c"
+          ],
+          "expected_document_ids": [
+            "9d969980ce1ae785"
+          ],
+          "failure_reason": "expected_source_missing",
+          "hit_at_10": false,
+          "query_id": "text_namu_v2_0034",
+          "rank": null,
+          "top_ids": [
+            "e1834d0579e271d5",
+            "d860930a9b958584",
+            "e3c8e9e499db4123"
+          ]
+        },
+        {
+          "expected_chunk_ids": [
+            "fcd6ddab922263d5"
+          ],
+          "expected_document_ids": [
+            "d0d852e9065ab51f"
+          ],
+          "failure_reason": "expected_source_missing",
+          "hit_at_10": false,
+          "query_id": "text_namu_v2_0038",
+          "rank": null,
+          "top_ids": [
+            "94343730c14453e1",
+            "09fd4e122dbaf58c",
+            "67b626246fc15743"
+          ]
+        },
+        {
+          "expected_chunk_ids": [
+            "90f0c48687c6d0ef"
+          ],
+          "expected_document_ids": [
+            "d7bafc7ead17cdb5"
+          ],
+          "failure_reason": "expected_source_missing",
+          "hit_at_10": false,
+          "query_id": "text_namu_v2_0042",
+          "rank": null,
+          "top_ids": [
+            "4c52318547f07290",
+            "09a387e0872a69d1",
+            "4c52318547f07290"
+          ]
+        },
+        {
+          "expected_chunk_ids": [
+            "032aec1d39c97712"
+          ],
+          "expected_document_ids": [
+            "c2e8690974e2c649"
+          ],
+          "failure_reason": "expected_source_missing",
+          "hit_at_10": false,
+          "query_id": "text_namu_v2_0069",
+          "rank": null,
+          "top_ids": [
+            "c4fce14bdec16a95",
+            "d071fe2087d73eb3",
+            "152e420273884c02"
+          ]
+        },
+        {
+          "expected_chunk_ids": [
+            "d2c6d6d7ce2a8fda"
+          ],
+          "expected_document_ids": [
+            "2db4858170644e6c"
+          ],
+          "failure_reason": "expected_source_missing",
+          "hit_at_10": false,
+          "query_id": "text_namu_v2_0090",
+          "rank": null,
+          "top_ids": [
+            "58d6bafef8c1b9fc",
+            "58d6bafef8c1b9fc",
+            "a4d814a9e8b5238c"
+          ]
+        }
+      ]
+    },
+    "XLSX": {
+      "lane": "XLSX",
+      "metrics": {
+        "official_denominator_changed": false,
+        "promotion_evidence": false,
+        "row_count": null
+      },
+      "source_report": "ai-worker/eval/reports/rag-ingestion/xlsx_strict_silver_generation_20260507.json",
+      "status": "REPORT_ONLY_INCLUDED"
+    }
+  },
+  "policy": {
+    "broad_indexing": false,
+    "evaluate_frozen_gold_after_tuning": true,
+    "lanes_kept_separate": [],
+    "modify_official_denominator_registry": false,
+    "mutate_production_indexes": false,
+    "official_denominator_registry": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+    "pdf_file_lookup_claims_page_bbox_table_row_column_value_success": false,
+    "pdf_file_lookup_policy": "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+    "train_on_frozen_gold": false,
+    "tune_thresholds_on_frozen_gold": false
+  },
+  "schema_version": "silver_only_tuning_baseline_v1",
+  "standard_command_note": "phase7_human_gold_tune.py remains the older gold-50/silver-500 CLI. This pass uses the explicit silver_only_tuning_config.yaml so frozen cleaned gold candidates are evaluated only after silver profile selection.",
+  "status": "PASS"
+}

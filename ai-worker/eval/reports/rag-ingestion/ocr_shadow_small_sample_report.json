@@ -1,0 +1,82 @@
+{
+  "counts": {
+    "diagnostic_unit_count": 2,
+    "native_compare_unit_count": 1,
+    "ocr_unit_count": 1
+  },
+  "diagnostic_rows": [
+    {
+      "bm25_text": "OCR fallback diagnostic text sample",
+      "citation_text": "20220401(total).pdf OCR fallback diagnostic text",
+      "confidence": 0.9372,
+      "debug_text": "Report-only OCR fallback; lower trust than native PDF text",
+      "denominator_role": "DIAGNOSTIC_ONLY",
+      "display_text": "OCR fallback diagnostic text sample",
+      "embedding_text": "OCR fallback diagnostic text sample",
+      "evidence_role": "diagnostic",
+      "extra": {
+        "native_text_conflict": false,
+        "ocr_confidence_bucket": "HIGH"
+      },
+      "lane": "OCR_SHADOW",
+      "location_json": {
+        "source_report": "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_parse_canary.csv",
+        "type": "ocr_fallback"
+      },
+      "official_denominator_eligible": false,
+      "parser_version": "shadow-lane-diagnostic-v1",
+      "search_unit_id": "ocr-shadow-fallback-001",
+      "source_file_id": null,
+      "source_file_name": "20220401(total).pdf",
+      "trust_tier": "OCR_MEDIUM",
+      "unitType": "OCR_FALLBACK_DIAGNOSTIC",
+      "unit_id": "ocr-shadow-fallback-001",
+      "unit_type": "OCR_FALLBACK_DIAGNOSTIC"
+    },
+    {
+      "bm25_text": "native PDF text diagnostic comparison sample",
+      "citation_text": "20220401(total).pdf native text diagnostic comparison",
+      "confidence": 0.7,
+      "debug_text": "Report-only native-vs-OCR trust ordering sample",
+      "denominator_role": "DIAGNOSTIC_ONLY",
+      "display_text": "Native PDF text diagnostic comparison sample",
+      "embedding_text": "native PDF text diagnostic comparison sample",
+      "evidence_role": "diagnostic",
+      "extra": {},
+      "lane": "PDF_CONTENT",
+      "location_json": {
+        "source_report": "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_parse_canary.csv",
+        "type": "native_pdf_text_compare"
+      },
+      "official_denominator_eligible": false,
+      "parser_version": "shadow-lane-diagnostic-v1",
+      "search_unit_id": "ocr-shadow-native-compare-001",
+      "source_file_id": null,
+      "source_file_name": "20220401(total).pdf",
+      "trust_tier": "NATIVE_TEXT_HIGH",
+      "unitType": "PDF_NATIVE_TEXT_DIAGNOSTIC",
+      "unit_id": "ocr-shadow-native-compare-001",
+      "unit_type": "PDF_NATIVE_TEXT_DIAGNOSTIC"
+    }
+  ],
+  "generated_at": "2026-05-08T15:29:34.550334+00:00",
+  "native_outranks_ocr_fallback": true,
+  "native_text_conflict": false,
+  "ocr_confidence_bucket": "HIGH",
+  "policy": {
+    "broad_indexing": false,
+    "denominator_role": "DIAGNOSTIC_ONLY",
+    "evidence_role": "diagnostic",
+    "official_denominator_eligible": false,
+    "official_denominator_registry_changed": false,
+    "production_index_mutation": false
+  },
+  "required_search_unit_shaped_fields_present": true,
+  "sample_scope": "small_report_only_existing_parse_canary",
+  "schema_version": "ocr_shadow_small_sample_report_v1",
+  "source_artifacts": [
+    "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_parse_canary.csv",
+    "ai-worker/eval/reports/rag-ingestion/rag_pdf_supplemental_parse_canary_report.json"
+  ],
+  "status": "PASS"
+}

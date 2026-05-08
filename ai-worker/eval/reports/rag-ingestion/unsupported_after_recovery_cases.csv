@@ -1,0 +1,5 @@
+case_id,diagnostic_reason,failure_type,lane,sufficiency_status
+xlsx_hidden_blocked,"Hidden XLSX content is blocked from query, answer, gold, and candidate surfaces.",INSUFFICIENT_EVIDENCE,XLSX,UNSUPPORTED
+idp_diagnostic_only,Diagnostic-only OCR/IDP/multimodal evidence cannot make an answer officially supported.,INSUFFICIENT_EVIDENCE,IDP_SHADOW,NEEDS_RECOVERY
+multimodal_diagnostic_only,Diagnostic-only OCR/IDP/multimodal evidence cannot make an answer officially supported.,INSUFFICIENT_EVIDENCE,MULTIMODAL_SHADOW,NEEDS_RECOVERY
+unsupported_no_citation,No citation_text plus location_json support was available.,INSUFFICIENT_EVIDENCE,PDF_CONTENT,UNSUPPORTED

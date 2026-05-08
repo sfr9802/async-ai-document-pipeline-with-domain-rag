@@ -1,0 +1,30 @@
+{
+  "blockers": [],
+  "broad_indexing": false,
+  "db_mutation": false,
+  "diagnostic_only": true,
+  "external_live_llm_run": false,
+  "generated_at": "2026-05-08T15:34:13.198885+00:00",
+  "local_db": {
+    "dsn": "host=localhost port=5433 dbname=aipipeline user=aipipeline password=<redacted>",
+    "postgres_status": "PASS",
+    "postgres_summary": "PostgreSQL reachable.",
+    "schemas_status": "PASS",
+    "schemas_summary": "aipipeline + ragmeta schemas / tables present."
+  },
+  "local_llm": {
+    "base_url": "http://localhost:8081/v1",
+    "chat_latency_ms": 347.13,
+    "local_llm_run": true,
+    "model": "gemma4-e2b-local",
+    "models_available": 1,
+    "response_preview": "```json\n{\"status\":\"PASS\",\"resource\":\"local_llm\",\"scope\":\"diagnostic_only\"}\n```",
+    "status": "PASS"
+  },
+  "official_denominator_registry_changed": false,
+  "production_index_mutation": false,
+  "promotion_evidence": false,
+  "schema_version": "rag_local_resource_diagnostic_smoke_v1",
+  "status": "PASS",
+  "warnings": []
+}

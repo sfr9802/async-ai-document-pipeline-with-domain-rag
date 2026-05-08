@@ -1,0 +1,897 @@
+{
+  "baseline_top10_candidates": [
+    {
+      "chunk_id": "11eacfc71fbfba70",
+      "chunk_overlap": [
+        "팬"
+      ],
+      "chunk_text_excerpt": "VOD 출시를 하면서 작화를 수정했다. 팬 서비스 오다가 감수한 스탬피드나 총괄프로듀서로서 참가한 필름 Z나 필름 골드처럼 역시나 팬 서비스가 많다. 칼리파 등 행적이 불분명했던 사이퍼 폴의 멤버들의 근황이 밝혀졌으며, 엄청난 인기를 끌었던 샬롯 카타쿠리 , 코비 등의 게스트 출연, 팬들에게 귀엽다고 평가 받은 샬롯 브륄레 의 미소",
+      "doc_id": "bb6462dace081f88",
+      "expected_match": false,
+      "rank": 1,
+      "score": 19.339174,
+      "score_components": {
+        "bm25_total": 19.339174,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "6a0906a3c7a476f8",
+      "section_overlap": [],
+      "section_path": [
+        "평가",
+        "긍정적 평가"
+      ],
+      "title": "원피스 필름 레드",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "3a951d536a6d2b70",
+      "chunk_overlap": [
+        "가진"
+      ],
+      "chunk_text_excerpt": "그 편만의 특색을 가진 OST도 따로 작곡하여 위의 OST 돌려막기와 같은 비판도 사라졌다. 와노쿠니 OST에 이어 기어 5와 에그 헤드도 독자적 OST가 발매되었다.",
+      "doc_id": "1304f44478650c7a",
+      "expected_match": false,
+      "rank": 2,
+      "score": 16.144214,
+      "score_components": {
+        "bm25_total": 16.144214,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "88742d6c6cf2d939",
+      "section_overlap": [],
+      "section_path": [
+        "개요"
+      ],
+      "title": "원피스(애니메이션)/OST",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "b298ed3116934faf",
+      "chunk_overlap": [
+        "원작과"
+      ],
+      "chunk_text_excerpt": "TV 애니메이션판은 만화판보다 에피소드나 작화의 퀄리티가 떨어지고, 밝은 채색이나 얇은 선 굵기 등의 요소 때문에 아동용 애니메이션 같다는 평이 많다. 일요 방송이 된 이후부터 검열 도 심해져 피나 공포 묘사가 심할 정도로 약해졌기에 긴장감이 상당히 줄었으며, 작붕 도 심심찮게 보이는 수준이었다. 2부 스토리가 진행될수록 이런 단점의 빈도가 늘어 거의 모든 작화가 원작과 괴리감이 느껴지...",
+      "doc_id": "f4fbe985489fa342",
+      "expected_match": false,
+      "rank": 3,
+      "score": 15.589841,
+      "score_components": {
+        "bm25_total": 15.589841,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "28bc50ee4d22b33e",
+      "section_overlap": [],
+      "section_path": [
+        "특징"
+      ],
+      "title": "원피스(애니메이션)",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "b14d3ee1aca8fa9f",
+      "chunk_overlap": [
+        "가진",
+        "원피스"
+      ],
+      "chunk_text_excerpt": "고등학교 1학년인 루피와 나미는 둘 다 원피스 캐릭터 이름이라는 공통점도 있어, 서로 거리를 좁혀가고 있었다. 하지만 거기에 원피스 이름을 가진 또 한 명의 동급생, 우솝이 나타나면서 평온한 일상이 무너지고 만다. 우솝은 루피와 나미를 끌어들여 「해적부」를 결성하고, 선원을 모아간다. 이렇게 해서 ‘하나로 이어진 대보물’을 목표로 하는 좌충우돌 학원 생활이 막을 올린다——!",
+      "doc_id": "88f920d4da21fbfc",
+      "expected_match": false,
+      "rank": 4,
+      "score": 15.30587,
+      "score_components": {
+        "bm25_total": 15.30587,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "15f28c1b4f4e9ab0",
+      "section_overlap": [],
+      "section_path": [
+        "줄거리"
+      ],
+      "title": "사랑하는 원피스(애니메이션)",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 2,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "ba8965f5b1a53178",
+      "chunk_overlap": [
+        "기념",
+        "원피스"
+      ],
+      "chunk_text_excerpt": "오사키 토모히토의 소설 단편집 < 원피스 노벨 밀짚모자 스토리즈 >를 원작으로 하는 스핀오프이자 원피스 25주년 기념 TV 스페셜 애니메이션. 동시에 어인섬편 특별 편집판 의 프롤로그를 겸하는 회차이다. 감독은 이시타니 메구미 .",
+      "doc_id": "579e66394c3ce1be",
+      "expected_match": true,
+      "rank": 5,
+      "score": 15.179508,
+      "score_components": {
+        "bm25_total": 15.179508,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "b8d9c137dbac009a",
+      "section_overlap": [],
+      "section_path": [
+        "개요"
+      ],
+      "title": "ONE PIECE FAN LETTER",
+      "title_overlap": [],
+      "weighted_overlap_hint": {
+        "chunk": 2,
+        "section": 0,
+        "title": 0
+      }
+    },
+    {
+      "chunk_id": "75cf8b641f07b7a1",
+      "chunk_overlap": [
+        "팬"
+      ],
+      "chunk_text_excerpt": "True heart Oh my “F” word(Fetish) 全身 がふわふわっと 젠신가 후와후왓토 전신이 둥실둥실하고 不安 などシャットアウト ~Bye~ 후안나도 샷토아우토~Bye~ 불안 같은 건 셧아웃~Bye~ 半端 ない 数多 のファンサは 愛 한파나이 아마타노 환사와 아이 장난 없는 무수한 팬 서비스는 사랑 ずっと 終 わらないYou & I ここにいる 限 り 즛토 오와라나이 You & I...",
+      "doc_id": "08002c3a3fa1ff97",
+      "expected_match": false,
+      "rank": 6,
+      "score": 14.621027,
+      "score_components": {
+        "bm25_total": 14.621027,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "5f9a167e88df99f3",
+      "section_overlap": [],
+      "section_path": [
+        "삽입곡",
+        "물거품 자장가"
+      ],
+      "title": "원피스 필름 레드/사운드트랙",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "44472d2c91828b62",
+      "chunk_overlap": [
+        "어떤"
+      ],
+      "chunk_text_excerpt": "\"사실 아만다의 아빠라는 사람이 보물찾기의 프로였거든요\"어떤 소녀의 아빠가 가지고있었던 커다란 꿈의 이야기 특별편 방영일 드넓은 바다에 펼쳐라! 아빠의 커다란 꿈! 日: 2003.XX.XX",
+      "doc_id": "00c3bcca2fd178d1",
+      "expected_match": false,
+      "rank": 7,
+      "score": 14.407417,
+      "score_components": {
+        "bm25_total": 14.407417,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "51f1a4cee8486c8a",
+      "section_overlap": [],
+      "section_path": [
+        "★하늘섬★ 편(2002년~2004년)",
+        "꿈꾸는 모험가 편",
+        "아빠의 커다란 꿈 편"
+      ],
+      "title": "원피스(애니메이션)/회차 목록/1~516화",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "4cb52c0780fb3e98",
+      "chunk_overlap": [
+        "원작과"
+      ],
+      "chunk_text_excerpt": "예시 1부 목록 만화 애니 이스트 블루 100 53 쌍둥이 언덕 5 2 위스키피크 9 4 리틀 가든 15 8 드럼섬 25 14 알라바스타 63 39 자야 19 9 스카이피아 66 43 롱 링 롱 랜드 19 15 워터 세븐 & 에니에스 로비 120 94 스릴러 바크 48 45 샤본디 제도 24 21 아마존 릴리 9 10 임펠 다운 25 27 마린 포드 31 33 루피의 과거 & 종전 17...",
+      "doc_id": "f4fbe985489fa342",
+      "expected_match": false,
+      "rank": 8,
+      "score": 14.344921,
+      "score_components": {
+        "bm25_total": 14.344921,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "d50f9114347ff2ef",
+      "section_overlap": [],
+      "section_path": [
+        "평가",
+        "느려지는 전개"
+      ],
+      "title": "원피스(애니메이션)",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "6702f07e3d94fdf2",
+      "chunk_overlap": [
+        "가진"
+      ],
+      "chunk_text_excerpt": "여기서 만약 최악의 밸런스를 가진 카드가 생기면 에라타하거나 금지하면 된다고 하는데, 현실의 유희왕이 매번 해온 짓이다.",
+      "doc_id": "66157f97d902e013",
+      "expected_match": false,
+      "rank": 9,
+      "score": 14.326845,
+      "score_components": {
+        "bm25_total": 14.326845,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "4e5eebcbe48d647f",
+      "section_overlap": [
+        "원피스"
+      ],
+      "section_path": [
+        "원피스 콜라보"
+      ],
+      "title": "일일외출록 반장 / 줄거리",
+      "title_overlap": [],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 2,
+        "title": 0
+      }
+    },
+    {
+      "chunk_id": "1eb7ab7142df61c7",
+      "chunk_overlap": [
+        "가진",
+        "어떤",
+        "팬"
+      ],
+      "chunk_text_excerpt": "애니메이션으로 재현했다. 극장판에서야 드디어 간접적으로나마 초대 그리드맨과 SSSS.그리드맨의 변신자 둘의 조우가 이뤄진 셈. SSSS.그리드맨의 주인공의 핀치를 원조 그리드맨의 변신자가 도와준다는 일종의 팬 서비스라고 할 수 있다. 청년의 외모 자체는 극장판 공개 이후 개최된 그리드맨 유니버스의 전시를 통해 애니메이션화된 현재의 쇼 나오토 의 모습이라는 것이 공인되었지만, 어째서 SS...",
+      "doc_id": "09a387e0872a69d1",
+      "expected_match": false,
+      "rank": 10,
+      "score": 14.222588,
+      "score_components": {
+        "bm25_total": 14.222588,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "96b744f6aea91326",
+      "section_overlap": [],
+      "section_path": [
+        "기타 등장인물"
+      ],
+      "title": "그리드맨 유니버스 / 등장인물",
+      "title_overlap": [],
+      "weighted_overlap_hint": {
+        "chunk": 3,
+        "section": 0,
+        "title": 0
+      }
+    }
+  ],
+  "bucket": "direct_fact_lookup",
+  "expected": {
+    "expected_chunk_ids": [
+      "ba8965f5b1a53178"
+    ],
+    "expected_document_ids": [
+      "579e66394c3ce1be"
+    ]
+  },
+  "expected_candidate_after": {
+    "chunk_id": "ba8965f5b1a53178",
+    "chunk_overlap": [
+      "기념",
+      "원피스"
+    ],
+    "chunk_text_excerpt": "오사키 토모히토의 소설 단편집 < 원피스 노벨 밀짚모자 스토리즈 >를 원작으로 하는 스핀오프이자 원피스 25주년 기념 TV 스페셜 애니메이션. 동시에 어인섬편 특별 편집판 의 프롤로그를 겸하는 회차이다. 감독은 이시타니 메구미 .",
+    "doc_id": "579e66394c3ce1be",
+    "expected_match": true,
+    "rank": 6,
+    "score": 15.251752,
+    "score_components": {
+      "bm25_total": 15.251752,
+      "section_boost": null,
+      "vector": null
+    },
+    "section_id": "b8d9c137dbac009a",
+    "section_overlap": [],
+    "section_path": [
+      "개요"
+    ],
+    "title": "ONE PIECE FAN LETTER",
+    "title_overlap": [],
+    "weighted_overlap_hint": {
+      "chunk": 2,
+      "section": 0,
+      "title": 0
+    }
+  },
+  "expected_candidate_before": {
+    "chunk_id": "ba8965f5b1a53178",
+    "chunk_overlap": [
+      "기념",
+      "원피스"
+    ],
+    "chunk_text_excerpt": "오사키 토모히토의 소설 단편집 < 원피스 노벨 밀짚모자 스토리즈 >를 원작으로 하는 스핀오프이자 원피스 25주년 기념 TV 스페셜 애니메이션. 동시에 어인섬편 특별 편집판 의 프롤로그를 겸하는 회차이다. 감독은 이시타니 메구미 .",
+    "doc_id": "579e66394c3ce1be",
+    "expected_match": true,
+    "rank": 5,
+    "score": 15.179508,
+    "score_components": {
+      "bm25_total": 15.179508,
+      "section_boost": null,
+      "vector": null
+    },
+    "section_id": "b8d9c137dbac009a",
+    "section_overlap": [],
+    "section_path": [
+      "개요"
+    ],
+    "title": "ONE PIECE FAN LETTER",
+    "title_overlap": [],
+    "weighted_overlap_hint": {
+      "chunk": 2,
+      "section": 0,
+      "title": 0
+    }
+  },
+  "generated_at": "2026-05-08T16:21:20.902253+00:00",
+  "gold_eval_profiles": {
+    "pdf_file_lookup": "baseline_pdf_file_identity_tokens",
+    "text": "tuned_text_section_boost_bm25"
+  },
+  "mitigation_recommendation": "Keep tuned_text_section_boost_bm25 diagnostic-only. Review a capped or query-bucket-gated section boost and add this query to the Hit@5 regression watchlist before any promotion review.",
+  "policy": {
+    "broad_indexing": false,
+    "frozen_gold_training_rows": 0,
+    "gold_used_for_profile_selection": false,
+    "official_denominator_registry_changed": false,
+    "production_index_mutation": false,
+    "profile_changed": false,
+    "profile_promoted": false,
+    "report_only": true
+  },
+  "profiles": {
+    "baseline": {
+      "name": "baseline_text_title_section_bm25",
+      "weights": {
+        "alias_weight": 2,
+        "chunk_weight": 1,
+        "section_weight": 2,
+        "title_weight": 4
+      }
+    },
+    "selected_text_profile_assessment": "diagnostic_only_due_hit5_regression",
+    "tuned": {
+      "name": "tuned_text_section_boost_bm25",
+      "weights": {
+        "alias_weight": 2,
+        "chunk_weight": 1,
+        "section_weight": 4,
+        "title_weight": 4
+      }
+    }
+  },
+  "query": "원피스 팬 레터는 어떤 원작과 기념 성격을 가진 애니야",
+  "query_id": "text_namu_v2_0058",
+  "rank_summary": {
+    "baseline_expected_rank": 5,
+    "hit10_after": true,
+    "hit10_before": true,
+    "hit5_after": false,
+    "hit5_before": true,
+    "tuned_expected_rank": 6
+  },
+  "root_cause_classification": {
+    "expected_section_weighted_overlap_hint": 0,
+    "explanation": "The selected profile doubles section weighting. The expected result moved from rank 5 to rank 6, so the regression is a borderline Hit@5 loss, not a Hit@10 loss.",
+    "label": "section_boost_displaced_borderline_hit5",
+    "max_displaced_section_weighted_overlap_hint": 4,
+    "section_weight_increased": true
+  },
+  "schema_version": "text_rank_trace_v1",
+  "score_availability": {
+    "bm25_total_score_available": true,
+    "note": "The local deterministic TextIndex emits final BM25 scores only. Field contribution is represented by configured weights plus token-overlap diagnostics.",
+    "section_boost_score_available": false,
+    "vector_score_available": false
+  },
+  "status": "PASS",
+  "top5_candidates_that_displaced_expected": [
+    {
+      "chunk_id": "11eacfc71fbfba70",
+      "chunk_overlap": [
+        "팬"
+      ],
+      "chunk_text_excerpt": "VOD 출시를 하면서 작화를 수정했다. 팬 서비스 오다가 감수한 스탬피드나 총괄프로듀서로서 참가한 필름 Z나 필름 골드처럼 역시나 팬 서비스가 많다. 칼리파 등 행적이 불분명했던 사이퍼 폴의 멤버들의 근황이 밝혀졌으며, 엄청난 인기를 끌었던 샬롯 카타쿠리 , 코비 등의 게스트 출연, 팬들에게 귀엽다고 평가 받은 샬롯 브륄레 의 미소",
+      "doc_id": "bb6462dace081f88",
+      "expected_match": false,
+      "rank": 1,
+      "score": 19.246033,
+      "score_components": {
+        "bm25_total": 19.246033,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "6a0906a3c7a476f8",
+      "section_overlap": [],
+      "section_path": [
+        "평가",
+        "긍정적 평가"
+      ],
+      "title": "원피스 필름 레드",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "3a951d536a6d2b70",
+      "chunk_overlap": [
+        "가진"
+      ],
+      "chunk_text_excerpt": "그 편만의 특색을 가진 OST도 따로 작곡하여 위의 OST 돌려막기와 같은 비판도 사라졌다. 와노쿠니 OST에 이어 기어 5와 에그 헤드도 독자적 OST가 발매되었다.",
+      "doc_id": "1304f44478650c7a",
+      "expected_match": false,
+      "rank": 2,
+      "score": 16.163838,
+      "score_components": {
+        "bm25_total": 16.163838,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "88742d6c6cf2d939",
+      "section_overlap": [],
+      "section_path": [
+        "개요"
+      ],
+      "title": "원피스(애니메이션)/OST",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "6702f07e3d94fdf2",
+      "chunk_overlap": [
+        "가진"
+      ],
+      "chunk_text_excerpt": "여기서 만약 최악의 밸런스를 가진 카드가 생기면 에라타하거나 금지하면 된다고 하는데, 현실의 유희왕이 매번 해온 짓이다.",
+      "doc_id": "66157f97d902e013",
+      "expected_match": false,
+      "rank": 3,
+      "score": 15.69265,
+      "score_components": {
+        "bm25_total": 15.69265,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "4e5eebcbe48d647f",
+      "section_overlap": [
+        "원피스"
+      ],
+      "section_path": [
+        "원피스 콜라보"
+      ],
+      "title": "일일외출록 반장 / 줄거리",
+      "title_overlap": [],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 4,
+        "title": 0
+      }
+    },
+    {
+      "chunk_id": "b298ed3116934faf",
+      "chunk_overlap": [
+        "원작과"
+      ],
+      "chunk_text_excerpt": "TV 애니메이션판은 만화판보다 에피소드나 작화의 퀄리티가 떨어지고, 밝은 채색이나 얇은 선 굵기 등의 요소 때문에 아동용 애니메이션 같다는 평이 많다. 일요 방송이 된 이후부터 검열 도 심해져 피나 공포 묘사가 심할 정도로 약해졌기에 긴장감이 상당히 줄었으며, 작붕 도 심심찮게 보이는 수준이었다. 2부 스토리가 진행될수록 이런 단점의 빈도가 늘어 거의 모든 작화가 원작과 괴리감이 느껴지...",
+      "doc_id": "f4fbe985489fa342",
+      "expected_match": false,
+      "rank": 4,
+      "score": 15.690399,
+      "score_components": {
+        "bm25_total": 15.690399,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "28bc50ee4d22b33e",
+      "section_overlap": [],
+      "section_path": [
+        "특징"
+      ],
+      "title": "원피스(애니메이션)",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "b14d3ee1aca8fa9f",
+      "chunk_overlap": [
+        "가진",
+        "원피스"
+      ],
+      "chunk_text_excerpt": "고등학교 1학년인 루피와 나미는 둘 다 원피스 캐릭터 이름이라는 공통점도 있어, 서로 거리를 좁혀가고 있었다. 하지만 거기에 원피스 이름을 가진 또 한 명의 동급생, 우솝이 나타나면서 평온한 일상이 무너지고 만다. 우솝은 루피와 나미를 끌어들여 「해적부」를 결성하고, 선원을 모아간다. 이렇게 해서 ‘하나로 이어진 대보물’을 목표로 하는 좌충우돌 학원 생활이 막을 올린다——!",
+      "doc_id": "88f920d4da21fbfc",
+      "expected_match": false,
+      "rank": 5,
+      "score": 15.376804,
+      "score_components": {
+        "bm25_total": 15.376804,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "15f28c1b4f4e9ab0",
+      "section_overlap": [],
+      "section_path": [
+        "줄거리"
+      ],
+      "title": "사랑하는 원피스(애니메이션)",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 2,
+        "section": 0,
+        "title": 4
+      }
+    }
+  ],
+  "tuned_top10_candidates": [
+    {
+      "chunk_id": "11eacfc71fbfba70",
+      "chunk_overlap": [
+        "팬"
+      ],
+      "chunk_text_excerpt": "VOD 출시를 하면서 작화를 수정했다. 팬 서비스 오다가 감수한 스탬피드나 총괄프로듀서로서 참가한 필름 Z나 필름 골드처럼 역시나 팬 서비스가 많다. 칼리파 등 행적이 불분명했던 사이퍼 폴의 멤버들의 근황이 밝혀졌으며, 엄청난 인기를 끌었던 샬롯 카타쿠리 , 코비 등의 게스트 출연, 팬들에게 귀엽다고 평가 받은 샬롯 브륄레 의 미소",
+      "doc_id": "bb6462dace081f88",
+      "expected_match": false,
+      "rank": 1,
+      "score": 19.246033,
+      "score_components": {
+        "bm25_total": 19.246033,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "6a0906a3c7a476f8",
+      "section_overlap": [],
+      "section_path": [
+        "평가",
+        "긍정적 평가"
+      ],
+      "title": "원피스 필름 레드",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "3a951d536a6d2b70",
+      "chunk_overlap": [
+        "가진"
+      ],
+      "chunk_text_excerpt": "그 편만의 특색을 가진 OST도 따로 작곡하여 위의 OST 돌려막기와 같은 비판도 사라졌다. 와노쿠니 OST에 이어 기어 5와 에그 헤드도 독자적 OST가 발매되었다.",
+      "doc_id": "1304f44478650c7a",
+      "expected_match": false,
+      "rank": 2,
+      "score": 16.163838,
+      "score_components": {
+        "bm25_total": 16.163838,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "88742d6c6cf2d939",
+      "section_overlap": [],
+      "section_path": [
+        "개요"
+      ],
+      "title": "원피스(애니메이션)/OST",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "6702f07e3d94fdf2",
+      "chunk_overlap": [
+        "가진"
+      ],
+      "chunk_text_excerpt": "여기서 만약 최악의 밸런스를 가진 카드가 생기면 에라타하거나 금지하면 된다고 하는데, 현실의 유희왕이 매번 해온 짓이다.",
+      "doc_id": "66157f97d902e013",
+      "expected_match": false,
+      "rank": 3,
+      "score": 15.69265,
+      "score_components": {
+        "bm25_total": 15.69265,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "4e5eebcbe48d647f",
+      "section_overlap": [
+        "원피스"
+      ],
+      "section_path": [
+        "원피스 콜라보"
+      ],
+      "title": "일일외출록 반장 / 줄거리",
+      "title_overlap": [],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 4,
+        "title": 0
+      }
+    },
+    {
+      "chunk_id": "b298ed3116934faf",
+      "chunk_overlap": [
+        "원작과"
+      ],
+      "chunk_text_excerpt": "TV 애니메이션판은 만화판보다 에피소드나 작화의 퀄리티가 떨어지고, 밝은 채색이나 얇은 선 굵기 등의 요소 때문에 아동용 애니메이션 같다는 평이 많다. 일요 방송이 된 이후부터 검열 도 심해져 피나 공포 묘사가 심할 정도로 약해졌기에 긴장감이 상당히 줄었으며, 작붕 도 심심찮게 보이는 수준이었다. 2부 스토리가 진행될수록 이런 단점의 빈도가 늘어 거의 모든 작화가 원작과 괴리감이 느껴지...",
+      "doc_id": "f4fbe985489fa342",
+      "expected_match": false,
+      "rank": 4,
+      "score": 15.690399,
+      "score_components": {
+        "bm25_total": 15.690399,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "28bc50ee4d22b33e",
+      "section_overlap": [],
+      "section_path": [
+        "특징"
+      ],
+      "title": "원피스(애니메이션)",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "b14d3ee1aca8fa9f",
+      "chunk_overlap": [
+        "가진",
+        "원피스"
+      ],
+      "chunk_text_excerpt": "고등학교 1학년인 루피와 나미는 둘 다 원피스 캐릭터 이름이라는 공통점도 있어, 서로 거리를 좁혀가고 있었다. 하지만 거기에 원피스 이름을 가진 또 한 명의 동급생, 우솝이 나타나면서 평온한 일상이 무너지고 만다. 우솝은 루피와 나미를 끌어들여 「해적부」를 결성하고, 선원을 모아간다. 이렇게 해서 ‘하나로 이어진 대보물’을 목표로 하는 좌충우돌 학원 생활이 막을 올린다——!",
+      "doc_id": "88f920d4da21fbfc",
+      "expected_match": false,
+      "rank": 5,
+      "score": 15.376804,
+      "score_components": {
+        "bm25_total": 15.376804,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "15f28c1b4f4e9ab0",
+      "section_overlap": [],
+      "section_path": [
+        "줄거리"
+      ],
+      "title": "사랑하는 원피스(애니메이션)",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 2,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "ba8965f5b1a53178",
+      "chunk_overlap": [
+        "기념",
+        "원피스"
+      ],
+      "chunk_text_excerpt": "오사키 토모히토의 소설 단편집 < 원피스 노벨 밀짚모자 스토리즈 >를 원작으로 하는 스핀오프이자 원피스 25주년 기념 TV 스페셜 애니메이션. 동시에 어인섬편 특별 편집판 의 프롤로그를 겸하는 회차이다. 감독은 이시타니 메구미 .",
+      "doc_id": "579e66394c3ce1be",
+      "expected_match": true,
+      "rank": 6,
+      "score": 15.251752,
+      "score_components": {
+        "bm25_total": 15.251752,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "b8d9c137dbac009a",
+      "section_overlap": [],
+      "section_path": [
+        "개요"
+      ],
+      "title": "ONE PIECE FAN LETTER",
+      "title_overlap": [],
+      "weighted_overlap_hint": {
+        "chunk": 2,
+        "section": 0,
+        "title": 0
+      }
+    },
+    {
+      "chunk_id": "6abcb3a87e051387",
+      "chunk_overlap": [
+        "어떤"
+      ],
+      "chunk_text_excerpt": "OVA의 아키는 물고기 떼에 파묻힌 이후 보행기에 장착당한다. 시라카와 츠요시가 갖고 있던 USB가 있었는데 뭔가 중요한 물건으로 비춰졌다가 끝내 어떤 장치인지는 나오지 않았다. 오리지널 전개로 인한 맥거핀.",
+      "doc_id": "78ad18e41432c62a",
+      "expected_match": false,
+      "rank": 7,
+      "score": 15.052894,
+      "score_components": {
+        "bm25_total": 15.052894,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "26249fb5d1d8b701",
+      "section_overlap": [
+        "원작과"
+      ],
+      "section_path": [
+        "원작과 OVA의 차이점"
+      ],
+      "title": "공포의 물고기",
+      "title_overlap": [],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 4,
+        "title": 0
+      }
+    },
+    {
+      "chunk_id": "4869d1727c5ee436",
+      "chunk_overlap": [
+        "어떤"
+      ],
+      "chunk_text_excerpt": "이때 '다시 한번 하늘을 볼 수 있길'이라는 짠한 소원을 적은 노동자도 있었는데, 이 노동자가 훗날 유일하게 만기를 채우고 노역장에서 나온 키무라다. 어떤 의미로는 소원이 이루어진 셈.",
+      "doc_id": "66157f97d902e013",
+      "expected_match": false,
+      "rank": 8,
+      "score": 15.032307,
+      "score_components": {
+        "bm25_total": 15.032307,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "4e5eebcbe48d647f",
+      "section_overlap": [
+        "원피스"
+      ],
+      "section_path": [
+        "원피스 콜라보"
+      ],
+      "title": "일일외출록 반장 / 줄거리",
+      "title_overlap": [],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 4,
+        "title": 0
+      }
+    },
+    {
+      "chunk_id": "75cf8b641f07b7a1",
+      "chunk_overlap": [
+        "팬"
+      ],
+      "chunk_text_excerpt": "True heart Oh my “F” word(Fetish) 全身 がふわふわっと 젠신가 후와후왓토 전신이 둥실둥실하고 不安 などシャットアウト ~Bye~ 후안나도 샷토아우토~Bye~ 불안 같은 건 셧아웃~Bye~ 半端 ない 数多 のファンサは 愛 한파나이 아마타노 환사와 아이 장난 없는 무수한 팬 서비스는 사랑 ずっと 終 わらないYou & I ここにいる 限 り 즛토 오와라나이 You & I...",
+      "doc_id": "08002c3a3fa1ff97",
+      "expected_match": false,
+      "rank": 9,
+      "score": 14.656034,
+      "score_components": {
+        "bm25_total": 14.656034,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "5f9a167e88df99f3",
+      "section_overlap": [],
+      "section_path": [
+        "삽입곡",
+        "물거품 자장가"
+      ],
+      "title": "원피스 필름 레드/사운드트랙",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    },
+    {
+      "chunk_id": "4cb52c0780fb3e98",
+      "chunk_overlap": [
+        "원작과"
+      ],
+      "chunk_text_excerpt": "예시 1부 목록 만화 애니 이스트 블루 100 53 쌍둥이 언덕 5 2 위스키피크 9 4 리틀 가든 15 8 드럼섬 25 14 알라바스타 63 39 자야 19 9 스카이피아 66 43 롱 링 롱 랜드 19 15 워터 세븐 & 에니에스 로비 120 94 스릴러 바크 48 45 샤본디 제도 24 21 아마존 릴리 9 10 임펠 다운 25 27 마린 포드 31 33 루피의 과거 & 종전 17...",
+      "doc_id": "f4fbe985489fa342",
+      "expected_match": false,
+      "rank": 10,
+      "score": 14.356149,
+      "score_components": {
+        "bm25_total": 14.356149,
+        "section_boost": null,
+        "vector": null
+      },
+      "section_id": "d50f9114347ff2ef",
+      "section_overlap": [],
+      "section_path": [
+        "평가",
+        "느려지는 전개"
+      ],
+      "title": "원피스(애니메이션)",
+      "title_overlap": [
+        "원피스"
+      ],
+      "weighted_overlap_hint": {
+        "chunk": 1,
+        "section": 0,
+        "title": 4
+      }
+    }
+  ]
+}

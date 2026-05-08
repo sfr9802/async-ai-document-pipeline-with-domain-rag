@@ -1,0 +1,327 @@
+{
+  "generated_at": "2026-05-08T09:32:35.839837+00:00",
+  "gold_frozen": {
+    "denominator_candidates": {
+      "pdf_file_lookup_candidate_count": 15,
+      "pdf_file_lookup_deferred_or_excluded_count": 9,
+      "pdf_file_lookup_diagnostic_count": 4,
+      "text_abstain_diagnostic_count": 10,
+      "text_deferred_or_excluded_count": 21,
+      "text_main_positive_candidate_count": 69
+    },
+    "evidence_role": "diagnostic",
+    "generated_at": "2026-05-08T09:32:35.690640+00:00",
+    "official_denominator_registry_changed": false,
+    "policies": {
+      "official_gold": false,
+      "pdf_content_denominator_count": 0,
+      "pdf_file_lookup_rule": "KEEP_POSITIVE + ANSWERABLE/ANSWERABLE_AS_FILE_LOOKUP + RELEVANT + PDF_FILE_LOOKUP risk tag; file identity only",
+      "pdf_page_bbox_table_row_column_value_success_claimed": false,
+      "text_abstain_rule": "DIAGNOSTIC_ONLY_DEFAULT or abstain_not_answerable_diagnostic stays diagnostic",
+      "text_main_positive_rule": "KEEP_POSITIVE + ANSWERABLE + RELEVANT + non-diagnostic default + not source_label_status=needs_review + no conflict + no missing override + no NEEDS_SECOND_REVIEW"
+    },
+    "promotion_evidence": false,
+    "schema_version": "reviewed_gold_denominator_candidate_manifest_v1"
+  },
+  "input_columns": {
+    "pdf": [
+      "track",
+      "query_id",
+      "retrieval_lane",
+      "review_group",
+      "source_file_name",
+      "expected_file_name",
+      "expected_document_version_id",
+      "expected_page_no",
+      "expected_page_label",
+      "expected_bbox",
+      "query",
+      "expected_evidence_excerpt",
+      "evidence_object_summary",
+      "deterministic_draft",
+      "review_lane",
+      "suggested_gold_decision",
+      "suggested_answerability_label",
+      "suggested_relevance_label",
+      "suggested_expected_evidence_policy",
+      "suggested_denominator_policy",
+      "risk_tags",
+      "diagnostic_reason",
+      "user_gold_decision",
+      "user_answerability_label",
+      "user_relevance_label",
+      "user_expected_evidence_policy",
+      "user_denominator_policy",
+      "user_issue_tags",
+      "user_notes"
+    ],
+    "text": [
+      "query_id",
+      "track",
+      "bucket",
+      "query",
+      "expected_answer_text",
+      "must_contain_terms",
+      "expected_document_ids",
+      "expected_page_ids",
+      "expected_section_ids",
+      "expected_chunk_ids",
+      "expected_page_title",
+      "expected_section_path",
+      "source_url",
+      "chunk_text_sha256",
+      "source_evidence_quote",
+      "answer_type",
+      "allowed_abstain",
+      "source_dataset",
+      "source_original_gold",
+      "source_query_id",
+      "source_label_status",
+      "source_locator",
+      "candidate_default_policy",
+      "generation_notes",
+      "user_final_gold_policy",
+      "user_answerability_label",
+      "user_relevance_label",
+      "user_expected_answer_override",
+      "user_expected_evidence_override",
+      "user_review_notes"
+    ]
+  },
+  "inputs": {
+    "official_denominator_registry": {
+      "bytes": 8455,
+      "path": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+      "sha256": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22"
+    },
+    "pdf_file_lookup_review_csv": {
+      "bytes": 29850,
+      "path": "ai-worker/eval/review/pdf_supplemental_gold_review/pdf_gold_review_pack_manual_v1_file_lookup_companion - pdf_gold_review_pack_manual_v1_file_lookup_companion.csv",
+      "sha256": "c77f8b431c2cef5dffac5a968606c309eb653ec506efeb7ad37190c45f8b2b9a"
+    },
+    "text_review_csv": {
+      "bytes": 218141,
+      "path": "ai-worker/eval/review/text_namu_v2_gold_review/text_namu_v2_gold_review_pack - text_namu_v2_gold_review_pack.csv",
+      "sha256": "5a2407089a5c5c22cf8f0101b76bba23a8c991fe7d2fa3f7fb89e395b56e4d0a"
+    }
+  },
+  "output_files": {
+    "pdf_file_lookup_deferred_or_excluded_clean.csv": "ai-worker/eval/review/gold_silver_tuning/pdf_file_lookup_deferred_or_excluded_clean.csv",
+    "pdf_file_lookup_diagnostic_clean.csv": "ai-worker/eval/review/gold_silver_tuning/pdf_file_lookup_diagnostic_clean.csv",
+    "pdf_file_lookup_gold_positive_clean.csv": "ai-worker/eval/review/gold_silver_tuning/pdf_file_lookup_gold_positive_clean.csv",
+    "silver_manifest.csv": "ai-worker/eval/review/gold_silver_tuning/silver_manifest.csv",
+    "silver_pdf_file_lookup_hard_negative_train.csv": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_train.csv",
+    "silver_pdf_file_lookup_positive_train.csv": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_positive_train.csv",
+    "silver_text_abstain_diagnostic.csv": "ai-worker/eval/review/gold_silver_tuning/silver_text_abstain_diagnostic.csv",
+    "silver_text_hard_negative_train.csv": "ai-worker/eval/review/gold_silver_tuning/silver_text_hard_negative_train.csv",
+    "silver_text_positive_train.csv": "ai-worker/eval/review/gold_silver_tuning/silver_text_positive_train.csv",
+    "text_gold_abstain_diagnostic_clean.csv": "ai-worker/eval/review/gold_silver_tuning/text_gold_abstain_diagnostic_clean.csv",
+    "text_gold_deferred_or_excluded_clean.csv": "ai-worker/eval/review/gold_silver_tuning/text_gold_deferred_or_excluded_clean.csv",
+    "text_gold_main_positive_clean.csv": "ai-worker/eval/review/gold_silver_tuning/text_gold_main_positive_clean.csv"
+  },
+  "pdf_cleanup": {
+    "deferred_or_excluded_count": 9,
+    "diagnostic_count": 4,
+    "generic_filename_rows": [
+      "pdf_file_lookup_content_anchor_011",
+      "pdf_file_lookup_content_anchor_012",
+      "pdf_file_lookup_content_anchor_013",
+      "pdf_file_lookup_content_anchor_014",
+      "pdf_file_lookup_content_anchor_015",
+      "pdf_file_lookup_content_anchor_016",
+      "pdf_file_lookup_content_anchor_017",
+      "pdf_file_lookup_content_anchor_018",
+      "pdf_file_lookup_content_anchor_019",
+      "pdf_file_lookup_content_anchor_020",
+      "pdf_file_lookup_content_anchor_021"
+    ],
+    "input_row_count": 28,
+    "mixed_decision_rows": [
+      "pdf_file_lookup_content_anchor_017"
+    ],
+    "normalization_rules": [
+      "trimmed whitespace on all fields",
+      "treated empty strings as null for validation decisions",
+      "normalized clear FILE lookup positives to ANSWERABLE_AS_FILE_LOOKUP",
+      "normalized clear FILE lookup evidence policy to EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+      "kept NOT_ANSWERABLE, IRRELEVANT, PARTIAL, REVISE_EXPECTED_EVIDENCE, mixed decisions, and weak generic filenames out of official positives"
+    ],
+    "normalized_positive_rows": [
+      "pdf_file_lookup_content_anchor_001",
+      "pdf_file_lookup_content_anchor_002",
+      "pdf_file_lookup_content_anchor_003",
+      "pdf_file_lookup_content_anchor_005",
+      "pdf_file_lookup_content_anchor_006",
+      "pdf_file_lookup_content_anchor_007",
+      "pdf_file_lookup_content_anchor_008",
+      "pdf_file_lookup_content_anchor_009",
+      "pdf_file_lookup_content_anchor_010",
+      "pdf_file_lookup_metadata_001",
+      "pdf_file_lookup_metadata_003",
+      "pdf_file_lookup_metadata_004",
+      "pdf_file_lookup_metadata_005",
+      "pdf_file_lookup_metadata_006",
+      "pdf_file_lookup_metadata_007"
+    ],
+    "positive_count": 15,
+    "row_counts_by_cleanup_status": {
+      "CLEANED_FILE_LOOKUP_POSITIVE": 15,
+      "DEFERRED_MIXED_GOLD_DECISION": 1,
+      "DIAGNOSTIC_OR_EXCLUDED_BY_FILE_LOOKUP_POLICY": 12
+    },
+    "row_counts_by_denominator_role": {
+      "DEFERRED": 9,
+      "PDF_FILE_LOOKUP_DIAGNOSTIC": 4,
+      "PDF_FILE_LOOKUP_GOLD_CANDIDATE": 15
+    }
+  },
+  "report_files": {
+    "denominator_manifest": "ai-worker/eval/reports/rag-ingestion/denominator_manifest.json",
+    "gold_cleanup_report": "ai-worker/eval/reports/rag-ingestion/gold_cleanup_report.md",
+    "silver_generation_report": "ai-worker/eval/reports/rag-ingestion/silver_generation_report.md",
+    "tuning_readiness_report": "ai-worker/eval/reports/rag-ingestion/tuning_readiness_report.md"
+  },
+  "schema_version": "reviewed_gold_cleanup_and_silver_generation_v1",
+  "silver": {
+    "leakage": {
+      "duplicate_silver_queries": [
+        "단체 설정이 나오는 문서 찾아줘",
+        "시간도 촉박하고 어느 한쪽을 포기할 수 없는 마당인데, 상대는 온 우주와 전 차원의 절대적인 법칙을 아우르는 존재 중 하나인 군주였다 이런 장면 나오는 애니 뭐였지?",
+        "쿠로미즈 관련 캐릭터 정리 찾아줘",
+        "영사 설정이 나오는 문서 찾아줘",
+        "원작이랑 비교해서 원작 연재가 시작된지 2년 밖에 안된 상태에서 이례적으로 빠르게 애니화가 이뤄져 누적된 스토리가 부족했기 때문에 이런 설명 있던 문서 찾아줘",
+        "연출 역시 크게 위화감이 들거나 하는 부분은 보이지 않으며 전반적으로 원작초월 수준은 못되더라도 원작 팬이 실망은 안 할 애니화 정도는 된다 이런 평가 받던 애니 뭐였지?",
+        "어스그랜너 일본 지부 관련 캐릭터 정리 찾아줘",
+        "스토리와 설정의 충실한 연계 설정이 나오는 문서 찾아줘",
+        "갑자기 들어오는 정체불명의 신호에 그만두고 위성을 신호에 집중한다 이런 장면 나오는 애니 뭐였지?",
+        "아이돌 마스터 라이브 애니 기본 정보 찾아줘",
+        "코니 뭐? 아르민 그건 엘런이 꾸며낸 거짓말이라고 봐. 미카사 내가 가끔 두통에 시달리는 건 사실이잖아 이런 장면 나오는 애니 뭐였지?",
+        "디럭스 설정이 나오는 문서 찾아줘",
+        "전쟁을 막기 위해, 웰베르의 왕 하이델은 그의 공주 리타를 이웃 국가 산가트라스의 왕자 게르니아와 혼인시킨다 이런 장면 나오는 애니 뭐였지?",
+        "호불호 있는 작화와 빈약하고 부족한 스토리로 인해 평가가 좋지 않다 이런 평가 받던 애니 뭐였지?",
+        "1990년대 2000년대 설정이 나오는 문서 찾아줘",
+        "중동 연합 설정이 나오는 문서 찾아줘",
+        "시리즈 이후 5년만에 재결합한 사카이 카즈오와 하나다 줏키 콤비의 역량이 다시 한 번 빛을 발휘했고 방영전부터 여러모로 준비를 많이한 프로젝트로서 예상 이상의... 이런 평가 받던 애니 뭐였지?",
+        "캐피털 테리토리 설정이 나오는 문서 찾아줘",
+        "적우도 설정이 나오는 문서 찾아줘",
+        "가난하고 가혹한 환경을 거쳐가며 사람들이 즐겁게 살아가는 세계 이런 장면 나오는 애니 뭐였지?",
+        "의료 설정이 나오는 문서 찾아줘",
+        "완결 이후 평가 문서 찾아줘",
+        "심안크림슨즈 관련 캐릭터 정리 찾아줘",
+        "빅샷 레코드 설정이 나오는 문서 찾아줘",
+        "등장인물 및 주요 성우진 관련 캐릭터 정리 찾아줘",
+        "거인이 된 라이너는 손 끝과 발 끝을 경질화 하여 벽을 올라온다 이런 장면 나오는 애니 뭐였지?",
+        "타이밍 애니 원작 정보 찾아줘",
+        "초반에는 1화부터 원작과 비교해 크게 달라진 작화와 떨어지는 촬영 퀄리티가 지적을 받았다 이런 평가 받던 애니 뭐였지?",
+        "스파이가 위장 가족을 만드는 애니 찾아줘",
+        "천원돌파 그렌라간 나암편 이름으로 찾을 수 있는 애니 문서 찾아줘",
+        "고향에서 후배 여고생이 자신에게 긴장하며 말을 거는 것을 보고 인생 첫 고백인가 하고 긴장하지만, 알고보니 가출하고 총을 든 이야기에 관심을 가진... 이런 장면 나오는 애니 뭐였지?",
+        "오리비 관련 캐릭터 정리 찾아줘",
+        "메메치 성격이 정리된 캐릭터 문서 찾아줘",
+        "그러자 갑자기 쿠즈하와 시치미야가 나와서 이게 대체 어떻게 된거냐고 소리친다 이런 장면 나오는 애니 뭐였지?",
+        "메르헨 설정이 나오는 문서 찾아줘",
+        "납득 못하는 사람도 있겠지만 난 이걸 했다는 점을 좋게 평가하고 싶다. 라고 평했다 이런 평가 받던 애니 뭐였지?",
+        "무기 설정이 나오는 문서 찾아줘",
+        "그다음에 나오는 엘사는 완전히 다섯 번째 정령으로 각성한 정령 엘사이다 이런 장면 나오는 애니 뭐였지?",
+        "제인의 모자를 가져가서 남아있는 츄러스를 가린 다음에, 츄러스를 모자에 대어 마치 권총을 쥔 것처럼 연기했다 이런 장면 나오는 애니 뭐였지?",
+        "크레용 신짱 외전 응가맨 시리즈 관련 캐릭터 정리 찾아줘",
+        "기영네 외가 관련 캐릭터 정리 찾아줘",
+        "미소녀 전사 세일러 애니 원작 정보 찾아줘",
+        "이때 쇼코가 입고 있는 유카타를 잘 보면 허리띠인 오비가 없다 이런 장면 나오는 애니 뭐였지?",
+        "상어 떼 관련 캐릭터 정리 찾아줘",
+        "글럼골드의 수하들 관련 캐릭터 정리 찾아줘",
+        "프로냘드 세계 설정이 나오는 문서 찾아줘",
+        "프리큐어 올스타즈 뉴 애니 기본 정보 찾아줘",
+        "멀티 설정이 나오는 문서 찾아줘",
+        "아이돌마스터 영화 애니 기본 정보 찾아줘",
+        "광명계 및 암흑계 관련 캐릭터 정리 찾아줘"
+      ],
+      "duplicate_silver_query_count": 95,
+      "duplicate_silver_query_policy": "allowed for deliberate positive/hard-negative training pairs",
+      "expected_id_overlap_count": 0,
+      "expected_id_overlaps": [],
+      "query_id_overlap_count": 0,
+      "query_id_overlaps": [],
+      "query_text_overlap_count": 0,
+      "query_text_overlaps": [],
+      "source_query_id_overlap_count": 0,
+      "source_query_id_overlaps": [],
+      "status": "PASS"
+    },
+    "row_counts": {
+      "silver_manifest": 5,
+      "silver_pdf_file_lookup_hard_negative_train": 4,
+      "silver_pdf_file_lookup_positive_train": 4,
+      "silver_text_abstain_diagnostic": 10,
+      "silver_text_hard_negative_train": 91,
+      "silver_text_positive_train": 120
+    },
+    "sources": {
+      "pdf_merged_csv": "ai-worker/eval/review/pdf_supplemental_gold_review/pdf_gold_review_pack_manual_v1_with_file_lookup.csv",
+      "phase7_silver_jsonl": "ai-worker/eval/reports/phase7/7.12_silver_manual_curated/queries_v4_silver_manual_curated_500.jsonl"
+    }
+  },
+  "text_cleanup": {
+    "abstain_diagnostic_count": 10,
+    "conflict_rows": [
+      "text_namu_v2_0019",
+      "text_namu_v2_0020",
+      "text_namu_v2_0027",
+      "text_namu_v2_0033",
+      "text_namu_v2_0066",
+      "text_namu_v2_0067",
+      "text_namu_v2_0078",
+      "text_namu_v2_0080",
+      "text_namu_v2_0082"
+    ],
+    "deferred_or_excluded_count": 21,
+    "input_row_count": 100,
+    "main_positive_count": 69,
+    "missing_override_rows": [
+      "text_namu_v2_0006",
+      "text_namu_v2_0013",
+      "text_namu_v2_0029"
+    ],
+    "needs_second_review_rows": [
+      "text_namu_v2_0010",
+      "text_namu_v2_0078",
+      "text_namu_v2_0080"
+    ],
+    "normalization_rules": [
+      "trimmed whitespace on all fields",
+      "treated empty strings as null for validation decisions",
+      "split comma/semicolon/pipe user decision cells only to detect conflicts",
+      "did not choose a gold label for conflicting answerability cells",
+      "did not modify provenance columns"
+    ],
+    "provenance_changes": {
+      "changed_provenance_row_count": 0,
+      "changed_provenance_rows": [],
+      "note": "normalization used in-memory views only; provenance output values are copied from source after trimming",
+      "status": "PASSED"
+    },
+    "row_counts_by_cleanup_status": {
+      "CLEANED_POSITIVE": 69,
+      "DEFERRED_LABEL_CONFLICT": 7,
+      "DEFERRED_MISSING_ANSWERABILITY": 2,
+      "DEFERRED_NEEDS_SECOND_REVIEW": 3,
+      "DIAGNOSTIC_ONLY": 8,
+      "EXCLUDED_BY_CONSERVATIVE_POLICY": 8,
+      "MISSING_REQUIRED_OVERRIDE": 3
+    },
+    "row_counts_by_denominator_role": {
+      "DEFERRED": 21,
+      "TEXT_ABSTAIN_DIAGNOSTIC": 10,
+      "TEXT_MAIN_POSITIVE_GOLD_CANDIDATE": 69
+    }
+  },
+  "tuning_readiness": {
+    "active_tuning_sweep_allowed": false,
+    "disabled_reason": "_meta.execution_policy.allow_tuning_sweep=false",
+    "expensive_tuning_run": false,
+    "recommended_next_step": "review the generated silver manifest, then create an explicit silver-only tuning config before running `python scripts\\phase7_human_gold_tune.py`; evaluate only on frozen cleaned gold candidates after that.",
+    "standard_command": "python scripts\\phase7_human_gold_tune.py --help",
+    "standard_command_found": true,
+    "status": "READY_FOR_DOCUMENTED_SILVER_ONLY_TUNING_STEP"
+  }
+}

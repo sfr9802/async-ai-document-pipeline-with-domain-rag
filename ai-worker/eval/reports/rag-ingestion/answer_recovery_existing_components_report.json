@@ -1,0 +1,137 @@
+{
+  "discovered_components": [
+    {
+      "module": "app.capabilities.agent.loop",
+      "status": "FOUND",
+      "symbols": [
+        "AgentLoopController",
+        "LoopBudget",
+        "LoopOutcome",
+        "ExecuteFn"
+      ]
+    },
+    {
+      "module": "app.capabilities.agent.graph_loop.adapters",
+      "status": "FOUND",
+      "symbols": [
+        "AgentLoopGraph"
+      ]
+    },
+    {
+      "module": "app.capabilities.agent.critic",
+      "status": "FOUND",
+      "symbols": [
+        "RuleCritic",
+        "LlmCritic",
+        "CritiqueResult"
+      ]
+    },
+    {
+      "module": "app.capabilities.agent.rewriter",
+      "status": "FOUND",
+      "symbols": [
+        "NoOpQueryRewriter",
+        "LlmQueryRewriter",
+        "QueryRewriterProvider"
+      ]
+    },
+    {
+      "module": "app.capabilities.rag.query_parser",
+      "status": "FOUND",
+      "symbols": [
+        "RegexQueryParser",
+        "LlmQueryParser",
+        "ParsedQuery"
+      ]
+    },
+    {
+      "module": "app.capabilities.rag.generation",
+      "status": "FOUND",
+      "symbols": [
+        "ExtractiveGenerator",
+        "RetrievedChunk"
+      ]
+    },
+    {
+      "module": "app.capabilities.rag_orchestrator.evidence",
+      "status": "FOUND",
+      "symbols": [
+        "Evidence",
+        "QueryPolicy"
+      ]
+    },
+    {
+      "module": "app.capabilities.rag_orchestrator.citation_verify",
+      "status": "FOUND",
+      "symbols": [
+        "citation_verify_tool",
+        "verify_evidence"
+      ]
+    },
+    {
+      "module": "app.capabilities.rag_orchestrator.evidence_merge",
+      "status": "FOUND",
+      "symbols": [
+        "evidence_merge_tool"
+      ]
+    },
+    {
+      "module": "app.capabilities.rag_orchestrator.answer_policy",
+      "status": "FOUND",
+      "symbols": [
+        "prepare_answer_handoff",
+        "build_no_evidence_response"
+      ]
+    },
+    {
+      "module": "eval.harness.pdf_xlsx_answer_evidence_serializer",
+      "status": "FOUND",
+      "symbols": [
+        "serialize_input_row",
+        "serialize_input_rows"
+      ]
+    },
+    {
+      "module": "eval.harness.pdf_xlsx_deterministic_answer_compiler",
+      "status": "FOUND",
+      "symbols": [
+        "compile_evidence_row",
+        "compile_evidence_rows"
+      ]
+    }
+  ],
+  "no_production_mutation_proof": {
+    "broad_indexing": false,
+    "official_denominator_registry_changed": false,
+    "production_index_mutation": false,
+    "profile_selection_on_frozen_gold": false,
+    "training_on_frozen_gold": false
+  },
+  "reuse_decision": {
+    "agentic_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+    "answer_compiler_components": [
+      "eval.harness.pdf_xlsx_answer_evidence_serializer.serialize_input_row",
+      "eval.harness.pdf_xlsx_deterministic_answer_compiler.compile_evidence_row"
+    ],
+    "citation_components": [
+      "app.capabilities.rag_orchestrator.citation_verify.citation_verify_tool",
+      "app.capabilities.rag_orchestrator.answer_policy.prepare_answer_handoff"
+    ],
+    "graph_loop_component_available": true,
+    "new_code_required": [
+      "AnswerSufficiencyJudge",
+      "RecoveryPolicyRouter",
+      "AgenticRetrievalLoopAdapter",
+      "report-only diagnostic harness"
+    ]
+  },
+  "risk_notes": [
+    "Do not promote answer denominators from this diagnostic bridge.",
+    "Do not use PDF FILE lookup as content evidence.",
+    "Do not expose hidden XLSX content.",
+    "OCR, IDP, and multimodal evidence remains diagnostic-only by default.",
+    "Local LLM smoke output is diagnostic-only and not promotion evidence."
+  ],
+  "schema_version": "answer_recovery_existing_components_report_v1",
+  "status": "PASS"
+}

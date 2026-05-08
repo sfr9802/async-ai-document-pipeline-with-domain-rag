@@ -1,0 +1,6 @@
+case_id,lane,loop_iterations,recovered,route_action,stop_reason
+text_recoverable,TEXT,1,True,AGENTIC_RETRIEVAL_LOOP,converged
+xlsx_hidden_blocked,XLSX,2,False,ADJACENT_CONTEXT_EXPANSION,iter_cap
+idp_diagnostic_only,IDP_SHADOW,2,False,ADJACENT_CONTEXT_EXPANSION,iter_cap
+multimodal_diagnostic_only,MULTIMODAL_SHADOW,2,False,ADJACENT_CONTEXT_EXPANSION,iter_cap
+unsupported_no_citation,PDF_CONTENT,2,False,ADJACENT_CONTEXT_EXPANSION,iter_cap

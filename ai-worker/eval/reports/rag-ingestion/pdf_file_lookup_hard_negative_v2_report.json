@@ -1,0 +1,56 @@
+{
+  "counts": {
+    "frozen_gold_document_version_id_exclusion_count": 0,
+    "frozen_gold_file_identity_exclusion_count": 14,
+    "generated_row_count": 12,
+    "silver_positive_row_count": 4,
+    "silver_train_identity_candidate_count": 4,
+    "skipped": {}
+  },
+  "generated_at": "2026-05-08T16:20:50.574755+00:00",
+  "inputs": {
+    "frozen_gold_diagnostic": "used_for_exclusion_count_only",
+    "frozen_gold_positive": "used_for_exclusion_count_only",
+    "silver_hard_negative_v1": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_train.csv",
+    "silver_positive": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_positive_train.csv"
+  },
+  "output_csv": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv",
+  "policy": {
+    "bbox_success_claimed": false,
+    "broad_indexing": false,
+    "column_success_claimed": false,
+    "content_success_claimed": false,
+    "denominator_role": "TUNING_ONLY",
+    "frozen_gold_identity_values_materialized_in_output": false,
+    "frozen_gold_values_used_for_exclusion_guard_only": true,
+    "frozen_gold_values_used_for_sampling": false,
+    "official_denominator_registry_changed": false,
+    "official_gold": false,
+    "page_success_claimed": false,
+    "pdf_file_lookup_semantics": "file_identity_only",
+    "production_index_mutation": false,
+    "row_success_claimed": false,
+    "source_rows": "silver_pdf_file_lookup_train_rows_only",
+    "table_success_claimed": false,
+    "value_success_claimed": false
+  },
+  "schema_version": "pdf_file_lookup_hard_negative_v2_report_v1",
+  "status": "PASS",
+  "strategy_counts": {
+    "same_metadata_family_wrong_file_identity": 12
+  },
+  "strategy_support": {
+    "generic_filename_patterns": 0,
+    "same_metadata_family": 12,
+    "similar_file_names": 12,
+    "wrong_document_version_id": 0,
+    "wrong_document_version_id_note": "No silver-only mismatched document_version_id pairs were available."
+  },
+  "validation": {
+    "generated_queries_exclude_frozen_gold_query_text": true,
+    "generated_rows_are_tuning_only": true,
+    "generated_rows_exclude_frozen_gold_document_version_ids": true,
+    "generated_rows_exclude_frozen_gold_file_identities": true,
+    "generated_rows_official_gold_false": true
+  }
+}

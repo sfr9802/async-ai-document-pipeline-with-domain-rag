@@ -1,0 +1,64 @@
+{
+  "counts": {
+    "caption_unit_count": 1,
+    "diagnostic_unit_count": 1
+  },
+  "diagnostic_rows": [
+    {
+      "bm25_text": "A portrait dark-toned image (480x720 pixels) dominated by blue tones with moderate contrast.",
+      "citation_text": "Caption diagnostic for anime-kr-001.png",
+      "confidence": null,
+      "debug_text": "Report-only multimodal caption; retrieval expansion only, not official evidence",
+      "denominator_role": "DIAGNOSTIC_ONLY",
+      "display_text": "A portrait dark-toned image (480x720 pixels) dominated by blue tones with moderate contrast.",
+      "embedding_text": "A portrait dark-toned image (480x720 pixels) dominated by blue tones with moderate contrast.",
+      "evidence_role": "diagnostic",
+      "extra": {
+        "caption_role": "retrieval_expansion_only",
+        "expected_keywords": [
+          "도서관",
+          "별빛"
+        ],
+        "external_llm_used": false,
+        "official_evidence": false,
+        "source_question": "이 포스터의 작품은 어떤 장소를 무대로 하나요?",
+        "vision_provider": "heuristic-vision-v1"
+      },
+      "lane": "MULTIMODAL_SHADOW",
+      "location_json": {
+        "image": "ai-worker/fixtures/posters/anime-kr-001.png",
+        "page": 1,
+        "type": "figure_caption"
+      },
+      "official_denominator_eligible": false,
+      "parser_version": "shadow-lane-diagnostic-v1",
+      "search_unit_id": "multimodal-shadow-caption-001",
+      "source_file_id": null,
+      "source_file_name": "anime-kr-001.png",
+      "trust_tier": "MULTIMODAL_CAPTION_LOW",
+      "unitType": "MULTIMODAL_CAPTION_DIAGNOSTIC",
+      "unit_id": "multimodal-shadow-caption-001",
+      "unit_type": "MULTIMODAL_CAPTION_DIAGNOSTIC"
+    }
+  ],
+  "generated_at": "2026-05-08T15:29:34.596906+00:00",
+  "policy": {
+    "broad_indexing": false,
+    "caption_role": "retrieval_expansion_only",
+    "denominator_role": "DIAGNOSTIC_ONLY",
+    "evidence_role": "diagnostic",
+    "external_llm_used": false,
+    "official_denominator_eligible": false,
+    "official_denominator_registry_changed": false,
+    "official_evidence_claimed": false,
+    "production_index_mutation": false
+  },
+  "required_search_unit_shaped_fields_present": true,
+  "sample_scope": "small_report_only_local_heuristic_caption",
+  "schema_version": "multimodal_shadow_small_sample_report_v1",
+  "source_artifacts": [
+    "ai-worker/eval/datasets/multimodal_anime_kr.jsonl",
+    "ai-worker/fixtures/posters/anime-kr-001.png"
+  ],
+  "status": "PASS"
+}
