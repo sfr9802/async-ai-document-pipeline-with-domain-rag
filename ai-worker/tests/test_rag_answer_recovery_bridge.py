@@ -203,15 +203,156 @@ def test_pdf_file_lookup_file_identity_intent_ignores_filename_table_marker():
                 lane=PDF_FILE_LOOKUP,
                 trust=NATIVE_TEXT_HIGH,
                 citation="2024년 4월 전기요금표.pdf",
-                location={"type": "file_identity"},
+                location={"type": "file_identity", "candidate_file_name": "2024년 4월 전기요금표.pdf"},
             )
         ],
-        answer_shape_metadata={"answer_intent": "file_identity"},
+        answer_shape_metadata={
+            "answer_intent": "file_identity",
+            "target_file_name": "2024년 4월 전기요금표.pdf",
+            "identity_match": True,
+        },
+    )
+    route = RecoveryPolicyRouter().route(
+        user_query="2024년 4월 전기요금표 자료를 파일 목록에서 찾아줘",
+        lane=PDF_FILE_LOOKUP,
+        decision=decision,
     )
 
     assert decision.sufficiency_status == SUPPORTED
     assert decision.official_support is True
     assert PDF_FILE_LOOKUP not in decision.blocked_lanes
+    assert route.target_lane == PDF_FILE_LOOKUP
+
+
+def test_pdf_file_lookup_hard_negative_identity_row_is_not_supported():
+    decision = AnswerSufficiencyJudge().evaluate(
+        user_query="2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+        lane=PDF_FILE_LOOKUP,
+        draft_answer="The diagnostic answer identifies the wrong similar file identity.",
+        retrieved_evidence_candidates=[
+            _candidate(
+                lane=PDF_FILE_LOOKUP,
+                trust=NATIVE_TEXT_HIGH,
+                citation="2024년도+7월+1일+시행+전기요금표(종합).pdf",
+                location={
+                    "type": "file_identity",
+                    "candidate_file_name": "2024년도+7월+1일+시행+전기요금표(종합).pdf",
+                },
+            )
+        ],
+        answer_shape_metadata={
+            "answer_intent": "file_identity",
+            "target_file_name": "2024년도+4월+1일+시행+전기요금표(종합)_출력용.pdf",
+            "candidate_file_name": "2024년도+7월+1일+시행+전기요금표(종합).pdf",
+            "silver_label": "SILVER_FILE_LOOKUP_HARD_NEGATIVE_V2",
+            "negative_strategy": "same_metadata_family_wrong_file_identity",
+        },
+    )
+
+    assert decision.sufficiency_status == UNSUPPORTED
+    assert "PDF_FILE_HARD_NEGATIVE_IDENTITY" in decision.blocked_lanes
+
+
+def test_pdf_file_lookup_filename_token_overlap_alone_is_not_supported():
+    decision = AnswerSufficiencyJudge().evaluate(
+        user_query="2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+        lane=PDF_FILE_LOOKUP,
+        draft_answer="The answer cites a similar electricity rate table file.",
+        retrieved_evidence_candidates=[
+            _candidate(
+                lane=PDF_FILE_LOOKUP,
+                trust=NATIVE_TEXT_HIGH,
+                citation="2024년도+4월+1일+시행+전기요금표(종합)_출력용.pdf",
+                location={
+                    "type": "file_identity",
+                    "candidate_file_name": "2024년도+4월+1일+시행+전기요금표(종합)_출력용.pdf",
+                },
+            )
+        ],
+        answer_shape_metadata={
+            "answer_intent": "file_identity",
+            "target_file_name": "2025년도+4월+1일+시행+전기요금표(종합).pdf",
+        },
+    )
+
+    assert decision.sufficiency_status == UNSUPPORTED
+    assert "PDF_FILE_IDENTITY_MISMATCH" in decision.blocked_lanes
+
+
+def test_pdf_file_lookup_generic_filename_requires_stronger_identity():
+    decision = AnswerSufficiencyJudge().evaluate(
+        user_query="LH 자료 파일 찾아줘",
+        lane=PDF_FILE_LOOKUP,
+        draft_answer="The answer identifies file.pdf.",
+        retrieved_evidence_candidates=[
+            _candidate(
+                lane=PDF_FILE_LOOKUP,
+                trust=NATIVE_TEXT_HIGH,
+                citation="file.pdf",
+                location={"type": "file_identity", "candidate_file_name": "file.pdf"},
+            )
+        ],
+        answer_shape_metadata={"answer_intent": "file_identity", "target_file_name": "file.pdf"},
+    )
+
+    assert decision.sufficiency_status == NEEDS_CLARIFICATION
+    assert "PDF_FILE_GENERIC_FILENAME_AMBIGUOUS" in decision.blocked_lanes
+
+
+def test_pdf_file_lookup_document_version_id_mismatch_fails_closed():
+    decision = AnswerSufficiencyJudge().evaluate(
+        user_query="정확한 PDF 파일 찾아줘",
+        lane=PDF_FILE_LOOKUP,
+        draft_answer="The answer identifies the requested file name.",
+        retrieved_evidence_candidates=[
+            _candidate(
+                lane=PDF_FILE_LOOKUP,
+                trust=NATIVE_TEXT_HIGH,
+                citation="report.pdf",
+                location={
+                    "type": "file_identity",
+                    "candidate_file_name": "report.pdf",
+                    "candidate_document_version_id": "docv_wrong",
+                },
+            )
+        ],
+        answer_shape_metadata={
+            "answer_intent": "file_identity",
+            "target_file_name": "report.pdf",
+            "target_document_version_id": "docv_expected",
+        },
+    )
+
+    assert decision.sufficiency_status == UNSUPPORTED
+    assert "PDF_FILE_DOCUMENT_VERSION_ID_MISMATCH" in decision.blocked_lanes
+
+
+def test_pdf_file_lookup_source_file_id_mismatch_fails_closed():
+    decision = AnswerSufficiencyJudge().evaluate(
+        user_query="정확한 PDF 파일 찾아줘",
+        lane=PDF_FILE_LOOKUP,
+        draft_answer="The answer identifies the requested file name.",
+        retrieved_evidence_candidates=[
+            _candidate(
+                lane=PDF_FILE_LOOKUP,
+                trust=NATIVE_TEXT_HIGH,
+                citation="report.pdf",
+                location={
+                    "type": "file_identity",
+                    "candidate_file_name": "report.pdf",
+                    "candidate_source_file_id": "source_wrong",
+                },
+            )
+        ],
+        answer_shape_metadata={
+            "answer_intent": "file_identity",
+            "target_file_name": "report.pdf",
+            "target_source_file_id": "source_expected",
+        },
+    )
+
+    assert decision.sufficiency_status == UNSUPPORTED
+    assert "PDF_FILE_SOURCE_FILE_ID_MISMATCH" in decision.blocked_lanes
 
 
 def test_native_pdf_text_outranks_ocr_fallback():
@@ -324,6 +465,11 @@ def test_diagnostic_harness_emits_reports_and_trace(tmp_path: Path):
     assert (tmp_path / "answer_recovery_lane_breakdown.md").exists()
     assert (tmp_path / "answer_recovery_failure_taxonomy.md").exists()
     assert (tmp_path / "answer_recovery_wrongly_supported_review.csv").exists()
+    readiness = json.loads((tmp_path / "answer_recovery_tuning_readiness_after_calibration.json").read_text(encoding="utf-8"))
+    assert readiness["decision"]["tuning_ready"] == "true_for_narrow_silver_only_calibration"
+    assert readiness["decision"]["production_promotion_ready"] is False
+    assert readiness["decision"]["official_answer_denominator_ready"] is False
+    assert readiness["counts"]["wrongly_supported_count"] == 0
     if registry_before is not None:
         assert registry.read_text(encoding="utf-8") == registry_before
 
@@ -372,6 +518,7 @@ def test_expanded_report_surfaces_taxonomy_and_blocks_diagnostic_evidence():
     assert report["policy"]["production_index_mutation"] is False
     assert report["policy"]["broad_indexing"] is False
     assert report["policy"]["max_loop_iterations"] == 2
+    assert report["counts"]["wrongly_supported_count"] == 0
     assert all(
         int(iteration_count) <= report["policy"]["max_loop_iterations"]
         for iteration_count in report["failure_taxonomy"]["loop_iteration_distribution"].keys()

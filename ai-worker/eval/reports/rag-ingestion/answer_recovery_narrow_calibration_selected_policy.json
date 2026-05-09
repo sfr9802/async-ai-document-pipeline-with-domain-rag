@@ -1,0 +1,104 @@
+{
+  "counts": {
+    "average_loop_iterations": 1.814815,
+    "citation_coverage_after": 0.962162,
+    "citation_coverage_before": 0.935135,
+    "clarification_needed_count": 6,
+    "diagnostic_only_evidence_blocked_count": 8,
+    "hidden_xlsx_surface_attempt_count": 3,
+    "initially_supported": 148,
+    "pdf_file_lookup_content_mixing_attempt_count": 4,
+    "recovered_after_loop": 5,
+    "total_evaluated": 185,
+    "unsupported_correctly_blocked_count": 32,
+    "wrongly_supported_count": 0
+  },
+  "diagnostic_only": true,
+  "guardrails": {
+    "broad_indexing": false,
+    "frozen_gold_profile_selection": false,
+    "frozen_gold_training_rows": 0,
+    "native_pdf_text_outranks_ocr_fallback": true,
+    "ocr_idp_multimodal_denominator_role": "DIAGNOSTIC_ONLY",
+    "official_answer_denominator_opened": false,
+    "official_answer_denominator_ready": false,
+    "official_denominator_registry_changed": false,
+    "pdf_file_lookup_semantics": "file_identity_only",
+    "pdf_file_lookup_success_claims": {
+      "bbox": false,
+      "column": false,
+      "content": false,
+      "page": false,
+      "row": false,
+      "table": false,
+      "value": false
+    },
+    "production_index_mutation": false,
+    "production_promotion_ready": false,
+    "tuned_text_section_boost_bm25_promotion_status": "diagnostic_only"
+  },
+  "lane_breakdown": {
+    "IDP_SHADOW": {
+      "initially_supported": 0,
+      "supported_after_recovery": 0,
+      "total": 2,
+      "unsupported_correctly_blocked": 2,
+      "wrongly_supported": 0
+    },
+    "MULTIMODAL_SHADOW": {
+      "initially_supported": 0,
+      "supported_after_recovery": 0,
+      "total": 1,
+      "unsupported_correctly_blocked": 1,
+      "wrongly_supported": 0
+    },
+    "OCR_SHADOW": {
+      "initially_supported": 0,
+      "supported_after_recovery": 0,
+      "total": 1,
+      "unsupported_correctly_blocked": 1,
+      "wrongly_supported": 0
+    },
+    "PDF_CONTENT": {
+      "initially_supported": 38,
+      "supported_after_recovery": 38,
+      "total": 40,
+      "unsupported_correctly_blocked": 2,
+      "wrongly_supported": 0
+    },
+    "PDF_FILE_LOOKUP": {
+      "initially_supported": 10,
+      "supported_after_recovery": 10,
+      "total": 28,
+      "unsupported_correctly_blocked": 18,
+      "wrongly_supported": 0
+    },
+    "TEXT": {
+      "initially_supported": 67,
+      "supported_after_recovery": 72,
+      "total": 75,
+      "unsupported_correctly_blocked": 3,
+      "wrongly_supported": 0
+    },
+    "XLSX": {
+      "initially_supported": 33,
+      "supported_after_recovery": 33,
+      "total": 38,
+      "unsupported_correctly_blocked": 5,
+      "wrongly_supported": 0
+    }
+  },
+  "official_answer_denominator_ready": false,
+  "policy": {
+    "citation_coverage_threshold": 1.0,
+    "max_loop_iterations": 2,
+    "max_query_rewrites": 3,
+    "needs_clarification_routing_threshold": "current_ambiguous_or_missing_identity",
+    "needs_recovery_vs_unsupported_boundary": "keep_current_fail_closed",
+    "pdf_file_identity_exactness_rule": "exact_or_canonical_identity_required",
+    "support_score_threshold": 0.0
+  },
+  "production_promotion_ready": false,
+  "schema_version": "answer_recovery_narrow_calibration_selected_policy_v1",
+  "variant_name": "calibrated_identity_exact_v1"
+}

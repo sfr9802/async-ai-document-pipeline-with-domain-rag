@@ -8,10 +8,10 @@
 ## Counts
 
 - total_evaluated: `185`
-- initially_supported: `162`
+- initially_supported: `148`
 - recovered_after_loop: `5`
-- wrongly_supported_count: `10`
-- unsupported_correctly_blocked_count: `18`
+- wrongly_supported_count: `0`
+- unsupported_correctly_blocked_count: `32`
 - diagnostic_only_evidence_blocked_count: `8`
 - hidden_xlsx_surface_attempt_count: `3`
 - pdf_file_lookup_content_mixing_attempt_count: `4`

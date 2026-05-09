@@ -10527,34 +10527,44 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_005",
       "case_type": "pdf_file_lookup_identity",
@@ -10569,13 +10579,112 @@
       },
       "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
-      "loop_result": null,
+      "loop_result": {
+        "action": "ADJACENT_CONTEXT_EXPANSION",
+        "existing_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+        "existing_loop_invoked": true,
+        "final_answer": "근거를 찾지 못했습니다.",
+        "guardrails": {
+          "allow_broad_indexing": false,
+          "allow_unscoped": false,
+          "diagnostic_trace_required": true,
+          "max_iterations": 2,
+          "max_query_rewrites": 3,
+          "official_denominator_mutation": false,
+          "production_index_mutation": false
+        },
+        "loop_iterations": 2,
+        "query_rewrite_count": 1,
+        "recovered": false,
+        "stop_reason": "iter_cap",
+        "trace": [
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 0,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2024년",
+                "4월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          },
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 1,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2024년",
+                "4월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          }
+        ]
+      },
       "query": "2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
+        "action": "ADJACENT_CONTEXT_EXPANSION",
         "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
-        "recovery_actions": [],
+        "diagnostic_reason": "Expand adjacent context or rerun lane-specific retrieval under guardrails.",
+        "recovery_actions": [
+          "adjacent_context_expansion",
+          "lane_specific_retrieval_loop"
+        ],
         "target_lane": "PDF_FILE_LOOKUP"
       },
       "source_artifact": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv"
@@ -10586,34 +10695,44 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_006",
       "case_type": "pdf_file_lookup_identity",
@@ -10628,13 +10747,112 @@
       },
       "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
-      "loop_result": null,
+      "loop_result": {
+        "action": "ADJACENT_CONTEXT_EXPANSION",
+        "existing_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+        "existing_loop_invoked": true,
+        "final_answer": "근거를 찾지 못했습니다.",
+        "guardrails": {
+          "allow_broad_indexing": false,
+          "allow_unscoped": false,
+          "diagnostic_trace_required": true,
+          "max_iterations": 2,
+          "max_query_rewrites": 3,
+          "official_denominator_mutation": false,
+          "production_index_mutation": false
+        },
+        "loop_iterations": 2,
+        "query_rewrite_count": 1,
+        "recovered": false,
+        "stop_reason": "iter_cap",
+        "trace": [
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 0,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2024년",
+                "4월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          },
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 1,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2024년",
+                "4월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          }
+        ]
+      },
       "query": "2024년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
+        "action": "ADJACENT_CONTEXT_EXPANSION",
         "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
-        "recovery_actions": [],
+        "diagnostic_reason": "Expand adjacent context or rerun lane-specific retrieval under guardrails.",
+        "recovery_actions": [
+          "adjacent_context_expansion",
+          "lane_specific_retrieval_loop"
+        ],
         "target_lane": "PDF_FILE_LOOKUP"
       },
       "source_artifact": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv"
@@ -10716,34 +10934,44 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.8325
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.8325
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_008",
       "case_type": "pdf_file_lookup_identity",
@@ -10758,13 +10986,112 @@
       },
       "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
-      "loop_result": null,
+      "loop_result": {
+        "action": "ADJACENT_CONTEXT_EXPANSION",
+        "existing_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+        "existing_loop_invoked": true,
+        "final_answer": "근거를 찾지 못했습니다.",
+        "guardrails": {
+          "allow_broad_indexing": false,
+          "allow_unscoped": false,
+          "diagnostic_trace_required": true,
+          "max_iterations": 2,
+          "max_query_rewrites": 3,
+          "official_denominator_mutation": false,
+          "production_index_mutation": false
+        },
+        "loop_iterations": 2,
+        "query_rewrite_count": 1,
+        "recovered": false,
+        "stop_reason": "iter_cap",
+        "trace": [
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 0,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2024년",
+                "7월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          },
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 1,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2024년",
+                "7월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          }
+        ]
+      },
       "query": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
+        "action": "ADJACENT_CONTEXT_EXPANSION",
         "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
-        "recovery_actions": [],
+        "diagnostic_reason": "Expand adjacent context or rerun lane-specific retrieval under guardrails.",
+        "recovery_actions": [
+          "adjacent_context_expansion",
+          "lane_specific_retrieval_loop"
+        ],
         "target_lane": "PDF_FILE_LOOKUP"
       },
       "source_artifact": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv"
@@ -10775,34 +11102,44 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_009",
       "case_type": "pdf_file_lookup_identity",
@@ -10817,13 +11154,112 @@
       },
       "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
-      "loop_result": null,
+      "loop_result": {
+        "action": "ADJACENT_CONTEXT_EXPANSION",
+        "existing_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+        "existing_loop_invoked": true,
+        "final_answer": "근거를 찾지 못했습니다.",
+        "guardrails": {
+          "allow_broad_indexing": false,
+          "allow_unscoped": false,
+          "diagnostic_trace_required": true,
+          "max_iterations": 2,
+          "max_query_rewrites": 3,
+          "official_denominator_mutation": false,
+          "production_index_mutation": false
+        },
+        "loop_iterations": 2,
+        "query_rewrite_count": 1,
+        "recovered": false,
+        "stop_reason": "iter_cap",
+        "trace": [
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 0,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2024년",
+                "7월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          },
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 1,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2024년",
+                "7월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          }
+        ]
+      },
       "query": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
+        "action": "ADJACENT_CONTEXT_EXPANSION",
         "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
-        "recovery_actions": [],
+        "diagnostic_reason": "Expand adjacent context or rerun lane-specific retrieval under guardrails.",
+        "recovery_actions": [
+          "adjacent_context_expansion",
+          "lane_specific_retrieval_loop"
+        ],
         "target_lane": "PDF_FILE_LOOKUP"
       },
       "source_artifact": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv"
@@ -10834,34 +11270,44 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.824063
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.824063
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_010",
       "case_type": "pdf_file_lookup_identity",
@@ -10876,13 +11322,112 @@
       },
       "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
-      "loop_result": null,
+      "loop_result": {
+        "action": "ADJACENT_CONTEXT_EXPANSION",
+        "existing_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+        "existing_loop_invoked": true,
+        "final_answer": "근거를 찾지 못했습니다.",
+        "guardrails": {
+          "allow_broad_indexing": false,
+          "allow_unscoped": false,
+          "diagnostic_trace_required": true,
+          "max_iterations": 2,
+          "max_query_rewrites": 3,
+          "official_denominator_mutation": false,
+          "production_index_mutation": false
+        },
+        "loop_iterations": 2,
+        "query_rewrite_count": 1,
+        "recovered": false,
+        "stop_reason": "iter_cap",
+        "trace": [
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 0,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2024년",
+                "7월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          },
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 1,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2024년",
+                "7월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          }
+        ]
+      },
       "query": "2024년 7월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
+        "action": "ADJACENT_CONTEXT_EXPANSION",
         "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
-        "recovery_actions": [],
+        "diagnostic_reason": "Expand adjacent context or rerun lane-specific retrieval under guardrails.",
+        "recovery_actions": [
+          "adjacent_context_expansion",
+          "lane_specific_retrieval_loop"
+        ],
         "target_lane": "PDF_FILE_LOOKUP"
       },
       "source_artifact": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv"
@@ -10893,34 +11438,44 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.8325
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.8325
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_011",
       "case_type": "pdf_file_lookup_identity",
@@ -10935,13 +11490,112 @@
       },
       "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
-      "loop_result": null,
+      "loop_result": {
+        "action": "ADJACENT_CONTEXT_EXPANSION",
+        "existing_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+        "existing_loop_invoked": true,
+        "final_answer": "근거를 찾지 못했습니다.",
+        "guardrails": {
+          "allow_broad_indexing": false,
+          "allow_unscoped": false,
+          "diagnostic_trace_required": true,
+          "max_iterations": 2,
+          "max_query_rewrites": 3,
+          "official_denominator_mutation": false,
+          "production_index_mutation": false
+        },
+        "loop_iterations": 2,
+        "query_rewrite_count": 1,
+        "recovered": false,
+        "stop_reason": "iter_cap",
+        "trace": [
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 0,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2025년",
+                "4월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          },
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 1,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2025년",
+                "4월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          }
+        ]
+      },
       "query": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
+        "action": "ADJACENT_CONTEXT_EXPANSION",
         "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
-        "recovery_actions": [],
+        "diagnostic_reason": "Expand adjacent context or rerun lane-specific retrieval under guardrails.",
+        "recovery_actions": [
+          "adjacent_context_expansion",
+          "lane_specific_retrieval_loop"
+        ],
         "target_lane": "PDF_FILE_LOOKUP"
       },
       "source_artifact": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv"
@@ -10952,34 +11606,44 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_012",
       "case_type": "pdf_file_lookup_identity",
@@ -10994,13 +11658,112 @@
       },
       "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
-      "loop_result": null,
+      "loop_result": {
+        "action": "ADJACENT_CONTEXT_EXPANSION",
+        "existing_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+        "existing_loop_invoked": true,
+        "final_answer": "근거를 찾지 못했습니다.",
+        "guardrails": {
+          "allow_broad_indexing": false,
+          "allow_unscoped": false,
+          "diagnostic_trace_required": true,
+          "max_iterations": 2,
+          "max_query_rewrites": 3,
+          "official_denominator_mutation": false,
+          "production_index_mutation": false
+        },
+        "loop_iterations": 2,
+        "query_rewrite_count": 1,
+        "recovered": false,
+        "stop_reason": "iter_cap",
+        "trace": [
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 0,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2025년",
+                "4월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          },
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 1,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2025년",
+                "4월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          }
+        ]
+      },
       "query": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
+        "action": "ADJACENT_CONTEXT_EXPANSION",
         "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
-        "recovery_actions": [],
+        "diagnostic_reason": "Expand adjacent context or rerun lane-specific retrieval under guardrails.",
+        "recovery_actions": [
+          "adjacent_context_expansion",
+          "lane_specific_retrieval_loop"
+        ],
         "target_lane": "PDF_FILE_LOOKUP"
       },
       "source_artifact": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv"
@@ -11011,34 +11774,44 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.824063
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.824063
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_013",
       "case_type": "pdf_file_lookup_identity",
@@ -11053,13 +11826,112 @@
       },
       "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
-      "loop_result": null,
+      "loop_result": {
+        "action": "ADJACENT_CONTEXT_EXPANSION",
+        "existing_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+        "existing_loop_invoked": true,
+        "final_answer": "근거를 찾지 못했습니다.",
+        "guardrails": {
+          "allow_broad_indexing": false,
+          "allow_unscoped": false,
+          "diagnostic_trace_required": true,
+          "max_iterations": 2,
+          "max_query_rewrites": 3,
+          "official_denominator_mutation": false,
+          "production_index_mutation": false
+        },
+        "loop_iterations": 2,
+        "query_rewrite_count": 1,
+        "recovered": false,
+        "stop_reason": "iter_cap",
+        "trace": [
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 0,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2025년",
+                "4월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          },
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 1,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "2025년",
+                "4월",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          }
+        ]
+      },
       "query": "2025년 4월 전기요금 종합표 자료를 파일 목록에서 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
+        "action": "ADJACENT_CONTEXT_EXPANSION",
         "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
-        "recovery_actions": [],
+        "diagnostic_reason": "Expand adjacent context or rerun lane-specific retrieval under guardrails.",
+        "recovery_actions": [
+          "adjacent_context_expansion",
+          "lane_specific_retrieval_loop"
+        ],
         "target_lane": "PDF_FILE_LOOKUP"
       },
       "source_artifact": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv"
@@ -11141,34 +12013,44 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_015",
       "case_type": "pdf_file_lookup_identity",
@@ -11183,13 +12065,110 @@
       },
       "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
-      "loop_result": null,
+      "loop_result": {
+        "action": "ADJACENT_CONTEXT_EXPANSION",
+        "existing_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+        "existing_loop_invoked": true,
+        "final_answer": "근거를 찾지 못했습니다.",
+        "guardrails": {
+          "allow_broad_indexing": false,
+          "allow_unscoped": false,
+          "diagnostic_trace_required": true,
+          "max_iterations": 2,
+          "max_query_rewrites": 3,
+          "official_denominator_mutation": false,
+          "production_index_mutation": false
+        },
+        "loop_iterations": 2,
+        "query_rewrite_count": 1,
+        "recovered": false,
+        "stop_reason": "iter_cap",
+        "trace": [
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 0,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "해당",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "해당 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "해당 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          },
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 1,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "해당",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "해당 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "해당 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          }
+        ]
+      },
       "query": "해당 전기요금 종합표 자료를 파일 목록에서 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
+        "action": "ADJACENT_CONTEXT_EXPANSION",
         "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
-        "recovery_actions": [],
+        "diagnostic_reason": "Expand adjacent context or rerun lane-specific retrieval under guardrails.",
+        "recovery_actions": [
+          "adjacent_context_expansion",
+          "lane_specific_retrieval_loop"
+        ],
         "target_lane": "PDF_FILE_LOOKUP"
       },
       "source_artifact": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv"
@@ -11200,34 +12179,44 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_HARD_NEGATIVE_IDENTITY"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
-        "recommended_recovery_actions": [],
+        "failure_type": "INSUFFICIENT_EVIDENCE",
+        "official_support": false,
+        "recommended_recovery_actions": [
+          "file_identity_clarification",
+          "retrieve_exact_file_identity"
+        ],
         "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.82875
+        "sufficiency_status": "UNSUPPORTED",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_016",
       "case_type": "pdf_file_lookup_identity",
@@ -11242,13 +12231,110 @@
       },
       "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
-      "loop_result": null,
+      "loop_result": {
+        "action": "ADJACENT_CONTEXT_EXPANSION",
+        "existing_loop_component": "app.capabilities.agent.loop.AgentLoopController",
+        "existing_loop_invoked": true,
+        "final_answer": "근거를 찾지 못했습니다.",
+        "guardrails": {
+          "allow_broad_indexing": false,
+          "allow_unscoped": false,
+          "diagnostic_trace_required": true,
+          "max_iterations": 2,
+          "max_query_rewrites": 3,
+          "official_denominator_mutation": false,
+          "production_index_mutation": false
+        },
+        "loop_iterations": 2,
+        "query_rewrite_count": 1,
+        "recovered": false,
+        "stop_reason": "iter_cap",
+        "trace": [
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 0,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "해당",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "해당 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "해당 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          },
+          {
+            "critique": {
+              "confidence": 0.75,
+              "criticName": "rule",
+              "gapReason": "answer length 13 < 40 chars",
+              "gapType": "missing_facts",
+              "llmTokensUsed": 0,
+              "sufficient": false
+            },
+            "guardrails": {
+              "allow_broad_indexing": false,
+              "allow_unscoped": false,
+              "official_denominator_mutation": false,
+              "production_index_mutation": false
+            },
+            "iter": 1,
+            "lane": "PDF_FILE_LOOKUP",
+            "query": {
+              "filters": {},
+              "intent": "other",
+              "keywords": [
+                "해당",
+                "전기요금",
+                "종합표",
+                "자료를",
+                "파일",
+                "목록에서",
+                "찾아줘"
+              ],
+              "normalized": "해당 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "original": "해당 전기요금 종합표 자료를 파일 목록에서 찾아줘",
+              "parserName": "regex",
+              "rewrites": []
+            },
+            "retrieved_chunk_ids": [],
+            "route_action": "ADJACENT_CONTEXT_EXPANSION"
+          }
+        ]
+      },
       "query": "해당 전기요금 종합표 자료를 파일 목록에서 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
+        "action": "ADJACENT_CONTEXT_EXPANSION",
         "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
-        "recovery_actions": [],
+        "diagnostic_reason": "Expand adjacent context or rerun lane-specific retrieval under guardrails.",
+        "recovery_actions": [
+          "adjacent_context_expansion",
+          "lane_specific_retrieval_loop"
+        ],
         "target_lane": "PDF_FILE_LOOKUP"
       },
       "source_artifact": "ai-worker/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv"
@@ -11259,34 +12345,38 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_GENERIC_FILENAME_AMBIGUOUS"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "Generic PDF filename match is insufficient without document_version_id or source_file_id confirmation.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
+        "failure_type": "AMBIGUOUS_QUERY",
+        "official_support": false,
         "recommended_recovery_actions": [],
-        "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.809063
+        "required_followup_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "sufficiency_status": "NEEDS_CLARIFICATION",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_GENERIC_FILENAME_AMBIGUOUS"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "Generic PDF filename match is insufficient without document_version_id or source_file_id confirmation.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
+        "failure_type": "AMBIGUOUS_QUERY",
+        "official_support": false,
         "recommended_recovery_actions": [],
-        "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.809063
+        "required_followup_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "sufficiency_status": "NEEDS_CLARIFICATION",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_017",
       "case_type": "pdf_file_lookup_identity",
@@ -11299,14 +12389,14 @@
         "promotion_evidence": false,
         "tuned_text_section_boost_bm25_promotion_status": "diagnostic_only"
       },
-      "expected_official_support_allowed": true,
+      "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
       "loop_result": null,
       "query": "건설사업관리를 건설산업기본법 제2조 기준으로 정의한 LH 자료 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
-        "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
+        "action": "ASK_CLARIFICATION",
+        "clarification_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "diagnostic_reason": "Ask a targeted clarification question.",
         "recovery_actions": [],
         "target_lane": "PDF_FILE_LOOKUP"
       },
@@ -11318,34 +12408,38 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_GENERIC_FILENAME_AMBIGUOUS"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "Generic PDF filename match is insufficient without document_version_id or source_file_id confirmation.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
+        "failure_type": "AMBIGUOUS_QUERY",
+        "official_support": false,
         "recommended_recovery_actions": [],
-        "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.81375
+        "required_followup_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "sufficiency_status": "NEEDS_CLARIFICATION",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_GENERIC_FILENAME_AMBIGUOUS"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "Generic PDF filename match is insufficient without document_version_id or source_file_id confirmation.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
+        "failure_type": "AMBIGUOUS_QUERY",
+        "official_support": false,
         "recommended_recovery_actions": [],
-        "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.81375
+        "required_followup_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "sufficiency_status": "NEEDS_CLARIFICATION",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_018",
       "case_type": "pdf_file_lookup_identity",
@@ -11358,14 +12452,14 @@
         "promotion_evidence": false,
         "tuned_text_section_boost_bm25_promotion_status": "diagnostic_only"
       },
-      "expected_official_support_allowed": true,
+      "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
       "loop_result": null,
       "query": "전기공사 준공 시 제출서류가 LHCS 10 10 35를 따른다는 자료 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
-        "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
+        "action": "ASK_CLARIFICATION",
+        "clarification_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "diagnostic_reason": "Ask a targeted clarification question.",
         "recovery_actions": [],
         "target_lane": "PDF_FILE_LOOKUP"
       },
@@ -11377,34 +12471,38 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_GENERIC_FILENAME_AMBIGUOUS"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "Generic PDF filename match is insufficient without document_version_id or source_file_id confirmation.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
+        "failure_type": "AMBIGUOUS_QUERY",
+        "official_support": false,
         "recommended_recovery_actions": [],
-        "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.812812
+        "required_followup_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "sufficiency_status": "NEEDS_CLARIFICATION",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_GENERIC_FILENAME_AMBIGUOUS"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "Generic PDF filename match is insufficient without document_version_id or source_file_id confirmation.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
+        "failure_type": "AMBIGUOUS_QUERY",
+        "official_support": false,
         "recommended_recovery_actions": [],
-        "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.812812
+        "required_followup_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "sufficiency_status": "NEEDS_CLARIFICATION",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_019",
       "case_type": "pdf_file_lookup_identity",
@@ -11417,14 +12515,14 @@
         "promotion_evidence": false,
         "tuned_text_section_boost_bm25_promotion_status": "diagnostic_only"
       },
-      "expected_official_support_allowed": true,
+      "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
       "loop_result": null,
       "query": "공사현장 표지 제작과 설치 기준이 나오는 LH 자료 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
-        "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
+        "action": "ASK_CLARIFICATION",
+        "clarification_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "diagnostic_reason": "Ask a targeted clarification question.",
         "recovery_actions": [],
         "target_lane": "PDF_FILE_LOOKUP"
       },
@@ -11436,34 +12534,38 @@
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_GENERIC_FILENAME_AMBIGUOUS"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "Generic PDF filename match is insufficient without document_version_id or source_file_id confirmation.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
+        "failure_type": "AMBIGUOUS_QUERY",
+        "official_support": false,
         "recommended_recovery_actions": [],
-        "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.812812
+        "required_followup_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "sufficiency_status": "NEEDS_CLARIFICATION",
+        "support_score": 0.0
       },
       "before_decision": {
         "allowed_lanes": [
           "PDF_FILE_LOOKUP"
         ],
         "best_trust_tier": "NATIVE_TEXT_HIGH",
-        "blocked_lanes": [],
+        "blocked_lanes": [
+          "PDF_FILE_GENERIC_FILENAME_AMBIGUOUS"
+        ],
         "citation_coverage": 1.0,
         "cited_evidence_count": 1,
-        "diagnostic_reason": "Answer has cited, non-diagnostic evidence and passes deterministic sufficiency checks.",
+        "diagnostic_reason": "Generic PDF filename match is insufficient without document_version_id or source_file_id confirmation.",
         "evidence_count": 1,
-        "failure_type": "",
-        "official_support": true,
+        "failure_type": "AMBIGUOUS_QUERY",
+        "official_support": false,
         "recommended_recovery_actions": [],
-        "required_followup_question": "",
-        "sufficiency_status": "SUPPORTED",
-        "support_score": 0.812812
+        "required_followup_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "sufficiency_status": "NEEDS_CLARIFICATION",
+        "support_score": 0.0
       },
       "case_id": "expanded_pdf_file_lookup_020",
       "case_type": "pdf_file_lookup_identity",
@@ -11476,14 +12578,14 @@
         "promotion_evidence": false,
         "tuned_text_section_boost_bm25_promotion_status": "diagnostic_only"
       },
-      "expected_official_support_allowed": true,
+      "expected_official_support_allowed": false,
       "lane": "PDF_FILE_LOOKUP",
       "loop_result": null,
       "query": "공사대금지급 알림 서비스에서 빠진 내용은 하도급관리를 따른다는 자료 찾아줘",
       "route": {
-        "action": "NOOP_SUPPORTED",
-        "clarification_question": "",
-        "diagnostic_reason": "Answer already supported.",
+        "action": "ASK_CLARIFICATION",
+        "clarification_question": "파일 이름이나 시행일 기준으로 찾을까요, 아니면 PDF 본문 내용 기준으로 확인할까요?",
+        "diagnostic_reason": "Ask a targeted clarification question.",
         "recovery_actions": [],
         "target_lane": "PDF_FILE_LOOKUP"
       },
@@ -12651,12 +13753,12 @@
   "counts": {
     "diagnostic_only_evidence_blocked_count": 8,
     "hidden_xlsx_surface_attempt_count": 3,
-    "initially_supported": 162,
+    "initially_supported": 148,
     "pdf_file_lookup_content_mixing_attempt_count": 4,
     "recovered_after_loop": 5,
     "total_evaluated": 185,
-    "unsupported_correctly_blocked_count": 18,
-    "wrongly_supported_count": 10
+    "unsupported_correctly_blocked_count": 32,
+    "wrongly_supported_count": 0
   },
   "failure_taxonomy": {
     "citation_coverage_delta_by_lane": {
@@ -12669,26 +13771,28 @@
       "XLSX": 0.0
     },
     "clarification_by_failure_type": {
+      "AMBIGUOUS_QUERY": 4,
       "NEEDS_USER_CONSTRAINT": 2
     },
     "failure_type_counts": {
-      "INSUFFICIENT_EVIDENCE": 12,
+      "AMBIGUOUS_QUERY": 4,
+      "INSUFFICIENT_EVIDENCE": 22,
       "LANE_MISMATCH": 4,
       "NEEDS_USER_CONSTRAINT": 2,
-      "NONE": 167
+      "NONE": 153
     },
     "loop_iteration_distribution": {
       "1": 5,
-      "2": 12
+      "2": 22
     },
     "recovery_success_by_lane": {
       "TEXT": 5
     },
     "status_counts": {
-      "NEEDS_CLARIFICATION": 2,
+      "NEEDS_CLARIFICATION": 6,
       "NEEDS_RECOVERY": 8,
-      "SUPPORTED": 167,
-      "UNSUPPORTED": 8
+      "SUPPORTED": 153,
+      "UNSUPPORTED": 18
     }
   },
   "lane_breakdown": {
@@ -12729,13 +13833,13 @@
       "wrongly_supported": 0
     },
     "PDF_FILE_LOOKUP": {
-      "clarification_needed": 0,
-      "initially_supported": 24,
-      "supported_after_recovery": 24,
+      "clarification_needed": 4,
+      "initially_supported": 10,
+      "supported_after_recovery": 10,
       "total": 28,
-      "unsupported_after_recovery": 4,
-      "unsupported_correctly_blocked": 4,
-      "wrongly_supported": 10
+      "unsupported_after_recovery": 18,
+      "unsupported_correctly_blocked": 18,
+      "wrongly_supported": 0
     },
     "TEXT": {
       "clarification_needed": 0,

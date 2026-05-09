@@ -75,6 +75,7 @@ def main(argv: list[str] | None = None) -> int:
     plan = build_recovery_loop_plan()
     diagnostic = run_diagnostic_cases()
     expanded = run_expanded_diagnostic_cases()
+    readiness = build_tuning_readiness_after_calibration(expanded["report"])
 
     write_json(report_dir / "answer_recovery_existing_components_report.json", components)
     write_text(report_dir / "answer_recovery_existing_components_report.md", render_components_md(components))
@@ -107,6 +108,11 @@ def main(argv: list[str] | None = None) -> int:
             "diagnostic_reason",
         ],
     )
+    write_json(report_dir / "answer_recovery_tuning_readiness_after_calibration.json", readiness)
+    write_text(
+        report_dir / "answer_recovery_tuning_readiness_after_calibration.md",
+        render_tuning_readiness_md(readiness),
+    )
 
     print(
         json.dumps(
@@ -117,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
                 "recovered_after_loop": diagnostic["report"]["counts"]["recovered_after_loop"],
                 "report": repo_relative(report_dir / "answer_sufficiency_diagnostic_report.json"),
                 "expanded_report": repo_relative(report_dir / "answer_sufficiency_expanded_diagnostic_report.json"),
+                "tuning_ready": readiness["decision"]["tuning_ready"],
             },
             ensure_ascii=False,
             indent=2,
@@ -798,17 +805,36 @@ def sample_pdf_file_lookup_cases() -> tuple[list[DiagnosticCase], dict[str, Any]
     cases: list[DiagnosticCase] = []
     for index, (path, row) in enumerate(rows[:28], start=1):
         query = first_present(row, "query") or f"PDF 파일 identity 진단 {index}"
-        file_name = first_present(row, "expected_file_name", "source_file_name") or "file.pdf"
-        document_version_id = first_present(row, "expected_document_version_id") or ""
+        candidate_file_name = first_present(row, "expected_file_name", "source_file_name") or "file.pdf"
+        target_file_name = first_present(row, "positive_expected_file_name") or candidate_file_name
+        candidate_document_version_id = first_present(row, "expected_document_version_id") or ""
+        target_document_version_id = first_present(row, "positive_expected_document_version_id") or candidate_document_version_id
         is_hard_negative = "hard_negative" in path.name or "HARD_NEGATIVE" in json.dumps(row, ensure_ascii=False)
         is_content_mixing = index % 7 == 0
+        generic_identity = is_generic_pdf_filename_for_report(candidate_file_name) and not (
+            candidate_document_version_id or first_present(row, "source_file_id", "expected_source_file_id")
+        )
         metadata = base_case_metadata(
             "PDF_FILE_LOOKUP",
             path,
             row,
             case_type="pdf_file_lookup_content_mixing" if is_content_mixing else "pdf_file_lookup_identity",
-            expected_official_support_allowed=not is_hard_negative and not is_content_mixing,
+            expected_official_support_allowed=not is_hard_negative and not is_content_mixing and not generic_identity,
         )
+        metadata = {
+            **metadata,
+            "target_file_name": target_file_name,
+            "candidate_file_name": candidate_file_name,
+            "target_document_version_id": target_document_version_id,
+            "candidate_document_version_id": candidate_document_version_id,
+            "target_source_file_id": first_present(row, "positive_source_file_id", "expected_source_file_id"),
+            "candidate_source_file_id": first_present(row, "source_file_id", "expected_source_file_id"),
+            "identity_match": canonical_file_name_for_report(target_file_name) == canonical_file_name_for_report(candidate_file_name),
+            "pdf_file_lookup_hard_negative": is_hard_negative,
+            "silver_label": first_present(row, "silver_label"),
+            "negative_strategy": first_present(row, "negative_strategy"),
+            "generic_filename_risk": generic_identity,
+        }
         if is_content_mixing:
             metadata = {**metadata, "answer_intent": "table"}
             query = f"{query} 본문 표 값까지 알려줘"
@@ -819,18 +845,19 @@ def sample_pdf_file_lookup_cases() -> tuple[list[DiagnosticCase], dict[str, Any]
                 f"expanded_pdf_file_lookup_{index:03d}",
                 PDF_FILE_LOOKUP,
                 query,
-                f"The diagnostic answer identifies file identity `{file_name}` only.",
+                f"The diagnostic answer identifies file identity `{candidate_file_name}` only.",
                 (
                     evidence(
                         PDF_FILE_LOOKUP,
                         NATIVE_TEXT_HIGH,
-                        file_name,
+                        candidate_file_name,
                         {
                             "type": "file_identity",
-                            "expected_file_name": file_name,
-                            "document_version_id_present": bool(document_version_id),
+                            "candidate_file_name": candidate_file_name,
+                            "candidate_document_version_id": candidate_document_version_id,
+                            "document_version_id_present": bool(candidate_document_version_id),
                         },
-                        f"file identity: {file_name}",
+                        f"file identity: {candidate_file_name}",
                     ),
                 ),
                 metadata,
@@ -1014,6 +1041,68 @@ def build_expanded_taxonomy(case_reports: Sequence[Mapping[str, Any]]) -> dict[s
         "lane_breakdown": dict(sorted(lane_breakdown.items())),
         "failure_taxonomy": failure_taxonomy,
         "wrongly_supported_rows": wrongly_supported_rows,
+    }
+
+
+def build_tuning_readiness_after_calibration(expanded_report: Mapping[str, Any]) -> dict[str, Any]:
+    counts = expanded_report["counts"]
+    policy = expanded_report["policy"]
+    guardrails_pass = all(
+        [
+            policy["official_answer_denominator_opened"] is False,
+            policy["official_denominator_registry_changed"] is False,
+            policy["production_index_mutation"] is False,
+            policy["broad_indexing"] is False,
+            policy["frozen_gold_training_rows"] == 0,
+            policy["frozen_gold_profile_selection"] is False,
+            policy["tuned_text_section_boost_bm25_promotion_status"] == "diagnostic_only",
+            policy["ocr_idp_multimodal_denominator_role"] == "DIAGNOSTIC_ONLY",
+            policy["native_pdf_text_outranks_ocr_fallback"] is True,
+            not any(policy["pdf_file_lookup_success_claims"].values()),
+        ]
+    )
+    wrongly_supported_count = int(counts["wrongly_supported_count"])
+    if wrongly_supported_count > 0:
+        tuning_ready = "false"
+        reason = "wrongly_supported_count remains above zero after calibration."
+    elif guardrails_pass:
+        tuning_ready = "true_for_narrow_silver_only_calibration"
+        reason = "No wrongly-supported cases remain and diagnostic guardrails pass."
+    else:
+        tuning_ready = "false"
+        reason = "One or more diagnostic guardrails failed."
+    return {
+        "schema_version": "answer_recovery_tuning_readiness_after_calibration_v1",
+        "status": "PASS" if guardrails_pass and wrongly_supported_count == 0 else "BLOCKED",
+        "decision": {
+            "tuning_ready": tuning_ready,
+            "production_promotion_ready": False,
+            "official_answer_denominator_ready": False,
+            "reason": reason,
+        },
+        "counts": {
+            "total_evaluated": counts["total_evaluated"],
+            "wrongly_supported_count": wrongly_supported_count,
+            "unsupported_correctly_blocked_count": counts["unsupported_correctly_blocked_count"],
+            "hidden_xlsx_surface_attempt_count": counts["hidden_xlsx_surface_attempt_count"],
+            "pdf_file_lookup_content_mixing_attempt_count": counts["pdf_file_lookup_content_mixing_attempt_count"],
+            "diagnostic_only_evidence_blocked_count": counts["diagnostic_only_evidence_blocked_count"],
+            "recovered_after_loop": counts["recovered_after_loop"],
+        },
+        "guardrails": {
+            "official_denominator_registry_changed": policy["official_denominator_registry_changed"],
+            "official_answer_denominator_opened": policy["official_answer_denominator_opened"],
+            "production_index_mutation": policy["production_index_mutation"],
+            "broad_indexing": policy["broad_indexing"],
+            "frozen_gold_training_rows": policy["frozen_gold_training_rows"],
+            "frozen_gold_profile_selection": policy["frozen_gold_profile_selection"],
+            "tuned_text_section_boost_bm25_promotion_status": policy["tuned_text_section_boost_bm25_promotion_status"],
+            "pdf_file_lookup_semantics": policy["pdf_file_lookup_semantics"],
+            "pdf_file_lookup_success_claims": policy["pdf_file_lookup_success_claims"],
+            "ocr_idp_multimodal_denominator_role": policy["ocr_idp_multimodal_denominator_role"],
+            "native_pdf_text_outranks_ocr_fallback": policy["native_pdf_text_outranks_ocr_fallback"],
+        },
+        "next_action": "Proceed only to narrow silver-only calibration; do not run broad tuning or production promotion.",
     }
 
 
@@ -1304,6 +1393,19 @@ def pdf_content_location(row: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def canonical_file_name_for_report(value: str) -> str:
+    text = " ".join(str(value or "").lower().replace("\\", "/").split("/")[-1].replace("+", " ").split())
+    return text
+
+
+def is_generic_pdf_filename_for_report(value: str) -> bool:
+    filename = canonical_file_name_for_report(value)
+    if filename in {"file.pdf", "document.pdf", "scan.pdf", "report.pdf", "untitled.pdf", "sample.pdf"}:
+        return True
+    stem = filename[:-4] if filename.endswith(".pdf") else filename
+    return stem == "file" or (stem.startswith("file (") and stem.endswith(")"))
+
+
 def render_components_md(payload: Mapping[str, Any]) -> str:
     lines = [
         "# Answer Recovery Existing Components Report",
@@ -1448,6 +1550,33 @@ def render_failure_taxonomy_md(payload: Mapping[str, Any]) -> str:
     else:
         lines.append("- none: `0`")
     lines.append("")
+    return "\n".join(lines)
+
+
+def render_tuning_readiness_md(payload: Mapping[str, Any]) -> str:
+    decision_payload = payload["decision"]
+    lines = [
+        "# Answer Recovery Tuning Readiness After Calibration",
+        "",
+        f"- Status: `{payload['status']}`.",
+        f"- Tuning ready: `{decision_payload['tuning_ready']}`.",
+        f"- Production promotion ready: `{decision_payload['production_promotion_ready']}`.",
+        f"- Official answer denominator ready: `{decision_payload['official_answer_denominator_ready']}`.",
+        f"- Reason: {decision_payload['reason']}",
+        "",
+        "## Counts",
+        "",
+    ]
+    for key, value in payload["counts"].items():
+        lines.append(f"- {key}: `{value}`")
+    lines.extend(["", "## Guardrails", ""])
+    for key, value in payload["guardrails"].items():
+        if isinstance(value, Mapping):
+            compact = ", ".join(f"{subkey}={subvalue}" for subkey, subvalue in value.items())
+            lines.append(f"- {key}: `{compact}`")
+        else:
+            lines.append(f"- {key}: `{value}`")
+    lines.extend(["", f"- Next: {payload['next_action']}", ""])
     return "\n".join(lines)
 
 

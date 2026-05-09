@@ -193,3 +193,25 @@ report file and link it here.
 - Verification: `python ai-worker\scripts\rag_answer_recovery_diagnostic.py` passed; `python -m pytest ai-worker/tests/test_rag_answer_recovery_bridge.py` returned `15 passed`; official denominator registry diff remained empty.
 - Result: `tuned_text_section_boost_bm25` remains diagnostic-only; PDF FILE lookup remains file identity only with no content/page/bbox/table/row/column/value success claim; explicit file-identity intent now prevents filename marker false positives such as `전기요금표`.
 - Next: review the `wrongly_supported` PDF FILE hard-negative rows, then add identity-correctness checks before treating file-identity answer sufficiency as anything beyond diagnostic.
+
+
+## 2026-05-09 - PDF FILE answer sufficiency calibration
+
+- Status: `answer_recovery_policy_calibrated`.
+- Scope: analyzed PDF FILE lookup wrongly-supported hard negatives, required exact/canonical file identity verification for PDF FILE support, and kept file identity separate from content/page/bbox/table/row/column/value semantics.
+- Evidence: `ai-worker/eval/reports/rag-ingestion/pdf_file_lookup_wrongly_supported_root_cause.md`, `ai-worker/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_tuning_readiness_after_calibration.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_wrongly_supported_review.csv`.
+- Counts: expanded total `185`; PDF FILE lookup `28`; wrongly supported `10 -> 0`; PDF FILE unsupported correctly blocked `18`; hidden XLSX attempts blocked `3`; PDF FILE content-mixing blocked `4`; diagnostic-only evidence blocked `8`; recovered after loop `5`.
+- Verification: `python ai-worker\scripts\rag_pdf_file_lookup_wrongly_supported_root_cause.py` passed; `python ai-worker\scripts\rag_answer_recovery_diagnostic.py` passed; `python -m pytest ai-worker/tests/test_rag_answer_recovery_bridge.py` returned `20 passed`; official denominator registry diff remained empty.
+- Result: tuning readiness is `true_for_narrow_silver_only_calibration`; production promotion and official answer denominator readiness remain `false`.
+- Next: run only a narrow silver-only calibration pass if needed; do not run broad tuning or promotion until identity-correctness remains stable on fresh diagnostic rows.
+
+
+## 2026-05-10 - Narrow answer recovery silver calibration
+
+- Status: `narrow_silver_calibration_complete`.
+- Scope: added explicit diagnostic-only calibration config, evaluated deterministic policy variants over the expanded answer recovery diagnostic set, and selected the current exact/canonical PDF FILE identity policy without broad tuning or promotion.
+- Evidence: `ai-worker/eval/configs/answer_recovery_narrow_silver_calibration.yaml`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_report.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_report.json`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_variants.csv`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_selected_policy.json`.
+- Counts: variants `6`; selected `calibrated_identity_exact_v1`; total `185`; wrongly supported `0`; recovered after loop `5`; unsupported correctly blocked `32`; hidden XLSX blocked `3`; PDF FILE content-mixing blocked `4`; diagnostic-only evidence blocked `8`; citation coverage `0.935135 -> 0.962162`.
+- Verification: `python ai-worker\scripts\rag_answer_recovery_narrow_calibration.py --config ai-worker\eval\configs\answer_recovery_narrow_silver_calibration.yaml` passed; `python -m pytest ai-worker/tests/test_rag_answer_recovery_bridge.py ai-worker/tests/test_rag_answer_recovery_narrow_calibration.py` returned `24 passed`; official denominator registry diff remained empty.
+- Result: readiness remains `true_for_narrow_silver_only_calibration`; production promotion and official answer denominator readiness remain `false`.
+- Next: collect fresh non-frozen diagnostic PDF FILE identity rows, then rerun the same narrow calibration before any broader tuning discussion.

@@ -75,6 +75,22 @@ CONTENT_INTENT_MARKERS = {
     "값",
     "요약",
 }
+GENERIC_PDF_FILENAMES = {
+    "file.pdf",
+    "document.pdf",
+    "scan.pdf",
+    "report.pdf",
+    "untitled.pdf",
+    "sample.pdf",
+}
+GENERIC_PDF_FILENAMES = {
+    "file.pdf",
+    "document.pdf",
+    "scan.pdf",
+    "report.pdf",
+    "untitled.pdf",
+    "sample.pdf",
+}
 
 
 @dataclass(frozen=True)
@@ -258,6 +274,24 @@ class AnswerSufficiencyJudge:
                 cited,
                 best_trust,
             )
+
+        if lane == PDF_FILE_LOOKUP:
+            identity_failure = pdf_file_lookup_identity_failure(metadata, candidates)
+            if identity_failure:
+                return decision(
+                    identity_failure["status"],
+                    identity_failure["failure_type"],
+                    identity_failure["support_score"],
+                    citation_coverage,
+                    identity_failure["recommended_recovery_actions"],
+                    identity_failure["required_followup_question"],
+                    (PDF_FILE_LOOKUP,),
+                    identity_failure["blocked_lanes"],
+                    identity_failure["diagnostic_reason"],
+                    candidates,
+                    cited,
+                    best_trust,
+                )
 
         if lane == XLSX and any(item.hidden for item in candidates):
             return decision(
@@ -716,6 +750,132 @@ def support_score(draft_answer: str, candidates: Sequence[AnswerEvidenceCandidat
     return min(1.0, citation_coverage * 0.50 + trust * 0.20 + answer_part + count_part)
 
 
+def pdf_file_lookup_identity_failure(
+    metadata: Mapping[str, Any],
+    candidates: Sequence[AnswerEvidenceCandidate],
+) -> dict[str, Any] | None:
+    if metadata_truthy(metadata, "pdf_file_lookup_hard_negative") or hard_negative_label(metadata):
+        return {
+            "status": UNSUPPORTED,
+            "failure_type": INSUFFICIENT_EVIDENCE,
+            "support_score": 0.0,
+            "recommended_recovery_actions": ("file_identity_clarification", "retrieve_exact_file_identity"),
+            "required_followup_question": "",
+            "blocked_lanes": ("PDF_FILE_HARD_NEGATIVE_IDENTITY",),
+            "diagnostic_reason": "PDF FILE lookup hard-negative identity rows cannot make an answer supported.",
+        }
+
+    target_file = canonical_file_name(
+        first_identity_value(
+            metadata,
+            "target_file_name",
+            "requested_file_name",
+            "positive_expected_file_name",
+            "expected_file_name",
+            "canonical_file_name",
+        )
+    )
+    target_docv = clean(
+        first_identity_value(
+            metadata,
+            "target_document_version_id",
+            "positive_expected_document_version_id",
+            "expected_document_version_id",
+            "canonical_document_version_id",
+        )
+    )
+    target_source_file_id = clean(
+        first_identity_value(
+            metadata,
+            "target_source_file_id",
+            "positive_source_file_id",
+            "expected_source_file_id",
+            "canonical_source_file_id",
+        )
+    )
+    candidate_files = [canonical_file_name(candidate_file_name(item)) for item in candidates if candidate_file_name(item)]
+    candidate_docvs = [
+        clean(candidate_identity_value(item, "candidate_document_version_id", "document_version_id", "expected_document_version_id"))
+        for item in candidates
+    ]
+    candidate_source_ids = [
+        clean(candidate_identity_value(item, "candidate_source_file_id", "source_file_id", "expected_source_file_id"))
+        for item in candidates
+    ]
+    candidate_docvs = [value for value in candidate_docvs if value]
+    candidate_source_ids = [value for value in candidate_source_ids if value]
+
+    if target_docv and candidate_docvs and any(value != target_docv for value in candidate_docvs):
+        return {
+            "status": UNSUPPORTED,
+            "failure_type": INSUFFICIENT_EVIDENCE,
+            "support_score": 0.0,
+            "recommended_recovery_actions": ("retrieve_exact_file_identity",),
+            "required_followup_question": "",
+            "blocked_lanes": ("PDF_FILE_DOCUMENT_VERSION_ID_MISMATCH",),
+            "diagnostic_reason": "PDF FILE lookup document_version_id mismatch fails closed.",
+        }
+    if target_source_file_id and candidate_source_ids and any(value != target_source_file_id for value in candidate_source_ids):
+        return {
+            "status": UNSUPPORTED,
+            "failure_type": INSUFFICIENT_EVIDENCE,
+            "support_score": 0.0,
+            "recommended_recovery_actions": ("retrieve_exact_file_identity",),
+            "required_followup_question": "",
+            "blocked_lanes": ("PDF_FILE_SOURCE_FILE_ID_MISMATCH",),
+            "diagnostic_reason": "PDF FILE lookup source_file_id mismatch fails closed.",
+        }
+
+    exact_file_match = bool(target_file and candidate_files and all(value == target_file for value in candidate_files))
+    strong_id_match = bool(
+        (target_docv and candidate_docvs and all(value == target_docv for value in candidate_docvs))
+        or (
+            target_source_file_id
+            and candidate_source_ids
+            and all(value == target_source_file_id for value in candidate_source_ids)
+        )
+    )
+    explicit_verified = metadata_truthy(metadata, "canonical_file_identity_verified") or metadata_truthy(metadata, "identity_match")
+    candidate_is_generic = any(is_generic_pdf_filename(value) for value in candidate_files)
+    target_is_generic = bool(target_file and is_generic_pdf_filename(target_file))
+
+    if (candidate_is_generic or target_is_generic) and not strong_id_match:
+        return {
+            "status": NEEDS_CLARIFICATION,
+            "failure_type": AMBIGUOUS_QUERY,
+            "support_score": 0.0,
+            "recommended_recovery_actions": (),
+            "required_followup_question": targeted_question("", PDF_FILE_LOOKUP, AMBIGUOUS_QUERY),
+            "blocked_lanes": ("PDF_FILE_GENERIC_FILENAME_AMBIGUOUS",),
+            "diagnostic_reason": "Generic PDF filename match is insufficient without document_version_id or source_file_id confirmation.",
+        }
+    if target_file and candidate_files:
+        if exact_file_match:
+            return None
+        return {
+            "status": UNSUPPORTED,
+            "failure_type": INSUFFICIENT_EVIDENCE,
+            "support_score": 0.0,
+            "recommended_recovery_actions": ("file_identity_clarification", "retrieve_exact_file_identity"),
+            "required_followup_question": "",
+            "blocked_lanes": ("PDF_FILE_IDENTITY_MISMATCH",),
+            "diagnostic_reason": "Filename token overlap or similar filename evidence is insufficient for PDF FILE lookup support.",
+        }
+    if explicit_verified:
+        return None
+    if not target_file and not explicit_verified:
+        return {
+            "status": NEEDS_CLARIFICATION,
+            "failure_type": AMBIGUOUS_QUERY,
+            "support_score": 0.0,
+            "recommended_recovery_actions": (),
+            "required_followup_question": targeted_question("", PDF_FILE_LOOKUP, AMBIGUOUS_QUERY),
+            "blocked_lanes": ("PDF_FILE_IDENTITY_UNVERIFIED",),
+            "diagnostic_reason": "PDF FILE lookup support requires an exact or canonical file identity verification signal.",
+        }
+    return None
+
+
 def allowed_lanes_for(lane: str) -> tuple[str, ...]:
     lane = normalize_lane(lane)
     if lane == PDF_FILE_LOOKUP:
@@ -763,6 +923,66 @@ def asks_for_content_answer(query: str, metadata: Mapping[str, Any]) -> bool:
         return True
     joined = f"{query} {metadata.get('answer_shape', '')} {metadata.get('expected_answer_shape', '')}".lower()
     return any(marker.lower() in joined for marker in CONTENT_INTENT_MARKERS)
+
+
+def first_identity_value(mapping: Mapping[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = mapping.get(key)
+        if value is None:
+            continue
+        text = clean(value)
+        if text:
+            return text
+    return ""
+
+
+def candidate_identity_value(candidate: AnswerEvidenceCandidate, *keys: str) -> str:
+    location = candidate.location_json or {}
+    for key in keys:
+        for source in (candidate.metadata, location):
+            value = source.get(key) if isinstance(source, Mapping) else None
+            if value is None:
+                continue
+            text = clean(value)
+            if text:
+                return text
+    return ""
+
+
+def candidate_file_name(candidate: AnswerEvidenceCandidate) -> str:
+    return (
+        candidate_identity_value(candidate, "candidate_file_name", "file_name", "source_file_name", "expected_file_name")
+        or candidate.citation_text
+    )
+
+
+def canonical_file_name(value: str) -> str:
+    text = clean(value).lower().replace("\\", "/").split("/")[-1]
+    text = text.replace("+", " ")
+    return " ".join(text.split())
+
+
+def is_generic_pdf_filename(value: str) -> bool:
+    filename = canonical_file_name(value)
+    if filename in GENERIC_PDF_FILENAMES:
+        return True
+    stem = filename[:-4] if filename.endswith(".pdf") else filename
+    return stem == "file" or (stem.startswith("file (") and stem.endswith(")"))
+
+
+def hard_negative_label(metadata: Mapping[str, Any]) -> bool:
+    labels = " ".join(
+        clean(metadata.get(key))
+        for key in ("silver_label", "label", "negative_strategy", "case_type", "source_artifact")
+    ).upper()
+    return "HARD_NEGATIVE" in labels or "HNEG" in labels
+
+
+def metadata_truthy(metadata: Mapping[str, Any], key: str) -> bool:
+    value = metadata.get(key)
+    if isinstance(value, bool):
+        return value
+    return clean(value).lower() in {"1", "true", "yes", "y"}
 
 
 def xlsx_strict_wrapper_allowed(candidate: AnswerEvidenceCandidate) -> bool:
