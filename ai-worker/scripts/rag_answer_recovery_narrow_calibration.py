@@ -23,6 +23,10 @@ import yaml
 SCRIPT_DIR = Path(__file__).resolve().parent
 AI_WORKER_ROOT = SCRIPT_DIR.parents[0]
 REPO_ROOT = AI_WORKER_ROOT.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import rag_answer_recovery_report_artifacts as report_artifacts  # noqa: E402
 
 DEFAULT_CONFIG = AI_WORKER_ROOT / "eval" / "configs" / "answer_recovery_narrow_silver_calibration.yaml"
 DEFAULT_REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
@@ -37,15 +41,14 @@ NEEDS_RECOVERY = "NEEDS_RECOVERY"
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     config_path = resolve_path(args.config)
-    config = load_config(config_path)
+    config = report_artifacts.with_reporting_overrides(
+        load_config(config_path),
+        report_artifacts.reporting_overrides_from_args(args),
+    )
     report_dir = resolve_path(args.reports_dir or DEFAULT_REPORT_DIR)
     report_dir.mkdir(parents=True, exist_ok=True)
     report = run_calibration(config=config, config_path=config_path, report_dir=report_dir)
-    paths = config["report_paths"]
-    write_json(resolve_path(paths["calibration_report_json"]), report)
-    write_text(resolve_path(paths["calibration_report_md"]), render_report_md(report))
-    write_csv(resolve_path(paths["variants_csv"]), report["variants"])
-    write_json(resolve_path(paths["selected_policy_json"]), report["selected_policy"])
+    write_outputs(config, report)
     print(
         json.dumps(
             {
@@ -65,6 +68,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default=str(DEFAULT_CONFIG))
     parser.add_argument("--reports-dir", default=str(DEFAULT_REPORT_DIR))
+    report_artifacts.add_reporting_args(parser)
     return parser.parse_args(argv)
 
 
@@ -138,6 +142,17 @@ def run_calibration(*, config: Mapping[str, Any], config_path: Path, report_dir:
         "guardrail_status": guardrails,
         "official_denominator_registry_changed": registry_changed,
     }
+
+
+def write_outputs(config: Mapping[str, Any], report: Mapping[str, Any]) -> None:
+    options = report_artifacts.reporting_options(config)
+    paths = config["report_paths"]
+    if options["emit_stage_reports"]:
+        write_json(resolve_path(paths["calibration_report_json"]), report)
+        write_text(resolve_path(paths["calibration_report_md"]), render_report_md(report))
+        write_json(resolve_path(paths["selected_policy_json"]), report["selected_policy"])
+    if options["emit_csv"]:
+        write_csv(resolve_path(paths["variants_csv"]), report["variants"])
 
 
 def variant_metrics(

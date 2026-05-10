@@ -1,0 +1,95 @@
+schema_version: "1.0"
+round_id: round_01
+n_trials: 12
+evaluate: "eval.tuning.answer_recovery_optuna_objective:evaluate"
+direction: maximize
+objective_name: answer_recovery_safe_recall_guarded_score
+study_id: answer_recovery_safe_recall_round_01_readiness
+sampler:
+  type: TPESampler
+  params:
+    multivariate: false
+  seed: 42
+pruner:
+  type: NopPruner
+  params: {}
+search_space:
+  support_score_threshold:
+    type: float
+    low: 0.0
+    high: 0.85
+    step: 0.05
+    log: false
+  max_loop_iterations:
+    type: int
+    low: 0
+    high: 2
+    step: 1
+    log: false
+  max_query_rewrites:
+    type: int
+    low: 0
+    high: 3
+    step: 1
+    log: false
+  safe_context_variant:
+    type: categorical
+    choices:
+      - baseline_selected_policy
+      - text_adjacent_context_v1
+      - text_rewrite_then_adjacent_v1
+      - xlsx_strict_context_v1
+      - pdf_content_native_page_context_v1
+      - mixed_safe_context_v1
+fixed_params:
+  pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+  hidden_xlsx_blocking: true
+  diagnostic_only_support: false
+  production_index_mutation: false
+  vector_write_attempted: false
+  namespace_created: false
+  broad_indexing: false
+provenance:
+  kind: initial
+  source_round_id: null
+  source_bundle_hash: null
+  parent_config_hash: null
+  generated_at: "2026-05-10T00:00:00Z"
+  generated_by:
+    tool: codex
+    model: null
+    prompt_version: null
+    prompt_path: null
+  reviewer: null
+  rationale: >
+    Initial guarded answer-recovery readiness draft. Search axes are limited to
+    parameters already present in answer recovery calibration or safe-recall
+    configs. Execution is not ready because fresh non-frozen reviewed positive
+    candidates are missing.
+  diff_summary:
+    - action: add
+      target: support_score_threshold
+      before: null
+      after: "0.0..0.85 step 0.05"
+      evidence: "answer_recovery_narrow_silver_calibration.allowed_calibration_knobs.support_score_threshold"
+    - action: add
+      target: max_loop_iterations
+      before: null
+      after: "0..2"
+      evidence: "answer_recovery_safe_recall_tuning.allowed_tuning_knobs.max_loop_iterations"
+    - action: add
+      target: max_query_rewrites
+      before: null
+      after: "0..3"
+      evidence: "answer_recovery_safe_recall_tuning.allowed_tuning_knobs.max_query_rewrites"
+    - action: add
+      target: safe_context_variant
+      before: null
+      after: "diagnostic-safe variants only"
+      evidence: "answer_recovery_safe_recall_tuning.variants"
+notes: >
+  execution_ready=false; actual_round_execution_ready=false;
+  reason=fresh_non_frozen_reviewed_positive_candidates_missing;
+  promotion_evidence=false; no official denominator opening, no production
+  index mutation, no vector write, no namespace creation, no broad indexing,
+  no per-trial LLM steering, and no LLM-as-objective.

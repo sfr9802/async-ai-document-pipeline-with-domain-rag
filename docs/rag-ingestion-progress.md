@@ -215,3 +215,61 @@ report file and link it here.
 - Verification: `python ai-worker\scripts\rag_answer_recovery_narrow_calibration.py --config ai-worker\eval\configs\answer_recovery_narrow_silver_calibration.yaml` passed; `python -m pytest ai-worker/tests/test_rag_answer_recovery_bridge.py ai-worker/tests/test_rag_answer_recovery_narrow_calibration.py` returned `24 passed`; official denominator registry diff remained empty.
 - Result: readiness remains `true_for_narrow_silver_only_calibration`; production promotion and official answer denominator readiness remain `false`.
 - Next: collect fresh non-frozen diagnostic PDF FILE identity rows, then rerun the same narrow calibration before any broader tuning discussion.
+
+
+## 2026-05-10 - Answer recovery safe recall tuning v1
+
+- Status: `safe_recall_report_only_complete`.
+- Scope: ran `answer_recovery_safe_recall_tuning_v1` as a diagnostic-only sibling of the narrow calibration; no broad tuning, no production promotion, no official denominator opening, no production index mutation, no broad indexing, and no frozen-gold selection/training.
+- Evidence: `ai-worker/eval/configs/answer_recovery_safe_recall_tuning.yaml`, `ai-worker/scripts/rag_answer_recovery_safe_recall_tuning.py`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_safe_recall_baseline.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_safe_recall_tuning_report.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_safe_recall_selected_policy.json`.
+- Counts: variants `6`; selected `baseline_selected_policy` over `calibrated_identity_exact_v1`; full diagnostic total `185`; selection rows `173` after excluding frozen-gold-sourced rows `12`; wrongly supported `0`; recovered after loop `5`; unsupported correctly blocked `32`; hidden XLSX blocked `3`; PDF FILE content-mixing blocked `4`; diagnostic-only evidence blocked `8`; citation coverage `0.935135 -> 0.962162`; safe recovery candidate count `0`.
+- Verification: `python ai-worker/scripts/rag_answer_recovery_safe_recall_tuning.py --config ai-worker/eval/configs/answer_recovery_safe_recall_tuning.yaml` passed; focused pytest returned `31 passed`; official denominator registry diff remained empty.
+- Result: allowed TEXT/XLSX/PDF CONTENT safe-context variants produced no safe recall or citation-coverage improvement on the current diagnostic set, so the selected policy remains diagnostic-only with production promotion ready `false` and official answer denominator ready `false`.
+- Next: add fresh non-frozen diagnostic rows with actual unsupported positive cases before another safe-recall attempt; keep PDF FILE lookup exact/canonical identity only.
+
+
+## 2026-05-10 - Answer recovery safe recall missed-row triage v1
+
+- Status: `missed_row_triage_report_only_complete`.
+- Scope: analyzed the rows behind recovered-after-loop, remaining citation-uncovered, and unsupported-correctly-blocked counts from `answer_recovery_safe_recall_tuning_v1`; no policy promotion, official answer denominator opening, production index mutation, broad indexing, frozen-gold training/selection, local LLM judging, or Optuna tuning.
+- Evidence: `ai-worker/eval/configs/answer_recovery_safe_recall_missed_row_triage.yaml`, `ai-worker/scripts/rag_answer_recovery_safe_recall_missed_row_triage.py`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.json`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.csv`.
+- Counts: triage rows `37`; recovered-after-loop focus `5`; citation-uncovered focus `7`; unsupported-correctly-blocked focus `32`; category counts SAFE_EXISTING `5`, SAFE_CANONICAL `0`, INDEX_SCOPE_MISSING `5`, POLICY_BLOCKED_CORRECTLY `17`, GOLD_POLICY_REQUIRED `6`, DIAGNOSTIC_ONLY_DO_NOT_PROMOTE `4`, UNKNOWN `0`; selection rows stayed `173` after excluding frozen-gold-sourced rows `12`.
+- Verification: `python ai-worker/scripts/rag_answer_recovery_safe_recall_missed_row_triage.py --config ai-worker/eval/configs/answer_recovery_safe_recall_missed_row_triage.yaml` passed; focused pytest returned `37 passed`; official denominator registry diff remained empty.
+- Result: safe recovery category was found only for the existing five TEXT loop recoveries, and they remain diagnostic evidence. No production promotion was made because the report does not establish fresh non-frozen gold, official denominator readiness, or a production-safe policy change.
+- Next: gather fresh non-frozen unsupported-positive diagnostic rows with human policy decisions before another safe-recall attempt.
+
+
+## 2026-05-10 - Answer recovery embedding readiness v1
+
+- Status: `embedding_readiness_report_only_complete`.
+- Scope: inspected existing embedding/vector conventions, source-chunk provenance, staging namespace safety, and leakage risks for recovered, citation-uncovered, and unsupported-correctly-blocked answer recovery rows; no production index mutation, staging vector write, official denominator opening, policy promotion, frozen-gold selection/training, expected-answer embedding, or label embedding.
+- Evidence: `ai-worker/eval/configs/answer_recovery_embedding_readiness.yaml`, `ai-worker/scripts/rag_answer_recovery_embedding_readiness.py`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_embedding_readiness.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_embedding_readiness.json`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_embedding_backfill_manifest.jsonl`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_embedding_namespace_inventory.json`.
+- Counts: manifest rows `37`; EMBED_STAGING_PRODUCTION_ELIGIBLE_SOURCE `5`; SKIP_HIDDEN_XLSX `3`; SKIP_DIAGNOSTIC_ONLY_SHADOW `6`; SKIP_PDF_FILE_CONTENT_MIXING_RISK `4`; SKIP_FROZEN_GOLD_DERIVED_EVAL_CONTENT `4`; SKIP_EXPECTED_ANSWER_OR_LABEL `7`; SKIP_POLICY_BLOCKED `6`; REVIEW_GOLD_POLICY_REQUIRED `2`; INDEX_SCOPE_MISSING causes indexing-scope policy `3` and diagnostic-only source `2`.
+- Backend: local FAISS/SentenceTransformer conventions and existing indexes were detected, but `embedding_backend_available=false` for this step because no configured diagnostic staging namespace exists and the runner is report-only; staging backfill status `skipped_backend_unavailable`.
+- Verification: `python ai-worker/scripts/rag_answer_recovery_embedding_readiness.py --config ai-worker/eval/configs/answer_recovery_embedding_readiness.yaml` passed; new focused pytest returned `9 passed`; production index and official denominator registry were not changed.
+- Result: the five safe-existing TEXT rows have stable canonical chunk IDs and are already present in the local Namu embedded source index, but would only be eligible for a future diagnostic namespace backfill. Hidden XLSX, diagnostic-only, PDF FILE content-mixing, frozen-gold-derived, and expected-answer/label surfaces remain blocked.
+- Next: if staging embedding is needed, first create an explicit diagnostic namespace setup and source-text materialization check; keep official denominator and production promotion closed.
+
+
+## 2026-05-10 - Answer recovery embedding backend contract recheck v1
+
+- Status: `backend_available_detection_bug_fixed`.
+- Scope: reran `answer_recovery_embedding_backend_contract_recheck_v1` as diagnostic/report-only and split backend availability from staging backfill, namespace existence, and write permission.
+- Evidence: `ai-worker/eval/reports/rag-ingestion/answer_recovery_embedding_backend_contract_recheck.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_embedding_backend_contract_recheck.json`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_embedding_readiness.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_embedding_readiness.json`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.json`.
+- Backend: previous readiness backend value `false`; corrected backend value `true`; root cause was runner-side conflation of `perform_staging_backfill=false` / missing staging namespace with backend unavailability.
+- Backfill: corrected staging backfill status `skipped_backfill_disabled_by_config`; backend probe succeeded with `BAAI/bge-m3` dimension `1024`; vector write attempted `false`; namespace created `false`; production mutation `false`; denominator opened `false`.
+- Follow-on probe: `answer_recovery_existing_embedding_retrieval_probe_v1` started and passed read-only over the five safe existing source rows; all five target chunks were found at rank `1` in top-10 from namespace `namu-v4-2008-2026-04-retrieval-title-section-mseq512`.
+- Verification: backend contract runner passed; readiness runner passed; retrieval probe runner passed; focused readiness pytest `16 passed`; focused answer-recovery bundle `53 passed`; py_compile passed for the new/updated scripts.
+- Warnings: live embedding runs emitted existing environment warnings for `requests` dependency versions, deprecated `TRANSFORMERS_CACHE`, and PyTorch `expandable_segments` unsupported on this platform.
+- Result: official denominator registry unchanged; production promotion ready `false`; official answer denominator ready `false`; no expected answers, labels, hidden XLSX, PDF FILE content-mixing, or diagnostic-only evidence was made support-eligible.
+
+
+## 2026-05-10 - answer_recovery_report_artifact_compaction_v1
+
+- Status: `compact_report_default_enabled`; artifact_profile=`compact`.
+- Compact reports generated: `ai-worker/eval/reports/rag-ingestion/answer_recovery_tuning_report.md`, `ai-worker/eval/reports/rag-ingestion/answer_recovery_tuning_report.json`.
+- Legacy debug artifacts cleaned: `true` for generated embedding/backend/probe CSV/MD/JSON, JSONL manifest, and namespace inventory; tracked legacy artifacts were not removed.
+- Debug artifacts emitted: `false` by default; debug profile remains available behind explicit `artifact_profile=debug` or reporting flags.
+- Guardrails: production mutation=`false`; denominator opened=`false`; production promotion ready=`false`; official answer denominator ready=`false`; vector write attempted=`false`.
+- Verification: compact report runner passed with live backend/probe path; backend contract and readiness runners also passed in compact/default mode with `--skip-backend-probe`; focused compaction pytest `5 passed`; focused answer-recovery bundle `38 passed`.
+- Known warnings: focused pytest still emits pre-existing environment warnings for `requests` dependency versions, pytest-asyncio default fixture loop scope, and FAISS/numpy deprecation; live backend run also emits existing `TRANSFORMERS_CACHE` and PyTorch `expandable_segments` warnings.

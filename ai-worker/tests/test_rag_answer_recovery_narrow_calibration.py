@@ -76,6 +76,8 @@ def test_narrow_calibration_script_emits_reports_and_preserves_registry(tmp_path
             str(ROOT / "scripts" / "rag_answer_recovery_narrow_calibration.py"),
             "--config",
             str(CONFIG),
+            "--artifact-profile",
+            "debug",
         ],
         cwd=REPO_ROOT,
         check=True,
