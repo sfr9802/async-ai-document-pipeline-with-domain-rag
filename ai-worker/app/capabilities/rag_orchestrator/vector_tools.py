@@ -269,6 +269,7 @@ def retrieved_chunk_to_evidence(
             _metadata_any(metadata, "hiddenPolicyVersion", "hidden_policy_version")
             or _location_value(location_json, "hidden_policy_version")
         ),
+        diagnostic_only=_bool_metadata(metadata, "diagnosticOnly", "diagnostic_only"),
         extra={
             "retriever_metadata": dict(metadata),
             "poc_vector_wrapper": True,
@@ -486,6 +487,17 @@ def _string(value: Any, *, fallback: str = "") -> str:
 def _optional_string(value: Any) -> str | None:
     text = _string(value)
     return text or None
+
+
+def _bool_metadata(metadata: Mapping[str, Any], *keys: str) -> bool:
+    value = _metadata_any(metadata, *keys)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y"}
+    return False
 
 
 def _float_or_none(value: Any) -> float | None:

@@ -1,0 +1,523 @@
+schema_version: existing_manifest_license_usage_gate_config_v1
+task: rag_existing_dataset_license_usage_gate_v1
+mode: diagnostic_report_only
+project_usage_profile: NONCOMMERCIAL_INTERNAL_RESEARCH_AND_DEVELOPMENT
+description: >
+  Enrich already-collected manifests with explicit license and usage-gate
+  metadata for noncommercial internal OCR/MM and RAG experiments. This config
+  is conservative: rows are not marked VERIFIED unless a row-level manifest
+  field, source-family terms page, catalog metadata, or source-page proof is
+  available. The outputs are companion review artifacts only.
+
+inputs:
+  discover_repo_manifests: true
+  manifest_paths:
+    - D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/source_collection_20260510/manifest.csv
+    - D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/source_collection_20260510/manifest.json
+  repo_manifest_globs:
+    - "**/manifest.json"
+    - "**/manifest.csv"
+    - "**/manifest*.json"
+    - "**/manifest*.csv"
+    - "**/external_archive_manifest.json"
+    - "**/external_archive_manifest.csv"
+  exclude_path_contains:
+    - "/.git/"
+    - "/.pytest_cache/"
+    - "/__pycache__/"
+    - "/existing_manifest_license_enriched."
+    - "/license_review_required_rows.csv"
+
+network_verification:
+  enabled: false
+  max_source_page_checks: 30
+  timeout_seconds: 4
+  note: >
+    Disabled for deterministic report generation. The script supports bounded
+    source-page fetching, but this run relies on manifest metadata and explicit
+    configured source-family evidence URLs. Rows without explicit evidence stay
+    ambiguous or review-required.
+
+source_family_policies:
+  - source_family_ids: ["PUBLIC_DATA_PORTAL"]
+    domains: ["www.data.go.kr"]
+    source_page_contains:
+      - "15011688"
+      - "15013362"
+      - "15041048"
+      - "15051394"
+      - "15062604"
+      - "15063291"
+      - "15078729"
+      - "15083019"
+      - "15109587"
+      - "15110034"
+      - "15114991"
+      - "15115857"
+      - "15121219"
+      - "15123296"
+      - "15128397"
+      - "15129644"
+      - "15129688"
+      - "15137146"
+      - "15148325"
+      - "15158901"
+      - "15159068"
+      - "3036263"
+    license_status: VERIFIED_OPEN_PUBLIC_DATA
+    license_name: Public data portal item-level license - unrestricted use scope
+    license_type_code: DATA_GO_KR_UNRESTRICTED
+    source_terms_url: https://www.data.go.kr/ugs/selectPortalPolicyView.do
+    source_license_evidence_url: https://www.data.go.kr/catalog/{dataset_id}/fileData.json
+    evidence_text: 공공데이터포털 catalog JSON license field is 이용허락범위 제한 없음 for these dataset ids.
+    verification_method: revisited_data_go_kr_catalog_json_license_field
+    attribution_required: true
+    commercial_use_allowed: true
+    noncommercial_use_allowed: true
+    redistribution_allowed: true
+    derivative_allowed: true
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: true
+    vector_db_internal_allowed: true
+    ocr_processing_allowed: true
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: true
+    public_report_allowed: true
+    public_release_allowed: true
+    license_risk_level: LOW
+    requires_user_license_review: false
+    license_notes: Item-level catalog JSON was revisited and the license field was captured; still do not promote to support/gold without separate evidence policy.
+
+  - source_family_ids: ["PUBLIC_DATA_PORTAL"]
+    domains: ["www.data.go.kr"]
+    source_page_contains:
+      - "15048206"
+      - "15067469"
+    license_status: VERIFIED_KOGL_TYPE_1
+    license_name: KOGL Type 1 - attribution
+    license_type_code: KOGL-1
+    license_url: https://www.kogl.or.kr/info/license.do
+    source_terms_url: https://www.data.go.kr/ugs/selectPortalPolicyView.do
+    source_license_evidence_url: https://www.data.go.kr/catalog/{dataset_id}/fileData.json
+    evidence_text: 공공데이터포털 catalog JSON license field is 공공저작물 출처표시 제1유형 for these dataset ids.
+    verification_method: revisited_data_go_kr_catalog_json_license_field
+    attribution_required: true
+    commercial_use_allowed: true
+    noncommercial_use_allowed: true
+    redistribution_allowed: true
+    derivative_allowed: true
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: true
+    vector_db_internal_allowed: true
+    ocr_processing_allowed: true
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: true
+    public_report_allowed: true
+    public_release_allowed: true
+    license_risk_level: LOW
+    requires_user_license_review: false
+    license_notes: Item-level KOGL Type 1 evidence captured from catalog JSON; support/gold remains separate.
+
+  - source_family_ids: ["PUBLIC_DATA_PORTAL"]
+    domains: ["www.data.go.kr"]
+    source_page_contains:
+      - "15001549"
+    license_status: VERIFIED_KOGL_TYPE_2_NONCOMMERCIAL
+    license_name: KOGL Type 2 - attribution, noncommercial
+    license_type_code: KOGL-2
+    license_url: https://www.kogl.or.kr/info/license.do
+    source_terms_url: https://www.data.go.kr/ugs/selectPortalPolicyView.do
+    source_license_evidence_url: https://www.data.go.kr/catalog/15001549/fileData.json
+    evidence_text: 공공데이터포털 catalog JSON license field is 공공저작물 출처표시 + 상업적 이용금지 for dataset 15001549.
+    verification_method: revisited_data_go_kr_catalog_json_license_field
+    attribution_required: true
+    commercial_use_allowed: false
+    noncommercial_use_allowed: true
+    redistribution_allowed: true
+    derivative_allowed: true
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: true
+    vector_db_internal_allowed: true
+    ocr_processing_allowed: true
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: true
+    public_report_allowed: true
+    public_release_allowed: false
+    license_risk_level: MEDIUM
+    requires_user_license_review: true
+    license_notes: Noncommercial item-level evidence captured; public redistributable benchmark release stays blocked.
+
+  - source_family_ids: ["PUBLIC_DATA_PORTAL"]
+    domains: ["www.data.go.kr"]
+    source_page_contains:
+      - "15106838"
+      - "15123882"
+      - "15128187"
+    license_status: VERIFIED_KOGL_TYPE_4_NONCOMMERCIAL_NO_DERIVATIVES
+    license_name: KOGL Type 4 - attribution, noncommercial, no derivatives
+    license_type_code: KOGL-4
+    license_url: https://www.kogl.or.kr/info/license.do
+    source_terms_url: https://www.data.go.kr/ugs/selectPortalPolicyView.do
+    source_license_evidence_url: https://www.data.go.kr/catalog/{dataset_id}/fileData.json
+    evidence_text: 공공데이터포털 catalog JSON license field is 공공저작물 출처표시 + 상업적 이용금지 + 변경금지 for these dataset ids.
+    verification_method: revisited_data_go_kr_catalog_json_license_field
+    attribution_required: true
+    commercial_use_allowed: false
+    noncommercial_use_allowed: true
+    redistribution_allowed: true
+    derivative_allowed: false
+    no_derivatives: true
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: false
+    vector_db_internal_allowed: false
+    ocr_processing_allowed: false
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: false
+    public_report_allowed: true
+    public_release_allowed: false
+    license_risk_level: HIGH
+    requires_user_license_review: true
+    license_notes: No-derivatives item-level evidence captured; OCR/VLM transformation and vector staging remain blocked without explicit policy.
+
+  - source_family_ids: ["SEOUL_OPEN_DATA"]
+    domains: ["data.seoul.go.kr"]
+    source_page_contains:
+      - "OA-1176"
+    license_status: VERIFIED_KOGL_TYPE_1
+    license_name: Seoul Open Data KOGL Type 1
+    license_type_code: KOGL-1
+    license_url: https://www.kogl.or.kr/info/license.do
+    source_terms_url: https://data.seoul.go.kr/dataList/OA-1176/S/1/datasetView.do
+    source_license_evidence_url: https://data.seoul.go.kr/dataList/OA-1176/S/1/datasetView.do
+    evidence_text: Seoul Open Data dataset page shows 공공누리 1유형 출처표시, 상업적 이용 및 변경 가능.
+    verification_method: revisited_seoul_open_data_dataset_page
+    attribution_required: true
+    commercial_use_allowed: true
+    noncommercial_use_allowed: true
+    redistribution_allowed: true
+    derivative_allowed: true
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: true
+    vector_db_internal_allowed: true
+    ocr_processing_allowed: false
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: true
+    public_report_allowed: true
+    public_release_allowed: true
+    license_risk_level: LOW
+    requires_user_license_review: false
+    license_notes: Item-level Seoul dataset page evidence captured for OA-1176 rows; statbook list rows remain generic review-first.
+
+  - source_family_ids: ["HUGGING_FACE"]
+    domains: ["huggingface.co"]
+    source_page_contains:
+      - "nielsr/docvqa_1200_examples"
+    license_status: SOURCE_LICENSE_NOT_FOUND
+    license_name: Hugging Face dataset card/API license missing
+    license_type_code: HF_LICENSE_NULL
+    source_terms_url: https://huggingface.co/datasets/nielsr/docvqa_1200_examples
+    source_license_evidence_url: https://huggingface.co/api/datasets/nielsr/docvqa_1200_examples
+    evidence_text: Hugging Face dataset API returned cardData.license null for nielsr/docvqa_1200_examples on revisit.
+    verification_method: revisited_huggingface_dataset_api_license_null
+    attribution_required: false
+    commercial_use_allowed: false
+    noncommercial_use_allowed: false
+    redistribution_allowed: false
+    derivative_allowed: false
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: false
+    embedding_allowed: false
+    vector_db_internal_allowed: false
+    ocr_processing_allowed: false
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: false
+    public_report_allowed: false
+    public_release_allowed: false
+    license_risk_level: UNKNOWN
+    requires_user_license_review: true
+    license_notes: Dataset-specific license was not present on the revisited Hugging Face API/card; keep diagnostic hold until upstream rights are verified.
+
+  - source_family_ids: ["HUGGING_FACE"]
+    domains: ["huggingface.co"]
+    source_page_contains:
+      - "mychen76/receipt_cord_ocr_v2"
+    license_status: SOURCE_LICENSE_NOT_FOUND
+    license_name: Hugging Face dataset card/API license missing
+    license_type_code: HF_LICENSE_NULL
+    source_terms_url: https://huggingface.co/datasets/mychen76/receipt_cord_ocr_v2
+    source_license_evidence_url: https://huggingface.co/api/datasets/mychen76/receipt_cord_ocr_v2
+    evidence_text: Hugging Face dataset API returned cardData.license null for mychen76/receipt_cord_ocr_v2 on revisit.
+    verification_method: revisited_huggingface_dataset_api_license_null
+    attribution_required: false
+    commercial_use_allowed: false
+    noncommercial_use_allowed: false
+    redistribution_allowed: false
+    derivative_allowed: false
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: false
+    embedding_allowed: false
+    vector_db_internal_allowed: false
+    ocr_processing_allowed: false
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: false
+    public_report_allowed: false
+    public_release_allowed: false
+    license_risk_level: UNKNOWN
+    requires_user_license_review: true
+    license_notes: Dataset-specific license was not present on the revisited Hugging Face API/card; keep diagnostic hold until upstream rights are verified.
+
+  - source_family_ids: ["FUNSD"]
+    domains: ["guillaumejaume.github.io"]
+    license_status: VERIFIED_RESEARCH_ONLY
+    license_name: FUNSD noncommercial research and educational terms
+    license_type_code: RESEARCH_ONLY_NONCOMMERCIAL
+    source_terms_url: https://guillaumejaume.github.io/FUNSD/work/
+    source_license_evidence_url: https://guillaumejaume.github.io/FUNSD/work/
+    evidence_text: FUNSD terms state use is solely for non-commercial, research and educational purposes.
+    verification_method: configured_source_family_terms_page
+    attribution_required: true
+    commercial_use_allowed: false
+    noncommercial_use_allowed: true
+    redistribution_allowed: false
+    derivative_allowed: false
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: false
+    vector_db_internal_allowed: false
+    ocr_processing_allowed: true
+    vlm_processing_allowed: true
+    benchmark_eval_allowed: true
+    public_report_allowed: false
+    public_release_allowed: false
+    license_risk_level: MEDIUM
+    requires_user_license_review: true
+    license_notes: Research-only source-family terms; keep raw images and annotations internal.
+
+  - source_family_ids: ["PADDLEOCR_GITHUB"]
+    domains: ["github.com"]
+    source_page_contains: ["PaddlePaddle/PaddleOCR"]
+    license_status: VERIFIED_OPEN_LICENSE
+    license_name: Apache-2.0
+    license_type_code: APACHE-2.0
+    license_url: https://github.com/PaddlePaddle/PaddleOCR/blob/main/LICENSE
+    source_terms_url: https://github.com/PaddlePaddle/PaddleOCR/blob/main/LICENSE
+    source_license_evidence_url: https://github.com/PaddlePaddle/PaddleOCR/blob/main/LICENSE
+    evidence_text: PaddleOCR repository LICENSE declares Apache License Version 2.0.
+    verification_method: configured_repository_license_page
+    attribution_required: true
+    commercial_use_allowed: true
+    noncommercial_use_allowed: true
+    redistribution_allowed: true
+    derivative_allowed: true
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: true
+    vector_db_internal_allowed: true
+    ocr_processing_allowed: true
+    vlm_processing_allowed: true
+    benchmark_eval_allowed: true
+    public_report_allowed: true
+    public_release_allowed: false
+    license_risk_level: LOW
+    requires_user_license_review: false
+    license_notes: Open repository license evidence applies to repository sample images; public benchmark release is still not prepared by this diagnostic run.
+
+  - source_family_ids: ["KOSIS"]
+    domains: ["kosis.kr", "edu.kosis.kr"]
+    license_status: VERIFIED_OPEN_PUBLIC_DATA
+    license_name: KOSIS public data use guideline
+    license_type_code: KOSIS_PUBLIC_DATA_GUIDELINE
+    source_terms_url: https://kosis.kr/serviceInfo/useGuide.do
+    source_license_evidence_url: https://kosis.kr/serviceInfo/useGuide.do
+    evidence_text: KOSIS use guide states KOSIS public data can be freely used, including commercial use, subject to excluded third-party or restricted information.
+    verification_method: configured_source_terms_page
+    attribution_required: true
+    commercial_use_allowed: true
+    noncommercial_use_allowed: true
+    redistribution_allowed: true
+    derivative_allowed: true
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: true
+    vector_db_internal_allowed: true
+    ocr_processing_allowed: false
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: true
+    public_report_allowed: true
+    public_release_allowed: false
+    license_risk_level: LOW
+    requires_user_license_review: false
+    license_notes: International/third-party statistics are downgraded to ambiguous by the script when detected in row identity text.
+
+  - source_family_ids: ["HUGGING_FACE"]
+    source_page_contains: ["HuggingFaceM4/ChartQA"]
+    license_status: VERIFIED_OPEN_LICENSE
+    license_name: GPL-3.0
+    license_type_code: GPL-3.0
+    license_url: https://huggingface.co/datasets/HuggingFaceM4/ChartQA/blob/main/README.md
+    source_terms_url: https://huggingface.co/datasets/HuggingFaceM4/ChartQA/blob/main/README.md
+    source_license_evidence_url: https://huggingface.co/datasets/HuggingFaceM4/ChartQA/blob/main/README.md
+    evidence_text: Hugging Face dataset card metadata lists license gpl-3.0.
+    verification_method: configured_dataset_card_license
+    attribution_required: true
+    commercial_use_allowed: true
+    noncommercial_use_allowed: true
+    redistribution_allowed: true
+    derivative_allowed: true
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: true
+    vector_db_internal_allowed: true
+    ocr_processing_allowed: true
+    vlm_processing_allowed: true
+    benchmark_eval_allowed: true
+    public_report_allowed: true
+    public_release_allowed: false
+    license_risk_level: MEDIUM
+    requires_user_license_review: true
+    license_notes: Dataset-card license is explicit, but annotation labels remain blocked from embedding/search text.
+
+  - source_family_ids: ["NAMU"]
+    domains: ["namu.wiki"]
+    license_status: VERIFIED_NONCOMMERCIAL_ONLY
+    license_name: NamuWiki source-family noncommercial terms
+    license_type_code: NONCOMMERCIAL_SOURCE_FAMILY_TERMS
+    source_terms_url: https://namu.wiki/License
+    source_license_evidence_url: https://namu.wiki/License
+    evidence_text: Source-family license page is recorded for noncommercial-only internal hard-negative metadata use; public release is not allowed in this diagnostic run.
+    verification_method: configured_source_family_terms_page
+    attribution_required: true
+    commercial_use_allowed: false
+    noncommercial_use_allowed: true
+    redistribution_allowed: false
+    derivative_allowed: true
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: true
+    vector_db_internal_allowed: true
+    ocr_processing_allowed: false
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: true
+    public_report_allowed: false
+    public_release_allowed: false
+    license_risk_level: MEDIUM
+    requires_user_license_review: true
+    license_notes: Use as near-duplicate metadata hard negatives only; do not prepare public redistributable benchmark artifacts.
+
+  - source_family_ids: ["PUBLIC_DATA_PORTAL", "SEOUL_OPEN_DATA"]
+    license_status: LICENSE_INFERRED_FROM_CATALOG_BUT_UNVERIFIED
+    license_name: Public data portal catalog terms require row-specific license confirmation
+    license_type_code: PUBLIC_DATA_CATALOG_UNVERIFIED
+    source_terms_url: https://www.data.go.kr/ugs/selectPortalPolicyView.do
+    source_license_evidence_url: https://www.data.go.kr/ugs/selectPortalPolicyView.do
+    evidence_text: Public data portal policy says works-containing public data should display a KOGL/public-use scope; this run did not fetch every row-specific catalog license.
+    verification_method: configured_portal_policy_not_row_specific
+    attribution_required: true
+    commercial_use_allowed: false
+    noncommercial_use_allowed: true
+    redistribution_allowed: false
+    derivative_allowed: false
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: false
+    vector_db_internal_allowed: false
+    ocr_processing_allowed: true
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: false
+    public_report_allowed: true
+    public_release_allowed: false
+    license_risk_level: MEDIUM
+    requires_user_license_review: true
+    license_notes: Row-specific catalog JSON or KOGL metadata is still required before vector staging or public release.
+
+  - source_family_ids: ["DART"]
+    domains: ["dart.fss.or.kr"]
+    license_status: SOURCE_TERMS_FOUND_BUT_AMBIGUOUS
+    license_name: OpenDART terms need document-level interpretation
+    license_type_code: OPENDART_TERMS_AMBIGUOUS
+    source_terms_url: https://opendart.fss.or.kr/intro/terms.do
+    source_license_evidence_url: https://opendart.fss.or.kr/intro/terms.do
+    evidence_text: OpenDART terms refer to public data law for matters not specified, but this does not prove PDF redistribution or vector staging permission for each disclosure attachment.
+    verification_method: configured_source_terms_page_ambiguous
+    attribution_required: true
+    commercial_use_allowed: false
+    noncommercial_use_allowed: true
+    redistribution_allowed: false
+    derivative_allowed: false
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: true
+    embedding_allowed: false
+    vector_db_internal_allowed: false
+    ocr_processing_allowed: true
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: false
+    public_report_allowed: true
+    public_release_allowed: false
+    license_risk_level: MEDIUM
+    requires_user_license_review: true
+    license_notes: Keep DART PDFs diagnostic until document/source-page usage constraints are reviewed.
+
+  - source_family_ids: ["PRISM", "PUBLIC_INSTITUTION", "OTHER_SOURCE"]
+    license_status: SOURCE_LICENSE_NOT_FOUND
+    license_name: Source page license not found in manifest
+    license_type_code: SOURCE_PAGE_NO_ROW_LICENSE
+    source_terms_url: ""
+    source_license_evidence_url: ""
+    evidence_text: Source page exists but no explicit license or KOGL evidence was present in the manifest row.
+    verification_method: configured_conservative_no_source_license
+    attribution_required: false
+    commercial_use_allowed: false
+    noncommercial_use_allowed: false
+    redistribution_allowed: false
+    derivative_allowed: false
+    no_derivatives: false
+    third_party_transfer_prohibited: false
+    internal_eval_allowed: false
+    embedding_allowed: false
+    vector_db_internal_allowed: false
+    ocr_processing_allowed: false
+    vlm_processing_allowed: false
+    benchmark_eval_allowed: false
+    public_report_allowed: false
+    public_release_allowed: false
+    license_risk_level: UNKNOWN
+    requires_user_license_review: true
+    license_notes: Do not infer permission from public-facing attachments.
+
+readiness_thresholds:
+  retrieval_core_internal_eval_allowed_rate: 0.80
+  retrieval_core_embedding_allowed_rate: 0.70
+  retrieval_core_vector_db_internal_allowed_rate: 0.70
+  xlsx_pdf_content_parser_smoke_candidate_count: 20
+  visual_shadow_internal_eval_allowed_rate: 0.80
+  visual_shadow_ocr_or_vlm_processing_allowed_rate: 0.70
+  visual_shadow_vector_db_internal_allowed_rate: 0.60
+
+outputs:
+  enriched_json: ai-worker/eval/review/retrieval_dataset_supplementation/existing_manifest_license_enriched.json
+  enriched_csv: ai-worker/eval/review/retrieval_dataset_supplementation/existing_manifest_license_enriched.csv
+  gate_md: ai-worker/eval/reports/rag-ingestion/existing_manifest_license_usage_gate.md
+  gate_json: ai-worker/eval/reports/rag-ingestion/existing_manifest_license_usage_gate.json
+  summary_by_source_md: ai-worker/eval/reports/rag-ingestion/existing_manifest_license_summary_by_source.md
+  summary_by_source_json: ai-worker/eval/reports/rag-ingestion/existing_manifest_license_summary_by_source.json
+  readiness_md: ai-worker/eval/reports/rag-ingestion/existing_manifest_experiment_readiness.md
+  readiness_json: ai-worker/eval/reports/rag-ingestion/existing_manifest_experiment_readiness.json
+  review_required_csv: ai-worker/eval/review/retrieval_dataset_supplementation/license_review_required_rows.csv

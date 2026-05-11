@@ -116,9 +116,9 @@ AIPIPELINE_WORKER_LLM_LLAMACPP_MODEL=gemma4-e2b-local
 │   ├── eval/          eval harness와 README 중심의 평가 작업 공간
 │   └── fixtures/      작은 fixture와 manifest
 ├── docs/              README 중심의 트랙별 문서
-├── frontend/          테스트용 프론트엔드
+├── frontend/          테스트용 프론트엔드 앱만 유지
 ├── local-storage/     기본 로컬 artifact 저장소
-├── archive/           오래된 스크립트와 보존 자료
+├── archive/           오래된 실험, 디자인 핸드오프, legacy 자료
 └── docker-compose.yml 로컬 인프라와 선택 profile
 ```
 
@@ -146,7 +146,13 @@ AIPIPELINE_WORKER_LLM_LLAMACPP_MODEL=gemma4-e2b-local
 - `ai-worker/eval/artifacts/`
 - `README.md`가 아닌 대부분의 `*.md`
 
-따라서 README와 코드가 canonical entrypoint이고, 데이터셋, 실행 결과, 대용량 report는 로컬에서 다시 준비하거나 별도 보관본을 사용해야 합니다.
+따라서 README와 코드가 canonical entrypoint이고, 데이터셋, 실행 결과, 대용량 report는 로컬에서 다시 준비하거나 별도 보관본을 사용해야 합니다. 비핵심 프론트엔드 디자인 핸드오프와 legacy UI/평가 설명 자료는 `archive/experiments/`로 이동했습니다.
+
+## 라이선스
+
+이 저장소의 직접 작성 코드와 문서는 루트 [`LICENSE`](LICENSE)의 Apache License 2.0을 따릅니다.
+
+외부에서 수집한 PDF, XLSX, 이미지, OCR/MM annotation, 폰트, 공공데이터, Hugging Face dataset mirror, NamuWiki metadata 등은 이 저장소의 Apache-2.0 라이선스로 재허가되지 않습니다. 원천별 이용조건과 현재 내부 diagnostic usage gate는 [`docs/THIRD_PARTY_DATA_LICENSES.md`](docs/THIRD_PARTY_DATA_LICENSES.md)를 확인하세요.
 
 ## 읽을 만한 README
 
