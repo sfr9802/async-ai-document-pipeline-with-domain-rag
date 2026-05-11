@@ -82,9 +82,42 @@ def _chunk(
     chunk_id="chunk-1",
 ) -> RetrievedChunk:
     if location_json is None and source_file_type == "PDF":
-        location_json = {"page_no": 1}
+        location_json = {
+            "page_no": 1,
+            "bbox": [72, 120, 510, 680],
+            "region_type": "paragraph",
+            "section_heading": "Contract terms",
+            "nearby_paragraphs": ["Previous paragraph.", "Next paragraph."],
+            "ocr_confidence": 0.96,
+        }
     if location_json is None and source_file_type == "SPREADSHEET":
-        location_json = {"sheetName": "Sales", "cellRange": "A1:D5"}
+        location_json = {
+            "sheetName": "Sales",
+            "cellRange": "A1:D5",
+            "tableId": "sales-table",
+            "rowStart": 2,
+            "rowEnd": 2,
+            "columnStart": "A",
+            "columnEnd": "D",
+            "headerRows": [1],
+            "columnHeaders": ["Region", "Quarter", "Revenue", "Units"],
+            "rowValues": {
+                "Region": "KR",
+                "Quarter": "Q1",
+                "Revenue": 100,
+                "Units": 10,
+            },
+            "nearbyRows": [
+                {
+                    "Region": "KR",
+                    "Quarter": "Q2",
+                    "Revenue": 150,
+                    "Units": 12,
+                }
+            ],
+            "mergedCellContext": ["A1:D1"],
+            "tableTitle": "Sales table",
+        }
     if location_json is None and source_file_type == "TEXT":
         location_json = {"section_path": "Overview", "char_start": 0, "char_end": 40}
 
@@ -143,6 +176,18 @@ def test_pdf_retrieved_chunk_is_adapted_to_verified_evidence():
     assert evidence.embedding_status == "EMBEDDED"
     assert evidence.citation_text == "fake.pdf p. 1"
     assert evidence.location_json["page_no"] == 1
+    assert evidence.extra["track_evidence_contract"] == "pdf-business-ocr-mm-context-v1"
+    pdf_context = evidence.extra["pdf_evidence_context"]
+    assert pdf_context["page"] == 1
+    assert pdf_context["bbox"] == [72.0, 120.0, 510.0, 680.0]
+    assert pdf_context["region_type"] == "paragraph"
+    assert pdf_context["section_heading"] == "Contract terms"
+    assert pdf_context["nearby_paragraphs"] == [
+        "Previous paragraph.",
+        "Next paragraph.",
+    ]
+    assert pdf_context["OCR_confidence"] == 0.96
+    assert pdf_context["diagnostic_only"] is False
     assert evidence.verification_status == "verified"
     assert retriever.calls[0]["top_k"] > policy.top_k
     assert retriever._top_k == 2
@@ -172,6 +217,21 @@ def test_xlsx_retrieved_chunk_is_adapted_to_verified_evidence():
     assert evidence.location_json["sheetName"] == "Sales"
     assert evidence.location_json["cellRange"] == "A1:D5"
     assert evidence.hidden_policy_version == "exclude-hidden-v1"
+    assert evidence.extra["track_evidence_contract"] == "xlsx-business-structured-context-v1"
+    xlsx_context = evidence.extra["xlsx_evidence_context"]
+    assert xlsx_context["file"] == "chunk-1.xlsx"
+    assert xlsx_context["sheet"] == "Sales"
+    assert xlsx_context["table_id"] == "sales-table"
+    assert xlsx_context["matched_cells"] == ["A1:D5"]
+    assert xlsx_context["header_rows"] == [1]
+    assert xlsx_context["target_rows"] == [2]
+    assert xlsx_context["target_columns"] == ["A", "B", "C", "D"]
+    assert xlsx_context["row_values"]["Revenue"] == 100
+    assert xlsx_context["column_headers"] == ["Region", "Quarter", "Revenue", "Units"]
+    assert xlsx_context["nearby_rows"][0]["Quarter"] == "Q2"
+    assert xlsx_context["merged_cell_context"] == ["A1:D1"]
+    assert xlsx_context["table_title_candidate"] == "Sales table"
+    assert xlsx_context["diagnostic_only"] is False
 
 
 def test_text_vector_tool_marks_contract_readiness_warning():

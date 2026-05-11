@@ -26,7 +26,9 @@ from app.capabilities.rag_orchestrator.evidence import (
     Evidence,
     QueryPolicy,
 )
+from app.capabilities.rag_orchestrator.pdf_tools import evidence_with_pdf_context
 from app.capabilities.rag_orchestrator.tools import RejectedEvidence, ToolResult
+from app.capabilities.rag_orchestrator.xlsx_tools import evidence_with_xlsx_context
 
 TOOL_PDF_VECTOR_SEARCH = "pdf_vector_search_tool"
 TOOL_XLSX_VECTOR_SEARCH = "xlsx_vector_search_tool"
@@ -189,7 +191,7 @@ def retrieved_chunk_to_evidence(
         fallback=chunk_id,
     )
 
-    return Evidence(
+    evidence = Evidence(
         evidence_id=f"vector-{chunk_id}",
         retrieval_backend=RETRIEVAL_BACKEND_VECTOR,
         rank=rank,
@@ -275,6 +277,7 @@ def retrieved_chunk_to_evidence(
             "poc_vector_wrapper": True,
         },
     )
+    return _with_track_context(evidence)
 
 
 def _overfetch_k(policy: QueryPolicy, *, overfetch_factor: int) -> int:
@@ -322,6 +325,14 @@ def _verified_evidence(
         verification_reasons=(),
         verification_warnings=_dedupe(all_warnings),
     )
+
+
+def _with_track_context(evidence: Evidence) -> Evidence:
+    if evidence.source_file_type == SOURCE_FILE_TYPE_SPREADSHEET:
+        return evidence_with_xlsx_context(evidence)
+    if evidence.source_file_type == SOURCE_FILE_TYPE_PDF:
+        return evidence_with_pdf_context(evidence)
+    return evidence
 
 
 def _rejected_evidence(

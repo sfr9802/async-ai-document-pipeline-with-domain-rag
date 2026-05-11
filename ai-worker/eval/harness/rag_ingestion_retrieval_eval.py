@@ -209,10 +209,21 @@ def evaluate_gold_rows(
     xlsx_range_overlap_hits: list[bool] = []
     xlsx_range_contains_hits: list[bool] = []
     xlsx_exact_range_hits: list[bool] = []
+    xlsx_target_cell_hits: list[bool] = []
+    xlsx_target_row_hits: list[bool] = []
+    xlsx_header_included_hits: list[bool] = []
+    xlsx_target_column_included_hits: list[bool] = []
+    xlsx_surrounding_context_included_hits: list[bool] = []
+    xlsx_sheet_resolution_hits: list[bool] = []
     pdf_file_hits: list[bool] = []
     pdf_page_hits: list[bool] = []
     pdf_bbox_overlap_hits: list[bool] = []
     pdf_exact_bbox_hits: list[bool] = []
+    pdf_region_hits: list[bool] = []
+    pdf_bbox_available_hits: list[bool] = []
+    pdf_table_or_caption_included_hits: list[bool] = []
+    pdf_nearby_paragraph_included_hits: list[bool] = []
+    pdf_ocr_confidence_available_hits: list[bool] = []
     hidden_leakage_count = 0
     result_empty_count = 0
     gold_label_invalid_count = 0
@@ -366,7 +377,21 @@ def evaluate_gold_rows(
                 xlsx_range_overlap_hits.append(xlsx_breakdown["range_overlap"])
                 xlsx_range_contains_hits.append(xlsx_breakdown["range_contains"])
                 xlsx_exact_range_hits.append(xlsx_breakdown["exact_range"])
+            xlsx_context_breakdown = _xlsx_context_query_breakdown(row, hit_details)
+            xlsx_target_cell_hits.append(xlsx_context_breakdown["target_cell_hit"])
+            xlsx_target_row_hits.append(xlsx_context_breakdown["target_row_hit"])
+            xlsx_header_included_hits.append(xlsx_context_breakdown["header_included"])
+            xlsx_target_column_included_hits.append(
+                xlsx_context_breakdown["target_column_included"]
+            )
+            xlsx_surrounding_context_included_hits.append(
+                xlsx_context_breakdown["surrounding_context_included"]
+            )
+            xlsx_sheet_resolution_hits.append(
+                xlsx_context_breakdown["sheet_resolution_accuracy"]
+            )
             _extend_bucket_stats(bucket_stats[bucket], "xlsx", xlsx_breakdown)
+            _extend_bucket_stats(bucket_stats[bucket], "xlsx", xlsx_context_breakdown)
         if expected_type in {"pdf", "ocr"}:
             pdf_location_hits.append(location_ok)
             pdf_breakdown = _pdf_query_breakdown(row, hit_details)
@@ -376,7 +401,20 @@ def evaluate_gold_rows(
             if pdf_breakdown["bbox_applicable"]:
                 pdf_bbox_overlap_hits.append(pdf_breakdown["bbox_overlap"])
                 pdf_exact_bbox_hits.append(pdf_breakdown["exact_bbox"])
+            pdf_context_breakdown = _pdf_context_query_breakdown(row, hit_details)
+            pdf_region_hits.append(pdf_context_breakdown["region_hit"])
+            pdf_bbox_available_hits.append(pdf_context_breakdown["bbox_available"])
+            pdf_table_or_caption_included_hits.append(
+                pdf_context_breakdown["table_or_caption_included"]
+            )
+            pdf_nearby_paragraph_included_hits.append(
+                pdf_context_breakdown["nearby_paragraph_included"]
+            )
+            pdf_ocr_confidence_available_hits.append(
+                pdf_context_breakdown["OCR_confidence_available"]
+            )
             _extend_bucket_stats(bucket_stats[bucket], "pdf", pdf_breakdown)
+            _extend_bucket_stats(bucket_stats[bucket], "pdf", pdf_context_breakdown)
 
         candidate_mismatch = _candidate_index_mismatch(hit_details, candidate_index_version)
         if candidate_mismatch:
@@ -444,10 +482,28 @@ def evaluate_gold_rows(
         "xlsx_range_overlap@10": _mean_bool(xlsx_range_overlap_hits),
         "xlsx_range_contains@10": _mean_bool(xlsx_range_contains_hits),
         "xlsx_exact_range@10": _mean_bool(xlsx_exact_range_hits),
+        "target_cell_hit": _mean_bool(xlsx_target_cell_hits),
+        "target_row_hit": _mean_bool(xlsx_target_row_hits),
+        "header_included": _mean_bool(xlsx_header_included_hits),
+        "target_column_included": _mean_bool(xlsx_target_column_included_hits),
+        "surrounding_context_included": _mean_bool(xlsx_surrounding_context_included_hits),
+        "sheet_resolution_accuracy": _mean_bool(xlsx_sheet_resolution_hits),
         "pdf_file_hit@10": _mean_bool(pdf_file_hits),
         "pdf_page_hit@10": _mean_bool(pdf_page_hits),
         "pdf_bbox_overlap@10": _mean_bool(pdf_bbox_overlap_hits),
         "pdf_exact_bbox@10": _mean_bool(pdf_exact_bbox_hits),
+        "page_hit": _mean_bool(pdf_page_hits),
+        "region_hit": _mean_bool(pdf_region_hits),
+        "bbox_available": _mean_bool(pdf_bbox_available_hits),
+        "table_or_caption_included": _mean_bool(pdf_table_or_caption_included_hits),
+        "nearby_paragraph_included": _mean_bool(pdf_nearby_paragraph_included_hits),
+        "OCR_confidence_available": _mean_bool(pdf_ocr_confidence_available_hits),
+        "routing_accuracy": None,
+        "wrong_route_rate": None,
+        "fallback_success_rate": None,
+        "multi_route_success_rate": None,
+        "low_confidence_route_count": 0,
+        "route_decision_metrics_role": "diagnostic_only_not_available_in_retrieval_harness",
         "result_empty_count": result_empty_count,
         "gold_label_invalid_count": gold_label_invalid_count,
         "candidate_index_mismatch_count": overall_failure_reason_counts.get("candidate_index_mismatch", 0),
@@ -492,6 +548,13 @@ def evaluate_gold_rows(
         },
         "metrics": metrics,
         "bucket_metrics": bucket_metrics,
+        "track_denominator_policy": {
+            "text": "text_namuwiki_animation denominator is separate from XLSX/PDF and uses namu-v4 bound rows only.",
+            "xlsx": "xlsx_business_structured denominator is spreadsheet retrieval/evidence only; answer denominator remains separately governed.",
+            "pdf": "pdf_business_ocr_mm denominator is PDF content/layout only and remains conservative when gold evidence is incomplete.",
+            "overall_average_interpretation": "Do not interpret an overall mean across text/xlsx/pdf as track quality.",
+            "gold_evidence_incomplete_default": "diagnostic_only",
+        },
         "per_query": per_query,
         "query_results": query_results,
     }
@@ -740,6 +803,87 @@ def _pdf_query_breakdown(row: dict[str, str], hit_details: list[dict[str, Any]])
     }
 
 
+def _xlsx_context_query_breakdown(row: dict[str, str], hit_details: list[dict[str, Any]]) -> dict[str, bool]:
+    expected_range = _cell(row, "expected_cell_range")
+    file_hits = [hit for hit in hit_details if hit["match_breakdown"]["file_match"]]
+    sheet_hits = [hit for hit in file_hits if hit["match_breakdown"].get("xlsx_sheet_match", False)]
+    range_scope = sheet_hits or file_hits
+    return {
+        "target_cell_hit": any(
+            hit["match_breakdown"].get("xlsx_range_policy_match", False)
+            for hit in range_scope
+        ),
+        "target_row_hit": any(
+            _range_rows_overlap(expected_range, _hit_detail_location(hit).get("cell_range"))
+            for hit in range_scope
+        ),
+        "header_included": any(
+            _has_any_key(
+                _hit_detail_location(hit),
+                "headerRows",
+                "header_rows",
+                "headers",
+                "columnHeaders",
+                "column_headers",
+            )
+            for hit in range_scope
+        ),
+        "target_column_included": any(
+            _target_columns_included(expected_range, _hit_detail_location(hit))
+            for hit in range_scope
+        ),
+        "surrounding_context_included": any(
+            _has_any_key(
+                _hit_detail_location(hit),
+                "nearbyRows",
+                "nearby_rows",
+                "rowValues",
+                "row_values",
+            )
+            for hit in range_scope
+        ),
+        "sheet_resolution_accuracy": bool(sheet_hits),
+    }
+
+
+def _pdf_context_query_breakdown(row: dict[str, str], hit_details: list[dict[str, Any]]) -> dict[str, bool]:
+    del row
+    file_hits = [hit for hit in hit_details if hit["match_breakdown"]["file_match"]]
+    return {
+        "region_hit": any(
+            _has_any_key(
+                _hit_detail_location(hit),
+                "regionType",
+                "region_type",
+                "blockType",
+                "block_type",
+            )
+            for hit in file_hits
+        ),
+        "bbox_available": any(bool(_hit_detail_location(hit).get("bbox")) for hit in file_hits),
+        "table_or_caption_included": any(
+            _table_or_caption_available(_hit_detail_location(hit)) for hit in file_hits
+        ),
+        "nearby_paragraph_included": any(
+            _has_any_key(
+                _hit_detail_location(hit),
+                "nearbyParagraphs",
+                "nearby_paragraphs",
+            )
+            for hit in file_hits
+        ),
+        "OCR_confidence_available": any(
+            _has_any_key(
+                _hit_detail_location(hit),
+                "OCR_confidence",
+                "ocr_confidence",
+                "ocrConfidence",
+            )
+            for hit in file_hits
+        ),
+    }
+
+
 def _extend_bucket_stats(stats: dict[str, list[bool]], prefix: str, breakdown: dict[str, bool]) -> None:
     for key, value in breakdown.items():
         if key.endswith("_applicable"):
@@ -754,6 +898,11 @@ def _extend_bucket_stats(stats: dict[str, list[bool]], prefix: str, breakdown: d
         if key in {"bbox_overlap", "exact_bbox"} and not breakdown.get("bbox_applicable", False):
             continue
         stats[f"{prefix}_{key}@10"].append(value)
+
+
+def _hit_detail_location(hit: dict[str, Any]) -> dict[str, Any]:
+    location = hit.get("location_json")
+    return location if isinstance(location, dict) else _location(hit)
 
 
 def _classify_failure_reason(
@@ -803,6 +952,56 @@ def _candidate_index_mismatch(hit_details: list[dict[str, Any]], candidate_index
         return False
     indexed_hits = [hit for hit in hit_details if hit.get("index_version")]
     return bool(indexed_hits) and not any(hit["index_version"] == candidate_index_version for hit in indexed_hits)
+
+
+def _range_rows_overlap(expected: str, actual: str | None) -> bool:
+    expected_range = _cell_range(expected)
+    actual_range = _cell_range(str(actual or ""))
+    if expected_range is None or actual_range is None:
+        return False
+    return not (expected_range[2] < actual_range[0] or actual_range[2] < expected_range[0])
+
+
+def _target_columns_included(expected: str, location: dict[str, Any]) -> bool:
+    expected_range = _cell_range(expected)
+    if expected_range is None:
+        return bool(
+            _has_any_key(location, "columnHeaders", "column_headers", "headers")
+        )
+    actual_range = _cell_range(str(location.get("cell_range") or ""))
+    if actual_range is not None:
+        return not (expected_range[3] < actual_range[1] or actual_range[3] < expected_range[1])
+    return bool(
+        _has_any_key(location, "columnStart", "column_start", "columnHeaders", "column_headers", "headers")
+    )
+
+
+def _has_any_key(location: dict[str, Any], *keys: str) -> bool:
+    for key in keys:
+        value = location.get(key)
+        if value not in (None, "", [], {}):
+            return True
+    return False
+
+
+def _table_or_caption_available(location: dict[str, Any]) -> bool:
+    region_type = str(
+        location.get("regionType")
+        or location.get("region_type")
+        or location.get("blockType")
+        or location.get("block_type")
+        or ""
+    ).lower()
+    if region_type in {"table", "caption", "footnote"}:
+        return True
+    return _has_any_key(
+        location,
+        "caption",
+        "tableCaption",
+        "table_caption",
+        "footnote",
+        "tableCaptionFootnote",
+    )
 
 
 def _invalid_failure_reason(errors: list[str]) -> str:

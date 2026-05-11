@@ -38,8 +38,10 @@ class QueryOrchestratorState(TypedDict, total=False):
     normalized_query: str
     policy: QueryPolicy
     intent: dict[str, Any]
+    route_decision: dict[str, Any]
     selected_tools: list[str]
     tool_results: list[ToolResult]
+    fallback_routes_triggered: list[str]
     evidence: list[Evidence]
     merged_evidence: list[Evidence]
     verified_evidence: list[Evidence]

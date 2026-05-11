@@ -16,6 +16,25 @@ defaults and documentation references are updated in the same change.
 | Cross-track readiness | `rag_file_content_lane_*`, `rag_pdf_xlsx_*`, `rag_text_r8_*` | ABC lane readiness, denominator, and shape/echo-risk comparison outputs. |
 | Runtime logs | `runtime-logs/` | Ignored local process logs. Keep logs out of the report root. |
 
+## 3-track report policy
+
+Current orchestration reports must name the active tracks explicitly:
+
+| Track | Report meaning |
+|---|---|
+| `text_namuwiki_animation` | Namuwiki animation-domain TEXT RAG. Do not describe this as general business text RAG. |
+| `xlsx_business_structured` | Business spreadsheet structured RAG with sheet/table/row/column context, not flatten-only keyword search. |
+| `pdf_business_ocr_mm` | Business OCR/MM document RAG with page/bbox/region context, not OCR-text-only search. |
+
+Reports should include track-level denominator fields for TEXT, XLSX, and PDF.
+An overall average may be printed for quick diagnostics, but it must not be used
+as a promotion or quality interpretation unless each track denominator is
+shown separately.
+
+Route-decision sections should record wrong-route, low-confidence, fallback, and
+multi-route cases when route labels exist. If route labels do not exist, record
+those fields as diagnostic-only instead of silently treating them as zero.
+
 ## Cleanup Rules
 
 1. Keep current reports here when a script default, progress document, or
@@ -29,6 +48,15 @@ defaults and documentation references are updated in the same change.
    ground for new run output.
 4. If a report is ambiguous, keep it in place and mark the cleanup decision as
   `needs_review` rather than moving it aggressively.
+
+Recent external archive:
+
+- `D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260511-eval-report-cleanup\archive_summary.json`
+- `D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260511-eval-report-cleanup\archive_manifest.csv`
+
+The 2026-05-11 cleanup moved ignored/generated reports and eval artifacts only.
+Tracked/canonical reports, current 3-track report output, denominator registry
+inputs, and active corpus/eval-query inputs were preserved in the workspace.
 
 ## Runtime Output Policy
 

@@ -20,6 +20,8 @@ from app.capabilities.rag_orchestrator.evidence import (
     Evidence,
     QueryPolicy,
 )
+from app.capabilities.rag_orchestrator.pdf_tools import evidence_with_pdf_context
+from app.capabilities.rag_orchestrator.xlsx_tools import evidence_with_xlsx_context
 
 TOOL_PDF_VECTOR_SEARCH = "fake_pdf_vector_search_tool"
 TOOL_XLSX_VECTOR_SEARCH = "fake_xlsx_vector_search_tool"
@@ -232,7 +234,7 @@ def _valid_evidence(
         if source_file_type == SOURCE_FILE_TYPE_TEXT
         else ()
     )
-    return Evidence(
+    evidence = Evidence(
         evidence_id=evidence_id,
         retrieval_backend=RETRIEVAL_BACKEND_VECTOR,
         rank=rank,
@@ -267,8 +269,9 @@ def _valid_evidence(
             else None
         ),
         verification_warnings=warnings,
-        extra={"fixture": "valid"},
+        extra=_fixture_extra(source_file_type),
     )
+    return _with_track_context(evidence)
 
 
 def _mismatch_evidence(
@@ -334,7 +337,19 @@ def _mismatch_evidence(
 
 def _valid_locator(source_file_type: str) -> tuple[str, dict[str, Any], str]:
     if source_file_type == SOURCE_FILE_TYPE_PDF:
-        return "pdf", {"page_no": 2, "page_label": "2"}, "fake.pdf p. 2"
+        return (
+            "pdf",
+            {
+                "page_no": 2,
+                "page_label": "2",
+                "bbox": [72, 120, 510, 680],
+                "region_type": "paragraph",
+                "section_heading": "Contract terms",
+                "nearby_paragraphs": ["Previous paragraph.", "Next paragraph."],
+                "ocr_confidence": 0.98,
+            },
+            "fake.pdf p. 2",
+        )
     if source_file_type == SOURCE_FILE_TYPE_SPREADSHEET:
         return (
             "xlsx",
@@ -342,6 +357,28 @@ def _valid_locator(source_file_type: str) -> tuple[str, dict[str, Any], str]:
                 "sheetName": "Sales",
                 "cellRange": "A1:D5",
                 "tableId": "sales-table",
+                "rowStart": 2,
+                "rowEnd": 2,
+                "columnStart": "A",
+                "columnEnd": "D",
+                "headerRows": [1],
+                "columnHeaders": ["Region", "Quarter", "Revenue", "Units"],
+                "rowValues": {
+                    "Region": "KR",
+                    "Quarter": "Q1",
+                    "Revenue": 100,
+                    "Units": 10,
+                },
+                "nearbyRows": [
+                    {
+                        "Region": "KR",
+                        "Quarter": "Q2",
+                        "Revenue": 150,
+                        "Units": 12,
+                    }
+                ],
+                "mergedCellContext": ["A1:D1"],
+                "tableTitle": "Sales table",
                 "hidden_policy_version": "exclude-hidden-v1",
             },
             "fake.xlsx Sales!A1:D5",
@@ -351,6 +388,35 @@ def _valid_locator(source_file_type: str) -> tuple[str, dict[str, Any], str]:
         {"section_path": "Overview", "char_start": 0, "char_end": 48},
         "fake.txt Overview",
     )
+
+
+def _fixture_extra(source_file_type: str) -> dict[str, Any]:
+    if source_file_type == SOURCE_FILE_TYPE_SPREADSHEET:
+        return {
+            "fixture": "valid",
+            "headers": ["Region", "Quarter", "Revenue", "Units"],
+            "rowValues": {
+                "Region": "KR",
+                "Quarter": "Q1",
+                "Revenue": 100,
+                "Units": 10,
+            },
+        }
+    if source_file_type == SOURCE_FILE_TYPE_PDF:
+        return {
+            "fixture": "valid",
+            "sectionHeading": "Contract terms",
+            "nearbyParagraphs": ["Previous paragraph.", "Next paragraph."],
+        }
+    return {"fixture": "valid"}
+
+
+def _with_track_context(evidence: Evidence) -> Evidence:
+    if evidence.source_file_type == SOURCE_FILE_TYPE_SPREADSHEET:
+        return evidence_with_xlsx_context(evidence)
+    if evidence.source_file_type == SOURCE_FILE_TYPE_PDF:
+        return evidence_with_pdf_context(evidence)
+    return evidence
 
 
 def _extension(source_file_type: str) -> str:

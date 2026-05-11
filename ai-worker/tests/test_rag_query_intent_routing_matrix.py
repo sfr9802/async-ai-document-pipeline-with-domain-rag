@@ -317,7 +317,9 @@ def test_denominator_eligibility_excludes_deferred_and_hidden_negative_rows():
     group = report["positive_denominator_policy"]["eligible_denominator_groups_by_lane"]["XLSX_CONTENT"]
     assert group["row_count"] == 1
     assert group["query_ids"] == ["q-positive"]
-    assert report["denominator_exclusion_counts"]["source manifest is not the reviewed XLSX positive set"] == 2
+    assert report["denominator_exclusion_counts"][
+        "source manifest is not the current XLSX official or legacy reviewed positive set"
+    ] == 2
 
 
 def write_csv(path: Path, rows: list[dict[str, str]]) -> None:

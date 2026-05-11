@@ -85,6 +85,16 @@ def test_test_mode_policy_runs_fake_tool_graph():
     assert body["runtime_endpoint"] is False
     assert body["langchain_used"] is False
     assert body["state"]["selected_tools"] == ["pdf", "xlsx"]
+    route_decision = body["state"]["route_decision"]
+    assert route_decision["route"] == "multi_route"
+    assert route_decision["routes"] == [
+        "pdf_business_ocr_mm",
+        "xlsx_business_structured",
+    ]
+    assert route_decision["required_evidence_type"] == "multi_track_evidence_bundle"
+    assert route_decision["route_confidence"] > 0.5
+    assert route_decision["allow_fallback"] is False
+    assert body["state"]["fallback_routes_triggered"] == []
     assert body["state"]["verified_evidence"]
     assert body["state"]["answer"]["status"] == "stub"
     assert body["state"]["aggregation_results"]

@@ -4,7 +4,35 @@
 
 이 문서는 XLSX retrieval Track A의 완료 아카이브입니다.
 
+Track A는 현재 3-track orchestration에서 `xlsx_business_structured` track으로
+취급합니다. 목표는 business spreadsheet structured RAG이며, 단순 keyword
+search나 flatten-only answer context가 아닙니다.
+
 Track A는 broad retrieval tuning, reranking, parser expansion, hidden-content mixing, candidate reindexing을 하지 않았습니다. 2026-05-07 strict pre-silver 기준으로 현재 XLSX wrapper의 공식 retrieval/evidence denominator는 human-review projection 23행이며, legacy XLSX v3 35행은 historical diagnostic 비교용으로만 보존합니다.
+
+## Structure-aware retrieval contract
+
+XLSX retrieval은 candidate retrieval과 context assembly를 분리합니다.
+후보 검색은 namespace/index/source type을 제한하고, answer handoff에는 다음
+evidence bundle 필드를 붙입니다.
+
+| Field | Policy |
+|---|---|
+| `file`, `sheet` | source file and resolved sheet identity |
+| `table_id` or `table_range` | table scope when available |
+| `matched_cells` | matched cell or matched range from retrieved candidate |
+| `header_rows` | header context used to interpret row values |
+| `target_rows`, `target_columns` | row/column coordinates inferred from locator/range |
+| `row_values`, `column_headers` | same-row values and target column headers |
+| `nearby_rows` | local row neighborhood for context assembly |
+| `merged_cell_context` | merged parent cell context when available |
+| `table_title_candidate` | table/sheet title candidate from metadata |
+| `score` | retrieval score carried from the candidate |
+
+Context assembly policy is: same row, header row, target column header, nearby
+rows, merged parent cells, sheet name, and table title candidate. If these
+structured fields are missing and only flattened text remains, the result is
+kept as diagnostic fallback with `xlsx_context_diagnostic_only_missing_structure`.
 
 ## 최종 상태
 

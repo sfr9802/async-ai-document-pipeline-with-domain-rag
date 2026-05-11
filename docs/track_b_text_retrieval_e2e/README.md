@@ -4,6 +4,11 @@
 
 상태는 diagnostic-only다. promotion, XLSX/PDF candidate mutation, immutable baseline 수정, `ai-worker/eval/indexes/rag-data-canary` 수정과 섞지 않는다.
 
+3-track orchestration에서 이 lane의 track 이름은
+`text_namuwiki_animation`이다. 이 track은 Namuwiki animation-domain RAG로
+유지하며, general business text RAG나 PDF/XLSX business document RAG의
+fallback denominator로 쓰지 않는다.
+
 ## Source Notes
 
 - 기존 `B2 retrieval diagnostic`은 `B-app app-catalog TEXT canary smoke`로 재라벨링한다.
@@ -37,11 +42,15 @@ Historical shorthand such as `reports/...`, `scripts/...`, or bare `eval/...` mu
 | Lane | 목적 | 대표 corpus/backend | 현재 상태 |
 |---|---|---|---|
 | `B-app` | app catalog TEXT import/search smoke | small TEXT canary + `library_search` | 완료, smoke-only; B-namu/namu-v4/production-style TEXT evidence로 인용 금지 |
-| `B-namu` | 단순 텍스트 문서 검색/QA 본선 | `namu-v4-structured-combined` | R7 deterministic answer eval completed with `PASS_WITH_WARNINGS`; R8 citation support planned; live LLM not run |
-| `XLSX_CONTENT` | XLSX 내부 내용 검색 | XLSX vector candidate | diagnostic-ready |
+| `B-namu` / `text_namuwiki_animation` | Namuwiki animation-domain TEXT 검색/QA 본선 | `namu-v4-structured-combined` | R7 deterministic answer eval completed with `PASS_WITH_WARNINGS`; R8 citation support planned; live LLM not run |
+| `XLSX_CONTENT` / `xlsx_business_structured` | Business spreadsheet structured RAG | XLSX vector candidate + structure-aware evidence context | diagnostic-ready |
 | `XLSX_FILE` | XLSX 파일 자체 검색 | file/document metadata index | not ready |
-| `PDF_CONTENT` | PDF 내부 내용 검색 | PDF vector candidate + page/bbox metadata | blocked on Track C |
+| `PDF_CONTENT` / `pdf_business_ocr_mm` | Business OCR/MM document RAG | PDF vector candidate + page/bbox/layout metadata | blocked on Track C |
 | `PDF_FILE` | PDF 파일 자체 검색 | file/document metadata index | not ready |
+
+Routing must choose among these track names with deterministic hints, metadata
+guards, optional LLM suggestions, and post-retrieval validation. LLM output alone
+cannot route an XLSX/PDF question into `text_namuwiki_animation`.
 
 ## Current Phase Map
 

@@ -37,7 +37,14 @@ def test_retrieval_eval_scores_xlsx_location_hits():
     assert report["metrics"]["xlsx_file_hit@10"] == 1.0
     assert report["metrics"]["xlsx_sheet_hit@10"] == 1.0
     assert report["metrics"]["xlsx_range_contains@10"] == 1.0
+    assert report["metrics"]["target_cell_hit"] == 1.0
+    assert report["metrics"]["target_row_hit"] == 1.0
+    assert report["metrics"]["header_included"] == 1.0
+    assert report["metrics"]["target_column_included"] == 1.0
+    assert report["metrics"]["surrounding_context_included"] == 1.0
+    assert report["metrics"]["sheet_resolution_accuracy"] == 1.0
     assert report["bucket_metrics"]["xlsx_lookup"]["Hit@10"] == 1.0
+    assert report["bucket_metrics"]["xlsx_lookup"]["xlsx_header_included@10"] == 1.0
     query_result = report["query_results"][0]
     assert query_result["expected_file_name"] == "sales.xlsx"
     assert query_result["top_k_results"][0]["rank"] == 1
@@ -76,7 +83,14 @@ def test_retrieval_eval_scores_pdf_bbox_location_hits():
     assert report["metrics"]["pdf_file_hit@10"] == 1.0
     assert report["metrics"]["pdf_page_hit@10"] == 1.0
     assert report["metrics"]["pdf_bbox_overlap@10"] == 1.0
+    assert report["metrics"]["page_hit"] == 1.0
+    assert report["metrics"]["region_hit"] == 1.0
+    assert report["metrics"]["bbox_available"] == 1.0
+    assert report["metrics"]["table_or_caption_included"] == 1.0
+    assert report["metrics"]["nearby_paragraph_included"] == 1.0
+    assert report["metrics"]["OCR_confidence_available"] == 1.0
     assert report["bucket_metrics"]["pdf_page_lookup"]["MRR@10"] == 1.0
+    assert report["bucket_metrics"]["pdf_page_lookup"]["pdf_region_hit@10"] == 1.0
 
 
 def test_retrieval_eval_classifies_pdf_page_and_bbox_failures():
@@ -369,7 +383,13 @@ def _fake_search(_query: str, _top_k: int):
                 "locationType": "xlsx",
                 "locationJson": (
                     '{"type":"xlsx","document_version_id":"docv_1",'
-                    '"sheet_name":"철도","cell_range":"A1:D10"}'
+                    '"sheet_name":"철도","cell_range":"A1:D10",'
+                    '"header_rows":[1],'
+                    '"column_headers":["노선","역","승객수","매출"],'
+                    '"row_values":{"노선":"1호선","승객수":100},'
+                    '"nearby_rows":[{"노선":"2호선","승객수":200}],'
+                    '"merged_cell_context":["A1:D1"],'
+                    '"table_title":"월별 승객수"}'
                 ),
                 "citationText": "sales.xlsx > 철도 > A1:D10",
             },
@@ -415,7 +435,12 @@ def _fake_pdf_search(_query: str, _top_k: int):
                 "locationJson": (
                     '{"type":"pdf","document_version_id":"docv_pdf_1",'
                     '"physical_page_index":2,"page_no":3,"page_label":"iii",'
-                    '"bbox":[70,118,500,650]}'
+                    '"bbox":[70,118,500,650],'
+                    '"region_type":"paragraph",'
+                    '"section_heading":"계약 해지",'
+                    '"caption":"표 1. 계약 조건",'
+                    '"nearby_paragraphs":["이전 문단","다음 문단"],'
+                    '"ocr_confidence":0.97}'
                 ),
                 "citationText": "contract.pdf > p.iii",
             },

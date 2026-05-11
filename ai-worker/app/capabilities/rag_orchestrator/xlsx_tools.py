@@ -3,8 +3,14 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass, replace
+from typing import Any
+
+from app.capabilities.rag_orchestrator.evidence import (
+    SOURCE_FILE_TYPE_SPREADSHEET,
+    Evidence,
+)
 
 EXPECTED_HIDDEN_POLICY_VERSION = "exclude-hidden-v1"
 FORMULA_POLICY_CACHED_VALUES_ONLY = "cached_values_only"
@@ -22,6 +28,7 @@ REJECT_AMBIGUOUS_NUMERIC_VALUE = "ambiguous_numeric_value"
 
 SUPPORTED_OPERATIONS = {"sum", "avg", "min", "max", "count"}
 _NUMERIC_RE = re.compile(r"^[+-]?(?:\d+|\d+\.\d+|\.\d+)$")
+_CELL_REF_RE = re.compile(r"^\$?([A-Z]+)\$?(\d+)$", re.IGNORECASE)
 
 VECTOR_WRAPPER_TODOS = (
     "Replace fixture lookup with a bounded table_metadata/materialized-table read API.",
@@ -29,6 +36,189 @@ VECTOR_WRAPPER_TODOS = (
     "Continue using cached formula values only; never execute macros or formulas.",
     "Validate aggregation specs from any future LLM node before calculation.",
 )
+
+XLSX_CONTEXT_CONTRACT_VERSION = "xlsx-business-structured-context-v1"
+XLSX_CONTEXT_DIAGNOSTIC_WARNING = "xlsx_context_diagnostic_only_missing_structure"
+XLSX_CONTEXT_ASSEMBLY_POLICY = (
+    "same_row",
+    "header_row",
+    "target_column_header",
+    "nearby_rows",
+    "merged_parent_cells",
+    "sheet_name",
+    "table_title_candidate",
+)
+
+
+@dataclass(frozen=True)
+class XlsxEvidenceContext:
+    """Structure-aware answer context assembled from one XLSX candidate."""
+
+    file: str
+    sheet: str | None
+    table_id: str | None
+    table_range: str | None
+    matched_cells: tuple[str, ...]
+    header_rows: tuple[Any, ...]
+    target_rows: tuple[int, ...]
+    target_columns: tuple[str, ...]
+    row_values: Mapping[str, Any]
+    column_headers: tuple[str, ...]
+    nearby_rows: tuple[Mapping[str, Any], ...]
+    merged_cell_context: tuple[Any, ...]
+    table_title_candidate: str | None
+    score: float | None
+    diagnostic_only: bool
+    missing_context_fields: tuple[str, ...]
+    context_assembly_policy: tuple[str, ...] = XLSX_CONTEXT_ASSEMBLY_POLICY
+    contract_version: str = XLSX_CONTEXT_CONTRACT_VERSION
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "contract_version": self.contract_version,
+            "file": self.file,
+            "sheet": self.sheet,
+            "table_id": self.table_id,
+            "table_range": self.table_range,
+            "matched_cells": list(self.matched_cells),
+            "header_rows": list(self.header_rows),
+            "target_rows": list(self.target_rows),
+            "target_columns": list(self.target_columns),
+            "row_values": dict(self.row_values),
+            "column_headers": list(self.column_headers),
+            "nearby_rows": [dict(row) for row in self.nearby_rows],
+            "merged_cell_context": list(self.merged_cell_context),
+            "table_title_candidate": self.table_title_candidate,
+            "score": self.score,
+            "diagnostic_only": self.diagnostic_only,
+            "missing_context_fields": list(self.missing_context_fields),
+            "context_assembly_policy": list(self.context_assembly_policy),
+        }
+
+
+def assemble_xlsx_evidence_context(evidence: Evidence) -> XlsxEvidenceContext:
+    """Assemble structure-aware context from a retrieved XLSX candidate.
+
+    This function deliberately accepts only the retrieved Evidence payload. It
+    does not reopen source workbooks or probe hidden workbook state.
+    """
+
+    if evidence.source_file_type != SOURCE_FILE_TYPE_SPREADSHEET:
+        raise ValueError("assemble_xlsx_evidence_context requires SPREADSHEET evidence")
+
+    location = dict(evidence.location_json) if isinstance(evidence.location_json, Mapping) else {}
+    metadata = _evidence_metadata(evidence)
+    table_range = _str_or_none(
+        _first_present(
+            location,
+            metadata,
+            "cellRange",
+            "cell_range",
+            "range",
+            "usedRange",
+            "tableRange",
+            "table_range",
+        )
+    )
+    row_start = _int_or_none(_first_present(location, metadata, "rowStart", "row_start"))
+    row_end = _int_or_none(_first_present(location, metadata, "rowEnd", "row_end"))
+    column_start = _first_present(location, metadata, "columnStart", "column_start")
+    column_end = _first_present(location, metadata, "columnEnd", "column_end")
+    parsed_rows, parsed_columns = _rows_columns_from_range(table_range)
+    target_rows = _int_range(row_start, row_end) or parsed_rows
+    target_columns = _column_range(column_start, column_end) or parsed_columns
+
+    row_values = _mapping_from_value(
+        _first_present(metadata, location, "rowValues", "row_values")
+    )
+    column_headers = _tuple_strings(
+        _first_present(metadata, location, "columnHeaders", "column_headers", "headers")
+    )
+    header_rows = _tuple_any(
+        _first_present(metadata, location, "headerRows", "header_rows", "headers")
+    )
+    nearby_rows = _tuple_mappings(
+        _first_present(metadata, location, "nearbyRows", "nearby_rows")
+    )
+    merged_cell_context = _tuple_any(
+        _first_present(
+            metadata,
+            location,
+            "mergedCellContext",
+            "merged_cell_context",
+            "mergedParentCells",
+            "mergedCells",
+            "merged_cells",
+        )
+    )
+    matched_cells = _tuple_strings(
+        _first_present(metadata, location, "matchedCells", "matched_cells", "cell")
+    )
+    if not matched_cells and table_range:
+        matched_cells = (table_range,)
+
+    missing = []
+    if not row_values:
+        missing.append("row_values")
+    if not column_headers:
+        missing.append("column_headers")
+    if not header_rows:
+        missing.append("header_rows")
+    if not target_rows:
+        missing.append("target_rows")
+    if not target_columns:
+        missing.append("target_columns")
+    diagnostic_only = bool(missing)
+
+    return XlsxEvidenceContext(
+        file=evidence.source_file_name or evidence.source_file_id,
+        sheet=_str_or_none(
+            _first_present(location, metadata, "sheetName", "sheet_name")
+        ),
+        table_id=_str_or_none(
+            _first_present(location, metadata, "tableId", "table_id", "tableName")
+        ),
+        table_range=table_range,
+        matched_cells=matched_cells,
+        header_rows=header_rows,
+        target_rows=target_rows,
+        target_columns=target_columns,
+        row_values=row_values,
+        column_headers=column_headers,
+        nearby_rows=nearby_rows,
+        merged_cell_context=merged_cell_context,
+        table_title_candidate=_str_or_none(
+            _first_present(
+                metadata,
+                location,
+                "tableTitle",
+                "table_title",
+                "tableName",
+                "title",
+            )
+        ),
+        score=_score(evidence),
+        diagnostic_only=diagnostic_only,
+        missing_context_fields=tuple(missing),
+    )
+
+
+def evidence_with_xlsx_context(evidence: Evidence) -> Evidence:
+    """Attach XLSX context assembly output to an Evidence item."""
+
+    context = assemble_xlsx_evidence_context(evidence)
+    warnings = tuple(evidence.verification_warnings)
+    if context.diagnostic_only and XLSX_CONTEXT_DIAGNOSTIC_WARNING not in warnings:
+        warnings = (*warnings, XLSX_CONTEXT_DIAGNOSTIC_WARNING)
+    extra = dict(evidence.extra)
+    extra["track_evidence_contract"] = XLSX_CONTEXT_CONTRACT_VERSION
+    extra["xlsx_evidence_context"] = context.to_dict()
+    return replace(
+        evidence,
+        diagnostic_only=evidence.diagnostic_only or context.diagnostic_only,
+        verification_warnings=warnings,
+        extra=extra,
+    )
 
 
 @dataclass(frozen=True)
@@ -393,6 +583,165 @@ def _dedupe(values: Sequence[str]) -> tuple[str, ...]:
         seen.add(value)
         deduped.append(value)
     return tuple(deduped)
+
+
+def _evidence_metadata(evidence: Evidence) -> dict[str, Any]:
+    metadata = dict(evidence.extra.get("retriever_metadata") or {})
+    metadata.update(
+        {
+            key: value
+            for key, value in evidence.extra.items()
+            if key not in {"retriever_metadata", "xlsx_evidence_context"}
+        }
+    )
+    return metadata
+
+
+def _first_present(
+    primary: Mapping[str, Any],
+    secondary: Mapping[str, Any],
+    *keys: str,
+) -> Any:
+    for source in (primary, secondary):
+        for key in keys:
+            value = source.get(key)
+            if value not in (None, ""):
+                return value
+    return None
+
+
+def _mapping_from_value(value: Any) -> dict[str, Any]:
+    return dict(value) if isinstance(value, Mapping) else {}
+
+
+def _tuple_strings(value: Any) -> tuple[str, ...]:
+    if value in (None, ""):
+        return ()
+    if isinstance(value, str):
+        return (value.strip(),) if value.strip() else ()
+    if isinstance(value, Mapping):
+        return tuple(str(key).strip() for key in value.keys() if str(key).strip())
+    if isinstance(value, Iterable):
+        return tuple(str(item).strip() for item in value if str(item).strip())
+    return (str(value).strip(),) if str(value).strip() else ()
+
+
+def _tuple_any(value: Any) -> tuple[Any, ...]:
+    if value in (None, ""):
+        return ()
+    if isinstance(value, str):
+        return (value.strip(),) if value.strip() else ()
+    if isinstance(value, Mapping):
+        return (dict(value),)
+    if isinstance(value, Iterable):
+        return tuple(value)
+    return (value,)
+
+
+def _tuple_mappings(value: Any) -> tuple[Mapping[str, Any], ...]:
+    if not value:
+        return ()
+    if isinstance(value, Mapping):
+        return (dict(value),)
+    if isinstance(value, Iterable) and not isinstance(value, str):
+        return tuple(dict(item) for item in value if isinstance(item, Mapping))
+    return ()
+
+
+def _int_range(start: int | None, end: int | None) -> tuple[int, ...]:
+    if start is None:
+        return ()
+    stop = start if end is None else end
+    low = min(start, stop)
+    high = max(start, stop)
+    return tuple(range(low, high + 1))
+
+
+def _column_range(start: Any, end: Any) -> tuple[str, ...]:
+    start_text = _column_label(start)
+    if not start_text:
+        return ()
+    end_text = _column_label(end) or start_text
+    start_idx = _column_index(start_text)
+    end_idx = _column_index(end_text)
+    if start_idx is None or end_idx is None:
+        return (start_text,) if start_text == end_text else (start_text, end_text)
+    low = min(start_idx, end_idx)
+    high = max(start_idx, end_idx)
+    return tuple(_index_to_column(idx) for idx in range(low, high + 1))
+
+
+def _rows_columns_from_range(cell_range: str | None) -> tuple[tuple[int, ...], tuple[str, ...]]:
+    if not cell_range:
+        return (), ()
+    parts = str(cell_range).replace("$", "").split(":", 1)
+    start = _parse_cell_ref(parts[0])
+    end = _parse_cell_ref(parts[1] if len(parts) == 2 else parts[0])
+    if start is None or end is None:
+        return (), ()
+    row_start, col_start = start
+    row_end, col_end = end
+    return _int_range(row_start, row_end), _column_range(col_start, col_end)
+
+
+def _parse_cell_ref(value: str) -> tuple[int, str] | None:
+    match = _CELL_REF_RE.match(str(value or "").strip())
+    if not match:
+        return None
+    return int(match.group(2)), match.group(1).upper()
+
+
+def _column_label(value: Any) -> str | None:
+    if value in (None, ""):
+        return None
+    text = str(value).strip().upper()
+    if text.isdigit():
+        return _index_to_column(int(text))
+    return "".join(ch for ch in text if ch.isalpha()) or None
+
+
+def _column_index(label: str) -> int | None:
+    if not label:
+        return None
+    value = 0
+    for char in label.upper():
+        if not ("A" <= char <= "Z"):
+            return None
+        value = value * 26 + (ord(char) - ord("A") + 1)
+    return value
+
+
+def _index_to_column(index: int) -> str:
+    value = max(1, int(index))
+    chars: list[str] = []
+    while value:
+        value, rem = divmod(value - 1, 26)
+        chars.append(chr(ord("A") + rem))
+    return "".join(reversed(chars))
+
+
+def _str_or_none(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _int_or_none(value: Any) -> int | None:
+    if value in (None, "") or isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _score(evidence: Evidence) -> float | None:
+    for key in ("final", "rerank", "dense"):
+        value = evidence.scores.get(key) if evidence.scores else None
+        if isinstance(value, (int, float)):
+            return float(value)
+    return None
 
 
 _FIXTURES: dict[str, dict[str, Any]] = {

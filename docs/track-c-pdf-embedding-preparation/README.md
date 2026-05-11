@@ -4,6 +4,32 @@
 
 목표는 PDF vector retrieval 개선을 바로 시작하기 전에, PDF citation location 평가에 필요한 metadata projection, embedding text contract, candidate indexing consistency를 먼저 증명하는 것이다.
 
+3-track orchestration에서 이 lane의 track 이름은 `pdf_business_ocr_mm`이다.
+목표는 business OCR/MM document RAG이며, OCR text flatten-only 검색이나
+page-only keyword lookup이 아니다. PDF retrieval은 candidate retrieval과
+layout-aware context assembly를 분리한다.
+
+## Layout-aware retrieval contract
+
+PDF answer handoff evidence bundle은 다음 필드를 포함한다.
+
+| Field | Policy |
+|---|---|
+| `file`, `page` | source file and resolved page identity |
+| `region_type` | paragraph/table/caption/footnote/heading 등 region type |
+| `bbox` | layout coordinates when available |
+| `matched_text` | matched OCR/native block text |
+| `section_heading` | heading/section path nearest to the matched block |
+| `table/caption/footnote` | table/caption/footnote context when present |
+| `nearby_paragraphs` | local paragraph neighborhood |
+| `OCR_confidence` | OCR confidence when provided by parser metadata |
+| `score` | retrieval score carried from the candidate |
+
+Context assembly policy is: matched block, page number, bbox, section heading,
+table/caption/footnote, nearby paragraph, and OCR confidence if available.
+If OCR/MM layout metadata is absent, the row remains diagnostic-only with
+`pdf_context_diagnostic_only_missing_layout`.
+
 ## 읽는 순서
 
 1. [contracts.md](contracts.md) - PDF metadata, citation, embedding text, namespace 계약

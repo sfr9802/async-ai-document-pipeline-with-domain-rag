@@ -220,6 +220,7 @@ ai-worker/eval/datasets/samples/
 !README.md
 !**/README.md
 !docs/THIRD_PARTY_DATA_LICENSES.md
+!docs/eval/denominator_policy.md
 !archive/MANIFEST.md
 
 # Canonical XLSX preflight/gold guardrail artifacts are intentionally small
@@ -240,6 +241,7 @@ ai-worker/eval/datasets/samples/
 !ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary_repeat.json
 !ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic.json
 !ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic_repeat.json
+!ai-worker/eval/reports/rag-ingestion/three_track_orchestration_report.md
 **/datasets/
 ai-worker/eval/artifacts/
 !ai-worker/eval/artifacts/

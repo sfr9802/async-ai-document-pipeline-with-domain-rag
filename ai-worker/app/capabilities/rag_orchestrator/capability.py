@@ -183,7 +183,9 @@ def _state_to_dict(state: Mapping[str, Any]) -> dict[str, Any]:
         "query": state.get("query"),
         "normalized_query": state.get("normalized_query"),
         "intent": state.get("intent"),
+        "route_decision": dict(state.get("route_decision", {})),
         "selected_tools": list(state.get("selected_tools", [])),
+        "fallback_routes_triggered": list(state.get("fallback_routes_triggered", [])),
         "tool_results": [
             item.to_dict() for item in state.get("tool_results", [])
         ],

@@ -19,13 +19,20 @@ from typing import Any, Iterable, Mapping
 
 
 DEFAULT_INPUTS = [
-    Path("eval/eval_queries/gold_queries_text_e2e_v0.csv"),
-    Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv"),
+    Path("eval/eval_queries/gold_queries_text_namu_v4_v0.csv"),
+    Path("eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv"),
     Path("eval/eval_queries/gold_queries_pdf_v0.csv"),
 ]
-DEFAULT_FUTURE_INPUTS = [Path("eval/eval_queries/gold_queries_text_namu_v4_v0.csv")]
+DEFAULT_FUTURE_INPUTS: list[Path] = []
 DEFAULT_OUTPUT_CSV = Path("eval/eval_queries/query_intent_routing_matrix_v0.csv")
 DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_query_intent_routing_matrix_report.json")
+
+TRACK_TEXT_NAMUWIKI_ANIMATION = "text_namuwiki_animation"
+TRACK_XLSX_BUSINESS_STRUCTURED = "xlsx_business_structured"
+TRACK_PDF_BUSINESS_OCR_MM = "pdf_business_ocr_mm"
+CURRENT_XLSX_OFFICIAL_SOURCE = "gold_queries_xlsx_human_review_official_positive_v0_retrieval"
+LEGACY_XLSX_REVIEWED_SOURCE = "gold_queries_xlsx_v3_positive_reviewed"
+CURRENT_TEXT_NAMU_SOURCE = "gold_queries_text_namu_v4_v0"
 
 CSV_FIELDNAMES = [
     "query_id",
@@ -352,7 +359,7 @@ def lane_for(resource_type: str, target_type: str, source_manifest: str) -> str:
 
 def readiness_for(retrieval_lane: str) -> str:
     return {
-        "B_NAMU_TEXT_CONTENT": "PLANNED",
+        "B_NAMU_TEXT_CONTENT": "DIAGNOSTIC_READY",
         "TEXT_FILE_LOOKUP": "PLANNED",
         "XLSX_CONTENT": "DIAGNOSTIC_READY",
         "XLSX_FILE": "NOT_READY",
@@ -400,10 +407,22 @@ def denominator_eligibility(
         return False, "target_type_requires_clarification"
     if readiness in {"BLOCKED", "NOT_READY", "PLANNED", "SMOKE_ONLY"}:
         return False, f"readiness_{readiness.lower()}_excluded"
+    if retrieval_lane == "B_NAMU_TEXT_CONTENT":
+        if source_manifest != CURRENT_TEXT_NAMU_SOURCE:
+            return False, "source manifest is not the current namu-v4 text set"
+        label_status = clean(row.get("label_status")).lower()
+        if label_status != "bound":
+            return False, f"label_status={label_status or '<missing>'}"
+        return True, ""
     if retrieval_lane != "XLSX_CONTENT":
-        return False, "only reviewed XLSX_CONTENT rows are currently denominator eligible"
-    if source_manifest != "gold_queries_xlsx_v3_positive_reviewed":
-        return False, "source manifest is not the reviewed XLSX positive set"
+        return False, "only current TEXT_NAMU and XLSX_CONTENT rows are denominator eligible"
+    if source_manifest == CURRENT_XLSX_OFFICIAL_SOURCE:
+        label_status = clean(row.get("label_status")).lower()
+        if label_status != "bound":
+            return False, f"label_status={label_status or '<missing>'}"
+        return True, ""
+    if source_manifest != LEGACY_XLSX_REVIEWED_SOURCE:
+        return False, "source manifest is not the current XLSX official or legacy reviewed positive set"
     policy_label = clean(row.get("policy_label")).lower()
     review_decision = clean(row.get("review_decision")).upper()
     promotion_eval_eligible = clean(row.get("promotion_eval_eligible")).lower()
@@ -471,6 +490,17 @@ def build_report(
         "report_role": "rag_query_intent_routing_matrix",
         "scope": "track_b_text_retrieval_e2e",
         "phase": "R1",
+        "track_architecture": {
+            "tracks": [
+                TRACK_TEXT_NAMUWIKI_ANIMATION,
+                TRACK_XLSX_BUSINESS_STRUCTURED,
+                TRACK_PDF_BUSINESS_OCR_MM,
+            ],
+            "text_track_domain": "Namuwiki animation-domain RAG, not general business text RAG",
+            "xlsx_track_goal": "business spreadsheet structured RAG with structure-aware retrieval",
+            "pdf_track_goal": "business OCR/MM document RAG with layout-aware retrieval",
+            "single_integrated_vector_index": False,
+        },
         "output_csv": str(output_csv).replace("\\", "/"),
         "row_count": len(matrix_rows),
         "lane_counts": lane_counts,
@@ -498,6 +528,11 @@ def build_report(
                 "PDF_CONTENT",
             ],
             "eligible_denominator_groups_by_lane": eligible_groups,
+            "track_namespace_policy": {
+                "B_NAMU_TEXT_CONTENT": "text_namuwiki_animation namespace/index/eval denominator",
+                "XLSX_CONTENT": "xlsx_business_structured namespace/index/eval denominator",
+                "PDF_CONTENT": "pdf_business_ocr_mm namespace/index/eval denominator; conservative C7 rows only",
+            },
             "notes": [
                 "B-app smoke rows are preserved for diagnostics but not used as B-namu denominators.",
                 "FILE lookup lanes are not content retrieval metrics.",
@@ -506,9 +541,17 @@ def build_report(
                 "UNKNOWN and MIXED rows require clarification before positive Hit/MRR denominators.",
             ],
         },
+        "route_decision_metrics": {
+            "routing_accuracy": None,
+            "wrong_route_rate": None,
+            "fallback_success_rate": None,
+            "multi_route_success_rate": None,
+            "low_confidence_route_count": sum(1 for row in matrix_rows if row.get("confidence") == "low"),
+            "diagnostic_only_reason": "route gold labels and fallback outcomes are not human-verified in this matrix",
+        },
         "denominator_exclusion_counts": denominator_exclusion_counts,
         "lane_readiness_policy": {
-            "B_NAMU_TEXT_CONTENT": "PLANNED until R2/R3 produce namu-v4 gold",
+            "B_NAMU_TEXT_CONTENT": "DIAGNOSTIC_READY for namu-v4 bound rows; keep separate from APP_TEXT_SMOKE",
             "XLSX_CONTENT": "DIAGNOSTIC_READY from current XLSX positive diagnostics",
             "PDF_CONTENT": "BLOCKED until Track C PDF readiness",
             "XLSX_FILE": "NOT_READY; file lookup index is separate from content retrieval",
@@ -521,14 +564,14 @@ def build_report(
         "missing_future_inputs": missing_future,
         "missing_input_policy": {
             "current_candidates": "Missing current candidate inputs are recorded and skipped; at least one usable input is required.",
-            "future_namu_candidate": "Missing eval/eval_queries/gold_queries_text_namu_v4_v0.csv is expected before R2/R3 and does not fail R1.",
+            "future_namu_candidate": "Optional future inputs are recorded and skipped; namu-v4 is now a current text track input when present.",
         },
         "completion_criteria": completion_criteria,
         "blockers": blockers,
         "warnings": warnings_for(lane_counts, missing_future, unknown_count, mixed_count),
         "promotion_evidence": False,
         "evidence_role": "diagnostic",
-        "next_phase_recommendation": "Proceed to R2 namu-v4 corpus inventory before building B-namu gold.",
+        "next_phase_recommendation": "Keep route decisions and denominators track-scoped; do not aggregate TEXT/XLSX/PDF into one quality score.",
     }
 
 
