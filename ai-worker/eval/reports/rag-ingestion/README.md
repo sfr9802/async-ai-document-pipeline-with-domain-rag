@@ -34,10 +34,6 @@ shown separately.
 Route-decision sections should record wrong-route, low-confidence, fallback, and
 multi-route cases when route labels exist. If route labels do not exist, record
 those fields as diagnostic-only instead of silently treating them as zero.
-LLM-assisted route adjudication is allowed only as diagnostic ambiguity
-adjudication after deterministic hard guards and rule scores; it must not be
-reported as policy authority, promotion evidence, denominator mutation, or
-production retrieval proof.
 
 ## Cleanup Rules
 

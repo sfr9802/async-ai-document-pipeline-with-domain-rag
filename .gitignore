@@ -241,18 +241,7 @@ ai-worker/eval/datasets/samples/
 !ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary_repeat.json
 !ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic.json
 !ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic_repeat.json
-!ai-worker/eval/reports/rag-ingestion/xlsx_hidden_excluded_leakage_probe_report.md
-!ai-worker/eval/reports/rag-ingestion/xlsx_hidden_excluded_leakage_probe_report.json
-!ai-worker/eval/reports/rag-ingestion/xlsx_strict_silver_generation_report.md
-!ai-worker/eval/reports/rag-ingestion/xlsx_strict_silver_generation_report.json
-!ai-worker/eval/reports/rag-ingestion/pdf_strict_silver_generation_report.md
-!ai-worker/eval/reports/rag-ingestion/pdf_strict_silver_generation_report.json
 !ai-worker/eval/reports/rag-ingestion/three_track_orchestration_report.md
-!ai-worker/eval/reports/rag-ingestion/three_track_orchestration_report.json
-!ai-worker/eval/reports/rag-ingestion/answer_recovery_tuning_report.md
-!ai-worker/eval/reports/rag-ingestion/answer_recovery_tuning_report.json
-!ai-worker/eval/reports/rag-ingestion/rag_reviewed_gold_policy_normalization_report.md
-!ai-worker/eval/reports/rag-ingestion/rag_reviewed_gold_policy_normalization_report.json
 **/datasets/
 ai-worker/eval/artifacts/
 !ai-worker/eval/artifacts/
@@ -312,24 +301,6 @@ ai-worker/eval/datasets/xlsx/
 ai-worker/eval/datasets/golden/**/hf_snapshot/
 # sample_check.py HTML reports + reviewer annotation JSONs are local.
 review/
-!ai-worker/eval/review/
-!ai-worker/eval/review/rag_gold_policy_resolution_packet_v1.json
-!ai-worker/eval/review/rag_gold_policy_resolution_packet_v1.md
-!ai-worker/eval/review/rag_gold_policy_decision_draft_v1.json
-!ai-worker/eval/review/rag_gold_policy_decision_draft_v1.md
-!ai-worker/eval/review/rag_gold_policy_user_review_sheet_v1.md
-!ai-worker/eval/review/rag_gold_policy_user_approved_resolutions_v1.json
-!ai-worker/eval/review/rag_gold_policy_user_approved_resolutions_v1.md
-!ai-worker/eval/review/rag_gold_policy_applied_decisions_v1.json
-!ai-worker/eval/review/rag_gold_policy_applied_decisions_v1.md
-!ai-worker/eval/review/route_gold_label_review_pack_v1.json
-!ai-worker/eval/review/route_gold_label_review_pack_v1.md
-!ai-worker/eval/review/fallback_outcome_label_review_pack_v1.json
-!ai-worker/eval/review/fallback_outcome_label_review_pack_v1.md
-!ai-worker/eval/review/route_gold_label_review_applied_v1.json
-!ai-worker/eval/review/route_gold_label_review_applied_v1.md
-!ai-worker/eval/review/fallback_outcome_label_review_applied_v1.json
-!ai-worker/eval/review/fallback_outcome_label_review_applied_v1.md
 
 # ---- Retrieval-eval corpora (local-only, large) ----
 # Full source corpora live under ai-worker/eval/corpora/<name>/corpus.jsonl
