@@ -24,8 +24,10 @@ FATAL_INVALID_LOCATION = "invalid_location_json"
 FATAL_SOURCE_TYPE = "source_file_type_mismatch"
 FATAL_PARSER_VERSION = "parser_version_not_allowed"
 FATAL_PDF_PAGE = "pdf_locator_missing_page"
+FATAL_PDF_STABLE_IDENTITY_REQUIRED = "stable_identity_required"
 FATAL_XLSX_SHEET = "xlsx_locator_missing_sheet"
 FATAL_XLSX_RANGE = "xlsx_locator_missing_range"
+FATAL_XLSX_HIDDEN_NEGATIVE_OR_EXCLUDED_ROW = "hidden_negative_or_excluded_row_guard"
 
 WARNING_OCR_LOWER_TRUST = "ocr_lower_trust"
 WARNING_BBOX_CONFIDENCE_LOW = "bbox_confidence_low"
@@ -151,6 +153,11 @@ def _fatal_reasons(evidence: Evidence, policy: QueryPolicy) -> list[str]:
         reasons.append(FATAL_SOURCE_TYPE)
     if evidence.parser_version not in policy.allowed_parser_versions:
         reasons.append(FATAL_PARSER_VERSION)
+    if source_type == SOURCE_FILE_TYPE_PDF and _is_pdf_file_identity_evidence(evidence):
+        if not _has_stable_pdf_document_identity(evidence):
+            reasons.append(FATAL_PDF_STABLE_IDENTITY_REQUIRED)
+    if _is_spreadsheet_source_type(source_type) and _is_xlsx_hidden_or_excluded(evidence):
+        reasons.append(FATAL_XLSX_HIDDEN_NEGATIVE_OR_EXCLUDED_ROW)
 
     location = evidence.location_json
     if location and not isinstance(location, Mapping):
@@ -230,6 +237,117 @@ def _has_valid_xlsx_table_locator(location: Mapping[str, Any]) -> bool:
 
 def _is_spreadsheet_source_type(source_type: str) -> bool:
     return source_type in {SOURCE_FILE_TYPE_SPREADSHEET, "XLSX", "XLSM"}
+
+
+def _is_pdf_file_identity_evidence(evidence: Evidence) -> bool:
+    lane = _metadata_text(
+        evidence,
+        (
+            "requestedEvidenceLane",
+            "requested_evidence_lane",
+            "evidenceLane",
+            "evidence_lane",
+            "retrievalLane",
+            "retrieval_lane",
+            "targetLane",
+            "target_lane",
+        ),
+    )
+    normalized = lane.lower()
+    return normalized in {
+        "pdf_file",
+        "pdf_file_lookup",
+        "pdf_file_document_identity",
+        "file_document_identity",
+        "file_identity",
+    }
+
+
+def _has_stable_pdf_document_identity(evidence: Evidence) -> bool:
+    if _metadata_bool(
+        evidence,
+        (
+            "genericFilenameIdentity",
+            "generic_filename_identity",
+            "filenameOnlyIdentity",
+            "filename_only_identity",
+        ),
+    ):
+        return False
+    return _metadata_bool(
+        evidence,
+        (
+            "stableDocumentIdentity",
+            "stable_document_identity",
+            "stableIdentity",
+            "stable_identity",
+        ),
+    )
+
+
+def _is_xlsx_hidden_or_excluded(evidence: Evidence) -> bool:
+    if _metadata_bool(
+        evidence,
+        (
+            "hidden",
+            "hiddenSheet",
+            "hidden_sheet",
+            "hiddenRow",
+            "hidden_row",
+            "hiddenColumn",
+            "hidden_column",
+            "hiddenNegative",
+            "hidden_negative",
+            "excluded",
+            "excludedRow",
+            "excluded_row",
+        ),
+    ):
+        return True
+
+    policy_guard = _metadata_text(evidence, ("policyGuard", "policy_guard"))
+    if policy_guard == FATAL_XLSX_HIDDEN_NEGATIVE_OR_EXCLUDED_ROW:
+        return True
+
+    policy_label = _metadata_text(evidence, ("policyLabel", "policy_label")).lower()
+    review_status = _metadata_text(evidence, ("reviewStatus", "review_status")).lower()
+    return "hidden" in policy_label or "excluded" in review_status
+
+
+def _metadata_text(evidence: Evidence, keys: tuple[str, ...]) -> str:
+    value = _metadata_value(evidence, keys)
+    return "" if value in (None, "") else str(value).strip()
+
+
+def _metadata_bool(evidence: Evidence, keys: tuple[str, ...]) -> bool:
+    value = _metadata_value(evidence, keys)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y"}
+    return False
+
+
+def _metadata_value(evidence: Evidence, keys: tuple[str, ...]) -> Any:
+    for source in _metadata_sources(evidence):
+        value = _get_any(source, keys)
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def _metadata_sources(evidence: Evidence) -> tuple[Mapping[str, Any], ...]:
+    sources: list[Mapping[str, Any]] = []
+    if isinstance(evidence.location_json, Mapping):
+        sources.append(evidence.location_json)
+    if isinstance(evidence.extra, Mapping):
+        sources.append(evidence.extra)
+        retriever_metadata = evidence.extra.get("retriever_metadata")
+        if isinstance(retriever_metadata, Mapping):
+            sources.append(retriever_metadata)
+    return tuple(sources)
 
 
 def _is_int_at_least(value: Any, *, minimum: int) -> bool:

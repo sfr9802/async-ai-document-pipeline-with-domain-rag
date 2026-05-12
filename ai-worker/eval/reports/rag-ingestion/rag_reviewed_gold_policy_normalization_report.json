@@ -1,0 +1,2206 @@
+{
+  "cross_track_validation_errors": [],
+  "generated_at": "2026-05-11T03:25:34.744497+00:00",
+  "guardrails": {
+    "diagnostic_only_row_promoted": false,
+    "index_scope_missing_rows_treated_as_ranking_failures": false,
+    "not_answerable_or_irrelevant_in_normal_positive_denominator": false,
+    "official_denominator_opened": false,
+    "official_denominator_registry_changed": false,
+    "official_denominator_registry_path": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+    "official_denominator_registry_sha256_after": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22",
+    "official_denominator_registry_sha256_before": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22",
+    "policy_blocked_rows_treated_as_retrieval_failures": false,
+    "production_namespace_mutated": false,
+    "retrieval_variants_run": false
+  },
+  "imported_files": {
+    "pdf_file_lookup_companion": {
+      "bytes": 29850,
+      "exists": true,
+      "expected_row_count": 28,
+      "path": "ai-worker/eval/review/pdf_supplemental_gold_review/pdf_gold_review_pack_manual_v1_file_lookup_companion - pdf_gold_review_pack_manual_v1_file_lookup_companion.csv",
+      "row_count": 28,
+      "sha256": "c77f8b431c2cef5dffac5a968606c309eb653ec506efeb7ad37190c45f8b2b9a"
+    },
+    "text_namu_v2": {
+      "bytes": 218141,
+      "exists": true,
+      "expected_row_count": 100,
+      "path": "ai-worker/eval/review/text_namu_v2_gold_review/text_namu_v2_gold_review_pack - text_namu_v2_gold_review_pack.csv",
+      "row_count": 100,
+      "sha256": "5a2407089a5c5c22cf8f0101b76bba23a8c991fe7d2fa3f7fb89e395b56e4d0a"
+    },
+    "xlsx_human_review": {
+      "bytes": 217462,
+      "exists": true,
+      "expected_row_count": 50,
+      "path": "ai-worker/eval/review/xlsx/제목 없는 스프레드시트 - xlsx_gold_human_review_pack (1).csv",
+      "row_count": 50,
+      "sha256": "66c883037214dd0679f6e5e05011b1189a71b23c820c0e655accc494e6747073"
+    }
+  },
+  "normalized_label_mapping": {
+    "pdf_file_lookup_companion": {
+      "aggregate_policy": "No aggregate official candidate count is emitted for PDF content and file identity lanes.",
+      "content_evidence_positive": "KEEP_POSITIVE + ANSWERABLE + RELEVANT + KEEP_CURRENT_EVIDENCE + INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW.",
+      "evidence_revision": "Any REVISE_EXPECTED_EVIDENCE marker goes to the evidence revision bucket.",
+      "file_lookup_identity_candidate": "KEEP_POSITIVE + INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE + answerable/file-lookup answerable + relevant/partial; this lane is scored separately from content evidence.",
+      "policy_excluded": "NOT_ANSWERABLE or IRRELEVANT rows are not content-positive denominator rows."
+    },
+    "text_namu_v2": {
+      "diagnostic_only": "DIAGNOSTIC_ONLY_DEFAULT stays diagnostic-only.",
+      "proposed_official_candidate": "OFFICIAL_REVIEW_CANDIDATE + KEEP_POSITIVE + ANSWERABLE + RELEVANT + empty user_review_notes + source_label_status not needs_review",
+      "separate_review_markers": [
+        "NEEDS_SECOND_REVIEW",
+        "REVISE_EXPECTED_ANSWER",
+        "REVISE_EXPECTED_ANSWER_AND_EVIDENCE",
+        "AMBIGUOUS_QUERY",
+        "INVALID_QUERY",
+        "EVIDENCE_TOO_BROAD"
+      ]
+    },
+    "xlsx_human_review": {
+      "evidence_mismatch": "EVIDENCE_MISMATCH is not an official positive.",
+      "official_denominator_frozen": "0 rows because user_gold_policy_decision and user_include_in_official_denominator are blank.",
+      "policy_excluded": "POLICY_EXCLUDED or NOT_ANSWERABLE stays outside positive denominators.",
+      "preserved_policy_inputs": [
+        "user_gold_answer_shape",
+        "user_required_citation_policy"
+      ],
+      "proposed_official_candidate": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT.",
+      "source_verification_required": "ANSWERABLE_NEEDS_SOURCE_VERIFICATION + EVIDENCE_PARTIAL/RELEVANT; not official positive yet."
+    }
+  },
+  "rationale": [
+    "Official denominator registry was read for policy context but not mutated.",
+    "Rows with diagnostic-only defaults are kept out of proposed official candidates.",
+    "TEXT rows with ambiguous, invalid, second-review, or revision markers stay out of proposed official candidates.",
+    "XLSX empty user denominator decisions are preserved; proposed candidates are not frozen official denominator rows.",
+    "PDF content evidence and file identity lookup are separate lanes and have no aggregate official candidate count.",
+    "NOT_ANSWERABLE, IRRELEVANT, POLICY_EXCLUDED, and EVIDENCE_MISMATCH rows are not normal positive denominator rows."
+  ],
+  "schema_version": "reviewed_gold_policy_normalization_v1",
+  "source_resolution": {
+    "note": "The /mnt/data source paths were not mounted in this Windows workspace; canonical repo review-pack paths were used. The XLSX repo copy matches the accessible D:/다운 export by sha256. Raw review packs stay local/ignored; the committed report records paths, hashes, counts, and normalized policy buckets.",
+    "production_namespace_mutated": false,
+    "retrieval_variants_run": false
+  },
+  "status": "PASS",
+  "tracks": {
+    "pdf_file_lookup_companion": {
+      "content_evidence_positive_count": 14,
+      "content_evidence_positive_query_ids": [
+        "pdf_file_lookup_content_anchor_001",
+        "pdf_file_lookup_content_anchor_002",
+        "pdf_file_lookup_content_anchor_005",
+        "pdf_file_lookup_content_anchor_006",
+        "pdf_file_lookup_content_anchor_007",
+        "pdf_file_lookup_content_anchor_008",
+        "pdf_file_lookup_content_anchor_009",
+        "pdf_file_lookup_content_anchor_010",
+        "pdf_file_lookup_metadata_001",
+        "pdf_file_lookup_metadata_003",
+        "pdf_file_lookup_metadata_004",
+        "pdf_file_lookup_metadata_005",
+        "pdf_file_lookup_metadata_006",
+        "pdf_file_lookup_metadata_007"
+      ],
+      "diagnostic_only_count": 0,
+      "diagnostic_only_query_ids": [],
+      "evidence_mismatch_count": 0,
+      "evidence_mismatch_query_ids": [],
+      "expected_answer_or_evidence_revision_count": 9,
+      "expected_answer_or_evidence_revision_query_ids": [
+        "pdf_file_lookup_content_anchor_004",
+        "pdf_file_lookup_content_anchor_012",
+        "pdf_file_lookup_content_anchor_013",
+        "pdf_file_lookup_content_anchor_014",
+        "pdf_file_lookup_content_anchor_015",
+        "pdf_file_lookup_content_anchor_017",
+        "pdf_file_lookup_content_anchor_018",
+        "pdf_file_lookup_content_anchor_020",
+        "pdf_file_lookup_metadata_002"
+      ],
+      "file_lookup_identity_candidate_count": 5,
+      "file_lookup_identity_candidate_query_ids": [
+        "pdf_file_lookup_content_anchor_003",
+        "pdf_file_lookup_content_anchor_011",
+        "pdf_file_lookup_content_anchor_016",
+        "pdf_file_lookup_content_anchor_019",
+        "pdf_file_lookup_content_anchor_021"
+      ],
+      "normalized_bucket_counts": {
+        "CONTENT_EVIDENCE_POSITIVE": 14,
+        "EXPECTED_EVIDENCE_REVISION": 9,
+        "FILE_LOOKUP_IDENTITY_CANDIDATE": 5
+      },
+      "official_denominator_frozen_count": 0,
+      "official_denominator_frozen_query_ids": [],
+      "policy_excluded_count": 6,
+      "policy_excluded_query_ids": [
+        "pdf_file_lookup_content_anchor_004",
+        "pdf_file_lookup_content_anchor_012",
+        "pdf_file_lookup_content_anchor_013",
+        "pdf_file_lookup_content_anchor_014",
+        "pdf_file_lookup_content_anchor_015",
+        "pdf_file_lookup_metadata_002"
+      ],
+      "proposed_content_evidence_candidate_count": 14,
+      "proposed_content_evidence_candidate_query_ids": [
+        "pdf_file_lookup_content_anchor_001",
+        "pdf_file_lookup_content_anchor_002",
+        "pdf_file_lookup_content_anchor_005",
+        "pdf_file_lookup_content_anchor_006",
+        "pdf_file_lookup_content_anchor_007",
+        "pdf_file_lookup_content_anchor_008",
+        "pdf_file_lookup_content_anchor_009",
+        "pdf_file_lookup_content_anchor_010",
+        "pdf_file_lookup_metadata_001",
+        "pdf_file_lookup_metadata_003",
+        "pdf_file_lookup_metadata_004",
+        "pdf_file_lookup_metadata_005",
+        "pdf_file_lookup_metadata_006",
+        "pdf_file_lookup_metadata_007"
+      ],
+      "proposed_file_lookup_identity_candidate_count": 5,
+      "proposed_file_lookup_identity_candidate_query_ids": [
+        "pdf_file_lookup_content_anchor_003",
+        "pdf_file_lookup_content_anchor_011",
+        "pdf_file_lookup_content_anchor_016",
+        "pdf_file_lookup_content_anchor_019",
+        "pdf_file_lookup_content_anchor_021"
+      ],
+      "proposed_official_candidate_count": null,
+      "proposed_official_candidate_query_ids": [],
+      "review_marker_buckets": {
+        "evidence_revision": [
+          "pdf_file_lookup_content_anchor_004",
+          "pdf_file_lookup_content_anchor_012",
+          "pdf_file_lookup_content_anchor_013",
+          "pdf_file_lookup_content_anchor_014",
+          "pdf_file_lookup_content_anchor_015",
+          "pdf_file_lookup_content_anchor_017",
+          "pdf_file_lookup_content_anchor_018",
+          "pdf_file_lookup_content_anchor_020",
+          "pdf_file_lookup_metadata_002"
+        ],
+        "generic_filename_identity_risk": [
+          "pdf_file_lookup_content_anchor_011",
+          "pdf_file_lookup_content_anchor_012",
+          "pdf_file_lookup_content_anchor_013",
+          "pdf_file_lookup_content_anchor_014",
+          "pdf_file_lookup_content_anchor_015",
+          "pdf_file_lookup_content_anchor_016",
+          "pdf_file_lookup_content_anchor_017",
+          "pdf_file_lookup_content_anchor_018",
+          "pdf_file_lookup_content_anchor_019",
+          "pdf_file_lookup_content_anchor_020",
+          "pdf_file_lookup_content_anchor_021"
+        ],
+        "irrelevant": [
+          "pdf_file_lookup_content_anchor_012",
+          "pdf_file_lookup_content_anchor_013",
+          "pdf_file_lookup_content_anchor_014",
+          "pdf_file_lookup_content_anchor_015",
+          "pdf_file_lookup_metadata_002"
+        ],
+        "not_answerable": [
+          "pdf_file_lookup_content_anchor_004",
+          "pdf_file_lookup_content_anchor_014",
+          "pdf_file_lookup_content_anchor_015",
+          "pdf_file_lookup_metadata_002"
+        ]
+      },
+      "row_count": 28,
+      "rows": [
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_content_anchor_001"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_content_anchor_002"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE"
+          ],
+          "normalization_reason": "file/document identity lookup lane",
+          "normalized_policy_bucket": "FILE_LOOKUP_IDENTITY_CANDIDATE",
+          "query_id": "pdf_file_lookup_content_anchor_003"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_EVIDENCE",
+            "NOT_ANSWERABLE",
+            "PARTIAL",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "user decision marks expected evidence revision",
+          "normalized_policy_bucket": "EXPECTED_EVIDENCE_REVISION",
+          "query_id": "pdf_file_lookup_content_anchor_004"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_content_anchor_005"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_content_anchor_006"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_content_anchor_007"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_content_anchor_008"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_content_anchor_009"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_content_anchor_010"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE_AS_FILE_LOOKUP",
+            "PARTIAL",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "file/document identity lookup lane",
+          "normalized_policy_bucket": "FILE_LOOKUP_IDENTITY_CANDIDATE",
+          "query_id": "pdf_file_lookup_content_anchor_011"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_EVIDENCE",
+            "ANSWERABLE_AS_FILE_LOOKUP",
+            "IRRELEVANT",
+            "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+            "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "user decision marks expected evidence revision",
+          "normalized_policy_bucket": "EXPECTED_EVIDENCE_REVISION",
+          "query_id": "pdf_file_lookup_content_anchor_012"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_EVIDENCE",
+            "ANSWERABLE_AS_FILE_LOOKUP",
+            "IRRELEVANT",
+            "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "user decision marks expected evidence revision",
+          "normalized_policy_bucket": "EXPECTED_EVIDENCE_REVISION",
+          "query_id": "pdf_file_lookup_content_anchor_013"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_EVIDENCE",
+            "NOT_ANSWERABLE",
+            "IRRELEVANT",
+            "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "user decision marks expected evidence revision",
+          "normalized_policy_bucket": "EXPECTED_EVIDENCE_REVISION",
+          "query_id": "pdf_file_lookup_content_anchor_014"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_EVIDENCE",
+            "NOT_ANSWERABLE",
+            "IRRELEVANT",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "user decision marks expected evidence revision",
+          "normalized_policy_bucket": "EXPECTED_EVIDENCE_REVISION",
+          "query_id": "pdf_file_lookup_content_anchor_015"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE_AS_FILE_LOOKUP",
+            "PARTIAL",
+            "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+            "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "file/document identity lookup lane",
+          "normalized_policy_bucket": "FILE_LOOKUP_IDENTITY_CANDIDATE",
+          "query_id": "pdf_file_lookup_content_anchor_016"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "REVISE_EXPECTED_EVIDENCE",
+            "ANSWERABLE_AS_FILE_LOOKUP",
+            "PARTIAL",
+            "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "user decision marks expected evidence revision",
+          "normalized_policy_bucket": "EXPECTED_EVIDENCE_REVISION",
+          "query_id": "pdf_file_lookup_content_anchor_017"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_EVIDENCE",
+            "ANSWERABLE_AS_FILE_LOOKUP",
+            "PARTIAL",
+            "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "user decision marks expected evidence revision",
+          "normalized_policy_bucket": "EXPECTED_EVIDENCE_REVISION",
+          "query_id": "pdf_file_lookup_content_anchor_018"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE_AS_FILE_LOOKUP",
+            "PARTIAL",
+            "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+            "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "file/document identity lookup lane",
+          "normalized_policy_bucket": "FILE_LOOKUP_IDENTITY_CANDIDATE",
+          "query_id": "pdf_file_lookup_content_anchor_019"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_EVIDENCE",
+            "ANSWERABLE_AS_FILE_LOOKUP",
+            "PARTIAL",
+            "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+            "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "user decision marks expected evidence revision",
+          "normalized_policy_bucket": "EXPECTED_EVIDENCE_REVISION",
+          "query_id": "pdf_file_lookup_content_anchor_020"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "PARTIAL",
+            "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+            "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+            "GENERIC_FILENAME"
+          ],
+          "normalization_reason": "file/document identity lookup lane",
+          "normalized_policy_bucket": "FILE_LOOKUP_IDENTITY_CANDIDATE",
+          "query_id": "pdf_file_lookup_content_anchor_021"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_metadata_001"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_EVIDENCE",
+            "NOT_ANSWERABLE",
+            "IRRELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "user decision marks expected evidence revision",
+          "normalized_policy_bucket": "EXPECTED_EVIDENCE_REVISION",
+          "query_id": "pdf_file_lookup_metadata_002"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_metadata_003"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_metadata_004"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_metadata_005"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_metadata_006"
+        },
+        {
+          "issue_tags": [
+            "KEEP_POSITIVE",
+            "ANSWERABLE",
+            "RELEVANT",
+            "KEEP_CURRENT_EVIDENCE",
+            "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+          ],
+          "normalization_reason": "content evidence positive lane",
+          "normalized_policy_bucket": "CONTENT_EVIDENCE_POSITIVE",
+          "query_id": "pdf_file_lookup_metadata_007"
+        }
+      ],
+      "track": "pdf_business_ocr_mm",
+      "unresolved_user_review_count": 9,
+      "unresolved_user_review_rows": [
+        "pdf_file_lookup_content_anchor_004",
+        "pdf_file_lookup_content_anchor_012",
+        "pdf_file_lookup_content_anchor_013",
+        "pdf_file_lookup_content_anchor_014",
+        "pdf_file_lookup_content_anchor_015",
+        "pdf_file_lookup_content_anchor_017",
+        "pdf_file_lookup_content_anchor_018",
+        "pdf_file_lookup_content_anchor_020",
+        "pdf_file_lookup_metadata_002"
+      ]
+    },
+    "text_namu_v2": {
+      "diagnostic_only_count": 10,
+      "diagnostic_only_query_ids": [
+        "text_namu_v2_0046",
+        "text_namu_v2_0047",
+        "text_namu_v2_0048",
+        "text_namu_v2_0049",
+        "text_namu_v2_0050",
+        "text_namu_v2_0096",
+        "text_namu_v2_0097",
+        "text_namu_v2_0098",
+        "text_namu_v2_0099",
+        "text_namu_v2_0100"
+      ],
+      "expected_answer_or_evidence_revision_count": 3,
+      "expected_answer_or_evidence_revision_query_ids": [
+        "text_namu_v2_0006",
+        "text_namu_v2_0029",
+        "text_namu_v2_0013"
+      ],
+      "normalized_bucket_counts": {
+        "AMBIGUOUS_QUERY": 2,
+        "DIAGNOSTIC_ONLY": 10,
+        "EVIDENCE_TOO_BROAD": 1,
+        "EXPECTED_ANSWER_AND_EVIDENCE_REVISION": 1,
+        "EXPECTED_ANSWER_REVISION": 2,
+        "INVALID_QUERY": 7,
+        "NEEDS_SECOND_REVIEW": 3,
+        "POLICY_EXCLUDED": 1,
+        "PROPOSED_OFFICIAL_CANDIDATE": 66,
+        "SOURCE_BINDING_REVIEW_REQUIRED": 7
+      },
+      "policy_excluded_count": 8,
+      "policy_excluded_query_ids": [
+        "text_namu_v2_0045",
+        "text_namu_v2_0019",
+        "text_namu_v2_0020",
+        "text_namu_v2_0027",
+        "text_namu_v2_0033",
+        "text_namu_v2_0066",
+        "text_namu_v2_0067",
+        "text_namu_v2_0082"
+      ],
+      "proposed_official_candidate_count": 66,
+      "proposed_official_candidate_query_ids": [
+        "text_namu_v2_0001",
+        "text_namu_v2_0002",
+        "text_namu_v2_0003",
+        "text_namu_v2_0004",
+        "text_namu_v2_0005",
+        "text_namu_v2_0007",
+        "text_namu_v2_0008",
+        "text_namu_v2_0009",
+        "text_namu_v2_0011",
+        "text_namu_v2_0012",
+        "text_namu_v2_0014",
+        "text_namu_v2_0015",
+        "text_namu_v2_0016",
+        "text_namu_v2_0017",
+        "text_namu_v2_0018",
+        "text_namu_v2_0021",
+        "text_namu_v2_0022",
+        "text_namu_v2_0025",
+        "text_namu_v2_0026",
+        "text_namu_v2_0028",
+        "text_namu_v2_0030",
+        "text_namu_v2_0032",
+        "text_namu_v2_0034",
+        "text_namu_v2_0035",
+        "text_namu_v2_0036",
+        "text_namu_v2_0037",
+        "text_namu_v2_0038",
+        "text_namu_v2_0039",
+        "text_namu_v2_0040",
+        "text_namu_v2_0041",
+        "text_namu_v2_0042",
+        "text_namu_v2_0051",
+        "text_namu_v2_0052",
+        "text_namu_v2_0053",
+        "text_namu_v2_0054",
+        "text_namu_v2_0055",
+        "text_namu_v2_0056",
+        "text_namu_v2_0057",
+        "text_namu_v2_0058",
+        "text_namu_v2_0059",
+        "text_namu_v2_0060",
+        "text_namu_v2_0061",
+        "text_namu_v2_0062",
+        "text_namu_v2_0063",
+        "text_namu_v2_0064",
+        "text_namu_v2_0065",
+        "text_namu_v2_0068",
+        "text_namu_v2_0069",
+        "text_namu_v2_0070",
+        "text_namu_v2_0071",
+        "text_namu_v2_0072",
+        "text_namu_v2_0073",
+        "text_namu_v2_0074",
+        "text_namu_v2_0075",
+        "text_namu_v2_0076",
+        "text_namu_v2_0077",
+        "text_namu_v2_0079",
+        "text_namu_v2_0081",
+        "text_namu_v2_0083",
+        "text_namu_v2_0084",
+        "text_namu_v2_0085",
+        "text_namu_v2_0086",
+        "text_namu_v2_0087",
+        "text_namu_v2_0088",
+        "text_namu_v2_0089",
+        "text_namu_v2_0090"
+      ],
+      "review_marker_buckets": {
+        "ambiguous_query": [
+          "text_namu_v2_0019",
+          "text_namu_v2_0020",
+          "text_namu_v2_0023",
+          "text_namu_v2_0024",
+          "text_namu_v2_0027",
+          "text_namu_v2_0031",
+          "text_namu_v2_0033",
+          "text_namu_v2_0066",
+          "text_namu_v2_0067",
+          "text_namu_v2_0078",
+          "text_namu_v2_0080"
+        ],
+        "diagnostic_only_default": [
+          "text_namu_v2_0046",
+          "text_namu_v2_0047",
+          "text_namu_v2_0048",
+          "text_namu_v2_0049",
+          "text_namu_v2_0050",
+          "text_namu_v2_0096",
+          "text_namu_v2_0097",
+          "text_namu_v2_0098",
+          "text_namu_v2_0099",
+          "text_namu_v2_0100"
+        ],
+        "evidence_too_broad": [
+          "text_namu_v2_0031"
+        ],
+        "expected_answer_and_evidence_revision": [
+          "text_namu_v2_0013"
+        ],
+        "expected_answer_revision": [
+          "text_namu_v2_0006",
+          "text_namu_v2_0029"
+        ],
+        "invalid_query": [
+          "text_namu_v2_0019",
+          "text_namu_v2_0020",
+          "text_namu_v2_0027",
+          "text_namu_v2_0033",
+          "text_namu_v2_0066",
+          "text_namu_v2_0067",
+          "text_namu_v2_0078",
+          "text_namu_v2_0080",
+          "text_namu_v2_0082"
+        ],
+        "needs_second_review": [
+          "text_namu_v2_0010",
+          "text_namu_v2_0078",
+          "text_namu_v2_0080"
+        ],
+        "source_binding_review_required": [
+          "text_namu_v2_0043",
+          "text_namu_v2_0044",
+          "text_namu_v2_0091",
+          "text_namu_v2_0092",
+          "text_namu_v2_0093",
+          "text_namu_v2_0094",
+          "text_namu_v2_0095"
+        ]
+      },
+      "row_count": 100,
+      "rows": [
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0001"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0002"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0003"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0004"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0005"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_ANSWER"
+          ],
+          "normalization_reason": "expected answer needs revision",
+          "normalized_policy_bucket": "EXPECTED_ANSWER_REVISION",
+          "query_id": "text_namu_v2_0006"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0007"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0008"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0009"
+        },
+        {
+          "issue_tags": [
+            "NEEDS_SECOND_REVIEW"
+          ],
+          "normalization_reason": "user_final_gold_policy=NEEDS_SECOND_REVIEW",
+          "normalized_policy_bucket": "NEEDS_SECOND_REVIEW",
+          "query_id": "text_namu_v2_0010"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0011"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0012"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_ANSWER_AND_EVIDENCE"
+          ],
+          "normalization_reason": "expected answer and evidence need revision",
+          "normalized_policy_bucket": "EXPECTED_ANSWER_AND_EVIDENCE_REVISION",
+          "query_id": "text_namu_v2_0013"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0014"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0015"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0016"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0017"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0018"
+        },
+        {
+          "issue_tags": [
+            "INVALID_QUERY",
+            "AMBIGUOUS_QUERY"
+          ],
+          "normalization_reason": "user label contains INVALID_QUERY",
+          "normalized_policy_bucket": "INVALID_QUERY",
+          "query_id": "text_namu_v2_0019"
+        },
+        {
+          "issue_tags": [
+            "INVALID_QUERY",
+            "AMBIGUOUS_QUERY"
+          ],
+          "normalization_reason": "user label contains INVALID_QUERY",
+          "normalized_policy_bucket": "INVALID_QUERY",
+          "query_id": "text_namu_v2_0020"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0021"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0022"
+        },
+        {
+          "issue_tags": [
+            "AMBIGUOUS_QUERY"
+          ],
+          "normalization_reason": "user review notes mark ambiguous query",
+          "normalized_policy_bucket": "AMBIGUOUS_QUERY",
+          "query_id": "text_namu_v2_0023"
+        },
+        {
+          "issue_tags": [
+            "AMBIGUOUS_QUERY"
+          ],
+          "normalization_reason": "user review notes mark ambiguous query",
+          "normalized_policy_bucket": "AMBIGUOUS_QUERY",
+          "query_id": "text_namu_v2_0024"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0025"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0026"
+        },
+        {
+          "issue_tags": [
+            "INVALID_QUERY",
+            "AMBIGUOUS_QUERY"
+          ],
+          "normalization_reason": "user label contains INVALID_QUERY",
+          "normalized_policy_bucket": "INVALID_QUERY",
+          "query_id": "text_namu_v2_0027"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0028"
+        },
+        {
+          "issue_tags": [
+            "REVISE_EXPECTED_ANSWER"
+          ],
+          "normalization_reason": "expected answer needs revision",
+          "normalized_policy_bucket": "EXPECTED_ANSWER_REVISION",
+          "query_id": "text_namu_v2_0029"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0030"
+        },
+        {
+          "issue_tags": [
+            "AMBIGUOUS_QUERY",
+            "EVIDENCE_TOO_BROAD"
+          ],
+          "normalization_reason": "user review notes mark evidence too broad",
+          "normalized_policy_bucket": "EVIDENCE_TOO_BROAD",
+          "query_id": "text_namu_v2_0031"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0032"
+        },
+        {
+          "issue_tags": [
+            "INVALID_QUERY",
+            "AMBIGUOUS_QUERY"
+          ],
+          "normalization_reason": "user label contains INVALID_QUERY",
+          "normalized_policy_bucket": "INVALID_QUERY",
+          "query_id": "text_namu_v2_0033"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0034"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0035"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0036"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0037"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0038"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0039"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0040"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0041"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0042"
+        },
+        {
+          "issue_tags": [
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "clean user policy but source_label_status=needs_review",
+          "normalized_policy_bucket": "SOURCE_BINDING_REVIEW_REQUIRED",
+          "query_id": "text_namu_v2_0043"
+        },
+        {
+          "issue_tags": [
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "clean user policy but source_label_status=needs_review",
+          "normalized_policy_bucket": "SOURCE_BINDING_REVIEW_REQUIRED",
+          "query_id": "text_namu_v2_0044"
+        },
+        {
+          "issue_tags": [
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "not clean positive under conservative TEXT policy",
+          "normalized_policy_bucket": "POLICY_EXCLUDED",
+          "query_id": "text_namu_v2_0045"
+        },
+        {
+          "issue_tags": [
+            "DIAGNOSTIC_ONLY_DEFAULT"
+          ],
+          "normalization_reason": "candidate_default_policy=DIAGNOSTIC_ONLY_DEFAULT",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "text_namu_v2_0046"
+        },
+        {
+          "issue_tags": [
+            "DIAGNOSTIC_ONLY_DEFAULT"
+          ],
+          "normalization_reason": "candidate_default_policy=DIAGNOSTIC_ONLY_DEFAULT",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "text_namu_v2_0047"
+        },
+        {
+          "issue_tags": [
+            "DIAGNOSTIC_ONLY_DEFAULT"
+          ],
+          "normalization_reason": "candidate_default_policy=DIAGNOSTIC_ONLY_DEFAULT",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "text_namu_v2_0048"
+        },
+        {
+          "issue_tags": [
+            "DIAGNOSTIC_ONLY_DEFAULT"
+          ],
+          "normalization_reason": "candidate_default_policy=DIAGNOSTIC_ONLY_DEFAULT",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "text_namu_v2_0049"
+        },
+        {
+          "issue_tags": [
+            "DIAGNOSTIC_ONLY_DEFAULT"
+          ],
+          "normalization_reason": "candidate_default_policy=DIAGNOSTIC_ONLY_DEFAULT",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "text_namu_v2_0050"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0051"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0052"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0053"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0054"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0055"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0056"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0057"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0058"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0059"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0060"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0061"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0062"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0063"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0064"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0065"
+        },
+        {
+          "issue_tags": [
+            "INVALID_QUERY",
+            "AMBIGUOUS_QUERY"
+          ],
+          "normalization_reason": "user label contains INVALID_QUERY",
+          "normalized_policy_bucket": "INVALID_QUERY",
+          "query_id": "text_namu_v2_0066"
+        },
+        {
+          "issue_tags": [
+            "INVALID_QUERY",
+            "AMBIGUOUS_QUERY"
+          ],
+          "normalization_reason": "user label contains INVALID_QUERY",
+          "normalized_policy_bucket": "INVALID_QUERY",
+          "query_id": "text_namu_v2_0067"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0068"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0069"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0070"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0071"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0072"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0073"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0074"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0075"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0076"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0077"
+        },
+        {
+          "issue_tags": [
+            "NEEDS_SECOND_REVIEW",
+            "INVALID_QUERY",
+            "AMBIGUOUS_QUERY"
+          ],
+          "normalization_reason": "user_final_gold_policy=NEEDS_SECOND_REVIEW",
+          "normalized_policy_bucket": "NEEDS_SECOND_REVIEW",
+          "query_id": "text_namu_v2_0078"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0079"
+        },
+        {
+          "issue_tags": [
+            "NEEDS_SECOND_REVIEW",
+            "INVALID_QUERY",
+            "AMBIGUOUS_QUERY"
+          ],
+          "normalization_reason": "user_final_gold_policy=NEEDS_SECOND_REVIEW",
+          "normalized_policy_bucket": "NEEDS_SECOND_REVIEW",
+          "query_id": "text_namu_v2_0080"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0081"
+        },
+        {
+          "issue_tags": [
+            "INVALID_QUERY"
+          ],
+          "normalization_reason": "user label contains INVALID_QUERY",
+          "normalized_policy_bucket": "INVALID_QUERY",
+          "query_id": "text_namu_v2_0082"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0083"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0084"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0085"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0086"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0087"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0088"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0089"
+        },
+        {
+          "issue_tags": [],
+          "normalization_reason": "clean official-review candidate under TEXT policy",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "text_namu_v2_0090"
+        },
+        {
+          "issue_tags": [
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "clean user policy but source_label_status=needs_review",
+          "normalized_policy_bucket": "SOURCE_BINDING_REVIEW_REQUIRED",
+          "query_id": "text_namu_v2_0091"
+        },
+        {
+          "issue_tags": [
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "clean user policy but source_label_status=needs_review",
+          "normalized_policy_bucket": "SOURCE_BINDING_REVIEW_REQUIRED",
+          "query_id": "text_namu_v2_0092"
+        },
+        {
+          "issue_tags": [
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "clean user policy but source_label_status=needs_review",
+          "normalized_policy_bucket": "SOURCE_BINDING_REVIEW_REQUIRED",
+          "query_id": "text_namu_v2_0093"
+        },
+        {
+          "issue_tags": [
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "clean user policy but source_label_status=needs_review",
+          "normalized_policy_bucket": "SOURCE_BINDING_REVIEW_REQUIRED",
+          "query_id": "text_namu_v2_0094"
+        },
+        {
+          "issue_tags": [
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "clean user policy but source_label_status=needs_review",
+          "normalized_policy_bucket": "SOURCE_BINDING_REVIEW_REQUIRED",
+          "query_id": "text_namu_v2_0095"
+        },
+        {
+          "issue_tags": [
+            "DIAGNOSTIC_ONLY_DEFAULT",
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "candidate_default_policy=DIAGNOSTIC_ONLY_DEFAULT",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "text_namu_v2_0096"
+        },
+        {
+          "issue_tags": [
+            "DIAGNOSTIC_ONLY_DEFAULT",
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "candidate_default_policy=DIAGNOSTIC_ONLY_DEFAULT",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "text_namu_v2_0097"
+        },
+        {
+          "issue_tags": [
+            "DIAGNOSTIC_ONLY_DEFAULT",
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "candidate_default_policy=DIAGNOSTIC_ONLY_DEFAULT",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "text_namu_v2_0098"
+        },
+        {
+          "issue_tags": [
+            "DIAGNOSTIC_ONLY_DEFAULT",
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "candidate_default_policy=DIAGNOSTIC_ONLY_DEFAULT",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "text_namu_v2_0099"
+        },
+        {
+          "issue_tags": [
+            "DIAGNOSTIC_ONLY_DEFAULT",
+            "SOURCE_LABEL_STATUS_NEEDS_REVIEW"
+          ],
+          "normalization_reason": "candidate_default_policy=DIAGNOSTIC_ONLY_DEFAULT",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "text_namu_v2_0100"
+        }
+      ],
+      "source_verification_required_count": 7,
+      "source_verification_required_query_ids": [
+        "text_namu_v2_0043",
+        "text_namu_v2_0044",
+        "text_namu_v2_0091",
+        "text_namu_v2_0092",
+        "text_namu_v2_0093",
+        "text_namu_v2_0094",
+        "text_namu_v2_0095"
+      ],
+      "track": "text_namuwiki_animation",
+      "unresolved_user_review_count": 23,
+      "unresolved_user_review_rows": [
+        "text_namu_v2_0006",
+        "text_namu_v2_0010",
+        "text_namu_v2_0013",
+        "text_namu_v2_0019",
+        "text_namu_v2_0020",
+        "text_namu_v2_0023",
+        "text_namu_v2_0024",
+        "text_namu_v2_0027",
+        "text_namu_v2_0029",
+        "text_namu_v2_0031",
+        "text_namu_v2_0033",
+        "text_namu_v2_0043",
+        "text_namu_v2_0044",
+        "text_namu_v2_0066",
+        "text_namu_v2_0067",
+        "text_namu_v2_0078",
+        "text_namu_v2_0080",
+        "text_namu_v2_0082",
+        "text_namu_v2_0091",
+        "text_namu_v2_0092",
+        "text_namu_v2_0093",
+        "text_namu_v2_0094",
+        "text_namu_v2_0095"
+      ]
+    },
+    "xlsx_human_review": {
+      "denominator_confirmation_required_count": 25,
+      "denominator_confirmation_required_query_ids": [
+        "gq_xlsx_lookup_001",
+        "gq_xlsx_lookup_004",
+        "gq_xlsx_lookup_005",
+        "gq_xlsx_lookup_006",
+        "gq_xlsx_lookup_007",
+        "gq_xlsx_lookup_008",
+        "gq_xlsx_date_number_format_001",
+        "gq_xlsx_date_number_format_003",
+        "gq_xlsx_aggregation_001",
+        "gq_xlsx_aggregation_002",
+        "gq_auto_012",
+        "gq_auto_017",
+        "gq_auto_018",
+        "gq_auto_022",
+        "gq_auto_023",
+        "gq_auto_028",
+        "gq_auto_031",
+        "gq_auto_034",
+        "gq_auto_035",
+        "gq_auto_036",
+        "gq_auto_037",
+        "gq_auto_038",
+        "gq_auto_040",
+        "gq_auto_043",
+        "gq_auto_044"
+      ],
+      "diagnostic_only_count": 1,
+      "diagnostic_only_query_ids": [
+        "gq_xlsx_lookup_003"
+      ],
+      "empty_user_gold_policy_decision_count": 50,
+      "empty_user_include_in_official_denominator_count": 50,
+      "evidence_mismatch_count": 7,
+      "evidence_mismatch_query_ids": [
+        "gq_xlsx_lookup_002",
+        "gq_auto_013",
+        "gq_auto_032",
+        "gq_auto_033",
+        "gq_auto_039",
+        "gq_auto_041",
+        "gq_auto_042"
+      ],
+      "expected_answer_or_evidence_revision_count": 0,
+      "expected_answer_or_evidence_revision_query_ids": [],
+      "nonblank_user_gold_policy_decision_query_ids": [],
+      "nonblank_user_include_in_official_denominator_query_ids": [],
+      "normalized_bucket_counts": {
+        "DIAGNOSTIC_ONLY": 1,
+        "EVIDENCE_MISMATCH": 7,
+        "POLICY_EXCLUDED": 7,
+        "PROPOSED_OFFICIAL_CANDIDATE": 25,
+        "SOURCE_VERIFICATION_REQUIRED": 10
+      },
+      "official_denominator_frozen_count": 0,
+      "official_denominator_frozen_query_ids": [],
+      "policy_excluded_count": 7,
+      "policy_excluded_query_ids": [
+        "gq_xlsx_hidden_policy_003",
+        "gq_xlsx_aggregation_003",
+        "gq_xlsx_formula_value_001",
+        "gq_xlsx_formula_value_002",
+        "gq_xlsx_formula_value_003",
+        "gq_xlsx_hidden_policy_001",
+        "gq_xlsx_hidden_policy_002"
+      ],
+      "proposed_official_candidate_count": 25,
+      "proposed_official_candidate_query_ids": [
+        "gq_xlsx_lookup_001",
+        "gq_xlsx_lookup_004",
+        "gq_xlsx_lookup_005",
+        "gq_xlsx_lookup_006",
+        "gq_xlsx_lookup_007",
+        "gq_xlsx_lookup_008",
+        "gq_xlsx_date_number_format_001",
+        "gq_xlsx_date_number_format_003",
+        "gq_xlsx_aggregation_001",
+        "gq_xlsx_aggregation_002",
+        "gq_auto_012",
+        "gq_auto_017",
+        "gq_auto_018",
+        "gq_auto_022",
+        "gq_auto_023",
+        "gq_auto_028",
+        "gq_auto_031",
+        "gq_auto_034",
+        "gq_auto_035",
+        "gq_auto_036",
+        "gq_auto_037",
+        "gq_auto_038",
+        "gq_auto_040",
+        "gq_auto_043",
+        "gq_auto_044"
+      ],
+      "row_count": 50,
+      "rows": [
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_xlsx_lookup_001"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_MISMATCH"
+          ],
+          "normalization_reason": "human label marks evidence mismatch",
+          "normalized_policy_bucket": "EVIDENCE_MISMATCH",
+          "query_id": "gq_xlsx_lookup_002"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "no relaxed XLSX policy for this label combination",
+          "normalized_policy_bucket": "DIAGNOSTIC_ONLY",
+          "query_id": "gq_xlsx_lookup_003"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_xlsx_lookup_004"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_xlsx_lookup_005"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_xlsx_lookup_006"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_xlsx_lookup_007"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_xlsx_lookup_008"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_xlsx_date_number_format_001"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_xlsx_date_number_format_003"
+        },
+        {
+          "issue_tags": [
+            "NOT_ANSWERABLE",
+            "POLICY_EXCLUDED"
+          ],
+          "normalization_reason": "human label marks policy excluded or not answerable",
+          "normalized_policy_bucket": "POLICY_EXCLUDED",
+          "query_id": "gq_xlsx_hidden_policy_003"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_xlsx_aggregation_001"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_xlsx_aggregation_002"
+        },
+        {
+          "issue_tags": [
+            "NOT_ANSWERABLE",
+            "POLICY_EXCLUDED"
+          ],
+          "normalization_reason": "human label marks policy excluded or not answerable",
+          "normalized_policy_bucket": "POLICY_EXCLUDED",
+          "query_id": "gq_xlsx_aggregation_003"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_012"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_MISMATCH"
+          ],
+          "normalization_reason": "human label marks evidence mismatch",
+          "normalized_policy_bucket": "EVIDENCE_MISMATCH",
+          "query_id": "gq_auto_013"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_017"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_018"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_022"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_023"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_028"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_031"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_MISMATCH"
+          ],
+          "normalization_reason": "human label marks evidence mismatch",
+          "normalized_policy_bucket": "EVIDENCE_MISMATCH",
+          "query_id": "gq_auto_032"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_MISMATCH"
+          ],
+          "normalization_reason": "human label marks evidence mismatch",
+          "normalized_policy_bucket": "EVIDENCE_MISMATCH",
+          "query_id": "gq_auto_033"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_034"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_035"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_036"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_037"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_038"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_MISMATCH"
+          ],
+          "normalization_reason": "human label marks evidence mismatch",
+          "normalized_policy_bucket": "EVIDENCE_MISMATCH",
+          "query_id": "gq_auto_039"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_040"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_MISMATCH"
+          ],
+          "normalization_reason": "human label marks evidence mismatch",
+          "normalized_policy_bucket": "EVIDENCE_MISMATCH",
+          "query_id": "gq_auto_041"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_MISMATCH"
+          ],
+          "normalization_reason": "human label marks evidence mismatch",
+          "normalized_policy_bucket": "EVIDENCE_MISMATCH",
+          "query_id": "gq_auto_042"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_043"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_CONFIRMED",
+            "EVIDENCE_RELEVANT"
+          ],
+          "normalization_reason": "ANSWERABLE_CONFIRMED + EVIDENCE_RELEVANT",
+          "normalized_policy_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+          "query_id": "gq_auto_044"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "answerable but source verification is still required",
+          "normalized_policy_bucket": "SOURCE_VERIFICATION_REQUIRED",
+          "query_id": "gq_xlsx_header_ambiguous_001"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "answerable but source verification is still required",
+          "normalized_policy_bucket": "SOURCE_VERIFICATION_REQUIRED",
+          "query_id": "gq_xlsx_header_ambiguous_002"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "answerable but source verification is still required",
+          "normalized_policy_bucket": "SOURCE_VERIFICATION_REQUIRED",
+          "query_id": "gq_xlsx_header_ambiguous_003"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "answerable but source verification is still required",
+          "normalized_policy_bucket": "SOURCE_VERIFICATION_REQUIRED",
+          "query_id": "gq_xlsx_header_ambiguous_004"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "POLICY_EXCLUDED"
+          ],
+          "normalization_reason": "human label marks policy excluded or not answerable",
+          "normalized_policy_bucket": "POLICY_EXCLUDED",
+          "query_id": "gq_xlsx_formula_value_001"
+        },
+        {
+          "issue_tags": [
+            "NOT_ANSWERABLE",
+            "POLICY_EXCLUDED"
+          ],
+          "normalization_reason": "human label marks policy excluded or not answerable",
+          "normalized_policy_bucket": "POLICY_EXCLUDED",
+          "query_id": "gq_xlsx_formula_value_002"
+        },
+        {
+          "issue_tags": [
+            "NOT_ANSWERABLE",
+            "POLICY_EXCLUDED"
+          ],
+          "normalization_reason": "human label marks policy excluded or not answerable",
+          "normalized_policy_bucket": "POLICY_EXCLUDED",
+          "query_id": "gq_xlsx_formula_value_003"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "answerable but source verification is still required",
+          "normalized_policy_bucket": "SOURCE_VERIFICATION_REQUIRED",
+          "query_id": "gq_xlsx_date_number_format_002"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "answerable but source verification is still required",
+          "normalized_policy_bucket": "SOURCE_VERIFICATION_REQUIRED",
+          "query_id": "gq_xlsx_date_number_format_004"
+        },
+        {
+          "issue_tags": [
+            "NOT_ANSWERABLE",
+            "POLICY_EXCLUDED"
+          ],
+          "normalization_reason": "human label marks policy excluded or not answerable",
+          "normalized_policy_bucket": "POLICY_EXCLUDED",
+          "query_id": "gq_xlsx_hidden_policy_001"
+        },
+        {
+          "issue_tags": [
+            "NOT_ANSWERABLE",
+            "POLICY_EXCLUDED"
+          ],
+          "normalization_reason": "human label marks policy excluded or not answerable",
+          "normalized_policy_bucket": "POLICY_EXCLUDED",
+          "query_id": "gq_xlsx_hidden_policy_002"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "answerable but source verification is still required",
+          "normalized_policy_bucket": "SOURCE_VERIFICATION_REQUIRED",
+          "query_id": "gq_mixed_text_table_001"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "answerable but source verification is still required",
+          "normalized_policy_bucket": "SOURCE_VERIFICATION_REQUIRED",
+          "query_id": "gq_mixed_text_table_002"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "answerable but source verification is still required",
+          "normalized_policy_bucket": "SOURCE_VERIFICATION_REQUIRED",
+          "query_id": "gq_mixed_text_table_003"
+        },
+        {
+          "issue_tags": [
+            "ANSWERABLE_NEEDS_SOURCE_VERIFICATION",
+            "EVIDENCE_PARTIAL"
+          ],
+          "normalization_reason": "answerable but source verification is still required",
+          "normalized_policy_bucket": "SOURCE_VERIFICATION_REQUIRED",
+          "query_id": "gq_auto_027"
+        }
+      ],
+      "source_verification_required_count": 10,
+      "source_verification_required_query_ids": [
+        "gq_xlsx_header_ambiguous_001",
+        "gq_xlsx_header_ambiguous_002",
+        "gq_xlsx_header_ambiguous_003",
+        "gq_xlsx_header_ambiguous_004",
+        "gq_xlsx_date_number_format_002",
+        "gq_xlsx_date_number_format_004",
+        "gq_mixed_text_table_001",
+        "gq_mixed_text_table_002",
+        "gq_mixed_text_table_003",
+        "gq_auto_027"
+      ],
+      "track": "xlsx_business_structured",
+      "unresolved_user_review_count": 35,
+      "unresolved_user_review_rows": [
+        "gq_xlsx_lookup_001",
+        "gq_xlsx_lookup_004",
+        "gq_xlsx_lookup_005",
+        "gq_xlsx_lookup_006",
+        "gq_xlsx_lookup_007",
+        "gq_xlsx_lookup_008",
+        "gq_xlsx_date_number_format_001",
+        "gq_xlsx_date_number_format_003",
+        "gq_xlsx_aggregation_001",
+        "gq_xlsx_aggregation_002",
+        "gq_auto_012",
+        "gq_auto_017",
+        "gq_auto_018",
+        "gq_auto_022",
+        "gq_auto_023",
+        "gq_auto_028",
+        "gq_auto_031",
+        "gq_auto_034",
+        "gq_auto_035",
+        "gq_auto_036",
+        "gq_auto_037",
+        "gq_auto_038",
+        "gq_auto_040",
+        "gq_auto_043",
+        "gq_auto_044",
+        "gq_xlsx_header_ambiguous_001",
+        "gq_xlsx_header_ambiguous_002",
+        "gq_xlsx_header_ambiguous_003",
+        "gq_xlsx_header_ambiguous_004",
+        "gq_xlsx_date_number_format_002",
+        "gq_xlsx_date_number_format_004",
+        "gq_mixed_text_table_001",
+        "gq_mixed_text_table_002",
+        "gq_mixed_text_table_003",
+        "gq_auto_027"
+      ],
+      "user_gold_answer_shape_distribution": {
+        "AGGREGATION_RESULT": 1,
+        "CELL_VALUE": 6,
+        "FORMULA_VALUE": 6,
+        "NOT_ANSWERABLE_OR_POLICY_PENDING": 2,
+        "RANGE_LOCATION_SUMMARY": 24,
+        "ROW_SUMMARY": 11
+      },
+      "user_required_citation_policy_distribution": {
+        "EXACT_CELL": 8,
+        "EXACT_CELL, EXACT_ROW": 1,
+        "EXACT_ROW": 11,
+        "POLICY_EXCLUDED": 7,
+        "ROW_GROUP_RANGE": 5,
+        "SHEET_RANGE_WITH_EXAMPLES": 17,
+        "TABLE_RANGE": 1
+      }
+    }
+  },
+  "unresolved_user_review_rows": {
+    "pdf_file_lookup_companion": [
+      "pdf_file_lookup_content_anchor_004",
+      "pdf_file_lookup_content_anchor_012",
+      "pdf_file_lookup_content_anchor_013",
+      "pdf_file_lookup_content_anchor_014",
+      "pdf_file_lookup_content_anchor_015",
+      "pdf_file_lookup_content_anchor_017",
+      "pdf_file_lookup_content_anchor_018",
+      "pdf_file_lookup_content_anchor_020",
+      "pdf_file_lookup_metadata_002"
+    ],
+    "text_namu_v2": [
+      "text_namu_v2_0006",
+      "text_namu_v2_0010",
+      "text_namu_v2_0013",
+      "text_namu_v2_0019",
+      "text_namu_v2_0020",
+      "text_namu_v2_0023",
+      "text_namu_v2_0024",
+      "text_namu_v2_0027",
+      "text_namu_v2_0029",
+      "text_namu_v2_0031",
+      "text_namu_v2_0033",
+      "text_namu_v2_0043",
+      "text_namu_v2_0044",
+      "text_namu_v2_0066",
+      "text_namu_v2_0067",
+      "text_namu_v2_0078",
+      "text_namu_v2_0080",
+      "text_namu_v2_0082",
+      "text_namu_v2_0091",
+      "text_namu_v2_0092",
+      "text_namu_v2_0093",
+      "text_namu_v2_0094",
+      "text_namu_v2_0095"
+    ],
+    "xlsx_human_review": [
+      "gq_xlsx_lookup_001",
+      "gq_xlsx_lookup_004",
+      "gq_xlsx_lookup_005",
+      "gq_xlsx_lookup_006",
+      "gq_xlsx_lookup_007",
+      "gq_xlsx_lookup_008",
+      "gq_xlsx_date_number_format_001",
+      "gq_xlsx_date_number_format_003",
+      "gq_xlsx_aggregation_001",
+      "gq_xlsx_aggregation_002",
+      "gq_auto_012",
+      "gq_auto_017",
+      "gq_auto_018",
+      "gq_auto_022",
+      "gq_auto_023",
+      "gq_auto_028",
+      "gq_auto_031",
+      "gq_auto_034",
+      "gq_auto_035",
+      "gq_auto_036",
+      "gq_auto_037",
+      "gq_auto_038",
+      "gq_auto_040",
+      "gq_auto_043",
+      "gq_auto_044",
+      "gq_xlsx_header_ambiguous_001",
+      "gq_xlsx_header_ambiguous_002",
+      "gq_xlsx_header_ambiguous_003",
+      "gq_xlsx_header_ambiguous_004",
+      "gq_xlsx_date_number_format_002",
+      "gq_xlsx_date_number_format_004",
+      "gq_mixed_text_table_001",
+      "gq_mixed_text_table_002",
+      "gq_mixed_text_table_003",
+      "gq_auto_027"
+    ]
+  },
+  "validation": {
+    "pdf_file_lookup_companion": {
+      "actual_row_count": 28,
+      "blank_query_id_count": 0,
+      "duplicate_query_ids": [],
+      "errors": [],
+      "expected_row_count": 28,
+      "missing_columns": [],
+      "required_columns_present": true,
+      "status": "PASS",
+      "unique_query_ids": true
+    },
+    "text_namu_v2": {
+      "actual_row_count": 100,
+      "blank_query_id_count": 0,
+      "duplicate_query_ids": [],
+      "errors": [],
+      "expected_row_count": 100,
+      "missing_columns": [],
+      "required_columns_present": true,
+      "status": "PASS",
+      "unique_query_ids": true
+    },
+    "xlsx_human_review": {
+      "actual_row_count": 50,
+      "blank_query_id_count": 0,
+      "duplicate_query_ids": [],
+      "errors": [],
+      "expected_row_count": 50,
+      "missing_columns": [],
+      "required_columns_present": true,
+      "status": "PASS",
+      "unique_query_ids": true
+    }
+  }
+}

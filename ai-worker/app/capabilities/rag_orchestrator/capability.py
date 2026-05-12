@@ -67,7 +67,14 @@ class RagQueryOrchestratorCapability(Capability):
         )
         _validate_mode_policy(mode=mode, policy=policy)
 
-        state = run_query_orchestrator_pure(query=query, policy=policy)
+        source_metadata = _mapping_or_empty(
+            request.get("source_metadata") or request.get("sourceMetadata")
+        )
+        state = run_query_orchestrator_pure(
+            query=query,
+            policy=policy,
+            source_metadata=source_metadata,
+        )
         return _json_output(
             {
                 "status": "ok",
@@ -183,9 +190,13 @@ def _state_to_dict(state: Mapping[str, Any]) -> dict[str, Any]:
         "query": state.get("query"),
         "normalized_query": state.get("normalized_query"),
         "intent": state.get("intent"),
+        "source_metadata": dict(state.get("source_metadata", {})),
         "route_decision": dict(state.get("route_decision", {})),
+        "route_diagnostics": list(state.get("route_diagnostics", [])),
+        "loop_states": list(state.get("loop_states", [])),
         "selected_tools": list(state.get("selected_tools", [])),
         "fallback_routes_triggered": list(state.get("fallback_routes_triggered", [])),
+        "fallback_attempts": list(state.get("fallback_attempts", [])),
         "tool_results": [
             item.to_dict() for item in state.get("tool_results", [])
         ],
@@ -197,6 +208,7 @@ def _state_to_dict(state: Mapping[str, Any]) -> dict[str, Any]:
             item.to_dict() for item in state.get("verified_evidence", [])
         ],
         "rejected_evidence": list(state.get("rejected_evidence", [])),
+        "evidence_sufficiency": dict(state.get("evidence_sufficiency", {})),
         "aggregation_results": [
             item.to_dict() for item in state.get("aggregation_results", [])
         ],
@@ -237,6 +249,10 @@ def _get_any(data: Mapping[str, Any], *keys: str) -> Any:
         if key in data:
             return data[key]
     return None
+
+
+def _mapping_or_empty(value: Any) -> Mapping[str, Any]:
+    return value if isinstance(value, Mapping) else {}
 
 
 def _list_str(value: Any) -> list[str]:

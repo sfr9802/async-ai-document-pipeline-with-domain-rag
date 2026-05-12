@@ -24,6 +24,19 @@ from app.capabilities.rag_orchestrator.tools import (
     TOOL_XLSX_VECTOR_SEARCH,
 )
 
+
+class _FakeRouteAdjudicator:
+    def __init__(self, response):
+        self.response = response
+        self.calls = []
+
+    def adjudicate(self, payload):
+        self.calls.append(payload)
+        if isinstance(self.response, Exception):
+            raise self.response
+        return self.response
+
+
 def _policy(
     *,
     source_types=("PDF", "SPREADSHEET", "TEXT"),
@@ -79,6 +92,196 @@ def test_xlsx_aggregation_query_selects_xlsx_tool_and_aggregation_path():
     assert aggregation.deterministic is True
 
 
+def test_easy_xlsx_structured_query_routes_without_llm_adjudicator():
+    adjudicator = _FakeRouteAdjudicator(AssertionError("LLM must not be called"))
+
+    state = run_query_orchestrator_pure(
+        query="xlsx 시트 Revenue 합계를 보여줘",
+        policy=_policy(),
+        route_adjudicator=adjudicator,
+    )
+
+    decision = state["route_decision"]
+    diagnostic = state["route_diagnostics"][0]
+    assert adjudicator.calls == []
+    assert decision["route"] == TRACK_XLSX_BUSINESS_STRUCTURED
+    assert diagnostic["llm_adjudicator_called"] is False
+    assert set(diagnostic["route_scores"]) == {
+        TRACK_TEXT_NAMUWIKI_ANIMATION,
+        TRACK_XLSX_BUSINESS_STRUCTURED,
+        TRACK_PDF_BUSINESS_OCR_MM,
+    }
+    assert "routed" in state["loop_states"]
+    assert state["loop_states"][-1] == "final_diagnostic_only"
+
+
+def test_ambiguous_xlsx_query_calls_llm_adjudicator_with_strict_schema():
+    adjudicator = _FakeRouteAdjudicator(
+        {
+            "primary_route": TRACK_XLSX_BUSINESS_STRUCTURED,
+            "candidate_routes": [TRACK_XLSX_BUSINESS_STRUCTURED],
+            "route_confidence": 0.62,
+            "intent": "xlsx_aggregation",
+            "evidence_lane": "xlsx_structured_evidence",
+            "requires_multi_route": False,
+            "fallback_plan": [TRACK_PDF_BUSINESS_OCR_MM],
+            "policy_flags": ["diagnostic_only"],
+            "blocked_flags": [],
+            "diagnostic_only": True,
+            "reason": "short aggregate query needs spreadsheet evidence",
+        }
+    )
+
+    state = run_query_orchestrator_pure(
+        query="합계?",
+        policy=_policy(),
+        route_adjudicator=adjudicator,
+    )
+
+    decision = state["route_decision"]
+    diagnostic = state["route_diagnostics"][0]
+    assert len(adjudicator.calls) == 1
+    assert adjudicator.calls[0]["diagnostic_only"] is True
+    assert decision["route"] == TRACK_XLSX_BUSINESS_STRUCTURED
+    assert decision["llm_decision_used"] is True
+    assert diagnostic["llm_adjudicator_called"] is True
+    assert diagnostic["llm_validation_status"] == "valid"
+    assert diagnostic["llm_adjudicator_output"]["intent"] == "xlsx_aggregation"
+    assert diagnostic["evidence_lane"] == "xlsx_structured_evidence"
+    assert diagnostic["official_denominator_registry_changed"] is False
+    assert diagnostic["production_vector_written"] is False
+
+
+def test_invalid_llm_json_fails_closed_to_deterministic_diagnostic_multi_route():
+    adjudicator = _FakeRouteAdjudicator("not-json")
+
+    state = run_query_orchestrator_pure(
+        query="이 자료 확인",
+        policy=_policy(),
+        route_adjudicator=adjudicator,
+    )
+
+    decision = state["route_decision"]
+    diagnostic = state["route_diagnostics"][0]
+    assert len(adjudicator.calls) == 1
+    assert decision["route"] == "diagnostic_multi_route"
+    assert decision["llm_decision_used"] is False
+    assert diagnostic["llm_adjudicator_called"] is True
+    assert diagnostic["llm_validation_status"] == "invalid"
+    assert "invalid_llm_json" in diagnostic["blocked_flags"]
+    assert "diagnostic_multi_route" in state["loop_states"]
+    assert diagnostic["diagnostic_only"] is True
+
+
+def test_unsafe_llm_output_fails_closed_without_denominator_or_promotion_mutation():
+    adjudicator = _FakeRouteAdjudicator(
+        {
+            "primary_route": TRACK_XLSX_BUSINESS_STRUCTURED,
+            "candidate_routes": [TRACK_XLSX_BUSINESS_STRUCTURED],
+            "route_confidence": 0.99,
+            "intent": "xlsx_lookup",
+            "evidence_lane": "xlsx_structured_evidence",
+            "requires_multi_route": False,
+            "fallback_plan": [],
+            "policy_flags": [],
+            "blocked_flags": [],
+            "diagnostic_only": False,
+            "reason": "unsafe promotion-like route",
+        }
+    )
+
+    state = run_query_orchestrator_pure(
+        query="행?",
+        policy=_policy(),
+        route_adjudicator=adjudicator,
+    )
+
+    diagnostic = state["route_diagnostics"][0]
+    assert diagnostic["llm_adjudicator_called"] is True
+    assert diagnostic["llm_validation_status"] == "invalid"
+    assert "llm_diagnostic_only_must_be_true" in diagnostic["blocked_flags"]
+    assert diagnostic["official_denominator_registry_changed"] is False
+    assert diagnostic["official_denominator_opened_or_frozen"] is False
+    assert diagnostic["diagnostic_only_row_promoted"] is False
+
+
+def test_hard_guard_blocks_generic_pdf_file_identity_before_llm():
+    adjudicator = _FakeRouteAdjudicator(
+        {
+            "primary_route": TRACK_PDF_BUSINESS_OCR_MM,
+            "candidate_routes": [TRACK_PDF_BUSINESS_OCR_MM],
+            "route_confidence": 0.99,
+            "intent": "pdf_file_identity",
+            "evidence_lane": "pdf_file_identity",
+            "requires_multi_route": False,
+            "fallback_plan": [],
+            "policy_flags": [],
+            "blocked_flags": [],
+            "diagnostic_only": True,
+            "reason": "claims stable identity",
+        }
+    )
+
+    state = run_query_orchestrator_pure(
+        query="계약서 PDF 파일 찾아줘",
+        policy=_policy(source_types=("PDF",), parser_versions=("pdf-extract-v2",)),
+        source_metadata={
+            "source_file_type": "PDF",
+            "requested_evidence_lane": "pdf_file_document_identity",
+            "generic_filename_identity": True,
+            "stable_document_identity": False,
+        },
+        route_adjudicator=adjudicator,
+    )
+
+    decision = state["route_decision"]
+    diagnostic = state["route_diagnostics"][0]
+    assert adjudicator.calls == []
+    assert decision["route"] == "policy_blocked"
+    assert state["selected_tools"] == []
+    assert "stable_identity_required" in diagnostic["blocked_flags"]
+    assert diagnostic["pdf_lanes_aggregated"] is False
+
+
+def test_bounded_fallback_records_at_most_one_fallback_attempt():
+    adjudicator = _FakeRouteAdjudicator(
+        {
+            "primary_route": TRACK_XLSX_BUSINESS_STRUCTURED,
+            "candidate_routes": [TRACK_XLSX_BUSINESS_STRUCTURED],
+            "route_confidence": 0.50,
+            "intent": "ambiguous",
+            "evidence_lane": "xlsx_structured_evidence",
+            "requires_multi_route": False,
+            "fallback_plan": [TRACK_PDF_BUSINESS_OCR_MM],
+            "policy_flags": ["diagnostic_only"],
+            "blocked_flags": [],
+            "diagnostic_only": True,
+            "reason": "try spreadsheet first, then one scoped fallback",
+        }
+    )
+
+    state = run_query_orchestrator_pure(
+        query="합계?",
+        policy=_policy(
+            source_types=("PDF", "SPREADSHEET"),
+            parser_versions=("pdf-extract-v2", "xlsx-extract-v2-hidden-safe"),
+        ),
+        route_adjudicator=adjudicator,
+        fixture="mismatch",
+    )
+
+    diagnostic = state["route_diagnostics"][0]
+    assert diagnostic["fallback_attempts"] == [
+        {"attempt": 1, "route": TRACK_PDF_BUSINESS_OCR_MM}
+    ]
+    assert diagnostic["fallback_attempt_count"] == 1
+    assert state["loop_states"].count("fallback_attempted") == 1
+    assert diagnostic["final_diagnostic_status"] in {
+        "no_supported_evidence",
+        "fallback_blocked",
+    }
+
+
 def test_route_decision_schema_records_guarded_xlsx_route_without_text_fallback():
     state = run_query_orchestrator_pure(
         query="엑셀 표 매출 합계를 보여줘",
@@ -105,6 +308,18 @@ def test_route_decision_schema_records_guarded_xlsx_route_without_text_fallback(
     assert decision["fallback_routes"] == []
     assert state["selected_tools"] == [XLSX_TOOL]
     assert TEXT_TOOL not in state["selected_tools"]
+    diagnostic = state["route_diagnostics"][0]
+    assert diagnostic["query_id"] == "req-graph-1"
+    assert diagnostic["selected_primary_route"] == TRACK_XLSX_BUSINESS_STRUCTURED
+    assert diagnostic["candidate_routes"] == [TRACK_XLSX_BUSINESS_STRUCTURED]
+    assert diagnostic["fallback_routes"] == []
+    assert diagnostic["route_result_diagnostic_only"] is True
+    assert diagnostic["evidence_assembly_lane"] == "xlsx_strict_evidence_citation"
+    assert diagnostic["denominator_scope"] == "xlsx_retrieval_evidence_diagnostic_denominator_23_answer_generation_denominator_0"
+    assert diagnostic["official_denominator_registry_mutated"] is False
+    assert diagnostic["production_namespace_mutated"] is False
+    assert diagnostic["production_vector_index_mutated"] is False
+    assert diagnostic["route_metrics_official"] is False
 
 
 def test_metadata_policy_guard_overrides_conflicting_namuwiki_hint():
@@ -146,7 +361,7 @@ def test_multi_route_query_calls_pdf_and_xlsx_without_global_text_route():
     )
 
     decision = state["route_decision"]
-    assert decision["route"] == "multi_route"
+    assert decision["route"] == "diagnostic_multi_route"
     assert decision["multi_route"] is True
     assert decision["routes"] == [
         TRACK_PDF_BUSINESS_OCR_MM,
@@ -154,6 +369,63 @@ def test_multi_route_query_calls_pdf_and_xlsx_without_global_text_route():
     ]
     assert state["selected_tools"] == [PDF_TOOL, XLSX_TOOL]
     assert TEXT_TOOL not in state["selected_tools"]
+    diagnostic = state["route_diagnostics"][0]
+    assert diagnostic["selected_primary_route"] == "diagnostic_multi_route"
+    assert diagnostic["evidence_assembly_lane"] == "multi_track_evidence_bundle"
+    assert "diagnostic_multi_route_or_fallback_not_official_success" in diagnostic["policy_guards_applied"]
+
+
+def test_namuwiki_query_routes_to_text_track_but_stays_diagnostic_candidate_prep():
+    state = run_query_orchestrator_pure(
+        query="애니 작품 등장인물 설명을 찾아줘",
+        policy=_policy(source_types=("TEXT",), parser_versions=("text-parser-v0",)),
+    )
+
+    decision = state["route_decision"]
+    assert decision["route"] == TRACK_TEXT_NAMUWIKI_ANIMATION
+    assert decision["routes"] == [TRACK_TEXT_NAMUWIKI_ANIMATION]
+    assert decision["required_evidence_type"] == "namuwiki_animation_text"
+    diagnostic = state["route_diagnostics"][0]
+    assert diagnostic["evidence_assembly_lane"] == "text_namuwiki_candidate_prep"
+    assert diagnostic["denominator_scope"] == "text_namuwiki_bound_diagnostic_denominator_47_answer_citation_denominator_not_open"
+    assert diagnostic["route_result_diagnostic_only"] is True
+    assert "text_namuwiki_noncommercial_limited_no_public_or_gold_promotion" in diagnostic["policy_guards_applied"]
+
+
+def test_ambiguous_query_is_diagnostic_multi_route_not_official_success():
+    state = run_query_orchestrator_pure(
+        query="이 자료에서 확인해줘",
+        policy=_policy(),
+    )
+
+    decision = state["route_decision"]
+    assert decision["route"] == "diagnostic_multi_route"
+    assert decision["multi_route"] is True
+    assert decision["route_confidence"] < 0.55
+    diagnostic = state["route_diagnostics"][0]
+    assert diagnostic["route_result_diagnostic_only"] is True
+    assert diagnostic["route_metrics_official"] is False
+    assert diagnostic["route_label_status"] == "missing_route_gold_labels"
+    assert diagnostic["fallback_outcome_label_status"] == "missing_fallback_outcome_labels"
+    assert "diagnostic_multi_route_or_fallback_not_official_success" in diagnostic["policy_guards_applied"]
+
+
+def test_pdf_file_identity_metadata_requires_stable_document_identity():
+    decision = build_route_decision(
+        query="계약서 PDF 파일 찾아줘",
+        policy=_policy(source_types=("PDF",), parser_versions=("pdf-extract-v2",)),
+        source_metadata={
+            "source_file_type": "PDF",
+            "requested_evidence_lane": "pdf_file_document_identity",
+            "generic_filename_identity": True,
+            "stable_document_identity": False,
+        },
+    ).to_dict()
+
+    assert decision["route"] == "policy_blocked"
+    assert decision["evidence_assembly_lane"] == "pdf_file_document_identity_policy_blocked"
+    assert decision["route_result_diagnostic_only"] is True
+    assert "stable_identity_required" in decision["blocked_flags"]
 
 
 def test_mixed_query_calls_pdf_and_xlsx_tools():

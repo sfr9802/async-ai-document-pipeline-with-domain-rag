@@ -335,6 +335,7 @@ def build_compact_json_report(
 ) -> dict[str, Any]:
     calibration = calibration_summary(stage_payloads["narrow_calibration"], stage_payloads["safe_recall_tuning"])
     missed = missed_recovery_summary(stage_payloads["safe_recall_tuning"]["missed_analysis"])
+    triage = triage_consolidation_summary(stage_payloads["missed_row_triage"])
     backend = embedding_backend_summary(stage_payloads["embedding_backend_contract"])
     readiness_summary = embedding_readiness_summary(stage_payloads["embedding_readiness"])
     retrieval_summary = retrieval_probe_summary(stage_payloads["existing_embedding_retrieval_probe"])
@@ -367,6 +368,7 @@ def build_compact_json_report(
         "broad_indexing": guardrails["broad_indexing"],
         "calibration": calibration,
         "missed_recovery": missed,
+        "triage": triage,
         "embedding_backend": backend,
         "embedding_readiness": readiness_summary,
         "existing_embedding_retrieval_probe": retrieval_summary,
@@ -416,6 +418,61 @@ def missed_recovery_summary(missed_analysis: Mapping[str, Any]) -> dict[str, Any
         "safe_recovery_candidates": missed_analysis["safe_recovery_candidate_count"],
         "blocked_by_lane": dict(missed_analysis["counts_by_lane"]),
         "blocked_by_reason": dict(missed_analysis["counts_by_reason"]),
+    }
+
+
+def triage_consolidation_summary(triage_payload: Mapping[str, Any]) -> dict[str, Any]:
+    rows = list(triage_payload.get("rows", []))
+    counts = triage_payload["counts"]
+    selection = triage_payload["selection_policy"]
+
+    def ids_for(category: str) -> list[str]:
+        return [str(row["row_id"]) for row in rows if row.get("category") == category]
+
+    gold_review_rows = [
+        {
+            "row_id": str(row["row_id"]),
+            "lane": str(row.get("lane", "")),
+            "case_type": str(row.get("case_type", "")),
+            "reason": str(row.get("recovery_or_block_reason", "")),
+            "judgment_needed": (
+                "User gold-policy judgment only: expected answer/evidence semantics, "
+                "answerability/relevance label, and whether a future official denominator may include the row."
+            ),
+            "codex_decision": "not_decided",
+        }
+        for row in rows
+        if row.get("category") == "GOLD_POLICY_REQUIRED"
+    ]
+    excluded_frozen = list(selection.get("excluded_frozen_gold_rows", []))
+    return {
+        "category_counts": dict(counts["category_counts"]),
+        "row_groups": {
+            "promotion_candidate": [],
+            "safe_recoverable_report_only": ids_for("SAFE_RECOVERABLE_WITH_EXISTING_EVIDENCE"),
+            "diagnostic_only": ids_for("DIAGNOSTIC_ONLY_DO_NOT_PROMOTE"),
+            "policy_blocked_correctly": ids_for("POLICY_BLOCKED_CORRECTLY"),
+            "index_scope_missing": ids_for("INDEX_SCOPE_MISSING"),
+            "gold_policy_required": ids_for("GOLD_POLICY_REQUIRED"),
+            "unknown_needs_manual_review": ids_for("UNKNOWN_NEEDS_MANUAL_REVIEW"),
+            "excluded_frozen_gold_sourced": [str(row.get("case_id", "")) for row in excluded_frozen],
+        },
+        "frozen_gold_sourced_excluded_count": int(selection.get("excluded_frozen_gold_row_count") or 0),
+        "frozen_gold_used_for_selection": bool(selection.get("frozen_gold_used_for_selection")),
+        "frozen_gold_used_for_training": bool(selection.get("frozen_gold_used_for_training")),
+        "gold_policy_required_user_review": gold_review_rows,
+        "interpretation": {
+            "promotion_candidate": "No current row is a production-promotion candidate.",
+            "safe_recoverable_report_only": (
+                "Recovered rows remain report-only evidence until human-reviewed answer/evidence labels "
+                "and an explicit promotion policy exist."
+            ),
+            "index_scope_missing": (
+                "Do not count as retrieval/ranking failures unless source evidence is proven in-scope and indexed."
+            ),
+            "policy_blocked_correctly": "Preserve current fail-closed blocks; do not count as recovery failures.",
+            "diagnostic_only": "Do not promote OCR/IDP/multimodal or other diagnostic-only evidence.",
+        },
     }
 
 
@@ -645,6 +702,7 @@ def render_compact_md(report: Mapping[str, Any]) -> str:
     sections = [
         ("Calibration Summary", report["calibration"]),
         ("Missed / Blocked Recovery Summary", report["missed_recovery"]),
+        ("Triage Consolidation", report["triage"]),
         ("Embedding Backend Summary", report["embedding_backend"]),
         ("Embedding Readiness Summary", report["embedding_readiness"]),
         ("Existing Embedding Retrieval Probe Summary", report["existing_embedding_retrieval_probe"]),

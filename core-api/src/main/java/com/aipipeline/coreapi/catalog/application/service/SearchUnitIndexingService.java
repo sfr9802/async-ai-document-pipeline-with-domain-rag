@@ -383,10 +383,17 @@ public class SearchUnitIndexingService {
         putJsonIfPresent(metadata, "locationJson", unit.getLocationJson());
         put(metadata, "citation_text", unit.getCitationText());
         put(metadata, "citationText", unit.getCitationText());
+        put(metadata, "bm25_text", unit.getBm25Text());
+        put(metadata, "bm25Text", unit.getBm25Text());
         put(metadata, "display_text", unit.getDisplayText());
         put(metadata, "displayText", unit.getDisplayText());
         put(metadata, "debug_text", unit.getDebugText());
         put(metadata, "debugText", unit.getDebugText());
+        boolean embeddingTextPresent = unit.getEmbeddingText() != null && !unit.getEmbeddingText().isBlank();
+        put(metadata, "embedding_text_present", embeddingTextPresent);
+        put(metadata, "embeddingTextPresent", embeddingTextPresent);
+        put(metadata, "embedding_text_sha256", unit.getContentSha256());
+        put(metadata, "embeddingTextSha256", unit.getContentSha256());
         put(metadata, "parser_name", unit.getParserName());
         put(metadata, "parserName", unit.getParserName());
         put(metadata, "parser_version", unit.getParserVersion());

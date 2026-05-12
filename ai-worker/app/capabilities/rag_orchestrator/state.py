@@ -37,15 +37,21 @@ class QueryOrchestratorState(TypedDict, total=False):
     query: str
     normalized_query: str
     policy: QueryPolicy
+    source_metadata: dict[str, Any]
     intent: dict[str, Any]
     route_decision: dict[str, Any]
+    route_diagnostics: list[dict[str, Any]]
+    route_adjudicator: Any
+    loop_states: list[str]
     selected_tools: list[str]
     tool_results: list[ToolResult]
     fallback_routes_triggered: list[str]
+    fallback_attempts: list[dict[str, Any]]
     evidence: list[Evidence]
     merged_evidence: list[Evidence]
     verified_evidence: list[Evidence]
     rejected_evidence: list[dict[str, Any]]
+    evidence_sufficiency: dict[str, Any]
     aggregation_results: list[XlsxAggregationResult]
     answer: dict[str, Any]
     stop_reason: str

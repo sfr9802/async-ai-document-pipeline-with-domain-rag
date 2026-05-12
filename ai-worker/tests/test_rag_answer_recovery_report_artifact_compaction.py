@@ -60,6 +60,7 @@ def test_compact_reports_have_required_sections_and_guardrails(tmp_path: Path):
     for section in (
         "calibration",
         "missed_recovery",
+        "triage",
         "embedding_backend",
         "embedding_readiness",
         "existing_embedding_retrieval_probe",
@@ -72,6 +73,7 @@ def test_compact_reports_have_required_sections_and_guardrails(tmp_path: Path):
         "## Status",
         "## Calibration Summary",
         "## Missed / Blocked Recovery Summary",
+        "## Triage Consolidation",
         "## Embedding Backend Summary",
         "## Embedding Readiness Summary",
         "## Existing Embedding Retrieval Probe Summary",
@@ -83,6 +85,15 @@ def test_compact_reports_have_required_sections_and_guardrails(tmp_path: Path):
     assert report["official_answer_denominator_ready"] is False
     assert report["guardrails"]["production_index_mutation"] is False
     assert report["guardrails"]["vector_write_attempted"] is False
+    assert report["embedding_backend"]["backend_embedding_model"] == "BAAI/bge-m3"
+    assert report["triage"]["category_counts"]["SAFE_RECOVERABLE_WITH_EXISTING_EVIDENCE"] == 5
+    assert report["triage"]["category_counts"]["GOLD_POLICY_REQUIRED"] == 6
+    assert report["triage"]["row_groups"]["promotion_candidate"] == []
+    assert len(report["triage"]["row_groups"]["safe_recoverable_report_only"]) == 5
+    assert len(report["triage"]["gold_policy_required_user_review"]) == 6
+    assert report["triage"]["frozen_gold_sourced_excluded_count"] == 12
+    assert report["triage"]["frozen_gold_used_for_selection"] is False
+    assert report["triage"]["frozen_gold_used_for_training"] is False
     assert report["verification"]["official_denominator_registry_json_diff_status"] == "unchanged"
     assert report["verification"]["official_denominator_registry_json_cached_diff_status"] == "unchanged"
 

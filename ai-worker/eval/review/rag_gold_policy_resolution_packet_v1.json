@@ -1,0 +1,1622 @@
+{
+  "counts_by_proposed_decision": {
+    "pdf_file_lookup_companion": {
+      "EXCLUDE_POLICY_OR_NOT_ANSWERABLE": 6,
+      "KEEP_PENDING_USER_REVIEW": 3
+    },
+    "xlsx_human_review": {
+      "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE": 23,
+      "KEEP_PENDING_EVIDENCE": 2
+    }
+  },
+  "exact_remaining_user_decisions": {
+    "pdf_file_lookup_companion": [
+      {
+        "decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+        "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+        "query_id": "pdf_file_lookup_content_anchor_004"
+      },
+      {
+        "decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+        "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+        "query_id": "pdf_file_lookup_content_anchor_012"
+      },
+      {
+        "decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+        "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+        "query_id": "pdf_file_lookup_content_anchor_013"
+      },
+      {
+        "decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+        "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+        "query_id": "pdf_file_lookup_content_anchor_014"
+      },
+      {
+        "decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+        "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+        "query_id": "pdf_file_lookup_content_anchor_015"
+      },
+      {
+        "decision_needed": "Confirm whether the generic filename is acceptable, or provide a stable document identity before file-lookup inclusion.",
+        "proposed_expected_evidence_policy": "KEEP_PENDING_USER_REVIEW",
+        "query_id": "pdf_file_lookup_content_anchor_017"
+      },
+      {
+        "decision_needed": "Confirm whether the generic filename is acceptable, or provide a stable document identity before file-lookup inclusion.",
+        "proposed_expected_evidence_policy": "KEEP_PENDING_USER_REVIEW",
+        "query_id": "pdf_file_lookup_content_anchor_018"
+      },
+      {
+        "decision_needed": "Confirm whether the generic filename is acceptable, or provide a stable document identity before file-lookup inclusion.",
+        "proposed_expected_evidence_policy": "KEEP_PENDING_USER_REVIEW",
+        "query_id": "pdf_file_lookup_content_anchor_020"
+      },
+      {
+        "decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+        "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+        "query_id": "pdf_file_lookup_metadata_002"
+      }
+    ],
+    "text_namu_v2": [
+      "Carry forward the 23 TEXT/Namu unresolved rows for a separate TEXT-only gold-policy review."
+    ],
+    "xlsx_human_review": [
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_xlsx_lookup_001",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_xlsx_lookup_004",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_xlsx_lookup_005",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_xlsx_lookup_006",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_xlsx_lookup_007",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_xlsx_lookup_008",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_xlsx_date_number_format_001",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Provide or confirm the exact evidence locator/evidence sufficiency before this row can become an official retrieval/evidence candidate.",
+        "query_id": "gq_xlsx_date_number_format_003",
+        "recommendation": "KEEP_PENDING_EVIDENCE"
+      },
+      {
+        "decision_needed": "Provide or confirm the exact evidence locator/evidence sufficiency before this row can become an official retrieval/evidence candidate.",
+        "query_id": "gq_xlsx_aggregation_001",
+        "recommendation": "KEEP_PENDING_EVIDENCE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_xlsx_aggregation_002",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_012",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_017",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_018",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_022",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_023",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_028",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_031",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_034",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_035",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_036",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_037",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_038",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_040",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_043",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      },
+      {
+        "decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+        "query_id": "gq_auto_044",
+        "recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE"
+      }
+    ]
+  },
+  "generated_at": "2026-05-12T01:54:29.739056+00:00",
+  "guardrail_status": {
+    "diagnostic_only_row_promoted": false,
+    "not_answerable_or_irrelevant_emitted_as_content_positive": false,
+    "official_denominator_opened": false,
+    "official_denominator_registry_changed": false,
+    "official_denominator_registry_path": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+    "official_denominator_registry_sha256_after": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22",
+    "official_denominator_registry_sha256_before": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22",
+    "pdf_content_and_file_identity_aggregated": false,
+    "production_namespace_mutated": false,
+    "report_only": true,
+    "retrieval_variants_run": false
+  },
+  "official_denominator_registry_not_changed": true,
+  "pdf_decision_packets": [
+    {
+      "appears_to_be": "policy_excluded_not_answerable",
+      "current_conflict_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "NOT_ANSWERABLE",
+        "PARTIAL",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+      ],
+      "current_issue_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "NOT_ANSWERABLE",
+        "PARTIAL",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+      ],
+      "current_normalized_bucket": "EXPECTED_EVIDENCE_REVISION",
+      "exact_user_decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+      "expected_document_version_id": "",
+      "expected_file_name": "20210101(low).pdf",
+      "generic_filename_identity_risk": false,
+      "official_denominator_frozen": false,
+      "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+      "proposed_expected_evidence_text_or_summary": {
+        "source_field": "expected_evidence_excerpt",
+        "text": "expected_file_name=20210101(low).pdf; content_reference=사이버지점 cyber.kepco.co.kr 스마트폰 앱 스마트 한전(아이폰, 안드로이드폰 사용 가능) 트위터 www.twitter.com/iamkepco 페이스북 www.facebook.com/iamkepco 블로그 blog.kepco.co.kr 인스타그램 www.instagram.c…"
+      },
+      "query_id": "pdf_file_lookup_content_anchor_004",
+      "rationale": "NOT_ANSWERABLE or IRRELEVANT rows cannot silently become content-positive denominator rows.",
+      "source_file_name": "20210101(low).pdf",
+      "stable_document_identity": {
+        "available": true,
+        "basis": "non_generic_expected_file_name",
+        "value": "20210101(low).pdf"
+      }
+    },
+    {
+      "appears_to_be": "policy_excluded_not_answerable",
+      "current_conflict_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "ANSWERABLE_AS_FILE_LOOKUP",
+        "IRRELEVANT",
+        "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+        "GENERIC_FILENAME"
+      ],
+      "current_issue_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "ANSWERABLE_AS_FILE_LOOKUP",
+        "IRRELEVANT",
+        "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+        "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+        "GENERIC_FILENAME"
+      ],
+      "current_normalized_bucket": "EXPECTED_EVIDENCE_REVISION",
+      "exact_user_decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+      "expected_document_version_id": "",
+      "expected_file_name": "file (1).pdf",
+      "generic_filename_identity_risk": true,
+      "official_denominator_frozen": false,
+      "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+      "proposed_expected_evidence_text_or_summary": {
+        "source_field": "expected_evidence_excerpt",
+        "text": "expected_file_name=file (1).pdf; content_reference=(6) 수급인은 작업이 다른 공사와 연관될 때에는 을 통하여 협의조정한 내용을 포함하여 시공상세 LHCS 10 10 05"
+      },
+      "query_id": "pdf_file_lookup_content_anchor_012",
+      "rationale": "NOT_ANSWERABLE or IRRELEVANT rows cannot silently become content-positive denominator rows.",
+      "source_file_name": "file (1).pdf",
+      "stable_document_identity": {
+        "available": false,
+        "basis": "none",
+        "value": ""
+      }
+    },
+    {
+      "appears_to_be": "policy_excluded_not_answerable",
+      "current_conflict_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "ANSWERABLE_AS_FILE_LOOKUP",
+        "IRRELEVANT",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+        "GENERIC_FILENAME"
+      ],
+      "current_issue_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "ANSWERABLE_AS_FILE_LOOKUP",
+        "IRRELEVANT",
+        "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+        "GENERIC_FILENAME"
+      ],
+      "current_normalized_bucket": "EXPECTED_EVIDENCE_REVISION",
+      "exact_user_decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+      "expected_document_version_id": "",
+      "expected_file_name": "file (1).pdf",
+      "generic_filename_identity_risk": true,
+      "official_denominator_frozen": false,
+      "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+      "proposed_expected_evidence_text_or_summary": {
+        "source_field": "expected_evidence_excerpt",
+        "text": "expected_file_name=file (1).pdf; content_reference=(1) 수급인은 자재선정을 위한 제품자료에 대하여 이 항목에서 언급하지 않은 사항에 대하여는 해 LHCS 10 10 20"
+      },
+      "query_id": "pdf_file_lookup_content_anchor_013",
+      "rationale": "NOT_ANSWERABLE or IRRELEVANT rows cannot silently become content-positive denominator rows.",
+      "source_file_name": "file (1).pdf",
+      "stable_document_identity": {
+        "available": false,
+        "basis": "none",
+        "value": ""
+      }
+    },
+    {
+      "appears_to_be": "policy_excluded_not_answerable",
+      "current_conflict_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "NOT_ANSWERABLE",
+        "IRRELEVANT",
+        "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+        "GENERIC_FILENAME"
+      ],
+      "current_issue_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "NOT_ANSWERABLE",
+        "IRRELEVANT",
+        "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+        "GENERIC_FILENAME"
+      ],
+      "current_normalized_bucket": "EXPECTED_EVIDENCE_REVISION",
+      "exact_user_decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+      "expected_document_version_id": "",
+      "expected_file_name": "file (10).pdf",
+      "generic_filename_identity_risk": true,
+      "official_denominator_frozen": false,
+      "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+      "proposed_expected_evidence_text_or_summary": {
+        "source_field": "expected_evidence_excerpt",
+        "text": "expected_file_name=file (10).pdf; content_reference=(1) 관련 기준은 (1.2.2) , (1.2.3) 을 따른다. KCS 31 10 21 KCS 31 10 21"
+      },
+      "query_id": "pdf_file_lookup_content_anchor_014",
+      "rationale": "NOT_ANSWERABLE or IRRELEVANT rows cannot silently become content-positive denominator rows.",
+      "source_file_name": "file (10).pdf",
+      "stable_document_identity": {
+        "available": false,
+        "basis": "none",
+        "value": ""
+      }
+    },
+    {
+      "appears_to_be": "policy_excluded_not_answerable",
+      "current_conflict_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "NOT_ANSWERABLE",
+        "IRRELEVANT",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+        "GENERIC_FILENAME"
+      ],
+      "current_issue_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "NOT_ANSWERABLE",
+        "IRRELEVANT",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+        "GENERIC_FILENAME"
+      ],
+      "current_normalized_bucket": "EXPECTED_EVIDENCE_REVISION",
+      "exact_user_decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+      "expected_document_version_id": "",
+      "expected_file_name": "file (10).pdf",
+      "generic_filename_identity_risk": true,
+      "official_denominator_frozen": false,
+      "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+      "proposed_expected_evidence_text_or_summary": {
+        "source_field": "expected_evidence_excerpt",
+        "text": "expected_file_name=file (10).pdf; content_reference=(1) 총칙 공사일반의 공사사진 및 비디오 촬영에 따른 사진촬영대상 부위는 다음과 같다. LHCS 10 10 05 01"
+      },
+      "query_id": "pdf_file_lookup_content_anchor_015",
+      "rationale": "NOT_ANSWERABLE or IRRELEVANT rows cannot silently become content-positive denominator rows.",
+      "source_file_name": "file (10).pdf",
+      "stable_document_identity": {
+        "available": false,
+        "basis": "none",
+        "value": ""
+      }
+    },
+    {
+      "appears_to_be": "file_document_identity_lookup_candidate",
+      "current_conflict_tags": [
+        "KEEP_POSITIVE",
+        "REVISE_EXPECTED_EVIDENCE",
+        "ANSWERABLE_AS_FILE_LOOKUP",
+        "PARTIAL",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+        "GENERIC_FILENAME"
+      ],
+      "current_issue_tags": [
+        "KEEP_POSITIVE",
+        "REVISE_EXPECTED_EVIDENCE",
+        "ANSWERABLE_AS_FILE_LOOKUP",
+        "PARTIAL",
+        "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+        "GENERIC_FILENAME"
+      ],
+      "current_normalized_bucket": "EXPECTED_EVIDENCE_REVISION",
+      "exact_user_decision_needed": "Confirm whether the generic filename is acceptable, or provide a stable document identity before file-lookup inclusion.",
+      "expected_document_version_id": "",
+      "expected_file_name": "file (12).pdf",
+      "generic_filename_identity_risk": true,
+      "official_denominator_frozen": false,
+      "proposed_expected_evidence_policy": "KEEP_PENDING_USER_REVIEW",
+      "proposed_expected_evidence_text_or_summary": {
+        "source_field": "expected_evidence_excerpt",
+        "text": "expected_file_name=file (12).pdf; content_reference=(1) 사용자재는 를 따르며, 자재 및 장비는 모두 신품으로서 품질이 양호하고 설계도서의 요구에 충 LHCS 10 10 20"
+      },
+      "query_id": "pdf_file_lookup_content_anchor_017",
+      "rationale": "The row looks file-identity oriented, but generic filename risk blocks a safe conversion.",
+      "source_file_name": "file (12).pdf",
+      "stable_document_identity": {
+        "available": false,
+        "basis": "none",
+        "value": ""
+      }
+    },
+    {
+      "appears_to_be": "file_document_identity_lookup_candidate",
+      "current_conflict_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "ANSWERABLE_AS_FILE_LOOKUP",
+        "PARTIAL",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+        "GENERIC_FILENAME"
+      ],
+      "current_issue_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "ANSWERABLE_AS_FILE_LOOKUP",
+        "PARTIAL",
+        "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW",
+        "GENERIC_FILENAME"
+      ],
+      "current_normalized_bucket": "EXPECTED_EVIDENCE_REVISION",
+      "exact_user_decision_needed": "Confirm whether the generic filename is acceptable, or provide a stable document identity before file-lookup inclusion.",
+      "expected_document_version_id": "",
+      "expected_file_name": "file (3).pdf",
+      "generic_filename_identity_risk": true,
+      "official_denominator_frozen": false,
+      "proposed_expected_evidence_policy": "KEEP_PENDING_USER_REVIEW",
+      "proposed_expected_evidence_text_or_summary": {
+        "source_field": "expected_evidence_excerpt",
+        "text": "expected_file_name=file (3).pdf; content_reference=③ 공사계약 특수조건 제34조 및 을 따라 경고장 3차 이상 발급받은 때 LHCS 10 40 00"
+      },
+      "query_id": "pdf_file_lookup_content_anchor_018",
+      "rationale": "The row looks file-identity oriented, but generic filename risk blocks a safe conversion.",
+      "source_file_name": "file (3).pdf",
+      "stable_document_identity": {
+        "available": false,
+        "basis": "none",
+        "value": ""
+      }
+    },
+    {
+      "appears_to_be": "file_document_identity_lookup_candidate",
+      "current_conflict_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "ANSWERABLE_AS_FILE_LOOKUP",
+        "PARTIAL",
+        "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+        "GENERIC_FILENAME"
+      ],
+      "current_issue_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "ANSWERABLE_AS_FILE_LOOKUP",
+        "PARTIAL",
+        "EXPECTED_FILE_NAME_OR_DOCUMENT_IDENTITY",
+        "INCLUDE_FILE_LOOKUP_DENOMINATOR_CANDIDATE",
+        "GENERIC_FILENAME"
+      ],
+      "current_normalized_bucket": "EXPECTED_EVIDENCE_REVISION",
+      "exact_user_decision_needed": "Confirm whether the generic filename is acceptable, or provide a stable document identity before file-lookup inclusion.",
+      "expected_document_version_id": "",
+      "expected_file_name": "file (5).pdf",
+      "generic_filename_identity_risk": true,
+      "official_denominator_frozen": false,
+      "proposed_expected_evidence_policy": "KEEP_PENDING_USER_REVIEW",
+      "proposed_expected_evidence_text_or_summary": {
+        "source_field": "expected_evidence_excerpt",
+        "text": "expected_file_name=file (5).pdf; content_reference=(2) 소방공사를 전기공사와 함께 도급받은 경우에 관련법령에 없는 내용은 건설공사 하도급관 LHCS 10 10 05 05"
+      },
+      "query_id": "pdf_file_lookup_content_anchor_020",
+      "rationale": "The row looks file-identity oriented, but generic filename risk blocks a safe conversion.",
+      "source_file_name": "file (5).pdf",
+      "stable_document_identity": {
+        "available": false,
+        "basis": "none",
+        "value": ""
+      }
+    },
+    {
+      "appears_to_be": "policy_excluded_not_answerable",
+      "current_conflict_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "NOT_ANSWERABLE",
+        "IRRELEVANT",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+      ],
+      "current_issue_tags": [
+        "REVISE_EXPECTED_EVIDENCE",
+        "NOT_ANSWERABLE",
+        "IRRELEVANT",
+        "KEEP_CURRENT_EVIDENCE",
+        "INCLUDE_POSITIVE_DENOMINATOR_AFTER_USER_REVIEW"
+      ],
+      "current_normalized_bucket": "EXPECTED_EVIDENCE_REVISION",
+      "exact_user_decision_needed": "Confirm exclusion or revise the answerability/relevance/evidence labels with sufficient expected evidence.",
+      "expected_document_version_id": "",
+      "expected_file_name": "20210101(total).pdf",
+      "generic_filename_identity_risk": false,
+      "official_denominator_frozen": false,
+      "proposed_expected_evidence_policy": "EXCLUDE_POLICY_OR_NOT_ANSWERABLE",
+      "proposed_expected_evidence_text_or_summary": {
+        "source_field": "expected_evidence_excerpt",
+        "text": "expected_file_name=20210101(total).pdf; content_reference=사이버지점 cyber.kepco.co.kr 스마트폰 앱 스마트 한전(아이폰, 안드로이드폰 사용 가능) 트위터 www.twitter.com/iamkepco 페이스북 www.facebook.com/iamkepco 블로그 blog.kepco.co.kr 인스타그램 www.instagram.c…"
+      },
+      "query_id": "pdf_file_lookup_metadata_002",
+      "rationale": "NOT_ANSWERABLE or IRRELEVANT rows cannot silently become content-positive denominator rows.",
+      "source_file_name": "20210101(total).pdf",
+      "stable_document_identity": {
+        "available": true,
+        "basis": "non_generic_expected_file_name",
+        "value": "20210101(total).pdf"
+      }
+    }
+  ],
+  "rows_processed_by_track": {
+    "pdf_file_lookup_companion": 9,
+    "text_namu_v2": 0,
+    "xlsx_human_review": 25
+  },
+  "schema_version": "rag_gold_policy_resolution_packet_v1",
+  "scope": {
+    "active_tracks": [
+      "xlsx_human_review",
+      "pdf_file_lookup_companion"
+    ],
+    "no_retrieval_or_ranking_experiments": true,
+    "pdf_target_source": "pdf_file_lookup_companion.expected_answer_or_evidence_revision_query_ids",
+    "text_namu_v2_resolved": false,
+    "xlsx_target_source": "xlsx_human_review.denominator_confirmation_required_query_ids"
+  },
+  "source_normalization_report": {
+    "cross_track_validation_errors": [],
+    "path": "ai-worker/eval/reports/rag-ingestion/rag_reviewed_gold_policy_normalization_report.json",
+    "sha256": "cf778c3fb163e1e013eea2e70b2d069d5084110ec57a60a3c9a916f8e9fd75ed",
+    "status": "PASS"
+  },
+  "status": "PASS",
+  "unchanged_text_unresolved_summary": {
+    "rationale": "TEXT/Namu unresolved rows are explicitly out of scope for this packet.",
+    "resolution_attempted": false,
+    "track": "text_namuwiki_animation",
+    "unresolved_user_review_count": 23,
+    "unresolved_user_review_rows": [
+      "text_namu_v2_0006",
+      "text_namu_v2_0010",
+      "text_namu_v2_0013",
+      "text_namu_v2_0019",
+      "text_namu_v2_0020",
+      "text_namu_v2_0023",
+      "text_namu_v2_0024",
+      "text_namu_v2_0027",
+      "text_namu_v2_0029",
+      "text_namu_v2_0031",
+      "text_namu_v2_0033",
+      "text_namu_v2_0043",
+      "text_namu_v2_0044",
+      "text_namu_v2_0066",
+      "text_namu_v2_0067",
+      "text_namu_v2_0078",
+      "text_namu_v2_0080",
+      "text_namu_v2_0082",
+      "text_namu_v2_0091",
+      "text_namu_v2_0092",
+      "text_namu_v2_0093",
+      "text_namu_v2_0094",
+      "text_namu_v2_0095"
+    ]
+  },
+  "validation": {
+    "errors": [],
+    "only_requested_pdf_rows_processed": true,
+    "only_requested_xlsx_rows_processed": true,
+    "pdf_lane_counts": {
+      "aggregate_official_denominator_count": null,
+      "content_evidence_packet_count": 0,
+      "file_identity_packet_count": 3,
+      "policy_excluded_or_not_answerable_packet_count": 6
+    },
+    "text_unresolved_carried_forward_only": true
+  },
+  "xlsx_decision_packets": [
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "1호선 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '1호선'. Evidence scope: sheet '철도', range A2:D51.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_xlsx_lookup_001",
+      "question_input": "1호선 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_ROW",
+        "document_version_id": "docv_b24282189b1610cb",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A2:D51",
+        "search_unit_id": "bb88c729-9923-4be1-916a-32e6c9463848",
+        "sheet": "철도",
+        "target_kind": "exact_row"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_ROW"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "우이신설선 201905 승차"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '우이신설선'. Evidence scope: sheet '철도', range A602:D602.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_xlsx_lookup_004",
+      "question_input": "우이신설선 201905 행 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_ROW",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A602:D602",
+        "search_unit_id": "b74ab211-84e3-4687-b73f-2076bff38fdf",
+        "sheet": "철도",
+        "target_kind": "exact_row"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "ROW_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_ROW"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "경인선 월별 승차"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "CONTENT_MISSING_ABSTAIN",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '경인선'. Evidence scope: sheet '철도', range A102:D151.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_xlsx_lookup_005",
+      "question_input": "경인선 월별 승차 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "SHEET_RANGE_WITH_EXAMPLES",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A102:D151",
+        "search_unit_id": "fe8ca279-03ed-42d4-b63d-e25c6a28dbb7",
+        "sheet": "철도",
+        "target_kind": "sheet_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "SHEET_RANGE_WITH_EXAMPLES"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "수인선 월별 승차"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "CONTENT_MISSING_ABSTAIN",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '수인선'. Evidence scope: sheet '철도', range A302:D351.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_xlsx_lookup_006",
+      "question_input": "수인선 월별 승차 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "SHEET_RANGE_WITH_EXAMPLES",
+        "document_version_id": "docv_b24282189b1610cb",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A302:D351",
+        "search_unit_id": "654c0c6a-8b5a-4aa1-982c-f04acdff35d0",
+        "sheet": "철도",
+        "target_kind": "sheet_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "SHEET_RANGE_WITH_EXAMPLES"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "청운노인요양원 소재 행"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "장기요양기관코드",
+          "장기요양기관이름",
+          "우편번호",
+          "시도코드",
+          "시군구코드",
+          "법정동코드",
+          "시도 시군구 법정동명",
+          "지정일자",
+          "설치신고일자",
+          "기관별 상세주소"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '11,111,000,006' / column '장기요양기관이름' has value '청운노인요양원'. Evidence scope: sheet '일반현황', range A2:J51.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_xlsx_lookup_007",
+      "question_input": "청운노인요양원 주소 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_CELL",
+        "document_version_id": "docv_7bddd99c39ffdf1a",
+        "file": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "range": "A2:J51",
+        "search_unit_id": "3986c4c9-4430-4008-a8c9-e484c8bfb2ba",
+        "sheet": "일반현황",
+        "target_kind": "exact_cell"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "CELL_VALUE",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_CELL"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "부여효요양원 소재 행"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "장기요양기관코드",
+          "장기요양기관이름",
+          "우편번호",
+          "시도코드",
+          "시군구코드",
+          "법정동코드",
+          "시도 시군구 법정동명",
+          "지정일자",
+          "설치신고일자",
+          "기관별 상세주소"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '14,476,000,092' / column '장기요양기관이름' has value '부여효요양원'. Evidence scope: sheet '일반현황', range A5002:J5051.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_xlsx_lookup_008",
+      "question_input": "부여효요양원 주소 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_CELL",
+        "document_version_id": "docv_7bddd99c39ffdf1a",
+        "file": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "range": "A5002:J5051",
+        "search_unit_id": "bc491468-78d9-42ae-9f35-a060943cd39f",
+        "sheet": "일반현황",
+        "target_kind": "exact_cell"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "CELL_VALUE",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_CELL"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "청운노인요양원 지정일자"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "장기요양기관코드",
+          "장기요양기관이름",
+          "우편번호",
+          "시도코드",
+          "시군구코드",
+          "법정동코드",
+          "시도 시군구 법정동명",
+          "지정일자",
+          "설치신고일자",
+          "기관별 상세주소"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '11,111,000,006' / column '장기요양기관이름' has value '청운노인요양원'. Evidence scope: sheet '일반현황', range A2:J51.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_xlsx_date_number_format_001",
+      "question_input": "청운노인요양원 지정일자 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_CELL",
+        "document_version_id": "docv_7bddd99c39ffdf1a",
+        "file": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "range": "A2:J51",
+        "search_unit_id": "3986c4c9-4430-4008-a8c9-e484c8bfb2ba",
+        "sheet": "일반현황",
+        "target_kind": "exact_cell"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "CELL_VALUE",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_CELL"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "버스 201711 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "CONTENT_MISSING_ABSTAIN",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '9호선'. Evidence scope: sheet '철도', range A452:D501.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "KEEP_PENDING_EVIDENCE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Provide or confirm the exact evidence locator/evidence sufficiency before this row can become an official retrieval/evidence candidate.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_xlsx_date_number_format_003",
+      "question_input": "163,443,126 승객수 찾아줘.",
+      "rationale": "Existing artifacts do not satisfy the stricter evidence contract, so the row remains proposed-only.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_CELL",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A452:D501",
+        "search_unit_id": "af9a7cf6-c195-4339-827d-d53cb0253650",
+        "sheet": "철도",
+        "target_kind": "exact_cell"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "FORMULA_VALUE",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_CELL"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "USER_REQUIRED",
+        "text": ""
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "CONTENT_MISSING_ABSTAIN",
+        "headers": [],
+        "source_field": "USER_REQUIRED",
+        "summary": "",
+        "workbook_only_context": true
+      },
+      "codex_recommendation": "KEEP_PENDING_EVIDENCE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Provide or confirm the exact evidence locator/evidence sufficiency before this row can become an official retrieval/evidence candidate.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_xlsx_aggregation_001",
+      "question_input": "버스 승차 쪽 찾아줘.",
+      "rationale": "Existing artifacts do not satisfy the stricter evidence contract, so the row remains proposed-only.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "FAIL",
+        "citation_policy": "SHEET_RANGE_WITH_EXAMPLES",
+        "document_version_id": "",
+        "file": "",
+        "range": "",
+        "search_unit_id": "",
+        "sheet": "",
+        "target_kind": "sheet_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "SHEET_RANGE_WITH_EXAMPLES"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "deterministic_compiled_answer",
+        "text": "Matched table context: 지하철 / 대중교통구분: 지하철; 지하철 / 노선명: 1호선; 지하철 / 년월: 201711. Inferred table context: headers: 대중교통구분, 노선명, 년월, 승차총승객수. Evidence scope: sheet 철도, range A2:D51. Major headers: 대중교통구분, 노선명, 년월, 승차총승객수."
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '1호선'. Evidence scope: sheet '철도', range A2:D51.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_xlsx_aggregation_002",
+      "question_input": "1호선 승객 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "SHEET_RANGE_WITH_EXAMPLES",
+        "document_version_id": "docv_b24282189b1610cb",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A2:D51",
+        "search_unit_id": "bb88c729-9923-4be1-916a-32e6c9463848",
+        "sheet": "철도",
+        "target_kind": "sheet_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "SHEET_RANGE_WITH_EXAMPLES"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "5호선 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '5호선'. Evidence scope: sheet '철도', range A352:D401.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_012",
+      "question_input": "5호선 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "SHEET_RANGE_WITH_EXAMPLES",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A352:D401",
+        "search_unit_id": "fde8e2c3-6faf-4c93-8c37-1b3a0b6789dd",
+        "sheet": "철도",
+        "target_kind": "sheet_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "SHEET_RANGE_WITH_EXAMPLES"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "우이신설선 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '우이신설선'. Evidence scope: sheet '철도', range A602:D602.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_017",
+      "question_input": "우이신설선 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "ROW_GROUP_RANGE",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A602:D602",
+        "search_unit_id": "b74ab211-84e3-4687-b73f-2076bff38fdf",
+        "sheet": "철도",
+        "target_kind": "row_group_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "ROW_GROUP_RANGE"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "하얀민들레노인요양원"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "장기요양기관코드",
+          "장기요양기관이름",
+          "우편번호",
+          "시도코드",
+          "시군구코드",
+          "법정동코드",
+          "시도 시군구 법정동명",
+          "지정일자",
+          "설치신고일자",
+          "기관별 상세주소"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '12,717,000,382' / column '장기요양기관이름' has value '하얀민들레노인요양원'. Evidence scope: sheet '일반현황', range A702:J751.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_018",
+      "question_input": "하얀민들레노인요양원 행 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_ROW",
+        "document_version_id": "docv_7bddd99c39ffdf1a",
+        "file": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "range": "A702:J751",
+        "search_unit_id": "55af9753-ee08-4a19-af14-1751b31cae13",
+        "sheet": "일반현황",
+        "target_kind": "exact_row"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "ROW_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_ROW"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "9호선 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '9호선'. Evidence scope: sheet '철도', range A452:D501.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_022",
+      "question_input": "9호선 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "ROW_GROUP_RANGE",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A452:D501",
+        "search_unit_id": "af9a7cf6-c195-4339-827d-d53cb0253650",
+        "sheet": "철도",
+        "target_kind": "row_group_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "ROW_GROUP_RANGE"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "해뜨는요양원2"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "장기요양기관코드",
+          "장기요양기관이름",
+          "우편번호",
+          "시도코드",
+          "시군구코드",
+          "법정동코드",
+          "시도 시군구 법정동명",
+          "지정일자",
+          "설치신고일자",
+          "기관별 상세주소"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '12,723,000,318' / column '장기요양기관이름' has value '해뜨는요양원2'. Evidence scope: sheet '일반현황', range A752:J801.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_023",
+      "question_input": "해뜨는요양원2 행 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_ROW",
+        "document_version_id": "docv_7bddd99c39ffdf1a",
+        "file": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "range": "A752:J801",
+        "search_unit_id": "9fb7d262-a01a-4960-940f-023c2283de0c",
+        "sheet": "일반현황",
+        "target_kind": "exact_row"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "ROW_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_ROW"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "해오름요양원"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "장기요양기관코드",
+          "장기요양기관이름",
+          "우편번호",
+          "시도코드",
+          "시군구코드",
+          "법정동코드",
+          "시도 시군구 법정동명",
+          "지정일자",
+          "설치신고일자",
+          "기관별 상세주소"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '12,726,000,180' / column '장기요양기관이름' has value '해오름요양원'. Evidence scope: sheet '일반현황', range A802:J851.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_028",
+      "question_input": "해오름요양원 행 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_ROW",
+        "document_version_id": "docv_7bddd99c39ffdf1a",
+        "file": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "range": "A802:J851",
+        "search_unit_id": "97f157d0-1bf7-40c4-a744-4c913886db3f",
+        "sheet": "일반현황",
+        "target_kind": "exact_row"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "ROW_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_ROW"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "8호선 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '8호선'. Evidence scope: sheet '철도', range A402:D451.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_031",
+      "question_input": "8호선 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "ROW_GROUP_RANGE",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A402:D451",
+        "search_unit_id": "2832d99a-3847-47a5-916e-63cbad17ac2b",
+        "sheet": "철도",
+        "target_kind": "row_group_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "ROW_GROUP_RANGE"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "의정부경전철 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '의정부경전철'. Evidence scope: sheet '철도', range A552:D601.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_034",
+      "question_input": "의정부경전철 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "ROW_GROUP_RANGE",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A552:D601",
+        "search_unit_id": "6a9bff61-ae18-4519-99a8-fd60beaeda58",
+        "sheet": "철도",
+        "target_kind": "row_group_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "ROW_GROUP_RANGE"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "3호선 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '3호선'. Evidence scope: sheet '철도', range A52:D101.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_035",
+      "question_input": "3호선 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "ROW_GROUP_RANGE",
+        "document_version_id": "docv_b24282189b1610cb",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A52:D101",
+        "search_unit_id": "98f16e66-211d-4f20-867e-b79f802f9252",
+        "sheet": "철도",
+        "target_kind": "row_group_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "ROW_GROUP_RANGE"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "경인선 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '경인선'. Evidence scope: sheet '철도', range A102:D151.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_036",
+      "question_input": "경인선 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "SHEET_RANGE_WITH_EXAMPLES",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A102:D151",
+        "search_unit_id": "fe8ca279-03ed-42d4-b63d-e25c6a28dbb7",
+        "sheet": "철도",
+        "target_kind": "sheet_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "SHEET_RANGE_WITH_EXAMPLES"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "안산선 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '안산선'. Evidence scope: sheet '철도', range A152:D201.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_037",
+      "question_input": "안산선 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "SHEET_RANGE_WITH_EXAMPLES",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A152:D201",
+        "search_unit_id": "3f1f4399-8e89-4ac8-990e-653966d2da26",
+        "sheet": "철도",
+        "target_kind": "sheet_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "SHEET_RANGE_WITH_EXAMPLES"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "일산선 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '일산선'. Evidence scope: sheet '철도', range A202:D251.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_038",
+      "question_input": "일산선 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "SHEET_RANGE_WITH_EXAMPLES",
+        "document_version_id": "docv_f39c6a5b56da9ad8",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A202:D251",
+        "search_unit_id": "72fb1d66-3a0d-436e-ab7f-2bf5f870ad1a",
+        "sheet": "철도",
+        "target_kind": "sheet_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "SHEET_RANGE_WITH_EXAMPLES"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "수인선 승차총승객수"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "대중교통구분",
+          "노선명",
+          "년월",
+          "승차총승객수"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '지하철' / column '노선명' has value '수인선'. Evidence scope: sheet '철도', range A302:D351.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_040",
+      "question_input": "수인선 승차 쪽 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "SHEET_RANGE_WITH_EXAMPLES",
+        "document_version_id": "docv_b24282189b1610cb",
+        "file": "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx",
+        "range": "A302:D351",
+        "search_unit_id": "654c0c6a-8b5a-4aa1-982c-f04acdff35d0",
+        "sheet": "철도",
+        "target_kind": "sheet_range"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "RANGE_LOCATION_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "SHEET_RANGE_WITH_EXAMPLES"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "신논현요양원"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "장기요양기관코드",
+          "장기요양기관이름",
+          "우편번호",
+          "시도코드",
+          "시군구코드",
+          "법정동코드",
+          "시도 시군구 법정동명",
+          "지정일자",
+          "설치신고일자",
+          "기관별 상세주소"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '12,820,000,600' / column '장기요양기관이름' has value '신논현요양원'. Evidence scope: sheet '일반현황', range A1052:J1101.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_043",
+      "question_input": "신논현요양원 행 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_ROW",
+        "document_version_id": "docv_7bddd99c39ffdf1a",
+        "file": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "range": "A1052:J1101",
+        "search_unit_id": "317a7e33-907b-4fcb-8a15-77063a3ef516",
+        "sheet": "일반현황",
+        "target_kind": "exact_row"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "ROW_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_ROW"
+    },
+    {
+      "candidate_expected_answer": {
+        "source_field": "expected_answer_text_existing",
+        "text": "인천은빛요양원"
+      },
+      "candidate_expected_evidence": {
+        "deterministic_compiled_status": "COMPILED",
+        "headers": [
+          "장기요양기관코드",
+          "장기요양기관이름",
+          "우편번호",
+          "시도코드",
+          "시군구코드",
+          "법정동코드",
+          "시도 시군구 법정동명",
+          "지정일자",
+          "설치신고일자",
+          "기관별 상세주소"
+        ],
+        "source_field": "evidence_summary",
+        "summary": "Row '12,820,000,827' / column '장기요양기관이름' has value '인천은빛요양원'. Evidence scope: sheet '일반현황', range A1102:J1151.",
+        "workbook_only_context": false
+      },
+      "codex_recommendation": "CONFIRM_INCLUDE_OFFICIAL_CANDIDATE",
+      "current_normalized_bucket": "PROPOSED_OFFICIAL_CANDIDATE",
+      "exact_user_decision_needed": "Confirm inclusion in the official retrieval/evidence candidate denominator. This does not open XLSX answer-generation denominator membership.",
+      "official_denominator_frozen": false,
+      "query_id": "gq_auto_044",
+      "question_input": "인천은빛요양원 행 찾아줘.",
+      "rationale": "The row has confirmed answerability/relevance plus existing expected-answer, evidence, and citation target artifacts.",
+      "source_citation_target": {
+        "citation_locator_parse_status": "PASS",
+        "citation_policy": "EXACT_ROW",
+        "document_version_id": "docv_7bddd99c39ffdf1a",
+        "file": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+        "range": "A1102:J1151",
+        "search_unit_id": "5a223a28-02ec-4e21-a21e-958e3ffe32ab",
+        "sheet": "일반현황",
+        "target_kind": "exact_row"
+      },
+      "user_answerability_label": "ANSWERABLE_CONFIRMED",
+      "user_gold_answer_shape": "ROW_SUMMARY",
+      "user_relevance_label": "EVIDENCE_RELEVANT",
+      "user_required_citation_policy": "EXACT_ROW"
+    }
+  ]
+}

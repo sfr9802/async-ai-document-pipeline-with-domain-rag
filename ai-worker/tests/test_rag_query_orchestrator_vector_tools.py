@@ -9,8 +9,10 @@ from app.capabilities.rag_orchestrator.citation_verify import (
     FATAL_INDEX_VERSION,
     FATAL_MISSING_CITATION,
     FATAL_MISSING_LOCATION,
+    FATAL_PDF_STABLE_IDENTITY_REQUIRED,
     FATAL_PARSER_VERSION,
     FATAL_SOURCE_TYPE,
+    FATAL_XLSX_HIDDEN_NEGATIVE_OR_EXCLUDED_ROW,
 )
 from app.capabilities.rag_orchestrator.evidence import QueryPolicy
 from app.capabilities.rag_orchestrator.tools import ToolResult
@@ -80,6 +82,7 @@ def _chunk(
     citation_text="fake.pdf p. 1",
     location_json: dict[str, Any] | None = None,
     chunk_id="chunk-1",
+    extra_metadata: dict[str, Any] | None = None,
 ) -> RetrievedChunk:
     if location_json is None and source_file_type == "PDF":
         location_json = {
@@ -138,6 +141,8 @@ def _chunk(
             "exclude-hidden-v1" if source_file_type == "SPREADSHEET" else None
         ),
     }
+    if extra_metadata:
+        metadata.update(extra_metadata)
     return RetrievedChunk(
         chunk_id=chunk_id,
         doc_id=f"doc-{chunk_id}",
@@ -324,6 +329,54 @@ def test_missing_location_is_rejected_by_verifier():
 
     assert result.evidence == ()
     assert FATAL_MISSING_LOCATION in result.rejected[0].reasons
+
+
+def test_pdf_file_identity_rejects_generic_filename_without_stable_identity():
+    result = pdf_vector_search_tool(
+        "pdf 파일 찾아줘",
+        _policy(),
+        retriever=_FakeRetriever(
+            [
+                _chunk(
+                    extra_metadata={
+                        "requestedEvidenceLane": "pdf_file_document_identity",
+                        "genericFilenameIdentity": True,
+                        "stableDocumentIdentity": False,
+                    }
+                )
+            ]
+        ),
+    )
+
+    assert result.evidence == ()
+    assert FATAL_PDF_STABLE_IDENTITY_REQUIRED in result.rejected[0].reasons
+
+
+def test_xlsx_hidden_or_excluded_candidate_is_rejected_before_answer_surface():
+    result = xlsx_vector_search_tool(
+        "숨김 행 알려줘",
+        _policy(
+            source_types=("SPREADSHEET",),
+            parser_versions=("xlsx-extract-v2-hidden-safe",),
+        ),
+        retriever=_FakeRetriever(
+            [
+                _chunk(
+                    source_file_type="SPREADSHEET",
+                    parser_version="xlsx-extract-v2-hidden-safe",
+                    citation_text="fake.xlsx Hidden!A1:B2",
+                    extra_metadata={
+                        "hidden": True,
+                        "excludedRow": True,
+                        "policyGuard": "hidden_negative_or_excluded_row_guard",
+                    },
+                )
+            ]
+        ),
+    )
+
+    assert result.evidence == ()
+    assert FATAL_XLSX_HIDDEN_NEGATIVE_OR_EXCLUDED_ROW in result.rejected[0].reasons
 
 
 def test_backend_identity_exposes_faiss_vector_post_filter_boundary():

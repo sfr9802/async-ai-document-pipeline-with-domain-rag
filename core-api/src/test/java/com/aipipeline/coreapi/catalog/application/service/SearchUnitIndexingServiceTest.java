@@ -263,8 +263,21 @@ class SearchUnitIndexingServiceTest {
                 .containsEntry("tableId", "SalesTable")
                 .containsEntry("rowStart", 1)
                 .containsEntry("columnEnd", 4)
+                .containsEntry("bm25_text", "sales.xlsx\n매출\nA1:D30\n직원명: 홍길동")
+                .containsEntry("bm25Text", "sales.xlsx\n매출\nA1:D30\n직원명: 홍길동")
+                .containsEntry("display_text", "직원명: 홍길동")
+                .containsEntry("displayText", "직원명: 홍길동")
+                .containsEntry("citation_text", "sales.xlsx > 매출 > A1:D30")
+                .containsEntry("citationText", "sales.xlsx > 매출 > A1:D30")
+                .containsEntry("debug_text", "{}")
+                .containsEntry("debugText", "{}")
+                .containsEntry("embedding_text_present", true)
+                .containsEntry("embeddingTextPresent", true)
+                .containsEntry("embedding_text_sha256", "hash-xlsx")
+                .containsEntry("embeddingTextSha256", "hash-xlsx")
                 .containsEntry("content_sha256", "hash-xlsx")
                 .containsEntry("index_id", "source_file:source-file-1:unit:TABLE:sheet:0:매출:table:SalesTable");
+        assertThat(claimed.getFirst().indexMetadata()).doesNotContainKeys("embedding_text", "embeddingText");
     }
 
     @Test

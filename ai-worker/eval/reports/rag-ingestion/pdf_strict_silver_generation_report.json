@@ -1,0 +1,403 @@
+{
+  "answer_generation_run": false,
+  "citation_metadata_completeness": {
+    "diagnostic_only_fallback_row_count": 7,
+    "field_nonempty_counts": {
+      "OCR_confidence": 0,
+      "bbox": 4,
+      "citation_locator": 7,
+      "document_version_id": 7,
+      "file": 7,
+      "matched_text": 7,
+      "nearby_paragraphs": 0,
+      "page": 7,
+      "parser_source_metadata": 0,
+      "physical_page_index": 7,
+      "region_type": 7,
+      "score": 0,
+      "section_heading": 0,
+      "source_searchunit_id": 0,
+      "source_searchunit_rank": 0,
+      "table_caption_footnote": 0
+    },
+    "field_nonempty_ratio": {
+      "OCR_confidence": 0.0,
+      "bbox": 0.571,
+      "citation_locator": 1.0,
+      "document_version_id": 1.0,
+      "file": 1.0,
+      "matched_text": 1.0,
+      "nearby_paragraphs": 0.0,
+      "page": 1.0,
+      "parser_source_metadata": 0.0,
+      "physical_page_index": 1.0,
+      "region_type": 1.0,
+      "score": 0.0,
+      "section_heading": 0.0,
+      "source_searchunit_id": 0.0,
+      "source_searchunit_rank": 0.0,
+      "table_caption_footnote": 0.0
+    },
+    "field_presence_counts": {
+      "OCR_confidence": 7,
+      "bbox": 7,
+      "citation_locator": 7,
+      "document_version_id": 7,
+      "file": 7,
+      "matched_text": 7,
+      "nearby_paragraphs": 7,
+      "page": 7,
+      "parser_source_metadata": 7,
+      "physical_page_index": 7,
+      "region_type": 7,
+      "score": 7,
+      "section_heading": 7,
+      "source_searchunit_id": 7,
+      "source_searchunit_rank": 7,
+      "table_caption_footnote": 7
+    },
+    "field_presence_ratio": {
+      "OCR_confidence": 1.0,
+      "bbox": 1.0,
+      "citation_locator": 1.0,
+      "document_version_id": 1.0,
+      "file": 1.0,
+      "matched_text": 1.0,
+      "nearby_paragraphs": 1.0,
+      "page": 1.0,
+      "parser_source_metadata": 1.0,
+      "physical_page_index": 1.0,
+      "region_type": 1.0,
+      "score": 1.0,
+      "section_heading": 1.0,
+      "source_searchunit_id": 1.0,
+      "source_searchunit_rank": 1.0,
+      "table_caption_footnote": 1.0
+    },
+    "input_candidate_row_count": 7,
+    "locator_complete_row_count": 0,
+    "locator_completeness": 0.0,
+    "metadata_key_presence_completeness": 1.0,
+    "metadata_nonempty_value_completeness": 0.473,
+    "required_fields": [
+      "file",
+      "document_version_id",
+      "page",
+      "physical_page_index",
+      "region_type",
+      "bbox",
+      "matched_text",
+      "section_heading",
+      "table_caption_footnote",
+      "nearby_paragraphs",
+      "OCR_confidence",
+      "source_searchunit_id",
+      "source_searchunit_rank",
+      "parser_source_metadata",
+      "citation_locator",
+      "score"
+    ],
+    "strict_silver_row_count": 0
+  },
+  "counts": {
+    "candidate_row_count": 9,
+    "diagnostic_only_fallback_row_count": 7,
+    "generated_silver_row_count": 0,
+    "input_denominator_row_count": 7,
+    "pdf_answer_generation_denominator": 0,
+    "pending_deferred_ocr_or_parsing_row_count": 2,
+    "policy_excluded_row_count": 6,
+    "registry_diagnostic_only_row_count": 6,
+    "registry_pdf_row_count": 22,
+    "stable_identity_required_row_count": 3,
+    "strict_structured_row_count": 0
+  },
+  "deferred_rows": [
+    {
+      "evidence_lane": "none",
+      "query_id": "route_review_ambiguous_multi_route_001",
+      "reason": "fallback_deferred_until_source_context_extraction"
+    },
+    {
+      "evidence_lane": "pdf_content_evidence",
+      "query_id": "fallback_review_pdf_content_file_identity_lane_001",
+      "reason": "fallback_deferred_until_ocr_parse_keywords"
+    }
+  ],
+  "diagnostic_only": true,
+  "diagnostic_only_fallback_rows": [
+    {
+      "evidence_lane": "pdf_content_evidence",
+      "missing_context_fields": [
+        "nearby_paragraphs",
+        "OCR_confidence",
+        "source_searchunit_id",
+        "source_searchunit_rank",
+        "parser_source_metadata"
+      ],
+      "query_id": "gq_pdf_page_lookup_001",
+      "reason": "pdf_context_diagnostic_only_missing_layout"
+    },
+    {
+      "evidence_lane": "pdf_content_evidence",
+      "missing_context_fields": [
+        "nearby_paragraphs",
+        "OCR_confidence",
+        "source_searchunit_id",
+        "source_searchunit_rank",
+        "parser_source_metadata"
+      ],
+      "query_id": "gq_pdf_section_question_001",
+      "reason": "pdf_context_diagnostic_only_missing_layout"
+    },
+    {
+      "evidence_lane": "pdf_content_evidence",
+      "missing_context_fields": [
+        "bbox",
+        "nearby_paragraphs",
+        "OCR_confidence",
+        "source_searchunit_id",
+        "source_searchunit_rank",
+        "parser_source_metadata"
+      ],
+      "query_id": "gq_auto_010",
+      "reason": "pdf_context_diagnostic_only_missing_layout"
+    },
+    {
+      "evidence_lane": "pdf_content_evidence",
+      "missing_context_fields": [
+        "bbox",
+        "nearby_paragraphs",
+        "OCR_confidence",
+        "source_searchunit_id",
+        "source_searchunit_rank",
+        "parser_source_metadata"
+      ],
+      "query_id": "gq_auto_015",
+      "reason": "pdf_context_diagnostic_only_missing_layout"
+    },
+    {
+      "evidence_lane": "pdf_content_evidence",
+      "missing_context_fields": [
+        "nearby_paragraphs",
+        "OCR_confidence",
+        "source_searchunit_id",
+        "source_searchunit_rank",
+        "parser_source_metadata"
+      ],
+      "query_id": "gq_auto_024",
+      "reason": "pdf_context_diagnostic_only_missing_layout"
+    },
+    {
+      "evidence_lane": "pdf_content_evidence",
+      "missing_context_fields": [
+        "nearby_paragraphs",
+        "OCR_confidence",
+        "source_searchunit_id",
+        "source_searchunit_rank",
+        "parser_source_metadata"
+      ],
+      "query_id": "gq_auto_029",
+      "reason": "pdf_context_diagnostic_only_missing_layout"
+    },
+    {
+      "evidence_lane": "pdf_content_evidence",
+      "missing_context_fields": [
+        "bbox",
+        "nearby_paragraphs",
+        "OCR_confidence",
+        "source_searchunit_id",
+        "source_searchunit_rank",
+        "parser_source_metadata"
+      ],
+      "query_id": "gq_auto_030",
+      "reason": "pdf_context_diagnostic_only_missing_layout"
+    }
+  ],
+  "excluded_query_ids": {
+    "diagnostic_only_fallback": [
+      "gq_pdf_page_lookup_001",
+      "gq_pdf_section_question_001",
+      "gq_auto_010",
+      "gq_auto_015",
+      "gq_auto_024",
+      "gq_auto_029",
+      "gq_auto_030"
+    ],
+    "pending_deferred_ocr_or_parsing": [
+      "route_review_ambiguous_multi_route_001",
+      "fallback_review_pdf_content_file_identity_lane_001"
+    ],
+    "policy_excluded": [
+      "pdf_file_lookup_content_anchor_004",
+      "pdf_file_lookup_content_anchor_012",
+      "pdf_file_lookup_content_anchor_013",
+      "pdf_file_lookup_content_anchor_014",
+      "pdf_file_lookup_content_anchor_015",
+      "pdf_file_lookup_metadata_002"
+    ],
+    "stable_identity_required": [
+      "pdf_file_lookup_content_anchor_017",
+      "pdf_file_lookup_content_anchor_018",
+      "pdf_file_lookup_content_anchor_020"
+    ]
+  },
+  "generated_at": "2026-05-12T16:29:45+00:00",
+  "guardrails": {
+    "answer_citation_surfaces_opened": false,
+    "answer_generation_run": false,
+    "candidate_artifact_mutated": false,
+    "diagnostic_only_row_promoted": false,
+    "diagnostic_only_row_promoted_from_flattened_evidence": false,
+    "immutable_baseline_mutated": false,
+    "official_denominator_opened_or_frozen": false,
+    "official_denominator_registry_changed": false,
+    "pdf_answer_generation_denominator_opened": false,
+    "pdf_content_file_lanes_aggregated": false,
+    "policy_excluded_rows_counted_as_retrieval_failures": false,
+    "production_namespace_mutated": false,
+    "production_vector_index_mutated": false,
+    "production_vector_written": false,
+    "promotion_evidence_created": false,
+    "repo_local_pdf_silver_manifest_written": false,
+    "route_fallback_labels_promoted_to_official_metrics": false
+  },
+  "included_query_ids": [],
+  "input_denominator_query_ids": [
+    "gq_pdf_page_lookup_001",
+    "gq_pdf_section_question_001",
+    "gq_auto_010",
+    "gq_auto_015",
+    "gq_auto_024",
+    "gq_auto_029",
+    "gq_auto_030"
+  ],
+  "lane_separation": {
+    "content_and_file_identity_aggregated": false,
+    "content_evidence_lane": "pdf_content_evidence",
+    "content_to_file_transition_counted_as_success": false,
+    "file_identity_lane": "pdf_file_identity",
+    "file_to_content_transition_counted_as_success": false,
+    "status": "PASS",
+    "strict_silver_lanes": {
+      "pdf_content_evidence": 0,
+      "pdf_file_identity": 0
+    }
+  },
+  "notes": [
+    "The active C7 PDF positive controls identify retrieval/evidence candidates only.",
+    "Current active PDF artifacts do not expose source search unit rank, parser metadata, OCR confidence, or nearby paragraph context for strict promotion.",
+    "All seven input denominator rows remain diagnostic-only until layout/source metadata is present.",
+    "PDF CONTENT evidence and PDF FILE/document identity lanes remain separate.",
+    "Answer and citation generation surfaces remain NOT_OPENED."
+  ],
+  "official_metric": false,
+  "promotion_evidence": false,
+  "report_role": "pdf_strict_retrieval_evidence_silver_generation_diagnostic",
+  "retrieval_evidence_metrics": {
+    "OCR_confidence_available": 0.0,
+    "bbox_available": 0.571,
+    "citation_locator_completeness": 0.0,
+    "metadata_key_presence_completeness": 1.0,
+    "metadata_nonempty_value_completeness": 0.473,
+    "metric_source": "generated_pdf_strict_pre_silver_gate_input_completeness",
+    "nearby_paragraph_included": 0.0,
+    "page_hit": null,
+    "region_hit": null,
+    "retrieval_run_current_slice": false,
+    "table_or_caption_included": 0.0
+  },
+  "retrieval_failure_accounting": {
+    "diagnostic_only_fallback_retrieval_failure_count": 0,
+    "policy_excluded_retrieval_failure_count": 0,
+    "policy_excluded_rows_counted_as_retrieval_failures": false,
+    "stable_identity_required_retrieval_failure_count": 0
+  },
+  "schema_version": "pdf_strict_silver_generation_report_v1",
+  "silver_artifact_policy": {
+    "canonical_repo_silver_artifact_defined": false,
+    "decision": "No canonical PDF strict silver manifest path exists in the repository. The compact report is repo-local; the full manifest is external-only.",
+    "external_runtime_convention": "../_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/",
+    "external_silver_artifact": {
+      "bytes": 0,
+      "exists": true,
+      "path": "D:\\_external_runtime_artifacts\\async-ocr-rag-multimodal-pipeline\\rag-ingestion\\pdf_strict_silver_generation\\pdf_strict_silver_retrieval_evidence_manifest.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "external_silver_artifact_written": true,
+    "full_manifest_location_guard": "assert_external_pdf_silver_output_path",
+    "repo_local_full_manifest_allowed": false,
+    "repo_silver_artifact_written": false
+  },
+  "silver_manifest_preview": [],
+  "source_artifacts": {
+    "fallback_outcome_label_review_applied": {
+      "bytes": 17501,
+      "exists": true,
+      "path": "ai-worker/eval/review/fallback_outcome_label_review_applied_v1.json",
+      "sha256": "69e4807fe06fa1f9e27d4cfe349edb76471fed267441594d899e93a04321de5b"
+    },
+    "official_denominator_registry": {
+      "bytes": 8455,
+      "exists": true,
+      "path": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+      "sha256": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22"
+    },
+    "pdf_gold_csv": {
+      "bytes": 8414,
+      "exists": true,
+      "path": "ai-worker/eval/eval_queries/gold_queries_pdf_v0.csv",
+      "sha256": "cf582fbf0629962ba035ad121d4e9dd7fbea2ee4b7251c51dce2a0a31ea22e29"
+    },
+    "pdf_review_pack_csv": {
+      "bytes": 15084,
+      "exists": true,
+      "path": "ai-worker/eval/review/_archive/2026-05-11-review-cleanup/pdf_gold_v1/pdf_gold_v1_review_draft_pack.csv",
+      "sha256": "03357212258fcb9c1b112fcd8dcf333249c7cb451ff9132ff8bfd265a33f3aa1"
+    },
+    "policy_decisions": {
+      "bytes": 7957,
+      "exists": true,
+      "path": "ai-worker/eval/review/rag_gold_policy_applied_decisions_v1.json",
+      "sha256": "228d203221ae5708656832f3ce7fa42efaeb59ab5ad84de5eebdb73840c4261b"
+    },
+    "route_label_review_applied": {
+      "bytes": 21153,
+      "exists": true,
+      "path": "ai-worker/eval/review/route_gold_label_review_applied_v1.json",
+      "sha256": "0f7d064a2d142033b3103a7667c9f0e1e4a8fd4ec1527f9fcfec850c690521d1"
+    },
+    "three_track_report": {
+      "bytes": 41794,
+      "exists": true,
+      "path": "ai-worker/eval/reports/rag-ingestion/three_track_orchestration_report.json",
+      "sha256": "b535e8ca3201c8eba377769f7131c3607a45d8c8f8b474809888fef90399bff0"
+    }
+  },
+  "status": "COMPLETED_DIAGNOSTIC_ONLY",
+  "strict_silver_evidence_metrics": {
+    "OCR_confidence_available": null,
+    "bbox_available": null,
+    "citation_locator_completeness": null,
+    "metadata_key_presence_completeness": null,
+    "metadata_nonempty_value_completeness": null,
+    "metric_source": "external_pdf_strict_silver_manifest_completeness",
+    "nearby_paragraph_included": null,
+    "page_hit": null,
+    "region_hit": null,
+    "table_or_caption_included": null
+  },
+  "surface_status": {
+    "answer": "NOT_OPENED",
+    "candidate": "DIAGNOSTIC_ONLY",
+    "citation": "NOT_OPENED",
+    "debug_public": "DIAGNOSTIC_ONLY",
+    "official_denominator": "NOT_OPENED",
+    "query": "DIAGNOSTIC_ONLY"
+  },
+  "track": "pdf_business_ocr_mm",
+  "validation": {
+    "errors": [],
+    "ok": true
+  }
+}

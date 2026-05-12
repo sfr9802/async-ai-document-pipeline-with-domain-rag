@@ -86,7 +86,7 @@ def test_test_mode_policy_runs_fake_tool_graph():
     assert body["langchain_used"] is False
     assert body["state"]["selected_tools"] == ["pdf", "xlsx"]
     route_decision = body["state"]["route_decision"]
-    assert route_decision["route"] == "multi_route"
+    assert route_decision["route"] == "diagnostic_multi_route"
     assert route_decision["routes"] == [
         "pdf_business_ocr_mm",
         "xlsx_business_structured",
@@ -98,6 +98,48 @@ def test_test_mode_policy_runs_fake_tool_graph():
     assert body["state"]["verified_evidence"]
     assert body["state"]["answer"]["status"] == "stub"
     assert body["state"]["aggregation_results"]
+    assert body["state"]["loop_states"][-1] == "final_diagnostic_only"
+    assert body["state"]["evidence_sufficiency"]["status"] == "evidence_sufficient"
+
+
+def test_source_metadata_passthrough_blocks_generic_pdf_identity_in_capability():
+    from app.capabilities import registry as registry_module
+
+    registry = registry_module.build_default_registry(
+        _settings(rag_query_orchestrator_enabled=True)
+    )
+    capability = registry.get(CAPABILITY_NAME)
+
+    output = capability.run(
+        _input(
+            {
+                "query": "계약서 PDF 파일 찾아줘",
+                "mode": "test",
+                "policy": {
+                    **_policy_snapshot(),
+                    "allowedSourceFileTypes": ["PDF"],
+                    "allowedParserVersions": ["pdf-extract-v2"],
+                },
+                "sourceMetadata": {
+                    "source_file_type": "PDF",
+                    "requested_evidence_lane": "pdf_file_document_identity",
+                    "generic_filename_identity": True,
+                    "stable_document_identity": False,
+                },
+            }
+        )
+    )
+    body = _body(output)
+
+    state = body["state"]
+    diagnostic = state["route_diagnostics"][0]
+    assert state["source_metadata"]["requested_evidence_lane"] == "pdf_file_document_identity"
+    assert state["route_decision"]["route"] == "policy_blocked"
+    assert state["selected_tools"] == []
+    assert diagnostic["llm_adjudicator_called"] is False
+    assert "stable_identity_required" in diagnostic["blocked_flags"]
+    assert diagnostic["production_vector_written"] is False
+    assert state["loop_states"][-1] == "final_diagnostic_only"
 
 
 def test_missing_required_index_version_is_rejected():

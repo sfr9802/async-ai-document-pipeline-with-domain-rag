@@ -1353,6 +1353,7 @@ def build_backend_contract_report(
         "required_env_vars": embedding_backend.get("required_env_vars", []),
         "missing_required_env_vars": embedding_backend.get("missing_required_env_vars", []),
         "env_presence": embedding_backend.get("env_presence", []),
+        "settings_summary": embedding_backend.get("settings_summary", {}),
         "backend_probe_embedding_allowed": embedding_backend.get("backend_probe_embedding_allowed"),
         "backend_probe_embedding_succeeded": embedding_backend.get("backend_probe_embedding_succeeded"),
         "backend_embedding_dimension_detected": embedding_backend.get("backend_embedding_dimension_detected"),

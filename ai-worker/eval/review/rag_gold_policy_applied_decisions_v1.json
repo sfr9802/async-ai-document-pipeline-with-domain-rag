@@ -1,0 +1,228 @@
+{
+  "application_scope": {
+    "official_denominator_open_or_freeze": false,
+    "official_denominator_registry_mutation": false,
+    "pdf_content_file_identity_aggregation": false,
+    "production_namespace_mutation": false,
+    "report_only": true,
+    "retrieval_variants_run": false
+  },
+  "applied_decisions": {
+    "pdf_excluded_from_gold_v0_1": {
+      "count_as_retrieval_failure": false,
+      "query_ids": [
+        "pdf_file_lookup_content_anchor_004",
+        "pdf_file_lookup_content_anchor_012",
+        "pdf_file_lookup_content_anchor_013",
+        "pdf_file_lookup_content_anchor_014",
+        "pdf_file_lookup_content_anchor_015",
+        "pdf_file_lookup_metadata_002"
+      ],
+      "status": "APPLIED_EXCLUDE_FROM_GOLD_V0_1"
+    },
+    "pdf_stable_identity_required_excluded": {
+      "count_as_retrieval_failure": false,
+      "diagnostic_only_file_identity_review_allowed": true,
+      "generic_filename_identity_accepted": false,
+      "query_ids": [
+        "pdf_file_lookup_content_anchor_017",
+        "pdf_file_lookup_content_anchor_018",
+        "pdf_file_lookup_content_anchor_020"
+      ],
+      "stable_document_identity_required": true,
+      "status": "APPLIED_EXCLUDE_REQUIRE_STABLE_DOCUMENT_IDENTITY"
+    },
+    "text_namu_v2_unresolved_carry_forward": {
+      "include_in_gold_v0_1": false,
+      "query_ids": [
+        "text_namu_v2_0006",
+        "text_namu_v2_0010",
+        "text_namu_v2_0013",
+        "text_namu_v2_0019",
+        "text_namu_v2_0020",
+        "text_namu_v2_0023",
+        "text_namu_v2_0024",
+        "text_namu_v2_0027",
+        "text_namu_v2_0029",
+        "text_namu_v2_0031",
+        "text_namu_v2_0033",
+        "text_namu_v2_0043",
+        "text_namu_v2_0044",
+        "text_namu_v2_0066",
+        "text_namu_v2_0067",
+        "text_namu_v2_0078",
+        "text_namu_v2_0080",
+        "text_namu_v2_0082",
+        "text_namu_v2_0091",
+        "text_namu_v2_0092",
+        "text_namu_v2_0093",
+        "text_namu_v2_0094",
+        "text_namu_v2_0095"
+      ],
+      "resolution_attempted": false,
+      "status": "APPLIED_CARRY_FORWARD_UNCHANGED"
+    },
+    "xlsx_draft_gold_v0_1_candidates": {
+      "official_denominator_frozen": false,
+      "query_ids": [
+        "gq_xlsx_lookup_001",
+        "gq_xlsx_lookup_004",
+        "gq_xlsx_lookup_005",
+        "gq_xlsx_lookup_006",
+        "gq_xlsx_lookup_007",
+        "gq_xlsx_lookup_008",
+        "gq_xlsx_date_number_format_001",
+        "gq_xlsx_aggregation_002",
+        "gq_auto_012",
+        "gq_auto_017",
+        "gq_auto_018",
+        "gq_auto_022",
+        "gq_auto_023",
+        "gq_auto_028",
+        "gq_auto_031",
+        "gq_auto_034",
+        "gq_auto_035",
+        "gq_auto_036",
+        "gq_auto_037",
+        "gq_auto_038",
+        "gq_auto_040",
+        "gq_auto_043",
+        "gq_auto_044"
+      ],
+      "registry_mutation": false,
+      "status": "APPLIED_DRAFT_ONLY_NOT_FROZEN"
+    },
+    "xlsx_pending_evidence": {
+      "gold_v0_1_candidate_manifest_inclusion": false,
+      "query_ids": [
+        "gq_xlsx_date_number_format_003",
+        "gq_xlsx_aggregation_001"
+      ],
+      "row_notes": {
+        "gq_xlsx_aggregation_001": "Expected answer and supporting evidence remain USER_REQUIRED.",
+        "gq_xlsx_date_number_format_003": "Pending exact evidence/citation sufficiency verification."
+      },
+      "status": "APPLIED_KEEP_PENDING_EVIDENCE"
+    }
+  },
+  "counts": {
+    "pdf_excluded_applied": 6,
+    "pdf_stable_identity_required_excluded_applied": 3,
+    "text_unresolved_carried_forward": 23,
+    "xlsx_draft_candidates_applied": 23,
+    "xlsx_pending_evidence_applied": 2
+  },
+  "draft_gold_v0_1_candidate_manifest": {
+    "excluded_pending_query_ids_by_track": {
+      "pdf_file_lookup_companion": [
+        "pdf_file_lookup_content_anchor_004",
+        "pdf_file_lookup_content_anchor_012",
+        "pdf_file_lookup_content_anchor_013",
+        "pdf_file_lookup_content_anchor_014",
+        "pdf_file_lookup_content_anchor_015",
+        "pdf_file_lookup_content_anchor_017",
+        "pdf_file_lookup_content_anchor_018",
+        "pdf_file_lookup_content_anchor_020",
+        "pdf_file_lookup_metadata_002"
+      ],
+      "text_namu_v2": [
+        "text_namu_v2_0006",
+        "text_namu_v2_0010",
+        "text_namu_v2_0013",
+        "text_namu_v2_0019",
+        "text_namu_v2_0020",
+        "text_namu_v2_0023",
+        "text_namu_v2_0024",
+        "text_namu_v2_0027",
+        "text_namu_v2_0029",
+        "text_namu_v2_0031",
+        "text_namu_v2_0033",
+        "text_namu_v2_0043",
+        "text_namu_v2_0044",
+        "text_namu_v2_0066",
+        "text_namu_v2_0067",
+        "text_namu_v2_0078",
+        "text_namu_v2_0080",
+        "text_namu_v2_0082",
+        "text_namu_v2_0091",
+        "text_namu_v2_0092",
+        "text_namu_v2_0093",
+        "text_namu_v2_0094",
+        "text_namu_v2_0095"
+      ],
+      "xlsx_human_review": [
+        "gq_xlsx_date_number_format_003",
+        "gq_xlsx_aggregation_001"
+      ]
+    },
+    "included_query_ids_by_track": {
+      "xlsx_human_review": [
+        "gq_xlsx_lookup_001",
+        "gq_xlsx_lookup_004",
+        "gq_xlsx_lookup_005",
+        "gq_xlsx_lookup_006",
+        "gq_xlsx_lookup_007",
+        "gq_xlsx_lookup_008",
+        "gq_xlsx_date_number_format_001",
+        "gq_xlsx_aggregation_002",
+        "gq_auto_012",
+        "gq_auto_017",
+        "gq_auto_018",
+        "gq_auto_022",
+        "gq_auto_023",
+        "gq_auto_028",
+        "gq_auto_031",
+        "gq_auto_034",
+        "gq_auto_035",
+        "gq_auto_036",
+        "gq_auto_037",
+        "gq_auto_038",
+        "gq_auto_040",
+        "gq_auto_043",
+        "gq_auto_044"
+      ]
+    },
+    "official_denominator_frozen": false,
+    "registry_mutation": false,
+    "status": "DRAFT_ONLY_NOT_FROZEN"
+  },
+  "generated_at": "2026-05-12T03:41:39.067079+00:00",
+  "guardrails": {
+    "diagnostic_only_row_promoted": false,
+    "official_denominator_frozen": false,
+    "official_denominator_opened": false,
+    "official_denominator_registry_changed": false,
+    "official_denominator_registry_path": "ai-worker/eval/eval_queries/official_denominator_registry.json",
+    "official_denominator_registry_sha256_after": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22",
+    "official_denominator_registry_sha256_before": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22",
+    "pdf_content_and_file_identity_aggregated": false,
+    "policy_excluded_rows_counted_as_retrieval_failures": false,
+    "production_namespace_mutated": false,
+    "report_only": true,
+    "retrieval_variants_run": false,
+    "unresolved_text_rows_included_in_gold_v0_1": false
+  },
+  "schema_version": "rag_gold_policy_applied_decisions_v1",
+  "source_user_approved_resolutions": {
+    "path": "ai-worker/eval/review/rag_gold_policy_user_approved_resolutions_v1.json",
+    "sha256": "1729663dd16526c9337d0eedf7d3f31ec08ce97be144d210d61c89ba38da2a0f",
+    "status": "PASS"
+  },
+  "source_user_review_sheet": {
+    "path": "ai-worker/eval/review/rag_gold_policy_user_review_sheet_v1.md",
+    "sha256_after_status_update": "53760c11c6b5b11cbaf492ee99c0cc4f36e1ddbe4a14650498c266cc45f5a006",
+    "sha256_before_status_update": "21c1fbbcc987147a6a2bce64ca79503794011128d3a584d137eb0c365f1b0356"
+  },
+  "status": "PASS",
+  "validation": {
+    "approved_resolutions_status_pass": true,
+    "errors": [],
+    "official_denominator_registry_not_modified": true,
+    "pdf_excluded_count_is_6": true,
+    "pdf_stable_identity_required_excluded_count_is_3": true,
+    "pending_xlsx_rows_not_in_manifest": true,
+    "text_unresolved_count_is_23": true,
+    "xlsx_draft_candidate_count_is_23": true,
+    "xlsx_pending_evidence_count_is_2": true
+  }
+}
