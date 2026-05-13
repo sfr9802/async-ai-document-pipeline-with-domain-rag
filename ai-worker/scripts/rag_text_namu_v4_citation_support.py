@@ -502,6 +502,9 @@ def evaluate_citation_row(
         "expected_evidence_chunk_present": expected_evidence_chunk_present,
         "expected_section_surface_present": expected_section_surface_present,
         "expected_section_path_surface_present": expected_section_path_surface_present,
+        "diagnostic_only": True,
+        "official_metric_input": False,
+        "official_denominator_mutation": False,
     }
 
     if is_needs_review(gold) or not bool(answer_row.get("denominator_included")):
@@ -676,6 +679,11 @@ def metrics_from_rows(
 ) -> dict[str, Any]:
     status_counts = Counter(clean(row.get("citation_support_status")) for row in rows)
     denominator_rows = [row for row in rows if row.get("citation_denominator_included")]
+    official_metric_rows = [row for row in rows if row.get("official_metric_input") is True]
+    # TEXT citation-support policy is still closed. Rows that accidentally set
+    # official_metric_input=True are surfaced as leakage, not converted into an
+    # official denominator by this diagnostic runner.
+    official_denominator_rows: list[Mapping[str, Any]] = []
     supported_statuses = {
         SUPPORTED_BY_EXPECTED_CONTEXT,
         SUPPORTED_BY_CONTEXT_BUT_EXPECTED_CHUNK_NOT_TOP_CITATION,
@@ -701,6 +709,14 @@ def metrics_from_rows(
         "positive_denominator_count": int(fallback.get("positive_denominator_count") or EXPECTED_POSITIVE_DENOMINATOR),
         "needs_review_excluded_count": needs_review_excluded,
         "citation_support_denominator_count": denominator_count,
+        "official_metric_input_rows": len(official_metric_rows),
+        "official_citation_support_denominator_count": len(official_denominator_rows),
+        "official_citation_support_metric_status": (
+            "FAIL_CLOSED_OFFICIAL_METRIC_INPUT_EMPTY"
+            if not official_metric_rows
+            else "FAIL_CLOSED_OFFICIAL_POLICY_NOT_OPEN"
+        ),
+        "official_citation_support_rate": None,
         "retrieval_context_miss_excluded_count": retrieval_excluded,
         "supported_count": supported_count,
         "supported_by_expected_context_count": status_counts[SUPPORTED_BY_EXPECTED_CONTEXT],
@@ -739,6 +755,8 @@ def metrics_from_rows(
 
 def status_from(blockers: list[str], metrics: Mapping[str, Any]) -> str:
     if blockers:
+        return "FAIL"
+    if int(metrics.get("official_metric_input_rows") or 0) != 0:
         return "FAIL"
     if (
         metrics.get("retrieval_context_miss_excluded_count")
@@ -802,6 +820,8 @@ def build_report(
         "evidence_role": "diagnostic",
         "phase": PHASE,
         "promotion_ready": False,
+        "diagnostic_only": True,
+        "citation_metric_role": "diagnostic_only",
         "live_llm_run": False,
         "optional_judge_run": False,
         "deterministic_citation_support_run": not blockers,
@@ -840,6 +860,18 @@ def build_report(
         "positive_denominator_count": metrics.get("positive_denominator_count", EXPECTED_POSITIVE_DENOMINATOR),
         "needs_review_excluded_count": metrics.get("needs_review_excluded_count", 0),
         "citation_support_denominator_count": metrics.get("citation_support_denominator_count", 0),
+        "official_metric_input_rows": metrics.get("official_metric_input_rows", 0),
+        "official_citation_support_denominator_count": metrics.get(
+            "official_citation_support_denominator_count", 0
+        ),
+        "official_citation_support_metric_status": metrics.get(
+            "official_citation_support_metric_status",
+            "FAIL_CLOSED_OFFICIAL_METRIC_INPUT_EMPTY",
+        ),
+        "official_citation_support_rate": metrics.get("official_citation_support_rate"),
+        "official_citation_support_metric_computed": False,
+        "official_text_citation_denominator_opened": False,
+        "official_text_citation_metric_input_required": True,
         "retrieval_context_miss_excluded_count": metrics.get(
             "retrieval_context_miss_excluded_count", 0
         ),
@@ -913,6 +945,8 @@ def build_report(
             "disallowed_context_fields_not_used": not blockers,
             "retrieval_context_misses_not_counted_as_citation_failures": True,
             "answer_generation_failure_count_quoted_from_r7": answer_generation_failure_count == 0,
+            "official_metric_input_rows_zero_fails_closed": metrics.get("official_metric_input_rows") == 0,
+            "diagnostic_citation_support_is_not_official_metric": True,
             "promotion_not_run": True,
             "live_llm_not_run": True,
             "optional_judge_not_run": True,
