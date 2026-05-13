@@ -35,7 +35,7 @@ model-quality tuning remain blocked.
 - Generated/ignored eval artifacts were externalized on 2026-05-11. The active
   Namuwiki/text corpus remains local because the text track still depends on it.
 - Answer recovery is consolidated in the compact report
-  `ai-worker/eval/reports/rag-ingestion/answer_recovery_tuning_report.md`;
+  `ai/eval/reports/rag-ingestion/answer_recovery_tuning_report.md`;
   detailed stage/debug reports remain generated artifacts unless explicitly
   re-emitted.
 
@@ -45,7 +45,7 @@ model-quality tuning remain blocked.
 |---|---|---|---|
 | `xlsx_business_structured` | `STRICT_SILVER_GENERATED_DIAGNOSTIC_ONLY` for retrieval/evidence only; normalized excluded-row / hidden-negative leakage probe `PASS` | Official retrieval/evidence denominator `23`; generated strict silver rows `23`; answer-generation denominator `0`; live smoke Hit@10 `1.0`, MRR@10 `0.942`, citation accuracy `1.0` | Review the strict silver report/manifest. Keep answer-generation and promotion closed until any newly opened answer/citation/debug/public surfaces are reprobed. |
 | XLSX legacy diagnostic | Historical / superseded | Legacy Track A reviewed diagnostic denominator `35`; exact location recovered by top 10 | Preserve only as historical diagnostic evidence. Do not use as the current wrapper default. |
-| `text_namuwiki_animation` | Review / candidate-prep lane | Bound TEXT/NAMU diagnostic positive denominator `47`; current answer/citation-support denominator not opened | Review v2 candidates and collect actual generated answer output before any R8 citation-support denominator. Keep NAMU noncommercial-limited and out of public/support/gold promotion by default. |
+| `text_namuwiki_animation` | Diagnostic answer/citation local-LLM v2 review-prep generated | Bound TEXT/NAMU diagnostic positive denominator `47`; generated-answer review rows `66`; official answer/citation-support denominator `0`; official metric input rows `0` | Review the local-LLM v2 diagnostic artifacts. Keep NAMU noncommercial-limited and out of public/support/gold promotion by default. Official answer/citation metrics require explicit human-approved policy artifacts. |
 | `pdf_business_ocr_mm` | `STRICT_SILVER_DIAGNOSTIC_GATE_COMPLETE` for retrieval/evidence only; no strict rows promoted because active artifacts lack source-unit/layout/OCR context | Conservative PDF positive controls `7`; generated strict silver rows `0`; diagnostic-only fallback rows `7`; policy-excluded rows `6`; stable-identity-required rows `3`; deferred OCR/parsing rows `2`; answer denominator `0` | Add or regenerate PDF evidence with source search unit id/rank, parser/source metadata, nearby paragraphs, bbox/page/region, OCR confidence where relevant, and citation locator metadata before strict silver promotion. Keep FILE/document identity separate from CONTENT evidence. |
 | Route/orchestration metrics | Diagnostic-only | Korean memo labels applied in diagnostic-only route/fallback artifacts; official metric input rows remain `0` | Use the applied route/fallback labels for diagnostic analysis only. Create an explicit policy review before interpreting routing accuracy, wrong-route rate, fallback success, or multi-route success as official metrics. |
 | Answer recovery | Diagnostic-only consolidation complete | Baseline `calibrated_identity_exact_v1`; compact status `PASS`; `185` cases; triage counts: safe-recoverable report-only `5`, index-scope-missing `5`, policy-blocked-correctly `17`, gold-policy-required `6`, diagnostic-only-do-not-promote `4`, unknown `0`; answer denominator `0`; production promotion `false` | User gold-policy judgment is needed only for the 6 `GOLD_POLICY_REQUIRED` rows. Keep safe recoveries report-only and keep index-scope rows out of retrieval/ranking failure counts until source evidence is proven in-scope and indexed. |
@@ -54,7 +54,7 @@ model-quality tuning remain blocked.
 
 Status: `COMPLETED_DIAGNOSTIC_ONLY`; compact reports:
 
-- `ai-worker/eval/reports/rag-ingestion/pdf_strict_silver_generation_report.md`
+- `ai/eval/reports/rag-ingestion/pdf_strict_silver_generation_report.md`
   / `.json`
 - External-only full manifest:
   `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\pdf_strict_silver_generation\pdf_strict_silver_retrieval_evidence_manifest.jsonl`
@@ -95,6 +95,59 @@ Interpretation:
 - Promotion evidence created remains `false`.
 - No official denominator, production vector/index/namespace, candidate
   artifact, or immutable baseline mutation occurred.
+
+## 2026-05-13 TEXT/Namu Local LLM Answer/Citation Diagnostic Slice
+
+Status: `DIAGNOSTIC_LOCAL_LLM_REWRITE_V2_COMPLETE`; compact reports:
+
+- `ai/eval/reports/rag-ingestion/rag_text_namu_answer_citation_local_llm_improvement_report.md`
+  / `.json`
+- `ai/eval/review/rag_text_namu_generated_answer_review_input_local_llm_v2.jsonl`
+- `ai/eval/review/rag_text_namu_answer_citation_review_applied_diagnostic_v2.md`
+  / `.json`
+
+Run context:
+
+- Local LLM endpoint: `llamacpp` / `gemma4-e2b-local` at
+  `http://localhost:8081/v1`.
+- GPU runtime confirmed: Docker container `aipipeline-llama-cpp-gemma4` uses
+  the CUDA llama.cpp image with `--n-gpu-layers 99`, and container-local
+  `nvidia-smi` shows `/llama-server` as a GPU compute process.
+- DB access status: local Postgres read-only transaction guard passed, but
+  candidate TEXT/Namu chunk ids did not match current `search_unit` rows, so
+  `db_context_used=false` and `loaded_search_unit_count=0`.
+
+Counts:
+
+- Generated answer review rows: `66`.
+- v1 clean pass / cleanup / rewrite-required: `29` / `5` / `32`.
+- v2 clean pass / cleanup / unresolved diagnostic rows: `52` / `5` / `9`.
+- v2 literal answer-rewrite-required rows: `9`.
+- v2 citation fully supported generated-answer rows: `57`.
+- Rows improved / regressed / unchanged: `23` / `0` / `43`.
+- Rows blocked by verifier: `9`.
+- Rows blocked by DB unavailable: `0`.
+- Rows blocked by local LLM unavailable: `0`.
+- Official metric input rows: `0`.
+
+Diagnostic target status:
+
+- Minimum diagnostic improvement (`unresolved <= 20`): `true`.
+- Metric preview candidate (`clean >= 47` and `unresolved <= 13`): `true`.
+- Metric pass candidate (`clean >= 53`, `unresolved <= 10`,
+  `citation_supported >= 60`): `false`.
+- Official metric: `false`; human-approved policy artifacts are still required
+  before opening official answer/citation denominators.
+
+Guardrails:
+
+- All v2 rows remain `diagnostic_only=true`, `official_metric_input=false`,
+  and `promotion_evidence=false`.
+- Model-assisted v2 rows are not human-approved gold.
+- Route/fallback labels remain diagnostic-only and are not mixed into
+  answer/citation official metrics.
+- No official denominator registry, production namespace/vector/index,
+  candidate artifact, immutable baseline, or gold registry mutation occurred.
 
 ## Phase 2 And License Readiness
 
@@ -148,9 +201,9 @@ Interpretation rules:
 - Keep PDF native text authoritative; OCR fallback is lower-trust metadata unless
   a later policy says otherwise.
 - Keep active and historical eval paths separate. Current worker eval code lives
-  under `ai-worker/eval/`.
+  under `ai/eval/`.
 - Current SearchUnit indexing CLI is `python -m app.cli.search_unit_indexing`
-  from `ai-worker/`.
+  from `ai/`.
 - For Phase 7 v4 style answerability joins, use `rag_chunks.jsonl`; do not
   substitute `chunks_v4.jsonl`.
 - Generated raw outputs should prefer an external runtime root such as
@@ -175,52 +228,20 @@ Current guardrail state:
 
 ## Canonical References
 
-Planning and orientation:
+Current canonical navigation after cleanup:
 
-- `docs/codex-rag-ingestion-next-steps.md`
-- `docs/rag-ingestion-p1-next-plan.md`
-- `docs/track_a_xlsx_retrieval_improvement_plan.md`
-- `docs/track_b_text_retrieval_e2e_plan.md`
-- `docs/track_c_pdf_embedding_preparation_plan.md`
+- `README.md`
+- `ai/eval/README.md`
+- `ai/eval/eval_queries/README.md`
+- `ai/eval/eval_queries/official_denominator_registry.json`
+- `ai/scripts/README.md`
+- `ai/eval/reports/rag-ingestion/three_track_orchestration_report.md`
+- `docs/THIRD_PARTY_DATA_LICENSES.md`
+- `docs/rag-ingestion-progress.md`
 
-Current status and policy:
-
-- `ai-worker/eval/eval_queries/official_denominator_registry.json`
-- `docs/eval/denominator_policy.md`
-- `ai-worker/eval/reports/rag-ingestion/three_track_orchestration_report.md`
-- `ai-worker/eval/reports/rag-ingestion/README.md`
-- `docs/rag-ingestion/xlsx-retrieval/README.md`
-- `docs/track_b_text_retrieval_e2e/README.md`
-- `docs/track-c-pdf-embedding-preparation/README.md`
-
-Current diagnostic reports:
-
-- `ai-worker/eval/reports/rag-ingestion/xlsx_pre_silver_risk_closure_20260507.md`
-- `ai-worker/eval/reports/rag-ingestion/xlsx_pre_silver_risk_closure_20260507.json`
-- `ai-worker/eval/reports/rag-ingestion/xlsx_end_to_end_preflight_20260507.md`
-- `ai-worker/eval/reports/rag-ingestion/xlsx_end_to_end_preflight_20260507.json`
-- `ai-worker/eval/reports/rag-ingestion/answer_recovery_tuning_report.md`
-- `ai-worker/eval/reports/rag-ingestion/answer_recovery_tuning_report.json`
-- `ai-worker/eval/reports/rag-ingestion/rag_reviewed_gold_policy_normalization_report.md`
-- `ai-worker/eval/reports/rag-ingestion/rag_reviewed_gold_policy_normalization_report.json`
-- `ai-worker/eval/reports/rag-ingestion/xlsx_hidden_excluded_leakage_probe_report.md`
-- `ai-worker/eval/reports/rag-ingestion/xlsx_hidden_excluded_leakage_probe_report.json`
-- `ai-worker/eval/reports/rag-ingestion/xlsx_strict_silver_generation_report.md`
-- `ai-worker/eval/reports/rag-ingestion/xlsx_strict_silver_generation_report.json`
-- `ai-worker/eval/reports/rag-ingestion/pdf_strict_silver_generation_report.md`
-- `ai-worker/eval/reports/rag-ingestion/pdf_strict_silver_generation_report.json`
-- `ai-worker/eval/review/rag_gold_policy_resolution_packet_v1.md`
-- `ai-worker/eval/review/rag_gold_policy_resolution_packet_v1.json`
-- `ai-worker/eval/review/route_gold_label_review_pack_v1.md`
-- `ai-worker/eval/review/route_gold_label_review_pack_v1.json`
-- `ai-worker/eval/review/fallback_outcome_label_review_pack_v1.md`
-- `ai-worker/eval/review/fallback_outcome_label_review_pack_v1.json`
-- `ai-worker/eval/review/route_gold_label_review_applied_v1.md`
-- `ai-worker/eval/review/route_gold_label_review_applied_v1.json`
-- `ai-worker/eval/review/fallback_outcome_label_review_applied_v1.md`
-- `ai-worker/eval/review/fallback_outcome_label_review_applied_v1.json`
-- `.tmp/phase2-review-unlock/phase2_review_unlock_estimate.md`
-- `.tmp/phase2-review-unlock/phase2_review_unlock_estimate.json`
+Detailed diagnostic reports and review packs are generated or externally
+archived artifacts unless a later task explicitly promotes a compact file back
+to tracked documentation.
 
 External archive manifests:
 
@@ -248,7 +269,7 @@ External archive manifests:
 
 - Status: `consolidated_diagnostic_only`; official baseline is
   `calibrated_identity_exact_v1`.
-- Consolidated report: `ai-worker/eval/reports/rag-ingestion/answer_recovery_tuning_report.md`
+- Consolidated report: `ai/eval/reports/rag-ingestion/answer_recovery_tuning_report.md`
   / `.json`; category counts are recorded there with row-id groups.
 - User action required: only the 6 `GOLD_POLICY_REQUIRED` rows need gold-policy
   judgment for expected answer/evidence semantics, answerability/relevance, and
@@ -271,12 +292,12 @@ External archive manifests:
 
 ## 2026-05-11 - Reviewed Gold Policy Normalization
 
-- Imported canonical review-pack CSVs under `ai-worker/eval/review/` for
+- Imported canonical review-pack CSVs under `ai/eval/review/` for
   TEXT/Namu v2 (`100` rows), XLSX human review (`50` rows), and PDF file-lookup
   companion (`28` rows). The accessible XLSX external export matched the repo
   copy by sha256; `/mnt/data` was not mounted in this Windows workspace.
 - Normalization report:
-  `ai-worker/eval/reports/rag-ingestion/rag_reviewed_gold_policy_normalization_report.md`
+  `ai/eval/reports/rag-ingestion/rag_reviewed_gold_policy_normalization_report.md`
   / `.json`; exact proposed-candidate and review-required row ids are recorded
   in the JSON report.
 - Proposed candidates remain proposals, not registry gold: TEXT/Namu content
@@ -302,7 +323,7 @@ External archive manifests:
 - Scope: report-only resolution packet for XLSX denominator-confirmation rows
   and PDF expected-evidence revision rows. TEXT/Namu unresolved rows were
   carried forward unchanged and not resolved in this task.
-- Generated packet: `ai-worker/eval/review/rag_gold_policy_resolution_packet_v1.md`
+- Generated packet: `ai/eval/review/rag_gold_policy_resolution_packet_v1.md`
   / `.json`.
 - XLSX processed `25`: `23` recommend
   `CONFIRM_INCLUDE_OFFICIAL_CANDIDATE`, `2` stay
@@ -322,9 +343,9 @@ External archive manifests:
 ## 2026-05-12 - Gold Policy Decision Draft v1
 
 - Scope: report-only decision draft derived from
-  `ai-worker/eval/review/rag_gold_policy_resolution_packet_v1.json`; no
+  `ai/eval/review/rag_gold_policy_resolution_packet_v1.json`; no
   official denominator membership was frozen.
-- Generated draft: `ai-worker/eval/review/rag_gold_policy_decision_draft_v1.md`
+- Generated draft: `ai/eval/review/rag_gold_policy_decision_draft_v1.md`
   / `.json`.
 - XLSX processed `25`: `23` draft
   `INCLUDE_AS_GOLD_V0_1_CANDIDATE`, `2` remain
@@ -341,10 +362,10 @@ External archive manifests:
 ## 2026-05-12 - Gold Policy User Review Sheet v1
 
 - Scope: compact user-facing sheet generated from
-  `ai-worker/eval/review/rag_gold_policy_decision_draft_v1.json`; no official
+  `ai/eval/review/rag_gold_policy_decision_draft_v1.json`; no official
   denominator membership was frozen.
 - Generated sheet:
-  `ai-worker/eval/review/rag_gold_policy_user_review_sheet_v1.md`.
+  `ai/eval/review/rag_gold_policy_user_review_sheet_v1.md`.
 - Actionable row sections: XLSX pending evidence `2`, PDF pending file identity
   `3`. Batch sections: XLSX include candidates `23`, PDF exclude candidates
   `6`. TEXT/Namu unresolved rows `23` were carried forward unchanged.
@@ -357,7 +378,7 @@ External archive manifests:
 - Scope: report-only materialization of the user's review-sheet decisions; no
   official denominator membership was frozen.
 - Generated resolutions:
-  `ai-worker/eval/review/rag_gold_policy_user_approved_resolutions_v1.md`
+  `ai/eval/review/rag_gold_policy_user_approved_resolutions_v1.md`
   / `.json`.
 - User-approved state: XLSX draft `gold_v0.1` candidates `23`; XLSX pending
   evidence `2`; PDF approved excludes `6`; PDF generic-filename rows excluded
@@ -374,9 +395,9 @@ External archive manifests:
   `rag_gold_policy_user_review_sheet_v1`; no official denominator membership
   was frozen.
 - Generated applied artifacts:
-  `ai-worker/eval/review/rag_gold_policy_applied_decisions_v1.md` / `.json`;
+  `ai/eval/review/rag_gold_policy_applied_decisions_v1.md` / `.json`;
   updated sheet status in
-  `ai-worker/eval/review/rag_gold_policy_user_review_sheet_v1.md` to
+  `ai/eval/review/rag_gold_policy_user_review_sheet_v1.md` to
   `APPLIED`.
 - Applied state: XLSX draft `gold_v0.1` candidates `23`; XLSX pending evidence
   `2`; PDF excludes `6`; PDF stable-identity-required excludes `3`; TEXT/Namu
@@ -389,7 +410,7 @@ External archive manifests:
 ## 2026-05-12 - Three-Track Routing Diagnostic Guardrails
 
 - Status: `implemented_diagnostic_only`.
-- Evidence: `ai-worker/eval/reports/rag-ingestion/three_track_orchestration_report.md`
+- Evidence: `ai/eval/reports/rag-ingestion/three_track_orchestration_report.md`
   / `.json`.
 - Scope: query-time route diagnostics for `text_namuwiki_animation`,
   `xlsx_business_structured`, and `pdf_business_ocr_mm`; no official route
@@ -408,8 +429,8 @@ External archive manifests:
 ## 2026-05-12 - Route/Fallback Label Review Packs v1
 
 - Status: `generated_diagnostic_only_pending_human_review`.
-- Evidence: `ai-worker/eval/review/route_gold_label_review_pack_v1.md` /
-  `.json`, `ai-worker/eval/review/fallback_outcome_label_review_pack_v1.md` /
+- Evidence: `ai/eval/review/route_gold_label_review_pack_v1.md` /
+  `.json`, `ai/eval/review/fallback_outcome_label_review_pack_v1.md` /
   `.json`.
 - Counts: human review rows `8`; Codex diagnostic-only auto-classified rows
   `8`; official metric input rows `0`.
@@ -423,8 +444,8 @@ External archive manifests:
 ## 2026-05-12 - Route/Fallback Label Review Applied v1
 
 - Status: `applied_diagnostic_only`.
-- Evidence: `ai-worker/eval/review/route_gold_label_review_applied_v1.md` /
-  `.json`, `ai-worker/eval/review/fallback_outcome_label_review_applied_v1.md`
+- Evidence: `ai/eval/review/route_gold_label_review_applied_v1.md` /
+  `.json`, `ai/eval/review/fallback_outcome_label_review_applied_v1.md`
   / `.json`.
 - Counts: route human rows applied `5`; fallback human rows applied `3`;
   Codex diagnostic-only auto-classified rows unchanged `8`; official metric
@@ -439,7 +460,7 @@ External archive manifests:
 ## 2026-05-12 - XLSX Hidden/Excluded Leakage Probe
 
 - Status: `PASS`; evidence:
-  `ai-worker/eval/reports/rag-ingestion/xlsx_hidden_excluded_leakage_probe_report.md`
+  `ai/eval/reports/rag-ingestion/xlsx_hidden_excluded_leakage_probe_report.md`
   / `.json`.
 - Scope: diagnostic-only scan before any XLSX answer-generation or promotion
   lane; no retrieval run, answer-generation run, vector write, candidate artifact
@@ -457,7 +478,7 @@ External archive manifests:
 ## 2026-05-12 - XLSX Strict Silver Generation
 
 - Status: `COMPLETED_DIAGNOSTIC_ONLY`; evidence:
-  `ai-worker/eval/reports/rag-ingestion/xlsx_strict_silver_generation_report.md`
+  `ai/eval/reports/rag-ingestion/xlsx_strict_silver_generation_report.md`
   / `.json`.
 - Scope: strict XLSX retrieval/evidence silver only through
   `rag_xlsx_pre_silver_risk_closure.py` and
@@ -473,6 +494,41 @@ External archive manifests:
 - Result: hidden/excluded leakage `PASS`; answer/citation surfaces
   `NOT_OPENED`; policy-excluded rows counted as retrieval failures `false`;
   citation locator completeness `1.0`.
+
+## 2026-05-13 - TEXT/Namu Answer-Citation Diagnostic Review Applied
+
+- Status: `APPLIED_DIAGNOSTIC_ONLY`; evidence:
+  `ai/eval/review/rag_text_namu_answer_citation_review_applied_diagnostic_v1.md`
+  / `.json`.
+- Counts: generated-answer rows `66`, draft rows `66`, applied rows `66`;
+  `KEEP_DIAGNOSTIC_CANDIDATE=29`, `KEEP_WITH_CLEANUP=5`,
+  `ANSWER_REWRITE_REQUIRED=32`.
+- Diagnostic preview: `answer_pass_preview_count=29`,
+  `cleanup_pass_preview_count=5`, `rewrite_required_count=32`,
+  `citation_fully_supported_generated_answer_count=34`,
+  `citation_contains_correct_answer_but_generated_answer_incomplete_count=32`.
+- Guardrails held: `official_metric_input_rows=0`,
+  `official_metric_status=FAIL_CLOSED_OFFICIAL_METRIC_INPUT_EMPTY`, no
+  official denominator/gold/candidate/baseline/production mutation.
+- Verification: apply script returned `APPLIED_DIAGNOSTIC_ONLY`; focused
+  no-cache pytest passed `40` tests; applied JSON parsed; protected paths had
+  no diff.
+- Next: human policy review is still required before any TEXT answer/citation
+  denominator can open.
+
+## 2026-05-13 - Pre-5/12 Review And Docs External Archive Cleanup
+
+- Status: `COMPLETED_PRESERVE_ONLY`; external archive:
+  `D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260513T222411-pre-20260512-review-docs-cleanup`.
+- Counts: moved files `153`; docs created before 2026-05-12 `77`; pre-5/12
+  review `.md/.json/.csv` artifacts `76`; tracked files moved `29`; bytes
+  moved `19014890`.
+- Preserved exceptions: `docs/THIRD_PARTY_DATA_LICENSES.md` and
+  `docs/rag-ingestion-progress.md`.
+- Evidence: external `archive_manifest.csv`, `archive_manifest.pre_move.csv`,
+  and `archive_summary.json` include original relative paths and SHA256 hashes.
+- Verification: manifest rows `153`, hash mismatches `0`, remaining matching
+  docs/review cleanup candidates `0`.
 
 ## Next Recommended Steps
 

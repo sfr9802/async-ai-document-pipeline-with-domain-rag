@@ -1,0 +1,105 @@
+schema_version: retrieval_corpus_diversity_profile_config_v1
+run_id: retrieval_corpus_diversity_profile_20260510
+
+policy:
+  diagnostic_report_only: true
+  mutate_production_indexes: false
+  vector_write_attempted: false
+  run_optuna: false
+  use_llm_for_labels_or_judgments: false
+  official_denominator_registry_changed: false
+  hidden_xlsx_content_previews: false
+  pdf_file_lookup_policy: file_identity_only
+  pdf_file_lookup_claims_content_page_bbox_table_row_column_value_success: false
+
+postgres:
+  host: 127.0.0.1
+  port: 5433
+  database: aipipeline
+  user: aipipeline
+  password: aipipeline_pw
+  connect_timeout_seconds: 5
+
+near_duplicate:
+  simhash_hamming_threshold: 6
+  max_bucket_candidates: 50
+
+diagnostic_source_contract:
+  PDF_CONTENT:
+    target_sources:
+      - DART_PDF
+      - PUBLIC_INSTITUTION_PDF
+      - LOCAL_GOVERNMENT_PDF
+      - INTERNAL_REPORT_PDF
+    positive_policy: content_evidence_only
+    hard_negative_policy: keep_file_identity_confusions_out_of_pdf_content_success
+  XLSX:
+    target_sources:
+      - PUBLIC_DATA_PORTAL_XLSX
+      - KOSIS_EXCEL
+      - LOCAL_GOVERNMENT_STATISTICAL_YEARBOOK_EXCEL
+      - INTERNAL_WORK_EXCEL
+    positive_policy: retrieval_selected_visible_table_content_only
+    hard_negative_policy: preserve_hidden_redaction_and_table_shape_confusions
+  PDF_FILE_IDENTITY:
+    target_sources:
+      - DART_PDF
+      - PUBLIC_INSTITUTION_PDF
+      - STATISTICAL_YEARBOOK_PDF
+    positive_policy: exact_or_canonical_file_identity_only
+    hard_negative_policy: year_version_and_similar_filename_confusions
+  TEXT_NAMU:
+    target_sources:
+      - NAMU_NEAR_DUPLICATE_METADATA
+    positive_policy: no_general_positive_expansion_for_this_diagnostic
+    hard_negative_policy: near_duplicate_metadata_hard_negative_without_query_echo
+
+lanes:
+  - name: TEXT_NAMU
+    query_sources:
+      - role: official_text_namu_v4
+        path: ai/eval/eval_queries/gold_queries_text_namu_v4_v0.csv
+    chunk_sources:
+      - type: jsonl
+        path: ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl
+        text_fields: [chunk_text, text]
+        embedding_text_fields: [embedding_text]
+        bm25_text_fields: [bm25_text]
+        citation_text_fields: [citation_text]
+        source_document_fields: [doc_id]
+        document_family_fields: [title, display_title, retrieval_title]
+        source_artifact_fields: [doc_id]
+        parser_version_fields: [parser_version]
+
+  - name: XLSX
+    hidden_xlsx_redaction: true
+    query_sources:
+      - role: official_xlsx_positive_retrieval_v0
+        path: ai/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv
+    chunk_sources:
+      - type: ragmeta
+        index_version: rag-ingestion-v2-xlsx-candidate-v1
+
+  - name: PDF_CONTENT
+    query_sources:
+      - role: pdf_c7_conservative
+        path: ai/eval/eval_queries/gold_queries_pdf_v0.csv
+    chunk_sources:
+      - type: ragmeta
+        index_version: rag-ingestion-v2-pdf-candidate-v1
+
+  - name: PDF_FILE_IDENTITY
+    identity_only: true
+    query_sources:
+      - role: pdf_file_lookup_gold_positive_clean
+        path: ai/eval/review/gold_silver_tuning/pdf_file_lookup_gold_positive_clean.csv
+      - role: pdf_file_lookup_diagnostic_clean
+        path: ai/eval/review/gold_silver_tuning/pdf_file_lookup_diagnostic_clean.csv
+      - role: silver_pdf_file_lookup_positive_train
+        path: ai/eval/review/gold_silver_tuning/silver_pdf_file_lookup_positive_train.csv
+      - role: silver_pdf_file_lookup_hard_negative_v2
+        path: ai/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv
+
+outputs:
+  json: ai/eval/reports/rag-ingestion/retrieval_corpus_diversity_profile.json
+  markdown: ai/eval/reports/rag-ingestion/retrieval_corpus_diversity_profile.md

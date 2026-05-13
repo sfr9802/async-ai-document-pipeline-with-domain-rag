@@ -16,7 +16,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  *   - Accept worker claim and callback requests
  *   - Serve artifact access URLs to clients
  *
- * The worker is a separate long-lived process; see ai-worker/.
+ * The worker is a separate long-lived process; see ai/.
  */
 @SpringBootApplication
 @ConfigurationPropertiesScan("com.aipipeline.coreapi")

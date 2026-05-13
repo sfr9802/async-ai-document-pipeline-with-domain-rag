@@ -34,7 +34,7 @@ import java.util.UUID;
  *
  * <p>Storage URIs produced by this adapter look like
  * {@code s3://{bucket}/{key}}. The same format is understood by the
- * ai-worker's {@code StorageResolver} (boto3 path) and by this adapter's
+ * ai's {@code StorageResolver} (boto3 path) and by this adapter's
  * {@link #openForRead(String)} when streaming back through core-api.
  *
  * <p>MinIO compatibility is ensured via path-style access, configured

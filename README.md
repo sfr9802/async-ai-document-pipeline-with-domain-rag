@@ -1,6 +1,6 @@
 # 비동기 OCR/RAG 멀티모달 문서 처리 파이프라인
 
-Spring Boot `core-api`와 Python `ai-worker`를 분리해 만든 비동기 AI 문서 처리 파이프라인입니다. 이 저장소의 초점은 단순한 LLM 호출 예제가 아니라, OCR, RAG, PDF/XLSX ingestion, 멀티모달 처리, 로컬 LLM 실험을 백엔드 작업 흐름 안에서 안전하게 실행하고 검증하는 구조입니다.
+Spring Boot `core-api`와 Python `ai`를 분리해 만든 비동기 AI 문서 처리 파이프라인입니다. 이 저장소의 초점은 단순한 LLM 호출 예제가 아니라, OCR, RAG, PDF/XLSX ingestion, 멀티모달 처리, 로컬 LLM 실험을 백엔드 작업 흐름 안에서 안전하게 실행하고 검증하는 구조입니다.
 
 핵심 상태는 PostgreSQL이 소유합니다. Redis는 작업 상태 저장소가 아니라 worker를 깨우는 dispatch signal로만 사용합니다. Worker는 Redis 신호를 받더라도 바로 실행하지 않고, 먼저 `core-api`에 claim을 요청해 실행 소유권을 확보한 뒤 작업을 처리합니다.
 
@@ -45,7 +45,7 @@ flowchart LR
     Client["Client / 테스트 프론트엔드"] --> Core["core-api<br/>Spring Boot"]
     Core -->|"job, artifact, catalog 상태"| DB[("PostgreSQL")]
     Core -->|"dispatch signal only"| Redis[("Redis")]
-    Redis -->|"BRPOP"| Worker["ai-worker<br/>Python"]
+    Redis -->|"BRPOP"| Worker["ai<br/>Python"]
     Worker -->|"claim / fetch / callback"| Core
     Worker --> Capabilities["RAG / OCR / PDF / XLSX / MULTIMODAL / AGENT"]
     Capabilities --> Index[("FAISS + rag metadata")]
@@ -70,10 +70,10 @@ cd core-api
 mvn spring-boot:run
 ```
 
-`ai-worker` 실행:
+`ai` 실행:
 
 ```bash
-cd ai-worker
+cd ai
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -83,7 +83,7 @@ python -m app.main
 간단한 end-to-end smoke:
 
 ```bash
-cd ai-worker
+cd ai
 python scripts/operational/e2e_smoke.py
 ```
 
@@ -110,7 +110,7 @@ AIPIPELINE_WORKER_LLM_LLAMACPP_MODEL=gemma4-e2b-local
 ```text
 .
 ├── core-api/          Spring Boot API, job/catalog/indexing 상태, Flyway migration
-├── ai-worker/
+├── ai/
 │   ├── app/           worker runtime, capability, client, storage, CLI
 │   ├── scripts/       운영, ingestion, diagnostic, eval 보조 CLI
 │   ├── eval/          eval harness와 README 중심의 평가 작업 공간
@@ -126,13 +126,13 @@ AIPIPELINE_WORKER_LLM_LLAMACPP_MODEL=gemma4-e2b-local
 
 | 자료 | 위치 |
 |---|---|
-| Worker 스크립트 | `ai-worker/scripts/` |
-| SearchUnit indexing CLI | `ai-worker/app/cli/search_unit_indexing.py` |
-| Eval harness | `ai-worker/eval/` |
-| RAG ingestion report 안내 | `ai-worker/eval/reports/rag-ingestion/README.md` |
+| Worker 스크립트 | `ai/scripts/` |
+| SearchUnit indexing CLI | `ai/app/cli/search_unit_indexing.py` |
+| Eval harness | `ai/eval/` |
+| RAG ingestion 진행 기록 | `docs/rag-ingestion-progress.md` |
 | RAG/XLSX/PDF/Text 트랙 README | `docs/` 아래 각 `README.md` |
 
-루트의 `scripts/`, `eval/`, `evals/`, `samples/`, `datasets/`, `reports/`, `rag-data*`, `ai-worker/evals/`, `ai-worker/ai_worker/` 계열은 retired path로 봅니다.
+루트의 `scripts/`, `eval/`, `evals/`, `samples/`, `datasets/`, `reports/`, `rag-data*`, `ai/evals/`, `ai/ai_worker/` 계열은 retired path로 봅니다.
 
 ## Git에 넣지 않는 것
 
@@ -143,7 +143,7 @@ AIPIPELINE_WORKER_LLM_LLAMACPP_MODEL=gemma4-e2b-local
 - `*.jsonl`
 - `*.json`
 - `datasets/`
-- `ai-worker/eval/artifacts/`
+- `ai/eval/artifacts/`
 - `README.md`가 아닌 대부분의 `*.md`
 
 따라서 README와 코드가 canonical entrypoint이고, 데이터셋, 실행 결과, 대용량 report는 로컬에서 다시 준비하거나 별도 보관본을 사용해야 합니다. 비핵심 프론트엔드 디자인 핸드오프와 legacy UI/평가 설명 자료는 `archive/experiments/`로 이동했습니다.
@@ -158,13 +158,11 @@ AIPIPELINE_WORKER_LLM_LLAMACPP_MODEL=gemma4-e2b-local
 
 | 주제 | 문서 |
 |---|---|
-| Eval 전체 구조 | [`ai-worker/eval/README.md`](ai-worker/eval/README.md) |
-| Eval query 정책 | [`ai-worker/eval/eval_queries/README.md`](ai-worker/eval/eval_queries/README.md) |
-| Script 위치와 역할 | [`ai-worker/scripts/README.md`](ai-worker/scripts/README.md) |
-| RAG ingestion report 정리 | [`ai-worker/eval/reports/rag-ingestion/README.md`](ai-worker/eval/reports/rag-ingestion/README.md) |
-| XLSX retrieval 트랙 | [`docs/rag-ingestion/xlsx-retrieval/README.md`](docs/rag-ingestion/xlsx-retrieval/README.md) |
-| PDF preparation 트랙 | [`docs/track-c-pdf-embedding-preparation/README.md`](docs/track-c-pdf-embedding-preparation/README.md) |
-| Text retrieval 트랙 | [`docs/track_b_text_retrieval_e2e/README.md`](docs/track_b_text_retrieval_e2e/README.md) |
+| Eval 전체 구조 | [`ai/eval/README.md`](ai/eval/README.md) |
+| Eval query 정책 | [`ai/eval/eval_queries/README.md`](ai/eval/eval_queries/README.md) |
+| Script 위치와 역할 | [`ai/scripts/README.md`](ai/scripts/README.md) |
+| RAG ingestion 진행 기록 | [`docs/rag-ingestion-progress.md`](docs/rag-ingestion-progress.md) |
+| 외부 데이터 라이선스 | [`docs/THIRD_PARTY_DATA_LICENSES.md`](docs/THIRD_PARTY_DATA_LICENSES.md) |
 
 ## 주의할 경계
 
@@ -179,7 +177,7 @@ AIPIPELINE_WORKER_LLM_LLAMACPP_MODEL=gemma4-e2b-local
 최근 정리 후 사용한 최소 검증 예시는 다음과 같습니다.
 
 ```bash
-python -m pytest -q ai-worker/tests/test_llm_chat.py
+python -m pytest -q ai/tests/test_llm_chat.py
 docker compose --profile llm config --quiet
 git diff --check
 ```

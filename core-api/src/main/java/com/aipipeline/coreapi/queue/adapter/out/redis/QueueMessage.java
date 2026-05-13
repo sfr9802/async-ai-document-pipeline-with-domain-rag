@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * Wire shape of a dispatch message pushed onto Redis. This is the contract
- * the ai-worker queue consumer unmarshals — keep it stable and minimal.
+ * the ai queue consumer unmarshals — keep it stable and minimal.
  *
  * The queue is still a "wake up, come and claim" signal, not a full task
  * payload: workers fetch authoritative input bytes and sourceFileId via the

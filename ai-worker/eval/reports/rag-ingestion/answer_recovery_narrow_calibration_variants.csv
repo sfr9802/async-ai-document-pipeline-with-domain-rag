@@ -1,7 +1,0 @@
-variant_name,accepted,rejection_reasons,total_evaluated,initially_supported,recovered_after_loop,wrongly_supported_count,unsupported_correctly_blocked_count,clarification_needed_count,hidden_xlsx_surface_attempt_count,pdf_file_lookup_content_mixing_attempt_count,diagnostic_only_evidence_blocked_count,citation_coverage_before,citation_coverage_after,average_loop_iterations,pdf_file_identity_exactness_rule
-calibrated_identity_exact_v1,True,,185,148,5,0,32,6,3,4,8,0.935135,0.962162,1.814815,exact_or_canonical_identity_required
-strict_support_score_0_85,False,no recovery or citation-coverage improvement,185,0,5,0,32,6,3,4,8,0.935135,0.962162,1.814815,exact_or_canonical_identity_required
-retry_uncited_diagnostic_only,False,no recovery or citation-coverage improvement,185,148,5,0,32,6,3,4,8,0.935135,0.962162,1.814815,exact_or_canonical_identity_required
-unsafe_pdf_file_token_overlap_support,False,wrongly_supported_count > 0;weakens PDF FILE identity exactness,185,158,15,10,22,6,3,4,8,0.935135,0.962162,1.814815,filename_token_overlap_allowed
-unsafe_hidden_xlsx_support,False,wrongly_supported_count > 0;weakens hidden XLSX blocking,185,151,8,3,29,6,0,4,8,0.935135,0.962162,1.814815,exact_or_canonical_identity_required
-unsafe_diagnostic_only_support,False,wrongly_supported_count > 0;weakens diagnostic-only evidence blocking,185,152,9,4,28,6,3,4,0,0.935135,0.962162,1.814815,exact_or_canonical_identity_required

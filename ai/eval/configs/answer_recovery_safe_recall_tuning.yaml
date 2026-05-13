@@ -1,0 +1,141 @@
+schema_version: answer_recovery_safe_recall_tuning_config_v1
+mode: diagnostic_only_safe_recall_tuning
+description: >
+  Report-only safe recall tuning over the existing narrow silver calibration
+  baseline. This config does not run broad tuning, does not open official
+  answer denominators, does not train on frozen gold, and does not mutate
+  production indexes.
+
+baseline_policy:
+  name: calibrated_identity_exact_v1
+  source_config: ai/eval/configs/answer_recovery_narrow_silver_calibration.yaml
+  source_report: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_report.json
+  source_selected_policy: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_selected_policy.json
+
+diagnostic_inputs:
+  answer_sufficiency_expanded_report: ai/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
+  answer_recovery_expanded_trace: ai/eval/reports/rag-ingestion/answer_recovery_expanded_trace.jsonl
+  failure_taxonomy: ai/eval/reports/rag-ingestion/answer_recovery_failure_taxonomy.md
+  lane_breakdown: ai/eval/reports/rag-ingestion/answer_recovery_lane_breakdown.md
+
+excluded_frozen_gold_ids:
+  source_files:
+    - ai/eval/review/gold_silver_tuning/text_gold_main_positive_clean.csv
+    - ai/eval/review/gold_silver_tuning/text_gold_abstain_diagnostic_clean.csv
+    - ai/eval/review/gold_silver_tuning/pdf_file_lookup_gold_positive_clean.csv
+    - ai/eval/review/gold_silver_tuning/pdf_file_lookup_diagnostic_clean.csv
+  use_for_selection: false
+  use_for_training: false
+
+guardrail_assertions:
+  official_denominator_registry_changed: false
+  official_answer_denominator_opened: false
+  production_index_mutation: false
+  broad_indexing: false
+  frozen_gold_training_rows: 0
+  frozen_gold_profile_selection: false
+  tuned_text_section_boost_bm25_promotion_status: diagnostic_only
+  ocr_idp_multimodal_denominator_role: DIAGNOSTIC_ONLY
+  native_pdf_text_outranks_ocr_fallback: true
+  pdf_file_lookup_semantics: file_identity_only
+  pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+  pdf_file_lookup_success_claims:
+    content: false
+    page: false
+    bbox: false
+    table: false
+    row: false
+    column: false
+    value: false
+  hidden_xlsx_content_blocked: true
+  diagnostic_only_evidence_support: false
+  production_promotion_ready: false
+  official_answer_denominator_ready: false
+
+allowed_tuning_knobs:
+  max_loop_iterations: 2
+  max_query_rewrites: 3
+  production_profile_changes: false
+  official_denominator_changes: false
+  broad_indexing: false
+  frozen_gold_selection_or_training: false
+
+variants:
+  - name: baseline_selected_policy
+    base_policy: calibrated_identity_exact_v1
+    enabled_lanes: []
+    pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+    hidden_xlsx_blocking: enabled
+    diagnostic_only_support: disabled
+    max_loop_iterations: 2
+    max_query_rewrites: 3
+
+  - name: text_adjacent_context_v1
+    base_policy: calibrated_identity_exact_v1
+    enabled_lanes: [TEXT]
+    text_context_expansion: adjacent_chunk_or_section_once
+    allow_query_rewrite_before_adjacent: false
+    pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+    hidden_xlsx_blocking: enabled
+    diagnostic_only_support: disabled
+    max_loop_iterations: 2
+    max_query_rewrites: 3
+
+  - name: text_rewrite_then_adjacent_v1
+    base_policy: calibrated_identity_exact_v1
+    enabled_lanes: [TEXT]
+    text_context_expansion: adjacent_chunk_or_section_once
+    allow_query_rewrite_before_adjacent: true
+    pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+    hidden_xlsx_blocking: enabled
+    diagnostic_only_support: disabled
+    max_loop_iterations: 2
+    max_query_rewrites: 3
+
+  - name: xlsx_strict_context_v1
+    base_policy: calibrated_identity_exact_v1
+    enabled_lanes: [XLSX]
+    xlsx_context_expansion: same_sheet_table_row_column
+    xlsx_strict_wrapper_only: true
+    hidden_xlsx_blocking: enabled
+    pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+    diagnostic_only_support: disabled
+    max_loop_iterations: 2
+    max_query_rewrites: 3
+
+  - name: pdf_content_native_page_context_v1
+    base_policy: calibrated_identity_exact_v1
+    enabled_lanes: [PDF_CONTENT]
+    pdf_content_context_expansion: same_or_neighbor_page_native_text
+    pdf_content_native_text_only: true
+    pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+    hidden_xlsx_blocking: enabled
+    diagnostic_only_support: disabled
+    max_loop_iterations: 2
+    max_query_rewrites: 3
+
+  - name: mixed_safe_context_v1
+    base_policy: calibrated_identity_exact_v1
+    enabled_lanes: [TEXT, XLSX, PDF_CONTENT]
+    text_context_expansion: adjacent_chunk_or_section_once
+    allow_query_rewrite_before_adjacent: true
+    xlsx_context_expansion: same_sheet_table_row_column
+    xlsx_strict_wrapper_only: true
+    pdf_content_context_expansion: same_or_neighbor_page_native_text
+    pdf_content_native_text_only: true
+    pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+    hidden_xlsx_blocking: enabled
+    diagnostic_only_support: disabled
+    max_loop_iterations: 2
+    max_query_rewrites: 3
+
+report_paths:
+  baseline_md: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_baseline.md
+  baseline_json: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_baseline.json
+  missed_analysis_md: ai/eval/reports/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.md
+  missed_analysis_json: ai/eval/reports/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.json
+  tuning_report_md: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_tuning_report.md
+  tuning_report_json: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_tuning_report.json
+  variants_csv: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_variants.csv
+  selected_policy_json: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_selected_policy.json
+  rejected_variants_md: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_rejected_variants.md

@@ -1,0 +1,94 @@
+schema_version: answer_recovery_safe_recall_missed_row_triage_config_v1
+mode: diagnostic_only_missed_row_triage
+description: >
+  Report-only triage for the rows behind safe-recall baseline recoveries,
+  remaining citation gaps, and correctly blocked unsupported cases. This step
+  does not promote a policy, open official answer denominators, mutate indexes,
+  train on frozen gold, or use local LLMs/judges for answer correctness.
+
+inputs:
+  safe_recall_tuning_report: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_tuning_report.json
+  safe_recall_variants_csv: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_variants.csv
+  safe_recall_selected_policy: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_selected_policy.json
+  safe_recall_rejected_variants_md: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_rejected_variants.md
+  missed_safe_recovery_analysis: ai/eval/reports/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.json
+  answer_recovery_expanded_trace: ai/eval/reports/rag-ingestion/answer_recovery_expanded_trace.jsonl
+  answer_sufficiency_expanded_report: ai/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
+
+excluded_frozen_gold_ids:
+  source_files:
+    - ai/eval/review/gold_silver_tuning/text_gold_main_positive_clean.csv
+    - ai/eval/review/gold_silver_tuning/text_gold_abstain_diagnostic_clean.csv
+    - ai/eval/review/gold_silver_tuning/pdf_file_lookup_gold_positive_clean.csv
+    - ai/eval/review/gold_silver_tuning/pdf_file_lookup_diagnostic_clean.csv
+  use_for_selection: false
+  use_for_training: false
+
+focus_groups:
+  recovered_after_loop: true
+  citation_uncovered_after_recovery: true
+  unsupported_correctly_blocked: true
+
+categories:
+  - SAFE_RECOVERABLE_WITH_EXISTING_EVIDENCE
+  - SAFE_RECOVERABLE_WITH_CANONICAL_LINKING
+  - INDEX_SCOPE_MISSING
+  - POLICY_BLOCKED_CORRECTLY
+  - GOLD_POLICY_REQUIRED
+  - DIAGNOSTIC_ONLY_DO_NOT_PROMOTE
+  - UNKNOWN_NEEDS_MANUAL_REVIEW
+
+guardrail_assertions:
+  wrongly_supported_count: 0
+  hidden_xlsx_support_count: 0
+  pdf_file_content_mixing_support_count: 0
+  diagnostic_only_evidence_support_count: 0
+  official_denominator_registry_changed: false
+  official_answer_denominator_opened: false
+  production_index_mutation: false
+  broad_indexing: false
+  frozen_gold_training_rows: 0
+  frozen_gold_profile_selection: false
+  production_promotion_ready: false
+  official_answer_denominator_ready: false
+  pdf_file_lookup_semantics: file_identity_only
+  pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+  pdf_file_lookup_success_claims:
+    content: false
+    page: false
+    bbox: false
+    table: false
+    row: false
+    column: false
+    value: false
+  hidden_xlsx_content_blocked: true
+  diagnostic_only_evidence_support: false
+  native_pdf_text_outranks_ocr_fallback: true
+
+local_db_provenance_inspection:
+  enabled: false
+  reason: >
+    No DB input is required for this report-only triage. Existing diagnostic
+    artifacts provide provenance and support availability; DB content must not
+    create new supported answers outside current evidence policy.
+
+local_llm:
+  enabled: false
+  allowed_only_for: diagnostic_summarization_or_failure_reason_drafting
+  may_decide_answer_correctness: false
+  may_decide_evidence_support: false
+  may_decide_relevance: false
+  may_decide_answerability: false
+  may_decide_gold_labels: false
+
+optuna:
+  enabled: false
+  reason: >
+    Not useful for deterministic missed-row triage because there is no
+    hyperparameter objective to optimize. The hard constraints are categorical
+    guardrails and must remain fixed.
+
+report_paths:
+  triage_md: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.md
+  triage_json: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.json
+  triage_csv: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.csv

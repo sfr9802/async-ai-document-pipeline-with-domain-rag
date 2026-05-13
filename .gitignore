@@ -35,14 +35,14 @@ core-api/logs/
 core-api/HELP.md
 
 # ---- Python ----
-ai-worker/.venv/
-ai-worker/venv/
-ai-worker/__pycache__/
-ai-worker/**/__pycache__/
-ai-worker/**/*.pyc
-ai-worker/.pytest_cache/
-ai-worker/.mypy_cache/
-ai-worker/*.egg-info/
+ai/.venv/
+ai/venv/
+ai/__pycache__/
+ai/**/__pycache__/
+ai/**/*.pyc
+ai/.pytest_cache/
+ai/.mypy_cache/
+ai/*.egg-info/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -75,12 +75,12 @@ __pycache__/
 **/_scratch_*.jsonl
 **/_scratch_*.txt
 **/_scratch_*.md
-ai-worker/scripts/_scratch/
-ai-worker/scripts/_drafts/
-ai-worker/eval/harness/_scratch/
-ai-worker/eval/harness/_drafts/
-ai-worker/tests/_scratch/
-ai-worker/tests/_drafts/
+ai/scripts/_scratch/
+ai/scripts/_drafts/
+ai/eval/harness/_scratch/
+ai/eval/harness/_drafts/
+ai/tests/_scratch/
+ai/tests/_drafts/
 
 # ---- Eval harness generated artifacts ----
 # Reports change every run and should not be committed. Sample OCR
@@ -88,127 +88,126 @@ ai-worker/tests/_drafts/
 # and drift across fonts, so they are regenerated on demand. Phase-0
 # baseline reports are the one exception — they anchor the README
 # benchmark table and later phases diff against them.
-ai-worker/eval/reports/*
-!ai-worker/eval/reports/rag-ingestion/
-!ai-worker/eval/reports/rag-ingestion/**
-!ai-worker/eval/reports/phase0/
-ai-worker/eval/reports/phase0/*
-!ai-worker/eval/reports/phase0/baseline.json
-!ai-worker/eval/reports/phase0/baseline-anime.json
+ai/eval/reports/*
+!ai/eval/reports/rag-ingestion/
+!ai/eval/reports/phase0/
+ai/eval/reports/phase0/*
+!ai/eval/reports/phase0/baseline.json
+!ai/eval/reports/phase0/baseline-anime.json
 # Phase 8 agent-loop decision: the markdown + backing JSON are the
 # record of the measured A/B, not a run-to-run report.
-!ai-worker/eval/reports/phase8/
-ai-worker/eval/reports/phase8/*
-!ai-worker/eval/reports/phase8/agent_loop_decision.md
-!ai-worker/eval/reports/phase8/agent_loop_decision.json
+!ai/eval/reports/phase8/
+ai/eval/reports/phase8/*
+!ai/eval/reports/phase8/agent_loop_decision.md
+!ai/eval/reports/phase8/agent_loop_decision.json
 # Phase 2A reranker summary artifacts — small, deterministic, anchor
 # the README benchmark table. We commit the flat candidate-recall /
 # comparison / failure-analysis files; the per-run retrieval dirs
 # (top_k_dump.jsonl, miss_analysis, duplicate_analysis) stay local
 # because they're large and reproducible from corpus + dataset.
-!ai-worker/eval/reports/phase2/
-ai-worker/eval/reports/phase2/*
-!ai-worker/eval/reports/phase2/2a_reranker/
-ai-worker/eval/reports/phase2/2a_reranker/*
-!ai-worker/eval/reports/phase2/2a_reranker/candidate-recall-b2.json
-!ai-worker/eval/reports/phase2/2a_reranker/candidate-recall-b2.md
-!ai-worker/eval/reports/phase2/2a_reranker/reranker-comparison.json
-!ai-worker/eval/reports/phase2/2a_reranker/reranker-comparison.md
-!ai-worker/eval/reports/phase2/2a_reranker/reranker-failure-analysis.json
-!ai-worker/eval/reports/phase2/2a_reranker/reranker-failure-analysis.md
+!ai/eval/reports/phase2/
+ai/eval/reports/phase2/*
+!ai/eval/reports/phase2/2a_reranker/
+ai/eval/reports/phase2/2a_reranker/*
+!ai/eval/reports/phase2/2a_reranker/candidate-recall-b2.json
+!ai/eval/reports/phase2/2a_reranker/candidate-recall-b2.md
+!ai/eval/reports/phase2/2a_reranker/reranker-comparison.json
+!ai/eval/reports/phase2/2a_reranker/reranker-comparison.md
+!ai/eval/reports/phase2/2a_reranker/reranker-failure-analysis.json
+!ai/eval/reports/phase2/2a_reranker/reranker-failure-analysis.md
 # Locked legacy retrieval baseline — the A/B reference for LangGraph
 # adoption. Files are deterministic post-process output of
 # scripts/build_legacy_baseline_final.py (no top_k_dump or per-row
 # JSON, only the consolidated metrics + manifest + README).
-!ai-worker/eval/reports/legacy-baseline-final/
-ai-worker/eval/reports/legacy-baseline-final/*
-!ai-worker/eval/reports/legacy-baseline-final/README.md
-!ai-worker/eval/reports/legacy-baseline-final/metrics.json
-!ai-worker/eval/reports/legacy-baseline-final/metrics.md
-!ai-worker/eval/reports/legacy-baseline-final/latency_breakdown.json
-!ai-worker/eval/reports/legacy-baseline-final/latency_breakdown.md
-!ai-worker/eval/reports/legacy-baseline-final/selected_config.json
-!ai-worker/eval/reports/legacy-baseline-final/baseline_manifest.json
+!ai/eval/reports/legacy-baseline-final/
+ai/eval/reports/legacy-baseline-final/*
+!ai/eval/reports/legacy-baseline-final/README.md
+!ai/eval/reports/legacy-baseline-final/metrics.json
+!ai/eval/reports/legacy-baseline-final/metrics.md
+!ai/eval/reports/legacy-baseline-final/latency_breakdown.json
+!ai/eval/reports/legacy-baseline-final/latency_breakdown.md
+!ai/eval/reports/legacy-baseline-final/selected_config.json
+!ai/eval/reports/legacy-baseline-final/baseline_manifest.json
 # Phase 7.0 retrieval-title A/B — commit the small decision artefacts
 # (final report, A/B summary, diff report, improved/regressed/per-query
 # JSONL, manifest digests, generated silver query set). The two
 # rag_chunks_<variant>.jsonl exports (~318 MB each) are
 # deterministically reproducible from the Phase 6.3 source via
 # eval.harness.v4_chunk_export and stay local.
-!ai-worker/eval/reports/phase7/
-ai-worker/eval/reports/phase7/*
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/
-ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/*
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/PHASE7_0_FINAL_REPORT.md
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/ab_summary.json
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/ab_summary.md
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/manifest_title_section.json
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/manifest_retrieval_title_section.json
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/variant_diff_report.json
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/variant_diff_report.md
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/queries_v4_silver.jsonl
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/per_query_comparison.jsonl
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/improved_queries.jsonl
-!ai-worker/eval/reports/phase7/7.0_retrieval_title_ab/regressed_queries.jsonl
+!ai/eval/reports/phase7/
+ai/eval/reports/phase7/*
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/
+ai/eval/reports/phase7/7.0_retrieval_title_ab/*
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/PHASE7_0_FINAL_REPORT.md
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/ab_summary.json
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/ab_summary.md
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/manifest_title_section.json
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/manifest_retrieval_title_section.json
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/variant_diff_report.json
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/variant_diff_report.md
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/queries_v4_silver.jsonl
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/per_query_comparison.jsonl
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/improved_queries.jsonl
+!ai/eval/reports/phase7/7.0_retrieval_title_ab/regressed_queries.jsonl
 # Phase 7.6 — section-aware reranking plan (no experiment artefacts yet,
 # just the plan doc)
-!ai-worker/eval/reports/phase7/phase7_6_section_aware_reranking_plan.md
-!ai-worker/eval/reports/phase7/PHASE7_WRAP_UP.md
-!ai-worker/eval/reports/phase7/legacy_cleanup_candidates.md
+!ai/eval/reports/phase7/phase7_6_section_aware_reranking_plan.md
+!ai/eval/reports/phase7/PHASE7_WRAP_UP.md
+!ai/eval/reports/phase7/legacy_cleanup_candidates.md
 # Phase 7.7 answerability audit — commit the operator README and any
 # reviewer-labelled outputs / score reports. The raw `*_unlabeled_export`
 # CSV / JSONL drops are regenerable from a retrieval emit + chunk fixture
 # and carry zero labelling signal, so they stay local. Reviewer-filled
 # files MUST use the `*_human_labeled.{csv,jsonl}` naming convention to
 # survive this allowlist.
-!ai-worker/eval/reports/phase7/7.7_answerability_audit/
-ai-worker/eval/reports/phase7/7.7_answerability_audit/*
-!ai-worker/eval/reports/phase7/7.7_answerability_audit/README.md
-!ai-worker/eval/reports/phase7/7.7_answerability_audit/*_GUIDE.md
-!ai-worker/eval/reports/phase7/7.7_answerability_audit/*_human_labeled.csv
-!ai-worker/eval/reports/phase7/7.7_answerability_audit/*_human_labeled.jsonl
-!ai-worker/eval/reports/phase7/7.7_answerability_audit/*_score_report.md
-!ai-worker/eval/reports/phase7/7.7_answerability_audit/*_score_report.json
+!ai/eval/reports/phase7/7.7_answerability_audit/
+ai/eval/reports/phase7/7.7_answerability_audit/*
+!ai/eval/reports/phase7/7.7_answerability_audit/README.md
+!ai/eval/reports/phase7/7.7_answerability_audit/*_GUIDE.md
+!ai/eval/reports/phase7/7.7_answerability_audit/*_human_labeled.csv
+!ai/eval/reports/phase7/7.7_answerability_audit/*_human_labeled.jsonl
+!ai/eval/reports/phase7/7.7_answerability_audit/*_score_report.md
+!ai/eval/reports/phase7/7.7_answerability_audit/*_score_report.json
 # Phase 7.5 — human gold seed 50 tuning + MMR confirm sweep + production
 # promotion + latency smoke + Phase 7.6 section-rerank scaffold. Decision
 # artefacts only (small JSON / MD / digests) — the bulk
 # retrieval_*.jsonl exports and candidate_pool_*.jsonl files are
 # deterministically reproducible from the cached FAISS index via
 # scripts/run_phase7_mmr_confirm_sweep.py, so we keep them local.
-!ai-worker/eval/reports/phase7/seeds/
-ai-worker/eval/reports/phase7/seeds/*
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/
-ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/*
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/best_config.env
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/best_config.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/baseline_gold_summary.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/baseline_silver_summary.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/candidate_results.jsonl
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/comparison_report.md
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/comparison_summary.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_gold.jsonl
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_gold.md
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_silver.jsonl
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_silver.md
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/manifest.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/
-ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/*
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.confirmed.env
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.confirmed.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.production_recommended.env
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.production_recommended.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/confirm_sweep_report.md
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/confirm_sweep_results.jsonl
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/confirm_sweep_summary.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/manifest.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/latency_smoke_report.md
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/latency_smoke_results.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/promotion_pr_summary.md
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/
-ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/*
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/section_rerank_grid.json
-!ai-worker/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/section_rerank_grid.md
-ai-worker/eval/datasets/samples/
+!ai/eval/reports/phase7/seeds/
+ai/eval/reports/phase7/seeds/*
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/
+ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/*
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/best_config.env
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/best_config.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/baseline_gold_summary.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/baseline_silver_summary.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/candidate_results.jsonl
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/comparison_report.md
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/comparison_summary.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_gold.jsonl
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_gold.md
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_silver.jsonl
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_silver.md
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/manifest.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/
+ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/*
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.confirmed.env
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.confirmed.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.production_recommended.env
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.production_recommended.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/confirm_sweep_report.md
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/confirm_sweep_results.jsonl
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/confirm_sweep_summary.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/manifest.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/latency_smoke_report.md
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/latency_smoke_results.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/promotion_pr_summary.md
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/
+ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/*
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/section_rerank_grid.json
+!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/section_rerank_grid.md
+ai/eval/datasets/samples/
 
 # Dataset inputs and generated evidence files are local-only by default.
 # This is intentionally broad: fresh clones may need regenerated artifacts.
@@ -220,62 +219,50 @@ ai-worker/eval/datasets/samples/
 !README.md
 !**/README.md
 !docs/THIRD_PARTY_DATA_LICENSES.md
-!docs/eval/denominator_policy.md
 !archive/MANIFEST.md
 
 # Canonical XLSX preflight/gold guardrail artifacts are intentionally small
 # and must not be hidden by the broad generated-artifact patterns above.
-!ai-worker/eval/eval_queries/official_denominator_registry.json
-!ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.csv
-!ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.jsonl
-!ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0.csv
-!ai-worker/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv
-!ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_gold_normalization_report.json
-!ai-worker/eval/reports/rag-ingestion/xlsx_end_to_end_preflight_20260507.md
-!ai-worker/eval/reports/rag-ingestion/xlsx_end_to_end_preflight_20260507.json
-!ai-worker/eval/reports/rag-ingestion/xlsx_pre_silver_risk_closure_20260507.md
-!ai-worker/eval/reports/rag-ingestion/xlsx_pre_silver_risk_closure_20260507.json
-!ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report.json
-!ai-worker/eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report_repeat.json
-!ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary.json
-!ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary_repeat.json
-!ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic.json
-!ai-worker/eval/reports/rag-ingestion/rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic_repeat.json
-!ai-worker/eval/reports/rag-ingestion/three_track_orchestration_report.md
+!ai/eval/eval_queries/official_denominator_registry.json
+!ai/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.csv
+!ai/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.jsonl
+!ai/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0.csv
+!ai/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv
+!ai/eval/reports/rag-ingestion/three_track_orchestration_report.md
 **/datasets/
-ai-worker/eval/artifacts/
-!ai-worker/eval/artifacts/
-ai-worker/eval/artifacts/*
-!ai-worker/eval/artifacts/eval_runs/
-ai-worker/eval/artifacts/eval_runs/*
-!ai-worker/eval/artifacts/eval_runs/xlsx_human_review_gold_normalization_20260507Tpreflight/
-!ai-worker/eval/artifacts/eval_runs/xlsx_human_review_gold_normalization_20260507Tpreflight/source_xlsx_gold_human_review_pack_used.csv
+ai/eval/artifacts/
+!ai/eval/artifacts/
+ai/eval/artifacts/*
+!ai/eval/artifacts/eval_runs/
+ai/eval/artifacts/eval_runs/*
+!ai/eval/artifacts/eval_runs/xlsx_human_review_gold_normalization_20260507Tpreflight/
+!ai/eval/artifacts/eval_runs/xlsx_human_review_gold_normalization_20260507Tpreflight/source_xlsx_gold_human_review_pack_used.csv
 
 # ---- Phase 7.0 dense FAISS indexes (local-only, ~1.3 GB total) ----
 # faiss.index + chunks.jsonl + variant_manifest.json are rebuilt from
 # the chunk exports via eval.harness.v4_index_builder.build_v4_variant_index.
 # Variant manifest digests are recorded in PHASE7_0_FINAL_REPORT.md.
-ai-worker/eval/indexes/
+ai/eval/indexes/
 
 # ---- Agent loop A/B harness run output ----
 # Each run writes raw_results.jsonl / summary.csv / comparison_summary.json
 # under eval/agent_loop_ab/<run-name>/ plus a FAISS index cache under
 # _indexes/ and a console log under _logs/. Only the README and the
 # tracked smoke fixtures (smoke.csv / smoke.jsonl) are committed.
-ai-worker/eval/agent_loop_ab/_indexes/
-ai-worker/eval/agent_loop_ab/_logs/
-ai-worker/eval/agent_loop_ab/legacy-vs-graph-*/
-ai-worker/eval/agent_loop_ab/smoke-*/
+ai/eval/agent_loop_ab/_indexes/
+ai/eval/agent_loop_ab/_logs/
+ai/eval/agent_loop_ab/legacy-vs-graph-*/
+ai/eval/agent_loop_ab/smoke-*/
 
 # ---- Optuna tuning artifacts ----
 # Keep summary.md + config.yaml (deterministic replay), drop the
 # binary SQLite study and per-run plots. See docs/tuning.md.
-ai-worker/eval/experiments/studies/**/study.db
-ai-worker/eval/experiments/studies/**/study.db-journal
-ai-worker/eval/experiments/studies/**/plots/
+ai/eval/experiments/studies/**/study.db
+ai/eval/experiments/studies/**/study.db-journal
+ai/eval/experiments/studies/**/plots/
 
 # ---- Demo script generated assets ----
-ai-worker/scripts/assets/
+ai/scripts/assets/
 
 # ---- Local runtime state ----
 data/
@@ -296,29 +283,29 @@ infra/minio/data/
 # contributor stages it locally, keep it out of git. We commit only the
 # 300-title reservoir sample at fixtures/anime_corpus_kr.jsonl (~17 MB).
 /datasets/
-ai-worker/fixtures/corpus_anime_full/
-ai-worker/eval/datasets/xlsx/
-ai-worker/eval/datasets/golden/**/hf_snapshot/
+ai/fixtures/corpus_anime_full/
+ai/eval/datasets/xlsx/
+ai/eval/datasets/golden/**/hf_snapshot/
 # sample_check.py HTML reports + reviewer annotation JSONs are local.
 review/
 
 # ---- Retrieval-eval corpora (local-only, large) ----
-# Full source corpora live under ai-worker/eval/corpora/<name>/corpus.jsonl
+# Full source corpora live under ai/eval/corpora/<name>/corpus.jsonl
 # and are too large to commit (e.g. namu_anime_v3 is ~261 MB). The
 # accompanying README.md is committed so contributors know how to
 # re-stage the file from its source path.
-ai-worker/eval/corpora/**/*.jsonl
-!ai-worker/eval/corpora/**/README.md
+ai/eval/corpora/**/*.jsonl
+!ai/eval/corpora/**/README.md
 # Generated silver query sets are reproducible via
 # eval.harness.generate_eval_queries; keep them local. Hand-authored
 # smoke and gold sets ARE committed (small + verified).
-ai-worker/eval/eval_queries/*_silver_*.jsonl
-ai-worker/eval/eval_queries/*_synthetic_*.jsonl
-ai-worker/eval/eval_queries/_generation_log_*.jsonl
+ai/eval/eval_queries/*_silver_*.jsonl
+ai/eval/eval_queries/*_synthetic_*.jsonl
+ai/eval/eval_queries/_generation_log_*.jsonl
 
 # ---- RAG build artifacts (local-only) ----
 # FAISS index + build manifest are rebuilt from fixtures via
-# ai-worker/scripts/build_rag_index.py; keep them under ai-worker/eval/indexes.
+# ai/scripts/build_rag_index.py; keep them under ai/eval/indexes.
 /rag-data/
 /rag-data-canary/
 /rag-data-xlsx-candidate-v*/
@@ -328,8 +315,8 @@ ai-worker/eval/eval_queries/_generation_log_*.jsonl
 # study_bundle.json + llm_input.md emitted by the skill's round_runner
 # are per-run artifacts; only the .gitkeep is tracked so the directory
 # survives a fresh clone.
-ai-worker/eval/experiments/run_output/
-!ai-worker/eval/experiments/run_output/.gitkeep
+ai/eval/experiments/run_output/
+!ai/eval/experiments/run_output/.gitkeep
 
 # ---- Working notes / decision logs / personal context ----
 # Trade-off records, session work logs, and decision/process docs are
@@ -352,5 +339,5 @@ ai-worker/eval/experiments/run_output/
 **/_local/
 **/_drafts/
 # Phase 0 baseline tradeoffs / decisions doc — local-only by policy.
-ai-worker/eval/reports/phase0/tradeoffs.md
+ai/eval/reports/phase0/tradeoffs.md
 

@@ -1,2 +1,0 @@
-case_id,failure_type,lane,question
-xlsx_ambiguous,AMBIGUOUS_QUERY,XLSX,"어느 시트, 기간, 지표를 기준으로 확인할까요? 예: Sheet1의 2024년 매출 합계처럼 범위를 지정해 주세요."

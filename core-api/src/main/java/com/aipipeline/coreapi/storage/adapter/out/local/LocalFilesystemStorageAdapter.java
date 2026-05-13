@@ -27,7 +27,7 @@ import java.util.UUID;
  *
  * Storage URIs produced by this adapter look like
  * {@code local://{relative/path/under/root}}. The same root directory is
- * assumed to be reachable from both core-api and ai-worker in phase 1
+ * assumed to be reachable from both core-api and ai in phase 1
  * (they run on the same host). When MinIO or S3 is introduced, the URI
  * scheme changes but the port contract stays the same.
  *

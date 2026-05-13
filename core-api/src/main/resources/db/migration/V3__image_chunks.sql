@@ -5,7 +5,7 @@
 -- authored or pre-computed during dataset preparation), NOT from CLIP.
 --
 -- Follows the same ownership model as V2: schema owned by Flyway,
--- the ai-worker only reads/writes rows.
+-- the ai only reads/writes rows.
 
 CREATE TABLE ragmeta.image_chunks (
     image_id        VARCHAR(128)    PRIMARY KEY,

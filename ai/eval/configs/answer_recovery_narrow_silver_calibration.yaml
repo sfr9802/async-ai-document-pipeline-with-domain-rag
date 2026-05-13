@@ -1,0 +1,217 @@
+schema_version: answer_recovery_narrow_silver_calibration_config_v1
+mode: diagnostic_only_narrow_silver_calibration
+description: >
+  Report-only answer recovery calibration over existing silver/reviewed
+  diagnostic artifacts. This config does not open official answer denominators,
+  does not train on frozen gold, and does not mutate production indexes.
+
+silver_only_diagnostic_inputs:
+  text:
+    - ai/eval/review/gold_silver_tuning/silver_text_positive_train.csv
+    - ai/eval/review/gold_silver_tuning/silver_text_hard_negative_train.csv
+    - ai/eval/review/gold_silver_tuning/silver_text_abstain_diagnostic.csv
+  pdf_file_lookup:
+    - ai/eval/review/gold_silver_tuning/silver_pdf_file_lookup_positive_train.csv
+    - ai/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv
+  diagnostic_shadow:
+    - ai/eval/reports/rag-ingestion/ocr_shadow_small_sample_report.json
+    - ai/eval/reports/rag-ingestion/idp_shadow_small_sample_report.json
+    - ai/eval/reports/rag-ingestion/multimodal_shadow_small_sample_report.json
+  answer_recovery_expanded_input:
+    - ai/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
+    - ai/eval/reports/rag-ingestion/answer_recovery_expanded_trace.jsonl
+
+excluded_frozen_gold_ids:
+  source_files:
+    - ai/eval/review/gold_silver_tuning/text_gold_main_positive_clean.csv
+    - ai/eval/review/gold_silver_tuning/text_gold_abstain_diagnostic_clean.csv
+    - ai/eval/review/gold_silver_tuning/pdf_file_lookup_gold_positive_clean.csv
+    - ai/eval/review/gold_silver_tuning/pdf_file_lookup_diagnostic_clean.csv
+  ids:
+    - text_namu_v2_0001
+    - text_namu_v2_0002
+    - text_namu_v2_0003
+    - text_namu_v2_0004
+    - text_namu_v2_0005
+    - text_namu_v2_0007
+    - text_namu_v2_0008
+    - text_namu_v2_0009
+    - text_namu_v2_0011
+    - text_namu_v2_0012
+    - text_namu_v2_0014
+    - text_namu_v2_0015
+    - text_namu_v2_0016
+    - text_namu_v2_0017
+    - text_namu_v2_0018
+    - text_namu_v2_0021
+    - text_namu_v2_0022
+    - text_namu_v2_0023
+    - text_namu_v2_0024
+    - text_namu_v2_0025
+    - text_namu_v2_0026
+    - text_namu_v2_0028
+    - text_namu_v2_0030
+    - text_namu_v2_0031
+    - text_namu_v2_0032
+    - text_namu_v2_0034
+    - text_namu_v2_0035
+    - text_namu_v2_0036
+    - text_namu_v2_0037
+    - text_namu_v2_0038
+    - text_namu_v2_0039
+    - text_namu_v2_0040
+    - text_namu_v2_0041
+    - text_namu_v2_0042
+    - text_namu_v2_0046
+    - text_namu_v2_0047
+    - text_namu_v2_0048
+    - text_namu_v2_0049
+    - text_namu_v2_0050
+    - text_namu_v2_0051
+    - text_namu_v2_0052
+    - text_namu_v2_0053
+    - text_namu_v2_0054
+    - text_namu_v2_0055
+    - text_namu_v2_0056
+    - text_namu_v2_0057
+    - text_namu_v2_0058
+    - text_namu_v2_0059
+    - text_namu_v2_0060
+    - text_namu_v2_0061
+    - text_namu_v2_0062
+    - text_namu_v2_0063
+    - text_namu_v2_0064
+    - text_namu_v2_0065
+    - text_namu_v2_0068
+    - text_namu_v2_0069
+    - text_namu_v2_0070
+    - text_namu_v2_0071
+    - text_namu_v2_0072
+    - text_namu_v2_0073
+    - text_namu_v2_0074
+    - text_namu_v2_0075
+    - text_namu_v2_0076
+    - text_namu_v2_0077
+    - text_namu_v2_0079
+    - text_namu_v2_0081
+    - text_namu_v2_0083
+    - text_namu_v2_0084
+    - text_namu_v2_0085
+    - text_namu_v2_0086
+    - text_namu_v2_0087
+    - text_namu_v2_0088
+    - text_namu_v2_0089
+    - text_namu_v2_0090
+    - text_namu_v2_0096
+    - text_namu_v2_0097
+    - text_namu_v2_0098
+    - text_namu_v2_0099
+    - text_namu_v2_0100
+    - pdf_file_lookup_content_anchor_001
+    - pdf_file_lookup_content_anchor_002
+    - pdf_file_lookup_content_anchor_003
+    - pdf_file_lookup_content_anchor_005
+    - pdf_file_lookup_content_anchor_006
+    - pdf_file_lookup_content_anchor_007
+    - pdf_file_lookup_content_anchor_008
+    - pdf_file_lookup_content_anchor_009
+    - pdf_file_lookup_content_anchor_010
+    - pdf_file_lookup_content_anchor_011
+    - pdf_file_lookup_content_anchor_016
+    - pdf_file_lookup_content_anchor_019
+    - pdf_file_lookup_content_anchor_021
+    - pdf_file_lookup_metadata_001
+    - pdf_file_lookup_metadata_003
+    - pdf_file_lookup_metadata_004
+    - pdf_file_lookup_metadata_005
+    - pdf_file_lookup_metadata_006
+    - pdf_file_lookup_metadata_007
+  use_for_selection: false
+  use_for_training: false
+
+lane_names:
+  - TEXT
+  - XLSX
+  - PDF_CONTENT
+  - PDF_FILE_LOOKUP
+  - OCR_SHADOW
+  - IDP_SHADOW
+  - MULTIMODAL_SHADOW
+
+allowed_calibration_knobs:
+  support_score_threshold: [0.0, 0.75, 0.85]
+  citation_coverage_threshold: [1.0]
+  needs_recovery_vs_unsupported_boundary:
+    - keep_current_fail_closed
+    - retry_uncited_diagnostic_only
+  needs_clarification_routing_threshold:
+    - current_ambiguous_or_missing_identity
+  pdf_file_identity_exactness_rule:
+    - exact_or_canonical_identity_required
+  max_loop_iterations: 2
+  max_query_rewrites: 3
+
+blocked_knobs:
+  production_profile_changes: true
+  official_denominator_changes: true
+  broad_indexing: true
+  frozen_gold_selection_or_training: true
+  ocr_idp_multimodal_promotion: true
+  pdf_file_content_page_bbox_table_row_column_value_success_claims: true
+
+variants:
+  - name: calibrated_identity_exact_v1
+    support_score_threshold: 0.0
+    citation_coverage_threshold: 1.0
+    needs_recovery_vs_unsupported_boundary: keep_current_fail_closed
+    needs_clarification_routing_threshold: current_ambiguous_or_missing_identity
+    pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+  - name: strict_support_score_0_85
+    support_score_threshold: 0.85
+    citation_coverage_threshold: 1.0
+    pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+  - name: retry_uncited_diagnostic_only
+    support_score_threshold: 0.0
+    citation_coverage_threshold: 1.0
+    needs_recovery_vs_unsupported_boundary: retry_uncited_diagnostic_only
+    pdf_file_identity_exactness_rule: exact_or_canonical_identity_required
+  - name: unsafe_pdf_file_token_overlap_support
+    support_score_threshold: 0.0
+    citation_coverage_threshold: 1.0
+    pdf_file_identity_exactness_rule: filename_token_overlap_allowed
+  - name: unsafe_hidden_xlsx_support
+    support_score_threshold: 0.0
+    citation_coverage_threshold: 1.0
+    hidden_xlsx_blocking: disabled
+  - name: unsafe_diagnostic_only_support
+    support_score_threshold: 0.0
+    citation_coverage_threshold: 1.0
+    diagnostic_only_support: enabled
+
+report_paths:
+  calibration_report_md: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_report.md
+  calibration_report_json: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_report.json
+  variants_csv: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_variants.csv
+  selected_policy_json: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_selected_policy.json
+
+guardrail_assertions:
+  official_denominator_registry_changed: false
+  official_answer_denominator_opened: false
+  production_index_mutation: false
+  broad_indexing: false
+  frozen_gold_training_rows: 0
+  frozen_gold_profile_selection: false
+  tuned_text_section_boost_bm25_promotion_status: diagnostic_only
+  ocr_idp_multimodal_denominator_role: DIAGNOSTIC_ONLY
+  native_pdf_text_outranks_ocr_fallback: true
+  pdf_file_lookup_semantics: file_identity_only
+  pdf_file_lookup_success_claims:
+    content: false
+    page: false
+    bbox: false
+    table: false
+    row: false
+    column: false
+    value: false
+  production_promotion_ready: false
+  official_answer_denominator_ready: false

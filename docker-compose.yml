@@ -8,7 +8,7 @@
 # postgres that may already own :5432. See docs/local-run.md if you want to
 # point the apps at an external postgres instead.
 #
-# Neither mode starts core-api or ai-worker — those stay as local processes
+# Neither mode starts core-api or ai — those stay as local processes
 # in phase 1 so debugging stays cheap.
 #
 # Container names are prefixed with `aipipeline-` to avoid collision with

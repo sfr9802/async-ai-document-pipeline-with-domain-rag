@@ -1,6 +1,0 @@
-file_name,row_count,lane,official_gold,denominator_role,leakage_check_status,notes
-silver_text_positive_train.csv,120,text_positive,false,TUNING_ONLY,PASS,"generated after gold cleanup; excludes frozen gold query ids, text, source ids, and expected ids"
-silver_text_hard_negative_train.csv,91,text_hard_negative,false,TUNING_ONLY,PASS,"generated after gold cleanup; excludes frozen gold query ids, text, source ids, and expected ids"
-silver_text_abstain_diagnostic.csv,10,text_abstain_diagnostic,false,TUNING_ONLY,PASS,"generated after gold cleanup; excludes frozen gold query ids, text, source ids, and expected ids"
-silver_pdf_file_lookup_positive_train.csv,4,pdf_file_lookup_positive,false,TUNING_ONLY,PASS,"generated after gold cleanup; excludes frozen gold query ids, text, source ids, and expected ids"
-silver_pdf_file_lookup_hard_negative_train.csv,4,pdf_file_lookup_hard_negative,false,TUNING_ONLY,PASS,"generated after gold cleanup; excludes frozen gold query ids, text, source ids, and expected ids"
