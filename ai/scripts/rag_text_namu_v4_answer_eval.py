@@ -306,6 +306,11 @@ def evaluate_row(gold: Mapping[str, str], context_row: Mapping[str, Any]) -> dic
         "not_answerable_from_context": denominator and retrieval_context_available and not support_possible and not wrong_source and not missing_chunk,
         "answer_eval_pending_live_llm": answer_eval_pending_live_llm,
         "answer_generation_failure": False,
+        "actual_generated_answer_output": False,
+        "generated_answer_missing": answer_eval_pending_live_llm,
+        "diagnostic_only": True,
+        "official_metric_input": False,
+        "official_denominator_mutation": False,
         "live_llm_run": False,
         "deterministic_judge_run": True,
         "r6_taxonomy": context_row.get("taxonomy"),
@@ -428,6 +433,9 @@ def metrics_from_rows(gold_rows: list[dict[str, str]], answer_rows: list[dict[st
     positive_rows = [row for row in answer_rows if row.get("denominator_included")]
     needs_review_ids = [clean(row.get("query_id")) for row in answer_rows if not row.get("denominator_included")]
     answerable_rows = [row for row in positive_rows if row.get("answerable_from_context")]
+    generated_answer_missing_rows = [
+        row for row in positive_rows if row.get("generated_answer_missing") is True
+    ]
     not_answerable_rows = [row for row in positive_rows if row.get("not_answerable_from_context")]
     wrong_source_rows = [
         row for row in positive_rows if row.get("expected_context_missing_due_to_wrong_source")
@@ -475,6 +483,13 @@ def metrics_from_rows(gold_rows: list[dict[str, str]], answer_rows: list[dict[st
         "not_answerable_from_context_count": len(not_answerable_rows),
         "answer_eval_pending_live_llm_count": stage_counts["answer_eval_pending_live_llm"],
         "answer_generation_failure_count": 0,
+        "actual_generated_answer_output_count": sum(
+            1 for row in answer_rows if row.get("actual_generated_answer_output") is True
+        ),
+        "generated_answer_missing_count": len(generated_answer_missing_rows),
+        "generated_answer_missing_query_ids": [row["query_id"] for row in generated_answer_missing_rows],
+        "official_metric_input_rows": sum(1 for row in answer_rows if row.get("official_metric_input") is True),
+        "official_text_answer_metric_status": "FAIL_CLOSED_OFFICIAL_METRIC_INPUT_EMPTY",
         "must_contain_evaluated_count": len(must_rows),
         "must_contain_pass_count": len(must_pass_rows),
         "must_contain_pass_rate": safe_ratio(len(must_pass_rows), len(must_rows)),
@@ -538,7 +553,9 @@ def build_report(
         "schema_version": "rag_text_namu_v4_answer_eval_report_v1",
         "status": status,
         "promotion_evidence": False,
+        "promotion_ready": False,
         "evidence_role": "diagnostic",
+        "answer_metric_role": "diagnostic_only",
         "context_field": CONTEXT_FIELD,
         "used_context_json_path": "contexts[].text",
         "phase": PHASE,
@@ -593,6 +610,18 @@ def build_report(
         "not_answerable_from_context_count": metrics.get("not_answerable_from_context_count", 0),
         "answer_eval_pending_live_llm_count": metrics.get("answer_eval_pending_live_llm_count", 0),
         "answer_generation_failure_count": metrics.get("answer_generation_failure_count", 0),
+        "actual_generated_answer_output_count": metrics.get("actual_generated_answer_output_count", 0),
+        "generated_answer_missing_count": metrics.get("generated_answer_missing_count", 0),
+        "generated_answer_missing_query_ids": metrics.get("generated_answer_missing_query_ids", []),
+        "official_metric_input_rows": metrics.get("official_metric_input_rows", 0),
+        "official_answer_denominator": 0,
+        "official_answer_metric_computed": False,
+        "official_text_answer_metric_status": metrics.get(
+            "official_text_answer_metric_status",
+            "FAIL_CLOSED_OFFICIAL_METRIC_INPUT_EMPTY",
+        ),
+        "official_text_answer_denominator_opened": False,
+        "official_text_answer_metric_input_required": True,
         "must_contain_evaluated_count": metrics.get("must_contain_evaluated_count", 0),
         "must_contain_pass_count": metrics.get("must_contain_pass_count", 0),
         "must_contain_pass_rate": metrics.get("must_contain_pass_rate"),
@@ -604,6 +633,8 @@ def build_report(
             "retrieval_miss_not_answer_generation_failure": True,
             "retrieval_context_miss_count": metrics.get("retrieval_context_miss_count", 0),
             "answer_generation_failure_count": metrics.get("answer_generation_failure_count", 0),
+            "generated_answer_missing_not_failure": True,
+            "official_metric_input_rows_zero_fails_closed": True,
             "source_context_taxonomy": context_payload.get("taxonomy_counts", {}) if context_payload else {},
         },
         "query_id_groups": {
@@ -630,6 +661,8 @@ def build_report(
             "needs_review_excluded_is_3": metrics.get("needs_review_excluded_count") == EXPECTED_NEEDS_REVIEW_EXCLUDED,
             "live_llm_not_run_by_default": not enable_live_llm,
             "retrieval_miss_and_answer_failure_separated": metrics.get("answer_generation_failure_count") == 0,
+            "generated_answer_missing_rows_remain_diagnostic_only": metrics.get("official_metric_input_rows") == 0,
+            "official_metric_input_rows_zero_fails_closed": metrics.get("official_metric_input_rows") == 0,
             "promotion_not_run": True,
             "retrieval_tuning_not_run": True,
             "reranking_not_run": True,

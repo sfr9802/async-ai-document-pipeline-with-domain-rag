@@ -32,7 +32,9 @@ def test_r7_deterministic_answer_eval_separates_retrieval_misses(tmp_path: Path)
 
     assert report["status"] == "PASS_WITH_WARNINGS"
     assert report["promotion_evidence"] is False
+    assert report["promotion_ready"] is False
     assert report["evidence_role"] == "diagnostic"
+    assert report["answer_metric_role"] == "diagnostic_only"
     assert report["context_field"] == "chunk_text"
     assert report["used_context_json_path"] == "contexts[].text"
     assert report["positive_denominator_count"] == 47
@@ -43,10 +45,24 @@ def test_r7_deterministic_answer_eval_separates_retrieval_misses(tmp_path: Path)
     assert report["retrieval_context_miss_count"] == 2
     assert report["answerable_from_context_count"] == 45
     assert report["answer_generation_failure_count"] == 0
+    assert report["actual_generated_answer_output_count"] == 0
+    assert report["generated_answer_missing_count"] == 45
+    assert report["official_metric_input_rows"] == 0
+    assert report["official_answer_denominator"] == 0
+    assert report["official_answer_metric_computed"] is False
+    assert report["official_text_answer_metric_status"] == "FAIL_CLOSED_OFFICIAL_METRIC_INPUT_EMPTY"
     assert report["live_llm_run"] is False
     assert report["llm_model"] == "none_deterministic_dry_run"
     assert report["context_source_policy"]["embedding_text_used"] is False
+    assert all(row["diagnostic_only"] is True for row in rows)
+    assert all(row["official_metric_input"] is False for row in rows)
+    assert all(row["official_denominator_mutation"] is False for row in rows)
+    assert all(row["actual_generated_answer_output"] is False for row in rows)
     assert rows[0]["primary_stage"] == "answerable_from_context"
+    assert rows[0]["diagnostic_only"] is True
+    assert rows[0]["official_metric_input"] is False
+    assert rows[0]["actual_generated_answer_output"] is False
+    assert rows[0]["generated_answer_missing"] is True
     assert "answer_eval_pending_live_llm" in rows[0]["stages"]
     assert rows[1]["primary_stage"] == "expected_context_missing_due_to_wrong_source"
     assert rows[2]["primary_stage"] == "expected_chunk_missing"

@@ -34,6 +34,8 @@ def test_r8_citation_support_locks_denominator_and_excludes_misses(tmp_path: Pat
     assert report["promotion_evidence"] is False
     assert report["evidence_role"] == "diagnostic"
     assert report["promotion_ready"] is False
+    assert report["diagnostic_only"] is True
+    assert report["citation_metric_role"] == "diagnostic_only"
     assert report["live_llm_run"] is False
     assert report["optional_judge_run"] is False
     assert report["context_field"] == "chunk_text"
@@ -41,6 +43,11 @@ def test_r8_citation_support_locks_denominator_and_excludes_misses(tmp_path: Pat
     assert report["positive_denominator_count"] == 47
     assert report["needs_review_excluded_count"] == 3
     assert report["citation_support_denominator_count"] == 29
+    assert report["official_metric_input_rows"] == 0
+    assert report["official_citation_support_denominator_count"] == 0
+    assert report["official_citation_support_metric_status"] == "FAIL_CLOSED_OFFICIAL_METRIC_INPUT_EMPTY"
+    assert report["official_citation_support_rate"] is None
+    assert report["official_citation_support_metric_computed"] is False
     assert report["retrieval_context_miss_excluded_count"] == 18
     assert report["answer_generation_failure_count"] == 0
     assert report["retrieval_context_misses_counted_as_citation_failures"] is False
@@ -55,6 +62,9 @@ def test_r8_citation_support_locks_denominator_and_excludes_misses(tmp_path: Pat
     assert report["done_criteria"]["retrieval_context_miss_exclusion_is_18"] is True
     assert report["done_criteria"]["needs_review_exclusion_is_3"] is True
     assert len(rows) == 50
+    assert all(row["diagnostic_only"] is True for row in rows)
+    assert all(row["official_metric_input"] is False for row in rows)
+    assert all(row["official_denominator_mutation"] is False for row in rows)
 
     by_id = {row["query_id"]: row for row in rows}
     assert by_id["gold_seed_0001"]["citation_support_status"] == "SUPPORTED_BY_EXPECTED_CONTEXT"
@@ -68,6 +78,47 @@ def test_r8_citation_support_locks_denominator_and_excludes_misses(tmp_path: Pat
     )
     assert by_id["gold_seed_0030"]["unsupported_claim_candidate"] is False
     assert by_id["gold_seed_0048"]["citation_support_status"] == "EXCLUDED_NEEDS_REVIEW"
+
+
+def test_r8_official_metric_runner_fails_closed_when_official_metric_input_rows_are_zero(tmp_path: Path):
+    paths = write_fixture_bundle(tmp_path)
+
+    report = citation_support.run_citation_support(**paths)
+
+    assert report["status"] == "PASS_WITH_WARNINGS"
+    assert report["citation_support_denominator_count"] == 29
+    assert report["official_metric_input_rows"] == 0
+    assert report["official_citation_support_denominator_count"] == 0
+    assert report["official_citation_support_metric_status"] == "FAIL_CLOSED_OFFICIAL_METRIC_INPUT_EMPTY"
+    assert report["official_citation_support_rate"] is None
+    assert report["official_citation_support_metric_computed"] is False
+    assert report["done_criteria"]["official_metric_input_rows_zero_fails_closed"] is True
+
+
+def test_r8_metrics_fail_closed_when_official_metric_rows_present_without_policy_open():
+    rows = [
+        {
+            "query_id": "gold_seed_0001",
+            "citation_denominator_included": True,
+            "citation_support_status": "SUPPORTED_BY_EXPECTED_CONTEXT",
+            "official_metric_input": True,
+        }
+    ]
+
+    metrics = citation_support.metrics_from_rows(
+        rows,
+        {
+            "positive_denominator_count": 47,
+            "needs_review_excluded_count": 3,
+            "answerable_from_context_count": 1,
+        },
+    )
+
+    assert metrics["official_metric_input_rows"] == 1
+    assert metrics["official_citation_support_denominator_count"] == 0
+    assert metrics["official_citation_support_metric_status"] == "FAIL_CLOSED_OFFICIAL_POLICY_NOT_OPEN"
+    assert metrics["official_citation_support_rate"] is None
+    assert citation_support.status_from([], metrics) == "FAIL"
 
 
 def test_r8_fails_if_context_contains_disallowed_fields(tmp_path: Path):
