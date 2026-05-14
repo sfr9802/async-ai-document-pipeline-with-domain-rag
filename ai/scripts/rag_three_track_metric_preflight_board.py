@@ -21,14 +21,18 @@ REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
 
 DEFAULT_TEXT_POLICY_PACKET = REVIEW_DIR / "rag_text_namu_answer_citation_policy_review_packet_v2_1.json"
-DEFAULT_XLSX_ANSWER_REPORT = REPORT_DIR / "xlsx_answer_citation_diagnostic_report.json"
-DEFAULT_PDF_READINESS_REPORT = REPORT_DIR / "pdf_evidence_readiness_report.json"
+DEFAULT_XLSX_ANSWER_REPORT = REPORT_DIR / "rag_xlsx_answer_citation_policy_review_packet_v1.json"
+DEFAULT_PDF_READINESS_REPORT = REPORT_DIR / "pdf_evidence_readiness_repair_report.json"
 DEFAULT_OUTPUT_JSON = REPORT_DIR / "three_track_metric_preflight_board.json"
 DEFAULT_OUTPUT_MD = REPORT_DIR / "three_track_metric_preflight_board.md"
 
 SCHEMA_VERSION = "three_track_metric_preflight_board_v1"
 TRACKS = ("text_namu_v2_1", "xlsx_business_structured", "pdf_business_ocr_mm")
 PROTECTED_SOURCE_GUARDRAILS = (
+    "official_denominator_registry_mutation",
+    "official_denominator_registry_changed",
+    "official_denominator_registry_opened",
+    "gold_registry_mutation",
     "official_denominator_opened",
     "official_denominator_opened_or_frozen",
     "promotion_evidence_created",
@@ -68,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
             sort_keys=True,
         )
     )
-    return 0 if board["status"] in {"DIAGNOSTIC_PREFLIGHT_READY", "DIAGNOSTIC_PREFLIGHT_BLOCKED"} else 2
+    return 0 if board["status"].startswith("DIAGNOSTIC_PREFLIGHT_") else 2
 
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -120,6 +124,7 @@ def build_board(
         "xlsx_business_structured": xlsx_track(xlsx, xlsx_answer_report),
         "pdf_business_ocr_mm": pdf_track(pdf, pdf_readiness_report),
     }
+    source_guardrails = source_guardrail_summary(text=text, xlsx=xlsx, pdf=pdf)
     errors = validation_errors(tracks, text=text, xlsx=xlsx, pdf=pdf)
     if cross_track_averages_requested:
         errors.append("cross-track averages are not allowed for this diagnostic board")
@@ -127,10 +132,11 @@ def build_board(
         track: int(payload.get("official_metric_input_rows") or 0)
         for track, payload in tracks.items()
     }
-    blocked = any(payload.get("status") in {"FAIL", "DIAGNOSTIC_ONLY_BLOCKED"} for payload in tracks.values())
-    status = "DIAGNOSTIC_PREFLIGHT_READY"
-    if blocked:
-        status = "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    blocker_status = {
+        "xlsx_leakage_blocked": xlsx_leakage_blocked(tracks["xlsx_business_structured"]),
+        "pdf_evidence_readiness_blocked": pdf_evidence_readiness_blocked(tracks["pdf_business_ocr_mm"]),
+    }
+    status = board_status(blocker_status)
     if errors:
         status = "FAILED_GUARDRAIL"
     board = {
@@ -144,6 +150,7 @@ def build_board(
         "tracks": tracks,
         "official_metric_input_rows_by_track": official_rows_by_track,
         "cross_track_averages_computed": False,
+        "blocker_status": blocker_status,
         "route_fallback_label_status": {
             "route_labels": "diagnostic_only",
             "fallback_labels": "diagnostic_only",
@@ -152,14 +159,19 @@ def build_board(
         },
         "guardrails": {
             "official_metric_input_rows_remain_zero": all(value == 0 for value in official_rows_by_track.values()),
-            "official_denominator_registry_mutation": False,
-            "official_denominator_registry_opened": False,
-            "candidate_artifact_mutation": False,
-            "immutable_baseline_mutation": False,
-            "production_namespace_vector_index_mutation": False,
-            "production_vector_index_mutation": False,
-            "production_vector_written": False,
-            "model_assisted_outputs_promoted_to_gold": False,
+            "official_denominator_registry_mutation": source_guardrails["official_denominator_registry_mutation"],
+            "official_denominator_registry_opened": source_guardrails["official_denominator_registry_opened"],
+            "gold_registry_mutation": source_guardrails["gold_registry_mutation"],
+            "candidate_artifact_mutation": source_guardrails["candidate_artifact_mutation"],
+            "immutable_baseline_mutation": source_guardrails["immutable_baseline_mutation"],
+            "production_namespace_vector_index_mutation": source_guardrails[
+                "production_namespace_vector_index_mutation"
+            ],
+            "production_vector_index_mutation": source_guardrails["production_vector_index_mutation"],
+            "production_vector_written": source_guardrails["production_vector_written"],
+            "model_assisted_outputs_promoted_to_gold": source_guardrails[
+                "model_assisted_outputs_promoted_to_gold"
+            ],
             "cross_track_averages_computed": False,
             "route_fallback_labels_diagnostic_only": True,
         },
@@ -183,18 +195,17 @@ def text_track(payload: Mapping[str, Any], path: Path) -> dict[str, Any]:
     metrics = nested_mapping(payload, "diagnostic_metric_preview")
     return {
         "source_report": repo_relative(path),
-        "status": clean(payload.get("status")),
-        "diagnostic_status": clean(payload.get("status")),
-        "answer_citation_status": "diagnostic_metric_pass_candidate"
-        if metrics.get("metric_pass_candidate") is True
-        else "diagnostic_policy_review_required",
+        "status": "FROZEN_DIAGNOSTIC_V2_1",
+        "diagnostic_status": "FROZEN_DIAGNOSTIC_V2_1",
+        "source_policy_packet_role": "frozen_source_packet_provenance",
+        "answer_citation_status": "frozen_diagnostic_v2_1",
         "official_metric_input_rows": int(metrics.get("official_metric_input_rows") or 0),
         "promotion_evidence": False,
         "clean_pass_rows": nested_int(metrics, "strict_clean_answer_preview", "numerator"),
         "cleanup_rows": nested_int(payload, "row_groups", "cleanup_rows", "row_count"),
         "rewrite_unresolved_rows": nested_int(payload, "row_groups", "unresolved_rows", "row_count"),
         "citation_fully_supported_rows": nested_int(metrics, "citation_supported_preview", "numerator"),
-        "policy_packet_status": clean(payload.get("status")),
+        "policy_packet_status": "frozen_source_packet_not_current_preflight_readiness",
     }
 
 
@@ -202,11 +213,25 @@ def xlsx_track(payload: Mapping[str, Any], path: Path) -> dict[str, Any]:
     preview = nested_mapping(payload, "diagnostic_metric_preview")
     counts = nested_mapping(payload, "counts")
     leakage = nested_mapping(payload, "leakage_reprobe")
+    leakage_status = clean(payload.get("leakage_raw_status") or preview.get("leakage_status") or leakage.get("status"))
     return {
         "source_report": repo_relative(path),
         "status": clean(payload.get("status")),
-        "diagnostic_status": "blocked_by_leakage_reprobe" if clean(payload.get("status")) != "PASS" else "ready",
-        "generated_answer_rows": int(preview.get("generated_answer_rows") or counts.get("generated_review_input_rows") or 0),
+        "diagnostic_status": "blocked_by_leakage_reprobe" if leakage_status != "PASS" else "ready",
+        "strict_silver_rows": int(payload.get("strict_silver_rows") or counts.get("input_strict_silver_rows") or 0),
+        "generated_answer_rows": int(
+            preview.get("generated_answer_rows") or payload.get("input_rows") or counts.get("generated_review_input_rows") or 0
+        ),
+        "pre_leakage_support_pass_rows": int(
+            preview.get("pre_leakage_support_pass_rows")
+            or preview.get("answer_citation_clean_pass_rows")
+            or min(
+                int(preview.get("citation_fully_supported_rows") or counts.get("answer_claim_supported_rows") or 0),
+                int(preview.get("citation_locator_valid_rows") or counts.get("citation_locator_resolved_rows") or 0),
+            )
+            or 0
+        ),
+        "ready_rows": int(preview.get("clean_pass_rows") or 0),
         "clean_pass_rows": int(preview.get("clean_pass_rows") or 0),
         "cleanup_rows": int(preview.get("cleanup_rows") or 0),
         "rewrite_unresolved_rows": int(preview.get("rewrite_unresolved_rows") or 0),
@@ -216,9 +241,17 @@ def xlsx_track(payload: Mapping[str, Any], path: Path) -> dict[str, Any]:
         "citation_locator_valid_rows": int(
             preview.get("citation_locator_valid_rows") or counts.get("citation_locator_resolved_rows") or 0
         ),
-        "leakage_count": int(preview.get("leakage_count") or leakage.get("surface_leakage_count") or 0),
-        "leakage_status": clean(preview.get("leakage_status") or leakage.get("status")),
-        "official_metric_input_rows": int(payload.get("official_metric_input_rows") or 0),
+        "leakage_count": int(
+            payload.get("leakage_raw_total")
+            or preview.get("leakage_count")
+            or leakage.get("surface_leakage_count")
+            or 0
+        ),
+        "leakage_status": leakage_status,
+        "metric_preview_status": clean(payload.get("metric_preview_status") or preview.get("status")),
+        "official_metric_input_rows": int(
+            payload.get("official_metric_input_rows") or preview.get("official_metric_input_rows") or 0
+        ),
         "promotion_evidence": bool(payload.get("promotion_evidence", False)),
     }
 
@@ -232,19 +265,48 @@ def pdf_track(payload: Mapping[str, Any], path: Path) -> dict[str, Any]:
         "source_report": repo_relative(path),
         "status": clean(payload.get("status")),
         "diagnostic_status": clean(payload.get("status")),
-        "input_rows": int(counts.get("input_rows") or 0),
-        "rows_with_complete_page_bbox_region": int(counts.get("rows_with_complete_page_bbox_region") or 0),
-        "rows_with_matched_text": int(counts.get("rows_with_matched_text") or 0),
-        "rows_with_nearby_paragraphs": int(counts.get("rows_with_nearby_paragraphs") or 0),
-        "rows_with_ocr_confidence_or_native_text_na": int(
-            counts.get("rows_with_ocr_confidence_or_native_text_na") or 0
+        "input_rows": int(payload.get("input_rows") or counts.get("input_rows") or 0),
+        "rows_with_complete_page_bbox_region": int(
+            payload.get("complete_page_bbox_region_count") or counts.get("rows_with_complete_page_bbox_region") or 0
         ),
-        "rows_with_citation_locator": int(counts.get("rows_with_citation_locator") or 0),
-        "rows_blocked_by_missing_layout": int(counts.get("rows_blocked_by_missing_layout") or 0),
-        "rows_blocked_by_file_identity_ambiguity": int(counts.get("rows_blocked_by_file_identity_ambiguity") or 0),
-        "strict_gate_readiness_count": int(counts.get("strict_gate_readiness_count") or 0),
-        "generated_strict_rows_if_rerun": int(counts.get("generated_strict_rows_if_rerun") or 0),
+        "rows_with_matched_text": int(payload.get("matched_text_count") or counts.get("rows_with_matched_text") or 0),
+        "rows_with_nearby_paragraphs": int(
+            payload.get("nearby_paragraph_count") or counts.get("rows_with_nearby_paragraphs") or 0
+        ),
+        "rows_with_ocr_confidence_or_native_text_na": int(
+            payload.get("OCR_confidence_available_count")
+            or payload.get("native_text_available_count")
+            or counts.get("rows_with_ocr_confidence_or_native_text_na")
+            or 0
+        ),
+        "rows_with_citation_locator": int(
+            payload.get("citation_locator_complete_count") or counts.get("rows_with_citation_locator") or 0
+        ),
+        "search_unit_id_available_count": int(payload.get("search_unit_id_available_count") or 0),
+        "parser_source_metadata_available_count": int(payload.get("parser_source_metadata_available_count") or 0),
+        "rows_blocked_by_missing_layout": int(
+            payload.get("blocked_by_missing_layout_count") or counts.get("rows_blocked_by_missing_layout") or 0
+        ),
+        "rows_blocked_by_missing_page_bbox_region": int(payload.get("blocked_by_missing_page_bbox_region_count") or 0),
+        "rows_blocked_by_missing_context_metadata": int(payload.get("blocked_by_missing_context_metadata_count") or 0),
+        "rows_blocked_by_missing_layout_or_context_metadata": int(
+            payload.get("blocked_by_missing_layout_or_context_metadata_count")
+            or payload.get("blocked_by_missing_layout_count")
+            or counts.get("rows_blocked_by_missing_layout")
+            or 0
+        ),
+        "rows_blocked_by_missing_source_unit": int(payload.get("blocked_by_missing_source_unit_count") or 0),
+        "rows_blocked_by_file_identity_ambiguity": int(
+            payload.get("file_identity_ambiguous_count") or counts.get("rows_blocked_by_file_identity_ambiguity") or 0
+        ),
+        "strict_gate_readiness_count": int(
+            payload.get("strict_ready_rows") or counts.get("strict_gate_readiness_count") or 0
+        ),
+        "generated_strict_rows_if_rerun": int(
+            payload.get("generated_strict_silver_rows") or counts.get("generated_strict_rows_if_rerun") or 0
+        ),
         "strict_gate_rerun_performed": rerun.get("rerun_performed") is True,
+        "strict_gate_rerun_eligible": rerun.get("eligible") is True,
         "answer_denominator_rows": answer_denominator_rows,
         "answer_generation_run": payload.get("answer_generation_run") is True,
         "official_metric_input_rows": source_official_rows,
@@ -284,15 +346,100 @@ def validation_errors(
     return errors
 
 
+def pdf_evidence_readiness_blocked(payload: Mapping[str, Any]) -> bool:
+    strict_ready = int(payload.get("strict_gate_readiness_count") or 0)
+    input_rows = int(payload.get("input_rows") or 0)
+    ready_status = clean(payload.get("status")) in {
+        "READY_FOR_STRICT_GATE_RERUN",
+        "READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN",
+    }
+    if not ready_status:
+        return True
+    return not (
+        input_rows > 0
+        and strict_ready == input_rows
+        and payload.get("strict_gate_rerun_eligible") is True
+    )
+
+
+def xlsx_leakage_blocked(payload: Mapping[str, Any]) -> bool:
+    return clean(payload.get("leakage_status")) != "PASS" or int(payload.get("leakage_count") or 0) != 0
+
+
+def board_status(blocker_status: Mapping[str, bool]) -> str:
+    xlsx_blocked = blocker_status.get("xlsx_leakage_blocked") is True
+    pdf_blocked = blocker_status.get("pdf_evidence_readiness_blocked") is True
+    if xlsx_blocked or pdf_blocked:
+        return "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    return "DIAGNOSTIC_PREFLIGHT_READY"
+
+
 def source_guardrail_errors(track: str, payload: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
     if payload.get("official_metric") is True:
         errors.append(f"{track} source report must keep official_metric=false")
+    validation = payload.get("validation") if isinstance(payload.get("validation"), Mapping) else {}
+    if validation.get("ok") is False:
+        source_errors = validation.get("errors") if isinstance(validation.get("errors"), list) else []
+        source_errors = [
+            source_error
+            for source_error in source_errors
+            if "leakage" not in clean(source_error).lower()
+        ]
+        if source_errors:
+            for source_error in source_errors:
+                errors.append(f"{track} source validation failed: {source_error}")
+        elif clean(payload.get("status")) == "FAILED_GUARDRAIL":
+            errors.append(f"{track} source validation failed")
     guardrails = payload.get("guardrails") if isinstance(payload.get("guardrails"), Mapping) else {}
+    source_guardrails = payload.get("source_guardrails") if isinstance(payload.get("source_guardrails"), Mapping) else {}
     for key in PROTECTED_SOURCE_GUARDRAILS:
-        if guardrails.get(key) is True:
+        if payload.get(key) is True or guardrails.get(key) is True or source_guardrails.get(key) is True:
             errors.append(f"{track} source guardrail violation: {key}=true")
     return errors
+
+
+def source_guardrail_summary(
+    *,
+    text: Mapping[str, Any],
+    xlsx: Mapping[str, Any],
+    pdf: Mapping[str, Any],
+) -> dict[str, bool]:
+    source_payloads = (text, xlsx, pdf)
+
+    def any_guardrail(*keys: str) -> bool:
+        for payload in source_payloads:
+            guardrails = payload.get("guardrails") if isinstance(payload.get("guardrails"), Mapping) else {}
+            source_guardrails = (
+                payload.get("source_guardrails") if isinstance(payload.get("source_guardrails"), Mapping) else {}
+            )
+            for key in keys:
+                if payload.get(key) is True or guardrails.get(key) is True or source_guardrails.get(key) is True:
+                    return True
+        return False
+
+    return {
+        "official_denominator_registry_mutation": any_guardrail(
+            "official_denominator_registry_mutation",
+            "official_denominator_registry_changed",
+        ),
+        "official_denominator_registry_opened": any_guardrail(
+            "official_denominator_registry_opened",
+            "official_denominator_opened",
+            "official_denominator_opened_or_frozen",
+        ),
+        "gold_registry_mutation": any_guardrail("gold_registry_mutation"),
+        "candidate_artifact_mutation": any_guardrail("candidate_artifact_mutation", "candidate_artifact_mutated"),
+        "immutable_baseline_mutation": any_guardrail("immutable_baseline_mutation", "immutable_baseline_mutated"),
+        "production_namespace_vector_index_mutation": any_guardrail(
+            "production_namespace_vector_index_mutation",
+            "production_namespace_mutated",
+            "production_vector_index_mutated",
+        ),
+        "production_vector_index_mutation": any_guardrail("production_vector_index_mutation", "production_vector_index_mutated"),
+        "production_vector_written": any_guardrail("production_vector_written"),
+        "model_assisted_outputs_promoted_to_gold": any_guardrail("model_assisted_outputs_promoted_to_gold"),
+    }
 
 
 def remaining_blockers(tracks: Mapping[str, Mapping[str, Any]]) -> list[str]:
@@ -326,20 +473,24 @@ def render_markdown(board: Mapping[str, Any]) -> str:
         f"- Status: `{board['status']}`",
         "- Scope: diagnostic-only; official metrics and official denominators remain closed.",
         f"- Cross-track averages computed: `{str(board['cross_track_averages_computed']).lower()}`",
+        f"- XLSX leakage blocker: `{str(board['blocker_status']['xlsx_leakage_blocked']).lower()}`",
+        f"- PDF evidence readiness blocker: `{str(board['blocker_status']['pdf_evidence_readiness_blocked']).lower()}`",
         "",
         "## Tracks",
         "",
-        "| Track | Status | Rows | Supported/Ready | Blockers | Official rows |",
-        "| --- | --- | ---: | ---: | ---: | ---: |",
+        "| Track | Status | Rows | Final clean/strict ready | Pre-leakage/support | Blockers | Official rows |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
         "| TEXT/Namu V2.1 | "
         f"`{text['diagnostic_status']}` | `{text['clean_pass_rows'] + text['cleanup_rows'] + text['rewrite_unresolved_rows']}` | "
-        f"`{text['citation_fully_supported_rows']}` | `{text['rewrite_unresolved_rows']}` | `{text['official_metric_input_rows']}` |",
+        f"`{text['clean_pass_rows']}` | `{text['citation_fully_supported_rows']}` | `{text['rewrite_unresolved_rows']}` | "
+        f"`{text['official_metric_input_rows']}` |",
         "| XLSX | "
         f"`{xlsx['diagnostic_status']}` | `{xlsx['generated_answer_rows']}` | "
-        f"`{xlsx['citation_locator_valid_rows']}` | `{xlsx['leakage_count']}` | `{xlsx['official_metric_input_rows']}` |",
+        f"`{xlsx['ready_rows']}` | `{xlsx['pre_leakage_support_pass_rows']}` | `{xlsx['leakage_count']}` | "
+        f"`{xlsx['official_metric_input_rows']}` |",
         "| PDF | "
-        f"`{pdf['diagnostic_status']}` | `{pdf['input_rows']}` | `{pdf['strict_gate_readiness_count']}` | "
-        f"`{pdf['rows_blocked_by_missing_layout']}` | `{pdf['official_metric_input_rows']}` |",
+        f"`{pdf['diagnostic_status']}` | `{pdf['input_rows']}` | `{pdf['strict_gate_readiness_count']}` | `n/a` | "
+        f"`{pdf['rows_blocked_by_missing_layout_or_context_metadata']}` | `{pdf['official_metric_input_rows']}` |",
         "",
         "## Guardrails",
         "",

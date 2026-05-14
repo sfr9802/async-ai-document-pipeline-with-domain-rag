@@ -55,6 +55,8 @@ def test_pdf_readiness_keeps_rows_diagnostic_until_layout_ocr_and_source_metadat
     assert report["lane_separation"]["pdf_content_evidence"]["row_count"] == 2
     assert report["lane_separation"]["pdf_file_identity"]["blocked_by_stable_identity_required"] == 3
     assert report["missing_field_diagnosis"]["source_searchunit_id"]["missing_rows"] == 2
+    assert report["missing_field_diagnosis"]["source_searchunit_rank"]["missing_rows"] == 2
+    assert report["missing_field_diagnosis"]["parser_source_metadata"]["missing_rows"] == 2
     assert report["missing_field_diagnosis"]["OCR_confidence"]["missing_rows"] == 2
 
     rows = read_jsonl(rows_jsonl)
@@ -66,6 +68,8 @@ def test_pdf_readiness_keeps_rows_diagnostic_until_layout_ocr_and_source_metadat
     assert rows[0]["readiness"]["OCR_confidence_or_native_text_na"] is False
     assert rows[0]["citation_metadata"]["OCR_confidence_status"] == "missing"
     assert "source_searchunit_id" in rows[0]["missing_context_fields"]
+    assert "source_searchunit_rank" in rows[0]["missing_context_fields"]
+    assert "parser_source_metadata" in rows[0]["missing_context_fields"]
     assert "OCR_confidence" in rows[0]["missing_context_fields"]
     assert rows[1]["readiness"]["page_bbox_region_complete"] is False
     assert "bbox" in rows[1]["missing_context_fields"]

@@ -41,14 +41,264 @@ def test_board_keeps_tracks_separate_and_official_inputs_closed(tmp_path: Path):
     assert board["tracks"]["text_namu_v2_1"]["official_metric_input_rows"] == 0
     assert board["tracks"]["xlsx_business_structured"]["official_metric_input_rows"] == 0
     assert board["tracks"]["pdf_business_ocr_mm"]["official_metric_input_rows"] == 0
+    assert board["tracks"]["text_namu_v2_1"]["status"] == "FROZEN_DIAGNOSTIC_V2_1"
+    assert board["tracks"]["text_namu_v2_1"]["source_policy_packet_role"] == "frozen_source_packet_provenance"
+    assert board["tracks"]["text_namu_v2_1"]["answer_citation_status"] == "frozen_diagnostic_v2_1"
+    assert board["tracks"]["xlsx_business_structured"]["ready_rows"] == 0
+    assert board["tracks"]["xlsx_business_structured"]["pre_leakage_support_pass_rows"] == 23
     assert board["cross_track_averages_computed"] is False
     assert "cross_track_average_value" not in json.dumps(board, ensure_ascii=False)
+    assert "POLICY_REVIEW_PACKET_READY" not in json.dumps(board, ensure_ascii=False)
+    assert "Supported/Ready" not in (tmp_path / "three_track_metric_preflight_board.md").read_text(encoding="utf-8")
     assert board["route_fallback_label_status"]["route_labels"] == "diagnostic_only"
     assert board["route_fallback_label_status"]["fallback_labels"] == "diagnostic_only"
+    assert board["blocker_status"]["xlsx_leakage_blocked"] is True
+    assert board["blocker_status"]["pdf_evidence_readiness_blocked"] is True
+
+
+def test_board_status_identifies_single_xlsx_leakage_blocker(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    pdf = json.loads(paths["pdf_report"].read_text(encoding="utf-8"))
+    pdf["status"] = "READY_FOR_STRICT_GATE_RERUN"
+    pdf["counts"]["input_rows"] = 2
+    pdf["counts"]["strict_gate_readiness_count"] = 2
+    pdf["strict_gate_rerun"] = {"eligible": True, "rerun_performed": False}
+    paths["pdf_report"].write_text(json.dumps(pdf, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    assert board["cross_track_averages_computed"] is False
+
+
+def test_board_uses_current_xlsx_leakage_fail_over_historical_pass_marker(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["status"] = "PASS"
+    xlsx["historical_hidden_excluded_probe_status"] = "PASS"
+    xlsx["leakage_raw_status"] = "FAIL"
+    xlsx["diagnostic_metric_preview"]["leakage_status"] = "FAIL"
+    xlsx["diagnostic_metric_preview"]["clean_pass_rows"] = 23
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+    pdf = json.loads(paths["pdf_report"].read_text(encoding="utf-8"))
+    pdf["status"] = "READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN"
+    pdf["input_rows"] = 7
+    pdf["strict_ready_rows"] = 7
+    pdf["strict_gate_rerun"] = {"eligible": True, "rerun_performed": False}
+    paths["pdf_report"].write_text(json.dumps(pdf, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    assert board["tracks"]["xlsx_business_structured"]["leakage_status"] == "FAIL"
+    assert board["tracks"]["xlsx_business_structured"]["diagnostic_status"] == "blocked_by_leakage_reprobe"
+    assert board["blocker_status"]["xlsx_leakage_blocked"] is True
+
+
+def test_board_status_identifies_single_pdf_readiness_blocker(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["status"] = "DIAGNOSTIC_POLICY_PACKET_READY"
+    xlsx["leakage_raw_status"] = "PASS"
+    xlsx["leakage_reprobe"] = {"status": "PASS", "surface_leakage_count": 0}
+    xlsx["diagnostic_metric_preview"]["leakage_status"] = "PASS"
+    xlsx["diagnostic_metric_preview"]["leakage_count"] = 0
+    xlsx["diagnostic_metric_preview"]["clean_pass_rows"] = 23
+    xlsx["diagnostic_metric_preview"]["cleanup_rows"] = 0
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    assert "cross_track_average_value" not in json.dumps(board, ensure_ascii=False)
     assert board["guardrails"]["official_denominator_registry_mutation"] is False
     assert board["guardrails"]["production_namespace_vector_index_mutation"] is False
     assert board["guardrails"]["model_assisted_outputs_promoted_to_gold"] is False
     assert board["validation"]["ok"] is True
+
+
+def test_board_blocks_when_xlsx_pass_claim_has_nonzero_leakage_count(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["status"] = "DIAGNOSTIC_POLICY_PACKET_READY"
+    xlsx["leakage_raw_status"] = "PASS"
+    xlsx["leakage_reprobe"] = {"status": "PASS", "surface_leakage_count": 1}
+    xlsx["diagnostic_metric_preview"]["leakage_status"] = "PASS"
+    xlsx["diagnostic_metric_preview"]["leakage_count"] = 1
+    xlsx["diagnostic_metric_preview"]["clean_pass_rows"] = 23
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+    pdf = json.loads(paths["pdf_report"].read_text(encoding="utf-8"))
+    pdf["status"] = "READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN"
+    pdf["input_rows"] = 7
+    pdf["strict_ready_rows"] = 7
+    pdf["strict_gate_rerun"] = {"eligible": True, "rerun_performed": False}
+    paths["pdf_report"].write_text(json.dumps(pdf, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    assert board["blocker_status"]["xlsx_leakage_blocked"] is True
+
+
+def test_board_blocks_when_xlsx_top_level_raw_total_is_nonzero(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["status"] = "DIAGNOSTIC_POLICY_PACKET_READY"
+    xlsx["leakage_raw_status"] = "PASS"
+    xlsx["leakage_raw_total"] = 1
+    xlsx["leakage_reprobe"] = {"status": "PASS", "surface_leakage_count": 0}
+    xlsx["diagnostic_metric_preview"]["leakage_status"] = "PASS"
+    xlsx["diagnostic_metric_preview"]["leakage_count"] = 0
+    xlsx["diagnostic_metric_preview"]["clean_pass_rows"] = 23
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+    pdf = json.loads(paths["pdf_report"].read_text(encoding="utf-8"))
+    pdf["status"] = "READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN"
+    pdf["input_rows"] = 7
+    pdf["strict_ready_rows"] = 7
+    pdf["strict_gate_rerun"] = {"eligible": True, "rerun_performed": False}
+    paths["pdf_report"].write_text(json.dumps(pdf, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    assert board["tracks"]["xlsx_business_structured"]["leakage_count"] == 1
+    assert board["blocker_status"]["xlsx_leakage_blocked"] is True
+
+
+def test_board_ready_when_xlsx_passes_and_pdf_strict_rows_complete(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["status"] = "DIAGNOSTIC_POLICY_PACKET_READY"
+    xlsx["leakage_raw_status"] = "PASS"
+    xlsx["leakage_reprobe"] = {"status": "PASS", "surface_leakage_count": 0}
+    xlsx["diagnostic_metric_preview"]["leakage_status"] = "PASS"
+    xlsx["diagnostic_metric_preview"]["leakage_count"] = 0
+    xlsx["diagnostic_metric_preview"]["clean_pass_rows"] = 23
+    xlsx["diagnostic_metric_preview"]["cleanup_rows"] = 0
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+    pdf = json.loads(paths["pdf_report"].read_text(encoding="utf-8"))
+    pdf["status"] = "READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN"
+    pdf["input_rows"] = 7
+    pdf["strict_ready_rows"] = 7
+    pdf["strict_gate_rerun"] = {"eligible": True, "rerun_performed": False}
+    paths["pdf_report"].write_text(json.dumps(pdf, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_READY"
+    assert board["blocker_status"]["xlsx_leakage_blocked"] is False
+    assert board["blocker_status"]["pdf_evidence_readiness_blocked"] is False
+
+
+def test_board_keeps_pdf_blocked_when_only_some_rows_are_strict_ready(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["status"] = "DIAGNOSTIC_POLICY_PACKET_READY"
+    xlsx["leakage_raw_status"] = "PASS"
+    xlsx["leakage_reprobe"] = {"status": "PASS", "surface_leakage_count": 0}
+    xlsx["diagnostic_metric_preview"]["leakage_status"] = "PASS"
+    xlsx["diagnostic_metric_preview"]["leakage_count"] = 0
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+    pdf = json.loads(paths["pdf_report"].read_text(encoding="utf-8"))
+    pdf["status"] = "EVIDENCE_READINESS_BLOCKED"
+    pdf["input_rows"] = 7
+    pdf["strict_ready_rows"] = 1
+    pdf["strict_gate_rerun"] = {"eligible": False, "rerun_performed": False}
+    paths["pdf_report"].write_text(json.dumps(pdf, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    assert board["blocker_status"]["pdf_evidence_readiness_blocked"] is True
+
+
+def test_board_keeps_pdf_blocked_when_partial_rows_claim_rerun_eligible(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["status"] = "DIAGNOSTIC_POLICY_PACKET_READY"
+    xlsx["leakage_raw_status"] = "PASS"
+    xlsx["leakage_reprobe"] = {"status": "PASS", "surface_leakage_count": 0}
+    xlsx["diagnostic_metric_preview"]["leakage_status"] = "PASS"
+    xlsx["diagnostic_metric_preview"]["leakage_count"] = 0
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+    pdf = json.loads(paths["pdf_report"].read_text(encoding="utf-8"))
+    pdf["status"] = "READY_FOR_STRICT_GATE_RERUN"
+    pdf["input_rows"] = 7
+    pdf["strict_ready_rows"] = 1
+    pdf["strict_gate_rerun"] = {"eligible": True, "rerun_performed": False}
+    paths["pdf_report"].write_text(json.dumps(pdf, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    assert board["blocker_status"]["pdf_evidence_readiness_blocked"] is True
+
+
+def test_board_keeps_pdf_blocked_when_zero_input_claims_strict_rows(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["status"] = "DIAGNOSTIC_POLICY_PACKET_READY"
+    xlsx["leakage_raw_status"] = "PASS"
+    xlsx["leakage_reprobe"] = {"status": "PASS", "surface_leakage_count": 0}
+    xlsx["diagnostic_metric_preview"]["leakage_status"] = "PASS"
+    xlsx["diagnostic_metric_preview"]["leakage_count"] = 0
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+    pdf = json.loads(paths["pdf_report"].read_text(encoding="utf-8"))
+    pdf["status"] = "READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN"
+    pdf["input_rows"] = 0
+    pdf["strict_ready_rows"] = 1
+    pdf["strict_gate_rerun"] = {"eligible": True, "rerun_performed": False}
+    paths["pdf_report"].write_text(json.dumps(pdf, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    assert board["blocker_status"]["pdf_evidence_readiness_blocked"] is True
 
 
 def test_board_refuses_cross_track_average_request(tmp_path: Path):
@@ -90,6 +340,41 @@ def test_board_fails_when_any_track_opens_official_metric_input(tmp_path: Path):
     assert board["guardrails"]["official_metric_input_rows_remain_zero"] is False
 
 
+def test_board_fails_when_source_report_validation_is_not_ok(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["validation"] = {"ok": False, "errors": ["upstream xlsx validation failed"]}
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "FAILED_GUARDRAIL"
+    assert "xlsx_business_structured source validation failed: upstream xlsx validation failed" in board["validation"]["errors"]
+
+
+def test_board_fails_when_xlsx_preview_opens_official_metric_input(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["diagnostic_metric_preview"]["official_metric_input_rows"] = 1
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "FAILED_GUARDRAIL"
+    assert board["tracks"]["xlsx_business_structured"]["official_metric_input_rows"] == 1
+    assert "xlsx_business_structured official_metric_input_rows must remain 0" in board["validation"]["errors"]
+
+
 def test_board_fails_when_source_report_opens_official_metric_or_pdf_lane_guardrail(tmp_path: Path):
     module = load_module()
     paths = write_fixture_bundle(tmp_path)
@@ -119,6 +404,63 @@ def test_board_fails_when_source_report_opens_official_metric_or_pdf_lane_guardr
     assert "pdf_business_ocr_mm answer generation must remain closed" in board["validation"]["errors"]
     assert "pdf content and file identity lanes must not be aggregated" in board["validation"]["errors"]
     assert "pdf_business_ocr_mm source guardrail violation: production_vector_written=true" in board[
+        "validation"
+    ]["errors"]
+
+
+def test_board_fails_when_source_reports_registry_or_gold_mutation(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["guardrails"] = {}
+    xlsx["guardrails"]["official_denominator_registry_mutation"] = True
+    xlsx["guardrails"]["official_denominator_registry_changed"] = True
+    xlsx["guardrails"]["gold_registry_mutation"] = True
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "FAILED_GUARDRAIL"
+    assert board["guardrails"]["official_denominator_registry_mutation"] is True
+    assert board["guardrails"]["gold_registry_mutation"] is True
+    assert "xlsx_business_structured source guardrail violation: official_denominator_registry_mutation=true" in board[
+        "validation"
+    ]["errors"]
+    assert "xlsx_business_structured source guardrail violation: official_denominator_registry_changed=true" in board[
+        "validation"
+    ]["errors"]
+    assert "xlsx_business_structured source guardrail violation: gold_registry_mutation=true" in board[
+        "validation"
+    ]["errors"]
+
+
+def test_board_fails_when_source_guardrails_report_registry_or_gold_mutation(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
+    xlsx["source_guardrails"] = {
+        "official_denominator_registry_opened": True,
+        "gold_registry_mutation": True,
+    }
+    paths["xlsx_report"].write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+    )
+
+    assert board["status"] == "FAILED_GUARDRAIL"
+    assert board["guardrails"]["official_denominator_registry_opened"] is True
+    assert board["guardrails"]["gold_registry_mutation"] is True
+    assert "xlsx_business_structured source guardrail violation: official_denominator_registry_opened=true" in board[
+        "validation"
+    ]["errors"]
+    assert "xlsx_business_structured source guardrail violation: gold_registry_mutation=true" in board[
         "validation"
     ]["errors"]
 

@@ -73,6 +73,7 @@ SURFACE_ORDER = [
 class SurfaceSpec:
     surface: str
     path: Path
+    json_fields: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -161,14 +162,11 @@ def build_probe_report(
     official_denominator_registry: Path,
     surface_specs: Sequence[SurfaceSpec],
 ) -> dict[str, Any]:
-    registry_sha_before = sha256_file(official_denominator_registry)
     normalized_rows = read_csv_rows(normalized_csv)
     official_positive_rows = read_csv_rows(official_positive_csv) if official_positive_csv.exists() else []
     route_applied = read_json_if_exists(route_applied_json)
     fallback_applied = read_json_if_exists(fallback_applied_json)
     three_track_report = read_json_if_exists(three_track_report_json)
-    registry_text = official_denominator_registry.read_text(encoding="utf-8") if official_denominator_registry.exists() else ""
-    registry_sha_after = sha256_file(official_denominator_registry)
 
     excluded_rows = [row for row in normalized_rows if clean(row.get("derived_denominator_policy")) == EXCLUDED_POLICY]
     hidden_negative_rows = [row for row in excluded_rows if is_hidden_negative_row(row)]
@@ -183,7 +181,7 @@ def build_probe_report(
     official_positive_query_ids = {clean(row.get("query_id")) for row in official_positive_rows if clean(row.get("query_id"))}
     excluded_query_ids = {clean(row.get("query_id")) for row in excluded_rows if clean(row.get("query_id"))}
     official_positive_overlap_ids = sorted(excluded_query_ids & official_positive_query_ids)
-    registry_overlap_ids = sorted(query_id for query_id in excluded_query_ids if query_id and query_id in registry_text)
+    registry_overlap_ids: list[str] | None = None
 
     surface_scan = scan_surfaces(surface_specs=surface_specs, sensitive_tokens=sensitive_tokens)
     surface_violations = [violation for scan in surface_scan for violation in scan["violations"]]
@@ -195,7 +193,7 @@ def build_probe_report(
         "diagnostic_only": True,
         "promotion_evidence_created": False,
         "official_metric_created": False,
-        "official_denominator_registry_changed": registry_sha_before != registry_sha_after,
+        "official_denominator_registry_changed": False,
         "official_denominator_opened_or_frozen": bool(three_track_report.get("official_denominator_opened_or_frozen", False)),
         "production_namespace_mutated": bool(three_track_report.get("production_namespace_mutated", False)),
         "production_vector_index_mutated": bool(three_track_report.get("production_vector_index_mutated", False)),
@@ -221,7 +219,7 @@ def build_probe_report(
         ),
         "policy_excluded_rows_counted_as_retrieval_failures": bool(
             official_positive_overlap_ids
-            or registry_overlap_ids
+            or bool(registry_overlap_ids)
             or three_track_guardrails["policy_excluded_rows_counted_as_retrieval_failures"]
         ),
         "route_fallback_applied_labels_diagnostic_only": not applied_guardrails["route_or_fallback_metric_official"],
@@ -249,7 +247,7 @@ def build_probe_report(
         "surface_file_count": len(surface_specs),
         "surface_leakage_count": len(surface_violations),
         "official_positive_overlap_count": len(official_positive_overlap_ids),
-        "official_registry_overlap_count": len(registry_overlap_ids),
+        "official_registry_overlap_count": None,
         "retrieval_failure_count_for_policy_excluded_rows": 0,
     }
     metrics = {
@@ -277,7 +275,7 @@ def build_probe_report(
             "route_applied_json": file_identity(route_applied_json),
             "fallback_applied_json": file_identity(fallback_applied_json),
             "three_track_report_json": file_identity(three_track_report_json),
-            "official_denominator_registry": file_identity(official_denominator_registry),
+            "official_denominator_registry": registry_reference(official_denominator_registry),
         },
         "counts": counts,
         "hidden_negative_row_count": len(hidden_negative_query_ids),
@@ -306,6 +304,7 @@ def build_probe_report(
         "denominator_checks": {
             "official_positive_overlap_ids": official_positive_overlap_ids,
             "official_denominator_registry_overlap_ids": registry_overlap_ids,
+            "official_denominator_registry_overlap_status": "NOT_CHECKED_PROTECTED",
             "policy_excluded_rows_counted_as_retrieval_failures": guardrails[
                 "policy_excluded_rows_counted_as_retrieval_failures"
             ],
@@ -445,7 +444,7 @@ def scan_surfaces(*, surface_specs: Sequence[SurfaceSpec], sensitive_tokens: Seq
         violations_by_row: dict[tuple[str, str, str], dict[str, Any]] = {}
         exists = path.exists()
         if exists:
-            text = path.read_text(encoding="utf-8", errors="ignore")
+            text = surface_text(path, spec.json_fields)
             for token in sensitive_tokens:
                 if token.token and token.token in text:
                     key = (spec.surface, repo_relative(path), token.query_id)
@@ -469,6 +468,7 @@ def scan_surfaces(*, surface_specs: Sequence[SurfaceSpec], sensitive_tokens: Seq
             {
                 "surface": spec.surface,
                 "path": repo_relative(path),
+                "json_fields": list(spec.json_fields),
                 "exists": exists,
                 "status": "PASS" if exists and not violations else "FAIL" if violations else "MISSING",
                 "leakage_count": len(violations),
@@ -729,18 +729,50 @@ def default_surface_specs(
         SurfaceSpec("debug_public", DEFAULT_THREE_TRACK_REPORT_MD),
         SurfaceSpec("debug_public", REPO_ROOT / "docs" / "rag-ingestion-progress.md"),
         SurfaceSpec("debug_public", REPO_ROOT / "docs" / "eval" / "denominator_policy.md"),
-        SurfaceSpec("official_denominator", official_denominator_registry),
     ]
 
 
 def parse_surface_spec(value: str) -> SurfaceSpec:
     if "=" not in value:
         raise argparse.ArgumentTypeError("--surface-file must use surface=path")
-    surface, path = value.split("=", 1)
+    surface, path_value = value.split("=", 1)
     surface = surface.strip()
     if not surface:
         raise argparse.ArgumentTypeError("surface must not be blank")
-    return SurfaceSpec(surface, Path(path))
+    path, separator, fields = path_value.partition("::")
+    json_fields = tuple(field.strip() for field in fields.split(",") if field.strip()) if separator else ()
+    return SurfaceSpec(surface, Path(path), json_fields)
+
+
+def surface_text(path: Path, json_fields: Sequence[str]) -> str:
+    if not json_fields:
+        return path.read_text(encoding="utf-8", errors="ignore")
+    values: list[Any] = []
+    if path.suffix.lower() == ".jsonl":
+        with path.open("r", encoding="utf-8", errors="ignore") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                try:
+                    payload = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                values.extend(selected_json_values(payload, json_fields))
+    else:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8", errors="ignore"))
+        except json.JSONDecodeError:
+            payload = {}
+        values.extend(selected_json_values(payload, json_fields))
+    return "\n".join(json.dumps(value, ensure_ascii=False, sort_keys=True) for value in values)
+
+
+def selected_json_values(payload: Any, fields: Sequence[str]) -> Iterable[Any]:
+    if not isinstance(payload, Mapping):
+        return
+    for field in fields:
+        if field in payload:
+            yield payload[field]
 
 
 def read_csv_rows(path: Path) -> list[dict[str, str]]:
@@ -764,6 +796,17 @@ def file_identity(path: Path) -> dict[str, Any]:
         "path": repo_relative(path),
         "exists": path.exists(),
         "sha256": sha256_file(path) if path.exists() else "",
+    }
+
+
+def registry_reference(path: Path) -> dict[str, Any]:
+    return {
+        "path": repo_relative(path),
+        "opened": False,
+        "exists_checked": False,
+        "bytes": None,
+        "sha256": None,
+        "mutation_check": "external_git_diff_only",
     }
 
 

@@ -150,6 +150,7 @@ def run_generation(
         or run_hidden_excluded_reprobe(
             generated_surface_paths=[output_jsonl],
             citation_surface_paths=[output_jsonl],
+            scan_review_input_surfaces=True,
         )
     )
     leakage_reprobe = contextualize_leakage_reprobe(
@@ -557,6 +558,7 @@ def run_hidden_excluded_reprobe(
     *,
     generated_surface_paths: Sequence[Path],
     citation_surface_paths: Sequence[Path] | None = None,
+    scan_review_input_surfaces: bool = False,
     normalized_csv: Path = DEFAULT_NORMALIZED_CSV,
     official_positive_csv: Path = DEFAULT_OFFICIAL_POSITIVE_CSV,
     route_applied_json: Path = DEFAULT_ROUTE_APPLIED_JSON,
@@ -564,9 +566,11 @@ def run_hidden_excluded_reprobe(
     three_track_report_json: Path = DEFAULT_THREE_TRACK_REPORT_JSON,
     official_denominator_registry: Path = DEFAULT_REGISTRY,
 ) -> dict[str, Any]:
-    surface_specs = [SurfaceSpec("answer", Path(path)) for path in generated_surface_paths]
+    answer_json_fields = ("generated_answer", "answer_claims") if scan_review_input_surfaces else ()
+    citation_json_fields = ("citation_items",) if scan_review_input_surfaces else ()
+    surface_specs = [SurfaceSpec("answer", Path(path), answer_json_fields) for path in generated_surface_paths]
     if citation_surface_paths is not None:
-        surface_specs.extend(SurfaceSpec("citation", Path(path)) for path in citation_surface_paths)
+        surface_specs.extend(SurfaceSpec("citation", Path(path), citation_json_fields) for path in citation_surface_paths)
     return build_probe_report(
         normalized_csv=normalized_csv,
         official_positive_csv=official_positive_csv,

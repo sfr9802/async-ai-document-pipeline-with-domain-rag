@@ -182,6 +182,116 @@ def test_hidden_excluded_reprobe_scans_answer_and_citation_surfaces(tmp_path: Pa
     assert report["surface_coverage"]["answer"]["status"] == "FAIL"
 
 
+def test_review_input_reprobe_ignores_formatter_input_only_shared_tokens(tmp_path: Path):
+    module = load_module()
+    fixture = write_leakage_probe_fixture(tmp_path, token="STRICT_ONLY_SHARED_TOKEN")
+    review_input = tmp_path / "review_input.jsonl"
+    review_input.write_text(
+        json.dumps(
+            {
+                "query_id": "strict_001",
+                "formatter_input": {"header_rows": ["STRICT_ONLY_SHARED_TOKEN"]},
+                "generated_answer": "구조화된 표 근거에 따르면 안전열: 안전값입니다.",
+                "answer_claims": [{"column": "안전열", "value": "안전값"}],
+                "citation_items": [{"citation_text": "안전한 citation", "locator": {"sheet": "Sheet1"}}],
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = module.run_hidden_excluded_reprobe(
+        generated_surface_paths=[review_input],
+        citation_surface_paths=[review_input],
+        normalized_csv=fixture["normalized_csv"],
+        official_positive_csv=fixture["official_positive_csv"],
+        route_applied_json=fixture["route_applied_json"],
+        fallback_applied_json=fixture["fallback_applied_json"],
+        three_track_report_json=fixture["three_track_report_json"],
+        official_denominator_registry=fixture["registry"],
+        scan_review_input_surfaces=True,
+    )
+
+    assert report["status"] == "PASS"
+    assert report["counts"]["surface_leakage_count"] == 0
+    assert report["surface_coverage"]["answer"]["status"] == "PASS"
+    assert report["surface_coverage"]["citation"]["status"] == "PASS"
+
+
+def test_review_input_reprobe_fails_when_excluded_token_is_in_generated_answer(tmp_path: Path):
+    module = load_module()
+    fixture = write_leakage_probe_fixture(tmp_path, token="EXCLUDED_ANSWER_TOKEN")
+    review_input = tmp_path / "review_input.jsonl"
+    review_input.write_text(
+        json.dumps(
+            {
+                "query_id": "strict_001",
+                "formatter_input": {"header_rows": []},
+                "generated_answer": "EXCLUDED_ANSWER_TOKEN",
+                "answer_claims": [],
+                "citation_items": [{"citation_text": "safe citation", "locator": {"sheet": "Sheet1"}}],
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = module.run_hidden_excluded_reprobe(
+        generated_surface_paths=[review_input],
+        citation_surface_paths=[review_input],
+        normalized_csv=fixture["normalized_csv"],
+        official_positive_csv=fixture["official_positive_csv"],
+        route_applied_json=fixture["route_applied_json"],
+        fallback_applied_json=fixture["fallback_applied_json"],
+        three_track_report_json=fixture["three_track_report_json"],
+        official_denominator_registry=fixture["registry"],
+        scan_review_input_surfaces=True,
+    )
+
+    assert report["status"] == "FAIL"
+    assert report["surface_coverage"]["answer"]["status"] == "FAIL"
+    assert report["surface_coverage"]["citation"]["status"] == "PASS"
+
+
+def test_review_input_reprobe_fails_when_hidden_token_is_in_citation_item(tmp_path: Path):
+    module = load_module()
+    fixture = write_leakage_probe_fixture(tmp_path, token="HIDDEN_CITATION_TOKEN", hidden_negative=True)
+    review_input = tmp_path / "review_input.jsonl"
+    review_input.write_text(
+        json.dumps(
+            {
+                "query_id": "strict_001",
+                "formatter_input": {"header_rows": []},
+                "generated_answer": "safe answer",
+                "answer_claims": [],
+                "citation_items": [{"citation_text": "HIDDEN_CITATION_TOKEN", "locator": {"sheet": "Sheet1"}}],
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = module.run_hidden_excluded_reprobe(
+        generated_surface_paths=[review_input],
+        citation_surface_paths=[review_input],
+        normalized_csv=fixture["normalized_csv"],
+        official_positive_csv=fixture["official_positive_csv"],
+        route_applied_json=fixture["route_applied_json"],
+        fallback_applied_json=fixture["fallback_applied_json"],
+        three_track_report_json=fixture["three_track_report_json"],
+        official_denominator_registry=fixture["registry"],
+        scan_review_input_surfaces=True,
+    )
+
+    assert report["status"] == "FAIL"
+    assert report["surface_coverage"]["answer"]["status"] == "PASS"
+    assert report["surface_coverage"]["citation"]["status"] == "FAIL"
+    assert report["hidden_negative_query_ids"] == ["gq_xlsx_hidden_policy_001"]
+
+
 def test_metric_preview_holds_clean_pass_when_leakage_reprobe_fails(tmp_path: Path):
     module = load_module()
     paths = write_xlsx_fixture(tmp_path)
@@ -202,6 +312,48 @@ def test_metric_preview_holds_clean_pass_when_leakage_reprobe_fails(tmp_path: Pa
     assert report["diagnostic_metric_preview"]["clean_pass_rows"] == 0
     assert report["diagnostic_metric_preview"]["cleanup_rows"] == 1
     assert report["diagnostic_metric_preview"]["leakage_count"] == 2
+
+
+def test_run_generation_zeroes_clean_pass_rows_when_reprobe_fails(tmp_path: Path):
+    module = load_module()
+    paths = write_xlsx_fixture(tmp_path)
+    paths["leakage_report"].write_text(
+        json.dumps({"status": "PASS", "target_rows": [{"query_id": "hidden_001"}]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    def fake_reprobe(**_kwargs):
+        return {
+            "status": "FAIL",
+            "counts": {"surface_leakage_count": 1},
+            "surface_coverage": {"answer": {"status": "FAIL", "leakage_count": 1}},
+            "surface_scan": [],
+            "surface_violations": [],
+            "validation": {"ok": False, "errors": ["excluded content surfaced"]},
+            "guardrails": {"hidden_excluded_content_exposed": True},
+        }
+
+    module.run_hidden_excluded_reprobe = fake_reprobe
+    report_json = tmp_path / "report.json"
+
+    report = module.run_generation(
+        strict_report=paths["strict_report"],
+        strict_manifest=paths["strict_manifest"],
+        leakage_report=paths["leakage_report"],
+        output_jsonl=tmp_path / "review_input.jsonl",
+        output_report=report_json,
+        output_md=tmp_path / "report.md",
+        leakage_reprobe_output=tmp_path / "leakage_reprobe.json",
+    )
+    persisted = json.loads(report_json.read_text(encoding="utf-8"))
+
+    assert report["status"] == "FAIL"
+    assert report["validation"]["ok"] is False
+    assert "hidden/excluded leakage reprobe failed" in report["validation"]["errors"]
+    assert report["diagnostic_metric_preview"]["answer_citation_clean_pass_rows"] == 1
+    assert report["diagnostic_metric_preview"]["clean_pass_rows"] == 0
+    assert report["diagnostic_metric_preview"]["cleanup_rows"] == 1
+    assert persisted["diagnostic_metric_preview"]["clean_pass_rows"] == 0
 
 
 def test_contextual_leakage_annotation_does_not_clear_raw_failures():
@@ -250,8 +402,50 @@ def test_contextual_leakage_annotation_does_not_clear_raw_failures():
 
     assert report["status"] == "FAIL"
     assert report["counts"]["surface_leakage_count"] == 1
+    assert report["validation"]["ok"] is False
+    assert report["surface_coverage"]["answer"]["status"] == "FAIL"
+    assert report["surface_scan"][0]["status"] == "FAIL"
+    assert report["guardrails"]["hidden_excluded_content_exposed"] is True
     assert report["allowlist_policy"]["allowlisted_surface_violation_count"] == 1
     assert report["allowlist_policy"]["status_effect"] == "annotation_only"
+
+
+def write_leakage_probe_fixture(tmp_path: Path, *, token: str, hidden_negative: bool = False) -> dict[str, Path]:
+    normalized_csv = tmp_path / "normalized.csv"
+    query_id = "gq_xlsx_hidden_policy_001" if hidden_negative else "gq_xlsx_excluded_001"
+    normalized_csv.write_text(
+        "\n".join(
+            [
+                "query_id,derived_denominator_policy,query,evidence_summary,evidence_headers,evidence_row_values,evidence_cell_values,deterministic_compiled_answer,expected_answer_text_existing,user_expected_answer_text,normalized_expected_answer_text,must_contain_terms_existing,normalized_must_contain_terms_json,citation_locator,hidden_policy,v2_label_status,eval_purpose",
+                f"{query_id},EXCLUDED,,,,{token},,,,,,,,,{'hidden_negative' if hidden_negative else ''},{'negative_hidden_policy' if hidden_negative else ''},{'hidden_policy_negative' if hidden_negative else ''}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    official_positive_csv = tmp_path / "official_positive.csv"
+    official_positive_csv.write_text("query_id\nstrict_001\n", encoding="utf-8")
+    route_applied_json = tmp_path / "route.json"
+    fallback_applied_json = tmp_path / "fallback.json"
+    guard_row = {
+        "query_id": "guard",
+        "blocked_flags": ["hidden_negative_or_excluded_row_guard"],
+        "official_metric_input": False,
+    }
+    route_applied_json.write_text(json.dumps({"applied_human_review_rows": [guard_row]}), encoding="utf-8")
+    fallback_applied_json.write_text(json.dumps({"applied_human_review_rows": [guard_row]}), encoding="utf-8")
+    three_track_report_json = tmp_path / "three_track.json"
+    three_track_report_json.write_text(json.dumps({"tracks": {}}), encoding="utf-8")
+    registry = tmp_path / "official_denominator_registry.json"
+    registry.write_text("{}", encoding="utf-8")
+    return {
+        "normalized_csv": normalized_csv,
+        "official_positive_csv": official_positive_csv,
+        "route_applied_json": route_applied_json,
+        "fallback_applied_json": fallback_applied_json,
+        "three_track_report_json": three_track_report_json,
+        "registry": registry,
+    }
 
 
 def write_xlsx_fixture(tmp_path: Path, rows: list[dict] | None = None) -> dict[str, Path]:

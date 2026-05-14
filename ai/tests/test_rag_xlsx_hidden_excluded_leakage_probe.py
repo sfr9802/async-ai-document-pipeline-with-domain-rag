@@ -6,6 +6,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = ROOT / "ai" / "scripts" / "rag_xlsx_hidden_excluded_leakage_probe.py"
@@ -56,6 +58,60 @@ def test_probe_passes_when_normalized_excluded_rows_stay_off_surfaces(tmp_path: 
     assert "HIDDEN_NEGATIVE_PAYLOAD" not in serialized
 
 
+def test_probe_does_not_open_registry_for_overlap_or_source_hash(tmp_path: Path):
+    module = load_module()
+    fixture = write_fixture(tmp_path)
+    fixture["registry"].write_text(
+        json.dumps({"query_ids": ["gq_xlsx_hidden_policy_001", "gq_xlsx_lookup_002"]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+    report = module.build_probe_report(
+        normalized_csv=fixture["normalized_csv"],
+        official_positive_csv=fixture["official_positive_csv"],
+        route_applied_json=fixture["route_applied_json"],
+        fallback_applied_json=fixture["fallback_applied_json"],
+        three_track_report_json=fixture["three_track_report_json"],
+        official_denominator_registry=fixture["registry"],
+        surface_specs=[
+            module.SurfaceSpec("debug_public", fixture["clean_surface"]),
+            module.SurfaceSpec("candidate", fixture["official_positive_csv"]),
+        ],
+    )
+
+    assert report["status"] == "PASS"
+    assert report["counts"]["official_registry_overlap_count"] is None
+    assert report["denominator_checks"]["official_denominator_registry_overlap_status"] == "NOT_CHECKED_PROTECTED"
+    assert report["denominator_checks"]["official_denominator_registry_overlap_ids"] is None
+    assert report["source_artifacts"]["official_denominator_registry"]["opened"] is False
+    assert report["source_artifacts"]["official_denominator_registry"]["sha256"] is None
+    assert report["guardrails"]["official_denominator_registry_changed"] is False
+
+
+def test_default_surfaces_do_not_scan_official_denominator_registry(tmp_path: Path):
+    module = load_module()
+    registry = tmp_path / "official_denominator_registry.json"
+
+    specs = module.default_surface_specs(
+        official_positive_csv=tmp_path / "official_positive.csv",
+        official_denominator_registry=registry,
+        route_applied_json=tmp_path / "route.json",
+        fallback_applied_json=tmp_path / "fallback.json",
+        three_track_report_json=tmp_path / "three_track.json",
+    )
+
+    assert all(spec.path != registry for spec in specs)
+    assert all(spec.surface != "official_denominator" for spec in specs)
+    assert module.registry_reference(registry) == {
+        "path": module.repo_relative(registry),
+        "opened": False,
+        "exists_checked": False,
+        "bytes": None,
+        "sha256": None,
+        "mutation_check": "external_git_diff_only",
+    }
+
+
 def test_probe_fails_closed_when_excluded_content_appears_on_surface(tmp_path: Path):
     module = load_module()
     fixture = write_fixture(tmp_path)
@@ -80,6 +136,31 @@ def test_probe_fails_closed_when_excluded_content_appears_on_surface(tmp_path: P
     assert report["surface_violations"][0]["surface"] == "answer"
     assert report["surface_violations"][0]["query_id"] == "gq_xlsx_hidden_policy_001"
     assert "HIDDEN_NEGATIVE_PAYLOAD" not in serialized
+
+
+@pytest.mark.parametrize("surface", ["answer", "citation", "debug_public", "official_denominator"])
+def test_probe_fails_closed_for_hidden_excluded_leakage_on_each_surface(tmp_path: Path, surface: str):
+    module = load_module()
+    fixture = write_fixture(tmp_path)
+
+    report = module.build_probe_report(
+        normalized_csv=fixture["normalized_csv"],
+        official_positive_csv=fixture["official_positive_csv"],
+        route_applied_json=fixture["route_applied_json"],
+        fallback_applied_json=fixture["fallback_applied_json"],
+        three_track_report_json=fixture["three_track_report_json"],
+        official_denominator_registry=fixture["registry"],
+        surface_specs=[
+            module.SurfaceSpec(surface, fixture["leaky_surface"]),
+        ],
+    )
+
+    assert report["status"] == "FAIL"
+    assert report["counts"]["surface_leakage_count"] == 1
+    assert report["surface_coverage"][surface]["status"] == "FAIL"
+    assert report["guardrails"]["hidden_excluded_content_exposed"] is True
+    if surface in {"answer", "citation", "debug_public"}:
+        assert report["guardrails"]["answer_citation_debug_surface_exposed"] is True
 
 
 def test_main_writes_json_and_md_without_registry_mutation(tmp_path: Path):

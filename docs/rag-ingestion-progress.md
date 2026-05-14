@@ -1,6 +1,6 @@
 # RAG Ingestion Progress
 
-Last updated: 2026-05-13 KST.
+Last updated: 2026-05-14 KST.
 
 This file is the compact status index for RAG ingestion. It should not store
 turn-level logs, command transcripts, raw report payloads, or per-agent notes.
@@ -9,8 +9,8 @@ external archive manifests and link only the current source of truth here.
 
 ## Current Status
 
-Overall status: `diagnostic_pipeline_ready_for_review`; production promotion and
-model-quality tuning remain blocked.
+Overall status: `diagnostic_preflight_blocked_report_only`; production
+promotion and model-quality tuning remain blocked.
 
 - Ingestion v2 is implemented on the production
   `source_file -> extracted_artifact -> search_unit` path.
@@ -43,18 +43,34 @@ model-quality tuning remain blocked.
 
 | Track | Current state | Current denominator / metric | Next action |
 |---|---|---|---|
-| `xlsx_business_structured` | `STRICT_SILVER_GENERATED_DIAGNOSTIC_ONLY` for retrieval/evidence only; normalized excluded-row / hidden-negative leakage probe `PASS` | Official retrieval/evidence denominator `23`; generated strict silver rows `23`; answer-generation denominator `0`; live smoke Hit@10 `1.0`, MRR@10 `0.942`, citation accuracy `1.0` | Review the strict silver report/manifest. Keep answer-generation and promotion closed until any newly opened answer/citation/debug/public surfaces are reprobed. |
+| `xlsx_business_structured` | Answer/citation diagnostic policy packet `DIAGNOSTIC_POLICY_PACKET_READY`; latest raw answer/citation leakage reprobe `PASS` (`0` total) | Strict silver rows `23`; pre-leakage support pass rows `23`; citation locator valid `23`; final clean pass `23`; official metric input rows `0`; denominator policy `closed` | Old raw hidden/excluded answer/citation leakage blocker is resolved. Keep XLSX diagnostic-only and do not open official metrics without explicit human audit. |
 | XLSX legacy diagnostic | Historical / superseded | Legacy Track A reviewed diagnostic denominator `35`; exact location recovered by top 10 | Preserve only as historical diagnostic evidence. Do not use as the current wrapper default. |
-| `text_namuwiki_animation` | Diagnostic answer/citation local-LLM v2 review-prep generated | Bound TEXT/NAMU diagnostic positive denominator `47`; generated-answer review rows `66`; official answer/citation-support denominator `0`; official metric input rows `0` | Review the local-LLM v2 diagnostic artifacts. Keep NAMU noncommercial-limited and out of public/support/gold promotion by default. Official answer/citation metrics require explicit human-approved policy artifacts. |
-| `pdf_business_ocr_mm` | `STRICT_SILVER_DIAGNOSTIC_GATE_COMPLETE` for retrieval/evidence only; no strict rows promoted because active artifacts lack source-unit/layout/OCR context | Conservative PDF positive controls `7`; generated strict silver rows `0`; diagnostic-only fallback rows `7`; policy-excluded rows `6`; stable-identity-required rows `3`; deferred OCR/parsing rows `2`; answer denominator `0` | Add or regenerate PDF evidence with source search unit id/rank, parser/source metadata, nearby paragraphs, bbox/page/region, OCR confidence where relevant, and citation locator metadata before strict silver promotion. Keep FILE/document identity separate from CONTENT evidence. |
+| `text_namuwiki_animation` | Frozen TEXT/Namu V2.1 policy packet `FROZEN_DIAGNOSTIC_V2_1` | Generated-answer review rows `66`; clean `60`; cleanup `5`; unresolved `1`; citation supported `65`; official metric input rows `0` | Keep frozen. Do not tune or reopen official denominators without explicit human-approved policy. |
+| `pdf_business_ocr_mm` | Evidence readiness repair `READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN`; layout gap closure `PDF_LAYOUT_GAP_CLOSED_ALL_STRICT_READY` | Input rows `7`; SearchUnit id `7`; parser/source metadata `7`; nearby paragraphs `7`; OCR/native text trust `7`; citation locator complete `7`; strict ready `7`; diagnostic fallback `0`; source-bound bbox resolved `3/3`; official metric input rows `0` | Keep PDF diagnostic-only. Next action is PDF answer/citation diagnostic packet readiness, not tuning execution or official metric opening. |
 | Route/orchestration metrics | Diagnostic-only | Korean memo labels applied in diagnostic-only route/fallback artifacts; official metric input rows remain `0` | Use the applied route/fallback labels for diagnostic analysis only. Create an explicit policy review before interpreting routing accuracy, wrong-route rate, fallback success, or multi-route success as official metrics. |
 | Answer recovery | Diagnostic-only consolidation complete | Baseline `calibrated_identity_exact_v1`; compact status `PASS`; `185` cases; triage counts: safe-recoverable report-only `5`, index-scope-missing `5`, policy-blocked-correctly `17`, gold-policy-required `6`, diagnostic-only-do-not-promote `4`, unknown `0`; answer denominator `0`; production promotion `false` | User gold-policy judgment is needed only for the 6 `GOLD_POLICY_REQUIRED` rows. Keep safe recoveries report-only and keep index-scope rows out of retrieval/ranking failure counts until source evidence is proven in-scope and indexed. |
 
+## 2026-05-14 XLSX/PDF Pre-Tuning Diagnostic Readiness
+
+Status: `REPORT_ONLY_READY`.
+
+- XLSX policy packet: `DIAGNOSTIC_POLICY_PACKET_READY`.
+- XLSX raw leakage status: `PASS`; pre-leakage support pass rows `23`, final clean pass rows `23`.
+- PDF layout gap closure: strict ready rows `4 -> 7`; fallback rows `3 -> 0`.
+- Remaining PDF fallback row ids: `none`; source-bound bbox resolved for `gq_auto_010`, `gq_auto_015`, and `gq_auto_030`.
+- PDF strict readiness gate rerun: `true` as diagnostic readiness-gate only; answer generation opened `false`.
+- Three-track board: `DIAGNOSTIC_PREFLIGHT_READY`; XLSX blocker `false`, PDF blocker `false`, cross-track averages computed `false`.
+- Tuning readiness plan: `REPORT_ONLY_READY`.
+- Official metric input rows remain `0` for TEXT/XLSX/PDF.
+- Tuning run started: `false`.
+- Denominator registry unchanged by this diagnostic/report-only slice.
+
 ## 2026-05-13 PDF Strict Retrieval/Evidence Diagnostic Slice
 
-Status: `COMPLETED_DIAGNOSTIC_ONLY`; compact reports:
+Status: `COMPLETED_DIAGNOSTIC_ONLY`; historical strict-slice report superseded
+by the current canonical PDF readiness repair:
 
-- `ai/eval/reports/rag-ingestion/pdf_strict_silver_generation_report.md`
+- `ai/eval/reports/rag-ingestion/pdf_evidence_readiness_repair_report.md`
   / `.json`
 - External-only full manifest:
   `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\pdf_strict_silver_generation\pdf_strict_silver_retrieval_evidence_manifest.jsonl`
@@ -566,9 +582,8 @@ External archive manifests:
 
 ## 2026-05-12 - XLSX Hidden/Excluded Leakage Probe
 
-- Status: `PASS`; evidence:
-  `ai/eval/reports/rag-ingestion/xlsx_hidden_excluded_leakage_probe_report.md`
-  / `.json`.
+- Status: `HISTORICAL_PASS_BEFORE_ANSWER_CITATION_SURFACES`; current
+  answer/citation policy packet supersedes this as the active XLSX status.
 - Scope: diagnostic-only scan before any XLSX answer-generation or promotion
   lane; no retrieval run, answer-generation run, vector write, candidate artifact
   mutation, immutable baseline mutation, or denominator registry update.
@@ -584,9 +599,8 @@ External archive manifests:
 
 ## 2026-05-12 - XLSX Strict Silver Generation
 
-- Status: `COMPLETED_DIAGNOSTIC_ONLY`; evidence:
-  `ai/eval/reports/rag-ingestion/xlsx_strict_silver_generation_report.md`
-  / `.json`.
+- Status: `COMPLETED_DIAGNOSTIC_ONLY_HISTORICAL`; current answer/citation
+  policy packet supersedes this as the active XLSX pre-tuning status.
 - Scope: strict XLSX retrieval/evidence silver only through
   `rag_xlsx_pre_silver_risk_closure.py` and
   `rag_xlsx_retrieval_performance_diagnostic.py`; no answer-generation,
@@ -636,6 +650,24 @@ External archive manifests:
   and `archive_summary.json` include original relative paths and SHA256 hashes.
 - Verification: manifest rows `153`, hash mismatches `0`, remaining matching
   docs/review cleanup candidates `0`.
+
+## 2026-05-14 - PDF Evidence Metadata And Layout Closure
+
+- Status: `PDF_LAYOUT_GAP_CLOSED_ALL_STRICT_READY`; board
+  `DIAGNOSTIC_PREFLIGHT_READY`; tuning plan `REPORT_ONLY_READY`.
+- Evidence: `ai/eval/reports/rag-ingestion/pdf_evidence_metadata_enrichment_report.json`
+  / `.md`, `pdf_layout_gap_closure_report.json` / `.md`, and refreshed
+  `pdf_evidence_readiness_repair_report.json` / `.md`.
+- Counts: SearchUnit id `0 -> 7`, parser/source metadata `0 -> 7`,
+  nearby paragraphs `0 -> 7`, OCR/native trust `0 -> 7`, citation locator
+  completeness `4 -> 7`, strict ready rows `0 -> 4 -> 7`.
+- Layout closure: source-bound bbox resolved for `gq_auto_010`,
+  `gq_auto_015`, and `gq_auto_030`; fallback rows `3 -> 0`.
+- Guardrails: strict gate rerun performed as diagnostic readiness-gate only;
+  canonical strict generator not run; `official_metric_input_rows=0`,
+  `answer_generation_opened=false`, `tuning_run_started=false`.
+- XLSX remains `DIAGNOSTIC_POLICY_PACKET_READY`; TEXT remains
+  `FROZEN_DIAGNOSTIC_V2_1`; denominator registry unchanged.
 
 ## Next Recommended Steps
 
