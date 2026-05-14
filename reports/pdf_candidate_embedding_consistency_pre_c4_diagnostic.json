@@ -1,0 +1,73 @@
+{
+  "run_id": "2026-05-05T005006Z",
+  "generated_at": "2026-05-05T00:50:06.758651+00:00",
+  "status": "FAIL",
+  "expected_index_version": "rag-ingestion-v2-pdf-candidate-v1",
+  "sourceFileTypes": [
+    "PDF"
+  ],
+  "parserVersions": [
+    "pdf-extract-v1",
+    "pdf-extract-v2"
+  ],
+  "allowUnscoped": false,
+  "run_started_at": null,
+  "expected_document_version_count": 3,
+  "gold": {
+    "enabled": true,
+    "path": "eval\\gold_queries_v0.csv",
+    "exists": true,
+    "expected_gold_row_count": 72,
+    "gold_row_count": 72,
+    "gold_unique_document_version_count": 7,
+    "missing_expected_document_version_id_count": 0,
+    "document_version_ids": [
+      "docv_2bc2cb4df8c629e4",
+      "docv_7bddd99c39ffdf1a",
+      "docv_88368b8b12ba3f38",
+      "docv_8b23a58c27c5518a",
+      "docv_8bafd560c35198d9",
+      "docv_f39c6a5b56da9ad8",
+      "docv_fe2470815512a395"
+    ]
+  },
+  "document_version_scope_source": [
+    "gold_query_file",
+    "expected_document_version_id"
+  ],
+  "document_version_ids": [
+    "docv_2bc2cb4df8c629e4",
+    "docv_7bddd99c39ffdf1a",
+    "docv_88368b8b12ba3f38",
+    "docv_8b23a58c27c5518a",
+    "docv_8bafd560c35198d9",
+    "docv_f39c6a5b56da9ad8",
+    "docv_fe2470815512a395"
+  ],
+  "explicit_document_version_ids": [
+    "docv_2bc2cb4df8c629e4",
+    "docv_7bddd99c39ffdf1a",
+    "docv_88368b8b12ba3f38",
+    "docv_8b23a58c27c5518a",
+    "docv_8bafd560c35198d9",
+    "docv_f39c6a5b56da9ad8",
+    "docv_fe2470815512a395"
+  ],
+  "derived_document_version_ids": [],
+  "scope": {
+    "document_version_id_count": 7,
+    "complete": true,
+    "missing_expected_document_version_ids": [],
+    "missing_contracts": []
+  },
+  "status_counts": {},
+  "parser_version_breakdown": {},
+  "source_file_type_breakdown": {},
+  "document_scope_details": [],
+  "scoped_summary": {},
+  "sample_failures": [],
+  "blockers": [
+    "DB inspection failed: OperationalError: connection to server at \"localhost\" (::1), port 5433 failed: Connection refused (0x0000274D/10061)\n\tIs the server running on that host and accepting TCP/IP connections?\nconnection to server at \"localhost\" (127.0.0.1), port 5433 failed: Connection refused (0x0000274D/10061)\n\tIs the server running on that host and accepting TCP/IP connections?\n"
+  ],
+  "warnings": []
+}

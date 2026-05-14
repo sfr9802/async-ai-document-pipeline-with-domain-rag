@@ -226,6 +226,12 @@ def _validate_cli_args(args: argparse.Namespace) -> None:
         )
 
 
+def _is_candidate_index_version(index_version: str | None) -> bool:
+    if not index_version:
+        return False
+    return "candidate" in str(index_version)
+
+
 def _has_hard_identity_scope(args: argparse.Namespace) -> bool:
     return any(
         (
