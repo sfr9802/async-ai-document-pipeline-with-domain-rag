@@ -11,10 +11,10 @@
       "sha256": "dfb17b723b2b03715f977e87329add01478dfdb842c4db5b674e82f5aaed05c4"
     },
     "candidates_jsonl": {
-      "bytes": 2397479,
+      "bytes": 2398181,
       "exists": true,
       "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.jsonl",
-      "sha256": "0be9b61b67b51bc762477378a08e0c78b74c3ca3c59a4e71002607d4d595c8f5"
+      "sha256": "ee85ead2f4980a046f71cefe7324aac76f79a3123008473972b0d94035582c50"
     },
     "dev_csv": {
       "bytes": 787321,
@@ -23,10 +23,10 @@
       "sha256": "e58fc66fa64c453a9d854778d2fda315e58e0cc1d65c41765ae2056250133108"
     },
     "dev_jsonl": {
-      "bytes": 1212834,
+      "bytes": 1213184,
       "exists": true,
       "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl",
-      "sha256": "7a79d4a01d6a372cb60b15bf35ea6d17480d7cbd5ee4e6b80137899de4315f61"
+      "sha256": "82353416f9f0c0c35d366be844c5cd207833254991d5d1a51c4fc64fb5e522fd"
     },
     "holdout_csv": {
       "bytes": 340637,
@@ -35,10 +35,10 @@
       "sha256": "e3e9d785e9fee8ad2db2ef353e4e6f1c4576e003f7e8284d6fa2f84c149af163"
     },
     "holdout_jsonl": {
-      "bytes": 522458,
+      "bytes": 522608,
       "exists": true,
       "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl",
-      "sha256": "3541580fbbae918af6f4ed2cfaffdb4405599ebc83609289184667d750665d8a"
+      "sha256": "da90380ef894b94882ca64ffac98f25a488b051173cc3786cafb546d284db5bb"
     },
     "selected_csv": {
       "bytes": 1128923,
@@ -47,10 +47,10 @@
       "sha256": "b502b1d7f3d78514a6a270719d115b2193eb43cf87be0cae222eccb3dbaa376a"
     },
     "selected_jsonl": {
-      "bytes": 1737192,
+      "bytes": 1737692,
       "exists": true,
       "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.jsonl",
-      "sha256": "a1c093c570fd8bf6a2bdbd66b61cabe4374b36805eaecff21a01863c2baca1dd"
+      "sha256": "db172e84d39ecd186236cc15fdaed88694784d3346b24ca0917ef4bd43badfac"
     },
     "validation_report": {
       "bytes": 3718,
@@ -74,7 +74,7 @@
     "validation_report": "ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_validation_report_v0.json"
   },
   "corpus_index_version": "rag-ingestion-v2-xlsx-candidate-v1",
-  "generated_at": "2026-05-08T02:53:39.684301+00:00",
+  "generated_at": "2026-05-08T11:53:39.684301+09:00",
   "generation_seed": "xlsx_silver_v0_seed_20260507",
   "official_denominator_count_before_after": [
     23,
