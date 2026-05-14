@@ -246,13 +246,13 @@ ai/eval/indexes/
 
 # ---- Agent loop A/B harness run output ----
 # Each run writes raw_results.jsonl / summary.csv / comparison_summary.json
-# under eval/agent_loop_ab/<run-name>/ plus a FAISS index cache under
+# under eval/legacy_agent_loop_ab/<run-name>/ plus a FAISS index cache under
 # _indexes/ and a console log under _logs/. Only the README and the
 # tracked smoke fixtures (smoke.csv / smoke.jsonl) are committed.
-ai/eval/agent_loop_ab/_indexes/
-ai/eval/agent_loop_ab/_logs/
-ai/eval/agent_loop_ab/legacy-vs-graph-*/
-ai/eval/agent_loop_ab/smoke-*/
+ai/eval/legacy_agent_loop_ab/_indexes/
+ai/eval/legacy_agent_loop_ab/_logs/
+ai/eval/legacy_agent_loop_ab/legacy-vs-graph-*/
+ai/eval/legacy_agent_loop_ab/smoke-*/
 
 # ---- Optuna tuning artifacts ----
 # Keep summary.md + config.yaml (deterministic replay), drop the
@@ -302,6 +302,20 @@ ai/eval/corpora/**/*.jsonl
 ai/eval/eval_queries/*_silver_*.jsonl
 ai/eval/eval_queries/*_synthetic_*.jsonl
 ai/eval/eval_queries/_generation_log_*.jsonl
+
+# XLSX strict silver retrieval/evidence v0 is a reviewable generated bundle.
+!ai/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.csv
+!ai/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.jsonl
+!ai/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.csv
+!ai/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.jsonl
+!ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.csv
+!ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl
+!ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.csv
+!ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl
+!ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_manifest_v0.json
+!ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_validation_report_v0.json
+!ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.json
+!ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.md
 
 # ---- RAG build artifacts (local-only) ----
 # FAISS index + build manifest are rebuilt from fixtures via

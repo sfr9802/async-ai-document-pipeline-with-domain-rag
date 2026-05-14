@@ -11,7 +11,7 @@ bundle (psycopg2 + ragmeta + ingest pipeline) which is not available
 in offline / CI envs. This module reuses the same cached FAISS index
 the wide-MMR-titlecap sweep operates against:
 
-    eval/agent_loop_ab/_indexes/bge-m3-anime-namu-v3-raw-mseq1024/
+    eval/legacy_agent_loop_ab/_indexes/bge-m3-anime-namu-v3-raw-mseq1024/
 
 …and the silver-200 query set, so an Optuna trial directly probes the
 *same* search space the wide-MMR sweep just diagnosed: candidate_k,
@@ -79,7 +79,7 @@ _CORPUS_PATH = Path(
 _CACHE_DIR = Path(
     os.environ.get(
         "OFFLINE_TUNE_CACHE_DIR",
-        "eval/agent_loop_ab/_indexes/bge-m3-anime-namu-v3-raw-mseq1024",
+        "eval/legacy_agent_loop_ab/_indexes/bge-m3-anime-namu-v3-raw-mseq1024",
     )
 )
 _QUERY_LIMIT = int(os.environ.get("OFFLINE_TUNE_QUERY_LIMIT", "50"))

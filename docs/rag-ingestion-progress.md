@@ -252,6 +252,113 @@ External archive manifests:
 - `D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260511-eval-report-cleanup\archive_manifest.csv`
 - `..\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\2026-05-11-portfolio-cleanup\`
 
+## 2026-05-07 - remaining storage cleanup
+
+- Status: `REMAINING_STORAGE_REDUCED_WITH_ACTIVE_PHASE7_HELD`.
+- Scope: moved only ignored/untracked legacy or stale generated payloads to the
+  external archive; no tracked files were moved or deleted.
+- Evidence:
+  `D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260507_214525\external_archive_manifest.json`.
+- Counts: workspace size went from `8,968,446,646` bytes (`8.353 GiB`) to
+  `6,296,876,287` bytes (`5.864 GiB`); archived `56` files /
+  `2,671,570,359` bytes (`2,547.81 MiB`), all SHA256 verified.
+- Externalized: legacy v3 corpus payloads, legacy v3 preprocessed/token corpus
+  outputs, non-promoted Phase 7 `title-section` comparison index, and the top
+  stale generated `local-storage/<job-id>` XLSX runtime outputs.
+- Held: active `namu-v4-structured-combined` corpus, promoted
+  `retrieval-title-section` index, `rag-data*` baseline/candidates, current
+  Phase 7 `rag_chunks_*`, source datasets/gold/review files, and `.git`/LFS.
+- Verification: final git status stayed clean; `anime_namu_v3/README.md` and
+  promoted retrieval index still exist; active vector hashes are checked in the
+  cleanup response.
+- Next: migrate remaining large re-runnable eval outputs to explicit external
+  runtime roots before generating more Phase 7 or local-storage artifacts.
+
+## 2026-05-07 - eval directory naming cleanup
+
+- Status: `EVAL_DIRECTORY_NAVIGATION_IMPROVED`.
+- Scope: documented the active role of each `ai/eval/` directory and
+  renamed the low-risk legacy A/B fixture directory from `agent_loop_ab/` to
+  `legacy_agent_loop_ab/`.
+- Preservation: high-reference eval contract paths such as `harness/`,
+  `reports/`, `eval_queries/`, `datasets/`, `review/`, `artifacts/`,
+  `corpora/`, `indexes/`, and `golden_retrieval/` were not physically renamed
+  because they are used by code, reports, descriptors, fixtures, or gold/review
+  workflows.
+- Verification: tracked references were updated to the new legacy A/B path;
+  historical ignored Phase 7 report mentions were normalized as provenance text.
+- Cleanup: validation-created Python `__pycache__` directories were moved to
+  `D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260507_220341\external_archive_manifest.json`
+  with SHA256 verification, leaving the `eval/` root directory list clean.
+- Next: if a future physical rename is needed for `review/` or `artifacts/`,
+  first add compatibility wrappers or explicit config indirection because those
+  names are already part of the eval/report surface.
+
+## 2026-05-07 - XLSX/PDF route trace diagnostics
+
+- Status: `DIAGNOSTIC_ONLY_ROUTE_TRACE_READY`.
+- Scope: added report-replay XLSX/PDF route tracing and bounded agentic
+  retrieval-route verification; no answer generation, broad indexing,
+  promotion, baseline mutation, or candidate artifact mutation was run.
+- Evidence:
+  `ai/eval/reports/rag-ingestion/xlsx_pdf_route_trace_diagnostic_20260507.json`,
+  `ai/eval/reports/rag-ingestion/xlsx_pdf_route_trace_diagnostic_20260507.md`,
+  `ai/eval/reports/rag-ingestion/xlsx_pdf_agentic_route_loop_diagnostic_20260507.json`,
+  `ai/eval/reports/rag-ingestion/xlsx_pdf_agentic_route_loop_diagnostic_20260507.md`.
+- Counts: route trace `PASS=5`, `REVIEW_REQUIRED=5`, `FAIL=0`;
+  XLSX hidden leakage `0`; agentic cases `10`, retry exhausted `0`.
+- Verification: py_compile passed; focused pytest bundle passed
+  `82 passed`; both diagnostic CLIs regenerated reports with
+  `promotion_evidence=false` and denominator registry diff empty.
+- Next: use these diagnostics while XLSX/PDF gold and PDF policy review
+  decisions remain separate from official answer metrics.
+
+## 2026-05-07 - PDF review pack application
+
+- Status: `PDF_REVIEW_PACK_CONSUMED_DIAGNOSTIC_ONLY`.
+- Scope: located and consumed the latest merged PDF manual v1 review pack with
+  FILE lookup companion; normalized retrieval/evidence rows without answer
+  generation, broad indexing, registry mutation, or candidate artifact writes.
+- Evidence:
+  `ai/eval/reports/rag-ingestion/pdf_review_pack_validation_20260507.json`,
+  `ai/eval/reports/rag-ingestion/pdf_reviewed_retrieval_evidence_application_20260507.json`,
+  `ai/eval/reports/rag-ingestion/pdf_reviewed_route_trace_diagnostic_20260507.json`,
+  `ai/eval/reports/rag-ingestion/pdf_reviewed_agentic_route_loop_diagnostic_20260507.json`,
+  `ai/eval/reports/rag-ingestion/pdf_xlsx_review_application_manifest_20260507.toml`.
+- Counts: source rows `108`; complete reviewed rows `0`; official candidates
+  `0`; excluded incomplete `108`; route trace `REVIEW_REQUIRED=108`,
+  `FAIL=0`; table lane `24`, FILE lookup `28`, CONTENT lookup `80`;
+  agentic cases `116`, retry exhausted `7`, max attempts `3`.
+- Verification: py_compile passed; focused pytest bundle passed `65 passed`;
+  review-application CLI regenerated reports; denominator registry diff empty;
+  protected index/canary git status empty.
+- Next: apply filled user review decisions through an explicit PDF
+  retrieval/evidence normalizer before any registry mutation or live official
+  denominator run.
+
+## 2026-05-08 - XLSX strict silver generation v0
+
+- Status: `XLSX_SILVER_GENERATION_COMPLETE`.
+- Scope: generated XLSX retrieval/evidence silver only through the strict
+  XLSX wrapper path; no retrieval tuning, answer scoring, broad indexing,
+  official denominator mutation, or TEXT/PDF behavior change.
+- Evidence:
+  `ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.json`,
+  `ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.md`,
+  `ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_manifest_v0.json`,
+  `ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_validation_report_v0.json`.
+- Counts: generated candidates `702`; valid rows `699`; rejected rows `3`
+  (`synthetic_label_not_source_bound`); selected silver rows `500`; dev
+  rows `350`; holdout rows `150`; official XLSX retrieval/evidence denominator
+  `23 -> 23`; XLSX answer-generation denominator `0 -> 0`.
+- Verification: generation CLI regenerated the bundle; py_compile passed;
+  focused pytest passed `48 passed`; route guard passed; denominator guard
+  passed; manifest hashes passed; exact range/cell query leakage `0`; dev/holdout
+  source-content/citation/range overlap `0`; hidden check is
+  `PASS_METADATA_ONLY` with workbook reopen not run in this phase.
+- Next: run an XLSX silver retrieval baseline against `silver_dev`, keeping
+  `silver_holdout` sealed for later tuning verification.
+
 ## Short History
 
 | Date | Milestone |

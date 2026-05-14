@@ -72,7 +72,7 @@ _DEFAULT_REPORTS_ROOT = Path("eval/reports/_archive/confirm-runs")
 _DEFAULT_QUERY_TYPE_DRAFT = Path(
     "eval/eval_queries/anime_silver_200.query_type_draft.jsonl"
 )
-_DEFAULT_CACHE_ROOT = Path("eval/agent_loop_ab/_indexes")
+_DEFAULT_CACHE_ROOT = Path("eval/legacy_agent_loop_ab/_indexes")
 
 # Held-constant — these mirror the prior format-confirm sweep so the
 # cap-policy axis is the only independent variable.

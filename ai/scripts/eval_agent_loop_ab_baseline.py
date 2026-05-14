@@ -88,13 +88,13 @@ log = logging.getLogger("scripts.eval_agent_loop_ab_baseline")
 
 
 _DEFAULT_BASELINE_DIR = Path("eval/reports/legacy-baseline-final")
-_DEFAULT_OUTPUT_ROOT = Path("eval/agent_loop_ab")
+_DEFAULT_OUTPUT_ROOT = Path("eval/legacy_agent_loop_ab")
 # Cache directory for the offline FAISS index + chunk metadata so that
 # successive baseline runs can skip the 30-60-minute corpus embedding
 # step. Bind the cache key to (corpus path + size + mtime + embedding
 # model + max_seq_length) so a corpus refresh or a model swap forces a
 # rebuild — a stale index silently corrupts retrieval otherwise.
-_DEFAULT_CACHE_ROOT = Path("eval/agent_loop_ab/_indexes")
+_DEFAULT_CACHE_ROOT = Path("eval/legacy_agent_loop_ab/_indexes")
 
 
 def main(argv: Optional[List[str]] = None) -> int:

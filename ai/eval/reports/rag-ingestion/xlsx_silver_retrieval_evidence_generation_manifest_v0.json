@@ -1,0 +1,133 @@
+{
+  "answer_denominator_count_before_after": [
+    0,
+    0
+  ],
+  "artifact_hashes": {
+    "candidates_csv": {
+      "bytes": 1543058,
+      "exists": true,
+      "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.csv",
+      "sha256": "dfb17b723b2b03715f977e87329add01478dfdb842c4db5b674e82f5aaed05c4"
+    },
+    "candidates_jsonl": {
+      "bytes": 2397479,
+      "exists": true,
+      "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.jsonl",
+      "sha256": "0be9b61b67b51bc762477378a08e0c78b74c3ca3c59a4e71002607d4d595c8f5"
+    },
+    "dev_csv": {
+      "bytes": 787321,
+      "exists": true,
+      "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.csv",
+      "sha256": "e58fc66fa64c453a9d854778d2fda315e58e0cc1d65c41765ae2056250133108"
+    },
+    "dev_jsonl": {
+      "bytes": 1212834,
+      "exists": true,
+      "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl",
+      "sha256": "7a79d4a01d6a372cb60b15bf35ea6d17480d7cbd5ee4e6b80137899de4315f61"
+    },
+    "holdout_csv": {
+      "bytes": 340637,
+      "exists": true,
+      "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.csv",
+      "sha256": "e3e9d785e9fee8ad2db2ef353e4e6f1c4576e003f7e8284d6fa2f84c149af163"
+    },
+    "holdout_jsonl": {
+      "bytes": 522458,
+      "exists": true,
+      "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl",
+      "sha256": "3541580fbbae918af6f4ed2cfaffdb4405599ebc83609289184667d750665d8a"
+    },
+    "selected_csv": {
+      "bytes": 1128923,
+      "exists": true,
+      "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.csv",
+      "sha256": "b502b1d7f3d78514a6a270719d115b2193eb43cf87be0cae222eccb3dbaa376a"
+    },
+    "selected_jsonl": {
+      "bytes": 1737192,
+      "exists": true,
+      "path": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.jsonl",
+      "sha256": "a1c093c570fd8bf6a2bdbd66b61cabe4374b36805eaecff21a01863c2baca1dd"
+    },
+    "validation_report": {
+      "bytes": 3718,
+      "exists": true,
+      "path": "ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_validation_report_v0.json",
+      "sha256": "fe67fcafd017bf103766eafcd954354e02b626be5e80f9504d196954ef2ca8d0"
+    }
+  },
+  "artifact_paths": {
+    "candidates_csv": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.csv",
+    "candidates_jsonl": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.jsonl",
+    "dev_csv": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.csv",
+    "dev_jsonl": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl",
+    "holdout_csv": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.csv",
+    "holdout_jsonl": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl",
+    "manifest": "ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_manifest_v0.json",
+    "report_json": "ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.json",
+    "report_md": "ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.md",
+    "selected_csv": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.csv",
+    "selected_jsonl": "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.jsonl",
+    "validation_report": "ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_validation_report_v0.json"
+  },
+  "corpus_index_version": "rag-ingestion-v2-xlsx-candidate-v1",
+  "generated_at": "2026-05-08T02:53:39.684301+00:00",
+  "generation_seed": "xlsx_silver_v0_seed_20260507",
+  "official_denominator_count_before_after": [
+    23,
+    23
+  ],
+  "official_denominator_registry_diff": {
+    "after_sha256": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22",
+    "before_sha256": "8f5e6bde33ff7cd68cfcc3d43bca976ca59799b78e490fab440ec2651c52fc22",
+    "changed": false,
+    "path": "ai/eval/eval_queries/official_denominator_registry.json"
+  },
+  "promotion_evidence": false,
+  "row_counts": {
+    "answer_denominator_after": 0,
+    "answer_denominator_before": 0,
+    "generated_candidates": 702,
+    "official_denominator_after": 23,
+    "official_denominator_before": 23,
+    "rejected_rows": 3,
+    "selected_silver_rows": 500,
+    "silver_dev_rows": 350,
+    "silver_holdout_rows": 150,
+    "valid_rows": 699
+  },
+  "schema_version": "xlsx_silver_retrieval_evidence_v0_manifest",
+  "source_artifact_identifiers": {
+    "eligible_source_unit_count": 702,
+    "index_build": {
+      "bytes": 143,
+      "exists": true,
+      "path": "ai/eval/indexes/rag-data-xlsx-candidate-v1/build.json",
+      "sha256": "340720615091a3e7416ee3c0c3c59dd03904264deb836d30583d36eec1d1341d"
+    },
+    "index_ingest_manifest": {
+      "bytes": 2796,
+      "exists": true,
+      "path": "ai/eval/indexes/rag-data-xlsx-candidate-v1/ingest_manifest.json",
+      "sha256": "9fcecf3f7e58e1663bdba47a1dc3def6c01e2d34893ac87ed1664c2bf9995691"
+    },
+    "source_dataset": "ragmeta_xlsx_candidate_v1_search_units",
+    "source_index_version": "rag-ingestion-v2-xlsx-candidate-v1",
+    "source_unit_count": 710,
+    "workbook_counts": {
+      "rag-ingestion-sales.xlsx": 2,
+      "과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx": 201,
+      "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx": 201,
+      "서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx": 32,
+      "제_1장 연령별 성별 수술현황(2024).xlsx": 266
+    }
+  },
+  "strict_wrapper_config_hash": "1cf97b7ec71a6dfbda8a10a844dd3d2fc8d9f618601024bf3ba27cee728a1a7b",
+  "validation_command_summaries": [
+    "python scripts\\rag_xlsx_silver_generation.py --date 20260507",
+    "python -m pytest tests\\test_rag_xlsx_silver_generation.py tests\\test_rag_xlsx_pre_silver_risk_closure.py -q"
+  ]
+}

@@ -201,7 +201,7 @@ def variant_cache_key(
     """Stable 16-char digest over (corpus, model, max_seq, variant).
 
     Mirrors ``eval_full_silver_minimal_sweep._dense_cache_key`` so the
-    layout under ``eval/agent_loop_ab/_indexes/`` stays consistent, but
+    layout under ``eval/legacy_agent_loop_ab/_indexes/`` stays consistent, but
     *adds* the variant identifier to the digest. Two variants with the
     same (corpus, model, max_seq) MUST produce different keys —
     collisions would silently feed the confirm sweep wrong data. The

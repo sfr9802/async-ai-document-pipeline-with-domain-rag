@@ -77,9 +77,9 @@ _DEFAULT_QUERY_TYPE_DRAFT = Path(
     "eval/eval_queries/anime_silver_200.query_type_draft.jsonl"
 )
 _DEFAULT_RAW_CACHE_DIR = Path(
-    "eval/agent_loop_ab/_indexes/bge-m3-anime-namu-v3-raw-mseq1024"
+    "eval/legacy_agent_loop_ab/_indexes/bge-m3-anime-namu-v3-raw-mseq1024"
 )
-_DEFAULT_CACHE_ROOT = Path("eval/agent_loop_ab/_indexes")
+_DEFAULT_CACHE_ROOT = Path("eval/legacy_agent_loop_ab/_indexes")
 
 _OPTUNA_WINNER_LABEL = "optuna_winner_top8"
 _ANCHOR_VARIANT = "raw"
