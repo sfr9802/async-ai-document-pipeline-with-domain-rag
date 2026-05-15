@@ -41,12 +41,19 @@ flowchart LR
 
 이 세 트랙은 하나의 namespace, retrieval contract, denominator, quality average로 합치지 않습니다.
 
-## XLSX/PDF Evidence 검색 방식
+## XLSX/PDF Evidence 검색을 쉽게 보면
 
-현재 orchestrator는 query와 source metadata guard로 트랙을 먼저 좁힌 뒤, 후보 검색과 evidence context assembly를 분리합니다. POC vector wrapper는 아직 bounded overfetch plus post-filtering을 사용하므로, production promotion 전에는 tenant/ACL/source type/parser/index/embedding 상태를 vector ranking 전이나 내부에서 fail-closed로 강제해야 합니다.
+이 저장소에서 `Evidence`는 "답이 맞아 보인다"가 아니라 "어느 표, 어느 셀, 어느 페이지, 어느 문단을 근거로 삼았는지 남길 수 있다"에 가깝습니다. 그래서 XLSX와 PDF를 한 검색통에 넣고 점수만 비교하지 않습니다. 먼저 질문과 source metadata로 트랙을 고르고, 그 트랙 안에서만 후보를 찾은 뒤, 답에 붙일 근거 조각을 따로 조립합니다.
 
-- XLSX: Spreadsheet SearchUnit 후보를 찾은 뒤, workbook을 다시 열거나 hidden 상태를 새로 probe하지 않고 retrieved Evidence의 `location_json`과 retriever metadata만 사용합니다. Context는 `sheet`, `table_id`, `table_range`, `matched_cells`, `header_rows`, `target_rows`, `target_columns`, `row_values`, `column_headers`, `nearby_rows`, `merged_cell_context`, `table_title_candidate`로 조립합니다. `row_values`, `column_headers`, `header_rows`, `target_rows`, `target_columns`가 부족하면 `xlsx_context_diagnostic_only_missing_structure`로 diagnostic-only 처리합니다.
-- PDF: PDF SearchUnit 후보를 찾은 뒤, retrieved Evidence의 `location_json`과 retriever metadata에서 layout context를 조립합니다. Context는 `page`, `region_type`, `bbox`, `matched_text`, `section_heading`, `table_caption_footnote`, `nearby_paragraphs`, `OCR_confidence`를 사용합니다. `page`, `region_type`, `bbox`, `section_heading`, `nearby_paragraphs`가 부족하면 `pdf_context_diagnostic_only_missing_layout`로 diagnostic-only 처리합니다.
+검색 흐름은 단순하게 보면 두 단계입니다.
+
+1. 후보를 찾습니다. 이 질문이 어느 표나 페이지 근처에서 풀릴 가능성이 큰지 SearchUnit을 고릅니다.
+2. 근거를 조립합니다. 후보를 찾았다는 사실만으로 끝내지 않고, 사람이 다시 확인할 수 있는 위치와 주변 문맥을 `Evidence`로 묶습니다.
+
+- XLSX는 workbook을 다시 열어 숨김 셀을 새로 뒤지지 않습니다. 이미 검색된 `Evidence`에 남아 있는 sheet, table/range, matched cells, row/column, nearby row 같은 단서만 사용합니다. 표 구조나 행/열 단서가 부족하면 "아직 답의 근거로 쓰기엔 불완전하다"고 보고 diagnostic-only로 막습니다.
+- PDF는 page, bbox, 영역 유형, matched text, section heading, nearby paragraph, OCR confidence 같은 단서를 봅니다. 페이지 위치나 주변 문맥이 부족하면 PDF도 official 근거로 올리지 않고 diagnostic-only로 남깁니다.
+
+현재 POC 검색기는 후보를 조금 넓게 가져온 뒤 후처리로 걸러내는 구조입니다. 그래서 production promotion 전에 tenant/ACL, source type, parser, index, embedding 상태가 검색 랭킹 전이나 랭킹 내부에서 fail-closed로 검증되어야 합니다.
 
 ## 현재 트랙별 Metric
 
