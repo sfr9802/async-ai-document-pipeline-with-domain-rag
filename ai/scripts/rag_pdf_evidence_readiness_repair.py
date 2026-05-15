@@ -216,13 +216,25 @@ def build_repair_from_payload(
             "ok": not guardrail_errors,
             "errors": guardrail_errors,
         },
-        "next_safe_actions": [
-            "Populate SearchUnit id/rank and parser/source metadata from active artifacts before any strict gate rerun.",
-            "Keep filename-only PDF identity blocked by stable_identity_required.",
-            "Keep PDF answer generation closed; generated strict rows, if any, are diagnostic only.",
-        ],
+        "next_safe_actions": next_safe_actions(strict_ready_all=strict_ready_all),
     }
     return report
+
+
+def next_safe_actions(*, strict_ready_all: bool) -> list[str]:
+    if strict_ready_all:
+        return [
+            "PDF evidence readiness is complete for 7 diagnostic rows.",
+            "Next safe action is answer/citation diagnostic or human audit depending on the current stage.",
+            "Keep answer generation diagnostic-only.",
+            "Keep official metrics and denominators closed.",
+            "Keep filename-only identity blocked and CONTENT/FILE lanes separate.",
+        ]
+    return [
+        "Populate SearchUnit id/rank and parser/source metadata from active artifacts before any strict gate rerun.",
+        "Keep filename-only PDF identity blocked by stable_identity_required.",
+        "Keep PDF answer generation closed; generated strict rows, if any, are diagnostic only.",
+    ]
 
 
 def repair_row(row: Mapping[str, Any]) -> dict[str, Any]:

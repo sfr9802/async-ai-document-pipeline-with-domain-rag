@@ -1,6 +1,6 @@
 # RAG Ingestion Progress
 
-Last updated: 2026-05-14 KST.
+Last updated: 2026-05-15 KST.
 
 This file is the compact status index for RAG ingestion. It should not store
 turn-level logs, command transcripts, raw report payloads, or per-agent notes.
@@ -9,7 +9,7 @@ external archive manifests and link only the current source of truth here.
 
 ## Current Status
 
-Overall status: `diagnostic_preflight_blocked_report_only`; production
+Overall status: `diagnostic_preflight_ready_report_only`; production
 promotion and model-quality tuning remain blocked.
 
 - Ingestion v2 is implemented on the production
@@ -46,7 +46,7 @@ promotion and model-quality tuning remain blocked.
 | `xlsx_business_structured` | Answer/citation diagnostic policy packet `DIAGNOSTIC_POLICY_PACKET_READY`; latest raw answer/citation leakage reprobe `PASS` (`0` total) | Strict silver rows `23`; pre-leakage support pass rows `23`; citation locator valid `23`; final clean pass `23`; official metric input rows `0`; denominator policy `closed` | Old raw hidden/excluded answer/citation leakage blocker is resolved. Keep XLSX diagnostic-only and do not open official metrics without explicit human audit. |
 | XLSX legacy diagnostic | Historical / superseded | Legacy Track A reviewed diagnostic denominator `35`; exact location recovered by top 10 | Preserve only as historical diagnostic evidence. Do not use as the current wrapper default. |
 | `text_namuwiki_animation` | Frozen TEXT/Namu V2.1 policy packet `FROZEN_DIAGNOSTIC_V2_1` | Generated-answer review rows `66`; clean `60`; cleanup `5`; unresolved `1`; citation supported `65`; official metric input rows `0` | Keep frozen. Do not tune or reopen official denominators without explicit human-approved policy. |
-| `pdf_business_ocr_mm` | Evidence readiness repair `READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN`; layout gap closure `PDF_LAYOUT_GAP_CLOSED_ALL_STRICT_READY` | Input rows `7`; SearchUnit id `7`; parser/source metadata `7`; nearby paragraphs `7`; OCR/native text trust `7`; citation locator complete `7`; strict ready `7`; diagnostic fallback `0`; source-bound bbox resolved `3/3`; official metric input rows `0` | Keep PDF diagnostic-only. Next action is PDF answer/citation diagnostic packet readiness, not tuning execution or official metric opening. |
+| `pdf_business_ocr_mm` | Evidence readiness `7/7`; answer/citation diagnostic policy packet `DIAGNOSTIC_POLICY_PACKET_READY` | Strict ready rows `7`; generated answer rows `7`; answer support pass `7`; citation locator valid `7`; clean pass `7`; cleanup `0`; unresolved `0`; lane policy blocked `0`; official metric input rows `0`; denominator policy `closed` | Keep PDF diagnostic-only. Human review can inspect the packet, but tuning execution and official metrics remain closed. |
 | Route/orchestration metrics | Diagnostic-only | Korean memo labels applied in diagnostic-only route/fallback artifacts; official metric input rows remain `0` | Use the applied route/fallback labels for diagnostic analysis only. Create an explicit policy review before interpreting routing accuracy, wrong-route rate, fallback success, or multi-route success as official metrics. |
 | Answer recovery | Diagnostic-only consolidation complete | Baseline `calibrated_identity_exact_v1`; compact status `PASS`; `185` cases; triage counts: safe-recoverable report-only `5`, index-scope-missing `5`, policy-blocked-correctly `17`, gold-policy-required `6`, diagnostic-only-do-not-promote `4`, unknown `0`; answer denominator `0`; production promotion `false` | User gold-policy judgment is needed only for the 6 `GOLD_POLICY_REQUIRED` rows. Keep safe recoveries report-only and keep index-scope rows out of retrieval/ranking failure counts until source evidence is proven in-scope and indexed. |
 
@@ -57,6 +57,7 @@ Status: `REPORT_ONLY_READY`.
 - XLSX policy packet: `DIAGNOSTIC_POLICY_PACKET_READY`.
 - XLSX raw leakage status: `PASS`; pre-leakage support pass rows `23`, final clean pass rows `23`.
 - PDF layout gap closure: strict ready rows `4 -> 7`; fallback rows `3 -> 0`.
+- PDF answer/citation packet: `DIAGNOSTIC_POLICY_PACKET_READY`; clean pass rows `7`, cleanup `0`, unresolved `0`, lane policy blocked `0`.
 - Remaining PDF fallback row ids: `none`; source-bound bbox resolved for `gq_auto_010`, `gq_auto_015`, and `gq_auto_030`.
 - PDF strict readiness gate rerun: `true` as diagnostic readiness-gate only; answer generation opened `false`.
 - Three-track board: `DIAGNOSTIC_PREFLIGHT_READY`; XLSX blocker `false`, PDF blocker `false`, cross-track averages computed `false`.
@@ -64,6 +65,70 @@ Status: `REPORT_ONLY_READY`.
 - Official metric input rows remain `0` for TEXT/XLSX/PDF.
 - Tuning run started: `false`.
 - Denominator registry unchanged by this diagnostic/report-only slice.
+
+## 2026-05-15 PDF Answer/Citation Diagnostic Packet
+
+Status: `DIAGNOSTIC_POLICY_PACKET_READY`.
+
+- Evidence: `ai/eval/reports/rag-ingestion/pdf_answer_citation_diagnostic_report.json`
+  / `.md`, `pdf_answer_citation_diagnostic_review_input.jsonl`, and
+  `rag_pdf_answer_citation_policy_review_packet_v1.json` / `.md`.
+- Counts: input `7`, strict ready `7`, generated answer rows `7`, answer
+  support pass `7`, citation locator valid `7`, clean pass `7`, cleanup `0`,
+  unresolved `0`, lane policy blocked `0`.
+- Board: `DIAGNOSTIC_PREFLIGHT_READY`; tuning plan `REPORT_ONLY_READY`.
+- Guardrails: `official_metric_input_rows=0`, `tuning_run_started=false`,
+  official metrics and denominators closed, denominator registry unchanged.
+
+## 2026-05-15 Report-Only Dry-Run Plan And Human Audit Packet
+
+Status: `REPORT_ONLY_DRY_RUN_PLAN_READY`; human audit packet
+`HUMAN_AUDIT_PACKET_READY`.
+
+- Generated plan:
+  `ai/eval/reports/rag-ingestion/report_only_tuning_dry_run_plan_v1.json`
+  / `.md`.
+- Generated human audit packet:
+  `ai/eval/review/rag_human_audit_packet_v1.json` / `.md`.
+- Generated transition checklist:
+  `ai/eval/reports/rag-ingestion/official_metric_transition_readiness_checklist_v1.json`
+  / `.md`.
+- Board: `DIAGNOSTIC_PREFLIGHT_READY`; tuning readiness plan:
+  `REPORT_ONLY_READY`.
+- User-action audit rows: total `19` (`pdf_business_ocr_mm=11`,
+  `text_namu_v2_1=6`, `xlsx_business_structured=2`); decision types are
+  expected answer/evidence semantics, answerability, relevance, final gold
+  policy, and official denominator inclusion.
+- Non-action diagnostic-only rows summarized: `93`; hidden/excluded XLSX rows
+  remain non-candidates; route/fallback metrics remain diagnostic-only.
+- Guardrails: `official_metric_input_rows=0`, official denominator registry
+  unchanged, `tuning_run_started=false`, production mutation `false`,
+  cross-track average `false`.
+- Next action: user human audit decisions only. After that, apply decisions
+  report-only and generate an official denominator candidate diff preview;
+  require explicit user approval before any registry mutation.
+
+## 2026-05-15 Canonical Pack And Anti-Shortcut Audit
+
+Status: `CANONICAL_ARTIFACT_AUDIT_PASS`;
+`ANTI_SHORTCUT_GUARDRAIL_AUDIT_PASS`.
+
+- Board: `DIAGNOSTIC_PREFLIGHT_READY`; dry-run plan:
+  `REPORT_ONLY_DRY_RUN_PLAN_READY`; human audit packet:
+  `HUMAN_AUDIT_PACKET_READY`.
+- Official transition checklist:
+  `OFFICIAL_TRANSITION_BLOCKED_PENDING_HUMAN_AUDIT`.
+- Guardrails: official metric input rows remain `0`, tuning run started
+  `false`, official metrics and denominators closed, denominator registry
+  unchanged.
+- Remaining blocker: user human audit decisions only.
+- Current slim canonical pack keeps board/readiness/dry-run/checklist/human
+  audit/progress doc as current reports, and keeps TEXT/XLSX/PDF proof packets
+  as generated source proof.
+- Cleanup: superseded intermediate review packets moved to external archive
+  `D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260515T0338-rag-slim-canonical-cleanup`;
+  current report/review directories now include README files listing current,
+  source-proof, and active legacy-input files.
 
 ## 2026-05-13 PDF Strict Retrieval/Evidence Diagnostic Slice
 
@@ -676,8 +741,8 @@ External archive manifests:
 2. Review any newly opened XLSX answer/citation/debug/public surfaces with the
    focused normalized excluded-row / hidden-negative leakage probe before using
    them for answer-generation or promotion.
-3. Resolve PDF review decisions for page/table/bbox evidence, answerability, and
-   FILE vs CONTENT routing.
+3. Review the PDF answer/citation diagnostic packet without opening official
+   metrics, answer denominators, or CONTENT/FILE lane merges.
 4. Review TEXT/NAMU v2 candidates and actual generated answers before changing
    R8 citation-support denominators.
 5. Use the applied route/fallback label artifacts for diagnostic analysis only;

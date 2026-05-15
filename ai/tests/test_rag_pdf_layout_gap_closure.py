@@ -83,6 +83,7 @@ def test_layout_gap_closure_promotes_only_source_bound_bbox(tmp_path: Path) -> N
     refreshed = json.loads(paths["refreshed_enrichment"].read_text(encoding="utf-8"))
     refreshed_row = next(row for row in refreshed["rows"] if row["query_id"] == "gq_auto_010")
     assert refreshed["after_counts"]["strict_ready_rows"] == 2
+    assert refreshed["remaining_blockers"] == {}
     assert refreshed_row["strict_ready"] is True
     assert refreshed_row["bbox"] == [63.65, 121.56, 227.84, 131.77]
 

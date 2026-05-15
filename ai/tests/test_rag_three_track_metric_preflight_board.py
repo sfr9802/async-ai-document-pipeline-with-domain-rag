@@ -190,7 +190,7 @@ def test_board_blocks_when_xlsx_top_level_raw_total_is_nonzero(tmp_path: Path):
     assert board["blocker_status"]["xlsx_leakage_blocked"] is True
 
 
-def test_board_ready_when_xlsx_passes_and_pdf_strict_rows_complete(tmp_path: Path):
+def test_board_blocks_when_pdf_answer_packet_missing_after_pdf_evidence_ready(tmp_path: Path):
     module = load_module()
     paths = write_fixture_bundle(tmp_path)
     xlsx = json.loads(paths["xlsx_report"].read_text(encoding="utf-8"))
@@ -215,9 +215,60 @@ def test_board_ready_when_xlsx_passes_and_pdf_strict_rows_complete(tmp_path: Pat
         pdf_readiness_report=paths["pdf_report"],
     )
 
-    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_READY"
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_BLOCKED_BY_PDF_ANSWER_CITATION"
     assert board["blocker_status"]["xlsx_leakage_blocked"] is False
     assert board["blocker_status"]["pdf_evidence_readiness_blocked"] is False
+    assert board["blocker_status"]["pdf_answer_citation_blocked"] is True
+    assert "PDF answer/citation diagnostic packet is missing or not ready." in board["remaining_blockers"]
+
+
+def test_board_reads_pdf_answer_packet_ready_without_blocking_preflight(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    make_xlsx_ready(paths["xlsx_report"])
+    make_pdf_readiness_ready(paths["pdf_report"])
+    pdf_answer = tmp_path / "pdf_answer_packet.json"
+    write_pdf_answer_packet(pdf_answer, status="DIAGNOSTIC_POLICY_PACKET_READY", clean_pass_rows=7, cleanup_rows=0)
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+        pdf_answer_report=pdf_answer,
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_READY"
+    assert board["tracks"]["pdf_business_ocr_mm"]["answer_citation_status"] == "DIAGNOSTIC_POLICY_PACKET_READY"
+    assert board["tracks"]["pdf_business_ocr_mm"]["answer_clean_pass_rows"] == 7
+    assert board["blocker_status"]["pdf_answer_citation_blocked"] is False
+    assert board["official_metric_input_rows_by_track"]["pdf_business_ocr_mm"] == 0
+
+
+def test_board_blocks_when_pdf_answer_packet_is_lane_guard_blocked(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    make_xlsx_ready(paths["xlsx_report"])
+    make_pdf_readiness_ready(paths["pdf_report"])
+    pdf_answer = tmp_path / "pdf_answer_packet.json"
+    write_pdf_answer_packet(
+        pdf_answer,
+        status="DIAGNOSTIC_POLICY_PACKET_BLOCKED_BY_LANE_OR_EVIDENCE_GUARD",
+        clean_pass_rows=6,
+        cleanup_rows=0,
+        lane_policy_blocked_rows=1,
+    )
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+        pdf_answer_report=pdf_answer,
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_BLOCKED_BY_PDF_ANSWER_CITATION"
+    assert board["blocker_status"]["pdf_evidence_readiness_blocked"] is False
+    assert board["blocker_status"]["pdf_answer_citation_blocked"] is True
+    assert "PDF answer/citation diagnostic packet is missing or not ready." in board["remaining_blockers"]
 
 
 def test_board_keeps_pdf_blocked_when_only_some_rows_are_strict_ready(tmp_path: Path):
@@ -560,3 +611,66 @@ def write_fixture_bundle(tmp_path: Path) -> dict[str, Path]:
         encoding="utf-8",
     )
     return {"text_packet": text_packet, "xlsx_report": xlsx_report, "pdf_report": pdf_report}
+
+
+def make_xlsx_ready(path: Path) -> None:
+    xlsx = json.loads(path.read_text(encoding="utf-8"))
+    xlsx["status"] = "DIAGNOSTIC_POLICY_PACKET_READY"
+    xlsx["leakage_raw_status"] = "PASS"
+    xlsx["leakage_reprobe"] = {"status": "PASS", "surface_leakage_count": 0}
+    xlsx["diagnostic_metric_preview"]["leakage_status"] = "PASS"
+    xlsx["diagnostic_metric_preview"]["leakage_count"] = 0
+    xlsx["diagnostic_metric_preview"]["clean_pass_rows"] = 23
+    xlsx["diagnostic_metric_preview"]["cleanup_rows"] = 0
+    path.write_text(json.dumps(xlsx, ensure_ascii=False), encoding="utf-8")
+
+
+def make_pdf_readiness_ready(path: Path) -> None:
+    pdf = json.loads(path.read_text(encoding="utf-8"))
+    pdf["status"] = "READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN"
+    pdf["input_rows"] = 7
+    pdf["strict_ready_rows"] = 7
+    pdf["strict_gate_rerun"] = {"eligible": True, "rerun_performed": True}
+    path.write_text(json.dumps(pdf, ensure_ascii=False), encoding="utf-8")
+
+
+def write_pdf_answer_packet(
+    path: Path,
+    *,
+    status: str,
+    clean_pass_rows: int,
+    cleanup_rows: int,
+    lane_policy_blocked_rows: int = 0,
+) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "status": status,
+                "diagnostic_only": True,
+                "official_metric": False,
+                "promotion_evidence": False,
+                "input_rows": 7,
+                "strict_ready_rows": 7,
+                "generated_answer_rows": 7,
+                "answer_support_pass_count": clean_pass_rows,
+                "citation_locator_valid_count": clean_pass_rows,
+                "clean_pass_rows": clean_pass_rows,
+                "cleanup_rows": cleanup_rows,
+                "unresolved_rows": 0,
+                "lane_policy_blocked_rows": lane_policy_blocked_rows,
+                "official_metric_input_rows": 0,
+                "pdf_answer_generation_denominator_opened": False,
+                "content_file_identity_lane_merge": False,
+                "filename_only_identity_accepted": False,
+                "guardrails": {
+                    "official_metric_input_rows_remain_zero": True,
+                    "official_denominator_registry_opened": False,
+                    "official_denominator_registry_mutation": False,
+                    "promotion_evidence_created": False,
+                },
+                "validation": {"ok": True, "errors": []},
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )

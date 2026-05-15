@@ -99,9 +99,10 @@ def build_plan(
         *metric_board_validation_errors(board),
     ]
     readiness = track_readiness(board)
-    blockers = readiness_blockers(readiness)
+    technical_blockers = readiness_blockers(readiness)
+    blockers = [*technical_blockers, "human_audit_required_before_official_metric_open"]
     status = "REPORT_ONLY_READY"
-    if blockers:
+    if technical_blockers:
         status = "REPORT_ONLY_PRE_TUNING_READINESS_BLOCKED"
     if errors:
         status = "FAILED_GUARDRAIL"
@@ -128,6 +129,8 @@ def build_plan(
         },
         "track_policies": track_policies(readiness),
         "readiness_blockers": blockers,
+        "technical_readiness_blockers": technical_blockers,
+        "official_transition_blockers": ["human_audit_required_before_official_metric_open"],
         "guardrails": guardrails,
         "artifact_paths": {
             "metric_board": "",
@@ -240,6 +243,10 @@ def track_readiness(board: Mapping[str, Any]) -> dict[str, str]:
     pdf_strict_ready = int_value(pdf.get("strict_gate_readiness_count"))
     pdf_input_rows = int_value(pdf.get("input_rows"))
     pdf_board_blocked = blocker_status.get("pdf_evidence_readiness_blocked") is True
+    pdf_answer_blocked = (
+        blocker_status.get("pdf_answer_citation_blocked") is True
+        or clean(pdf.get("answer_citation_status")) == "DIAGNOSTIC_POLICY_PACKET_BLOCKED_BY_LANE_OR_EVIDENCE_GUARD"
+    )
     pdf_track_ready = pdf_input_rows > 0 and pdf_strict_ready == pdf_input_rows
     if "strict_gate_rerun_eligible" in pdf:
         pdf_track_ready = pdf_track_ready and pdf.get("strict_gate_rerun_eligible") is True
@@ -254,6 +261,9 @@ def track_readiness(board: Mapping[str, Any]) -> dict[str, str]:
             else "REPORT_ONLY_NOT_BLOCKED_DIAGNOSTIC"
         ),
         "pdf_business_ocr_mm": (
+            "REPORT_ONLY_BLOCKED_BY_ANSWER_CITATION"
+            if pdf_answer_blocked
+            else
             "REPORT_ONLY_BLOCKED_BY_EVIDENCE_READINESS"
             if pdf_board_blocked or pdf_data_blocked
             else "REPORT_ONLY_NOT_BLOCKED_DIAGNOSTIC"
@@ -267,6 +277,8 @@ def readiness_blockers(readiness: Mapping[str, str]) -> list[str]:
         blockers.append("xlsx_business_structured leakage_raw_status=FAIL")
     if readiness.get("pdf_business_ocr_mm") == "REPORT_ONLY_BLOCKED_BY_EVIDENCE_READINESS":
         blockers.append("pdf_business_ocr_mm evidence_readiness_blocked")
+    if readiness.get("pdf_business_ocr_mm") == "REPORT_ONLY_BLOCKED_BY_ANSWER_CITATION":
+        blockers.append("pdf_business_ocr_mm answer_citation_blocked")
     return blockers
 
 
