@@ -567,6 +567,7 @@ def build_refreshed_enrichment(
                 "generated_strict_silver_rows": int_value(after_counts.get("strict_ready_rows")),
                 "strict_ready_rows": int_value(after_counts.get("strict_ready_rows")),
                 "remaining_fallback_rows": int_value(after_counts.get("diagnostic_only_fallback_rows")),
+                "blocker_reasons_by_row": remaining_blockers(refreshed_repair["repair_rows"]),
             },
             "artifact_paths": {
                 "report_json": repo_relative(output_json_path),
@@ -583,7 +584,16 @@ def build_refreshed_enrichment(
     refreshed["guardrails"] = {**guardrails(), **(refreshed.get("guardrails") if isinstance(refreshed.get("guardrails"), Mapping) else {})}
     refreshed["guardrails"].update(guardrails())
     refreshed["validation"] = refreshed_repair["validation"]
+    refreshed["remaining_blockers"] = remaining_blockers(refreshed_repair["repair_rows"])
     return refreshed
+
+
+def remaining_blockers(rows: Sequence[Mapping[str, Any]]) -> dict[str, list[str]]:
+    return {
+        clean(row.get("query_id")): list(row.get("blocker_classifications") or [])
+        for row in rows
+        if row.get("strict_ready") is not True
+    }
 
 
 def closure_status(after_counts: Mapping[str, int], refreshed_repair: Mapping[str, Any]) -> str:

@@ -23,6 +23,7 @@ REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
 DEFAULT_TEXT_POLICY_PACKET = REVIEW_DIR / "rag_text_namu_answer_citation_policy_review_packet_v2_1.json"
 DEFAULT_XLSX_ANSWER_REPORT = REPORT_DIR / "rag_xlsx_answer_citation_policy_review_packet_v1.json"
 DEFAULT_PDF_READINESS_REPORT = REPORT_DIR / "pdf_evidence_readiness_repair_report.json"
+DEFAULT_PDF_ANSWER_REPORT = REPORT_DIR / "rag_pdf_answer_citation_policy_review_packet_v1.json"
 DEFAULT_OUTPUT_JSON = REPORT_DIR / "three_track_metric_preflight_board.json"
 DEFAULT_OUTPUT_MD = REPORT_DIR / "three_track_metric_preflight_board.md"
 
@@ -55,6 +56,7 @@ def main(argv: list[str] | None = None) -> int:
         text_policy_packet=Path(args.text_policy_packet),
         xlsx_answer_report=Path(args.xlsx_answer_report),
         pdf_readiness_report=Path(args.pdf_readiness_report),
+        pdf_answer_report=Path(args.pdf_answer_report),
         output_report=Path(args.output_report),
         output_md=Path(args.output_md),
         cross_track_averages_requested=args.cross_track_averages_requested,
@@ -80,6 +82,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--text-policy-packet", default=str(DEFAULT_TEXT_POLICY_PACKET))
     parser.add_argument("--xlsx-answer-report", default=str(DEFAULT_XLSX_ANSWER_REPORT))
     parser.add_argument("--pdf-readiness-report", default=str(DEFAULT_PDF_READINESS_REPORT))
+    parser.add_argument("--pdf-answer-report", default=str(DEFAULT_PDF_ANSWER_REPORT))
     parser.add_argument("--output-report", default=str(DEFAULT_OUTPUT_JSON))
     parser.add_argument("--output-md", default=str(DEFAULT_OUTPUT_MD))
     parser.add_argument("--cross-track-averages-requested", action="store_true")
@@ -91,6 +94,7 @@ def run_board(
     text_policy_packet: Path,
     xlsx_answer_report: Path,
     pdf_readiness_report: Path,
+    pdf_answer_report: Path | None = None,
     output_report: Path,
     output_md: Path,
     cross_track_averages_requested: bool = False,
@@ -99,6 +103,7 @@ def run_board(
         text_policy_packet=text_policy_packet,
         xlsx_answer_report=xlsx_answer_report,
         pdf_readiness_report=pdf_readiness_report,
+        pdf_answer_report=pdf_answer_report,
         cross_track_averages_requested=cross_track_averages_requested,
     )
     board["artifact_paths"]["report_json"] = repo_relative(output_report)
@@ -114,18 +119,25 @@ def build_board(
     text_policy_packet: Path,
     xlsx_answer_report: Path,
     pdf_readiness_report: Path,
+    pdf_answer_report: Path | None = None,
     cross_track_averages_requested: bool = False,
 ) -> dict[str, Any]:
     text = read_json(text_policy_packet)
     xlsx = read_json(xlsx_answer_report)
     pdf = read_json(pdf_readiness_report)
+    pdf_answer = read_json(pdf_answer_report) if pdf_answer_report is not None and pdf_answer_report.exists() else {}
     tracks = {
         "text_namu_v2_1": text_track(text, text_policy_packet),
         "xlsx_business_structured": xlsx_track(xlsx, xlsx_answer_report),
-        "pdf_business_ocr_mm": pdf_track(pdf, pdf_readiness_report),
+        "pdf_business_ocr_mm": pdf_track(
+            pdf,
+            pdf_readiness_report,
+            pdf_answer=pdf_answer,
+            pdf_answer_path=pdf_answer_report,
+        ),
     }
-    source_guardrails = source_guardrail_summary(text=text, xlsx=xlsx, pdf=pdf)
-    errors = validation_errors(tracks, text=text, xlsx=xlsx, pdf=pdf)
+    source_guardrails = source_guardrail_summary(text=text, xlsx=xlsx, pdf=pdf, pdf_answer=pdf_answer)
+    errors = validation_errors(tracks, text=text, xlsx=xlsx, pdf=pdf, pdf_answer=pdf_answer)
     if cross_track_averages_requested:
         errors.append("cross-track averages are not allowed for this diagnostic board")
     official_rows_by_track = {
@@ -135,6 +147,7 @@ def build_board(
     blocker_status = {
         "xlsx_leakage_blocked": xlsx_leakage_blocked(tracks["xlsx_business_structured"]),
         "pdf_evidence_readiness_blocked": pdf_evidence_readiness_blocked(tracks["pdf_business_ocr_mm"]),
+        "pdf_answer_citation_blocked": pdf_answer_citation_blocked(tracks["pdf_business_ocr_mm"]),
     }
     status = board_status(blocker_status)
     if errors:
@@ -179,6 +192,7 @@ def build_board(
             "text_policy_packet": repo_relative(text_policy_packet),
             "xlsx_answer_report": repo_relative(xlsx_answer_report),
             "pdf_readiness_report": repo_relative(pdf_readiness_report),
+            "pdf_answer_report": repo_relative(pdf_answer_report) if pdf_answer_report is not None else "",
             "report_json": "",
             "report_md": "",
         },
@@ -256,15 +270,25 @@ def xlsx_track(payload: Mapping[str, Any], path: Path) -> dict[str, Any]:
     }
 
 
-def pdf_track(payload: Mapping[str, Any], path: Path) -> dict[str, Any]:
+def pdf_track(
+    payload: Mapping[str, Any],
+    path: Path,
+    *,
+    pdf_answer: Mapping[str, Any] | None = None,
+    pdf_answer_path: Path | None = None,
+) -> dict[str, Any]:
     counts = nested_mapping(payload, "counts")
     rerun = nested_mapping(payload, "strict_gate_rerun")
+    answer = pdf_answer if isinstance(pdf_answer, Mapping) else {}
     source_official_rows = int(payload.get("official_metric_input_rows") or counts.get("official_metric_input_rows") or 0)
+    answer_official_rows = int(answer.get("official_metric_input_rows") or 0)
     answer_denominator_rows = int(counts.get("pdf_answer_generation_denominator") or 0)
     return {
         "source_report": repo_relative(path),
+        "answer_citation_report": repo_relative(pdf_answer_path) if pdf_answer_path is not None else "",
         "status": clean(payload.get("status")),
         "diagnostic_status": clean(payload.get("status")),
+        "answer_citation_status": clean(answer.get("status") or "NOT_GENERATED"),
         "input_rows": int(payload.get("input_rows") or counts.get("input_rows") or 0),
         "rows_with_complete_page_bbox_region": int(
             payload.get("complete_page_bbox_region_count") or counts.get("rows_with_complete_page_bbox_region") or 0
@@ -309,8 +333,15 @@ def pdf_track(payload: Mapping[str, Any], path: Path) -> dict[str, Any]:
         "strict_gate_rerun_eligible": rerun.get("eligible") is True,
         "answer_denominator_rows": answer_denominator_rows,
         "answer_generation_run": payload.get("answer_generation_run") is True,
-        "official_metric_input_rows": source_official_rows,
-        "promotion_evidence": bool(payload.get("promotion_evidence", False)),
+        "answer_generated_rows": int(answer.get("generated_answer_rows") or 0),
+        "answer_clean_pass_rows": int(answer.get("clean_pass_rows") or 0),
+        "answer_cleanup_rows": int(answer.get("cleanup_rows") or 0),
+        "answer_unresolved_rows": int(answer.get("unresolved_rows") or 0),
+        "answer_lane_policy_blocked_rows": int(answer.get("lane_policy_blocked_rows") or 0),
+        "answer_support_pass_count": int(answer.get("answer_support_pass_count") or 0),
+        "answer_citation_locator_valid_count": int(answer.get("citation_locator_valid_count") or 0),
+        "official_metric_input_rows": source_official_rows + answer_official_rows,
+        "promotion_evidence": bool(payload.get("promotion_evidence", False) or answer.get("promotion_evidence", False)),
     }
 
 
@@ -320,6 +351,7 @@ def validation_errors(
     text: Mapping[str, Any],
     xlsx: Mapping[str, Any],
     pdf: Mapping[str, Any],
+    pdf_answer: Mapping[str, Any] | None = None,
 ) -> list[str]:
     errors: list[str] = []
     for track, payload in tracks.items():
@@ -330,6 +362,9 @@ def validation_errors(
     errors.extend(source_guardrail_errors("text_namu_v2_1", text))
     errors.extend(source_guardrail_errors("xlsx_business_structured", xlsx))
     errors.extend(source_guardrail_errors("pdf_business_ocr_mm", pdf))
+    pdf_answer = pdf_answer if isinstance(pdf_answer, Mapping) else {}
+    if pdf_answer:
+        errors.extend(source_guardrail_errors("pdf_business_ocr_mm", pdf_answer))
     if text.get("diagnostic_only") is not True:
         errors.append("text_namu_v2_1 policy packet must be diagnostic_only=true")
     if xlsx.get("diagnostic_only") is not True:
@@ -339,6 +374,10 @@ def validation_errors(
     if pdf.get("answer_generation_run") is True:
         errors.append("pdf_business_ocr_mm answer generation must remain closed")
     if nested_int(pdf, "counts", "pdf_answer_generation_denominator") != 0:
+        errors.append("pdf_business_ocr_mm answer denominator must remain 0")
+    if pdf_answer and pdf_answer.get("diagnostic_only") is not True:
+        errors.append("pdf_business_ocr_mm answer/citation packet must be diagnostic_only=true")
+    if pdf_answer and pdf_answer.get("pdf_answer_generation_denominator_opened") is True:
         errors.append("pdf_business_ocr_mm answer denominator must remain 0")
     lane_separation = nested_mapping(pdf, "lane_separation")
     if lane_separation.get("content_and_file_identity_aggregated") is True:
@@ -366,11 +405,33 @@ def xlsx_leakage_blocked(payload: Mapping[str, Any]) -> bool:
     return clean(payload.get("leakage_status")) != "PASS" or int(payload.get("leakage_count") or 0) != 0
 
 
+def pdf_answer_citation_blocked(payload: Mapping[str, Any]) -> bool:
+    if pdf_evidence_readiness_blocked(payload):
+        return False
+    return not pdf_answer_citation_ready(payload)
+
+
+def pdf_answer_citation_ready(payload: Mapping[str, Any]) -> bool:
+    return (
+        clean(payload.get("answer_citation_status")) == "DIAGNOSTIC_POLICY_PACKET_READY"
+        and int(payload.get("answer_generated_rows") or 0) == 7
+        and int(payload.get("answer_clean_pass_rows") or 0) == 7
+        and int(payload.get("answer_cleanup_rows") or 0) == 0
+        and int(payload.get("answer_unresolved_rows") or 0) == 0
+        and int(payload.get("answer_lane_policy_blocked_rows") or 0) == 0
+        and int(payload.get("answer_support_pass_count") or 0) == 7
+        and int(payload.get("answer_citation_locator_valid_count") or 0) == 7
+    )
+
+
 def board_status(blocker_status: Mapping[str, bool]) -> str:
     xlsx_blocked = blocker_status.get("xlsx_leakage_blocked") is True
     pdf_blocked = blocker_status.get("pdf_evidence_readiness_blocked") is True
+    pdf_answer_blocked = blocker_status.get("pdf_answer_citation_blocked") is True
     if xlsx_blocked or pdf_blocked:
         return "DIAGNOSTIC_PREFLIGHT_BLOCKED"
+    if pdf_answer_blocked:
+        return "DIAGNOSTIC_PREFLIGHT_BLOCKED_BY_PDF_ANSWER_CITATION"
     return "DIAGNOSTIC_PREFLIGHT_READY"
 
 
@@ -404,8 +465,9 @@ def source_guardrail_summary(
     text: Mapping[str, Any],
     xlsx: Mapping[str, Any],
     pdf: Mapping[str, Any],
+    pdf_answer: Mapping[str, Any] | None = None,
 ) -> dict[str, bool]:
-    source_payloads = (text, xlsx, pdf)
+    source_payloads = (text, xlsx, pdf, pdf_answer if isinstance(pdf_answer, Mapping) else {})
 
     def any_guardrail(*keys: str) -> bool:
         for payload in source_payloads:
@@ -448,6 +510,8 @@ def remaining_blockers(tracks: Mapping[str, Mapping[str, Any]]) -> list[str]:
         blockers.append("XLSX hidden/excluded leakage reprobe must pass before clean preflight.")
     if int(tracks["pdf_business_ocr_mm"].get("strict_gate_readiness_count") or 0) == 0:
         blockers.append("PDF layout/SearchUnit/OCR/citation metadata must be enriched before strict gate rerun.")
+    if pdf_answer_citation_blocked(tracks["pdf_business_ocr_mm"]):
+        blockers.append("PDF answer/citation diagnostic packet is missing or not ready.")
     blockers.append("Human audit is still required before any official metric candidate can open.")
     return blockers
 
@@ -475,6 +539,7 @@ def render_markdown(board: Mapping[str, Any]) -> str:
         f"- Cross-track averages computed: `{str(board['cross_track_averages_computed']).lower()}`",
         f"- XLSX leakage blocker: `{str(board['blocker_status']['xlsx_leakage_blocked']).lower()}`",
         f"- PDF evidence readiness blocker: `{str(board['blocker_status']['pdf_evidence_readiness_blocked']).lower()}`",
+        f"- PDF answer/citation blocker: `{str(board['blocker_status']['pdf_answer_citation_blocked']).lower()}`",
         "",
         "## Tracks",
         "",
@@ -489,7 +554,7 @@ def render_markdown(board: Mapping[str, Any]) -> str:
         f"`{xlsx['ready_rows']}` | `{xlsx['pre_leakage_support_pass_rows']}` | `{xlsx['leakage_count']}` | "
         f"`{xlsx['official_metric_input_rows']}` |",
         "| PDF | "
-        f"`{pdf['diagnostic_status']}` | `{pdf['input_rows']}` | `{pdf['strict_gate_readiness_count']}` | `n/a` | "
+        f"`{pdf['diagnostic_status']}` / `{pdf['answer_citation_status']}` | `{pdf['input_rows']}` | `{pdf['strict_gate_readiness_count']}` | `{pdf['answer_clean_pass_rows']}` | "
         f"`{pdf['rows_blocked_by_missing_layout_or_context_metadata']}` | `{pdf['official_metric_input_rows']}` |",
         "",
         "## Guardrails",

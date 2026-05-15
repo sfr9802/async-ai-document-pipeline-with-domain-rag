@@ -288,6 +288,9 @@ ai/eval/datasets/xlsx/
 ai/eval/datasets/golden/**/hf_snapshot/
 # sample_check.py HTML reports + reviewer annotation JSONs are local.
 review/
+!ai/eval/review/
+ai/eval/review/*
+!ai/eval/review/README.md
 
 # ---- Retrieval-eval corpora (local-only, large) ----
 # Full source corpora live under ai/eval/corpora/<name>/corpus.jsonl

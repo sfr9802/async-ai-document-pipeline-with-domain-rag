@@ -164,6 +164,28 @@ def test_pdf_repair_infers_source_bound_bbox_from_source_location_json(tmp_path:
     assert ready_row["layout_resolution_method"] == "existing_source_metadata_location_json_bbox"
 
 
+def test_pdf_repair_next_actions_shift_to_answer_packet_when_all_rows_strict_ready(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture(tmp_path)
+    rows = [json.loads(line) for line in paths["readiness_rows"].read_text(encoding="utf-8").splitlines() if line]
+    rows = [rows[0]]
+    paths["readiness_rows"].write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n",
+        encoding="utf-8",
+    )
+
+    report = module.build_repair(
+        readiness_report=paths["readiness_report"],
+        readiness_rows=paths["readiness_rows"],
+    )
+
+    joined = "\n".join(report["next_safe_actions"])
+    assert report["strict_ready_rows"] == report["input_rows"]
+    assert "PDF evidence readiness is complete for 7 diagnostic rows." in joined
+    assert "Next safe action is answer/citation diagnostic or human audit depending on the current stage." in joined
+    assert "Populate SearchUnit id/rank" not in joined
+
+
 def test_pdf_repair_fails_when_source_or_rows_open_official_metric_input(tmp_path: Path):
     module = load_module()
     paths = write_fixture(tmp_path)
