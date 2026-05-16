@@ -1,0 +1,924 @@
+{
+  "artifact_index": {
+    "human_audit_packet": {
+      "exists": true,
+      "generated_at": "2026-05-16T13:35:26.111311Z",
+      "name": "human_audit_packet",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/review/rag_human_audit_packet_v2_question_quality_local_llm.json",
+      "promotion_evidence": false,
+      "schema_version": "rag_human_audit_packet_v2_question_quality_local_llm",
+      "selected_as_canonical": true,
+      "sha256": "86a75ff11e2b6ca887641e20eb562715292fd0b17e80bd81a181e416b6bf03e2",
+      "source_artifacts": {
+        "human_audit_v1": "ai/eval/review/rag_human_audit_packet_v1.json",
+        "verifier_report": "ai/eval/review/rag_local_llm_expected_answer_verifier_v1.json"
+      },
+      "stale_conflict_detected": false,
+      "status": "HUMAN_AUDIT_PACKET_V2_READY",
+      "tuning_run_started": false
+    },
+    "human_audit_v2_applied_decisions": {
+      "exists": true,
+      "generated_at": "2026-05-16T13:49:37.373384+00:00",
+      "name": "human_audit_v2_applied_decisions",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+      "promotion_evidence": false,
+      "schema_version": "rag_human_audit_v2_applied_decisions_v1",
+      "selected_as_canonical": true,
+      "sha256": "39e66a0b641ada3d8f2ddffc395b755816de5417c9607cbff451c907348e6bee",
+      "source_artifacts": {
+        "human_audit_packet_v2": "ai/eval/review/rag_human_audit_packet_v2_question_quality_local_llm.json",
+        "official_denominator_registry": "ai/eval/eval_queries/official_denominator_registry.json"
+      },
+      "stale_conflict_detected": false,
+      "status": "HUMAN_AUDIT_V2_APPLIED_DECISIONS_READY",
+      "tuning_run_started": false
+    },
+    "hyperparameter_tuning_readiness_plan": {
+      "exists": true,
+      "generated_at": "2026-05-14T18:25:41+00:00",
+      "name": "hyperparameter_tuning_readiness_plan",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": true,
+      "path": "ai/eval/reports/rag-ingestion/hyperparameter_tuning_readiness_plan.json",
+      "promotion_evidence": false,
+      "schema_version": "hyperparameter_tuning_readiness_plan_v1",
+      "selected_as_canonical": true,
+      "sha256": "22b5d4f2713a79a847473e48980e2d83e4f97d7adcc4992c112e8e9ad4465a3f",
+      "source_artifacts": {},
+      "stale_conflict_detected": false,
+      "status": "REPORT_ONLY_READY",
+      "tuning_run_started": false
+    },
+    "official_denominator_candidate_diff_preview": {
+      "exists": true,
+      "generated_at": "2026-05-16T13:35:43.375853+00:00",
+      "name": "official_denominator_candidate_diff_preview",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "official_denominator_candidate_diff_preview_v1",
+      "selected_as_canonical": true,
+      "sha256": "d99c4a172f702a3a8dced1167831d63ef90ebcfaad7179ea1ba0081bc1f1e213",
+      "source_artifacts": {
+        "applied_decisions": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+        "official_denominator_registry": "ai/eval/eval_queries/official_denominator_registry.json"
+      },
+      "stale_conflict_detected": false,
+      "status": "OFFICIAL_DENOMINATOR_CANDIDATE_DIFF_PREVIEW_READY",
+      "tuning_run_started": false
+    },
+    "official_metric_input_config": {
+      "exists": true,
+      "generated_at": "2026-05-16T14:41:22.228747+00:00",
+      "name": "official_metric_input_config",
+      "official_metric_input_rows": 29,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "official_metric_input_config_v1",
+      "selected_as_canonical": true,
+      "sha256": "02aae3c0155924150734bea8fca1a3fe1fbf8f82e35c3908d5e731328a732fcf",
+      "source_artifacts": {
+        "applied_decisions": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+        "denominator_diff_preview": "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json",
+        "registry_application_report": "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json"
+      },
+      "stale_conflict_detected": false,
+      "status": "OFFICIAL_METRIC_INPUT_CONFIG_READY_REGISTRY_BACKED_NOT_EXECUTED",
+      "tuning_run_started": false
+    },
+    "official_metric_transition_readiness_checklist": {
+      "exists": true,
+      "generated_at": "2026-05-16T13:55:35+00:00",
+      "name": "official_metric_transition_readiness_checklist",
+      "official_metric_input_rows": 29,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/official_metric_transition_readiness_checklist_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "official_metric_transition_readiness_checklist_v1",
+      "selected_as_canonical": true,
+      "sha256": "27417678bd8a6b7eb1e85f2c98c6e3d9a3dcd75b7eeafe6971fcea2546b8d354",
+      "source_artifacts": {},
+      "stale_conflict_detected": false,
+      "status": "OFFICIAL_METRIC_INPUT_READY_NOT_EXECUTED",
+      "tuning_run_started": false
+    },
+    "official_question_gold_v2_registry_application": {
+      "exists": true,
+      "generated_at": "2026-05-16T13:55:35.245624+00:00",
+      "name": "official_question_gold_v2_registry_application",
+      "official_metric_input_rows": 29,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json",
+      "promotion_evidence": false,
+      "schema_version": "official_question_gold_v2_registry_application_v1",
+      "selected_as_canonical": true,
+      "sha256": "13031a2e319496843aa69e8e7692f1a22098e9067372861628512fcd9e7d2bbb",
+      "source_artifacts": {
+        "applied_decisions": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+        "denominator_diff_preview": "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json"
+      },
+      "stale_conflict_detected": false,
+      "status": "OFFICIAL_QUESTION_GOLD_V2_REGISTRY_APPLIED",
+      "tuning_run_started": false
+    },
+    "pdf_answer_citation_policy_packet": {
+      "exists": true,
+      "generated_at": "2026-05-14T18:15:58+00:00",
+      "name": "pdf_answer_citation_policy_packet",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/rag_pdf_answer_citation_policy_review_packet_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "rag_pdf_answer_citation_policy_review_packet_v1",
+      "selected_as_canonical": true,
+      "sha256": "53dddfff7aebdb0f20329655bbc4502b67c949fe76d690572e6e469d8df89fbc",
+      "source_artifacts": {
+        "diagnostic_report": {
+          "bytes": 3096,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_answer_citation_diagnostic_report.json",
+          "sha256": "2f22eb5bd78b82203115f18b39518307994ca3e33c8c892ec25e7cf7bd6b769e"
+        },
+        "review_input_jsonl": {
+          "bytes": 20711,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_answer_citation_diagnostic_review_input.jsonl",
+          "sha256": "5a70bead69088022db79d9c6d1795473ac4a6a35e3eae7e6190f61d066be5c3b"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "DIAGNOSTIC_POLICY_PACKET_READY",
+      "tuning_run_started": false
+    },
+    "pdf_evidence_metadata_enrichment": {
+      "exists": true,
+      "generated_at": "2026-05-14T18:15:48+00:00",
+      "name": "pdf_evidence_metadata_enrichment",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/pdf_evidence_metadata_enrichment_report.json",
+      "promotion_evidence": false,
+      "schema_version": "pdf_evidence_metadata_enrichment_report_v1",
+      "selected_as_canonical": true,
+      "sha256": "edea78c785c9c39e77ea6014358df52b5d2da3811159a6d85302b0e1d8553c5f",
+      "source_artifacts": {
+        "database_readonly": {
+          "attempted": true,
+          "errors": [],
+          "readonly_transaction": true,
+          "resolved_query_count": 7
+        },
+        "layout_gap_closure_report": {
+          "bytes": 11757,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_layout_gap_closure_report.json",
+          "sha256": "75444a5132406b8408c5022dc6f2e54fbc5a7747387c57042be106f22d380fdd"
+        },
+        "metadata_sources": [
+          {
+            "bytes": 417459,
+            "exists": true,
+            "path": "reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json",
+            "resolved_row_count": 22,
+            "sha256": "4c23f777a64045096ffda2afe322c06a04b394076bdc52f05367ce7f38309e38",
+            "source_role": "metadata_source"
+          },
+          {
+            "bytes": 13529,
+            "exists": true,
+            "path": "reports/pdf_candidate_embedding_consistency_report.json",
+            "resolved_row_count": 0,
+            "sha256": "311569fe45f6c0b834e9a6b8f1ace065fa035ec143cc8a8c05fb930eb173abc1",
+            "source_role": "metadata_source"
+          },
+          {
+            "bytes": 158012,
+            "exists": true,
+            "path": "reports/rag_pdf_vector_quality_breakdown_after_policy.json",
+            "resolved_row_count": 22,
+            "sha256": "74fffc37c4349f3f58309522756be507e81cb5cb5cf0bed69b957ea491ce68e8",
+            "source_role": "metadata_source"
+          },
+          {
+            "bytes": 2207,
+            "exists": true,
+            "path": "rag-data-pdf-candidate-v1/ingest_manifest.json",
+            "resolved_row_count": 0,
+            "sha256": "4c055ba195d66e504951d78b295218cdbd9f563c62467149ad1340bb29b4437b",
+            "source_role": "metadata_source"
+          }
+        ],
+        "readiness_report": {
+          "bytes": 21139,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_readiness_report.json",
+          "sha256": "d7603cca63efb1407c6bd98a95fad398a05bafeddbcea4458f8a2e41f7c5d7d9"
+        },
+        "readiness_rows": {
+          "bytes": 12886,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_readiness_rows.jsonl",
+          "sha256": "889e2ce6fd4f559dd85c66abbe74d2d2f08df5c992b7164bec0eb492e5dac68d"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "PDF_METADATA_ENRICHMENT_COMPLETED_STRICT_READY",
+      "tuning_run_started": false
+    },
+    "pdf_evidence_readiness_repair": {
+      "exists": true,
+      "generated_at": "2026-05-14T18:15:48+00:00",
+      "name": "pdf_evidence_readiness_repair",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/pdf_evidence_readiness_repair_report.json",
+      "promotion_evidence": false,
+      "schema_version": "pdf_evidence_readiness_repair_report_v1",
+      "selected_as_canonical": true,
+      "sha256": "b347085556926ea813922ccb91fd634d1592fe7fd65933b01642c881b7b5b721",
+      "source_artifacts": {
+        "database_readonly": {
+          "attempted": true,
+          "errors": [],
+          "readonly_transaction": true,
+          "resolved_query_count": 3
+        },
+        "enrichment_report": {
+          "bytes": 48397,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_metadata_enrichment_report.json",
+          "sha256": "24d6f0ba853198d7ed16220fd43449f42d77acdbf34e683f262f272a6e21897d"
+        },
+        "layout_sources": [],
+        "repair_report": {
+          "bytes": 45990,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_readiness_repair_report.json",
+          "sha256": "87e35a158eac7ca17206b4e6d9ed62256677a842be2e4bdb372e58b36758564a"
+        },
+        "vector_diagnostic": {
+          "bytes": 417459,
+          "exists": true,
+          "path": "reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json",
+          "sha256": "4c23f777a64045096ffda2afe322c06a04b394076bdc52f05367ce7f38309e38"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN",
+      "tuning_run_started": false
+    },
+    "pdf_layout_gap_closure": {
+      "exists": true,
+      "generated_at": "2026-05-14T18:15:48+00:00",
+      "name": "pdf_layout_gap_closure",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/pdf_layout_gap_closure_report.json",
+      "promotion_evidence": false,
+      "schema_version": "pdf_layout_gap_closure_report_v1",
+      "selected_as_canonical": true,
+      "sha256": "75444a5132406b8408c5022dc6f2e54fbc5a7747387c57042be106f22d380fdd",
+      "source_artifacts": {
+        "database_readonly": {
+          "attempted": true,
+          "errors": [],
+          "readonly_transaction": true,
+          "resolved_query_count": 3
+        },
+        "enrichment_report": {
+          "bytes": 48397,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_metadata_enrichment_report.json",
+          "sha256": "24d6f0ba853198d7ed16220fd43449f42d77acdbf34e683f262f272a6e21897d"
+        },
+        "layout_sources": [],
+        "repair_report": {
+          "bytes": 45990,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_readiness_repair_report.json",
+          "sha256": "87e35a158eac7ca17206b4e6d9ed62256677a842be2e4bdb372e58b36758564a"
+        },
+        "vector_diagnostic": {
+          "bytes": 417459,
+          "exists": true,
+          "path": "reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json",
+          "sha256": "4c23f777a64045096ffda2afe322c06a04b394076bdc52f05367ce7f38309e38"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "PDF_LAYOUT_GAP_CLOSED_ALL_STRICT_READY",
+      "tuning_run_started": false
+    },
+    "progress_doc": {
+      "exists": true,
+      "generated_at": "",
+      "name": "progress_doc",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "docs/rag-ingestion-progress.md",
+      "promotion_evidence": false,
+      "schema_version": "",
+      "selected_as_canonical": true,
+      "sha256": "0441f25c54cc1f9720d734963f187fee92711a048c39ac22cda244cf0135c570",
+      "source_artifacts": {},
+      "stale_conflict_detected": false,
+      "status": "",
+      "tuning_run_started": false
+    },
+    "report_only_tuning_dry_run_plan": {
+      "exists": true,
+      "generated_at": "2026-05-16T13:55:35+00:00",
+      "name": "report_only_tuning_dry_run_plan",
+      "official_metric_input_rows": 29,
+      "official_metrics_closed": true,
+      "path": "ai/eval/reports/rag-ingestion/report_only_tuning_dry_run_plan_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "report_only_tuning_dry_run_plan_v1",
+      "selected_as_canonical": true,
+      "sha256": "89a75aa7be36187ca6a00a34c1cb714221c2ddfee8261a0e1aca896128bfa61c",
+      "source_artifacts": {},
+      "stale_conflict_detected": false,
+      "status": "REPORT_ONLY_DRY_RUN_PLAN_READY",
+      "tuning_run_started": false
+    },
+    "text_namu_policy_packet": {
+      "exists": true,
+      "generated_at": "2026-05-14T00:33:33.361764+09:00",
+      "name": "text_namu_policy_packet",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/review/rag_text_namu_answer_citation_policy_review_packet_v2_1.json",
+      "promotion_evidence": false,
+      "schema_version": "rag_text_namu_answer_citation_policy_review_packet_v2_1",
+      "selected_as_canonical": true,
+      "sha256": "1f98aeef850374ad4cc10587f6abff03309e65f0d1fed13faa465b0b85ccb6b1",
+      "source_artifacts": {
+        "answer_citation_review_draft_local_llm_v2_1_jsonl": {
+          "bytes": 150045,
+          "exists": true,
+          "path": "ai/eval/review/rag_text_namu_answer_citation_review_draft_local_llm_v2_1.jsonl",
+          "sha256": "302a4ceb7d639bb505eb304f6d7f2f5b6aeb765518f9e3311f3c89427eef0898"
+        },
+        "applied_diagnostic_v2_1_json": {
+          "bytes": 166421,
+          "exists": true,
+          "path": "ai/eval/review/rag_text_namu_answer_citation_review_applied_diagnostic_v2_1.json",
+          "sha256": "47b571f35b834480e5920866e0db35ba543e8bd09899611c6d080fb727933064"
+        },
+        "generated_answer_review_input_local_llm_v2_1_jsonl": {
+          "bytes": 225101,
+          "exists": true,
+          "path": "ai/eval/review/rag_text_namu_generated_answer_review_input_local_llm_v2_1.jsonl",
+          "sha256": "afd46cf3fde0f01f5ccfac818558ff6b0ab9061fc27a00bdd41ef70984fe471b"
+        },
+        "improvement_report_v2_1_json": {
+          "bytes": 609510,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/rag_text_namu_answer_citation_local_llm_improvement_report_v2_1.json",
+          "sha256": "967a4d1e2326a842ed4b3c754dd5b1ae135f06d26ac48cedb851806223c14655"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "POLICY_REVIEW_PACKET_READY",
+      "tuning_run_started": false
+    },
+    "three_track_metric_preflight_board": {
+      "exists": true,
+      "generated_at": "2026-05-16T14:41:22+00:00",
+      "name": "three_track_metric_preflight_board",
+      "official_metric_input_rows": 29,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/three_track_metric_preflight_board.json",
+      "promotion_evidence": false,
+      "schema_version": "three_track_metric_preflight_board_v1",
+      "selected_as_canonical": true,
+      "sha256": "d4e7580667c226f84d340f6748085300b2941f43dffa405247028092e3c7b1f8",
+      "source_artifacts": {},
+      "stale_conflict_detected": false,
+      "status": "DIAGNOSTIC_PREFLIGHT_READY",
+      "tuning_run_started": false
+    },
+    "xlsx_answer_citation_policy_packet": {
+      "exists": true,
+      "generated_at": "2026-05-14T05:54:10+00:00",
+      "name": "xlsx_answer_citation_policy_packet",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/rag_xlsx_answer_citation_policy_review_packet_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "rag_xlsx_answer_citation_policy_review_packet_v1",
+      "selected_as_canonical": true,
+      "sha256": "500a977e912ae0988b476992e6348a27053cdd8654bdb06c2e279d21cbd535d3",
+      "source_artifacts": {
+        "answer_report": {
+          "bytes": 6724,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/xlsx_answer_citation_diagnostic_report.json",
+          "sha256": "6134b5775092d6b60deb2899a8ed2bb3f6f45c5c653cbf81035c15f7124038eb"
+        },
+        "leakage_reprobe": {
+          "bytes": 29030,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/xlsx_answer_citation_hidden_excluded_leakage_reprobe.json",
+          "sha256": "d60a6eac5b1eaedcea5366c21a5d5eca6268d0fd15e3b61ff8b99de27849f48c"
+        },
+        "review_input_jsonl": {
+          "bytes": 141871,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/xlsx_answer_citation_diagnostic_review_input.jsonl",
+          "sha256": "767b140b1ae9d07733e34faacefffb38b0319b7afd9634ae68580a7427ad8e63"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "DIAGNOSTIC_POLICY_PACKET_READY",
+      "tuning_run_started": false
+    }
+  },
+  "artifact_paths": {
+    "report_json": "ai/eval/reports/rag-ingestion/canonical_artifact_audit_v1.json",
+    "report_md": "ai/eval/reports/rag-ingestion/canonical_artifact_audit_v1.md"
+  },
+  "artifacts": [
+    {
+      "exists": true,
+      "generated_at": "2026-05-16T14:41:22+00:00",
+      "name": "three_track_metric_preflight_board",
+      "official_metric_input_rows": 29,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/three_track_metric_preflight_board.json",
+      "promotion_evidence": false,
+      "schema_version": "three_track_metric_preflight_board_v1",
+      "selected_as_canonical": true,
+      "sha256": "d4e7580667c226f84d340f6748085300b2941f43dffa405247028092e3c7b1f8",
+      "source_artifacts": {},
+      "stale_conflict_detected": false,
+      "status": "DIAGNOSTIC_PREFLIGHT_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-14T18:25:41+00:00",
+      "name": "hyperparameter_tuning_readiness_plan",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": true,
+      "path": "ai/eval/reports/rag-ingestion/hyperparameter_tuning_readiness_plan.json",
+      "promotion_evidence": false,
+      "schema_version": "hyperparameter_tuning_readiness_plan_v1",
+      "selected_as_canonical": true,
+      "sha256": "22b5d4f2713a79a847473e48980e2d83e4f97d7adcc4992c112e8e9ad4465a3f",
+      "source_artifacts": {},
+      "stale_conflict_detected": false,
+      "status": "REPORT_ONLY_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-16T13:55:35+00:00",
+      "name": "report_only_tuning_dry_run_plan",
+      "official_metric_input_rows": 29,
+      "official_metrics_closed": true,
+      "path": "ai/eval/reports/rag-ingestion/report_only_tuning_dry_run_plan_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "report_only_tuning_dry_run_plan_v1",
+      "selected_as_canonical": true,
+      "sha256": "89a75aa7be36187ca6a00a34c1cb714221c2ddfee8261a0e1aca896128bfa61c",
+      "source_artifacts": {},
+      "stale_conflict_detected": false,
+      "status": "REPORT_ONLY_DRY_RUN_PLAN_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-16T13:55:35+00:00",
+      "name": "official_metric_transition_readiness_checklist",
+      "official_metric_input_rows": 29,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/official_metric_transition_readiness_checklist_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "official_metric_transition_readiness_checklist_v1",
+      "selected_as_canonical": true,
+      "sha256": "27417678bd8a6b7eb1e85f2c98c6e3d9a3dcd75b7eeafe6971fcea2546b8d354",
+      "source_artifacts": {},
+      "stale_conflict_detected": false,
+      "status": "OFFICIAL_METRIC_INPUT_READY_NOT_EXECUTED",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-16T13:35:26.111311Z",
+      "name": "human_audit_packet",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/review/rag_human_audit_packet_v2_question_quality_local_llm.json",
+      "promotion_evidence": false,
+      "schema_version": "rag_human_audit_packet_v2_question_quality_local_llm",
+      "selected_as_canonical": true,
+      "sha256": "86a75ff11e2b6ca887641e20eb562715292fd0b17e80bd81a181e416b6bf03e2",
+      "source_artifacts": {
+        "human_audit_v1": "ai/eval/review/rag_human_audit_packet_v1.json",
+        "verifier_report": "ai/eval/review/rag_local_llm_expected_answer_verifier_v1.json"
+      },
+      "stale_conflict_detected": false,
+      "status": "HUMAN_AUDIT_PACKET_V2_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-16T13:49:37.373384+00:00",
+      "name": "human_audit_v2_applied_decisions",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+      "promotion_evidence": false,
+      "schema_version": "rag_human_audit_v2_applied_decisions_v1",
+      "selected_as_canonical": true,
+      "sha256": "39e66a0b641ada3d8f2ddffc395b755816de5417c9607cbff451c907348e6bee",
+      "source_artifacts": {
+        "human_audit_packet_v2": "ai/eval/review/rag_human_audit_packet_v2_question_quality_local_llm.json",
+        "official_denominator_registry": "ai/eval/eval_queries/official_denominator_registry.json"
+      },
+      "stale_conflict_detected": false,
+      "status": "HUMAN_AUDIT_V2_APPLIED_DECISIONS_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-16T13:35:43.375853+00:00",
+      "name": "official_denominator_candidate_diff_preview",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "official_denominator_candidate_diff_preview_v1",
+      "selected_as_canonical": true,
+      "sha256": "d99c4a172f702a3a8dced1167831d63ef90ebcfaad7179ea1ba0081bc1f1e213",
+      "source_artifacts": {
+        "applied_decisions": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+        "official_denominator_registry": "ai/eval/eval_queries/official_denominator_registry.json"
+      },
+      "stale_conflict_detected": false,
+      "status": "OFFICIAL_DENOMINATOR_CANDIDATE_DIFF_PREVIEW_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-16T13:55:35.245624+00:00",
+      "name": "official_question_gold_v2_registry_application",
+      "official_metric_input_rows": 29,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json",
+      "promotion_evidence": false,
+      "schema_version": "official_question_gold_v2_registry_application_v1",
+      "selected_as_canonical": true,
+      "sha256": "13031a2e319496843aa69e8e7692f1a22098e9067372861628512fcd9e7d2bbb",
+      "source_artifacts": {
+        "applied_decisions": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+        "denominator_diff_preview": "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json"
+      },
+      "stale_conflict_detected": false,
+      "status": "OFFICIAL_QUESTION_GOLD_V2_REGISTRY_APPLIED",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-16T14:41:22.228747+00:00",
+      "name": "official_metric_input_config",
+      "official_metric_input_rows": 29,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "official_metric_input_config_v1",
+      "selected_as_canonical": true,
+      "sha256": "02aae3c0155924150734bea8fca1a3fe1fbf8f82e35c3908d5e731328a732fcf",
+      "source_artifacts": {
+        "applied_decisions": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+        "denominator_diff_preview": "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json",
+        "registry_application_report": "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json"
+      },
+      "stale_conflict_detected": false,
+      "status": "OFFICIAL_METRIC_INPUT_CONFIG_READY_REGISTRY_BACKED_NOT_EXECUTED",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-14T05:54:10+00:00",
+      "name": "xlsx_answer_citation_policy_packet",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/rag_xlsx_answer_citation_policy_review_packet_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "rag_xlsx_answer_citation_policy_review_packet_v1",
+      "selected_as_canonical": true,
+      "sha256": "500a977e912ae0988b476992e6348a27053cdd8654bdb06c2e279d21cbd535d3",
+      "source_artifacts": {
+        "answer_report": {
+          "bytes": 6724,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/xlsx_answer_citation_diagnostic_report.json",
+          "sha256": "6134b5775092d6b60deb2899a8ed2bb3f6f45c5c653cbf81035c15f7124038eb"
+        },
+        "leakage_reprobe": {
+          "bytes": 29030,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/xlsx_answer_citation_hidden_excluded_leakage_reprobe.json",
+          "sha256": "d60a6eac5b1eaedcea5366c21a5d5eca6268d0fd15e3b61ff8b99de27849f48c"
+        },
+        "review_input_jsonl": {
+          "bytes": 141871,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/xlsx_answer_citation_diagnostic_review_input.jsonl",
+          "sha256": "767b140b1ae9d07733e34faacefffb38b0319b7afd9634ae68580a7427ad8e63"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "DIAGNOSTIC_POLICY_PACKET_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-14T18:15:58+00:00",
+      "name": "pdf_answer_citation_policy_packet",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/rag_pdf_answer_citation_policy_review_packet_v1.json",
+      "promotion_evidence": false,
+      "schema_version": "rag_pdf_answer_citation_policy_review_packet_v1",
+      "selected_as_canonical": true,
+      "sha256": "53dddfff7aebdb0f20329655bbc4502b67c949fe76d690572e6e469d8df89fbc",
+      "source_artifacts": {
+        "diagnostic_report": {
+          "bytes": 3096,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_answer_citation_diagnostic_report.json",
+          "sha256": "2f22eb5bd78b82203115f18b39518307994ca3e33c8c892ec25e7cf7bd6b769e"
+        },
+        "review_input_jsonl": {
+          "bytes": 20711,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_answer_citation_diagnostic_review_input.jsonl",
+          "sha256": "5a70bead69088022db79d9c6d1795473ac4a6a35e3eae7e6190f61d066be5c3b"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "DIAGNOSTIC_POLICY_PACKET_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-14T18:15:48+00:00",
+      "name": "pdf_evidence_metadata_enrichment",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/pdf_evidence_metadata_enrichment_report.json",
+      "promotion_evidence": false,
+      "schema_version": "pdf_evidence_metadata_enrichment_report_v1",
+      "selected_as_canonical": true,
+      "sha256": "edea78c785c9c39e77ea6014358df52b5d2da3811159a6d85302b0e1d8553c5f",
+      "source_artifacts": {
+        "database_readonly": {
+          "attempted": true,
+          "errors": [],
+          "readonly_transaction": true,
+          "resolved_query_count": 7
+        },
+        "layout_gap_closure_report": {
+          "bytes": 11757,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_layout_gap_closure_report.json",
+          "sha256": "75444a5132406b8408c5022dc6f2e54fbc5a7747387c57042be106f22d380fdd"
+        },
+        "metadata_sources": [
+          {
+            "bytes": 417459,
+            "exists": true,
+            "path": "reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json",
+            "resolved_row_count": 22,
+            "sha256": "4c23f777a64045096ffda2afe322c06a04b394076bdc52f05367ce7f38309e38",
+            "source_role": "metadata_source"
+          },
+          {
+            "bytes": 13529,
+            "exists": true,
+            "path": "reports/pdf_candidate_embedding_consistency_report.json",
+            "resolved_row_count": 0,
+            "sha256": "311569fe45f6c0b834e9a6b8f1ace065fa035ec143cc8a8c05fb930eb173abc1",
+            "source_role": "metadata_source"
+          },
+          {
+            "bytes": 158012,
+            "exists": true,
+            "path": "reports/rag_pdf_vector_quality_breakdown_after_policy.json",
+            "resolved_row_count": 22,
+            "sha256": "74fffc37c4349f3f58309522756be507e81cb5cb5cf0bed69b957ea491ce68e8",
+            "source_role": "metadata_source"
+          },
+          {
+            "bytes": 2207,
+            "exists": true,
+            "path": "rag-data-pdf-candidate-v1/ingest_manifest.json",
+            "resolved_row_count": 0,
+            "sha256": "4c055ba195d66e504951d78b295218cdbd9f563c62467149ad1340bb29b4437b",
+            "source_role": "metadata_source"
+          }
+        ],
+        "readiness_report": {
+          "bytes": 21139,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_readiness_report.json",
+          "sha256": "d7603cca63efb1407c6bd98a95fad398a05bafeddbcea4458f8a2e41f7c5d7d9"
+        },
+        "readiness_rows": {
+          "bytes": 12886,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_readiness_rows.jsonl",
+          "sha256": "889e2ce6fd4f559dd85c66abbe74d2d2f08df5c992b7164bec0eb492e5dac68d"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "PDF_METADATA_ENRICHMENT_COMPLETED_STRICT_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-14T18:15:48+00:00",
+      "name": "pdf_layout_gap_closure",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/pdf_layout_gap_closure_report.json",
+      "promotion_evidence": false,
+      "schema_version": "pdf_layout_gap_closure_report_v1",
+      "selected_as_canonical": true,
+      "sha256": "75444a5132406b8408c5022dc6f2e54fbc5a7747387c57042be106f22d380fdd",
+      "source_artifacts": {
+        "database_readonly": {
+          "attempted": true,
+          "errors": [],
+          "readonly_transaction": true,
+          "resolved_query_count": 3
+        },
+        "enrichment_report": {
+          "bytes": 48397,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_metadata_enrichment_report.json",
+          "sha256": "24d6f0ba853198d7ed16220fd43449f42d77acdbf34e683f262f272a6e21897d"
+        },
+        "layout_sources": [],
+        "repair_report": {
+          "bytes": 45990,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_readiness_repair_report.json",
+          "sha256": "87e35a158eac7ca17206b4e6d9ed62256677a842be2e4bdb372e58b36758564a"
+        },
+        "vector_diagnostic": {
+          "bytes": 417459,
+          "exists": true,
+          "path": "reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json",
+          "sha256": "4c23f777a64045096ffda2afe322c06a04b394076bdc52f05367ce7f38309e38"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "PDF_LAYOUT_GAP_CLOSED_ALL_STRICT_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-14T18:15:48+00:00",
+      "name": "pdf_evidence_readiness_repair",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/reports/rag-ingestion/pdf_evidence_readiness_repair_report.json",
+      "promotion_evidence": false,
+      "schema_version": "pdf_evidence_readiness_repair_report_v1",
+      "selected_as_canonical": true,
+      "sha256": "b347085556926ea813922ccb91fd634d1592fe7fd65933b01642c881b7b5b721",
+      "source_artifacts": {
+        "database_readonly": {
+          "attempted": true,
+          "errors": [],
+          "readonly_transaction": true,
+          "resolved_query_count": 3
+        },
+        "enrichment_report": {
+          "bytes": 48397,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_metadata_enrichment_report.json",
+          "sha256": "24d6f0ba853198d7ed16220fd43449f42d77acdbf34e683f262f272a6e21897d"
+        },
+        "layout_sources": [],
+        "repair_report": {
+          "bytes": 45990,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/pdf_evidence_readiness_repair_report.json",
+          "sha256": "87e35a158eac7ca17206b4e6d9ed62256677a842be2e4bdb372e58b36758564a"
+        },
+        "vector_diagnostic": {
+          "bytes": 417459,
+          "exists": true,
+          "path": "reports/rag_retrieval_eval_pdf_vector_diagnostic_report.json",
+          "sha256": "4c23f777a64045096ffda2afe322c06a04b394076bdc52f05367ce7f38309e38"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "READY_FOR_DIAGNOSTIC_STRICT_GATE_RERUN",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "2026-05-14T00:33:33.361764+09:00",
+      "name": "text_namu_policy_packet",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "ai/eval/review/rag_text_namu_answer_citation_policy_review_packet_v2_1.json",
+      "promotion_evidence": false,
+      "schema_version": "rag_text_namu_answer_citation_policy_review_packet_v2_1",
+      "selected_as_canonical": true,
+      "sha256": "1f98aeef850374ad4cc10587f6abff03309e65f0d1fed13faa465b0b85ccb6b1",
+      "source_artifacts": {
+        "answer_citation_review_draft_local_llm_v2_1_jsonl": {
+          "bytes": 150045,
+          "exists": true,
+          "path": "ai/eval/review/rag_text_namu_answer_citation_review_draft_local_llm_v2_1.jsonl",
+          "sha256": "302a4ceb7d639bb505eb304f6d7f2f5b6aeb765518f9e3311f3c89427eef0898"
+        },
+        "applied_diagnostic_v2_1_json": {
+          "bytes": 166421,
+          "exists": true,
+          "path": "ai/eval/review/rag_text_namu_answer_citation_review_applied_diagnostic_v2_1.json",
+          "sha256": "47b571f35b834480e5920866e0db35ba543e8bd09899611c6d080fb727933064"
+        },
+        "generated_answer_review_input_local_llm_v2_1_jsonl": {
+          "bytes": 225101,
+          "exists": true,
+          "path": "ai/eval/review/rag_text_namu_generated_answer_review_input_local_llm_v2_1.jsonl",
+          "sha256": "afd46cf3fde0f01f5ccfac818558ff6b0ab9061fc27a00bdd41ef70984fe471b"
+        },
+        "improvement_report_v2_1_json": {
+          "bytes": 609510,
+          "exists": true,
+          "path": "ai/eval/reports/rag-ingestion/rag_text_namu_answer_citation_local_llm_improvement_report_v2_1.json",
+          "sha256": "967a4d1e2326a842ed4b3c754dd5b1ae135f06d26ac48cedb851806223c14655"
+        }
+      },
+      "stale_conflict_detected": false,
+      "status": "POLICY_REVIEW_PACKET_READY",
+      "tuning_run_started": false
+    },
+    {
+      "exists": true,
+      "generated_at": "",
+      "name": "progress_doc",
+      "official_metric_input_rows": 0,
+      "official_metrics_closed": null,
+      "path": "docs/rag-ingestion-progress.md",
+      "promotion_evidence": false,
+      "schema_version": "",
+      "selected_as_canonical": true,
+      "sha256": "0441f25c54cc1f9720d734963f187fee92711a048c39ac22cda244cf0135c570",
+      "source_artifacts": {},
+      "stale_conflict_detected": false,
+      "status": "",
+      "tuning_run_started": false
+    }
+  ],
+  "diagnostic_only": true,
+  "generated_at": "2026-05-16T14:44:09+00:00",
+  "official_metric_input_rows": 0,
+  "official_metric_input_rows_scope": "unique_registry_backed_question_gold_input_rows_not_artifact_duplicate_sum",
+  "promotion_evidence": false,
+  "registry_backed_official_metric_input_rows": 29,
+  "registry_backed_official_metric_input_rows_by_track": {
+    "pdf_business_ocr_mm": 4,
+    "text_namu_v2_1": 6,
+    "xlsx_business_structured": 19
+  },
+  "schema_version": "canonical_artifact_audit_v1",
+  "stale_conflicts_found": [],
+  "status": "CANONICAL_ARTIFACT_AUDIT_PASS",
+  "summary": {
+    "artifact_count": 16,
+    "missing_count": 0,
+    "official_metric_input_rows_artifact_duplicate_sum": 145,
+    "official_metric_input_rows_scope": "unique_registry_backed_question_gold_input_rows_not_artifact_duplicate_sum",
+    "official_metric_input_rows_total": 29,
+    "promotion_evidence_true_count": 0,
+    "registry_backed_official_metric_input_rows": 29,
+    "registry_backed_official_metric_input_rows_by_track": {
+      "pdf_business_ocr_mm": 4,
+      "text_namu_v2_1": 6,
+      "xlsx_business_structured": 19
+    },
+    "stale_conflict_count": 0,
+    "tuning_run_started": false
+  },
+  "validation": {
+    "errors": [],
+    "ok": true
+  }
+}

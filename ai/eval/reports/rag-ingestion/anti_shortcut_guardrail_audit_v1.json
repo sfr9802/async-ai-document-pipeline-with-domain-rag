@@ -1,0 +1,98 @@
+{
+  "artifact_paths": {
+    "report_json": "ai/eval/reports/rag-ingestion/anti_shortcut_guardrail_audit_v1.json",
+    "report_md": "ai/eval/reports/rag-ingestion/anti_shortcut_guardrail_audit_v1.md"
+  },
+  "checks": {
+    "dry_run_plan": {
+      "cross_track_average_optimization_allowed": false,
+      "errors": [],
+      "metric_input_config_registry_backed": true,
+      "official_metric_input_rows": 29,
+      "ok": true,
+      "tuning_run_started": false
+    },
+    "human_audit_packet": {
+      "errors": [],
+      "human_audit_completed": true,
+      "human_label_counts": {
+        "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE": 29
+      },
+      "human_labeled_rows": 29,
+      "ok": true,
+      "total_user_action_rows": {
+        "pdf_business_ocr_mm": 4,
+        "text_namu_v2_1": 6,
+        "xlsx_business_structured": 19
+      }
+    },
+    "official_candidate_transition_artifacts": {
+      "applied_decisions_present": true,
+      "denominator_diff_preview_present": true,
+      "errors": [],
+      "metric_input_config_present": true,
+      "metric_input_config_registry_backed": true,
+      "official_metric_input_rows": 29,
+      "official_metric_input_rows_by_track": {
+        "pdf_business_ocr_mm": 4,
+        "text_namu_v2_1": 6,
+        "xlsx_business_structured": 19
+      },
+      "ok": true,
+      "proposed_metric_input_rows": 29,
+      "registry_application_report_present": true
+    },
+    "pdf_answer_citation_packet": {
+      "answer_support_pass_count": 7,
+      "citation_locator_valid_count": 7,
+      "clean_pass_rows": 7,
+      "cleanup_rows": 0,
+      "errors": [],
+      "input_rows": 7,
+      "lane_policy_blocked_rows": 0,
+      "official_metric_input_rows": 0,
+      "ok": true,
+      "promotion_evidence": false,
+      "review_input_rows": 7,
+      "strict_ready_rows": 7,
+      "unresolved_rows": 0
+    },
+    "pdf_bbox_source_bound_proof": {
+      "errors": [],
+      "forbidden_bbox_source_rows": [],
+      "formerly_blocked_rows_checked": [
+        "gq_auto_010",
+        "gq_auto_015",
+        "gq_auto_030"
+      ],
+      "ok": true,
+      "strict_ready_rows_checked": 7
+    },
+    "xlsx_public_private_surface_separation": {
+      "annotation_only_allowlist_promoted_to_pass": false,
+      "errors": [],
+      "ok": true,
+      "private_formatter_input_rows": 23,
+      "private_formatter_input_treated_as_public": false,
+      "public_surface_leakage_count": 0,
+      "public_surface_policy": "generated_answer, answer_claims, citation_items only"
+    }
+  },
+  "diagnostic_only": true,
+  "generated_at": "2026-05-16T14:44:20+00:00",
+  "official_metric_input_rows": 0,
+  "official_metric_input_rows_scope": "audit_report_rows_closed_registry_backed_input_reported_separately",
+  "promotion_evidence": false,
+  "registry_backed_official_metric_input_rows": 29,
+  "registry_backed_official_metric_input_rows_by_track": {
+    "pdf_business_ocr_mm": 4,
+    "text_namu_v2_1": 6,
+    "xlsx_business_structured": 19
+  },
+  "schema_version": "anti_shortcut_guardrail_audit_v1",
+  "status": "ANTI_SHORTCUT_GUARDRAIL_AUDIT_PASS",
+  "validation": {
+    "errors": [],
+    "ok": true
+  }
+}

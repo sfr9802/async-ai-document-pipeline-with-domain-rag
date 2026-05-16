@@ -1,6 +1,6 @@
 {
   "schema_version": "official_denominator_registry_v1",
-  "updated_at": "2026-05-07",
+  "updated_at": "2026-05-16",
   "policy": {
     "official_metric_gold_status": "gold",
     "ambiguous_non_gold_default": "diagnostic_only",
@@ -16,6 +16,33 @@
       "official_positive_denominator": 23,
       "official_xlsx_answer_generation_denominator": 0,
       "supersedes": "track_a_xlsx_reviewed_positive"
+    },
+    "track_a_xlsx_question_gold_v2": {
+      "denominator_key": "track_a_xlsx_question_gold_v2_human_audit_approved",
+      "official_metric_input_path": "ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv",
+      "official_metric_input_rows": 19,
+      "official_positive_denominator": 19,
+      "metric_lane": "answer_citation",
+      "denominator_kind": "question_answer_citation_gold_v2",
+      "retrieval_default_unchanged": true
+    },
+    "track_b_text_namu_v2_1_question_gold_v2": {
+      "denominator_key": "track_b_text_namu_v2_1_question_gold_v2_human_audit_approved",
+      "official_metric_input_path": "ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv",
+      "official_metric_input_rows": 6,
+      "official_positive_denominator": 6,
+      "metric_lane": "answer_citation",
+      "denominator_kind": "question_answer_citation_gold_v2",
+      "retrieval_default_unchanged": true
+    },
+    "track_c_pdf_question_gold_v2": {
+      "denominator_key": "track_c_pdf_question_gold_v2_human_audit_approved",
+      "official_metric_input_path": "ai/eval/eval_queries/gold_queries_pdf_question_gold_v2.csv",
+      "official_metric_input_rows": 4,
+      "official_positive_denominator": 4,
+      "metric_lane": "answer_citation",
+      "denominator_kind": "question_answer_citation_gold_v2",
+      "retrieval_default_unchanged": true
     }
   },
   "removed_active_legacy_csvs": {
@@ -110,6 +137,63 @@
       "xlsx_retrieval_wrapper_default": true,
       "replaces_legacy_track_a_xlsx_reviewed_positive_default_for_wrapper": true,
       "legacy_track_a_xlsx_reviewed_positive_artifact_preserved": true
+    },
+    "track_b_text_namu_v2_1_question_gold_v2_human_audit_approved": {
+      "path": "ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv",
+      "row_count": 6,
+      "official_positive_denominator": 6,
+      "official_metric_input_rows": 6,
+      "sha256": "03764d1d7aa682cd8646d9028b6219fdbeba8a4eb219a87a285a162f16702cd6",
+      "gold_status_policy": "human_label=INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE from v2 audit packet",
+      "denominator_rule": "human-approved source-bound question, expected answer, evidence, and citation locator",
+      "promotion_evidence": false,
+      "evidence_role": "official_question_gold_denominator",
+      "denominator_kind": "question_answer_citation_gold_v2",
+      "metric_lane": "answer_citation",
+      "question_gold_current_default": true,
+      "current_default": false,
+      "not_retrieval_denominator": true,
+      "source_applied_decisions": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+      "source_denominator_diff_preview": "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json",
+      "registry_application_report": "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json"
+    },
+    "track_a_xlsx_question_gold_v2_human_audit_approved": {
+      "path": "ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv",
+      "row_count": 19,
+      "official_positive_denominator": 19,
+      "official_metric_input_rows": 19,
+      "sha256": "b28f42ad395b90b97795decc0b3cc91f0dc4fa515f22863d72c66508bb666f40",
+      "gold_status_policy": "human_label=INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE from v2 audit packet",
+      "denominator_rule": "human-approved source-bound question, expected answer, evidence, and citation locator",
+      "promotion_evidence": false,
+      "evidence_role": "official_question_gold_denominator",
+      "denominator_kind": "question_answer_citation_gold_v2",
+      "metric_lane": "answer_citation",
+      "question_gold_current_default": true,
+      "current_default": false,
+      "not_retrieval_denominator": true,
+      "source_applied_decisions": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+      "source_denominator_diff_preview": "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json",
+      "registry_application_report": "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json"
+    },
+    "track_c_pdf_question_gold_v2_human_audit_approved": {
+      "path": "ai/eval/eval_queries/gold_queries_pdf_question_gold_v2.csv",
+      "row_count": 4,
+      "official_positive_denominator": 4,
+      "official_metric_input_rows": 4,
+      "sha256": "6bb09a0a61f4e3bea76869c6893c67ab810720e188814e3e8113740288a79998",
+      "gold_status_policy": "human_label=INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE from v2 audit packet",
+      "denominator_rule": "human-approved source-bound question, expected answer, evidence, and citation locator",
+      "promotion_evidence": false,
+      "evidence_role": "official_question_gold_denominator",
+      "denominator_kind": "question_answer_citation_gold_v2",
+      "metric_lane": "answer_citation",
+      "question_gold_current_default": true,
+      "current_default": false,
+      "not_retrieval_denominator": true,
+      "source_applied_decisions": "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+      "source_denominator_diff_preview": "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json",
+      "registry_application_report": "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json"
     }
   },
   "archived_legacy_csvs": {

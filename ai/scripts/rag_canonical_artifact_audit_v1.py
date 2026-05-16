@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import re
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
@@ -27,7 +28,11 @@ DEFAULT_CANONICAL_PATHS = {
     "report_only_tuning_dry_run_plan": REPORT_DIR / "report_only_tuning_dry_run_plan_v1.json",
     "official_metric_transition_readiness_checklist": REPORT_DIR
     / "official_metric_transition_readiness_checklist_v1.json",
-    "human_audit_packet": REVIEW_DIR / "rag_human_audit_packet_v1.json",
+    "human_audit_packet": REVIEW_DIR / "rag_human_audit_packet_v2_question_quality_local_llm.json",
+    "human_audit_v2_applied_decisions": REVIEW_DIR / "rag_human_audit_v2_applied_decisions.json",
+    "official_denominator_candidate_diff_preview": REPORT_DIR / "official_denominator_candidate_diff_preview_v1.json",
+    "official_question_gold_v2_registry_application": REPORT_DIR / "official_question_gold_v2_registry_application_report.json",
+    "official_metric_input_config": REPORT_DIR / "official_metric_input_config_v1.json",
     "xlsx_answer_citation_policy_packet": REPORT_DIR / "rag_xlsx_answer_citation_policy_review_packet_v1.json",
     "pdf_answer_citation_policy_packet": REPORT_DIR / "rag_pdf_answer_citation_policy_review_packet_v1.json",
     "pdf_evidence_metadata_enrichment": REPORT_DIR / "pdf_evidence_metadata_enrichment_report.json",
@@ -53,8 +58,16 @@ CANONICAL_CURRENT_REPORTS = [
     "ai/eval/reports/rag-ingestion/report_only_tuning_dry_run_plan_v1.md",
     "ai/eval/reports/rag-ingestion/official_metric_transition_readiness_checklist_v1.json",
     "ai/eval/reports/rag-ingestion/official_metric_transition_readiness_checklist_v1.md",
-    "ai/eval/review/rag_human_audit_packet_v1.json",
-    "ai/eval/review/rag_human_audit_packet_v1.md",
+    "ai/eval/review/rag_human_audit_packet_v2_question_quality_local_llm.json",
+    "ai/eval/review/rag_human_audit_packet_v2_question_quality_local_llm.md",
+    "ai/eval/review/rag_human_audit_v2_applied_decisions.json",
+    "ai/eval/review/rag_human_audit_v2_applied_decisions.md",
+    "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json",
+    "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.md",
+    "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json",
+    "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.md",
+    "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json",
+    "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.md",
     "docs/rag-ingestion-progress.md",
 ]
 
@@ -129,6 +142,7 @@ def run_audit(
     artifacts = [artifact_record(name, path, payloads.get(name, {})) for name, path in canonical_paths.items()]
     artifact_index = {row["name"]: row for row in artifacts}
     errors = validation_errors(canonical_paths=canonical_paths, payloads=payloads)
+    summary = audit_summary(artifacts, payloads)
     audit = {
         "schema_version": "canonical_artifact_audit_v1",
         "generated_at": utc_timestamp(),
@@ -136,7 +150,12 @@ def run_audit(
         "diagnostic_only": True,
         "promotion_evidence": False,
         "official_metric_input_rows": 0,
-        "summary": audit_summary(artifacts),
+        "official_metric_input_rows_scope": summary["official_metric_input_rows_scope"],
+        "registry_backed_official_metric_input_rows": summary["registry_backed_official_metric_input_rows"],
+        "registry_backed_official_metric_input_rows_by_track": summary[
+            "registry_backed_official_metric_input_rows_by_track"
+        ],
+        "summary": summary,
         "artifacts": artifacts,
         "artifact_index": artifact_index,
         "stale_conflicts_found": errors,
@@ -192,6 +211,10 @@ def validation_errors(*, canonical_paths: Mapping[str, Path], payloads: Mapping[
     dry_plan = payloads.get("report_only_tuning_dry_run_plan", {})
     checklist = payloads.get("official_metric_transition_readiness_checklist", {})
     human = payloads.get("human_audit_packet", {})
+    applied = payloads.get("human_audit_v2_applied_decisions", {})
+    denominator_preview = payloads.get("official_denominator_candidate_diff_preview", {})
+    registry_application = payloads.get("official_question_gold_v2_registry_application", {})
+    metric_config = payloads.get("official_metric_input_config", {})
     pdf_answer = payloads.get("pdf_answer_citation_policy_packet", {})
     xlsx = payloads.get("xlsx_answer_citation_policy_packet", {})
     pdf_repair = payloads.get("pdf_evidence_readiness_repair", {})
@@ -216,7 +239,7 @@ def validation_errors(*, canonical_paths: Mapping[str, Path], payloads: Mapping[
     if canonical_paths["pdf_answer_citation_policy_packet"].exists():
         errors.extend(pdf_answer_packet_readiness_errors(pdf_answer))
     for name, payload in payloads.items():
-        if official_rows(payload) > 0:
+        if official_rows(payload) > 0 and not official_rows_allowed(name, payload):
             errors.append(f"{name} official_metric_input_rows must remain 0")
         if payload.get("promotion_evidence") is True:
             errors.append(f"{name} promotion_evidence must remain false")
@@ -228,8 +251,17 @@ def validation_errors(*, canonical_paths: Mapping[str, Path], payloads: Mapping[
         errors.append("dry-run plan is ready but PDF answer/citation packet payload is unavailable")
     if checklist and checklist.get("official_denominator_registry_opened") is True:
         errors.append("official transition checklist must keep official_denominator_registry_opened=false")
-    if human and clean(human.get("status")) != "HUMAN_AUDIT_PACKET_READY":
-        errors.append("human audit packet must be HUMAN_AUDIT_PACKET_READY")
+    if human:
+        errors.extend(human_audit_v2_errors(human))
+        if human.get("human_audit_completed") is True:
+            for name in (
+                "human_audit_v2_applied_decisions",
+                "official_denominator_candidate_diff_preview",
+                "official_metric_input_config",
+            ):
+                if not canonical_paths.get(name) or not canonical_paths[name].exists():
+                    errors.append(f"completed human audit requires current artifact: {name}")
+    errors.extend(candidate_transition_artifact_errors(applied, denominator_preview, registry_application, metric_config))
     if progress_doc and progress_doc.exists():
         errors.extend(progress_doc_conflicts(progress_doc))
     return sorted(dict.fromkeys(errors))
@@ -252,11 +284,22 @@ def progress_doc_conflicts(path: Path) -> list[str]:
     return sorted(dict.fromkeys(errors))
 
 
-def audit_summary(artifacts: list[Mapping[str, Any]]) -> dict[str, Any]:
+def audit_summary(artifacts: list[Mapping[str, Any]], payloads: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+    registry_rows_by_track = registry_backed_rows_by_track(payloads)
+    registry_rows = sum(registry_rows_by_track.values())
+    artifact_duplicate_sum = sum(int_value(row.get("official_metric_input_rows")) for row in artifacts)
     return {
         "artifact_count": len(artifacts),
         "missing_count": sum(1 for row in artifacts if not row["exists"]),
-        "official_metric_input_rows_total": sum(int_value(row.get("official_metric_input_rows")) for row in artifacts),
+        "official_metric_input_rows_total": registry_rows or artifact_duplicate_sum,
+        "official_metric_input_rows_scope": (
+            "unique_registry_backed_question_gold_input_rows_not_artifact_duplicate_sum"
+            if registry_rows
+            else "artifact_field_sum_no_registry_backed_input_detected"
+        ),
+        "official_metric_input_rows_artifact_duplicate_sum": artifact_duplicate_sum,
+        "registry_backed_official_metric_input_rows": registry_rows,
+        "registry_backed_official_metric_input_rows_by_track": registry_rows_by_track,
         "promotion_evidence_true_count": sum(1 for row in artifacts if row.get("promotion_evidence") is True),
         "tuning_run_started": any(row.get("tuning_run_started") is True for row in artifacts),
         "stale_conflict_count": sum(1 for row in artifacts if row.get("stale_conflict_detected") is True),
@@ -301,9 +344,16 @@ def build_script_plan() -> dict[str, Any]:
         "groups": {
             "keep_active_generator": [
                 "rag_report_only_tuning_dry_run_plan_v1.py",
-                "rag_human_audit_packet_v1.py",
+                "rag_human_audit_packet_v2_question_quality_local_llm.py",
+                "rag_human_audit_v2_applied_decisions.py",
+                "rag_official_denominator_candidate_diff_preview_v1.py",
+                "rag_official_question_gold_v2_registry_apply.py",
+                "rag_official_metric_input_config_v1.py",
                 "rag_three_track_metric_preflight_board.py",
                 "rag_hyperparameter_tuning_readiness_plan.py",
+            ],
+            "keep_historical_input_generator": [
+                "rag_human_audit_packet_v1.py",
             ],
             "keep_guardrail_audit": [
                 "rag_canonical_artifact_audit_v1.py",
@@ -336,6 +386,8 @@ def render_audit_markdown(audit: Mapping[str, Any]) -> str:
         "",
         f"- Status: `{audit['status']}`",
         f"- Official metric input rows total: `{audit['summary']['official_metric_input_rows_total']}`",
+        f"- Official metric input rows scope: `{audit['summary']['official_metric_input_rows_scope']}`",
+        f"- Artifact duplicate row-field sum: `{audit['summary']['official_metric_input_rows_artifact_duplicate_sum']}`",
         f"- Tuning run started: `{json.dumps(audit['summary']['tuning_run_started'])}`",
         "",
         "## Validation",
@@ -361,7 +413,7 @@ def render_script_plan_markdown(plan: Mapping[str, Any]) -> str:
     for group, values in plan["groups"].items():
         lines.extend(["", f"## {group}", ""])
         lines.extend(f"- `{value}`" for value in values)
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def payload_stale_conflict(name: str, payload: Mapping[str, Any]) -> bool:
@@ -405,6 +457,174 @@ def pdf_answer_packet_readiness_errors(payload: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def human_audit_v2_errors(payload: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if clean(payload.get("status")) != "HUMAN_AUDIT_PACKET_V2_READY":
+        errors.append("human audit packet must be HUMAN_AUDIT_PACKET_V2_READY")
+    if payload.get("official_metric") is True or official_rows(payload) != 0:
+        errors.append("human audit packet official rows must remain 0")
+    if payload.get("promotion_evidence") is True:
+        errors.append("human audit packet must not be promotion evidence")
+    validation = human_label_validation(payload)
+    errors.extend(validation["errors"])
+    if not validation["completed"]:
+        errors.append("human audit packet v2 row-level labels must be complete")
+    return errors
+
+
+def candidate_transition_artifact_errors(
+    applied: Mapping[str, Any],
+    denominator_preview: Mapping[str, Any],
+    registry_application: Mapping[str, Any],
+    metric_config: Mapping[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    if applied:
+        if clean(applied.get("status")) != "HUMAN_AUDIT_V2_APPLIED_DECISIONS_READY":
+            errors.append("human audit v2 applied decisions must be ready")
+        if nested_mapping(applied, "validation").get("ok") is not True:
+            errors.append("human audit v2 applied decisions validation.ok must be true")
+    if denominator_preview:
+        if clean(denominator_preview.get("status")) != "OFFICIAL_DENOMINATOR_CANDIDATE_DIFF_PREVIEW_READY":
+            errors.append("official denominator candidate diff preview must be ready")
+        if clean(denominator_preview.get("registry_diff_status")) != "PREVIEW_ONLY_NO_MUTATION":
+            errors.append("official denominator candidate diff preview must be preview-only")
+        if nested_mapping(denominator_preview, "guardrails").get("official_denominator_registry_changed") is True:
+            errors.append("official denominator candidate diff preview must not mutate registry")
+        if nested_mapping(denominator_preview, "validation").get("ok") is not True:
+            errors.append("official denominator candidate diff preview validation.ok must be true")
+    if metric_config:
+        if clean(metric_config.get("status")) not in {
+            "OFFICIAL_METRIC_INPUT_CONFIG_READY_PENDING_REGISTRY_APPLICATION",
+            "OFFICIAL_METRIC_INPUT_CONFIG_READY_REGISTRY_BACKED_NOT_EXECUTED",
+        }:
+            errors.append("official metric input config must be ready pending registry application")
+        if metric_config.get("official_metric_execution_started") is not False:
+            errors.append("official metric input config must not start metric execution")
+        if (
+            clean(metric_config.get("status")) == "OFFICIAL_METRIC_INPUT_CONFIG_READY_PENDING_REGISTRY_APPLICATION"
+            and metric_config.get("metric_execution_allowed") is not False
+        ):
+            errors.append("official metric input config must not allow execution before registry application")
+        if nested_mapping(metric_config, "validation").get("ok") is not True:
+            errors.append("official metric input config validation.ok must be true")
+    if registry_application:
+        if clean(registry_application.get("status")) != "OFFICIAL_QUESTION_GOLD_V2_REGISTRY_APPLIED":
+            errors.append("official question gold v2 registry application must be applied")
+        if registry_application.get("registry_updated") is not True:
+            errors.append("official question gold v2 registry application must update registry")
+        if registry_application.get("official_metric_execution_started") is not False:
+            errors.append("official question gold v2 registry application must not start metric execution")
+        if nested_mapping(registry_application, "validation").get("ok") is not True:
+            errors.append("official question gold v2 registry application validation.ok must be true")
+    for name, payload in (
+        ("human audit v2 applied decisions", applied),
+        ("official denominator candidate diff preview", denominator_preview),
+        ("official question gold v2 registry application", registry_application),
+        ("official metric input config", metric_config),
+    ):
+        if not payload:
+            continue
+        if official_rows(payload) != 0 and not (
+            name in {"official question gold v2 registry application", "official metric input config"}
+            and official_rows_allowed(name, payload)
+        ):
+            errors.append(f"{name} official_metric_input_rows must remain 0")
+        if payload.get("promotion_evidence") is True:
+            errors.append(f"{name} promotion_evidence must remain false")
+        if payload.get("tuning_run_started") is True:
+            errors.append(f"{name} tuning_run_started must remain false")
+        guardrails = nested_mapping(payload, "guardrails")
+        for key in (
+            "official_denominator_registry_mutation",
+            "official_denominator_registry_opened",
+            "official_metric_executed",
+            "gold_registry_mutation",
+            "candidate_artifact_mutation",
+            "immutable_baseline_mutation",
+            "production_namespace_vector_index_mutation",
+            "production_vector_written",
+        ):
+            if payload.get(key) is True or guardrails.get(key) is True:
+                if name == "official metric input config" and official_rows_allowed(name, payload) and key in {
+                    "official_denominator_registry_mutation",
+                    "official_denominator_registry_opened",
+                }:
+                    continue
+                errors.append(f"{name} guardrail {key} must remain false")
+    return errors
+
+
+def official_rows_allowed(name: str, payload: Mapping[str, Any]) -> bool:
+    if name == "official_question_gold_v2_registry_application" or name == "official question gold v2 registry application":
+        return (
+            clean(payload.get("status")) == "OFFICIAL_QUESTION_GOLD_V2_REGISTRY_APPLIED"
+            and payload.get("registry_updated") is True
+            and payload.get("official_metric_execution_started") is False
+            and payload.get("promotion_evidence") is not True
+        )
+    if name in {
+        "official_metric_input_config",
+        "official metric input config",
+        "report_only_tuning_dry_run_plan",
+        "official_metric_transition_readiness_checklist",
+        "three_track_metric_preflight_board",
+    }:
+        return (
+            clean(payload.get("status"))
+            in {
+                "OFFICIAL_METRIC_INPUT_CONFIG_READY_REGISTRY_BACKED_NOT_EXECUTED",
+                "REPORT_ONLY_DRY_RUN_PLAN_READY",
+                "OFFICIAL_METRIC_INPUT_READY_NOT_EXECUTED",
+                "DIAGNOSTIC_PREFLIGHT_READY",
+            }
+            and (
+                payload.get("metric_input_config_registry_backed") is True
+                or nested_mapping(payload, "guardrails").get("official_metric_input_rows_registry_backed") is True
+                or payload.get("registry_application_status") == "APPLIED"
+            )
+            and payload.get("official_metric_execution_started") is not True
+            and payload.get("promotion_evidence") is not True
+        )
+    return False
+
+
+def human_label_validation(payload: Mapping[str, Any]) -> dict[str, Any]:
+    rows = [row for row in payload.get("actionable_rows") or [] if isinstance(row, Mapping)]
+    if not rows:
+        return {"completed": False, "errors": [], "counts": {}}
+    errors: list[str] = []
+    counts: Counter[str] = Counter()
+    missing: list[str] = []
+    invalid: list[str] = []
+    for row in rows:
+        qid = clean(row.get("query_id") or row.get("row_id"))
+        label = clean(row.get("human_label"))
+        allowed = row.get("allowed_decision_values") if isinstance(row.get("allowed_decision_values"), list) else []
+        allowed_values = {clean(value) for value in allowed}
+        if not label:
+            missing.append(qid)
+            continue
+        counts[label] += 1
+        if label not in allowed_values:
+            invalid.append(qid)
+    if missing:
+        errors.append(f"human audit packet rows missing human_label: {', '.join(missing)}")
+    if invalid:
+        errors.append(f"human audit packet rows have invalid human_label: {', '.join(invalid)}")
+    summary = nested_mapping(payload, "summary")
+    if "human_labeled_rows" in summary and int_value(summary.get("human_labeled_rows")) != sum(counts.values()):
+        errors.append("human audit packet human_labeled_rows summary mismatch")
+    if "human_unlabeled_rows" in summary and int_value(summary.get("human_unlabeled_rows")) != len(missing):
+        errors.append("human audit packet human_unlabeled_rows summary mismatch")
+    expected_counts = payload.get("human_audit_label_counts")
+    if isinstance(expected_counts, Mapping):
+        normalized_expected = {clean(key): int_value(value) for key, value in expected_counts.items()}
+        if normalized_expected != dict(sorted(counts.items())):
+            errors.append("human audit packet human_audit_label_counts mismatch")
+    return {"completed": bool(rows) and not missing and not invalid, "errors": errors, "counts": dict(sorted(counts.items()))}
+
+
 def pdf_plan_answer_ready(plan: Mapping[str, Any]) -> bool:
     return (
         clean(plan.get("status")) == "REPORT_ONLY_DRY_RUN_PLAN_READY"
@@ -421,8 +641,32 @@ def official_rows(payload: Mapping[str, Any]) -> int:
     ]
     by_track = payload.get("official_metric_input_rows_by_track")
     if isinstance(by_track, Mapping):
-        values.extend(int_value(value) for value in by_track.values())
+        values.append(sum(int_value(value) for value in by_track.values()))
     return max(values) if values else 0
+
+
+def registry_backed_rows_by_track(payloads: Mapping[str, Mapping[str, Any]]) -> dict[str, int]:
+    for name in (
+        "official_metric_input_config",
+        "official_question_gold_v2_registry_application",
+        "report_only_tuning_dry_run_plan",
+        "official_metric_transition_readiness_checklist",
+        "three_track_metric_preflight_board",
+    ):
+        payload = payloads.get(name, {})
+        if not payload or not official_rows_allowed(name, payload):
+            continue
+        by_track = payload.get("official_metric_input_rows_by_track")
+        if isinstance(by_track, Mapping):
+            normalized = {clean(key): int_value(value) for key, value in by_track.items() if int_value(value)}
+            if normalized:
+                return dict(sorted(normalized.items()))
+        nested_by_track = nested_mapping(payload, "registry_backed_official_metric_input_rows_by_track")
+        if nested_by_track:
+            normalized = {clean(key): int_value(value) for key, value in nested_by_track.items() if int_value(value)}
+            if normalized:
+                return dict(sorted(normalized.items()))
+    return {}
 
 
 def cross_track_average_open(payload: Mapping[str, Any]) -> bool:

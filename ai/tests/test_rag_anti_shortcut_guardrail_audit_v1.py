@@ -42,7 +42,8 @@ def test_anti_shortcut_audit_passes_clean_diagnostic_pack(tmp_path: Path) -> Non
     assert audit["checks"]["xlsx_public_private_surface_separation"]["public_surface_leakage_count"] == 0
     assert audit["checks"]["pdf_bbox_source_bound_proof"]["strict_ready_rows_checked"] == 7
     assert audit["checks"]["pdf_answer_citation_packet"]["official_metric_input_rows"] == 0
-    assert audit["checks"]["human_audit_packet"]["gold_policy_required_count_matches_report"] is True
+    assert audit["checks"]["human_audit_packet"]["human_audit_completed"] is True
+    assert audit["checks"]["human_audit_packet"]["human_label_counts"] == {"INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE": 2}
     assert audit["checks"]["dry_run_plan"]["tuning_run_started"] is False
 
 
@@ -184,12 +185,14 @@ def test_anti_shortcut_audit_fails_if_xlsx_public_leakage_or_annotation_allowlis
     assert "annotation-only allowlist cannot create PASS" in errors
 
 
-def test_anti_shortcut_audit_fails_if_human_audit_drops_answer_recovery_gold_policy_ids(tmp_path: Path) -> None:
+def test_anti_shortcut_audit_fails_if_human_audit_has_invalid_or_missing_labels(tmp_path: Path) -> None:
     module = load_module()
     paths = write_guardrail_sources(tmp_path)
     human = read_json(paths["human_audit_packet"])
-    human["sections"]["answer_recovery"]["gold_policy_required_count_matches_report"] = False
-    human["sections"]["answer_recovery"]["gold_policy_required_ids_match_report"] = False
+    human["actionable_rows"][0]["human_label"] = "NOT_ALLOWED"
+    human["actionable_rows"][1]["human_label"] = ""
+    human["summary"]["human_labeled_rows"] = 2
+    human["human_audit_label_counts"] = {"INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE": 2}
     write_json(paths["human_audit_packet"], human)
 
     audit = module.run_audit(
@@ -206,8 +209,9 @@ def test_anti_shortcut_audit_fails_if_human_audit_drops_answer_recovery_gold_pol
     )
 
     errors = audit["validation"]["errors"]
-    assert "human audit answer recovery GOLD_POLICY_REQUIRED count mismatch" in errors
-    assert "human audit answer recovery GOLD_POLICY_REQUIRED id mismatch" in errors
+    assert "human audit packet rows have invalid human_label: pdf_1" in errors
+    assert "human audit packet rows missing human_label: xlsx_1" in errors
+    assert "human audit packet human_audit_label_counts mismatch" in errors
 
 
 def test_anti_shortcut_audit_fails_if_dry_run_starts_tuning_or_cross_track_average(tmp_path: Path) -> None:
@@ -425,23 +429,42 @@ def pdf_review_row(query_id: str) -> dict[str, object]:
 
 def human_audit_packet() -> dict[str, object]:
     return {
-        "status": "HUMAN_AUDIT_PACKET_READY",
+        "status": "HUMAN_AUDIT_PACKET_V2_READY",
         "diagnostic_only": True,
         "official_metric": False,
         "promotion_evidence": False,
         "official_metric_input_rows": 0,
-        "summary": {"total_user_action_rows": 19},
-        "sections": {
-            "xlsx_business_structured": {"hidden_excluded_rows_candidate_count": 0},
-            "pdf_business_ocr_mm": {"filename_only_identity_accepted": False},
-            "answer_recovery": {
-                "gold_policy_required_rows": 6,
-                "expected_gold_policy_required_rows": 6,
-                "row_group_gold_policy_required_rows": 6,
-                "gold_policy_required_count_matches_report": True,
-                "gold_policy_required_ids_match_report": True,
+        "human_audit_completed": True,
+        "human_audit_label_counts": {"INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE": 2},
+        "summary": {
+            "pdf_generated_candidates": 4,
+            "xlsx_generated_candidates": 23,
+            "human_labeled_rows": 2,
+            "human_unlabeled_rows": 0,
+            "human_audit_completed": True,
+            "official_metric_input_rows": 0,
+            "promotion_evidence": False,
+            "final_user_action_rows_by_track": {
+                "pdf_business_ocr_mm": 1,
+                "xlsx_business_structured": 1,
             },
         },
+        "actionable_rows": [
+            {
+                "query_id": "pdf_1",
+                "human_label": "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE",
+                "allowed_decision_values": ["INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE"],
+                "official_metric_input": False,
+                "promotion_evidence": False,
+            },
+            {
+                "query_id": "xlsx_1",
+                "human_label": "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE",
+                "allowed_decision_values": ["INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE"],
+                "official_metric_input": False,
+                "promotion_evidence": False,
+            },
+        ],
         "validation": {"ok": True, "errors": []},
     }
 

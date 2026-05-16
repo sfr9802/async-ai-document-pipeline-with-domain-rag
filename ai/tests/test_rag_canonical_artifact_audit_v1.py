@@ -40,12 +40,12 @@ def test_canonical_artifact_audit_passes_current_ready_pack_and_writes_slim_outp
 
     assert audit["status"] == "CANONICAL_ARTIFACT_AUDIT_PASS"
     assert audit["validation"]["ok"] is True
-    assert audit["summary"]["official_metric_input_rows_total"] == 0
+    assert audit["summary"]["official_metric_input_rows_total"] == 2
     assert audit["summary"]["promotion_evidence_true_count"] == 0
     assert audit["summary"]["tuning_run_started"] is False
     assert all(row["exists"] and row["sha256"] for row in audit["artifacts"])
     assert audit["artifact_index"]["report_only_tuning_dry_run_plan"]["status"] == "REPORT_ONLY_DRY_RUN_PLAN_READY"
-    assert audit["artifact_index"]["human_audit_packet"]["status"] == "HUMAN_AUDIT_PACKET_READY"
+    assert audit["artifact_index"]["human_audit_packet"]["status"] == "HUMAN_AUDIT_PACKET_V2_READY"
 
     canonical_paths = {row["path"] for row in manifest["keep_as_canonical_current_reports"]}
     assert "ai/eval/reports/rag-ingestion/three_track_metric_preflight_board.json" in canonical_paths
@@ -215,8 +215,16 @@ def write_canonical_pack(tmp_path: Path) -> dict[str, object]:
         "dry_plan_md": reports / "report_only_tuning_dry_run_plan_v1.md",
         "checklist": reports / "official_metric_transition_readiness_checklist_v1.json",
         "checklist_md": reports / "official_metric_transition_readiness_checklist_v1.md",
-        "human_audit": review / "rag_human_audit_packet_v1.json",
-        "human_audit_md": review / "rag_human_audit_packet_v1.md",
+        "human_audit": review / "rag_human_audit_packet_v2_question_quality_local_llm.json",
+        "human_audit_md": review / "rag_human_audit_packet_v2_question_quality_local_llm.md",
+        "applied_decisions": review / "rag_human_audit_v2_applied_decisions.json",
+        "applied_decisions_md": review / "rag_human_audit_v2_applied_decisions.md",
+        "denominator_preview": reports / "official_denominator_candidate_diff_preview_v1.json",
+        "denominator_preview_md": reports / "official_denominator_candidate_diff_preview_v1.md",
+        "registry_application": reports / "official_question_gold_v2_registry_application_report.json",
+        "registry_application_md": reports / "official_question_gold_v2_registry_application_report.md",
+        "metric_config": reports / "official_metric_input_config_v1.json",
+        "metric_config_md": reports / "official_metric_input_config_v1.md",
         "xlsx": reports / "rag_xlsx_answer_citation_policy_review_packet_v1.json",
         "pdf_answer": reports / "rag_pdf_answer_citation_policy_review_packet_v1.json",
         "pdf_metadata": reports / "pdf_evidence_metadata_enrichment_report.json",
@@ -230,13 +238,27 @@ def write_canonical_pack(tmp_path: Path) -> dict[str, object]:
     write_json(paths["dry_plan"], dry_plan_payload())
     write_json(paths["checklist"], checklist_payload())
     write_json(paths["human_audit"], human_audit_payload())
+    write_json(paths["applied_decisions"], applied_decisions_payload())
+    write_json(paths["denominator_preview"], denominator_preview_payload())
+    write_json(paths["registry_application"], registry_application_payload())
+    write_json(paths["metric_config"], metric_config_payload())
     write_json(paths["xlsx"], xlsx_payload())
     write_json(paths["pdf_answer"], pdf_answer_payload())
     write_json(paths["pdf_metadata"], pdf_metadata_payload())
     write_json(paths["pdf_layout"], pdf_layout_payload())
     write_json(paths["pdf_repair"], pdf_repair_payload())
     write_json(paths["text"], text_payload())
-    for key in ("board_md", "readiness_md", "dry_plan_md", "checklist_md", "human_audit_md"):
+    for key in (
+        "board_md",
+        "readiness_md",
+        "dry_plan_md",
+        "checklist_md",
+        "human_audit_md",
+        "applied_decisions_md",
+        "denominator_preview_md",
+        "registry_application_md",
+        "metric_config_md",
+    ):
         paths[key].write_text("# current report\n", encoding="utf-8")
     paths["progress_doc"].write_text(
         "Current board DIAGNOSTIC_PREFLIGHT_READY; XLSX leakage PASS; PDF strict_ready_rows=7; "
@@ -251,6 +273,10 @@ def write_canonical_pack(tmp_path: Path) -> dict[str, object]:
             "report_only_tuning_dry_run_plan": paths["dry_plan"],
             "official_metric_transition_readiness_checklist": paths["checklist"],
             "human_audit_packet": paths["human_audit"],
+            "human_audit_v2_applied_decisions": paths["applied_decisions"],
+            "official_denominator_candidate_diff_preview": paths["denominator_preview"],
+            "official_question_gold_v2_registry_application": paths["registry_application"],
+            "official_metric_input_config": paths["metric_config"],
             "xlsx_answer_citation_policy_packet": paths["xlsx"],
             "pdf_answer_citation_policy_packet": paths["pdf_answer"],
             "pdf_evidence_metadata_enrichment": paths["pdf_metadata"],
@@ -328,27 +354,150 @@ def checklist_payload() -> dict[str, object]:
     return {
         "schema_version": "official_metric_transition_readiness_checklist_v1",
         "generated_at": "2026-05-15T00:03:00+00:00",
-        "status": "OFFICIAL_TRANSITION_BLOCKED_PENDING_HUMAN_AUDIT",
+        "status": "OFFICIAL_TRANSITION_BLOCKED_PENDING_REPORT_ONLY_DECISION_APPLICATION",
         "diagnostic_only": True,
         "promotion_evidence": False,
         "official_metric_input_rows": 0,
         "official_denominator_registry_opened": False,
         "human_audit_packet_generated": True,
-        "human_audit_completed": False,
+        "human_audit_completed": True,
         "validation": {"ok": True, "errors": []},
     }
 
 
 def human_audit_payload() -> dict[str, object]:
     return {
-        "schema_version": "rag_human_audit_packet_v1",
+        "schema_version": "rag_human_audit_packet_v2_question_quality_local_llm",
         "generated_at": "2026-05-15T00:04:00+00:00",
-        "status": "HUMAN_AUDIT_PACKET_READY",
+        "status": "HUMAN_AUDIT_PACKET_V2_READY",
         "diagnostic_only": True,
         "official_metric": False,
         "promotion_evidence": False,
         "official_metric_input_rows": 0,
-        "summary": {"total_user_action_rows": 19},
+        "human_audit_completed": True,
+        "human_audit_label_counts": {"INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE": 2},
+        "summary": {
+            "total_user_action_rows": 19,
+            "pdf_generated_candidates": 4,
+            "xlsx_generated_candidates": 23,
+            "human_labeled_rows": 2,
+            "human_unlabeled_rows": 0,
+            "human_audit_completed": True,
+            "official_metric_input_rows": 0,
+            "promotion_evidence": False,
+        },
+        "actionable_rows": [
+            {
+                "query_id": "pdf_1",
+                "human_label": "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE",
+                "allowed_decision_values": ["INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE"],
+                "official_metric_input": False,
+                "promotion_evidence": False,
+            },
+            {
+                "query_id": "xlsx_1",
+                "human_label": "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE",
+                "allowed_decision_values": ["INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE"],
+                "official_metric_input": False,
+                "promotion_evidence": False,
+            },
+        ],
+        "validation": {"ok": True, "errors": []},
+    }
+
+
+def applied_decisions_payload() -> dict[str, object]:
+    return {
+        "schema_version": "rag_human_audit_v2_applied_decisions_v1",
+        "generated_at": "2026-05-15T00:04:30+00:00",
+        "status": "HUMAN_AUDIT_V2_APPLIED_DECISIONS_READY",
+        "report_only": True,
+        "promotion_evidence": False,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "proposed_official_metric_candidate_rows": 2,
+        "summary": {
+            "approved_gold_candidate_rows": 2,
+            "approved_rows_by_track": {"pdf_business_ocr_mm": 1, "xlsx_business_structured": 1},
+            "official_metric_input_rows": 0,
+            "promotion_evidence": False,
+        },
+        "guardrails": {
+            "official_denominator_registry_changed": False,
+            "official_denominator_registry_mutation": False,
+            "official_metric_executed": False,
+        },
+        "validation": {"ok": True, "errors": []},
+    }
+
+
+def denominator_preview_payload() -> dict[str, object]:
+    return {
+        "schema_version": "official_denominator_candidate_diff_preview_v1",
+        "generated_at": "2026-05-15T00:04:40+00:00",
+        "status": "OFFICIAL_DENOMINATOR_CANDIDATE_DIFF_PREVIEW_READY",
+        "registry_diff_status": "PREVIEW_ONLY_NO_MUTATION",
+        "promotion_evidence": False,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "proposed_official_metric_candidate_rows": 2,
+        "summary": {
+            "proposed_rows_total": 2,
+            "proposed_rows_by_track": {"pdf_business_ocr_mm": 1, "xlsx_business_structured": 1},
+            "official_metric_input_rows": 0,
+            "promotion_evidence": False,
+        },
+        "guardrails": {
+            "official_denominator_registry_changed": False,
+            "official_denominator_registry_mutation": False,
+            "official_metric_executed": False,
+        },
+        "validation": {"ok": True, "errors": []},
+    }
+
+
+def metric_config_payload() -> dict[str, object]:
+    return {
+        "schema_version": "official_metric_input_config_v1",
+        "generated_at": "2026-05-15T00:04:50+00:00",
+        "status": "OFFICIAL_METRIC_INPUT_CONFIG_READY_PENDING_REGISTRY_APPLICATION",
+        "promotion_evidence": False,
+        "official_metric": False,
+        "official_metric_execution_started": False,
+        "metric_execution_allowed": False,
+        "official_metric_input_rows": 0,
+        "proposed_metric_input_rows": 2,
+        "proposed_metric_input_rows_by_track": {"pdf_business_ocr_mm": 1, "xlsx_business_structured": 1},
+        "tuning_run_started": False,
+        "guardrails": {
+            "official_denominator_registry_changed": False,
+            "official_denominator_registry_mutation": False,
+            "official_metric_executed": False,
+        },
+        "validation": {"ok": True, "errors": []},
+    }
+
+
+def registry_application_payload() -> dict[str, object]:
+    return {
+        "schema_version": "official_question_gold_v2_registry_application_v1",
+        "generated_at": "2026-05-15T00:04:45+00:00",
+        "status": "OFFICIAL_QUESTION_GOLD_V2_REGISTRY_APPLIED",
+        "registry_updated": True,
+        "promotion_evidence": False,
+        "official_metric": False,
+        "official_metric_execution_started": False,
+        "official_metric_input_rows": 2,
+        "official_metric_input_rows_by_track": {"pdf_business_ocr_mm": 1, "xlsx_business_structured": 1},
+        "tuning_run_started": False,
+        "guardrails": {
+            "official_metric_execution_started": False,
+            "gold_registry_mutation": False,
+            "candidate_artifact_mutation": False,
+            "immutable_baseline_mutation": False,
+            "production_namespace_vector_index_mutation": False,
+            "production_vector_written": False,
+        },
         "validation": {"ok": True, "errors": []},
     }
 

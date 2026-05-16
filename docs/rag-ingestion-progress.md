@@ -1,6 +1,6 @@
 # RAG Ingestion Progress
 
-Last updated: 2026-05-15 KST.
+Last updated: 2026-05-16 KST.
 
 This file is the compact status index for RAG ingestion. It should not store
 turn-level logs, command transcripts, raw report payloads, or per-agent notes.
@@ -9,8 +9,9 @@ external archive manifests and link only the current source of truth here.
 
 ## Current Status
 
-Overall status: `diagnostic_preflight_ready_report_only`; production
-promotion and model-quality tuning remain blocked.
+Overall status: `official_question_gold_v2_registry_applied_metric_input_ready_not_executed`;
+official metric execution and model-quality tuning remain blocked until the
+next explicit command.
 
 - Ingestion v2 is implemented on the production
   `source_file -> extracted_artifact -> search_unit` path.
@@ -43,10 +44,10 @@ promotion and model-quality tuning remain blocked.
 
 | Track | Current state | Current denominator / metric | Next action |
 |---|---|---|---|
-| `xlsx_business_structured` | Answer/citation diagnostic policy packet `DIAGNOSTIC_POLICY_PACKET_READY`; latest raw answer/citation leakage reprobe `PASS` (`0` total) | Strict silver rows `23`; pre-leakage support pass rows `23`; citation locator valid `23`; final clean pass `23`; official metric input rows `0`; denominator policy `closed` | Old raw hidden/excluded answer/citation leakage blocker is resolved. Keep XLSX diagnostic-only and do not open official metrics without explicit human audit. |
+| `xlsx_business_structured` | Evidence/answer-citation readiness remains `DIAGNOSTIC_POLICY_PACKET_READY`; local-LLM question/expected-answer draft candidates were human-reviewed and applied to question-gold v2 | Strict silver rows `23`; clean pass rows `23`; verifier-clean and human-approved candidate rows `19`; registry-backed official metric input rows `19`; denominator policy `question_answer_citation_gold_v2` | Official metric input is ready; run official metrics only as a separate explicit step. Tuning remains closed. |
 | XLSX legacy diagnostic | Historical / superseded | Legacy Track A reviewed diagnostic denominator `35`; exact location recovered by top 10 | Preserve only as historical diagnostic evidence. Do not use as the current wrapper default. |
-| `text_namuwiki_animation` | Frozen TEXT/Namu V2.1 policy packet `FROZEN_DIAGNOSTIC_V2_1` | Generated-answer review rows `66`; clean `60`; cleanup `5`; unresolved `1`; citation supported `65`; official metric input rows `0` | Keep frozen. Do not tune or reopen official denominators without explicit human-approved policy. |
-| `pdf_business_ocr_mm` | Evidence readiness `7/7`; answer/citation diagnostic policy packet `DIAGNOSTIC_POLICY_PACKET_READY` | Strict ready rows `7`; generated answer rows `7`; answer support pass `7`; citation locator valid `7`; clean pass `7`; cleanup `0`; unresolved `0`; lane policy blocked `0`; official metric input rows `0`; denominator policy `closed` | Keep PDF diagnostic-only. Human review can inspect the packet, but tuning execution and official metrics remain closed. |
+| `text_namuwiki_animation` | Frozen TEXT/Namu V2.1 policy packet `FROZEN_DIAGNOSTIC_V2_1`; human-approved v2 answer/citation input rows are materialized separately | Generated-answer review rows `66`; clean `60`; cleanup `5`; unresolved `1`; citation supported `65`; registry-backed official metric input rows `6`; denominator policy `question_answer_citation_gold_v2` | Include only the v2 question-gold rows in the first official answer/citation metric run. Do not tune yet. |
+| `pdf_business_ocr_mm` | Locator/bbox evidence readiness remains complete (`7/7`); context v2 resolves native/nearby block text and deterministic table rows; manually authored source-bound drafts were human-reviewed and applied to question-gold v2 | Strict ready rows `7`; native block text resolved `7`; deterministic table-ready rows `2`; manually authored and human-approved candidate rows `4`; registry-backed official metric input rows `4`; denominator policy `question_answer_citation_gold_v2` | Official metric input is ready; run official metrics only as a separate explicit step. Tuning remains closed. |
 | Route/orchestration metrics | Diagnostic-only | Korean memo labels applied in diagnostic-only route/fallback artifacts; official metric input rows remain `0` | Use the applied route/fallback labels for diagnostic analysis only. Create an explicit policy review before interpreting routing accuracy, wrong-route rate, fallback success, or multi-route success as official metrics. |
 | Answer recovery | Diagnostic-only consolidation complete | Baseline `calibrated_identity_exact_v1`; compact status `PASS`; `185` cases; triage counts: safe-recoverable report-only `5`, index-scope-missing `5`, policy-blocked-correctly `17`, gold-policy-required `6`, diagnostic-only-do-not-promote `4`, unknown `0`; answer denominator `0`; production promotion `false` | User gold-policy judgment is needed only for the 6 `GOLD_POLICY_REQUIRED` rows. Keep safe recoveries report-only and keep index-scope rows out of retrieval/ranking failure counts until source evidence is proven in-scope and indexed. |
 
@@ -60,8 +61,10 @@ Status: `REPORT_ONLY_READY`.
 - PDF answer/citation packet: `DIAGNOSTIC_POLICY_PACKET_READY`; clean pass rows `7`, cleanup `0`, unresolved `0`, lane policy blocked `0`.
 - Remaining PDF fallback row ids: `none`; source-bound bbox resolved for `gq_auto_010`, `gq_auto_015`, and `gq_auto_030`.
 - PDF strict readiness gate rerun: `true` as diagnostic readiness-gate only; answer generation opened `false`.
-- Three-track board: `DIAGNOSTIC_PREFLIGHT_READY`; XLSX blocker `false`, PDF blocker `false`, cross-track averages computed `false`.
-- Tuning readiness plan: `REPORT_ONLY_READY`.
+- Three-track board is now superseded by the 2026-05-15 v2 question-quality
+  refresh: evidence readiness remains complete, but official question-gold is
+  incomplete.
+- Tuning readiness plan remains report-only; tuning execution remains closed.
 - Official metric input rows remain `0` for TEXT/XLSX/PDF.
 - Tuning run started: `false`.
 - Denominator registry unchanged by this diagnostic/report-only slice.
@@ -108,13 +111,82 @@ Status: `REPORT_ONLY_DRY_RUN_PLAN_READY`; human audit packet
   report-only and generate an official denominator candidate diff preview;
   require explicit user approval before any registry mutation.
 
+## 2026-05-16 PDF/XLSX Question Quality + Local LLM Draft Packet Human Audit
+
+Status: `OFFICIAL_METRIC_INPUT_READY_NOT_EXECUTED`;
+human audit packet v2 `HUMAN_AUDIT_PACKET_V2_READY`, human audit completed
+`true`.
+
+- Evidence: `ai/eval/reports/rag-ingestion/local_llm_expected_answer_generation_probe_v1.json`,
+  `question_quality_gate_report_v1.json`, `ai/eval/review/rag_pdf_gold_question_candidate_generation_v1.json`,
+  `ai/eval/review/rag_pdf_manual_question_rewrite_candidates_v1.json`,
+  `rag_xlsx_gold_question_candidate_generation_v1.json`,
+  `rag_local_llm_expected_answer_verifier_v1.json`, and
+  `rag_human_audit_packet_v2_question_quality_local_llm.json`.
+- Local LLM: llama.cpp-compatible local endpoint `http://localhost:8081/v1`,
+  model `gemma4-e2b-local`; XLSX outputs are diagnostic/model-assisted drafts
+  only. PDF questions were manually authored from source-bound context v2.
+- Counts: v1 action rows `19`; bad original PDF/XLSX question rows rejected
+  `13`; PDF manually authored and verifier-clean candidates `4`; XLSX
+  generated and verifier-clean candidates `19`; final v2 action rows `29`
+  (`text_namu_v2_1=6`, `pdf_business_ocr_mm=4`,
+  `xlsx_business_structured=19`); human labeled rows `29` with
+  `INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE`.
+- Board: `DIAGNOSTIC_PREFLIGHT_READY`; PDF/XLSX evidence readiness remains
+  complete. Official metric setup status is
+  `REGISTRY_BACKED_CONFIG_READY_NOT_EXECUTED`.
+- Applied decision and metric setup artifacts:
+  `ai/eval/review/rag_human_audit_v2_applied_decisions.json`,
+  `ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.json`,
+  `ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json`,
+  and `ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json`.
+- Materialized official question-gold v2 inputs:
+  `ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv`
+  (`6` rows), `ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv`
+  (`19` rows), and `ai/eval/eval_queries/gold_queries_pdf_question_gold_v2.csv`
+  (`4` rows).
+- Official metric input rows: total `29`
+  (`text_namu_v2_1=6`, `pdf_business_ocr_mm=4`,
+  `xlsx_business_structured=19`). These rows are registry-backed metric inputs,
+  but official metric execution has not started.
+- Registry: `ai/eval/eval_queries/official_denominator_registry.json` now has
+  v2 question-gold denominator entries for TEXT/XLSX/PDF. The existing XLSX
+  retrieval default `track_a_xlsx_human_review_normalized_v0` remains unchanged.
+- Guardrails: `promotion_evidence=false`, `official_metric_execution_started=false`,
+  `tuning_run_started=false`, production vector writes `false`, cross-track
+  averages `false`.
+- Remaining blocker: run the first official answer/citation metric against the
+  registry-backed v2 inputs. Tuning remains closed until after that metric step
+  is explicitly requested and reviewed.
+
+## 2026-05-15 PDF Gold/Evidence Lineage + v2 Canary
+
+Status: `SUPERSEDED_BY_PDF_EVIDENCE_CONTEXT_V2_NATIVE_TABLE_RECOVERY`.
+
+- Evidence: `ai/eval/reports/rag-ingestion/pdf_gold_evidence_lineage_audit_v1.json`
+  / `.md` and `pdf_evidence_object_v2_canary_report.json` / `.md`.
+- Lineage: current PDF rows `7`; all `7` had bad vector query surfaces,
+  locator-only nearby context, answer-input echoing `matched_text`, and human
+  audit v1 inheriting the bad query. Reviewed-v1 matching positives exist, but
+  they prove location/retrieval review, not answer-gold question quality.
+- Initial v2 canary before native/table recovery: rows `7`; local-LLM answer
+  candidates `0`; native block text missing `7`; locator-only context `7`.
+  Current context-v2 canary supersedes this with native block text resolved `7`
+  and manually authored PDF candidates `4`.
+- Guardrails: `official_metric_input_rows=0`, `promotion_evidence=false`,
+  `tuning_run_started=false`, official denominator registry unchanged.
+- Next: superseded by context v2 native/nearby block recovery, deterministic
+  PDF table extraction, and the 2026-05-16 human-reviewed v2 packet above.
+
 ## 2026-05-15 Canonical Pack And Anti-Shortcut Audit
 
 Status: `CANONICAL_ARTIFACT_AUDIT_PASS`;
 `ANTI_SHORTCUT_GUARDRAIL_AUDIT_PASS`.
 
-- Board: `DIAGNOSTIC_PREFLIGHT_READY`; dry-run plan:
-  `REPORT_ONLY_DRY_RUN_PLAN_READY`; human audit packet:
+- This audit snapshot is superseded for current transition status by the
+  PDF/XLSX question-quality/local-LLM v2 packet above.
+- Board at the time: `DIAGNOSTIC_PREFLIGHT_READY`; dry-run plan:
+  `REPORT_ONLY_DRY_RUN_PLAN_READY`; human audit packet v1:
   `HUMAN_AUDIT_PACKET_READY`.
 - Official transition checklist:
   `OFFICIAL_TRANSITION_BLOCKED_PENDING_HUMAN_AUDIT`.
@@ -734,6 +806,35 @@ External archive manifests:
 - XLSX remains `DIAGNOSTIC_POLICY_PACKET_READY`; TEXT remains
   `FROZEN_DIAGNOSTIC_V2_1`; denominator registry unchanged.
 
+## 2026-05-15 - PDF Evidence Context V2 Native/Table Recovery
+
+- Status: `PDF_EVIDENCE_CONTEXT_V2_READY_FOR_MANUAL_QUERY_AUTHORING`;
+  diagnostic-only canary `PDF_EVIDENCE_OBJECT_V2_CANARY_COMPLETE`.
+- Evidence: `ai/eval/reports/rag-ingestion/pdf_evidence_context_v2_enrichment_report.json`
+  / `.md`, refreshed `pdf_evidence_object_v2_canary_report.json` / `.md`.
+- Counts: context rows `7`, native block text resolved `7`, nearby block text
+  resolved `7`, deterministic table-ready rows `2`, source-mismatch repair rows
+  `1`, chart/table-label blocked rows `1`, title-only blocked rows `1`,
+  official metric input rows `0`.
+- Parser change: PDF extraction now emits narrow deterministic table records
+  for supported native-text tables; cell bbox remains fail-closed as row/table
+  granularity, and OCR fragments do not become table/value evidence.
+- Guardrails: model/gold/denominator/promotion/tuning remain closed;
+  `tuning_run_started=false`; denominator registry unchanged.
+- Next: superseded by the completed v2 human audit; apply the completed
+  decisions report-only before any denominator diff preview.
+
+## 2026-05-16 - Official Metric Pre-Execution Smoke
+
+- Status: `OFFICIAL_METRIC_PRE_EXECUTION_SMOKE_PASS_WITH_DIAGNOSTIC_WARNINGS`;
+  evidence: `ai/eval/reports/rag-ingestion/official_metric_pre_execution_smoke_report_v1.json` / `.md`.
+- Counts: registry-backed official input rows `29`; PDF `4`, TEXT `6`, XLSX
+  `19`; all three CSV SHA-256 values match registry/application/config.
+- Diagnostic note: TEXT `text_namu_v2_0017` remains a
+  `potential_support_coverage_gap`; gold CSV text was not modified.
+- Guardrails: official metric execution still not started,
+  tuning still not started, promotion evidence not created.
+
 ## Next Recommended Steps
 
 1. Review the XLSX strict silver generation report and external manifest before
@@ -741,8 +842,9 @@ External archive manifests:
 2. Review any newly opened XLSX answer/citation/debug/public surfaces with the
    focused normalized excluded-row / hidden-negative leakage probe before using
    them for answer-generation or promotion.
-3. Review the PDF answer/citation diagnostic packet without opening official
-   metrics, answer denominators, or CONTENT/FILE lane merges.
+3. Run the first official answer/citation metric against the registry-backed
+   v2 question-gold inputs only after an explicit command; do not start tuning
+   in the same step.
 4. Review TEXT/NAMU v2 candidates and actual generated answers before changing
    R8 citation-support denominators.
 5. Use the applied route/fallback label artifacts for diagnostic analysis only;

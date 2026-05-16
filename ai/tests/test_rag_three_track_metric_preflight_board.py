@@ -244,6 +244,70 @@ def test_board_reads_pdf_answer_packet_ready_without_blocking_preflight(tmp_path
     assert board["official_metric_input_rows_by_track"]["pdf_business_ocr_mm"] == 0
 
 
+def test_board_marks_completed_human_audit_as_report_only_next_gate(tmp_path: Path):
+    module = load_module()
+    paths = write_fixture_bundle(tmp_path)
+    make_xlsx_ready(paths["xlsx_report"])
+    make_pdf_readiness_ready(paths["pdf_report"])
+    pdf_answer = tmp_path / "pdf_answer_packet.json"
+    human_audit = tmp_path / "human_audit_v2.json"
+    write_pdf_answer_packet(pdf_answer, status="DIAGNOSTIC_POLICY_PACKET_READY", clean_pass_rows=7, cleanup_rows=0)
+    human_audit.write_text(
+        json.dumps(
+            {
+                "status": "HUMAN_AUDIT_PACKET_V2_READY",
+                "diagnostic_only": True,
+                "official_metric": False,
+                "official_metric_input_rows": 0,
+            "promotion_evidence": False,
+            "human_audit_completed": True,
+            "summary": {
+                "pdf_generated_candidates": 4,
+                "xlsx_generated_candidates": 23,
+                "official_metric_input_rows": 0,
+                "promotion_evidence": False,
+            },
+            "guardrails": {
+                "official_denominator_registry_opened": False,
+                "official_denominator_registry_mutation": False,
+                "gold_registry_mutation": False,
+                "candidate_artifact_mutation": False,
+                "production_vector_written": False,
+                "tuning_run_started": False,
+            },
+            "actionable_rows": [
+                {
+                    "query_id": "pdf_1",
+                    "human_label": "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE",
+                    "allowed_decision_values": ["INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE"],
+                },
+                {
+                    "query_id": "xlsx_1",
+                    "human_label": "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE",
+                    "allowed_decision_values": ["INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE"],
+                },
+            ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    board = module.build_board(
+        text_policy_packet=paths["text_packet"],
+        xlsx_answer_report=paths["xlsx_report"],
+        pdf_readiness_report=paths["pdf_report"],
+        pdf_answer_report=pdf_answer,
+        human_audit_packet=human_audit,
+    )
+
+    assert board["status"] == "DIAGNOSTIC_PREFLIGHT_READY"
+    assert board["official_question_gold_status"] == "HUMAN_AUDIT_COMPLETED_PENDING_REPORT_ONLY_DECISION_APPLICATION"
+    assert board["blocker_status"]["human_audit_completed"] is True
+    assert "Human audit decisions must be applied report-only before any official metric candidate can open." in board["remaining_blockers"]
+    assert board["guardrails"]["official_metric_input_rows_remain_zero"] is True
+
+
 def test_board_blocks_when_pdf_answer_packet_is_lane_guard_blocked(tmp_path: Path):
     module = load_module()
     paths = write_fixture_bundle(tmp_path)

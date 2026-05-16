@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -20,8 +21,12 @@ DEFAULT_XLSX_REVIEW_INPUT = REPORT_DIR / "xlsx_answer_citation_diagnostic_review
 DEFAULT_PDF_REPAIR = REPORT_DIR / "pdf_evidence_readiness_repair_report.json"
 DEFAULT_PDF_ANSWER_PACKET = REPORT_DIR / "rag_pdf_answer_citation_policy_review_packet_v1.json"
 DEFAULT_PDF_REVIEW_INPUT = REPORT_DIR / "pdf_answer_citation_diagnostic_review_input.jsonl"
-DEFAULT_HUMAN_AUDIT = REVIEW_DIR / "rag_human_audit_packet_v1.json"
+DEFAULT_HUMAN_AUDIT = REVIEW_DIR / "rag_human_audit_packet_v2_question_quality_local_llm.json"
 DEFAULT_DRY_RUN_PLAN = REPORT_DIR / "report_only_tuning_dry_run_plan_v1.json"
+DEFAULT_APPLIED_DECISIONS = REVIEW_DIR / "rag_human_audit_v2_applied_decisions.json"
+DEFAULT_DENOMINATOR_DIFF_PREVIEW = REPORT_DIR / "official_denominator_candidate_diff_preview_v1.json"
+DEFAULT_REGISTRY_APPLICATION_REPORT = REPORT_DIR / "official_question_gold_v2_registry_application_report.json"
+DEFAULT_METRIC_INPUT_CONFIG = REPORT_DIR / "official_metric_input_config_v1.json"
 DEFAULT_OUTPUT_JSON = REPORT_DIR / "anti_shortcut_guardrail_audit_v1.json"
 DEFAULT_OUTPUT_MD = REPORT_DIR / "anti_shortcut_guardrail_audit_v1.md"
 
@@ -52,6 +57,10 @@ def main(argv: list[str] | None = None) -> int:
         pdf_review_input_path=Path(args.pdf_review_input),
         human_audit_packet_path=Path(args.human_audit_packet),
         dry_run_plan_path=Path(args.dry_run_plan),
+        applied_decisions_path=Path(args.applied_decisions),
+        denominator_diff_preview_path=Path(args.denominator_diff_preview),
+        registry_application_report_path=Path(args.registry_application_report),
+        metric_input_config_path=Path(args.metric_input_config),
         output_report=Path(args.output_report),
         output_md=Path(args.output_md),
     )
@@ -80,6 +89,10 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--pdf-review-input", default=str(DEFAULT_PDF_REVIEW_INPUT))
     parser.add_argument("--human-audit-packet", default=str(DEFAULT_HUMAN_AUDIT))
     parser.add_argument("--dry-run-plan", default=str(DEFAULT_DRY_RUN_PLAN))
+    parser.add_argument("--applied-decisions", default=str(DEFAULT_APPLIED_DECISIONS))
+    parser.add_argument("--denominator-diff-preview", default=str(DEFAULT_DENOMINATOR_DIFF_PREVIEW))
+    parser.add_argument("--registry-application-report", default=str(DEFAULT_REGISTRY_APPLICATION_REPORT))
+    parser.add_argument("--metric-input-config", default=str(DEFAULT_METRIC_INPUT_CONFIG))
     parser.add_argument("--output-report", default=str(DEFAULT_OUTPUT_JSON))
     parser.add_argument("--output-md", default=str(DEFAULT_OUTPUT_MD))
     return parser.parse_args(argv)
@@ -97,6 +110,10 @@ def run_audit(
     dry_run_plan_path: Path,
     output_report: Path,
     output_md: Path,
+    applied_decisions_path: Path | None = None,
+    denominator_diff_preview_path: Path | None = None,
+    registry_application_report_path: Path | None = None,
+    metric_input_config_path: Path | None = None,
 ) -> dict[str, Any]:
     xlsx_packet = read_json(xlsx_packet_path)
     xlsx_leakage = read_json(xlsx_leakage_reprobe_path)
@@ -106,6 +123,10 @@ def run_audit(
     pdf_review_rows = read_jsonl(pdf_review_input_path)
     human_audit = read_json(human_audit_packet_path)
     dry_run_plan = read_json(dry_run_plan_path)
+    applied_decisions = read_json(applied_decisions_path) if applied_decisions_path is not None else {}
+    denominator_diff_preview = read_json(denominator_diff_preview_path) if denominator_diff_preview_path is not None else {}
+    registry_application_report = read_json(registry_application_report_path) if registry_application_report_path is not None else {}
+    metric_input_config = read_json(metric_input_config_path) if metric_input_config_path is not None else {}
 
     checks = {
         "xlsx_public_private_surface_separation": check_xlsx_public_private(
@@ -117,10 +138,18 @@ def run_audit(
         "pdf_answer_citation_packet": check_pdf_answer_packet(pdf_answer=pdf_answer, pdf_review_rows=pdf_review_rows),
         "human_audit_packet": check_human_audit_packet(human_audit),
         "dry_run_plan": check_dry_run_plan(dry_run_plan),
+        "official_candidate_transition_artifacts": check_candidate_transition_artifacts(
+            applied_decisions=applied_decisions,
+            denominator_diff_preview=denominator_diff_preview,
+            registry_application_report=registry_application_report,
+            metric_input_config=metric_input_config,
+        ),
     }
     errors: list[str] = []
     for check in checks.values():
         errors.extend(check["errors"])
+    registry_rows_by_track = registry_backed_rows_by_track(metric_input_config)
+    registry_rows = sum(registry_rows_by_track.values())
     audit = {
         "schema_version": "anti_shortcut_guardrail_audit_v1",
         "generated_at": utc_timestamp(),
@@ -128,6 +157,13 @@ def run_audit(
         "diagnostic_only": True,
         "promotion_evidence": False,
         "official_metric_input_rows": 0,
+        "official_metric_input_rows_scope": (
+            "audit_report_rows_closed_registry_backed_input_reported_separately"
+            if registry_rows
+            else "audit_report_rows_closed"
+        ),
+        "registry_backed_official_metric_input_rows": registry_rows,
+        "registry_backed_official_metric_input_rows_by_track": registry_rows_by_track,
         "checks": checks,
         "validation": {"ok": not errors, "errors": sorted(dict.fromkeys(errors))},
         "artifact_paths": {"report_json": repo_relative(output_report), "report_md": repo_relative(output_md)},
@@ -285,34 +321,69 @@ def check_pdf_answer_packet(*, pdf_answer: Mapping[str, Any], pdf_review_rows: S
 
 
 def check_human_audit_packet(human: Mapping[str, Any]) -> dict[str, Any]:
-    answer_recovery = nested_mapping(human, "sections", "answer_recovery")
-    xlsx = nested_mapping(human, "sections", "xlsx_business_structured")
-    pdf = nested_mapping(human, "sections", "pdf_business_ocr_mm")
     errors: list[str] = []
-    if clean(human.get("status")) != "HUMAN_AUDIT_PACKET_READY":
-        errors.append("human audit packet must be ready")
+    if clean(human.get("status")) != "HUMAN_AUDIT_PACKET_V2_READY":
+        errors.append("human audit packet v2 must be ready")
     if int_value(human.get("official_metric_input_rows")) != 0 or human.get("official_metric") is True:
         errors.append("human audit packet official rows must remain 0")
     if human.get("promotion_evidence") is True:
         errors.append("human audit packet must not be promotion evidence")
-    if int_value(xlsx.get("hidden_excluded_rows_candidate_count")) != 0:
-        errors.append("human audit must not include hidden/excluded XLSX rows as candidates")
-    if pdf.get("filename_only_identity_accepted") is True:
-        errors.append("human audit must not auto-accept PDF filename-only identity")
-    if answer_recovery.get("gold_policy_required_count_matches_report") is not True:
-        errors.append("human audit answer recovery GOLD_POLICY_REQUIRED count mismatch")
-    if answer_recovery.get("gold_policy_required_ids_match_report") is not True:
-        errors.append("human audit answer recovery GOLD_POLICY_REQUIRED id mismatch")
-    if int_value(answer_recovery.get("gold_policy_required_rows")) <= 0:
-        errors.append("human audit must include answer recovery GOLD_POLICY_REQUIRED rows")
+    label_validation = human_label_validation(human)
+    errors.extend(label_validation["errors"])
+    if not label_validation["completed"]:
+        errors.append("human audit packet v2 row-level labels must be complete")
+    if human.get("human_audit_completed") is not True:
+        errors.append("human audit packet v2 human_audit_completed must be true")
+    if nested_mapping(human, "summary").get("human_audit_completed") is not True:
+        errors.append("human audit packet v2 summary human_audit_completed must be true")
+    if int_value(nested_mapping(human, "summary").get("pdf_generated_candidates")) <= 0:
+        errors.append("human audit packet v2 must include PDF candidates")
+    if int_value(nested_mapping(human, "summary").get("xlsx_generated_candidates")) <= 0:
+        errors.append("human audit packet v2 must include XLSX candidates")
     return {
         "ok": not errors,
-        "total_user_action_rows": nested_mapping(human, "summary").get("total_user_action_rows"),
-        "gold_policy_required_rows": int_value(answer_recovery.get("gold_policy_required_rows")),
-        "gold_policy_required_count_matches_report": answer_recovery.get("gold_policy_required_count_matches_report") is True,
-        "gold_policy_required_ids_match_report": answer_recovery.get("gold_policy_required_ids_match_report") is True,
+        "total_user_action_rows": nested_mapping(human, "summary").get("final_user_action_rows_by_track"),
+        "human_audit_completed": human.get("human_audit_completed") is True,
+        "human_label_counts": label_validation["counts"],
+        "human_labeled_rows": nested_mapping(human, "summary").get("human_labeled_rows"),
         "errors": errors,
     }
+
+
+def human_label_validation(human: Mapping[str, Any]) -> dict[str, Any]:
+    rows = [row for row in human.get("actionable_rows") or [] if isinstance(row, Mapping)]
+    if not rows:
+        return {"completed": False, "errors": [], "counts": {}}
+    errors: list[str] = []
+    counts: Counter[str] = Counter()
+    missing: list[str] = []
+    invalid: list[str] = []
+    for row in rows:
+        qid = clean(row.get("query_id") or row.get("row_id"))
+        label = clean(row.get("human_label"))
+        allowed = row.get("allowed_decision_values") if isinstance(row.get("allowed_decision_values"), list) else []
+        allowed_values = {clean(value) for value in allowed}
+        if not label:
+            missing.append(qid)
+            continue
+        counts[label] += 1
+        if label not in allowed_values:
+            invalid.append(qid)
+    if missing:
+        errors.append(f"human audit packet rows missing human_label: {', '.join(missing)}")
+    if invalid:
+        errors.append(f"human audit packet rows have invalid human_label: {', '.join(invalid)}")
+    summary = nested_mapping(human, "summary")
+    if "human_labeled_rows" in summary and int_value(summary.get("human_labeled_rows")) != sum(counts.values()):
+        errors.append("human audit packet human_labeled_rows summary mismatch")
+    if "human_unlabeled_rows" in summary and int_value(summary.get("human_unlabeled_rows")) != len(missing):
+        errors.append("human audit packet human_unlabeled_rows summary mismatch")
+    expected_counts = human.get("human_audit_label_counts")
+    if isinstance(expected_counts, Mapping):
+        normalized_expected = {clean(key): int_value(value) for key, value in expected_counts.items()}
+        if normalized_expected != dict(sorted(counts.items())):
+            errors.append("human audit packet human_audit_label_counts mismatch")
+    return {"completed": bool(rows) and not missing and not invalid, "errors": errors, "counts": dict(sorted(counts.items()))}
 
 
 def check_dry_run_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
@@ -325,10 +396,11 @@ def check_dry_run_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
         or nested_mapping(plan, "split_policy").get("cross_track_average_computed") is True
     ):
         errors.append("dry-run plan must not compute or optimize cross-track averages")
-    if int_value(plan.get("official_metric_input_rows")) != 0:
+    registry_backed = plan.get("metric_input_config_registry_backed") is True
+    if int_value(plan.get("official_metric_input_rows")) != 0 and not registry_backed:
         errors.append("dry-run plan official_metric_input_rows must remain 0")
     by_track = plan.get("official_metric_input_rows_by_track") if isinstance(plan.get("official_metric_input_rows_by_track"), Mapping) else {}
-    if any(int_value(value) != 0 for value in by_track.values()):
+    if any(int_value(value) != 0 for value in by_track.values()) and not registry_backed:
         errors.append("dry-run plan track official_metric_input_rows must remain 0")
     if nested_mapping(plan, "split_policy").get("parameter_winner_selected") is True:
         errors.append("dry-run plan must not pick production winners")
@@ -341,8 +413,123 @@ def check_dry_run_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
         "tuning_run_started": plan.get("tuning_run_started") is True,
         "cross_track_average_optimization_allowed": plan.get("cross_track_average_optimization_allowed") is True,
         "official_metric_input_rows": int_value(plan.get("official_metric_input_rows")),
+        "metric_input_config_registry_backed": registry_backed,
         "errors": errors,
     }
+
+
+def check_candidate_transition_artifacts(
+    *,
+    applied_decisions: Mapping[str, Any],
+    denominator_diff_preview: Mapping[str, Any],
+    registry_application_report: Mapping[str, Any],
+    metric_input_config: Mapping[str, Any],
+) -> dict[str, Any]:
+    errors: list[str] = []
+    if applied_decisions:
+        if clean(applied_decisions.get("status")) != "HUMAN_AUDIT_V2_APPLIED_DECISIONS_READY":
+            errors.append("applied decisions must be ready")
+        if int_value(applied_decisions.get("official_metric_input_rows")) != 0:
+            errors.append("applied decisions official_metric_input_rows must remain 0")
+        if applied_decisions.get("promotion_evidence") is True:
+            errors.append("applied decisions must not be promotion evidence")
+    if denominator_diff_preview:
+        if clean(denominator_diff_preview.get("status")) != "OFFICIAL_DENOMINATOR_CANDIDATE_DIFF_PREVIEW_READY":
+            errors.append("denominator diff preview must be ready")
+        if clean(denominator_diff_preview.get("registry_diff_status")) != "PREVIEW_ONLY_NO_MUTATION":
+            errors.append("denominator diff preview must be preview-only")
+        if nested_mapping(denominator_diff_preview, "guardrails").get("official_denominator_registry_changed") is True:
+            errors.append("denominator diff preview must not mutate registry")
+        if int_value(denominator_diff_preview.get("official_metric_input_rows")) != 0:
+            errors.append("denominator diff preview official_metric_input_rows must remain 0")
+        if denominator_diff_preview.get("promotion_evidence") is True:
+            errors.append("denominator diff preview must not be promotion evidence")
+    if registry_application_report:
+        if clean(registry_application_report.get("status")) != "OFFICIAL_QUESTION_GOLD_V2_REGISTRY_APPLIED":
+            errors.append("registry application report must be applied")
+        if registry_application_report.get("registry_updated") is not True:
+            errors.append("registry application report must update registry")
+        if registry_application_report.get("official_metric_execution_started") is not False:
+            errors.append("registry application report must not start metric execution")
+    if metric_input_config:
+        registry_backed = metric_input_config_registry_backed(metric_input_config)
+        if clean(metric_input_config.get("status")) not in {
+            "OFFICIAL_METRIC_INPUT_CONFIG_READY_PENDING_REGISTRY_APPLICATION",
+            "OFFICIAL_METRIC_INPUT_CONFIG_READY_REGISTRY_BACKED_NOT_EXECUTED",
+        }:
+            errors.append("metric input config must be ready pending registry application")
+        if metric_input_config.get("official_metric_execution_started") is not False:
+            errors.append("metric input config must not start metric execution")
+        if metric_input_config.get("metric_execution_allowed") is not False and not registry_backed:
+            errors.append("metric input config must not allow execution")
+        if int_value(metric_input_config.get("official_metric_input_rows")) != 0 and not registry_backed:
+            errors.append("metric input config official_metric_input_rows must remain 0")
+        if metric_input_config.get("promotion_evidence") is True:
+            errors.append("metric input config must not be promotion evidence")
+        if registry_backed and sum(registry_backed_rows_by_track(metric_input_config).values()) != int_value(
+            metric_input_config.get("official_metric_input_rows")
+        ):
+            errors.append("metric input config registry-backed by-track rows must sum to official_metric_input_rows")
+    for name, payload in (
+        ("applied decisions", applied_decisions),
+        ("denominator diff preview", denominator_diff_preview),
+        ("registry application report", registry_application_report),
+        ("metric input config", metric_input_config),
+    ):
+        guardrails = nested_mapping(payload, "guardrails")
+        for key in (
+            "official_denominator_registry_mutation",
+            "official_denominator_registry_changed",
+            "official_denominator_registry_opened",
+            "official_metric_executed",
+            "gold_registry_mutation",
+            "candidate_artifact_mutation",
+            "immutable_baseline_mutation",
+            "production_namespace_vector_index_mutation",
+            "production_vector_written",
+            "tuning_run_started",
+        ):
+            if payload.get(key) is True or guardrails.get(key) is True:
+                if name == "metric input config" and metric_input_config_registry_backed(payload) and key in {
+                    "official_denominator_registry_mutation",
+                    "official_denominator_registry_opened",
+                }:
+                    continue
+                errors.append(f"{name} guardrail violation: {key}=true")
+    return {
+        "ok": not errors,
+        "applied_decisions_present": bool(applied_decisions),
+        "denominator_diff_preview_present": bool(denominator_diff_preview),
+        "registry_application_report_present": bool(registry_application_report),
+        "metric_input_config_present": bool(metric_input_config),
+        "metric_input_config_registry_backed": metric_input_config_registry_backed(metric_input_config),
+        "proposed_metric_input_rows": int_value(metric_input_config.get("proposed_metric_input_rows")),
+        "official_metric_input_rows": int_value(metric_input_config.get("official_metric_input_rows")),
+        "official_metric_input_rows_by_track": registry_backed_rows_by_track(metric_input_config),
+        "errors": errors,
+    }
+
+
+def metric_input_config_registry_backed(payload: Mapping[str, Any]) -> bool:
+    rows_by_track = registry_backed_rows_by_track(payload)
+    row_total = int_value(payload.get("official_metric_input_rows"))
+    return (
+        clean(payload.get("status")) == "OFFICIAL_METRIC_INPUT_CONFIG_READY_REGISTRY_BACKED_NOT_EXECUTED"
+        and nested_mapping(payload, "validation").get("ok") is True
+        and row_total > 0
+        and sum(rows_by_track.values()) == row_total
+        and payload.get("official_metric_execution_started") is False
+        and payload.get("metric_execution_allowed") is True
+        and payload.get("registry_application_status") == "APPLIED"
+        and payload.get("promotion_evidence") is not True
+    )
+
+
+def registry_backed_rows_by_track(payload: Mapping[str, Any]) -> dict[str, int]:
+    by_track = payload.get("official_metric_input_rows_by_track")
+    if not isinstance(by_track, Mapping):
+        return {}
+    return {clean(key): int_value(value) for key, value in by_track.items() if clean(key) and int_value(value)}
 
 
 def bbox_source_forbidden(value: str) -> bool:
@@ -365,6 +552,8 @@ def render_markdown(audit: Mapping[str, Any]) -> str:
         "",
         f"- Status: `{audit['status']}`",
         f"- Errors: `{len(audit['validation']['errors'])}`",
+        f"- Official metric input rows scope: `{audit.get('official_metric_input_rows_scope')}`",
+        f"- Registry-backed official input rows: `{audit.get('registry_backed_official_metric_input_rows')}`",
         "",
     ]
     for name, check in audit["checks"].items():
