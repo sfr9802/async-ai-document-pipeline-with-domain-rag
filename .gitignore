@@ -228,6 +228,9 @@ ai/eval/datasets/samples/
 !ai/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.jsonl
 !ai/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0.csv
 !ai/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv
+!ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv
+!ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv
+!ai/eval/eval_queries/gold_queries_pdf_question_gold_v2.csv
 !ai/eval/reports/rag-ingestion/three_track_orchestration_report.md
 **/datasets/
 ai/eval/artifacts/

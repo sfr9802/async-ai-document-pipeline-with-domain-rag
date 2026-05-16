@@ -81,6 +81,191 @@ def test_dry_run_plan_is_track_specific_report_only_and_keeps_official_rows_clos
     assert checklist["cross_track_average"] is False
 
 
+def test_transition_checklist_records_completed_human_audit_without_opening_metrics(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_canonical_bundle(tmp_path)
+    human_audit = tmp_path / "human_audit_v2.json"
+    write_json(
+        human_audit,
+        {
+            "status": "HUMAN_AUDIT_PACKET_V2_READY",
+            "diagnostic_only": True,
+            "official_metric": False,
+            "official_metric_input_rows": 0,
+            "promotion_evidence": False,
+            "human_audit_completed": True,
+            "summary": {
+                "pdf_generated_candidates": 4,
+                "xlsx_generated_candidates": 23,
+                "human_audit_completed": True,
+                "official_metric_input_rows": 0,
+                "promotion_evidence": False,
+            },
+            "actionable_rows": [
+                {
+                    "query_id": "pdf_1",
+                    "human_label": "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE",
+                    "allowed_decision_values": ["INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE"],
+                },
+                {
+                    "query_id": "xlsx_1",
+                    "human_label": "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE",
+                    "allowed_decision_values": ["INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE"],
+                },
+            ],
+        },
+    )
+
+    result = module.run_plan(
+        board_path=paths["board"],
+        readiness_plan_path=paths["readiness_plan"],
+        text_packet_path=paths["text_packet"],
+        xlsx_packet_path=paths["xlsx_packet"],
+        pdf_metadata_report_path=paths["pdf_metadata"],
+        pdf_layout_report_path=paths["pdf_layout"],
+        pdf_repair_report_path=paths["pdf_repair"],
+        pdf_answer_packet_path=paths["pdf_answer"],
+        progress_doc_path=paths["progress_doc"],
+        output_report=tmp_path / "plan.json",
+        output_md=tmp_path / "plan.md",
+        checklist_report=tmp_path / "checklist.json",
+        checklist_md=tmp_path / "checklist.md",
+        human_audit_packet_path=human_audit,
+    )
+
+    plan = result["plan"]
+    checklist = result["checklist"]
+    assert plan["status"] == "REPORT_ONLY_DRY_RUN_PLAN_READY"
+    assert plan["human_audit_completed"] is True
+    assert plan["human_audit_required_before_official_metric_open"] is True
+    assert plan["human_audit_requirement_satisfied"] is True
+    assert plan["human_audit_next_gate"] == "apply_human_audit_decisions_report_only"
+    assert plan["official_metric_open_allowed"] is False
+    assert plan["explicit_registry_approval_required"] is True
+    assert plan["official_metric_input_rows"] == 0
+    assert plan["tuning_run_started"] is False
+    assert checklist["status"] == "OFFICIAL_TRANSITION_BLOCKED_PENDING_REPORT_ONLY_DECISION_APPLICATION"
+    assert checklist["human_audit_completed"] is True
+    assert checklist["official_metric_open_allowed"] is False
+    assert checklist["explicit_registry_approval_required"] is True
+    assert checklist["official_metric_input_rows"] == 0
+    assert checklist["official_denominator_registry_opened"] is False
+
+
+def test_transition_checklist_accepts_registry_backed_metric_input_without_execution(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_canonical_bundle(tmp_path)
+    human_audit = tmp_path / "human_audit_v2.json"
+    applied = tmp_path / "applied.json"
+    preview = tmp_path / "preview.json"
+    registry_application = tmp_path / "registry_application.json"
+    metric_config = tmp_path / "metric_config.json"
+    write_json(
+        human_audit,
+        {
+            "status": "HUMAN_AUDIT_PACKET_V2_READY",
+            "official_metric_input_rows": 0,
+            "promotion_evidence": False,
+            "human_audit_completed": True,
+            "summary": {"human_audit_completed": True, "official_metric_input_rows": 0, "promotion_evidence": False},
+            "actionable_rows": [
+                {
+                    "query_id": "pdf_1",
+                    "human_label": "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE",
+                    "allowed_decision_values": ["INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE"],
+                }
+            ],
+        },
+    )
+    write_json(
+        applied,
+        {
+            "status": "HUMAN_AUDIT_V2_APPLIED_DECISIONS_READY",
+            "official_metric_input_rows": 0,
+            "promotion_evidence": False,
+            "validation": {"ok": True, "errors": []},
+        },
+    )
+    write_json(
+        preview,
+        {
+            "status": "OFFICIAL_DENOMINATOR_CANDIDATE_DIFF_PREVIEW_READY",
+            "registry_diff_status": "PREVIEW_ONLY_NO_MUTATION",
+            "official_metric_input_rows": 0,
+            "promotion_evidence": False,
+            "guardrails": {"official_denominator_registry_changed": False},
+            "validation": {"ok": True, "errors": []},
+        },
+    )
+    write_json(
+        registry_application,
+        {
+            "status": "OFFICIAL_QUESTION_GOLD_V2_REGISTRY_APPLIED",
+            "registry_updated": True,
+            "official_metric_input_rows": 3,
+            "official_metric_input_rows_by_track": {
+                "pdf_business_ocr_mm": 1,
+                "text_namu_v2_1": 1,
+                "xlsx_business_structured": 1,
+            },
+            "official_metric_execution_started": False,
+            "promotion_evidence": False,
+            "validation": {"ok": True, "errors": []},
+        },
+    )
+    write_json(
+        metric_config,
+        {
+            "status": "OFFICIAL_METRIC_INPUT_CONFIG_READY_REGISTRY_BACKED_NOT_EXECUTED",
+            "official_metric_input_rows": 3,
+            "official_metric_input_rows_by_track": {
+                "pdf_business_ocr_mm": 1,
+                "text_namu_v2_1": 1,
+                "xlsx_business_structured": 1,
+            },
+            "registry_application_status": "APPLIED",
+            "metric_execution_allowed": True,
+            "official_metric_execution_started": False,
+            "tuning_run_started": False,
+            "promotion_evidence": False,
+            "validation": {"ok": True, "errors": []},
+        },
+    )
+
+    result = module.run_plan(
+        board_path=paths["board"],
+        readiness_plan_path=paths["readiness_plan"],
+        text_packet_path=paths["text_packet"],
+        xlsx_packet_path=paths["xlsx_packet"],
+        pdf_metadata_report_path=paths["pdf_metadata"],
+        pdf_layout_report_path=paths["pdf_layout"],
+        pdf_repair_report_path=paths["pdf_repair"],
+        pdf_answer_packet_path=paths["pdf_answer"],
+        progress_doc_path=paths["progress_doc"],
+        output_report=tmp_path / "plan.json",
+        output_md=tmp_path / "plan.md",
+        checklist_report=tmp_path / "checklist.json",
+        checklist_md=tmp_path / "checklist.md",
+        human_audit_packet_path=human_audit,
+        applied_decisions_path=applied,
+        denominator_diff_preview_path=preview,
+        registry_application_report_path=registry_application,
+        metric_input_config_path=metric_config,
+    )
+
+    plan = result["plan"]
+    checklist = result["checklist"]
+    assert plan["status"] == "REPORT_ONLY_DRY_RUN_PLAN_READY"
+    assert plan["official_metric_input_rows"] == 3
+    assert plan["official_metric_open_allowed"] is True
+    assert plan["tuning_run_started"] is False
+    assert checklist["status"] == "OFFICIAL_METRIC_INPUT_READY_NOT_EXECUTED"
+    assert checklist["official_metric_input_rows"] == 3
+    assert checklist["explicit_registry_approval_required"] is False
+    assert checklist["official_metric_execution_started"] is False
+    assert checklist["validation"]["ok"] is True
+
+
 def test_dry_run_plan_fails_closed_if_pdf_answer_packet_missing_but_board_marks_answer_ready(
     tmp_path: Path,
 ) -> None:

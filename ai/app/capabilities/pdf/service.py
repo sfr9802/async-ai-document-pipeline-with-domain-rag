@@ -19,6 +19,7 @@ from app.capabilities.pdf.artifact_builder import (
     PDF_PIPELINE_VERSION,
     build_output_artifacts,
 )
+from app.capabilities.pdf.table_parser import extract_pdf_table_records
 
 log = logging.getLogger(__name__)
 
@@ -344,7 +345,12 @@ class PdfExtractService:
             "ocr_used": False,
             "char_count": len(page_text),
             "blocks": blocks,
-            "tables": [],
+            "tables": extract_pdf_table_records(
+                blocks,
+                page_no=page_no,
+                physical_page_index=page_index,
+                page_label=page_label,
+            ),
         }
 
 

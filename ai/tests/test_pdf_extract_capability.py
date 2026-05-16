@@ -130,6 +130,38 @@ def test_pdf_extract_does_not_ocr_normal_native_text_pages():
     assert body["pages"][0]["ocr_used"] is False
 
 
+def test_pdf_extract_populates_deterministic_table_records_from_native_blocks():
+    service = PdfExtractService()
+
+    page = service._extract_page(  # noqa: SLF001 - regression coverage for parsed JSON contract
+        _FakePdfPage(
+            [
+                (
+                    76.68,
+                    103.92,
+                    483.52,
+                    672.6,
+                    "수 출(FOB)\n수 입(CIF)\n수출입차\n금 액\n증가율\n금 액\n증가율\n금 액\n"
+                    "2025. 1\n491.9\n△10.1\n510.6\n△6.3\n△18.7",
+                    0,
+                    0,
+                )
+            ]
+        ),
+        60,
+        [],
+    )
+
+    assert len(page["tables"]) == 1
+    table = page["tables"][0]
+    assert table["table_type"] == "export_import"
+    assert table["page_no"] == 61
+    assert table["source_block_ids"] == ["p60_b0"]
+    assert table["row_records"][0]["row_label_normalized"] == "2025. 1"
+    assert table["row_records"][0]["cells"][0]["column_path"] == "수출(FOB) 금액"
+    assert table["row_records"][0]["cells"][0]["value_raw"] == "491.9"
+
+
 def test_pdf_extract_rejects_non_pdf_inputs():
     capability = PdfExtractCapability(service=PdfExtractService())
 
@@ -234,3 +266,20 @@ class _FakeOcrProvider:
                 )
             ],
         )
+
+
+class _FakeRect:
+    width = 595
+    height = 842
+
+
+class _FakePdfPage:
+    rect = _FakeRect()
+
+    def __init__(self, blocks: list[tuple]) -> None:
+        self._blocks = blocks
+
+    def get_text(self, mode: str, sort: bool = False) -> list[tuple]:
+        assert mode == "blocks"
+        assert sort is True
+        return self._blocks

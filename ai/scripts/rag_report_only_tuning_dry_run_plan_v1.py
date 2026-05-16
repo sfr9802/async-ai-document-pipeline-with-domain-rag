@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections import Counter
 from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,7 +31,11 @@ DEFAULT_PDF_LAYOUT = REPORT_DIR / "pdf_layout_gap_closure_report.json"
 DEFAULT_PDF_REPAIR = REPORT_DIR / "pdf_evidence_readiness_repair_report.json"
 DEFAULT_PDF_ANSWER_PACKET = REPORT_DIR / "rag_pdf_answer_citation_policy_review_packet_v1.json"
 DEFAULT_PROGRESS_DOC = REPO_ROOT / "docs" / "rag-ingestion-progress.md"
-DEFAULT_HUMAN_AUDIT_PACKET = REVIEW_DIR / "rag_human_audit_packet_v1.json"
+DEFAULT_HUMAN_AUDIT_PACKET = REVIEW_DIR / "rag_human_audit_packet_v2_question_quality_local_llm.json"
+DEFAULT_APPLIED_DECISIONS = REVIEW_DIR / "rag_human_audit_v2_applied_decisions.json"
+DEFAULT_DENOMINATOR_DIFF_PREVIEW = REPORT_DIR / "official_denominator_candidate_diff_preview_v1.json"
+DEFAULT_REGISTRY_APPLICATION_REPORT = REPORT_DIR / "official_question_gold_v2_registry_application_report.json"
+DEFAULT_METRIC_INPUT_CONFIG = REPORT_DIR / "official_metric_input_config_v1.json"
 DEFAULT_OUTPUT_JSON = REPORT_DIR / "report_only_tuning_dry_run_plan_v1.json"
 DEFAULT_OUTPUT_MD = REPORT_DIR / "report_only_tuning_dry_run_plan_v1.md"
 DEFAULT_CHECKLIST_JSON = REPORT_DIR / "official_metric_transition_readiness_checklist_v1.json"
@@ -123,6 +128,10 @@ def main(argv: list[str] | None = None) -> int:
         checklist_report=Path(args.checklist_report),
         checklist_md=Path(args.checklist_md),
         human_audit_packet_path=Path(args.human_audit_packet),
+        applied_decisions_path=Path(args.applied_decisions),
+        denominator_diff_preview_path=Path(args.denominator_diff_preview),
+        registry_application_report_path=Path(args.registry_application_report),
+        metric_input_config_path=Path(args.metric_input_config),
     )
     plan = result["plan"]
     print(
@@ -154,6 +163,10 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--pdf-answer-packet", default=str(DEFAULT_PDF_ANSWER_PACKET))
     parser.add_argument("--progress-doc", default=str(DEFAULT_PROGRESS_DOC))
     parser.add_argument("--human-audit-packet", default=str(DEFAULT_HUMAN_AUDIT_PACKET))
+    parser.add_argument("--applied-decisions", default=str(DEFAULT_APPLIED_DECISIONS))
+    parser.add_argument("--denominator-diff-preview", default=str(DEFAULT_DENOMINATOR_DIFF_PREVIEW))
+    parser.add_argument("--registry-application-report", default=str(DEFAULT_REGISTRY_APPLICATION_REPORT))
+    parser.add_argument("--metric-input-config", default=str(DEFAULT_METRIC_INPUT_CONFIG))
     parser.add_argument("--output-report", default=str(DEFAULT_OUTPUT_JSON))
     parser.add_argument("--output-md", default=str(DEFAULT_OUTPUT_MD))
     parser.add_argument("--checklist-report", default=str(DEFAULT_CHECKLIST_JSON))
@@ -177,6 +190,10 @@ def run_plan(
     checklist_report: Path,
     checklist_md: Path,
     human_audit_packet_path: Path,
+    applied_decisions_path: Path | None = None,
+    denominator_diff_preview_path: Path | None = None,
+    registry_application_report_path: Path | None = None,
+    metric_input_config_path: Path | None = None,
 ) -> dict[str, dict[str, Any]]:
     payloads = {
         "three_track_metric_preflight_board": read_json(board_path),
@@ -187,8 +204,18 @@ def run_plan(
         "pdf_layout_gap_closure": read_json(pdf_layout_report_path),
         "pdf_evidence_readiness_repair": read_json(pdf_repair_report_path),
         "pdf_answer_citation_policy_packet": read_json(pdf_answer_packet_path),
+        "human_audit_v2_applied_decisions": read_json(applied_decisions_path) if applied_decisions_path is not None else {},
+        "official_denominator_candidate_diff_preview": read_json(denominator_diff_preview_path)
+        if denominator_diff_preview_path is not None
+        else {},
+        "official_question_gold_v2_registry_application": read_json(registry_application_report_path)
+        if registry_application_report_path is not None
+        else {},
+        "official_metric_input_config": read_json(metric_input_config_path)
+        if metric_input_config_path is not None
+        else {},
     }
-    paths = {
+    paths: dict[str, Path] = {
         "three_track_metric_preflight_board": board_path,
         "hyperparameter_tuning_readiness_plan": readiness_plan_path,
         "text_policy_packet": text_packet_path,
@@ -199,6 +226,14 @@ def run_plan(
         "pdf_answer_citation_policy_packet": pdf_answer_packet_path,
         "progress_doc": progress_doc_path,
     }
+    if applied_decisions_path is not None:
+        paths["human_audit_v2_applied_decisions"] = applied_decisions_path
+    if denominator_diff_preview_path is not None:
+        paths["official_denominator_candidate_diff_preview"] = denominator_diff_preview_path
+    if registry_application_report_path is not None:
+        paths["official_question_gold_v2_registry_application"] = registry_application_report_path
+    if metric_input_config_path is not None:
+        paths["official_metric_input_config"] = metric_input_config_path
     freshness = canonical_freshness(paths, payloads)
     plan = build_plan(payloads=payloads, paths=paths, freshness=freshness, human_audit_packet_path=human_audit_packet_path)
     plan["artifact_paths"]["report_json"] = repo_relative(output_report)
@@ -231,8 +266,26 @@ def build_plan(
     pdf_layout = payloads["pdf_layout_gap_closure"]
     pdf_repair = payloads["pdf_evidence_readiness_repair"]
     pdf_answer = payloads["pdf_answer_citation_policy_packet"]
+    applied_decisions = payloads.get("human_audit_v2_applied_decisions", {})
+    denominator_diff_preview = payloads.get("official_denominator_candidate_diff_preview", {})
+    registry_application = payloads.get("official_question_gold_v2_registry_application", {})
+    metric_input_config = payloads.get("official_metric_input_config", {})
+    human_audit = read_json(human_audit_packet_path)
+    audit_completed = human_audit_completed(human_audit)
+    applied_ready = applied_decisions_ready(applied_decisions)
+    diff_preview_ready = denominator_diff_preview_ready(denominator_diff_preview)
+    registry_application_ready_flag = registry_application_ready(registry_application)
+    metric_config_ready = metric_input_config_ready(metric_input_config)
+    metric_config_registry_backed = metric_input_config_registry_backed(metric_input_config)
+    proposed_metric_rows_by_track = proposed_metric_rows_by_track_from(metric_input_config, denominator_diff_preview, applied_decisions)
+    proposed_metric_rows_total = sum(proposed_metric_rows_by_track.values())
 
     official_rows_by_track = official_rows_by_track_from(board, text, xlsx, pdf_repair, pdf_answer)
+    if metric_config_registry_backed:
+        official_rows_by_track = {
+            track: int_value(value)
+            for track, value in nested_mapping(metric_input_config, "official_metric_input_rows_by_track").items()
+        }
     pdf_answer_exists = paths["pdf_answer_citation_policy_packet"].exists()
     pdf_answer_ready = pdf_answer_packet_ready(pdf_answer) if pdf_answer_exists else False
     pdf_board_answer_ready = (
@@ -253,13 +306,31 @@ def build_plan(
     hidden_excluded_leakage_detected = xlsx_leakage_status != "PASS" or xlsx_leakage_count != 0
 
     errors: list[str] = []
+    label_validation = human_label_validation(human_audit)
+    errors.extend(label_validation["errors"])
+    errors.extend(
+        candidate_transition_errors(
+            applied_decisions=applied_decisions,
+            denominator_diff_preview=denominator_diff_preview,
+            registry_application_report=registry_application,
+            metric_input_config=metric_input_config,
+        )
+    )
+    human_summary = nested_mapping(human_audit, "summary")
+    if (human_audit.get("human_audit_completed") is True or human_summary.get("human_audit_completed") is True) and not label_validation["completed"]:
+        errors.append("human_audit_packet completion flag must match row-level valid labels")
     if freshness["missing_required_artifacts"]:
         errors.extend(f"MISSING_CANONICAL_ARTIFACT:{item}" for item in freshness["missing_required_artifacts"])
-    if clean(board.get("status")) != "DIAGNOSTIC_PREFLIGHT_READY":
+    board_status_value = clean(board.get("status"))
+    question_gold_incomplete = board_status_value == "DIAGNOSTIC_PREFLIGHT_BLOCKED_BY_OFFICIAL_QUESTION_GOLD"
+    if board_status_value not in {"DIAGNOSTIC_PREFLIGHT_READY", "DIAGNOSTIC_PREFLIGHT_BLOCKED_BY_OFFICIAL_QUESTION_GOLD"}:
         errors.append("BOARD_STATUS_NOT_DIAGNOSTIC_PREFLIGHT_READY")
     if nested_mapping(board, "validation").get("ok") is not True:
         errors.append("BOARD_VALIDATION_NOT_OK")
-    if nested_mapping(board, "guardrails").get("official_metric_input_rows_remain_zero") is not True:
+    if (
+        nested_mapping(board, "guardrails").get("official_metric_input_rows_remain_zero") is not True
+        and nested_mapping(board, "guardrails").get("official_metric_input_rows_registry_backed") is not True
+    ):
         errors.append("BOARD_OFFICIAL_METRIC_INPUT_ROWS_NOT_CONFIRMED_ZERO")
     for key in BOARD_PROTECTED_GUARDRAILS:
         if nested_mapping(board, "guardrails").get(key) is True:
@@ -270,7 +341,7 @@ def build_plan(
         errors.append("PDF_ANSWER_CITATION_PACKET_MISSING_FAIL_CLOSED")
     if pdf_answer_exists and not pdf_answer_ready:
         errors.append("PDF_ANSWER_CITATION_PACKET_NOT_READY_FAIL_CLOSED")
-    if any(value != 0 for value in official_rows_by_track.values()):
+    if any(value != 0 for value in official_rows_by_track.values()) and not metric_config_registry_backed:
         errors.append("OFFICIAL_METRIC_INPUT_ROWS_GT_0")
     if int_value(readiness.get("official_metric_input_rows")) != 0:
         errors.append("READINESS_PLAN_OFFICIAL_METRIC_INPUT_ROWS_GT_0")
@@ -297,6 +368,8 @@ def build_plan(
         status = "FAIL_CLOSED_CANONICAL_FRESHNESS"
     elif errors:
         status = "FAIL_CLOSED_GUARDRAIL"
+    elif question_gold_incomplete:
+        status = "REPORT_ONLY_BLOCKED_BY_OFFICIAL_QUESTION_GOLD_INCOMPLETE"
     else:
         status = "REPORT_ONLY_DRY_RUN_PLAN_READY"
 
@@ -315,6 +388,46 @@ def build_plan(
         "cross_track_average_optimization_allowed": False,
         "cross_track_averages_computed": False,
         "human_audit_required_before_official_metric_open": True,
+        "human_audit_requirement_satisfied": audit_completed,
+        "human_audit_completed": audit_completed,
+        "human_audit_next_gate": (
+            "run_official_metrics_not_tuning"
+            if metric_config_registry_backed
+            else "explicit_registry_application_approval"
+            if metric_config_ready
+            else "generate_official_metric_input_config"
+            if diff_preview_ready
+            else "generate_official_denominator_candidate_diff_preview"
+            if applied_ready
+            else "apply_human_audit_decisions_report_only"
+            if audit_completed
+            else "complete_human_audit_of_v2_packet"
+        ),
+        "report_only_decision_application_required": audit_completed and not applied_ready,
+        "applied_decisions_ready": applied_ready,
+        "denominator_diff_preview_ready": diff_preview_ready,
+        "registry_application_ready": registry_application_ready_flag,
+        "metric_input_config_ready": metric_config_ready,
+        "metric_input_config_registry_backed": metric_config_registry_backed,
+        "official_metric_setup_status": (
+            "REGISTRY_BACKED_CONFIG_READY_NOT_EXECUTED"
+            if metric_config_registry_backed
+            else "CONFIG_READY_PENDING_REGISTRY_APPLICATION"
+            if metric_config_ready
+            else "DENOMINATOR_DIFF_PREVIEW_READY_PENDING_CONFIG"
+            if diff_preview_ready
+            else "APPLIED_DECISIONS_READY_PENDING_DENOMINATOR_DIFF_PREVIEW"
+            if applied_ready
+            else "NOT_READY"
+        ),
+        "proposed_metric_input_rows": proposed_metric_rows_total,
+        "proposed_metric_input_rows_by_track": proposed_metric_rows_by_track,
+        "explicit_registry_approval_required": not metric_config_registry_backed,
+        "official_metric_open_allowed": metric_config_registry_backed,
+        "official_transition_ready": False,
+        "official_question_gold_status": board.get("official_question_gold_status")
+        or ("OFFICIAL_QUESTION_GOLD_INCOMPLETE" if question_gold_incomplete else "PENDING_HUMAN_AUDIT_OF_V2_PACKET"),
+        "official_question_gold_incomplete": question_gold_incomplete,
         "canonical_freshness": freshness,
         "track_dev_set_policy": track_dev_set_policy(
             text=text,
@@ -346,6 +459,7 @@ def build_plan(
         },
         "stop_conditions": {
             "official_metric_rows_gt_0": any(value != 0 for value in official_rows_by_track.values()),
+            "official_metric_rows_registry_backed": metric_config_registry_backed,
             "official_denominator_registry_diff_exists": "verified_by_external_git_diff_checks",
             "pdf_answer_packet_missing_but_pdf_answer_ready": (not pdf_answer_exists and pdf_board_answer_ready),
             "pdf_answer_packet_not_ready": pdf_answer_exists and not pdf_answer_ready,
@@ -365,6 +479,18 @@ def build_plan(
             "pdf_repair_report": repo_relative(paths["pdf_evidence_readiness_repair"]),
             "pdf_answer_packet": repo_relative(paths["pdf_answer_citation_policy_packet"]),
             "human_audit_packet": repo_relative(human_audit_packet_path),
+            "applied_decisions": repo_relative(paths["human_audit_v2_applied_decisions"])
+            if "human_audit_v2_applied_decisions" in paths
+            else "",
+            "denominator_diff_preview": repo_relative(paths["official_denominator_candidate_diff_preview"])
+            if "official_denominator_candidate_diff_preview" in paths
+            else "",
+            "registry_application_report": repo_relative(paths["official_question_gold_v2_registry_application"])
+            if "official_question_gold_v2_registry_application" in paths
+            else "",
+            "metric_input_config": repo_relative(paths["official_metric_input_config"])
+            if "official_metric_input_config" in paths
+            else "",
             "report_json": "",
             "report_md": "",
         },
@@ -548,23 +674,61 @@ def dry_run_evaluation_matrix(
 
 def build_transition_checklist(*, plan: Mapping[str, Any], human_audit_packet_path: Path) -> dict[str, Any]:
     official_rows = int_value(plan.get("official_metric_input_rows"))
+    human_audit = read_json(human_audit_packet_path)
+    audit_completed = human_audit_completed(human_audit)
+    metric_config_registry_backed = plan.get("metric_input_config_registry_backed") is True
+    metric_config_ready = plan.get("metric_input_config_ready") is True
+    diff_preview_ready = plan.get("denominator_diff_preview_ready") is True
+    applied_ready = plan.get("applied_decisions_ready") is True
+    if metric_config_registry_backed:
+        status = "OFFICIAL_METRIC_INPUT_READY_NOT_EXECUTED"
+    elif metric_config_ready:
+        status = "OFFICIAL_TRANSITION_BLOCKED_PENDING_REGISTRY_APPLICATION_APPROVAL"
+    elif diff_preview_ready:
+        status = "OFFICIAL_TRANSITION_BLOCKED_PENDING_METRIC_INPUT_CONFIG"
+    elif applied_ready:
+        status = "OFFICIAL_TRANSITION_BLOCKED_PENDING_DENOMINATOR_DIFF_PREVIEW"
+    elif audit_completed:
+        status = "OFFICIAL_TRANSITION_BLOCKED_PENDING_REPORT_ONLY_DECISION_APPLICATION"
+    else:
+        status = "OFFICIAL_TRANSITION_BLOCKED_PENDING_HUMAN_AUDIT"
+    validation_errors: list[str] = []
+    if plan.get("tuning_run_started") is True:
+        validation_errors.append("tuning_run_started must remain false")
+    if official_rows != 0 and not metric_config_registry_backed:
+        validation_errors.append("official_metric_input_rows must remain 0 before registry-backed config")
+    if metric_config_registry_backed and plan.get("official_metric_execution_started") is True:
+        validation_errors.append("official_metric_execution_started must remain false")
     checklist = {
         "schema_version": CHECKLIST_SCHEMA_VERSION,
         "generated_at": utc_timestamp(),
-        "status": "OFFICIAL_TRANSITION_BLOCKED_PENDING_HUMAN_AUDIT",
+        "status": status,
         "diagnostic_only": True,
         "promotion_evidence": False,
         "official_denominator_registry_opened": False,
         "official_metric_input_rows": official_rows,
+        "proposed_metric_input_rows": int_value(plan.get("proposed_metric_input_rows")),
+        "proposed_metric_input_rows_by_track": nested_mapping(plan, "proposed_metric_input_rows_by_track"),
         "human_audit_packet_generated": human_audit_packet_path.exists(),
-        "human_audit_completed": False,
-        "official_transition_blocked_until_user_decisions_applied": True,
+        "human_audit_completed": audit_completed,
+        "applied_decisions_ready": applied_ready,
+        "denominator_diff_preview_ready": diff_preview_ready,
+        "metric_input_config_ready": metric_config_ready,
+        "metric_input_config_registry_backed": metric_config_registry_backed,
+        "registry_application_completed": metric_config_registry_backed,
+        "official_transition_blocked_until_user_decisions_applied": not applied_ready,
+        "report_only_decision_application_required": audit_completed and not applied_ready,
+        "registry_application_required": metric_config_ready and not metric_config_registry_backed,
+        "explicit_registry_approval_required": not metric_config_registry_backed,
+        "official_metric_open_allowed": metric_config_registry_backed,
+        "official_metric_execution_started": False,
         "production_mutation": False,
         "cross_track_average": False,
         "diagnostic_artifacts_not_promotion_evidence": True,
         "next_allowed_steps_after_user_audit": [
             "apply_human_audit_decisions_report_only",
             "generate_official_denominator_candidate_diff_preview",
+            "generate_official_metric_input_config",
             "require_explicit_user_approval_before_registry_mutation",
         ],
         "artifact_paths": {
@@ -574,8 +738,8 @@ def build_transition_checklist(*, plan: Mapping[str, Any], human_audit_packet_pa
             "report_md": "",
         },
         "validation": {
-            "ok": official_rows == 0 and plan.get("tuning_run_started") is False,
-            "errors": [] if official_rows == 0 else ["official_metric_input_rows must remain 0"],
+            "ok": not validation_errors,
+            "errors": validation_errors,
         },
     }
     return checklist
@@ -642,6 +806,142 @@ def pdf_answer_packet_ready(payload: Mapping[str, Any]) -> bool:
     )
 
 
+def applied_decisions_ready(payload: Mapping[str, Any]) -> bool:
+    return (
+        clean(payload.get("status")) == "HUMAN_AUDIT_V2_APPLIED_DECISIONS_READY"
+        and nested_mapping(payload, "validation").get("ok") is True
+        and int_value(payload.get("official_metric_input_rows")) == 0
+        and payload.get("promotion_evidence") is not True
+    )
+
+
+def denominator_diff_preview_ready(payload: Mapping[str, Any]) -> bool:
+    return (
+        clean(payload.get("status")) == "OFFICIAL_DENOMINATOR_CANDIDATE_DIFF_PREVIEW_READY"
+        and clean(payload.get("registry_diff_status")) == "PREVIEW_ONLY_NO_MUTATION"
+        and nested_mapping(payload, "validation").get("ok") is True
+        and int_value(payload.get("official_metric_input_rows")) == 0
+        and nested_mapping(payload, "guardrails").get("official_denominator_registry_changed") is not True
+        and payload.get("promotion_evidence") is not True
+    )
+
+
+def metric_input_config_ready(payload: Mapping[str, Any]) -> bool:
+    status = clean(payload.get("status"))
+    if status == "OFFICIAL_METRIC_INPUT_CONFIG_READY_PENDING_REGISTRY_APPLICATION":
+        return (
+            nested_mapping(payload, "validation").get("ok") is True
+            and int_value(payload.get("official_metric_input_rows")) == 0
+            and payload.get("official_metric_execution_started") is False
+            and payload.get("metric_execution_allowed") is False
+            and payload.get("promotion_evidence") is not True
+        )
+    if status == "OFFICIAL_METRIC_INPUT_CONFIG_READY_REGISTRY_BACKED_NOT_EXECUTED":
+        return metric_input_config_registry_backed(payload)
+    return False
+
+
+def metric_input_config_registry_backed(payload: Mapping[str, Any]) -> bool:
+    return (
+        clean(payload.get("status")) == "OFFICIAL_METRIC_INPUT_CONFIG_READY_REGISTRY_BACKED_NOT_EXECUTED"
+        and nested_mapping(payload, "validation").get("ok") is True
+        and int_value(payload.get("official_metric_input_rows")) > 0
+        and payload.get("official_metric_execution_started") is False
+        and payload.get("metric_execution_allowed") is True
+        and payload.get("registry_application_status") == "APPLIED"
+        and payload.get("promotion_evidence") is not True
+    )
+
+
+def registry_application_ready(payload: Mapping[str, Any]) -> bool:
+    return (
+        clean(payload.get("status")) == "OFFICIAL_QUESTION_GOLD_V2_REGISTRY_APPLIED"
+        and payload.get("registry_updated") is True
+        and nested_mapping(payload, "validation").get("ok") is True
+        and int_value(payload.get("official_metric_input_rows")) > 0
+        and payload.get("official_metric_execution_started") is False
+        and payload.get("promotion_evidence") is not True
+    )
+
+
+def candidate_transition_errors(
+    *,
+    applied_decisions: Mapping[str, Any],
+    denominator_diff_preview: Mapping[str, Any],
+    registry_application_report: Mapping[str, Any],
+    metric_input_config: Mapping[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    if applied_decisions and not applied_decisions_ready(applied_decisions):
+        errors.append("APPLIED_DECISIONS_NOT_READY")
+    if denominator_diff_preview and not denominator_diff_preview_ready(denominator_diff_preview):
+        errors.append("DENOMINATOR_DIFF_PREVIEW_NOT_READY")
+    if metric_input_config and not metric_input_config_ready(metric_input_config):
+        errors.append("METRIC_INPUT_CONFIG_NOT_READY")
+    if registry_application_report and not registry_application_ready(registry_application_report):
+        errors.append("REGISTRY_APPLICATION_REPORT_NOT_READY")
+    for name, payload in (
+        ("applied_decisions", applied_decisions),
+        ("denominator_diff_preview", denominator_diff_preview),
+        ("registry_application_report", registry_application_report),
+        ("metric_input_config", metric_input_config),
+    ):
+        if not payload:
+            continue
+        if int_value(payload.get("official_metric_input_rows")) != 0 and not (
+            name in {"metric_input_config", "registry_application_report"}
+            and (
+                metric_input_config_registry_backed(payload)
+                or registry_application_ready(payload)
+            )
+        ):
+            errors.append(f"{name.upper()}_OFFICIAL_METRIC_INPUT_ROWS_GT_0")
+        if payload.get("promotion_evidence") is True:
+            errors.append(f"{name.upper()}_PROMOTION_EVIDENCE_TRUE")
+        if payload.get("tuning_run_started") is True:
+            errors.append(f"{name.upper()}_TUNING_STARTED")
+        guardrails = nested_mapping(payload, "guardrails")
+        for key in (
+            "official_denominator_registry_mutation",
+            "official_denominator_registry_opened",
+            "official_denominator_opened",
+            "official_metric_executed",
+            "gold_registry_mutation",
+            "candidate_artifact_mutation",
+            "immutable_baseline_mutation",
+            "production_namespace_vector_index_mutation",
+            "production_vector_written",
+            "tuning_run_started",
+        ):
+            if payload.get(key) is True or guardrails.get(key) is True:
+                if name == "metric_input_config" and metric_input_config_registry_backed(payload) and key in {
+                    "official_denominator_registry_mutation",
+                    "official_denominator_registry_opened",
+                }:
+                    continue
+                errors.append(f"{name.upper()}_GUARDRAIL_TRUE:{key}")
+    return errors
+
+
+def proposed_metric_rows_by_track_from(
+    metric_input_config: Mapping[str, Any],
+    denominator_diff_preview: Mapping[str, Any],
+    applied_decisions: Mapping[str, Any],
+) -> dict[str, int]:
+    for payload, key in (
+        (metric_input_config, "proposed_metric_input_rows_by_track"),
+        (denominator_diff_preview, ("summary", "proposed_rows_by_track")),
+        (applied_decisions, ("summary", "proposed_official_metric_candidate_rows_by_track")),
+    ):
+        if isinstance(key, tuple):
+            value = nested_mapping(payload, *key)
+        else:
+            value = payload.get(key) if isinstance(payload.get(key), Mapping) else {}
+        if value:
+            return {track: int_value(count) for track, count in value.items() if int_value(count)}
+    return {}
+
+
 def progress_doc_stale_markers(path: Path) -> list[str]:
     if not path.exists():
         return []
@@ -665,6 +965,12 @@ def render_markdown(plan: Mapping[str, Any]) -> str:
         f"- Tuning run started: `{str(plan['tuning_run_started']).lower()}`",
         f"- Official metric input rows: `{plan['official_metric_input_rows']}`",
         f"- Cross-track average optimization allowed: `{str(plan['cross_track_average_optimization_allowed']).lower()}`",
+        f"- Human audit completed: `{str(plan.get('human_audit_completed')).lower()}`",
+        f"- Human audit next gate: `{plan.get('human_audit_next_gate')}`",
+        f"- Official metric setup status: `{plan.get('official_metric_setup_status')}`",
+        f"- Proposed metric input rows: `{plan.get('proposed_metric_input_rows')}`",
+        f"- Official metric open allowed: `{str(plan.get('official_metric_open_allowed')).lower()}`",
+        f"- Explicit registry approval required: `{str(plan.get('explicit_registry_approval_required')).lower()}`",
         "",
         "## Track Dev Sets",
         "",
@@ -701,6 +1007,12 @@ def render_checklist_markdown(checklist: Mapping[str, Any]) -> str:
         f"- official_metric_input_rows: `{checklist['official_metric_input_rows']}`",
         f"- human_audit_packet_generated: `{str(checklist['human_audit_packet_generated']).lower()}`",
         f"- human_audit_completed: `{str(checklist['human_audit_completed']).lower()}`",
+        f"- applied_decisions_ready: `{str(checklist.get('applied_decisions_ready')).lower()}`",
+        f"- denominator_diff_preview_ready: `{str(checklist.get('denominator_diff_preview_ready')).lower()}`",
+        f"- metric_input_config_ready: `{str(checklist.get('metric_input_config_ready')).lower()}`",
+        f"- proposed_metric_input_rows: `{checklist.get('proposed_metric_input_rows')}`",
+        f"- official_metric_open_allowed: `{str(checklist['official_metric_open_allowed']).lower()}`",
+        f"- explicit_registry_approval_required: `{str(checklist['explicit_registry_approval_required']).lower()}`",
         f"- production_mutation: `{str(checklist['production_mutation']).lower()}`",
         f"- cross_track_average: `{str(checklist['cross_track_average']).lower()}`",
         "- Diagnostic artifacts are not promotion evidence.",
@@ -710,6 +1022,48 @@ def render_checklist_markdown(checklist: Mapping[str, Any]) -> str:
     ]
     lines.extend(f"- `{step}`" for step in checklist["next_allowed_steps_after_user_audit"])
     return "\n".join(lines) + "\n"
+
+
+def human_audit_completed(human_audit: Mapping[str, Any]) -> bool:
+    return human_label_validation(human_audit)["completed"]
+
+
+def human_label_validation(human_audit: Mapping[str, Any]) -> dict[str, Any]:
+    rows = [row for row in human_audit.get("actionable_rows") or [] if isinstance(row, Mapping)]
+    if not rows:
+        return {"completed": False, "errors": [], "counts": {}}
+    errors: list[str] = []
+    counts: Counter[str] = Counter()
+    missing: list[str] = []
+    invalid: list[str] = []
+    for row in rows:
+        qid = clean(row.get("query_id") or row.get("row_id"))
+        label = clean(row.get("human_label"))
+        allowed = row.get("allowed_decision_values") if isinstance(row.get("allowed_decision_values"), list) else []
+        allowed_values = {clean(value) for value in allowed}
+        if not label:
+            missing.append(qid)
+            continue
+        counts[label] += 1
+        if label not in allowed_values:
+            invalid.append(qid)
+    if missing:
+        errors.append(f"human_audit_packet rows missing human_label: {', '.join(missing)}")
+    if invalid:
+        errors.append(f"human_audit_packet rows have invalid human_label: {', '.join(invalid)}")
+    summary = nested_mapping(human_audit, "summary")
+    expected_labeled = int_value(summary.get("human_labeled_rows"))
+    expected_unlabeled = int_value(summary.get("human_unlabeled_rows"))
+    if "human_labeled_rows" in summary and expected_labeled != sum(counts.values()):
+        errors.append("human_audit_packet human_labeled_rows summary mismatch")
+    if "human_unlabeled_rows" in summary and expected_unlabeled != len(missing):
+        errors.append("human_audit_packet human_unlabeled_rows summary mismatch")
+    expected_counts = human_audit.get("human_audit_label_counts")
+    if isinstance(expected_counts, Mapping):
+        normalized_expected = {clean(key): int_value(value) for key, value in expected_counts.items()}
+        if normalized_expected != dict(sorted(counts.items())):
+            errors.append("human_audit_packet human_audit_label_counts mismatch")
+    return {"completed": bool(rows) and not missing and not invalid, "errors": errors, "counts": dict(sorted(counts.items()))}
 
 
 def read_json(path: Path) -> dict[str, Any]:

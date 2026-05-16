@@ -9,9 +9,10 @@ external archive manifests and link only the current source of truth here.
 
 ## Current Status
 
-Overall status: `official_question_gold_v2_registry_applied_metric_input_ready_not_executed`;
-official metric execution and model-quality tuning remain blocked until the
-next explicit command.
+Overall status: `official_question_gold_v2_metric_first_run_blocked_scorer_backend_unavailable`;
+the registry-backed metric inputs are ready, but the first official
+answer/citation metric attempt did not start scoring because no official
+scorer/backend is wired. Model-quality tuning remains closed.
 
 - Ingestion v2 is implemented on the production
   `source_file -> extracted_artifact -> search_unit` path.
@@ -44,10 +45,10 @@ next explicit command.
 
 | Track | Current state | Current denominator / metric | Next action |
 |---|---|---|---|
-| `xlsx_business_structured` | Evidence/answer-citation readiness remains `DIAGNOSTIC_POLICY_PACKET_READY`; local-LLM question/expected-answer draft candidates were human-reviewed and applied to question-gold v2 | Strict silver rows `23`; clean pass rows `23`; verifier-clean and human-approved candidate rows `19`; registry-backed official metric input rows `19`; denominator policy `question_answer_citation_gold_v2` | Official metric input is ready; run official metrics only as a separate explicit step. Tuning remains closed. |
+| `xlsx_business_structured` | Evidence/answer-citation readiness remains `DIAGNOSTIC_POLICY_PACKET_READY`; local-LLM question/expected-answer draft candidates were human-reviewed and applied to question-gold v2 | Strict silver rows `23`; clean pass rows `23`; verifier-clean and human-approved candidate rows `19`; registry-backed official metric input rows `19`; denominator policy `question_answer_citation_gold_v2` | First official metric report consumed this track but did not score because the official scorer/backend is unavailable. Wire/start scorer backend and rerun; tuning remains closed. |
 | XLSX legacy diagnostic | Historical / superseded | Legacy Track A reviewed diagnostic denominator `35`; exact location recovered by top 10 | Preserve only as historical diagnostic evidence. Do not use as the current wrapper default. |
-| `text_namuwiki_animation` | Frozen TEXT/Namu V2.1 policy packet `FROZEN_DIAGNOSTIC_V2_1`; human-approved v2 answer/citation input rows are materialized separately | Generated-answer review rows `66`; clean `60`; cleanup `5`; unresolved `1`; citation supported `65`; registry-backed official metric input rows `6`; denominator policy `question_answer_citation_gold_v2` | Include only the v2 question-gold rows in the first official answer/citation metric run. Do not tune yet. |
-| `pdf_business_ocr_mm` | Locator/bbox evidence readiness remains complete (`7/7`); context v2 resolves native/nearby block text and deterministic table rows; manually authored source-bound drafts were human-reviewed and applied to question-gold v2 | Strict ready rows `7`; native block text resolved `7`; deterministic table-ready rows `2`; manually authored and human-approved candidate rows `4`; registry-backed official metric input rows `4`; denominator policy `question_answer_citation_gold_v2` | Official metric input is ready; run official metrics only as a separate explicit step. Tuning remains closed. |
+| `text_namuwiki_animation` | Frozen TEXT/Namu V2.1 policy packet `FROZEN_DIAGNOSTIC_V2_1`; human-approved v2 answer/citation input rows are materialized separately | Generated-answer review rows `66`; clean `60`; cleanup `5`; unresolved `1`; citation supported `65`; registry-backed official metric input rows `6`; denominator policy `question_answer_citation_gold_v2` | First official metric report consumed this track but did not score because the official scorer/backend is unavailable. Preserve `text_namu_v2_0017` as a diagnostic support warning. |
+| `pdf_business_ocr_mm` | Locator/bbox evidence readiness remains complete (`7/7`); context v2 resolves native/nearby block text and deterministic table rows; manually authored source-bound drafts were human-reviewed and applied to question-gold v2 | Strict ready rows `7`; native block text resolved `7`; deterministic table-ready rows `2`; manually authored and human-approved candidate rows `4`; registry-backed official metric input rows `4`; denominator policy `question_answer_citation_gold_v2` | First official metric report consumed this track but did not score because the official scorer/backend is unavailable. Wire/start scorer backend and rerun; tuning remains closed. |
 | Route/orchestration metrics | Diagnostic-only | Korean memo labels applied in diagnostic-only route/fallback artifacts; official metric input rows remain `0` | Use the applied route/fallback labels for diagnostic analysis only. Create an explicit policy review before interpreting routing accuracy, wrong-route rate, fallback success, or multi-route success as official metrics. |
 | Answer recovery | Diagnostic-only consolidation complete | Baseline `calibrated_identity_exact_v1`; compact status `PASS`; `185` cases; triage counts: safe-recoverable report-only `5`, index-scope-missing `5`, policy-blocked-correctly `17`, gold-policy-required `6`, diagnostic-only-do-not-promote `4`, unknown `0`; answer denominator `0`; production promotion `false` | User gold-policy judgment is needed only for the 6 `GOLD_POLICY_REQUIRED` rows. Keep safe recoveries report-only and keep index-scope rows out of retrieval/ranking failure counts until source evidence is proven in-scope and indexed. |
 
@@ -147,17 +148,44 @@ human audit packet v2 `HUMAN_AUDIT_PACKET_V2_READY`, human audit completed
   (`4` rows).
 - Official metric input rows: total `29`
   (`text_namu_v2_1=6`, `pdf_business_ocr_mm=4`,
-  `xlsx_business_structured=19`). These rows are registry-backed metric inputs,
-  but official metric execution has not started.
+  `xlsx_business_structured=19`). These rows are registry-backed metric inputs;
+  the first-run report consumed them, but official scoring did not start because
+  the scorer/backend is unavailable.
 - Registry: `ai/eval/eval_queries/official_denominator_registry.json` now has
   v2 question-gold denominator entries for TEXT/XLSX/PDF. The existing XLSX
   retrieval default `track_a_xlsx_human_review_normalized_v0` remains unchanged.
 - Guardrails: `promotion_evidence=false`, `official_metric_execution_started=false`,
   `tuning_run_started=false`, production vector writes `false`, cross-track
   averages `false`.
-- Remaining blocker: run the first official answer/citation metric against the
-  registry-backed v2 inputs. Tuning remains closed until after that metric step
-  is explicitly requested and reviewed.
+- Remaining blocker: wire or start the official answer/citation scorer/backend,
+  then rerun the same first-run runner. Tuning remains closed.
+
+## 2026-05-16 Official Answer/Citation Metric First Run
+
+Status: `BLOCKED_OR_PARTIAL`; blocker `SCORER_BACKEND_UNAVAILABLE`.
+
+- Evidence:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json`
+  / `.md`.
+- Consumed source of truth:
+  `ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json`,
+  `ai/eval/eval_queries/official_denominator_registry.json`, and
+  `ai/eval/reports/rag-ingestion/official_metric_pre_execution_smoke_report_v1.json`.
+- Rows consumed: total `29` (`pdf_business_ocr_mm=4`,
+  `text_namu_v2_1=6`, `xlsx_business_structured=19`).
+- Scoring attempts: `0`; `official_metric_execution_started=false` because no
+  official answer/citation scorer/backend was available.
+- Row-level result fields were emitted for all 29 rows with
+  `answer_score=null`, `citation_support_score=null`, and failure category
+  `SCORER_BACKEND_UNAVAILABLE`; no score was fabricated.
+- Diagnostic warning preserved: `text_namu_v2_0017`
+  `potential_support_coverage_gap`.
+- Guardrails: `tuning_run_started=false`, `promotion_evidence=false`,
+  threshold tuning `false`, gold/denominator/production mutation `false`,
+  cross-track averages `false`, winner selection `false`.
+- Next action: wire or start the official answer/citation scoring backend, then
+  rerun the same first-run runner. Do not start tuning or create promotion
+  evidence from this blocked report.
 
 ## 2026-05-15 PDF Gold/Evidence Lineage + v2 Canary
 
@@ -842,9 +870,8 @@ External archive manifests:
 2. Review any newly opened XLSX answer/citation/debug/public surfaces with the
    focused normalized excluded-row / hidden-negative leakage probe before using
    them for answer-generation or promotion.
-3. Run the first official answer/citation metric against the registry-backed
-   v2 question-gold inputs only after an explicit command; do not start tuning
-   in the same step.
+3. Wire or start the official answer/citation scorer/backend, then rerun the
+   registry-backed v2 first-run runner; do not start tuning in the same step.
 4. Review TEXT/NAMU v2 candidates and actual generated answers before changing
    R8 citation-support denominators.
 5. Use the applied route/fallback label artifacts for diagnostic analysis only;

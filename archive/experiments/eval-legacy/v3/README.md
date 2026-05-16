@@ -13,6 +13,9 @@ workflow.
 - Phase 7.7 answerability joins production retrieval emits through
   `rag_chunks.jsonl`; `chunks_v4.jsonl` is a different chunk-id namespace and
   must not be used as that join source.
+- The repo-local `rag-cheap-sweep-v3` study config/output directory was
+  externalized on 2026-05-15 under
+  `D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260515T101440-legacy-v3-artifact-externalization`.
 
 ## Preserved Legacy Script Entry Points
 
