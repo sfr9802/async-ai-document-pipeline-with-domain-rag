@@ -126,7 +126,7 @@
     }
   },
   "diagnostic_only": true,
-  "generated_at": "2026-05-16T15:16:50.294307+00:00",
+  "generated_at": "2026-05-16T16:00:06.299006+00:00",
   "guardrails": {
     "cross_track_optimization": false,
     "expected_answer_rewrite": false,

@@ -863,6 +863,20 @@ External archive manifests:
 - Guardrails: official metric execution still not started,
   tuning still not started, promotion evidence not created.
 
+## 2026-05-17 - Official Answer/Citation Scorer Baseline First Run
+
+- Status: `BLOCKED_OR_PARTIAL`; blocker `CITATION_UNSUPPORTED`, not
+  `SCORER_BACKEND_UNAVAILABLE`.
+- Evidence: `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json`
+  / `.md`, scorer results
+  `ai/eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl`.
+- Counts: attempts `29`, scored `29`, skipped `0`, errors `21`; PASS `8`,
+  `CITATION_UNSUPPORTED` `11`, `PARTIAL_OR_UNSUPPORTED` `10`.
+- Track baseline: PDF `1/4` pass, TEXT `6/6` pass, XLSX `1/19` pass;
+  cross-track average remains not optimization and not a tuning target.
+- Guardrails: tuning, threshold tuning, promotion evidence, gold mutation,
+  denominator mutation, and production/vector mutation remain `false`.
+
 ## Next Recommended Steps
 
 1. Review the XLSX strict silver generation report and external manifest before
@@ -870,8 +884,8 @@ External archive manifests:
 2. Review any newly opened XLSX answer/citation/debug/public surfaces with the
    focused normalized excluded-row / hidden-negative leakage probe before using
    them for answer-generation or promotion.
-3. Wire or start the official answer/citation scorer/backend, then rerun the
-   registry-backed v2 first-run runner; do not start tuning in the same step.
+3. Inspect the official first-run row failures per track before any tuning,
+   threshold, winner-selection, or promotion discussion.
 4. Review TEXT/NAMU v2 candidates and actual generated answers before changing
    R8 citation-support denominators.
 5. Use the applied route/fallback label artifacts for diagnostic analysis only;

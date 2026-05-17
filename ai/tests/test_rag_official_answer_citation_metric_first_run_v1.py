@@ -191,6 +191,7 @@ def test_cli_returns_nonzero_when_backend_unavailable_but_writes_report(tmp_path
             str(paths["registry"]),
             "--pre-execution-smoke",
             str(paths["smoke"]),
+            "--disable-scorer-backend",
             "--output-report",
             str(output_json),
             "--output-md",
@@ -204,6 +205,98 @@ def test_cli_returns_nonzero_when_backend_unavailable_but_writes_report(tmp_path
     assert report["blocker_category"] == "SCORER_BACKEND_UNAVAILABLE"
     assert report["official_metric_execution_started"] is False
     assert output_md.exists()
+
+
+def test_cli_runs_configured_backend_and_writes_official_scorer_results_jsonl(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+    write_generation_artifacts_for_fixture(module, tmp_path)
+    output_json = tmp_path / "first_run.json"
+    scorer_results = tmp_path / "official_scorer_results.jsonl"
+
+    exit_code = module.main(
+        [
+            "--metric-input-config",
+            str(paths["config"]),
+            "--denominator-registry",
+            str(paths["registry"]),
+            "--pre-execution-smoke",
+            str(paths["smoke"]),
+            "--scorer-results-output",
+            str(scorer_results),
+            "--output-report",
+            str(output_json),
+            "--output-md",
+            str(tmp_path / "first_run.md"),
+        ]
+    )
+
+    report = read_json(output_json)
+    result_rows = [json.loads(line) for line in scorer_results.read_text(encoding="utf-8").splitlines()]
+    assert exit_code == 0
+    assert report["status"] == "PASS_WITH_DIAGNOSTIC_WARNINGS"
+    assert report["blocker_category"] is None
+    assert report["official_metric_execution_started"] is True
+    assert report["official_scoring_attempt_count"] == 29
+    assert report["scored_count"] == 29
+    assert report["skipped_count"] == 0
+    assert report["error_count"] == 0
+    assert report["artifact_paths"]["scorer_results_jsonl"] == module.repo_relative(scorer_results)
+    assert len(result_rows) == 29
+    assert {row["scorer_backend_name"] for row in result_rows} == {"official_deterministic_artifact_scorer"}
+    assert all(row["production_mutation"] is False for row in result_rows)
+    assert all(row["scoring_attempted"] is True for row in result_rows)
+    assert all(row["failure_category"] == "PASS" for row in result_rows)
+    first_row = report["row_results"][0]
+    assert first_row["generated_answer"]
+    assert first_row["generated_citations"]
+    assert first_row["scorer_backend_name"] == "official_deterministic_artifact_scorer"
+    assert report["baseline_metric_policy"]["cross_track_average"] == "not optimization, not tuning target"
+    assert report["production_mutation"] is False
+    assert report["denominator_mutation"] is False
+    assert report["gold_mutation"] is False
+    assert report["promotion_evidence"] is False
+    assert report["tuning_run_started"] is False
+    assert report["threshold_tuning"] is False
+
+
+def test_cli_skips_builtin_backend_when_input_validation_fails(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+    write_generation_artifacts_for_fixture(module, tmp_path)
+    registry = read_json(paths["registry"])
+    registry["official_diagnostic_denominators"]["track_a_xlsx_question_gold_v2_human_audit_approved"][
+        "sha256"
+    ] = "bad"
+    write_json(paths["registry"], registry)
+    output_json = tmp_path / "first_run.json"
+    scorer_results = tmp_path / "official_scorer_results.jsonl"
+
+    exit_code = module.main(
+        [
+            "--metric-input-config",
+            str(paths["config"]),
+            "--denominator-registry",
+            str(paths["registry"]),
+            "--pre-execution-smoke",
+            str(paths["smoke"]),
+            "--scorer-results-output",
+            str(scorer_results),
+            "--output-report",
+            str(output_json),
+            "--output-md",
+            str(tmp_path / "first_run.md"),
+        ]
+    )
+
+    report = read_json(output_json)
+    assert exit_code == 2
+    assert not scorer_results.exists()
+    assert report["status"] == "FAIL_CLOSED_INPUT_VALIDATION"
+    assert report["official_metric_execution_started"] is False
+    assert report["official_scoring_attempt_count"] == 0
+    assert report["scorer_backend"]["backend_skipped_before_execution"] is True
+    assert report["scorer_backend"]["validation"]["ok"] is False
 
 
 def test_cli_can_consume_official_scorer_results_jsonl(tmp_path: Path) -> None:
@@ -237,6 +330,38 @@ def test_cli_can_consume_official_scorer_results_jsonl(tmp_path: Path) -> None:
     assert report["official_scoring_attempt_count"] == 29
     assert report["track_aggregates"]["pdf_business_ocr_mm"]["scored_count"] == 4
     assert report["track_aggregates"]["xlsx_business_structured"]["scored_count"] == 19
+
+
+def test_missing_official_query_in_scorer_jsonl_is_result_missing(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+    scorer_results = tmp_path / "scorer_results.jsonl"
+    write_all_pass_scorer_results(scorer_results, skip_query_id="gq_xlsx_000")
+    output_json = tmp_path / "first_run.json"
+
+    exit_code = module.main(
+        [
+            "--metric-input-config",
+            str(paths["config"]),
+            "--denominator-registry",
+            str(paths["registry"]),
+            "--pre-execution-smoke",
+            str(paths["smoke"]),
+            "--scorer-results-jsonl",
+            str(scorer_results),
+            "--output-report",
+            str(output_json),
+            "--output-md",
+            str(tmp_path / "first_run.md"),
+        ]
+    )
+
+    report = read_json(output_json)
+    missing = [row for row in report["row_results"] if row["query_id"] == "gq_xlsx_000"][0]
+    assert exit_code == 4
+    assert report["blocker_category"] == "SCORER_RESULT_MISSING"
+    assert missing["failure_category"] == "SCORER_RESULT_MISSING"
+    assert missing["scoring_attempted"] is True
 
 
 def test_cli_fail_closes_on_duplicate_extra_scorer_result_row(tmp_path: Path) -> None:
@@ -327,6 +452,202 @@ def test_malformed_pass_scorer_result_is_invalid(tmp_path: Path) -> None:
     assert {row["failure_category"] for row in report["row_results"]} == {"SCORER_INVALID_RESULT"}
 
 
+def test_answer_citation_score_combinations_are_classified_without_scorer_labels(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+
+    outcomes = {
+        "gq_pdf_000": {"answer_score": 1.0, "citation_support_score": 0.0},
+        "gq_pdf_001": {"answer_score": 0.0, "citation_support_score": 1.0},
+        "gq_pdf_002": {"answer_score": 0.0, "citation_support_score": 0.0},
+    }
+
+    def scorer(row: Mapping[str, str]) -> dict[str, Any]:
+        return outcomes.get(
+            row["query_id"],
+            {"answer_score": 1.0, "citation_support_score": 1.0},
+        )
+
+    report = module.build_report(
+        metric_input_config_path=paths["config"],
+        denominator_registry_path=paths["registry"],
+        pre_execution_smoke_path=paths["smoke"],
+        scorer=scorer,
+    )
+
+    by_id = {row["query_id"]: row for row in report["row_results"]}
+    assert by_id["gq_pdf_000"]["failure_category"] == "CITATION_UNSUPPORTED"
+    assert by_id["gq_pdf_001"]["failure_category"] == "ANSWER_UNSUPPORTED"
+    assert by_id["gq_pdf_002"]["failure_category"] == "PARTIAL_OR_UNSUPPORTED"
+
+
+def test_xlsx_hidden_excluded_leakage_guardrail_blocks_citation_pass(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+    write_generation_artifacts_for_fixture(module, tmp_path, xlsx_surface_leakage_count=1)
+    output_json = tmp_path / "first_run.json"
+
+    exit_code = module.main(
+        [
+            "--metric-input-config",
+            str(paths["config"]),
+            "--denominator-registry",
+            str(paths["registry"]),
+            "--pre-execution-smoke",
+            str(paths["smoke"]),
+            "--scorer-results-output",
+            str(tmp_path / "official_scorer_results.jsonl"),
+            "--output-report",
+            str(output_json),
+            "--output-md",
+            str(tmp_path / "first_run.md"),
+        ]
+    )
+
+    report = read_json(output_json)
+    xlsx_rows = [row for row in report["row_results"] if row["track"] == "xlsx_business_structured"]
+    assert exit_code == 4
+    assert report["blocker_category"] == "CITATION_UNSUPPORTED"
+    assert {row["failure_category"] for row in xlsx_rows} == {"CITATION_UNSUPPORTED"}
+    assert all(row["answer_score"] == 1.0 for row in xlsx_rows)
+    assert all(row["citation_support_score"] == 0.0 for row in xlsx_rows)
+
+
+def test_generation_artifact_load_errors_fail_closed_for_affected_track(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+    write_generation_artifacts_for_fixture(module, tmp_path)
+    xlsx_jsonl = tmp_path / "ai" / "eval" / "reports" / "rag-ingestion" / "xlsx_answer_citation_diagnostic_review_input.jsonl"
+    first_line = xlsx_jsonl.read_text(encoding="utf-8").splitlines()[0]
+    with xlsx_jsonl.open("a", encoding="utf-8", newline="\n") as handle:
+        handle.write(first_line + "\n")
+    output_json = tmp_path / "first_run.json"
+
+    exit_code = module.main(
+        [
+            "--metric-input-config",
+            str(paths["config"]),
+            "--denominator-registry",
+            str(paths["registry"]),
+            "--pre-execution-smoke",
+            str(paths["smoke"]),
+            "--scorer-results-output",
+            str(tmp_path / "official_scorer_results.jsonl"),
+            "--output-report",
+            str(output_json),
+            "--output-md",
+            str(tmp_path / "first_run.md"),
+        ]
+    )
+
+    report = read_json(output_json)
+    xlsx_rows = [row for row in report["row_results"] if row["track"] == "xlsx_business_structured"]
+    assert exit_code == 4
+    assert report["blocker_category"] == "SCORER_EXCEPTION"
+    assert {row["failure_category"] for row in xlsx_rows} == {"SCORER_EXCEPTION"}
+    assert all("duplicate scorer result query_id" in row["failure_detail"] for row in xlsx_rows)
+
+
+def test_scorer_result_mutation_flags_are_invalid(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+
+    def scorer(_row: Mapping[str, str]) -> dict[str, Any]:
+        return {
+            "answer_score": 1.0,
+            "citation_support_score": 1.0,
+            "failure_category": "PASS",
+            "production_mutation": True,
+            "promotion_evidence": True,
+            "threshold_tuning": True,
+            "denominator_mutation": True,
+            "gold_mutation": True,
+        }
+
+    report = module.build_report(
+        metric_input_config_path=paths["config"],
+        denominator_registry_path=paths["registry"],
+        pre_execution_smoke_path=paths["smoke"],
+        scorer=scorer,
+    )
+
+    assert report["status"] == "BLOCKED_OR_PARTIAL"
+    assert report["blocker_category"] == "SCORER_INVALID_RESULT"
+    assert {row["failure_category"] for row in report["row_results"]} == {"SCORER_INVALID_RESULT"}
+    assert all("forbidden scorer result guardrail flag" in row["failure_detail"] for row in report["row_results"])
+    assert all(row["production_mutation"] is False for row in report["row_results"])
+
+
+def test_expected_answer_subset_does_not_pass_directional_matching(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+    write_generation_artifacts_for_fixture(module, tmp_path)
+    pdf_jsonl = tmp_path / "ai" / "eval" / "reports" / "rag-ingestion" / "pdf_answer_citation_diagnostic_review_input.jsonl"
+    rows = read_jsonl(pdf_jsonl)
+    rows[0]["generated_answer"] = "answer"
+    write_jsonl(pdf_jsonl, rows)
+    output_json = tmp_path / "first_run.json"
+
+    exit_code = module.main(
+        [
+            "--metric-input-config",
+            str(paths["config"]),
+            "--denominator-registry",
+            str(paths["registry"]),
+            "--pre-execution-smoke",
+            str(paths["smoke"]),
+            "--scorer-results-output",
+            str(tmp_path / "official_scorer_results.jsonl"),
+            "--output-report",
+            str(output_json),
+            "--output-md",
+            str(tmp_path / "first_run.md"),
+        ]
+    )
+
+    report = read_json(output_json)
+    failed = [row for row in report["row_results"] if row["query_id"] == "gq_pdf_000"][0]
+    assert exit_code == 4
+    assert failed["answer_score"] == 0.0
+    assert failed["failure_category"] == "ANSWER_UNSUPPORTED"
+
+
+def test_xlsx_internal_formatter_input_does_not_support_or_emit_citation_surface(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+    write_generation_artifacts_for_fixture(module, tmp_path)
+    xlsx_jsonl = tmp_path / "ai" / "eval" / "reports" / "rag-ingestion" / "xlsx_answer_citation_diagnostic_review_input.jsonl"
+    rows = read_jsonl(xlsx_jsonl)
+    rows[0]["citation_items"][0]["citation_text"] = "public citation without answer"
+    rows[0]["formatter_input"]["nearby_rows"] = [{"row_text": "hidden internal answer 0"}]
+    write_jsonl(xlsx_jsonl, rows)
+    output_json = tmp_path / "first_run.json"
+
+    exit_code = module.main(
+        [
+            "--metric-input-config",
+            str(paths["config"]),
+            "--denominator-registry",
+            str(paths["registry"]),
+            "--pre-execution-smoke",
+            str(paths["smoke"]),
+            "--scorer-results-output",
+            str(tmp_path / "official_scorer_results.jsonl"),
+            "--output-report",
+            str(output_json),
+            "--output-md",
+            str(tmp_path / "first_run.md"),
+        ]
+    )
+
+    report = read_json(output_json)
+    failed = [row for row in report["row_results"] if row["query_id"] == "gq_xlsx_000"][0]
+    assert exit_code == 4
+    assert failed["failure_category"] == "CITATION_UNSUPPORTED"
+    assert failed["citation_support_score"] == 0.0
+    assert failed["retrieved_support"] == ["public citation without answer"]
+
+
 def write_official_fixture_bundle(module, tmp_path: Path) -> dict[str, Any]:
     module.REPO_ROOT = tmp_path
     eval_queries = tmp_path / "ai" / "eval" / "eval_queries"
@@ -358,7 +679,7 @@ def write_official_fixture_bundle(module, tmp_path: Path) -> dict[str, Any]:
     return paths
 
 
-def write_all_pass_scorer_results(path: Path) -> None:
+def write_all_pass_scorer_results(path: Path, *, skip_query_id: str = "") -> None:
     query_ids = (
         [f"gq_pdf_{idx:03d}" for idx in range(4)]
         + [f"text_namu_v2_{idx:03d}" for idx in range(3)]
@@ -368,6 +689,8 @@ def write_all_pass_scorer_results(path: Path) -> None:
     )
     with path.open("w", encoding="utf-8", newline="\n") as handle:
         for query_id in query_ids:
+            if query_id == skip_query_id:
+                continue
             handle.write(
                 json.dumps(
                     {
@@ -380,6 +703,157 @@ def write_all_pass_scorer_results(path: Path) -> None:
                 )
                 + "\n"
             )
+
+
+def write_generation_artifacts_for_fixture(
+    module,
+    tmp_path: Path,
+    *,
+    xlsx_surface_leakage_count: int = 0,
+) -> None:
+    reports = tmp_path / "ai" / "eval" / "reports" / "rag-ingestion"
+    review = tmp_path / "ai" / "eval" / "review"
+    reports.mkdir(parents=True, exist_ok=True)
+    review.mkdir(parents=True, exist_ok=True)
+
+    pdf_rows = rows_for_track("pdf_business_ocr_mm", 4, "gq_pdf")
+    xlsx_rows = rows_for_track("xlsx_business_structured", 19, "gq_xlsx")
+    text_rows = rows_for_track("text_namu_v2_1", 6, "text_namu_v2")
+
+    write_jsonl(
+        reports / "pdf_answer_citation_diagnostic_review_input.jsonl",
+        [generation_row_from_gold(row) for row in pdf_rows],
+    )
+    write_jsonl(
+        reports / "xlsx_answer_citation_diagnostic_review_input.jsonl",
+        [xlsx_generation_row_from_gold(row) for row in xlsx_rows],
+    )
+    write_json(
+        reports / "xlsx_answer_citation_hidden_excluded_leakage_reprobe.json",
+        {
+            "status": "PASS" if xlsx_surface_leakage_count == 0 else "FAIL",
+            "counts": {"surface_leakage_count": xlsx_surface_leakage_count},
+            "guardrails": {
+                "hidden_excluded_content_exposed": xlsx_surface_leakage_count > 0,
+                "production_namespace_mutated": False,
+                "production_vector_index_mutated": False,
+                "production_vector_written": False,
+            },
+        },
+    )
+    write_json(
+        review / "rag_text_namu_answer_citation_policy_review_packet_v2_1.json",
+        {
+            "status": "POLICY_REVIEW_PACKET_READY",
+            "diagnostic_only": True,
+            "not_official_metric": True,
+            "promotion_evidence": False,
+            "user_review": {
+                "rows_requiring_human_decision": [
+                    text_packet_row_from_gold(row) for row in text_rows
+                ]
+            },
+        },
+    )
+
+
+def generation_row_from_gold(row: Mapping[str, str]) -> dict[str, Any]:
+    locator = json.loads(row["citation_locator"])
+    return {
+        "query_id": row["query_id"],
+        "track": row["track"],
+        "generated_answer": row["expected_answer"],
+        "answer_claims": [row["expected_answer"]],
+        "citation_items": [
+            {
+                "citation_text": row["supporting_evidence"],
+                "citation_locator": locator,
+                "locator": locator,
+                "search_unit_id": locator.get("search_unit_id", ""),
+            }
+        ],
+        "citation_locator": locator,
+        "matched_text": row["supporting_evidence"],
+        "nearby_paragraphs": [row["supporting_evidence"]],
+        "citation_locator_valid": True,
+        "citation_text_matches_source_bound_evidence": True,
+        "bucket": "clean_pass",
+        "diagnostic_only": True,
+        "official_metric_input": False,
+        "promotion_evidence": False,
+    }
+
+
+def xlsx_generation_row_from_gold(row: Mapping[str, str]) -> dict[str, Any]:
+    payload = generation_row_from_gold(row)
+    locator = payload["citation_locator"]
+    payload["formatter_input"] = {
+        "citation_locator_metadata": {
+            "file": locator.get("file", ""),
+            "sheet": locator.get("sheet", ""),
+            "range": locator.get("range", ""),
+            "document_version_id": locator.get("document_version_id", ""),
+            "search_unit_id": locator.get("search_unit_id", ""),
+        },
+        "matched_cells": locator.get("matched_cells", []),
+        "target_rows": locator.get("target_rows", []),
+        "target_columns": locator.get("target_columns", []),
+        "row_values": [{"column_label": "answer", "value": row["expected_answer"]}],
+        "nearby_rows": [{"row_text": row["supporting_evidence"]}],
+    }
+    payload["citation_items"] = [
+        {
+            "citation_text": row["supporting_evidence"] + " " + row["expected_answer"],
+            "citation_type": "xlsx_sheet_range",
+            "locator": {
+                "file": locator.get("file", ""),
+                "sheet": locator.get("sheet", ""),
+                "range": locator.get("range", ""),
+                "matched_cells": locator.get("matched_cells", []),
+                "target_rows": locator.get("target_rows", []),
+                "target_columns": locator.get("target_columns", []),
+                "document_version_id": locator.get("document_version_id", ""),
+                "search_unit_id": locator.get("search_unit_id", ""),
+            },
+        }
+    ]
+    payload["verifier"] = {
+        "answer_claim_support_status": "PASS",
+        "citation_locator_status": "PASS",
+        "flattened_only_status": "PASS",
+    }
+    return payload
+
+
+def text_packet_row_from_gold(row: Mapping[str, str]) -> dict[str, Any]:
+    locator = json.loads(row["citation_locator"])
+    return {
+        "query_id": row["query_id"],
+        "query": row["question"],
+        "generated_short_answer": row["expected_answer"],
+        "suggested_extractive_answer_not_gold": row["expected_answer"],
+        "evidence_spans": [row["supporting_evidence"]],
+        "cited_chunk_ids": locator.get("cited_chunk_ids", []),
+        "assistant_review_action": "KEEP_WITH_CLEANUP",
+        "assistant_answer_judgment": "source_supported_rewrite",
+        "assistant_citation_support_judgment": "fully_supported",
+        "failure_causes": [],
+        "diagnostic_only": True,
+        "official_metric_input": False,
+        "promotion_evidence": False,
+    }
+
+
+def write_jsonl(path: Path, rows: list[Mapping[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in rows) + "\n",
+        encoding="utf-8",
+    )
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def rows_for_track(track: str, count: int, prefix: str) -> list[dict[str, str]]:
