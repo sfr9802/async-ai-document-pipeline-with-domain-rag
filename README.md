@@ -6,16 +6,54 @@ PostgreSQL은 job, artifact, catalog, SearchUnit 상태의 durable truth입니�
 
 ## 현재 상태
 
-기준 시점: 2026-05-14 KST. 전체 상태는 `diagnostic_pipeline_ready_for_review`이고, production promotion과 model-quality tuning은 아직 blocked입니다. 현재 metric preflight는 `DIAGNOSTIC_PREFLIGHT_BLOCKED`이며, official metric과 official denominator는 아직 열지 않았습니다.
+기준 시점: 2026-05-17 KST. 전체 상태는 `official_answer_citation_agentic_loop_measurement_partial_gpu_index_live_generation`입니다. official answer/citation denominator는 열려 있고 첫 baseline은 29개 row가 채점됐지만, production promotion과 model-quality tuning은 여전히 닫혀 있습니다. 다음 agentic-loop measurement는 별도 run id로 실행됐고, 비프로덕션 RAG FAISS index는 WSL2 Python 3.12 GPU 환경에서 재생성했습니다.
 
 | Metric surface | 현재 값 | 의미 |
 |---|---:|---|
-| Official metric input rows | TEXT `0`, XLSX `0`, PDF `0` | 세 트랙 모두 official metric 입력은 닫혀 있음 |
+| Official metric input rows | TEXT `6`, XLSX `19`, PDF `4` | registry-backed answer/citation denominator 총 `29` |
+| Official first-run baseline | PASS `8/29` | immutable baseline for comparison |
+| Agentic-loop measurement | PASS `1/29`, scored `29/29` | `official_answer_citation_agentic_loop_run_v1`, agentic loop executed with GPU-built non-production index |
 | Cross-track averages | `false` | TEXT/XLSX/PDF 평균값을 만들지 않음 |
 | Promotion evidence | `false` | production promotion 증거로 쓰지 않음 |
 | Official denominator registry mutation | `false` | denominator registry 변경 없음 |
 | Production vector/index mutation | `false` | production namespace, vector, index write 없음 |
 | Route/fallback labels | diagnostic-only | route accuracy, fallback success는 아직 official metric 아님 |
+
+## RAG Answer/Citation Metric Baseline
+
+The current official first-run baseline is `official_answer_citation_metric_first_run_v1`.
+Its status is `SCORED_BASELINE_PARTIAL`: `scored_count=29`, `PASS=8`,
+`CITATION_UNSUPPORTED=11`, and `PARTIAL_OR_UNSUPPORTED=10`.
+This artifact is the immutable baseline for comparison.
+
+Report-only candidates are not the baseline. The XLSX runtime candidate is
+`PASS=26/29` all-track carry-forward with `XLSX=19/19`, report-only. The PDF table/value candidate is `PASS=29/29`, report-only. Candidate `PASS=29/29`
+must not be presented as the official first-run baseline or promotion evidence.
+
+expected answers/supporting evidence are for scoring/audit only and must not be used for generation, retrieval, citation selection, repair, threshold tuning, or winner selection.
+
+The next phase is a separate actual performance measurement with a new run id,
+`official_answer_citation_agentic_loop_run_v1`, and the implemented agentic loop
+included. The non-production index at `ai/eval/indexes/rag-data` was rebuilt in
+WSL2 with Python 3.12, CUDA PyTorch, and CUDA FAISS: embedding ran on `cuda:0`
+and FAISS build metadata records `faiss_gpu_used=true`. The run scored 29 rows
+with PASS=1, CITATION_UNSUPPORTED=25, and PARTIAL_OR_UNSUPPORTED=3. It remains
+separate from the immutable baseline and is not promotion evidence.
+
+Canonical source-of-truth artifacts:
+
+- `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.md`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl`
+- `ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json`
+- `ai/eval/reports/rag-ingestion/official_metric_pre_execution_smoke_report_v1.json`
+- `ai/eval/reports/rag-ingestion/xlsx_answer_citation_runtime_precision_candidate_results_v1.jsonl`
+- `ai/eval/reports/rag-ingestion/pdf_answer_citation_table_value_candidate_results_v1.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_results.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.md`
+- `ai/eval/reports/rag-ingestion/rag_current_eval_status.jsonl`
+- `ai/eval/eval_queries/official_denominator_registry.json`
 
 ## 3트랙 아키텍처
 
@@ -59,9 +97,9 @@ flowchart LR
 
 | Track | 현재 상태 | Diagnostic preview | Official state | 남은 blocker |
 |---|---|---:|---|---|
-| TEXT/Namu V2.1 | `POLICY_REVIEW_PACKET_READY` | diagnostic positive denominator `47`; generated-answer review rows `66`; strict clean `60/66`; cleanup-inclusive `65/66`; citation-supported `65/66`; unresolved `1` | official metric input rows `0`; official answer/citation denominator `0`; model-assisted output is not human-approved gold | Human policy decision is required before any official metric lane can open |
-| XLSX | retrieval/evidence strict silver ready, answer/citation preflight `FAIL` | official retrieval/evidence denominator `23`; strict silver rows `23`; live smoke Hit@10 `1.0`; MRR@10 `0.942`; citation accuracy `1.0`; answer-claim/citation-locator `23/23`; leakage count `14`; clean pass held at `0` | official metric input rows `0`; answer-generation denominator `0` | Hidden/excluded leakage reprobe must pass before clean preflight |
-| PDF | `DIAGNOSTIC_ONLY_BLOCKED` | conservative positive controls `7`; strict silver rows `0`; diagnostic fallback rows `7`; matched text `7`; complete page/bbox/region `4`; citation locator `4`; strict gate readiness `0` | official metric input rows `0`; answer denominator `0` | Layout/SearchUnit/OCR/citation metadata must be enriched before strict gate rerun |
+| TEXT/Namu V2.1 | Official first-run PASS=6/6 | registry-backed answer/citation rows `6`; one diagnostic support-coverage warning retained | agentic-loop run scored 6/6, PASS=0 | Preserve baseline pass state; no tuning or promotion. |
+| XLSX | Official first-run PASS=1/19; runtime candidate report-only PASS=19/19 | registry-backed answer/citation rows `19`; candidate all-track carry-forward PASS=26/29 | agentic-loop run scored 19/19, PASS=0 | Keep candidate report-only; no winner selection. |
+| PDF | Official first-run PASS=1/4; table/value candidate report-only PASS=4/4 | registry-backed answer/citation rows `4`; repaired rows have official-compatible source-bound locators | agentic-loop run scored 4/4, PASS=1 | Keep candidate report-only; do not treat candidate PASS=29/29 as baseline or promotion evidence. |
 
 Route/fallback review artifact는 diagnostic analysis에만 사용합니다. routing accuracy, wrong-route rate, fallback success, multi-route success를 official metric으로 열지 않습니다.
 
@@ -76,8 +114,8 @@ Route/fallback review artifact는 diagnostic analysis에만 사용합니다. rou
 ## 근거 문서
 
 - `docs/rag-ingestion-progress.md`
-- `ai/eval/reports/rag-ingestion/three_track_metric_preflight_board.md`
-- `ai/eval/reports/rag-ingestion/three_track_orchestration_report.md`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.json`
 - `ai/eval/eval_queries/official_denominator_registry.json`
 
 ## 라이선스

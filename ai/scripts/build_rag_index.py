@@ -187,7 +187,11 @@ def main() -> int:
     metadata = RagMetadataStore(settings.rag_db_dsn)
     metadata.ping()
 
-    index = FaissIndex(Path(settings.rag_index_dir))
+    index = FaissIndex(
+        Path(settings.rag_index_dir),
+        build_device=settings.rag_faiss_build_device,
+    )
+    log.info("FAISS build device policy: %s", settings.rag_faiss_build_device)
     ingester = IngestService(
         embedder=embedder,
         metadata_store=metadata,

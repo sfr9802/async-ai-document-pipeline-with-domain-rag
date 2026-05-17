@@ -174,6 +174,16 @@ class WorkerSettings(BaseSettings):
         default="eval/indexes/rag-data",
         description="Directory holding the FAISS index file and build metadata. Resolved relative to the worker's CWD.",
     )
+    rag_faiss_build_device: Literal["cpu", "auto", "cuda"] = Field(
+        default="cpu",
+        description=(
+            "Device policy used only while building a FAISS index. 'cpu' "
+            "preserves the default exact IndexFlatIP build path. 'auto' "
+            "uses FAISS GPU APIs when installed and falls back to CPU. "
+            "'cuda' requires FAISS GPU APIs and fails closed instead of "
+            "silently building on CPU."
+        ),
+    )
     rag_embedding_text_variant: str = Field(
         default="retrieval_title_section",
         description=(

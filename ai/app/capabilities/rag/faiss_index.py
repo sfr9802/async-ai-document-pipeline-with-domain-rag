@@ -41,8 +41,9 @@ class IndexBuildInfo:
 class FaissIndex:
     """Thin, explicit wrapper around a single IndexFlatIP on disk."""
 
-    def __init__(self, index_dir: Path) -> None:
+    def __init__(self, index_dir: Path, *, build_device: str = "cpu") -> None:
         self._dir = Path(index_dir)
+        self._build_device = build_device
         self._index: Optional[faiss.Index] = None
         self._info: Optional[IndexBuildInfo] = None
 
@@ -143,9 +144,10 @@ class FaissIndex:
             vectors = vectors.astype(np.float32, copy=False)
 
         n, d = vectors.shape
+        build_meta = self._build_meta()
         index = faiss.IndexFlatIP(d)
         if n > 0:
-            index.add(vectors)
+            index, build_meta = self._add_vectors(index, vectors, build_meta)
 
         target_dir.mkdir(parents=True, exist_ok=True)
         faiss.write_index(index, str(target_dir / _INDEX_FILE))
@@ -163,12 +165,65 @@ class FaissIndex:
                     "embedding_model": info.embedding_model,
                     "dimension": info.dimension,
                     "chunk_count": info.chunk_count,
+                    **build_meta,
                 },
                 indent=2,
             ),
             encoding="utf-8",
         )
         return info, index
+
+    def _build_meta(self) -> dict[str, object]:
+        requested = (self._build_device or "cpu").strip().lower()
+        if requested not in {"cpu", "auto", "cuda"}:
+            raise ValueError(
+                "FAISS build_device must be one of 'cpu', 'auto', or 'cuda'"
+            )
+        return {
+            "faiss_build_device_requested": requested,
+            "faiss_gpu_used": False,
+            "faiss_gpu_count": _faiss_gpu_count(),
+        }
+
+    def _add_vectors(
+        self,
+        index: faiss.Index,
+        vectors: np.ndarray,
+        build_meta: dict[str, object],
+    ) -> tuple[faiss.Index, dict[str, object]]:
+        requested = str(build_meta["faiss_build_device_requested"])
+        if requested == "cpu":
+            index.add(vectors)
+            return index, build_meta
+
+        if not _faiss_gpu_ready():
+            message = (
+                "FAISS GPU build requested but this Python environment does "
+                "not expose StandardGpuResources/index_cpu_to_gpu with at "
+                "least one visible GPU."
+            )
+            if requested == "cuda":
+                raise RuntimeError(message)
+            log.info("%s Falling back to CPU because build_device='auto'.", message)
+            index.add(vectors)
+            return index, build_meta
+
+        resources = faiss.StandardGpuResources()
+        gpu_index = faiss.index_cpu_to_gpu(resources, 0, index)
+        gpu_index.add(vectors)
+        cpu_index = faiss.index_gpu_to_cpu(gpu_index)
+        build_meta.update(
+            {
+                "faiss_gpu_used": True,
+                "faiss_gpu_device": 0,
+            }
+        )
+        log.info(
+            "FAISS vectors added on GPU device 0 (vectors=%d, dim=%d)",
+            vectors.shape[0],
+            vectors.shape[1],
+        )
+        return cpu_index, build_meta
 
     def _new_stage_dir(self, index_version: str) -> Path:
         safe_version = "".join(
@@ -242,3 +297,22 @@ class FaissIndex:
         for row_id in range(n):
             out[row_id] = self._index.reconstruct(row_id)
         return out
+
+
+def _faiss_gpu_count() -> int:
+    get_num_gpus = getattr(faiss, "get_num_gpus", None)
+    if get_num_gpus is None:
+        return 0
+    try:
+        return int(get_num_gpus())
+    except Exception:
+        return 0
+
+
+def _faiss_gpu_ready() -> bool:
+    return (
+        _faiss_gpu_count() > 0
+        and hasattr(faiss, "StandardGpuResources")
+        and hasattr(faiss, "index_cpu_to_gpu")
+        and hasattr(faiss, "index_gpu_to_cpu")
+    )

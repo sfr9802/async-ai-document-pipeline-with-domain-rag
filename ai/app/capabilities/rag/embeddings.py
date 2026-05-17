@@ -231,6 +231,10 @@ class SentenceTransformerEmbedder(EmbeddingProvider):
     def model_name(self) -> str:
         return self._model_name
 
+    @property
+    def max_seq_length(self) -> Optional[int]:
+        return self._max_seq_length
+
     def embed_passages(self, texts: List[str]) -> np.ndarray:
         return self._embed([self._passage_prefix + t for t in texts])
 

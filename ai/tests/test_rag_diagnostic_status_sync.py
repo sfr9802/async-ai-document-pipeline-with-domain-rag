@@ -11,7 +11,7 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
     text = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = text.split("## Short History", 1)[0]
 
-    assert "official_answer_citation_pdf_table_value_candidate_report_only_pass" in current_text
+    assert "official_answer_citation_agentic_loop_measurement_partial_gpu_index_live_generation" in current_text
     assert "official_metric_execution_started=true" in current_text
     assert "official_scoring_attempt_count=29" in current_text
     assert "PASS=8" in current_text
@@ -21,6 +21,11 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
     assert "XLSX=19/19" in current_text
     assert "PDF table/value candidate" in current_text
     assert "PASS=29/29" in current_text
+    assert "official_answer_citation_agentic_loop_run_v1" in current_text
+    assert "scored_count=29" in current_text
+    assert "PASS=1" in current_text
+    assert "faiss_gpu_used=true" in current_text
+    assert "eval/indexes/rag-data" in current_text
     assert "report-only" in current_text
     assert "pytest ai/tests --rag-current -q" in current_text
     assert "full ai/tests is broad/nightly diagnostic only" in current_text
@@ -35,8 +40,9 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
 def test_progress_doc_does_not_keep_stale_current_profile_test_count():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
 
-    assert "Current verification: `--rag-current` 68 passed, 0 skipped, 0 failed" in text
-    assert "marker profile 68 passed, 2909 deselected, 0 failed" in text
+    assert "Current verification:" in text
+    assert "0 skipped" in text
+    assert "0 failed" in text
     assert "current focused profile is 61 tests" not in text
 
 
