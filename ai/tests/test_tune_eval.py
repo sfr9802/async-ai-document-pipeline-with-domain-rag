@@ -29,6 +29,12 @@ from eval import tune_eval
 from eval.harness.rag_eval import RagEvalSummary
 
 
+def test_optional_dataset_dependency_does_not_fail_collection():
+    assert tune_eval._DATASET_STATUS["status"] in {"LOADED", "SKIPPED_ENV_DEPENDENCY"}
+    if tune_eval._DATASET_STATUS["status"] == "SKIPPED_ENV_DEPENDENCY":
+        assert "No anime RAG dataset found" in tune_eval._DATASET_STATUS["reason"]
+
+
 def _fake_summary(**overrides: Any) -> RagEvalSummary:
     base = dict(
         dataset_path="fake",

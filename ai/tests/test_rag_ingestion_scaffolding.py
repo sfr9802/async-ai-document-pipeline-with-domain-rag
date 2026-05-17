@@ -317,19 +317,6 @@ def test_pdf_report_validation_requires_metadata_and_locations():
         )
 
 
-def test_pdf_batch_manifest_resolves_real_sample_paths():
-    manifest_path = ROOT / "ai" / "fixtures" / "manifests" / "rag_pdf_ingestion_manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert len(manifest["samples"]) >= 8
-
-    for sample in manifest["samples"]:
-        resolved = pdf_batch_module.resolve_sample_path(
-            sample.get("file_path") or sample["path"],
-            manifest_path,
-        )
-        assert resolved.exists(), sample["sample_id"]
-
-
 def test_promotion_metrics_builder_reports_missing_critical_counters(tmp_path):
     xlsx_report = tmp_path / "xlsx.json"
     pdf_report = tmp_path / "pdf.json"

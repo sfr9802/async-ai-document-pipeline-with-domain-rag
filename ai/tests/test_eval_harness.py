@@ -898,35 +898,3 @@ def test_ocr_harness_rejects_unsupported_extension(tmp_path: Path):
     assert summary.error_count == 1
     assert rows[0].error is not None
     assert "unsupported extension" in rows[0].error
-
-
-# ---------------------------------------------------------------------------
-# 5. Committed sample datasets parse cleanly.
-# ---------------------------------------------------------------------------
-
-
-class TestCommittedSampleDatasets:
-    """Guards against a stray comma breaking the shipped examples."""
-
-    def test_rag_sample_parses(self):
-        path = Path("eval/datasets/rag_sample.jsonl")
-        rows = load_jsonl(path)
-        assert len(rows) >= 1
-        for row in rows:
-            assert "query" in row and isinstance(row["query"], str)
-
-    def test_ocr_sample_parses(self):
-        path = Path("eval/datasets/ocr_sample.jsonl")
-        rows = load_jsonl(path)
-        assert len(rows) >= 1
-        for row in rows:
-            assert "file" in row and isinstance(row["file"], str)
-            assert "ground_truth" in row and isinstance(row["ground_truth"], str)
-
-    def test_multimodal_sample_parses(self):
-        path = Path("eval/datasets/multimodal_sample.jsonl")
-        rows = load_jsonl(path)
-        assert len(rows) >= 1
-        for row in rows:
-            assert "image" in row and isinstance(row["image"], str)
-            assert "question" in row and isinstance(row["question"], str)

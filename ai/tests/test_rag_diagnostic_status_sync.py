@@ -9,30 +9,47 @@ PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 
 def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unavailable():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
-    current_board = text.split("## Track Board", 1)[1].split("## 2026-05-14", 1)[0]
-    current_status = text.split("## Current Status", 1)[1].split("## Track Board", 1)[0]
-    next_steps = text.split("## Next Recommended Steps", 1)[1].split("## Update Policy", 1)[0]
+    current_text = text.split("## Short History", 1)[0]
 
-    assert "official_answer_citation_metric_first_run_scored_baseline_partial" in current_status
-    assert "official_metric_execution_started=true" in current_status
-    assert "official_scoring_attempt_count=29" in current_status
-    assert "PASS=8" in current_status
-    assert "CITATION_UNSUPPORTED=11" in current_status
-    assert "PARTIAL_OR_UNSUPPORTED=10" in current_status
-    assert "DIAGNOSTIC_POLICY_PACKET_READY" in current_board
-    assert "row/cell citation precision + target-column answer extraction candidate repair" in current_board
-    assert "preserve `text_namu_v2_0017` diagnostic warning" in current_board
-    assert "inspect table/row value answer generation failures" in current_board
-    assert "XLSX candidate repair, report-only" in next_steps
+    assert "official_answer_citation_pdf_table_value_candidate_report_only_pass" in current_text
+    assert "official_metric_execution_started=true" in current_text
+    assert "official_scoring_attempt_count=29" in current_text
+    assert "PASS=8" in current_text
+    assert "CITATION_UNSUPPORTED=11" in current_text
+    assert "PARTIAL_OR_UNSUPPORTED=10" in current_text
+    assert "XLSX runtime candidate" in current_text
+    assert "XLSX=19/19" in current_text
+    assert "PDF table/value candidate" in current_text
+    assert "PASS=29/29" in current_text
+    assert "report-only" in current_text
+    assert "pytest ai/tests --rag-current -q" in current_text
+    assert "full ai/tests is broad/nightly diagnostic only" in current_text
+    assert "rag_current_eval_status.jsonl" in current_text
 
-    for section in (current_status, current_board, next_steps):
-        assert "SCORER_BACKEND_UNAVAILABLE" not in section
-        assert "scorer/backend is unavailable" not in section
-        assert "wire or start the official answer/citation scorer/backend" not in section
-        assert "Wire or start the official answer/citation scorer/backend" not in section
+    assert "SCORER_BACKEND_UNAVAILABLE" not in current_text
+    assert "scorer/backend is unavailable" not in current_text
+    assert "wire or start the official answer/citation scorer/backend" not in current_text
+    assert "Wire or start the official answer/citation scorer/backend" not in current_text
 
 
-def test_progress_doc_scorer_backend_unavailable_only_in_superseded_history():
+def test_progress_doc_does_not_keep_stale_current_profile_test_count():
+    text = PROGRESS_DOC.read_text(encoding="utf-8")
+
+    assert "Current verification: `--rag-current` 68 passed, 0 skipped, 0 failed" in text
+    assert "marker profile 68 passed, 2909 deselected, 0 failed" in text
+    assert "current focused profile is 61 tests" not in text
+
+
+def test_progress_doc_explains_pre_execution_smoke_is_not_latest_metric_status():
+    text = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = text.split("## Short History", 1)[0]
+
+    assert "pre-execution artifact" in current_text
+    assert "official_metric_execution_started=false" in current_text
+    assert "must not be read\nas the latest metric execution status" in current_text
+
+
+def test_progress_doc_scorer_backend_unavailable_only_in_short_history():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
     headings_with_unavailable = []
     current_heading = ""
@@ -48,4 +65,4 @@ def test_progress_doc_scorer_backend_unavailable_only_in_superseded_history():
     if "SCORER_BACKEND_UNAVAILABLE" in "\n".join(current_body):
         headings_with_unavailable.append(current_heading)
 
-    assert headings_with_unavailable == ["2026-05-16 Official Answer/Citation Metric First Run (superseded)"]
+    assert headings_with_unavailable == ["Short History"]

@@ -62,7 +62,23 @@ def _load_combined() -> List[Dict[str, Any]]:
     return rows
 
 
-_DATASET = _load_combined()
+try:
+    _DATASET = _load_combined()
+    _DATASET_STATUS = {
+        "status": "LOADED",
+        "reason": "",
+        "row_count": len(_DATASET),
+    }
+except FileNotFoundError as exc:
+    if os.environ.get("TUNE_EVAL_DATASETS_REQUIRED") == "1":
+        raise
+    _DATASET = []
+    _DATASET_STATUS = {
+        "status": "SKIPPED_ENV_DEPENDENCY",
+        "reason": str(exc),
+        "row_count": 0,
+        "required_env_var": "TUNE_EVAL_DATASETS_REQUIRED",
+    }
 
 
 def _params_to_env(params: Mapping[str, Any]) -> Dict[str, str]:

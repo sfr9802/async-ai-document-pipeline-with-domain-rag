@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import builtins
 import importlib.util
 import json
 import sys
@@ -48,6 +49,22 @@ def test_text_namu_metadata_hard_negative_objective_and_guardrails(tmp_path: Pat
         priority.startswith("TEXT_NAMU: add near-duplicate metadata hard negatives")
         for priority in report["dataset_supplementation_priorities"]
     )
+
+
+def test_reranker_disabled_report_does_not_import_torch_or_transformers(tmp_path: Path, monkeypatch):
+    module = load_module()
+    real_import = builtins.__import__
+
+    def guarded_import(name, *args, **kwargs):
+        if name in {"torch", "sentence_transformers", "transformers"}:
+            raise AssertionError(f"heavy import should be isolated from run_reranker=false tests: {name}")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", guarded_import)
+    report, _ = module.build_report(fixture_config(tmp_path), run_reranker=False)
+
+    assert report["reranker_availability"]["probe_mode"] == "skipped_reranker_disabled"
+    assert report["reranker_availability"]["package_available"] is None
 
 
 def test_metric_sanity_adjusts_text_citation_location_when_location_json_missing(tmp_path: Path):

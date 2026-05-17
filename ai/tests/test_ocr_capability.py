@@ -525,6 +525,7 @@ def test_ocr_disabled_leaves_other_capabilities_intact(monkeypatch):
         ocr_enabled=False,
         ocr_extract_enabled=False,
         xlsx_extract_enabled=False,
+        pdf_extract_enabled=False,
     )
     result = registry_module.build_default_registry(settings)
 

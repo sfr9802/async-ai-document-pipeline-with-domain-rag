@@ -158,6 +158,7 @@ def build_report(config: Mapping[str, Any], *, run_reranker: bool) -> tuple[dict
         "metric_sanity": metric_sanity,
         "baseline_weakness": baseline,
         "text_namu_ablation": text_ablation,
+        "reranker_availability": text_ablation.get("reranker") or {},
         "text_namu_root_cause": root_cause,
         "pdf_file_identity_ablation": pdf_ablation,
         "xlsx_pdf_content_ceiling_effect": ceiling,
@@ -314,7 +315,7 @@ def run_text_namu_ablation(
         variant_reports[variant] = summarize_ablation_rows(rows)
         by_query_rows.extend(format_ablation_rows(rows, variant=variant, lane="TEXT_NAMU"))
 
-    reranker_info = reranker_availability()
+    reranker_info = reranker_availability() if run_reranker else reranker_availability_skipped()
     if run_reranker and reranker_info["available"]:
         try:
             candidates = load_text_candidates(lane_cfg, cases, "current_profile", max_candidates=max_candidates)
@@ -987,6 +988,23 @@ def reranker_availability() -> dict[str, Any]:
         "cache_folder": str(cache_folder),
         "cuda_available": cuda_available,
         "model": "BAAI/bge-reranker-v2-m3",
+    }
+
+
+def reranker_availability_skipped() -> dict[str, Any]:
+    cache_folder = Path(os.environ.get("HF_HOME") or os.environ.get("TRANSFORMERS_CACHE") or "C:/llm/hf_cache")
+    model_paths = [
+        cache_folder / "models--BAAI--bge-reranker-v2-m3",
+        cache_folder / "hub" / "models--BAAI--bge-reranker-v2-m3",
+    ]
+    return {
+        "available": False,
+        "package_available": None,
+        "local_model_cache_present": any(path.exists() for path in model_paths),
+        "cache_folder": str(cache_folder),
+        "cuda_available": None,
+        "model": "BAAI/bge-reranker-v2-m3",
+        "probe_mode": "skipped_reranker_disabled",
     }
 
 
