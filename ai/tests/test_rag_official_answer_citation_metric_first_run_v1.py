@@ -95,6 +95,9 @@ def test_injected_scorer_marks_execution_started_and_keeps_track_counts_separate
     assert report["status"] == "PASS_WITH_DIAGNOSTIC_WARNINGS"
     assert report["official_metric_execution_started"] is True
     assert report["official_scoring_attempt_count"] == 29
+    assert report["execution_blocker_category"] is None
+    assert report["primary_failure_category"] is None
+    assert report["status_detail"] == "SCORED_BASELINE_PASS_WITH_DIAGNOSTIC_WARNINGS"
     assert report["track_aggregates"]["pdf_business_ocr_mm"]["scored_count"] == 4
     assert report["track_aggregates"]["text_namu_v2_1"]["scored_count"] == 6
     assert report["track_aggregates"]["xlsx_business_structured"]["scored_count"] == 19
@@ -159,6 +162,9 @@ def test_partial_scorer_failure_records_taxonomy_fields(tmp_path: Path) -> None:
 
     assert report["status"] == "BLOCKED_OR_PARTIAL"
     assert report["official_metric_execution_started"] is True
+    assert report["execution_blocker_category"] is None
+    assert report["primary_failure_category"] == "ANSWER_UNSUPPORTED"
+    assert report["status_detail"] == "SCORED_BASELINE_PARTIAL"
     failed = [row for row in report["row_results"] if row["query_id"] == "gq_xlsx_000"][0]
     assert failed["answer_score"] == 0.0
     assert failed["citation_support_score"] == 0.0
@@ -177,6 +183,111 @@ def test_partial_scorer_failure_records_taxonomy_fields(tmp_path: Path) -> None:
     ]
 
 
+def test_xlsx_diagnostic_subtype_preserves_official_failure_category(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+
+    def scorer(row: Mapping[str, str]) -> dict[str, Any]:
+        if row["query_id"] == "gq_xlsx_000":
+            return {
+                "answer_score": 1.0,
+                "citation_support_score": 0.0,
+                "failure_category": "CITATION_UNSUPPORTED",
+                "failure_detail": "XLSX citation unsupported: leakage_ok=True, locator_match=True, support_match=False",
+                "generated_answer": "answer 0",
+                "generated_citations": [
+                    {
+                        "citation_text": "answer 0",
+                        "locator": {"range": "A1:D20", "matched_cells": ["A1:D20"]},
+                    }
+                ],
+                "score_details": {
+                    "expected_answer": "answer 0",
+                    "supporting_evidence": "D1",
+                    "xlsx_hidden_excluded_surface_leakage_count": 0,
+                },
+            }
+        return {
+            "answer_score": 1.0,
+            "citation_support_score": 1.0,
+            "failure_category": "PASS",
+            "failure_detail": "",
+        }
+
+    report = module.build_report(
+        metric_input_config_path=paths["config"],
+        denominator_registry_path=paths["registry"],
+        pre_execution_smoke_path=paths["smoke"],
+        scorer=scorer,
+    )
+
+    failed = [row for row in report["row_results"] if row["query_id"] == "gq_xlsx_000"][0]
+    assert failed["failure_category"] == "CITATION_UNSUPPORTED"
+    assert failed["diagnostic_xlsx_citation_failure_subtype"] == (
+        "support_cell_inside_locator_range_but_locator_too_broad"
+    )
+    assert failed["diagnostic_xlsx_citation_failure_subtype_policy"] == {
+        "diagnostic_only": True,
+        "official_failure_category_unchanged": True,
+        "tuning_target": False,
+        "threshold_tuning": False,
+        "promotion_evidence": False,
+    }
+    assert report["diagnostic_xlsx_citation_failure_subtype_counts"] == {
+        "support_cell_inside_locator_range_but_locator_too_broad": 1
+    }
+    assert "SCORER_BACKEND_UNAVAILABLE" not in report["failure_taxonomy"]
+
+
+def test_xlsx_answer_target_missing_subtype_when_citation_has_value_but_answer_omits_it(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+
+    def scorer(row: Mapping[str, str]) -> dict[str, Any]:
+        if row["query_id"] == "gq_xlsx_000":
+            return {
+                "answer_score": 0.0,
+                "citation_support_score": 0.0,
+                "failure_category": "PARTIAL_OR_UNSUPPORTED",
+                "failure_detail": (
+                    "generated_answer did not support expected_answer after deterministic normalization; "
+                    "XLSX citation unsupported: leakage_ok=True, locator_match=True, support_match=False"
+                ),
+                "generated_answer": "다른 열만 답했습니다.",
+                "generated_citations": [
+                    {
+                        "citation_text": "target column answer 0",
+                        "locator": {"range": "A1:D20", "matched_cells": ["A1:D20"]},
+                    }
+                ],
+                "score_details": {
+                    "expected_answer": "answer 0",
+                    "supporting_evidence": "D1",
+                    "xlsx_hidden_excluded_surface_leakage_count": 0,
+                },
+            }
+        return {
+            "answer_score": 1.0,
+            "citation_support_score": 1.0,
+            "failure_category": "PASS",
+            "failure_detail": "",
+        }
+
+    report = module.build_report(
+        metric_input_config_path=paths["config"],
+        denominator_registry_path=paths["registry"],
+        pre_execution_smoke_path=paths["smoke"],
+        scorer=scorer,
+    )
+
+    failed = [row for row in report["row_results"] if row["query_id"] == "gq_xlsx_000"][0]
+    assert failed["failure_category"] == "PARTIAL_OR_UNSUPPORTED"
+    assert failed["diagnostic_xlsx_citation_failure_subtype"] == "answer_target_column_missing"
+    assert report["track_aggregates"]["xlsx_business_structured"][
+        "diagnostic_xlsx_citation_failure_subtype_counts"
+    ] == {"answer_target_column_missing": 1}
+
+
 def test_cli_returns_nonzero_when_backend_unavailable_but_writes_report(tmp_path: Path) -> None:
     module = load_module()
     paths = write_official_fixture_bundle(module, tmp_path)
@@ -191,6 +302,8 @@ def test_cli_returns_nonzero_when_backend_unavailable_but_writes_report(tmp_path
             str(paths["registry"]),
             "--pre-execution-smoke",
             str(paths["smoke"]),
+            "--scorer-results-jsonl",
+            "",
             "--output-report",
             str(output_json),
             "--output-md",
@@ -281,6 +394,73 @@ def test_cli_fail_closes_on_duplicate_extra_scorer_result_row(tmp_path: Path) ->
     assert report["status"] == "FAIL_CLOSED_INPUT_VALIDATION"
     assert report["official_scoring_attempt_count"] == 0
     assert any("duplicate scorer result query_id gq_xlsx_000" in error for error in report["validation"]["errors"])
+
+
+def test_empty_scorer_results_jsonl_fails_closed_before_scoring(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+    scorer_results = tmp_path / "empty_scorer_results.jsonl"
+    scorer_results.write_text("", encoding="utf-8")
+
+    report = module.build_report(
+        metric_input_config_path=paths["config"],
+        denominator_registry_path=paths["registry"],
+        pre_execution_smoke_path=paths["smoke"],
+        scorer=module.scorer_from_results_jsonl(scorer_results),
+    )
+
+    assert report["status"] == "FAIL_CLOSED_INPUT_VALIDATION"
+    assert report["official_metric_execution_started"] is False
+    assert report["official_scoring_attempt_count"] == 0
+    assert "scorer results row count must be 29, got 0" in report["validation"]["errors"]
+    assert any("scorer results missing official query_ids" in error for error in report["validation"]["errors"])
+
+
+def test_scorer_guardrail_true_flag_fails_closed_before_scoring(tmp_path: Path) -> None:
+    module = load_module()
+    paths = write_official_fixture_bundle(module, tmp_path)
+    scorer_results = tmp_path / "scorer_results.jsonl"
+    write_all_pass_scorer_results(scorer_results)
+    rows = [json.loads(line) for line in scorer_results.read_text(encoding="utf-8").splitlines()]
+    rows[0]["production_mutation"] = True
+    scorer_results.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+    report = module.build_report(
+        metric_input_config_path=paths["config"],
+        denominator_registry_path=paths["registry"],
+        pre_execution_smoke_path=paths["smoke"],
+        scorer=module.scorer_from_results_jsonl(scorer_results),
+    )
+
+    assert report["status"] == "FAIL_CLOSED_INPUT_VALIDATION"
+    assert report["official_metric_execution_started"] is False
+    assert report["official_scoring_attempt_count"] == 0
+    assert "scorer result gq_pdf_000 production_mutation must be false" in report["validation"]["errors"]
+
+
+def test_latest_first_run_artifacts_are_scored_baseline_not_backend_unavailable() -> None:
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "official_answer_citation_metric_first_run_v1.json"
+    md_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "official_answer_citation_metric_first_run_v1.md"
+    report = read_json(report_path)
+    md_text = md_path.read_text(encoding="utf-8")
+
+    assert report["official_scoring_attempt_count"] == 29
+    assert report["scored_count"] == 29
+    assert report["artifact_paths"]["scorer_results_jsonl"] == (
+        "ai/eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl"
+    )
+    assert report["execution_blocker_category"] is None
+    assert report["primary_failure_category"] == "CITATION_UNSUPPORTED"
+    assert report["status_detail"] == "SCORED_BASELINE_PARTIAL"
+    assert report["tuning_run_started"] is False
+    assert report["promotion_evidence"] is False
+    assert report["production_mutation"] is False
+    assert "SCORER_BACKEND_UNAVAILABLE" not in json.dumps(report, ensure_ascii=False)
+    assert "SCORER_BACKEND_UNAVAILABLE" not in md_text
+    assert "not a scorer backend blocker" in md_text
 
 
 def test_source_guardrail_flags_fail_closed_before_scoring(tmp_path: Path) -> None:
@@ -391,7 +571,7 @@ def rows_for_track(track: str, count: int, prefix: str) -> list[dict[str, str]]:
                 "query_id": query_id,
                 "question": f"question {query_id}",
                 "expected_answer": f"answer {idx}",
-                "supporting_evidence": f"evidence {idx}",
+                "supporting_evidence": f"D{idx + 1}" if track == "xlsx_business_structured" else f"evidence {idx}",
                 "track": track,
                 "citation_locator": json.dumps(locator_for_track(track, idx), ensure_ascii=False),
                 "human_label": "INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE",

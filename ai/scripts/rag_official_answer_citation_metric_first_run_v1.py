@@ -13,6 +13,7 @@ import argparse
 import csv
 import hashlib
 import json
+import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -29,6 +30,7 @@ DEFAULT_DENOMINATOR_REGISTRY = EVAL_QUERY_DIR / "official_denominator_registry.j
 DEFAULT_PRE_EXECUTION_SMOKE = REPORT_DIR / "official_metric_pre_execution_smoke_report_v1.json"
 DEFAULT_OUTPUT_JSON = REPORT_DIR / "official_answer_citation_metric_first_run_v1.json"
 DEFAULT_OUTPUT_MD = REPORT_DIR / "official_answer_citation_metric_first_run_v1.md"
+DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "official_answer_citation_scorer_results_v1.jsonl"
 
 SCHEMA_VERSION = "official_answer_citation_metric_first_run_v1"
 REPORT_ROLE = "official_answer_citation_metric_first_run"
@@ -42,6 +44,44 @@ INPUT_VALIDATION_FAILED = "INPUT_VALIDATION_FAILED"
 SCORER_EXCEPTION = "SCORER_EXCEPTION"
 SCORER_INVALID_RESULT = "SCORER_INVALID_RESULT"
 SCORER_RESULT_MISSING = "SCORER_RESULT_MISSING"
+SCORER_EXTRA_RESULT_FIELDS = (
+    "actual_answer",
+    "generated_answer",
+    "generated_citations",
+    "retrieved_support",
+    "score_details",
+    "scorer_backend_mode",
+    "scorer_backend_name",
+    "scorer_backend_version",
+)
+SCORER_FALSE_ONLY_KEYS = (
+    "tuning_run_started",
+    "promotion_evidence",
+    "threshold_tuning",
+    "gold_mutation",
+    "denominator_mutation",
+    "production_mutation",
+    "production_namespace_vector_index_mutation",
+    "production_vector_written",
+)
+XLSX_CITATION_DIAGNOSTIC_SUBTYPE_TAXONOMY = {
+    "support_cell_inside_locator_range_but_locator_too_broad": (
+        "The official supporting cell falls inside the cited XLSX range, but the citation is a broad range instead "
+        "of the exact cell or target row."
+    ),
+    "support_cell_not_in_locator_range": (
+        "The official supporting cell is outside the generated citation locator range."
+    ),
+    "support_value_present_but_cell_address_not_precise": (
+        "The support value appears in citation text, but the citation does not identify the precise support cell."
+    ),
+    "answer_target_column_missing": (
+        "The cited XLSX row contains the target column/value, but the generated answer omitted that target field."
+    ),
+    "hidden_excluded_leakage": (
+        "Hidden or policy-excluded XLSX content appeared on an answer/citation surface."
+    ),
+}
 
 ScoreFn = Callable[[Mapping[str, str]], Mapping[str, Any]]
 
@@ -82,10 +122,10 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--pre-execution-smoke", default=str(DEFAULT_PRE_EXECUTION_SMOKE))
     parser.add_argument(
         "--scorer-results-jsonl",
-        default="",
+        default=str(DEFAULT_SCORER_RESULTS_JSONL),
         help=(
-            "Optional official scorer output JSONL keyed by query_id. "
-            "When omitted, the runner fails closed without fabricating scores."
+            "Official scorer output JSONL keyed by query_id. "
+            "Pass an empty string only to exercise the fail-closed backend-unavailable path."
         ),
     )
     parser.add_argument("--output-report", default=str(DEFAULT_OUTPUT_JSON))
@@ -110,6 +150,12 @@ def run_first_metric(
     )
     report["artifact_paths"]["report_json"] = repo_relative(output_report)
     report["artifact_paths"]["report_md"] = repo_relative(output_md)
+    scorer_results_path = nested_mapping(report, "scorer_backend", "results_jsonl").get("path")
+    if scorer_results_path:
+        report["artifact_paths"]["scorer_results_jsonl"] = scorer_results_path
+        report["artifact_paths"]["scorer_results_jsonl_sha256"] = nested_mapping(
+            report, "scorer_backend", "results_jsonl"
+        ).get("sha256")
     write_json(output_report, report)
     output_md.parent.mkdir(parents=True, exist_ok=True)
     output_md.write_text(render_markdown(report), encoding="utf-8")
@@ -145,10 +191,21 @@ def build_report(
         validation_errors.extend(clean(error) for error in getattr(scorer, "load_errors", []) if clean(error))
 
     row_count_by_track = dict(sorted(Counter(row["_track"] for row in rows).items()))
+    official_query_ids = {clean(row.get("query_id")) for row in rows}
+    scorer_query_ids = set(getattr(scorer, "query_ids")) if scorer is not None and hasattr(scorer, "query_ids") else None
     if len(rows) != EXPECTED_TOTAL:
         validation_errors.append(f"official input row count must be {EXPECTED_TOTAL}, got {len(rows)}")
     if row_count_by_track != EXPECTED_SPLIT:
         validation_errors.append(f"official input track split mismatch: {row_count_by_track}")
+    if scorer_query_ids is not None:
+        if len(scorer_query_ids) != EXPECTED_TOTAL:
+            validation_errors.append(f"scorer results row count must be {EXPECTED_TOTAL}, got {len(scorer_query_ids)}")
+        missing_scorer_ids = sorted(official_query_ids - scorer_query_ids)
+        extra_scorer_ids = sorted(scorer_query_ids - official_query_ids)
+        if missing_scorer_ids:
+            validation_errors.append(f"scorer results missing official query_ids: {missing_scorer_ids}")
+        if extra_scorer_ids:
+            validation_errors.append(f"scorer results contain non-official query_ids: {extra_scorer_ids}")
 
     if validation_errors:
         row_results = [
@@ -181,17 +238,47 @@ def build_report(
             status = "PASS"
 
     execution_started = attempt_count > 0
+    execution_blocker_category = execution_blocker_category_from(status, blocker_category, execution_started)
+    primary_failure_category = None if execution_blocker_category else blocker_category
+    status_detail = status_detail_from(status, execution_blocker_category, primary_failure_category, diagnostic_warnings)
     track_aggregates = build_track_aggregates(row_results)
+    failure_category_counts = dict(
+        sorted(Counter(clean(row.get("failure_category")) for row in row_results).items())
+    )
+    scored_count = sum(
+        1
+        for row in row_results
+        if row.get("answer_score") is not None and row.get("citation_support_score") is not None
+    )
+    answer_score_pass_count = sum(1 for row in row_results if row.get("answer_score") == 1.0)
+    citation_support_score_pass_count = sum(1 for row in row_results if row.get("citation_support_score") == 1.0)
+    error_count = sum(1 for row in row_results if row.get("failure_category") != PASS_CATEGORY)
+    skipped_count = sum(1 for row in row_results if row.get("scoring_attempted") is not True)
+    diagnostic_xlsx_citation_failure_subtype_counts = dict(
+        sorted(
+            Counter(
+                clean(row.get("diagnostic_xlsx_citation_failure_subtype"))
+                for row in row_results
+                if clean(row.get("diagnostic_xlsx_citation_failure_subtype"))
+            ).items()
+        )
+    )
     skipped_or_error_rows = [
         {
             "query_id": row["query_id"],
             "track": row["track"],
             "failure_category": row["failure_category"],
             "failure_detail": row["failure_detail"],
+            **(
+                {"diagnostic_xlsx_citation_failure_subtype": row["diagnostic_xlsx_citation_failure_subtype"]}
+                if clean(row.get("diagnostic_xlsx_citation_failure_subtype"))
+                else {}
+            ),
         }
         for row in row_results
         if row["failure_category"] != PASS_CATEGORY
     ]
+    scorer_results_path = getattr(scorer, "results_jsonl_path", None) if scorer is not None else None
 
     report = {
         "schema_version": SCHEMA_VERSION,
@@ -202,6 +289,15 @@ def build_report(
         "official_metric_execution_started": execution_started,
         "official_scoring_attempt_count": attempt_count,
         "blocker_category": blocker_category,
+        "execution_blocker_category": execution_blocker_category,
+        "primary_failure_category": primary_failure_category,
+        "status_detail": status_detail,
+        "scored_count": scored_count,
+        "answer_score_pass_count": answer_score_pass_count,
+        "citation_support_score_pass_count": citation_support_score_pass_count,
+        "error_count": error_count,
+        "skipped_count": skipped_count,
+        "failure_category_counts": failure_category_counts,
         "tuning_run_started": False,
         "promotion_evidence": False,
         "threshold_tuning": False,
@@ -250,9 +346,31 @@ def build_report(
         },
         "row_results": row_results,
         "track_aggregates": track_aggregates,
+        "baseline_metrics": build_baseline_metrics(track_aggregates),
+        "baseline_metric_policy": {
+            "scope": "per-track observation only",
+            "cross_track_average": "not optimization, not tuning target",
+            "threshold_tuning": False,
+            "promotion_evidence": False,
+            "winner_selection": False,
+        },
         "skipped_or_error_rows": skipped_or_error_rows,
         "diagnostic_warnings": diagnostic_warnings,
-        "failure_taxonomy": failure_taxonomy(),
+        "failure_taxonomy": failure_taxonomy(row_results),
+        "diagnostic_xlsx_citation_failure_subtype_taxonomy": XLSX_CITATION_DIAGNOSTIC_SUBTYPE_TAXONOMY,
+        "diagnostic_xlsx_citation_failure_subtype_counts": diagnostic_xlsx_citation_failure_subtype_counts,
+        "diagnostic_xlsx_citation_failure_subtype_policy": {
+            "diagnostic_only": True,
+            "official_failure_category_unchanged": True,
+            "tuning_target": False,
+            "threshold_tuning": False,
+            "promotion_evidence": False,
+        },
+        "scorer_backend": scorer_backend_summary(
+            scorer=scorer,
+            rows=row_results,
+            scorer_results_path=scorer_results_path,
+        ),
         "validation": {
             "ok": not validation_errors,
             "errors": sorted(dict.fromkeys(validation_errors)),
@@ -408,7 +526,7 @@ def row_result_from_score(row: Mapping[str, Any], score: Mapping[str, Any]) -> d
         if score_error
         else raw_category or (PASS_CATEGORY if answer_score == 1.0 and citation_score == 1.0 else "PARTIAL_OR_UNSUPPORTED")
     )
-    return base_row_result(
+    result = base_row_result(
         row,
         scoring_attempted=True,
         answer_score=answer_score,
@@ -416,6 +534,22 @@ def row_result_from_score(row: Mapping[str, Any], score: Mapping[str, Any]) -> d
         failure_category=category,
         failure_detail=score_error or clean(score.get("failure_detail")),
     )
+    for key in SCORER_EXTRA_RESULT_FIELDS:
+        if key in score:
+            result[key] = score[key]
+    subtype_info = xlsx_citation_diagnostic_subtype(row=row, score=score, result=result)
+    if subtype_info:
+        result["diagnostic_xlsx_citation_failure_subtype"] = subtype_info["subtype"]
+        result["diagnostic_xlsx_citation_failure_subtype_detail"] = subtype_info["detail"]
+        result["diagnostic_xlsx_citation_failure_subtype_signals"] = subtype_info["signals"]
+        result["diagnostic_xlsx_citation_failure_subtype_policy"] = {
+            "diagnostic_only": True,
+            "official_failure_category_unchanged": True,
+            "tuning_target": False,
+            "threshold_tuning": False,
+            "promotion_evidence": False,
+        }
+    return result
 
 
 def row_result_from_failure(
@@ -467,6 +601,11 @@ def build_track_aggregates(row_results: list[Mapping[str, Any]]) -> dict[str, An
     for track in TRACKS:
         track_rows = [row for row in row_results if row.get("track") == track]
         failure_counts = Counter(clean(row.get("failure_category")) for row in track_rows)
+        subtype_counts = Counter(
+            clean(row.get("diagnostic_xlsx_citation_failure_subtype"))
+            for row in track_rows
+            if clean(row.get("diagnostic_xlsx_citation_failure_subtype"))
+        )
         aggregates[track] = {
             "row_count": len(track_rows),
             "attempted_count": sum(1 for row in track_rows if row.get("scoring_attempted") is True),
@@ -482,8 +621,34 @@ def build_track_aggregates(row_results: list[Mapping[str, Any]]) -> dict[str, An
             "error_count": sum(1 for row in track_rows if row.get("failure_category") != PASS_CATEGORY),
             "skipped_count": sum(1 for row in track_rows if row.get("scoring_attempted") is not True),
             "failure_category_counts": dict(sorted(failure_counts.items())),
+            "diagnostic_xlsx_citation_failure_subtype_counts": dict(sorted(subtype_counts.items())),
         }
     return aggregates
+
+
+def build_baseline_metrics(track_aggregates: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+    per_track: dict[str, Any] = {}
+    for track, item in track_aggregates.items():
+        row_count = int_value(item.get("row_count"))
+        scored_count = int_value(item.get("scored_count"))
+        pass_count = int_value(nested_mapping(item, "failure_category_counts").get(PASS_CATEGORY))
+        answer_pass_count = int_value(item.get("answer_score_pass_count"))
+        citation_pass_count = int_value(item.get("citation_support_score_pass_count"))
+        per_track[track] = {
+            "row_count": row_count,
+            "scored_count": scored_count,
+            "pass_count": pass_count,
+            "pass_rate": ratio(pass_count, row_count),
+            "answer_pass_count": answer_pass_count,
+            "answer_pass_rate": ratio(answer_pass_count, row_count),
+            "citation_support_pass_count": citation_pass_count,
+            "citation_support_pass_rate": ratio(citation_pass_count, row_count),
+        }
+    return {
+        "per_track": per_track,
+        "cross_track_average": None,
+        "cross_track_average_note": "not optimization, not tuning target",
+    }
 
 
 def blocker_category_from_results(row_results: list[Mapping[str, Any]]) -> str | None:
@@ -492,6 +657,31 @@ def blocker_category_from_results(row_results: list[Mapping[str, Any]]) -> str |
         return None
     counts = Counter(categories)
     return counts.most_common(1)[0][0]
+
+
+def execution_blocker_category_from(status: str, blocker_category: str | None, execution_started: bool) -> str | None:
+    if status == "FAIL_CLOSED_INPUT_VALIDATION":
+        return INPUT_VALIDATION_FAILED
+    if not execution_started and blocker_category:
+        return blocker_category
+    return None
+
+
+def status_detail_from(
+    status: str,
+    execution_blocker_category: str | None,
+    primary_failure_category: str | None,
+    diagnostic_warnings: list[Mapping[str, Any]],
+) -> str:
+    if execution_blocker_category == INPUT_VALIDATION_FAILED:
+        return "FAIL_CLOSED_INPUT_VALIDATION"
+    if execution_blocker_category == SCORER_BACKEND_UNAVAILABLE:
+        return "EXECUTION_BLOCKED_SCORER_BACKEND_UNAVAILABLE"
+    if primary_failure_category:
+        return "SCORED_BASELINE_PARTIAL"
+    if status == "PASS_WITH_DIAGNOSTIC_WARNINGS" or diagnostic_warnings:
+        return "SCORED_BASELINE_PASS_WITH_DIAGNOSTIC_WARNINGS"
+    return "SCORED_BASELINE_PASS"
 
 
 def score_validation_error(answer_score: float | None, citation_score: float | None, category: str) -> str:
@@ -506,6 +696,117 @@ def score_validation_error(answer_score: float | None, citation_score: float | N
     if category == PASS_CATEGORY and (answer_score != 1.0 or citation_score != 1.0):
         return "failure_category PASS requires answer_score=1.0 and citation_support_score=1.0"
     return ""
+
+
+def xlsx_citation_diagnostic_subtype(
+    *,
+    row: Mapping[str, Any],
+    score: Mapping[str, Any],
+    result: Mapping[str, Any],
+) -> dict[str, Any]:
+    if clean(row.get("_track") or row.get("track")) != "xlsx_business_structured":
+        return {}
+    if clean(result.get("failure_category")) == PASS_CATEGORY:
+        return {}
+
+    score_details = as_mapping(score.get("score_details"))
+    failure_detail = clean(result.get("failure_detail"))
+    citation_match_detail = clean(score_details.get("citation_match_detail"))
+    generated_citations = score.get("generated_citations")
+    citation_failure_context = (
+        isinstance(generated_citations, list)
+        or "XLSX citation" in failure_detail
+        or "XLSX citation" in citation_match_detail
+        or "leakage_ok=False" in failure_detail
+        or "leakage_ok=False" in citation_match_detail
+    )
+    if not citation_failure_context:
+        return {}
+    first_citation = generated_citations[0] if isinstance(generated_citations, list) and generated_citations else {}
+    first_citation = first_citation if isinstance(first_citation, Mapping) else {}
+    locator = as_mapping(first_citation.get("locator"))
+    citation_text = clean(first_citation.get("citation_text"))
+    generated_answer = clean(score.get("generated_answer"))
+    expected_answer = clean(score_details.get("expected_answer") or row.get("expected_answer"))
+    support_cell = first_cell_ref(score_details.get("supporting_evidence") or row.get("supporting_evidence"))
+    locator_range = clean(locator.get("range"))
+    matched_cells = [clean(value).upper() for value in list_value(locator.get("matched_cells"))]
+    support_value_present = expected_answer_supported_by_text(expected_answer, citation_text)
+    answer_value_present = expected_answer_supported_by_text(expected_answer, generated_answer)
+    support_cell_inside = bool(support_cell and cell_in_any_range(support_cell, [locator_range, *matched_cells]))
+    locator_is_exact_cell = bool(
+        support_cell
+        and (
+            locator_range.upper() == support_cell
+            or matched_cells == [support_cell]
+            or (not matched_cells and locator_range.upper() == support_cell)
+        )
+    )
+    leakage_count = int_value(score_details.get("xlsx_hidden_excluded_surface_leakage_count"))
+    leakage_failed = "leakage_ok=False" in failure_detail or "leakage_ok=False" in citation_match_detail
+
+    signals = {
+        "supporting_evidence_cell": support_cell,
+        "citation_locator_range": locator_range,
+        "citation_locator_matched_cells": matched_cells,
+        "support_cell_inside_locator_range": support_cell_inside,
+        "locator_is_exact_support_cell": locator_is_exact_cell,
+        "support_value_present_in_citation_text": support_value_present,
+        "answer_score": result.get("answer_score"),
+        "citation_support_score": result.get("citation_support_score"),
+        "answer_value_present_in_generated_answer": answer_value_present,
+        "xlsx_hidden_excluded_surface_leakage_count": leakage_count,
+    }
+
+    if leakage_count > 0 or leakage_failed:
+        return subtype_result("hidden_excluded_leakage", signals)
+    if result.get("answer_score") != 1.0 and support_value_present and not answer_value_present:
+        return subtype_result("answer_target_column_missing", signals)
+    if support_cell and not support_cell_inside:
+        return subtype_result("support_cell_not_in_locator_range", signals)
+    if support_cell_inside and not locator_is_exact_cell:
+        return subtype_result("support_cell_inside_locator_range_but_locator_too_broad", signals)
+    if support_value_present and not locator_is_exact_cell:
+        return subtype_result("support_value_present_but_cell_address_not_precise", signals)
+    return {}
+
+
+def subtype_result(subtype: str, signals: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "subtype": subtype,
+        "detail": XLSX_CITATION_DIAGNOSTIC_SUBTYPE_TAXONOMY[subtype],
+        "signals": dict(signals),
+    }
+
+
+def expected_answer_supported_by_text(expected_answer: str, text: str) -> bool:
+    expected = normalized_text(expected_answer)
+    target = normalized_text(text)
+    if not expected or not target:
+        return False
+    expected_variants = {expected, strip_expected_answer_suffix(expected)}
+    expected_variants = {value for value in expected_variants if value}
+    if any(value in target for value in expected_variants):
+        return True
+    numeric_tokens = [normalized_text(token) for token in cell_value_tokens(expected_answer)]
+    if numeric_tokens and all(token in target for token in numeric_tokens):
+        return True
+    return False
+
+
+def strip_expected_answer_suffix(value: str) -> str:
+    for suffix in ("입니다", "이다", "명", "원", "개"):
+        if value.endswith(suffix):
+            value = value[: -len(suffix)]
+    return value
+
+
+def cell_value_tokens(value: str) -> list[str]:
+    return [
+        token
+        for token in re.findall(r"\d{4}-\d{2}-\d{2}|\d[\d,]*", clean(value))
+        if token
+    ]
 
 
 def source_guardrail_errors(label: str, payload: Mapping[str, Any]) -> list[str]:
@@ -541,8 +842,65 @@ def source_guardrail_errors(label: str, payload: Mapping[str, Any]) -> list[str]
     return sorted(dict.fromkeys(errors))
 
 
+def scorer_backend_summary(
+    *,
+    scorer: ScoreFn | None,
+    rows: list[Mapping[str, Any]],
+    scorer_results_path: Path | None,
+) -> dict[str, Any]:
+    if scorer is None:
+        return {
+            "backend_name": "",
+            "backend_mode": "",
+            "backend_version": "",
+            "official_rows_consumed": len(rows),
+            "official_result_rows_written": 0,
+            "source_load_errors": [],
+            "results_jsonl": None,
+            "tuning_run_started": False,
+            "promotion_evidence": False,
+            "threshold_tuning": False,
+            "gold_mutation": False,
+            "denominator_mutation": False,
+            "production_mutation": False,
+            "production_namespace_vector_index_mutation": False,
+            "production_vector_written": False,
+            "validation": {"ok": True, "errors": []},
+        }
+
+    scorer_query_ids = getattr(scorer, "query_ids", None)
+    result_rows = len(scorer_query_ids) if scorer_query_ids is not None else sum(
+        1 for row in rows if row.get("scoring_attempted") is True
+    )
+    backend_name = clean(getattr(scorer, "backend_name", "")) or "official_deterministic_artifact_scorer"
+    backend_mode = clean(getattr(scorer, "backend_mode", "")) or "deterministic_existing_generation_artifact_scoring"
+    backend_version = clean(getattr(scorer, "backend_version", "")) or "v1"
+    return {
+        "backend_name": backend_name,
+        "backend_mode": backend_mode,
+        "backend_version": backend_version,
+        "official_rows_consumed": len(rows),
+        "official_result_rows_written": result_rows,
+        "source_load_errors": [clean(error) for error in getattr(scorer, "load_errors", []) if clean(error)],
+        "results_jsonl": file_identity(scorer_results_path),
+        "tuning_run_started": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "gold_mutation": False,
+        "denominator_mutation": False,
+        "production_mutation": False,
+        "production_namespace_vector_index_mutation": False,
+        "production_vector_written": False,
+        "validation": {
+            "ok": not bool(getattr(scorer, "load_errors", [])),
+            "errors": [clean(error) for error in getattr(scorer, "load_errors", []) if clean(error)],
+        },
+    }
+
+
 def scorer_from_results_jsonl(path: Path) -> ScoreFn:
     results, load_errors = read_jsonl_by_query_id(path)
+    load_errors.extend(scorer_guardrail_errors(results))
 
     def scorer(row: Mapping[str, str]) -> Mapping[str, Any]:
         query_id = clean(row.get("query_id"))
@@ -556,7 +914,27 @@ def scorer_from_results_jsonl(path: Path) -> ScoreFn:
         return results[query_id]
 
     setattr(scorer, "load_errors", load_errors)
+    setattr(scorer, "query_ids", set(results))
+    setattr(scorer, "results_jsonl_path", path)
+    setattr(scorer, "results_jsonl_sha256", sha256_file(path) if path.exists() else None)
+    first_result = next(iter(results.values()), {})
+    setattr(scorer, "backend_name", clean(first_result.get("scorer_backend_name")))
+    setattr(scorer, "backend_mode", clean(first_result.get("scorer_backend_mode")))
+    setattr(scorer, "backend_version", clean(first_result.get("scorer_backend_version")))
     return scorer
+
+
+def scorer_guardrail_errors(results: Mapping[str, Mapping[str, Any]]) -> list[str]:
+    errors: list[str] = []
+    for query_id, row in sorted(results.items()):
+        for key in SCORER_FALSE_ONLY_KEYS:
+            if row.get(key) is True:
+                errors.append(f"scorer result {query_id} {key} must be false")
+        score_details = as_mapping(row.get("score_details"))
+        for key in SCORER_FALSE_ONLY_KEYS:
+            if score_details.get(key) is True:
+                errors.append(f"scorer result {query_id} score_details.{key} must be false")
+    return errors
 
 
 def diagnostic_warnings_from_smoke(smoke: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -574,10 +952,9 @@ def diagnostic_warnings_from_smoke(smoke: Mapping[str, Any]) -> list[dict[str, A
     return warnings
 
 
-def failure_taxonomy() -> dict[str, str]:
-    return {
+def failure_taxonomy(row_results: list[Mapping[str, Any]] | None = None) -> dict[str, str]:
+    taxonomy_reference = {
         PASS_CATEGORY: "Answer and citation/support scores passed according to the scorer result.",
-        SCORER_BACKEND_UNAVAILABLE: "No official scorer/backend was configured; no score was fabricated.",
         INPUT_VALIDATION_FAILED: "Input config, registry, smoke, application, or CSV validation failed before scoring.",
         SCORER_EXCEPTION: "The configured scorer raised an exception for the row.",
         SCORER_INVALID_RESULT: "The scorer returned missing, out-of-range, or contradictory score fields.",
@@ -586,6 +963,12 @@ def failure_taxonomy() -> dict[str, str]:
         "CITATION_UNSUPPORTED": "The generated citation/support evidence did not support the answer.",
         "PARTIAL_OR_UNSUPPORTED": "The scorer returned non-passing scores without a more specific category.",
     }
+    categories = {clean(row.get("failure_category")) for row in row_results or [] if clean(row.get("failure_category"))}
+    if not categories:
+        categories = set(taxonomy_reference)
+    if SCORER_BACKEND_UNAVAILABLE in categories:
+        taxonomy_reference[SCORER_BACKEND_UNAVAILABLE] = "No official scorer/backend was configured; no score was fabricated."
+    return {category: taxonomy_reference.get(category, "Scorer-provided category.") for category in sorted(categories)}
 
 
 def next_step_recommendation(status: str, blocker_category: str | None) -> str:
@@ -617,17 +1000,27 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         "# Official Answer/Citation Metric First Run v1",
         "",
         f"- Status: `{report['status']}`",
+        f"- Status detail: `{report['status_detail']}`",
         f"- Official metric execution started: `{str(report['official_metric_execution_started']).lower()}`",
         f"- Scoring attempts: `{report['official_scoring_attempt_count']}`",
+        f"- Scored / skipped / error: `{report['scored_count']}` / `{report['skipped_count']}` / `{report['error_count']}`",
+        f"- Answer pass count: `{report['answer_score_pass_count']}`",
+        f"- Citation support pass count: `{report['citation_support_score_pass_count']}`",
         f"- Blocker category: `{report.get('blocker_category') or ''}`",
+        f"- Execution blocker category: `{report.get('execution_blocker_category') or ''}`",
+        f"- Primary failure category: `{report.get('primary_failure_category') or ''}`",
         f"- Rows consumed: `{summary['row_count']}`",
         f"- Rows by track: `{json.dumps(summary['row_count_by_track'], ensure_ascii=False, sort_keys=True)}`",
+        f"- Scorer results JSONL: `{report['artifact_paths'].get('scorer_results_jsonl') or ''}`",
         f"- Tuning run started: `{str(report['tuning_run_started']).lower()}`",
         f"- Promotion evidence: `{str(report['promotion_evidence']).lower()}`",
         f"- Threshold tuning: `{str(report['threshold_tuning']).lower()}`",
+        f"- Production mutation: `{str(report['production_mutation']).lower()}`",
+        f"- Denominator mutation: `{str(report['denominator_mutation']).lower()}`",
+        f"- Gold mutation: `{str(report['gold_mutation']).lower()}`",
         f"- Cross-track averages computed: `{str(report['cross_track_averages_computed']).lower()}`",
         "",
-        "This report is not tuning and not promotion evidence.",
+        "This report is not tuning and not promotion evidence. Cross-track averages are not optimization and not a tuning target.",
         "",
         "## Consumed Inputs",
         "",
@@ -637,14 +1030,41 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         "| Track | Rows | SHA256 |",
         "| --- | ---: | --- |",
     ]
+    if report.get("primary_failure_category") and not report.get("execution_blocker_category"):
+        lines.extend(
+            [
+                "",
+                "`blocker_category` is retained for schema compatibility. In this scored baseline it is not a scorer backend blocker; it is the primary scored failure category.",
+            ]
+        )
     for track, item in report["consumed_csvs"].items():
         lines.append(f"| `{track}` | `{item['row_count']}` | `{item['sha256']}` |")
-    lines.extend(["", "## Per-Track Counts", "", "| Track | Rows | Attempted | Scored | Errors | Skipped |", "| --- | ---: | ---: | ---: | ---: | ---: |"])
+    lines.extend(
+        [
+            "",
+            "## Per-Track Counts",
+            "",
+            "| Track | Rows | Attempted | Scored | Answer pass | Citation pass | Pass | Errors | Skipped |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
     for track, item in report["track_aggregates"].items():
         lines.append(
             f"| `{track}` | `{item['row_count']}` | `{item['attempted_count']}` | "
-            f"`{item['scored_count']}` | `{item['error_count']}` | `{item['skipped_count']}` |"
+            f"`{item['scored_count']}` | `{item['answer_score_pass_count']}` | "
+            f"`{item['citation_support_score_pass_count']}` | "
+            f"`{item['failure_category_counts'].get(PASS_CATEGORY, 0)}` | "
+            f"`{item['error_count']}` | `{item['skipped_count']}` |"
         )
+    lines.extend(["", "## Failure Categories", ""])
+    for category, count in report["failure_category_counts"].items():
+        lines.append(f"- `{category}`: `{count}`")
+    if report["diagnostic_xlsx_citation_failure_subtype_counts"]:
+        lines.extend(["", "## XLSX Diagnostic Citation Failure Subtypes", ""])
+        lines.append("Diagnostic-only subtype counts; official failure categories are unchanged.")
+        lines.append("")
+        for subtype, count in report["diagnostic_xlsx_citation_failure_subtype_counts"].items():
+            lines.append(f"- `{subtype}`: `{count}`")
     if report["diagnostic_warnings"]:
         lines.extend(["", "## Diagnostic Warnings", ""])
         for warning in report["diagnostic_warnings"]:
@@ -652,7 +1072,9 @@ def render_markdown(report: Mapping[str, Any]) -> str:
     if report["skipped_or_error_rows"]:
         lines.extend(["", "## Skipped Or Error Rows", ""])
         for row in report["skipped_or_error_rows"][:20]:
-            lines.append(f"- `{row['query_id']}` (`{row['track']}`): `{row['failure_category']}`")
+            subtype = clean(row.get("diagnostic_xlsx_citation_failure_subtype"))
+            suffix = f" / `{subtype}`" if subtype else ""
+            lines.append(f"- `{row['query_id']}` (`{row['track']}`): `{row['failure_category']}`{suffix}")
         if len(report["skipped_or_error_rows"]) > 20:
             lines.append(f"- ... `{len(report['skipped_or_error_rows']) - 20}` more rows")
     lines.extend(["", "## Next Step", "", report["next_step_recommendation"], ""])
@@ -752,6 +1174,10 @@ def as_mapping(value: Any) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
 
 
+def list_value(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else []
+
+
 def resolve_repo_path(value: str) -> Path:
     path = Path(value)
     return path if path.is_absolute() else REPO_ROOT / path
@@ -792,6 +1218,71 @@ def first_present(row: Mapping[str, Any], keys: tuple[str, ...]) -> str:
         if value:
             return value
     return ""
+
+
+def first_cell_ref(value: Any) -> str:
+    match = re.search(r"\b([A-Z]{1,3})([1-9][0-9]*)\b", clean(value).upper())
+    return match.group(0) if match else ""
+
+
+def cell_in_any_range(cell_ref: str, ranges: list[str]) -> bool:
+    cell = parse_cell_ref(cell_ref)
+    if not cell:
+        return False
+    return any(cell_in_range_tuple(cell, cell_range) for cell_range in ranges if clean(cell_range))
+
+
+def cell_in_range_tuple(cell: tuple[int, int], range_ref: str) -> bool:
+    parsed = parse_range_ref(range_ref)
+    if not parsed:
+        return False
+    start_col, start_row, end_col, end_row = parsed
+    col, row = cell
+    return start_col <= col <= end_col and start_row <= row <= end_row
+
+
+def parse_cell_ref(value: str) -> tuple[int, int] | None:
+    match = re.fullmatch(r"\$?([A-Z]{1,3})\$?([1-9][0-9]*)", clean(value).upper())
+    if not match:
+        return None
+    return column_number(match.group(1)), int(match.group(2))
+
+
+def parse_range_ref(value: str) -> tuple[int, int, int, int] | None:
+    cleaned = clean(value).upper().replace("$", "")
+    if "!" in cleaned:
+        cleaned = cleaned.rsplit("!", 1)[1]
+    parts = cleaned.split(":", 1)
+    if len(parts) == 1:
+        cell = parse_cell_ref(parts[0])
+        if not cell:
+            return None
+        col, row = cell
+        return col, row, col, row
+    start = parse_cell_ref(parts[0])
+    end = parse_cell_ref(parts[1])
+    if not start or not end:
+        return None
+    start_col, start_row = start
+    end_col, end_row = end
+    return min(start_col, end_col), min(start_row, end_row), max(start_col, end_col), max(start_row, end_row)
+
+
+def column_number(column: str) -> int:
+    value = 0
+    for char in column:
+        value = value * 26 + (ord(char) - ord("A") + 1)
+    return value
+
+
+def normalized_text(value: Any) -> str:
+    return re.sub(r"[\s,.;:|()]+", "", clean(value).lower())
+
+
+def ratio(numerator: int, denominator: int) -> float | None:
+    if denominator <= 0:
+        return None
+    return round(numerator / denominator, 6)
 
 
 def clean(value: Any) -> str:
