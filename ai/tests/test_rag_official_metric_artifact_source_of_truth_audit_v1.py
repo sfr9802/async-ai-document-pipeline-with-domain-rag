@@ -17,10 +17,47 @@ README = ROOT / "README.md"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 REPAIRED_PDF_QUERY_IDS = ("gq_auto_010", "gq_auto_030", "gq_pdf_section_question_001")
 AGENTIC_RUN_ID = "official_answer_citation_agentic_loop_run_v1"
+AGENTIC_V2_RUN_ID = "official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic"
+AGENTIC_V2_1_RUN_ID = "official_answer_citation_agentic_loop_run_v2_1_citation_contract_repair"
+AGENTIC_DIAGNOSTIC_CLASSIFICATION = (
+    "diagnostic_live_generation_fixture_all_index_not_official_denominator_representative"
+)
+AGENTIC_DIAGNOSTIC_PERFORMANCE_INTERPRETATION = (
+    "diagnostic_retrieval_agent_loop_not_final_answer_generation_quality"
+)
+SOURCE_BOUND_INDEX_BLOCKER = "SOURCE_BOUND_OFFICIAL_DENOMINATOR_SOURCE_FIELDS_MISSING"
+READINESS_JSON = REPORT_DIR / "official_answer_citation_source_bound_index_build_readiness_v1.json"
 AGENTIC_RESULTS = REPORT_DIR / f"{AGENTIC_RUN_ID}_results.jsonl"
 AGENTIC_SUMMARY_JSON = REPORT_DIR / f"{AGENTIC_RUN_ID}_summary.json"
 AGENTIC_SUMMARY_MD = REPORT_DIR / f"{AGENTIC_RUN_ID}_summary.md"
+AGENTIC_ATTRIBUTION_JSON = REPORT_DIR / f"{AGENTIC_RUN_ID}_failure_attribution.json"
+AGENTIC_V2_RESULTS = REPORT_DIR / f"{AGENTIC_V2_RUN_ID}_results.jsonl"
+AGENTIC_V2_SUMMARY_JSON = REPORT_DIR / f"{AGENTIC_V2_RUN_ID}_summary.json"
+AGENTIC_V2_ATTRIBUTION_JSON = REPORT_DIR / f"{AGENTIC_V2_RUN_ID}_failure_attribution.json"
+AGENTIC_V2_1_RESULTS = REPORT_DIR / f"{AGENTIC_V2_1_RUN_ID}_results.jsonl"
+AGENTIC_V2_1_SUMMARY_JSON = REPORT_DIR / f"{AGENTIC_V2_1_RUN_ID}_summary.json"
+AGENTIC_V2_1_ATTRIBUTION_JSON = REPORT_DIR / f"{AGENTIC_V2_1_RUN_ID}_failure_attribution.json"
 AGENTIC_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data"
+ALLOWED_AGENTIC_ATTRIBUTION_CATEGORIES = {
+    "CORPUS_COVERAGE_MISS",
+    "RETRIEVAL_MISS",
+    "CITATION_PAYLOAD_MISSING",
+    "CITATION_LOCATOR_INCOMPATIBLE",
+    "ANSWER_GENERATION_NOOP_LIMITATION",
+    "STRUCTURED_ADAPTER_NOT_WIRED",
+    "SCORER_COMPATIBILITY_MISMATCH",
+    "REAL_MODEL_OR_RETRIEVAL_QUALITY_FAILURE",
+    "UNKNOWN_NEEDS_INSPECTION",
+}
+ALLOWED_V2_ATTRIBUTION_CATEGORIES = {
+    "PASS",
+    "RETRIEVAL_MISS",
+    "CITATION_PAYLOAD_SCHEMA_MISMATCH",
+    "ADAPTER_FAILURE",
+    "ANSWER_SYNTHESIS_LIMITATION",
+    "SCORER_COMPATIBILITY_MISMATCH",
+    "SOURCE_BOUND_MANIFEST_MISMATCH",
+}
 CURRENT_REPORT_FILENAMES = {
     "official_answer_citation_metric_first_run_v1.json",
     "official_answer_citation_metric_first_run_v1.md",
@@ -33,6 +70,16 @@ CURRENT_REPORT_FILENAMES = {
     f"{AGENTIC_RUN_ID}_results.jsonl",
     f"{AGENTIC_RUN_ID}_summary.json",
     f"{AGENTIC_RUN_ID}_summary.md",
+    f"{AGENTIC_RUN_ID}_failure_attribution.json",
+    f"{AGENTIC_V2_RUN_ID}_results.jsonl",
+    f"{AGENTIC_V2_RUN_ID}_summary.json",
+    f"{AGENTIC_V2_RUN_ID}_summary.md",
+    f"{AGENTIC_V2_RUN_ID}_failure_attribution.json",
+    f"{AGENTIC_V2_1_RUN_ID}_results.jsonl",
+    f"{AGENTIC_V2_1_RUN_ID}_summary.json",
+    f"{AGENTIC_V2_1_RUN_ID}_summary.md",
+    f"{AGENTIC_V2_1_RUN_ID}_failure_attribution.json",
+    "official_answer_citation_source_bound_index_build_readiness_v1.json",
 }
 
 
@@ -118,11 +165,15 @@ def test_source_of_truth_audit_reports_current_scored_baseline() -> None:
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_progress = progress.split("## Short History", 1)[0]
     assert "SCORER_BACKEND_UNAVAILABLE" not in current_progress
-    assert "official_answer_citation_agentic_loop_measurement_partial_gpu_index_live_generation" in current_progress
-    assert "PDF candidate now has official-compatible source-bound locators" in current_progress
+    assert "official_denominator_source_bound_index_build_ready_load_checked" in current_progress
+    assert "PDF table/value candidate now has official-compatible source-bound locators" in current_progress
     assert "official_answer_citation_agentic_loop_run_v1" in current_progress
     assert "promotion_evidence=false" in current_progress
     assert "faiss_gpu_used=true" in current_progress
+    assert "baseline_comparison_is_model_quality_comparable=false" in current_progress
+    assert "4 current run artifacts" in current_progress
+    assert "BUILD_READY_LOAD_CHECK_PASSED" in current_progress
+    assert "rerun_allowed=true" in current_progress
 
 
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:
@@ -257,6 +308,11 @@ def test_agentic_loop_measurement_artifacts_are_separate_fail_closed_current_run
     status_events = read_jsonl(REPORT_DIR / "rag_current_eval_status.jsonl")
 
     assert summary["run_id"] == AGENTIC_RUN_ID
+    assert not any(
+        event.get("run_id") == AGENTIC_RUN_ID
+        and event.get("measurement_classification") == "official_next_run_measurement"
+        for event in status_events
+    )
     assert summary["baseline_reference"]["run_id"] == "official_answer_citation_metric_first_run_v1"
     assert summary["baseline_reference"]["status_detail"] == "SCORED_BASELINE_PARTIAL"
     assert summary["artifact_provenance"]["immutable_first_run_baseline_overwritten"] is False
@@ -267,6 +323,10 @@ def test_agentic_loop_measurement_artifacts_are_separate_fail_closed_current_run
     assert summary["validation"]["ok"] is True
     assert summary["pipeline_decision"]["registry_application_report_required"] is False
     assert summary["pipeline_decision"]["registry_application_fallback_used"] is True
+    assert summary["artifact_paths"]["failure_attribution_json"] == (
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v1_failure_attribution.json"
+    )
     assert summary["agentic_loop"]["implemented"] is True
     assert summary["agentic_loop"]["enabled"] is True
     assert summary["agentic_loop"]["backend"] in {"legacy", "graph"}
@@ -294,7 +354,28 @@ def test_agentic_loop_measurement_artifacts_are_separate_fail_closed_current_run
         assert summary["infrastructure_blocker"]["category"] == "NON_PRODUCTION_RAG_INDEX_ARTIFACT_MISSING"
     else:
         assert summary["status"] in {"PASS", "BLOCKED_OR_PARTIAL"}
-        assert summary["measurement_classification"] == "official_next_run_measurement"
+        assert summary["measurement_classification"] == AGENTIC_DIAGNOSTIC_CLASSIFICATION
+        assert summary["performance_interpretation"] == AGENTIC_DIAGNOSTIC_PERFORMANCE_INTERPRETATION
+        assert summary["infrastructure_blocker"]["baseline_comparison_is_model_quality_comparable"] is False
+        assert summary["corpus_coverage_verdict"]["verdict"] == (
+            "fixture_all_index_not_official_denominator_representative"
+        )
+        assert summary["corpus_coverage_verdict"]["fixture_all_represents_official_mixed_denominator"] is False
+        assert summary["corpus_coverage_verdict"]["official_denominator_source_bound_index"] is False
+        assert summary["live_runner_verdict"]["current_run_uses_noop_llm"] is True
+        assert summary["live_runner_verdict"]["generator"] == "ExtractiveGenerator"
+        assert summary["live_runner_verdict"]["citation_locators_normalized_to_official_schema"] is False
+        assert summary["diagnostic_limitations"]["chunk_only_citations_not_canonical_search_unit_payloads"] is True
+        assert summary["diagnostic_limitations"]["current_pass_is_final_model_quality_regression"] is False
+        assert summary["diagnostic_limitations"]["current_pass_is_promotion_evidence"] is False
+        assert summary["source_bound_official_denominator_index_design"]["entrypoint_implemented"] is True
+        assert summary["source_bound_official_denominator_index_design"]["blocker_category"] == SOURCE_BOUND_INDEX_BLOCKER
+        assert summary["source_bound_official_denominator_index_design"]["build_ready"] is False
+        assert summary["source_bound_official_denominator_index_design"]["target_index_built"] is False
+        assert summary["source_bound_official_denominator_index_design"]["load_check_passed"] is False
+        assert summary["source_bound_official_denominator_index_design"]["rerun_allowed"] is False
+        assert summary["source_bound_official_denominator_index_design"]["production_index_path_used"] is False
+        assert summary["source_bound_official_denominator_index_design"]["candidate_artifacts_as_generation_source"] is False
         assert summary["agentic_loop"]["actual_generation_pipeline_available"] is True
         assert summary["agentic_loop"]["executed"] is True
         assert "GENERATION_PIPELINE_UNAVAILABLE" not in summary["failure_counts"]
@@ -339,19 +420,27 @@ def test_agentic_loop_measurement_artifacts_are_separate_fail_closed_current_run
         assert all(row["failure_category"] != "GENERATION_PIPELINE_UNAVAILABLE" for row in results)
 
     assert "official_answer_citation_agentic_loop_run_v1" in summary_md
+    assert AGENTIC_DIAGNOSTIC_CLASSIFICATION in summary_md
+    assert "baseline comparable as model quality: `false`" in summary_md
     assert "model quality regression: `false`" in summary_md
+    assert "chunk-only citation locators are not canonical SearchUnit payloads" in summary_md
     assert "FAISS GPU used for build: `true`" in summary_md
     assert "official first-run baseline was not overwritten" in summary_md
     latest = next(
         event
         for event in reversed(status_events)
         if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_RUN_ID
     )
     assert latest["event_type"] == "official_answer_citation_agentic_loop_measurement"
     assert latest["run_id"] == AGENTIC_RUN_ID
     assert latest["result_count"] == 29
     assert latest["unique_query_id_count"] == 29
     assert latest["pass_count"] == summary["pass_count"]
+    assert latest["measurement_classification"] == AGENTIC_DIAGNOSTIC_CLASSIFICATION
+    assert latest["performance_interpretation"] == AGENTIC_DIAGNOSTIC_PERFORMANCE_INTERPRETATION
+    assert latest["infrastructure_blocker"]["baseline_comparison_is_model_quality_comparable"] is False
+    assert latest["source_bound_official_denominator_index_design"]["blocker_category"] == SOURCE_BOUND_INDEX_BLOCKER
     assert latest["non_production_rag_index_dependency"]["build_metadata"]["faiss_gpu_used"] is True
     assert latest["promotion_evidence"] is False
     assert first_run["failure_category_counts"] == {
@@ -359,6 +448,574 @@ def test_agentic_loop_measurement_artifacts_are_separate_fail_closed_current_run
         "PARTIAL_OR_UNSUPPORTED": 10,
         "PASS": 8,
     }
+
+
+def test_agentic_loop_failure_attribution_locks_diagnostic_interpretation() -> None:
+    summary = read_json(AGENTIC_SUMMARY_JSON)
+    results = read_jsonl(AGENTIC_RESULTS)
+    attribution = read_json(AGENTIC_ATTRIBUTION_JSON)
+    status_events = read_jsonl(REPORT_DIR / "rag_current_eval_status.jsonl")
+
+    assert attribution["run_id"] == AGENTIC_RUN_ID
+    assert attribution["measurement_result"] == {
+        "rows": 29,
+        "unique_query_ids": 29,
+        "scored_count": 29,
+        "PASS": 1,
+        "CITATION_UNSUPPORTED": 25,
+        "PARTIAL_OR_UNSUPPORTED": 3,
+    }
+    assert attribution["performance_interpretation"] == (
+        "diagnostic_retrieval_agent_loop_not_final_answer_generation_quality"
+    )
+    assert attribution["measurement_classification"] == (
+        "diagnostic_live_generation_fixture_all_index_not_official_denominator_representative"
+    )
+    assert attribution["corpus_coverage_verdict"]["fixture_all_represents_official_mixed_denominator"] is False
+    assert attribution["corpus_coverage_verdict"]["official_denominator_source_bound_index"] is False
+    assert attribution["corpus_coverage_verdict"]["index_path"] == "ai/eval/indexes/rag-data"
+    assert attribution["corpus_coverage_verdict"]["production_index_path_used"] is False
+    assert attribution["corpus_coverage_verdict"]["candidate_index_path_used"] is False
+    assert attribution["live_runner_verdict"]["canonical_live_generation_runner_available"] is False
+    assert attribution["live_runner_verdict"]["current_run_uses_noop_llm"] is True
+    assert attribution["live_runner_verdict"]["local_llm_backend_available"] is False
+    assert attribution["live_runner_verdict"]["generator"] == "ExtractiveGenerator"
+    assert attribution["structured_adapter_wiring_verdict"]["xlsx_candidate_adapter_wired_into_live_path"] is False
+    assert attribution["structured_adapter_wiring_verdict"]["pdf_candidate_adapter_wired_into_live_path"] is False
+    assert attribution["guardrails"]["promotion_evidence"] is False
+    assert attribution["guardrails"]["generation_used_expected_answer"] is False
+    assert attribution["guardrails"]["generation_used_supporting_evidence"] is False
+    assert attribution["baseline_comparison_is_model_quality_comparable"] is False
+    assert summary["measurement_classification"] == attribution["measurement_classification"]
+    assert summary["performance_interpretation"] == attribution["performance_interpretation"]
+    assert summary["infrastructure_blocker"]["baseline_comparison_is_model_quality_comparable"] is False
+
+    design = attribution["source_bound_official_denominator_index_design"]
+    assert design["status"] == "implemented_fail_closed_source_metadata_missing_or_unchecked"
+    assert design["blocker_category"] == SOURCE_BOUND_INDEX_BLOCKER
+    assert design["target_index_path"] == "ai/eval/indexes/rag-data-official-denominator-v1"
+    assert design["entrypoint_implemented"] is True
+    assert design["build_ready"] is False
+    assert design["target_index_built"] is False
+    assert design["load_check_passed"] is False
+    assert design["rerun_allowed"] is False
+    assert design["production_index_path_used"] is False
+    assert design["candidate_index_path_used"] is False
+    assert design["candidate_artifacts_as_generation_source"] is False
+    assert design["required_fields_by_track"]["text_namu_v2_1"] == [
+        "document_id",
+        "document_version_id",
+        "search_unit_id",
+        "text_locator",
+    ]
+    assert "workbook" in design["required_fields_by_track"]["xlsx_business_structured"]
+    assert "bbox" in design["required_fields_by_track"]["pdf_business_ocr_mm"]
+
+    rows = attribution["row_level_attribution"]
+    assert len(rows) == 29
+    assert {row["query_id"] for row in rows} == {row["query_id"] for row in results}
+    assert all(row["primary_attribution"] in ALLOWED_AGENTIC_ATTRIBUTION_CATEGORIES for row in rows)
+    assert all(
+        set(row["secondary_attributions"]).issubset(ALLOWED_AGENTIC_ATTRIBUTION_CATEGORIES)
+        for row in rows
+    )
+    assert all(row["generation_used_expected_answer"] is False for row in rows)
+    assert all(row["generation_used_supporting_evidence"] is False for row in rows)
+    assert all(row["generated_answer_present"] is True for row in rows)
+    assert all(row["generated_citations_present"] is True for row in rows)
+    assert all(row["citation_payload_points_to_retrieved_evidence"] is True for row in rows)
+    assert all(row["citation_locator_scorer_compatible"] is False for row in rows)
+    assert all(row["retrieved_source_matches_expected_official_source_family"] is False for row in rows)
+    assert all(row["llm_backend_noop_limitation"] is True for row in rows)
+
+    assert attribution["primary_attribution_counts"] == {
+        "CORPUS_COVERAGE_MISS": 6,
+        "SCORER_COMPATIBILITY_MISMATCH": 1,
+        "STRUCTURED_ADAPTER_NOT_WIRED": 22,
+    }
+    assert attribution["per_track_primary_attribution_counts"] == {
+        "pdf_business_ocr_mm": {
+            "SCORER_COMPATIBILITY_MISMATCH": 1,
+            "STRUCTURED_ADAPTER_NOT_WIRED": 3,
+        },
+        "text_namu_v2_1": {"CORPUS_COVERAGE_MISS": 6},
+        "xlsx_business_structured": {"STRUCTURED_ADAPTER_NOT_WIRED": 19},
+    }
+
+    latest = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_failure_attribution"
+        and event.get("run_id") == AGENTIC_RUN_ID
+    )
+    assert latest["run_id"] == AGENTIC_RUN_ID
+    assert latest["measurement_classification"] == attribution["measurement_classification"]
+    assert latest["performance_interpretation"] == attribution["performance_interpretation"]
+    assert latest["primary_attribution_counts"] == attribution["primary_attribution_counts"]
+    assert latest["baseline_comparison_is_model_quality_comparable"] is False
+    assert latest["source_bound_official_denominator_index_design"]["blocker_category"] == SOURCE_BOUND_INDEX_BLOCKER
+    assert latest["guardrails"]["promotion_evidence"] is False
+    assert summary["artifact_provenance"]["report_only_candidates_promoted"] is False
+
+
+def test_source_bound_readiness_artifact_records_build_and_load_check_passed() -> None:
+    readiness = read_json(READINESS_JSON)
+    status_events = read_jsonl(REPORT_DIR / "rag_current_eval_status.jsonl")
+
+    assert readiness["entrypoint_implemented"] is True
+    assert readiness["status"] == "BUILD_READY_LOAD_CHECK_PASSED"
+    assert readiness["blocker_category"] is None
+    assert readiness["target_index_path"] == "ai/eval/indexes/rag-data-official-denominator-v1"
+    assert readiness["index_version"] == (
+        "official-answer-citation-agentic-loop-v1-nonprod-official-denominator-source-bound"
+    )
+    assert readiness["official_denominator_rows"] == 29
+    assert readiness["official_rows_by_track"] == {
+        "pdf_business_ocr_mm": 4,
+        "text_namu_v2_1": 6,
+            "xlsx_business_structured": 19,
+    }
+    assert readiness["blocked_query_ids"] == []
+    assert readiness["missing_fields_by_query_id"] == {}
+    assert readiness["missing_source_files_by_query_id"] == {}
+    assert readiness["source_bound_locators_by_query_id"]["text_namu_v2_0005"][
+        "text_locator"
+    ]["source_corpus_path"] == "ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl"
+    assert readiness["source_bound_locators_by_query_id"]["gq_auto_012"]["row_label"] == (
+        "대중교통구분=지하철 | 노선명=5호선 | 년월=201902"
+    )
+    assert readiness["source_bound_locators_by_query_id"]["gq_auto_012"][
+        "target_column"
+    ] == "승차총승객수"
+    assert readiness["source_bound_locators_by_query_id"]["gq_auto_012"][
+        "normalized_value"
+    ] == "15446522"
+    assert readiness["source_file_inventory_by_query_id"]["gq_auto_012"][0]["exists"] is True
+    pdf_inventory = readiness["source_file_inventory_by_query_id"]["gq_auto_010"][0]
+    assert pdf_inventory["exists"] is True
+    assert pdf_inventory["kind"] == "pdf_locator_manifest"
+    assert pdf_inventory["reference"] == "2847f7af-cfe4-41de-8393-58912df2dba9"
+    assert pdf_inventory["document_version_id"] == "docv_fe2470815512a395"
+    assert pdf_inventory["search_unit_id"] == "7bf516bf-2a17-4303-86d8-3cffaa04846e"
+    assert pdf_inventory["source_pdf_path_resolved"] is True
+    assert "D:/_external_runtime_artifacts/" in pdf_inventory["source_path"]
+    pdf_locator = readiness["source_bound_locators_by_query_id"]["gq_auto_010"]
+    assert pdf_locator["source_pdf_path"].endswith("2021_03_recent_economic_trends.pdf")
+    assert pdf_locator["document_version_id"] == "docv_fe2470815512a395"
+    assert pdf_locator["row_label"] == "▪ 실업률은 모든 연령계층에서 상승"
+    assert pdf_locator["target_column"] == "paragraph_text"
+    assert pdf_locator["pdf_source_text_locator"]["method"] == "pymupdf_source_pdf_text"
+    assert "D:/_external_runtime_artifacts/" in pdf_locator["source_locator_manifest_path"]
+    assert "D:/_external_runtime_artifacts/" in "\n".join(readiness["source_roots_checked"])
+    assert "D:/_external_workspace_archive/" in "\n".join(readiness["source_roots_checked"])
+    assert readiness["build_ready"] is True
+    assert readiness["target_index_built"] is True
+    assert readiness["load_check_passed"] is True
+    assert readiness["rerun_allowed"] is True
+    assert readiness["index_build_result"]["official_denominator_rows"] == 29
+    assert readiness["index_load_check"]["passed"] is True
+    assert readiness["index_load_check"]["track_counts"] == {
+        "pdf_business_ocr_mm": 4,
+        "text_namu_v2_1": 6,
+        "xlsx_business_structured": 19,
+    }
+    assert readiness["candidate_artifacts_as_generation_source"] is False
+    assert readiness["generation_used_expected_answer"] is False
+    assert readiness["generation_used_supporting_evidence"] is False
+    assert readiness["production_index_path_used"] is False
+    assert readiness["candidate_index_path_used"] is False
+    assert readiness["promotion_evidence"] is False
+
+    assert set(readiness["required_fields_by_track"]["text_namu_v2_1"]) == {
+        "document_id",
+        "document_version_id",
+        "search_unit_id",
+        "text_locator",
+    }
+    assert readiness["required_fields_by_track"]["xlsx_business_structured"] == [
+        "workbook",
+        "sheet",
+        "range",
+        "cell",
+        "row_label",
+        "target_column",
+        "normalized_value",
+        "search_unit_id",
+        "document_version_id",
+    ]
+    assert readiness["required_fields_by_track"]["pdf_business_ocr_mm"] == [
+        "source_pdf_path",
+        "page",
+        "physical_page_index",
+        "bbox",
+        "region_type",
+        "row_label",
+        "target_column",
+        "search_unit_id",
+        "document_version_id",
+    ]
+
+    latest = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_source_bound_index_preparation"
+    )
+    assert latest["source_bound_official_denominator_index_design"]["entrypoint_implemented"] is True
+    assert latest["source_bound_official_denominator_index_design"]["blocker_category"] is None
+    assert latest["source_bound_official_denominator_index_design"]["blocked_query_count"] == 0
+    assert latest["source_bound_official_denominator_index_design"]["required_field_complete_counts"] == {
+        "pdf_business_ocr_mm": 4,
+        "text_namu_v2_1": 6,
+        "xlsx_business_structured": 19,
+    }
+    assert latest["source_bound_official_denominator_index_design"]["source_identity_resolved_counts"] == {
+        "pdf_business_ocr_mm": 4,
+        "text_namu_v2_1": 6,
+        "xlsx_business_structured": 19,
+    }
+    assert latest["source_bound_official_denominator_index_design"]["missing_fields_by_query_id"] == {}
+    assert latest["source_bound_official_denominator_index_design"]["missing_source_files_by_query_id"] == {}
+    assert latest["source_bound_official_denominator_index_design"]["target_index_built"] is True
+    assert latest["source_bound_official_denominator_index_design"]["load_check_passed"] is True
+    assert latest["source_bound_official_denominator_index_design"]["rerun_allowed"] is True
+    assert latest["search_unit_citation_payload_wired"] is True
+    assert latest["xlsx_source_bound_adapter_opt_in_wired"] is True
+    assert latest["pdf_source_bound_adapter_opt_in_wired"] is True
+    assert latest["guardrails"]["gold_mutation"] is False
+    assert latest["guardrails"]["denominator_mutation"] is False
+    assert latest["guardrails"]["production_mutation"] is False
+
+
+def test_v2_source_bound_diagnostic_artifacts_are_separate_and_guarded() -> None:
+    summary = read_json(AGENTIC_V2_SUMMARY_JSON)
+    results = read_jsonl(AGENTIC_V2_RESULTS)
+    attribution = read_json(AGENTIC_V2_ATTRIBUTION_JSON)
+    status_events = read_jsonl(REPORT_DIR / "rag_current_eval_status.jsonl")
+
+    assert summary["run_id"] == AGENTIC_V2_RUN_ID
+    assert summary["status"] == "BLOCKED_OR_PARTIAL"
+    assert summary["diagnostic_only"] is True
+    assert summary["llm_backend"] == "noop"
+    assert "noop/extractive" in summary["llm_backend_limitation"]
+    assert summary["artifact_provenance"]["immutable_first_run_baseline_overwritten"] is False
+    assert summary["artifact_provenance"]["report_only_candidates_promoted"] is False
+    assert summary["artifact_provenance"]["run_id_separate_from_first_run"] is True
+    assert summary["result_count"] == 29
+    assert summary["unique_query_id_count"] == 29
+    assert summary["scored_count"] == 20
+    assert summary["pass_count"] == 20
+    assert summary["failure_counts"] == {
+        "PASS": 20,
+        "SEARCH_UNIT_LOCATOR_INCOMPLETE": 5,
+        "STRUCTURED_LOCATOR_DROPPED": 4,
+    }
+    assert summary["measurement_classification"] == AGENTIC_V2_RUN_ID
+    assert summary["performance_interpretation"] == "source_bound_official_denominator_backend_limited_diagnostic"
+    assert summary["source_bound_index_used"] is True
+    assert summary["non_production_rag_index_dependency"]["canonical_path"] == (
+        "ai/eval/indexes/rag-data-official-denominator-v1"
+    )
+    assert summary["non_production_rag_index_dependency"]["worker_relative_path"] == (
+        "eval/indexes/rag-data-official-denominator-v1"
+    )
+    assert summary["non_production_rag_index_dependency"]["preflight_errors"] == []
+    assert summary["non_production_rag_index_dependency"]["source_bound_artifact_contract_ok"] is True
+    assert summary["non_production_rag_index_dependency"]["source_bound_index_load_checked"] is True
+    assert summary["non_production_rag_index_dependency"]["satisfied"] is True
+    assert summary["non_production_rag_index_dependency"]["rerun_allowed"] is True
+    assert summary["non_production_rag_index_dependency"]["candidate_index_path_used"] is False
+    assert summary["non_production_rag_index_dependency"]["production_index_path_used"] is False
+    assert summary["non_production_rag_index_dependency"]["search_unit_manifest_metadata"] == {
+        "all_source_bound": True,
+        "row_count": 29,
+        "track_counts": {
+            "pdf_business_ocr_mm": 4,
+            "text_namu_v2_1": 6,
+            "xlsx_business_structured": 19,
+        },
+        "unique_query_id_count": 29,
+        "unique_search_unit_id_count": 29,
+    }
+    assert summary["non_production_rag_index_dependency"]["readiness_artifact"] == {
+        "blocked_query_ids": [],
+        "load_check_passed": True,
+        "missing_fields_by_query_id": {},
+        "missing_source_files_by_query_id": {},
+        "official_denominator_rows": 29,
+        "official_rows_by_track": {
+            "pdf_business_ocr_mm": 4,
+            "text_namu_v2_1": 6,
+            "xlsx_business_structured": 19,
+        },
+        "path": "ai/eval/reports/rag-ingestion/official_answer_citation_source_bound_index_build_readiness_v1.json",
+        "rerun_allowed": True,
+        "status": "BUILD_READY_LOAD_CHECK_PASSED",
+        "target_index_built": True,
+        "target_index_path": "ai/eval/indexes/rag-data-official-denominator-v1",
+    }
+    assert summary["canonical_search_unit_payload_used"] is True
+    assert summary["search_unit_citation_payloads_used"] is True
+    assert summary["xlsx_pdf_structured_adapters_enabled"] is True
+    assert summary["adapter_output_from_source_bound_search_units"] is False
+    assert summary["candidate_artifacts_as_generation_source"] is False
+    assert summary["generation_used_expected_answer"] is False
+    assert summary["generation_used_supporting_evidence"] is False
+    assert summary["generation_used_gold_fields"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["baseline_comparison_is_model_quality_comparable"] is False
+    assert summary["official_score_category_counts"]["PASS"] == summary["pass_count"]
+    assert summary["official_score_category_counts"] == {
+        "PASS": 20,
+        "CITATION_UNSUPPORTED": 0,
+        "PARTIAL_OR_UNSUPPORTED": 0,
+    }
+    assert summary["per_track_counts"] == {
+        "pdf_business_ocr_mm": {
+            "failure_counts": {"STRUCTURED_LOCATOR_DROPPED": 4},
+            "pass_count": 0,
+            "row_count": 4,
+            "scored_count": 0,
+        },
+        "text_namu_v2_1": {
+            "failure_counts": {"PASS": 1, "SEARCH_UNIT_LOCATOR_INCOMPLETE": 5},
+            "pass_count": 1,
+            "row_count": 6,
+            "scored_count": 1,
+        },
+        "xlsx_business_structured": {
+            "failure_counts": {"PASS": 19},
+            "pass_count": 19,
+            "row_count": 19,
+            "scored_count": 19,
+        },
+    }
+
+    assert len(results) == 29
+    assert len({row["query_id"] for row in results}) == 29
+    assert Counter(row["track"] for row in results) == Counter(
+        {"xlsx_business_structured": 19, "text_namu_v2_1": 6, "pdf_business_ocr_mm": 4}
+    )
+    assert Counter(row["failure_category"] for row in results) == Counter(
+        {"PASS": 20, "SEARCH_UNIT_LOCATOR_INCOMPLETE": 5, "STRUCTURED_LOCATOR_DROPPED": 4}
+    )
+    assert Counter(row["score_status"] for row in results) == Counter({"PASS": 20, "FAIL_CLOSED": 9})
+    assert all(row["run_id"] == AGENTIC_V2_RUN_ID for row in results)
+    assert all("expected_answer" not in row for row in results)
+    assert all("supporting_evidence" not in row for row in results)
+    assert all(row["generation_used_expected_answer"] is False for row in results)
+    assert all(row["generation_used_supporting_evidence"] is False for row in results)
+    assert all(row["generation_used_gold_fields"] is False for row in results)
+    assert all(row["promotion_evidence"] is False for row in results)
+    assert all(row["search_unit_citation_payloads_used"] is True for row in results)
+    assert all(row["structured_source_bound_adapters_enabled"] is True for row in results)
+    assert any(
+        citation.get("structured_adapter_output_from_source_bound_search_unit") is True
+        for row in results
+        for citation in row["generated_citations"]
+    )
+    assert not all(
+        any(citation.get("structured_adapter_output_from_source_bound_search_unit") is True for citation in row["generated_citations"])
+        for row in results
+    )
+
+    assert attribution["run_id"] == AGENTIC_V2_RUN_ID
+    assert attribution["source_bound_index_used"] is True
+    assert attribution["canonical_search_unit_payload_used"] is True
+    assert attribution["adapter_output_from_source_bound_search_units"] is False
+    assert attribution["baseline_comparison_is_model_quality_comparable"] is False
+    assert attribution["primary_attribution_counts"] == {"CITATION_PAYLOAD_SCHEMA_MISMATCH": 9, "PASS": 20}
+    assert attribution["per_track_primary_attribution_counts"] == {
+        "pdf_business_ocr_mm": {"CITATION_PAYLOAD_SCHEMA_MISMATCH": 4},
+        "text_namu_v2_1": {"CITATION_PAYLOAD_SCHEMA_MISMATCH": 5, "PASS": 1},
+        "xlsx_business_structured": {"PASS": 19},
+    }
+    assert set(attribution["primary_attribution_counts"]).issubset(ALLOWED_V2_ATTRIBUTION_CATEGORIES)
+    assert all(
+        row["primary_attribution"] in ALLOWED_V2_ATTRIBUTION_CATEGORIES
+        for row in attribution["row_level_attribution"]
+    )
+    assert all(
+        row["generation_used_expected_answer"] is False
+        and row["generation_used_supporting_evidence"] is False
+        and row["generation_used_gold_fields"] is False
+        and row["promotion_evidence"] is False
+        for row in attribution["row_level_attribution"]
+    )
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V2_RUN_ID
+    )
+    assert measurement["source_bound_index_used"] is True
+    assert measurement["candidate_artifacts_as_generation_source"] is False
+    assert measurement["generation_used_expected_answer"] is False
+    assert measurement["generation_used_supporting_evidence"] is False
+    assert measurement["generation_used_gold_fields"] is False
+    assert measurement["promotion_evidence"] is False
+    assert measurement["baseline_comparison_is_model_quality_comparable"] is False
+    assert measurement["result_count"] == 29
+    assert measurement["unique_query_id_count"] == 29
+    assert measurement["scored_count"] == 20
+    assert measurement["pass_count"] == 20
+    assert measurement["adapter_output_from_source_bound_search_units"] is False
+
+    failure_attribution = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_failure_attribution"
+        and event.get("run_id") == AGENTIC_V2_RUN_ID
+    )
+    assert failure_attribution["primary_attribution_counts"] == {
+        "CITATION_PAYLOAD_SCHEMA_MISMATCH": 9,
+        "PASS": 20,
+    }
+    assert failure_attribution["source_bound_index_used"] is True
+    assert failure_attribution["canonical_search_unit_payload_used"] is True
+    assert failure_attribution["adapter_output_from_source_bound_search_units"] is False
+    assert failure_attribution["baseline_comparison_is_model_quality_comparable"] is False
+    assert failure_attribution["guardrails"]["promotion_evidence"] is False
+
+
+def test_v2_1_citation_contract_repair_artifacts_discard_off_track_citations() -> None:
+    summary = read_json(AGENTIC_V2_1_SUMMARY_JSON)
+    results = read_jsonl(AGENTIC_V2_1_RESULTS)
+    attribution = read_json(AGENTIC_V2_1_ATTRIBUTION_JSON)
+    status_events = read_jsonl(REPORT_DIR / "rag_current_eval_status.jsonl")
+
+    assert summary["run_id"] == AGENTIC_V2_1_RUN_ID
+    assert summary["measurement_classification"] == AGENTIC_V2_1_RUN_ID
+    assert summary["status"] == "BLOCKED_OR_PARTIAL"
+    assert summary["diagnostic_only"] is True
+    assert summary["llm_backend"] == "noop"
+    assert summary["source_bound_index_used"] is True
+    assert summary["result_count"] == 29
+    assert summary["unique_query_id_count"] == 29
+    assert summary["scored_count"] == 29
+    assert summary["pass_count"] == 26
+    assert summary["failure_counts"] == {
+        "CITATION_UNSUPPORTED": 1,
+        "PARTIAL_OR_UNSUPPORTED": 2,
+        "PASS": 26,
+    }
+    assert summary["discarded_off_track_citation_count"] == 22
+    assert summary["same_track_valid_citation_count"] == 123
+    assert summary["query_bound_scored_citation_count"] == 29
+    assert summary["non_query_bound_same_track_scored_citation_count"] == 94
+    assert summary["schema_mismatch_residual_count"] == 0
+    assert summary["all_generated_citations_source_bound"] is True
+    assert summary["same_track_generated_citations_source_bound"] is True
+    assert summary["scored_citations_source_bound"] is True
+    assert summary["adapter_output_for_same_track_citations"] is True
+    assert summary["adapter_output_from_source_bound_search_units"] is True
+    assert summary["candidate_artifacts_as_generation_source"] is False
+    assert summary["generation_used_expected_answer"] is False
+    assert summary["generation_used_supporting_evidence"] is False
+    assert summary["generation_used_gold_fields"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["baseline_comparison_is_model_quality_comparable"] is False
+    assert summary["per_track_counts"] == {
+        "pdf_business_ocr_mm": {
+            "failure_counts": {"CITATION_UNSUPPORTED": 1, "PARTIAL_OR_UNSUPPORTED": 1, "PASS": 2},
+            "pass_count": 2,
+            "row_count": 4,
+            "scored_count": 4,
+        },
+        "text_namu_v2_1": {
+            "failure_counts": {"PARTIAL_OR_UNSUPPORTED": 1, "PASS": 5},
+            "pass_count": 5,
+            "row_count": 6,
+            "scored_count": 6,
+        },
+        "xlsx_business_structured": {
+            "failure_counts": {"PASS": 19},
+            "pass_count": 19,
+            "row_count": 19,
+            "scored_count": 19,
+        },
+    }
+
+    assert len(results) == 29
+    assert all(row["run_id"] == AGENTIC_V2_1_RUN_ID for row in results)
+    assert all("expected_answer" not in row for row in results)
+    assert all("supporting_evidence" not in row for row in results)
+    assert all(row["generation_used_expected_answer"] is False for row in results)
+    assert all(row["generation_used_supporting_evidence"] is False for row in results)
+    assert all(row["generation_used_gold_fields"] is False for row in results)
+    assert all(row["promotion_evidence"] is False for row in results)
+    assert all(row["same_track_valid_citation_count"] > 0 for row in results)
+    assert all(row["schema_mismatch_residual_count"] == 0 for row in results)
+    assert not any(
+        "#xlsx_business_structured" in row["generated_answer"]
+        for row in results
+        if row["track"] != "xlsx_business_structured"
+    )
+    assert all(
+        citation["citation_payload_validation"]["manifest_track"] == row["track"]
+        for row in results
+        for citation in row["scored_citations"]
+    )
+    assert all(
+        citation["citation_payload_validation"]["category"] == "OFF_TRACK_CITATION_FOR_QUERY_TRACK"
+        for row in results
+        for citation in row["discarded_off_track_citations"]
+    )
+    assert sum(row["discarded_off_track_citation_count"] for row in results) == 22
+    assert any(row["discarded_off_track_citation_count"] > 0 for row in results if row["track"] == "pdf_business_ocr_mm")
+    assert any(row["discarded_off_track_citation_count"] > 0 for row in results if row["track"] == "text_namu_v2_1")
+    assert not any(
+        citation["search_unit_citation_payload"]["track"] != row["track"]
+        for row in results
+        for citation in row["scored_citations"]
+    )
+    assert all(
+        citation["search_unit_citation_payload"]["manifest_query_id"]
+        == citation["citation_payload_validation"]["manifest_query_id"]
+        for row in results
+        for citation in row["generated_citations"]
+    )
+    assert all(
+        citation["citation_payload_validation"]["row_query_id"] == row["query_id"]
+        for row in results
+        for citation in row["generated_citations"]
+    )
+
+    assert attribution["run_id"] == AGENTIC_V2_1_RUN_ID
+    assert attribution["source_bound_index_used"] is True
+    assert attribution["canonical_search_unit_payload_used"] is True
+    assert attribution["discarded_off_track_citation_count"] == 22
+    assert attribution["same_track_valid_citation_count"] == 123
+    assert attribution["query_bound_scored_citation_count"] == 29
+    assert attribution["non_query_bound_same_track_scored_citation_count"] == 94
+    assert attribution["schema_mismatch_residual_count"] == 0
+    assert attribution["primary_attribution_counts"] == {"ANSWER_SYNTHESIS_LIMITATION": 3, "PASS": 26}
+    assert attribution["per_track_primary_attribution_counts"] == {
+        "pdf_business_ocr_mm": {"ANSWER_SYNTHESIS_LIMITATION": 2, "PASS": 2},
+        "text_namu_v2_1": {"ANSWER_SYNTHESIS_LIMITATION": 1, "PASS": 5},
+        "xlsx_business_structured": {"PASS": 19},
+    }
+    assert attribution["baseline_comparison_is_model_quality_comparable"] is False
+    assert attribution["guardrails"]["promotion_evidence"] is False
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V2_1_RUN_ID
+    )
+    assert measurement["discarded_off_track_citation_count"] == 22
+    assert measurement["same_track_valid_citation_count"] == 123
+    assert measurement["query_bound_scored_citation_count"] == 29
+    assert measurement["non_query_bound_same_track_scored_citation_count"] == 94
+    assert measurement["schema_mismatch_residual_count"] == 0
+    assert measurement["candidate_artifacts_as_generation_source"] is False
+    assert measurement["generation_used_expected_answer"] is False
+    assert measurement["generation_used_supporting_evidence"] is False
+    assert measurement["generation_used_gold_fields"] is False
+    assert measurement["promotion_evidence"] is False
+    assert "source-bound denominator index" in summary["pipeline_decision"]["rationale"]
+    assert "registry-backed RAG pipeline" not in summary["pipeline_decision"]["rationale"]
 
 
 def test_agentic_available_pipeline_row_exception_is_specific_not_pipeline_unavailable() -> None:

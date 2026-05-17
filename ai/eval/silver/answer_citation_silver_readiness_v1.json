@@ -1,0 +1,110 @@
+{
+  "candidate_artifacts_used_as_generation_source": false,
+  "candidate_result_rows_used_as_silver_generation_source": false,
+  "checked_at": "2026-05-17T11:15:00+00:00",
+  "decision": "create_manifest_and_readiness_only",
+  "expected_values_used_for_audit_only": true,
+  "first_run_baseline_overwritten": false,
+  "gold_csvs_mutated": false,
+  "human_labels_mutated": false,
+  "not_gold": true,
+  "not_official_metric_denominator": true,
+  "not_performance_rerun": true,
+  "not_promotion_evidence": true,
+  "no_tuning_performed": true,
+  "official_denominator_query_ids": {
+    "dev_holdout_tuning_silver_overlap_count": 0,
+    "excluded_from_dev_holdout_tuning_silver": true,
+    "official_query_id_count": 29,
+    "separate_contract_smoke_set_created": false
+  },
+  "official_denominator_query_ids_excluded_from_tuning_silver": true,
+  "official_denominator_registry_mutated": false,
+  "per_track_counts": {
+    "pdf_business_ocr_mm": 0,
+    "text_namu_v2_1": 0,
+    "xlsx_business_structured": 0
+  },
+  "production_namespace_or_vector_path_mutated": false,
+  "purpose": "anti_overfit_generalization_and_source_bound_contract",
+  "schema_version": "answer_citation_silver_readiness_v1",
+  "silver_jsonl_files_created": {
+    "contract": false,
+    "dev": false,
+    "holdout": false
+  },
+  "silver_set_used_for_generation": false,
+  "source_bound_nonproduction_index": {
+    "entrypoint_status": "repo_worktree_entrypoint_present_but_not_run_for_index_build",
+    "index_built": false,
+    "load_check_passed": false,
+    "production_index_path_used": false,
+    "target_index_path": "ai/eval/indexes/rag-data-official-denominator-v1"
+  },
+  "source_data_decision": {
+    "safe_source_bound_answer_citation_source_data_available": false,
+    "why_no_jsonl_created": "Available repo-local materials either lack required source-bound locator fields, belong to official gold/human-label denominators, or are report-only candidate result artifacts that must not seed silver generation."
+  },
+  "source_roots_and_artifacts_checked": {
+    "official_agentic_failure_attribution": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_failure_attribution.json",
+    "official_metric_input_config": "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json",
+    "official_source_bound_readiness": "ai/eval/reports/rag-ingestion/official_answer_citation_source_bound_index_build_readiness_v1.json",
+    "pdf_candidate_results": "ai/eval/reports/rag-ingestion/pdf_answer_citation_table_value_candidate_results_v1.jsonl",
+    "pdf_reviewed_gold_csv": "ai/eval/corpora/gold_queries_pdf_v1_reviewed.csv",
+    "text_namu_corpus": "ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl",
+    "xlsx_candidate_results": "ai/eval/reports/rag-ingestion/xlsx_answer_citation_runtime_precision_candidate_results_v1.jsonl",
+    "xlsx_existing_retrieval_silver": [
+      "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl",
+      "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl"
+    ]
+  },
+  "blockers_by_track": {
+    "pdf_business_ocr_mm": {
+      "available_repo_local_material": [
+        "official PDF gold rows with page and bbox fields",
+        "report-only PDF candidate rows with source-bound repairs",
+        "PDF ingestion/sample manifests"
+      ],
+      "missing_source_bound_fields": [
+        "source_pdf_path",
+        "document_version_id",
+        "search_unit_id",
+        "row_label",
+        "target_column"
+      ],
+      "reason": "Non-official PDF source-bound answer/citation silver source manifests were not found; official gold/human-label rows and report-only candidate rows are not safe tuning silver generation sources.",
+      "status": "blocked"
+    },
+    "text_namu_v2_1": {
+      "available_repo_local_material": [
+        "pages_v4.jsonl",
+        "chunks_v4.jsonl",
+        "rag_chunks.jsonl"
+      ],
+      "missing_source_bound_fields": [
+        "document_version_id",
+        "search_unit_id",
+        "text_locator"
+      ],
+      "reason": "Namu corpus records provide doc_id/chunk_id/section_path, but the requested strict answer/citation silver schema requires document_version_id, search_unit_id, and text_locator; these were not fabricated.",
+      "status": "blocked"
+    },
+    "xlsx_business_structured": {
+      "available_repo_local_material": [
+        "existing XLSX retrieval/evidence silver v0 files",
+        "official XLSX gold rows",
+        "report-only XLSX runtime precision candidate rows"
+      ],
+      "missing_source_bound_fields": [
+        "cell",
+        "row_label",
+        "target_column",
+        "normalized_value_for_audit_only"
+      ],
+      "reason": "Existing XLSX silver is retrieval/evidence oriented and often lacks answer-citation row/value fields; official gold rows and report-only candidate rows must not become tuning silver generation sources.",
+      "status": "blocked"
+    }
+  },
+  "status": "BLOCKED_SOURCE_BOUND_SILVER_SOURCE_DATA_MISSING",
+  "xlsx_pdf_candidates_promoted": false
+}

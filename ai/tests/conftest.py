@@ -13,6 +13,7 @@ CURRENT_RAG_TEST_FILES = frozenset(
         "ai/tests/test_rag_official_answer_citation_metric_first_run_v1.py",
         "ai/tests/test_rag_official_metric_pre_execution_smoke_v1.py",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py",
+        "ai/tests/test_rag_source_bound_official_denominator_index.py",
         "ai/tests/test_rag_xlsx_answer_citation_runtime_precision_candidate_v1.py",
         "ai/tests/test_rag_pdf_answer_citation_table_value_candidate_v1.py",
         "ai/tests/test_rag_diagnostic_status_sync.py",
@@ -20,6 +21,7 @@ CURRENT_RAG_TEST_FILES = frozenset(
         "ai/tests/test_rag_canonical_artifact_audit_v1.py",
         "ai/tests/test_rag_anti_shortcut_guardrail_audit_v1.py",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py",
+        "ai/tests/test_rag_answer_citation_silver_manifest_v1.py",
     }
 )
 
@@ -30,12 +32,6 @@ MARKER_DESCRIPTIONS = {
     "rag_pdf_current": "current PDF answer/citation table/value candidate tests",
     "rag_artifact_source_of_truth": "official metric artifact source-of-truth audit tests",
     "rag_guardrail_current": "current report-only and no-mutation guardrail tests",
-    "rag_historical": "historical RAG tests outside the current feedback loop",
-    "rag_external_artifact": "tests requiring externalized runtime artifacts",
-    "rag_optional_dataset": "tests requiring optional external datasets",
-    "rag_generated_artifact_replay": "tests replaying generated historical artifacts",
-    "rag_answer_recovery_historical": "historical answer-recovery tests",
-    "rag_strict_silver_historical": "historical strict-silver tests",
 }
 
 

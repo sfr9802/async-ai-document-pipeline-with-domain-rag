@@ -6,13 +6,13 @@ PostgreSQL은 job, artifact, catalog, SearchUnit 상태의 durable truth입니�
 
 ## 현재 상태
 
-기준 시점: 2026-05-17 KST. 전체 상태는 `official_answer_citation_agentic_loop_measurement_partial_gpu_index_live_generation`입니다. official answer/citation denominator는 열려 있고 첫 baseline은 29개 row가 채점됐지만, production promotion과 model-quality tuning은 여전히 닫혀 있습니다. 다음 agentic-loop measurement는 별도 run id로 실행됐고, 비프로덕션 RAG FAISS index는 WSL2 Python 3.12 GPU 환경에서 재생성했습니다.
+기준 시점: 2026-05-17 KST. 전체 상태는 `official_denominator_source_bound_index_build_ready_load_checked`입니다. official answer/citation denominator는 열려 있고 첫 baseline은 29개 row가 채점됐지만, production promotion과 model-quality tuning은 여전히 닫혀 있습니다. 다음 agentic-loop measurement는 별도 run id로 실행됐고, source-bound official-denominator SearchUnit index는 비프로덕션 경로에서 빌드/load-check까지 통과했습니다.
 
 | Metric surface | 현재 값 | 의미 |
 |---|---:|---|
 | Official metric input rows | TEXT `6`, XLSX `19`, PDF `4` | registry-backed answer/citation denominator 총 `29` |
 | Official first-run baseline | PASS `8/29` | immutable baseline for comparison |
-| Agentic-loop measurement | PASS `1/29`, scored `29/29` | `official_answer_citation_agentic_loop_run_v1`, agentic loop executed with GPU-built non-production index |
+| Agentic-loop measurement | PASS `1/29`, scored `29/29` | diagnostic only: fixture-all/noop/chunk-only citations, not final comparable model-quality performance |
 | Cross-track averages | `false` | TEXT/XLSX/PDF 평균값을 만들지 않음 |
 | Promotion evidence | `false` | production promotion 증거로 쓰지 않음 |
 | Official denominator registry mutation | `false` | denominator registry 변경 없음 |
@@ -40,6 +40,37 @@ and FAISS build metadata records `faiss_gpu_used=true`. The run scored 29 rows
 with PASS=1, CITATION_UNSUPPORTED=25, and PARTIAL_OR_UNSUPPORTED=3. It remains
 separate from the immutable baseline and is not promotion evidence.
 
+Row-level attribution classifies that PASS=1/29 run as
+`diagnostic_live_generation_fixture_all_index_not_official_denominator_representative`.
+It used the fixture-all smoke index, `llm_backend=noop`, extractive snippet
+generation, and chunk-only citation locators, so it is not final comparable
+model-quality performance. `baseline_comparison_is_model_quality_comparable=false`.
+
+The source-bound official-denominator SearchUnit export/build entrypoint is now
+implemented for the non-production target
+`ai/eval/indexes/rag-data-official-denominator-v1`, and the live runner has
+canonical SearchUnit citation payload wiring plus explicit XLSX/PDF
+source-bound adapter opt-in flags. Readiness is now
+`BUILD_READY_LOAD_CHECK_PASSED`: the target index contains 29/29 official rows
+with track counts PDF=4, TEXT=6, XLSX=19, plus `faiss.index`, `build.json`,
+`ingest_manifest.json`, and `search_unit_manifest.jsonl`. TEXT rows come only
+from `namu-v4-structured-combined/rag_chunks.jsonl`, XLSX rows from read-only
+source workbooks, and PDF row/column locators from original PDFs/native text
+with PaddleOCR reserved as the OCR fallback. Report-only XLSX/PDF candidate
+artifacts must not be used as generation source.
+
+Answer/citation silver strategy is now recorded in
+`ai/eval/silver/answer_citation_silver_manifest_v1.json`, with readiness in
+`ai/eval/silver/answer_citation_silver_readiness_v1.json`. Its purpose is an
+anti-overfit generalization guard before later tuning against the small official
+29-row denominator. The boundary is explicit: silver is not gold, not official
+denominator, not promotion evidence, and not used for generation. expected
+values are audit-only, candidate result rows are not silver generation source,
+and official 29 query_ids are excluded from dev/holdout tuning silver. Initial
+source-bound silver JSONL files were blocked rather than fabricated:
+TEXT=0, XLSX=0, PDF=0. The next step is source-bound SearchUnit export/build and
+canonical SearchUnit citation payload wiring backed by safe source manifests.
+
 Canonical source-of-truth artifacts:
 
 - `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json`
@@ -52,7 +83,11 @@ Canonical source-of-truth artifacts:
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_results.jsonl`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.json`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.md`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_failure_attribution.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_source_bound_index_build_readiness_v1.json`
 - `ai/eval/reports/rag-ingestion/rag_current_eval_status.jsonl`
+- `ai/eval/silver/answer_citation_silver_manifest_v1.json`
+- `ai/eval/silver/answer_citation_silver_readiness_v1.json`
 - `ai/eval/eval_queries/official_denominator_registry.json`
 
 ## 3트랙 아키텍처
@@ -97,9 +132,9 @@ flowchart LR
 
 | Track | 현재 상태 | Diagnostic preview | Official state | 남은 blocker |
 |---|---|---:|---|---|
-| TEXT/Namu V2.1 | Official first-run PASS=6/6 | registry-backed answer/citation rows `6`; one diagnostic support-coverage warning retained | agentic-loop run scored 6/6, PASS=0 | Preserve baseline pass state; no tuning or promotion. |
-| XLSX | Official first-run PASS=1/19; runtime candidate report-only PASS=19/19 | registry-backed answer/citation rows `19`; candidate all-track carry-forward PASS=26/29 | agentic-loop run scored 19/19, PASS=0 | Keep candidate report-only; no winner selection. |
-| PDF | Official first-run PASS=1/4; table/value candidate report-only PASS=4/4 | registry-backed answer/citation rows `4`; repaired rows have official-compatible source-bound locators | agentic-loop run scored 4/4, PASS=1 | Keep candidate report-only; do not treat candidate PASS=29/29 as baseline or promotion evidence. |
+| TEXT/Namu V2.1 | Official first-run PASS=6/6 | registry-backed answer/citation rows `6`; source-bound readiness resolves 6/6 from corpus chunks | agentic-loop run scored 6/6, PASS=0 | No TEXT blocker remains for source-bound readiness; no tuning or promotion. |
+| XLSX | Official first-run PASS=1/19; runtime candidate report-only PASS=19/19 | registry-backed answer/citation rows `19`; source-bound readiness resolves 19/19 from source workbooks | agentic-loop run scored 19/19, PASS=0 | No XLSX blocker remains for source-bound readiness; candidate artifacts stay report-only, no winner selection. |
+| PDF | Official first-run PASS=1/4; table/value candidate report-only PASS=4/4 | registry-backed answer/citation rows `4`; source-bound manifest rows `4/4` | agentic-loop run scored 4/4, PASS=1 | Source-field blocker cleared; do not treat candidate PASS=29/29 as baseline or promotion evidence. |
 
 Route/fallback review artifact는 diagnostic analysis에만 사용합니다. routing accuracy, wrong-route rate, fallback success, multi-route success를 official metric으로 열지 않습니다.
 

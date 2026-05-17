@@ -229,7 +229,7 @@ class FaissIndex:
         safe_version = "".join(
             ch if ch.isalnum() or ch in ("-", "_") else "-"
             for ch in index_version
-        )[:80] or "index"
+        )[:48] or "index"
         suffix = uuid.uuid4().hex[:12]
         return self._dir.parent / f"{self._dir.name}.staging-{safe_version}-{suffix}"
 

@@ -11,7 +11,7 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
     text = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = text.split("## Short History", 1)[0]
 
-    assert "official_answer_citation_agentic_loop_measurement_partial_gpu_index_live_generation" in current_text
+    assert "official_denominator_source_bound_index_build_ready_load_checked" in current_text
     assert "official_metric_execution_started=true" in current_text
     assert "official_scoring_attempt_count=29" in current_text
     assert "PASS=8" in current_text
@@ -25,10 +25,24 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
     assert "scored_count=29" in current_text
     assert "PASS=1" in current_text
     assert "faiss_gpu_used=true" in current_text
+    assert "diagnostic_live_generation_fixture_all_index_not_official_denominator_representative" in current_text
+    assert "baseline_comparison_is_model_quality_comparable=false" in current_text
+    assert "llm_backend=noop" in current_text
+    assert "chunk-only citation locators" in current_text
+    assert "not canonical SearchUnit" in current_text
+    assert "STRUCTURED_ADAPTER_NOT_WIRED=22" in current_text
     assert "eval/indexes/rag-data" in current_text
+    assert "4 current run artifacts" in current_text
+    assert "source-bound official-denominator SearchUnit export/build is now unblocked" in current_text
+    assert "BUILD_READY_LOAD_CHECK_PASSED" in current_text
+    assert "rerun_allowed=true" in current_text
+    assert "29/29 official" in current_text
+    assert "SearchUnit citation payload wiring is implemented" in current_text
+    assert "XLSX/PDF deterministic adapter opt-in wiring is implemented" in current_text
     assert "report-only" in current_text
     assert "pytest ai/tests --rag-current -q" in current_text
-    assert "full ai/tests is broad/nightly diagnostic only" in current_text
+    assert "full `ai/tests`\n  now mirrors the current profile" in current_text
+    assert "broad/nightly legacy\n  suites" in current_text
     assert "rag_current_eval_status.jsonl" in current_text
 
     assert "SCORER_BACKEND_UNAVAILABLE" not in current_text

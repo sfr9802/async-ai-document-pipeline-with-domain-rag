@@ -1,0 +1,200 @@
+{
+  "candidate_artifacts_used_as_generation_source": false,
+  "created_artifacts": {
+    "contract_jsonl": {
+      "created": false,
+      "path": "ai/eval/silver/answer_citation_silver_contract_v1.jsonl",
+      "reason": "source-bound contract smoke records were not created because required locator fields are incomplete"
+    },
+    "dev_jsonl": {
+      "created": false,
+      "path": "ai/eval/silver/answer_citation_silver_dev_v1.jsonl",
+      "reason": "tuning silver dev records were not created because safe source-bound answer/citation source manifests are missing"
+    },
+    "holdout_jsonl": {
+      "created": false,
+      "path": "ai/eval/silver/answer_citation_silver_holdout_v1.jsonl",
+      "reason": "tuning silver holdout records were not created because safe source-bound answer/citation source manifests are missing"
+    },
+    "readiness_json": {
+      "created": true,
+      "path": "ai/eval/silver/answer_citation_silver_readiness_v1.json"
+    }
+  },
+  "expected_values_used_for_audit_only": true,
+  "generated_at": "2026-05-17T11:15:00+00:00",
+  "label_confidence": [
+    "high",
+    "medium",
+    "low"
+  ],
+  "leakage_policy": {
+    "candidate_result_rows_must_not_be_generation_source": true,
+    "official_query_ids_must_not_appear_in_dev_or_holdout_tuning_silver": true,
+    "same_leakage_group_id_cannot_cross": [
+      "dev",
+      "holdout",
+      "sealed"
+    ],
+    "same_query_template_family_and_source_locator_family_should_not_cross_dev_holdout": true,
+    "silver_expected_values_must_not_be_generation_inputs": true
+  },
+  "non_production_index": {
+    "candidate_index_path_used": false,
+    "index_version": "official-answer-citation-agentic-loop-v1-nonprod-official-denominator-source-bound",
+    "production_index_path_used": false,
+    "target_index_path": "ai/eval/indexes/rag-data-official-denominator-v1"
+  },
+  "official_denominator_query_ids_excluded_from_tuning_silver": true,
+  "production_index_path_used": false,
+  "purpose": "anti_overfit_generalization_and_source_bound_contract",
+  "schema_version": "answer_citation_silver_manifest_v1",
+  "silver_set_is_gold": false,
+  "silver_set_is_official_metric_denominator": false,
+  "silver_set_is_promotion_evidence": false,
+  "silver_set_used_for_generation": false,
+  "source_artifacts_inspected": [
+    "README.md",
+    "docs/rag-ingestion-progress.md",
+    "ai/eval/reports/rag-ingestion/rag_current_eval_status.jsonl",
+    "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_failure_attribution.json",
+    "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.json",
+    "ai/eval/reports/rag-ingestion/xlsx_answer_citation_runtime_precision_candidate_results_v1.jsonl",
+    "ai/eval/reports/rag-ingestion/pdf_answer_citation_table_value_candidate_results_v1.jsonl",
+    "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json",
+    "ai/eval/eval_queries/official_denominator_registry.json",
+    "ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl",
+    "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl",
+    "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl",
+    "ai/eval/corpora/gold_queries_pdf_v1_reviewed.csv",
+    "ai/eval/eval_queries/gold_queries_pdf_question_gold_v2.csv",
+    "ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv"
+  ],
+  "splits": {
+    "contract": {
+      "allowed_use": "implementation_regression_only",
+      "may_include_official_query_ids": true,
+      "notes": "Official query ids may be used only for a separate non-tuning contract smoke set, never as dev or holdout tuning silver.",
+      "tuning_allowed": false
+    },
+    "dev": {
+      "allowed_use": "tuning_allowed",
+      "official_denominator_query_ids_allowed": false,
+      "tuning_allowed": true
+    },
+    "holdout": {
+      "allowed_use": "aggregate_monitoring_only_during_tuning",
+      "official_denominator_query_ids_allowed": false,
+      "tuning_allowed": false
+    },
+    "sealed": {
+      "allowed_use": "final_pre_promotion_sanity_only",
+      "official_denominator_query_ids_allowed": false,
+      "tuning_allowed": false
+    }
+  },
+  "tracks": {
+    "pdf_business_ocr_mm": {
+      "coverage_goals": [
+        "paragraph locator",
+        "table row locator",
+        "multi-page cases",
+        "OCR-noisy cases",
+        "bbox boundary cases",
+        "same label in different table",
+        "section question",
+        "near-negative table cases"
+      ],
+      "created_count": 0,
+      "recommended_initial_size": "40-60",
+      "required_fields": [
+        "silver_case_id",
+        "track",
+        "split",
+        "query_text",
+        "source_pdf_path",
+        "page",
+        "physical_page_index",
+        "bbox",
+        "region_type",
+        "bbox_granularity",
+        "row_label",
+        "target_column",
+        "document_version_id",
+        "search_unit_id",
+        "source_basis",
+        "query_template_family",
+        "leakage_group_id",
+        "label_confidence",
+        "used_for_generation",
+        "promotion_evidence"
+      ],
+      "status": "blocked_source_bound_fields_missing"
+    },
+    "text_namu_v2_1": {
+      "coverage_goals": [
+        "paraphrase cases",
+        "entity ambiguity",
+        "section-specific source retrieval",
+        "near-negative source cases",
+        "long-tail source family cases"
+      ],
+      "created_count": 0,
+      "recommended_initial_size": "30-40",
+      "required_fields": [
+        "silver_case_id",
+        "track",
+        "split",
+        "query_text",
+        "source_family_id",
+        "document_id",
+        "document_version_id",
+        "search_unit_id",
+        "text_locator",
+        "query_template_family",
+        "leakage_group_id",
+        "label_confidence",
+        "used_for_generation",
+        "promotion_evidence"
+      ],
+      "status": "blocked_source_bound_fields_missing"
+    },
+    "xlsx_business_structured": {
+      "coverage_goals": [
+        "simple lookup",
+        "duplicate row label",
+        "date/number formatting",
+        "units/currency/percent",
+        "blank/missing cells",
+        "merged cells if available",
+        "Korean row/column labels",
+        "multi-sheet cases",
+        "near-negative table cases"
+      ],
+      "created_count": 0,
+      "recommended_initial_size": "60-80",
+      "required_fields": [
+        "silver_case_id",
+        "track",
+        "split",
+        "query_text",
+        "workbook",
+        "sheet",
+        "range",
+        "cell",
+        "row_label",
+        "target_column",
+        "normalized_value_for_audit_only",
+        "document_version_id",
+        "search_unit_id",
+        "source_basis",
+        "query_template_family",
+        "leakage_group_id",
+        "label_confidence",
+        "used_for_generation",
+        "promotion_evidence"
+      ],
+      "status": "blocked_source_bound_fields_missing"
+    }
+  }
+}
