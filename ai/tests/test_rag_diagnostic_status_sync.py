@@ -32,7 +32,8 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
     assert "not canonical SearchUnit" in current_text
     assert "STRUCTURED_ADAPTER_NOT_WIRED=22" in current_text
     assert "eval/indexes/rag-data" in current_text
-    assert "4 current run artifacts" in current_text
+    assert "Human-facing rolling docs" in current_text
+    assert "Per-run Markdown" in current_text
     assert "source-bound official-denominator SearchUnit export/build is now unblocked" in current_text
     assert "BUILD_READY_LOAD_CHECK_PASSED" in current_text
     assert "rerun_allowed=true" in current_text

@@ -1,0 +1,60 @@
+{
+  "diagnostic_only": true,
+  "generated_at": "2026-05-18T10:28:38.295247+00:00",
+  "generation_used_expected_answer": false,
+  "generation_used_gold_fields": false,
+  "generation_used_supporting_evidence": false,
+  "promotion_evidence": false,
+  "rows": [
+    {
+      "after": {
+        "answer_score": 0.0,
+        "citation_support_score": 1.0,
+        "lane_b_failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+        "llm_generated_locator_copy_failure": false,
+        "llm_generated_locator_field_mismatch_failure": false,
+        "llm_generated_locator_missing_failure": false,
+        "pdf_source_pdf_path_byte_equal": null,
+        "pdf_source_pdf_path_normalized_equal": null,
+        "strict_json_parse_failure": false,
+        "strict_json_schema_repair_applied": false,
+        "text_locator_byte_equal": true,
+        "text_locator_normalized_equal": true,
+        "text_locator_present": true,
+        "xlsx_row_label_byte_equal": null,
+        "xlsx_row_label_normalized_equal": null
+      },
+      "before": {
+        "answer_score": 0.0,
+        "citation_support_score": 1.0,
+        "lane_b_failure_category": "CITATION_PAYLOAD_SCHEMA_MISMATCH",
+        "llm_generated_locator_copy_failure": true,
+        "llm_generated_locator_field_mismatch_failure": false,
+        "llm_generated_locator_missing_failure": true,
+        "pdf_source_pdf_path_byte_equal": null,
+        "pdf_source_pdf_path_normalized_equal": null,
+        "strict_json_parse_failure": false,
+        "strict_json_schema_repair_applied": false,
+        "text_locator_byte_equal": null,
+        "text_locator_normalized_equal": null,
+        "text_locator_present": false,
+        "xlsx_row_label_byte_equal": null,
+        "xlsx_row_label_normalized_equal": null
+      },
+      "query_id": "text_namu_v2_0012",
+      "source_family": "TEXT"
+    }
+  ],
+  "run_id": "official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage",
+  "schema_version": "official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_triage_delta_v1",
+  "source_run_id": "official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage",
+  "summary_metrics": {
+    "llm_generated_locator_field_mismatch_failure_after": 0,
+    "llm_generated_locator_missing_failure_after": 0,
+    "llm_generated_locator_missing_failure_before": 1,
+    "text_locator_byte_equal_after": true,
+    "text_locator_missing_count_after": 0,
+    "text_locator_missing_count_before": 1,
+    "text_locator_normalized_equal_after": true
+  }
+}

@@ -1897,6 +1897,101 @@ def test_v3_prompt_context_modes_exclude_off_track_and_gold_candidate_text() -> 
     assert "candidate" not in prompt.lower()
 
 
+def test_v3_locator_validation_reports_pdf_source_path_byte_equality() -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    expected_citation = {
+        "search_unit_citation_payload": {
+            "source_pdf_path": "reports/report.pdf",
+            "page": 3,
+            "physical_page_index": 2,
+            "bbox": [1.0, 2.0, 3.0, 4.0],
+            "region_type": "paragraph",
+            "search_unit_id": "su-pdf",
+            "document_version_id": "docv-pdf",
+            "source_bound_official_denominator": True,
+        }
+    }
+    generated_locator = {
+        "source_pdf_path": "reports/repert.pdf",
+        "page": 3,
+        "physical_page_index": 2,
+        "bbox": [1.0, 2.0, 3.0, 4.0],
+        "region_type": "paragraph",
+        "search_unit_id": "su-pdf",
+        "document_version_id": "docv-pdf",
+    }
+
+    validation = runner.llm_generated_locator_validation(
+        generated_locators=[generated_locator],
+        expected_citations=[expected_citation],
+        cited_search_unit_ids=["su-pdf"],
+        source_family="PDF",
+    )
+
+    source_path = validation["field_comparisons_by_search_unit_id"]["su-pdf"]["source_pdf_path"]
+    assert validation["ok"] is False
+    assert validation["mismatched_fields_by_search_unit_id"] == {"su-pdf": ["source_pdf_path"]}
+    assert source_path["byte_equal"] is False
+    assert source_path["normalized_equal"] is False
+
+
+def test_v3_locator_validation_reports_xlsx_row_label_byte_and_normalized_equality() -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    expected_citation = {
+        "search_unit_citation_payload": {
+            "workbook": "book.xlsx",
+            "sheet": "일반현황",
+            "range": "A1:J2",
+            "cell": "J2",
+            "row_label": "장기요양기관코드=1 | 우편번호=2",
+            "target_column": "기관별 상세주소",
+            "normalized_value": "서울",
+            "search_unit_id": "su-xlsx",
+            "document_version_id": "docv-xlsx",
+            "source_bound_official_denominator": True,
+        }
+    }
+    spacing_only_locator = {
+        "workbook": "book.xlsx",
+        "sheet": "일반현황",
+        "range": "A1:J2",
+        "cell": "J2",
+        "row_label": "장기요양기관코드=1|우편번호=2",
+        "target_column": "기관별 상세주소",
+        "normalized_value": "서울",
+        "search_unit_id": "su-xlsx",
+        "document_version_id": "docv-xlsx",
+    }
+    semantic_mismatch_locator = {
+        **spacing_only_locator,
+        "row_label": "장기요양기관코드=1 | 우편번호=2 | 기관별 상세주소=서울",
+    }
+
+    spacing_validation = runner.llm_generated_locator_validation(
+        generated_locators=[spacing_only_locator],
+        expected_citations=[expected_citation],
+        cited_search_unit_ids=["su-xlsx"],
+        source_family="XLSX",
+    )
+    mismatch_validation = runner.llm_generated_locator_validation(
+        generated_locators=[semantic_mismatch_locator],
+        expected_citations=[expected_citation],
+        cited_search_unit_ids=["su-xlsx"],
+        source_family="XLSX",
+    )
+
+    spacing_row_label = spacing_validation["field_comparisons_by_search_unit_id"]["su-xlsx"]["row_label"]
+    mismatch_row_label = mismatch_validation["field_comparisons_by_search_unit_id"]["su-xlsx"]["row_label"]
+    assert spacing_validation["ok"] is False
+    assert spacing_row_label["byte_equal"] is False
+    assert spacing_row_label["normalized_equal"] is True
+    assert mismatch_validation["ok"] is False
+    assert mismatch_row_label["byte_equal"] is False
+    assert mismatch_row_label["normalized_equal"] is False
+
+
 def test_v3_text_namu_0017_diagnostic_fields_are_emitted() -> None:
     import rag_official_answer_citation_agentic_loop_run_v1 as runner
 

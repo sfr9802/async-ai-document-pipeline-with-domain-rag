@@ -11,7 +11,6 @@ PROTECTED_PATHS = (
     "ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv",
     "ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv",
     "ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json",
-    "ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.md",
     "ai/eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl",
     "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json",
     "ai/eval/reports/rag-ingestion/official_metric_pre_execution_smoke_report_v1.json",

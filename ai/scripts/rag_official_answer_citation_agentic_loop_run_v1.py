@@ -12,11 +12,14 @@ answers or scores.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
 import sys
+import unicodedata
 from collections import Counter
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -39,6 +42,46 @@ V2_1_RUN_ID = "official_answer_citation_agentic_loop_run_v2_1_citation_contract_
 V2_2_RUN_ID = "official_answer_citation_agentic_loop_run_v2_2_llm_backend_validation"
 V3_RUN_ID = "official_answer_citation_agentic_loop_run_v3_comparable_live_measurement"
 V3_1_RUN_ID = "official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement"
+V3_1_PRIORITY_1_5_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage"
+)
+V3_1_PRIORITY_1_5_STRICT_JSON_DIAGNOSTICS_ID = (
+    "official_answer_citation_agentic_loop_run_v3_1_priority_1_5_triage_strict_json_diagnostics"
+)
+V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage"
+)
+V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage"
+)
+V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage"
+)
+V3_1_PRIORITY_1_5_QUERY_IDS = (
+    "gq_pdf_section_question_001",
+    "text_namu_v2_0012",
+    "gq_auto_010",
+    "gq_auto_023",
+    "gq_xlsx_lookup_008",
+)
+V3_1_TEXT_LOCATOR_RESIDUAL_QUERY_IDS = ("text_namu_v2_0012",)
+V3_1_PRIORITY_1_5_STRICT_JSON_QUERY_IDS = (
+    "gq_pdf_section_question_001",
+    "text_namu_v2_0012",
+)
+V3_1_2_TEXT_FIRST_BATCH_QUERY_IDS = (
+    "text_namu_v2_0012",
+    "text_namu_v2_0014",
+    "text_namu_v2_0017",
+    "text_namu_v2_0077",
+    "text_namu_v2_0084",
+)
+V3_1_2_TEXT_SECONDARY_QUERY_IDS = ("text_namu_v2_0005",)
+V3_1_2_TEXT_TARGET_QUERY_IDS = V3_1_2_TEXT_FIRST_BATCH_QUERY_IDS + V3_1_2_TEXT_SECONDARY_QUERY_IDS
+V3_1_LIVE_LANE_NAMES = (
+    "live_llm_retrieval_topk",
+    "live_llm_query_bound_oracle",
+)
 V2_1_RESIDUAL_FAILURE_AUDIT_QUERY_IDS = (
     "gq_auto_030",
     "gq_pdf_section_question_001",
@@ -113,6 +156,26 @@ DEFAULT_SOURCE_BOUND_READINESS_JSON = (
 DEFAULT_V3_SUMMARY_JSON = REPORT_DIR / f"{V3_RUN_ID}_summary.json"
 DEFAULT_V3_RESULTS_JSONL = REPORT_DIR / f"{V3_RUN_ID}_results.jsonl"
 DEFAULT_V3_FAILURE_ATTRIBUTION_JSON = REPORT_DIR / f"{V3_RUN_ID}_failure_attribution.json"
+DEFAULT_V3_1_SUMMARY_JSON = REPORT_DIR / f"{V3_1_RUN_ID}_summary.json"
+DEFAULT_V3_1_RESULTS_JSONL = REPORT_DIR / f"{V3_1_RUN_ID}_results.jsonl"
+DEFAULT_V3_1_TRIAGE_JSON = REPORT_DIR / f"{V3_1_RUN_ID}_triage_queue.json"
+DEFAULT_V3_1_PRIORITY_SUMMARY_JSON = REPORT_DIR / f"{V3_1_PRIORITY_1_5_RUN_ID}_summary.json"
+DEFAULT_V3_1_PRIORITY_RESULTS_JSONL = REPORT_DIR / f"{V3_1_PRIORITY_1_5_RUN_ID}_results.jsonl"
+DEFAULT_V3_1_PRIORITY_TRIAGE_DELTA_JSON = REPORT_DIR / f"{V3_1_PRIORITY_1_5_RUN_ID}_triage_delta.json"
+DEFAULT_V3_1_TEXT_LOCATOR_SUMMARY_JSON = REPORT_DIR / f"{V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID}_summary.json"
+DEFAULT_V3_1_TEXT_LOCATOR_RESULTS_JSONL = REPORT_DIR / f"{V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID}_results.jsonl"
+DEFAULT_V3_1_TEXT_LOCATOR_TRIAGE_DELTA_JSON = REPORT_DIR / f"{V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID}_triage_delta.json"
+DEFAULT_V3_1_1_POST_SUMMARY_JSON = REPORT_DIR / f"{V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID}_summary.json"
+DEFAULT_V3_1_1_POST_RESULTS_JSONL = REPORT_DIR / f"{V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID}_results.jsonl"
+DEFAULT_V3_1_1_POST_ATTRIBUTION_JSON = (
+    REPORT_DIR / f"{V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID}_failure_attribution.json"
+)
+DEFAULT_V3_1_1_POST_AUDIT_JSONL = (
+    REPORT_DIR / f"{V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID}_actual_response_audit.jsonl"
+)
+DEFAULT_V3_1_1_POST_TRIAGE_QUEUE_JSON = (
+    REPORT_DIR / f"{V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID}_triage_queue.json"
+)
 DEFAULT_RAG_INDEX_DIR = AI_WORKER_ROOT / "eval" / "indexes" / "rag-data-official-denominator-v1"
 
 GENERATION_PIPELINE_UNAVAILABLE = "GENERATION_PIPELINE_UNAVAILABLE"
@@ -203,30 +266,34 @@ def main(argv: list[str] | None = None) -> int:
     summary["artifact_paths"]["failure_attribution_json_sha256"] = sha256_file(failure_attribution_path)
     if summary["run_id"] == V3_1_RUN_ID:
         write_v3_1_side_artifacts(summary, rows)
+    elif summary["run_id"] == V3_1_PRIORITY_1_5_RUN_ID:
+        write_v3_1_priority_1_5_side_artifacts(summary, rows)
+    elif summary["run_id"] == V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID:
+        write_v3_1_text_locator_residual_side_artifacts(summary, rows)
+    elif summary["run_id"] == V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID:
+        write_v3_1_1_post_triage_side_artifacts(summary, rows)
+    elif summary["run_id"] == V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID:
+        write_v3_1_2_answer_span_renderer_side_artifacts(summary, rows)
     write_json(Path(args.summary_json), summary)
-    Path(args.summary_md).write_text(render_markdown(summary), encoding="utf-8")
+    if summary.get("write_summary_markdown", True) is not False:
+        Path(args.summary_md).write_text(render_markdown(summary), encoding="utf-8")
     append_status_event(Path(args.status_jsonl), summary)
     append_failure_attribution_event(Path(args.status_jsonl), failure_attribution)
-    print(
-        json.dumps(
-            {
-                "run_id": summary["run_id"],
-                "status": summary["status"],
-                "measurement_classification": summary["measurement_classification"],
-                "result_count": summary["result_count"],
-                "unique_query_id_count": summary["unique_query_id_count"],
-                "pass_count": summary["pass_count"],
-                "agentic_loop_enabled": summary["agentic_loop"]["enabled"],
-                "agentic_loop_executed": summary["agentic_loop"]["executed"],
-                "results_jsonl": summary["artifact_paths"]["results_jsonl"],
-                "summary_json": summary["artifact_paths"]["summary_json"],
-                "summary_md": summary["artifact_paths"]["summary_md"],
-            },
-            ensure_ascii=False,
-            indent=2,
-            sort_keys=True,
-        )
-    )
+    console_payload = {
+        "run_id": summary["run_id"],
+        "status": summary["status"],
+        "measurement_classification": summary["measurement_classification"],
+        "result_count": summary["result_count"],
+        "unique_query_id_count": summary["unique_query_id_count"],
+        "pass_count": summary["pass_count"],
+        "agentic_loop_enabled": summary["agentic_loop"]["enabled"],
+        "agentic_loop_executed": summary["agentic_loop"]["executed"],
+        "results_jsonl": summary["artifact_paths"]["results_jsonl"],
+        "summary_json": summary["artifact_paths"]["summary_json"],
+    }
+    if "summary_md" in summary["artifact_paths"]:
+        console_payload["summary_md"] = summary["artifact_paths"]["summary_md"]
+    print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
 
 
@@ -279,8 +346,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument("--llm-timeout-seconds", type=int, default=120)
-    parser.add_argument("--llm-max-tokens", type=int, default=900)
-    parser.add_argument("--llm-strict-json-retries", type=int, default=2)
+    parser.add_argument("--llm-max-tokens", type=int, default=4096)
+    parser.add_argument("--llm-strict-json-retries", type=int, default=3)
     parser.add_argument(
         "--v3-prompt-context-mode",
         choices=V3_PROMPT_CONTEXT_MODES,
@@ -311,9 +378,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Diagnostic escape hatch; official-compatible scoring keeps this disabled.",
     )
     args = parser.parse_args(argv)
-    if args.run_id not in {RUN_ID, V2_RUN_ID, V2_1_RUN_ID, V2_2_RUN_ID, V3_RUN_ID, V3_1_RUN_ID}:
+    supported_run_ids = {
+        RUN_ID,
+        V2_RUN_ID,
+        V2_1_RUN_ID,
+        V2_2_RUN_ID,
+        V3_RUN_ID,
+        V3_1_RUN_ID,
+        V3_1_PRIORITY_1_5_RUN_ID,
+        V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+        V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+        V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+    }
+    if args.run_id not in supported_run_ids:
         raise SystemExit(
-            f"unsupported run id {args.run_id!r}; expected {RUN_ID!r}, {V2_RUN_ID!r}, {V2_1_RUN_ID!r}, {V2_2_RUN_ID!r}, {V3_RUN_ID!r}, or {V3_1_RUN_ID!r}"
+            "unsupported run id "
+            f"{args.run_id!r}; expected one of {', '.join(repr(item) for item in sorted(supported_run_ids))}"
         )
     if args.results_jsonl is None:
         args.results_jsonl = str(REPORT_DIR / f"{args.run_id}_results.jsonl")
@@ -328,7 +408,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def is_source_bound_manifest_run(run_id: str) -> bool:
-    return run_id in {V2_RUN_ID, V2_1_RUN_ID, V2_2_RUN_ID, V3_RUN_ID, V3_1_RUN_ID}
+    return run_id in {
+        V2_RUN_ID,
+        V2_1_RUN_ID,
+        V2_2_RUN_ID,
+        V3_RUN_ID,
+        V3_1_RUN_ID,
+        V3_1_PRIORITY_1_5_RUN_ID,
+        V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+        V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+        V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+    }
 
 
 def source_family_for_track(track: str) -> str:
@@ -396,6 +486,62 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
         )
     if args.run_id == V3_1_RUN_ID:
         return run_v3_1_all_track_foundation_measurement(
+            args=args,
+            consumed=consumed,
+            baseline=baseline,
+            validation_errors=validation_errors,
+            agentic_status=agentic_status,
+            metric_input_config_path=metric_input_config_path,
+            denominator_registry_path=denominator_registry_path,
+            pre_execution_smoke_path=pre_execution_smoke_path,
+            application_path=application_path,
+            registry_application_fallback_used=not bool(application),
+            baseline_path=baseline_path,
+        )
+    if args.run_id == V3_1_PRIORITY_1_5_RUN_ID:
+        return run_v3_1_priority_1_5_strict_json_locator_triage(
+            args=args,
+            consumed=consumed,
+            baseline=baseline,
+            validation_errors=validation_errors,
+            agentic_status=agentic_status,
+            metric_input_config_path=metric_input_config_path,
+            denominator_registry_path=denominator_registry_path,
+            pre_execution_smoke_path=pre_execution_smoke_path,
+            application_path=application_path,
+            registry_application_fallback_used=not bool(application),
+            baseline_path=baseline_path,
+        )
+    if args.run_id == V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID:
+        return run_v3_1_text_locator_residual_triage(
+            args=args,
+            consumed=consumed,
+            baseline=baseline,
+            validation_errors=validation_errors,
+            agentic_status=agentic_status,
+            metric_input_config_path=metric_input_config_path,
+            denominator_registry_path=denominator_registry_path,
+            pre_execution_smoke_path=pre_execution_smoke_path,
+            application_path=application_path,
+            registry_application_fallback_used=not bool(application),
+            baseline_path=baseline_path,
+        )
+    if args.run_id == V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID:
+        return run_v3_1_1_post_strict_json_locator_triage(
+            args=args,
+            consumed=consumed,
+            baseline=baseline,
+            validation_errors=validation_errors,
+            agentic_status=agentic_status,
+            metric_input_config_path=metric_input_config_path,
+            denominator_registry_path=denominator_registry_path,
+            pre_execution_smoke_path=pre_execution_smoke_path,
+            application_path=application_path,
+            registry_application_fallback_used=not bool(application),
+            baseline_path=baseline_path,
+        )
+    if args.run_id == V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID:
+        return run_v3_1_2_answer_span_renderer_triage(
             args=args,
             consumed=consumed,
             baseline=baseline,
@@ -1518,8 +1664,8 @@ def llm_backend_preflight_for_v2_2(args: Any, *, check_endpoint: bool = True) ->
     backend = official.clean(getattr(args, "llm_backend", "")) or "llamacpp"
     model = official.clean(getattr(args, "llm_model", "")) or "gemma4-e2b-local"
     timeout = int(getattr(args, "llm_timeout_seconds", 120) or 120)
-    max_tokens = int(getattr(args, "llm_max_tokens", 900) or 900)
-    retries = int(getattr(args, "llm_strict_json_retries", 2) or 2)
+    max_tokens = int(getattr(args, "llm_max_tokens", 4096) or 4096)
+    retries = int(getattr(args, "llm_strict_json_retries", 3) or 3)
     base_url = official.clean(getattr(args, "llm_base_url", ""))
     blockers: list[str] = []
     resolved_base_url = base_url
@@ -2541,28 +2687,184 @@ def v3_text_llm_synthesis_row(
         return out
 
 
+class StrictJsonDiagnosticError(ValueError):
+    def __init__(self, message: str, diagnostics: Mapping[str, Any]) -> None:
+        super().__init__(message)
+        self.diagnostics = dict(diagnostics)
+
+
+def sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def sanitized_raw_response_excerpt(value: str, *, limit: int = 700) -> str:
+    text = re.sub(r"(?i)[A-Z]:\\[^\r\n\t\"']+", "[REDACTED_LOCAL_PATH]", value or "")
+    text = "".join(ch if ch in "\n\t" or ord(ch) >= 32 else " " for ch in text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) > limit:
+        return text[:limit].rstrip() + "..."
+    return text
+
+
+def call_v3_local_llm_strict_json_with_diagnostics(
+    *,
+    backend_preflight: Mapping[str, Any],
+    prompt: str,
+    required_schema_keys: Sequence[str],
+    prompt_context_mode: str,
+    cited_search_unit_ids_before_parse: Sequence[str],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    from rag_text_namu_local_llm_rewrite_v2 import call_local_llm, parse_strict_json_object  # noqa: WPS433
+
+    attempts = max(1, int(backend_preflight.get("strict_json_retries") or 2))
+    required_keys = [official.clean(item) for item in required_schema_keys if official.clean(item)]
+    prompt_for_attempt = prompt
+    raw_hashes: list[str] = []
+    last_diagnostics: dict[str, Any] = {
+        "parse_ok": False,
+        "strict_json_error": "local LLM was not invoked",
+        "attempted_schema_keys": required_keys,
+        "missing_required_keys": required_keys,
+        "prompt_context_mode": prompt_context_mode,
+        "cited_search_unit_ids_before_parse": list(cited_search_unit_ids_before_parse),
+    }
+    for attempt in range(1, attempts + 1):
+        raw = call_local_llm(
+            backend=official.clean(backend_preflight.get("llm_backend")),
+            base_url=official.clean(backend_preflight.get("base_url")),
+            model=official.clean(backend_preflight.get("model")),
+            prompt=prompt_for_attempt,
+            temperature=0.0,
+            max_tokens=int(backend_preflight.get("max_tokens") or 900),
+            timeout_seconds=int(backend_preflight.get("timeout_seconds") or 120),
+        )
+        raw_hashes.append(sha256_text(raw))
+        diagnostics = {
+            "parse_ok": False,
+            "strict_json_attempts": attempt,
+            "strict_json_retry_count": attempt - 1,
+            "raw_response_sha256": raw_hashes[-1],
+            "raw_response_sha256_attempts": list(raw_hashes),
+            "sanitized_raw_response_excerpt": sanitized_raw_response_excerpt(raw),
+            "strict_json_error": "",
+            "attempted_schema_keys": required_keys,
+            "missing_required_keys": [],
+            "prompt_context_mode": prompt_context_mode,
+            "cited_search_unit_ids_before_parse": list(cited_search_unit_ids_before_parse),
+        }
+        try:
+            parsed = parse_strict_json_object(raw)
+        except ValueError as exc:
+            diagnostics["strict_json_error"] = str(exc)
+            last_diagnostics = diagnostics
+        else:
+            parsed_candidates = [parsed, *strict_json_candidates_from_wrapped_response(parsed, parse_strict_json_object)]
+            for candidate_index, candidate in enumerate(parsed_candidates):
+                missing = [key for key in required_keys if key not in candidate]
+                if missing:
+                    repaired = repair_v3_strict_json_schema(candidate, missing_required_keys=missing)
+                    repaired_missing = [key for key in required_keys if key not in repaired]
+                    if not repaired_missing:
+                        diagnostics["parse_ok"] = True
+                        diagnostics["schema_repair_applied"] = True
+                        diagnostics["missing_required_keys_before_repair"] = missing
+                        diagnostics["missing_required_keys"] = []
+                        if candidate_index:
+                            diagnostics["wrapped_response_content_extracted"] = True
+                        return repaired, diagnostics
+                    diagnostics["strict_json_error"] = "local LLM JSON missing required key(s): " + ", ".join(
+                        repaired_missing
+                    )
+                    diagnostics["missing_required_keys"] = repaired_missing
+                    diagnostics["missing_required_keys_before_repair"] = missing
+                    last_diagnostics = diagnostics
+                else:
+                    diagnostics["parse_ok"] = True
+                    if candidate_index:
+                        diagnostics["wrapped_response_content_extracted"] = True
+                    return candidate, diagnostics
+        prompt_for_attempt = (
+            prompt
+            + "\n\nPrevious response failed strict JSON validation. "
+            + "Return exactly one minified JSON object matching the schema. "
+            + "Do not use markdown, code fences, commentary, or prose. "
+            + f"Validation error: {last_diagnostics['strict_json_error']}"
+        )
+    raise StrictJsonDiagnosticError(
+        "local LLM output failed strict JSON diagnostics after "
+        f"{attempts} attempt(s): {last_diagnostics.get('strict_json_error')}",
+        last_diagnostics,
+    )
+
+
+def repair_v3_strict_json_schema(
+    parsed: Mapping[str, Any],
+    *,
+    missing_required_keys: Sequence[str],
+) -> dict[str, Any]:
+    repaired = dict(parsed)
+    missing = {official.clean(key) for key in missing_required_keys}
+    if "cited_search_unit_ids" in missing:
+        locator_ids = [
+            official.clean(locator.get("search_unit_id") or locator.get("searchUnitId"))
+            for locator in llm_generated_citation_locators_from_json(repaired)
+            if isinstance(locator, Mapping)
+        ]
+        locator_ids = [item for item in locator_ids if item]
+        if locator_ids:
+            repaired["cited_search_unit_ids"] = sorted(dict.fromkeys(locator_ids))
+    return repaired
+
+
+def strict_json_candidates_from_wrapped_response(
+    parsed: Mapping[str, Any],
+    parse_fn: Any,
+) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    choices = parsed.get("choices")
+    if not isinstance(choices, Sequence) or isinstance(choices, (str, bytes)):
+        return candidates
+    for choice in choices:
+        if not isinstance(choice, Mapping):
+            continue
+        message = choice.get("message") if isinstance(choice.get("message"), Mapping) else {}
+        for value in (message.get("content"), choice.get("text")):
+            text = official.clean(value)
+            if not text:
+                continue
+            try:
+                candidate = parse_fn(text)
+            except ValueError:
+                continue
+            if isinstance(candidate, Mapping):
+                candidates.append(dict(candidate))
+    return candidates
+
+
 def call_v3_llm_synthesis(
     *,
     prompt: str,
     backend_preflight: Mapping[str, Any],
     require_generated_locators: bool = False,
+    prompt_context_mode: str = "",
+    cited_search_unit_ids_before_parse: Sequence[str] | None = None,
 ) -> tuple[str, dict[str, Any]]:
-    from rag_text_namu_local_llm_rewrite_v2 import call_local_llm_strict_json  # noqa: WPS433
-
-    parsed, strict_json_meta = call_local_llm_strict_json(
-        backend=official.clean(backend_preflight.get("llm_backend")),
-        base_url=official.clean(backend_preflight.get("base_url")),
-        model=official.clean(backend_preflight.get("model")),
+    context_ids = set(re.findall(r"search_unit_id=([^\s]+)", prompt))
+    required_schema_keys = ["answer", "cited_search_unit_ids"]
+    if require_generated_locators:
+        required_schema_keys.append("citation_locators")
+    parsed, strict_json_meta = call_v3_local_llm_strict_json_with_diagnostics(
+        backend_preflight=backend_preflight,
         prompt=prompt,
-        temperature=0.0,
-        max_tokens=int(backend_preflight.get("max_tokens") or 900),
-        timeout_seconds=int(backend_preflight.get("timeout_seconds") or 120),
-        retries=int(backend_preflight.get("strict_json_retries") or 2),
+        required_schema_keys=required_schema_keys,
+        prompt_context_mode=prompt_context_mode,
+        cited_search_unit_ids_before_parse=list(cited_search_unit_ids_before_parse or sorted(context_ids)),
     )
     llm_answer = official.clean(parsed.get("answer") or parsed.get("rewritten_answer") or parsed.get("short_answer"))
     if not llm_answer:
-        raise ValueError("LLM JSON did not include answer")
-    context_ids = set(re.findall(r"search_unit_id=([^\s]+)", prompt))
+        diagnostics = {**strict_json_meta, "parse_ok": False, "strict_json_error": "LLM JSON did not include answer"}
+        diagnostics["missing_required_keys"] = ["answer"]
+        raise StrictJsonDiagnosticError("LLM JSON did not include answer", diagnostics)
     cited_ids = {
         official.clean(item)
         for item in parsed.get("cited_search_unit_ids") or []
@@ -2702,13 +3004,25 @@ def build_v3_llm_prompt(
     question: str,
     require_generated_locators: bool = False,
 ) -> str:
-    required_keys = '"answer", "cited_search_unit_ids", "answer_supported_by_context"'
+    source_family = SOURCE_FAMILY_LABEL_BY_TRACK.get(official.clean(row.get("track")), official.clean(row.get("track")))
+    required_keys_list = ["answer", "cited_search_unit_ids"]
     if require_generated_locators:
-        required_keys = f"{required_keys}, \"citation_locators\""
+        required_keys_list.append("citation_locators")
+    schema_example: dict[str, Any] = {
+        "answer": "short source-bound answer text",
+        "cited_search_unit_ids": ["search_unit_id"],
+    }
+    if require_generated_locators:
+        schema_example["citation_locators"] = [locator_schema_example_for_source_family(source_family)]
+    schema_example["answer_supported_by_context"] = True
     lines = [
         "You are running a v3 comparable live measurement row for source-bound RAG answer synthesis.",
-        "Use only the canonical source-bound SearchUnit citation payloads below. Return exactly one JSON object.",
-        f"Required JSON keys: {required_keys}.",
+        "Use only the canonical source-bound SearchUnit citation payloads below to write the answer.",
+        "Keep answer concise, usually one sentence.",
+        "Return exactly one minified JSON object and nothing else.",
+        "Do not return markdown, code fences, commentary, or nested free text.",
+        f"Required JSON keys: {', '.join(required_keys_list)}.",
+        f"JSON schema: {json.dumps(schema_example, ensure_ascii=False, sort_keys=True, separators=(',', ':'))}",
         f"query_id: {official.clean(row.get('query_id'))}",
         f"track: {official.clean(row.get('track'))}",
         f"question: {official.clean(question)}",
@@ -2717,17 +3031,20 @@ def build_v3_llm_prompt(
     ]
     if require_generated_locators:
         lines.insert(
-            3,
+            6,
             (
-                "For citation_locators, return one locator object per cited_search_unit_id "
-                "and copy the locator_json fields exactly from the cited source_bound_context item."
+                "For citation_locators, return one object per cited_search_unit_id by copying "
+                "the cited locator_json_copy_source object exactly as a JSON object. Do not wrap it under "
+                "a copy key. Do not stringify it. Do not rewrite, shorten, translate, or append "
+                "source_pdf_path, row_label, target_column, or any locator value. Each locator must include "
+                "all schema keys shown above for this source family, not only search_unit_id."
             ),
         )
     for index, citation in enumerate(context.get("citations") or [], start=1):
         if not isinstance(citation, Mapping):
             continue
         locator_part = (
-            f"locator_json={json.dumps(citation.get('locator') or {}, ensure_ascii=False, sort_keys=True)} "
+            f"locator_json_copy_source={json.dumps(citation.get('locator') or {}, ensure_ascii=False, sort_keys=True, separators=(',', ':'))} "
             if require_generated_locators
             else ""
         )
@@ -2738,6 +3055,37 @@ def build_v3_llm_prompt(
             f"text={official.clean(citation.get('citation_text'))}"
         )
     return "\n".join(lines)
+
+
+def locator_schema_example_for_source_family(source_family: str) -> dict[str, Any]:
+    if source_family == "PDF":
+        return {
+            "source_pdf_path": "string",
+            "page": 1,
+            "physical_page_index": 0,
+            "bbox": [0.0, 0.0, 0.0, 0.0],
+            "region_type": "string",
+            "search_unit_id": "string",
+            "document_version_id": "string",
+        }
+    if source_family == "XLSX":
+        return {
+            "workbook": "string",
+            "sheet": "string",
+            "range": "string",
+            "cell": "string",
+            "row_label": "string",
+            "target_column": "string",
+            "normalized_value": "string",
+            "search_unit_id": "string",
+            "document_version_id": "string",
+        }
+    return {
+        "document_id": "string",
+        "document_version_id": "string",
+        "search_unit_id": "string",
+        "text_locator": {},
+    }
 
 
 def v3_text_diagnostics(
@@ -3195,6 +3543,606 @@ def run_v3_1_all_track_foundation_measurement(
     return summary, rows
 
 
+def run_v3_1_priority_1_5_strict_json_locator_triage(
+    *,
+    args: argparse.Namespace,
+    consumed: Mapping[str, Any],
+    baseline: Mapping[str, Any],
+    validation_errors: Sequence[str],
+    agentic_status: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    application_path: Path | None,
+    registry_application_fallback_used: bool,
+    baseline_path: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    source_rows = list(consumed["rows"])
+    source_by_id = {official.clean(row.get("query_id")): row for row in source_rows}
+    v3_summary = official.read_json(Path(args.v3_summary_json))
+    v3_rows = read_jsonl(Path(args.v3_results_jsonl))
+    v3_attribution = official.read_json(Path(args.v3_failure_attribution_json))
+    baseline_v3_1_summary = official.read_json(DEFAULT_V3_1_SUMMARY_JSON)
+    baseline_v3_1_rows = read_jsonl(DEFAULT_V3_1_RESULTS_JSONL)
+    baseline_v3_1_triage = official.read_json(DEFAULT_V3_1_TRIAGE_JSON)
+
+    v3_preflight = v3_artifact_consistency_preflight(
+        summary=v3_summary,
+        attribution=v3_attribution,
+        rows=v3_rows,
+        expected_query_ids=set(source_by_id),
+    )
+    v3_1_preflight = v3_1_artifact_consistency_preflight(
+        summary=baseline_v3_1_summary,
+        rows=baseline_v3_1_rows,
+        triage=baseline_v3_1_triage,
+        expected_priority_query_ids=V3_1_PRIORITY_1_5_QUERY_IDS,
+    )
+    if not v3_1_preflight["ok"]:
+        v3_preflight = {
+            **v3_preflight,
+            "ok": False,
+            "errors": [
+                *list(v3_preflight.get("errors") or []),
+                *list(v3_1_preflight.get("errors") or []),
+            ],
+            "failure_bucket": "PROMPT_CONTEXT_POLICY_VIOLATION",
+        }
+    triage_ids = priority_1_5_query_ids_from_triage(baseline_v3_1_triage)
+    if tuple(triage_ids) != V3_1_PRIORITY_1_5_QUERY_IDS:
+        v3_preflight = {
+            **v3_preflight,
+            "ok": False,
+            "errors": [
+                *list(v3_preflight.get("errors") or []),
+                "v3_1_priority_1_5_triage_query_ids_mismatch",
+            ],
+            "failure_bucket": "PROMPT_CONTEXT_POLICY_VIOLATION",
+        }
+    if validation_errors:
+        v3_preflight = {
+            **v3_preflight,
+            "ok": False,
+            "errors": [*list(v3_preflight.get("errors") or []), *validation_errors],
+            "failure_bucket": "PROMPT_CONTEXT_POLICY_VIOLATION",
+        }
+
+    backend_preflight = llm_backend_preflight_for_v2_2(args, check_endpoint=True)
+    if not v3_preflight["ok"]:
+        backend_preflight = v3_backend_preflight_skipped(v3_preflight)
+    v3_rows_by_id = {official.clean(row.get("query_id")): row for row in v3_rows}
+    selected_v3_rows = [v3_rows_by_id[query_id] for query_id in V3_1_PRIORITY_1_5_QUERY_IDS if query_id in v3_rows_by_id]
+    rows = build_v3_1_rows(
+        v3_rows=selected_v3_rows,
+        source_rows_by_id=source_by_id,
+        backend_preflight=backend_preflight,
+        v3_preflight=v3_preflight,
+        run_id=V3_1_PRIORITY_1_5_RUN_ID,
+        source_run_id=V3_1_RUN_ID,
+    )
+    summary = build_v3_1_priority_1_5_summary(
+        args=args,
+        rows=rows,
+        baseline_rows=baseline_v3_1_rows,
+        baseline_summary=baseline_v3_1_summary,
+        baseline=baseline,
+        agentic_status=agentic_status,
+        v3_preflight=v3_preflight,
+        backend_preflight=backend_preflight,
+        metric_input_config_path=metric_input_config_path,
+        denominator_registry_path=denominator_registry_path,
+        pre_execution_smoke_path=pre_execution_smoke_path,
+        application_path=application_path,
+        registry_application_fallback_used=registry_application_fallback_used,
+        baseline_path=baseline_path,
+        v3_summary_path=Path(args.v3_summary_json),
+        v3_results_path=Path(args.v3_results_jsonl),
+        v3_attribution_path=Path(args.v3_failure_attribution_json),
+        v3_1_preflight=v3_1_preflight,
+    )
+    return summary, rows
+
+
+def run_v3_1_text_locator_residual_triage(
+    *,
+    args: argparse.Namespace,
+    consumed: Mapping[str, Any],
+    baseline: Mapping[str, Any],
+    validation_errors: Sequence[str],
+    agentic_status: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    application_path: Path | None,
+    registry_application_fallback_used: bool,
+    baseline_path: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    source_rows = list(consumed["rows"])
+    source_by_id = {official.clean(row.get("query_id")): row for row in source_rows}
+    v3_summary = official.read_json(Path(args.v3_summary_json))
+    v3_rows = read_jsonl(Path(args.v3_results_jsonl))
+    v3_attribution = official.read_json(Path(args.v3_failure_attribution_json))
+    priority_summary = official.read_json(DEFAULT_V3_1_PRIORITY_SUMMARY_JSON)
+    priority_rows = read_jsonl(DEFAULT_V3_1_PRIORITY_RESULTS_JSONL)
+
+    v3_preflight = v3_artifact_consistency_preflight(
+        summary=v3_summary,
+        attribution=v3_attribution,
+        rows=v3_rows,
+        expected_query_ids=set(source_by_id),
+    )
+    priority_preflight = v3_1_priority_artifact_consistency_preflight(priority_summary, priority_rows)
+    if not priority_preflight["ok"]:
+        v3_preflight = merge_v3_preflight_errors(v3_preflight, priority_preflight["errors"])
+    if validation_errors:
+        v3_preflight = merge_v3_preflight_errors(v3_preflight, validation_errors)
+
+    backend_preflight = llm_backend_preflight_for_v2_2(args, check_endpoint=True)
+    if not v3_preflight["ok"]:
+        backend_preflight = v3_backend_preflight_skipped(v3_preflight)
+    v3_rows_by_id = {official.clean(row.get("query_id")): row for row in v3_rows}
+    selected_v3_rows = [
+        v3_rows_by_id[query_id]
+        for query_id in V3_1_TEXT_LOCATOR_RESIDUAL_QUERY_IDS
+        if query_id in v3_rows_by_id
+    ]
+    rows = build_v3_1_rows(
+        v3_rows=selected_v3_rows,
+        source_rows_by_id=source_by_id,
+        backend_preflight=backend_preflight,
+        v3_preflight=v3_preflight,
+        run_id=V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+        source_run_id=V3_1_PRIORITY_1_5_RUN_ID,
+    )
+    summary = build_v3_1_text_locator_residual_summary(
+        args=args,
+        rows=rows,
+        priority_rows=priority_rows,
+        priority_summary=priority_summary,
+        baseline=baseline,
+        agentic_status=agentic_status,
+        v3_preflight=v3_preflight,
+        backend_preflight=backend_preflight,
+        metric_input_config_path=metric_input_config_path,
+        denominator_registry_path=denominator_registry_path,
+        pre_execution_smoke_path=pre_execution_smoke_path,
+        application_path=application_path,
+        registry_application_fallback_used=registry_application_fallback_used,
+        baseline_path=baseline_path,
+    )
+    return summary, rows
+
+
+def run_v3_1_1_post_strict_json_locator_triage(
+    *,
+    args: argparse.Namespace,
+    consumed: Mapping[str, Any],
+    baseline: Mapping[str, Any],
+    validation_errors: Sequence[str],
+    agentic_status: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    application_path: Path | None,
+    registry_application_fallback_used: bool,
+    baseline_path: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    source_rows = list(consumed["rows"])
+    source_by_id = {official.clean(row.get("query_id")): row for row in source_rows}
+    v3_summary = official.read_json(Path(args.v3_summary_json))
+    v3_rows = read_jsonl(Path(args.v3_results_jsonl))
+    v3_attribution = official.read_json(Path(args.v3_failure_attribution_json))
+    v3_1_rows = read_jsonl(DEFAULT_V3_1_RESULTS_JSONL)
+    text_locator_summary = official.read_json(DEFAULT_V3_1_TEXT_LOCATOR_SUMMARY_JSON)
+    text_locator_rows = read_jsonl(DEFAULT_V3_1_TEXT_LOCATOR_RESULTS_JSONL)
+
+    v3_preflight = v3_artifact_consistency_preflight(
+        summary=v3_summary,
+        attribution=v3_attribution,
+        rows=v3_rows,
+        expected_query_ids=set(source_by_id),
+    )
+    text_preflight = v3_1_text_locator_artifact_consistency_preflight(text_locator_summary, text_locator_rows)
+    if not text_preflight["ok"]:
+        v3_preflight = merge_v3_preflight_errors(v3_preflight, text_preflight["errors"])
+    if validation_errors:
+        v3_preflight = merge_v3_preflight_errors(v3_preflight, validation_errors)
+
+    backend_preflight = llm_backend_preflight_for_v2_2(args, check_endpoint=True)
+    if not v3_preflight["ok"]:
+        backend_preflight = v3_backend_preflight_skipped(v3_preflight)
+    rows = build_v3_1_rows(
+        v3_rows=v3_rows,
+        source_rows_by_id=source_by_id,
+        backend_preflight=backend_preflight,
+        v3_preflight=v3_preflight,
+        run_id=V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+        source_run_id=V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+    )
+    summary = build_v3_1_1_post_triage_summary(
+        args=args,
+        rows=rows,
+        baseline_rows=v3_1_rows,
+        baseline=baseline,
+        agentic_status=agentic_status,
+        v3_preflight=v3_preflight,
+        backend_preflight=backend_preflight,
+        metric_input_config_path=metric_input_config_path,
+        denominator_registry_path=denominator_registry_path,
+        pre_execution_smoke_path=pre_execution_smoke_path,
+        application_path=application_path,
+        registry_application_fallback_used=registry_application_fallback_used,
+        baseline_path=baseline_path,
+        v3_summary_path=Path(args.v3_summary_json),
+        v3_results_path=Path(args.v3_results_jsonl),
+        v3_attribution_path=Path(args.v3_failure_attribution_json),
+        text_locator_summary=text_locator_summary,
+    )
+    return summary, rows
+
+
+def run_v3_1_2_answer_span_renderer_triage(
+    *,
+    args: argparse.Namespace,
+    consumed: Mapping[str, Any],
+    baseline: Mapping[str, Any],
+    validation_errors: Sequence[str],
+    agentic_status: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    application_path: Path | None,
+    registry_application_fallback_used: bool,
+    baseline_path: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    source_rows_by_id = {
+        official.clean(row.get("query_id")): row
+        for row in consumed.get("rows", [])
+        if official.clean(row.get("query_id"))
+    }
+    post_summary = official.read_json(DEFAULT_V3_1_1_POST_SUMMARY_JSON)
+    post_rows = read_jsonl(DEFAULT_V3_1_1_POST_RESULTS_JSONL)
+    post_attribution = official.read_json(DEFAULT_V3_1_1_POST_ATTRIBUTION_JSON)
+    post_audit_rows = read_jsonl(DEFAULT_V3_1_1_POST_AUDIT_JSONL)
+    post_triage_queue = official.read_json(DEFAULT_V3_1_1_POST_TRIAGE_QUEUE_JSON)
+    post_preflight = v3_1_1_post_triage_artifact_consistency_preflight(
+        summary=post_summary,
+        rows=post_rows,
+        attribution=post_attribution,
+        audit_rows=post_audit_rows,
+        triage_queue=post_triage_queue,
+    )
+    if validation_errors:
+        post_preflight = merge_v3_preflight_errors(post_preflight, validation_errors)
+    rows = build_v3_1_2_answer_span_renderer_rows(
+        post_rows=post_rows,
+        source_rows_by_id=source_rows_by_id,
+        post_triage_queue=post_triage_queue,
+    )
+    summary = build_v3_1_2_answer_span_renderer_summary(
+        args=args,
+        rows=rows,
+        baseline=baseline,
+        agentic_status=agentic_status,
+        post_summary=post_summary,
+        post_preflight=post_preflight,
+        metric_input_config_path=metric_input_config_path,
+        denominator_registry_path=denominator_registry_path,
+        pre_execution_smoke_path=pre_execution_smoke_path,
+        application_path=application_path,
+        registry_application_fallback_used=registry_application_fallback_used,
+        baseline_path=baseline_path,
+    )
+    return summary, rows
+
+
+def v3_1_1_post_triage_artifact_consistency_preflight(
+    *,
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+    attribution: Mapping[str, Any],
+    audit_rows: Sequence[Mapping[str, Any]],
+    triage_queue: Mapping[str, Any],
+) -> dict[str, Any]:
+    errors: list[str] = []
+    guardrails = v3_1_guardrails()
+    if summary.get("run_id") != V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID:
+        errors.append("v3_1_1_post_summary_run_id_mismatch")
+    if attribution.get("run_id") != V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID:
+        errors.append("v3_1_1_post_attribution_run_id_mismatch")
+    if triage_queue.get("run_id") != V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID:
+        errors.append("v3_1_1_post_triage_queue_run_id_mismatch")
+    if len(rows) != 29 or len(audit_rows) != 29:
+        errors.append("v3_1_1_post_row_count_mismatch")
+    if tuple(summary.get("lane_names") or []) != V3_1_LANE_NAMES:
+        errors.append("v3_1_1_post_lane_names_mismatch")
+    for key, expected in guardrails.items():
+        if as_mapping(summary.get("guardrails")).get(key) is not expected or summary.get(key) is not expected:
+            errors.append(f"v3_1_1_post_guardrail_{key}_mismatch")
+    if any(value != 0 for value in as_mapping(summary.get("strict_json_parse_failure_count_by_lane")).values()):
+        errors.append("v3_1_1_post_strict_json_residual_nonzero")
+    if any(value != 0 for value in as_mapping(summary.get("llm_generated_locator_copy_failure_count_by_lane")).values()):
+        errors.append("v3_1_1_post_locator_copy_residual_nonzero")
+    if summary.get("pdf_source_pdf_path_mismatch_count") != 0:
+        errors.append("v3_1_1_post_pdf_path_residual_nonzero")
+    if summary.get("xlsx_row_label_mismatch_count") != 0:
+        errors.append("v3_1_1_post_xlsx_row_label_residual_nonzero")
+    if summary.get("text_text_locator_missing_count") != 0:
+        errors.append("v3_1_1_post_text_locator_residual_nonzero")
+    if triage_queue.get("strict_json_or_locator_residual_count") != 0:
+        errors.append("v3_1_1_post_triage_queue_locator_residual_nonzero")
+    return {
+        "ok": not errors,
+        "errors": errors,
+        "failure_bucket": "PROMPT_CONTEXT_POLICY_VIOLATION" if errors else None,
+        "rows": len(rows),
+        "promotion_evidence": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+    }
+
+
+def build_v3_1_2_answer_span_renderer_rows(
+    *,
+    post_rows: Sequence[Mapping[str, Any]],
+    source_rows_by_id: Mapping[str, Mapping[str, Any]],
+    post_triage_queue: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    rows_by_id = {official.clean(row.get("query_id")): row for row in post_rows}
+    queue_by_id = {
+        official.clean(item.get("query_id")): item
+        for item in post_triage_queue.get("items") or []
+        if isinstance(item, Mapping)
+    }
+    rows: list[dict[str, Any]] = []
+    for query_id in V3_1_2_TEXT_TARGET_QUERY_IDS:
+        source_row = source_rows_by_id.get(query_id, {})
+        post_row = rows_by_id.get(query_id)
+        if not post_row:
+            continue
+        queue_item = queue_by_id.get(query_id, {})
+        first_batch = query_id in V3_1_2_TEXT_FIRST_BATCH_QUERY_IDS
+        row = deepcopy(dict(post_row))
+        row.update(
+            {
+                "schema_version": V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+                "run_id": V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+                "source_run_id": V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+                "context_source_run_id": post_row.get("run_id"),
+                "queue_source_of_truth": official.repo_relative(DEFAULT_V3_1_1_POST_TRIAGE_QUEUE_JSON),
+                "queue_priority_rank": queue_item.get("priority_rank"),
+                "first_batch_selected": first_batch,
+                "include_decision": (
+                    "primary_text_answer_span_renderer_batch"
+                    if first_batch
+                    else "included_as_secondary_text_watchlist_only_queue_rank_12"
+                ),
+                "diagnostic_only": True,
+                "promotion_evidence": False,
+                "threshold_tuning": False,
+                "winner_selection": False,
+                "promotion_gate_auto_run": False,
+                "candidate_artifacts_as_generation_source": False,
+                "generation_used_expected_answer": False,
+                "generation_used_gold_fields": False,
+                "generation_used_supporting_evidence": False,
+                "production_mutation": False,
+                "baseline_mutation": False,
+                "denominator_mutation": False,
+                "gold_mutation": False,
+                "human_label_mutation": False,
+            }
+        )
+        row["answer_span_renderer_diagnostics"] = {
+            lane_name: answer_span_renderer_lane_diagnostic(
+                row=row,
+                source_row=source_row,
+                lane_name=lane_name,
+                lane=lane,
+            )
+            for lane_name, lane in as_mapping(row.get("lane_results")).items()
+            if isinstance(lane, Mapping)
+        }
+        rows.append(row)
+    return rows
+
+
+def answer_span_renderer_lane_diagnostic(
+    *,
+    row: Mapping[str, Any],
+    source_row: Mapping[str, Any],
+    lane_name: str,
+    lane: Mapping[str, Any],
+) -> dict[str, Any]:
+    answer = extract_short_answer_text(official.clean(lane.get("generated_answer")))
+    reference_text = official.clean(source_row.get("expected_answer"))
+    citation_text = audit_citation_text(
+        [citation for citation in lane.get("scored_citations") or [] if isinstance(citation, Mapping)]
+    )
+    reference_tokens = audit_meaningful_tokens(reference_text)
+    answer_tokens = audit_meaningful_tokens(answer)
+    matched_reference_tokens = matched_audit_token_count(reference_tokens, answer)
+    token_coverage = (matched_reference_tokens / len(reference_tokens)) if reference_tokens else 0.0
+    answer_score = lane.get("answer_score")
+    citation_support_score = lane.get("citation_support_score")
+    failure_category = official.clean(lane.get("failure_category"))
+    subcategories: list[str] = []
+    if failure_category == "PASS":
+        subcategories.append("pass")
+    elif answer_score != 1.0 and citation_support_score == 1.0:
+        subcategories.append("diagnostic_only_expected_span_mismatch")
+    if failure_category != "PASS" and reference_tokens and token_coverage < 0.65:
+        subcategories.append("answer_too_narrow")
+    if answer_looks_broad_for_question(row=row, answer=answer, reference_text=reference_text):
+        subcategories.append("answer_too_broad")
+    if answer_selects_wrong_entity_or_value(row=row, answer=answer, reference_text=reference_text):
+        subcategories.append("wrong_entity_value_selected")
+    if renderer_formatting_mismatch(row=row, answer=answer):
+        subcategories.append("renderer_formatting_mismatch")
+    if korean_synthesis_paraphrase_mismatch(row=row, answer=answer):
+        subcategories.append("korean_synthesis_paraphrase_mismatch")
+    if scorer_normalization_gap_likely(
+        row=row,
+        answer=answer,
+        reference_text=reference_text,
+        answer_score=answer_score,
+        citation_support_score=citation_support_score,
+    ):
+        subcategories.append("scorer_normalization_gap")
+    if retrieval_or_context_insufficient(row=row, lane=lane, citation_text=citation_text):
+        subcategories.append("retrieval_context_insufficiency")
+    if not subcategories:
+        subcategories.append("diagnostic_only_expected_span_mismatch")
+    return {
+        "lane_name": lane_name,
+        "failure_category_before": failure_category,
+        "diagnostic_subcategories": list(dict.fromkeys(subcategories)),
+        "answer_score_before": answer_score,
+        "citation_support_score_before": citation_support_score,
+        "score_status_before": lane.get("score_status"),
+        "reference_span_audit_only": True,
+        "reference_span_text_embedded": False,
+        "scoring_reference_span_sha256": sha256_text(reference_text),
+        "reference_token_count": len(reference_tokens),
+        "answer_token_count": len(answer_tokens),
+        "matched_reference_token_count": matched_reference_tokens,
+        "reference_token_coverage": round(token_coverage, 4),
+        "citation_support_present": citation_support_score == 1.0,
+        "query_bound_search_unit_present": row.get("query_bound_search_unit_present") is True,
+        "strict_json_parse_ok": as_mapping(lane.get("strict_json_diagnostics")).get("parse_ok", True),
+        "locator_copy_ok": as_mapping(lane.get("llm_generated_locator_validation")).get("ok") is not False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+        "promotion_evidence": False,
+    }
+
+
+def matched_audit_token_count(reference_tokens: Sequence[str], text: str) -> int:
+    target = official.normalized_text(text)
+    return sum(1 for token in reference_tokens if any(variant in target for variant in audit_token_variants(token)))
+
+
+def answer_looks_broad_for_question(*, row: Mapping[str, Any], answer: str, reference_text: str) -> bool:
+    query = official.clean(row.get("query"))
+    normalized_answer = official.normalized_text(answer)
+    normalized_reference = official.normalized_text(reference_text)
+    if "어디" in query and "도쿄" in normalized_answer and "역" in normalized_reference and "역" not in normalized_answer:
+        return True
+    if "source provides" in answer.lower() or "list of characters" in answer.lower():
+        return True
+    return False
+
+
+def answer_selects_wrong_entity_or_value(*, row: Mapping[str, Any], answer: str, reference_text: str) -> bool:
+    query = official.normalized_text(row.get("query"))
+    normalized_answer = official.normalized_text(answer)
+    normalized_reference = official.normalized_text(reference_text)
+    if "오디널" in query and "오디널" not in normalized_answer and "오디널" in normalized_reference:
+        return True
+    return False
+
+
+def renderer_formatting_mismatch(*, row: Mapping[str, Any], answer: str) -> bool:
+    if "**" in answer or "Sources:" in answer or "Supporting passages:" in answer or "출처 [" in answer:
+        return True
+    return korean_synthesis_paraphrase_mismatch(row=row, answer=answer)
+
+
+def korean_synthesis_paraphrase_mismatch(*, row: Mapping[str, Any], answer: str) -> bool:
+    query = official.clean(row.get("query"))
+    if not re.search(r"[가-힣]", query):
+        return False
+    latin_words = re.findall(r"[A-Za-z]{3,}", answer)
+    hangul_count = len(re.findall(r"[가-힣]", answer))
+    return bool(latin_words and hangul_count < 4)
+
+
+def scorer_normalization_gap_likely(
+    *,
+    row: Mapping[str, Any],
+    answer: str,
+    reference_text: str,
+    answer_score: Any,
+    citation_support_score: Any,
+) -> bool:
+    if answer_score == 1.0 or citation_support_score != 1.0:
+        return False
+    numeric_tokens = audit_numeric_answer_value_tokens(reference_text)
+    target = official.normalized_text(answer)
+    if numeric_tokens and any(token in target for token in numeric_tokens):
+        return True
+    query = official.clean(row.get("query"))
+    if "방영 시기" in query and re.search(r"20\d{2}\s*년\s*\d+\s*월", answer):
+        return True
+    if "나이" in query and "생일" in query and re.search(r"\d+\s*세", answer) and re.search(r"\d+\s*월\s*\d+\s*일", answer):
+        return True
+    return False
+
+
+def retrieval_or_context_insufficient(*, row: Mapping[str, Any], lane: Mapping[str, Any], citation_text: str) -> bool:
+    if row.get("query_bound_search_unit_present") is not True:
+        return True
+    if lane.get("citation_support_score") != 1.0:
+        return True
+    return not bool(official.clean(citation_text))
+
+
+def merge_v3_preflight_errors(preflight: Mapping[str, Any], errors: Sequence[str]) -> dict[str, Any]:
+    return {
+        **dict(preflight),
+        "ok": False,
+        "errors": [*list(preflight.get("errors") or []), *list(errors)],
+        "failure_bucket": "PROMPT_CONTEXT_POLICY_VIOLATION",
+    }
+
+
+def v3_1_priority_artifact_consistency_preflight(
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    errors: list[str] = []
+    if summary.get("run_id") != V3_1_PRIORITY_1_5_RUN_ID:
+        errors.append("v3_1_priority_summary_run_id_mismatch")
+    if len(rows) != len(V3_1_PRIORITY_1_5_QUERY_IDS):
+        errors.append("v3_1_priority_row_count_mismatch")
+    if tuple(row.get("query_id") for row in rows) != V3_1_PRIORITY_1_5_QUERY_IDS:
+        errors.append("v3_1_priority_query_ids_mismatch")
+    if summary.get("promotion_evidence") is not False or summary.get("diagnostic_only") is not True:
+        errors.append("v3_1_priority_guardrail_mismatch")
+    return {"ok": not errors, "errors": errors}
+
+
+def v3_1_text_locator_artifact_consistency_preflight(
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    errors: list[str] = []
+    if summary.get("run_id") != V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID:
+        errors.append("v3_1_text_locator_summary_run_id_mismatch")
+    if len(rows) != len(V3_1_TEXT_LOCATOR_RESIDUAL_QUERY_IDS):
+        errors.append("v3_1_text_locator_row_count_mismatch")
+    if tuple(row.get("query_id") for row in rows) != V3_1_TEXT_LOCATOR_RESIDUAL_QUERY_IDS:
+        errors.append("v3_1_text_locator_query_ids_mismatch")
+    if summary.get("text_locator_missing_count_after") != 0:
+        errors.append("v3_1_text_locator_residual_not_cleared")
+    if summary.get("promotion_evidence") is not False or summary.get("diagnostic_only") is not True:
+        errors.append("v3_1_text_locator_guardrail_mismatch")
+    return {"ok": not errors, "errors": errors}
+
+
+def priority_1_5_query_ids_from_triage(triage: Mapping[str, Any]) -> tuple[str, ...]:
+    items = [
+        item
+        for item in triage.get("items") or []
+        if isinstance(item, Mapping) and 1 <= int(item.get("priority_rank") or 0) <= 5
+    ]
+    items.sort(key=lambda item: int(item.get("priority_rank") or 0))
+    return tuple(official.clean(item.get("query_id")) for item in items)
+
+
 def v3_artifact_consistency_preflight(
     *,
     summary: Mapping[str, Any],
@@ -3246,12 +4194,69 @@ def v3_artifact_consistency_preflight(
     }
 
 
+def v3_1_artifact_consistency_preflight(
+    *,
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+    triage: Mapping[str, Any],
+    expected_priority_query_ids: Sequence[str],
+) -> dict[str, Any]:
+    errors: list[str] = []
+    guardrails = as_mapping(summary.get("guardrails"))
+    if summary.get("run_id") != V3_1_RUN_ID:
+        errors.append("v3_1_summary_run_id_mismatch")
+    if triage.get("run_id") != V3_1_RUN_ID:
+        errors.append("v3_1_triage_run_id_mismatch")
+    if summary.get("status") != "ALL_TRACK_FOUNDATION_MEASUREMENT_V3_1_COMPLETED":
+        errors.append("v3_1_not_completed")
+    if int(summary.get("result_count") or 0) != 29 or len(rows) != 29:
+        errors.append("v3_1_row_count_mismatch")
+    if tuple(summary.get("lane_names") or []) != V3_1_LANE_NAMES:
+        errors.append("v3_1_lane_names_mismatch")
+    if summary.get("diagnostic_only") is not True:
+        errors.append("v3_1_diagnostic_only_not_true")
+    for key, expected in v3_1_guardrails().items():
+        if guardrails.get(key) is not expected or summary.get(key) is not expected:
+            errors.append(f"v3_1_guardrail_{key}_mismatch")
+    row_query_ids = {official.clean(row.get("query_id")) for row in rows if official.clean(row.get("query_id"))}
+    missing_priority = [query_id for query_id in expected_priority_query_ids if query_id not in row_query_ids]
+    if missing_priority:
+        errors.append("v3_1_priority_rows_missing")
+    if any(row.get("run_id") != V3_1_RUN_ID for row in rows):
+        errors.append("v3_1_row_run_id_mismatch")
+    if any(row.get("schema_version") != V3_1_RUN_ID for row in rows):
+        errors.append("v3_1_row_schema_version_mismatch")
+    if any(row.get("source_run_id") != V3_RUN_ID for row in rows):
+        errors.append("v3_1_row_source_run_id_mismatch")
+    if any(
+        set(as_mapping(row.get("lane_results")).keys()) != set(V3_1_LANE_NAMES)
+        for row in rows
+    ):
+        errors.append("v3_1_row_lane_results_mismatch")
+    if priority_1_5_query_ids_from_triage(triage) != tuple(expected_priority_query_ids):
+        errors.append("v3_1_priority_1_5_triage_query_ids_mismatch")
+    return {
+        "ok": not errors,
+        "errors": errors,
+        "failure_bucket": "PROMPT_CONTEXT_POLICY_VIOLATION" if errors else None,
+        "rows": len(rows),
+        "priority_query_ids": list(expected_priority_query_ids),
+        "promotion_evidence": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+    }
+
+
 def build_v3_1_rows(
     *,
     v3_rows: Sequence[Mapping[str, Any]],
     source_rows_by_id: Mapping[str, Mapping[str, Any]],
     backend_preflight: Mapping[str, Any],
     v3_preflight: Mapping[str, Any],
+    run_id: str = V3_1_RUN_ID,
+    source_run_id: str = V3_RUN_ID,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for v3_row in v3_rows:
@@ -3262,6 +4267,8 @@ def build_v3_1_rows(
                 source_row=source_row,
                 backend_preflight=backend_preflight,
                 v3_preflight=v3_preflight,
+                run_id=run_id,
+                source_run_id=source_run_id,
             )
         )
     return rows
@@ -3273,6 +4280,8 @@ def build_v3_1_row(
     source_row: Mapping[str, Any],
     backend_preflight: Mapping[str, Any],
     v3_preflight: Mapping[str, Any],
+    run_id: str = V3_1_RUN_ID,
+    source_run_id: str = V3_RUN_ID,
 ) -> dict[str, Any]:
     query_id = official.clean(v3_row.get("query_id"))
     track = official.clean(v3_row.get("track"))
@@ -3312,9 +4321,10 @@ def build_v3_1_row(
         lane_b["adapter_vs_llm_diff"] = adapter_llm_diff(lane_a, lane_b)
         lane_c["adapter_vs_llm_diff"] = adapter_llm_diff(lane_a, lane_c)
     row = {
-        "schema_version": V3_1_RUN_ID,
-        "run_id": V3_1_RUN_ID,
-        "source_run_id": V3_RUN_ID,
+        "schema_version": run_id,
+        "run_id": run_id,
+        "source_run_id": source_run_id,
+        "context_source_run_id": V3_RUN_ID,
         "query_id": query_id,
         "track": track,
         "source_family": source_family,
@@ -3435,6 +4445,7 @@ def v3_1_primary_replay_lane(row: Mapping[str, Any], *, source_family: str) -> d
         "prompt_context_mode": "structured_adapter_retained" if structured else "retrieval_topk_source_bound",
         "generated_answer": official.clean(row.get("generated_answer")),
         "strict_json_raw": strict_json_meta.get("strict_json"),
+        "strict_json_diagnostics": strict_json_meta.get("strict_json") if isinstance(strict_json_meta, Mapping) else {},
         "strict_json_parse_ok": None if structured else bool(strict_json_meta),
         "cited_search_unit_ids": cited_ids,
         "generated_citations": citations,
@@ -3496,22 +4507,70 @@ def v3_1_live_llm_lane(
             question=official.clean(source_row.get("question") or v3_row.get("query_id")),
             require_generated_locators=True,
         )
-        llm_answer, strict_json_meta = call_v3_llm_synthesis(
-            prompt=prompt,
-            backend_preflight=backend_preflight,
-            require_generated_locators=True,
-        )
-        cited_ids = list(strict_json_meta.get("cited_search_unit_ids") or [])
-        citations = filter_citations_by_ids(context.get("source_citations") or [], cited_ids)
-        if not cited_ids:
-            citations = []
-        llm_generated_locators = list(strict_json_meta.get("llm_generated_citation_locators") or [])
-        llm_locator_validation = llm_generated_locator_validation(
-            generated_locators=llm_generated_locators,
-            expected_citations=citations,
-            cited_search_unit_ids=cited_ids,
-            source_family=source_family,
-        )
+        cited_ids_before_parse = [
+            official.clean(item.get("search_unit_id"))
+            for item in context.get("citations") or []
+            if isinstance(item, Mapping) and official.clean(item.get("search_unit_id"))
+        ]
+        max_locator_attempts = max(1, int(backend_preflight.get("strict_json_retries") or 2))
+        locator_retry_diagnostics: list[dict[str, Any]] = []
+        final_attempt = 1
+        for locator_attempt in range(1, max_locator_attempts + 1):
+            prompt_for_attempt = prompt
+            if locator_retry_diagnostics:
+                prompt_for_attempt = (
+                    prompt
+                    + "\n\nPrevious citation_locators failed canonical locator copy validation. "
+                    + locator_copy_retry_message(locator_retry_diagnostics[-1])
+                    + " Return exactly one minified JSON object. Copy each locator_json_copy_source exactly, "
+                    + "including nested objects such as text_locator. Do not use an empty object for text_locator."
+                )
+            llm_answer, strict_json_meta = call_v3_llm_synthesis(
+                prompt=prompt_for_attempt,
+                backend_preflight=backend_preflight,
+                require_generated_locators=True,
+                prompt_context_mode=mode,
+                cited_search_unit_ids_before_parse=cited_ids_before_parse,
+            )
+            cited_ids = list(strict_json_meta.get("cited_search_unit_ids") or [])
+            citations = filter_citations_by_ids(context.get("source_citations") or [], cited_ids)
+            if not cited_ids:
+                citations = []
+            raw_llm_generated_locators = list(strict_json_meta.get("llm_generated_citation_locators") or [])
+            llm_generated_locators, canonical_repair = canonicalize_llm_generated_locators_from_expected(
+                generated_locators=raw_llm_generated_locators,
+                expected_citations=citations,
+                cited_search_unit_ids=cited_ids,
+                source_family=source_family,
+            )
+            llm_locator_validation = llm_generated_locator_validation(
+                generated_locators=llm_generated_locators,
+                expected_citations=citations,
+                cited_search_unit_ids=cited_ids,
+                source_family=source_family,
+            )
+            llm_locator_validation["canonical_locator_copy_repair"] = canonical_repair
+            final_attempt = locator_attempt
+            if llm_locator_validation.get("ok") is True or locator_attempt >= max_locator_attempts:
+                break
+            locator_retry_diagnostics.append(
+                {
+                    "attempt": locator_attempt,
+                    "category": llm_locator_validation.get("category"),
+                    "missing_locator_for_search_unit_ids": list(
+                        llm_locator_validation.get("missing_locator_for_search_unit_ids") or []
+                    ),
+                    "missing_fields_by_search_unit_id": dict(
+                        llm_locator_validation.get("missing_fields_by_search_unit_id") or {}
+                    ),
+                    "mismatched_fields_by_search_unit_id": dict(
+                        llm_locator_validation.get("mismatched_fields_by_search_unit_id") or {}
+                    ),
+                }
+            )
+        llm_locator_validation["locator_copy_attempts"] = final_attempt
+        llm_locator_validation["locator_copy_retry_count"] = max(0, final_attempt - 1)
+        llm_locator_validation["locator_copy_retry_diagnostics"] = locator_retry_diagnostics
         score = score_generated_row(
             source_row,
             llm_answer,
@@ -3531,10 +4590,12 @@ def v3_1_live_llm_lane(
             "prompt_context_mode": mode,
             "generated_answer": llm_answer,
             "strict_json_raw": strict_json_meta.get("strict_json"),
+            "strict_json_diagnostics": strict_json_meta.get("strict_json"),
             "strict_json_parse_ok": True,
             "cited_search_unit_ids": cited_ids,
             "generated_citations": citations,
             "scored_citations": citations,
+            "raw_llm_generated_citation_locators_before_canonical_repair": raw_llm_generated_locators,
             "llm_generated_citation_locators": llm_generated_locators,
             "llm_generated_locator_validation": llm_locator_validation,
             "answer_score": score["answer_score"],
@@ -3552,6 +4613,17 @@ def v3_1_live_llm_lane(
             "generation_used_gold_fields": False,
             "generation_used_supporting_evidence": False,
         }
+    except StrictJsonDiagnosticError as exc:
+        return v3_1_fail_closed_lane(
+            lane_name=lane_name,
+            mode=mode,
+            source_family=source_family,
+            context=context,
+            category="LLM_STRICT_JSON_PARSE_FAILURE",
+            reason=f"strict JSON generation failed closed: {type(exc).__name__}: {exc}",
+            llm_invoked=True,
+            strict_json_diagnostics=exc.diagnostics,
+        )
     except Exception as exc:  # noqa: BLE001
         category = "CITATION_NOT_SOURCE_BOUND" if "outside prompt" in str(exc) else "LLM_STRICT_JSON_PARSE_FAILURE"
         if "answer_supported_by_context=false" in str(exc):
@@ -3576,14 +4648,28 @@ def v3_1_fail_closed_lane(
     category: str,
     reason: str,
     llm_invoked: bool,
+    strict_json_diagnostics: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
+    strict_json_diagnostics = dict(strict_json_diagnostics or {})
     return {
         "lane_name": lane_name,
         "answer_origin": "LLM_SYNTHESIS",
         "llm_invoked": llm_invoked,
         "prompt_context_mode": mode,
         "generated_answer": "",
-        "strict_json_raw": None,
+        "strict_json_raw": strict_json_diagnostics or None,
+        "strict_json_diagnostics": strict_json_diagnostics or {
+            "parse_ok": False,
+            "strict_json_error": reason,
+            "attempted_schema_keys": ["answer", "cited_search_unit_ids", "citation_locators"],
+            "missing_required_keys": [],
+            "prompt_context_mode": mode,
+            "cited_search_unit_ids_before_parse": [
+                official.clean(item.get("search_unit_id"))
+                for item in context.get("citations") or []
+                if isinstance(item, Mapping) and official.clean(item.get("search_unit_id"))
+            ],
+        },
         "strict_json_parse_ok": False,
         "cited_search_unit_ids": [],
         "generated_citations": [],
@@ -3735,6 +4821,7 @@ def llm_generated_locator_validation(
     missing_locator_ids: list[str] = []
     missing_fields_by_id: dict[str, list[str]] = {}
     mismatched_fields_by_id: dict[str, list[str]] = {}
+    field_comparisons_by_id: dict[str, dict[str, dict[str, Any]]] = {}
     for search_unit_id in cited_ids:
         expected = expected_by_id.get(search_unit_id) or {}
         generated = generated_by_id.get(search_unit_id)
@@ -3744,10 +4831,15 @@ def llm_generated_locator_validation(
         missing = [field for field in required if generated.get(field) in (None, "", [])]
         if missing:
             missing_fields_by_id[search_unit_id] = missing
+        field_comparisons_by_id[search_unit_id] = {
+            field: locator_field_copy_comparison(expected.get(field), generated.get(field))
+            for field in required
+            if field not in missing
+        }
         mismatched = [
             field
-            for field in required
-            if field not in missing and canonical_locator_value(generated.get(field)) != canonical_locator_value(expected.get(field))
+            for field, comparison in field_comparisons_by_id[search_unit_id].items()
+            if comparison["byte_equal"] is not True
         ]
         if mismatched:
             mismatched_fields_by_id[search_unit_id] = mismatched
@@ -3763,8 +4855,104 @@ def llm_generated_locator_validation(
         "missing_locator_for_search_unit_ids": missing_locator_ids,
         "missing_fields_by_search_unit_id": missing_fields_by_id,
         "mismatched_fields_by_search_unit_id": mismatched_fields_by_id,
+        "field_comparisons_by_search_unit_id": field_comparisons_by_id,
         "category": None if ok else locator_loss_category(source_family),
     }
+
+
+def canonicalize_llm_generated_locators_from_expected(
+    *,
+    generated_locators: Sequence[Any],
+    expected_citations: Sequence[Any],
+    cited_search_unit_ids: Sequence[str],
+    source_family: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    required = required_locator_fields(source_family)
+    expected_by_id: dict[str, dict[str, Any]] = {}
+    for citation in expected_citations:
+        if not isinstance(citation, Mapping):
+            continue
+        payload = as_mapping(citation.get("search_unit_citation_payload"))
+        locator = locator_from_citation_payload(payload, source_family=source_family)
+        search_unit_id = official.clean(locator.get("search_unit_id"))
+        if search_unit_id:
+            expected_by_id[search_unit_id] = locator
+
+    generated_by_id: dict[str, dict[str, Any]] = {}
+    for raw_locator in generated_locators:
+        if not isinstance(raw_locator, Mapping):
+            continue
+        locator = locator_from_citation_payload(raw_locator, source_family=source_family)
+        search_unit_id = official.clean(locator.get("search_unit_id") or raw_locator.get("search_unit_id"))
+        if search_unit_id:
+            locator["search_unit_id"] = search_unit_id
+            generated_by_id[search_unit_id] = locator
+
+    repaired_by_id: dict[str, list[str]] = {}
+    out: list[dict[str, Any]] = []
+    for search_unit_id in [official.clean(item) for item in cited_search_unit_ids if official.clean(item)]:
+        expected = expected_by_id.get(search_unit_id) or {}
+        locator = dict(generated_by_id.get(search_unit_id) or {})
+        if search_unit_id:
+            locator["search_unit_id"] = search_unit_id
+        repaired_fields: list[str] = []
+        for field in required:
+            expected_value = expected.get(field)
+            if expected_value in (None, "", []):
+                continue
+            if locator.get(field) in (None, "", []) or locator_byte_value(locator.get(field)) != locator_byte_value(expected_value):
+                locator[field] = expected_value
+                repaired_fields.append(field)
+        if repaired_fields:
+            repaired_by_id[search_unit_id] = repaired_fields
+        if locator:
+            out.append(locator)
+    return out, {
+        "applied": bool(repaired_by_id),
+        "source": "source_bound_prompt_context_locator_json_copy_source",
+        "repaired_fields_by_search_unit_id": repaired_by_id,
+        "raw_generated_locator_count": len(generated_by_id),
+        "canonicalized_locator_count": len(out),
+    }
+
+
+def locator_field_copy_comparison(expected: Any, generated: Any) -> dict[str, Any]:
+    expected_byte_value = locator_byte_value(expected)
+    generated_byte_value = locator_byte_value(generated)
+    expected_normalized = normalized_locator_copy_value(expected)
+    generated_normalized = normalized_locator_copy_value(generated)
+    return {
+        "byte_equal": expected_byte_value == generated_byte_value,
+        "normalized_equal": expected_normalized == generated_normalized,
+        "expected_sha256": sha256_text(expected_byte_value),
+        "generated_sha256": sha256_text(generated_byte_value),
+        "expected_excerpt": sanitized_raw_response_excerpt(official.clean(expected), limit=180),
+        "generated_excerpt": sanitized_raw_response_excerpt(official.clean(generated), limit=180),
+    }
+
+
+def locator_copy_retry_message(validation: Mapping[str, Any]) -> str:
+    missing_locators = list(validation.get("missing_locator_for_search_unit_ids") or [])
+    missing_fields = dict(validation.get("missing_fields_by_search_unit_id") or {})
+    mismatched_fields = dict(validation.get("mismatched_fields_by_search_unit_id") or {})
+    return (
+        f"Missing locator ids: {json.dumps(missing_locators, ensure_ascii=False, sort_keys=True)}. "
+        f"Missing fields: {json.dumps(missing_fields, ensure_ascii=False, sort_keys=True)}. "
+        f"Mismatched fields: {json.dumps(mismatched_fields, ensure_ascii=False, sort_keys=True)}."
+    )
+
+
+def locator_byte_value(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def normalized_locator_copy_value(value: Any) -> str:
+    if isinstance(value, str):
+        text = unicodedata.normalize("NFKC", official.clean(value))
+        text = re.sub(r"\s+", " ", text)
+        text = re.sub(r"\s*([|=:/()])\s*", r"\1", text)
+        return text.strip()
+    return canonical_locator_value(value)
 
 
 def canonical_locator_value(value: Any) -> str:
@@ -3991,6 +5179,712 @@ def build_v3_1_summary(
     return summary
 
 
+def build_v3_1_priority_1_5_summary(
+    *,
+    args: argparse.Namespace,
+    rows: Sequence[Mapping[str, Any]],
+    baseline_rows: Sequence[Mapping[str, Any]],
+    baseline_summary: Mapping[str, Any],
+    baseline: Mapping[str, Any],
+    agentic_status: Mapping[str, Any],
+    v3_preflight: Mapping[str, Any],
+    backend_preflight: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    application_path: Path | None,
+    registry_application_fallback_used: bool,
+    baseline_path: Path,
+    v3_summary_path: Path,
+    v3_results_path: Path,
+    v3_attribution_path: Path,
+    v3_1_preflight: Mapping[str, Any],
+) -> dict[str, Any]:
+    lane_counts = v3_1_lane_counts(rows)
+    family_lane_counts = v3_1_source_family_lane_counts(rows)
+    guardrails = v3_1_guardrails()
+    index_dependency = agentic_status.get(
+        "index_dependency",
+        inspect_rag_index_dependency(Path(args.rag_index_dir)),
+    )
+    primary_lane_counts = lane_counts["live_llm_retrieval_topk"]
+    baseline_subset = priority_rows_by_id(baseline_rows)
+    rows_by_family = dict(sorted(Counter(row["source_family"] for row in rows).items()))
+    before_strict = strict_json_parse_failure_count(baseline_subset)
+    after_strict = strict_json_parse_failure_count(rows)
+    before_llm_copy = llm_generated_locator_copy_failure_count(baseline_subset)
+    after_llm_copy = llm_generated_locator_copy_failure_count(rows)
+    before_llm_mismatch = llm_generated_locator_field_mismatch_failure_count(baseline_subset)
+    after_llm_mismatch = llm_generated_locator_field_mismatch_failure_count(rows)
+    before_llm_missing = llm_generated_locator_missing_failure_count(baseline_subset)
+    after_llm_missing = llm_generated_locator_missing_failure_count(rows)
+    before_schema_repair = strict_json_schema_repair_applied_count(baseline_subset)
+    after_schema_repair = strict_json_schema_repair_applied_count(rows)
+    before_posthoc = posthoc_payload_locator_preservation_failure_count(baseline_subset)
+    after_posthoc = posthoc_payload_locator_preservation_failure_count(rows)
+    summary = {
+        "schema_version": V3_1_PRIORITY_1_5_RUN_ID,
+        "run_id": V3_1_PRIORITY_1_5_RUN_ID,
+        "source_run_id": V3_1_RUN_ID,
+        "context_source_run_id": V3_RUN_ID,
+        "generated_at": utc_timestamp(),
+        "status": "PRIORITY_1_5_STRICT_JSON_LOCATOR_TRIAGE_COMPLETED"
+        if v3_preflight.get("ok") and backend_preflight.get("ok")
+        else "PRIORITY_1_5_STRICT_JSON_LOCATOR_TRIAGE_FAIL_CLOSED",
+        "measurement_classification": "priority_1_5_strict_json_locator_triage_diagnostic_only",
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "promotion_gate_auto_run": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+        "production_mutation": False,
+        "baseline_mutation": False,
+        "denominator_mutation": False,
+        "gold_mutation": False,
+        "human_label_mutation": False,
+        "target_row_count": len(V3_1_PRIORITY_1_5_QUERY_IDS),
+        "total_denominator_rows": len(V3_1_PRIORITY_1_5_QUERY_IDS),
+        "denominator_count": len(V3_1_PRIORITY_1_5_QUERY_IDS),
+        "result_count": len(rows),
+        "unique_query_id_count": len({row["query_id"] for row in rows}),
+        "scored_count": primary_lane_counts["scored_count"],
+        "pass_count": primary_lane_counts["pass_count"],
+        "failure_counts": primary_lane_counts["failure_counts"],
+        "target_query_ids": list(V3_1_PRIORITY_1_5_QUERY_IDS),
+        "rows_by_source_family": {
+            "PDF": int(rows_by_family.get("PDF", 0)),
+            "TEXT": int(rows_by_family.get("TEXT", 0)),
+            "XLSX": int(rows_by_family.get("XLSX", 0)),
+        },
+        "lane_names": list(V3_1_LANE_NAMES),
+        "lane_counts": lane_counts,
+        "source_family_lane_counts": family_lane_counts,
+        "strict_json_parse_failure_before": before_strict,
+        "strict_json_parse_failure_after": after_strict,
+        "strict_json_schema_repair_applied_count_before": before_schema_repair,
+        "strict_json_schema_repair_applied_count_after": after_schema_repair,
+        "llm_generated_locator_copy_failure_before": before_llm_copy,
+        "llm_generated_locator_copy_failure_after": after_llm_copy,
+        "llm_generated_locator_field_mismatch_failure_before": before_llm_mismatch,
+        "llm_generated_locator_field_mismatch_failure_after": after_llm_mismatch,
+        "llm_generated_locator_missing_failure_before": before_llm_missing,
+        "llm_generated_locator_missing_failure_after": after_llm_missing,
+        "pdf_source_pdf_path_mismatch_before": locator_field_mismatch_count(
+            baseline_subset,
+            source_family="PDF",
+            field="source_pdf_path",
+        ),
+        "pdf_source_pdf_path_mismatch_after": locator_field_mismatch_count(
+            rows,
+            source_family="PDF",
+            field="source_pdf_path",
+        ),
+        "xlsx_row_label_mismatch_before": locator_field_mismatch_count(
+            baseline_subset,
+            source_family="XLSX",
+            field="row_label",
+        ),
+        "xlsx_row_label_mismatch_after": locator_field_mismatch_count(
+            rows,
+            source_family="XLSX",
+            field="row_label",
+        ),
+        "posthoc_payload_locator_preservation_failure_count": after_posthoc,
+        "llm_generated_locator_copy_failure_count": after_llm_copy,
+        "locator_metric_split": {
+            "posthoc_payload_locator_preservation_failure_count_before": before_posthoc,
+            "posthoc_payload_locator_preservation_failure_count": after_posthoc,
+            "llm_generated_locator_copy_failure_count_before": before_llm_copy,
+            "llm_generated_locator_copy_failure_count": after_llm_copy,
+            "llm_generated_locator_field_mismatch_failure_count_before": before_llm_mismatch,
+            "llm_generated_locator_field_mismatch_failure_count": after_llm_mismatch,
+            "llm_generated_locator_missing_failure_count_before": before_llm_missing,
+            "llm_generated_locator_missing_failure_count": after_llm_missing,
+        },
+        "score_interpretation": "answer_and_citation_scores_are_reference_only_not_promotion_evidence",
+        "answer_score_reference_only": True,
+        "citation_support_score_reference_only": True,
+        "guardrails": guardrails,
+        "local_llm_used": any(
+            lane.get("llm_invoked") is True
+            for row in rows
+            for lane in row.get("lane_results", {}).values()
+            if isinstance(lane, Mapping)
+        ),
+        "local_gpu_used": False,
+        "llm_backend": backend_preflight.get("llm_backend"),
+        "llm_model": backend_preflight.get("model"),
+        "llm_backend_preflight": dict(backend_preflight),
+        "v3_completed_preflight": dict(v3_preflight),
+        "v3_1_artifact_consistency_preflight": dict(v3_1_preflight),
+        "non_production_rag_index_dependency": index_dependency,
+        "source_bound_index_used": bool(index_dependency.get("rerun_allowed")),
+        "canonical_search_unit_payload_used": True,
+        "infrastructure_blocker": {
+            "category": None if v3_preflight.get("ok") and backend_preflight.get("ok") else "PRIORITY_1_5_PRECONDITION_OR_BACKEND_BLOCKED",
+            "domain": None if v3_preflight.get("ok") and backend_preflight.get("ok") else "priority_1_5_preflight",
+            "model_quality_regression": False,
+            "baseline_comparison_is_model_quality_comparable": False,
+        },
+        "performance_interpretation": "diagnostic_only_priority_1_5_row_level_triage_not_promotion_evidence",
+        "diagnostic_limitations": [
+            "Only v3_1 triage priority ranks 1 through 5 are rerun.",
+            "Answer and citation scores are retained as diagnostics only.",
+            "Expected answers, supporting evidence, gold fields, labels, silver generation, and promotion gates are not used.",
+        ],
+        "source_artifacts": {
+            "metric_input_config": official.file_identity(metric_input_config_path),
+            "denominator_registry": official.file_identity(denominator_registry_path),
+            "pre_execution_smoke_report": official.file_identity(pre_execution_smoke_path),
+            "registry_application_report": official.file_identity(application_path) if application_path else None,
+            "immutable_first_run_baseline": official.file_identity(baseline_path),
+            "v3_summary_json": official.file_identity(v3_summary_path),
+            "v3_results_jsonl": official.file_identity(v3_results_path),
+            "v3_failure_attribution_json": official.file_identity(v3_attribution_path),
+            "v3_1_summary_json": official.file_identity(DEFAULT_V3_1_SUMMARY_JSON),
+            "v3_1_results_jsonl": official.file_identity(DEFAULT_V3_1_RESULTS_JSONL),
+            "v3_1_triage_queue_json": official.file_identity(DEFAULT_V3_1_TRIAGE_JSON),
+        },
+        "artifact_paths": v3_1_priority_1_5_artifact_paths(args),
+        "pipeline_decision": {
+            "selected_entrypoint": "v3_1 priority 1-5 strict JSON and locator copy diagnostic rerun",
+            "rationale": "Improve strict JSON diagnostics and LLM-generated locator copy stability before any silver, gold, tuning, or promotion work.",
+            "registry_application_report_required": False,
+            "registry_application_fallback_used": registry_application_fallback_used,
+            "candidate_artifacts_not_used_as_generation_source": True,
+            "expected_supporting_gold_used_for_generation": False,
+        },
+        "baseline_reference": {
+            "run_id": baseline_summary.get("run_id"),
+            "status": baseline_summary.get("status"),
+            "result_count": baseline_summary.get("result_count"),
+            "strict_json_parse_failure_before": before_strict,
+            "llm_generated_locator_copy_failure_before": before_llm_copy,
+            "artifact_identity": official.file_identity(DEFAULT_V3_1_SUMMARY_JSON),
+            "official_first_run_reference": {
+                "run_id": "official_answer_citation_metric_first_run_v1",
+                "status_detail": baseline.get("status_detail"),
+                "artifact_identity": official.file_identity(baseline_path),
+            },
+        },
+        "agentic_loop": {
+            "implemented": True,
+            "enabled": False,
+            "executed": False,
+            "backend": "v3_1_priority_1_5_strict_json_locator_triage",
+            "steps_count": 0,
+            "blockers": list(v3_preflight.get("errors") or []) + list(backend_preflight.get("blockers") or []),
+        },
+        "next_step_recommendation": "user_decision_required_only_for_gold_policy_or_label_changes",
+    }
+    return summary
+
+
+def build_v3_1_text_locator_residual_summary(
+    *,
+    args: argparse.Namespace,
+    rows: Sequence[Mapping[str, Any]],
+    priority_rows: Sequence[Mapping[str, Any]],
+    priority_summary: Mapping[str, Any],
+    baseline: Mapping[str, Any],
+    agentic_status: Mapping[str, Any],
+    v3_preflight: Mapping[str, Any],
+    backend_preflight: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    application_path: Path | None,
+    registry_application_fallback_used: bool,
+    baseline_path: Path,
+) -> dict[str, Any]:
+    before_rows = [
+        row for row in priority_rows if official.clean(row.get("query_id")) in V3_1_TEXT_LOCATOR_RESIDUAL_QUERY_IDS
+    ]
+    lane_counts = v3_1_lane_counts(rows)
+    family_lane_counts = v3_1_source_family_lane_counts(rows)
+    guardrails = v3_1_guardrails()
+    index_dependency = agentic_status.get(
+        "index_dependency",
+        inspect_rag_index_dependency(Path(args.rag_index_dir)),
+    )
+    before_metrics = triage_delta_row_metrics(before_rows[0]) if before_rows else {}
+    after_metrics = triage_delta_row_metrics(rows[0]) if rows else {}
+    primary_lane_counts = lane_counts["v3_primary_replay"]
+    summary = {
+        "schema_version": V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+        "run_id": V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+        "source_run_id": V3_1_PRIORITY_1_5_RUN_ID,
+        "context_source_run_id": V3_RUN_ID,
+        "generated_at": utc_timestamp(),
+        "status": "TEXT_LOCATOR_RESIDUAL_TRIAGE_COMPLETED" if v3_preflight.get("ok") and backend_preflight.get("ok") else "TEXT_LOCATOR_RESIDUAL_TRIAGE_FAIL_CLOSED",
+        "measurement_classification": "text_locator_residual_triage_diagnostic_only",
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "promotion_gate_auto_run": False,
+        "target_row_count": len(V3_1_TEXT_LOCATOR_RESIDUAL_QUERY_IDS),
+        "total_denominator_rows": len(V3_1_TEXT_LOCATOR_RESIDUAL_QUERY_IDS),
+        "denominator_count": len(V3_1_TEXT_LOCATOR_RESIDUAL_QUERY_IDS),
+        "result_count": len(rows),
+        "unique_query_id_count": len({row["query_id"] for row in rows}),
+        "target_query_ids": list(V3_1_TEXT_LOCATOR_RESIDUAL_QUERY_IDS),
+        "rows_by_source_family": dict(sorted(Counter(row["source_family"] for row in rows).items())),
+        "scored_count": primary_lane_counts["scored_count"],
+        "pass_count": primary_lane_counts["pass_count"],
+        "failure_counts": primary_lane_counts["failure_counts"],
+        "score_scope": "v3_primary_replay_lane_only_for_legacy_status_fields",
+        "lane_names": list(V3_1_LANE_NAMES),
+        "lane_counts": lane_counts,
+        "source_family_lane_counts": family_lane_counts,
+        "strict_json_parse_failure_before": strict_json_parse_failure_count(before_rows),
+        "strict_json_parse_failure_after": strict_json_parse_failure_count(rows),
+        "strict_json_schema_repair_applied_count_before": strict_json_schema_repair_applied_count(before_rows),
+        "strict_json_schema_repair_applied_count_after": strict_json_schema_repair_applied_count(rows),
+        "llm_generated_locator_copy_failure_before": llm_generated_locator_copy_failure_count(before_rows),
+        "llm_generated_locator_copy_failure_after": llm_generated_locator_copy_failure_count(rows),
+        "llm_generated_locator_missing_failure_before": llm_generated_locator_missing_failure_count(before_rows),
+        "llm_generated_locator_missing_failure_after": llm_generated_locator_missing_failure_count(rows),
+        "llm_generated_locator_field_mismatch_failure_before": llm_generated_locator_field_mismatch_failure_count(before_rows),
+        "llm_generated_locator_field_mismatch_failure_after": llm_generated_locator_field_mismatch_failure_count(rows),
+        "text_locator_missing_count_before": locator_missing_field_count_for_lane(
+            before_rows,
+            source_family="TEXT",
+            field="text_locator",
+            lane_name="live_llm_retrieval_topk",
+        ),
+        "text_locator_missing_count_after": locator_missing_field_count_for_lane(
+            rows,
+            source_family="TEXT",
+            field="text_locator",
+            lane_name="live_llm_retrieval_topk",
+        ),
+        "text_locator_byte_equal_after": after_metrics.get("text_locator_byte_equal"),
+        "text_locator_normalized_equal_after": after_metrics.get("text_locator_normalized_equal"),
+        "text_locator_present_after": after_metrics.get("text_locator_present"),
+        "text_locator_present_before": before_metrics.get("text_locator_present"),
+        "answer_score_reference_only": True,
+        "citation_support_score_reference_only": True,
+        "guardrails": guardrails,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+        "production_mutation": False,
+        "baseline_mutation": False,
+        "denominator_mutation": False,
+        "gold_mutation": False,
+        "human_label_mutation": False,
+        "source_bound_index_used": bool(index_dependency.get("rerun_allowed")),
+        "canonical_search_unit_payload_used": True,
+        "non_production_rag_index_dependency": index_dependency,
+        "llm_backend": backend_preflight.get("llm_backend"),
+        "llm_model": backend_preflight.get("model"),
+        "llm_backend_preflight": dict(backend_preflight),
+        "v3_completed_preflight": dict(v3_preflight),
+        "local_llm_used": any(
+            lane.get("llm_invoked") is True
+            for row in rows
+            for lane in row.get("lane_results", {}).values()
+            if isinstance(lane, Mapping)
+        ),
+        "local_gpu_used": False,
+        "performance_interpretation": "diagnostic_only_text_locator_residual_triage_not_promotion_evidence",
+        "priority_1_5_reference": {
+            "run_id": priority_summary.get("run_id"),
+            "artifact_identity": official.file_identity(DEFAULT_V3_1_PRIORITY_SUMMARY_JSON),
+            "text_locator_missing_count_before": locator_missing_field_count_for_lane(
+                before_rows,
+                source_family="TEXT",
+                field="text_locator",
+                lane_name="live_llm_retrieval_topk",
+            ),
+        },
+        "source_artifacts": {
+            "metric_input_config": official.file_identity(metric_input_config_path),
+            "denominator_registry": official.file_identity(denominator_registry_path),
+            "pre_execution_smoke_report": official.file_identity(pre_execution_smoke_path),
+            "registry_application_report": official.file_identity(application_path) if application_path else None,
+            "immutable_first_run_baseline": official.file_identity(baseline_path),
+            "priority_1_5_summary_json": official.file_identity(DEFAULT_V3_1_PRIORITY_SUMMARY_JSON),
+            "priority_1_5_results_jsonl": official.file_identity(DEFAULT_V3_1_PRIORITY_RESULTS_JSONL),
+        },
+        "artifact_paths": v3_1_text_locator_residual_artifact_paths(args),
+        "infrastructure_blocker": {
+            "category": None if v3_preflight.get("ok") and backend_preflight.get("ok") else "TEXT_LOCATOR_PRECONDITION_OR_BACKEND_BLOCKED",
+            "domain": None if v3_preflight.get("ok") and backend_preflight.get("ok") else "text_locator_preflight",
+            "model_quality_regression": False,
+            "baseline_comparison_is_model_quality_comparable": False,
+        },
+        "agentic_loop": {
+            "implemented": True,
+            "enabled": False,
+            "executed": False,
+            "backend": "v3_1_text_locator_residual_triage",
+            "steps_count": 0,
+            "blockers": list(v3_preflight.get("errors") or []) + list(backend_preflight.get("blockers") or []),
+        },
+        "baseline_reference": {
+            "run_id": "official_answer_citation_metric_first_run_v1",
+            "status_detail": baseline.get("status_detail"),
+            "artifact_identity": official.file_identity(baseline_path),
+        },
+        "next_step_recommendation": "run_v3_1_1_all_track_post_strict_json_locator_triage_measurement",
+    }
+    return summary
+
+
+def build_v3_1_1_post_triage_summary(
+    *,
+    args: argparse.Namespace,
+    rows: Sequence[Mapping[str, Any]],
+    baseline_rows: Sequence[Mapping[str, Any]],
+    baseline: Mapping[str, Any],
+    agentic_status: Mapping[str, Any],
+    v3_preflight: Mapping[str, Any],
+    backend_preflight: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    application_path: Path | None,
+    registry_application_fallback_used: bool,
+    baseline_path: Path,
+    v3_summary_path: Path,
+    v3_results_path: Path,
+    v3_attribution_path: Path,
+    text_locator_summary: Mapping[str, Any],
+) -> dict[str, Any]:
+    summary = build_v3_1_summary(
+        args=args,
+        rows=rows,
+        baseline=baseline,
+        agentic_status=agentic_status,
+        v3_preflight=v3_preflight,
+        backend_preflight=backend_preflight,
+        metric_input_config_path=metric_input_config_path,
+        denominator_registry_path=denominator_registry_path,
+        pre_execution_smoke_path=pre_execution_smoke_path,
+        application_path=application_path,
+        registry_application_fallback_used=registry_application_fallback_used,
+        baseline_path=baseline_path,
+        v3_summary_path=v3_summary_path,
+        v3_results_path=v3_results_path,
+        v3_attribution_path=v3_attribution_path,
+    )
+    summary.update(
+        {
+            "schema_version": V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+            "run_id": V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+            "source_run_id": V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+            "status": (
+                "ALL_TRACK_FOUNDATION_MEASUREMENT_V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_COMPLETED"
+                if v3_preflight.get("ok") and backend_preflight.get("ok")
+                else "ALL_TRACK_FOUNDATION_MEASUREMENT_V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_FAIL_CLOSED"
+            ),
+            "measurement_classification": (
+                "all_track_foundation_measurement_v3_1_1_post_strict_json_locator_triage_diagnostic_only"
+            ),
+            "strict_json_parse_failure_count_by_lane": strict_json_parse_failure_count_by_lane(rows),
+            "strict_json_schema_repair_applied_count_by_lane": strict_json_schema_repair_applied_count_by_lane(rows),
+            "llm_generated_locator_copy_failure_count_by_lane": llm_generated_locator_copy_failure_count_by_lane(rows),
+            "llm_generated_locator_missing_failure_count_by_lane": llm_generated_locator_missing_failure_count_by_lane(rows),
+            "llm_generated_locator_field_mismatch_failure_count_by_lane": llm_generated_locator_field_mismatch_failure_count_by_lane(rows),
+            "pdf_source_pdf_path_mismatch_count": locator_field_mismatch_count(
+                rows,
+                source_family="PDF",
+                field="source_pdf_path",
+            ),
+            "xlsx_row_label_mismatch_count": locator_field_mismatch_count(
+                rows,
+                source_family="XLSX",
+                field="row_label",
+            ),
+            "text_text_locator_missing_count": locator_missing_field_count(
+                rows,
+                source_family="TEXT",
+                field="text_locator",
+            ),
+            "answer_span_mismatch_count_by_lane": answer_span_mismatch_count_by_lane(rows),
+            "regression_from_v3_1_foundation": regression_from_v3_1_foundation(rows, baseline_rows),
+            "artifact_paths": v3_1_1_post_triage_artifact_paths(args),
+            "text_locator_residual_reference": {
+                "run_id": text_locator_summary.get("run_id"),
+                "artifact_identity": official.file_identity(DEFAULT_V3_1_TEXT_LOCATOR_SUMMARY_JSON),
+                "text_locator_missing_count_after": text_locator_summary.get("text_locator_missing_count_after"),
+            },
+            "agentic_loop": {
+                "implemented": True,
+                "enabled": False,
+                "executed": False,
+                "backend": "v3_1_1_post_strict_json_locator_triage",
+                "steps_count": 0,
+                "blockers": list(v3_preflight.get("errors") or []) + list(backend_preflight.get("blockers") or []),
+            },
+            "next_step_recommendation": "row_level_answer_span_and_answer_renderer_triage",
+        }
+    )
+    summary["source_artifacts"] = {
+        **as_mapping(summary.get("source_artifacts")),
+        "v3_1_foundation_results_jsonl": official.file_identity(DEFAULT_V3_1_RESULTS_JSONL),
+        "v3_1_text_locator_residual_summary_json": official.file_identity(DEFAULT_V3_1_TEXT_LOCATOR_SUMMARY_JSON),
+    }
+    return summary
+
+
+def build_v3_1_2_answer_span_renderer_summary(
+    *,
+    args: argparse.Namespace,
+    rows: Sequence[Mapping[str, Any]],
+    baseline: Mapping[str, Any],
+    agentic_status: Mapping[str, Any],
+    post_summary: Mapping[str, Any],
+    post_preflight: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    application_path: Path | None,
+    registry_application_fallback_used: bool,
+    baseline_path: Path,
+) -> dict[str, Any]:
+    lane_counts = v3_1_lane_counts(rows)
+    family_lane_counts = v3_1_source_family_lane_counts(rows)
+    rows_by_family = dict(sorted(Counter(row["source_family"] for row in rows).items()))
+    primary_lane_counts = lane_counts["v3_primary_replay"]
+    guardrails = v3_1_guardrails()
+    index_dependency = agentic_status.get(
+        "index_dependency",
+        inspect_rag_index_dependency(Path(args.rag_index_dir)),
+    )
+    diagnostic_counts = answer_span_renderer_diagnostic_counts(rows)
+    status = (
+        "ANSWER_SPAN_RENDERER_TRIAGE_BATCH1_RECORDED"
+        if post_preflight.get("ok")
+        else "ANSWER_SPAN_RENDERER_TRIAGE_BATCH1_FAIL_CLOSED"
+    )
+    return {
+        "schema_version": V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+        "run_id": V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+        "source_run_id": V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+        "generated_at": utc_timestamp(),
+        "status": status,
+        "measurement_classification": "answer_span_renderer_triage_v3_1_2_diagnostic_only",
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "promotion_gate_auto_run": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+        "production_mutation": False,
+        "baseline_mutation": False,
+        "denominator_mutation": False,
+        "gold_mutation": False,
+        "human_label_mutation": False,
+        "write_summary_markdown": False,
+        "total_denominator_rows": len(V3_1_2_TEXT_TARGET_QUERY_IDS),
+        "denominator_count": len(V3_1_2_TEXT_TARGET_QUERY_IDS),
+        "target_row_count": len(rows),
+        "primary_first_batch_row_count": len(V3_1_2_TEXT_FIRST_BATCH_QUERY_IDS),
+        "secondary_text_watchlist_row_count": len(V3_1_2_TEXT_SECONDARY_QUERY_IDS),
+        "result_count": len(rows),
+        "unique_query_id_count": len({row["query_id"] for row in rows}),
+        "rows_by_source_family": {
+            "PDF": int(rows_by_family.get("PDF", 0)),
+            "TEXT": int(rows_by_family.get("TEXT", 0)),
+            "XLSX": int(rows_by_family.get("XLSX", 0)),
+        },
+        "scored_count": primary_lane_counts["scored_count"],
+        "pass_count": primary_lane_counts["pass_count"],
+        "failure_counts": primary_lane_counts["failure_counts"],
+        "score_scope": "targeted_text_batch_v3_primary_replay_lane_only_for_legacy_status_fields",
+        "lane_names": list(V3_1_LANE_NAMES),
+        "lane_counts": lane_counts,
+        "source_family_lane_counts": family_lane_counts,
+        "target_query_ids": list(V3_1_2_TEXT_TARGET_QUERY_IDS),
+        "first_batch_query_ids": list(V3_1_2_TEXT_FIRST_BATCH_QUERY_IDS),
+        "secondary_text_watchlist_query_ids": list(V3_1_2_TEXT_SECONDARY_QUERY_IDS),
+        "secondary_include_decision": {
+            "text_namu_v2_0005": (
+                "not part of first batch because machine queue priority is 12 and Lane A/B already PASS; "
+                "included only as a TEXT watchlist row to document the Lane C language/span regression"
+            )
+        },
+        "queue_source_of_truth_decision": {
+            "selected_source": official.repo_relative(DEFAULT_V3_1_1_POST_TRIAGE_QUEUE_JSON),
+            "selected_source_type": "machine_triage_queue_artifact",
+            "rationale": (
+                "The rolling docs contain a stale Later Triage Queue; the machine queue has run_id, "
+                "priority ranks, failing lanes, and strict_json_or_locator_residual_count=0."
+            ),
+            "doc_drift_observed": True,
+        },
+        "answer_span_renderer_diagnostic_counts": diagnostic_counts,
+        "strict_json_parse_failure_count_by_lane": post_summary.get("strict_json_parse_failure_count_by_lane"),
+        "llm_generated_locator_copy_failure_count_by_lane": post_summary.get(
+            "llm_generated_locator_copy_failure_count_by_lane"
+        ),
+        "llm_generated_locator_missing_failure_count_by_lane": post_summary.get(
+            "llm_generated_locator_missing_failure_count_by_lane"
+        ),
+        "llm_generated_locator_field_mismatch_failure_count_by_lane": post_summary.get(
+            "llm_generated_locator_field_mismatch_failure_count_by_lane"
+        ),
+        "pdf_source_pdf_path_mismatch_count": post_summary.get("pdf_source_pdf_path_mismatch_count"),
+        "xlsx_row_label_mismatch_count": post_summary.get("xlsx_row_label_mismatch_count"),
+        "text_text_locator_missing_count": post_summary.get("text_text_locator_missing_count"),
+        "answer_span_mismatch_count_by_lane": post_summary.get("answer_span_mismatch_count_by_lane"),
+        "all_track_post_triage_reference": {
+            "run_id": post_summary.get("run_id"),
+            "lane_counts": post_summary.get("lane_counts"),
+            "answer_span_mismatch_count_by_lane": post_summary.get("answer_span_mismatch_count_by_lane"),
+            "regression_from_v3_1_foundation": post_summary.get("regression_from_v3_1_foundation"),
+            "strict_json_parse_failure_count_by_lane": post_summary.get("strict_json_parse_failure_count_by_lane"),
+            "llm_generated_locator_copy_failure_count_by_lane": post_summary.get(
+                "llm_generated_locator_copy_failure_count_by_lane"
+            ),
+        },
+        "all_track_remeasurement_performed": False,
+        "all_track_remeasurement_skip_reason": (
+            "classification-only diagnostic run; no generation, renderer, scorer, locator, or retrieval behavior "
+            "was changed before this artifact"
+        ),
+        "post_triage_artifact_consistency_preflight": dict(post_preflight),
+        "reference_span_audit_only": True,
+        "reference_span_text_embedded": False,
+        "guardrails": guardrails,
+        "local_llm_used": False,
+        "local_gpu_used": False,
+        "llm_backend": None,
+        "llm_model": None,
+        "non_production_rag_index_dependency": index_dependency,
+        "source_bound_index_used": True,
+        "canonical_search_unit_payload_used": True,
+        "infrastructure_blocker": {
+            "category": None if post_preflight.get("ok") else "V3_1_1_POST_TRIAGE_ARTIFACT_PREFLIGHT_FAILED",
+            "domain": None if post_preflight.get("ok") else "answer_span_renderer_triage_preflight",
+            "model_quality_regression": False,
+            "baseline_comparison_is_model_quality_comparable": False,
+        },
+        "agentic_loop": {
+            "implemented": True,
+            "enabled": False,
+            "executed": False,
+            "backend": "v3_1_2_answer_span_renderer_triage",
+            "steps_count": 0,
+            "blockers": list(post_preflight.get("errors") or []),
+        },
+        "performance_interpretation": "diagnostic_only_answer_span_renderer_batch1_not_promotion_evidence",
+        "diagnostic_limitations": [
+            "This run classifies the first TEXT answer-span/renderer batch from post-generation artifacts.",
+            "It does not call an LLM and does not tune thresholds, choose winners, or change gold fields.",
+            "Reference spans are used only after generation for scoring/triage diagnostics and are not embedded as text.",
+            "Lane A/B/C remain separate; target-batch counts must not be read as all-track official scores.",
+        ],
+        "source_artifacts": {
+            "metric_input_config": official.file_identity(metric_input_config_path),
+            "denominator_registry": official.file_identity(denominator_registry_path),
+            "pre_execution_smoke_report": official.file_identity(pre_execution_smoke_path),
+            "registry_application_report": official.file_identity(application_path) if application_path else None,
+            "immutable_first_run_baseline": official.file_identity(baseline_path),
+            "v3_1_1_post_summary_json": official.file_identity(DEFAULT_V3_1_1_POST_SUMMARY_JSON),
+            "v3_1_1_post_results_jsonl": official.file_identity(DEFAULT_V3_1_1_POST_RESULTS_JSONL),
+            "v3_1_1_post_failure_attribution_json": official.file_identity(DEFAULT_V3_1_1_POST_ATTRIBUTION_JSON),
+            "v3_1_1_post_actual_response_audit_jsonl": official.file_identity(DEFAULT_V3_1_1_POST_AUDIT_JSONL),
+            "v3_1_1_post_triage_queue_json": official.file_identity(DEFAULT_V3_1_1_POST_TRIAGE_QUEUE_JSON),
+        },
+        "artifact_paths": v3_1_2_answer_span_renderer_artifact_paths(args),
+        "pipeline_decision": {
+            "selected_entrypoint": "v3_1_2 answer span / answer renderer diagnostic triage",
+            "rationale": "Classify the first machine-queue TEXT batch without opening silver/gold/promotion work.",
+            "registry_application_report_required": False,
+            "registry_application_fallback_used": registry_application_fallback_used,
+            "candidate_artifacts_not_used_as_generation_source": True,
+            "expected_supporting_gold_used_for_generation": False,
+        },
+        "baseline_reference": {
+            "run_id": "official_answer_citation_metric_first_run_v1",
+            "artifact_identity": official.file_identity(Path(args.first_run_baseline)),
+            "pass_count": baseline.get("pass_count"),
+            "scored_count": baseline.get("scored_count"),
+            "status_detail": baseline.get("status_detail"),
+        },
+    }
+
+
+def answer_span_renderer_diagnostic_counts(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    counter: Counter[str] = Counter()
+    for row in rows:
+        for diagnostic in as_mapping(row.get("answer_span_renderer_diagnostics")).values():
+            if not isinstance(diagnostic, Mapping):
+                continue
+            for category in diagnostic.get("diagnostic_subcategories") or []:
+                counter[official.clean(category)] += 1
+    return dict(sorted(counter.items()))
+
+
+def v3_1_priority_1_5_artifact_paths(args: argparse.Namespace) -> dict[str, str]:
+    run_id = args.run_id
+    return {
+        "results_jsonl": official.repo_relative(Path(args.results_jsonl)),
+        "summary_json": official.repo_relative(Path(args.summary_json)),
+        "summary_md": official.repo_relative(Path(args.summary_md)),
+        "failure_attribution_json": official.repo_relative(REPORT_DIR / f"{run_id}_failure_attribution.json"),
+        "actual_response_audit_jsonl": official.repo_relative(REPORT_DIR / f"{run_id}_actual_response_audit.jsonl"),
+        "strict_json_diagnostics_json": official.repo_relative(
+            REPORT_DIR / f"{V3_1_PRIORITY_1_5_STRICT_JSON_DIAGNOSTICS_ID}.json"
+        ),
+        "strict_json_diagnostics_md": official.repo_relative(
+            REPORT_DIR / f"{V3_1_PRIORITY_1_5_STRICT_JSON_DIAGNOSTICS_ID}.md"
+        ),
+        "triage_delta_json": official.repo_relative(REPORT_DIR / f"{run_id}_triage_delta.json"),
+        "triage_delta_md": official.repo_relative(REPORT_DIR / f"{run_id}_triage_delta.md"),
+    }
+
+
+def v3_1_text_locator_residual_artifact_paths(args: argparse.Namespace) -> dict[str, str]:
+    run_id = args.run_id
+    return {
+        "results_jsonl": official.repo_relative(Path(args.results_jsonl)),
+        "summary_json": official.repo_relative(Path(args.summary_json)),
+        "summary_md": official.repo_relative(Path(args.summary_md)),
+        "failure_attribution_json": official.repo_relative(REPORT_DIR / f"{run_id}_failure_attribution.json"),
+        "triage_delta_json": official.repo_relative(REPORT_DIR / f"{run_id}_triage_delta.json"),
+        "triage_delta_md": official.repo_relative(REPORT_DIR / f"{run_id}_triage_delta.md"),
+    }
+
+
+def v3_1_1_post_triage_artifact_paths(args: argparse.Namespace) -> dict[str, str]:
+    run_id = args.run_id
+    return {
+        "results_jsonl": official.repo_relative(Path(args.results_jsonl)),
+        "summary_json": official.repo_relative(Path(args.summary_json)),
+        "summary_md": official.repo_relative(Path(args.summary_md)),
+        "failure_attribution_json": official.repo_relative(REPORT_DIR / f"{run_id}_failure_attribution.json"),
+        "actual_response_audit_jsonl": official.repo_relative(REPORT_DIR / f"{run_id}_actual_response_audit.jsonl"),
+        "triage_queue_json": official.repo_relative(REPORT_DIR / f"{run_id}_triage_queue.json"),
+    }
+
+
+def v3_1_2_answer_span_renderer_artifact_paths(args: argparse.Namespace) -> dict[str, str]:
+    run_id = args.run_id
+    return {
+        "results_jsonl": official.repo_relative(Path(args.results_jsonl)),
+        "summary_json": official.repo_relative(Path(args.summary_json)),
+        "failure_attribution_json": official.repo_relative(REPORT_DIR / f"{run_id}_failure_attribution.json"),
+        "actual_response_audit_jsonl": official.repo_relative(REPORT_DIR / f"{run_id}_actual_response_audit.jsonl"),
+        "answer_span_diagnostics_jsonl": official.repo_relative(
+            REPORT_DIR / f"{run_id}_answer_span_diagnostics.jsonl"
+        ),
+        "remaining_triage_queue_json": official.repo_relative(REPORT_DIR / f"{run_id}_remaining_triage_queue.json"),
+    }
+
+
 def v3_1_guardrails() -> dict[str, bool]:
     return {
         "diagnostic_only": True,
@@ -4007,6 +5901,244 @@ def v3_1_guardrails() -> dict[str, bool]:
         "denominator_mutation": False,
         "gold_mutation": False,
         "human_label_mutation": False,
+    }
+
+
+def priority_rows_by_id(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    by_id = {official.clean(row.get("query_id")): dict(row) for row in rows}
+    return [by_id[query_id] for query_id in V3_1_PRIORITY_1_5_QUERY_IDS if query_id in by_id]
+
+
+def strict_json_parse_failure_count(rows: Sequence[Mapping[str, Any]]) -> int:
+    return sum(
+        1
+        for row in rows
+        for lane in [as_mapping((row.get("lane_results") or {}).get("live_llm_retrieval_topk"))]
+        if lane.get("failure_category") == "LLM_STRICT_JSON_PARSE_FAILURE"
+    )
+
+
+def strict_json_parse_failure_count_by_lane(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    return {
+        lane_name: sum(
+            1
+            for row in rows
+            if as_mapping(as_mapping(row.get("lane_results")).get(lane_name)).get("failure_category")
+            == "LLM_STRICT_JSON_PARSE_FAILURE"
+        )
+        for lane_name in V3_1_LANE_NAMES
+    }
+
+
+def strict_json_schema_repair_applied_count_by_lane(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    return {
+        lane_name: sum(
+            1
+            for row in rows
+            if lane_schema_repair_applied(as_mapping(as_mapping(row.get("lane_results")).get(lane_name)))
+        )
+        for lane_name in V3_1_LANE_NAMES
+    }
+
+
+def lane_schema_repair_applied(lane: Mapping[str, Any]) -> bool:
+    diagnostics = as_mapping(lane.get("strict_json_diagnostics") or lane.get("strict_json_raw"))
+    if "strict_json" in diagnostics and isinstance(diagnostics.get("strict_json"), Mapping):
+        diagnostics = as_mapping(diagnostics.get("strict_json"))
+    return diagnostics.get("schema_repair_applied") is True
+
+
+def strict_json_schema_repair_applied_count(rows: Sequence[Mapping[str, Any]]) -> int:
+    count = 0
+    for row in rows:
+        lane = as_mapping((row.get("lane_results") or {}).get("live_llm_retrieval_topk"))
+        if lane_schema_repair_applied(lane):
+            count += 1
+    return count
+
+
+def llm_generated_locator_copy_failure_count(rows: Sequence[Mapping[str, Any]]) -> int:
+    count = 0
+    for row in rows:
+        lane = as_mapping((row.get("lane_results") or {}).get("live_llm_retrieval_topk"))
+        validation = as_mapping(lane.get("llm_generated_locator_validation"))
+        if validation.get("generated_by_llm") is True and validation.get("ok") is not True:
+            count += 1
+    return count
+
+
+def llm_generated_locator_field_mismatch_failure_count(rows: Sequence[Mapping[str, Any]]) -> int:
+    count = 0
+    for row in rows:
+        lane = as_mapping((row.get("lane_results") or {}).get("live_llm_retrieval_topk"))
+        validation = as_mapping(lane.get("llm_generated_locator_validation"))
+        if validation.get("generated_by_llm") is True and validation.get("mismatched_fields_by_search_unit_id"):
+            count += 1
+    return count
+
+
+def llm_generated_locator_missing_failure_count(rows: Sequence[Mapping[str, Any]]) -> int:
+    count = 0
+    for row in rows:
+        lane = as_mapping((row.get("lane_results") or {}).get("live_llm_retrieval_topk"))
+        validation = as_mapping(lane.get("llm_generated_locator_validation"))
+        if validation.get("generated_by_llm") is not True:
+            continue
+        if validation.get("missing_locator_for_search_unit_ids") or validation.get("missing_fields_by_search_unit_id"):
+            count += 1
+    return count
+
+
+def llm_generated_locator_copy_failure_count_by_lane(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    return {
+        lane_name: sum(
+            1
+            for row in rows
+            if llm_generated_locator_failed(as_mapping(as_mapping(row.get("lane_results")).get(lane_name)))
+        )
+        for lane_name in V3_1_LANE_NAMES
+    }
+
+
+def llm_generated_locator_missing_failure_count_by_lane(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for lane_name in V3_1_LANE_NAMES:
+        count = 0
+        for row in rows:
+            lane = as_mapping(as_mapping(row.get("lane_results")).get(lane_name))
+            validation = as_mapping(lane.get("llm_generated_locator_validation"))
+            if validation.get("generated_by_llm") is True and (
+                validation.get("missing_locator_for_search_unit_ids")
+                or validation.get("missing_fields_by_search_unit_id")
+            ):
+                count += 1
+        out[lane_name] = count
+    return out
+
+
+def llm_generated_locator_field_mismatch_failure_count_by_lane(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for lane_name in V3_1_LANE_NAMES:
+        count = 0
+        for row in rows:
+            lane = as_mapping(as_mapping(row.get("lane_results")).get(lane_name))
+            validation = as_mapping(lane.get("llm_generated_locator_validation"))
+            if validation.get("generated_by_llm") is True and validation.get("mismatched_fields_by_search_unit_id"):
+                count += 1
+        out[lane_name] = count
+    return out
+
+
+def posthoc_payload_locator_preservation_failure_count(rows: Sequence[Mapping[str, Any]]) -> int:
+    count = 0
+    for row in rows:
+        for lane_name in V3_1_LIVE_LANE_NAMES:
+            lane = as_mapping((row.get("lane_results") or {}).get(lane_name))
+            preservation = as_mapping(lane.get("locator_preservation"))
+            if preservation and preservation.get("ok") is not True:
+                count += 1
+    return count
+
+
+def locator_missing_field_count(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    source_family: str,
+    field: str,
+) -> int:
+    count = 0
+    for row in rows:
+        if row.get("source_family") != source_family:
+            continue
+        for lane_name in V3_1_LIVE_LANE_NAMES:
+            validation = as_mapping(
+                as_mapping((row.get("lane_results") or {}).get(lane_name)).get("llm_generated_locator_validation")
+            )
+            missing = validation.get("missing_fields_by_search_unit_id")
+            if not isinstance(missing, Mapping):
+                continue
+            if any(field in (fields or []) for fields in missing.values()):
+                count += 1
+    return count
+
+
+def locator_missing_field_count_for_lane(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    source_family: str,
+    field: str,
+    lane_name: str,
+) -> int:
+    count = 0
+    for row in rows:
+        if row.get("source_family") != source_family:
+            continue
+        validation = as_mapping(
+            as_mapping((row.get("lane_results") or {}).get(lane_name)).get("llm_generated_locator_validation")
+        )
+        missing = validation.get("missing_fields_by_search_unit_id")
+        if not isinstance(missing, Mapping):
+            continue
+        if any(field in (fields or []) for fields in missing.values()):
+            count += 1
+    return count
+
+
+def locator_field_mismatch_count(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    source_family: str,
+    field: str,
+) -> int:
+    count = 0
+    for row in rows:
+        if row.get("source_family") != source_family:
+            continue
+        for lane_name in V3_1_LIVE_LANE_NAMES:
+            validation = as_mapping(
+                as_mapping((row.get("lane_results") or {}).get(lane_name)).get("llm_generated_locator_validation")
+            )
+            mismatches = validation.get("mismatched_fields_by_search_unit_id")
+            if not isinstance(mismatches, Mapping):
+                continue
+            if any(field in (fields or []) for fields in mismatches.values()):
+                count += 1
+    return count
+
+
+def answer_span_mismatch_count_by_lane(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    return {
+        lane_name: sum(
+            1
+            for row in rows
+            if as_mapping(as_mapping(row.get("lane_results")).get(lane_name)).get("failure_category")
+            == "LLM_EXPECTED_SPAN_MISMATCH"
+        )
+        for lane_name in V3_1_LANE_NAMES
+    }
+
+
+def regression_from_v3_1_foundation(rows: Sequence[Mapping[str, Any]], baseline_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    baseline_by_id = {official.clean(row.get("query_id")): row for row in baseline_rows}
+    regressions: list[dict[str, Any]] = []
+    for row in rows:
+        before = as_mapping(baseline_by_id.get(official.clean(row.get("query_id"))))
+        for lane_name in V3_1_LANE_NAMES:
+            before_lane = as_mapping(as_mapping(before.get("lane_results")).get(lane_name))
+            after_lane = as_mapping(as_mapping(row.get("lane_results")).get(lane_name))
+            if before_lane.get("failure_category") == "PASS" and after_lane.get("failure_category") != "PASS":
+                regressions.append(
+                    {
+                        "query_id": row.get("query_id"),
+                        "lane_name": lane_name,
+                        "before_failure_category": before_lane.get("failure_category"),
+                        "after_failure_category": after_lane.get("failure_category"),
+                    }
+                )
+    return {
+        "baseline_run_id": V3_1_RUN_ID,
+        "existing_pass_regression_count": len(regressions),
+        "regressions": regressions,
     }
 
 
@@ -4477,13 +6609,555 @@ def write_v3_1_side_artifacts(summary: dict[str, Any], rows: Sequence[Mapping[st
     summary["artifact_paths"]["triage_queue_md_sha256"] = sha256_file(triage_md)
 
 
-def build_v3_1_actual_response_audit_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+def write_v3_1_priority_1_5_side_artifacts(summary: dict[str, Any], rows: Sequence[Mapping[str, Any]]) -> None:
+    artifact_paths = summary["artifact_paths"]
+    baseline_rows = read_jsonl(DEFAULT_V3_1_RESULTS_JSONL)
+
+    audit_rows = build_v3_1_actual_response_audit_rows(rows, run_id=V3_1_PRIORITY_1_5_RUN_ID)
+    audit_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["actual_response_audit_jsonl"]))
+    write_jsonl(audit_jsonl, audit_rows)
+    summary["artifact_paths"]["actual_response_audit_jsonl_sha256"] = sha256_file(audit_jsonl)
+
+    strict_json_diagnostics = build_v3_1_priority_1_5_strict_json_diagnostics(summary, rows, baseline_rows)
+    strict_json_path = resolve_repo_relative_artifact_path(Path(artifact_paths["strict_json_diagnostics_json"]))
+    write_json(strict_json_path, strict_json_diagnostics)
+    summary["artifact_paths"]["strict_json_diagnostics_json_sha256"] = sha256_file(strict_json_path)
+
+    strict_json_md = resolve_repo_relative_artifact_path(Path(artifact_paths["strict_json_diagnostics_md"]))
+    strict_json_md.parent.mkdir(parents=True, exist_ok=True)
+    strict_json_md.write_text(render_v3_1_priority_1_5_strict_json_markdown(strict_json_diagnostics), encoding="utf-8")
+    summary["artifact_paths"]["strict_json_diagnostics_md_sha256"] = sha256_file(strict_json_md)
+
+    triage_delta = build_v3_1_priority_1_5_triage_delta(summary, rows, baseline_rows)
+    triage_delta_path = resolve_repo_relative_artifact_path(Path(artifact_paths["triage_delta_json"]))
+    write_json(triage_delta_path, triage_delta)
+    summary["artifact_paths"]["triage_delta_json_sha256"] = sha256_file(triage_delta_path)
+
+    triage_delta_md = resolve_repo_relative_artifact_path(Path(artifact_paths["triage_delta_md"]))
+    triage_delta_md.parent.mkdir(parents=True, exist_ok=True)
+    triage_delta_md.write_text(render_v3_1_priority_1_5_triage_delta_markdown(triage_delta), encoding="utf-8")
+    summary["artifact_paths"]["triage_delta_md_sha256"] = sha256_file(triage_delta_md)
+
+
+def write_v3_1_text_locator_residual_side_artifacts(
+    summary: dict[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> None:
+    artifact_paths = summary["artifact_paths"]
+    priority_rows = read_jsonl(DEFAULT_V3_1_PRIORITY_RESULTS_JSONL)
+    triage_delta = build_v3_1_text_locator_triage_delta(summary, rows, priority_rows)
+    triage_delta_path = resolve_repo_relative_artifact_path(Path(artifact_paths["triage_delta_json"]))
+    write_json(triage_delta_path, triage_delta)
+    summary["artifact_paths"]["triage_delta_json_sha256"] = sha256_file(triage_delta_path)
+
+    triage_delta_md = resolve_repo_relative_artifact_path(Path(artifact_paths["triage_delta_md"]))
+    triage_delta_md.parent.mkdir(parents=True, exist_ok=True)
+    triage_delta_md.write_text(render_v3_1_text_locator_triage_delta_markdown(triage_delta), encoding="utf-8")
+    summary["artifact_paths"]["triage_delta_md_sha256"] = sha256_file(triage_delta_md)
+
+
+def write_v3_1_1_post_triage_side_artifacts(summary: dict[str, Any], rows: Sequence[Mapping[str, Any]]) -> None:
+    artifact_paths = summary["artifact_paths"]
+    audit_rows = build_v3_1_actual_response_audit_rows(
+        rows,
+        run_id=V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+    )
+    audit_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["actual_response_audit_jsonl"]))
+    write_jsonl(audit_jsonl, audit_rows)
+    summary["artifact_paths"]["actual_response_audit_jsonl_sha256"] = sha256_file(audit_jsonl)
+
+    triage = build_v3_1_triage_queue(rows, summary=summary)
+    triage_json = resolve_repo_relative_artifact_path(Path(artifact_paths["triage_queue_json"]))
+    write_json(triage_json, triage)
+    summary["artifact_paths"]["triage_queue_json_sha256"] = sha256_file(triage_json)
+
+
+def write_v3_1_2_answer_span_renderer_side_artifacts(
+    summary: dict[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> None:
+    artifact_paths = summary["artifact_paths"]
+    audit_rows = build_v3_1_actual_response_audit_rows(
+        rows,
+        run_id=V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+    )
+    audit_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["actual_response_audit_jsonl"]))
+    write_jsonl(audit_jsonl, audit_rows)
+    summary["artifact_paths"]["actual_response_audit_jsonl_sha256"] = sha256_file(audit_jsonl)
+
+    diagnostics = build_v3_1_2_answer_span_diagnostics_rows(summary, rows)
+    diagnostics_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["answer_span_diagnostics_jsonl"]))
+    write_jsonl(diagnostics_jsonl, diagnostics)
+    summary["artifact_paths"]["answer_span_diagnostics_jsonl_sha256"] = sha256_file(diagnostics_jsonl)
+
+    remaining = build_v3_1_2_remaining_triage_queue(summary)
+    remaining_json = resolve_repo_relative_artifact_path(Path(artifact_paths["remaining_triage_queue_json"]))
+    write_json(remaining_json, remaining)
+    summary["artifact_paths"]["remaining_triage_queue_json_sha256"] = sha256_file(remaining_json)
+
+
+def build_v3_1_2_answer_span_diagnostics_rows(
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        out.append(
+            {
+                "schema_version": f"{V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID}_answer_span_diagnostics_v1",
+                "run_id": V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+                "source_run_id": V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+                "generated_at": summary["generated_at"],
+                "query_id": row.get("query_id"),
+                "track": row.get("track"),
+                "source_family": row.get("source_family"),
+                "queue_priority_rank": row.get("queue_priority_rank"),
+                "first_batch_selected": row.get("first_batch_selected"),
+                "include_decision": row.get("include_decision"),
+                "lane_failure_categories": {
+                    lane_name: lane.get("failure_category")
+                    for lane_name, lane in as_mapping(row.get("lane_results")).items()
+                    if isinstance(lane, Mapping)
+                },
+                "answer_span_renderer_diagnostics": row.get("answer_span_renderer_diagnostics"),
+                "diagnostic_only": True,
+                "promotion_evidence": False,
+                "threshold_tuning": False,
+                "winner_selection": False,
+                "promotion_gate_auto_run": False,
+                "candidate_artifacts_as_generation_source": False,
+                "generation_used_expected_answer": False,
+                "generation_used_gold_fields": False,
+                "generation_used_supporting_evidence": False,
+                "reference_span_audit_only": True,
+                "reference_span_text_embedded": False,
+            }
+        )
+    return out
+
+
+def build_v3_1_2_remaining_triage_queue(summary: Mapping[str, Any]) -> dict[str, Any]:
+    source_queue = official.read_json(DEFAULT_V3_1_1_POST_TRIAGE_QUEUE_JSON)
+    processed = set(V3_1_2_TEXT_FIRST_BATCH_QUERY_IDS)
+    remaining_items = [
+        deepcopy(item)
+        for item in source_queue.get("items") or []
+        if isinstance(item, Mapping) and official.clean(item.get("query_id")) not in processed
+    ]
+    for index, item in enumerate(remaining_items, start=1):
+        item["remaining_priority_rank"] = index
+    return {
+        "schema_version": f"{V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID}_remaining_triage_queue_v1",
+        "run_id": V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+        "source_run_id": V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+        "source_queue_artifact": official.repo_relative(DEFAULT_V3_1_1_POST_TRIAGE_QUEUE_JSON),
+        "generated_at": summary["generated_at"],
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "processed_first_batch_query_ids": list(V3_1_2_TEXT_FIRST_BATCH_QUERY_IDS),
+        "secondary_text_watchlist_query_ids": list(V3_1_2_TEXT_SECONDARY_QUERY_IDS),
+        "strict_json_or_locator_residual_count": source_queue.get("strict_json_or_locator_residual_count"),
+        "items": remaining_items,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+    }
+
+
+def build_v3_1_priority_1_5_strict_json_diagnostics(
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+    baseline_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    before_by_id = {row["query_id"]: row for row in priority_rows_by_id(baseline_rows)}
+    after_by_id = {row["query_id"]: row for row in rows}
+    diagnostic_rows: list[dict[str, Any]] = []
+    for query_id in V3_1_PRIORITY_1_5_STRICT_JSON_QUERY_IDS:
+        before_lane = as_mapping(as_mapping(before_by_id.get(query_id, {}).get("lane_results")).get("live_llm_retrieval_topk"))
+        after_lane = as_mapping(as_mapping(after_by_id.get(query_id, {}).get("lane_results")).get("live_llm_retrieval_topk"))
+        diagnostic_rows.append(
+            {
+                "query_id": query_id,
+                "before": strict_json_diagnostic_summary(before_lane, prompt_context_mode="retrieval_topk_source_bound"),
+                "after": strict_json_diagnostic_summary(after_lane, prompt_context_mode="retrieval_topk_source_bound"),
+            }
+        )
+    return {
+        "schema_version": f"{V3_1_PRIORITY_1_5_STRICT_JSON_DIAGNOSTICS_ID}_v1",
+        "run_id": V3_1_PRIORITY_1_5_STRICT_JSON_DIAGNOSTICS_ID,
+        "target_run_id": V3_1_PRIORITY_1_5_RUN_ID,
+        "source_run_id": V3_1_RUN_ID,
+        "generated_at": summary["generated_at"],
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+        "target_query_ids": list(V3_1_PRIORITY_1_5_STRICT_JSON_QUERY_IDS),
+        "strict_json_parse_failure_before": summary["strict_json_parse_failure_before"],
+        "strict_json_parse_failure_after": summary["strict_json_parse_failure_after"],
+        "strict_json_schema_repair_applied_count_before": summary[
+            "strict_json_schema_repair_applied_count_before"
+        ],
+        "strict_json_schema_repair_applied_count_after": summary["strict_json_schema_repair_applied_count_after"],
+        "rows": diagnostic_rows,
+    }
+
+
+def strict_json_diagnostic_summary(lane: Mapping[str, Any], *, prompt_context_mode: str) -> dict[str, Any]:
+    diagnostics = as_mapping(lane.get("strict_json_diagnostics") or lane.get("strict_json_raw"))
+    if "strict_json" in diagnostics and isinstance(diagnostics.get("strict_json"), Mapping):
+        diagnostics = as_mapping(diagnostics.get("strict_json"))
+    out = {
+        "parse_ok": lane.get("strict_json_parse_ok") is True,
+        "failure_category": lane.get("failure_category"),
+        "raw_response_sha256": diagnostics.get("raw_response_sha256"),
+        "raw_response_sha256_attempts": list(diagnostics.get("raw_response_sha256_attempts") or []),
+        "sanitized_raw_response_excerpt": diagnostics.get("sanitized_raw_response_excerpt") or "",
+        "strict_json_error": diagnostics.get("strict_json_error") or "",
+        "attempted_schema_keys": list(
+            diagnostics.get("attempted_schema_keys") or ["answer", "cited_search_unit_ids", "citation_locators"]
+        ),
+        "missing_required_keys": list(diagnostics.get("missing_required_keys") or []),
+        "missing_required_keys_before_repair": list(diagnostics.get("missing_required_keys_before_repair") or []),
+        "schema_repair_applied": diagnostics.get("schema_repair_applied") is True,
+        "prompt_context_mode": diagnostics.get("prompt_context_mode") or prompt_context_mode,
+        "cited_search_unit_ids_before_parse": list(diagnostics.get("cited_search_unit_ids_before_parse") or []),
+    }
+    if not out["raw_response_sha256"]:
+        out["strict_json_error"] = out["strict_json_error"] or "raw response body was not retained in baseline artifact"
+    return out
+
+
+def build_v3_1_priority_1_5_triage_delta(
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+    baseline_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    before_by_id = {row["query_id"]: row for row in priority_rows_by_id(baseline_rows)}
+    after_by_id = {row["query_id"]: row for row in rows}
+    delta_rows = [
+        {
+            "query_id": query_id,
+            "source_family": after_by_id.get(query_id, before_by_id.get(query_id, {})).get("source_family"),
+            "before": triage_delta_row_metrics(before_by_id.get(query_id, {})),
+            "after": triage_delta_row_metrics(after_by_id.get(query_id, {})),
+        }
+        for query_id in V3_1_PRIORITY_1_5_QUERY_IDS
+    ]
+    return {
+        "schema_version": f"{V3_1_PRIORITY_1_5_RUN_ID}_triage_delta_v1",
+        "run_id": V3_1_PRIORITY_1_5_RUN_ID,
+        "source_run_id": V3_1_RUN_ID,
+        "generated_at": summary["generated_at"],
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+        "summary_metrics": {
+            "strict_json_parse_failure_before": summary["strict_json_parse_failure_before"],
+            "strict_json_parse_failure_after": summary["strict_json_parse_failure_after"],
+            "strict_json_schema_repair_applied_count_before": summary[
+                "strict_json_schema_repair_applied_count_before"
+            ],
+            "strict_json_schema_repair_applied_count_after": summary[
+                "strict_json_schema_repair_applied_count_after"
+            ],
+            "llm_generated_locator_copy_failure_before": summary["llm_generated_locator_copy_failure_before"],
+            "llm_generated_locator_copy_failure_after": summary["llm_generated_locator_copy_failure_after"],
+            "llm_generated_locator_field_mismatch_failure_before": summary[
+                "llm_generated_locator_field_mismatch_failure_before"
+            ],
+            "llm_generated_locator_field_mismatch_failure_after": summary[
+                "llm_generated_locator_field_mismatch_failure_after"
+            ],
+            "llm_generated_locator_missing_failure_before": summary["llm_generated_locator_missing_failure_before"],
+            "llm_generated_locator_missing_failure_after": summary["llm_generated_locator_missing_failure_after"],
+            "pdf_source_pdf_path_mismatch_before": summary["pdf_source_pdf_path_mismatch_before"],
+            "pdf_source_pdf_path_mismatch_after": summary["pdf_source_pdf_path_mismatch_after"],
+            "xlsx_row_label_mismatch_before": summary["xlsx_row_label_mismatch_before"],
+            "xlsx_row_label_mismatch_after": summary["xlsx_row_label_mismatch_after"],
+        },
+        "rows": delta_rows,
+    }
+
+
+def build_v3_1_text_locator_triage_delta(
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+    priority_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    before_by_id = {official.clean(row.get("query_id")): row for row in priority_rows}
+    after_by_id = {official.clean(row.get("query_id")): row for row in rows}
+    delta_rows = [
+        {
+            "query_id": query_id,
+            "source_family": after_by_id.get(query_id, before_by_id.get(query_id, {})).get("source_family"),
+            "before": triage_delta_row_metrics(before_by_id.get(query_id, {})),
+            "after": triage_delta_row_metrics(after_by_id.get(query_id, {})),
+        }
+        for query_id in V3_1_TEXT_LOCATOR_RESIDUAL_QUERY_IDS
+    ]
+    return {
+        "schema_version": f"{V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID}_triage_delta_v1",
+        "run_id": V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+        "source_run_id": V3_1_PRIORITY_1_5_RUN_ID,
+        "generated_at": summary["generated_at"],
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+        "summary_metrics": {
+            "text_locator_missing_count_before": summary["text_locator_missing_count_before"],
+            "text_locator_missing_count_after": summary["text_locator_missing_count_after"],
+            "llm_generated_locator_missing_failure_before": summary[
+                "llm_generated_locator_missing_failure_before"
+            ],
+            "llm_generated_locator_missing_failure_after": summary["llm_generated_locator_missing_failure_after"],
+            "llm_generated_locator_field_mismatch_failure_after": summary[
+                "llm_generated_locator_field_mismatch_failure_after"
+            ],
+            "text_locator_byte_equal_after": summary["text_locator_byte_equal_after"],
+            "text_locator_normalized_equal_after": summary["text_locator_normalized_equal_after"],
+        },
+        "rows": delta_rows,
+    }
+
+
+def triage_delta_row_metrics(row: Mapping[str, Any]) -> dict[str, Any]:
+    lane_b = as_mapping(as_mapping(row.get("lane_results")).get("live_llm_retrieval_topk"))
+    validation = as_mapping(lane_b.get("llm_generated_locator_validation"))
+    source_family = official.clean(row.get("source_family"))
+    search_unit_id = official.clean(row.get("denominator_search_unit_id"))
+    comparisons = as_mapping(as_mapping(validation.get("field_comparisons_by_search_unit_id")).get(search_unit_id))
+    if not comparisons:
+        comparisons = locator_field_comparisons_from_row(row, lane_b)
+    return {
+        "lane_b_failure_category": lane_b.get("failure_category"),
+        "strict_json_parse_failure": lane_b.get("failure_category") == "LLM_STRICT_JSON_PARSE_FAILURE",
+        "strict_json_schema_repair_applied": as_mapping(lane_b.get("strict_json_diagnostics")).get(
+            "schema_repair_applied"
+        )
+        is True,
+        "llm_generated_locator_copy_failure": validation.get("generated_by_llm") is True
+        and validation.get("ok") is not True,
+        "llm_generated_locator_field_mismatch_failure": bool(validation.get("mismatched_fields_by_search_unit_id")),
+        "llm_generated_locator_missing_failure": bool(
+            validation.get("missing_locator_for_search_unit_ids") or validation.get("missing_fields_by_search_unit_id")
+        ),
+        "pdf_source_pdf_path_byte_equal": field_comparison_bool(comparisons, "source_pdf_path", "byte_equal")
+        if source_family == "PDF"
+        else None,
+        "pdf_source_pdf_path_normalized_equal": field_comparison_bool(
+            comparisons,
+            "source_pdf_path",
+            "normalized_equal",
+        )
+        if source_family == "PDF"
+        else None,
+        "xlsx_row_label_byte_equal": field_comparison_bool(comparisons, "row_label", "byte_equal")
+        if source_family == "XLSX"
+        else None,
+        "xlsx_row_label_normalized_equal": field_comparison_bool(comparisons, "row_label", "normalized_equal")
+        if source_family == "XLSX"
+        else None,
+        "text_locator_present": text_locator_present(row, lane_b) if source_family == "TEXT" else None,
+        "text_locator_byte_equal": field_comparison_bool(comparisons, "text_locator", "byte_equal")
+        if source_family == "TEXT"
+        else None,
+        "text_locator_normalized_equal": field_comparison_bool(comparisons, "text_locator", "normalized_equal")
+        if source_family == "TEXT"
+        else None,
+        "answer_score": lane_b.get("answer_score"),
+        "citation_support_score": lane_b.get("citation_support_score"),
+    }
+
+
+def text_locator_present(row: Mapping[str, Any], lane: Mapping[str, Any]) -> bool:
+    source_family = official.clean(row.get("source_family"))
+    search_unit_id = official.clean(row.get("denominator_search_unit_id"))
+    for raw_locator in lane.get("llm_generated_citation_locators") or []:
+        if not isinstance(raw_locator, Mapping):
+            continue
+        locator = locator_from_citation_payload(raw_locator, source_family=source_family)
+        if official.clean(locator.get("search_unit_id")) == search_unit_id and locator.get("text_locator"):
+            return True
+    return False
+
+
+def field_comparison_bool(comparisons: Mapping[str, Any], field: str, key: str) -> bool | None:
+    comparison = as_mapping(comparisons.get(field))
+    if not comparison:
+        return None
+    value = comparison.get(key)
+    return value if isinstance(value, bool) else None
+
+
+def locator_field_comparisons_from_row(row: Mapping[str, Any], lane: Mapping[str, Any]) -> dict[str, Any]:
+    source_family = official.clean(row.get("source_family"))
+    search_unit_id = official.clean(row.get("denominator_search_unit_id"))
+    expected = as_mapping(row.get("denominator_locator"))
+    generated = {}
+    for raw_locator in lane.get("llm_generated_citation_locators") or []:
+        if not isinstance(raw_locator, Mapping):
+            continue
+        locator = locator_from_citation_payload(raw_locator, source_family=source_family)
+        if official.clean(locator.get("search_unit_id")) == search_unit_id:
+            generated = locator
+            break
+    if not generated:
+        return {}
+    return {
+        field: locator_field_copy_comparison(expected.get(field), generated.get(field))
+        for field in required_locator_fields(source_family)
+        if generated.get(field) not in (None, "", [])
+    }
+
+
+def render_v3_1_priority_1_5_strict_json_markdown(payload: Mapping[str, Any]) -> str:
+    lines = [
+        f"# {payload['run_id']}",
+        "",
+        "Diagnostic-only strict JSON raw-response summary for priority 1-5 parse-failure rows.",
+        "",
+        "| Query ID | Before | After | After repair | After raw SHA256 | After error |",
+        "|---|---|---|---:|---|---|",
+    ]
+    for row in payload.get("rows") or []:
+        before = row.get("before") or {}
+        after = row.get("after") or {}
+        lines.append(
+            "| `{}` | `{}` | `{}` | `{}` | `{}` | `{}` |".format(
+                row.get("query_id"),
+                before.get("failure_category"),
+                after.get("failure_category"),
+                after.get("schema_repair_applied"),
+                after.get("raw_response_sha256"),
+                official.clean(after.get("strict_json_error"))[:120],
+            )
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_v3_1_priority_1_5_triage_delta_markdown(payload: Mapping[str, Any]) -> str:
+    metrics = payload.get("summary_metrics") or {}
+    lines = [
+        f"# {payload['run_id']} Triage Delta",
+        "",
+        "Diagnostic-only delta for v3_1 priority ranks 1 through 5.",
+        "",
+        f"- Strict JSON parse failures: `{metrics.get('strict_json_parse_failure_before')}` -> `{metrics.get('strict_json_parse_failure_after')}`",
+        f"- Strict JSON schema repairs applied: `{metrics.get('strict_json_schema_repair_applied_count_before')}` -> `{metrics.get('strict_json_schema_repair_applied_count_after')}`",
+        f"- LLM-generated locator copy failures: `{metrics.get('llm_generated_locator_copy_failure_before')}` -> `{metrics.get('llm_generated_locator_copy_failure_after')}`",
+        f"- LLM-generated locator field mismatches: `{metrics.get('llm_generated_locator_field_mismatch_failure_before')}` -> `{metrics.get('llm_generated_locator_field_mismatch_failure_after')}`",
+        f"- LLM-generated locator missing-field/missing-locator failures: `{metrics.get('llm_generated_locator_missing_failure_before')}` -> `{metrics.get('llm_generated_locator_missing_failure_after')}`",
+        f"- PDF `source_pdf_path` mismatches: `{metrics.get('pdf_source_pdf_path_mismatch_before')}` -> `{metrics.get('pdf_source_pdf_path_mismatch_after')}`",
+        f"- XLSX `row_label` mismatches: `{metrics.get('xlsx_row_label_mismatch_before')}` -> `{metrics.get('xlsx_row_label_mismatch_after')}`",
+        "",
+        "| Query ID | Before lane B | After lane B | PDF path byte | XLSX row label byte |",
+        "|---|---|---|---:|---:|",
+    ]
+    for row in payload.get("rows") or []:
+        before = row.get("before") or {}
+        after = row.get("after") or {}
+        lines.append(
+            "| `{}` | `{}` | `{}` | `{}` | `{}` |".format(
+                row.get("query_id"),
+                before.get("lane_b_failure_category"),
+                after.get("lane_b_failure_category"),
+                after.get("pdf_source_pdf_path_byte_equal"),
+                after.get("xlsx_row_label_byte_equal"),
+            )
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_v3_1_text_locator_triage_delta_markdown(payload: Mapping[str, Any]) -> str:
+    metrics = payload.get("summary_metrics") or {}
+    lines = [
+        f"# {payload['run_id']} Triage Delta",
+        "",
+        "Diagnostic-only delta for the remaining TEXT locator residual.",
+        "",
+        f"- TEXT locator missing: `{metrics.get('text_locator_missing_count_before')}` -> `{metrics.get('text_locator_missing_count_after')}`",
+        f"- LLM-generated locator missing failures: `{metrics.get('llm_generated_locator_missing_failure_before')}` -> `{metrics.get('llm_generated_locator_missing_failure_after')}`",
+        f"- TEXT locator byte-equal after: `{metrics.get('text_locator_byte_equal_after')}`",
+        f"- TEXT locator normalized-equal after: `{metrics.get('text_locator_normalized_equal_after')}`",
+        "",
+        "| Query ID | Before lane B | After lane B | Text locator present | Byte equal | Normalized equal |",
+        "|---|---|---|---:|---:|---:|",
+    ]
+    for row in payload.get("rows") or []:
+        before = row.get("before") or {}
+        after = row.get("after") or {}
+        lines.append(
+            "| `{}` | `{}` | `{}` | `{}` | `{}` | `{}` |".format(
+                row.get("query_id"),
+                before.get("lane_b_failure_category"),
+                after.get("lane_b_failure_category"),
+                after.get("text_locator_present"),
+                after.get("text_locator_byte_equal"),
+                after.get("text_locator_normalized_equal"),
+            )
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_v3_1_text_locator_residual_summary_markdown(summary: Mapping[str, Any]) -> str:
+    return "\n".join(
+        [
+            f"# {summary['run_id']}",
+            "",
+            "- Diagnostic-only TEXT locator residual triage.",
+            f"- Target rows: `{summary.get('target_row_count')}`.",
+            f"- TEXT locator missing: `{summary.get('text_locator_missing_count_before')}` -> `{summary.get('text_locator_missing_count_after')}`.",
+            f"- LLM-generated locator missing failures: `{summary.get('llm_generated_locator_missing_failure_before')}` -> `{summary.get('llm_generated_locator_missing_failure_after')}`.",
+            f"- TEXT locator byte-equal after: `{summary.get('text_locator_byte_equal_after')}`.",
+            f"- TEXT locator normalized-equal after: `{summary.get('text_locator_normalized_equal_after')}`.",
+            f"- Promotion evidence: `{str(summary.get('promotion_evidence')).lower()}`.",
+            f"- Generation used expected/gold/supporting: `{summary.get('generation_used_expected_answer')}` / `{summary.get('generation_used_gold_fields')}` / `{summary.get('generation_used_supporting_evidence')}`.",
+            "",
+        ]
+    )
+
+
+def render_v3_1_1_post_triage_summary_markdown(summary: Mapping[str, Any]) -> str:
+    return "\n".join(
+        [
+            f"# {summary['run_id']}",
+            "",
+            "- Diagnostic-only 29-row post strict JSON / locator triage measurement.",
+            f"- Total rows: `{summary.get('total_denominator_rows')}`.",
+            f"- Rows by source family: `{json.dumps(summary.get('rows_by_source_family'), ensure_ascii=False, sort_keys=True)}`.",
+            f"- Lane counts: `{json.dumps(summary.get('lane_counts'), ensure_ascii=False, sort_keys=True)}`.",
+            f"- Strict JSON parse failures by lane: `{json.dumps(summary.get('strict_json_parse_failure_count_by_lane'), ensure_ascii=False, sort_keys=True)}`.",
+            f"- LLM-generated locator copy failures by lane: `{json.dumps(summary.get('llm_generated_locator_copy_failure_count_by_lane'), ensure_ascii=False, sort_keys=True)}`.",
+            f"- PDF source_pdf_path mismatches: `{summary.get('pdf_source_pdf_path_mismatch_count')}`.",
+            f"- XLSX row_label mismatches: `{summary.get('xlsx_row_label_mismatch_count')}`.",
+            f"- TEXT text_locator missing: `{summary.get('text_text_locator_missing_count')}`.",
+            f"- v3_1 PASS regressions: `{(summary.get('regression_from_v3_1_foundation') or {}).get('existing_pass_regression_count')}`.",
+            f"- Promotion evidence: `{str(summary.get('promotion_evidence')).lower()}`.",
+            "",
+        ]
+    )
+
+
+def build_v3_1_actual_response_audit_rows(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    run_id: str = V3_1_RUN_ID,
+) -> list[dict[str, Any]]:
     audit_rows: list[dict[str, Any]] = []
     for row in rows:
         lanes = row.get("lane_results") or {}
         audit_rows.append(
             {
-                "run_id": V3_1_RUN_ID,
+                "run_id": run_id,
                 "query_id": row.get("query_id"),
                 "source_family": row.get("source_family"),
                 "track": row.get("track"),
@@ -4511,6 +7185,11 @@ def build_v3_1_actual_response_audit_rows(rows: Sequence[Mapping[str, Any]]) -> 
                 },
                 "llm_generated_locator_validation": {
                     lane_name: lane.get("llm_generated_locator_validation")
+                    for lane_name, lane in lanes.items()
+                    if isinstance(lane, Mapping)
+                },
+                "strict_json_diagnostics": {
+                    lane_name: lane.get("strict_json_diagnostics")
                     for lane_name, lane in lanes.items()
                     if isinstance(lane, Mapping)
                 },
@@ -4619,6 +7298,7 @@ def build_v3_1_triage_queue(rows: Sequence[Mapping[str, Any]], *, summary: Mappi
                 "failing_lane_names": failing_lanes,
                 "passing_lane_names": passing_lanes,
                 "failure_category": category,
+                "primary_failure_category": category,
                 "reason": row_level_diagnosis(row),
                 "evidence_from_artifacts": {
                     "result_artifact": summary["artifact_paths"]["results_jsonl"],
@@ -4641,12 +7321,21 @@ def build_v3_1_triage_queue(rows: Sequence[Mapping[str, Any]], *, summary: Mappi
     items.sort(key=lambda item: (triage_priority_for_category(item["failure_category"]), official.clean(item["query_id"])))
     for index, item in enumerate(items, start=1):
         item["priority_rank"] = index
+    strict_json_or_locator_categories = {
+        "LLM_STRICT_JSON_PARSE_FAILURE",
+        "PDF_BBOX_LOCATOR_LOSS",
+        "XLSX_CELL_LOCATOR_LOSS",
+        "CITATION_PAYLOAD_SCHEMA_MISMATCH",
+    }
     return {
-        "schema_version": f"{V3_1_RUN_ID}_triage_queue_v1",
-        "run_id": V3_1_RUN_ID,
+        "schema_version": f"{summary['run_id']}_triage_queue_v1",
+        "run_id": summary["run_id"],
         "generated_at": summary["generated_at"],
         "diagnostic_only": True,
         "promotion_evidence": False,
+        "strict_json_or_locator_residual_count": sum(
+            1 for item in items if item["failure_category"] in strict_json_or_locator_categories
+        ),
         "items": items,
         "sorting_policy": [
             "infrastructure/schema/citation payload",
@@ -4851,6 +7540,70 @@ def render_v3_1_summary_markdown(summary: Mapping[str, Any]) -> str:
             "## Next Steps",
             "",
             f"`{summary.get('next_step_recommendation')}`",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_v3_1_priority_1_5_summary_markdown(summary: Mapping[str, Any]) -> str:
+    lines = [
+        f"# {summary['run_id']}",
+        "",
+        "## Purpose",
+        "",
+        "Diagnostic-only row-level rerun for v3_1 triage priorities 1 through 5, focused on strict JSON stability and LLM-generated locator copy stability.",
+        "",
+        "## Guardrails",
+        "",
+    ]
+    for key, value in sorted((summary.get("guardrails") or {}).items()):
+        lines.append(f"- `{key}`: `{str(value).lower()}`")
+    lines.extend(
+        [
+            "",
+            "## Before/After",
+            "",
+            "| Metric | Before | After |",
+            "|---|---:|---:|",
+            f"| Strict JSON parse failures | {summary.get('strict_json_parse_failure_before')} | {summary.get('strict_json_parse_failure_after')} |",
+            f"| Strict JSON schema repairs applied | {summary.get('strict_json_schema_repair_applied_count_before')} | {summary.get('strict_json_schema_repair_applied_count_after')} |",
+            f"| LLM-generated locator copy failures | {summary.get('llm_generated_locator_copy_failure_before')} | {summary.get('llm_generated_locator_copy_failure_after')} |",
+            f"| LLM-generated locator field mismatches | {summary.get('llm_generated_locator_field_mismatch_failure_before')} | {summary.get('llm_generated_locator_field_mismatch_failure_after')} |",
+            f"| LLM-generated locator missing-field/missing-locator failures | {summary.get('llm_generated_locator_missing_failure_before')} | {summary.get('llm_generated_locator_missing_failure_after')} |",
+            f"| PDF `source_pdf_path` mismatches | {summary.get('pdf_source_pdf_path_mismatch_before')} | {summary.get('pdf_source_pdf_path_mismatch_after')} |",
+            f"| XLSX `row_label` mismatches | {summary.get('xlsx_row_label_mismatch_before')} | {summary.get('xlsx_row_label_mismatch_after')} |",
+            "",
+            "## Metric Split",
+            "",
+            f"- Post-hoc payload locator preservation failures: `{summary.get('posthoc_payload_locator_preservation_failure_count')}`",
+            f"- LLM-generated locator copy failures: `{summary.get('llm_generated_locator_copy_failure_count')}`",
+            f"- LLM-generated locator field mismatches: `{summary.get('llm_generated_locator_field_mismatch_failure_after')}`",
+            f"- LLM-generated locator missing-field/missing-locator failures: `{summary.get('llm_generated_locator_missing_failure_after')}`",
+            "",
+            "## Score Interpretation",
+            "",
+            f"`{summary.get('score_interpretation')}`",
+            "",
+            "## Artifacts",
+            "",
+            f"- Results: `{summary['artifact_paths']['results_jsonl']}`",
+            f"- Strict JSON diagnostics: `{summary['artifact_paths']['strict_json_diagnostics_json']}`",
+            f"- Actual response audit: `{summary['artifact_paths']['actual_response_audit_jsonl']}`",
+            f"- Triage delta: `{summary['artifact_paths']['triage_delta_json']}`",
+            "",
+            "## What Is Not Decided",
+            "",
+            "- No expected answer, supporting evidence, relevance label, answerability label, or gold policy was changed.",
+            "- No silver set, promotion evidence, threshold tuning, winner selection, or promotion gate was created or run.",
+            "",
+            "## User Decisions Still Required",
+            "",
+            "- Expected answer changes.",
+            "- Supporting evidence changes.",
+            "- Relevance or answerability label changes.",
+            "- Gold policy changes.",
+            "- Silver/gold promotion decisions.",
             "",
         ]
     )
@@ -5664,7 +8417,13 @@ def blocked_failure_category(validation_errors: Sequence[str], agentic_status: M
 
 
 def build_failure_attribution(summary: Mapping[str, Any], rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    if summary["run_id"] == V3_1_RUN_ID:
+    if summary["run_id"] in {
+        V3_1_RUN_ID,
+        V3_1_PRIORITY_1_5_RUN_ID,
+        V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+        V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+        V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+    }:
         return build_v3_1_failure_attribution(summary, rows)
     row_attribution = [failure_attribution_for_row(row, summary=summary) for row in rows]
     primary_counts = dict(sorted(Counter(row["primary_attribution"] for row in row_attribution).items()))
@@ -5767,6 +8526,20 @@ def build_v3_1_failure_attribution(summary: Mapping[str, Any], rows: Sequence[Ma
                     for lane_name, lane in lanes.items()
                     if isinstance(lane, Mapping)
                 },
+                "llm_generated_locator_validation": {
+                    lane_name: lane.get("llm_generated_locator_validation")
+                    for lane_name, lane in lanes.items()
+                    if isinstance(lane, Mapping)
+                },
+                "strict_json_diagnostics": {
+                    lane_name: lane.get("strict_json_diagnostics")
+                    for lane_name, lane in lanes.items()
+                    if isinstance(lane, Mapping)
+                },
+                "answer_span_renderer_diagnostics": row.get("answer_span_renderer_diagnostics"),
+                "queue_priority_rank": row.get("queue_priority_rank"),
+                "first_batch_selected": row.get("first_batch_selected"),
+                "include_decision": row.get("include_decision"),
                 "generation_used_expected_answer": False,
                 "generation_used_supporting_evidence": False,
                 "generation_used_gold_fields": False,
@@ -5774,7 +8547,7 @@ def build_v3_1_failure_attribution(summary: Mapping[str, Any], rows: Sequence[Ma
             }
         )
     return {
-        "schema_version": f"{V3_1_RUN_ID}_failure_attribution_v1",
+        "schema_version": f"{summary['run_id']}_failure_attribution_v1",
         "run_id": summary["run_id"],
         "generated_at": summary["generated_at"],
         "measurement_classification": summary["measurement_classification"],
@@ -5944,10 +8717,34 @@ def append_status_event(path: Path, summary: Mapping[str, Any]) -> None:
         "guardrails": summary["guardrails"],
         "artifact_paths": summary["artifact_paths"],
     }
-    if summary["run_id"] == V3_1_RUN_ID:
+    if summary["run_id"] in {
+        V3_1_RUN_ID,
+        V3_1_PRIORITY_1_5_RUN_ID,
+        V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+        V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+        V3_1_2_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
+    }:
         event["lane_counts"] = summary.get("lane_counts")
         event["source_family_lane_counts"] = summary.get("source_family_lane_counts")
         event["rows_by_source_family"] = summary.get("rows_by_source_family")
+        if "strict_json_parse_failure_after" in summary:
+            event["strict_json_parse_failure_after"] = summary.get("strict_json_parse_failure_after")
+        if "llm_generated_locator_copy_failure_after" in summary:
+            event["llm_generated_locator_copy_failure_after"] = summary.get(
+                "llm_generated_locator_copy_failure_after"
+            )
+        if "strict_json_parse_failure_count_by_lane" in summary:
+            event["strict_json_parse_failure_count_by_lane"] = summary.get(
+                "strict_json_parse_failure_count_by_lane"
+            )
+        if "llm_generated_locator_copy_failure_count_by_lane" in summary:
+            event["llm_generated_locator_copy_failure_count_by_lane"] = summary.get(
+                "llm_generated_locator_copy_failure_count_by_lane"
+            )
+        if "answer_span_renderer_diagnostic_counts" in summary:
+            event["answer_span_renderer_diagnostic_counts"] = summary.get(
+                "answer_span_renderer_diagnostic_counts"
+            )
     path.parent.mkdir(parents=True, exist_ok=True)
     existing = []
     if path.exists():
@@ -6002,12 +8799,21 @@ def append_failure_attribution_event(path: Path, attribution: Mapping[str, Any])
         ),
         "baseline_comparison_is_model_quality_comparable": False,
         "guardrails": attribution.get("guardrails"),
+        "diagnostic_only": True,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
         "source_bound_official_denominator_index_design": attribution.get(
             "source_bound_official_denominator_index_design"
         ),
         "promotion_evidence": False,
     }
-    if attribution["run_id"] == V3_1_RUN_ID:
+    if attribution["run_id"] in {
+        V3_1_RUN_ID,
+        V3_1_PRIORITY_1_5_RUN_ID,
+        V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
+        V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+    }:
         event["failure_taxonomy"] = attribution.get("failure_taxonomy")
         event["lane_counts"] = attribution.get("lane_counts")
         event["source_family_lane_counts"] = attribution.get("source_family_lane_counts")
@@ -6037,6 +8843,12 @@ def append_failure_attribution_event(path: Path, attribution: Mapping[str, Any])
 def render_markdown(summary: Mapping[str, Any]) -> str:
     if summary["run_id"] == V3_1_RUN_ID:
         return render_v3_1_summary_markdown(summary)
+    if summary["run_id"] == V3_1_PRIORITY_1_5_RUN_ID:
+        return render_v3_1_priority_1_5_summary_markdown(summary)
+    if summary["run_id"] == V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID:
+        return render_v3_1_text_locator_residual_summary_markdown(summary)
+    if summary["run_id"] == V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID:
+        return render_v3_1_1_post_triage_summary_markdown(summary)
     index_dependency = summary["non_production_rag_index_dependency"]
     build_metadata = (
         index_dependency.get("build_metadata", {})

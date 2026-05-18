@@ -1,0 +1,2207 @@
+{
+  "diagnostic_only": true,
+  "generated_at": "2026-05-18T10:32:54.134318+00:00",
+  "items": [
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "su_06f074cdb73bdab41debb6167be08880",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+          "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH",
+          "v3_primary_replay": "LLM_TRUE_PARTIAL_SYNTHESIS"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_06f074cdb73bdab41debb6167be08880": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_06f074cdb73bdab41debb6167be08880"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_06f074cdb73bdab41debb6167be08880": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "474e24d5441aeacd",
+                  "expected_sha256": "8c0dc6fc8fadf3fff0e135c2a740fa2ae460304229f2f6a9e57adcf5b48060a3",
+                  "generated_excerpt": "474e24d5441aeacd",
+                  "generated_sha256": "8c0dc6fc8fadf3fff0e135c2a740fa2ae460304229f2f6a9e57adcf5b48060a3",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_06f074cdb73bdab41debb6167be08880",
+                  "expected_sha256": "03716227702b8b29108fddafd3988af0ebad9c9e234b965f4fc14b9c41a74d57",
+                  "generated_excerpt": "su_06f074cdb73bdab41debb6167be08880",
+                  "generated_sha256": "03716227702b8b29108fddafd3988af0ebad9c9e234b965f4fc14b9c41a74d57",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': '4977eb3ffeb4cf67', 'line_number': 110673, 'section_id': 'dac284755f8094ee', 'section_path': ['토오노텐구닌자단', '유우야키'], 'section_type': 'character', 'source_corpus_path': '...",
+                  "expected_sha256": "92b04afb389cbe4f835d594b02eec3b7d22e90a08f0ee883297a35f856b4de2c",
+                  "generated_excerpt": "{'chunk_id': '4977eb3ffeb4cf67', 'line_number': 110673, 'section_id': 'dac284755f8094ee', 'section_path': ['토오노텐구닌자단', '유우야키'], 'section_type': 'character', 'source_corpus_path': '...",
+                  "generated_sha256": "92b04afb389cbe4f835d594b02eec3b7d22e90a08f0ee883297a35f856b4de2c",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          },
+          "live_llm_retrieval_topk": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_06f074cdb73bdab41debb6167be08880": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_06f074cdb73bdab41debb6167be08880"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_06f074cdb73bdab41debb6167be08880": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "474e24d5441aeacd",
+                  "expected_sha256": "8c0dc6fc8fadf3fff0e135c2a740fa2ae460304229f2f6a9e57adcf5b48060a3",
+                  "generated_excerpt": "474e24d5441aeacd",
+                  "generated_sha256": "8c0dc6fc8fadf3fff0e135c2a740fa2ae460304229f2f6a9e57adcf5b48060a3",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_06f074cdb73bdab41debb6167be08880",
+                  "expected_sha256": "03716227702b8b29108fddafd3988af0ebad9c9e234b965f4fc14b9c41a74d57",
+                  "generated_excerpt": "su_06f074cdb73bdab41debb6167be08880",
+                  "generated_sha256": "03716227702b8b29108fddafd3988af0ebad9c9e234b965f4fc14b9c41a74d57",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': '4977eb3ffeb4cf67', 'line_number': 110673, 'section_id': 'dac284755f8094ee', 'section_path': ['토오노텐구닌자단', '유우야키'], 'section_type': 'character', 'source_corpus_path': '...",
+                  "expected_sha256": "92b04afb389cbe4f835d594b02eec3b7d22e90a08f0ee883297a35f856b4de2c",
+                  "generated_excerpt": "{'chunk_id': '4977eb3ffeb4cf67', 'line_number': 110673, 'section_id': 'dac284755f8094ee', 'section_path': ['토오노텐구닌자단', '유우야키'], 'section_type': 'character', 'source_corpus_path': '...",
+                  "generated_sha256": "92b04afb389cbe4f835d594b02eec3b7d22e90a08f0ee883297a35f856b4de2c",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          },
+          "v3_primary_replay": {
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_06f074cdb73bdab41debb6167be08880"
+            ],
+            "generated_by_llm": false,
+            "note": "Lane A replays v3 primary output; PDF/XLSX locator payloads are adapter retained, not LLM-generated.",
+            "ok": null,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "v3_primary_replay",
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_TRUE_PARTIAL_SYNTHESIS",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [],
+      "primary_failure_category": "LLM_TRUE_PARTIAL_SYNTHESIS",
+      "priority_rank": 1,
+      "query_id": "text_namu_v2_0012",
+      "reason": "failing lanes require row-level triage: v3_primary_replay:LLM_TRUE_PARTIAL_SYNTHESIS, live_llm_retrieval_topk:LLM_EXPECTED_SPAN_MISMATCH, live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "prompt_answer_renderer_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "TEXT",
+      "track": "text_namu_v2_1"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "su_47ded21867e4af7502f907c61048928e",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+          "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH",
+          "v3_primary_replay": "LLM_TRUE_PARTIAL_SYNTHESIS"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_47ded21867e4af7502f907c61048928e": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_47ded21867e4af7502f907c61048928e"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_47ded21867e4af7502f907c61048928e": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "ffa9998ff6067ea2",
+                  "expected_sha256": "6ec91d710eea424ccc07df863725b9776a53ef2e5142a18d581f3fd19998726c",
+                  "generated_excerpt": "ffa9998ff6067ea2",
+                  "generated_sha256": "6ec91d710eea424ccc07df863725b9776a53ef2e5142a18d581f3fd19998726c",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_47ded21867e4af7502f907c61048928e",
+                  "expected_sha256": "cf03a0ba1782fccd67c5006fe397c42896148b646c5763417e16aee3f774192a",
+                  "generated_excerpt": "su_47ded21867e4af7502f907c61048928e",
+                  "generated_sha256": "cf03a0ba1782fccd67c5006fe397c42896148b646c5763417e16aee3f774192a",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': '98f5315b62c0282c', 'line_number': 79570, 'section_id': '5539e9167b496cdc', 'section_path': ['등장인물'], 'section_type': 'character', 'source_corpus_path': 'ai/eval/corpo...",
+                  "expected_sha256": "39f58c247789551bc840a1cf6c290b56264472c2865420527527d2d1cbba4355",
+                  "generated_excerpt": "{'chunk_id': '98f5315b62c0282c', 'line_number': 79570, 'section_id': '5539e9167b496cdc', 'section_path': ['등장인물'], 'section_type': 'character', 'source_corpus_path': 'ai/eval/corpo...",
+                  "generated_sha256": "39f58c247789551bc840a1cf6c290b56264472c2865420527527d2d1cbba4355",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          },
+          "live_llm_retrieval_topk": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_47ded21867e4af7502f907c61048928e": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_47ded21867e4af7502f907c61048928e"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_47ded21867e4af7502f907c61048928e": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "ffa9998ff6067ea2",
+                  "expected_sha256": "6ec91d710eea424ccc07df863725b9776a53ef2e5142a18d581f3fd19998726c",
+                  "generated_excerpt": "ffa9998ff6067ea2",
+                  "generated_sha256": "6ec91d710eea424ccc07df863725b9776a53ef2e5142a18d581f3fd19998726c",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_47ded21867e4af7502f907c61048928e",
+                  "expected_sha256": "cf03a0ba1782fccd67c5006fe397c42896148b646c5763417e16aee3f774192a",
+                  "generated_excerpt": "su_47ded21867e4af7502f907c61048928e",
+                  "generated_sha256": "cf03a0ba1782fccd67c5006fe397c42896148b646c5763417e16aee3f774192a",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': '98f5315b62c0282c', 'line_number': 79570, 'section_id': '5539e9167b496cdc', 'section_path': ['등장인물'], 'section_type': 'character', 'source_corpus_path': 'ai/eval/corpo...",
+                  "expected_sha256": "39f58c247789551bc840a1cf6c290b56264472c2865420527527d2d1cbba4355",
+                  "generated_excerpt": "{'chunk_id': '98f5315b62c0282c', 'line_number': 79570, 'section_id': '5539e9167b496cdc', 'section_path': ['등장인물'], 'section_type': 'character', 'source_corpus_path': 'ai/eval/corpo...",
+                  "generated_sha256": "39f58c247789551bc840a1cf6c290b56264472c2865420527527d2d1cbba4355",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          },
+          "v3_primary_replay": {
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_47ded21867e4af7502f907c61048928e"
+            ],
+            "generated_by_llm": false,
+            "note": "Lane A replays v3 primary output; PDF/XLSX locator payloads are adapter retained, not LLM-generated.",
+            "ok": null,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "v3_primary_replay",
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_TRUE_PARTIAL_SYNTHESIS",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [],
+      "primary_failure_category": "LLM_TRUE_PARTIAL_SYNTHESIS",
+      "priority_rank": 2,
+      "query_id": "text_namu_v2_0014",
+      "reason": "failing lanes require row-level triage: v3_primary_replay:LLM_TRUE_PARTIAL_SYNTHESIS, live_llm_retrieval_topk:LLM_EXPECTED_SPAN_MISMATCH, live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "prompt_answer_renderer_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "TEXT",
+      "track": "text_namu_v2_1"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "su_e3812ae37373195b931ad97018d62717",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+          "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH",
+          "v3_primary_replay": "LLM_TRUE_PARTIAL_SYNTHESIS"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_e3812ae37373195b931ad97018d62717": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_e3812ae37373195b931ad97018d62717"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_e3812ae37373195b931ad97018d62717": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "73557605809705ab",
+                  "expected_sha256": "f99b2c8b7668404e476e8d6d7fa26805c6ac0b6cd1d9651da9e88bb35930ef85",
+                  "generated_excerpt": "73557605809705ab",
+                  "generated_sha256": "f99b2c8b7668404e476e8d6d7fa26805c6ac0b6cd1d9651da9e88bb35930ef85",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_e3812ae37373195b931ad97018d62717",
+                  "expected_sha256": "bdb3ce02d57c35870fb274fca94a187b3d399f1aa981dd06f010a9378d8d3a8f",
+                  "generated_excerpt": "su_e3812ae37373195b931ad97018d62717",
+                  "generated_sha256": "bdb3ce02d57c35870fb274fca94a187b3d399f1aa981dd06f010a9378d8d3a8f",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': 'c154cb887de9efe4', 'line_number': 112697, 'section_id': '6d9b43f23617a1c0', 'section_path': ['등장 가족', '실크 고양이 가족'], 'section_type': 'setting', 'source_corpus_path': '...",
+                  "expected_sha256": "063d0c79ff88dce4bc71dddc0fac32cb4e0610207459c11afdd43d97ae3636f0",
+                  "generated_excerpt": "{'chunk_id': 'c154cb887de9efe4', 'line_number': 112697, 'section_id': '6d9b43f23617a1c0', 'section_path': ['등장 가족', '실크 고양이 가족'], 'section_type': 'setting', 'source_corpus_path': '...",
+                  "generated_sha256": "063d0c79ff88dce4bc71dddc0fac32cb4e0610207459c11afdd43d97ae3636f0",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          },
+          "live_llm_retrieval_topk": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_e3812ae37373195b931ad97018d62717": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_e3812ae37373195b931ad97018d62717"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_e3812ae37373195b931ad97018d62717": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "73557605809705ab",
+                  "expected_sha256": "f99b2c8b7668404e476e8d6d7fa26805c6ac0b6cd1d9651da9e88bb35930ef85",
+                  "generated_excerpt": "73557605809705ab",
+                  "generated_sha256": "f99b2c8b7668404e476e8d6d7fa26805c6ac0b6cd1d9651da9e88bb35930ef85",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_e3812ae37373195b931ad97018d62717",
+                  "expected_sha256": "bdb3ce02d57c35870fb274fca94a187b3d399f1aa981dd06f010a9378d8d3a8f",
+                  "generated_excerpt": "su_e3812ae37373195b931ad97018d62717",
+                  "generated_sha256": "bdb3ce02d57c35870fb274fca94a187b3d399f1aa981dd06f010a9378d8d3a8f",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': 'c154cb887de9efe4', 'line_number': 112697, 'section_id': '6d9b43f23617a1c0', 'section_path': ['등장 가족', '실크 고양이 가족'], 'section_type': 'setting', 'source_corpus_path': '...",
+                  "expected_sha256": "063d0c79ff88dce4bc71dddc0fac32cb4e0610207459c11afdd43d97ae3636f0",
+                  "generated_excerpt": "{'chunk_id': 'c154cb887de9efe4', 'line_number': 112697, 'section_id': '6d9b43f23617a1c0', 'section_path': ['등장 가족', '실크 고양이 가족'], 'section_type': 'setting', 'source_corpus_path': '...",
+                  "generated_sha256": "063d0c79ff88dce4bc71dddc0fac32cb4e0610207459c11afdd43d97ae3636f0",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          },
+          "v3_primary_replay": {
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_e3812ae37373195b931ad97018d62717"
+            ],
+            "generated_by_llm": false,
+            "note": "Lane A replays v3 primary output; PDF/XLSX locator payloads are adapter retained, not LLM-generated.",
+            "ok": null,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "v3_primary_replay",
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_TRUE_PARTIAL_SYNTHESIS",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [],
+      "primary_failure_category": "LLM_TRUE_PARTIAL_SYNTHESIS",
+      "priority_rank": 3,
+      "query_id": "text_namu_v2_0017",
+      "reason": "failing lanes require row-level triage: v3_primary_replay:LLM_TRUE_PARTIAL_SYNTHESIS, live_llm_retrieval_topk:LLM_EXPECTED_SPAN_MISMATCH, live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "prompt_answer_renderer_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "TEXT",
+      "track": "text_namu_v2_1"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+          "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH",
+          "v3_primary_replay": "LLM_TRUE_PARTIAL_SYNTHESIS"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "4035db0b8289111a",
+                  "expected_sha256": "37bd873499b5cb9d17c172c0d1e4bada1af83bccf7f3b668ff15f1dc4a4f2dad",
+                  "generated_excerpt": "4035db0b8289111a",
+                  "generated_sha256": "37bd873499b5cb9d17c172c0d1e4bada1af83bccf7f3b668ff15f1dc4a4f2dad",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce",
+                  "expected_sha256": "95333e31cbd82ccea46cd85bac0fd31cdfcfb7131142d94bf6059e188d2a1213",
+                  "generated_excerpt": "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce",
+                  "generated_sha256": "95333e31cbd82ccea46cd85bac0fd31cdfcfb7131142d94bf6059e188d2a1213",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': 'b6212abe489bd65a', 'line_number': 96481, 'section_id': 'd462e796db6f63c2', 'section_path': ['스토리', '과거로 돌아간 후'], 'section_type': 'synopsis', 'source_corpus_path': 'ai...",
+                  "expected_sha256": "d9a950dc95eff25a449701064296923ad1e97052d7ff27cd62f32bf19f249574",
+                  "generated_excerpt": "{'chunk_id': 'b6212abe489bd65a', 'line_number': 96481, 'section_id': 'd462e796db6f63c2', 'section_path': ['스토리', '과거로 돌아간 후'], 'section_type': 'synopsis', 'source_corpus_path': 'ai...",
+                  "generated_sha256": "d9a950dc95eff25a449701064296923ad1e97052d7ff27cd62f32bf19f249574",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          },
+          "live_llm_retrieval_topk": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "4035db0b8289111a",
+                  "expected_sha256": "37bd873499b5cb9d17c172c0d1e4bada1af83bccf7f3b668ff15f1dc4a4f2dad",
+                  "generated_excerpt": "4035db0b8289111a",
+                  "generated_sha256": "37bd873499b5cb9d17c172c0d1e4bada1af83bccf7f3b668ff15f1dc4a4f2dad",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce",
+                  "expected_sha256": "95333e31cbd82ccea46cd85bac0fd31cdfcfb7131142d94bf6059e188d2a1213",
+                  "generated_excerpt": "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce",
+                  "generated_sha256": "95333e31cbd82ccea46cd85bac0fd31cdfcfb7131142d94bf6059e188d2a1213",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': 'b6212abe489bd65a', 'line_number': 96481, 'section_id': 'd462e796db6f63c2', 'section_path': ['스토리', '과거로 돌아간 후'], 'section_type': 'synopsis', 'source_corpus_path': 'ai...",
+                  "expected_sha256": "d9a950dc95eff25a449701064296923ad1e97052d7ff27cd62f32bf19f249574",
+                  "generated_excerpt": "{'chunk_id': 'b6212abe489bd65a', 'line_number': 96481, 'section_id': 'd462e796db6f63c2', 'section_path': ['스토리', '과거로 돌아간 후'], 'section_type': 'synopsis', 'source_corpus_path': 'ai...",
+                  "generated_sha256": "d9a950dc95eff25a449701064296923ad1e97052d7ff27cd62f32bf19f249574",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          },
+          "v3_primary_replay": {
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_6d48d1ba9fa1ad85f5a5e84f2b77d0ce"
+            ],
+            "generated_by_llm": false,
+            "note": "Lane A replays v3 primary output; PDF/XLSX locator payloads are adapter retained, not LLM-generated.",
+            "ok": null,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "v3_primary_replay",
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_TRUE_PARTIAL_SYNTHESIS",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [],
+      "primary_failure_category": "LLM_TRUE_PARTIAL_SYNTHESIS",
+      "priority_rank": 4,
+      "query_id": "text_namu_v2_0077",
+      "reason": "failing lanes require row-level triage: v3_primary_replay:LLM_TRUE_PARTIAL_SYNTHESIS, live_llm_retrieval_topk:LLM_EXPECTED_SPAN_MISMATCH, live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "prompt_answer_renderer_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "TEXT",
+      "track": "text_namu_v2_1"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "su_4fe260722d1f2e526ccd32a465f737bb",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+          "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH",
+          "v3_primary_replay": "LLM_TRUE_PARTIAL_SYNTHESIS"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_4fe260722d1f2e526ccd32a465f737bb": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_4fe260722d1f2e526ccd32a465f737bb"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_4fe260722d1f2e526ccd32a465f737bb": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "214902951f6edb9e",
+                  "expected_sha256": "567ba89ba5cf2d4abf9f3a429007b2a313dcd968dec14e1eb55f987ed0f9e9ed",
+                  "generated_excerpt": "214902951f6edb9e",
+                  "generated_sha256": "567ba89ba5cf2d4abf9f3a429007b2a313dcd968dec14e1eb55f987ed0f9e9ed",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_4fe260722d1f2e526ccd32a465f737bb",
+                  "expected_sha256": "39851f07873c24fb0213f1cb3c0b204ba828ed1b5dcd958bda34c984b7fc489c",
+                  "generated_excerpt": "su_4fe260722d1f2e526ccd32a465f737bb",
+                  "generated_sha256": "39851f07873c24fb0213f1cb3c0b204ba828ed1b5dcd958bda34c984b7fc489c",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': '46f4df85eb6afb34', 'line_number': 41013, 'section_id': '9aeb31447d88d471', 'section_path': ['개요'], 'section_type': 'summary', 'source_corpus_path': 'ai/eval/corpora/n...",
+                  "expected_sha256": "4780ba05961728f8b824f6021ec6e7ef4e32edd8a0644cf940e8ccbe5b8fcac3",
+                  "generated_excerpt": "{'chunk_id': '46f4df85eb6afb34', 'line_number': 41013, 'section_id': '9aeb31447d88d471', 'section_path': ['개요'], 'section_type': 'summary', 'source_corpus_path': 'ai/eval/corpora/n...",
+                  "generated_sha256": "4780ba05961728f8b824f6021ec6e7ef4e32edd8a0644cf940e8ccbe5b8fcac3",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          },
+          "live_llm_retrieval_topk": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_4fe260722d1f2e526ccd32a465f737bb": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_4fe260722d1f2e526ccd32a465f737bb"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_4fe260722d1f2e526ccd32a465f737bb": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "214902951f6edb9e",
+                  "expected_sha256": "567ba89ba5cf2d4abf9f3a429007b2a313dcd968dec14e1eb55f987ed0f9e9ed",
+                  "generated_excerpt": "214902951f6edb9e",
+                  "generated_sha256": "567ba89ba5cf2d4abf9f3a429007b2a313dcd968dec14e1eb55f987ed0f9e9ed",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_4fe260722d1f2e526ccd32a465f737bb",
+                  "expected_sha256": "39851f07873c24fb0213f1cb3c0b204ba828ed1b5dcd958bda34c984b7fc489c",
+                  "generated_excerpt": "su_4fe260722d1f2e526ccd32a465f737bb",
+                  "generated_sha256": "39851f07873c24fb0213f1cb3c0b204ba828ed1b5dcd958bda34c984b7fc489c",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': '46f4df85eb6afb34', 'line_number': 41013, 'section_id': '9aeb31447d88d471', 'section_path': ['개요'], 'section_type': 'summary', 'source_corpus_path': 'ai/eval/corpora/n...",
+                  "expected_sha256": "4780ba05961728f8b824f6021ec6e7ef4e32edd8a0644cf940e8ccbe5b8fcac3",
+                  "generated_excerpt": "{'chunk_id': '46f4df85eb6afb34', 'line_number': 41013, 'section_id': '9aeb31447d88d471', 'section_path': ['개요'], 'section_type': 'summary', 'source_corpus_path': 'ai/eval/corpora/n...",
+                  "generated_sha256": "4780ba05961728f8b824f6021ec6e7ef4e32edd8a0644cf940e8ccbe5b8fcac3",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          },
+          "v3_primary_replay": {
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_4fe260722d1f2e526ccd32a465f737bb"
+            ],
+            "generated_by_llm": false,
+            "note": "Lane A replays v3 primary output; PDF/XLSX locator payloads are adapter retained, not LLM-generated.",
+            "ok": null,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "v3_primary_replay",
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_TRUE_PARTIAL_SYNTHESIS",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [],
+      "primary_failure_category": "LLM_TRUE_PARTIAL_SYNTHESIS",
+      "priority_rank": 5,
+      "query_id": "text_namu_v2_0084",
+      "reason": "failing lanes require row-level triage: v3_primary_replay:LLM_TRUE_PARTIAL_SYNTHESIS, live_llm_retrieval_topk:LLM_EXPECTED_SPAN_MISMATCH, live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "prompt_answer_renderer_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "TEXT",
+      "track": "text_namu_v2_1"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "7bf516bf-2a17-4303-86d8-3cffaa04846e",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+          "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": false,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {},
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "7bf516bf-2a17-4303-86d8-3cffaa04846e"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "7bf516bf-2a17-4303-86d8-3cffaa04846e": {
+                "bbox": {
+                  "byte_equal": true,
+                  "expected_excerpt": "[63.65, 121.56, 227.84, 131.77]",
+                  "expected_sha256": "6b9ea5580be78e4672d63e8fcb0505c03337b329205151608b781135a8638b18",
+                  "generated_excerpt": "[63.65, 121.56, 227.84, 131.77]",
+                  "generated_sha256": "6b9ea5580be78e4672d63e8fcb0505c03337b329205151608b781135a8638b18",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_fe2470815512a395",
+                  "expected_sha256": "22f7a06ff8b2ac2a15028358a54531ea10626d35059f629981a27e55a6d9672e",
+                  "generated_excerpt": "docv_fe2470815512a395",
+                  "generated_sha256": "22f7a06ff8b2ac2a15028358a54531ea10626d35059f629981a27e55a6d9672e",
+                  "normalized_equal": true
+                },
+                "page": {
+                  "byte_equal": true,
+                  "expected_excerpt": "8",
+                  "expected_sha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+                  "generated_excerpt": "8",
+                  "generated_sha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+                  "normalized_equal": true
+                },
+                "physical_page_index": {
+                  "byte_equal": true,
+                  "expected_excerpt": "7",
+                  "expected_sha256": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451",
+                  "generated_excerpt": "7",
+                  "generated_sha256": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451",
+                  "normalized_equal": true
+                },
+                "region_type": {
+                  "byte_equal": true,
+                  "expected_excerpt": "paragraph",
+                  "expected_sha256": "3139a3f47ead3163683921bcdea5677614ea57cccdf4b6fc968983220e5fc270",
+                  "generated_excerpt": "paragraph",
+                  "generated_sha256": "3139a3f47ead3163683921bcdea5677614ea57cccdf4b6fc968983220e5fc270",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "7bf516bf-2a17-4303-86d8-3cffaa04846e",
+                  "expected_sha256": "64f893275eec3fd349ed29c8dba556946146794b9ba9b1ed180045e7f4846593",
+                  "generated_excerpt": "7bf516bf-2a17-4303-86d8-3cffaa04846e",
+                  "generated_sha256": "64f893275eec3fd349ed29c8dba556946146794b9ba9b1ed180045e7f4846593",
+                  "normalized_equal": true
+                },
+                "source_pdf_path": {
+                  "byte_equal": true,
+                  "expected_excerpt": "local-storage/276e2d37-7c54-4d23-8d52-1a2c5a7ea1d9/input_file/9acfa9e6-36ff-4217-a212-c5688c1e88f2-2021_03_recent_economic_trends.pdf",
+                  "expected_sha256": "50aace9d06654744d470ac56dd6fc358406414801f334f4baa807ca97519b3c0",
+                  "generated_excerpt": "local-storage/276e2d37-7c54-4d23-8d52-1a2c5a7ea1d9/input_file/9acfa9e6-36ff-4217-a212-c5688c1e88f2-2021_03_recent_economic_trends.pdf",
+                  "generated_sha256": "50aace9d06654744d470ac56dd6fc358406414801f334f4baa807ca97519b3c0",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "source_pdf_path",
+              "page",
+              "physical_page_index",
+              "bbox",
+              "region_type",
+              "search_unit_id",
+              "document_version_id"
+            ],
+            "source_family": "PDF"
+          },
+          "live_llm_retrieval_topk": {
+            "canonical_locator_copy_repair": {
+              "applied": false,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {},
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "7bf516bf-2a17-4303-86d8-3cffaa04846e"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "7bf516bf-2a17-4303-86d8-3cffaa04846e": {
+                "bbox": {
+                  "byte_equal": true,
+                  "expected_excerpt": "[63.65, 121.56, 227.84, 131.77]",
+                  "expected_sha256": "6b9ea5580be78e4672d63e8fcb0505c03337b329205151608b781135a8638b18",
+                  "generated_excerpt": "[63.65, 121.56, 227.84, 131.77]",
+                  "generated_sha256": "6b9ea5580be78e4672d63e8fcb0505c03337b329205151608b781135a8638b18",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_fe2470815512a395",
+                  "expected_sha256": "22f7a06ff8b2ac2a15028358a54531ea10626d35059f629981a27e55a6d9672e",
+                  "generated_excerpt": "docv_fe2470815512a395",
+                  "generated_sha256": "22f7a06ff8b2ac2a15028358a54531ea10626d35059f629981a27e55a6d9672e",
+                  "normalized_equal": true
+                },
+                "page": {
+                  "byte_equal": true,
+                  "expected_excerpt": "8",
+                  "expected_sha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+                  "generated_excerpt": "8",
+                  "generated_sha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+                  "normalized_equal": true
+                },
+                "physical_page_index": {
+                  "byte_equal": true,
+                  "expected_excerpt": "7",
+                  "expected_sha256": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451",
+                  "generated_excerpt": "7",
+                  "generated_sha256": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451",
+                  "normalized_equal": true
+                },
+                "region_type": {
+                  "byte_equal": true,
+                  "expected_excerpt": "paragraph",
+                  "expected_sha256": "3139a3f47ead3163683921bcdea5677614ea57cccdf4b6fc968983220e5fc270",
+                  "generated_excerpt": "paragraph",
+                  "generated_sha256": "3139a3f47ead3163683921bcdea5677614ea57cccdf4b6fc968983220e5fc270",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "7bf516bf-2a17-4303-86d8-3cffaa04846e",
+                  "expected_sha256": "64f893275eec3fd349ed29c8dba556946146794b9ba9b1ed180045e7f4846593",
+                  "generated_excerpt": "7bf516bf-2a17-4303-86d8-3cffaa04846e",
+                  "generated_sha256": "64f893275eec3fd349ed29c8dba556946146794b9ba9b1ed180045e7f4846593",
+                  "normalized_equal": true
+                },
+                "source_pdf_path": {
+                  "byte_equal": true,
+                  "expected_excerpt": "local-storage/276e2d37-7c54-4d23-8d52-1a2c5a7ea1d9/input_file/9acfa9e6-36ff-4217-a212-c5688c1e88f2-2021_03_recent_economic_trends.pdf",
+                  "expected_sha256": "50aace9d06654744d470ac56dd6fc358406414801f334f4baa807ca97519b3c0",
+                  "generated_excerpt": "local-storage/276e2d37-7c54-4d23-8d52-1a2c5a7ea1d9/input_file/9acfa9e6-36ff-4217-a212-c5688c1e88f2-2021_03_recent_economic_trends.pdf",
+                  "generated_sha256": "50aace9d06654744d470ac56dd6fc358406414801f334f4baa807ca97519b3c0",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "source_pdf_path",
+              "page",
+              "physical_page_index",
+              "bbox",
+              "region_type",
+              "search_unit_id",
+              "document_version_id"
+            ],
+            "source_family": "PDF"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [
+        "v3_primary_replay"
+      ],
+      "primary_failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "priority_rank": 6,
+      "query_id": "gq_auto_010",
+      "reason": "failing lanes require row-level triage: live_llm_retrieval_topk:LLM_EXPECTED_SPAN_MISMATCH, live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "row_level_answer_span_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "PDF",
+      "track": "pdf_business_ocr_mm"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "64360248-5d63-43bb-a9b2-5dedbea3df84",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": false,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {},
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "64360248-5d63-43bb-a9b2-5dedbea3df84"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "64360248-5d63-43bb-a9b2-5dedbea3df84": {
+                "bbox": {
+                  "byte_equal": true,
+                  "expected_excerpt": "[82.35, 150.44, 313.91, 162.17]",
+                  "expected_sha256": "ae50279eab38254779684cf97762ea401fdda6cdb1df18d9ff476462035a1955",
+                  "generated_excerpt": "[82.35, 150.44, 313.91, 162.17]",
+                  "generated_sha256": "ae50279eab38254779684cf97762ea401fdda6cdb1df18d9ff476462035a1955",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_fe2470815512a395",
+                  "expected_sha256": "22f7a06ff8b2ac2a15028358a54531ea10626d35059f629981a27e55a6d9672e",
+                  "generated_excerpt": "docv_fe2470815512a395",
+                  "generated_sha256": "22f7a06ff8b2ac2a15028358a54531ea10626d35059f629981a27e55a6d9672e",
+                  "normalized_equal": true
+                },
+                "page": {
+                  "byte_equal": true,
+                  "expected_excerpt": "5",
+                  "expected_sha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+                  "generated_excerpt": "5",
+                  "generated_sha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+                  "normalized_equal": true
+                },
+                "physical_page_index": {
+                  "byte_equal": true,
+                  "expected_excerpt": "4",
+                  "expected_sha256": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+                  "generated_excerpt": "4",
+                  "generated_sha256": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+                  "normalized_equal": true
+                },
+                "region_type": {
+                  "byte_equal": true,
+                  "expected_excerpt": "paragraph",
+                  "expected_sha256": "3139a3f47ead3163683921bcdea5677614ea57cccdf4b6fc968983220e5fc270",
+                  "generated_excerpt": "paragraph",
+                  "generated_sha256": "3139a3f47ead3163683921bcdea5677614ea57cccdf4b6fc968983220e5fc270",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "64360248-5d63-43bb-a9b2-5dedbea3df84",
+                  "expected_sha256": "fcfb766e7b5b03fbdc67ef0856c0fb431f369fed7a3bf340d3364f1bad991b36",
+                  "generated_excerpt": "64360248-5d63-43bb-a9b2-5dedbea3df84",
+                  "generated_sha256": "fcfb766e7b5b03fbdc67ef0856c0fb431f369fed7a3bf340d3364f1bad991b36",
+                  "normalized_equal": true
+                },
+                "source_pdf_path": {
+                  "byte_equal": true,
+                  "expected_excerpt": "local-storage/276e2d37-7c54-4d23-8d52-1a2c5a7ea1d9/input_file/9acfa9e6-36ff-4217-a212-c5688c1e88f2-2021_03_recent_economic_trends.pdf",
+                  "expected_sha256": "50aace9d06654744d470ac56dd6fc358406414801f334f4baa807ca97519b3c0",
+                  "generated_excerpt": "local-storage/276e2d37-7c54-4d23-8d52-1a2c5a7ea1d9/input_file/9acfa9e6-36ff-4217-a212-c5688c1e88f2-2021_03_recent_economic_trends.pdf",
+                  "generated_sha256": "50aace9d06654744d470ac56dd6fc358406414801f334f4baa807ca97519b3c0",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "source_pdf_path",
+              "page",
+              "physical_page_index",
+              "bbox",
+              "region_type",
+              "search_unit_id",
+              "document_version_id"
+            ],
+            "source_family": "PDF"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [
+        "v3_primary_replay",
+        "live_llm_retrieval_topk"
+      ],
+      "primary_failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "priority_rank": 7,
+      "query_id": "gq_auto_024",
+      "reason": "failing lanes require row-level triage: live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "row_level_answer_span_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "PDF",
+      "track": "pdf_business_ocr_mm"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "0facad40-0431-4e90-ae9b-5d47c4cfbde9",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": false,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {},
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "0facad40-0431-4e90-ae9b-5d47c4cfbde9"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "0facad40-0431-4e90-ae9b-5d47c4cfbde9": {
+                "bbox": {
+                  "byte_equal": true,
+                  "expected_excerpt": "[73.6, 76.45, 239.27, 88.44]",
+                  "expected_sha256": "f97b85c576f286ffda447c2d4a5fb8f5b3f1b6ef8d2f0f0f7a5810f7aa0aaa4a",
+                  "generated_excerpt": "[73.6, 76.45, 239.27, 88.44]",
+                  "generated_sha256": "f97b85c576f286ffda447c2d4a5fb8f5b3f1b6ef8d2f0f0f7a5810f7aa0aaa4a",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_fe2470815512a395",
+                  "expected_sha256": "22f7a06ff8b2ac2a15028358a54531ea10626d35059f629981a27e55a6d9672e",
+                  "generated_excerpt": "docv_fe2470815512a395",
+                  "generated_sha256": "22f7a06ff8b2ac2a15028358a54531ea10626d35059f629981a27e55a6d9672e",
+                  "normalized_equal": true
+                },
+                "page": {
+                  "byte_equal": true,
+                  "expected_excerpt": "65",
+                  "expected_sha256": "108c995b953c8a35561103e2014cf828eb654a99e310f87fab94c2f4b7d2a04f",
+                  "generated_excerpt": "65",
+                  "generated_sha256": "108c995b953c8a35561103e2014cf828eb654a99e310f87fab94c2f4b7d2a04f",
+                  "normalized_equal": true
+                },
+                "physical_page_index": {
+                  "byte_equal": true,
+                  "expected_excerpt": "64",
+                  "expected_sha256": "a68b412c4282555f15546cf6e1fc42893b7e07f271557ceb021821098dd66c1b",
+                  "generated_excerpt": "64",
+                  "generated_sha256": "a68b412c4282555f15546cf6e1fc42893b7e07f271557ceb021821098dd66c1b",
+                  "normalized_equal": true
+                },
+                "region_type": {
+                  "byte_equal": true,
+                  "expected_excerpt": "table_body",
+                  "expected_sha256": "d6289b3e461927ae44473934e08f6a53015b1112466c95e1b3409fb8c01bf3a6",
+                  "generated_excerpt": "table_body",
+                  "generated_sha256": "d6289b3e461927ae44473934e08f6a53015b1112466c95e1b3409fb8c01bf3a6",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "0facad40-0431-4e90-ae9b-5d47c4cfbde9",
+                  "expected_sha256": "193f212efa28c1fa384ec539e461f7c42e25fcda71b7a187becae602d5289333",
+                  "generated_excerpt": "0facad40-0431-4e90-ae9b-5d47c4cfbde9",
+                  "generated_sha256": "193f212efa28c1fa384ec539e461f7c42e25fcda71b7a187becae602d5289333",
+                  "normalized_equal": true
+                },
+                "source_pdf_path": {
+                  "byte_equal": true,
+                  "expected_excerpt": "local-storage/276e2d37-7c54-4d23-8d52-1a2c5a7ea1d9/input_file/9acfa9e6-36ff-4217-a212-c5688c1e88f2-2021_03_recent_economic_trends.pdf",
+                  "expected_sha256": "50aace9d06654744d470ac56dd6fc358406414801f334f4baa807ca97519b3c0",
+                  "generated_excerpt": "local-storage/276e2d37-7c54-4d23-8d52-1a2c5a7ea1d9/input_file/9acfa9e6-36ff-4217-a212-c5688c1e88f2-2021_03_recent_economic_trends.pdf",
+                  "generated_sha256": "50aace9d06654744d470ac56dd6fc358406414801f334f4baa807ca97519b3c0",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "source_pdf_path",
+              "page",
+              "physical_page_index",
+              "bbox",
+              "region_type",
+              "search_unit_id",
+              "document_version_id"
+            ],
+            "source_family": "PDF"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [
+        "v3_primary_replay",
+        "live_llm_retrieval_topk"
+      ],
+      "primary_failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "priority_rank": 8,
+      "query_id": "gq_auto_030",
+      "reason": "failing lanes require row-level triage: live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "row_level_answer_span_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "PDF",
+      "track": "pdf_business_ocr_mm"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "su_4e2cedbb7866f2c7e2191766e2a5c3e8",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+          "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": false,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {},
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_4e2cedbb7866f2c7e2191766e2a5c3e8"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_4e2cedbb7866f2c7e2191766e2a5c3e8": {
+                "cell": {
+                  "byte_equal": true,
+                  "expected_excerpt": "I1052",
+                  "expected_sha256": "ee342f79948ef051b93e989c66b378f04037064d4f1aabf21fe6fde109ee47f2",
+                  "generated_excerpt": "I1052",
+                  "generated_sha256": "ee342f79948ef051b93e989c66b378f04037064d4f1aabf21fe6fde109ee47f2",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_905af8cbadec7244",
+                  "expected_sha256": "8b6e6bc137392a220b29ad43d03bfdb9fd045d137c25cdf2439802ff7bb6c7e8",
+                  "generated_excerpt": "docv_sha256_905af8cbadec7244",
+                  "generated_sha256": "8b6e6bc137392a220b29ad43d03bfdb9fd045d137c25cdf2439802ff7bb6c7e8",
+                  "normalized_equal": true
+                },
+                "normalized_value": {
+                  "byte_equal": true,
+                  "expected_excerpt": "2019-03-15",
+                  "expected_sha256": "fb28c17097cd29e27c71b55801633d7f1f10ab17cbe9007a908dbb51450d61b8",
+                  "generated_excerpt": "2019-03-15",
+                  "generated_sha256": "fb28c17097cd29e27c71b55801633d7f1f10ab17cbe9007a908dbb51450d61b8",
+                  "normalized_equal": true
+                },
+                "range": {
+                  "byte_equal": true,
+                  "expected_excerpt": "A1052:J1101",
+                  "expected_sha256": "4b07730cc16913b760156a822819e4d0c993e799d8dcb24ce1a37ca2373b657d",
+                  "generated_excerpt": "A1052:J1101",
+                  "generated_sha256": "4b07730cc16913b760156a822819e4d0c993e799d8dcb24ce1a37ca2373b657d",
+                  "normalized_equal": true
+                },
+                "row_label": {
+                  "byte_equal": true,
+                  "expected_excerpt": "장기요양기관코드=12820000600 | 장기요양기관이름=신논현요양원 | 우편번호=21666",
+                  "expected_sha256": "97311f778911b16582f41b4b64dab503ef8143d3964b67e808ebda7f93c6c8b7",
+                  "generated_excerpt": "장기요양기관코드=12820000600 | 장기요양기관이름=신논현요양원 | 우편번호=21666",
+                  "generated_sha256": "97311f778911b16582f41b4b64dab503ef8143d3964b67e808ebda7f93c6c8b7",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_4e2cedbb7866f2c7e2191766e2a5c3e8",
+                  "expected_sha256": "4b2fb82af97ff15fa65701bb98906454a75af5febd40288ba4b29f2a61c8b713",
+                  "generated_excerpt": "su_4e2cedbb7866f2c7e2191766e2a5c3e8",
+                  "generated_sha256": "4b2fb82af97ff15fa65701bb98906454a75af5febd40288ba4b29f2a61c8b713",
+                  "normalized_equal": true
+                },
+                "sheet": {
+                  "byte_equal": true,
+                  "expected_excerpt": "일반현황",
+                  "expected_sha256": "0cf5f6ebb46c569099b0a0e48399aacb9862cb29aaecdc174f75920ab174167c",
+                  "generated_excerpt": "일반현황",
+                  "generated_sha256": "0cf5f6ebb46c569099b0a0e48399aacb9862cb29aaecdc174f75920ab174167c",
+                  "normalized_equal": true
+                },
+                "target_column": {
+                  "byte_equal": true,
+                  "expected_excerpt": "설치신고일자",
+                  "expected_sha256": "75ad066925a9c1d0449568dbb451f5d57a5eed4f08ff11a0ffc4132c056d620f",
+                  "generated_excerpt": "설치신고일자",
+                  "generated_sha256": "75ad066925a9c1d0449568dbb451f5d57a5eed4f08ff11a0ffc4132c056d620f",
+                  "normalized_equal": true
+                },
+                "workbook": {
+                  "byte_equal": true,
+                  "expected_excerpt": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+                  "expected_sha256": "f7bf3b6b78b036ba2365fcfef878aa678c28af70de97aea89a4045be431335a7",
+                  "generated_excerpt": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+                  "generated_sha256": "f7bf3b6b78b036ba2365fcfef878aa678c28af70de97aea89a4045be431335a7",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "workbook",
+              "sheet",
+              "range",
+              "cell",
+              "row_label",
+              "target_column",
+              "normalized_value",
+              "search_unit_id",
+              "document_version_id"
+            ],
+            "source_family": "XLSX"
+          },
+          "live_llm_retrieval_topk": {
+            "canonical_locator_copy_repair": {
+              "applied": false,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {},
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_4e2cedbb7866f2c7e2191766e2a5c3e8"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_4e2cedbb7866f2c7e2191766e2a5c3e8": {
+                "cell": {
+                  "byte_equal": true,
+                  "expected_excerpt": "I1052",
+                  "expected_sha256": "ee342f79948ef051b93e989c66b378f04037064d4f1aabf21fe6fde109ee47f2",
+                  "generated_excerpt": "I1052",
+                  "generated_sha256": "ee342f79948ef051b93e989c66b378f04037064d4f1aabf21fe6fde109ee47f2",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_905af8cbadec7244",
+                  "expected_sha256": "8b6e6bc137392a220b29ad43d03bfdb9fd045d137c25cdf2439802ff7bb6c7e8",
+                  "generated_excerpt": "docv_sha256_905af8cbadec7244",
+                  "generated_sha256": "8b6e6bc137392a220b29ad43d03bfdb9fd045d137c25cdf2439802ff7bb6c7e8",
+                  "normalized_equal": true
+                },
+                "normalized_value": {
+                  "byte_equal": true,
+                  "expected_excerpt": "2019-03-15",
+                  "expected_sha256": "fb28c17097cd29e27c71b55801633d7f1f10ab17cbe9007a908dbb51450d61b8",
+                  "generated_excerpt": "2019-03-15",
+                  "generated_sha256": "fb28c17097cd29e27c71b55801633d7f1f10ab17cbe9007a908dbb51450d61b8",
+                  "normalized_equal": true
+                },
+                "range": {
+                  "byte_equal": true,
+                  "expected_excerpt": "A1052:J1101",
+                  "expected_sha256": "4b07730cc16913b760156a822819e4d0c993e799d8dcb24ce1a37ca2373b657d",
+                  "generated_excerpt": "A1052:J1101",
+                  "generated_sha256": "4b07730cc16913b760156a822819e4d0c993e799d8dcb24ce1a37ca2373b657d",
+                  "normalized_equal": true
+                },
+                "row_label": {
+                  "byte_equal": true,
+                  "expected_excerpt": "장기요양기관코드=12820000600 | 장기요양기관이름=신논현요양원 | 우편번호=21666",
+                  "expected_sha256": "97311f778911b16582f41b4b64dab503ef8143d3964b67e808ebda7f93c6c8b7",
+                  "generated_excerpt": "장기요양기관코드=12820000600 | 장기요양기관이름=신논현요양원 | 우편번호=21666",
+                  "generated_sha256": "97311f778911b16582f41b4b64dab503ef8143d3964b67e808ebda7f93c6c8b7",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_4e2cedbb7866f2c7e2191766e2a5c3e8",
+                  "expected_sha256": "4b2fb82af97ff15fa65701bb98906454a75af5febd40288ba4b29f2a61c8b713",
+                  "generated_excerpt": "su_4e2cedbb7866f2c7e2191766e2a5c3e8",
+                  "generated_sha256": "4b2fb82af97ff15fa65701bb98906454a75af5febd40288ba4b29f2a61c8b713",
+                  "normalized_equal": true
+                },
+                "sheet": {
+                  "byte_equal": true,
+                  "expected_excerpt": "일반현황",
+                  "expected_sha256": "0cf5f6ebb46c569099b0a0e48399aacb9862cb29aaecdc174f75920ab174167c",
+                  "generated_excerpt": "일반현황",
+                  "generated_sha256": "0cf5f6ebb46c569099b0a0e48399aacb9862cb29aaecdc174f75920ab174167c",
+                  "normalized_equal": true
+                },
+                "target_column": {
+                  "byte_equal": true,
+                  "expected_excerpt": "설치신고일자",
+                  "expected_sha256": "75ad066925a9c1d0449568dbb451f5d57a5eed4f08ff11a0ffc4132c056d620f",
+                  "generated_excerpt": "설치신고일자",
+                  "generated_sha256": "75ad066925a9c1d0449568dbb451f5d57a5eed4f08ff11a0ffc4132c056d620f",
+                  "normalized_equal": true
+                },
+                "workbook": {
+                  "byte_equal": true,
+                  "expected_excerpt": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+                  "expected_sha256": "f7bf3b6b78b036ba2365fcfef878aa678c28af70de97aea89a4045be431335a7",
+                  "generated_excerpt": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+                  "generated_sha256": "f7bf3b6b78b036ba2365fcfef878aa678c28af70de97aea89a4045be431335a7",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "workbook",
+              "sheet",
+              "range",
+              "cell",
+              "row_label",
+              "target_column",
+              "normalized_value",
+              "search_unit_id",
+              "document_version_id"
+            ],
+            "source_family": "XLSX"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [
+        "v3_primary_replay"
+      ],
+      "primary_failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "priority_rank": 9,
+      "query_id": "gq_auto_043",
+      "reason": "failing lanes require row-level triage: live_llm_retrieval_topk:LLM_EXPECTED_SPAN_MISMATCH, live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "row_level_answer_span_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "XLSX",
+      "track": "xlsx_business_structured"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "f5815847-706b-4fb1-bc99-f2a3284c5ede",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+          "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": false,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {},
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "f5815847-706b-4fb1-bc99-f2a3284c5ede"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "f5815847-706b-4fb1-bc99-f2a3284c5ede": {
+                "bbox": {
+                  "byte_equal": true,
+                  "expected_excerpt": "[76.68, 103.92, 483.52, 672.6]",
+                  "expected_sha256": "2816c941629914b5ee5c3afe15440dc6482e372d360e3f1ba25eec324a538210",
+                  "generated_excerpt": "[76.68, 103.92, 483.52, 672.6]",
+                  "generated_sha256": "2816c941629914b5ee5c3afe15440dc6482e372d360e3f1ba25eec324a538210",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_8b23a58c27c5518a",
+                  "expected_sha256": "f42d37de3401b9f96ae429968011b44482bb1f3e72318a8a2cdf51862e75285e",
+                  "generated_excerpt": "docv_8b23a58c27c5518a",
+                  "generated_sha256": "f42d37de3401b9f96ae429968011b44482bb1f3e72318a8a2cdf51862e75285e",
+                  "normalized_equal": true
+                },
+                "page": {
+                  "byte_equal": true,
+                  "expected_excerpt": "61",
+                  "expected_sha256": "d029fa3a95e174a19934857f535eb9427d967218a36ea014b70ad704bc6c8d1c",
+                  "generated_excerpt": "61",
+                  "generated_sha256": "d029fa3a95e174a19934857f535eb9427d967218a36ea014b70ad704bc6c8d1c",
+                  "normalized_equal": true
+                },
+                "physical_page_index": {
+                  "byte_equal": true,
+                  "expected_excerpt": "60",
+                  "expected_sha256": "39fa9ec190eee7b6f4dff1100d6343e10918d044c75eac8f9e9a2596173f80c9",
+                  "generated_excerpt": "60",
+                  "generated_sha256": "39fa9ec190eee7b6f4dff1100d6343e10918d044c75eac8f9e9a2596173f80c9",
+                  "normalized_equal": true
+                },
+                "region_type": {
+                  "byte_equal": true,
+                  "expected_excerpt": "table_body",
+                  "expected_sha256": "d6289b3e461927ae44473934e08f6a53015b1112466c95e1b3409fb8c01bf3a6",
+                  "generated_excerpt": "table_body",
+                  "generated_sha256": "d6289b3e461927ae44473934e08f6a53015b1112466c95e1b3409fb8c01bf3a6",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "f5815847-706b-4fb1-bc99-f2a3284c5ede",
+                  "expected_sha256": "c50939d3af66ddd57d6c75c0fd66d3c8fe0680c4e18863d1f0d3526b5cedd6ad",
+                  "generated_excerpt": "f5815847-706b-4fb1-bc99-f2a3284c5ede",
+                  "generated_sha256": "c50939d3af66ddd57d6c75c0fd66d3c8fe0680c4e18863d1f0d3526b5cedd6ad",
+                  "normalized_equal": true
+                },
+                "source_pdf_path": {
+                  "byte_equal": true,
+                  "expected_excerpt": "local-storage/2cfd4aa2-8956-4f0b-9719-731002d2c767/input_file/492ca671-e252-45a1-998d-f9a095855b82-2025_12_recent_economic_trends.pdf",
+                  "expected_sha256": "3a9dd9405e8b738093d820026965ca2bba3ee62730bd08b4f3bec57538b03edf",
+                  "generated_excerpt": "local-storage/2cfd4aa2-8956-4f0b-9719-731002d2c767/input_file/492ca671-e252-45a1-998d-f9a095855b82-2025_12_recent_economic_trends.pdf",
+                  "generated_sha256": "3a9dd9405e8b738093d820026965ca2bba3ee62730bd08b4f3bec57538b03edf",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "source_pdf_path",
+              "page",
+              "physical_page_index",
+              "bbox",
+              "region_type",
+              "search_unit_id",
+              "document_version_id"
+            ],
+            "source_family": "PDF"
+          },
+          "live_llm_retrieval_topk": {
+            "canonical_locator_copy_repair": {
+              "applied": false,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {},
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "f5815847-706b-4fb1-bc99-f2a3284c5ede"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "f5815847-706b-4fb1-bc99-f2a3284c5ede": {
+                "bbox": {
+                  "byte_equal": true,
+                  "expected_excerpt": "[76.68, 103.92, 483.52, 672.6]",
+                  "expected_sha256": "2816c941629914b5ee5c3afe15440dc6482e372d360e3f1ba25eec324a538210",
+                  "generated_excerpt": "[76.68, 103.92, 483.52, 672.6]",
+                  "generated_sha256": "2816c941629914b5ee5c3afe15440dc6482e372d360e3f1ba25eec324a538210",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_8b23a58c27c5518a",
+                  "expected_sha256": "f42d37de3401b9f96ae429968011b44482bb1f3e72318a8a2cdf51862e75285e",
+                  "generated_excerpt": "docv_8b23a58c27c5518a",
+                  "generated_sha256": "f42d37de3401b9f96ae429968011b44482bb1f3e72318a8a2cdf51862e75285e",
+                  "normalized_equal": true
+                },
+                "page": {
+                  "byte_equal": true,
+                  "expected_excerpt": "61",
+                  "expected_sha256": "d029fa3a95e174a19934857f535eb9427d967218a36ea014b70ad704bc6c8d1c",
+                  "generated_excerpt": "61",
+                  "generated_sha256": "d029fa3a95e174a19934857f535eb9427d967218a36ea014b70ad704bc6c8d1c",
+                  "normalized_equal": true
+                },
+                "physical_page_index": {
+                  "byte_equal": true,
+                  "expected_excerpt": "60",
+                  "expected_sha256": "39fa9ec190eee7b6f4dff1100d6343e10918d044c75eac8f9e9a2596173f80c9",
+                  "generated_excerpt": "60",
+                  "generated_sha256": "39fa9ec190eee7b6f4dff1100d6343e10918d044c75eac8f9e9a2596173f80c9",
+                  "normalized_equal": true
+                },
+                "region_type": {
+                  "byte_equal": true,
+                  "expected_excerpt": "table_body",
+                  "expected_sha256": "d6289b3e461927ae44473934e08f6a53015b1112466c95e1b3409fb8c01bf3a6",
+                  "generated_excerpt": "table_body",
+                  "generated_sha256": "d6289b3e461927ae44473934e08f6a53015b1112466c95e1b3409fb8c01bf3a6",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "f5815847-706b-4fb1-bc99-f2a3284c5ede",
+                  "expected_sha256": "c50939d3af66ddd57d6c75c0fd66d3c8fe0680c4e18863d1f0d3526b5cedd6ad",
+                  "generated_excerpt": "f5815847-706b-4fb1-bc99-f2a3284c5ede",
+                  "generated_sha256": "c50939d3af66ddd57d6c75c0fd66d3c8fe0680c4e18863d1f0d3526b5cedd6ad",
+                  "normalized_equal": true
+                },
+                "source_pdf_path": {
+                  "byte_equal": true,
+                  "expected_excerpt": "local-storage/2cfd4aa2-8956-4f0b-9719-731002d2c767/input_file/492ca671-e252-45a1-998d-f9a095855b82-2025_12_recent_economic_trends.pdf",
+                  "expected_sha256": "3a9dd9405e8b738093d820026965ca2bba3ee62730bd08b4f3bec57538b03edf",
+                  "generated_excerpt": "local-storage/2cfd4aa2-8956-4f0b-9719-731002d2c767/input_file/492ca671-e252-45a1-998d-f9a095855b82-2025_12_recent_economic_trends.pdf",
+                  "generated_sha256": "3a9dd9405e8b738093d820026965ca2bba3ee62730bd08b4f3bec57538b03edf",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "source_pdf_path",
+              "page",
+              "physical_page_index",
+              "bbox",
+              "region_type",
+              "search_unit_id",
+              "document_version_id"
+            ],
+            "source_family": "PDF"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [
+        "v3_primary_replay"
+      ],
+      "primary_failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "priority_rank": 10,
+      "query_id": "gq_pdf_section_question_001",
+      "reason": "failing lanes require row-level triage: live_llm_retrieval_topk:LLM_EXPECTED_SPAN_MISMATCH, live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "row_level_answer_span_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "PDF",
+      "track": "pdf_business_ocr_mm"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "su_0c48e5c6be0a69c80d5e2a7294279b08",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+          "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": false,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {},
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_0c48e5c6be0a69c80d5e2a7294279b08"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_0c48e5c6be0a69c80d5e2a7294279b08": {
+                "cell": {
+                  "byte_equal": true,
+                  "expected_excerpt": "H2",
+                  "expected_sha256": "9814b9a14e00568cbe7dad2c69c7ecc51d9220e7c376d543f7d8841ba5e1cff2",
+                  "generated_excerpt": "H2",
+                  "generated_sha256": "9814b9a14e00568cbe7dad2c69c7ecc51d9220e7c376d543f7d8841ba5e1cff2",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_905af8cbadec7244",
+                  "expected_sha256": "8b6e6bc137392a220b29ad43d03bfdb9fd045d137c25cdf2439802ff7bb6c7e8",
+                  "generated_excerpt": "docv_sha256_905af8cbadec7244",
+                  "generated_sha256": "8b6e6bc137392a220b29ad43d03bfdb9fd045d137c25cdf2439802ff7bb6c7e8",
+                  "normalized_equal": true
+                },
+                "normalized_value": {
+                  "byte_equal": true,
+                  "expected_excerpt": "2008-06-25",
+                  "expected_sha256": "24830949959b7b18a6b5aadd1fe8d542bb0856f40d9b0ac59b6adcbff26b960d",
+                  "generated_excerpt": "2008-06-25",
+                  "generated_sha256": "24830949959b7b18a6b5aadd1fe8d542bb0856f40d9b0ac59b6adcbff26b960d",
+                  "normalized_equal": true
+                },
+                "range": {
+                  "byte_equal": true,
+                  "expected_excerpt": "A2:J51",
+                  "expected_sha256": "4d45695d16bfc30d09bcd13d041f34f810846b98f5187f87c8bb882d9a93892d",
+                  "generated_excerpt": "A2:J51",
+                  "generated_sha256": "4d45695d16bfc30d09bcd13d041f34f810846b98f5187f87c8bb882d9a93892d",
+                  "normalized_equal": true
+                },
+                "row_label": {
+                  "byte_equal": true,
+                  "expected_excerpt": "장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001",
+                  "expected_sha256": "fc45b7b149f5e95955ff94e0d84857b7f5975f2689facc045c5872179aad08d6",
+                  "generated_excerpt": "장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001",
+                  "generated_sha256": "fc45b7b149f5e95955ff94e0d84857b7f5975f2689facc045c5872179aad08d6",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_0c48e5c6be0a69c80d5e2a7294279b08",
+                  "expected_sha256": "38918d4476c4a60d50d8018d8ed4ffc4888e20143c2f445d4102fd271b70c453",
+                  "generated_excerpt": "su_0c48e5c6be0a69c80d5e2a7294279b08",
+                  "generated_sha256": "38918d4476c4a60d50d8018d8ed4ffc4888e20143c2f445d4102fd271b70c453",
+                  "normalized_equal": true
+                },
+                "sheet": {
+                  "byte_equal": true,
+                  "expected_excerpt": "일반현황",
+                  "expected_sha256": "0cf5f6ebb46c569099b0a0e48399aacb9862cb29aaecdc174f75920ab174167c",
+                  "generated_excerpt": "일반현황",
+                  "generated_sha256": "0cf5f6ebb46c569099b0a0e48399aacb9862cb29aaecdc174f75920ab174167c",
+                  "normalized_equal": true
+                },
+                "target_column": {
+                  "byte_equal": true,
+                  "expected_excerpt": "지정일자",
+                  "expected_sha256": "625f90831dc7c9e4c2d983ba64ed1bfdb95cf8f929530741b499af11d8ff9c4e",
+                  "generated_excerpt": "지정일자",
+                  "generated_sha256": "625f90831dc7c9e4c2d983ba64ed1bfdb95cf8f929530741b499af11d8ff9c4e",
+                  "normalized_equal": true
+                },
+                "workbook": {
+                  "byte_equal": true,
+                  "expected_excerpt": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+                  "expected_sha256": "f7bf3b6b78b036ba2365fcfef878aa678c28af70de97aea89a4045be431335a7",
+                  "generated_excerpt": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+                  "generated_sha256": "f7bf3b6b78b036ba2365fcfef878aa678c28af70de97aea89a4045be431335a7",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "workbook",
+              "sheet",
+              "range",
+              "cell",
+              "row_label",
+              "target_column",
+              "normalized_value",
+              "search_unit_id",
+              "document_version_id"
+            ],
+            "source_family": "XLSX"
+          },
+          "live_llm_retrieval_topk": {
+            "canonical_locator_copy_repair": {
+              "applied": false,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {},
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_0c48e5c6be0a69c80d5e2a7294279b08"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_0c48e5c6be0a69c80d5e2a7294279b08": {
+                "cell": {
+                  "byte_equal": true,
+                  "expected_excerpt": "H2",
+                  "expected_sha256": "9814b9a14e00568cbe7dad2c69c7ecc51d9220e7c376d543f7d8841ba5e1cff2",
+                  "generated_excerpt": "H2",
+                  "generated_sha256": "9814b9a14e00568cbe7dad2c69c7ecc51d9220e7c376d543f7d8841ba5e1cff2",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_905af8cbadec7244",
+                  "expected_sha256": "8b6e6bc137392a220b29ad43d03bfdb9fd045d137c25cdf2439802ff7bb6c7e8",
+                  "generated_excerpt": "docv_sha256_905af8cbadec7244",
+                  "generated_sha256": "8b6e6bc137392a220b29ad43d03bfdb9fd045d137c25cdf2439802ff7bb6c7e8",
+                  "normalized_equal": true
+                },
+                "normalized_value": {
+                  "byte_equal": true,
+                  "expected_excerpt": "2008-06-25",
+                  "expected_sha256": "24830949959b7b18a6b5aadd1fe8d542bb0856f40d9b0ac59b6adcbff26b960d",
+                  "generated_excerpt": "2008-06-25",
+                  "generated_sha256": "24830949959b7b18a6b5aadd1fe8d542bb0856f40d9b0ac59b6adcbff26b960d",
+                  "normalized_equal": true
+                },
+                "range": {
+                  "byte_equal": true,
+                  "expected_excerpt": "A2:J51",
+                  "expected_sha256": "4d45695d16bfc30d09bcd13d041f34f810846b98f5187f87c8bb882d9a93892d",
+                  "generated_excerpt": "A2:J51",
+                  "generated_sha256": "4d45695d16bfc30d09bcd13d041f34f810846b98f5187f87c8bb882d9a93892d",
+                  "normalized_equal": true
+                },
+                "row_label": {
+                  "byte_equal": true,
+                  "expected_excerpt": "장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001",
+                  "expected_sha256": "fc45b7b149f5e95955ff94e0d84857b7f5975f2689facc045c5872179aad08d6",
+                  "generated_excerpt": "장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001",
+                  "generated_sha256": "fc45b7b149f5e95955ff94e0d84857b7f5975f2689facc045c5872179aad08d6",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_0c48e5c6be0a69c80d5e2a7294279b08",
+                  "expected_sha256": "38918d4476c4a60d50d8018d8ed4ffc4888e20143c2f445d4102fd271b70c453",
+                  "generated_excerpt": "su_0c48e5c6be0a69c80d5e2a7294279b08",
+                  "generated_sha256": "38918d4476c4a60d50d8018d8ed4ffc4888e20143c2f445d4102fd271b70c453",
+                  "normalized_equal": true
+                },
+                "sheet": {
+                  "byte_equal": true,
+                  "expected_excerpt": "일반현황",
+                  "expected_sha256": "0cf5f6ebb46c569099b0a0e48399aacb9862cb29aaecdc174f75920ab174167c",
+                  "generated_excerpt": "일반현황",
+                  "generated_sha256": "0cf5f6ebb46c569099b0a0e48399aacb9862cb29aaecdc174f75920ab174167c",
+                  "normalized_equal": true
+                },
+                "target_column": {
+                  "byte_equal": true,
+                  "expected_excerpt": "지정일자",
+                  "expected_sha256": "625f90831dc7c9e4c2d983ba64ed1bfdb95cf8f929530741b499af11d8ff9c4e",
+                  "generated_excerpt": "지정일자",
+                  "generated_sha256": "625f90831dc7c9e4c2d983ba64ed1bfdb95cf8f929530741b499af11d8ff9c4e",
+                  "normalized_equal": true
+                },
+                "workbook": {
+                  "byte_equal": true,
+                  "expected_excerpt": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+                  "expected_sha256": "f7bf3b6b78b036ba2365fcfef878aa678c28af70de97aea89a4045be431335a7",
+                  "generated_excerpt": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+                  "generated_sha256": "f7bf3b6b78b036ba2365fcfef878aa678c28af70de97aea89a4045be431335a7",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "workbook",
+              "sheet",
+              "range",
+              "cell",
+              "row_label",
+              "target_column",
+              "normalized_value",
+              "search_unit_id",
+              "document_version_id"
+            ],
+            "source_family": "XLSX"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [
+        "v3_primary_replay"
+      ],
+      "primary_failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "priority_rank": 11,
+      "query_id": "gq_xlsx_date_number_format_001",
+      "reason": "failing lanes require row-level triage: live_llm_retrieval_topk:LLM_EXPECTED_SPAN_MISMATCH, live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "row_level_answer_span_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "XLSX",
+      "track": "xlsx_business_structured"
+    },
+    {
+      "evidence_from_artifacts": {
+        "denominator_search_unit_id": "su_f078ba15a269ab6c3613f86a92c87287",
+        "lane_failure_categories": {
+          "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH"
+        },
+        "llm_generated_locator_validation": {
+          "live_llm_query_bound_oracle": {
+            "canonical_locator_copy_repair": {
+              "applied": true,
+              "canonicalized_locator_count": 1,
+              "raw_generated_locator_count": 1,
+              "repaired_fields_by_search_unit_id": {
+                "su_f078ba15a269ab6c3613f86a92c87287": [
+                  "text_locator"
+                ]
+              },
+              "source": "source_bound_prompt_context_locator_json_copy_source"
+            },
+            "category": null,
+            "cited_search_unit_ids": [
+              "su_f078ba15a269ab6c3613f86a92c87287"
+            ],
+            "field_comparisons_by_search_unit_id": {
+              "su_f078ba15a269ab6c3613f86a92c87287": {
+                "document_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "4fb4c291efb8b088",
+                  "expected_sha256": "f010a35fd6fd27a3a21bfb654ea5168f8e81534331839566880b1ea5f6e9400c",
+                  "generated_excerpt": "4fb4c291efb8b088",
+                  "generated_sha256": "f010a35fd6fd27a3a21bfb654ea5168f8e81534331839566880b1ea5f6e9400c",
+                  "normalized_equal": true
+                },
+                "document_version_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "docv_sha256_c9c18da61956de64",
+                  "expected_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "generated_excerpt": "docv_sha256_c9c18da61956de64",
+                  "generated_sha256": "f6779a476fb3851dff6d37ef8ef9a7388101898f766512b3b62e8f2d6db4e4f8",
+                  "normalized_equal": true
+                },
+                "search_unit_id": {
+                  "byte_equal": true,
+                  "expected_excerpt": "su_f078ba15a269ab6c3613f86a92c87287",
+                  "expected_sha256": "7e2a86318ca2a55e85c05df0b5bc45761b212447906a6ef2c145b5103bcee9c2",
+                  "generated_excerpt": "su_f078ba15a269ab6c3613f86a92c87287",
+                  "generated_sha256": "7e2a86318ca2a55e85c05df0b5bc45761b212447906a6ef2c145b5103bcee9c2",
+                  "normalized_equal": true
+                },
+                "text_locator": {
+                  "byte_equal": true,
+                  "expected_excerpt": "{'chunk_id': 'a648c3a062d55aa3', 'line_number': 90724, 'section_id': '6f578a505af74613', 'section_path': ['개요'], 'section_type': 'summary', 'source_corpus_path': 'ai/eval/corpora/n...",
+                  "expected_sha256": "0de00f57c476695b922ee8c521d815477b9142fbaf49ba549d5a2973d426e70e",
+                  "generated_excerpt": "{'chunk_id': 'a648c3a062d55aa3', 'line_number': 90724, 'section_id': '6f578a505af74613', 'section_path': ['개요'], 'section_type': 'summary', 'source_corpus_path': 'ai/eval/corpora/n...",
+                  "generated_sha256": "0de00f57c476695b922ee8c521d815477b9142fbaf49ba549d5a2973d426e70e",
+                  "normalized_equal": true
+                }
+              }
+            },
+            "generated_by_llm": true,
+            "generated_locator_count": 1,
+            "locator_copy_attempts": 1,
+            "locator_copy_retry_count": 0,
+            "locator_copy_retry_diagnostics": [],
+            "mismatched_fields_by_search_unit_id": {},
+            "missing_fields_by_search_unit_id": {},
+            "missing_locator_for_search_unit_ids": [],
+            "ok": true,
+            "required_fields": [
+              "document_id",
+              "document_version_id",
+              "search_unit_id",
+              "text_locator"
+            ],
+            "source_family": "TEXT"
+          }
+        },
+        "result_artifact": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl"
+      },
+      "failing_lane_names": [
+        "live_llm_query_bound_oracle"
+      ],
+      "failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "fix_type": "prompt_answer_renderer",
+      "passing_lane_names": [
+        "v3_primary_replay",
+        "live_llm_retrieval_topk"
+      ],
+      "primary_failure_category": "LLM_EXPECTED_SPAN_MISMATCH",
+      "priority_rank": 12,
+      "query_id": "text_namu_v2_0005",
+      "reason": "failing lanes require row-level triage: live_llm_query_bound_oracle:LLM_EXPECTED_SPAN_MISMATCH",
+      "recommended_next_step": "row_level_answer_span_triage",
+      "requires_user_gold_policy_decision": false,
+      "safe_to_fix_without_user_gold_decision": true,
+      "source_family": "TEXT",
+      "track": "text_namu_v2_1"
+    }
+  ],
+  "promotion_evidence": false,
+  "run_id": "official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage",
+  "schema_version": "official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_triage_queue_v1",
+  "sorting_policy": [
+    "infrastructure/schema/citation payload",
+    "retrieval query-bound miss",
+    "PDF/XLSX locator preservation",
+    "PDF/XLSX adapter PASS but LLM FAIL",
+    "TEXT LLM true partial synthesis",
+    "expected span mismatch / scorer normalization review",
+    "gold policy review"
+  ],
+  "strict_json_or_locator_residual_count": 0
+}

@@ -4,14 +4,20 @@ Last updated: 2026-05-18 KST.
 
 This is the compact status index for the current RAG ingestion and official
 answer/citation metric work. Do not append turn transcripts or create new
-per-phase `*_v1.json` / `*_v1.md` report pairs for routine status. Use this
-file for human-readable status and
-`ai/eval/reports/rag-ingestion/rag_current_eval_status.jsonl` for compact
-current status events.
+per-phase Markdown report pairs for routine status. The human-facing report
+surface is now three rolling files:
+
+- `docs/rag-ingestion-progress.md`: current status, verification, guardrails.
+- `docs/rag-ingestion-measurements.md`: run-level metrics and before/after
+  summaries.
+- `docs/rag-ingestion-triage.md`: row-level triage queue and decision boundary.
+
+Use `ai/eval/reports/rag-ingestion/rag_current_eval_status.jsonl` only as a
+compact machine-readable status event ledger.
 
 ## Current Status
 
-Overall status: `official_answer_citation_v3_1_all_track_foundation_measurement_recorded`;
+Overall status: `official_answer_citation_v3_1_2_answer_span_renderer_triage_recorded`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied.
 
@@ -87,6 +93,52 @@ and `v3_comparable_live_measurement_completed` remain satisfied.
   is measured separately from adapter-retained payloads. Lane counts are:
   A PASS=24/29, B PASS=18/29, C PASS=20/29. The triage queue contains 12 rows
   and should be used for the next row-level failure work.
+- v3_1 priority 1~5 strict JSON / locator copy triage
+  `official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage`
+  has been recorded as a diagnostic-only row-level rerun over five triage
+  rows: `gq_pdf_section_question_001`, `text_namu_v2_0012`, `gq_auto_010`,
+  `gq_auto_023`, and `gq_xlsx_lookup_008`. It uses only source-bound SearchUnit
+  context for generation, keeps expected answers/supporting evidence/gold fields
+  out of generation, and leaves silver/gold/promotion/tuning untouched. Results:
+  strict JSON parse failure `2 -> 0`, with schema repair applications tracked
+  separately as `0 -> 2`. LLM-generated locator copy failure is `5 -> 1` when
+  missing locator fields are counted, while field mismatches alone are `3 -> 0`.
+  PDF `source_pdf_path` mismatch is `1 -> 0`, and XLSX `row_label` mismatch is
+  `2 -> 0`. `answer_score` and `citation_support_score` are reference only.
+  Locator metrics now distinguish
+  `posthoc_payload_locator_preservation_failure_count` from
+  `llm_generated_locator_copy_failure_count`.
+- v3_1 TEXT locator residual triage
+  `official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage`
+  removed the remaining `text_namu_v2_0012` TEXT locator residual:
+  `text_locator` missing `1 -> 0`, LLM-generated locator missing failure
+  `1 -> 0`, and `text_locator` byte-equal / normalized-equal are both true.
+  The repair uses only source-bound canonical locator JSON and does not use
+  expected answers, supporting evidence, or gold fields for generation.
+- v3_1_1 post strict JSON / locator triage all-track measurement
+  `official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage`
+  reran all 29 official denominator rows with the same Lane A/B/C definitions.
+  Results: Lane A PASS=24/29, Lane B PASS=20/29, Lane C PASS=17/29. Lane B/C
+  strict JSON parse failure, LLM-generated locator copy failure, PDF
+  `source_pdf_path` mismatch, XLSX `row_label` mismatch, and TEXT
+  `text_locator` missing are all zero. Remaining failures are answer span /
+  answer renderer oriented. Four existing v3_1 PASS query/lane cases are
+  recorded as answer-span regressions for diagnostic follow-up.
+- v3_1_2 answer span / renderer triage
+  `official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage`
+  recorded the first diagnostic-only TEXT batch from the machine
+  v3_1_1 triage queue artifact. The selected first batch is
+  `text_namu_v2_0012`, `text_namu_v2_0014`, `text_namu_v2_0017`,
+  `text_namu_v2_0077`, and `text_namu_v2_0084`; `text_namu_v2_0005`
+  is included only as a secondary TEXT watchlist row because the machine queue
+  places it at priority 12 and its failure is Lane C-only. This run does not
+  invoke generation or change renderer/scorer behavior, so the 29-row
+  v3_1_1 all-track reference remains Lane A PASS=24/29, Lane B PASS=20/29,
+  Lane C PASS=17/29. Target-batch lane counts are Lane A PASS=1/6,
+  Lane B PASS=1/6, Lane C PASS=0/6. Strict JSON parse failure,
+  LLM-generated locator copy failure, PDF `source_pdf_path` mismatch, XLSX
+  `row_label` mismatch, and TEXT `text_locator` missing all remain zero in the
+  source post-triage reference.
 - Answer/citation silver strategy is recorded in
   `ai/eval/silver/answer_citation_silver_manifest_v1.json`; readiness is
   `ai/eval/silver/answer_citation_silver_readiness_v1.json`. Its purpose is an
@@ -103,18 +155,17 @@ and `v3_comparable_live_measurement_completed` remain satisfied.
   `python -X utf8 -m pytest ai/tests --rag-current -q`; full `ai/tests`
   now mirrors the current profile and no longer carries broad/nightly legacy
   suites.
-- Hard cleanup kept only the previous 8 source-of-truth/current files in
-  `ai/eval/reports/rag-ingestion/`; the explicitly approved next measurement
-  adds 4 current run artifacts under the new run id. Historical report/doc
-  artifacts were moved to `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\hard-cleanup-20260517`.
+- Report cleanup keeps human-facing status in three rolling docs and treats
+  `ai/eval/reports/rag-ingestion/` Markdown files as generated/local-only.
+  Machine JSON/JSONL artifacts remain available for reproducibility and tests.
 
 ## Track Board
 
 | Track | Current state | Current metric/evidence | Next action |
 |---|---|---|---|
-| `text_namu_v2_1` | v3_1 Lane A PASS=1/6; Lane B PASS=1/6; Lane C PASS=2/6 | Source-bound manifest rows=6/6; triage rows include strict JSON and TEXT partial/span mismatches | Process triage queue row by row; do not create silver or change gold during triage. |
-| `xlsx_business_structured` | v3_1 Lane A retains adapter PASS=19/19; Lane B PASS=15/19; Lane C PASS=16/19 | Workbook/sheet/range/cell locators preserved in payloads; LLM-generated locator failures are now measured separately | Inspect strict JSON and XLSX cell locator failures before adapter-vs-LLM answer gaps. |
-| `pdf_business_ocr_mm` | v3_1 Lane A retains adapter PASS=4/4; Lane B PASS=2/4; Lane C PASS=2/4 | page/bbox/region payloads preserved; LLM-generated bbox locator failures are now measured separately | Inspect strict JSON and PDF bbox locator handling before answer-renderer tuning. |
+| `text_namu_v2_1` | v3_1_2 first answer-span batch recorded; target Lane A PASS=1/6, Lane B PASS=1/6, Lane C PASS=0/6 | strict JSON parse failure=0, TEXT `text_locator` missing=0, and first five TEXT queue rows classified as answer span / renderer diagnostics | Keep `text_namu_v2_0005` as secondary watchlist; continue remaining queue without gold changes. |
+| `xlsx_business_structured` | post-triage Lane A PASS=19/19; Lane B PASS=17/19; Lane C PASS=17/19 | XLSX `row_label` mismatch=0 and locator copy failure=0 | Continue date/number/span normalization triage only after preserving locator metrics. |
+| `pdf_business_ocr_mm` | post-triage Lane A PASS=4/4; Lane B PASS=2/4; Lane C PASS=0/4 | PDF `source_pdf_path` mismatch=0 and locator copy failure=0 | Continue PDF answer-span triage separately from locator-copy stability. |
 | Current tests | `--rag-current` profile isolates official metric, source-of-truth, candidate, and guardrail tests | Legacy `ai/tests/test_*.py` suites outside the current profile were deleted | Keep the compact profile green; recreate deleted legacy tests only when a new task needs them. |
 
 ## Current Verification Command
@@ -128,10 +179,56 @@ python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_
 
 Current verification:
 local results recorded in this progress log.
-`--rag-current` 121 passed, 0 skipped, 0 failed.
+`--rag-current` 130 passed, 0 skipped, 0 failed.
 Marker profile
-`rag_current or rag_official_metric or rag_pdf_current`: 121 passed,
+`rag_current or rag_official_metric or rag_pdf_current`: 130 passed,
 0 deselected, 0 failed.
+
+Additional 2026-05-18 local verification for v3_1_2 answer span / renderer
+triage:
+
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 130 passed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 130 passed.
+- `python -X utf8 -m py_compile ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py ai\tests\test_rag_diagnostic_guardrail_git_diff.py ai\tests\test_rag_diagnostic_status_sync.py ai\tests\test_rag_official_answer_citation_metric_first_run_v1.py ai\tests\test_rag_official_metric_artifact_source_of_truth_audit_v1.py ai\tests\test_rag_source_bound_official_denominator_index.py`: PASS.
+- `cd ai; python -m scripts.doctor --json --only schemas,faiss_index,build_json,runtime_model_match`: overall PASS; schemas, faiss_index, build_json, runtime_model_match PASS; capability_readiness WARN is present but not part of the selected checks.
+- `git diff --check`: PASS with line-ending warnings only.
+- Diagnostic-only confirmed for the v3_1_2 answer-span/renderer triage:
+  `diagnostic_only=true`, `promotion_evidence=false`,
+  `promotion_gate_auto_run=false`, `threshold_tuning=false`,
+  `winner_selection=false`, `generation_used_expected_answer=false`,
+  `generation_used_gold_fields=false`,
+  `generation_used_supporting_evidence=false`, strict JSON residual maps are
+  zero, locator residual maps are zero, and reference span text is not embedded
+  as a generation source.
+
+Additional 2026-05-18 local verification for v3_1 TEXT locator residual and
+v3_1_1 post strict JSON / locator triage:
+
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 129 passed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 129 passed.
+- `python -X utf8 -m py_compile ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py ai\tests\test_rag_diagnostic_guardrail_git_diff.py ai\tests\test_rag_diagnostic_status_sync.py ai\tests\test_rag_official_answer_citation_metric_first_run_v1.py ai\tests\test_rag_official_metric_artifact_source_of_truth_audit_v1.py ai\tests\test_rag_source_bound_official_denominator_index.py`: PASS.
+- `cd ai; python -m scripts.doctor --json --only schemas,faiss_index,build_json,runtime_model_match`: overall PASS; schemas, faiss_index, build_json, runtime_model_match PASS; capability_readiness WARN is present but not part of the selected checks.
+- `git diff --check`: PASS.
+- Diagnostic-only confirmed for the TEXT residual and post-triage all-track
+  runs: `diagnostic_only=true`, `promotion_evidence=false`,
+  `promotion_gate_auto_run=false`, `threshold_tuning=false`,
+  `winner_selection=false`, `generation_used_expected_answer=false`,
+  `generation_used_gold_fields=false`, and
+  `generation_used_supporting_evidence=false`.
+
+Additional 2026-05-18 local verification for v3_1 priority 1~5 strict JSON /
+locator-copy triage:
+
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 127 passed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 127 passed.
+- `python -X utf8 -m py_compile ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py ai\tests\test_rag_diagnostic_guardrail_git_diff.py ai\tests\test_rag_diagnostic_status_sync.py ai\tests\test_rag_official_answer_citation_metric_first_run_v1.py ai\tests\test_rag_official_metric_artifact_source_of_truth_audit_v1.py ai\tests\test_rag_source_bound_official_denominator_index.py`: PASS.
+- `cd ai; python -m scripts.doctor --json --only schemas,faiss_index,build_json,runtime_model_match`: overall PASS; schemas, faiss_index, build_json, runtime_model_match PASS; capability_readiness WARN is present but not part of the selected checks.
+- `git diff --check`: PASS with line-ending warnings only.
+- Diagnostic-only confirmed for the priority run: `diagnostic_only=true`,
+  `promotion_evidence=false`, `promotion_gate_auto_run=false`,
+  `threshold_tuning=false`, `winner_selection=false`,
+  `generation_used_expected_answer=false`, `generation_used_gold_fields=false`,
+  and `generation_used_supporting_evidence=false`.
 
 Additional 2026-05-18 local verification for v3_1 all-track foundation
 measurement:
@@ -145,55 +242,74 @@ measurement:
   `generation_used_expected_answer=false`, `generation_used_gold_fields=false`,
   and `generation_used_supporting_evidence=false`.
 
-v3_1 artifact sha256:
+v3_1 machine artifact sha256:
 
 - `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_results.jsonl`: `5A871163121ABB4849B74CA2A33DD06757C84994C2E35064CDFF765F8562024D`
 - `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.json`: `474B950C6289362A3BE33880B755FB2361EA98F0AAD9EFC3A6FEC2FE72AA8688`
-- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.md`: `57C26D9CF5321FA24C754B7C651A3E224FBE9ED8E797E02A05AF0E3A904FE43C`
 - `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_failure_attribution.json`: `51377761AC0BE5AD8AAD7EA89655366907A389E139573A7B547A4627B3E30C08`
 - `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_actual_response_audit.jsonl`: `FC3E31C699C6791CECD4FE3E1B8B120C54C9B10FBA121FE967D4CEA84A493BBD`
-- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_actual_response_audit.md`: `394C550D745361613140A9D243F70B575D2C094195D621BEC6BDF19301783800`
 - `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.json`: `9426CE189C04080290027EFC923F38E60E5BE58EB6FF65FE572A6EFCBE837380`
-- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.md`: `5DB0E662AB54A8E12EDDF760D386BBBAADE5E5BB6428BA81E3D89DD08C5B16C3`
 
 ## Current Source-Of-Truth Artifacts
 
-Canonical official artifacts:
+Human-facing rolling docs:
+
+- `docs/rag-ingestion-progress.md`
+- `docs/rag-ingestion-measurements.md`
+- `docs/rag-ingestion-triage.md`
+
+Machine-readable official artifacts:
 
 - `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.md`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl`
 - `ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json`
 - `ai/eval/reports/rag-ingestion/official_metric_pre_execution_smoke_report_v1.json`
-
-Current compact candidate/status artifacts:
-
 - `ai/eval/reports/rag-ingestion/xlsx_answer_citation_runtime_precision_candidate_results_v1.jsonl`
 - `ai/eval/reports/rag-ingestion/pdf_answer_citation_table_value_candidate_results_v1.jsonl`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_results.jsonl`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.md`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_failure_attribution.json`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic_results.jsonl`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic_summary.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic_summary.md`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic_failure_attribution.json`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_results.jsonl`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_summary.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_summary.md`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_failure_attribution.json`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_results.jsonl`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.md`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_failure_attribution.json`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_actual_response_audit.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_actual_response_audit.md`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.md`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage_results.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage_summary.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage_failure_attribution.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage_actual_response_audit.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage_triage_delta.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_priority_1_5_triage_strict_json_diagnostics.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_results.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_summary.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_failure_attribution.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_triage_delta.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_summary.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_failure_attribution.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_actual_response_audit.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_triage_queue.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_results.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_summary.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_failure_attribution.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_actual_response_audit.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_answer_span_diagnostics.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_remaining_triage_queue.json`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_source_bound_index_build_readiness_v1.json`
 - `ai/eval/reports/rag-ingestion/rag_current_eval_status.jsonl`
 - `ai/eval/silver/answer_citation_silver_manifest_v1.json`
 - `ai/eval/silver/answer_citation_silver_readiness_v1.json`
+
+Per-run Markdown reports under `ai/eval/reports/rag-ingestion/` are no longer
+the human-facing surface. The v3_1_2 answer-span/renderer triage intentionally
+created only machine JSON/JSONL artifacts and keeps the ongoing narrative in
+the three rolling docs above.
 
 The pre-execution smoke report is a pre-execution artifact, so
 `official_metric_execution_started=false` there is expected and must not be read
@@ -217,17 +333,19 @@ as the latest metric execution status.
 
 ## Next Recommended Steps
 
-1. Start from
-   `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.md`
-   and process one failure row at a time.
+1. Continue from the v3_1_2 remaining queue in
+   `docs/rag-ingestion-triage.md`; strict JSON / locator-copy diagnostics are
+   cleared and the active queue is answer span / answer renderer cases.
 2. Keep v3_1 diagnostic-only. Do not treat Lane B/C PASS counts as promotion
    evidence and do not mix Lane A/B/C into a single official score.
 3. Do not create silver rows or change expected answers, supporting evidence,
    relevance labels, answerability labels, or gold policy unless the user makes
    that specific decision.
-4. Prefer infrastructure/schema/citation payload issues first, then retrieval
-   query-bound misses, then locator preservation, then adapter-vs-LLM gaps and
-   TEXT partial synthesis.
+4. If a future run reintroduces infrastructure/schema/citation payload issues,
+   move them back to the top; otherwise continue with `gq_auto_010`,
+   `gq_auto_024`, `gq_auto_030`, `gq_auto_043`,
+   `gq_pdf_section_question_001`, `gq_xlsx_date_number_format_001`, and the
+   secondary TEXT watchlist row `text_namu_v2_0005`.
 5. Keep the compact `ai/tests` surface current; recreate legacy coverage only
    when an active task needs a fresh, source-grounded test.
 
@@ -252,3 +370,6 @@ as the latest metric execution status.
 | 2026-05-17 | Ran `official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic` against only the source-bound official-denominator index: rows=29, scored_count=20, PASS=20, fail-closed schema mismatches=9, diagnostic-only, no candidate/gold/expected/supporting generation source and no promotion evidence. |
 | 2026-05-17 | Deleted legacy `ai/tests/test_*.py` suites outside the current profile; full `ai/tests` now mirrors the compact RAG official metric/candidate/guardrail surface. |
 | 2026-05-18 | Regenerated `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement` with LLM-generated `citation_locators`: 29 rows, Lane A PASS=24/29, Lane B PASS=18/29, Lane C PASS=20/29, all guardrails false for promotion/tuning/gold/silver mutation, actual-response audit and 12-row triage queue recorded. |
+| 2026-05-18 | Recorded priority 1~5 strict JSON / locator-copy triage as diagnostic-only: target rows=5, strict JSON parse failure 2->0 with schema repair 0->2, LLM-generated locator copy failure 5->1, field mismatch 3->0, PDF `source_pdf_path` mismatch 1->0, XLSX `row_label` mismatch 2->0, no expected/supporting/gold generation source and no silver/gold/promotion/tuning mutation. |
+| 2026-05-18 | Consolidated human-facing rag-ingestion reports into three rolling docs: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md`; per-run Markdown under `ai/eval/reports/rag-ingestion/` is generated/local-only. |
+| 2026-05-18 | Recorded v3_1_2 answer span / renderer triage as diagnostic-only: machine v3_1_1 queue selected the first five TEXT rows, `text_namu_v2_0005` stayed secondary at queue rank 12, no generation was invoked, and no expected/supporting/gold fields were used as generation source. |

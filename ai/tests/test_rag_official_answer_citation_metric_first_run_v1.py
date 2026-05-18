@@ -443,9 +443,8 @@ def test_scorer_guardrail_true_flag_fails_closed_before_scoring(tmp_path: Path) 
 
 def test_latest_first_run_artifacts_are_scored_baseline_not_backend_unavailable() -> None:
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "official_answer_citation_metric_first_run_v1.json"
-    md_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "official_answer_citation_metric_first_run_v1.md"
     report = read_json(report_path)
-    md_text = md_path.read_text(encoding="utf-8")
+    measurements_text = (ROOT / "docs" / "rag-ingestion-measurements.md").read_text(encoding="utf-8")
 
     assert report["official_scoring_attempt_count"] == 29
     assert report["scored_count"] == 29
@@ -459,8 +458,8 @@ def test_latest_first_run_artifacts_are_scored_baseline_not_backend_unavailable(
     assert report["promotion_evidence"] is False
     assert report["production_mutation"] is False
     assert "SCORER_BACKEND_UNAVAILABLE" not in json.dumps(report, ensure_ascii=False)
-    assert "SCORER_BACKEND_UNAVAILABLE" not in md_text
-    assert "not a scorer backend blocker" in md_text
+    assert "SCORER_BACKEND_UNAVAILABLE" not in measurements_text
+    assert "scorer backend blocker" in measurements_text
 
 
 def test_source_guardrail_flags_fail_closed_before_scoring(tmp_path: Path) -> None:

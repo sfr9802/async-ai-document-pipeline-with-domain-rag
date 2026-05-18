@@ -10,7 +10,7 @@ ai capability 를 위한 가벼운 로컬 우선 eval harness. 프로덕션
 를 분리한 3트랙으로 봅니다. 기준 입력은
 `eval_queries/official_denominator_registry.json` 에서 시작하고, 현재
 공식 first-run 리포트는
-`reports/rag-ingestion/official_answer_citation_metric_first_run_v1.{json,md}`
+`reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json`
 입니다.
 
 | Track | 공식 입력 | 공식 first-run baseline | v3 primary replay | v3_1 Lane B live LLM top-k | v3_1 Lane C query-bound oracle |
@@ -44,14 +44,44 @@ query-bound SearchUnit context 만으로 live LLM 생성합니다. Lane B/C stri
 않습니다. 이 run 도 silver/gold/promotion evidence 가 아니며 expected answer,
 gold fields, supporting evidence 를 generation source 로 쓰지 않습니다.
 
-현재 사람이 가장 먼저 볼 파일은 아래 파일들입니다.
+`official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage`
+는 위 foundation run 의 triage queue 중 priority 1~5만 다시 본 row-level
+diagnostic rerun 입니다. strict JSON prompt/schema 를 fail-closed 로 보강하고,
+LLM 이 context 안의 canonical locator JSON 을 그대로 복사했는지 byte-equal /
+normalized-equal 로 분리 검증합니다. 이번 rerun 에서 strict JSON parse failure 는
+`2 -> 0` 이지만 schema repair 적용도 `0 -> 2` 로 별도 기록되었습니다.
+LLM-generated locator copy failure 는 누락 필드까지 보수적으로 세면 `5 -> 1`,
+field mismatch 만 보면 `3 -> 0` 입니다. PDF `source_pdf_path` mismatch 는
+`1 -> 0`, XLSX `row_label` mismatch 는 `2 -> 0` 으로 기록되었습니다. 이 숫자는
+promotion evidence 가 아니며, answer/citation score 도 참고용입니다. locator
+metric 은 post-hoc payload locator 보존 실패와 LLM-generated locator copy 실패를
+별도 지표로 읽어야 합니다.
 
-- `eval/eval_queries/official_denominator_registry.json`
-- `eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.md`
-- `eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl`
-- `eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_summary.md`
-- `eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.md`
-- `eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.md`
+`official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage`
+는 priority 1~5 뒤에 남은 `text_namu_v2_0012` TEXT `text_locator` residual만
+다시 본 diagnostic run 입니다. source-bound prompt context 안의 canonical
+locator JSON을 copy-safe하게 제공하고, 모델이 비운 nested `text_locator`는
+source-bound locator JSON으로만 canonical copy repair 하도록 기록했습니다.
+결과적으로 TEXT `text_locator` missing 은 `1 -> 0`, byte-equal /
+normalized-equal 은 모두 true 입니다.
+
+`official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage`
+는 29개 official denominator 전체를 다시 실행한 post-triage all-track
+diagnostic measurement 입니다. Lane A/B/C 정의는 v3_1과 동일합니다. 결과는
+Lane A PASS `24/29`, Lane B PASS `20/29`, Lane C PASS `17/29` 이고,
+Lane B/C strict JSON parse failure, LLM-generated locator copy failure,
+PDF `source_pdf_path` mismatch, XLSX `row_label` mismatch, TEXT `text_locator`
+missing 이 모두 `0` 입니다. 남은 queue 는 answer span / answer renderer
+성격으로 이동했으며, 이 run 도 promotion/silver/gold/tuning evidence 가
+아닙니다.
+
+현재 사람이 가장 먼저 볼 파일은 아래 3개 rolling 문서입니다. run별
+Markdown report 는 주 독해 표면으로 보지 않고, 명시 요청된 diagnostic
+Markdown과 JSON/JSONL 원자료는 `eval/reports/rag-ingestion/` 아래에 남깁니다.
+
+- `../../docs/rag-ingestion-progress.md`
+- `../../docs/rag-ingestion-measurements.md`
+- `../../docs/rag-ingestion-triage.md`
 
 ## XLSX/PDF Evidence 검색 방식
 
