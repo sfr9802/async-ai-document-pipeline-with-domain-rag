@@ -13,16 +13,17 @@ ai capability 를 위한 가벼운 로컬 우선 eval harness. 프로덕션
 `reports/rag-ingestion/official_answer_citation_metric_first_run_v1.{json,md}`
 입니다.
 
-| Track | 공식 입력 | 공식 first-run baseline | 최신 v3 comparable live measurement |
-|---|---:|---:|---:|
-| `text_namu_v2_1` | 6 rows | PASS `6/6` | PASS `1/6` |
-| `xlsx_business_structured` | 19 rows | PASS `1/19` | PASS `19/19` |
-| `pdf_business_ocr_mm` | 4 rows | PASS `1/4` | PASS `4/4` |
+| Track | 공식 입력 | 공식 first-run baseline | v3 primary replay | v3_1 Lane B live LLM top-k | v3_1 Lane C query-bound oracle |
+|---|---:|---:|---:|---:|---:|
+| `text_namu_v2_1` | 6 rows | PASS `6/6` | PASS `1/6` | PASS `1/6` | PASS `2/6` |
+| `xlsx_business_structured` | 19 rows | PASS `1/19` | PASS `19/19` | PASS `15/19` | PASS `16/19` |
+| `pdf_business_ocr_mm` | 4 rows | PASS `1/4` | PASS `4/4` | PASS `2/4` | PASS `2/4` |
 
-공식 first-run 은 `SCORED_BASELINE_PARTIAL` 상태이고, 전체 `29`행 중
-PASS `8`, error `21`입니다. 이 baseline 은 tuning, threshold tuning,
-winner selection, promotion evidence, production mutation, gold mutation 을
-모두 하지 않습니다. `official_answer_citation_agentic_loop_run_v3_comparable_live_measurement`
+공식 first-run 은 `status=BLOCKED_OR_PARTIAL`,
+`status_detail=SCORED_BASELINE_PARTIAL` 상태이고, 전체 `29`행 중 PASS `8`,
+error `21`입니다. 이 baseline 은 tuning, threshold tuning, winner selection,
+promotion evidence, production mutation, gold mutation 을 모두 하지 않습니다.
+`official_answer_citation_agentic_loop_run_v3_comparable_live_measurement`
 는 v2.2 backend validation 완료를 전제로 한 별도 artifact family 입니다.
 XLSX/PDF structured row 는 deterministic source-bound adapter 답변을
 primary answer 로 유지하고, TEXT 6행만 real local LLM synthesis 를 실행합니다.
@@ -32,12 +33,25 @@ primary answer 로 유지하고, TEXT 6행만 real local LLM synthesis 를 실�
 `winner_selection=false` 이며 29/29 PASS 가 되더라도 promotion gate 를 자동
 실행하지 않습니다.
 
-현재 사람이 가장 먼저 볼 파일은 아래 네 가지입니다.
+`official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement`
+는 이후 실패 케이스 튜닝 전에 고정한 diagnostic-only foundation run 입니다.
+Lane A는 v3 primary 정책을 그대로 재생하고, Lane B는 PDF/TEXT/XLSX 29행
+전체를 source-bound retrieved top-k context 로 live LLM 생성하며, Lane C는
+query-bound SearchUnit context 만으로 live LLM 생성합니다. Lane B/C strict JSON
+에는 cited SearchUnit ID뿐 아니라 LLM이 직접 복사한 `citation_locators`도
+기록하므로 PDF bbox/XLSX cell locator 처리 여부를 post-hoc adapter payload와
+분리해 볼 수 있습니다. 세 lane 의 점수는 서로 섞어 official score 로 읽지
+않습니다. 이 run 도 silver/gold/promotion evidence 가 아니며 expected answer,
+gold fields, supporting evidence 를 generation source 로 쓰지 않습니다.
+
+현재 사람이 가장 먼저 볼 파일은 아래 파일들입니다.
 
 - `eval/eval_queries/official_denominator_registry.json`
 - `eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.md`
 - `eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl`
 - `eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_summary.md`
+- `eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.md`
+- `eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.md`
 
 ## XLSX/PDF Evidence 검색 방식
 
@@ -137,12 +151,13 @@ flat 파일을 능가할 때 교체 — `app/` 안의 어느 것도 여기 어�
   `eval/eval_queries/official_denominator_registry.json`
 - active Phase 7 corpus를 찾을 때:
   `eval/corpora/namu-v4-structured-combined/`
-- active promoted Phase 7 index를 찾을 때:
+- active promoted Phase 7 index cache를 재현할 때:
   `eval/indexes/namu-v4-2008-2026-04-retrieval-title-section-mseq512/`
+  (local-only/rebuildable cache name; fresh checkout 에 없을 수 있음)
 - generated run payload를 찾을 때:
   `eval/artifacts/eval_runs/<run_id>/`
 - legacy v3 reproduction note를 찾을 때:
-  `eval/legacy/v3/README.md`
+  `archive/experiments/eval-legacy/v3/README.md`
 
 ### 보존/외부화 규칙
 

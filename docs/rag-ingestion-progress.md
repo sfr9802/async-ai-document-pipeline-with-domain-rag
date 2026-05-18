@@ -1,6 +1,6 @@
 # RAG Ingestion Progress
 
-Last updated: 2026-05-17 KST.
+Last updated: 2026-05-18 KST.
 
 This is the compact status index for the current RAG ingestion and official
 answer/citation metric work. Do not append turn transcripts or create new
@@ -11,11 +11,12 @@ current status events.
 
 ## Current Status
 
-Overall status: `official_answer_citation_v2_source_bound_diagnostic_recorded`;
-the prior gate `official_denominator_source_bound_index_build_ready_load_checked`
-remains satisfied.
+Overall status: `official_answer_citation_v3_1_all_track_foundation_measurement_recorded`;
+the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
+and `v3_comparable_live_measurement_completed` remain satisfied.
 
-- Official first-run baseline is `SCORED_BASELINE_PARTIAL` with
+- Official first-run baseline is `status=BLOCKED_OR_PARTIAL` with
+  `status_detail=SCORED_BASELINE_PARTIAL`,
   `official_metric_execution_started=true`, `official_scoring_attempt_count=29`,
   `scored_count=29`, PASS=8, CITATION_UNSUPPORTED=11,
   PARTIAL_OR_UNSUPPORTED=10.
@@ -68,6 +69,24 @@ remains satisfied.
   `generation_used_supporting_evidence=false`,
   `generation_used_gold_fields=false`, `promotion_evidence=false`, and
   `baseline_comparison_is_model_quality_comparable=false`.
+- v3 comparable live measurement
+  `official_answer_citation_agentic_loop_run_v3_comparable_live_measurement`
+  remains diagnostic-only and separate from the immutable first-run baseline:
+  rows=29, scored_count=29, PASS=24/29, PDF=4/4, XLSX=19/19, TEXT=1/6.
+  PDF/XLSX primary answers are retained structured-adapter outputs; only TEXT
+  6 rows use real local LLM synthesis, so v3 is all-track official measurement
+  but not all-track LLM quality measurement.
+- v3_1 all-track foundation measurement
+  `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement`
+  is now recorded before silver-set creation or row-level failure tuning. It is
+  diagnostic-only and not silver/gold/promotion evidence. Lane A replays v3
+  primary policy; Lane B invokes live LLM on all 29 rows with source-bound
+  retrieved top-k context; Lane C invokes live LLM on all 29 rows with
+  query-bound SearchUnit context only. Lane B/C strict JSON now records
+  LLM-generated `citation_locators`, so PDF bbox and XLSX cell locator handling
+  is measured separately from adapter-retained payloads. Lane counts are:
+  A PASS=24/29, B PASS=18/29, C PASS=20/29. The triage queue contains 12 rows
+  and should be used for the next row-level failure work.
 - Answer/citation silver strategy is recorded in
   `ai/eval/silver/answer_citation_silver_manifest_v1.json`; readiness is
   `ai/eval/silver/answer_citation_silver_readiness_v1.json`. Its purpose is an
@@ -93,9 +112,9 @@ remains satisfied.
 
 | Track | Current state | Current metric/evidence | Next action |
 |---|---|---|---|
-| `text_namu_v2_1` | Official baseline PASS=6/6; source-bound readiness resolves all 6 from corpus chunks | Source-bound manifest rows=6/6 | Preserve baseline pass state; no TEXT blocker remains. |
-| `xlsx_business_structured` | XLSX runtime candidate report-only PASS=19/19; source-bound readiness resolves all 19 from source workbooks | Source-bound manifest rows=19/19 | Keep candidate artifacts report-only; no XLSX blocker remains. |
-| `pdf_business_ocr_mm` | PDF source fields now resolve from original PDFs/native text with PaddleOCR reserved as OCR fallback | Source-bound manifest rows=4/4; diagnostic v2 fail-closed on citation payload schema mismatch | Inspect track-mixed top-k and scorer-compatible locator filtering before any comparable rerun. |
+| `text_namu_v2_1` | v3_1 Lane A PASS=1/6; Lane B PASS=1/6; Lane C PASS=2/6 | Source-bound manifest rows=6/6; triage rows include strict JSON and TEXT partial/span mismatches | Process triage queue row by row; do not create silver or change gold during triage. |
+| `xlsx_business_structured` | v3_1 Lane A retains adapter PASS=19/19; Lane B PASS=15/19; Lane C PASS=16/19 | Workbook/sheet/range/cell locators preserved in payloads; LLM-generated locator failures are now measured separately | Inspect strict JSON and XLSX cell locator failures before adapter-vs-LLM answer gaps. |
+| `pdf_business_ocr_mm` | v3_1 Lane A retains adapter PASS=4/4; Lane B PASS=2/4; Lane C PASS=2/4 | page/bbox/region payloads preserved; LLM-generated bbox locator failures are now measured separately | Inspect strict JSON and PDF bbox locator handling before answer-renderer tuning. |
 | Current tests | `--rag-current` profile isolates official metric, source-of-truth, candidate, and guardrail tests | Legacy `ai/tests/test_*.py` suites outside the current profile were deleted | Keep the compact profile green; recreate deleted legacy tests only when a new task needs them. |
 
 ## Current Verification Command
@@ -107,10 +126,35 @@ python -X utf8 -m pytest ai/tests --rag-current -q
 python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q
 ```
 
-Current verification: `--rag-current` 101 passed, 0 skipped, 0 failed.
+Current verification:
+local results recorded in this progress log.
+`--rag-current` 121 passed, 0 skipped, 0 failed.
 Marker profile
-`rag_current or rag_official_metric or rag_pdf_current`: 101 passed,
+`rag_current or rag_official_metric or rag_pdf_current`: 121 passed,
 0 deselected, 0 failed.
+
+Additional 2026-05-18 local verification for v3_1 all-track foundation
+measurement:
+
+- `python -X utf8 -m py_compile ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py ai\tests\test_rag_official_metric_artifact_source_of_truth_audit_v1.py ai\tests\test_rag_current_focused_test_profile_v1.py ai\tests\test_rag_source_bound_official_denominator_index.py`: PASS.
+- `cd ai; python -m scripts.doctor --json --only schemas,faiss_index,build_json,runtime_model_match`: overall PASS; schemas, faiss_index, build_json, runtime_model_match PASS; capability_readiness WARN is present but not part of the requested failing checks.
+- `git diff --check`: PASS with line-ending warnings only.
+- Diagnostic-only confirmed: `promotion_evidence=false`, `threshold_tuning=false`,
+  `winner_selection=false`, `promotion_gate_auto_run=false`,
+  `candidate_artifacts_as_generation_source=false`,
+  `generation_used_expected_answer=false`, `generation_used_gold_fields=false`,
+  and `generation_used_supporting_evidence=false`.
+
+v3_1 artifact sha256:
+
+- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_results.jsonl`: `5A871163121ABB4849B74CA2A33DD06757C84994C2E35064CDFF765F8562024D`
+- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.json`: `474B950C6289362A3BE33880B755FB2361EA98F0AAD9EFC3A6FEC2FE72AA8688`
+- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.md`: `57C26D9CF5321FA24C754B7C651A3E224FBE9ED8E797E02A05AF0E3A904FE43C`
+- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_failure_attribution.json`: `51377761AC0BE5AD8AAD7EA89655366907A389E139573A7B547A4627B3E30C08`
+- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_actual_response_audit.jsonl`: `FC3E31C699C6791CECD4FE3E1B8B120C54C9B10FBA121FE967D4CEA84A493BBD`
+- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_actual_response_audit.md`: `394C550D745361613140A9D243F70B575D2C094195D621BEC6BDF19301783800`
+- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.json`: `9426CE189C04080290027EFC923F38E60E5BE58EB6FF65FE572A6EFCBE837380`
+- `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.md`: `5DB0E662AB54A8E12EDDF760D386BBBAADE5E5BB6428BA81E3D89DD08C5B16C3`
 
 ## Current Source-Of-Truth Artifacts
 
@@ -134,6 +178,18 @@ Current compact candidate/status artifacts:
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic_summary.json`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic_summary.md`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic_failure_attribution.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_results.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_summary.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_summary.md`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_failure_attribution.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_results.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.md`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_failure_attribution.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_actual_response_audit.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_actual_response_audit.md`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.md`
 - `ai/eval/reports/rag-ingestion/official_answer_citation_source_bound_index_build_readiness_v1.json`
 - `ai/eval/reports/rag-ingestion/rag_current_eval_status.jsonl`
 - `ai/eval/silver/answer_citation_silver_manifest_v1.json`
@@ -161,18 +217,17 @@ as the latest metric execution status.
 
 ## Next Recommended Steps
 
-1. Inspect the diagnostic v2 failure attribution at query/track/stage level:
-   PDF and most TEXT rows fail closed on citation payload schema mismatch, while
-   XLSX rows pass through the source-bound adapter path.
-2. Keep v2 as diagnostic-only until a real LLM backend and comparable setup are
-   validated; do not compare the 20 PASS result to the immutable first-run
-   baseline as model quality.
-3. Keep XLSX/PDF runtime candidates report-only; do not use their PASS=29/29
-   observation as the immutable baseline or promotion evidence.
-4. Create track-specific dev/holdout/contract silver JSONL only after safe
-   source-bound source manifests provide required TEXT, XLSX, and PDF locator
-   fields without using official 29 query_ids or report-only candidate rows as
-   generation source.
+1. Start from
+   `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.md`
+   and process one failure row at a time.
+2. Keep v3_1 diagnostic-only. Do not treat Lane B/C PASS counts as promotion
+   evidence and do not mix Lane A/B/C into a single official score.
+3. Do not create silver rows or change expected answers, supporting evidence,
+   relevance labels, answerability labels, or gold policy unless the user makes
+   that specific decision.
+4. Prefer infrastructure/schema/citation payload issues first, then retrieval
+   query-bound misses, then locator preservation, then adapter-vs-LLM gaps and
+   TEXT partial synthesis.
 5. Keep the compact `ai/tests` surface current; recreate legacy coverage only
    when an active task needs a fresh, source-grounded test.
 
@@ -196,3 +251,4 @@ as the latest metric execution status.
 | 2026-05-17 | Built and load-checked the non-production source-bound official-denominator index at `ai/eval/indexes/rag-data-official-denominator-v1`: 29/29 rows, PDF=4, TEXT=6, XLSX=19, `rerun_allowed=true`; no baseline/gold/denominator/human-label/production mutation. |
 | 2026-05-17 | Ran `official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic` against only the source-bound official-denominator index: rows=29, scored_count=20, PASS=20, fail-closed schema mismatches=9, diagnostic-only, no candidate/gold/expected/supporting generation source and no promotion evidence. |
 | 2026-05-17 | Deleted legacy `ai/tests/test_*.py` suites outside the current profile; full `ai/tests` now mirrors the compact RAG official metric/candidate/guardrail surface. |
+| 2026-05-18 | Regenerated `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement` with LLM-generated `citation_locators`: 29 rows, Lane A PASS=24/29, Lane B PASS=18/29, Lane C PASS=20/29, all guardrails false for promotion/tuning/gold/silver mutation, actual-response audit and 12-row triage queue recorded. |

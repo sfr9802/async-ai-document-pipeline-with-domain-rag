@@ -1635,6 +1635,72 @@ def test_v3_requires_completed_v2_2_preflight_before_generation() -> None:
     assert "v2_2_llm_backend_validation_not_completed" in blocked["errors"]
 
 
+def test_v3_1_preflight_requires_exact_current_denominator_query_ids() -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    rows = []
+    for index in range(4):
+        rows.append(
+            {
+                "run_id": runner.V3_RUN_ID,
+                "query_id": f"pdf-{index}",
+                "track": "pdf_business_ocr_mm",
+                "failure_category": "PASS",
+                "structured_adapter_output_retained": True,
+            }
+        )
+    for index in range(6):
+        rows.append(
+            {
+                "run_id": runner.V3_RUN_ID,
+                "query_id": f"text-{index}",
+                "track": "text_namu_v2_1",
+                "failure_category": "PASS" if index == 0 else "PARTIAL_OR_UNSUPPORTED",
+                "structured_adapter_output_retained": False,
+            }
+        )
+    for index in range(19):
+        rows.append(
+            {
+                "run_id": runner.V3_RUN_ID,
+                "query_id": f"xlsx-{index}",
+                "track": "xlsx_business_structured",
+                "failure_category": "PASS",
+                "structured_adapter_output_retained": True,
+            }
+        )
+    summary = {
+        "run_id": runner.V3_RUN_ID,
+        "status": "COMPARABLE_LIVE_MEASUREMENT_V3_COMPLETED",
+        "result_count": 29,
+        "pass_count": 24,
+        "promotion_evidence": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+    }
+    attribution = {"run_id": runner.V3_RUN_ID, "promotion_evidence": False}
+    expected_query_ids = {row["query_id"] for row in rows}
+
+    ok = runner.v3_artifact_consistency_preflight(
+        summary=summary,
+        attribution=attribution,
+        rows=rows,
+        expected_query_ids=expected_query_ids,
+    )
+    mismatched = runner.v3_artifact_consistency_preflight(
+        summary=summary,
+        attribution=attribution,
+        rows=[{**rows[0], "query_id": "stale-pdf-0"}, *rows[1:]],
+        expected_query_ids=expected_query_ids,
+    )
+
+    assert ok["ok"] is True
+    assert mismatched["ok"] is False
+    assert "v3_query_ids_do_not_match_current_official_denominator" in mismatched["errors"]
+
+
 def test_v3_structured_rows_are_retained_and_text_rows_use_llm(monkeypatch) -> None:
     import rag_official_answer_citation_agentic_loop_run_v1 as runner
 

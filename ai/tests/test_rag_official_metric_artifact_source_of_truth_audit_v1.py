@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -26,6 +27,7 @@ AGENTIC_V2_RUN_ID = "official_answer_citation_agentic_loop_run_v2_source_bound_d
 AGENTIC_V2_1_RUN_ID = "official_answer_citation_agentic_loop_run_v2_1_citation_contract_repair"
 AGENTIC_V2_2_RUN_ID = "official_answer_citation_agentic_loop_run_v2_2_llm_backend_validation"
 AGENTIC_V3_RUN_ID = "official_answer_citation_agentic_loop_run_v3_comparable_live_measurement"
+AGENTIC_V3_1_RUN_ID = "official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement"
 AGENTIC_DIAGNOSTIC_CLASSIFICATION = (
     "diagnostic_live_generation_fixture_all_index_not_official_denominator_representative"
 )
@@ -50,6 +52,13 @@ AGENTIC_V2_2_ATTRIBUTION_JSON = REPORT_DIR / f"{AGENTIC_V2_2_RUN_ID}_failure_att
 AGENTIC_V3_RESULTS = REPORT_DIR / f"{AGENTIC_V3_RUN_ID}_results.jsonl"
 AGENTIC_V3_SUMMARY_JSON = REPORT_DIR / f"{AGENTIC_V3_RUN_ID}_summary.json"
 AGENTIC_V3_ATTRIBUTION_JSON = REPORT_DIR / f"{AGENTIC_V3_RUN_ID}_failure_attribution.json"
+AGENTIC_V3_1_RESULTS = REPORT_DIR / f"{AGENTIC_V3_1_RUN_ID}_results.jsonl"
+AGENTIC_V3_1_SUMMARY_JSON = REPORT_DIR / f"{AGENTIC_V3_1_RUN_ID}_summary.json"
+AGENTIC_V3_1_ATTRIBUTION_JSON = REPORT_DIR / f"{AGENTIC_V3_1_RUN_ID}_failure_attribution.json"
+AGENTIC_V3_1_AUDIT_JSONL = REPORT_DIR / f"{AGENTIC_V3_1_RUN_ID}_actual_response_audit.jsonl"
+AGENTIC_V3_1_AUDIT_MD = REPORT_DIR / f"{AGENTIC_V3_1_RUN_ID}_actual_response_audit.md"
+AGENTIC_V3_1_TRIAGE_JSON = REPORT_DIR / f"{AGENTIC_V3_1_RUN_ID}_triage_queue.json"
+AGENTIC_V3_1_TRIAGE_MD = REPORT_DIR / f"{AGENTIC_V3_1_RUN_ID}_triage_queue.md"
 AGENTIC_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data"
 ALLOWED_AGENTIC_ATTRIBUTION_CATEGORIES = {
     "CORPUS_COVERAGE_MISS",
@@ -100,6 +109,14 @@ CURRENT_REPORT_FILENAMES = {
     f"{AGENTIC_V3_RUN_ID}_summary.json",
     f"{AGENTIC_V3_RUN_ID}_summary.md",
     f"{AGENTIC_V3_RUN_ID}_failure_attribution.json",
+    f"{AGENTIC_V3_1_RUN_ID}_results.jsonl",
+    f"{AGENTIC_V3_1_RUN_ID}_summary.json",
+    f"{AGENTIC_V3_1_RUN_ID}_summary.md",
+    f"{AGENTIC_V3_1_RUN_ID}_failure_attribution.json",
+    f"{AGENTIC_V3_1_RUN_ID}_actual_response_audit.jsonl",
+    f"{AGENTIC_V3_1_RUN_ID}_actual_response_audit.md",
+    f"{AGENTIC_V3_1_RUN_ID}_triage_queue.json",
+    f"{AGENTIC_V3_1_RUN_ID}_triage_queue.md",
     "official_answer_citation_source_bound_index_build_readiness_v1.json",
 }
 
@@ -1413,6 +1430,202 @@ def test_v3_comparable_live_measurement_artifacts_are_separate_and_guarded() -> 
     assert measurement["comparable_live_measurement"] is True
     assert measurement["promotion_gate_auto_run"] is False
     assert measurement["result_bucket_counts"] == summary["result_bucket_counts"]
+
+
+def test_v3_1_all_track_foundation_measurement_artifacts_are_separate_and_guarded() -> None:
+    summary = read_json(AGENTIC_V3_1_SUMMARY_JSON)
+    results = read_jsonl(AGENTIC_V3_1_RESULTS)
+    attribution = read_json(AGENTIC_V3_1_ATTRIBUTION_JSON)
+    audit_rows = read_jsonl(AGENTIC_V3_1_AUDIT_JSONL)
+    triage = read_json(AGENTIC_V3_1_TRIAGE_JSON)
+    status_events = read_jsonl(REPORT_DIR / "rag_current_eval_status.jsonl")
+    input_config = read_json(REPORT_DIR / "official_metric_input_config_v1.json")
+
+    lane_names = {
+        "v3_primary_replay",
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle",
+    }
+    required_guardrails = {
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "promotion_gate_auto_run": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+        "production_mutation": False,
+        "baseline_mutation": False,
+        "denominator_mutation": False,
+        "gold_mutation": False,
+        "human_label_mutation": False,
+    }
+    locator_fields = {
+        "PDF": {
+            "source_pdf_path",
+            "page",
+            "physical_page_index",
+            "bbox",
+            "region_type",
+            "search_unit_id",
+            "document_version_id",
+        },
+        "XLSX": {
+            "workbook",
+            "sheet",
+            "range",
+            "cell",
+            "row_label",
+            "target_column",
+            "normalized_value",
+            "search_unit_id",
+            "document_version_id",
+        },
+        "TEXT": {"document_id", "document_version_id", "search_unit_id", "text_locator"},
+    }
+
+    assert summary["run_id"] == AGENTIC_V3_1_RUN_ID
+    assert summary["measurement_classification"] == "all_track_foundation_measurement_v3_1_diagnostic_only"
+    assert summary["run_id"] not in {
+        AGENTIC_RUN_ID,
+        AGENTIC_V2_RUN_ID,
+        AGENTIC_V2_1_RUN_ID,
+        AGENTIC_V2_2_RUN_ID,
+        AGENTIC_V3_RUN_ID,
+    }
+    assert summary["total_denominator_rows"] == 29
+    assert summary["rows_by_source_family"] == {"PDF": 4, "TEXT": 6, "XLSX": 19}
+    assert summary["diagnostic_only"] is True
+    for key, expected in required_guardrails.items():
+        assert summary["guardrails"][key] is expected
+    assert summary["next_step_recommendation"] == "row_level_failure_triage_after_all_track_foundation_measurement"
+
+    assert set(summary["lane_counts"]) == lane_names
+    assert summary["lane_counts"]["live_llm_retrieval_topk"]["llm_invoked_count"] == 29
+    assert summary["lane_counts"]["live_llm_query_bound_oracle"]["llm_invoked_count"] == 29
+    assert summary["lane_counts"]["v3_primary_replay"]["adapter_retained_count"] == 23
+    assert summary["lane_counts"]["v3_primary_replay"]["llm_invoked_count"] == 6
+    assert summary["source_family_lane_counts"]["PDF"]["v3_primary_replay"]["pass_count"] == 4
+    assert summary["source_family_lane_counts"]["XLSX"]["v3_primary_replay"]["pass_count"] == 19
+
+    assert len(results) == 29
+    assert len(audit_rows) == 29
+    config_query_ids = {row["query_id"] for row in input_config["candidate_manifest"]}
+    assert {row["query_id"] for row in results} == config_query_ids
+    assert Counter(row["source_family"] for row in results) == Counter({"PDF": 4, "TEXT": 6, "XLSX": 19})
+    assert all(row["run_id"] == AGENTIC_V3_1_RUN_ID for row in results)
+    assert all(set(row["lane_results"]) == lane_names for row in results)
+    assert all("expected_answer" not in row for row in results)
+    assert all("supporting_evidence" not in row for row in results)
+    assert all("human_label" not in row for row in results)
+
+    for row in results:
+        family = row["source_family"]
+        assert locator_fields[family].issubset(set(row["denominator_locator"]))
+        assert row["denominator_search_unit_id"] == row["denominator_locator"]["search_unit_id"]
+        assert row["query_bound_search_unit_present"] is True
+
+        lane_a = row["lane_results"]["v3_primary_replay"]
+        lane_b = row["lane_results"]["live_llm_retrieval_topk"]
+        lane_c = row["lane_results"]["live_llm_query_bound_oracle"]
+        assert lane_b["llm_invoked"] is True
+        assert lane_c["llm_invoked"] is True
+        assert lane_b["answer_origin"] == "LLM_SYNTHESIS"
+        assert lane_c["answer_origin"] == "LLM_SYNTHESIS"
+        assert lane_b["prompt_context_mode"] == "retrieval_topk_source_bound"
+        assert lane_c["prompt_context_mode"] == "query_bound_only_source_bound"
+        assert lane_b["generation_used_expected_answer"] is False
+        assert lane_c["generation_used_expected_answer"] is False
+        assert lane_b["generation_used_gold_fields"] is False
+        assert lane_c["generation_used_gold_fields"] is False
+        assert lane_b["generation_used_supporting_evidence"] is False
+        assert lane_c["generation_used_supporting_evidence"] is False
+        assert set(lane_c["cited_search_unit_ids"]).issubset({row["denominator_search_unit_id"]})
+        for live_lane in (lane_b, lane_c):
+            assert live_lane["llm_generated_locator_validation"]["generated_by_llm"] is True
+            assert set(live_lane["llm_generated_locator_validation"]["required_fields"]) == locator_fields[family]
+            assert live_lane["llm_generated_locator_validation"]["cited_search_unit_ids"] == live_lane["cited_search_unit_ids"]
+            assert isinstance(live_lane["llm_generated_citation_locators"], list)
+            for generated_locator in live_lane["llm_generated_citation_locators"]:
+                assert "search_unit_id" in generated_locator
+            if live_lane["failure_category"] == "PASS":
+                assert live_lane["llm_generated_locator_validation"]["ok"] is True
+                assert len(live_lane["llm_generated_citation_locators"]) == len(live_lane["cited_search_unit_ids"])
+                for generated_locator in live_lane["llm_generated_citation_locators"]:
+                    assert locator_fields[family].issubset(set(generated_locator))
+
+        if family in {"PDF", "XLSX"}:
+            assert lane_a["answer_origin"] == "STRUCTURED_ADAPTER"
+            assert lane_a["llm_invoked"] is False
+            assert lane_a["prompt_context_mode"] == "structured_adapter_retained"
+        else:
+            assert lane_a["answer_origin"] == "LLM_SYNTHESIS"
+            assert lane_a["llm_invoked"] is True
+
+    failing_query_ids = {
+        row["query_id"]
+        for row in results
+        if any(lane["failure_category"] != "PASS" for lane in row["lane_results"].values())
+    }
+    assert {item["query_id"] for item in triage["items"]} == failing_query_ids
+    assert all(item["failing_lane_names"] for item in triage["items"])
+    assert all(item["query_id"] in failing_query_ids for item in triage["items"])
+    assert all(item["safe_to_fix_without_user_gold_decision"] in {True, False} for item in triage["items"])
+    assert all(item["requires_user_gold_policy_decision"] in {True, False} for item in triage["items"])
+
+    assert attribution["run_id"] == AGENTIC_V3_1_RUN_ID
+    assert attribution["guardrails"] == summary["guardrails"]
+    assert set(attribution["failure_taxonomy"]) >= {
+        "PASS",
+        "RETRIEVAL_QUERY_BOUND_MISS",
+        "CITATION_PAYLOAD_SCHEMA_MISMATCH",
+        "LLM_STRICT_JSON_PARSE_FAILURE",
+        "PDF_BBOX_LOCATOR_LOSS",
+        "XLSX_CELL_LOCATOR_LOSS",
+        "SCORER_NORMALIZATION_REVIEW",
+        "GOLD_POLICY_REVIEW_CANDIDATE",
+    }
+
+    assert all("expected_answer" not in row for row in audit_rows)
+    assert all("supporting_evidence" not in row for row in audit_rows)
+    assert all(row["query_id"] in config_query_ids for row in audit_rows)
+    assert AGENTIC_V3_1_AUDIT_MD.exists()
+    assert AGENTIC_V3_1_TRIAGE_MD.exists()
+    assert not list(REPORT_DIR.glob(f"{AGENTIC_V3_1_RUN_ID}*silver*"))
+    assert not list(REPORT_DIR.glob(f"{AGENTIC_V3_1_RUN_ID}*gold*"))
+    assert not list(REPORT_DIR.glob(f"{AGENTIC_V3_1_RUN_ID}*promotion*"))
+    forbidden_status = subprocess.run(
+        [
+            "git",
+            "status",
+            "--short",
+            "--untracked-files=all",
+            "--",
+            "ai/eval/silver",
+            "ai/eval/review",
+            "ai/eval/eval_queries",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+    assert forbidden_status.returncode == 0
+    assert forbidden_status.stdout.strip() == ""
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V3_1_RUN_ID
+    )
+    assert measurement["promotion_evidence"] is False
+    assert measurement["diagnostic_only"] is True
+    assert measurement["result_count"] == 29
+    assert measurement["lane_counts"] == summary["lane_counts"]
 
 
 def test_agentic_available_pipeline_row_exception_is_specific_not_pipeline_unavailable() -> None:

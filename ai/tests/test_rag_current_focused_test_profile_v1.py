@@ -40,6 +40,7 @@ def test_current_profile_includes_required_official_candidate_and_pdf_tests() ->
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v2_1_citation_contract_repair_artifacts_discard_off_track_citations",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v2_2_llm_backend_validation_artifact_is_diagnostic_only",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_comparable_live_measurement_artifacts_are_separate_and_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_all_track_foundation_measurement_artifacts_are_separate_and_guarded",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_residual_audit_does_not_mutate_protected_artifacts",
         "ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests",
     }
