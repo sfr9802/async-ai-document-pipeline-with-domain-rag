@@ -577,9 +577,14 @@ def source_bound_text_surfaces(
             for line in mapping(locator.get("pdf_source_text_locator")).get("source_lines", [])
         ]
         source_text = " | ".join(line for line in source_lines if line)
-        display = (
+        locator_text = (
             f"{clean(locator.get('source_pdf_path'))} page {clean(locator.get('page'))}: "
             f"{clean(locator.get('row_label'))} | {clean(locator.get('target_column'))}"
+        )
+        display = (
+            f"{source_text} ({locator_text})"
+            if source_text
+            else locator_text
         )
         embedding = "\n".join(
             part
@@ -593,7 +598,7 @@ def source_bound_text_surfaces(
             )
             if part
         )
-        return embedding, display, source_text or display
+        return embedding, display, source_text or locator_text
     raise RuntimeError(f"unsupported source-bound track: {track}")
 
 
@@ -1606,7 +1611,62 @@ def derive_table_axis_from_pdf_lines(
     target_column = " | ".join(line["text"] for line in header_lines)
     if not target_column:
         target_column = "table_body"
-    return row_line["text"], target_column, [dict(row_line), *header_lines]
+    body_lines = collect_pdf_table_body_lines(
+        lines=lines,
+        start_index=row_index + 1,
+        max_rows=5,
+    )
+    return row_line["text"], target_column, unique_pdf_lines([dict(row_line), *header_lines, *body_lines])
+
+
+def collect_pdf_table_body_lines(
+    *,
+    lines: Sequence[Mapping[str, Any]],
+    start_index: int,
+    max_rows: int,
+) -> list[dict[str, Any]]:
+    body_lines: list[dict[str, Any]] = []
+    anchor_bboxes: list[Sequence[float]] = []
+    for index, line in enumerate(lines[start_index:], start=start_index):
+        text = clean(line.get("text"))
+        if not text or is_pdf_unit_line(text) or not is_pdf_table_data_line(text):
+            continue
+        bbox = line.get("bbox")
+        if not valid_bbox(bbox):
+            continue
+        if any(bbox_vertical_overlap(bbox, anchor) for anchor in anchor_bboxes):
+            continue
+        row_lines = [
+            dict(candidate)
+            for candidate in lines[index:]
+            if valid_bbox(candidate.get("bbox"))
+            and bbox_vertical_overlap(candidate.get("bbox"), bbox)
+            and clean(candidate.get("text"))
+            and not is_pdf_unit_line(clean(candidate.get("text")))
+        ]
+        if not row_lines:
+            continue
+        body_lines.extend(sorted(row_lines, key=lambda item: float(item["bbox"][0])))
+        anchor_bboxes.append(bbox)
+        if len(anchor_bboxes) >= max_rows:
+            break
+    return body_lines
+
+
+def unique_pdf_lines(lines: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    seen: set[tuple[str, tuple[float, ...]]] = set()
+    for line in lines:
+        text = clean(line.get("text"))
+        bbox = line.get("bbox")
+        if not text or not valid_bbox(bbox):
+            continue
+        key = (text, tuple(round(float(value), 4) for value in bbox))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(dict(line))
+    return out
 
 
 def first_table_label_line(lines: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
@@ -1657,10 +1717,20 @@ def is_pdf_table_data_line(text: str) -> bool:
     first = text.split()[0] if text.split() else ""
     return bool(
         re.match(
-            r"^(?:\d{4}(?:\.\s*(?:\d{1,2}|[ⅠⅡⅢⅣ]+))?|[ⅠⅡⅢⅣ]+|\d{1,2})$",
+            r"^(?:\d{4}(?:\.\s*(?:\d{1,2}|[ⅠⅡⅢⅣ]+))?|[ⅠⅡⅢⅣ]+|\d{1,2}|\d[\d,]*(?:\.\d+)?)$",
             first,
         )
     )
+
+
+def valid_bbox(value: Any) -> bool:
+    return isinstance(value, Sequence) and not isinstance(value, (str, bytes)) and len(value) == 4
+
+
+def bbox_vertical_overlap(left: Any, right: Any) -> bool:
+    if not valid_bbox(left) or not valid_bbox(right):
+        return False
+    return min(float(left[3]), float(right[3])) >= max(float(left[1]), float(right[1]))
 
 
 def int_or_none(value: Any) -> int | None:

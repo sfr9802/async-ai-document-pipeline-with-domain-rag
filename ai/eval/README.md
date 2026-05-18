@@ -4,6 +4,80 @@ ai capability 를 위한 가벼운 로컬 우선 eval harness. 프로덕션
 파이프라인이 eval 코드를 절대 import 하지 않도록 (그 반대도) `app/`
 과 의도적으로 분리되어 있습니다.
 
+## 현재 3트랙 진행 상황
+
+현재 RAG answer/citation 평가는 하나의 통합 점수가 아니라 TEXT, XLSX, PDF
+를 분리한 3트랙으로 봅니다. 기준 입력은
+`eval_queries/official_denominator_registry.json` 에서 시작하고, 현재
+공식 first-run 리포트는
+`reports/rag-ingestion/official_answer_citation_metric_first_run_v1.{json,md}`
+입니다.
+
+| Track | 공식 입력 | 공식 first-run baseline | 최신 v3 comparable live measurement |
+|---|---:|---:|---:|
+| `text_namu_v2_1` | 6 rows | PASS `6/6` | PASS `1/6` |
+| `xlsx_business_structured` | 19 rows | PASS `1/19` | PASS `19/19` |
+| `pdf_business_ocr_mm` | 4 rows | PASS `1/4` | PASS `4/4` |
+
+공식 first-run 은 `SCORED_BASELINE_PARTIAL` 상태이고, 전체 `29`행 중
+PASS `8`, error `21`입니다. 이 baseline 은 tuning, threshold tuning,
+winner selection, promotion evidence, production mutation, gold mutation 을
+모두 하지 않습니다. `official_answer_citation_agentic_loop_run_v3_comparable_live_measurement`
+는 v2.2 backend validation 완료를 전제로 한 별도 artifact family 입니다.
+XLSX/PDF structured row 는 deterministic source-bound adapter 답변을
+primary answer 로 유지하고, TEXT 6행만 real local LLM synthesis 를 실행합니다.
+따라서 `baseline_comparison_is_model_quality_comparable=true` 라도 비교 범위는
+`mixed_structured_adapter_retained_and_text_llm_synthesis_rows` 로 읽어야 합니다.
+이 실행도 `promotion_evidence=false`, `threshold_tuning=false`,
+`winner_selection=false` 이며 29/29 PASS 가 되더라도 promotion gate 를 자동
+실행하지 않습니다.
+
+현재 사람이 가장 먼저 볼 파일은 아래 네 가지입니다.
+
+- `eval/eval_queries/official_denominator_registry.json`
+- `eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.md`
+- `eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl`
+- `eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_comparable_live_measurement_summary.md`
+
+## XLSX/PDF Evidence 검색 방식
+
+XLSX/PDF 검색은 "비슷한 문서 하나 찾기"가 아니라, 답변에 붙일 수 있는
+근거 위치를 끝까지 남기는 흐름입니다. 그래서 질문을 먼저 트랙으로
+라우팅하고, 같은 트랙 안의 SearchUnit 후보만 고른 뒤, citation payload
+가 official scorer 에서 다시 검증 가능한지 확인합니다.
+
+XLSX 에서는 workbook, sheet, range, cell, target column, row label 을
+근거로 봅니다. 예를 들어 `D602` 같은 cell 이 실제 supporting evidence
+이고, 넓은 `A602:D602` range 는 사람이 확인할 수 있는 주변 행입니다.
+숨김/제외 셀은 답변, citation, debug-public 표면으로 올라오면 안 되며,
+넓은 range 만 있고 target cell 이 흐리면 diagnostic-only 로 남깁니다.
+
+PDF 에서는 file identity 와 content evidence 를 분리합니다. FILE lane 은
+어떤 PDF 인지 확인하는 길이고, CONTENT lane 은 page, physical page index,
+bbox, region type, matched text, nearby paragraph 로 답을 지지하는 길입니다.
+native text 를 우선 쓰고, OCR 은 fallback 성격으로 다룹니다. page/bbox/region
+중 하나가 빠지면 official-compatible citation 으로 보지 않습니다.
+
+## 실제 골드셋 쿼리와 답변 샘플
+
+아래 행은 실제 official denominator 에 들어간 골드셋 쿼리와
+`official_answer_citation_scorer_results_v1.jsonl` 의 생성 답변 예시입니다.
+
+| Track | Query ID | 골드셋 질문 | 골드 정답 | 생성 답변 | 판정 |
+|---|---|---|---|---|---|
+| PDF | `gq_auto_024` | 1월 산업활동에서 생산 지표는 어떻게 움직였나요? | 광공업 생산, 서비스업 생산, 건설투자는 감소 | 광공업 생산, 서비스업 생산, 건설투자는 감소 | PASS |
+| TEXT | `text_namu_v2_0005` | 자동판매기 미궁 방랑 애니 3기 방영 시기는 문서에 어떻게 적혀 있어 | 감독은 야마모토 타카시, 방영 시기는 2026년 4월. | 감독은 야마모토 타카시, 방영 시기는 2026년 4월. | PASS |
+| XLSX | `gq_xlsx_lookup_004` | 2019년 5월 우이신설선의 승차총승객수는 몇 명입니까? | 1,469,681명입니다. | 구조화된 표 근거에 따르면 노선명: 우이신설선, 년월: 201905, 승차총승객수: 1,469,681입니다. | PASS |
+
+diagnostic-only LLM backend validation 에서는 local LLM 이 source-bound
+SearchUnit 후보를 읽고 답변 형식과 인용 후보를 냅니다. 예를 들어
+`gq_auto_024` 의 short answer 는 "광공업 생산, 서비스업 생산, 건설투자는
+감소"였고, `text_namu_v2_0005` 의 short answer 는 "감독은 야마모토 타카시,
+방영 시기는 2026년 4월."이었습니다. XLSX 행은 free-form LLM 답변보다
+source-bound structured adapter 의 cell/range 답변을 retained 해서 채점하는
+경우가 있으므로, LLM validation 결과를 공식 baseline 품질 숫자로 읽지
+않습니다.
+
 ## Phase 7 v4 guardrail
 
 현재 active retrieval/eval 기준선은 dataset v4입니다. 새 Phase 7 작업은

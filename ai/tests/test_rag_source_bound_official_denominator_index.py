@@ -447,6 +447,7 @@ def test_pdf_source_bound_readiness_derives_row_and_target_axis_from_source_pdf_
     from scripts.rag_official_denominator_source_bound_index import (
         SOURCE_BOUND_INDEX_VERSION,
         TARGET_INDEX_PATH,
+        build_search_unit_manifest_rows,
         build_readiness_report,
     )
 
@@ -587,6 +588,15 @@ def test_pdf_source_bound_readiness_derives_row_and_target_axis_from_source_pdf_
     assert "export FOB" in table["target_column"]
     assert "import CIF" in table["target_column"]
     assert "trade balance" in table["target_column"]
+    table_source_text = " | ".join(
+        line["text"] for line in table["pdf_source_text_locator"]["source_lines"]
+    )
+    assert "2024" in table_source_text
+    assert "6,836.1" in table_source_text
+    manifest_rows = build_search_unit_manifest_rows(report)
+    table_manifest = next(row for row in manifest_rows if row["query_id"] == "pdf-table")
+    assert "2024" in table_manifest["display_text"]
+    assert "6,836.1" in table_manifest["display_text"]
     assert table["pdf_source_text_locator"]["method"] == "pymupdf_source_pdf_text"
     assert report["generation_used_expected_answer"] is False
     assert report["generation_used_supporting_evidence"] is False
@@ -1237,6 +1247,626 @@ def test_pdf_query_discards_off_track_xlsx_search_unit_from_scored_citations() -
         "xlsx_business_structured"
     )
     assert contract["schema_mismatch_residual_count"] == 0
+
+
+def test_result_row_separates_query_bound_from_same_track_context_citations() -> None:
+    from types import SimpleNamespace
+
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    query_bound_citation = {
+        "citation_text": "query-bound same-track value",
+        "search_unit_citation_payload": {
+            "source_bound_official_denominator": True,
+            "track": "pdf_business_ocr_mm",
+        },
+        "citation_payload_validation": {
+            "ok": True,
+            "manifest_track": "pdf_business_ocr_mm",
+            "manifest_query_id": "pdf-row",
+        },
+        "structured_source_bound_adapter_enabled": True,
+        "structured_adapter_output_from_source_bound_search_unit": True,
+    }
+    same_track_context_citation = {
+        "citation_text": "same-track context value",
+        "search_unit_citation_payload": {
+            "source_bound_official_denominator": True,
+            "track": "pdf_business_ocr_mm",
+        },
+        "citation_payload_validation": {
+            "ok": True,
+            "manifest_track": "pdf_business_ocr_mm",
+            "manifest_query_id": "other-pdf-row",
+        },
+        "structured_source_bound_adapter_enabled": True,
+        "structured_adapter_output_from_source_bound_search_unit": True,
+    }
+    off_track_citation = {
+        "citation_text": "off-track xlsx value",
+        "search_unit_citation_payload": {
+            "source_bound_official_denominator": True,
+            "track": "xlsx_business_structured",
+        },
+        "citation_payload_validation": {
+            "ok": False,
+            "off_track": True,
+            "category": runner.OFF_TRACK_CITATION_FOR_QUERY_TRACK,
+            "manifest_track": "xlsx_business_structured",
+            "manifest_query_id": "xlsx-row",
+        },
+    }
+
+    row = runner.result_row(
+        {
+            "query_id": "pdf-row",
+            "track": "pdf_business_ocr_mm",
+        },
+        args=SimpleNamespace(
+            agent_loop_backend="legacy",
+            enable_structured_source_bound_adapters=True,
+            allow_chunk_only_official_citation_fallback=False,
+            run_id=runner.V2_1_RUN_ID,
+        ),
+        generated_answer="answer",
+        generated_citations=[query_bound_citation, same_track_context_citation, off_track_citation],
+        scored_citations=[query_bound_citation, same_track_context_citation],
+        discarded_off_track_citations=[off_track_citation],
+        retrieved_evidence=[{"id": "evidence"}],
+        answer_score=1.0,
+        citation_support_score=1.0,
+        scoring_attempted=True,
+        failure_category="PASS",
+        failure_detail="",
+        agentic_loop_executed=True,
+        agentic_loop_steps_count=1,
+        infrastructure_blocker_category=None,
+    )
+
+    assert row["same_track_valid_citation_count"] == 2
+    assert row["query_bound_scored_citation_count"] == 1
+    assert row["non_query_bound_same_track_scored_citation_count"] == 1
+    assert row["discarded_off_track_citation_count"] == 1
+    assert row["schema_mismatch_residual_count"] == 0
+
+
+def test_v2_2_noop_backend_cannot_be_real_llm_validation() -> None:
+    from types import SimpleNamespace
+
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    preflight = runner.llm_backend_preflight_for_v2_2(
+        SimpleNamespace(
+            llm_backend="noop",
+            llm_base_url="",
+            llm_model="noop",
+            llm_timeout_seconds=30,
+            llm_max_tokens=256,
+            llm_strict_json_retries=1,
+        ),
+        check_endpoint=False,
+    )
+
+    assert preflight["ok"] is False
+    assert preflight["failure_bucket"] == "LLM_BACKEND_UNAVAILABLE"
+    assert preflight["llm_backend"] == "noop"
+    assert preflight["real_llm_backend_used"] is False
+    assert preflight["local_llm_used"] is False
+    assert "noop backend is not a real LLM validation backend" in preflight["blockers"]
+
+
+def test_v2_2_unavailable_backend_fail_closes_rows_without_promotion() -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    v2_1_row = {
+        "run_id": runner.V2_1_RUN_ID,
+        "query_id": "text_namu_v2_0017",
+        "track": "text_namu_v2_1",
+        "failure_category": "PARTIAL_OR_UNSUPPORTED",
+        "generated_answer": "old extractive answer",
+        "scored_citations": [],
+        "discarded_off_track_citations": [],
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "promotion_evidence": False,
+    }
+    backend = {
+        "ok": False,
+        "llm_backend": "llamacpp",
+        "real_llm_backend_used": False,
+        "local_llm_used": False,
+        "failure_bucket": "LLM_BACKEND_UNAVAILABLE",
+        "blockers": ["local llamacpp unavailable: connection refused"],
+        "timeout_seconds": 30,
+        "max_tokens": 256,
+        "strict_json_retries": 1,
+        "model": "local-model",
+    }
+
+    rows = runner.v2_2_fail_closed_rows_from_v2_1([v2_1_row], backend)
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["run_id"] == runner.V2_2_RUN_ID
+    assert row["validation_bucket"] == "LLM_BACKEND_UNAVAILABLE"
+    assert row["failure_category"] == "LLM_BACKEND_UNAVAILABLE"
+    assert row["generated_answer"] == ""
+    assert row["generated_citations"] == []
+    assert row["scored_citations"] == []
+    assert row["source_v2_1_generated_answer"] == "old extractive answer"
+    assert row["llm_backend_validation_started"] is False
+    assert row["real_llm_backend_used"] is False
+    assert row["real_llm_backend_available"] is False
+    assert row["real_llm_backend_used_for_row"] is False
+    assert row["local_llm_used"] is False
+    assert row["diagnostic_only"] is True
+    assert row["promotion_evidence"] is False
+    assert row["generation_used_expected_answer"] is False
+    assert row["generation_used_supporting_evidence"] is False
+    assert row["generation_used_gold_fields"] is False
+    assert row["candidate_artifacts_as_generation_source"] is False
+
+
+def test_v2_2_prompt_context_uses_same_track_source_bound_citations_only() -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    row = {
+        "query_id": "text-row",
+        "track": "text_namu_v2_1",
+        "scored_citations": [
+            {
+                "citation_text": "query-bound source-bound text answer",
+                "search_unit_citation_payload": {
+                    "source_bound_official_denominator": True,
+                    "track": "text_namu_v2_1",
+                    "searchUnitId": "su-text-query",
+                    "search_unit_id": "su-text-query",
+                    "manifest_query_id": "text-row",
+                },
+                "citation_payload_validation": {
+                    "ok": True,
+                    "manifest_query_id": "text-row",
+                    "manifest_track": "text_namu_v2_1",
+                    "row_query_id": "text-row",
+                },
+            },
+            {
+                "citation_text": "same-track context text",
+                "search_unit_citation_payload": {
+                    "source_bound_official_denominator": True,
+                    "track": "text_namu_v2_1",
+                    "searchUnitId": "su-text-other",
+                    "search_unit_id": "su-text-other",
+                    "manifest_query_id": "other-text-row",
+                },
+                "citation_payload_validation": {
+                    "ok": True,
+                    "manifest_query_id": "other-text-row",
+                    "manifest_track": "text_namu_v2_1",
+                    "row_query_id": "text-row",
+                },
+            },
+        ],
+        "discarded_off_track_citations": [
+            {
+                "citation_text": "off-track xlsx value must not enter prompt",
+                "search_unit_citation_payload": {
+                    "source_bound_official_denominator": True,
+                    "track": "xlsx_business_structured",
+                },
+                "citation_payload_validation": {
+                    "off_track": True,
+                    "category": runner.OFF_TRACK_CITATION_FOR_QUERY_TRACK,
+                    "manifest_track": "xlsx_business_structured",
+                },
+            }
+        ],
+    }
+
+    context = runner.build_v2_2_prompt_context(row, use_query_bound_only=False)
+    prompt = runner.build_v2_2_llm_prompt(
+        row,
+        context,
+        question="질문 텍스트",
+    )
+
+    assert context["same_track_scored_citation_count"] == 2
+    assert context["query_bound_scored_citation_count"] == 1
+    assert context["non_query_bound_same_track_context_used"] is True
+    assert context["off_track_citation_count_excluded_from_prompt"] == 1
+    assert "query-bound source-bound text answer" in prompt
+    assert "same-track context text" in prompt
+    assert "off-track xlsx value must not enter prompt" not in prompt
+    assert "expected_answer" not in prompt
+    assert "supporting_evidence" not in prompt
+    assert "gold" not in prompt.lower()
+    assert "candidate" not in prompt.lower()
+
+
+def test_v2_2_structured_adapter_output_is_retained_without_llm_overwrite() -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    v2_1_row = {
+        "run_id": runner.V2_1_RUN_ID,
+        "query_id": "gq_pdf_section_question_001",
+        "track": "pdf_business_ocr_mm",
+        "failure_category": "PASS",
+        "generated_answer": "adapter answer 518.4",
+        "scored_citations": [
+            {
+                "citation_text": "2024 | 6,836.1 | 518.4",
+                "structured_source_bound_adapter_enabled": True,
+                "structured_adapter_output_from_source_bound_search_unit": True,
+                "structured_source_bound_adapter": {
+                    "output_from_source_bound_search_unit": True,
+                    "normalized_value": "518.4",
+                },
+                "search_unit_citation_payload": {
+                    "source_bound_official_denominator": True,
+                    "track": "pdf_business_ocr_mm",
+                    "searchUnitId": "su-pdf",
+                    "search_unit_id": "su-pdf",
+                    "manifest_query_id": "gq_pdf_section_question_001",
+                },
+                "citation_payload_validation": {
+                    "ok": True,
+                    "manifest_query_id": "gq_pdf_section_question_001",
+                    "manifest_track": "pdf_business_ocr_mm",
+                },
+            }
+        ],
+        "discarded_off_track_citations": [],
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "promotion_evidence": False,
+    }
+    backend = {
+        "ok": True,
+        "llm_backend": "llamacpp",
+        "real_llm_backend_used": True,
+        "local_llm_used": True,
+        "timeout_seconds": 30,
+        "max_tokens": 256,
+        "strict_json_retries": 1,
+        "model": "local-model",
+    }
+
+    row = runner.v2_2_retained_structured_adapter_row(v2_1_row, backend)
+
+    assert row["run_id"] == runner.V2_2_RUN_ID
+    assert row["validation_bucket"] == "PASS_RETAINED"
+    assert row["generated_answer"] == "adapter answer 518.4"
+    assert row["llm_answer"] == ""
+    assert row["llm_invoked_for_row"] is False
+    assert row["real_llm_backend_available"] is True
+    assert row["real_llm_backend_used"] is False
+    assert row["real_llm_backend_used_for_row"] is False
+    assert row["structured_adapter_output_retained"] is True
+    assert row["structured_adapter_overwritten_by_llm"] is False
+    assert row["prompt_context_source_bound_only"] is True
+    assert row["promotion_evidence"] is False
+
+
+def test_v3_run_id_is_separate_and_source_bound_defaults_are_locked() -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    args = runner.parse_args(["--run-id", runner.V3_RUN_ID])
+
+    assert args.run_id == "official_answer_citation_agentic_loop_run_v3_comparable_live_measurement"
+    assert args.run_id not in {
+        runner.RUN_ID,
+        runner.V2_RUN_ID,
+        runner.V2_1_RUN_ID,
+        runner.V2_2_RUN_ID,
+    }
+    assert runner.is_source_bound_manifest_run(args.run_id) is True
+    assert args.source_bound_index_load_checked is True
+    assert args.enable_structured_source_bound_adapters is True
+    assert args.results_jsonl.endswith(f"{runner.V3_RUN_ID}_results.jsonl")
+    assert args.summary_json.endswith(f"{runner.V3_RUN_ID}_summary.json")
+    assert args.summary_md.endswith(f"{runner.V3_RUN_ID}_summary.md")
+    assert "v2_2_llm_backend_validation" not in args.results_jsonl
+
+
+def test_v3_requires_completed_v2_2_preflight_before_generation() -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    rows = [
+        {
+            "run_id": runner.V2_2_RUN_ID,
+            "query_id": f"row-{index:02d}",
+            "track": "text_namu_v2_1" if index < 6 else "xlsx_business_structured",
+            "failure_category": "PASS",
+            "validation_bucket": "PASS_RETAINED",
+            "promotion_evidence": False,
+            "generation_used_expected_answer": False,
+            "generation_used_supporting_evidence": False,
+            "generation_used_gold_fields": False,
+            "candidate_artifacts_as_generation_source": False,
+            "prompt_context_source_bound_only": True,
+        }
+        for index in range(29)
+    ]
+    rows[17]["query_id"] = "text_namu_v2_0017"
+    rows[17]["track"] = "text_namu_v2_1"
+    rows[17]["failure_category"] = "PARTIAL_OR_UNSUPPORTED"
+    rows[17]["validation_bucket"] = "LLM_SYNTHESIS_REGRESSED"
+    summary = {
+        "run_id": runner.V2_2_RUN_ID,
+        "status": "LLM_BACKEND_VALIDATION_COMPLETED",
+        "llm_backend_validation_status": "LLM_BACKEND_VALIDATION_COMPLETED",
+        "result_count": 29,
+        "scored_count": 29,
+        "pass_count": 28,
+        "promotion_evidence": False,
+        "real_llm_backend_used": True,
+        "source_bound_index_used": True,
+        "canonical_search_unit_payload_used": True,
+        "prompt_context_source_bound_only": True,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "schema_mismatch_residual_count": 0,
+        "query_bound_evidence_gap_count": 0,
+        "validation_bucket_counts": {"PASS_RETAINED": 28, "LLM_SYNTHESIS_REGRESSED": 1},
+    }
+    attribution = {"run_id": runner.V2_2_RUN_ID, "promotion_evidence": False}
+
+    preflight = runner.v2_2_artifact_consistency_preflight(
+        summary=summary,
+        attribution=attribution,
+        rows=rows,
+    )
+    blocked = runner.v2_2_artifact_consistency_preflight(
+        summary={**summary, "llm_backend_validation_status": "LLM_BACKEND_UNAVAILABLE_FAIL_CLOSED"},
+        attribution=attribution,
+        rows=rows,
+    )
+
+    assert preflight["ok"] is True
+    assert preflight["ready_for_v3_comparable_live_measurement"] is True
+    assert preflight["completed_run_id"] == runner.V2_2_RUN_ID
+    assert preflight["pass_count"] == 28
+    assert preflight["remaining_failure_query_ids"] == ["text_namu_v2_0017"]
+    assert blocked["ok"] is False
+    assert "v2_2_llm_backend_validation_not_completed" in blocked["errors"]
+
+
+def test_v3_structured_rows_are_retained_and_text_rows_use_llm(monkeypatch) -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    structured_citation = {
+        "citation_text": "source-bound table body value 518.4",
+        "structured_adapter_output_from_source_bound_search_unit": True,
+        "structured_source_bound_adapter": {
+            "output_from_source_bound_search_unit": True,
+            "normalized_value": "518.4",
+        },
+        "search_unit_citation_payload": {
+            "source_bound_official_denominator": True,
+            "track": "pdf_business_ocr_mm",
+            "searchUnitId": "su-pdf",
+            "search_unit_id": "su-pdf",
+            "manifest_query_id": "pdf-row",
+        },
+        "citation_payload_validation": {
+            "ok": True,
+            "manifest_query_id": "pdf-row",
+            "manifest_track": "pdf_business_ocr_mm",
+        },
+    }
+    text_citation = {
+        "citation_text": "정답 문장",
+        "search_unit_citation_payload": {
+            "source_bound_official_denominator": True,
+            "track": "text_namu_v2_1",
+            "searchUnitId": "su-text",
+            "search_unit_id": "su-text",
+            "manifest_query_id": "text-row",
+        },
+        "citation_payload_validation": {
+            "ok": True,
+            "manifest_query_id": "text-row",
+            "manifest_track": "text_namu_v2_1",
+            "row_query_id": "text-row",
+        },
+    }
+    v2_2_rows = [
+        {
+            "run_id": runner.V2_2_RUN_ID,
+            "query_id": "pdf-row",
+            "track": "pdf_business_ocr_mm",
+            "failure_category": "PASS",
+            "generated_answer": "adapter answer 518.4",
+            "generated_citations": [structured_citation],
+            "scored_citations": [structured_citation],
+            "discarded_off_track_citations": [],
+            "promotion_evidence": False,
+        },
+        {
+            "run_id": runner.V2_2_RUN_ID,
+            "query_id": "text-row",
+            "track": "text_namu_v2_1",
+            "failure_category": "PASS",
+            "generated_answer": "old retained answer",
+            "generated_citations": [text_citation],
+            "scored_citations": [text_citation],
+            "discarded_off_track_citations": [],
+            "promotion_evidence": False,
+        },
+    ]
+    source_rows = {
+        "text-row": {
+            "query_id": "text-row",
+            "track": "text_namu_v2_1",
+            "question": "질문",
+            "expected_answer": "정답 문장",
+            "supporting_evidence": "정답 문장",
+        }
+    }
+    backend = {
+        "ok": True,
+        "llm_backend": "llamacpp",
+        "real_llm_backend_used": True,
+        "local_llm_used": True,
+        "timeout_seconds": 30,
+        "max_tokens": 256,
+        "strict_json_retries": 1,
+        "retry_policy": "strict_json_retries_then_fail_closed",
+        "model": "local-model",
+    }
+
+    monkeypatch.setattr(
+        runner,
+        "call_v3_llm_synthesis",
+        lambda *, prompt, backend_preflight: ("정답 문장", {"attempt_count": 1, "prompt_seen": prompt}),
+    )
+
+    rows = runner.build_v3_rows_from_v2_2(
+        v2_2_rows=v2_2_rows,
+        source_rows_by_id=source_rows,
+        backend_preflight=backend,
+        prompt_context_mode="same-track-scored-context",
+    )
+
+    structured_row = next(row for row in rows if row["query_id"] == "pdf-row")
+    text_row = next(row for row in rows if row["query_id"] == "text-row")
+    assert structured_row["run_id"] == runner.V3_RUN_ID
+    assert structured_row["result_bucket"] == "PASS_RETAINED_BY_STRUCTURED_ADAPTER"
+    assert structured_row["generated_answer"] == "adapter answer 518.4"
+    assert structured_row["llm_invoked_for_row"] is False
+    assert structured_row["structured_adapter_output_retained"] is True
+    assert structured_row["structured_adapter_overwritten_by_llm"] is False
+    assert text_row["run_id"] == runner.V3_RUN_ID
+    assert text_row["result_bucket"] == "LLM_SYNTHESIS_PASS"
+    assert text_row["generated_answer"] == "정답 문장"
+    assert text_row["llm_invoked_for_row"] is True
+    assert text_row["real_llm_backend_used_for_row"] is True
+    assert text_row["structured_adapter_output_retained"] is False
+    assert all(row["candidate_artifacts_as_generation_source"] is False for row in rows)
+    assert all(row["generation_used_expected_answer"] is False for row in rows)
+    assert all(row["generation_used_supporting_evidence"] is False for row in rows)
+    assert all(row["generation_used_gold_fields"] is False for row in rows)
+    assert all("expected_answer" not in row for row in rows)
+    assert all("supporting_evidence" not in row for row in rows)
+
+
+def test_v3_prompt_context_modes_exclude_off_track_and_gold_candidate_text() -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    query_bound = {
+        "citation_text": "query-bound text",
+        "search_unit_citation_payload": {
+            "source_bound_official_denominator": True,
+            "track": "text_namu_v2_1",
+            "searchUnitId": "su-query",
+            "search_unit_id": "su-query",
+            "manifest_query_id": "text-row",
+        },
+        "citation_payload_validation": {
+            "ok": True,
+            "manifest_query_id": "text-row",
+            "manifest_track": "text_namu_v2_1",
+            "row_query_id": "text-row",
+        },
+    }
+    same_track = {
+        "citation_text": "same-track context text",
+        "search_unit_citation_payload": {
+            "source_bound_official_denominator": True,
+            "track": "text_namu_v2_1",
+            "searchUnitId": "su-other",
+            "search_unit_id": "su-other",
+            "manifest_query_id": "other-text-row",
+        },
+        "citation_payload_validation": {
+            "ok": True,
+            "manifest_query_id": "other-text-row",
+            "manifest_track": "text_namu_v2_1",
+            "row_query_id": "text-row",
+        },
+    }
+    off_track = {
+        "citation_text": "off-track xlsx value",
+        "search_unit_citation_payload": {
+            "source_bound_official_denominator": True,
+            "track": "xlsx_business_structured",
+        },
+        "citation_payload_validation": {
+            "off_track": True,
+            "category": runner.OFF_TRACK_CITATION_FOR_QUERY_TRACK,
+            "manifest_track": "xlsx_business_structured",
+        },
+    }
+    row = {
+        "query_id": "text-row",
+        "track": "text_namu_v2_1",
+        "scored_citations": [query_bound, same_track],
+        "discarded_off_track_citations": [off_track],
+    }
+
+    query_bound_context = runner.build_v3_prompt_context(row, prompt_context_mode="query-bound-only")
+    same_track_context = runner.build_v3_prompt_context(
+        row,
+        prompt_context_mode="same-track-scored-context",
+    )
+    prompt = runner.build_v3_llm_prompt(row, same_track_context, question="질문")
+
+    assert query_bound_context["query_bound_evidence_only"] is True
+    assert query_bound_context["same_track_scored_citation_count"] == 1
+    assert query_bound_context["non_query_bound_same_track_context_used"] is False
+    assert same_track_context["query_bound_evidence_only"] is False
+    assert same_track_context["same_track_scored_citation_count"] == 2
+    assert same_track_context["non_query_bound_same_track_context_used"] is True
+    assert same_track_context["off_track_citation_count_excluded_from_prompt"] == 1
+    assert "query-bound text" in prompt
+    assert "same-track context text" in prompt
+    assert "off-track xlsx value" not in prompt
+    assert "expected_answer" not in prompt
+    assert "supporting_evidence" not in prompt
+    assert "gold" not in prompt.lower()
+    assert "candidate" not in prompt.lower()
+
+
+def test_v3_text_namu_0017_diagnostic_fields_are_emitted() -> None:
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    row = runner.v3_text_diagnostics(
+        query_id="text_namu_v2_0017",
+        source_row={
+            "expected_answer": "정답 문장",
+            "supporting_evidence": "근거 문장",
+        },
+        llm_answer="정답 문장",
+        citation_text="근거 문장",
+        score={"failure_category": "PASS", "answer_score": 1.0, "citation_support_score": 1.0},
+        prompt_context={
+            "non_query_bound_same_track_context_used": True,
+            "query_bound_evidence_only": False,
+            "policy_errors": [],
+            "prompt_context_source_bound_only": True,
+        },
+    )
+
+    assert set(row) == {
+        "llm_output_contains_expected_answer_span_for_scoring",
+        "citation_support_present",
+        "answer_citation_support_jointly_satisfied",
+        "non_query_bound_same_track_context_used",
+        "non_query_bound_same_track_context_distracted",
+        "scorer_normalization_issue_possible",
+        "prompt_context_policy",
+    }
+    assert row["llm_output_contains_expected_answer_span_for_scoring"] is True
+    assert row["citation_support_present"] is True
+    assert row["answer_citation_support_jointly_satisfied"] is True
+    assert row["non_query_bound_same_track_context_used"] is True
+    assert row["non_query_bound_same_track_context_distracted"] is False
+    assert row["scorer_normalization_issue_possible"] is False
+    assert row["prompt_context_policy"]["mode"] == "same-track-scored-context"
 
 
 def test_text_query_discards_off_track_xlsx_search_unit_from_scored_citations() -> None:

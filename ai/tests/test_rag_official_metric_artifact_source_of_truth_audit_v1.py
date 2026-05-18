@@ -16,9 +16,16 @@ REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 README = ROOT / "README.md"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 REPAIRED_PDF_QUERY_IDS = ("gq_auto_010", "gq_auto_030", "gq_pdf_section_question_001")
+RESIDUAL_AUDIT_QUERY_IDS = {
+    "gq_auto_030",
+    "gq_pdf_section_question_001",
+    "text_namu_v2_0017",
+}
 AGENTIC_RUN_ID = "official_answer_citation_agentic_loop_run_v1"
 AGENTIC_V2_RUN_ID = "official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic"
 AGENTIC_V2_1_RUN_ID = "official_answer_citation_agentic_loop_run_v2_1_citation_contract_repair"
+AGENTIC_V2_2_RUN_ID = "official_answer_citation_agentic_loop_run_v2_2_llm_backend_validation"
+AGENTIC_V3_RUN_ID = "official_answer_citation_agentic_loop_run_v3_comparable_live_measurement"
 AGENTIC_DIAGNOSTIC_CLASSIFICATION = (
     "diagnostic_live_generation_fixture_all_index_not_official_denominator_representative"
 )
@@ -37,6 +44,12 @@ AGENTIC_V2_ATTRIBUTION_JSON = REPORT_DIR / f"{AGENTIC_V2_RUN_ID}_failure_attribu
 AGENTIC_V2_1_RESULTS = REPORT_DIR / f"{AGENTIC_V2_1_RUN_ID}_results.jsonl"
 AGENTIC_V2_1_SUMMARY_JSON = REPORT_DIR / f"{AGENTIC_V2_1_RUN_ID}_summary.json"
 AGENTIC_V2_1_ATTRIBUTION_JSON = REPORT_DIR / f"{AGENTIC_V2_1_RUN_ID}_failure_attribution.json"
+AGENTIC_V2_2_RESULTS = REPORT_DIR / f"{AGENTIC_V2_2_RUN_ID}_results.jsonl"
+AGENTIC_V2_2_SUMMARY_JSON = REPORT_DIR / f"{AGENTIC_V2_2_RUN_ID}_summary.json"
+AGENTIC_V2_2_ATTRIBUTION_JSON = REPORT_DIR / f"{AGENTIC_V2_2_RUN_ID}_failure_attribution.json"
+AGENTIC_V3_RESULTS = REPORT_DIR / f"{AGENTIC_V3_RUN_ID}_results.jsonl"
+AGENTIC_V3_SUMMARY_JSON = REPORT_DIR / f"{AGENTIC_V3_RUN_ID}_summary.json"
+AGENTIC_V3_ATTRIBUTION_JSON = REPORT_DIR / f"{AGENTIC_V3_RUN_ID}_failure_attribution.json"
 AGENTIC_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data"
 ALLOWED_AGENTIC_ATTRIBUTION_CATEGORIES = {
     "CORPUS_COVERAGE_MISS",
@@ -79,6 +92,14 @@ CURRENT_REPORT_FILENAMES = {
     f"{AGENTIC_V2_1_RUN_ID}_summary.json",
     f"{AGENTIC_V2_1_RUN_ID}_summary.md",
     f"{AGENTIC_V2_1_RUN_ID}_failure_attribution.json",
+    f"{AGENTIC_V2_2_RUN_ID}_results.jsonl",
+    f"{AGENTIC_V2_2_RUN_ID}_summary.json",
+    f"{AGENTIC_V2_2_RUN_ID}_summary.md",
+    f"{AGENTIC_V2_2_RUN_ID}_failure_attribution.json",
+    f"{AGENTIC_V3_RUN_ID}_results.jsonl",
+    f"{AGENTIC_V3_RUN_ID}_summary.json",
+    f"{AGENTIC_V3_RUN_ID}_summary.md",
+    f"{AGENTIC_V3_RUN_ID}_failure_attribution.json",
     "official_answer_citation_source_bound_index_build_readiness_v1.json",
 }
 
@@ -411,6 +432,12 @@ def test_agentic_loop_measurement_artifacts_are_separate_fail_closed_current_run
     assert all(row["local_gpu_used"] is True for row in results)
     assert all("expected_answer" not in row for row in results)
     assert all("supporting_evidence" not in row for row in results)
+    assert all(
+        "pdf_answer_citation_table_value_candidate" not in json.dumps(row, ensure_ascii=False)
+        for row in results
+    )
+    assert all("table_value_candidate" not in json.dumps(row, ensure_ascii=False) for row in results)
+    assert all("pdf_candidate" not in json.dumps(row, ensure_ascii=False) for row in results)
     if summary["failure_counts"] == {"GENERATION_PIPELINE_UNAVAILABLE": 29}:
         assert all(row["agentic_loop_executed"] is False for row in results)
         assert all(row["failure_category"] == "GENERATION_PIPELINE_UNAVAILABLE" for row in results)
@@ -883,6 +910,8 @@ def test_v2_1_citation_contract_repair_artifacts_discard_off_track_citations() -
     results = read_jsonl(AGENTIC_V2_1_RESULTS)
     attribution = read_json(AGENTIC_V2_1_ATTRIBUTION_JSON)
     status_events = read_jsonl(REPORT_DIR / "rag_current_eval_status.jsonl")
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
 
     assert summary["run_id"] == AGENTIC_V2_1_RUN_ID
     assert summary["measurement_classification"] == AGENTIC_V2_1_RUN_ID
@@ -893,16 +922,15 @@ def test_v2_1_citation_contract_repair_artifacts_discard_off_track_citations() -
     assert summary["result_count"] == 29
     assert summary["unique_query_id_count"] == 29
     assert summary["scored_count"] == 29
-    assert summary["pass_count"] == 26
+    assert summary["pass_count"] == 28
     assert summary["failure_counts"] == {
-        "CITATION_UNSUPPORTED": 1,
-        "PARTIAL_OR_UNSUPPORTED": 2,
-        "PASS": 26,
+        "PARTIAL_OR_UNSUPPORTED": 1,
+        "PASS": 28,
     }
-    assert summary["discarded_off_track_citation_count"] == 22
-    assert summary["same_track_valid_citation_count"] == 123
+    assert summary["discarded_off_track_citation_count"] == 20
+    assert summary["same_track_valid_citation_count"] == 125
     assert summary["query_bound_scored_citation_count"] == 29
-    assert summary["non_query_bound_same_track_scored_citation_count"] == 94
+    assert summary["non_query_bound_same_track_scored_citation_count"] == 96
     assert summary["schema_mismatch_residual_count"] == 0
     assert summary["all_generated_citations_source_bound"] is True
     assert summary["same_track_generated_citations_source_bound"] is True
@@ -917,8 +945,8 @@ def test_v2_1_citation_contract_repair_artifacts_discard_off_track_citations() -
     assert summary["baseline_comparison_is_model_quality_comparable"] is False
     assert summary["per_track_counts"] == {
         "pdf_business_ocr_mm": {
-            "failure_counts": {"CITATION_UNSUPPORTED": 1, "PARTIAL_OR_UNSUPPORTED": 1, "PASS": 2},
-            "pass_count": 2,
+            "failure_counts": {"PASS": 4},
+            "pass_count": 4,
             "row_count": 4,
             "scored_count": 4,
         },
@@ -961,7 +989,7 @@ def test_v2_1_citation_contract_repair_artifacts_discard_off_track_citations() -
         for row in results
         for citation in row["discarded_off_track_citations"]
     )
-    assert sum(row["discarded_off_track_citation_count"] for row in results) == 22
+    assert sum(row["discarded_off_track_citation_count"] for row in results) == 20
     assert any(row["discarded_off_track_citation_count"] > 0 for row in results if row["track"] == "pdf_business_ocr_mm")
     assert any(row["discarded_off_track_citation_count"] > 0 for row in results if row["track"] == "text_namu_v2_1")
     assert not any(
@@ -984,17 +1012,103 @@ def test_v2_1_citation_contract_repair_artifacts_discard_off_track_citations() -
     assert attribution["run_id"] == AGENTIC_V2_1_RUN_ID
     assert attribution["source_bound_index_used"] is True
     assert attribution["canonical_search_unit_payload_used"] is True
-    assert attribution["discarded_off_track_citation_count"] == 22
-    assert attribution["same_track_valid_citation_count"] == 123
+    assert attribution["discarded_off_track_citation_count"] == 20
+    assert attribution["same_track_valid_citation_count"] == 125
     assert attribution["query_bound_scored_citation_count"] == 29
-    assert attribution["non_query_bound_same_track_scored_citation_count"] == 94
+    assert attribution["non_query_bound_same_track_scored_citation_count"] == 96
     assert attribution["schema_mismatch_residual_count"] == 0
-    assert attribution["primary_attribution_counts"] == {"ANSWER_SYNTHESIS_LIMITATION": 3, "PASS": 26}
+    assert attribution["primary_attribution_counts"] == {"ANSWER_SYNTHESIS_LIMITATION": 1, "PASS": 28}
     assert attribution["per_track_primary_attribution_counts"] == {
-        "pdf_business_ocr_mm": {"ANSWER_SYNTHESIS_LIMITATION": 2, "PASS": 2},
+        "pdf_business_ocr_mm": {"PASS": 4},
         "text_namu_v2_1": {"ANSWER_SYNTHESIS_LIMITATION": 1, "PASS": 5},
         "xlsx_business_structured": {"PASS": 19},
     }
+    residual_audit = attribution["residual_failure_audit"]
+    assert residual_audit["scope"] == "v2_1_residual_failures_only"
+    assert set(residual_audit["target_query_ids"]) == RESIDUAL_AUDIT_QUERY_IDS
+    assert set(residual_audit["audited_query_ids"]) == RESIDUAL_AUDIT_QUERY_IDS
+    assert residual_audit["non_target_audited_query_ids"] == []
+    assert residual_audit["llm_backend_validation_started"] is False
+    assert residual_audit["llm_backend_validation_readiness"] == (
+        "READY_FOR_LLM_BACKEND_VALIDATION_RESIDUALS_CONFIRMED_AS_SYNTHESIS"
+    )
+    assert residual_audit["schema_mismatch_residual_count"] == 0
+    assert residual_audit["schema_mismatch_residual_count"] == summary["schema_mismatch_residual_count"]
+    assert residual_audit["candidate_artifacts_as_generation_source"] is False
+    assert residual_audit["expected_supporting_gold_used_for_audit_only"] is True
+    assert residual_audit["generation_used_expected_answer"] is False
+    assert residual_audit["generation_used_supporting_evidence"] is False
+    assert residual_audit["generation_used_gold_fields"] is False
+    assert residual_audit["promotion_evidence"] is False
+    assert residual_audit["refined_primary_attribution_counts"] == {
+        "ANSWER_SYNTHESIS_LIMITATION": 1,
+        "PASS": 2,
+    }
+    assert residual_audit["counts"] == {
+        "answer_synthesis_limitation_confirmed": 1,
+        "deterministic_extractive_answer_missing_value": 3,
+        "query_bound_evidence_contains_answer": 3,
+        "query_bound_evidence_contains_citation_support": 3,
+        "query_bound_evidence_gap": 0,
+        "same_track_non_query_bound_distracted": 1,
+        "same_track_non_query_bound_helped": 0,
+        "scorer_normalization_issue_possible": 0,
+    }
+    assert "gq_auto_010" not in residual_audit["audited_query_ids"]
+    assert "gq_auto_024" not in residual_audit["audited_query_ids"]
+
+    audit_rows = {row["query_id"]: row for row in residual_audit["rows"]}
+    expected_counts = {
+        "gq_auto_030": (1, 1, 2, "PASS"),
+        "gq_pdf_section_question_001": (1, 1, 2, "PASS"),
+        "text_namu_v2_0017": (1, 2, 3, "ANSWER_SYNTHESIS_LIMITATION"),
+    }
+    results_by_id = {row["query_id"]: row for row in results}
+    failed_ids = {row["query_id"] for row in results if row["failure_category"] != "PASS"}
+    assert failed_ids == {"text_namu_v2_0017"}
+    for query_id, (query_bound, non_query_bound, same_track, refined) in expected_counts.items():
+        row = results_by_id[query_id]
+        audit_row = audit_rows[query_id]
+        assert row["query_bound_scored_citation_count"] == query_bound
+        assert row["non_query_bound_same_track_scored_citation_count"] == non_query_bound
+        assert row["same_track_valid_citation_count"] == same_track
+        assert row["schema_mismatch_residual_count"] == 0
+        assert audit_row["query_bound_scored_citation_count"] == query_bound
+        assert audit_row["non_query_bound_same_track_scored_citation_count"] == non_query_bound
+        assert audit_row["same_track_valid_citation_count"] == same_track
+        assert audit_row["refined_primary_attribution"] == refined
+        assert audit_row["generation_used_expected_answer"] is False
+        assert audit_row["generation_used_supporting_evidence"] is False
+        assert audit_row["generation_used_gold_fields"] is False
+        assert audit_row["candidate_artifacts_as_generation_source"] is False
+        assert audit_row["audit_comparison_only"] is True
+
+    auto_query_bound_text = " ".join(
+        citation["citation_text"]
+        for citation in results_by_id["gq_auto_030"]["scored_citations"]
+        if citation["citation_payload_validation"]["manifest_query_id"] == "gq_auto_030"
+    )
+    assert "2020" in auto_query_bound_text
+    assert "1,088.0" in auto_query_bound_text
+    assert audit_rows["gq_auto_030"]["query_bound_evidence_contains_answer"] is True
+    assert audit_rows["gq_auto_030"]["query_bound_evidence_contains_citation_support"] is True
+    assert audit_rows["gq_auto_030"]["same_track_non_query_bound_evidence_helped_or_distracted"] == "neutral"
+    assert audit_rows["gq_auto_030"]["answer_synthesis_limitation_confirmed"] is False
+    table_query_bound_text = " ".join(
+        citation["citation_text"]
+        for citation in results_by_id["gq_pdf_section_question_001"]["scored_citations"]
+        if citation["citation_payload_validation"]["manifest_query_id"] == "gq_pdf_section_question_001"
+    )
+    assert "2024" in table_query_bound_text
+    assert "518.4" in table_query_bound_text
+    assert audit_rows["gq_pdf_section_question_001"]["query_bound_evidence_contains_answer"] is True
+    assert audit_rows["gq_pdf_section_question_001"]["query_bound_evidence_contains_citation_support"] is True
+    assert audit_rows["gq_pdf_section_question_001"]["same_track_non_query_bound_evidence_helped_or_distracted"] == "neutral"
+    assert audit_rows["gq_pdf_section_question_001"]["scorer_normalization_issue_possible"] is False
+    assert audit_rows["text_namu_v2_0017"]["query_bound_evidence_contains_answer"] is True
+    assert audit_rows["text_namu_v2_0017"]["query_bound_evidence_contains_citation_support"] is True
+    assert audit_rows["text_namu_v2_0017"]["same_track_non_query_bound_evidence_helped_or_distracted"] == "distracted"
+    assert audit_rows["text_namu_v2_0017"]["answer_synthesis_limitation_confirmed"] is True
     assert attribution["baseline_comparison_is_model_quality_comparable"] is False
     assert attribution["guardrails"]["promotion_evidence"] is False
 
@@ -1004,18 +1118,301 @@ def test_v2_1_citation_contract_repair_artifacts_discard_off_track_citations() -
         if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
         and event.get("run_id") == AGENTIC_V2_1_RUN_ID
     )
-    assert measurement["discarded_off_track_citation_count"] == 22
-    assert measurement["same_track_valid_citation_count"] == 123
+    assert measurement["discarded_off_track_citation_count"] == 20
+    assert measurement["same_track_valid_citation_count"] == 125
     assert measurement["query_bound_scored_citation_count"] == 29
-    assert measurement["non_query_bound_same_track_scored_citation_count"] == 94
+    assert measurement["non_query_bound_same_track_scored_citation_count"] == 96
     assert measurement["schema_mismatch_residual_count"] == 0
     assert measurement["candidate_artifacts_as_generation_source"] is False
     assert measurement["generation_used_expected_answer"] is False
     assert measurement["generation_used_supporting_evidence"] is False
     assert measurement["generation_used_gold_fields"] is False
     assert measurement["promotion_evidence"] is False
+    assert measurement["residual_failure_audit"]["audited_row_count"] == 3
+    assert measurement["residual_failure_audit"]["promotion_evidence"] is False
+    failure_attribution_event = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_failure_attribution"
+        and event.get("run_id") == AGENTIC_V2_1_RUN_ID
+    )
+    assert failure_attribution_event["residual_failure_audit"]["audited_row_count"] == 3
+    preflight = runner.v2_1_artifact_consistency_preflight(
+        summary=summary,
+        attribution=attribution,
+        rows=results,
+        status_events=status_events,
+    )
+    assert preflight["ok"] is True
+    assert preflight["failure_bucket"] is None
+    assert preflight["pass_count"] == 28
+    assert preflight["per_track_pass_count"] == {
+        "pdf_business_ocr_mm": 4,
+        "text_namu_v2_1": 5,
+        "xlsx_business_structured": 19,
+    }
+    assert preflight["remaining_failure_query_ids"] == ["text_namu_v2_0017"]
+    assert preflight["answer_synthesis_limitation_query_ids"] == ["text_namu_v2_0017"]
+    assert preflight["query_bound_evidence_gap_count"] == 0
+    assert preflight["schema_mismatch_residual_count"] == 0
+    assert preflight["promotion_evidence"] is False
+    assert preflight["readiness"] == "READY_FOR_LLM_BACKEND_VALIDATION_RESIDUALS_CONFIRMED_AS_SYNTHESIS"
+    unexpected_residual_reports = [
+        path.name
+        for path in REPORT_DIR.iterdir()
+        if "residual" in path.name and path.suffix in {".json", ".md"}
+    ]
+    assert unexpected_residual_reports == []
     assert "source-bound denominator index" in summary["pipeline_decision"]["rationale"]
     assert "registry-backed RAG pipeline" not in summary["pipeline_decision"]["rationale"]
+
+
+def test_v2_2_llm_backend_validation_artifact_is_diagnostic_only() -> None:
+    summary = read_json(AGENTIC_V2_2_SUMMARY_JSON)
+    results = read_jsonl(AGENTIC_V2_2_RESULTS)
+    attribution = read_json(AGENTIC_V2_2_ATTRIBUTION_JSON)
+    status_events = read_jsonl(REPORT_DIR / "rag_current_eval_status.jsonl")
+
+    assert summary["run_id"] == AGENTIC_V2_2_RUN_ID
+    assert summary["measurement_classification"] == AGENTIC_V2_2_RUN_ID
+    assert summary["diagnostic_only"] is True
+    assert summary["promotion_evidence"] is False
+    assert summary["baseline_comparison_is_model_quality_comparable"] is False
+    assert summary["source_bound_index_used"] is True
+    assert summary["canonical_search_unit_payload_used"] is True
+    assert summary["prompt_context_source_bound_only"] is True
+    assert summary["candidate_artifacts_as_generation_source"] is False
+    assert summary["generation_used_expected_answer"] is False
+    assert summary["generation_used_supporting_evidence"] is False
+    assert summary["generation_used_gold_fields"] is False
+    assert summary["v2_1_artifact_consistency_preflight"]["ok"] is True
+    assert summary["v2_1_artifact_consistency_preflight"]["pass_count"] == 28
+    assert summary["v2_1_artifact_consistency_preflight"]["query_bound_evidence_gap_count"] == 0
+    assert summary["v2_1_artifact_consistency_preflight"]["schema_mismatch_residual_count"] == 0
+    assert summary["result_count"] == 29
+    assert len(results) == 29
+    assert all(row["run_id"] == AGENTIC_V2_2_RUN_ID for row in results)
+    assert all(row["diagnostic_only"] is True for row in results)
+    assert all(row["promotion_evidence"] is False for row in results)
+    assert all(row["prompt_context_source_bound_only"] is True for row in results)
+    assert all(row["candidate_artifacts_as_generation_source"] is False for row in results)
+    assert all(row["generation_used_expected_answer"] is False for row in results)
+    assert all(row["generation_used_supporting_evidence"] is False for row in results)
+    assert all(row["generation_used_gold_fields"] is False for row in results)
+    assert all(
+        "pdf_answer_citation_table_value_candidate" not in json.dumps(row, ensure_ascii=False)
+        for row in results
+    )
+    assert all("expected_answer" not in row for row in results)
+    assert all("supporting_evidence" not in row for row in results)
+    assert attribution["run_id"] == AGENTIC_V2_2_RUN_ID
+    assert attribution["promotion_evidence"] is False
+    assert attribution["v2_1_artifact_consistency_preflight"]["ok"] is True
+
+    bucket_counts = summary["validation_bucket_counts"]
+    if summary["llm_backend_validation_status"] == "LLM_BACKEND_UNAVAILABLE_FAIL_CLOSED":
+        assert summary["real_llm_backend_used"] is False
+        assert summary["local_llm_used"] is False
+        assert summary["llm_backend"] != "noop"
+        assert bucket_counts == {"LLM_BACKEND_UNAVAILABLE": 29}
+        assert all(row["validation_bucket"] == "LLM_BACKEND_UNAVAILABLE" for row in results)
+    else:
+        assert summary["llm_backend_validation_status"] == "LLM_BACKEND_VALIDATION_COMPLETED"
+        assert summary["real_llm_backend_used"] is True
+        assert summary["llm_backend"] in {"llamacpp", "openai-compatible", "ollama"}
+        assert summary["llm_invoked_row_count"] == 1
+        assert summary["retained_without_llm_count"] == 28
+        assert bucket_counts["PASS_RETAINED"] >= 28
+        assert summary["existing_pass_regression_count"] == 0
+        assert summary["schema_mismatch_residual_count"] == 0
+        assert summary["query_bound_evidence_gap_count"] == 0
+        assert summary["text_namu_v2_0017"]["validation_bucket"] in {
+            "LLM_SYNTHESIS_IMPROVED",
+            "LLM_SYNTHESIS_REGRESSED",
+            "LLM_TIMEOUT_OR_FAIL_CLOSED",
+            "CITATION_SUPPORT_REGRESSED",
+        }
+        structured_rows = [
+            row for row in results if row["track"] in {"pdf_business_ocr_mm", "xlsx_business_structured"}
+        ]
+        assert len(structured_rows) == 23
+        assert all(row["structured_adapter_output_retained"] is True for row in structured_rows)
+        assert all(row["structured_adapter_overwritten_by_llm"] is False for row in structured_rows)
+        retained_rows = [row for row in results if row["validation_bucket"] == "PASS_RETAINED"]
+        assert all(row["real_llm_backend_available"] is True for row in retained_rows)
+        assert all(row["real_llm_backend_used"] is False for row in retained_rows)
+        assert all(row["real_llm_backend_used_for_row"] is False for row in retained_rows)
+        target_row = next(row for row in results if row["query_id"] == "text_namu_v2_0017")
+        assert target_row["llm_invoked_for_row"] is True
+        assert target_row["real_llm_backend_used"] is True
+        assert target_row["real_llm_backend_used_for_row"] is True
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V2_2_RUN_ID
+    )
+    assert measurement["promotion_evidence"] is False
+    assert measurement["diagnostic_only"] is True
+    assert measurement["llm_backend_validation_status"] == summary["llm_backend_validation_status"]
+
+
+def test_v3_comparable_live_measurement_artifacts_are_separate_and_guarded() -> None:
+    summary = read_json(AGENTIC_V3_SUMMARY_JSON)
+    results = read_jsonl(AGENTIC_V3_RESULTS)
+    attribution = read_json(AGENTIC_V3_ATTRIBUTION_JSON)
+    status_events = read_jsonl(REPORT_DIR / "rag_current_eval_status.jsonl")
+    input_config = read_json(REPORT_DIR / "official_metric_input_config_v1.json")
+    first_run = read_json(REPORT_DIR / "official_answer_citation_metric_first_run_v1.json")
+
+    assert summary["run_id"] == AGENTIC_V3_RUN_ID
+    assert summary["measurement_classification"] == "comparable_live_measurement_v3_not_promotion_evidence"
+    assert summary["run_id"] not in {
+        AGENTIC_RUN_ID,
+        AGENTIC_V2_RUN_ID,
+        AGENTIC_V2_1_RUN_ID,
+        AGENTIC_V2_2_RUN_ID,
+    }
+    assert summary["diagnostic_only"] is True
+    assert summary["comparable_live_measurement"] is True
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["promotion_gate_auto_run"] is False
+    assert summary["v2_2_completed_preflight"]["ok"] is True
+    assert summary["source_bound_official_denominator_index_only"] is True
+    assert summary["source_bound_index_used"] is True
+    assert summary["canonical_search_unit_payload_used"] is True
+    assert summary["real_llm_backend_required_for_text_rows"] is True
+    assert summary["same_scorer_as_v2_2"] is True
+    assert summary["same_denominator_as_v2_2"] is True
+    assert summary["baseline_comparison_is_model_quality_comparable"] is True
+    assert summary["comparison_scope"] == "mixed_structured_adapter_retained_and_text_llm_synthesis_rows"
+    assert summary["structured_rows_policy"]["xlsx_primary_answer_policy"] == "deterministic_source_bound_adapter_retained"
+    assert summary["structured_rows_policy"]["llm_overwrites_structured_adapter_output"] is False
+    assert summary["text_rows_policy"]["text_rows_use_real_llm_synthesis"] is True
+    assert summary["text_rows_policy"]["prompt_context_mode"] in {
+        "query-bound-only",
+        "same-track-scored-context",
+    }
+    assert summary["guardrails"] == {
+        "promotion_evidence": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "production_mutation": False,
+        "denominator_mutation": False,
+        "gold_mutation": False,
+        "human_label_mutation": False,
+        "baseline_mutation": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+    }
+
+    assert len(results) == 29
+    assert len({row["query_id"] for row in results}) == 29
+    config_query_ids = {row["query_id"] for row in input_config["candidate_manifest"]}
+    assert {row["query_id"] for row in results} == config_query_ids
+    assert Counter(row["track"] for row in results) == Counter(
+        {
+            "pdf_business_ocr_mm": 4,
+            "text_namu_v2_1": 6,
+            "xlsx_business_structured": 19,
+        }
+    )
+    assert summary["result_count"] == 29
+    assert sum(summary["result_bucket_counts"].values()) == 29
+    assert set(summary["result_bucket_counts"]).issubset(
+        {
+            "PASS",
+            "PARTIAL_OR_UNSUPPORTED",
+            "CITATION_UNSUPPORTED",
+            "PASS_RETAINED_BY_STRUCTURED_ADAPTER",
+            "LLM_SYNTHESIS_PASS",
+            "LLM_SYNTHESIS_REGRESSED",
+            "STRUCTURED_ADAPTER_REGRESSED",
+            "CITATION_SUPPORT_REGRESSED",
+            "PROMPT_CONTEXT_POLICY_VIOLATION",
+            "SCORER_NORMALIZATION_ISSUE_POSSIBLE",
+        }
+    )
+    assert summary["per_track_counts_by_source_family"]["PDF"]["row_count"] == 4
+    assert summary["per_track_counts_by_source_family"]["TEXT"]["row_count"] == 6
+    assert summary["per_track_counts_by_source_family"]["XLSX"]["row_count"] == 19
+
+    assert all(row["run_id"] == AGENTIC_V3_RUN_ID for row in results)
+    assert all(row["promotion_evidence"] is False for row in results)
+    assert all(row["candidate_artifacts_as_generation_source"] is False for row in results)
+    assert all(row["generation_used_expected_answer"] is False for row in results)
+    assert all(row["generation_used_supporting_evidence"] is False for row in results)
+    assert all(row["generation_used_gold_fields"] is False for row in results)
+    assert all("expected_answer" not in row for row in results)
+    assert all("supporting_evidence" not in row for row in results)
+    assert all("human_label" not in row for row in results)
+
+    structured_rows = [
+        row for row in results if row["track"] in {"pdf_business_ocr_mm", "xlsx_business_structured"}
+    ]
+    text_rows = [row for row in results if row["track"] == "text_namu_v2_1"]
+    assert len(structured_rows) == 23
+    assert all(row["result_bucket"] == "PASS_RETAINED_BY_STRUCTURED_ADAPTER" for row in structured_rows)
+    assert all(row["structured_adapter_output_retained"] is True for row in structured_rows)
+    assert all(row["structured_adapter_overwritten_by_llm"] is False for row in structured_rows)
+    assert all(row["llm_invoked_for_row"] is False for row in structured_rows)
+    assert len(text_rows) == 6
+    assert all(row["llm_invoked_for_row"] is True for row in text_rows)
+    assert all(row["real_llm_backend_used_for_row"] is True for row in text_rows)
+
+    pdf_table_rows = [
+        row
+        for row in structured_rows
+        if any(
+            (citation.get("search_unit_citation_payload") or {}).get("region_type") == "table_body"
+            for citation in row["scored_citations"]
+        )
+    ]
+    assert pdf_table_rows
+    for row in pdf_table_rows:
+        locator = row["scored_citations"][0]["search_unit_citation_payload"]
+        assert locator["page"]
+        assert locator["bbox"] and len(locator["bbox"]) == 4
+        assert locator["source_pdf_path"]
+        assert locator["row_label"]
+        assert locator["target_column"]
+
+    target_row = next(row for row in results if row["query_id"] == "text_namu_v2_0017")
+    for key in (
+        "llm_output_contains_expected_answer_span_for_scoring",
+        "citation_support_present",
+        "answer_citation_support_jointly_satisfied",
+        "non_query_bound_same_track_context_used",
+        "non_query_bound_same_track_context_distracted",
+        "scorer_normalization_issue_possible",
+        "prompt_context_policy",
+    ):
+        assert key in target_row["text_namu_v2_0017_diagnostics"]
+    if target_row["failure_category"] != "PASS":
+        assert summary["next_step_recommendation"] == "failure_tuning_for_text_namu_v2_0017"
+
+    assert first_run["schema_version"] == summary["baseline_reference"]["run_id"]
+    assert summary["baseline_reference"]["artifact_identity"] == official_file_identity(
+        REPORT_DIR / "official_answer_citation_metric_first_run_v1.json"
+    )
+    assert attribution["run_id"] == AGENTIC_V3_RUN_ID
+    assert attribution["promotion_evidence"] is False
+    assert attribution["guardrails"] == summary["guardrails"]
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V3_RUN_ID
+    )
+    assert measurement["promotion_evidence"] is False
+    assert measurement["comparable_live_measurement"] is True
+    assert measurement["promotion_gate_auto_run"] is False
+    assert measurement["result_bucket_counts"] == summary["result_bucket_counts"]
 
 
 def test_agentic_available_pipeline_row_exception_is_specific_not_pipeline_unavailable() -> None:
@@ -1151,6 +1548,13 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def official_file_identity(path: Path) -> dict[str, Any]:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_metric_first_run_v1 as official
+
+    return official.file_identity(path)
 
 
 def numeric_bbox(value: Any) -> bool:
