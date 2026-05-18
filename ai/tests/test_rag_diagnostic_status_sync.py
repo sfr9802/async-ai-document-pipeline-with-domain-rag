@@ -33,6 +33,8 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
     assert "STRUCTURED_ADAPTER_NOT_WIRED=22" in current_text
     assert "eval/indexes/rag-data" in current_text
     assert "Human-facing rolling docs" in current_text
+    assert "primary append-only\nhuman report file" in current_text
+    assert "append the\nshort entry here instead of creating another report" in current_text
     assert "Per-run Markdown" in current_text
     assert "source-bound official-denominator SearchUnit export/build is now unblocked" in current_text
     assert "BUILD_READY_LOAD_CHECK_PASSED" in current_text
@@ -44,7 +46,7 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
     assert "pytest ai/tests --rag-current -q" in current_text
     assert "full `ai/tests`\n  now mirrors the current profile" in current_text
     assert "broad/nightly legacy\n  suites" in current_text
-    assert "rag_current_eval_status.jsonl" in current_text
+    assert "status.jsonl" in current_text
 
     assert "SCORER_BACKEND_UNAVAILABLE" not in current_text
     assert "scorer/backend is unavailable" not in current_text
@@ -87,3 +89,38 @@ def test_progress_doc_scorer_backend_unavailable_only_in_short_history():
         headings_with_unavailable.append(current_heading)
 
     assert headings_with_unavailable == ["Short History"]
+
+
+def test_progress_doc_records_v3_1_7_queue_closure_without_metric_promotion():
+    text = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = text.split("## Short History", 1)[0]
+
+    assert "official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit" in current_text
+    assert "active queue cleared" in current_text
+    assert "all-track residual inventory" in current_text
+    assert "text_namu_v2_0012" in current_text
+    assert "text_namu_v2_0084" in current_text
+    assert "gold_policy_review_packet_preparation" in current_text
+    assert "pdfwin_b1c6527f848018640ad5ed231877c662" in current_text
+    assert "diagnostic-only" in current_text
+    assert "not promotion evidence" in current_text
+    assert "no official nDCG/MRR/Hit@K" in current_text
+    assert "Lane A/B/C not collapsed" in current_text
+
+
+def test_progress_doc_records_v3_1_8_gold_policy_packet_without_metric_promotion():
+    text = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = text.split("## Short History", 1)[0]
+
+    assert "official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation" in current_text
+    assert "human gold-policy packet-preparation run" in current_text
+    assert "text_namu_v2_0012" in current_text
+    assert "text_namu_v2_0084" in current_text
+    assert "keep_current_strict_reference_boundary" in current_text
+    assert "approve_scorer_or_renderer_review_without_gold_mutation" in current_text
+    assert "revise_gold_or_label_policy" in current_text
+    assert "active implementation queue remains empty" in current_text
+    assert "diagnostic-only" in current_text
+    assert "not promotion evidence" in current_text
+    assert "no official nDCG/MRR/Hit@K" in current_text
+    assert "no behavior, gold, label, production, denominator, retrieval, scorer, renderer, silver, or promotion mutation" in current_text

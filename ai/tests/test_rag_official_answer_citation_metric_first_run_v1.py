@@ -442,14 +442,14 @@ def test_scorer_guardrail_true_flag_fails_closed_before_scoring(tmp_path: Path) 
 
 
 def test_latest_first_run_artifacts_are_scored_baseline_not_backend_unavailable() -> None:
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "official_answer_citation_metric_first_run_v1.json"
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "baseline_v1.json"
     report = read_json(report_path)
     measurements_text = (ROOT / "docs" / "rag-ingestion-measurements.md").read_text(encoding="utf-8")
 
     assert report["official_scoring_attempt_count"] == 29
     assert report["scored_count"] == 29
     assert report["artifact_paths"]["scorer_results_jsonl"] == (
-        "ai/eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl"
+        "ai/eval/reports/rag-ingestion/scorer_v1.jsonl"
     )
     assert report["execution_blocker_category"] is None
     assert report["primary_failure_category"] == "CITATION_UNSUPPORTED"
@@ -526,8 +526,8 @@ def write_official_fixture_bundle(module, tmp_path: Path) -> dict[str, Any]:
     paths = {
         "registry": eval_queries / "official_denominator_registry.json",
         "application": reports / "official_question_gold_v2_registry_application_report.json",
-        "config": reports / "official_metric_input_config_v1.json",
-        "smoke": reports / "official_metric_pre_execution_smoke_report_v1.json",
+        "config": reports / "metric_input_v1.json",
+        "smoke": reports / "smoke_v1.json",
         "sha_by_track": sha_by_track,
     }
     write_json(paths["registry"], registry_payload(module, csv_paths, sha_by_track))

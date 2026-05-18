@@ -10,12 +10,12 @@ PROTECTED_PATHS = (
     "ai/eval/eval_queries/gold_queries_pdf_question_gold_v2.csv",
     "ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv",
     "ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv",
-    "ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json",
-    "ai/eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl",
-    "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json",
-    "ai/eval/reports/rag-ingestion/official_metric_pre_execution_smoke_report_v1.json",
-    "ai/eval/reports/rag-ingestion/xlsx_answer_citation_runtime_precision_candidate_results_v1.jsonl",
-    "ai/eval/reports/rag-ingestion/pdf_answer_citation_table_value_candidate_results_v1.jsonl",
+    "ai/eval/reports/rag-ingestion/baseline_v1.json",
+    "ai/eval/reports/rag-ingestion/scorer_v1.jsonl",
+    "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+    "ai/eval/reports/rag-ingestion/smoke_v1.json",
+    "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+    "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
 )
 
 

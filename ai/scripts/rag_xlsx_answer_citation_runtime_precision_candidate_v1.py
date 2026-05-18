@@ -26,11 +26,11 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
 EVAL_QUERY_DIR = AI_WORKER_ROOT / "eval" / "eval_queries"
 
-DEFAULT_BASELINE_REPORT = REPORT_DIR / "official_answer_citation_metric_first_run_v1.json"
-DEFAULT_SCORER_RESULTS = REPORT_DIR / "official_answer_citation_scorer_results_v1.jsonl"
+DEFAULT_BASELINE_REPORT = REPORT_DIR / "baseline_v1.json"
+DEFAULT_SCORER_RESULTS = REPORT_DIR / "scorer_v1.jsonl"
 DEFAULT_XLSX_GOLD = EVAL_QUERY_DIR / "gold_queries_xlsx_question_gold_v2.csv"
-DEFAULT_OUTPUT_JSONL = REPORT_DIR / "xlsx_answer_citation_runtime_precision_candidate_results_v1.jsonl"
-DEFAULT_STATUS_MD = REPORT_DIR / "rag_current_eval_status.md"
+DEFAULT_OUTPUT_JSONL = REPORT_DIR / "xlsx_candidate_v1.jsonl"
+DEFAULT_STATUS_MD = REPORT_DIR / "status.md"
 
 SCHEMA_VERSION = "xlsx_answer_citation_runtime_precision_candidate_v1"
 PASS_CATEGORY = "PASS"

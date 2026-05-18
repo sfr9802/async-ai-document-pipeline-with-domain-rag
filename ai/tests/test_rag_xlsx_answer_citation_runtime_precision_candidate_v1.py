@@ -223,7 +223,7 @@ def test_runtime_candidate_run_emits_report_only_artifacts_without_mutating_base
     module = load_module()
     results_path = tmp_path / "runtime.jsonl"
     status_path = tmp_path / "status.md"
-    baseline_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "official_answer_citation_metric_first_run_v1.json"
+    baseline_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "baseline_v1.json"
     baseline_before = baseline_path.read_bytes()
 
     report = module.run_candidate(
@@ -234,7 +234,7 @@ def test_runtime_candidate_run_emits_report_only_artifacts_without_mutating_base
         / "eval"
         / "reports"
         / "rag-ingestion"
-        / "official_answer_citation_scorer_results_v1.jsonl",
+        / "scorer_v1.jsonl",
         xlsx_gold_csv_path=ROOT / "ai" / "eval" / "eval_queries" / "gold_queries_xlsx_question_gold_v2.csv",
         output_report=None,
         output_md=None,

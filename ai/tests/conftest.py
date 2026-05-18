@@ -7,6 +7,8 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+# Keep the current RAG test surface intentionally compact. Routine diagnostic
+# phases should extend these files instead of adding new test_*.py files.
 CURRENT_RAG_TEST_FILES = frozenset(
     {
         "ai/tests/test_rag_current_focused_test_profile_v1.py",

@@ -16,11 +16,11 @@ AI_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_ROOT.parent
 REPORT_DIR = AI_ROOT / "eval" / "reports" / "rag-ingestion"
 
-DEFAULT_BASELINE = REPORT_DIR / "official_answer_citation_metric_first_run_v1.json"
-DEFAULT_XLSX_RUNTIME_RESULTS = REPORT_DIR / "xlsx_answer_citation_runtime_precision_candidate_results_v1.jsonl"
-DEFAULT_SCORER_RESULTS = REPORT_DIR / "official_answer_citation_scorer_results_v1.jsonl"
-DEFAULT_OUTPUT_RESULTS = REPORT_DIR / "pdf_answer_citation_table_value_candidate_results_v1.jsonl"
-DEFAULT_STATUS_JSONL = REPORT_DIR / "rag_current_eval_status.jsonl"
+DEFAULT_BASELINE = REPORT_DIR / "baseline_v1.json"
+DEFAULT_XLSX_RUNTIME_RESULTS = REPORT_DIR / "xlsx_candidate_v1.jsonl"
+DEFAULT_SCORER_RESULTS = REPORT_DIR / "scorer_v1.jsonl"
+DEFAULT_OUTPUT_RESULTS = REPORT_DIR / "pdf_candidate_v1.jsonl"
+DEFAULT_STATUS_JSONL = REPORT_DIR / "status.jsonl"
 
 SCHEMA_VERSION = "pdf_answer_citation_table_value_candidate_v1"
 TARGET_QUERY_IDS = ("gq_auto_010", "gq_auto_030", "gq_pdf_section_question_001")

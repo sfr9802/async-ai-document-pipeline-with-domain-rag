@@ -41,6 +41,13 @@ def test_current_profile_includes_required_official_candidate_and_pdf_tests() ->
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v2_2_llm_backend_validation_artifact_is_diagnostic_only",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_comparable_live_measurement_artifacts_are_separate_and_guarded",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_all_track_foundation_measurement_artifacts_are_separate_and_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_3_remaining_queue_answer_span_renderer_triage_is_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_4_pdf_residual_answer_span_renderer_triage_is_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_5_gq_auto_010_source_bound_context_coverage_diagnostic_is_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_6_gq_auto_010_pdf_paragraph_window_expansion_is_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_7_post_residual_queue_closure_inventory_is_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_8_gold_policy_packet_preparation_is_compact_and_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_7_pdf_prompt_context_expansion_is_target_bound_and_query_bound",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_residual_audit_does_not_mutate_protected_artifacts",
         "ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests",
     }
@@ -69,5 +76,13 @@ def test_ai_tests_directory_contains_only_current_profile_files() -> None:
         path.relative_to(ROOT).as_posix()
         for path in (ROOT / "ai" / "tests").glob("test_*.py")
     }
+    forbidden_name_fragments = ("scratch", "tmp", "temp", "adhoc", "ad_hoc", "legacy", "unused")
 
     assert existing_test_files == rag_conftest.CURRENT_RAG_TEST_FILES
+    assert not [
+        rel_path
+        for rel_path in existing_test_files
+        if any(fragment in Path(rel_path).name.lower() for fragment in forbidden_name_fragments)
+    ]
+    for rel_path in sorted(rag_conftest.CURRENT_RAG_TEST_FILES):
+        assert "def test_" in (ROOT / rel_path).read_text(encoding="utf-8"), rel_path

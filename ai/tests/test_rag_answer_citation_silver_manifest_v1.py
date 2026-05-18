@@ -8,6 +8,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
+EXTERNAL_REPORT_ARCHIVE_DIR = Path(
+    "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+    "rag-ingestion/repo-wide-cleanup-20260519/reports/rag-ingestion-legacy"
+)
 SILVER_DIR = ROOT / "ai" / "eval" / "silver"
 MANIFEST = SILVER_DIR / "answer_citation_silver_manifest_v1.json"
 READINESS = SILVER_DIR / "answer_citation_silver_readiness_v1.json"
@@ -16,12 +21,12 @@ SILVER_JSONL_BY_SPLIT = {
     "dev": SILVER_DIR / "answer_citation_silver_dev_v1.jsonl",
     "holdout": SILVER_DIR / "answer_citation_silver_holdout_v1.jsonl",
 }
-OFFICIAL_INPUT_CONFIG = REPORT_DIR / "official_metric_input_config_v1.json"
-FIRST_RUN = REPORT_DIR / "official_answer_citation_metric_first_run_v1.json"
-XLSX_CANDIDATE = REPORT_DIR / "xlsx_answer_citation_runtime_precision_candidate_results_v1.jsonl"
-PDF_CANDIDATE = REPORT_DIR / "pdf_answer_citation_table_value_candidate_results_v1.jsonl"
-AGENTIC_SUMMARY = REPORT_DIR / "official_answer_citation_agentic_loop_run_v1_summary.json"
-AGENTIC_ATTRIBUTION = REPORT_DIR / "official_answer_citation_agentic_loop_run_v1_failure_attribution.json"
+OFFICIAL_INPUT_CONFIG = REPORT_DIR / "metric_input_v1.json"
+FIRST_RUN = REPORT_DIR / "baseline_v1.json"
+XLSX_CANDIDATE = REPORT_DIR / "xlsx_candidate_v1.jsonl"
+PDF_CANDIDATE = REPORT_DIR / "pdf_candidate_v1.jsonl"
+AGENTIC_SUMMARY = REPORT_ARCHIVE_DIR / "agentic_v1_summary.json"
+AGENTIC_ATTRIBUTION = REPORT_ARCHIVE_DIR / "agentic_v1_failure.json"
 README = ROOT / "README.md"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 
@@ -226,7 +231,10 @@ def test_docs_record_answer_citation_silver_strategy_without_promotion_claims() 
         assert "expected values are audit-only" in normalized
         assert "official 29 query_ids are excluded from dev/holdout tuning silver" in normalized
         assert "TEXT=0, XLSX=0, PDF=0" in normalized
-        assert "source-bound SearchUnit export/build and canonical SearchUnit citation payload wiring" in normalized
+
+    current_normalized = " ".join(current_progress.split())
+    assert "official-denominator source-bound index, build/load check, and canonical SearchUnit citation payload wiring are already available" in current_normalized
+    assert "silver generation stays closed until safe silver-source data coverage is settled" in current_normalized
 
     assert "silver promotion evidence" not in current_progress.lower()
 
@@ -294,13 +302,29 @@ def official_denominator_query_ids() -> set[str]:
     return {row["query_id"] for row in config["candidate_manifest"]}
 
 
+def resolve_report_artifact_path(path: Path) -> Path:
+    if path.exists():
+        return path
+    if path.parent == REPORT_ARCHIVE_DIR:
+        archived_external = EXTERNAL_REPORT_ARCHIVE_DIR / path.name
+        return archived_external if archived_external.exists() else path
+    if path.parent == REPORT_DIR:
+        archived_external = EXTERNAL_REPORT_ARCHIVE_DIR / path.name
+        if archived_external.exists():
+            return archived_external
+        archived = REPORT_ARCHIVE_DIR / path.name
+        if archived.exists():
+            return archived
+    return path
+
+
 def read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(resolve_report_artifact_path(path).read_text(encoding="utf-8"))
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows = []
-    with path.open(encoding="utf-8") as handle:
+    with resolve_report_artifact_path(path).open(encoding="utf-8") as handle:
         for line in handle:
             if line.strip():
                 rows.append(json.loads(line))

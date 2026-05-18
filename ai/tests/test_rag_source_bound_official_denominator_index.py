@@ -1131,10 +1131,10 @@ def test_v2_run_id_uses_separate_artifact_defaults_and_result_rows() -> None:
     assert args.run_id == "official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic"
     assert args.rag_index_dir.endswith("rag-data-official-denominator-v1")
     assert args.results_jsonl.endswith(
-        "official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic_results.jsonl"
+        "v2_source_bound_results.jsonl"
     )
     assert args.summary_json.endswith(
-        "official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic_summary.json"
+        "v2_source_bound_summary.json"
     )
     assert args.enable_structured_source_bound_adapters is True
     assert args.source_bound_index_load_checked is True
@@ -1168,10 +1168,10 @@ def test_v2_1_run_id_uses_separate_artifact_defaults() -> None:
 
     assert args.run_id == "official_answer_citation_agentic_loop_run_v2_1_citation_contract_repair"
     assert args.results_jsonl.endswith(
-        "official_answer_citation_agentic_loop_run_v2_1_citation_contract_repair_results.jsonl"
+        "v2_1_citation_results.jsonl"
     )
     assert args.summary_json.endswith(
-        "official_answer_citation_agentic_loop_run_v2_1_citation_contract_repair_summary.json"
+        "v2_1_citation_summary.json"
     )
     assert args.enable_structured_source_bound_adapters is True
     assert args.source_bound_index_load_checked is True
@@ -1564,9 +1564,9 @@ def test_v3_run_id_is_separate_and_source_bound_defaults_are_locked() -> None:
     assert runner.is_source_bound_manifest_run(args.run_id) is True
     assert args.source_bound_index_load_checked is True
     assert args.enable_structured_source_bound_adapters is True
-    assert args.results_jsonl.endswith(f"{runner.V3_RUN_ID}_results.jsonl")
-    assert args.summary_json.endswith(f"{runner.V3_RUN_ID}_summary.json")
-    assert args.summary_md.endswith(f"{runner.V3_RUN_ID}_summary.md")
+    assert args.results_jsonl.endswith("v3_comparable_results.jsonl")
+    assert args.summary_json.endswith("v3_comparable_summary.json")
+    assert args.summary_md.endswith("v3_comparable_summary.md")
     assert "v2_2_llm_backend_validation" not in args.results_jsonl
 
 

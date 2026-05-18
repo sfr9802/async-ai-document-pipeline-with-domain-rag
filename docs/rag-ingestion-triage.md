@@ -1,10 +1,18 @@
 # RAG Ingestion Triage
 
-Last updated: 2026-05-18 KST.
+Last updated: 2026-05-19 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of
-creating one Markdown file per run.
+creating one Markdown file per run. Machine artifacts should stay compact:
+write only the summary, queue, decision/inventory JSONL, and status event that a
+triage phase actually needs. For report-style human summaries, append the short
+entry to `docs/rag-ingestion-progress.md`; update this file only when row-level
+queue or decision-boundary detail belongs here.
+
+Historical `_archive/legacy` artifact paths below are logical provenance names.
+Their physical generated payloads may live in the external runtime archive under
+`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 
 ## Triage Policy
 
@@ -19,24 +27,141 @@ creating one Markdown file per run.
 ## Current Phase
 
 Phase:
-`row-level failure triage - answer span / renderer diagnostics`
+`gold policy review packet prepared - awaiting user policy decisions`
 
 Status:
 priority 1~5 plus the remaining `text_namu_v2_0012` TEXT locator residual have
 completed diagnostic stabilization. The full 29-row post-triage measurement now
 has strict JSON parse failure, LLM-generated locator copy failure, PDF
 `source_pdf_path` mismatch, XLSX `row_label` mismatch, and TEXT `text_locator`
-missing all at zero. The first answer-span/renderer batch has been recorded as
-v3_1_2 diagnostic-only classification over existing post-triage artifacts.
+missing all at zero. v3_1_2 recorded the first classification-only
+answer-span/renderer batch, v3_1_3 processed the v3_1_2 remaining queue with
+general prompt/renderer/scorer-compatibility changes, and v3_1_4 processed the
+PDF residual queue with source-bound table-axis disambiguation. v3_1_5 then
+processed the v3_1_4 remaining queue as a classification-only coverage
+diagnostic for `gq_auto_010`, and v3_1_6 applied a safe same-page source-bound
+PDF paragraph/window expansion for the same row. The current machine remaining
+queue is empty. v3_1_7 then created the all-track residual inventory and
+confirmed that the active implementation queue is empty even though policy-bound
+all-track residuals still exist. v3_1_8 has now prepared the human gold-policy
+packet and decision matrix for those five rows without making any policy
+decision.
 
 Source foundation run:
 `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement`
 
 Current triage run:
-`official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage`
+`official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation`
 
 Previous all-track source run:
 `official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage`
+
+## v3_1_8 Gold-Policy Review Packet Status
+
+Source run:
+`official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit`
+
+Machine artifacts:
+
+- Summary:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_summary.json`
+- Human review packet:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_human_review_packet.json`
+- Decision matrix:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_decision_matrix.jsonl`
+- Remaining queue:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_remaining_triage_queue.json`
+
+Current status:
+
+- Active remaining queue: cleared.
+- Active implementation queue remains empty.
+- `implementation_safe_residual_count=0`.
+- Silver remains closed.
+- v3_1_6 sibling-hash drift was recorded as metadata drift only; historical
+  v3_1_6 artifacts were not rewritten.
+- Raw expected/supporting/gold-policy material is present only inside the human
+  review packet with `human_review_only=true`, `generation_source=false`,
+  `not_silver_source=true`, and `not_gold_mutation=true`.
+
+User decision options for every row:
+
+- `keep_current_strict_reference_boundary`
+- `approve_scorer_or_renderer_review_without_gold_mutation`
+- `revise_gold_or_label_policy`
+
+No Codex decision has been applied. Do not treat `answer_renderer_followup_candidate`
+or `scorer_normalization_review_candidate` as implementation-safe until the
+user chooses a policy option in a later phase.
+
+Policy-review rows:
+
+| Query ID | Source family | Lane failures | Packet status |
+|---|---|---|---|
+| `text_namu_v2_0012` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | Awaiting user policy decision |
+| `text_namu_v2_0014` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | Awaiting user policy decision |
+| `text_namu_v2_0017` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | Awaiting user policy decision |
+| `text_namu_v2_0077` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | Awaiting user policy decision |
+| `text_namu_v2_0084` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | Awaiting user policy decision |
+
+Guardrail status:
+
+- Diagnostic-only.
+- Not promotion evidence.
+- No renderer, scorer, retrieval, denominator, production, silver, gold,
+  expected-answer, supporting-evidence, relevance-label, answerability-label, or
+  human-label mutation.
+- No official nDCG, MRR, Hit@K, or collapsed Lane A/B/C score.
+
+## v3_1_7 Residual Inventory And Decision Boundary
+
+Source run:
+`official_answer_citation_agentic_loop_run_v3_1_6_gq_auto_010_safe_pdf_paragraph_window_expansion_diagnostic`
+
+Machine artifacts:
+
+- Summary:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_summary.json`
+- Residual inventory:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_all_track_residual_inventory.jsonl`
+- Remaining queue:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_remaining_triage_queue.json`
+- User decision packet:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_user_decision_packet.json`
+
+Decision boundary:
+
+- Active remaining queue: cleared.
+- Active implementation queue: empty.
+- All-track residuals still exist: five TEXT query ids across all three lanes.
+- No residual is currently safe to fix without a user gold/relevance/
+  answerability policy decision.
+- Do not change expected answers, supporting evidence, labels, scorer policy, or
+  renderer behavior from this inventory alone.
+
+Residual query ids:
+
+| Query ID | Source family | Lane failures | Current handling |
+|---|---|---|---|
+| `text_namu_v2_0012` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | User gold-policy review packet |
+| `text_namu_v2_0014` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | User gold-policy review packet |
+| `text_namu_v2_0017` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | User gold-policy review packet |
+| `text_namu_v2_0077` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | User gold-policy review packet |
+| `text_namu_v2_0084` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | User gold-policy review packet |
+
+Residual buckets:
+
+- `gold_policy_review_candidate=15`
+- `answer_renderer_followup_candidate=15`
+- `scorer_normalization_review_candidate=3`
+- `implementation_safe_followup=0`
+- `retrieval_context_followup_candidate=0`
+- `relevance_label_review_candidate=0`
+- `answerability_label_review_candidate=0`
+
+Packet status:
+superseded by v3_1_8 packet preparation above; active implementation queue
+remains empty until a user policy decision is applied.
 
 ## Post-Triage Queue
 
@@ -48,7 +173,7 @@ Strict JSON / locator residual count: `0`.
 Queue source of truth:
 
 - The authoritative queue is the machine artifact
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_triage_queue.json`.
+  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_1_post_locator_queue.json`.
 - If this file and human queue notes differ, use the machine artifact. That is
   why the first batch includes `text_namu_v2_0012`, and why
   `text_namu_v2_0005` is kept as queue rank 12 instead of being dropped.
@@ -150,7 +275,315 @@ Remaining queue after batch 1:
 | 7 | `text_namu_v2_0005` | secondary TEXT watchlist, Lane C-only answer renderer/span |
 
 Machine remaining-queue artifact:
-`ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_remaining_triage_queue.json`
+`ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_queue.json`
+
+Artifact policy for this triage lane:
+
+- Queue source of truth: the machine remaining-queue JSON above.
+- Human-facing source of truth: this rolling triage document plus
+  `docs/rag-ingestion-progress.md` and `docs/rag-ingestion-measurements.md`.
+- Canonical classification payload: v3_1_2
+  `answer_span_diagnostics.jsonl`; use it for row/lane category inspection
+  before opening full debug payloads.
+- Forensic debug payloads: v3_1_2 `results.jsonl`,
+  `failure_attribution.json`, and `actual_response_audit.jsonl`. Keep them for
+  now because artifact tests read them and because they preserve strict
+  JSON/locator regression evidence.
+- Stale or previous queue text must not override the machine queue. The older
+  stale mention of `gq_auto_037` is retained only as historical drift evidence
+  above, not as an active queue item.
+- Per-run Markdown reports remain out of scope for routine classification-only
+  triage.
+
+## Remaining Queue Batch 2 Result
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_1_3_remaining_queue_answer_span_renderer_triage`
+
+Source of truth:
+
+- The authoritative input queue is
+  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_queue.json`.
+- Rolling docs are human-facing narrative only. If docs and machine queue
+  differ, use the machine queue. The stale `gq_auto_037` human queue wording is
+  not active.
+
+Scope:
+
+- Target rows: `gq_auto_010`, `gq_auto_024`, `gq_auto_030`,
+  `gq_auto_043`, `gq_pdf_section_question_001`,
+  `gq_xlsx_date_number_format_001`, `text_namu_v2_0005`.
+- Allowed changes used: prompt answer instructions, source-bound answer
+  renderer, and post-generation scorer compatibility normalization.
+- Forbidden work stayed closed: no expected/supporting/gold mutation, no
+  silver/gold/promotion evidence, no threshold tuning, no winner selection, no
+  production namespace mutation, and no candidate artifacts as generation
+  source.
+
+Target row changes:
+
+| Query ID | Before | After | Category |
+|---|---|---|---|
+| `gq_auto_010` | Lane B/C fail | Lane B/C fail | PDF retrieval/context answer-span insufficiency; expected numeric span not in cited context. |
+| `gq_auto_024` | Lane C fail | PASS all lanes | Korean source phrase renderer / paraphrase compatibility. |
+| `gq_auto_030` | Lane C fail | PASS all lanes | PDF table value selected correctly after prompt table-axis instruction. |
+| `gq_auto_043` | Lane B/C fail | PASS all lanes | XLSX date normalized-value compatibility. |
+| `gq_pdf_section_question_001` | Lane B/C fail | Lane B/C fail | PDF table repeated amount/growth columns still select wrong value. |
+| `gq_xlsx_date_number_format_001` | Lane B/C fail | PASS all lanes | XLSX date normalized-value compatibility. |
+| `text_namu_v2_0005` | Lane C fail | PASS all lanes | Korean answer-renderer/language drift fixed; Lane A/B unchanged PASS. |
+
+Metrics:
+
+- Target Lane A/B/C PASS: `7/7`, `5/7`, `5/7` after v3_1_3
+  (before: `7/7`, `3/7`, `0/7`).
+- Target answer-span mismatch Lane A/B/C: `0`, `2`, `2` after v3_1_3
+  (before: `0`, `4`, `7`).
+- 29-row all-track Lane A/B/C PASS: `24/29`, `22/29`, `22/29` after
+  v3_1_3 (before v3_1_1: `24/29`, `20/29`, `17/29`).
+- 29-row all-track answer-span mismatch Lane A/B/C: `0`, `7`, `7` after
+  v3_1_3 (before: `0`, `9`, `12`).
+- Strict JSON parse residual remains `0` by lane.
+- LLM-generated locator copy/missing/field mismatch residual remains `0` by
+  lane.
+- PDF `source_pdf_path` mismatch, XLSX `row_label` mismatch, and TEXT
+  `text_locator` missing remain `0`.
+
+Remaining queue after v3_1_3:
+
+| Priority | Query ID | Current issue |
+|---:|---|---|
+| 1 | `gq_auto_010` | PDF cited context does not include the expected numeric span (`4.9%`, `0.8%p`). |
+| 2 | `gq_pdf_section_question_001` | PDF table repeated amount/growth groups still require value disambiguation for `수출입차 금액`. |
+
+Machine remaining-queue artifact:
+`ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_3_remaining_queue.json`
+
+Guardrail audit:
+
+- `diagnostic_only=true`.
+- `promotion_evidence=false`.
+- `promotion_gate_auto_run=false`.
+- `threshold_tuning=false`.
+- `winner_selection=false`.
+- `candidate_artifacts_as_generation_source=false`.
+- `generation_used_expected_answer=false`.
+- `generation_used_supporting_evidence=false`.
+- `generation_used_gold_fields=false`.
+- `reference_span_text_embedded=false`.
+
+## PDF Residual Batch 3 Result
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_1_4_pdf_residual_answer_span_renderer_triage`
+
+Source of truth:
+
+- The authoritative input queue is
+  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_3_remaining_queue.json`.
+- Rolling docs are human-facing narrative only. If docs and machine queue
+  differ, use the machine queue.
+
+Scope:
+
+- Target rows: `gq_auto_010`, `gq_pdf_section_question_001`.
+- Allowed changes used: source-bound PDF table-axis answer renderer for
+  repeated amount/growth columns, plus post-generation diagnostic
+  classification for PDF context insufficiency.
+- Forbidden work stayed closed: no expected/supporting/gold mutation, no
+  silver/gold/promotion evidence, no threshold tuning, no winner selection, no
+  production namespace mutation, and no candidate artifacts as generation
+  source.
+
+Target row changes:
+
+| Query ID | Before | After | Category |
+|---|---|---|---|
+| `gq_auto_010` | Lane B/C fail | Lane B/C fail | Retrieval/context insufficiency: cited paragraph lacks the numeric span, so the renderer must not invent it. |
+| `gq_pdf_section_question_001` | Lane B/C fail | PASS all lanes | Source-bound PDF table-axis disambiguation selected `수출입차 금액` value `518.4`. |
+
+Metrics:
+
+- Target Lane A/B/C PASS: `2/2`, `1/2`, `1/2` after v3_1_4
+  (before: `2/2`, `0/2`, `0/2`).
+- Target answer-span mismatch Lane A/B/C: `0`, `1`, `1` after v3_1_4
+  (before: `0`, `2`, `2`).
+- 29-row all-track Lane A/B/C PASS: `24/29`, `23/29`, `23/29` after
+  v3_1_4 (before v3_1_3: `24/29`, `22/29`, `22/29`).
+- 29-row all-track answer-span mismatch Lane A/B/C: `0`, `6`, `6` after
+  v3_1_4 (before: `0`, `7`, `7`).
+- Strict JSON parse residual remains `0` by lane.
+- LLM-generated locator copy/missing/field mismatch residual remains `0` by
+  lane.
+- PDF `source_pdf_path` mismatch, XLSX `row_label` mismatch, and TEXT
+  `text_locator` missing remain `0`.
+
+Remaining queue after v3_1_4:
+
+| Priority | Query ID | Current issue |
+|---:|---|---|
+| 1 | `gq_auto_010` | Source-bound retrieval/context coverage: cited context lacks numeric answer span. |
+
+Machine remaining-queue artifact:
+`ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_4_pdf_residual_queue.json`
+
+Guardrail audit:
+
+- `diagnostic_only=true`.
+- `promotion_evidence=false`.
+- `promotion_gate_auto_run=false`.
+- `threshold_tuning=false`.
+- `winner_selection=false`.
+- `candidate_artifacts_as_generation_source=false`.
+- `generation_used_expected_answer=false`.
+- `generation_used_supporting_evidence=false`.
+- `generation_used_gold_fields=false`.
+- `reference_span_text_embedded=false`.
+
+## Source-Bound Coverage Batch 4 Result
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_1_5_gq_auto_010_source_bound_retrieval_context_coverage_diagnostic`
+
+Source of truth:
+
+- The authoritative input queue is
+  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_4_pdf_residual_queue.json`.
+- Queue preflight confirmed only `gq_auto_010` remains, strict JSON /
+  locator residual count is `0`, `diagnostic_only=true`,
+  `promotion_evidence=false`, and `reference_span_text_embedded=false`.
+
+Scope:
+
+- Target row: `gq_auto_010` only.
+- This was classification-only: no live generation, answer renderer/scorer
+  change, SearchUnit export change, index rebuild, denominator mutation, gold
+  mutation, label mutation, production mutation, threshold tuning, winner
+  selection, promotion gate, or official retrieval metric computation.
+- Audit numeric spans were used only as post-hoc static coverage probes and
+  were recorded by hash/count in the compact diagnostic artifact.
+
+Coverage findings:
+
+| Surface | Result |
+|---|---|
+| v3_1_4 Lane B/C cited SearchUnit | `7bf516bf-2a17-4303-86d8-3cffaa04846e` |
+| Current cited SearchUnit contains all audit numeric spans | no |
+| Any same-document SearchUnit contains all audit numeric spans | no |
+| Any adjacent page/window SearchUnit contains all audit numeric spans | no |
+| Raw/source PDF text extraction contains all audit numeric spans | yes |
+
+Classification:
+
+`query_bound_searchunit_too_narrow`
+
+Rationale: Lane A still passes through v3 primary replay. Lane B/C fail with
+`LLM_EXPECTED_SPAN_MISMATCH` while citing the same source-bound paragraph. The
+paragraph supports the general unemployment-rise claim but does not contain the
+numeric answer span. Raw PDF extraction can see the numeric span on the same
+source page, but the current query-bound cited SearchUnit and same-document
+SearchUnit surfaces in the non-production official denominator index do not.
+
+Repair decision:
+
+- No non-production SearchUnit export/windowing/index repair was applied in
+  this run.
+- No 29-row all-track remeasurement was necessary because no retrieval,
+  export, index, generation, renderer, or scorer behavior changed.
+- The next decision is whether to implement a safe source-bound PDF
+  paragraph/window expansion before live generation.
+- Verification is recorded in `docs/rag-ingestion-progress.md`: both current
+  pytest profiles PASS with 133 tests, py_compile PASS, doctor selected checks
+  PASS, and `git diff --check` PASS with line-ending warnings only.
+
+Remaining queue after v3_1_5:
+
+| Priority | Query ID | Current issue |
+|---:|---|---|
+| 1 | `gq_auto_010` | Safe source-bound PDF paragraph/window coverage decision: raw PDF contains the numeric span, but current SearchUnit surfaces do not. |
+
+Machine remaining-queue artifact:
+`ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_5_gq010_coverage_queue.json`
+
+Guardrail audit:
+
+- `diagnostic_only=true`.
+- `promotion_evidence=false`.
+- `promotion_gate_auto_run=false`.
+- `threshold_tuning=false`.
+- `winner_selection=false`.
+- `candidate_artifacts_as_generation_source=false`.
+- `generation_used_expected_answer=false`.
+- `generation_used_supporting_evidence=false`.
+- `generation_used_gold_fields=false`.
+- `reference_span_text_embedded=false`.
+- `production_mutation=false`, `denominator_mutation=false`,
+  `gold_mutation=false`, `human_label_mutation=false`.
+- Official nDCG, MRR, Hit@K, and collapsed Lane A/B/C score were not computed.
+
+## Source-Bound Coverage Repair Branch Result
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_1_6_gq_auto_010_safe_pdf_paragraph_window_expansion_diagnostic`
+
+Source of truth:
+
+- The authoritative input queue is
+  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_5_gq010_coverage_queue.json`.
+- Queue preflight confirmed only `gq_auto_010` remained and the v3_1_5
+  classification was `query_bound_searchunit_too_narrow`.
+
+Scope:
+
+- Target row: `gq_auto_010` only.
+- Safe PDF paragraph/window expansion was attempted and applied.
+- Locator-safe metadata was available: same `source_pdf_path`, same
+  `document_version_id`, page `8`, physical page index `7`, bbox
+  `[63.65, 95.06, 341.94, 163.68]`, region type `paragraph_window`, and
+  expansion unit `pdfwin_b1c6527f848018640ad5ed231877c662`.
+- The expansion came from safe local source PDF extraction and was represented
+  as non-production diagnostic context expansion. It did not mutate the
+  official denominator registry, production indexes, gold, labels, expected
+  answers, or supporting evidence.
+
+Result:
+
+| Lane | Before v3_1_6 | After v3_1_6 |
+|---|---|---|
+| Lane A `v3_primary_replay` | PASS | PASS |
+| Lane B `live_llm_retrieval_topk` | `LLM_EXPECTED_SPAN_MISMATCH` | PASS |
+| Lane C `live_llm_query_bound_oracle` | `LLM_EXPECTED_SPAN_MISMATCH` | PASS |
+
+All-track remeasurement:
+
+- Required because prompt context assembly changed.
+- Lane A/B/C PASS changed from `24/29`, `23/29`, `23/29` to `24/29`,
+  `24/29`, `24/29`.
+- Strict JSON parse residuals, LLM-generated locator copy/missing/field mismatch
+  residuals, PDF `source_pdf_path` mismatch, XLSX `row_label` mismatch, and
+  TEXT `text_locator` missing remain zero.
+- No non-target row received context expansion and no non-target unexpected
+  change was recorded.
+
+Remaining queue after v3_1_6: empty.
+
+Machine remaining-queue artifact:
+`ai/eval/reports/rag-ingestion/v3_1_6_gq010_pdfwin_queue.json`
+
+Guardrail audit:
+
+- `diagnostic_only=true`.
+- `promotion_evidence=false`.
+- `promotion_gate_auto_run=false`.
+- `threshold_tuning=false`.
+- `winner_selection=false`.
+- `candidate_artifacts_as_generation_source=false`.
+- `generation_used_expected_answer=false`.
+- `generation_used_supporting_evidence=false`.
+- `generation_used_gold_fields=false`.
+- `reference_span_text_embedded=false`.
+- `production_mutation=false`, `denominator_mutation=false`,
+  `gold_mutation=false`, `human_label_mutation=false`.
+- Official nDCG, MRR, Hit@K, and collapsed Lane A/B/C score were not computed.
 
 ## TEXT Locator Residual Result
 
@@ -194,21 +627,15 @@ Residual:
 
 ## Next Triage Step
 
-Proceed from the v3_1_2 remaining queue. Keep this diagnostic-only: do not
-create silver, change gold, tune thresholds, or run a promotion gate.
+The v3_1_6 machine remaining queue is empty. Keep future work diagnostic-only
+unless the user explicitly opens a new repair branch: do not create silver,
+change gold, tune thresholds, run a promotion gate, mutate production, or
+synthesize missing numeric spans.
 
 ## Later Triage Queue
 
-After batch 1, use the machine remaining-queue artifact above rather than the
-older stale human list. Current later queue:
-
-- `gq_auto_010`
-- `gq_auto_024`
-- `gq_auto_030`
-- `gq_auto_043`
-- `gq_pdf_section_question_001`
-- `gq_xlsx_date_number_format_001`
-- `text_namu_v2_0005`
+After v3_1_6, use the machine remaining-queue artifact above rather than older
+stale human lists. Current later queue: empty.
 
 ## User-Decision Boundary
 

@@ -23,13 +23,13 @@ AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
 REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
 EVAL_QUERY_DIR = AI_WORKER_ROOT / "eval" / "eval_queries"
-DEFAULT_METRIC_INPUT_CONFIG = REPORT_DIR / "official_metric_input_config_v1.json"
+DEFAULT_METRIC_INPUT_CONFIG = REPORT_DIR / "metric_input_v1.json"
 DEFAULT_DENOMINATOR_REGISTRY = EVAL_QUERY_DIR / "official_denominator_registry.json"
 DEFAULT_REGISTRY_APPLICATION_REPORT = REPORT_DIR / "official_question_gold_v2_registry_application_report.json"
 DEFAULT_XLSX_LEAKAGE_REPROBE = REPORT_DIR / "xlsx_answer_citation_hidden_excluded_leakage_reprobe.json"
 DEFAULT_TEXT_CORPUS = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined" / "rag_chunks.jsonl"
-DEFAULT_OUTPUT_JSON = REPORT_DIR / "official_metric_pre_execution_smoke_report_v1.json"
-DEFAULT_OUTPUT_MD = REPORT_DIR / "official_metric_pre_execution_smoke_report_v1.md"
+DEFAULT_OUTPUT_JSON = REPORT_DIR / "smoke_v1.json"
+DEFAULT_OUTPUT_MD = REPORT_DIR / "smoke_v1.md"
 
 SCHEMA_VERSION = "official_metric_pre_execution_smoke_report_v1"
 TRACKS = ("pdf_business_ocr_mm", "text_namu_v2_1", "xlsx_business_structured")

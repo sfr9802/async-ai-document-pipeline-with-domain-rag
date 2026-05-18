@@ -32,7 +32,7 @@ DEFAULT_CANONICAL_PATHS = {
     "human_audit_v2_applied_decisions": REVIEW_DIR / "rag_human_audit_v2_applied_decisions.json",
     "official_denominator_candidate_diff_preview": REPORT_DIR / "official_denominator_candidate_diff_preview_v1.json",
     "official_question_gold_v2_registry_application": REPORT_DIR / "official_question_gold_v2_registry_application_report.json",
-    "official_metric_input_config": REPORT_DIR / "official_metric_input_config_v1.json",
+    "official_metric_input_config": REPORT_DIR / "metric_input_v1.json",
     "xlsx_answer_citation_policy_packet": REPORT_DIR / "rag_xlsx_answer_citation_policy_review_packet_v1.json",
     "pdf_answer_citation_policy_packet": REPORT_DIR / "rag_pdf_answer_citation_policy_review_packet_v1.json",
     "pdf_evidence_metadata_enrichment": REPORT_DIR / "pdf_evidence_metadata_enrichment_report.json",
@@ -66,8 +66,8 @@ CANONICAL_CURRENT_REPORTS = [
     "ai/eval/reports/rag-ingestion/official_denominator_candidate_diff_preview_v1.md",
     "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json",
     "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.md",
-    "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json",
-    "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.md",
+    "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+    "ai/eval/reports/rag-ingestion/metric_input_v1.md",
     "docs/rag-ingestion-progress.md",
 ]
 

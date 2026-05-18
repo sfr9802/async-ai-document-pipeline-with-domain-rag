@@ -28,7 +28,7 @@ DEFAULT_PDF_ANSWER_REPORT = REPORT_DIR / "rag_pdf_answer_citation_policy_review_
 DEFAULT_HUMAN_AUDIT_PACKET_V2 = REVIEW_DIR / "rag_human_audit_packet_v2_question_quality_local_llm.json"
 DEFAULT_APPLIED_DECISIONS = REVIEW_DIR / "rag_human_audit_v2_applied_decisions.json"
 DEFAULT_DENOMINATOR_DIFF_PREVIEW = REPORT_DIR / "official_denominator_candidate_diff_preview_v1.json"
-DEFAULT_METRIC_INPUT_CONFIG = REPORT_DIR / "official_metric_input_config_v1.json"
+DEFAULT_METRIC_INPUT_CONFIG = REPORT_DIR / "metric_input_v1.json"
 DEFAULT_OUTPUT_JSON = REPORT_DIR / "three_track_metric_preflight_board.json"
 DEFAULT_OUTPUT_MD = REPORT_DIR / "three_track_metric_preflight_board.md"
 

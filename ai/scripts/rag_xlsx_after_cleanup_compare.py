@@ -16,7 +16,12 @@ AI_WORKER = Path(__file__).resolve().parents[1]
 ROOT = AI_WORKER.parent
 DEFAULT_BEFORE_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_vector_diagnostic_report.json")
 DEFAULT_AFTER_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
-LEGACY_CSV_ARCHIVE = ROOT / "archive" / "results" / "2026-05-05-eval-query-lineage-cleanup" / "csv"
+LOCAL_LEGACY_CSV_ARCHIVE = ROOT / "archive" / "results" / "2026-05-05-eval-query-lineage-cleanup" / "csv"
+EXTERNAL_LEGACY_CSV_ARCHIVE = Path(
+    "D:/_external_workspace_archive/async-ocr-rag-multimodal-pipeline/"
+    "20260519-repo-wide-cleanup/files/archive/results/2026-05-05-eval-query-lineage-cleanup/csv"
+)
+LEGACY_CSV_ARCHIVE = LOCAL_LEGACY_CSV_ARCHIVE if LOCAL_LEGACY_CSV_ARCHIVE.exists() else EXTERNAL_LEGACY_CSV_ARCHIVE
 DEFAULT_BEFORE_GOLD = LEGACY_CSV_ARCHIVE / "gold_queries_xlsx_v3_positive.csv"
 DEFAULT_AFTER_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
 DEFAULT_HIDDEN_REPORT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json")

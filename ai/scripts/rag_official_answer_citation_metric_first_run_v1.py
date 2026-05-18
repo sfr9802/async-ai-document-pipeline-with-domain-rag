@@ -25,12 +25,12 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
 EVAL_QUERY_DIR = AI_WORKER_ROOT / "eval" / "eval_queries"
 
-DEFAULT_METRIC_INPUT_CONFIG = REPORT_DIR / "official_metric_input_config_v1.json"
+DEFAULT_METRIC_INPUT_CONFIG = REPORT_DIR / "metric_input_v1.json"
 DEFAULT_DENOMINATOR_REGISTRY = EVAL_QUERY_DIR / "official_denominator_registry.json"
-DEFAULT_PRE_EXECUTION_SMOKE = REPORT_DIR / "official_metric_pre_execution_smoke_report_v1.json"
-DEFAULT_OUTPUT_JSON = REPORT_DIR / "official_answer_citation_metric_first_run_v1.json"
-DEFAULT_OUTPUT_MD = REPORT_DIR / "official_answer_citation_metric_first_run_v1.md"
-DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "official_answer_citation_scorer_results_v1.jsonl"
+DEFAULT_PRE_EXECUTION_SMOKE = REPORT_DIR / "smoke_v1.json"
+DEFAULT_OUTPUT_JSON = REPORT_DIR / "baseline_v1.json"
+DEFAULT_OUTPUT_MD = REPORT_DIR / "baseline_v1.md"
+DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "scorer_v1.jsonl"
 
 SCHEMA_VERSION = "official_answer_citation_metric_first_run_v1"
 REPORT_ROLE = "official_answer_citation_metric_first_run"

@@ -200,7 +200,7 @@ def write_fixture_bundle(module, tmp_path: Path, *, xlsx_missing_locator: bool =
     paths = {
         "registry": eval_queries / "official_denominator_registry.json",
         "application": reports / "official_question_gold_v2_registry_application_report.json",
-        "config": reports / "official_metric_input_config_v1.json",
+        "config": reports / "metric_input_v1.json",
         "xlsx_leakage": reports / "xlsx_answer_citation_hidden_excluded_leakage_reprobe.json",
         "text_corpus": text_corpus,
         "sha_by_track": sha_by_track,

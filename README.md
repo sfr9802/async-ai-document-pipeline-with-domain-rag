@@ -73,22 +73,24 @@ canonical SearchUnit citation payload wiring backed by safe source manifests.
 
 Canonical source-of-truth artifacts:
 
-- `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.md`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_scorer_results_v1.jsonl`
-- `ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json`
-- `ai/eval/reports/rag-ingestion/official_metric_pre_execution_smoke_report_v1.json`
-- `ai/eval/reports/rag-ingestion/xlsx_answer_citation_runtime_precision_candidate_results_v1.jsonl`
-- `ai/eval/reports/rag-ingestion/pdf_answer_citation_table_value_candidate_results_v1.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_results.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.md`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_failure_attribution.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_source_bound_index_build_readiness_v1.json`
-- `ai/eval/reports/rag-ingestion/rag_current_eval_status.jsonl`
+- `docs/rag-ingestion-progress.md`
+- `docs/rag-ingestion-measurements.md`
+- `docs/rag-ingestion-triage.md`
+- `ai/eval/reports/rag-ingestion/baseline_v1.json`
+- `ai/eval/reports/rag-ingestion/scorer_v1.jsonl`
+- `ai/eval/reports/rag-ingestion/metric_input_v1.json`
+- `ai/eval/reports/rag-ingestion/smoke_v1.json`
+- `ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl`
+- `ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl`
+- `ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json`
+- `ai/eval/reports/rag-ingestion/status.jsonl`
 - `ai/eval/silver/answer_citation_silver_manifest_v1.json`
 - `ai/eval/silver/answer_citation_silver_readiness_v1.json`
 - `ai/eval/eval_queries/official_denominator_registry.json`
+
+Historical generated report payloads are not kept in the repo root. When needed
+for local forensic review, use the external runtime archive under
+`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 
 ## 3트랙 아키텍처
 
@@ -149,8 +151,7 @@ Route/fallback review artifact는 diagnostic analysis에만 사용합니다. rou
 ## 근거 문서
 
 - `docs/rag-ingestion-progress.md`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_metric_first_run_v1.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_summary.json`
+- `ai/eval/reports/rag-ingestion/baseline_v1.json`
 - `ai/eval/eval_queries/official_denominator_registry.json`
 
 ## 라이선스

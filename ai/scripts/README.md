@@ -50,7 +50,7 @@ eval/eval_queries/official_denominator_registry.json
 Legacy full72/XLSX v1-v3 builder and comparison scripts were moved to:
 
 ```text
-../archive/results/2026-05-05-eval-query-lineage-cleanup/scripts/
+D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260519-repo-wide-cleanup\files\archive\results\2026-05-05-eval-query-lineage-cleanup\scripts\
 ```
 
 Keep those scripts provenance-only unless a follow-up explicitly restores or

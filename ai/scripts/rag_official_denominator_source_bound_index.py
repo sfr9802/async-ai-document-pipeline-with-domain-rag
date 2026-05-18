@@ -26,9 +26,9 @@ from openpyxl.utils.cell import coordinate_to_tuple, get_column_letter
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
 REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
-DEFAULT_METRIC_INPUT_CONFIG = REPORT_DIR / "official_metric_input_config_v1.json"
-DEFAULT_READINESS_JSON = REPORT_DIR / "official_answer_citation_source_bound_index_build_readiness_v1.json"
-DEFAULT_STATUS_JSONL = REPORT_DIR / "rag_current_eval_status.jsonl"
+DEFAULT_METRIC_INPUT_CONFIG = REPORT_DIR / "metric_input_v1.json"
+DEFAULT_READINESS_JSON = REPORT_DIR / "source_bound_readiness_v1.json"
+DEFAULT_STATUS_JSONL = REPORT_DIR / "status.jsonl"
 
 SOURCE_BOUND_INDEX_VERSION = (
     "official-answer-citation-agentic-loop-v1-nonprod-official-denominator-source-bound"

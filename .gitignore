@@ -219,7 +219,9 @@ ai/eval/datasets/samples/
 !README.md
 !**/README.md
 !docs/THIRD_PARTY_DATA_LICENSES.md
-!archive/MANIFEST.md
+# Repo-local archives are externalized under D:\_external_workspace_archive
+# and D:\_external_runtime_artifacts; keep future archive bundles out of git.
+archive/
 
 # Canonical XLSX preflight/gold guardrail artifacts are intentionally small
 # and must not be hidden by the broad generated-artifact patterns above.
@@ -234,34 +236,16 @@ ai/eval/datasets/samples/
 !ai/eval/silver/
 !ai/eval/silver/answer_citation_silver_manifest_v1.json
 !ai/eval/silver/answer_citation_silver_readiness_v1.json
-# Human-facing rag-ingestion reports live in three rolling docs under docs/.
-# Per-run Markdown under ai/eval/reports/rag-ingestion/ is generated/local-only.
+# Human-facing rag-ingestion reports live in the append-only progress doc,
+# with measurements/triage as existing scoped ledgers under docs/.
+# Machine-readable JSON/JSONL under ai/eval/reports/rag-ingestion/ is
+# generated/local-only. Keep the rolling docs as the tracked human-facing
+# record.
 !docs/rag-ingestion-progress.md
 !docs/rag-ingestion-measurements.md
 !docs/rag-ingestion-triage.md
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_results.jsonl
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_summary.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_failure_attribution.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_actual_response_audit.jsonl
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement_triage_queue.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_results.jsonl
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_summary.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_summary.md
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_failure_attribution.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_triage_delta.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage_triage_delta.md
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_results.jsonl
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_summary.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_summary.md
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_failure_attribution.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_actual_response_audit.jsonl
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage_triage_queue.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_results.jsonl
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_summary.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_failure_attribution.json
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_actual_response_audit.jsonl
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_answer_span_diagnostics.jsonl
-!ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_2_answer_span_renderer_triage_remaining_triage_queue.json
+ai/eval/reports/rag-ingestion/**/*.json
+ai/eval/reports/rag-ingestion/**/*.jsonl
 **/datasets/
 ai/eval/artifacts/
 !ai/eval/artifacts/
@@ -348,9 +332,7 @@ ai/eval/eval_queries/_generation_log_*.jsonl
 !ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl
 !ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.csv
 !ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl
-!ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_manifest_v0.json
-!ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_validation_report_v0.json
-!ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.json
+# Report-side JSON is generated/local-only; keep the human-facing note.
 !ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.md
 
 # ---- RAG build artifacts (local-only) ----

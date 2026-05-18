@@ -41,7 +41,12 @@ from rag_xlsx_pre_silver_risk_closure import (  # noqa: E402
 XLSX_CANDIDATE_INDEX_VERSION = "rag-ingestion-v2-xlsx-candidate-v1"
 XLSX_CANDIDATE_NAMESPACE = "rag-ingestion-v2-xlsx-candidate-v1"
 XLSX_CANDIDATE_ARTIFACT_DIR = Path("eval/indexes/rag-data-xlsx-candidate-v1")
-LEGACY_CSV_ARCHIVE = ROOT / "archive" / "results" / "2026-05-05-eval-query-lineage-cleanup" / "csv"
+LOCAL_LEGACY_CSV_ARCHIVE = ROOT / "archive" / "results" / "2026-05-05-eval-query-lineage-cleanup" / "csv"
+EXTERNAL_LEGACY_CSV_ARCHIVE = Path(
+    "D:/_external_workspace_archive/async-ocr-rag-multimodal-pipeline/"
+    "20260519-repo-wide-cleanup/files/archive/results/2026-05-05-eval-query-lineage-cleanup/csv"
+)
+LEGACY_CSV_ARCHIVE = LOCAL_LEGACY_CSV_ARCHIVE if LOCAL_LEGACY_CSV_ARCHIVE.exists() else EXTERNAL_LEGACY_CSV_ARCHIVE
 
 DEFAULT_HUMAN_REVIEW_OFFICIAL_RETRIEVAL_GOLD = Path(
     "eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv"

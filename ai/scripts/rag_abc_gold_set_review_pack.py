@@ -22,8 +22,17 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 
 REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
 EVAL_QUERY_DIR = AI_WORKER_ROOT / "eval" / "eval_queries"
-ARCHIVE_XLSX_CSV_DIR = (
+LEGACY_LINEAGE_ARCHIVE_DIR = (
     REPO_ROOT / "archive" / "results" / "2026-05-05-eval-query-lineage-cleanup" / "csv"
+)
+EXTERNAL_LEGACY_LINEAGE_ARCHIVE_DIR = Path(
+    "D:/_external_workspace_archive/async-ocr-rag-multimodal-pipeline/"
+    "20260519-repo-wide-cleanup/files/archive/results/2026-05-05-eval-query-lineage-cleanup/csv"
+)
+ARCHIVE_XLSX_CSV_DIR = (
+    LEGACY_LINEAGE_ARCHIVE_DIR
+    if LEGACY_LINEAGE_ARCHIVE_DIR.exists()
+    else EXTERNAL_LEGACY_LINEAGE_ARCHIVE_DIR
 )
 REMOVED_ACTIVE_LEGACY_DATASET_PATHS = [
     EVAL_QUERY_DIR / "gold_queries_v0.csv",

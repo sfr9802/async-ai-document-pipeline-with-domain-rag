@@ -18,8 +18,8 @@ REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
 DEFAULT_APPLIED_DECISIONS = REVIEW_DIR / "rag_human_audit_v2_applied_decisions.json"
 DEFAULT_DENOMINATOR_DIFF_PREVIEW = REPORT_DIR / "official_denominator_candidate_diff_preview_v1.json"
 DEFAULT_REGISTRY_APPLICATION_REPORT = REPORT_DIR / "official_question_gold_v2_registry_application_report.json"
-DEFAULT_OUTPUT_JSON = REPORT_DIR / "official_metric_input_config_v1.json"
-DEFAULT_OUTPUT_MD = REPORT_DIR / "official_metric_input_config_v1.md"
+DEFAULT_OUTPUT_JSON = REPORT_DIR / "metric_input_v1.json"
+DEFAULT_OUTPUT_MD = REPORT_DIR / "metric_input_v1.md"
 
 SCHEMA_VERSION = "official_metric_input_config_v1"
 TRACKS = ("text_namu_v2_1", "xlsx_business_structured", "pdf_business_ocr_mm")
