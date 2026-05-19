@@ -115,6 +115,15 @@ AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID = (
 AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet"
 )
+AGENTIC_V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels"
+)
+AGENTIC_V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation"
+)
+AGENTIC_V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -168,6 +177,15 @@ REPORT_ARTIFACT_SLUGS = {
     AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID: (
         AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID
     ),
+    AGENTIC_V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID: (
+        AGENTIC_V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID
+    ),
+    AGENTIC_V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID: (
+        AGENTIC_V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID
+    ),
+    AGENTIC_V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID: (
+        AGENTIC_V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID,
@@ -187,6 +205,9 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
     AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
     AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    AGENTIC_V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+    AGENTIC_V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+    AGENTIC_V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
 }
 
 
@@ -499,8 +520,42 @@ AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_MINIMAL_REVIEW_SUMMARY_JSON = report_ar
     AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
     "summary.json",
 )
+AGENTIC_V3_4_2_OFFICIAL_RETRIEVAL_QRELS_JSONL = report_artifact_path(
+    AGENTIC_V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+    "official_retrieval_qrels.jsonl",
+)
+AGENTIC_V3_4_2_QRELS_COVERAGE_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+    "qrels_coverage_summary.json",
+)
+AGENTIC_V3_4_2_QRELS_EXCLUSION_LEDGER_JSONL = report_artifact_path(
+    AGENTIC_V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+    "qrels_exclusion_ledger.jsonl",
+)
+AGENTIC_V3_4_3_RETRIEVAL_SMOKE_METRICS_JSON = report_artifact_path(
+    AGENTIC_V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+    "metrics.json",
+)
+AGENTIC_V3_4_3_RETRIEVAL_SMOKE_PER_QUERY_JSONL = report_artifact_path(
+    AGENTIC_V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+    "per_query.jsonl",
+)
+AGENTIC_V3_4_4_README_METRIC_CARD_JSON = report_artifact_path(
+    AGENTIC_V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+    "readme_metric_card.json",
+)
+AGENTIC_V3_4_4_README_SECTION_MD = report_artifact_path(
+    AGENTIC_V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+    "readme_section.md",
+)
+AGENTIC_V3_4_4_SILVER_READINESS_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+    "silver_readiness_summary.json",
+)
 AGENTIC_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data"
-EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES: set[str] = set()
+EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES: set[str] = {
+    AGENTIC_V3_4_4_README_SECTION_MD.name,
+}
 CURRENT_REPORT_PATHS = {
     REPORT_DIR / "baseline_v1.json",
     REPORT_DIR / "scorer_v1.jsonl",
@@ -575,6 +630,14 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AMBIGUOUS_CANDIDATE_REVIEW_CSV,
     AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AUTO_LABEL_PLAN_JSON,
     AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_MINIMAL_REVIEW_SUMMARY_JSON,
+    AGENTIC_V3_4_2_OFFICIAL_RETRIEVAL_QRELS_JSONL,
+    AGENTIC_V3_4_2_QRELS_COVERAGE_SUMMARY_JSON,
+    AGENTIC_V3_4_2_QRELS_EXCLUSION_LEDGER_JSONL,
+    AGENTIC_V3_4_3_RETRIEVAL_SMOKE_METRICS_JSON,
+    AGENTIC_V3_4_3_RETRIEVAL_SMOKE_PER_QUERY_JSONL,
+    AGENTIC_V3_4_4_README_METRIC_CARD_JSON,
+    AGENTIC_V3_4_4_README_SECTION_MD,
+    AGENTIC_V3_4_4_SILVER_READINESS_SUMMARY_JSON,
 }
 ARCHIVED_REPORT_PATHS = {
     AGENTIC_RESULTS,
@@ -5403,6 +5466,592 @@ def test_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_is_policy_
     assert_no_gold_generation_source_fields(auto_label_plan)
     assert_no_gold_generation_source_fields(query_rows)
     assert_no_gold_generation_source_fields(ambiguous_rows)
+
+
+def test_v3_4_2_applies_user_exact_evidence_qrels_and_excludes_ambiguous_query() -> None:
+    run_id = AGENTIC_V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+    event = next(
+        item
+        for item in reversed(status_events)
+        if item.get("event_type") == "official_exact_evidence_retrieval_qrels_labels_applied_v3_4_2"
+        and item.get("run_id") == run_id
+    )
+    qrels_rows = read_jsonl(AGENTIC_V3_4_2_OFFICIAL_RETRIEVAL_QRELS_JSONL)
+    coverage = read_json(AGENTIC_V3_4_2_QRELS_COVERAGE_SUMMARY_JSON)
+    exclusions = read_jsonl(AGENTIC_V3_4_2_QRELS_EXCLUSION_LEDGER_JSONL)
+    readme = README.read_text(encoding="utf-8")
+
+    assert event["status"] == "OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_QRELS_READY_METRICS_DEFERRED"
+    assert event["run_class"] == "official_exact_evidence_qrels_application_no_metric_execution"
+    assert event["metric_family"] == "official exact-evidence retrieval metrics"
+    assert event["metric_scope"] == "source_bound_search_unit_exact_answer_evidence_smoke"
+    assert event["benchmark_scope"] == "small official exact-evidence retrieval smoke benchmark"
+    assert "not statistically representative product performance" in event["small_sample_caveat"]
+    assert event["valid_for"] == ["metric_pipeline_validation", "regression_guarding"]
+    assert event["not_valid_for"] == [
+        "statistically_representative_product_performance",
+        "readme_headline_performance_claim",
+    ]
+    assert event["readme_headline_performance_claim_blocked"] is True
+    assert event["statistically_representative_product_performance"] is False
+    assert event["minimal_review_prerequisite"] == {
+        "run_id": AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+        "status_event_found": True,
+        "status": "OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_READY",
+    }
+    assert event["contract_prerequisite"] == {
+        "run_id": AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "status_event_found": True,
+        "status": "OFFICIAL_RETRIEVAL_METRIC_CONTRACT_READY_QRELS_REQUIRED",
+    }
+    assert event["included_query_count"] == 28
+    assert event["excluded_query_count"] == 1
+    assert event["excluded_query_ids"] == ["gq_auto_010"]
+    assert event["qrels_unit_row_count"] == 140
+    assert event["qrels_positive_count"] == 28
+    assert event["qrels_positive_by_source_family"] == {"PDF": 3, "TEXT": 6, "XLSX": 19}
+    assert event["qrels_non_positive_exact_evidence_candidate_count"] == 112
+    assert event["official_metrics_computed_in_v3_4_2"] is False
+    assert event["v3_4_3_ready"] is True
+    assert event["future_metric_names"] == {
+        "hit_at_k": "official exact-evidence Hit@K",
+        "mrr_at_k": "official exact-evidence MRR@K",
+        "ndcg_at_k": "binary exact-evidence nDCG@K",
+    }
+
+    assert coverage["included_query_count"] == 28
+    assert coverage["excluded_query_count"] == 1
+    assert coverage["excluded_query_ids"] == ["gq_auto_010"]
+    assert coverage["included_query_counts_by_source_family"] == {"PDF": 3, "TEXT": 6, "XLSX": 19}
+    assert coverage["excluded_query_counts_by_source_family"] == {"PDF": 1}
+    assert coverage["qrels_unit_row_count"] == 140
+    assert coverage["qrels_unit_rows_by_source_family"] == {"PDF": 8, "TEXT": 18, "XLSX": 114}
+    assert coverage["qrels_positive_count"] == 28
+    assert coverage["qrels_non_positive_exact_evidence_candidate_count"] == 112
+    assert coverage["same_phase_metric_allowed_by_contract"] is False
+    assert coverage["official_metrics_computed_in_v3_4_2"] is False
+    assert coverage["v3_4_3_ready"] is True
+    assert coverage["metric_family"] == "official exact-evidence retrieval metrics"
+    assert coverage["metric_scope"] == "source_bound_search_unit_exact_answer_evidence_smoke"
+    assert coverage["benchmark_scope"] == "small official exact-evidence retrieval smoke benchmark"
+    assert "metric-pipeline validation" in coverage["small_sample_caveat"]
+    assert "regression guarding" in coverage["small_sample_caveat"]
+    assert "not statistically representative product performance" in coverage["small_sample_caveat"]
+    assert coverage["valid_for"] == ["metric_pipeline_validation", "regression_guarding"]
+    assert coverage["not_valid_for"] == [
+        "statistically_representative_product_performance",
+        "readme_headline_performance_claim",
+    ]
+    assert coverage["readme_headline_performance_claim_blocked"] is True
+    assert coverage["statistically_representative_product_performance"] is False
+    assert coverage["future_metric_names"]["ndcg_at_k"] == "binary exact-evidence nDCG@K"
+    assert coverage["full_graded_ndcg_allowed"] is False
+    assert coverage["label_application_policy"] == {
+        "accepted_query_user_decision": "accept_recommendation",
+        "human_judged_topical_negatives_created": False,
+        "non_positive_label_provenance": "derived_from_user_exact_evidence_policy",
+        "non_positive_scope": "not_official_positive_for_exact_evidence_metric",
+        "positive_label_provenance": "user_bulk_accept_recommendation",
+    }
+    assert run_id not in readme
+    assert "official exact-evidence Hit@K" not in readme
+    assert "official exact-evidence MRR@K" not in readme
+    assert "binary exact-evidence nDCG@K" not in readme
+
+    assert len(qrels_rows) == 140
+    assert len({row["qrels_unit_id"] for row in qrels_rows}) == 140
+    assert "gq_auto_010" not in {row["query_id"] for row in qrels_rows}
+    positive_rows = [row for row in qrels_rows if row["qrels_positive"] is True]
+    non_positive_rows = [row for row in qrels_rows if row["qrels_positive"] is False]
+    assert len(positive_rows) == 28
+    assert len(non_positive_rows) == 112
+    for row in positive_rows:
+        assert row["relevance_label"] == 3
+        assert row["relevance_label_text"] == "EXACT_ANSWER_EVIDENCE"
+        assert row["answerability_label"] == 3
+        assert row["answerability_label_text"] == "FULLY_ANSWERABLE"
+        assert row["binary_exact_evidence_label"] == 1
+        assert row["label_provenance"] == "user_bulk_accept_recommendation"
+        assert row["not_official_positive_for_exact_evidence_metric"] is False
+        assert row["metric_family"] == "official exact-evidence retrieval metrics"
+        assert row["metric_scope"] == "source_bound_search_unit_exact_answer_evidence_smoke"
+        assert row["benchmark_scope"] == "small official exact-evidence retrieval smoke benchmark"
+        assert row["readme_headline_performance_claim_blocked"] is True
+        assert row["statistically_representative_product_performance"] is False
+        assert row["future_ndcg_name"] == "binary exact-evidence nDCG@K"
+    for row in non_positive_rows:
+        assert row["relevance_label"] is None
+        assert row["relevance_label_text"] == "not_judged_for_topical_relevance"
+        assert row["answerability_label"] is None
+        assert row["answerability_label_text"] == "not_judged_for_answerability"
+        assert row["binary_exact_evidence_label"] == 0
+        assert row["label_provenance"] == "derived_from_user_exact_evidence_policy"
+        assert row["not_official_positive_for_exact_evidence_metric"] is True
+        assert row["human_judged_topical_negative"] is False
+        assert row["broad_topical_relevance_label_created"] is False
+    for row in qrels_rows:
+        assert row["official_metric_denominator_query"] is True
+        assert row["qrels_excluded"] is False
+        assert row["generation_source"] is False
+        assert row["promotion_evidence"] is False
+        assert row["gold"] is False
+        assert row["metric_computation_allowed_in_v3_4_2"] is False
+        assert row["metric_scope"] == "source_bound_search_unit_exact_answer_evidence_smoke"
+        assert row["benchmark_scope"] == "small official exact-evidence retrieval smoke benchmark"
+        assert row["readme_headline_performance_claim_blocked"] is True
+        assert row["statistically_representative_product_performance"] is False
+        assert row["source_bound_locator"]
+        assert row["document_version_id"]
+        assert row["search_unit_id"]
+
+    assert len(exclusions) == 1
+    exclusion = exclusions[0]
+    assert exclusion["query_id"] == "gq_auto_010"
+    assert exclusion["question"] == "2월 실업률은 전년 같은 달보다 어떻게 변했나요?"
+    assert exclusion["user_decision"] == "exclude_from_qrels"
+    assert exclusion["exclusion_reason"] == "standalone_query_missing_year"
+    assert exclusion["user_note"] == (
+        "2월 실업률은 전년 같은 달보다 어떻게 변했나요? - 기준 연도 정보가 없어 standalone retrieval qrels에서 제외"
+    )
+    assert exclusion["official_metric_denominator_included"] is False
+    assert exclusion["not_counted_as_miss"] is True
+    assert exclusion["not_counted_as_failure"] is True
+    assert exclusion["not_counted_as_negative"] is True
+    assert exclusion["not_counted_as_unanswerable"] is True
+    assert exclusion["retrieval_failure"] is False
+    assert exclusion["qrels_positive"] is None
+    assert exclusion["source_raw_candidate_row_count"] == 6
+    assert exclusion["source_candidate_unit_count"] == 5
+
+    guardrails = event["guardrails"]
+    assert guardrails["official_exact_evidence_qrels_created"] is True
+    assert guardrails["user_review_decisions_applied"] is True
+    assert guardrails["readme_headline_performance_claim_blocked"] is True
+    for key in (
+        "official_retrieval_metrics_computed",
+        "official_ndcg_computed",
+        "official_mrr_computed",
+        "official_hit_at_k_computed",
+        "broad_graded_ndcg_computed",
+        "binary_exact_evidence_ndcg_computed",
+        "lane_score_collapsed",
+        "excluded_query_counted_as_miss",
+        "excluded_query_counted_as_failure",
+        "excluded_query_counted_as_negative",
+        "excluded_query_counted_as_unanswerable",
+        "denominator_mutation",
+        "answer_citation_denominator_mutation",
+        "official_denominator_query_id_set_mutation",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "candidate_artifacts_as_generation_source",
+        "generation_used_expected_answer",
+        "generation_used_supporting_evidence",
+        "generation_used_gold_fields",
+        "prompt_context_behavior_change",
+        "retrieval_mutation",
+        "renderer_mutation",
+        "scorer_behavior_mutation",
+        "index_or_export_rebuild_performed",
+        "export_mutation",
+        "silver_mutation",
+        "silver_rows_created",
+        "production_mutation",
+        "promotion_evidence",
+        "threshold_tuning",
+        "winner_selection",
+        "readme_metric_claim_added",
+        "readme_headline_performance_claim_added",
+        "statistically_representative_product_performance_claim_added",
+        "per_run_markdown_created",
+    ):
+        assert guardrails[key] is False, key
+    assert event["active_implementation_queue_empty"] is True
+    assert event["next_implementation_phase"] == "v3_4_3_official_exact_evidence_metric_computation"
+    assert not report_artifact_path(run_id, "results.jsonl").exists()
+    assert not report_artifact_path(run_id, "summary.md").exists()
+    assert_no_gold_generation_source_fields(event)
+    assert_no_gold_generation_source_fields(coverage)
+    assert_no_gold_generation_source_fields(qrels_rows)
+    assert_no_gold_generation_source_fields(exclusions)
+
+
+def test_v3_4_3_computes_lane_b_exact_evidence_retrieval_smoke_metrics_only() -> None:
+    run_id = AGENTIC_V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+    event = next(
+        item
+        for item in reversed(status_events)
+        if item.get("event_type") == "official_exact_evidence_retrieval_smoke_metrics_computed_v3_4_3"
+        and item.get("run_id") == run_id
+    )
+    metrics = read_json(AGENTIC_V3_4_3_RETRIEVAL_SMOKE_METRICS_JSON)
+    per_query_rows = read_jsonl(AGENTIC_V3_4_3_RETRIEVAL_SMOKE_PER_QUERY_JSONL)
+    readme = README.read_text(encoding="utf-8")
+
+    assert event["status"] == "OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRICS_COMPUTED_SMALL_SAMPLE"
+    assert event["measurement_classification"] == "official_exact_evidence_retrieval_smoke_metric_v3_4_3"
+    assert event["run_class"] == "official_exact_evidence_retrieval_smoke_metric_computation"
+    assert event["metric_family"] == "official exact-evidence retrieval smoke metrics"
+    assert event["metric_scope"] == "source_bound_search_unit_exact_answer_evidence_smoke"
+    assert event["benchmark_scope"] == "small official exact-evidence retrieval smoke benchmark"
+    assert event["primary_ranking_surface"] == "Lane B live_llm_retrieval_topk"
+    assert event["primary_lane_source"] == "retrieved_topk"
+    assert event["reference_only_surfaces"]["lane_c_query_bound_oracle"] == {
+        "coverage_rate": 1.0,
+        "included_positive_coverage_count": 28,
+        "included_query_count": 28,
+        "lane_source": "query_bound_oracle",
+        "not_primary_ranking_surface": True,
+        "not_used_for_micro_or_macro_metrics": True,
+        "ranking_surface": "Lane C query_bound_oracle",
+        "reference_only": True,
+    }
+    assert event["qrels_prerequisite"] == {
+        "run_id": AGENTIC_V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+        "status_event_found": True,
+        "status": "OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_QRELS_READY_METRICS_DEFERRED",
+        "included_query_count": 28,
+        "excluded_query_count": 1,
+    }
+    assert event["included_query_count"] == 28
+    assert event["excluded_query_count"] == 1
+    assert event["excluded_query_ids"] == ["gq_auto_010"]
+    assert event["source_family_counts"] == {"PDF": 3, "TEXT": 6, "XLSX": 19}
+    assert event["small_sample_warning"] is True
+    assert event["readme_headline_allowed"] is False
+    assert event["regression_guard_allowed"] is True
+    assert event["representative_product_performance_claim_allowed"] is False
+    assert event["graded_ndcg_computed"] is False
+    assert event["binary_exact_evidence_ndcg_computed"] is True
+    assert event["lane_score_collapsed"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["confidence_warning"]["one_query_delta_percentage_points"] == pytest.approx(100 / 28)
+    assert "about 3.57 percentage points" in event["confidence_warning"]["text"]
+
+    assert metrics["included_query_count"] == 28
+    assert metrics["excluded_query_count"] == 1
+    assert metrics["excluded_query_ids"] == ["gq_auto_010"]
+    assert metrics["source_family_counts"] == {"PDF": 3, "TEXT": 6, "XLSX": 19}
+    assert metrics["excluded_source_family_counts"] == {"PDF": 1}
+    assert metrics["primary_ranking_surface"] == "Lane B live_llm_retrieval_topk"
+    assert metrics["primary_ranking_surface_only"] is True
+    assert metrics["metrics"] == [
+        "Hit@1",
+        "Hit@3",
+        "Hit@5",
+        "MRR@5",
+        "binary exact-evidence nDCG@5",
+    ]
+    assert metrics["small_sample_warning"] is True
+    assert metrics["readme_headline_allowed"] is False
+    assert metrics["regression_guard_allowed"] is True
+    assert metrics["representative_product_performance_claim_allowed"] is False
+    assert metrics["graded_ndcg_computed"] is False
+    assert metrics["binary_exact_evidence_ndcg_computed"] is True
+    assert metrics["lane_score_collapsed"] is False
+
+    micro = metrics["micro_overall"]
+    assert micro["denominator"] == 28
+    assert micro["hit_at_1_count"] == 27
+    assert micro["hit_at_1"] == pytest.approx(27 / 28)
+    assert micro["hit_at_3_count"] == 28
+    assert micro["hit_at_3"] == pytest.approx(1.0)
+    assert micro["hit_at_5_count"] == 28
+    assert micro["hit_at_5"] == pytest.approx(1.0)
+    assert micro["mrr_at_5_sum"] == pytest.approx(27.5)
+    assert micro["mrr_at_5"] == pytest.approx(27.5 / 28)
+    assert micro["binary_exact_evidence_ndcg_at_5"] == pytest.approx(0.9868189197704093)
+
+    assert metrics["by_source_family"]["PDF"]["denominator"] == 3
+    assert metrics["by_source_family"]["PDF"]["hit_at_1"] == pytest.approx(1.0)
+    assert metrics["by_source_family"]["TEXT"]["denominator"] == 6
+    assert metrics["by_source_family"]["TEXT"]["mrr_at_5"] == pytest.approx(1.0)
+    assert metrics["by_source_family"]["XLSX"]["denominator"] == 19
+    assert metrics["by_source_family"]["XLSX"]["hit_at_1_count"] == 18
+    assert metrics["by_source_family"]["XLSX"]["mrr_at_5"] == pytest.approx(18.5 / 19)
+
+    macro = metrics["macro_by_source_family"]
+    assert macro["source_families"] == ["PDF", "TEXT", "XLSX"]
+    assert macro["source_family_count"] == 3
+    assert macro["hit_at_1"] == pytest.approx((1 + 1 + (18 / 19)) / 3)
+    assert macro["hit_at_3"] == pytest.approx(1.0)
+    assert macro["hit_at_5"] == pytest.approx(1.0)
+    assert macro["mrr_at_5"] == pytest.approx((1 + 1 + (18.5 / 19)) / 3)
+    assert macro["binary_exact_evidence_ndcg_at_5"] == pytest.approx(0.9935250833959905)
+
+    assert len(per_query_rows) == 28
+    assert "gq_auto_010" not in {row["query_id"] for row in per_query_rows}
+    assert Counter(row["source_family"] for row in per_query_rows) == {"PDF": 3, "TEXT": 6, "XLSX": 19}
+    assert sum(1 for row in per_query_rows if row["hit_at_1"] is False) == 1
+    rank_two = [row for row in per_query_rows if row["best_positive_rank"] == 2]
+    assert [row["query_id"] for row in rank_two] == ["gq_xlsx_lookup_007"]
+    for row in per_query_rows:
+        assert row["primary_ranking_surface"] == "Lane B live_llm_retrieval_topk"
+        assert row["primary_lane_source"] == "retrieved_topk"
+        assert row["reference_only_surface"] == "Lane C query_bound_oracle"
+        assert row["graded_relevance_gain_used"] is False
+        assert row["readme_headline_allowed"] is False
+        assert row["regression_guard_allowed"] is True
+        assert row["representative_product_performance_claim_allowed"] is False
+        assert row["promotion_evidence"] is False
+
+    guardrails = event["guardrails"]
+    assert guardrails["official_exact_evidence_retrieval_smoke_metrics_computed"] is True
+    assert guardrails["official_retrieval_metrics_computed"] is True
+    assert guardrails["primary_ranking_surface_lane_b_only"] is True
+    assert guardrails["lane_c_reference_only"] is True
+    assert guardrails["binary_exact_evidence_ndcg_computed"] is True
+    assert guardrails["small_sample_warning"] is True
+    assert guardrails["readme_headline_allowed"] is False
+    assert guardrails["regression_guard_allowed"] is True
+    for key in (
+        "graded_ndcg_computed",
+        "broad_graded_ndcg_computed",
+        "lane_score_collapsed",
+        "readme_headline_performance_claim_added",
+        "statistically_representative_product_performance_claim_added",
+        "representative_product_performance_claim",
+        "threshold_tuning",
+        "winner_selection",
+        "denominator_mutation",
+        "answer_citation_denominator_mutation",
+        "official_denominator_query_id_set_mutation",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "candidate_artifacts_as_generation_source",
+        "generation_used_expected_answer",
+        "generation_used_supporting_evidence",
+        "generation_used_gold_fields",
+        "prompt_context_behavior_change",
+        "retrieval_mutation",
+        "renderer_mutation",
+        "scorer_behavior_mutation",
+        "index_or_export_rebuild_performed",
+        "export_mutation",
+        "silver_mutation",
+        "production_mutation",
+        "promotion_evidence",
+    ):
+        assert guardrails[key] is False, key
+    assert run_id not in readme
+    assert "official exact-evidence retrieval smoke metrics" not in readme
+    assert_no_gold_generation_source_fields(event)
+    assert_no_gold_generation_source_fields(metrics)
+    assert_no_gold_generation_source_fields(per_query_rows)
+
+
+def test_v3_4_4_readme_metric_card_and_silver_readiness_artifacts_are_guarded() -> None:
+    run_id = AGENTIC_V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+    event = next(
+        item
+        for item in reversed(status_events)
+        if item.get("event_type") == "readme_retrieval_smoke_and_silver_readiness_artifacts_v3_4_4"
+        and item.get("run_id") == run_id
+    )
+    source_metrics = read_json(AGENTIC_V3_4_3_RETRIEVAL_SMOKE_METRICS_JSON)
+    metric_card = read_json(AGENTIC_V3_4_4_README_METRIC_CARD_JSON)
+    readme_section = AGENTIC_V3_4_4_README_SECTION_MD.read_text(encoding="utf-8")
+    silver_summary = read_json(AGENTIC_V3_4_4_SILVER_READINESS_SUMMARY_JSON)
+    readme = README.read_text(encoding="utf-8")
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    runner_summary = runner.run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts(
+        args=SimpleNamespace(status_jsonl=str(REPORT_DIR / "status.jsonl"))
+    )
+
+    assert event["status"] == "README_RETRIEVAL_SMOKE_CARD_READY_SILVER_GENERATION_BLOCKED"
+    assert event["run_class"] == "readme_ready_artifacts_and_silver_readiness_boundary"
+    assert event["readme_directly_updated"] is False
+    assert event["pending_manual_integration"] is True
+    assert event["triage_doc_updated"] is False
+    assert event["artifact_paths"] == {
+        "readme_metric_card_json": report_artifact_repo_relative(run_id, "readme_metric_card.json"),
+        "readme_section_md": report_artifact_repo_relative(run_id, "readme_section.md"),
+        "silver_readiness_summary_json": report_artifact_repo_relative(run_id, "silver_readiness_summary.json"),
+        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "progress_doc": "docs/rag-ingestion-progress.md",
+    }
+    assert run_id not in readme
+    assert "Retrieval smoke regression guard" not in readme
+    assert run_id in runner.REPORT_ARTIFACT_SLUGS
+    assert runner.DEFAULT_V3_4_4_README_METRIC_CARD_JSON == AGENTIC_V3_4_4_README_METRIC_CARD_JSON
+    assert runner_summary["run_id"] == run_id
+    assert runner_summary["artifact_paths"] == event["artifact_paths"]
+    assert runner_summary["readme_metric_card"]["metric_family"] == (
+        "official exact-evidence retrieval smoke metrics"
+    )
+    assert runner_summary["silver_readiness_summary"]["silver_generation_blocked"] is True
+
+    assert metric_card["metric_family"] == source_metrics["metric_family"]
+    assert metric_card["metric_scope"] == source_metrics["metric_scope"]
+    assert metric_card["primary_ranking_surface"] == "Lane B live_llm_retrieval_topk"
+    assert metric_card["reference_only_surfaces"]["lane_c_query_bound_oracle"] == {
+        "coverage_rate": 1.0,
+        "included_positive_coverage_count": 28,
+        "included_query_count": 28,
+        "lane_source": "query_bound_oracle",
+        "not_primary_ranking_surface": True,
+        "not_used_for_micro_or_macro_metrics": True,
+        "ranking_surface": "Lane C query_bound_oracle",
+        "reference_only": True,
+    }
+    assert metric_card["included_queries"] == 28
+    assert metric_card["excluded_queries"] == {
+        "count": 1,
+        "query_ids": ["gq_auto_010"],
+        "reason": "standalone_query_missing_year",
+    }
+    assert metric_card["source_family_counts"] == {"PDF": 3, "TEXT": 6, "XLSX": 19}
+
+    source_micro = source_metrics["micro_overall"]
+    assert metric_card["micro"]["hit_at_1"] == {
+        "count": source_micro["hit_at_1_count"],
+        "denominator": 28,
+        "value": source_micro["hit_at_1"],
+    }
+    assert metric_card["micro"]["hit_at_3"] == {
+        "count": source_micro["hit_at_3_count"],
+        "denominator": 28,
+        "value": source_micro["hit_at_3"],
+    }
+    assert metric_card["micro"]["hit_at_5"] == {
+        "count": source_micro["hit_at_5_count"],
+        "denominator": 28,
+        "value": source_micro["hit_at_5"],
+    }
+    assert metric_card["micro"]["mrr_at_5"] == {
+        "sum": source_micro["mrr_at_5_sum"],
+        "denominator": 28,
+        "value": source_micro["mrr_at_5"],
+    }
+    assert metric_card["micro"]["binary_exact_evidence_ndcg_at_5"] == {
+        "value": source_micro["binary_exact_evidence_ndcg_at_5"],
+    }
+    assert metric_card["macro_by_source_family"] == {
+        "hit_at_1": source_metrics["macro_by_source_family"]["hit_at_1"],
+        "hit_at_3": source_metrics["macro_by_source_family"]["hit_at_3"],
+        "hit_at_5": source_metrics["macro_by_source_family"]["hit_at_5"],
+        "mrr_at_5": source_metrics["macro_by_source_family"]["mrr_at_5"],
+        "binary_exact_evidence_ndcg_at_5": source_metrics["macro_by_source_family"][
+            "binary_exact_evidence_ndcg_at_5"
+        ],
+    }
+
+    warnings = metric_card["warnings"]
+    assert warnings["small_sample_warning"] is True
+    assert warnings["readme_headline_allowed"] is False
+    assert warnings["regression_guard_allowed"] is True
+    assert warnings["representative_product_performance_claim_allowed"] is False
+    assert warnings["one_query_delta_percentage_points"] == pytest.approx(100 / 28)
+    assert "not statistically representative product performance" in warnings["small_sample_warning_text"]
+
+    guardrails = metric_card["guardrails"]
+    for key in (
+        "lane_a_b_c_collapsed_score",
+        "threshold_tuning",
+        "winner_selection",
+        "graded_ndcg",
+        "readme_headline_product_performance_claim",
+        "representative_product_performance_claim",
+        "promotion_evidence",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "answer_citation_denominator_mutation",
+        "official_denominator_query_id_set_mutation",
+        "prompt_mutation",
+        "retrieval_mutation",
+        "scorer_mutation",
+        "renderer_mutation",
+        "index_or_export_mutation",
+        "production_mutation",
+        "silver_mutation",
+        "silver_generation_from_official_denominator_rows",
+        "candidate_artifacts_as_generation_source",
+    ):
+        assert guardrails[key] is False, key
+
+    assert readme_section.startswith("## Retrieval smoke regression guard")
+    assert "small 28-query official exact-evidence retrieval smoke benchmark" in readme_section
+    assert "metric-pipeline validation and regression guarding" in readme_section
+    assert "not a statistically representative product-performance benchmark" in readme_section
+    assert "Lane B retrieval placed an exact-evidence SearchUnit at rank 1 for 27/28" in readme_section
+    assert "within top 3 for 28/28" in readme_section
+    assert "readme_headline_allowed=false" in readme_section
+    assert "regression_guard_allowed=true" in readme_section
+    assert "Lane C is reference-only" in readme_section
+    assert "No graded nDCG or collapsed Lane A/B/C score is reported" in readme_section
+    for prohibited in (
+        "RAG achieves 96.4% Hit@1",
+        "production performance",
+        "representative benchmark",
+        "winner",
+        "promotion evidence",
+    ):
+        assert prohibited not in readme_section
+
+    assert silver_summary["silver_generation_blocked"] is True
+    assert silver_summary["silver_mutation"] is False
+    assert silver_summary["silver_jsonl_rows_created"] is False
+    assert silver_summary["answer_citation_silver_jsonl_files_created"] == {
+        "contract": False,
+        "dev": False,
+        "holdout": False,
+    }
+    assert silver_summary["official_denominator_overlap_boundary"] == {
+        "official_denominator_query_id_count": 29,
+        "official_source_bound_search_unit_rows": 29,
+        "official_denominator_overlap_true_count": 29,
+        "eligible_dev_holdout_source_candidate_count_from_official_manifest": 0,
+        "official_denominator_source_bound_search_units_remain_excluded_from_silver": True,
+        "official_29_query_ids_copied_or_relabelled_to_silver_dev_holdout": False,
+        "official_29_query_ids_excluded_from_dev_holdout_tuning_silver": True,
+    }
+    assert silver_summary["strict_non_official_source_bound_candidate_inventory"][
+        "counts_by_source_family"
+    ] == {"TEXT": 0, "PDF": 3, "XLSX": 4, "total": 7}
+    assert silver_summary["strict_non_official_source_bound_candidate_inventory"][
+        "candidate_artifacts_used_as_generation_source"
+    ] is False
+    assert silver_summary["thresholds"]["pilot_threshold_rows"] == 100
+    assert silver_summary["thresholds"]["pilot_threshold_met"] is False
+    assert silver_summary["thresholds"]["target_rows"] == 1000
+    assert silver_summary["thresholds"]["preferred_target_by_source_family"] == {
+        "TEXT": 350,
+        "PDF": 325,
+        "XLSX": 325,
+    }
+    assert silver_summary["thresholds"]["preferred_target_met"] is False
+    assert silver_summary["expected_values_used_for_audit_only"] is True
+    assert silver_summary["candidate_artifacts_must_not_be_used_as_generation_source"] is True
+    assert silver_summary["candidate_artifacts_used_as_generation_source"] is False
+    assert silver_summary["source_inventory_differs_from_v3_3_3"] is False
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+    assert event["silver_generation_blocked"] is True
+    assert event["silver_mutation"] is False
+    assert event["strict_non_official_source_bound_candidate_counts"] == {
+        "TEXT": 0,
+        "PDF": 3,
+        "XLSX": 4,
+        "total": 7,
+    }
+    assert event["official_denominator_source_bound_overlap_excluded_from_silver"] is True
+    assert event["candidate_artifacts_used_as_generation_source"] is False
+    assert_generation_guardrail_flags_false(event)
+    assert_generation_guardrail_flags_false(metric_card)
+    assert_generation_guardrail_flags_false(silver_summary)
+    assert_no_gold_generation_source_fields(event)
+    assert_no_gold_generation_source_fields(metric_card)
+    assert_no_gold_generation_source_fields(silver_summary)
 
 
 def test_v3_1_7_pdf_window_expansion_preflight_fails_closed_without_safe_locator_metadata() -> None:

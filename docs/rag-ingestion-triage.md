@@ -27,7 +27,11 @@ Their physical generated payloads may live in the external runtime archive under
 ## Current Phase
 
 Phase:
-`v3_4_1 official retrieval qrels candidate packet ready for human review`
+`v3_4_3 official exact-evidence retrieval smoke metrics computed`
+
+Prior phase marker
+`v3_4_2 official exact-evidence retrieval qrels labels applied` remains valid
+as the qrels-readiness source for this smoke metric.
 
 Status:
 priority 1~5 plus the remaining `text_namu_v2_0012` TEXT locator residual have
@@ -79,16 +83,152 @@ macro-by-source-family boundaries, but leaves official metrics blocked until
 approved qrels labels exist. v3_4_1 then emits only a human-labelable qrels
 candidate packet from source-bound official-denominator retrieval/oracle
 artifacts. The packet keeps every relevance and answerability label pending for
-human review and does not compute ranking metrics.
+human review and does not compute ranking metrics. v3_4_1a then minimizes that
+review surface into query-group and ambiguity review packets. v3_4_2 now applies
+the user decision: all query groups except `gq_auto_010` are accepted as
+official exact-evidence qrels positives, while `gq_auto_010` is excluded because
+the standalone February unemployment query lacks a year. The exclusion is not a
+miss, failure, negative, or unanswerable case. Official exact-evidence metric
+computation is ready for v3_4_3, but no metrics are computed in v3_4_2. The
+qrels set is a small official exact-evidence retrieval smoke benchmark for
+metric-pipeline validation and regression guarding, not statistically
+representative product performance; README headline performance claims from
+the 28-query set remain blocked. v3_4_3 now computes the small-sample official
+exact-evidence retrieval smoke metrics on Lane B `live_llm_retrieval_topk` only;
+Lane C query-bound oracle is reference-only. The run records micro/macro
+Hit@1/3/5, MRR@5, and binary exact-evidence nDCG@5 for regression guarding,
+with readme_headline_allowed=false and no representative product-performance
+claim.
 
 Source foundation run:
 `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement`
 
 Current triage run:
-`official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet`
+`official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation`
 
 Previous all-track source run:
 `official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement`
+
+## v3_4_3 Official Exact-Evidence Retrieval Smoke Metrics
+
+Source artifacts:
+
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_official_retrieval_qrels.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_coverage_summary.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_exclusion_ledger.jsonl`
+
+Metric artifacts:
+
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_metrics.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_per_query.jsonl`
+
+Metric denominator:
+
+| Bucket | Count/status |
+|---|---:|
+| included query groups | 28 |
+| excluded query groups | 1 |
+| excluded query_id | `gq_auto_010` |
+| source-family counts | PDF=3, TEXT=6, XLSX=19 |
+| primary ranking surface | Lane B `live_llm_retrieval_topk` |
+| reference-only surface | Lane C `query_bound_oracle` |
+
+Micro overall:
+
+| Metric | Value |
+|---|---:|
+| Hit@1 | 27/28 = 0.9642857142857143 |
+| Hit@3 | 28/28 = 1.0 |
+| Hit@5 | 28/28 = 1.0 |
+| MRR@5 | 27.5/28 = 0.9821428571428571 |
+| binary exact-evidence nDCG@5 | 0.9868189197704093 |
+
+Macro by source_family:
+
+| Metric | Value |
+|---|---:|
+| Hit@1 | 0.9824561403508771 |
+| Hit@3 | 1.0 |
+| Hit@5 | 1.0 |
+| MRR@5 | 0.9912280701754387 |
+| binary exact-evidence nDCG@5 | 0.9935250833959905 |
+
+Interpretation guardrails:
+
+- `small_sample_warning=true`: this 28-query set is valid for
+  metric-pipeline validation and regression guarding, not statistically
+  representative product performance.
+- `readme_headline_allowed=false`; do not create README headline performance
+  claims from this smoke metric.
+- `regression_guard_allowed=true`.
+- One query changes the score by about 3.57 percentage points.
+- nDCG is binary exact-evidence nDCG@5 only; no graded nDCG was computed from
+  ungraded labels.
+- Lane C query-bound oracle is reference-only and not used for micro or macro
+  retrieval ranking.
+- No Lane A/B/C collapsed score, threshold tuning, winner selection, gold,
+  expected answer, supporting evidence, answer/citation denominator, prompt,
+  retrieval, renderer, scorer, index/export, production, silver, or promotion
+  state changed.
+
+## v3_4_2 Official Exact-Evidence Retrieval Qrels Labels Applied
+
+Source artifacts:
+
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.csv`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_qrels_human_query_group_review.csv`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_qrels_ambiguous_candidate_review.csv`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
+
+Applied qrels artifacts:
+
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_official_retrieval_qrels.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_coverage_summary.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_exclusion_ledger.jsonl`
+
+Decision boundary:
+
+| Bucket | Count/status |
+|---|---:|
+| included query groups | 28 |
+| excluded query groups | 1 |
+| excluded query_id | `gq_auto_010` |
+| exclusion reason | `standalone_query_missing_year` |
+| qrels unit rows | 140 |
+| qrels positives | 28 |
+| non-positive exact-evidence candidates | 112 |
+| v3_4_3 metric computation | ready |
+
+The excluded query is:
+
+`2월 실업률은 전년 같은 달보다 어떻게 변했나요?`
+
+User note:
+
+`2월 실업률은 전년 같은 달보다 어떻게 변했나요? - 기준 연도 정보가 없어 standalone retrieval qrels에서 제외`
+
+Metric naming and guardrails:
+
+- This is an official exact-evidence retrieval qrels artifact over source-bound
+  SearchUnits, not a broad topical semantic relevance benchmark.
+- Scope is `source_bound_search_unit_exact_answer_evidence_smoke`: a small
+  official exact-evidence retrieval smoke benchmark.
+- It is valid for metric-pipeline validation and regression guarding, not
+  statistically representative product performance.
+- README headline performance claims from this 28-query set are blocked.
+- Positive qrels use `relevance_label=3`, `answerability_label=3`, and
+  `label_provenance=user_bulk_accept_recommendation`.
+- Non-positive candidates are only
+  `not_official_positive_for_exact_evidence_metric`; they are not human-judged
+  topical negatives.
+- Future nDCG must be named binary exact-evidence nDCG@K unless a future phase
+  creates full graded relevance labels.
+- No official Hit@K, MRR, nDCG, micro/macro aggregate, or collapsed Lane A/B/C
+  score was computed in v3_4_2.
+- No gold, expected answer, supporting evidence, answer/citation denominator,
+  prompt, retrieval, renderer, scorer, index/export, production, silver, or
+  promotion state changed.
 
 ## v3_4_1 Official Retrieval Qrels Candidate Packet
 

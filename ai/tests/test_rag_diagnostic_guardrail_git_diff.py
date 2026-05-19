@@ -363,3 +363,57 @@ def test_v3_3_0_source_of_truth_audit_does_not_mutate_gold_denominator_or_runtim
     assert event["guardrails"]["official_mrr_computed"] is False
     assert event["guardrails"]["official_hit_at_k_computed"] is False
     assert event["guardrails"]["lane_score_collapsed"] is False
+
+
+def test_v3_4_4_readme_artifacts_do_not_mutate_protected_surfaces_or_silver_rows():
+    run_id = "official_answer_citation_agentic_loop_run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts"
+    event = next(
+        item
+        for item in reversed([json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines()])
+        if item.get("event_type") == "readme_retrieval_smoke_and_silver_readiness_artifacts_v3_4_4"
+        and item.get("run_id") == run_id
+    )
+    protected_paths = (*STRICT_PROTECTED_PATHS, *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS)
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+    assert event["run_class"] == "readme_ready_artifacts_and_silver_readiness_boundary"
+    assert event["readme_directly_updated"] is False
+    assert event["pending_manual_integration"] is True
+    assert event["silver_generation_blocked"] is True
+    assert event["silver_mutation"] is False
+    assert event["official_denominator_source_bound_overlap_excluded_from_silver"] is True
+    assert event["candidate_artifacts_used_as_generation_source"] is False
+    assert event["guardrails"]["gold_mutation"] is False
+    assert event["guardrails"]["expected_answer_mutation"] is False
+    assert event["guardrails"]["supporting_evidence_mutation"] is False
+    assert event["guardrails"]["answer_citation_denominator_mutation"] is False
+    assert event["guardrails"]["official_denominator_query_id_set_mutation"] is False
+    assert event["guardrails"]["prompt_mutation"] is False
+    assert event["guardrails"]["retrieval_mutation"] is False
+    assert event["guardrails"]["scorer_mutation"] is False
+    assert event["guardrails"]["renderer_mutation"] is False
+    assert event["guardrails"]["index_or_export_mutation"] is False
+    assert event["guardrails"]["production_mutation"] is False
+    assert event["guardrails"]["silver_mutation"] is False
+    assert event["guardrails"]["silver_generation_from_official_denominator_rows"] is False
+    assert event["guardrails"]["lane_a_b_c_collapsed_score"] is False
+    assert event["guardrails"]["graded_ndcg"] is False
+    assert event["guardrails"]["threshold_tuning"] is False
+    assert event["guardrails"]["winner_selection"] is False

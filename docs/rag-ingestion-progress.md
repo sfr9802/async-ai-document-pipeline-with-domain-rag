@@ -23,7 +23,7 @@ requirements.
 
 ## Current Status
 
-Overall status: `official_retrieval_qrels_human_minimal_review_packet_v3_4_1a_ready`;
+Overall status: `readme_retrieval_smoke_card_v3_4_4_ready_silver_generation_blocked`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied.
 Previous closure status `official_answer_citation_v3_2_7_post_fix_sequence_closed`
@@ -47,10 +47,27 @@ remains valid as the raw candidate-packet source.
 v3_4_1a reduces that raw 219-row packet into a 29-row query-group review CSV,
 a 30-row ambiguity review CSV, a pending policy-approval JSON, and a planned
 auto-labeling policy JSON. The raw v3_4_1 CSV no longer needs direct human
-review unless the user explicitly opens a pool-complete audit.
-No denominator rows, official retrieval metrics, prompt, retrieval, renderer,
-scorer, index/export, silver generation, production, or Lane A/B/C score
-changed.
+review unless the user explicitly opens a pool-complete audit. The v3_4_1a
+marker `official_retrieval_qrels_human_minimal_review_packet_v3_4_1a_ready`
+remains valid as the minimized review-packet source.
+v3_4_2 applies the user-reviewed official exact-evidence qrels policy:
+28 query groups are included, `gq_auto_010` is excluded because the standalone
+February unemployment query lacks a year, and v3_4_3 exact-evidence metric
+computation is ready. This qrels set is a small official exact-evidence
+retrieval smoke benchmark for metric-pipeline validation and regression
+guarding, not statistically representative product performance; README
+headline performance claims from the 28-query set remain blocked. The v3_4_2
+marker `official_exact_evidence_retrieval_qrels_v3_4_2_ready_metrics_deferred`
+remains valid as the qrels-readiness source. v3_4_3 then computes the
+small-sample official exact-evidence retrieval smoke metrics on Lane B
+`live_llm_retrieval_topk` only: micro Hit@1=27/28, Hit@3=28/28, Hit@5=28/28,
+MRR@5=27.5/28, and binary exact-evidence nDCG@5=0.9868189197704093. Lane C
+query-bound oracle coverage is reference-only and not part of micro or macro
+retrieval ranking. The v3_4_3 marker
+`official_exact_evidence_retrieval_smoke_metrics_v3_4_3_computed_small_sample`
+remains valid as the retrieval-smoke metric source. No answer/citation denominator rows, prompt, retrieval,
+renderer, scorer, index/export, silver generation, production, threshold,
+winner selection, or Lane A/B/C collapsed score changed.
 
 - Official first-run baseline is `status=BLOCKED_OR_PARTIAL` with
   `status_detail=SCORED_BASELINE_PARTIAL`,
@@ -146,6 +163,58 @@ changed.
   approval. Codex recommendations are not final labels, auto-labeling is not
   applied, and official Hit@K, MRR, nDCG, micro/macro retrieval aggregate, and
   collapsed Lane A/B/C score remain blocked.
+- v3_4_2 official exact-evidence retrieval qrels label application
+  `official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels`
+  applied the user-reviewed minimal packet decisions into official
+  exact-evidence retrieval qrels artifacts:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_official_retrieval_qrels.jsonl`,
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_coverage_summary.json`,
+  and
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_exclusion_ledger.jsonl`.
+  Included query groups=28; excluded query groups=1 (`gq_auto_010`,
+  `standalone_query_missing_year`). The exclusion is not a retrieval miss,
+  failure, negative, or unanswerable row. Official qrels unit rows=140 and
+  qrels positives=28. The metric family name is now "official exact-evidence
+  retrieval metrics" with scope
+  `source_bound_search_unit_exact_answer_evidence_smoke`; future nDCG must be
+  named binary exact-evidence nDCG@K unless a later phase creates full graded
+  relevance labels. This is a small official exact-evidence retrieval smoke
+  benchmark, valid for metric-pipeline validation and regression guarding but
+  not statistically representative product performance; README headline
+  performance claims from this 28-query set are blocked. v3_4_2 did not compute
+  Hit@K, MRR, nDCG, micro/macro aggregates, or a collapsed Lane A/B/C score.
+  v3_4_3 official exact-evidence Hit@K/MRR/binary nDCG computation is ready.
+- v3_4_3 official exact-evidence retrieval smoke metric computation
+  `official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation`
+  writes:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_metrics.json`
+  and
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_per_query.jsonl`.
+  Primary ranking surface is Lane B `live_llm_retrieval_topk` only. Included
+  query count=28, excluded query count=1 (`gq_auto_010`), source-family counts
+  PDF=3, TEXT=6, XLSX=19. Micro overall: Hit@1=27/28
+  (0.9642857142857143), Hit@3=28/28 (1.0), Hit@5=28/28 (1.0),
+  MRR@5=27.5/28 (0.9821428571428571), and binary exact-evidence nDCG@5=
+  0.9868189197704093. Macro by source family: Hit@1=0.9824561403508771,
+  Hit@3=1.0, Hit@5=1.0, MRR@5=0.9912280701754387, and binary exact-evidence
+  nDCG@5=0.9935250833959905. Lane C query-bound oracle is recorded as
+  reference-only coverage, not the main retrieval ranking. small_sample_warning=true,
+  readme_headline_allowed=false, regression_guard_allowed=true; one query
+  changes the score by about 3.57 percentage points. No graded nDCG,
+  representative product-performance claim, Lane A/B/C collapsed score,
+  threshold tuning, winner selection, README headline claim, or protected
+  surface mutation was performed.
+- v3_4_4 README retrieval-smoke/silver-readiness artifacts
+  `official_answer_citation_agentic_loop_run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts`
+  created a compact README metric card JSON, README insertion snippet, and
+  silver-readiness summary from the verified v3_4_3 Lane B exact-evidence smoke
+  metrics. README integration is snippet-only (`pending_manual_integration=true`):
+  `readme_headline_allowed=false`, `regression_guard_allowed=true`, and the
+  28-query card remains a small-sample regression guard, not statistically
+  representative product performance. Silver generation remains blocked:
+  strict non-official source-bound inventory is TEXT=0, PDF=3, XLSX=4, total=7,
+  below the 100-row pilot and 1000-row target; official-denominator SearchUnits
+  remain excluded from dev/holdout silver and no silver rows were generated.
 - SearchUnit citation payload wiring is implemented in the live runner, and
   XLSX/PDF deterministic adapter opt-in wiring is implemented for retrieved
   source-bound SearchUnits. These are wiring changes only: the historical v1 run

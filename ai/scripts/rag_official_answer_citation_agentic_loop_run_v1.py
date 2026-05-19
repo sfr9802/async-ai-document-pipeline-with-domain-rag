@@ -15,6 +15,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -126,6 +127,15 @@ V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID = (
 V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet"
 )
+V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels"
+)
+V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation"
+)
+V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts"
+)
 REPORT_ARTIFACT_SLUGS = {
     RUN_ID: "agentic_v1",
     V2_RUN_ID: "v2_source_bound",
@@ -161,6 +171,15 @@ REPORT_ARTIFACT_SLUGS = {
     V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID: (
         V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID
     ),
+    V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID: (
+        V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID
+    ),
+    V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID: (
+        V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID
+    ),
+    V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID: (
+        V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
@@ -180,6 +199,9 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
     V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
     V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+    V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+    V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
 }
 V3_1_PRIORITY_1_5_QUERY_IDS = (
     "gq_pdf_section_question_001",
@@ -565,6 +587,38 @@ DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_MINIMAL_REVIEW_SUMMARY_JSON = report_ar
     V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
     "summary.json",
 )
+DEFAULT_V3_4_2_OFFICIAL_RETRIEVAL_QRELS_JSONL = report_artifact_path(
+    V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+    "official_retrieval_qrels.jsonl",
+)
+DEFAULT_V3_4_2_QRELS_COVERAGE_SUMMARY_JSON = report_artifact_path(
+    V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+    "qrels_coverage_summary.json",
+)
+DEFAULT_V3_4_2_QRELS_EXCLUSION_LEDGER_JSONL = report_artifact_path(
+    V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+    "qrels_exclusion_ledger.jsonl",
+)
+DEFAULT_V3_4_3_RETRIEVAL_SMOKE_METRICS_JSON = report_artifact_path(
+    V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+    "metrics.json",
+)
+DEFAULT_V3_4_3_RETRIEVAL_SMOKE_PER_QUERY_JSONL = report_artifact_path(
+    V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+    "per_query.jsonl",
+)
+DEFAULT_V3_4_4_README_METRIC_CARD_JSON = report_artifact_path(
+    V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+    "readme_metric_card.json",
+)
+DEFAULT_V3_4_4_README_SECTION_MD = report_artifact_path(
+    V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+    "readme_section.md",
+)
+DEFAULT_V3_4_4_SILVER_READINESS_SUMMARY_JSON = report_artifact_path(
+    V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+    "silver_readiness_summary.json",
+)
 DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "scorer_v1.jsonl"
 DEFAULT_TEXT_NAMU_GOLD_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v2_1_question_gold_v2.csv"
 DEFAULT_TEXT_NAMU_HUMAN_AUDIT_V2_DECISIONS_JSON = (
@@ -829,6 +883,137 @@ def main(argv: list[str] | None = None) -> int:
         }
         print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
+    if summary["run_id"] == V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID:
+        qrels_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["official_retrieval_qrels_jsonl"])
+        )
+        coverage_summary_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["qrels_coverage_summary_json"])
+        )
+        exclusion_ledger_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["qrels_exclusion_ledger_jsonl"])
+        )
+        write_jsonl(qrels_path, summary["official_retrieval_qrels_rows"])
+        write_json(coverage_summary_path, summary["qrels_coverage_summary"])
+        write_jsonl(exclusion_ledger_path, summary["qrels_exclusion_ledger_rows"])
+        summary["artifact_paths"]["official_retrieval_qrels_jsonl_sha256"] = sha256_file(qrels_path)
+        summary["artifact_paths"]["qrels_coverage_summary_json_sha256"] = sha256_file(
+            coverage_summary_path
+        )
+        summary["artifact_paths"]["qrels_exclusion_ledger_jsonl_sha256"] = sha256_file(
+            exclusion_ledger_path
+        )
+        append_v3_4_2_apply_user_official_retrieval_qrels_labels_event(
+            Path(args.status_jsonl),
+            summary,
+        )
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "measurement_classification": summary["measurement_classification"],
+            "included_query_count": summary["included_query_count"],
+            "excluded_query_count": summary["excluded_query_count"],
+            "excluded_query_ids": summary["excluded_query_ids"],
+            "qrels_positive_count": summary["qrels_positive_count"],
+            "qrels_unit_row_count": summary["qrels_unit_row_count"],
+            "v3_4_3_ready": summary["v3_4_3_ready"],
+            "official_retrieval_qrels_jsonl": summary["artifact_paths"][
+                "official_retrieval_qrels_jsonl"
+            ],
+            "qrels_coverage_summary_json": summary["artifact_paths"][
+                "qrels_coverage_summary_json"
+            ],
+            "qrels_exclusion_ledger_jsonl": summary["artifact_paths"][
+                "qrels_exclusion_ledger_jsonl"
+            ],
+            "status_jsonl": summary["artifact_paths"]["status_jsonl"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    if summary["run_id"] == V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID:
+        metrics_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["retrieval_smoke_metrics_json"])
+        )
+        per_query_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["retrieval_smoke_per_query_jsonl"])
+        )
+        write_json(metrics_path, summary["retrieval_smoke_metrics"])
+        write_jsonl(per_query_path, summary["per_query_metric_rows"])
+        summary["artifact_paths"]["retrieval_smoke_metrics_json_sha256"] = sha256_file(metrics_path)
+        summary["artifact_paths"]["retrieval_smoke_per_query_jsonl_sha256"] = sha256_file(
+            per_query_path
+        )
+        append_v3_4_3_official_exact_evidence_retrieval_smoke_metric_event(
+            Path(args.status_jsonl),
+            summary,
+        )
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "measurement_classification": summary["measurement_classification"],
+            "included_query_count": summary["included_query_count"],
+            "excluded_query_count": summary["excluded_query_count"],
+            "source_family_counts": summary["source_family_counts"],
+            "primary_ranking_surface": summary["primary_ranking_surface"],
+            "micro_overall": summary["micro_overall"],
+            "macro_by_source_family": summary["macro_by_source_family"],
+            "small_sample_warning": summary["small_sample_warning"],
+            "readme_headline_allowed": summary["readme_headline_allowed"],
+            "regression_guard_allowed": summary["regression_guard_allowed"],
+            "retrieval_smoke_metrics_json": summary["artifact_paths"][
+                "retrieval_smoke_metrics_json"
+            ],
+            "retrieval_smoke_per_query_jsonl": summary["artifact_paths"][
+                "retrieval_smoke_per_query_jsonl"
+            ],
+            "status_jsonl": summary["artifact_paths"]["status_jsonl"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    if summary["run_id"] == V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID:
+        metric_card_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["readme_metric_card_json"])
+        )
+        readme_section_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["readme_section_md"])
+        )
+        silver_summary_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["silver_readiness_summary_json"])
+        )
+        write_json(metric_card_path, summary["readme_metric_card"])
+        readme_section_path.write_text(summary["readme_section_markdown"], encoding="utf-8")
+        write_json(silver_summary_path, summary["silver_readiness_summary"])
+        summary["artifact_sha256"] = {
+            "readme_metric_card_json_sha256": sha256_file(metric_card_path),
+            "readme_section_md_sha256": sha256_file(readme_section_path),
+            "silver_readiness_summary_json_sha256": sha256_file(silver_summary_path),
+        }
+        append_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts_event(
+            Path(args.status_jsonl),
+            summary,
+        )
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "run_class": summary["run_class"],
+            "included_query_count": summary["included_query_count"],
+            "excluded_query_count": summary["excluded_query_count"],
+            "primary_ranking_surface": summary["primary_ranking_surface"],
+            "readme_directly_updated": summary["readme_directly_updated"],
+            "pending_manual_integration": summary["pending_manual_integration"],
+            "silver_generation_blocked": summary["silver_generation_blocked"],
+            "strict_non_official_source_bound_candidate_counts": summary[
+                "strict_non_official_source_bound_candidate_counts"
+            ],
+            "readme_metric_card_json": summary["artifact_paths"]["readme_metric_card_json"],
+            "readme_section_md": summary["artifact_paths"]["readme_section_md"],
+            "silver_readiness_summary_json": summary["artifact_paths"][
+                "silver_readiness_summary_json"
+            ],
+            "status_jsonl": summary["artifact_paths"]["status_jsonl"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
     if summary["run_id"] == V3_1_5_GQ_AUTO_010_SOURCE_BOUND_COVERAGE_DIAGNOSTIC_RUN_ID:
         write_v3_1_5_source_bound_coverage_side_artifacts(summary, rows)
         write_json(Path(args.summary_json), summary)
@@ -1089,6 +1274,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
         V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
         V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+        V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+        V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+        V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
     }
     if args.run_id not in supported_run_ids:
         raise SystemExit(
@@ -1161,6 +1349,15 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
 
     if args.run_id == V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID:
         return run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet(args=args), []
+
+    if args.run_id == V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID:
+        return run_v3_4_2_apply_user_official_retrieval_qrels_labels(args=args), []
+
+    if args.run_id == V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID:
+        return run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation(args=args), []
+
+    if args.run_id == V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID:
+        return run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts(args=args), []
 
     if args.run_id == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
         return run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement(
@@ -15818,6 +16015,9 @@ def run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet(
         "threshold_tuning": False,
         "winner_selection": False,
         "readme_metric_claim_added": False,
+        "readme_headline_performance_claim_added": False,
+        "readme_headline_performance_claim_blocked": True,
+        "statistically_representative_product_performance_claim_added": False,
         "per_run_markdown_created": False,
     }
     compact_summary = {
@@ -16392,6 +16592,1199 @@ def build_v3_4_1a_auto_label_plan(
             "Unjudged top-k candidates remain pending unless a pool-complete policy is explicitly approved.",
         ],
     }
+
+
+V3_4_2_EXCLUDED_STANDALONE_QUERY_TEXT = "2월 실업률은 전년 같은 달보다 어떻게 변했나요?"
+V3_4_2_EXCLUDED_QUERY_ID = "gq_auto_010"
+V3_4_2_EXCLUSION_REASON = "standalone_query_missing_year"
+V3_4_2_EXCLUSION_USER_NOTE = (
+    "2월 실업률은 전년 같은 달보다 어떻게 변했나요? - 기준 연도 정보가 없어 standalone retrieval qrels에서 제외"
+)
+
+
+def run_v3_4_2_apply_user_official_retrieval_qrels_labels(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    status_events = read_jsonl(Path(args.status_jsonl)) if Path(args.status_jsonl).exists() else []
+    minimal_review_event = latest_status_event(
+        status_events,
+        event_type="official_retrieval_qrels_human_minimal_review_packet_v3_4_1a",
+        run_id=V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    )
+    contract_event = latest_status_event(
+        status_events,
+        event_type="official_retrieval_metric_contract_v3_4_0",
+        run_id=V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+    )
+    raw_candidate_rows = read_jsonl(DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATES_JSONL)
+    _query_group_fieldnames, query_group_rows = read_csv_rows_with_fieldnames(
+        DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_QUERY_GROUP_REVIEW_CSV
+    )
+    _ambiguous_fieldnames, ambiguous_candidate_rows = read_csv_rows_with_fieldnames(
+        DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AMBIGUOUS_CANDIDATE_REVIEW_CSV
+    )
+    contract = official.read_json(DEFAULT_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_JSON)
+    generated_at = utc_timestamp()
+
+    excluded_query_row = v3_4_2_excluded_query_group_row(query_group_rows)
+    accepted_query_rows = [
+        row
+        for row in query_group_rows
+        if official.clean(row.get("query_id")) != V3_4_2_EXCLUDED_QUERY_ID
+    ]
+    raw_rows_by_candidate_id = {
+        official.clean(row.get("qrels_candidate_id")): row
+        for row in raw_candidate_rows
+        if official.clean(row.get("qrels_candidate_id"))
+    }
+    accepted_query_ids = {official.clean(row.get("query_id")) for row in accepted_query_rows}
+    excluded_query_ids = {V3_4_2_EXCLUDED_QUERY_ID}
+    positive_unit_keys, positive_candidate_ids_by_unit = v3_4_2_positive_unit_keys(
+        accepted_query_rows=accepted_query_rows,
+        raw_rows_by_candidate_id=raw_rows_by_candidate_id,
+    )
+    qrels_rows = build_v3_4_2_official_exact_evidence_qrels_rows(
+        raw_candidate_rows=raw_candidate_rows,
+        accepted_query_ids=accepted_query_ids,
+        positive_unit_keys=positive_unit_keys,
+        positive_candidate_ids_by_unit=positive_candidate_ids_by_unit,
+        generated_at=generated_at,
+    )
+    exclusion_ledger_rows = [
+        build_v3_4_2_exclusion_ledger_row(
+            excluded_query_row=excluded_query_row,
+            raw_candidate_rows=[
+                row
+                for row in raw_candidate_rows
+                if official.clean(row.get("query_id")) in excluded_query_ids
+            ],
+            generated_at=generated_at,
+        )
+    ]
+
+    included_query_count = len(accepted_query_ids)
+    excluded_query_count = len(excluded_query_ids)
+    qrels_positive_count = sum(1 for row in qrels_rows if row["qrels_positive"] is True)
+    qrels_non_positive_count = sum(1 for row in qrels_rows if row["qrels_positive"] is False)
+    included_query_counts_by_source_family = dict(
+        sorted(Counter(official.clean(row.get("source_family")).upper() for row in accepted_query_rows).items())
+    )
+    excluded_query_counts_by_source_family = dict(
+        sorted(Counter(official.clean(row.get("source_family")).upper() for row in [excluded_query_row]).items())
+    )
+    qrels_positive_by_source_family = dict(
+        sorted(Counter(row["source_family"] for row in qrels_rows if row["qrels_positive"]).items())
+    )
+    qrels_unit_rows_by_source_family = dict(
+        sorted(Counter(row["source_family"] for row in qrels_rows).items())
+    )
+    same_phase_metric_allowed_by_contract = bool(
+        contract.get("official_retrieval_metric_execution_allowed")
+    )
+    guardrails = {
+        "diagnostic_only": False,
+        "official_exact_evidence_qrels_created": True,
+        "user_review_decisions_applied": True,
+        "official_retrieval_metrics_computed": False,
+        "official_hit_at_k_computed": False,
+        "official_mrr_computed": False,
+        "official_ndcg_computed": False,
+        "broad_graded_ndcg_computed": False,
+        "binary_exact_evidence_ndcg_computed": False,
+        "lane_score_collapsed": False,
+        "excluded_query_counted_as_miss": False,
+        "excluded_query_counted_as_failure": False,
+        "excluded_query_counted_as_negative": False,
+        "excluded_query_counted_as_unanswerable": False,
+        "denominator_mutation": False,
+        "answer_citation_denominator_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "prompt_context_behavior_change": False,
+        "retrieval_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "index_or_export_rebuild_performed": False,
+        "export_mutation": False,
+        "silver_mutation": False,
+        "silver_rows_created": False,
+        "production_mutation": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_metric_claim_added": False,
+        "readme_headline_performance_claim_added": False,
+        "readme_headline_performance_claim_blocked": True,
+        "statistically_representative_product_performance_claim_added": False,
+        "per_run_markdown_created": False,
+    }
+    coverage_summary = {
+        "schema_version": f"{V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID}_coverage_summary_v1",
+        "run_id": V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+        "source_run_id": V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+        "source_review_run_id": V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+        "source_contract_run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "generated_at": generated_at,
+        "status": "OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_QRELS_READY_METRICS_DEFERRED",
+        "metric_family": "official exact-evidence retrieval metrics",
+        "metric_scope": "source_bound_search_unit_exact_answer_evidence_smoke",
+        "benchmark_scope": "small official exact-evidence retrieval smoke benchmark",
+        "small_sample_caveat": (
+            "This 28-query qrels set is valid for metric-pipeline validation and "
+            "regression guarding, but it is not statistically representative product performance."
+        ),
+        "valid_for": [
+            "metric_pipeline_validation",
+            "regression_guarding",
+        ],
+        "not_valid_for": [
+            "statistically_representative_product_performance",
+            "readme_headline_performance_claim",
+        ],
+        "readme_headline_performance_claim_blocked": True,
+        "statistically_representative_product_performance": False,
+        "future_metric_names": {
+            "hit_at_k": "official exact-evidence Hit@K",
+            "mrr_at_k": "official exact-evidence MRR@K",
+            "ndcg_at_k": "binary exact-evidence nDCG@K",
+        },
+        "full_graded_ndcg_allowed": False,
+        "full_graded_ndcg_blocker": "No broad graded relevance labels were created in v3_4_2.",
+        "raw_candidate_row_count": len(raw_candidate_rows),
+        "minimal_review_query_group_count": len(query_group_rows),
+        "minimal_review_ambiguous_candidate_count": len(ambiguous_candidate_rows),
+        "included_query_count": included_query_count,
+        "excluded_query_count": excluded_query_count,
+        "excluded_query_ids": sorted(excluded_query_ids),
+        "included_query_counts_by_source_family": included_query_counts_by_source_family,
+        "excluded_query_counts_by_source_family": excluded_query_counts_by_source_family,
+        "qrels_unit_row_count": len(qrels_rows),
+        "qrels_unit_rows_by_source_family": qrels_unit_rows_by_source_family,
+        "qrels_positive_count": qrels_positive_count,
+        "qrels_positive_by_source_family": qrels_positive_by_source_family,
+        "qrels_non_positive_exact_evidence_candidate_count": qrels_non_positive_count,
+        "excluded_query_policy": {
+            "query_id": V3_4_2_EXCLUDED_QUERY_ID,
+            "question": V3_4_2_EXCLUDED_STANDALONE_QUERY_TEXT,
+            "exclusion_reason": V3_4_2_EXCLUSION_REASON,
+            "not_counted_as_miss": True,
+            "not_counted_as_failure": True,
+            "not_counted_as_negative": True,
+            "not_counted_as_unanswerable": True,
+        },
+        "label_application_policy": {
+            "accepted_query_user_decision": "accept_recommendation",
+            "positive_label_provenance": "user_bulk_accept_recommendation",
+            "non_positive_label_provenance": "derived_from_user_exact_evidence_policy",
+            "non_positive_scope": "not_official_positive_for_exact_evidence_metric",
+            "human_judged_topical_negatives_created": False,
+        },
+        "same_phase_metric_allowed_by_contract": same_phase_metric_allowed_by_contract,
+        "official_metrics_computed_in_v3_4_2": False,
+        "v3_4_3_ready": True,
+        "v3_4_3_ready_reason": (
+            "All non-excluded query groups now have official exact-evidence qrels positives; "
+            "the only excluded query has an explicit exclusion ledger entry."
+        ),
+        "source_artifacts": {
+            "v3_4_1_qrels_candidates_jsonl": official.repo_relative(
+                DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATES_JSONL
+            ),
+            "v3_4_1_qrels_candidates_csv": official.repo_relative(
+                DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATES_CSV
+            ),
+            "v3_4_1a_query_group_review_csv": official.repo_relative(
+                DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_QUERY_GROUP_REVIEW_CSV
+            ),
+            "v3_4_1a_ambiguous_candidate_review_csv": official.repo_relative(
+                DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AMBIGUOUS_CANDIDATE_REVIEW_CSV
+            ),
+            "v3_4_0_contract_json": official.repo_relative(
+                DEFAULT_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_JSON
+            ),
+        },
+        "guardrails": guardrails,
+    }
+    return {
+        "schema_version": f"{V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID}_status_event_v1",
+        "event_type": "official_exact_evidence_retrieval_qrels_labels_applied_v3_4_2",
+        "run_id": V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+        "source_run_id": V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+        "source_review_run_id": V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+        "source_contract_run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "generated_at": generated_at,
+        "status": "OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_QRELS_READY_METRICS_DEFERRED",
+        "measurement_classification": "official_exact_evidence_retrieval_qrels_labels_applied_v3_4_2",
+        "run_class": "official_exact_evidence_qrels_application_no_metric_execution",
+        "metric_family": "official exact-evidence retrieval metrics",
+        "metric_scope": coverage_summary["metric_scope"],
+        "benchmark_scope": coverage_summary["benchmark_scope"],
+        "small_sample_caveat": coverage_summary["small_sample_caveat"],
+        "valid_for": coverage_summary["valid_for"],
+        "not_valid_for": coverage_summary["not_valid_for"],
+        "readme_headline_performance_claim_blocked": True,
+        "statistically_representative_product_performance": False,
+        "diagnostic_only": False,
+        "promotion_evidence": False,
+        "minimal_review_prerequisite": {
+            "run_id": V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+            "status_event_found": bool(minimal_review_event),
+            "status": minimal_review_event.get("status"),
+        },
+        "contract_prerequisite": {
+            "run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+            "status_event_found": bool(contract_event),
+            "status": contract_event.get("status"),
+        },
+        "included_query_count": included_query_count,
+        "excluded_query_count": excluded_query_count,
+        "excluded_query_ids": sorted(excluded_query_ids),
+        "qrels_unit_row_count": len(qrels_rows),
+        "qrels_positive_count": qrels_positive_count,
+        "qrels_positive_by_source_family": qrels_positive_by_source_family,
+        "qrels_non_positive_exact_evidence_candidate_count": qrels_non_positive_count,
+        "future_metric_names": coverage_summary["future_metric_names"],
+        "official_metrics_computed_in_v3_4_2": False,
+        "v3_4_3_ready": True,
+        "guardrails": guardrails,
+        "official_retrieval_qrels_rows": qrels_rows,
+        "qrels_coverage_summary": coverage_summary,
+        "qrels_exclusion_ledger_rows": exclusion_ledger_rows,
+        "artifact_paths": {
+            "official_retrieval_qrels_jsonl": official.repo_relative(
+                DEFAULT_V3_4_2_OFFICIAL_RETRIEVAL_QRELS_JSONL
+            ),
+            "qrels_coverage_summary_json": official.repo_relative(
+                DEFAULT_V3_4_2_QRELS_COVERAGE_SUMMARY_JSON
+            ),
+            "qrels_exclusion_ledger_jsonl": official.repo_relative(
+                DEFAULT_V3_4_2_QRELS_EXCLUSION_LEDGER_JSONL
+            ),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+        },
+        "active_implementation_queue_empty": True,
+        "next_implementation_phase": "v3_4_3_official_exact_evidence_metric_computation",
+    }
+
+
+def v3_4_2_excluded_query_group_row(query_group_rows: Sequence[Mapping[str, Any]]) -> dict[str, str]:
+    matches = [
+        dict(row)
+        for row in query_group_rows
+        if official.clean(row.get("question")) == V3_4_2_EXCLUDED_STANDALONE_QUERY_TEXT
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            "Expected exactly one v3_4_1a query-group row for the missing-year February unemployment query; "
+            f"found {len(matches)}."
+        )
+    query_id = official.clean(matches[0].get("query_id"))
+    if query_id != V3_4_2_EXCLUDED_QUERY_ID:
+        raise ValueError(
+            "Missing-year February unemployment query mapped to unexpected query_id "
+            f"{query_id!r}; expected {V3_4_2_EXCLUDED_QUERY_ID!r}."
+        )
+    return matches[0]
+
+
+def v3_4_2_split_candidate_ids(value: Any) -> list[str]:
+    return [
+        item.strip()
+        for item in official.clean(value).split("|")
+        if item.strip()
+    ]
+
+
+def v3_4_2_positive_unit_keys(
+    *,
+    accepted_query_rows: Sequence[Mapping[str, Any]],
+    raw_rows_by_candidate_id: Mapping[str, Mapping[str, Any]],
+) -> tuple[set[tuple[str, str, str]], dict[tuple[str, str, str], list[str]]]:
+    positive_unit_keys: set[tuple[str, str, str]] = set()
+    candidate_ids_by_unit: dict[tuple[str, str, str], list[str]] = {}
+    for row in accepted_query_rows:
+        query_id = official.clean(row.get("query_id"))
+        recommended_ids = v3_4_2_split_candidate_ids(row.get("codex_recommended_positive_candidate_ids"))
+        if not recommended_ids:
+            raise ValueError(f"Accepted query group {query_id!r} has no recommended positive candidate id.")
+        for candidate_id in recommended_ids:
+            raw_row = raw_rows_by_candidate_id.get(candidate_id)
+            if not raw_row:
+                raise ValueError(f"Recommended positive candidate id {candidate_id!r} was not found in v3_4_1 rows.")
+            unit_key = (
+                query_id,
+                official.clean(raw_row.get("document_version_id")),
+                official.clean(raw_row.get("search_unit_id")),
+            )
+            positive_unit_keys.add(unit_key)
+            candidate_ids_by_unit.setdefault(unit_key, []).append(candidate_id)
+    return positive_unit_keys, candidate_ids_by_unit
+
+
+def build_v3_4_2_official_exact_evidence_qrels_rows(
+    *,
+    raw_candidate_rows: Sequence[Mapping[str, Any]],
+    accepted_query_ids: set[str],
+    positive_unit_keys: set[tuple[str, str, str]],
+    positive_candidate_ids_by_unit: Mapping[tuple[str, str, str], list[str]],
+    generated_at: str,
+) -> list[dict[str, Any]]:
+    units: dict[tuple[str, str, str], list[Mapping[str, Any]]] = {}
+    for row in raw_candidate_rows:
+        query_id = official.clean(row.get("query_id"))
+        if query_id not in accepted_query_ids:
+            continue
+        key = (
+            query_id,
+            official.clean(row.get("document_version_id")),
+            official.clean(row.get("search_unit_id")),
+        )
+        units.setdefault(key, []).append(row)
+
+    qrels_rows: list[dict[str, Any]] = []
+    for key in sorted(units):
+        rows = units[key]
+        representative = min(
+            rows,
+            key=lambda item: (
+                0 if item.get("candidate_role") == "query_bound_oracle_candidate" else 1,
+                int(item.get("rank") or 999),
+                official.clean(item.get("qrels_candidate_id")),
+            ),
+        )
+        qrels_rows.append(
+            v3_4_2_qrels_row_from_candidate_unit(
+                key=key,
+                rows=rows,
+                representative=representative,
+                positive=key in positive_unit_keys,
+                positive_source_candidate_ids=positive_candidate_ids_by_unit.get(key, []),
+                generated_at=generated_at,
+            )
+        )
+    return qrels_rows
+
+
+def v3_4_2_qrels_row_from_candidate_unit(
+    *,
+    key: tuple[str, str, str],
+    rows: Sequence[Mapping[str, Any]],
+    representative: Mapping[str, Any],
+    positive: bool,
+    positive_source_candidate_ids: Sequence[str],
+    generated_at: str,
+) -> dict[str, Any]:
+    query_id, document_version_id, search_unit_id = key
+    retrieved_ranks = sorted(
+        {
+            int(row.get("rank") or 999)
+            for row in rows
+            if row.get("lane_source") == "retrieved_topk"
+            and row.get("candidate_role") == "retrieved_topk_candidate"
+        }
+    )
+    source_candidate_ids = sorted(
+        official.clean(row.get("qrels_candidate_id"))
+        for row in rows
+        if official.clean(row.get("qrels_candidate_id"))
+    )
+    base = {
+        "schema_version": f"{V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID}_qrels_row_v1",
+        "run_id": V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+        "source_run_id": V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+        "source_review_run_id": V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+        "generated_at": generated_at,
+        "metric_family": "official exact-evidence retrieval metrics",
+        "metric_scope": "source_bound_search_unit_exact_answer_evidence_smoke",
+        "benchmark_scope": "small official exact-evidence retrieval smoke benchmark",
+        "small_sample_caveat": (
+            "Valid for metric-pipeline validation and regression guarding; not "
+            "statistically representative product performance."
+        ),
+        "readme_headline_performance_claim_blocked": True,
+        "statistically_representative_product_performance": False,
+        "future_ndcg_name": "binary exact-evidence nDCG@K",
+        "query_id": query_id,
+        "source_family": official.clean(representative.get("source_family")).upper(),
+        "question": official.clean(representative.get("query")),
+        "document_version_id": document_version_id,
+        "search_unit_id": search_unit_id,
+        "qrels_unit_id": f"v3_4_2::{query_id}::{document_version_id}::{search_unit_id}",
+        "source_qrels_candidate_ids": source_candidate_ids,
+        "positive_source_qrels_candidate_ids": list(positive_source_candidate_ids),
+        "candidate_roles": sorted({official.clean(row.get("candidate_role")) for row in rows}),
+        "lane_sources": sorted({official.clean(row.get("lane_source")) for row in rows}),
+        "retrieved_topk_ranks": retrieved_ranks,
+        "best_retrieved_rank": retrieved_ranks[0] if retrieved_ranks else None,
+        "source_document_identity": official.clean(representative.get("source_document_identity")),
+        "source_bound_locator": representative.get("source_bound_locator") or {},
+        "source_excerpt": official.clean(representative.get("source_excerpt")),
+        "source_excerpt_sha256": official.clean(representative.get("source_excerpt_sha256")),
+        "source_text_or_value_available": bool(representative.get("source_text_or_value_available")),
+        "official_denominator_overlap": True,
+        "official_metric_denominator_query": True,
+        "qrels_excluded": False,
+        "qrels_positive": positive,
+        "exact_evidence_positive": positive,
+        "binary_exact_evidence_label": 1 if positive else 0,
+        "not_official_positive_for_exact_evidence_metric": not positive,
+        "human_review_decision": "accept_recommendation",
+        "human_judged_topical_negative": False,
+        "broad_topical_relevance_label_created": False,
+        "generation_source": False,
+        "promotion_evidence": False,
+        "gold": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "metric_computation_allowed_in_v3_4_2": False,
+    }
+    if positive:
+        base.update(
+            {
+                "relevance_label": 3,
+                "relevance_label_text": "EXACT_ANSWER_EVIDENCE",
+                "answerability_label": 3,
+                "answerability_label_text": "FULLY_ANSWERABLE",
+                "label_status": "applied_user_accepted_recommendation",
+                "label_provenance": "user_bulk_accept_recommendation",
+            }
+        )
+    else:
+        base.update(
+            {
+                "relevance_label": None,
+                "relevance_label_text": "not_judged_for_topical_relevance",
+                "answerability_label": None,
+                "answerability_label_text": "not_judged_for_answerability",
+                "label_status": "derived_non_positive_for_exact_evidence_metric",
+                "label_provenance": "derived_from_user_exact_evidence_policy",
+            }
+        )
+    return base
+
+
+def build_v3_4_2_exclusion_ledger_row(
+    *,
+    excluded_query_row: Mapping[str, Any],
+    raw_candidate_rows: Sequence[Mapping[str, Any]],
+    generated_at: str,
+) -> dict[str, Any]:
+    unit_keys = {
+        (
+            official.clean(row.get("document_version_id")),
+            official.clean(row.get("search_unit_id")),
+        )
+        for row in raw_candidate_rows
+    }
+    return {
+        "schema_version": f"{V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID}_exclusion_ledger_row_v1",
+        "run_id": V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+        "source_review_run_id": V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+        "generated_at": generated_at,
+        "query_id": V3_4_2_EXCLUDED_QUERY_ID,
+        "source_family": official.clean(excluded_query_row.get("source_family")).upper(),
+        "question": V3_4_2_EXCLUDED_STANDALONE_QUERY_TEXT,
+        "user_decision": "exclude_from_qrels",
+        "exclusion_reason": V3_4_2_EXCLUSION_REASON,
+        "user_note": V3_4_2_EXCLUSION_USER_NOTE,
+        "official_metric_denominator_included": False,
+        "qrels_excluded": True,
+        "not_counted_as_miss": True,
+        "not_counted_as_failure": True,
+        "not_counted_as_negative": True,
+        "not_counted_as_unanswerable": True,
+        "retrieval_failure": False,
+        "qrels_positive": None,
+        "relevance_label": None,
+        "answerability_label": None,
+        "label_provenance": "user_exclusion_standalone_query_missing_year",
+        "source_raw_candidate_row_count": len(raw_candidate_rows),
+        "source_candidate_unit_count": len(unit_keys),
+        "source_qrels_candidate_ids": sorted(
+            official.clean(row.get("qrels_candidate_id"))
+            for row in raw_candidate_rows
+            if official.clean(row.get("qrels_candidate_id"))
+        ),
+        "generation_source": False,
+        "promotion_evidence": False,
+        "gold": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+    }
+
+
+def run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    status_events = read_jsonl(Path(args.status_jsonl)) if Path(args.status_jsonl).exists() else []
+    qrels_event = latest_status_event(
+        status_events,
+        event_type="official_exact_evidence_retrieval_qrels_labels_applied_v3_4_2",
+        run_id=V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+    )
+    qrels_rows = read_jsonl(DEFAULT_V3_4_2_OFFICIAL_RETRIEVAL_QRELS_JSONL)
+    coverage = official.read_json(DEFAULT_V3_4_2_QRELS_COVERAGE_SUMMARY_JSON)
+    exclusions = read_jsonl(DEFAULT_V3_4_2_QRELS_EXCLUSION_LEDGER_JSONL)
+    generated_at = utc_timestamp()
+
+    if coverage.get("included_query_count") != 28 or coverage.get("excluded_query_count") != 1:
+        raise ValueError("v3_4_3 requires v3_4_2 coverage with 28 included and 1 excluded query.")
+    if coverage.get("excluded_query_ids") != [V3_4_2_EXCLUDED_QUERY_ID]:
+        raise ValueError("v3_4_3 requires gq_auto_010 to be the only excluded qrels query.")
+    if not coverage.get("v3_4_3_ready"):
+        raise ValueError("v3_4_2 qrels coverage did not mark v3_4_3 as ready.")
+
+    positive_qrels_rows = [row for row in qrels_rows if row.get("qrels_positive") is True]
+    included_query_ids = sorted({official.clean(row.get("query_id")) for row in positive_qrels_rows})
+    if len(positive_qrels_rows) != 28 or len(included_query_ids) != 28:
+        raise ValueError("v3_4_3 requires exactly one positive qrels unit for each of 28 included queries.")
+    if V3_4_2_EXCLUDED_QUERY_ID in included_query_ids:
+        raise ValueError("Excluded query gq_auto_010 must not appear in v3_4_3 metric denominator.")
+
+    per_query_rows = build_v3_4_3_per_query_metric_rows(
+        positive_qrels_rows=positive_qrels_rows,
+        generated_at=generated_at,
+    )
+    micro_overall = v3_4_3_metric_bundle(per_query_rows)
+    rows_by_source_family: dict[str, list[Mapping[str, Any]]] = {}
+    for row in per_query_rows:
+        rows_by_source_family.setdefault(official.clean(row.get("source_family")).upper(), []).append(row)
+    by_source_family = {
+        source_family: v3_4_3_metric_bundle(rows)
+        for source_family, rows in sorted(rows_by_source_family.items())
+    }
+    macro_by_source_family = v3_4_3_macro_metric_bundle(by_source_family)
+    source_family_counts = {
+        source_family: metrics["denominator"]
+        for source_family, metrics in by_source_family.items()
+    }
+    excluded_source_family_counts = dict(
+        sorted(Counter(official.clean(row.get("source_family")).upper() for row in exclusions).items())
+    )
+    one_query_delta = 100.0 / len(per_query_rows)
+    reference_oracle_positive_count = sum(
+        1
+        for row in positive_qrels_rows
+        if "query_bound_oracle" in (row.get("lane_sources") or [])
+    )
+    guardrails = {
+        "official_exact_evidence_retrieval_smoke_metrics_computed": True,
+        "official_retrieval_metrics_computed": True,
+        "official_hit_at_k_computed": True,
+        "official_mrr_computed": True,
+        "binary_exact_evidence_ndcg_computed": True,
+        "graded_ndcg_computed": False,
+        "broad_graded_ndcg_computed": False,
+        "primary_ranking_surface_lane_b_only": True,
+        "lane_c_reference_only": True,
+        "lane_score_collapsed": False,
+        "small_sample_warning": True,
+        "readme_headline_allowed": False,
+        "readme_headline_performance_claim_added": False,
+        "statistically_representative_product_performance_claim_added": False,
+        "representative_product_performance_claim": False,
+        "regression_guard_allowed": True,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "denominator_mutation": False,
+        "answer_citation_denominator_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "prompt_context_behavior_change": False,
+        "retrieval_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "index_or_export_rebuild_performed": False,
+        "export_mutation": False,
+        "silver_mutation": False,
+        "production_mutation": False,
+        "promotion_evidence": False,
+    }
+    metrics_summary = {
+        "schema_version": f"{V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID}_metrics_v1",
+        "run_id": V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+        "source_qrels_run_id": V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+        "source_contract_run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "generated_at": generated_at,
+        "status": "OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRICS_COMPUTED_SMALL_SAMPLE",
+        "metric_family": "official exact-evidence retrieval smoke metrics",
+        "metric_scope": "source_bound_search_unit_exact_answer_evidence_smoke",
+        "benchmark_scope": "small official exact-evidence retrieval smoke benchmark",
+        "primary_ranking_surface": "Lane B live_llm_retrieval_topk",
+        "primary_lane_source": "retrieved_topk",
+        "primary_ranking_surface_only": True,
+        "reference_only_surfaces": {
+            "lane_c_query_bound_oracle": {
+                "ranking_surface": "Lane C query_bound_oracle",
+                "lane_source": "query_bound_oracle",
+                "reference_only": True,
+                "not_primary_ranking_surface": True,
+                "not_used_for_micro_or_macro_metrics": True,
+                "included_positive_coverage_count": reference_oracle_positive_count,
+                "included_query_count": len(per_query_rows),
+                "coverage_rate": reference_oracle_positive_count / len(per_query_rows),
+            }
+        },
+        "included_query_count": len(per_query_rows),
+        "excluded_query_count": len(exclusions),
+        "excluded_query_ids": [official.clean(row.get("query_id")) for row in exclusions],
+        "source_family_counts": source_family_counts,
+        "excluded_source_family_counts": excluded_source_family_counts,
+        "qrels_positive_count": len(positive_qrels_rows),
+        "qrels_unit_row_count": len(qrels_rows),
+        "micro_overall": micro_overall,
+        "by_source_family": by_source_family,
+        "macro_by_source_family": macro_by_source_family,
+        "metrics": ["Hit@1", "Hit@3", "Hit@5", "MRR@5", "binary exact-evidence nDCG@5"],
+        "metric_definitions": {
+            "positive_rule": "qrels_positive=true exact-evidence SearchUnit",
+            "hit_at_k": "1 if any exact-evidence positive SearchUnit appears in Lane B retrieved top-k at rank <= K.",
+            "mrr_at_5": "Reciprocal rank of the first exact-evidence positive SearchUnit within Lane B top 5, else 0.",
+            "binary_exact_evidence_ndcg_at_5": (
+                "Binary gain only: exact-evidence positive=1 and all other candidates=0; "
+                "no graded relevance labels are used."
+            ),
+        },
+        "small_sample_warning": True,
+        "small_sample_warning_text": (
+            "This 28-query set is valid for metric-pipeline validation and regression guarding, "
+            "but it is not statistically representative product performance."
+        ),
+        "confidence_warning": {
+            "one_query_delta_percentage_points": one_query_delta,
+            "text": "One query changes the score by about 3.57 percentage points.",
+        },
+        "readme_headline_allowed": False,
+        "regression_guard_allowed": True,
+        "representative_product_performance_claim_allowed": False,
+        "graded_ndcg_computed": False,
+        "binary_exact_evidence_ndcg_computed": True,
+        "lane_score_collapsed": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "source_artifacts": {
+            "v3_4_2_official_retrieval_qrels_jsonl": official.repo_relative(
+                DEFAULT_V3_4_2_OFFICIAL_RETRIEVAL_QRELS_JSONL
+            ),
+            "v3_4_2_qrels_coverage_summary_json": official.repo_relative(
+                DEFAULT_V3_4_2_QRELS_COVERAGE_SUMMARY_JSON
+            ),
+            "v3_4_2_qrels_exclusion_ledger_jsonl": official.repo_relative(
+                DEFAULT_V3_4_2_QRELS_EXCLUSION_LEDGER_JSONL
+            ),
+        },
+        "guardrails": guardrails,
+    }
+    return {
+        "schema_version": f"{V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID}_status_event_v1",
+        "event_type": "official_exact_evidence_retrieval_smoke_metrics_computed_v3_4_3",
+        "run_id": V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+        "source_qrels_run_id": V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+        "generated_at": generated_at,
+        "status": metrics_summary["status"],
+        "measurement_classification": "official_exact_evidence_retrieval_smoke_metric_v3_4_3",
+        "run_class": "official_exact_evidence_retrieval_smoke_metric_computation",
+        "metric_family": metrics_summary["metric_family"],
+        "metric_scope": metrics_summary["metric_scope"],
+        "benchmark_scope": metrics_summary["benchmark_scope"],
+        "primary_ranking_surface": metrics_summary["primary_ranking_surface"],
+        "primary_lane_source": metrics_summary["primary_lane_source"],
+        "reference_only_surfaces": metrics_summary["reference_only_surfaces"],
+        "qrels_prerequisite": {
+            "run_id": V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+            "status_event_found": bool(qrels_event),
+            "status": qrels_event.get("status"),
+            "included_query_count": coverage.get("included_query_count"),
+            "excluded_query_count": coverage.get("excluded_query_count"),
+        },
+        "included_query_count": metrics_summary["included_query_count"],
+        "excluded_query_count": metrics_summary["excluded_query_count"],
+        "excluded_query_ids": metrics_summary["excluded_query_ids"],
+        "source_family_counts": source_family_counts,
+        "micro_overall": micro_overall,
+        "by_source_family": by_source_family,
+        "macro_by_source_family": macro_by_source_family,
+        "small_sample_warning": True,
+        "small_sample_warning_text": metrics_summary["small_sample_warning_text"],
+        "confidence_warning": metrics_summary["confidence_warning"],
+        "readme_headline_allowed": False,
+        "regression_guard_allowed": True,
+        "representative_product_performance_claim_allowed": False,
+        "graded_ndcg_computed": False,
+        "binary_exact_evidence_ndcg_computed": True,
+        "lane_score_collapsed": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "promotion_evidence": False,
+        "guardrails": guardrails,
+        "retrieval_smoke_metrics": metrics_summary,
+        "per_query_metric_rows": per_query_rows,
+        "artifact_paths": {
+            "retrieval_smoke_metrics_json": official.repo_relative(
+                DEFAULT_V3_4_3_RETRIEVAL_SMOKE_METRICS_JSON
+            ),
+            "retrieval_smoke_per_query_jsonl": official.repo_relative(
+                DEFAULT_V3_4_3_RETRIEVAL_SMOKE_PER_QUERY_JSONL
+            ),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+        },
+        "active_implementation_queue_empty": True,
+        "next_implementation_phase": "none",
+    }
+
+
+def build_v3_4_3_per_query_metric_rows(
+    *,
+    positive_qrels_rows: Sequence[Mapping[str, Any]],
+    generated_at: str,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for qrels_row in sorted(
+        positive_qrels_rows,
+        key=lambda row: (official.clean(row.get("source_family")).upper(), official.clean(row.get("query_id"))),
+    ):
+        rank = qrels_row.get("best_retrieved_rank")
+        rank_value = int(rank) if rank is not None else None
+        rows.append(
+            {
+                "schema_version": f"{V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID}_per_query_v1",
+                "run_id": V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+                "source_qrels_run_id": V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+                "generated_at": generated_at,
+                "query_id": official.clean(qrels_row.get("query_id")),
+                "source_family": official.clean(qrels_row.get("source_family")).upper(),
+                "question": official.clean(qrels_row.get("question")),
+                "primary_ranking_surface": "Lane B live_llm_retrieval_topk",
+                "primary_lane_source": "retrieved_topk",
+                "reference_only_surface": "Lane C query_bound_oracle",
+                "reference_only_lane_source": "query_bound_oracle",
+                "reference_only": False,
+                "included_in_metric_denominator": True,
+                "qrels_positive": True,
+                "qrels_unit_id": official.clean(qrels_row.get("qrels_unit_id")),
+                "document_version_id": official.clean(qrels_row.get("document_version_id")),
+                "search_unit_id": official.clean(qrels_row.get("search_unit_id")),
+                "best_positive_rank": rank_value,
+                "hit_at_1": rank_value is not None and rank_value <= 1,
+                "hit_at_3": rank_value is not None and rank_value <= 3,
+                "hit_at_5": rank_value is not None and rank_value <= 5,
+                "reciprocal_rank_at_5": (1.0 / rank_value) if rank_value is not None and rank_value <= 5 else 0.0,
+                "binary_exact_evidence_ndcg_at_5": v3_4_3_binary_ndcg_score(rank_value, k=5),
+                "binary_exact_evidence_gain": 1,
+                "graded_relevance_gain_used": False,
+                "lane_c_query_bound_oracle_positive_present": (
+                    "query_bound_oracle" in (qrels_row.get("lane_sources") or [])
+                ),
+                "retrieved_topk_ranks": qrels_row.get("retrieved_topk_ranks") or [],
+                "small_sample_warning": True,
+                "readme_headline_allowed": False,
+                "regression_guard_allowed": True,
+                "representative_product_performance_claim_allowed": False,
+                "promotion_evidence": False,
+            }
+        )
+    return rows
+
+
+def v3_4_3_metric_bundle(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    denominator = len(rows)
+    if denominator == 0:
+        return {
+            "denominator": 0,
+            "hit_at_1_count": 0,
+            "hit_at_1": 0.0,
+            "hit_at_3_count": 0,
+            "hit_at_3": 0.0,
+            "hit_at_5_count": 0,
+            "hit_at_5": 0.0,
+            "mrr_at_5_sum": 0.0,
+            "mrr_at_5": 0.0,
+            "binary_exact_evidence_ndcg_at_5_sum": 0.0,
+            "binary_exact_evidence_ndcg_at_5": 0.0,
+        }
+    hit_at_1_count = sum(1 for row in rows if row.get("hit_at_1") is True)
+    hit_at_3_count = sum(1 for row in rows if row.get("hit_at_3") is True)
+    hit_at_5_count = sum(1 for row in rows if row.get("hit_at_5") is True)
+    mrr_sum = sum(float(row.get("reciprocal_rank_at_5") or 0.0) for row in rows)
+    ndcg_sum = sum(float(row.get("binary_exact_evidence_ndcg_at_5") or 0.0) for row in rows)
+    return {
+        "denominator": denominator,
+        "hit_at_1_count": hit_at_1_count,
+        "hit_at_1": hit_at_1_count / denominator,
+        "hit_at_3_count": hit_at_3_count,
+        "hit_at_3": hit_at_3_count / denominator,
+        "hit_at_5_count": hit_at_5_count,
+        "hit_at_5": hit_at_5_count / denominator,
+        "mrr_at_5_sum": mrr_sum,
+        "mrr_at_5": mrr_sum / denominator,
+        "binary_exact_evidence_ndcg_at_5_sum": ndcg_sum,
+        "binary_exact_evidence_ndcg_at_5": ndcg_sum / denominator,
+    }
+
+
+def v3_4_3_macro_metric_bundle(by_source_family: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
+    families = sorted(by_source_family)
+    family_count = len(families)
+    metric_names = (
+        "hit_at_1",
+        "hit_at_3",
+        "hit_at_5",
+        "mrr_at_5",
+        "binary_exact_evidence_ndcg_at_5",
+    )
+    bundle: dict[str, Any] = {
+        "source_family_count": family_count,
+        "source_families": families,
+    }
+    for metric_name in metric_names:
+        bundle[metric_name] = (
+            sum(float(by_source_family[family][metric_name]) for family in families) / family_count
+            if family_count
+            else 0.0
+        )
+    return bundle
+
+
+def v3_4_3_binary_ndcg_score(rank: int | None, *, k: int) -> float:
+    if rank is None or rank < 1 or rank > k:
+        return 0.0
+    return 1.0 / math.log2(rank + 1)
+
+
+def run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    metrics = official.read_json(DEFAULT_V3_4_3_RETRIEVAL_SMOKE_METRICS_JSON)
+    _per_query_rows = read_jsonl(DEFAULT_V3_4_3_RETRIEVAL_SMOKE_PER_QUERY_JSONL)
+    _coverage = official.read_json(DEFAULT_V3_4_2_QRELS_COVERAGE_SUMMARY_JSON)
+    exclusions = read_jsonl(DEFAULT_V3_4_2_QRELS_EXCLUSION_LEDGER_JSONL)
+    inventory = (
+        official.read_json(DEFAULT_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_INVENTORY_JSON)
+        if DEFAULT_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_INVENTORY_JSON.exists()
+        else {}
+    )
+    silver_readiness = official.read_json(
+        REPO_ROOT / "ai" / "eval" / "silver" / "answer_citation_silver_readiness_v1.json"
+    )
+    generated_at = utc_timestamp()
+
+    micro = metrics["micro_overall"]
+    macro = metrics["macro_by_source_family"]
+    reference_lane = metrics["reference_only_surfaces"]["lane_c_query_bound_oracle"]
+    inventory_counts = {
+        "TEXT": (inventory.get("candidate_counts_by_track") or {}).get("TEXT", 0),
+        "PDF": (inventory.get("candidate_counts_by_track") or {}).get("PDF", 0),
+        "XLSX": (inventory.get("candidate_counts_by_track") or {}).get("XLSX", 0),
+        "total": inventory.get("candidate_count_total", 0),
+    }
+    source_artifacts = {
+        "v3_4_3_metrics_json": official.repo_relative(DEFAULT_V3_4_3_RETRIEVAL_SMOKE_METRICS_JSON),
+        "v3_4_3_per_query_jsonl": official.repo_relative(DEFAULT_V3_4_3_RETRIEVAL_SMOKE_PER_QUERY_JSONL),
+        "v3_4_2_official_retrieval_qrels_jsonl": official.repo_relative(
+            DEFAULT_V3_4_2_OFFICIAL_RETRIEVAL_QRELS_JSONL
+        ),
+        "v3_4_2_qrels_coverage_summary_json": official.repo_relative(
+            DEFAULT_V3_4_2_QRELS_COVERAGE_SUMMARY_JSON
+        ),
+        "v3_4_2_qrels_exclusion_ledger_jsonl": official.repo_relative(
+            DEFAULT_V3_4_2_QRELS_EXCLUSION_LEDGER_JSONL
+        ),
+        "v3_3_3_silver_candidate_inventory_json": (
+            official.repo_relative(DEFAULT_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_INVENTORY_JSON)
+            if DEFAULT_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_INVENTORY_JSON.exists()
+            else None
+        ),
+        "silver_manifest_json": "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "silver_readiness_json": "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+    }
+    guardrails = {
+        "lane_a_b_c_collapsed_score": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "graded_ndcg": False,
+        "readme_headline_product_performance_claim": False,
+        "representative_product_performance_claim": False,
+        "promotion_evidence": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "answer_citation_denominator_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "silver_mutation": False,
+        "silver_generation_from_official_denominator_rows": False,
+        "candidate_artifacts_as_generation_source": False,
+    }
+    readme_integration = {
+        "root_readme_path": "README.md",
+        "direct_readme_updated": False,
+        "pending_manual_integration": True,
+        "reason": (
+            "Snippet-only for v3_4_4: readme_headline_allowed=false, and the section must "
+            "be inserted only as a bounded non-headline regression guard."
+        ),
+        "snippet_path": official.repo_relative(DEFAULT_V3_4_4_README_SECTION_MD),
+    }
+    metric_card = {
+        "schema_version": f"{V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID}_readme_metric_card_v1",
+        "run_id": V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+        "source_metric_run_id": metrics["run_id"],
+        "source_qrels_run_id": metrics["source_qrels_run_id"],
+        "generated_at": generated_at,
+        "artifact_kind": "readme_metric_card",
+        "metric_family": "official exact-evidence retrieval smoke metrics",
+        "metric_scope": "source_bound_search_unit_exact_answer_evidence_smoke",
+        "benchmark_scope": "small official exact-evidence retrieval smoke benchmark",
+        "readme_section_title": "Retrieval smoke regression guard",
+        "primary_ranking_surface": "Lane B live_llm_retrieval_topk",
+        "primary_lane_source": "retrieved_topk",
+        "reference_only_surfaces": {"lane_c_query_bound_oracle": reference_lane},
+        "included_queries": 28,
+        "excluded_queries": {
+            "count": 1,
+            "query_ids": ["gq_auto_010"],
+            "reason": "standalone_query_missing_year",
+        },
+        "source_family_counts": {"PDF": 3, "TEXT": 6, "XLSX": 19},
+        "micro": {
+            "hit_at_1": {"count": 27, "denominator": 28, "value": micro["hit_at_1"]},
+            "hit_at_3": {"count": 28, "denominator": 28, "value": micro["hit_at_3"]},
+            "hit_at_5": {"count": 28, "denominator": 28, "value": micro["hit_at_5"]},
+            "mrr_at_5": {"sum": 27.5, "denominator": 28, "value": micro["mrr_at_5"]},
+            "binary_exact_evidence_ndcg_at_5": {
+                "value": micro["binary_exact_evidence_ndcg_at_5"]
+            },
+        },
+        "macro_by_source_family": {
+            "hit_at_1": macro["hit_at_1"],
+            "hit_at_3": macro["hit_at_3"],
+            "hit_at_5": macro["hit_at_5"],
+            "mrr_at_5": macro["mrr_at_5"],
+            "binary_exact_evidence_ndcg_at_5": macro["binary_exact_evidence_ndcg_at_5"],
+        },
+        "warnings": {
+            "small_sample_warning": True,
+            "readme_headline_allowed": False,
+            "regression_guard_allowed": True,
+            "representative_product_performance_claim_allowed": False,
+            "one_query_delta_percentage_points": 100 / 28,
+            "small_sample_warning_text": (
+                "This 28-query official exact-evidence retrieval smoke benchmark is for "
+                "metric-pipeline validation and regression guarding, not statistically "
+                "representative product performance."
+            ),
+        },
+        "guardrails": guardrails,
+        "prohibited_readme_wording": [
+            "RAG achieves 96.4% Hit@1",
+            "production performance",
+            "representative benchmark",
+            "winner",
+            "promotion evidence",
+        ],
+        "safe_readme_wording": (
+            "On the source-bound exact-evidence smoke guard, Lane B retrieval placed an "
+            "exact-evidence SearchUnit at rank 1 for 27/28 included queries and within "
+            "top 3 for 28/28. This guard is used to detect regressions, not to claim "
+            "representative product performance."
+        ),
+        "readme_integration": readme_integration,
+        "source_artifacts": source_artifacts,
+        "source_artifact_sha256": {
+            f"{name}_sha256": sha256_file(REPO_ROOT / path)
+            for name, path in source_artifacts.items()
+            if path
+        },
+    }
+    readme_section_markdown = v3_4_4_readme_section_markdown()
+    silver_summary = {
+        "schema_version": f"{V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID}_silver_readiness_summary_v1",
+        "run_id": V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "silver_readiness_summary",
+        "status": "SILVER_GENERATION_BLOCKED_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_BELOW_THRESHOLD",
+        "silver_generation_blocked": True,
+        "silver_mutation": False,
+        "silver_jsonl_rows_created": False,
+        "answer_citation_silver_jsonl_files_created": {
+            "contract": False,
+            "dev": False,
+            "holdout": False,
+        },
+        "official_denominator_overlap_boundary": {
+            "official_denominator_query_id_count": 29,
+            "official_source_bound_search_unit_rows": silver_readiness[
+                "official_denominator_overlap_scan"
+            ]["source_bound_search_unit_manifest_rows"],
+            "official_denominator_overlap_true_count": silver_readiness[
+                "official_denominator_overlap_scan"
+            ]["official_denominator_overlap_true_count"],
+            "eligible_dev_holdout_source_candidate_count_from_official_manifest": silver_readiness[
+                "official_denominator_overlap_scan"
+            ]["eligible_dev_holdout_source_candidate_count"],
+            "official_denominator_source_bound_search_units_remain_excluded_from_silver": True,
+            "official_29_query_ids_copied_or_relabelled_to_silver_dev_holdout": False,
+            "official_29_query_ids_excluded_from_dev_holdout_tuning_silver": True,
+        },
+        "strict_non_official_source_bound_candidate_inventory": {
+            "source_run_id": V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID if inventory else None,
+            "source_artifact": source_artifacts["v3_3_3_silver_candidate_inventory_json"],
+            "source_note": (
+                "v3_3_3 inventory confirms the latest strict non-official source-bound "
+                "candidate counts."
+                if inventory
+                else "v3_3_3 candidate inventory artifact missing."
+            ),
+            "counts_by_source_family": inventory_counts,
+            "candidate_artifacts_are_inventory_only": True,
+            "candidate_artifacts_used_as_generation_source": False,
+            "candidate_artifacts_must_not_be_used_as_generation_source": True,
+        },
+        "thresholds": {
+            "pilot_threshold_rows": 100,
+            "pilot_threshold_met": False,
+            "target_rows": 1000,
+            "preferred_target_by_source_family": {"TEXT": 350, "PDF": 325, "XLSX": 325},
+            "preferred_target_met": False,
+            "below_pilot_threshold_reason": (
+                "latest strict non-official source-bound candidate total is 7, below the "
+                "100-row pilot threshold"
+            ),
+            "below_target_reason": (
+                "latest strict non-official source-bound candidate total is 7, below the "
+                "1000-row target and preferred 350/325/325 mix"
+            ),
+        },
+        "silver_expected_values_policy": "audit_only",
+        "expected_values_used_for_audit_only": True,
+        "candidate_artifacts_must_not_be_used_as_generation_source": True,
+        "candidate_artifacts_used_as_generation_source": False,
+        "source_inventory_differs_from_v3_3_3": inventory_counts != {
+            "TEXT": 0,
+            "PDF": 3,
+            "XLSX": 4,
+            "total": 7,
+        },
+        "rationale": (
+            "For v3_4_4, no answer/citation silver rows are generated because only seven "
+            "strict non-official source-bound candidates are known, all candidate artifacts "
+            "remain inventory-only, and the official denominator rows overlap the official "
+            "29-query denominator and remain excluded from dev/holdout tuning silver."
+        ),
+        "source_artifacts": source_artifacts,
+        "guardrails": guardrails,
+    }
+    artifact_paths = {
+        "readme_metric_card_json": official.repo_relative(DEFAULT_V3_4_4_README_METRIC_CARD_JSON),
+        "readme_section_md": official.repo_relative(DEFAULT_V3_4_4_README_SECTION_MD),
+        "silver_readiness_summary_json": official.repo_relative(
+            DEFAULT_V3_4_4_SILVER_READINESS_SUMMARY_JSON
+        ),
+        "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+        "progress_doc": "docs/rag-ingestion-progress.md",
+    }
+    return {
+        "schema_version": f"{V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID}_status_event_v1",
+        "event_type": "readme_retrieval_smoke_and_silver_readiness_artifacts_v3_4_4",
+        "run_id": V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+        "source_metric_run_id": V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+        "source_qrels_run_id": V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+        "generated_at": generated_at,
+        "status": "README_RETRIEVAL_SMOKE_CARD_READY_SILVER_GENERATION_BLOCKED",
+        "run_class": "readme_ready_artifacts_and_silver_readiness_boundary",
+        "metric_family": metric_card["metric_family"],
+        "metric_scope": metric_card["metric_scope"],
+        "primary_ranking_surface": metric_card["primary_ranking_surface"],
+        "reference_only_surface": "Lane C query_bound_oracle",
+        "included_query_count": 28,
+        "excluded_query_count": len(exclusions),
+        "excluded_query_ids": ["gq_auto_010"],
+        "exclusion_reason": "standalone_query_missing_year",
+        "source_family_counts": {"PDF": 3, "TEXT": 6, "XLSX": 19},
+        "micro": metric_card["micro"],
+        "macro_by_source_family": metric_card["macro_by_source_family"],
+        "small_sample_warning": True,
+        "readme_headline_allowed": False,
+        "regression_guard_allowed": True,
+        "representative_product_performance_claim_allowed": False,
+        "one_query_delta_percentage_points": 100 / 28,
+        "readme_directly_updated": False,
+        "pending_manual_integration": True,
+        "silver_generation_blocked": True,
+        "silver_mutation": False,
+        "strict_non_official_source_bound_candidate_counts": inventory_counts,
+        "official_denominator_source_bound_overlap_excluded_from_silver": True,
+        "candidate_artifacts_used_as_generation_source": False,
+        "artifact_paths": artifact_paths,
+        "guardrails": guardrails,
+        "readme_metric_card": metric_card,
+        "readme_section_markdown": readme_section_markdown,
+        "silver_readiness_summary": silver_summary,
+        "active_implementation_queue_empty": True,
+        "triage_doc_updated": False,
+    }
+
+
+def v3_4_4_readme_section_markdown() -> str:
+    return """## Retrieval smoke regression guard
+
+This is a small 28-query official exact-evidence retrieval smoke benchmark for metric-pipeline validation and regression guarding. It is not a statistically representative product-performance benchmark.
+
+On the source-bound exact-evidence smoke guard, Lane B retrieval placed an exact-evidence SearchUnit at rank 1 for 27/28 included queries and within top 3 for 28/28. This guard is used to detect regressions, not to claim representative product performance.
+
+| Scope | Value |
+|---|---:|
+| Metric family | official exact-evidence retrieval smoke metrics |
+| Metric scope | source_bound_search_unit_exact_answer_evidence_smoke |
+| Primary ranking surface | Lane B live_llm_retrieval_topk |
+| Reference-only surface | Lane C query_bound_oracle |
+| Included queries | 28 |
+| Excluded query | gq_auto_010 |
+| Exclusion reason | standalone_query_missing_year |
+| Source families | PDF=3, TEXT=6, XLSX=19 |
+
+| Metric | Micro |
+|---|---:|
+| Hit@1 | 27/28 = 0.9642857142857143 |
+| Hit@3 | 28/28 = 1.0 |
+| Hit@5 | 28/28 = 1.0 |
+| MRR@5 | 27.5/28 = 0.9821428571428571 |
+| binary exact-evidence nDCG@5 | 0.9868189197704093 |
+
+| Metric | Macro by source_family |
+|---|---:|
+| Hit@1 | 0.9824561403508771 |
+| Hit@3 | 1.0 |
+| Hit@5 | 1.0 |
+| MRR@5 | 0.9912280701754387 |
+| binary exact-evidence nDCG@5 | 0.9935250833959905 |
+
+Caveats: small_sample_warning=true, readme_headline_allowed=false, regression_guard_allowed=true, representative_product_performance_claim_allowed=false. One query changes the score by about 3.57 percentage points. Lane C is reference-only and is not used for micro or macro retrieval ranking. No graded nDCG or collapsed Lane A/B/C score is reported.
+"""
 
 
 V3_4_1_QRELS_CANDIDATE_CSV_FIELDNAMES = [
@@ -17327,6 +18720,38 @@ def append_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_event(
     event.pop("ambiguous_candidate_review_csv_fieldnames", None)
     event.pop("qrels_auto_label_plan", None)
     event.pop("compact_summary", None)
+    append_unique_status_ledger_event(path, event)
+
+
+def append_v3_4_2_apply_user_official_retrieval_qrels_labels_event(
+    path: Path,
+    summary: Mapping[str, Any],
+) -> None:
+    event = dict(summary)
+    event.pop("official_retrieval_qrels_rows", None)
+    event.pop("qrels_coverage_summary", None)
+    event.pop("qrels_exclusion_ledger_rows", None)
+    append_unique_status_ledger_event(path, event)
+
+
+def append_v3_4_3_official_exact_evidence_retrieval_smoke_metric_event(
+    path: Path,
+    summary: Mapping[str, Any],
+) -> None:
+    event = dict(summary)
+    event.pop("retrieval_smoke_metrics", None)
+    event.pop("per_query_metric_rows", None)
+    append_unique_status_ledger_event(path, event)
+
+
+def append_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts_event(
+    path: Path,
+    summary: Mapping[str, Any],
+) -> None:
+    event = dict(summary)
+    event.pop("readme_metric_card", None)
+    event.pop("readme_section_markdown", None)
+    event.pop("silver_readiness_summary", None)
     append_unique_status_ledger_event(path, event)
 
 

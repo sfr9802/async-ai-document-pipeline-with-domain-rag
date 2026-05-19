@@ -374,7 +374,9 @@ def test_progress_docs_record_v3_4_0_official_retrieval_metric_contract_without_
 def test_progress_docs_record_v3_4_1_official_retrieval_qrels_candidate_packet_without_metrics():
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
     triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_flat = " ".join(triage.split())
 
     run_id = "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet"
     qrels_jsonl = (
@@ -466,3 +468,178 @@ def test_progress_doc_records_v3_4_1a_human_minimal_review_packet_without_metric
     assert "Codex recommendations are not final labels" in current_text
     assert "auto-labeling is not applied" in " ".join(current_text.split())
     assert "official Hit@K, MRR, nDCG" in current_text
+
+
+def test_progress_and_triage_docs_record_v3_4_2_exact_evidence_qrels_without_metrics():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+
+    run_id = "official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels"
+    qrels_jsonl = (
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_"
+        "official_retrieval_qrels.jsonl"
+    )
+    coverage_json = (
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_"
+        "qrels_coverage_summary.json"
+    )
+    exclusion_jsonl = (
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_"
+        "qrels_exclusion_ledger.jsonl"
+    )
+
+    assert "official_exact_evidence_retrieval_qrels_v3_4_2_ready_metrics_deferred" in current_text
+    assert run_id in current_text
+    assert qrels_jsonl in current_text
+    assert coverage_json in current_text
+    assert exclusion_jsonl in current_text
+    assert "Included query groups=28" in current_text
+    assert "excluded query groups=1" in current_text
+    assert "`gq_auto_010`" in current_text
+    assert "`standalone_query_missing_year`" in current_text
+    assert "not a retrieval miss, failure, negative, or unanswerable row" in " ".join(
+        current_text.split()
+    )
+    assert "Official qrels unit rows=140" in current_text
+    assert "qrels positives=28" in current_text
+    assert "official exact-evidence retrieval metrics" in " ".join(current_text.split())
+    assert "`source_bound_search_unit_exact_answer_evidence_smoke`" in current_text
+    assert "small official exact-evidence retrieval smoke benchmark" in " ".join(
+        current_text.split()
+    )
+    assert "metric-pipeline validation and regression guarding" in " ".join(current_text.split())
+    assert "not statistically representative product performance" in " ".join(
+        current_text.split()
+    )
+    assert "README headline performance claims from this 28-query set are blocked" in " ".join(
+        current_text.split()
+    )
+    assert "binary exact-evidence nDCG@K" in current_text
+    assert "v3_4_3 official exact-evidence Hit@K/MRR/binary nDCG computation is ready" in " ".join(
+        current_text.split()
+    )
+    assert "did not compute Hit@K, MRR, nDCG" in " ".join(current_text.split())
+
+    assert "`v3_4_2 official exact-evidence retrieval qrels labels applied`" in triage
+    assert "## v3_4_2 Official Exact-Evidence Retrieval Qrels Labels Applied" in triage
+    assert run_id in triage
+    assert qrels_jsonl in triage
+    assert coverage_json in triage
+    assert exclusion_jsonl in triage
+    assert "| included query groups | 28 |" in triage
+    assert "| excluded query groups | 1 |" in triage
+    assert "| excluded query_id | `gq_auto_010` |" in triage
+    assert "| qrels positives | 28 |" in triage
+    assert "not a broad topical semantic relevance benchmark" in triage
+    assert "`source_bound_search_unit_exact_answer_evidence_smoke`" in triage
+    assert "small official exact-evidence retrieval smoke benchmark" in " ".join(
+        triage.split()
+    )
+    assert "valid for metric-pipeline validation and regression guarding" in " ".join(
+        triage.split()
+    )
+    assert "not statistically representative product performance" in " ".join(
+        triage.split()
+    )
+    assert "README headline performance claims from this 28-query set are blocked" in " ".join(
+        triage.split()
+    )
+    assert "`not_official_positive_for_exact_evidence_metric`" in triage
+    assert "No official Hit@K, MRR, nDCG" in triage
+
+
+def test_progress_and_triage_docs_record_v3_4_3_exact_evidence_smoke_metrics():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_flat = " ".join(triage.split())
+
+    run_id = "official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation"
+    metrics_json = (
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_"
+        "metrics.json"
+    )
+    per_query_jsonl = (
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_"
+        "per_query.jsonl"
+    )
+
+    assert "official_exact_evidence_retrieval_smoke_metrics_v3_4_3_computed_small_sample" in current_text
+    assert run_id in current_text
+    assert metrics_json in current_text
+    assert per_query_jsonl in current_text
+    assert "Lane B `live_llm_retrieval_topk` only" in current_flat
+    assert "Included query count=28" in current_flat
+    assert "excluded query count=1" in current_flat
+    assert "`gq_auto_010`" in current_text
+    assert "PDF=3, TEXT=6, XLSX=19" in current_flat
+    assert "Hit@1=27/28" in current_flat
+    assert "Hit@3=28/28" in current_flat
+    assert "Hit@5=28/28" in current_flat
+    assert "MRR@5=27.5/28" in current_flat
+    assert "0.9868189197704093" in current_text
+    assert "small_sample_warning=true" in current_text
+    assert "readme_headline_allowed=false" in current_text
+    assert "regression_guard_allowed=true" in current_text
+    assert "one query changes the score by about 3.57 percentage points" in current_flat
+    assert "No graded nDCG" in current_text
+    assert "threshold tuning" in current_text
+    assert "winner selection" in current_text
+
+    assert "`v3_4_3 official exact-evidence retrieval smoke metrics computed`" in triage
+    assert "## v3_4_3 Official Exact-Evidence Retrieval Smoke Metrics" in triage
+    assert run_id in triage
+    assert metrics_json in triage
+    assert per_query_jsonl in triage
+    assert "| included query groups | 28 |" in triage
+    assert "| excluded query groups | 1 |" in triage
+    assert "| excluded query_id | `gq_auto_010` |" in triage
+    assert "| source-family counts | PDF=3, TEXT=6, XLSX=19 |" in triage
+    assert "| primary ranking surface | Lane B `live_llm_retrieval_topk` |" in triage
+    assert "| Hit@1 | 27/28 = 0.9642857142857143 |" in triage
+    assert "| Hit@3 | 28/28 = 1.0 |" in triage
+    assert "| Hit@5 | 28/28 = 1.0 |" in triage
+    assert "| MRR@5 | 27.5/28 = 0.9821428571428571 |" in triage
+    assert "| binary exact-evidence nDCG@5 | 0.9868189197704093 |" in triage
+    assert "`small_sample_warning=true`" in triage
+    assert "`readme_headline_allowed=false`" in triage
+    assert "`regression_guard_allowed=true`" in triage
+    assert "One query changes the score by about 3.57 percentage points" in triage_flat
+    assert "no graded nDCG was computed from ungraded labels" in triage_flat
+    assert "Lane C query-bound oracle is reference-only" in triage_flat
+    assert "No Lane A/B/C collapsed score" in triage_flat
+
+
+def test_progress_doc_records_v3_4_4_readme_artifacts_and_silver_boundary_without_triage_change():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+
+    run_id = "official_answer_citation_agentic_loop_run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts"
+
+    assert "readme_retrieval_smoke_card_v3_4_4_ready_silver_generation_blocked" in current_text
+    assert "v3_4_4 README retrieval-smoke/silver-readiness artifacts" in current_text
+    assert run_id in current_text
+    assert "compact README metric card JSON, README insertion snippet, and silver-readiness summary" in current_flat
+    assert "verified v3_4_3 Lane B exact-evidence smoke metrics" in current_flat
+    assert "README integration is snippet-only" in current_flat
+    assert "`pending_manual_integration=true`" in current_text
+    assert "`readme_headline_allowed=false`" in current_text
+    assert "`regression_guard_allowed=true`" in current_text
+    assert "small-sample regression guard" in current_flat
+    assert "not statistically representative product performance" in current_flat
+    assert "Silver generation remains blocked" in current_text
+    assert "TEXT=0, PDF=3, XLSX=4, total=7" in current_text
+    assert "below the 100-row pilot and 1000-row target" in current_flat
+    assert "official-denominator SearchUnits remain excluded from dev/holdout silver" in current_flat
+    assert "no silver rows were generated" in current_flat
+    assert run_id not in triage
+    assert "v3_4_4 README retrieval-smoke/silver-readiness artifacts" not in triage
