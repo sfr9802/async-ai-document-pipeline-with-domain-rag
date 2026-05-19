@@ -81,6 +81,9 @@ ai/eval/harness/_scratch/
 ai/eval/harness/_drafts/
 ai/tests/_scratch/
 ai/tests/_drafts/
+# Repo-root ad-hoc test runs / fixture sandboxes are local-only. Keep
+# canonical test sources under ai/tests tracked.
+/test/
 
 # ---- Eval harness generated artifacts ----
 # Reports change every run and should not be committed. Sample OCR
