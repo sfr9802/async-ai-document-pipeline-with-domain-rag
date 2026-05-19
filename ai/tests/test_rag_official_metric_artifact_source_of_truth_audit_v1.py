@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import subprocess
 import sys
+import csv
 from collections import Counter
 from pathlib import Path
 from types import SimpleNamespace
@@ -68,6 +70,9 @@ AGENTIC_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_RUN_ID = (
 AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation"
 )
+AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -99,11 +104,13 @@ REPORT_ARTIFACT_SLUGS = {
     AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID: "v3_1_6_gq010_pdfwin",
     AGENTIC_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_RUN_ID: AGENTIC_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_RUN_ID,
     AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID: AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID: AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID,
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID,
     AGENTIC_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_RUN_ID,
     AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID,
 }
 
 
@@ -232,6 +239,26 @@ AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_REMAINING_JSON = report_artifact_path(
     AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
     "remaining_triage_queue.json",
 )
+AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_APPLIED_JSONL = report_artifact_path(
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID,
+    "applied_overrides.jsonl",
+)
+AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_DIFF_JSONL = report_artifact_path(
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID,
+    "gold_diff.jsonl",
+)
+AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RESCORED_JSONL = report_artifact_path(
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID,
+    "rescored_results.jsonl",
+)
+AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_REMAINING_JSON = report_artifact_path(
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID,
+    "remaining_triage_queue.json",
+)
 AGENTIC_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data"
 EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES: set[str] = set()
 CURRENT_REPORT_PATHS = {
@@ -239,6 +266,9 @@ CURRENT_REPORT_PATHS = {
     REPORT_DIR / "scorer_v1.jsonl",
     REPORT_DIR / "metric_input_v1.json",
     REPORT_DIR / "smoke_v1.json",
+    REPORT_DIR / "gold_overrides.csv",
+    REPORT_DIR / "gold_overrides.jsonl",
+    REPORT_DIR / "gold_overrides_summary.json",
     REPORT_DIR / "xlsx_candidate_v1.jsonl",
     REPORT_DIR / "pdf_candidate_v1.jsonl",
     REPORT_DIR / "source_bound_readiness_v1.json",
@@ -259,6 +289,11 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_HUMAN_REVIEW_JSON,
     AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_DECISION_MATRIX_JSONL,
     AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_REMAINING_JSON,
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_SUMMARY_JSON,
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_APPLIED_JSONL,
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_DIFF_JSONL,
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RESCORED_JSONL,
+    AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_REMAINING_JSON,
 }
 ARCHIVED_REPORT_PATHS = {
     AGENTIC_RESULTS,
@@ -1853,7 +1888,7 @@ def test_v3_1_all_track_foundation_measurement_artifacts_are_separate_and_guarde
         encoding="utf-8",
     )
     assert forbidden_status.returncode == 0
-    assert forbidden_status.stdout.strip() == ""
+    assert_no_unexpected_eval_query_status(forbidden_status.stdout)
 
     measurement = next(
         event
@@ -2003,7 +2038,7 @@ def test_v3_1_priority_1_5_strict_json_locator_triage_artifacts_are_guarded() ->
         encoding="utf-8",
     )
     assert forbidden_status.returncode == 0
-    assert forbidden_status.stdout.strip() == ""
+    assert_no_unexpected_eval_query_status(forbidden_status.stdout)
 
     measurement = next(
         event
@@ -3208,6 +3243,217 @@ def test_v3_1_8_gold_policy_packet_preparation_is_compact_and_guarded() -> None:
     assert measurement["lane_score_collapsed"] is False
 
 
+def test_v3_1_9_user_gold_policy_override_application_and_rescore_is_guarded() -> None:
+    summary = read_json(AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_SUMMARY_JSON)
+    applied_rows = read_jsonl(AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_APPLIED_JSONL)
+    diff_rows = read_jsonl(AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_DIFF_JSONL)
+    rescored_rows = read_jsonl(AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RESCORED_JSONL)
+    remaining = read_json(AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_REMAINING_JSON)
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+
+    override_query_ids = [
+        "text_namu_v2_0012",
+        "text_namu_v2_0014",
+        "text_namu_v2_0017",
+        "text_namu_v2_0077",
+        "text_namu_v2_0084",
+    ]
+    lane_names = ["v3_primary_replay", "live_llm_retrieval_topk", "live_llm_query_bound_oracle"]
+
+    assert summary["run_id"] == AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID
+    assert summary["run_class"] == "user_approved_gold_policy_override_application"
+    assert summary["diagnostic_only"] is False
+    assert summary["user_assertion_count"] == 30
+    assert summary["override_source_found"] == "ai/eval/reports/rag-ingestion/gold_overrides.csv"
+    assert summary["human_approved_override_source"] == "gold_overrides.csv"
+    assert summary["optional_jsonl_override_source_validated"] is True
+    assert summary["gold_application_mode"] == "v2_csv_in_place"
+    assert summary["gold_versioning_decision"]["selected_path"] == "update_v2_csv_in_place"
+    assert summary["override_query_ids"] == override_query_ids
+    assert summary["changed_query_ids"] == override_query_ids
+    assert summary["changed_row_count"] == 5
+    assert summary["changed_rows_by_source_family"] == {"TEXT": 5}
+    assert summary["non_text_changed_query_ids"] == []
+    assert summary["text_namu_v2_0005_unchanged"] is True
+    assert summary["official_denominator_row_count"] == 29
+    assert summary["official_denominator_query_id_set_mutation"] is False
+    assert summary["official_denominator_query_ids_before"] == summary["official_denominator_query_ids_after"]
+    assert len(summary["official_denominator_query_ids_after"]) == 29
+
+    assert summary["user_policy_decision_applied"] is True
+    assert summary["expected_answer_mutation"] is True
+    assert summary["supporting_evidence_mutation"] is True
+    assert summary["gold_policy_mutation"] is True
+    assert summary["gold_mutation"] is True
+    assert summary["behavior_change_made"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["scorer_behavior_mutation"] is False
+    assert summary["retrieval_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["denominator_query_id_set_mutation"] is False
+    assert summary["candidate_artifacts_as_generation_source"] is False
+    assert summary["generation_used_expected_answer"] is False
+    assert summary["generation_used_supporting_evidence"] is False
+    assert summary["generation_used_gold_fields"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["silver_rows_created"] is False
+    assert summary["official_ndcg_computed"] is False
+    assert summary["official_mrr_computed"] is False
+    assert summary["official_hit_at_k_computed"] is False
+    assert summary["lane_score_collapsed"] is False
+    assert summary["live_generation_rerun"] is False
+    assert summary["all_track_live_generation_rerun"] is False
+
+    assert summary["gold_file_before_sha256"] == "03764d1d7aa682cd8646d9028b6219fdbeba8a4eb219a87a285a162f16702cd6"
+    assert summary["gold_file_after_sha256"] == sha256_file(
+        ROOT / "ai" / "eval" / "eval_queries" / "gold_queries_text_namu_v2_1_question_gold_v2.csv"
+    )
+    assert summary["gold_file_before_sha256"] != summary["gold_file_after_sha256"]
+
+    assert summary["lane_names"] == lane_names
+    assert set(summary["lane_pass_counts_before"]) == set(lane_names)
+    assert set(summary["lane_pass_counts_after"]) == set(lane_names)
+    assert summary["lane_pass_counts_before"] == {
+        "v3_primary_replay": 24,
+        "live_llm_retrieval_topk": 24,
+        "live_llm_query_bound_oracle": 24,
+    }
+    assert summary["rescored_result_count"] == 29
+    assert summary["rescored_query_id_count"] == 29
+    assert summary["official_retrieval_metrics_computed"] is False
+    assert summary["remaining_queue"]["implementation_safe_residual_count"] == remaining[
+        "implementation_safe_residual_count"
+    ]
+
+    assert len(applied_rows) == 5
+    assert [row["query_id"] for row in applied_rows] == override_query_ids
+    for row in applied_rows:
+        assert row["codex_policy_option"] == "revise_gold_or_label_policy"
+        assert row["apply_to_official_gold"] is True
+        assert row["user_policy_decision_applied"] is True
+        assert row["expected_answer_final"]
+        assert row["supporting_evidence_final"]
+        assert row["expected_answer_sha256"] == sha256_text(row["expected_answer_final"])
+        assert row["supporting_evidence_sha256"] == sha256_text(row["supporting_evidence_final"])
+        assert row["human_review_only"] is True
+        assert row["generation_source"] is False
+        assert row["not_silver_source"] is True
+        assert row["not_promotion_evidence"] is True
+
+    assert len(diff_rows) == 5
+    assert [row["query_id"] for row in diff_rows] == override_query_ids
+    for row in diff_rows:
+        assert row["source_family"] == "TEXT"
+        assert row["changed_fields"] == ["expected_answer", "supporting_evidence"]
+        for field in ("expected_answer", "supporting_evidence"):
+            diff = row["field_diffs"][field]
+            assert diff["before_text"]
+            assert diff["after_text"]
+            assert diff["before_sha256"]
+            assert diff["after_sha256"]
+            assert diff["before_sha256"] != diff["after_sha256"] or row["query_id"] == "text_namu_v2_0017"
+            assert diff["human_review_only"] is True
+            assert diff["generation_source"] is False
+            assert diff["not_silver_source"] is True
+            assert diff["user_policy_source"] is True
+
+    assert len(rescored_rows) == 29
+    assert {row["query_id"] for row in rescored_rows} == set(summary["official_denominator_query_ids_after"])
+    for row in rescored_rows:
+        assert set(row["lane_results"]) == set(lane_names)
+        assert row["generation_used_expected_answer"] is False
+        assert row["generation_used_supporting_evidence"] is False
+        assert row["generation_used_gold_fields"] is False
+        assert row["candidate_artifacts_as_generation_source"] is False
+        for lane_name, lane in row["lane_results"].items():
+            assert lane_name in lane_names
+            assert lane["scoring_only_remeasurement"] is True
+            assert lane["live_generation_rerun"] is False
+            assert lane["scorer_behavior_mutation"] is False
+
+    assert remaining["run_id"] == AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID
+    assert remaining["source_run_id"] == AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID
+    assert remaining["user_policy_decision_applied"] is True
+    assert remaining["requires_additional_user_policy_packet"] is False
+    assert remaining["promotion_evidence"] is False
+    assert remaining["silver_rows_created"] is False
+    for item in remaining["items"]:
+        assert item["implementation_safe"] is True
+        assert item["requires_user_gold_policy_decision"] is False
+
+    assert set(summary["artifact_paths"]) == {
+        "summary_json",
+        "applied_overrides_jsonl",
+        "applied_overrides_jsonl_sha256",
+        "gold_diff_jsonl",
+        "gold_diff_jsonl_sha256",
+        "rescored_results_jsonl",
+        "rescored_results_jsonl_sha256",
+        "remaining_triage_queue_json",
+        "remaining_triage_queue_json_sha256",
+        "status_jsonl",
+    }
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID
+    )
+    assert measurement["run_class"] == "user_approved_gold_policy_override_application"
+    assert measurement["user_policy_decision_applied"] is True
+    assert measurement["gold_policy_mutation"] is True
+    assert measurement["behavior_change_made"] is False
+    assert measurement["promotion_evidence"] is False
+    assert measurement["silver_rows_created"] is False
+
+
+def test_v3_1_9_gold_csv_contains_only_the_user_approved_text_overrides() -> None:
+    summary = read_json(AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_SUMMARY_JSON)
+    applied_rows = read_jsonl(AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_APPLIED_JSONL)
+    gold_rows = {
+        row["query_id"]: row
+        for row in read_csv(ROOT / "ai" / "eval" / "eval_queries" / "gold_queries_text_namu_v2_1_question_gold_v2.csv")
+    }
+
+    assert set(gold_rows) == {
+        "text_namu_v2_0005",
+        "text_namu_v2_0012",
+        "text_namu_v2_0014",
+        "text_namu_v2_0017",
+        "text_namu_v2_0077",
+        "text_namu_v2_0084",
+    }
+    assert summary["text_namu_v2_0005_unchanged"] is True
+    assert sha256_text(
+        "\n".join(
+            [
+                gold_rows["text_namu_v2_0005"]["expected_answer"],
+                gold_rows["text_namu_v2_0005"]["supporting_evidence"],
+                gold_rows["text_namu_v2_0005"]["citation_locator"],
+            ]
+        )
+    ) == summary["text_namu_v2_0005_after_row_core_sha256"]
+
+    for override in applied_rows:
+        gold_row = gold_rows[override["query_id"]]
+        assert gold_row["expected_answer"] == override["expected_answer_final"]
+        assert gold_row["supporting_evidence"] == override["supporting_evidence_final"]
+        assert gold_row["citation_locator"] == override["current_citation_locator"]
+        assert gold_row["human_label"] == override["preserved_gold_fields"]["human_label"]
+        assert gold_row["human_review_status"] == override["preserved_gold_fields"]["human_review_status"]
+        assert gold_row["official_denominator_current"] == override["preserved_gold_fields"][
+            "official_denominator_current"
+        ]
+        assert gold_row["official_metric_input"] == override["preserved_gold_fields"]["official_metric_input"]
+        assert gold_row["gold_promoted"] == override["preserved_gold_fields"]["gold_promoted"]
+
+    assert summary["pdf_rows_changed"] == 0
+    assert summary["xlsx_rows_changed"] == 0
+    assert summary["official_denominator_query_id_set_mutation"] is False
+
+
 def test_v3_1_7_pdf_window_expansion_preflight_fails_closed_without_safe_locator_metadata() -> None:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_official_answer_citation_agentic_loop_run_v1 as runner
@@ -3494,6 +3740,34 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
         for line in resolve_report_artifact_path(path).read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+
+
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def assert_no_unexpected_eval_query_status(stdout: str) -> None:
+    allowed_v3_1_9_policy_paths = {
+        "ai/eval/eval_queries/official_denominator_registry.json",
+        "ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv",
+    }
+    unexpected = []
+    for line in stdout.splitlines():
+        if not line.strip():
+            continue
+        path = line[3:].strip().replace("\\", "/") if len(line) > 3 else line.strip().replace("\\", "/")
+        if path not in allowed_v3_1_9_policy_paths:
+            unexpected.append(line)
+    assert unexpected == []
 
 
 def assert_no_gold_generation_source_fields(value: Any) -> None:

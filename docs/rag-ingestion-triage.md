@@ -27,7 +27,7 @@ Their physical generated payloads may live in the external runtime archive under
 ## Current Phase
 
 Phase:
-`gold policy review packet prepared - awaiting user policy decisions`
+`user gold policy decision applied - implementation-safe residual queue open`
 
 Status:
 priority 1~5 plus the remaining `text_namu_v2_0012` TEXT locator residual have
@@ -43,18 +43,80 @@ diagnostic for `gq_auto_010`, and v3_1_6 applied a safe same-page source-bound
 PDF paragraph/window expansion for the same row. The current machine remaining
 queue is empty. v3_1_7 then created the all-track residual inventory and
 confirmed that the active implementation queue is empty even though policy-bound
-all-track residuals still exist. v3_1_8 has now prepared the human gold-policy
-packet and decision matrix for those five rows without making any policy
-decision.
+all-track residuals still exist. v3_1_8 prepared the human gold-policy packet
+and decision matrix for those five rows. v3_1_9 has now applied the user-owned
+`gold_overrides.csv` decision source and rescored existing Lane A/B/C surfaces
+without live generation.
 
 Source foundation run:
 `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement`
 
 Current triage run:
-`official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation`
+`official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement`
 
 Previous all-track source run:
 `official_answer_citation_agentic_loop_run_v3_1_1_all_track_foundation_measurement_post_strict_json_locator_triage`
+
+## v3_1_9 User Decision Applied And Post-Rescore Queue
+
+Source run:
+`official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation`
+
+Machine artifacts:
+
+- Summary:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_summary.json`
+- Applied overrides:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_applied_overrides.jsonl`
+- Gold diff:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_gold_diff.jsonl`
+- Rescored results:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_rescored_results.jsonl`
+- Remaining queue:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_remaining_triage_queue.json`
+
+Applied override rows:
+
+| Query ID | Source family | User decision applied | Gold-policy action |
+|---|---|---|---|
+| `text_namu_v2_0012` | TEXT | user decision applied | Narrow expected answer and supporting evidence to age/birthday scope |
+| `text_namu_v2_0014` | TEXT | user decision applied | Narrow to the supported Adversary cameo entry |
+| `text_namu_v2_0017` | TEXT | user decision applied | Narrow to the currently supported Silk Cat boy description |
+| `text_namu_v2_0077` | TEXT | user decision applied | Narrow to the destination answer, Tokyo |
+| `text_namu_v2_0084` | TEXT | user decision applied | Drop the catchphrase and keep the film-description span |
+
+Scoring-only result after user policy application:
+
+| Lane | Before | After |
+|---|---:|---:|
+| Lane A `v3_primary_replay` | `24/29` PASS | `27/29` PASS |
+| Lane B `live_llm_retrieval_topk` | `24/29` PASS | `26/29` PASS |
+| Lane C `live_llm_query_bound_oracle` | `24/29` PASS | `25/29` PASS |
+
+Post-rescore remaining queue:
+
+| Query ID | Remaining lane failures | Classification |
+|---|---|---|
+| `text_namu_v2_0014` | Lane C | Implementation-safe residual after settled gold policy |
+| `text_namu_v2_0017` | Lane B/C | Implementation-safe residual after settled gold policy |
+| `text_namu_v2_0077` | Lane A/B/C | Implementation-safe residual after settled gold policy |
+| `text_namu_v2_0084` | Lane A/B/C | Implementation-safe residual after settled gold policy |
+
+v3_1_8 is now user decision applied, not awaiting user policy decision. The
+remaining queue does not require another user policy packet unless a concrete
+conflict appears between override rows and official denominator metadata.
+Later work may inspect renderer, scorer, prompt, or retrieval behavior for the
+four remaining query ids, but v3_1_9 itself did not implement those changes.
+
+Guardrail status:
+
+- User-approved gold policy mutation occurred:
+  `expected_answer_mutation=true`, `supporting_evidence_mutation=true`,
+  `gold_policy_mutation=true`, `user_policy_decision_applied=true`.
+- No renderer/scorer/retrieval/production/silver/promotion behavior changed.
+- Existing generated answer surfaces were rescored only; live generation was
+  not rerun.
+- No official nDCG, MRR, Hit@K, or collapsed Lane A/B/C score was computed.
 
 ## v3_1_8 Gold-Policy Review Packet Status
 
@@ -74,9 +136,10 @@ Machine artifacts:
 
 Current status:
 
-- Active remaining queue: cleared.
-- Active implementation queue remains empty.
-- `implementation_safe_residual_count=0`.
+- User decision has been applied by v3_1_9.
+- The v3_1_8 packet is no longer awaiting user policy decision.
+- Active implementation queue has moved from empty/policy-blocked to the v3_1_9
+  implementation-safe residual queue above.
 - Silver remains closed.
 - v3_1_6 sibling-hash drift was recorded as metadata drift only; historical
   v3_1_6 artifacts were not rewritten.
@@ -90,19 +153,19 @@ User decision options for every row:
 - `approve_scorer_or_renderer_review_without_gold_mutation`
 - `revise_gold_or_label_policy`
 
-No Codex decision has been applied. Do not treat `answer_renderer_followup_candidate`
-or `scorer_normalization_review_candidate` as implementation-safe until the
-user chooses a policy option in a later phase.
+The user-approved decision source has been applied from `gold_overrides.csv`.
+Do not create another user policy packet unless override metadata conflicts
+with the official denominator.
 
 Policy-review rows:
 
 | Query ID | Source family | Lane failures | Packet status |
 |---|---|---|---|
-| `text_namu_v2_0012` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | Awaiting user policy decision |
-| `text_namu_v2_0014` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | Awaiting user policy decision |
-| `text_namu_v2_0017` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | Awaiting user policy decision |
-| `text_namu_v2_0077` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | Awaiting user policy decision |
-| `text_namu_v2_0084` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | Awaiting user policy decision |
+| `text_namu_v2_0012` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | User decision applied; all lanes PASS after v3_1_9 rescore |
+| `text_namu_v2_0014` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | User decision applied; Lane C remains implementation-safe residual |
+| `text_namu_v2_0017` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | User decision applied; Lane B/C remain implementation-safe residuals |
+| `text_namu_v2_0077` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | User decision applied; Lane A/B/C remain implementation-safe residuals |
+| `text_namu_v2_0084` | TEXT | Lane A `LLM_TRUE_PARTIAL_SYNTHESIS`; Lane B/C `LLM_EXPECTED_SPAN_MISMATCH` | User decision applied; Lane A/B/C remain implementation-safe residuals |
 
 Guardrail status:
 

@@ -47,6 +47,8 @@ def test_current_profile_includes_required_official_candidate_and_pdf_tests() ->
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_6_gq_auto_010_pdf_paragraph_window_expansion_is_guarded",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_7_post_residual_queue_closure_inventory_is_guarded",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_8_gold_policy_packet_preparation_is_compact_and_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_9_user_gold_policy_override_application_and_rescore_is_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_9_gold_csv_contains_only_the_user_approved_text_overrides",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_7_pdf_prompt_context_expansion_is_target_bound_and_query_bound",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_residual_audit_does_not_mutate_protected_artifacts",
         "ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests",

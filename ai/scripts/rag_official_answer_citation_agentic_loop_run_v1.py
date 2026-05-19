@@ -81,6 +81,9 @@ V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID = (
 V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation"
 )
+V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement"
+)
 REPORT_ARTIFACT_SLUGS = {
     RUN_ID: "agentic_v1",
     V2_RUN_ID: "v2_source_bound",
@@ -98,11 +101,13 @@ REPORT_ARTIFACT_SLUGS = {
     V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID: "v3_1_6_gq010_pdfwin",
     V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID: V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID,
     V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID: V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+    V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID: V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
     V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID,
     V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+    V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
 }
 V3_1_PRIORITY_1_5_QUERY_IDS = (
     "gq_pdf_section_question_001",
@@ -141,6 +146,8 @@ V3_1_4_PDF_RESIDUAL_QUERY_IDS = (
 V3_1_5_SOURCE_BOUND_COVERAGE_QUERY_IDS = ("gq_auto_010",)
 V3_1_6_SAFE_PDF_WINDOW_QUERY_IDS = ("gq_auto_010",)
 V3_1_8_POLICY_REVIEW_QUERY_IDS = V3_1_2_TEXT_FIRST_BATCH_QUERY_IDS
+V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS = V3_1_8_POLICY_REVIEW_QUERY_IDS
+V3_1_9_TEXT_GOLD_BEFORE_SHA256 = "03764d1d7aa682cd8646d9028b6219fdbeba8a4eb219a87a285a162f16702cd6"
 V3_1_8_DECISION_OPTIONS = (
     "keep_current_strict_reference_boundary",
     "approve_scorer_or_renderer_review_without_gold_mutation",
@@ -502,6 +509,25 @@ def main(argv: list[str] | None = None) -> int:
         }
         print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
+    if summary["run_id"] == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
+        write_v3_1_9_user_gold_policy_override_side_artifacts(summary, rows)
+        write_json(Path(args.summary_json), summary)
+        append_status_event(Path(args.status_jsonl), summary)
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "run_class": summary["run_class"],
+            "result_count": summary["result_count"],
+            "unique_query_id_count": summary["unique_query_id_count"],
+            "summary_json": summary["artifact_paths"]["summary_json"],
+            "applied_overrides_jsonl": summary["artifact_paths"]["applied_overrides_jsonl"],
+            "gold_diff_jsonl": summary["artifact_paths"]["gold_diff_jsonl"],
+            "rescored_results_jsonl": summary["artifact_paths"]["rescored_results_jsonl"],
+            "remaining_triage_queue_json": summary["artifact_paths"]["remaining_triage_queue_json"],
+            "lane_pass_counts_after": summary["lane_pass_counts_after"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
     write_jsonl(Path(args.results_jsonl), rows)
     summary["artifact_paths"]["results_jsonl_sha256"] = sha256_file(Path(args.results_jsonl))
     failure_attribution = build_failure_attribution(summary, rows)
@@ -647,6 +673,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
         V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID,
         V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+        V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
     }
     if args.run_id not in supported_run_ids:
         raise SystemExit(
@@ -696,6 +723,17 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
     denominator_registry_path = Path(args.denominator_registry)
     pre_execution_smoke_path = Path(args.pre_execution_smoke)
     baseline_path = Path(args.first_run_baseline)
+    agentic_status = agentic_loop_status(args)
+
+    if args.run_id == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
+        return run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement(
+            args=args,
+            agentic_status=agentic_status,
+            metric_input_config_path=metric_input_config_path,
+            denominator_registry_path=denominator_registry_path,
+            pre_execution_smoke_path=pre_execution_smoke_path,
+            baseline_path=baseline_path,
+        )
 
     config = official.read_json(metric_input_config_path)
     registry = official.read_json(denominator_registry_path)
@@ -717,7 +755,6 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
     baseline = official.read_json(baseline_path)
     validation_errors = list(consumed["errors"])
 
-    agentic_status = agentic_loop_status(args)
     if args.run_id == V2_2_RUN_ID:
         return run_v2_2_llm_backend_validation(
             args=args,
@@ -5870,6 +5907,275 @@ def run_v3_1_8_gold_policy_review_packet_preparation(
     return summary, decision_rows
 
 
+def run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement(
+    *,
+    args: argparse.Namespace,
+    agentic_status: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    baseline_path: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    override_csv_path = locate_v3_1_9_gold_override_csv()
+    override_jsonl_path = override_csv_path.with_suffix(".jsonl")
+    overrides = validate_v3_1_9_gold_override_sources(
+        csv_path=override_csv_path,
+        jsonl_path=override_jsonl_path if override_jsonl_path.exists() else None,
+    )
+    v3_1_8_summary = official.read_json(
+        report_artifact_path(V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID, "summary.json")
+    )
+    v3_1_8_packet = official.read_json(
+        report_artifact_path(V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID, "human_review_packet.json")
+    )
+    before_policy_material = v3_1_9_before_policy_material_by_query_id(v3_1_8_packet)
+    gold_application = apply_v3_1_9_overrides_to_text_gold_csv(
+        overrides=overrides,
+        before_policy_material=before_policy_material,
+    )
+    source_hash_sync = sync_v3_1_9_official_input_hash_surfaces(
+        text_gold_sha256=gold_application["gold_file_after_sha256"],
+        current_text_gold_rows_by_query_id=read_csv_rows_by_query_id(DEFAULT_TEXT_NAMU_GOLD_CSV),
+        metric_input_config_path=metric_input_config_path,
+        denominator_registry_path=denominator_registry_path,
+        pre_execution_smoke_path=pre_execution_smoke_path,
+    )
+
+    config = official.read_json(metric_input_config_path)
+    registry = official.read_json(denominator_registry_path)
+    smoke = official.read_json(pre_execution_smoke_path)
+    application_path = official.resolve_application_report_path(config, smoke)
+    application = official.read_json(application_path) if application_path else {}
+    application_for_validation = (
+        application
+        if application
+        else fallback_registry_application_from_config(config)
+    )
+    consumed = official.consume_official_inputs(
+        config=config,
+        registry=registry,
+        application=application_for_validation,
+        smoke=smoke,
+    )
+    rows = list(consumed["rows"])
+    baseline = official.read_json(baseline_path)
+    validation_errors = list(consumed["errors"])
+    official_query_ids = [official.clean(row.get("query_id")) for row in rows]
+    official_rows_by_id = rows_by_query_id(rows)
+
+    latest_surface_rows, surface_sources = compose_v3_1_9_latest_lane_surface_rows(official_query_ids)
+    rescored_rows = rescore_v3_1_9_lane_surface_rows(
+        surface_rows=latest_surface_rows,
+        official_rows_by_id=official_rows_by_id,
+    )
+    lane_pass_counts_before = v3_1_9_lane_pass_counts_before(v3_1_8_summary)
+    lane_pass_counts_after = v3_1_9_lane_pass_counts(rescored_rows)
+    lane_failure_counts_after = v3_1_9_lane_failure_counts(rescored_rows)
+    remaining_queue = build_v3_1_9_remaining_triage_queue(
+        rescored_rows=rescored_rows,
+        source_run_id=V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+    )
+    rows_by_source_family = dict(
+        sorted(
+            Counter(
+                SOURCE_FAMILY_LABEL_BY_TRACK.get(official.clean(row.get("track")), official.clean(row.get("track")))
+                for row in rows
+            ).items()
+        )
+    )
+    source_family_lane_counts = build_v3_1_9_source_family_lane_counts(rescored_rows)
+    guardrails = v3_1_9_guardrails()
+    status_ok = (
+        not validation_errors
+        and gold_application["changed_row_count"] == 5
+        and list(gold_application["changed_query_ids"]) == list(V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS)
+        and len(rows) == 29
+        and len(rescored_rows) == 29
+        and set(official_query_ids) == {official.clean(row.get("query_id")) for row in rescored_rows}
+    )
+    summary: dict[str, Any] = {
+        "schema_version": f"{V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID}_summary_v1",
+        "run_id": V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
+        "source_run_id": V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+        "generated_at": utc_timestamp(),
+        "status": (
+            "USER_GOLD_POLICY_OVERRIDE_APPLIED_AND_SCORING_REMEASURED_V3_1_9_COMPLETED"
+            if status_ok
+            else "USER_GOLD_POLICY_OVERRIDE_APPLICATION_V3_1_9_REVIEW_REQUIRED"
+        ),
+        "measurement_classification": "user_approved_gold_policy_override_application_and_scoring_only_remeasurement_v3_1_9",
+        "run_class": "user_approved_gold_policy_override_application",
+        "diagnostic_only": False,
+        "write_summary_markdown": False,
+        "user_assertion_count": 30,
+        "override_source_found": official.repo_relative(override_csv_path),
+        "human_approved_override_source": override_csv_path.name,
+        "optional_jsonl_override_source_validated": override_jsonl_path.exists(),
+        "override_query_ids": list(V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS),
+        "changed_query_ids": list(gold_application["changed_query_ids"]),
+        "changed_row_count": gold_application["changed_row_count"],
+        "changed_rows_by_source_family": {"TEXT": gold_application["changed_row_count"]},
+        "non_text_changed_query_ids": [],
+        "pdf_rows_changed": 0,
+        "xlsx_rows_changed": 0,
+        "text_namu_v2_0005_unchanged": gold_application["text_namu_v2_0005_unchanged"],
+        "text_namu_v2_0005_after_row_core_sha256": gold_application[
+            "text_namu_v2_0005_after_row_core_sha256"
+        ],
+        "gold_application_mode": "v2_csv_in_place",
+        "gold_versioning_decision": {
+            "selected_path": "update_v2_csv_in_place",
+            "new_v3_file_created": False,
+            "active_gold_file": official.repo_relative(DEFAULT_TEXT_NAMU_GOLD_CSV),
+            "rationale": (
+                "The current official denominator registry, metric input config, smoke report, "
+                "loader tests, and current-profile guardrails reference the v2 text gold path directly; "
+                "updating the v2 CSV in place is the smallest safe path that keeps loader behavior correct."
+            ),
+        },
+        "gold_file_before_sha256": gold_application["gold_file_before_sha256"],
+        "gold_file_after_sha256": gold_application["gold_file_after_sha256"],
+        "gold_file_sha256_changed": gold_application["gold_file_before_sha256"]
+        != gold_application["gold_file_after_sha256"],
+        "gold_file_written_this_run": gold_application["gold_file_written_this_run"],
+        "official_denominator_row_count": len(rows),
+        "official_denominator_query_ids_before": official_query_ids,
+        "official_denominator_query_ids_after": official_query_ids,
+        "official_denominator_query_id_set_mutation": False,
+        "denominator_query_id_set_mutation": False,
+        "denominator_mutation": False,
+        "user_policy_decision_applied": True,
+        "expected_answer_mutation": True,
+        "supporting_evidence_mutation": True,
+        "gold_policy_mutation": True,
+        "gold_mutation": True,
+        "human_label_mutation": bool(gold_application["label_fields_mutated"]),
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "optional_final_label_columns_present": list(gold_application["optional_final_label_columns_present"]),
+        "optional_final_label_columns_applied": list(gold_application["optional_final_label_columns_applied"]),
+        "label_fields_preserved": not bool(gold_application["label_fields_mutated"]),
+        "behavior_change_made": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "retrieval_mutation": False,
+        "production_mutation": False,
+        "baseline_mutation": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "raw_reference_text_embedded_in_generation": False,
+        "raw_supporting_text_embedded_in_generation": False,
+        "raw_gold_text_embedded_in_generation": False,
+        "silver_rows_created": False,
+        "silver_generation_closed": True,
+        "promotion_evidence": False,
+        "promotion_gate_auto_run": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "official_retrieval_metrics_computed": False,
+        "official_ndcg_computed": False,
+        "official_mrr_computed": False,
+        "official_hit_at_k_computed": False,
+        "lane_score_collapsed": False,
+        "live_generation_rerun": False,
+        "all_track_live_generation_rerun": False,
+        "scoring_only_remeasurement": True,
+        "existing_result_artifacts_used_for_scoring_only": True,
+        "rescored_result_count": len(rescored_rows),
+        "rescored_query_id_count": len({row["query_id"] for row in rescored_rows}),
+        "result_count": len(rescored_rows),
+        "unique_query_id_count": len({row["query_id"] for row in rescored_rows}),
+        "scored_count": len(rescored_rows) * len(V3_1_LANE_NAMES),
+        "pass_count": sum(lane_pass_counts_after.values()),
+        "failure_counts": dict(lane_failure_counts_after),
+        "lane_names": list(V3_1_LANE_NAMES),
+        "lane_counts": {
+            lane_name: {
+                "row_count": len(rescored_rows),
+                "pass_count": lane_pass_counts_after.get(lane_name, 0),
+                "fail_count": len(rescored_rows) - lane_pass_counts_after.get(lane_name, 0),
+            }
+            for lane_name in V3_1_LANE_NAMES
+        },
+        "lane_pass_counts_before": lane_pass_counts_before,
+        "lane_pass_counts_after": lane_pass_counts_after,
+        "lane_failure_counts_after": dict(lane_failure_counts_after),
+        "source_family_lane_counts": source_family_lane_counts,
+        "rows_by_source_family": rows_by_source_family,
+        "active_remaining_queue_empty": remaining_queue["active_remaining_queue_empty"],
+        "active_implementation_queue_empty": remaining_queue["active_implementation_queue_empty"],
+        "implementation_safe_residual_count": remaining_queue["implementation_safe_residual_count"],
+        "remaining_queue": remaining_queue,
+        "requires_additional_user_policy_packet": False,
+        "any_remaining_residual_implementation_safe": remaining_queue["implementation_safe_residual_count"] > 0,
+        "source_artifact_hash_sync": source_hash_sync,
+        "source_artifacts": {
+            "metric_input_config": official.file_identity(metric_input_config_path),
+            "denominator_registry": official.file_identity(denominator_registry_path),
+            "pre_execution_smoke_report": official.file_identity(pre_execution_smoke_path),
+            "registry_application_report": official.file_identity(application_path) if application_path else None,
+            "immutable_first_run_baseline": official.file_identity(baseline_path),
+            "v3_1_8_summary": official.file_identity(
+                report_artifact_path(V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID, "summary.json")
+            ),
+            "v3_1_8_human_review_packet": official.file_identity(
+                report_artifact_path(V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID, "human_review_packet.json")
+            ),
+            "latest_lane_surface_sources": surface_sources,
+        },
+        "artifact_policy": {
+            "summary_json": "machine_manifest",
+            "applied_overrides_jsonl": "user_approved_policy_application_rows",
+            "gold_diff_jsonl": "human_review_only_before_after_gold_text_audit",
+            "rescored_results_jsonl": "scoring_only_lane_separated_remeasurement",
+            "remaining_triage_queue_json": "post_rescore_implementation_safe_queue",
+            "status_jsonl": "compact_status_ledger",
+            "per_run_markdown_report_created": False,
+        },
+        "guardrails": guardrails,
+        "non_production_rag_index_dependency": agentic_status.get("index_dependency"),
+        "source_bound_index_used": False,
+        "canonical_search_unit_payload_used": False,
+        "infrastructure_blocker": {
+            "category": None if status_ok else "V3_1_9_VALIDATION_REVIEW_REQUIRED",
+            "domain": None if status_ok else "user_gold_policy_override_application",
+            "model_quality_regression": False,
+            "baseline_comparison_is_model_quality_comparable": False,
+        },
+        "agentic_loop": {
+            "implemented": True,
+            "enabled": False,
+            "executed": False,
+            "backend": "v3_1_9_scoring_only_remeasurement",
+            "steps_count": 0,
+            "blockers": list(validation_errors),
+        },
+        "local_llm_used": False,
+        "local_gpu_used": False,
+        "llm_backend": None,
+        "llm_model": None,
+        "performance_interpretation": "scoring_only_remeasurement_after_user_gold_policy_mutation_not_promotion_evidence",
+        "diagnostic_limitations": [
+            "This run mutates only user-approved TEXT gold policy fields and then reuses existing Lane A/B/C answer surfaces.",
+            "No live generation, renderer, scorer behavior, retrieval, production, silver, or promotion behavior was changed.",
+            "Lane A/B/C remain separated and no official nDCG, MRR, or Hit@K is computed.",
+        ],
+        "artifact_paths": v3_1_9_user_gold_policy_override_artifact_paths(args),
+        "baseline_reference": {
+            "run_id": "official_answer_citation_metric_first_run_v1",
+            "status_detail": baseline.get("status_detail"),
+            "artifact_identity": official.file_identity(baseline_path),
+        },
+        "_v3_1_9_applied_overrides": gold_application["applied_overrides"],
+        "_v3_1_9_gold_diff": gold_application["gold_diff"],
+        "_v3_1_9_rescored_results": rescored_rows,
+        "_v3_1_9_remaining_queue": remaining_queue,
+    }
+    return summary, rescored_rows
+
+
 def collect_v3_1_8_policy_packet_source_material() -> dict[str, Any]:
     return {
         "span_results_by_query_id": rows_by_query_id(read_jsonl(DEFAULT_V3_1_2_ANSWER_SPAN_RESULTS_JSONL)),
@@ -5919,6 +6225,736 @@ def review_rows_by_query_id(path: Path) -> dict[str, dict[str, Any]]:
 
     visit(payload)
     return rows
+
+
+def locate_v3_1_9_gold_override_csv() -> Path:
+    candidates = [
+        REPO_ROOT / "gold_overrides.csv",
+        AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_overrides.csv",
+        REPORT_DIR / "gold_overrides.csv",
+    ]
+    for path in candidates:
+        if path.exists():
+            return path
+    raise FileNotFoundError(
+        "gold_overrides.csv not found in repo root, ai/eval/eval_queries, or ai/eval/reports/rag-ingestion"
+    )
+
+
+def read_csv_rows_with_fieldnames(path: Path) -> tuple[list[str], list[dict[str, str]]]:
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fieldnames = list(reader.fieldnames or [])
+        return fieldnames, [dict(row) for row in reader]
+
+
+def write_csv_rows_with_fieldnames(path: Path, fieldnames: Sequence[str], rows: Sequence[Mapping[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(fieldnames), lineterminator="\n")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: row.get(field, "") for field in fieldnames})
+
+
+def sha256_text(value: Any) -> str:
+    return hashlib.sha256(official.clean(value).encode("utf-8")).hexdigest()
+
+
+def validate_v3_1_9_gold_override_sources(
+    *,
+    csv_path: Path,
+    jsonl_path: Path | None,
+) -> list[dict[str, str]]:
+    fieldnames, csv_rows = read_csv_rows_with_fieldnames(csv_path)
+    if "query_id" not in fieldnames:
+        raise ValueError("gold_overrides.csv must include query_id")
+    by_id = {official.clean(row.get("query_id")): row for row in csv_rows if official.clean(row.get("query_id"))}
+    expected_ids = list(V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS)
+    if sorted(by_id) != sorted(expected_ids) or len(csv_rows) != len(expected_ids):
+        raise ValueError(f"gold_overrides.csv query_ids must be exactly {expected_ids!r}, got {sorted(by_id)!r}")
+    ordered_rows = [dict(by_id[query_id]) for query_id in expected_ids]
+    for row in ordered_rows:
+        query_id = official.clean(row.get("query_id"))
+        if official.clean(row.get("codex_policy_option")) != "revise_gold_or_label_policy":
+            raise ValueError(f"{query_id} codex_policy_option must be revise_gold_or_label_policy")
+        if official.clean(row.get("apply_to_official_gold")).lower() != "true":
+            raise ValueError(f"{query_id} apply_to_official_gold must be true")
+        expected_answer = official.clean(row.get("expected_answer_final"))
+        supporting_evidence = official.clean(row.get("supporting_evidence_final"))
+        if not expected_answer:
+            raise ValueError(f"{query_id} expected_answer_final is required")
+        if not supporting_evidence:
+            raise ValueError(f"{query_id} supporting_evidence_final is required")
+        if official.clean(row.get("expected_answer_sha256")) != sha256_text(expected_answer):
+            raise ValueError(f"{query_id} expected_answer_sha256 does not match expected_answer_final")
+        if official.clean(row.get("supporting_evidence_sha256")) != sha256_text(supporting_evidence):
+            raise ValueError(f"{query_id} supporting_evidence_sha256 does not match supporting_evidence_final")
+        for key in (
+            "do_not_change_renderer",
+            "do_not_change_scorer",
+            "do_not_change_retrieval",
+            "do_not_change_production",
+            "generation_source",
+            "human_review_only",
+            "not_silver_source",
+            "not_promotion_evidence",
+        ):
+            if key not in row:
+                continue
+            value = official.clean(row.get(key)).lower()
+            if key == "generation_source" and value != "false":
+                raise ValueError(f"{query_id} generation_source must be false")
+            if key != "generation_source" and value != "true":
+                raise ValueError(f"{query_id} {key} must be true")
+    if jsonl_path is not None:
+        jsonl_rows = read_jsonl(jsonl_path)
+        jsonl_by_id = {
+            official.clean(row.get("query_id")): row
+            for row in jsonl_rows
+            if official.clean(row.get("query_id"))
+        }
+        if sorted(jsonl_by_id) != sorted(expected_ids) or len(jsonl_rows) != len(expected_ids):
+            raise ValueError(f"{jsonl_path.name} query_ids must match gold_overrides.csv")
+        for csv_row in ordered_rows:
+            query_id = official.clean(csv_row.get("query_id"))
+            json_row = as_mapping(jsonl_by_id.get(query_id))
+            for key, csv_value in csv_row.items():
+                if key not in json_row:
+                    continue
+                if override_compare_value(csv_value) != override_compare_value(json_row.get(key)):
+                    raise ValueError(f"{jsonl_path.name} value mismatch for {query_id}.{key}")
+    return ordered_rows
+
+
+def override_compare_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return ""
+    return official.clean(value)
+
+
+def v3_1_9_before_policy_material_by_query_id(packet: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    for item in packet.get("decision_items") or []:
+        if not isinstance(item, Mapping):
+            continue
+        query_id = official.clean(item.get("query_id"))
+        if query_id not in V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS:
+            continue
+        material = as_mapping(item.get("current_policy_material"))
+        expected = as_mapping(material.get("expected_answer"))
+        supporting = as_mapping(material.get("supporting_evidence"))
+        out[query_id] = {
+            "expected_answer": official.clean(expected.get("text")),
+            "expected_answer_sha256": official.clean(expected.get("sha256")),
+            "supporting_evidence": official.clean(supporting.get("text")),
+            "supporting_evidence_sha256": official.clean(supporting.get("sha256")),
+            "gold_csv_fields": dict(as_mapping(material.get("gold_csv_fields"))),
+        }
+    missing = [query_id for query_id in V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS if query_id not in out]
+    if missing:
+        raise ValueError(f"v3_1_8 human review packet missing before policy material: {missing!r}")
+    return out
+
+
+def apply_v3_1_9_overrides_to_text_gold_csv(
+    *,
+    overrides: Sequence[Mapping[str, str]],
+    before_policy_material: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    fieldnames, gold_rows = read_csv_rows_with_fieldnames(DEFAULT_TEXT_NAMU_GOLD_CSV)
+    rows_by_id_current = {
+        official.clean(row.get("query_id")): dict(row)
+        for row in gold_rows
+        if official.clean(row.get("query_id"))
+    }
+    expected_text_ids = {
+        "text_namu_v2_0005",
+        *V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS,
+    }
+    if set(rows_by_id_current) != expected_text_ids:
+        raise ValueError(f"TEXT gold CSV query_ids changed unexpectedly: {sorted(rows_by_id_current)!r}")
+    override_by_id = {official.clean(row.get("query_id")): dict(row) for row in overrides}
+    applied_rows: list[dict[str, Any]] = []
+    diff_rows: list[dict[str, Any]] = []
+    file_changed = False
+    label_fields_mutated: list[str] = []
+    optional_final_label_columns_present: list[str] = []
+    optional_final_label_columns_applied: list[str] = []
+    optional_label_targets = {
+        "human_label_final": "human_label",
+        "human_review_status_final": "human_review_status",
+        "human_approved_gold_final": "human_approved_gold",
+        "official_denominator_current_final": "official_denominator_current",
+        "official_metric_input_final": "official_metric_input",
+        "gold_promoted_final": "gold_promoted",
+    }
+    locator_final_column = "citation_locator_final"
+    for query_id in V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS:
+        override = override_by_id[query_id]
+        gold_row = rows_by_id_current[query_id]
+        before = before_policy_material[query_id]
+        before_expected = official.clean(before.get("expected_answer"))
+        before_support = official.clean(before.get("supporting_evidence"))
+        after_expected = official.clean(override.get("expected_answer_final"))
+        after_support = official.clean(override.get("supporting_evidence_final"))
+        if before.get("expected_answer_sha256") and before["expected_answer_sha256"] != sha256_text(before_expected):
+            raise ValueError(f"{query_id} before expected_answer hash from v3_1_8 packet is inconsistent")
+        if before.get("supporting_evidence_sha256") and before["supporting_evidence_sha256"] != sha256_text(before_support):
+            raise ValueError(f"{query_id} before supporting_evidence hash from v3_1_8 packet is inconsistent")
+        if official.clean(override.get("current_expected_sha256")) != sha256_text(before_expected):
+            raise ValueError(f"{query_id} override current_expected_sha256 does not match v3_1_8 packet")
+        if official.clean(override.get("current_supporting_evidence_sha256")) != sha256_text(before_support):
+            raise ValueError(f"{query_id} override current_supporting_evidence_sha256 does not match v3_1_8 packet")
+        if gold_row.get("expected_answer") != after_expected:
+            gold_row["expected_answer"] = after_expected
+            file_changed = True
+        if gold_row.get("supporting_evidence") != after_support:
+            gold_row["supporting_evidence"] = after_support
+            file_changed = True
+        if locator_final_column in override and official.clean(override.get(locator_final_column)):
+            if gold_row.get("citation_locator") != official.clean(override.get(locator_final_column)):
+                gold_row["citation_locator"] = official.clean(override.get(locator_final_column))
+                file_changed = True
+        for override_column, gold_column in optional_label_targets.items():
+            if override_column not in override:
+                continue
+            optional_final_label_columns_present.append(override_column)
+            value = official.clean(override.get(override_column))
+            if value and gold_column in gold_row:
+                optional_final_label_columns_applied.append(override_column)
+                if gold_row.get(gold_column) != value:
+                    gold_row[gold_column] = value
+                    label_fields_mutated.append(gold_column)
+                    file_changed = True
+        preserved_fields = {
+            key: gold_row.get(key, "")
+            for key in (
+                "human_label",
+                "human_review_status",
+                "human_approved_gold",
+                "official_denominator_current",
+                "official_metric_input",
+                "promotion_evidence",
+                "gold_promoted",
+            )
+            if key in gold_row
+        }
+        applied_rows.append(
+            {
+                "schema_version": f"{V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID}_applied_override_v1",
+                "run_id": V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
+                "source_run_id": V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+                "query_id": query_id,
+                "track": official.clean(override.get("track") or gold_row.get("track")),
+                "source_family": "TEXT",
+                "codex_policy_option": "revise_gold_or_label_policy",
+                "codex_apply_action": official.clean(override.get("codex_apply_action")),
+                "apply_to_official_gold": True,
+                "user_policy_decision_applied": True,
+                "expected_answer_before_sha256": sha256_text(before_expected),
+                "supporting_evidence_before_sha256": sha256_text(before_support),
+                "expected_answer_final": after_expected,
+                "supporting_evidence_final": after_support,
+                "expected_answer_sha256": sha256_text(after_expected),
+                "supporting_evidence_sha256": sha256_text(after_support),
+                "current_citation_locator": gold_row.get("citation_locator", ""),
+                "citation_locator_mutated": bool(
+                    locator_final_column in override and official.clean(override.get(locator_final_column))
+                ),
+                "preserved_gold_fields": preserved_fields,
+                "target_answerability_label": official.clean(override.get("target_answerability_label")),
+                "target_relevance_label": official.clean(override.get("target_relevance_label")),
+                "override_source": official.clean(override.get("override_source")),
+                "human_review_only": True,
+                "generation_source": False,
+                "not_silver_source": True,
+                "not_promotion_evidence": True,
+                "user_policy_source": True,
+            }
+        )
+        diff_rows.append(
+            {
+                "schema_version": f"{V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID}_gold_diff_v1",
+                "run_id": V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
+                "source_run_id": V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+                "query_id": query_id,
+                "track": gold_row.get("track"),
+                "source_family": "TEXT",
+                "changed_fields": ["expected_answer", "supporting_evidence"],
+                "field_diffs": {
+                    "expected_answer": gold_text_field_diff(before_expected, after_expected),
+                    "supporting_evidence": gold_text_field_diff(before_support, after_support),
+                },
+                "citation_locator_mutated": False,
+                "human_review_only": True,
+                "generation_source": False,
+                "not_silver_source": True,
+                "user_policy_source": True,
+            }
+        )
+    if file_changed:
+        write_csv_rows_with_fieldnames(DEFAULT_TEXT_NAMU_GOLD_CSV, fieldnames, gold_rows)
+    after_rows_by_id = {
+        official.clean(row.get("query_id")): dict(row)
+        for row in gold_rows
+        if official.clean(row.get("query_id"))
+    }
+    after_text_0005 = after_rows_by_id["text_namu_v2_0005"]
+    return {
+        "changed_query_ids": list(V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS),
+        "changed_row_count": len(V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS),
+        "applied_overrides": applied_rows,
+        "gold_diff": diff_rows,
+        "gold_file_before_sha256": V3_1_9_TEXT_GOLD_BEFORE_SHA256,
+        "gold_file_after_sha256": sha256_file(DEFAULT_TEXT_NAMU_GOLD_CSV),
+        "gold_file_written_this_run": file_changed,
+        "text_namu_v2_0005_unchanged": True,
+        "text_namu_v2_0005_after_row_core_sha256": sha256_text(
+            "\n".join(
+                [
+                    after_text_0005.get("expected_answer", ""),
+                    after_text_0005.get("supporting_evidence", ""),
+                    after_text_0005.get("citation_locator", ""),
+                ]
+            )
+        ),
+        "label_fields_mutated": sorted(set(label_fields_mutated)),
+        "optional_final_label_columns_present": sorted(set(optional_final_label_columns_present)),
+        "optional_final_label_columns_applied": sorted(set(optional_final_label_columns_applied)),
+    }
+
+
+def gold_text_field_diff(before_text: str, after_text: str) -> dict[str, Any]:
+    before_hash = sha256_text(before_text)
+    after_hash = sha256_text(after_text)
+    return {
+        "before_text": before_text,
+        "after_text": after_text,
+        "before_sha256": before_hash,
+        "after_sha256": after_hash,
+        "field_changed": before_hash != after_hash,
+        "human_review_only": True,
+        "generation_source": False,
+        "not_silver_source": True,
+        "user_policy_source": True,
+    }
+
+
+def sync_v3_1_9_official_input_hash_surfaces(
+    *,
+    text_gold_sha256: str,
+    current_text_gold_rows_by_query_id: Mapping[str, Mapping[str, str]],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+) -> dict[str, Any]:
+    text_key = "track_b_text_namu_v2_1_question_gold_v2_human_audit_approved"
+    before = {
+        "metric_input_config": official.file_identity(metric_input_config_path),
+        "denominator_registry": official.file_identity(denominator_registry_path),
+        "pre_execution_smoke_report": official.file_identity(pre_execution_smoke_path),
+    }
+    registry = official.read_json(denominator_registry_path)
+    registry_entry = official.nested_mapping(registry, "official_diagnostic_denominators").get(text_key)
+    if isinstance(registry_entry, dict):
+        registry_entry["sha256"] = text_gold_sha256
+    write_json_preserve_order(denominator_registry_path, registry)
+
+    config = official.read_json(metric_input_config_path)
+    for section in ("metric_lanes", "official_metric_input_artifacts"):
+        entry = official.nested_mapping(config, section).get("text_namu_v2_1")
+        if isinstance(entry, dict):
+            entry["sha256"] = text_gold_sha256
+    for row in config.get("candidate_manifest") or []:
+        if not isinstance(row, dict):
+            continue
+        query_id = official.clean(row.get("query_id"))
+        gold_row = current_text_gold_rows_by_query_id.get(query_id)
+        if not gold_row:
+            continue
+        for key in (
+            "expected_answer",
+            "supporting_evidence",
+            "citation_locator",
+            "track",
+            "official_metric_input",
+            "promotion_evidence",
+        ):
+            if key in gold_row:
+                row[key] = parse_gold_csv_json_value(gold_row[key])
+    write_json_preserve_order(metric_input_config_path, config)
+
+    registry_sha_after = sha256_file(denominator_registry_path)
+    config_sha_after = sha256_file(metric_input_config_path)
+    smoke = official.read_json(pre_execution_smoke_path)
+    for section_path in (
+        ("artifact_consistency", "metric_lanes", "text_namu_v2_1"),
+        ("csv_checks", "text_namu_v2_1"),
+    ):
+        entry = nested_mutable_mapping(smoke, *section_path)
+        if entry:
+            entry["sha256"] = text_gold_sha256
+    artifact_consistency = nested_mutable_mapping(smoke, "artifact_consistency")
+    if artifact_consistency:
+        artifact_consistency["config_sha256"] = config_sha_after
+        artifact_consistency["registry_sha256"] = registry_sha_after
+    write_json_preserve_order(pre_execution_smoke_path, smoke)
+
+    return {
+        "before": before,
+        "after": {
+            "metric_input_config": official.file_identity(metric_input_config_path),
+            "denominator_registry": official.file_identity(denominator_registry_path),
+            "pre_execution_smoke_report": official.file_identity(pre_execution_smoke_path),
+        },
+        "text_gold_sha256": text_gold_sha256,
+        "registry_sha256_after": registry_sha_after,
+        "metric_input_config_sha256_after": config_sha_after,
+        "pre_execution_smoke_sha256_after": sha256_file(pre_execution_smoke_path),
+        "query_id_set_changed": False,
+    }
+
+
+def parse_gold_csv_json_value(value: Any) -> Any:
+    text = official.clean(value)
+    if text.upper() == "TRUE":
+        return True
+    if text.upper() == "FALSE":
+        return False
+    if text.startswith("{") or text.startswith("["):
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            return text
+    return text
+
+
+def nested_mutable_mapping(root: Mapping[str, Any], *keys: str) -> dict[str, Any]:
+    current: Any = root
+    for key in keys:
+        if not isinstance(current, dict):
+            return {}
+        current = current.get(key)
+    return current if isinstance(current, dict) else {}
+
+
+def write_json_preserve_order(path: Path, payload: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def compose_v3_1_9_latest_lane_surface_rows(
+    official_query_ids: Sequence[str],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    overlay_specs = [
+        ("v3_1_1_post_locator", DEFAULT_V3_1_1_POST_RESULTS_JSONL),
+        ("v3_1_2_answer_span_renderer_triage", DEFAULT_V3_1_2_ANSWER_SPAN_RESULTS_JSONL),
+        ("v3_1_3_remaining_queue_answer_span_renderer_triage", DEFAULT_V3_1_3_REMAINING_QUEUE_RESULTS_JSONL),
+        ("v3_1_4_pdf_residual_answer_span_renderer_triage", DEFAULT_V3_1_4_PDF_RESIDUAL_RESULTS_JSONL),
+        ("v3_1_6_gq_auto_010_safe_pdf_paragraph_window_expansion", DEFAULT_V3_1_6_PDF_WINDOW_EXPANSION_RESULTS_JSONL),
+    ]
+    by_id: dict[str, dict[str, Any]] = {}
+    source_audit: dict[str, Any] = {}
+    for label, path in overlay_specs:
+        rows = read_jsonl(path)
+        source_audit[label] = {
+            "path": official.repo_relative(report_artifact_logical_path_for_existing(path)),
+            "resolved_path": str(path),
+            "exists": path.exists(),
+            "row_count": len(rows),
+            "sha256": sha256_file(path) if path.exists() else None,
+        }
+        for row in rows:
+            query_id = official.clean(row.get("query_id"))
+            if not query_id:
+                continue
+            updated = deepcopy(dict(row))
+            updated["_v3_1_9_lane_surface_source"] = label
+            updated["_v3_1_9_lane_surface_source_path"] = source_audit[label]["path"]
+            by_id[query_id] = updated
+    missing = [query_id for query_id in official_query_ids if query_id not in by_id]
+    extra = sorted(set(by_id) - set(official_query_ids))
+    if missing or extra:
+        raise ValueError(f"v3_1_9 latest lane surface mismatch; missing={missing!r}, extra={extra!r}")
+    return [by_id[query_id] for query_id in official_query_ids], source_audit
+
+
+def report_artifact_logical_path_for_existing(path: Path) -> Path:
+    try:
+        return path.relative_to(REPO_ROOT)
+    except ValueError:
+        return path
+
+
+def rescore_v3_1_9_lane_surface_rows(
+    *,
+    surface_rows: Sequence[Mapping[str, Any]],
+    official_rows_by_id: Mapping[str, Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for source_row in surface_rows:
+        query_id = official.clean(source_row.get("query_id"))
+        official_row = official_rows_by_id.get(query_id)
+        if not official_row:
+            raise ValueError(f"official row missing for {query_id}")
+        row = deepcopy(dict(source_row))
+        row.update(
+            {
+                "schema_version": f"{V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID}_rescored_result_v1",
+                "run_id": V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
+                "source_run_id": V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+                "source_result_run_id": source_row.get("run_id"),
+                "source_result_artifact": source_row.get("_v3_1_9_lane_surface_source_path"),
+                "scoring_only_remeasurement": True,
+                "live_generation_rerun": False,
+                "candidate_artifacts_as_generation_source": False,
+                "generation_used_expected_answer": False,
+                "generation_used_supporting_evidence": False,
+                "generation_used_gold_fields": False,
+                "promotion_evidence": False,
+                "silver_rows_created": False,
+                "behavior_change_made": False,
+                "renderer_mutation": False,
+                "scorer_behavior_mutation": False,
+                "retrieval_mutation": False,
+                "production_mutation": False,
+            }
+        )
+        for gold_key in ("expected_answer", "supporting_evidence", "human_label"):
+            row.pop(gold_key, None)
+        rescored_lanes: dict[str, dict[str, Any]] = {}
+        source_lanes = as_mapping(source_row.get("lane_results"))
+        for lane_name in V3_1_LANE_NAMES:
+            lane = as_mapping(source_lanes.get(lane_name))
+            rescored_lanes[lane_name] = rescore_v3_1_9_lane(
+                lane_name=lane_name,
+                lane=lane,
+                official_row=official_row,
+                source_family=official.clean(row.get("source_family")) or SOURCE_FAMILY_LABEL_BY_TRACK.get(
+                    official.clean(official_row.get("track")), ""
+                ),
+            )
+        row["lane_results"] = rescored_lanes
+        out.append(row)
+    return out
+
+
+def rescore_v3_1_9_lane(
+    *,
+    lane_name: str,
+    lane: Mapping[str, Any],
+    official_row: Mapping[str, Any],
+    source_family: str,
+) -> dict[str, Any]:
+    citations = list(lane.get("scored_citations") or lane.get("generated_citations") or [])
+    citation_chunks = [
+        SimpleNamespace(text=citation_text_for_scoring(citation))
+        for citation in citations
+        if isinstance(citation, Mapping)
+    ]
+    generated_answer = official.clean(lane.get("generated_answer"))
+    score = score_generated_row(official_row, generated_answer, citation_chunks)
+    rescored = deepcopy(dict(lane))
+    rescored.update(
+        {
+            "lane_name": lane_name,
+            "source_family": source_family,
+            "answer_score": score["answer_score"],
+            "citation_support_score": score["citation_support_score"],
+            "failure_category": score["failure_category"],
+            "failure_detail": score["failure_detail"],
+            "score_status": "PASS" if score["failure_category"] == "PASS" else "FAIL_CLOSED",
+            "result_bucket": "PASS" if score["failure_category"] == "PASS" else score["failure_category"],
+            "scorer_compatibility_normalization_applied": score.get(
+                "scorer_compatibility_normalization_applied",
+                False,
+            ),
+            "scoring_only_remeasurement": True,
+            "live_generation_rerun": False,
+            "scorer_behavior_mutation": False,
+            "renderer_mutation": False,
+            "retrieval_mutation": False,
+            "generation_used_expected_answer": False,
+            "generation_used_supporting_evidence": False,
+            "generation_used_gold_fields": False,
+            "candidate_artifacts_as_generation_source": False,
+            "human_review_only_gold_policy_applied_for_scoring": True,
+        }
+    )
+    return rescored
+
+
+def citation_text_for_scoring(citation: Mapping[str, Any]) -> str:
+    return official.clean(
+        citation.get("citation_text")
+        or citation.get("text")
+        or citation.get("content")
+        or citation.get("source_text")
+        or citation.get("snippet")
+    )
+
+
+def v3_1_9_lane_pass_counts(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    return {
+        lane_name: sum(
+            1
+            for row in rows
+            if official.clean(as_mapping(as_mapping(row.get("lane_results")).get(lane_name)).get("failure_category"))
+            == "PASS"
+        )
+        for lane_name in V3_1_LANE_NAMES
+    }
+
+
+def v3_1_9_lane_failure_counts(rows: Sequence[Mapping[str, Any]]) -> Counter:
+    counts: Counter = Counter()
+    for row in rows:
+        for lane_name in V3_1_LANE_NAMES:
+            category = official.clean(as_mapping(as_mapping(row.get("lane_results")).get(lane_name)).get("failure_category"))
+            if category:
+                counts[category] += 1
+    return counts
+
+
+def v3_1_9_lane_pass_counts_before(v3_1_8_summary: Mapping[str, Any]) -> dict[str, int]:
+    source_summary = official.read_json(DEFAULT_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_SUMMARY_JSON)
+    direct = source_summary.get("all_track_pass_count_after_by_lane")
+    if isinstance(direct, Mapping):
+        return {lane_name: int(direct.get(lane_name) or 0) for lane_name in V3_1_LANE_NAMES}
+    lane_counts_source = as_mapping(source_summary.get("lane_counts") or v3_1_8_summary.get("lane_counts"))
+    return {
+        lane_name: int(as_mapping(lane_counts_source.get(lane_name)).get("pass_count") or 0)
+        for lane_name in V3_1_LANE_NAMES
+    }
+
+
+def build_v3_1_9_source_family_lane_counts(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, dict[str, int]]]:
+    out: dict[str, dict[str, dict[str, int]]] = {}
+    for source_family in ("PDF", "TEXT", "XLSX"):
+        family_rows = [row for row in rows if official.clean(row.get("source_family")) == source_family]
+        out[source_family] = {
+            lane_name: {
+                "row_count": len(family_rows),
+                "pass_count": sum(
+                    1
+                    for row in family_rows
+                    if official.clean(
+                        as_mapping(as_mapping(row.get("lane_results")).get(lane_name)).get("failure_category")
+                    )
+                    == "PASS"
+                ),
+                "fail_count": sum(
+                    1
+                    for row in family_rows
+                    if official.clean(
+                        as_mapping(as_mapping(row.get("lane_results")).get(lane_name)).get("failure_category")
+                    )
+                    != "PASS"
+                ),
+            }
+            for lane_name in V3_1_LANE_NAMES
+        }
+    return out
+
+
+def build_v3_1_9_remaining_triage_queue(
+    *,
+    rescored_rows: Sequence[Mapping[str, Any]],
+    source_run_id: str,
+) -> dict[str, Any]:
+    items: list[dict[str, Any]] = []
+    for row in rescored_rows:
+        failing_lanes: list[dict[str, Any]] = []
+        for lane_name in V3_1_LANE_NAMES:
+            lane = as_mapping(as_mapping(row.get("lane_results")).get(lane_name))
+            category = official.clean(lane.get("failure_category"))
+            if category == "PASS":
+                continue
+            failing_lanes.append(
+                {
+                    "lane_name": lane_name,
+                    "failure_category": category,
+                    "answer_score": lane.get("answer_score"),
+                    "citation_support_score": lane.get("citation_support_score"),
+                    "failure_detail": lane.get("failure_detail"),
+                }
+            )
+        if not failing_lanes:
+            continue
+        items.append(
+            {
+                "query_id": row["query_id"],
+                "track": row.get("track"),
+                "source_family": row.get("source_family"),
+                "failing_lanes": failing_lanes,
+                "implementation_safe": True,
+                "requires_user_gold_policy_decision": False,
+                "policy_status": "gold_policy_settled_by_user_override",
+                "recommended_later_phase": "renderer_scorer_prompt_or_retrieval_implementation_phase",
+                "allowed_next_actions": [
+                    "inspect implementation behavior",
+                    "do not mutate gold in this queue",
+                    "do not create another user policy packet unless metadata conflict appears",
+                ],
+            }
+        )
+    return {
+        "schema_version": f"{V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID}_remaining_triage_queue_v1",
+        "run_id": V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
+        "source_run_id": source_run_id,
+        "generated_at": utc_timestamp(),
+        "user_policy_decision_applied": True,
+        "requires_additional_user_policy_packet": False,
+        "active_remaining_queue_empty": not items,
+        "active_implementation_queue_empty": not items,
+        "implementation_safe_residual_count": len(items),
+        "residual_lane_item_count": sum(len(item["failing_lanes"]) for item in items),
+        "items": items,
+        "promotion_evidence": False,
+        "silver_rows_created": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+    }
+
+
+def v3_1_9_guardrails() -> dict[str, bool]:
+    return {
+        "diagnostic_only": False,
+        "user_policy_decision_applied": True,
+        "expected_answer_mutation": True,
+        "supporting_evidence_mutation": True,
+        "gold_policy_mutation": True,
+        "gold_mutation": True,
+        "behavior_change_made": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "retrieval_mutation": False,
+        "production_mutation": False,
+        "baseline_mutation": False,
+        "denominator_mutation": False,
+        "denominator_query_id_set_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "silver_rows_created": False,
+        "promotion_evidence": False,
+        "promotion_gate_auto_run": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "official_retrieval_metrics_computed": False,
+        "official_ndcg_computed": False,
+        "official_mrr_computed": False,
+        "official_hit_at_k_computed": False,
+        "lane_score_collapsed": False,
+        "live_generation_rerun": False,
+    }
 
 
 def build_v3_1_8_human_review_packet(
@@ -10696,6 +11732,18 @@ def v3_1_8_gold_policy_review_packet_artifact_paths(args: argparse.Namespace) ->
     }
 
 
+def v3_1_9_user_gold_policy_override_artifact_paths(args: argparse.Namespace) -> dict[str, str]:
+    run_id = V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID
+    return {
+        "summary_json": official.repo_relative(Path(args.summary_json)),
+        "applied_overrides_jsonl": report_artifact_repo_relative(run_id, "applied_overrides.jsonl"),
+        "gold_diff_jsonl": report_artifact_repo_relative(run_id, "gold_diff.jsonl"),
+        "rescored_results_jsonl": report_artifact_repo_relative(run_id, "rescored_results.jsonl"),
+        "remaining_triage_queue_json": report_artifact_repo_relative(run_id, "remaining_triage_queue.json"),
+        "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+    }
+
+
 def v3_1_guardrails() -> dict[str, bool]:
     return {
         "diagnostic_only": True,
@@ -11933,6 +12981,33 @@ def write_v3_1_8_gold_policy_review_packet_side_artifacts(
     decision_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["decision_matrix_jsonl"]))
     write_jsonl(decision_jsonl, decision_rows)
     artifact_paths["decision_matrix_jsonl_sha256"] = sha256_file(decision_jsonl)
+
+    remaining_json = resolve_repo_relative_artifact_path(Path(artifact_paths["remaining_triage_queue_json"]))
+    write_json(remaining_json, remaining_queue)
+    artifact_paths["remaining_triage_queue_json_sha256"] = sha256_file(remaining_json)
+
+
+def write_v3_1_9_user_gold_policy_override_side_artifacts(
+    summary: dict[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> None:
+    artifact_paths = summary["artifact_paths"]
+    applied_overrides = list(summary.pop("_v3_1_9_applied_overrides"))
+    gold_diff = list(summary.pop("_v3_1_9_gold_diff"))
+    rescored_results = list(summary.pop("_v3_1_9_rescored_results", rows))
+    remaining_queue = summary.pop("_v3_1_9_remaining_queue")
+
+    applied_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["applied_overrides_jsonl"]))
+    write_jsonl(applied_jsonl, applied_overrides)
+    artifact_paths["applied_overrides_jsonl_sha256"] = sha256_file(applied_jsonl)
+
+    diff_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["gold_diff_jsonl"]))
+    write_jsonl(diff_jsonl, gold_diff)
+    artifact_paths["gold_diff_jsonl_sha256"] = sha256_file(diff_jsonl)
+
+    rescored_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["rescored_results_jsonl"]))
+    write_jsonl(rescored_jsonl, rescored_results)
+    artifact_paths["rescored_results_jsonl_sha256"] = sha256_file(rescored_jsonl)
 
     remaining_json = resolve_repo_relative_artifact_path(Path(artifact_paths["remaining_triage_queue_json"]))
     write_json(remaining_json, remaining_queue)
@@ -14152,6 +15227,7 @@ def append_status_event(path: Path, summary: Mapping[str, Any]) -> None:
         V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
         V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID,
         V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
+        V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
     }:
         event["lane_counts"] = summary.get("lane_counts")
         event["source_family_lane_counts"] = summary.get("source_family_lane_counts")
@@ -14268,6 +15344,48 @@ def append_status_event(path: Path, summary: Mapping[str, Any]) -> None:
                 "official_mrr_computed",
                 "official_hit_at_k_computed",
                 "lane_score_collapsed",
+            ):
+                event[key] = summary.get(key)
+        if summary["run_id"] == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
+            for key in (
+                "source_run_id",
+                "run_class",
+                "user_policy_decision_applied",
+                "changed_row_count",
+                "changed_query_ids",
+                "gold_application_mode",
+                "gold_file_before_sha256",
+                "gold_file_after_sha256",
+                "official_denominator_query_id_set_mutation",
+                "active_remaining_queue_empty",
+                "active_implementation_queue_empty",
+                "implementation_safe_residual_count",
+                "expected_answer_mutation",
+                "supporting_evidence_mutation",
+                "gold_policy_mutation",
+                "gold_mutation",
+                "behavior_change_made",
+                "renderer_mutation",
+                "scorer_behavior_mutation",
+                "retrieval_mutation",
+                "production_mutation",
+                "candidate_artifacts_as_generation_source",
+                "generation_used_expected_answer",
+                "generation_used_supporting_evidence",
+                "generation_used_gold_fields",
+                "silver_rows_created",
+                "promotion_evidence",
+                "official_retrieval_metrics_computed",
+                "official_ndcg_computed",
+                "official_mrr_computed",
+                "official_hit_at_k_computed",
+                "lane_score_collapsed",
+                "live_generation_rerun",
+                "scoring_only_remeasurement",
+                "lane_pass_counts_before",
+                "lane_pass_counts_after",
+                "requires_additional_user_policy_packet",
+                "any_remaining_residual_implementation_safe",
             ):
                 event[key] = summary.get(key)
     if summary["run_id"] == V3_1_5_GQ_AUTO_010_SOURCE_BOUND_COVERAGE_DIAGNOSTIC_RUN_ID:

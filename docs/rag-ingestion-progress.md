@@ -23,7 +23,7 @@ requirements.
 
 ## Current Status
 
-Overall status: `official_answer_citation_v3_1_8_gold_policy_review_packet_preparation_recorded`;
+Overall status: `official_answer_citation_v3_1_9_user_gold_policy_override_application_recorded`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied.
 
@@ -240,6 +240,30 @@ and `v3_comparable_live_measurement_completed` remain satisfied.
   official nDCG/MRR/Hit@K was computed; and Lane A/B/C not collapsed. Raw
   expected/supporting/gold-policy material appears only in the human review
   packet with `human_review_only=true` and `generation_source=false`.
+- v3_1_9 user-approved gold policy override application
+  `official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement`
+  applied `gold_overrides.csv` as the user-owned source of truth. This is a
+  user-approved gold policy override application, not another diagnostic packet
+  preparation run. five TEXT rows changed by user decision:
+  `text_namu_v2_0012`, `text_namu_v2_0014`, `text_namu_v2_0017`,
+  `text_namu_v2_0077`, and `text_namu_v2_0084`. The active gold file stays
+  `gold_queries_text_namu_v2_1_question_gold_v2.csv`; the v2 CSV was updated
+  in place because the current loader and registry contract still reference
+  that path directly. Gold hash changed from
+  `03764d1d7aa682cd8646d9028b6219fdbeba8a4eb219a87a285a162f16702cd6` to
+  `0f9e24e68494b85ad6e4b85c84c1519a62dd596612c6bd269d58ca9017e1a4b4`.
+- v3_1_9 scoring-only remeasurement reused existing Lane A/B/C answer surfaces;
+  live generation was not rerun. `behavior_change_made=false`;
+  renderer/scorer/retrieval/production/silver/promotion behavior changed: none.
+  `expected_answer_mutation=true`, `supporting_evidence_mutation=true`,
+  `gold_policy_mutation=true`, `user_policy_decision_applied=true`.
+  scoring-only remeasurement changed Lane A/B/C PASS from `24/29`, `24/29`,
+  `24/29` to `27/29`, `26/29`, `25/29`. no official nDCG/MRR/Hit@K was
+  computed; Lane A/B/C not collapsed; `promotion_evidence=false`.
+  Post-rescore remaining queue contains four implementation-safe TEXT query ids
+  (`text_namu_v2_0014`, `text_namu_v2_0017`, `text_namu_v2_0077`,
+  `text_namu_v2_0084`) across nine lane items. No additional user policy packet
+  is required unless a concrete metadata conflict appears.
 - v3_1_7 stayed diagnostic-only and not promotion evidence: no behavior changed,
   no live all-track generation was rerun, no production/denominator/gold/label
   mutation occurred, no official nDCG/MRR/Hit@K was computed, and
@@ -271,11 +295,11 @@ and `v3_comparable_live_measurement_completed` remain satisfied.
 
 | Track | Current state | Current metric/evidence | Next action |
 |---|---|---|---|
-| `text_namu_v2_1` | v3_1_8 human gold-policy packet exists for the five all-track TEXT residual query ids after the active queue was cleared | 15 lane residuals are policy-bound; strict JSON/citation locator residuals remain `0`; implementation-safe follow-up `0` | User reviews packet options; do not open renderer/scorer work until a user policy decision exists. |
+| `text_namu_v2_1` | v3_1_9 applied the user-approved gold policy override for five TEXT residual rows | Lane A/B/C after scoring-only remeasurement: `27/29`, `26/29`, `25/29`; remaining queue has 4 implementation-safe TEXT query ids / 9 lane items | Later implementation-safe renderer/scorer/prompt/retrieval work may inspect remaining residuals without reopening gold policy. |
 | `xlsx_business_structured` | v3_1_3 improved remaining XLSX date rows through source-bound answer/scorer compatibility | target XLSX rows now PASS in Lane B/C; XLSX `row_label` mismatch=0 | Keep date/number compatibility general; do not tune thresholds. |
 | `pdf_business_ocr_mm` | v3_1_6 applied safe same-page source-bound PDF paragraph/window context expansion for `gq_auto_010` | Target Lane B/C now PASS with locator-valid `pdfwin_b1c6527f848018640ad5ed231877c662`; all-track Lane B/C now `24/29`; residual strict JSON/locator counts stay `0` | Queue cleared; keep expansion guarded and do not broaden it. |
 | Current tests | `--rag-current` profile isolates official metric, source-of-truth, candidate, and guardrail tests | Legacy `ai/tests/test_*.py` suites outside the current profile were deleted | Keep the compact profile green; extend existing files for routine diagnostic coverage. Create a new test file only for a durable new subsystem and update the keep-set in the same change. |
-| Report artifacts | Classification-only and packet-preparation phases use compact JSON/JSONL artifacts plus the status ledger | v3_1_8 creates only summary, human review packet, decision matrix, remaining queue, and compact status event | Append human report notes to this progress file; do not create per-run Markdown or full forensic payloads unless behavior changes or a test-backed forensic contract requires them. |
+| Report artifacts | Classification-only, packet-preparation, and v3_1_9 policy-application phases use compact JSON/JSONL artifacts plus the status ledger | v3_1_9 creates only summary, applied overrides, gold diff, rescored results, remaining queue, and compact status event | Append human report notes to this progress file; do not create per-run Markdown or full forensic payloads unless behavior changes or a test-backed forensic contract requires them. |
 
 ## Current Verification Command
 
@@ -287,11 +311,29 @@ python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_
 ```
 
 Current verification:
-local results recorded in this progress log.
-`--rag-current` 141 passed, 0 skipped, 0 failed.
-Marker profile
-`rag_current or rag_official_metric or rag_pdf_current`: 141 passed,
+local results recorded in this progress log. Latest `--rag-current` verification
+after the v3_1_9 updates: 145 passed, 0 skipped, 0 failed. Marker profile
+`rag_current or rag_official_metric or rag_pdf_current`: 145 passed,
 0 deselected, 0 failed.
+
+Additional 2026-05-19 local verification for v3_1_9 user-approved gold policy
+override application and scoring-only remeasurement:
+
+- `python -X utf8 ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement`: PASS; applied the user-approved override contract, wrote compact v3_1_9 artifacts, and appended `status.jsonl`.
+- Targeted contract check:
+  `python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_9_user_gold_policy_override_application_and_rescore_is_guarded ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_9_gold_csv_contains_only_the_user_approved_text_overrides ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_1_9_user_gold_policy_override_without_behavior_promotion -q`: PASS, 3 passed.
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 145 passed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 145 passed.
+- v3_1_9 mutation/guardrail summary:
+  `run_class=user_approved_gold_policy_override_application`,
+  `diagnostic_only=false`, `expected_answer_mutation=true`,
+  `supporting_evidence_mutation=true`, `gold_policy_mutation=true`,
+  `user_policy_decision_applied=true`, `behavior_change_made=false`,
+  `renderer_mutation=false`, `scorer_behavior_mutation=false`,
+  `retrieval_mutation=false`, `production_mutation=false`,
+  `silver_rows_created=false`, `promotion_evidence=false`,
+  `official_ndcg_computed=false`, `official_mrr_computed=false`,
+  `official_hit_at_k_computed=false`, and `lane_score_collapsed=false`.
 
 Additional 2026-05-19 local verification for v3_1_8 gold-policy review packet
 preparation:

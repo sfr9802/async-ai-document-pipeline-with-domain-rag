@@ -124,3 +124,23 @@ def test_progress_doc_records_v3_1_8_gold_policy_packet_without_metric_promotion
     assert "not promotion evidence" in current_text
     assert "no official nDCG/MRR/Hit@K" in current_text
     assert "no behavior, gold, label, production, denominator, retrieval, scorer, renderer, silver, or promotion mutation" in current_text
+
+
+def test_progress_doc_records_v3_1_9_user_gold_policy_override_without_behavior_promotion():
+    text = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = text.split("## Short History", 1)[0]
+
+    assert (
+        "official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement"
+        in current_text
+    )
+    assert "user-approved gold policy override application" in current_text
+    assert "five TEXT rows changed by user decision" in current_text
+    assert "text_namu_v2_0012" in current_text
+    assert "text_namu_v2_0084" in current_text
+    assert "behavior_change_made=false" in current_text
+    assert "renderer/scorer/retrieval/production/silver/promotion behavior changed: none" in current_text
+    assert "scoring-only remeasurement" in current_text
+    assert "no official nDCG/MRR/Hit@K" in current_text
+    assert "Lane A/B/C not collapsed" in current_text
+    assert "promotion_evidence=false" in current_text

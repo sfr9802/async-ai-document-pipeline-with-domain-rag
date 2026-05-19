@@ -143,7 +143,7 @@
       "row_count": 6,
       "official_positive_denominator": 6,
       "official_metric_input_rows": 6,
-      "sha256": "03764d1d7aa682cd8646d9028b6219fdbeba8a4eb219a87a285a162f16702cd6",
+      "sha256": "0f9e24e68494b85ad6e4b85c84c1519a62dd596612c6bd269d58ca9017e1a4b4",
       "gold_status_policy": "human_label=INCLUDE_AS_OFFICIAL_GOLD_CANDIDATE from v2 audit packet",
       "denominator_rule": "human-approved source-bound question, expected answer, evidence, and citation locator",
       "promotion_evidence": false,

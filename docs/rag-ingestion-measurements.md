@@ -34,10 +34,64 @@ runtime archive under
 | v3_1_6 `gq_auto_010` safe PDF paragraph/window expansion | `official_answer_citation_agentic_loop_run_v3_1_6_gq_auto_010_safe_pdf_paragraph_window_expansion_diagnostic` | One-row v3_1_5 remaining queue plus 29-row all-track remeasurement | Target Lane A `1/1`, Lane B `1/1`, Lane C `1/1`; all-track Lane A `24/29`, Lane B `24/29`, Lane C `24/29`; residual locator/strict JSON counts `0`; remaining queue empty | Diagnostic-only |
 | v3_1_7 post-residual queue closure audit | `official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit` | No-behavior inventory over existing v3_1_6 after-state artifacts | Active queue empty; all-track residuals remain 5 TEXT query ids / 15 lane items; implementation-safe follow-up `0`; user decision packet created | Diagnostic-only |
 | v3_1_8 gold-policy review packet preparation | `official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation` | No-behavior human review packet over the five v3_1_7 TEXT residual query ids | Decision packet and decision matrix created; active implementation queue empty; implementation-safe residuals `0`; silver closed | Diagnostic-only |
+| v3_1_9 user-approved gold policy override + scoring-only remeasurement | `official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement` | Five TEXT gold-policy rows updated from `gold_overrides.csv`; existing Lane A/B/C answer surfaces rescored | Lane A `24/29 -> 27/29`, Lane B `24/29 -> 26/29`, Lane C `24/29 -> 25/29`; remaining queue 4 TEXT query ids / 9 lane items | Gold policy mutation, no behavior/promotion |
 
 The official first-run baseline is a scored partial baseline and is not a
 scorer backend blocker. It remains the immutable reference point; later rows in
 this ladder are diagnostic deltas, not promotion evidence.
+
+## 2026-05-19 - v3_1_9 User-Approved Gold Policy Override Application And Scoring-Only Remeasurement
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement`
+
+Scope:
+
+- This run applied the user-approved `gold_overrides.csv` policy source of
+  truth for exactly five TEXT rows: `text_namu_v2_0012`,
+  `text_namu_v2_0014`, `text_namu_v2_0017`, `text_namu_v2_0077`, and
+  `text_namu_v2_0084`.
+- Active gold path: `ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv`.
+  The v2 CSV was updated in place because the current official denominator
+  registry, metric input config, smoke report, and loader tests reference that
+  path directly.
+- This is a gold policy mutation run:
+  `run_class=user_approved_gold_policy_override_application`,
+  `user_policy_decision_applied=true`, `expected_answer_mutation=true`,
+  `supporting_evidence_mutation=true`, and `gold_policy_mutation=true`.
+- It is not renderer, scorer, retrieval, production, silver, or promotion work:
+  `behavior_change_made=false`, `renderer_mutation=false`,
+  `scorer_behavior_mutation=false`, `retrieval_mutation=false`,
+  `production_mutation=false`, `silver_rows_created=false`, and
+  `promotion_evidence=false`.
+
+Scoring-only remeasurement:
+
+| Lane | Before | After |
+|---|---:|---:|
+| Lane A `v3_primary_replay` | `24/29` PASS | `27/29` PASS |
+| Lane B `live_llm_retrieval_topk` | `24/29` PASS | `26/29` PASS |
+| Lane C `live_llm_query_bound_oracle` | `24/29` PASS | `25/29` PASS |
+
+Boundaries:
+
+- Existing Lane A/B/C generated answer surfaces were reused; live generation was
+  not rerun.
+- Expected answers, supporting evidence, and gold fields were not used as
+  generation source.
+- Official nDCG, MRR, Hit@K, and any collapsed Lane A/B/C score were not
+  computed.
+- The official denominator query-id set remained 29 rows and did not change.
+
+Remaining queue:
+
+- `text_namu_v2_0014`: Lane C remains non-PASS.
+- `text_namu_v2_0017`: Lane B/C remain non-PASS.
+- `text_namu_v2_0077`: Lane A/B/C remain non-PASS.
+- `text_namu_v2_0084`: Lane A/B/C remain non-PASS.
+- These residuals are now implementation-safe for a later renderer/scorer/
+  prompt/retrieval phase because the user gold policy is settled. No additional
+  user policy packet is required from v3_1_9.
 
 ## 2026-05-19 - v3_1_8 Gold-Policy Review Packet Preparation
 
