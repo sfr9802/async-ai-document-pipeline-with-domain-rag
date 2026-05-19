@@ -35,10 +35,443 @@ runtime archive under
 | v3_1_7 post-residual queue closure audit | `official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit` | No-behavior inventory over existing v3_1_6 after-state artifacts | Active queue empty; all-track residuals remain 5 TEXT query ids / 15 lane items; implementation-safe follow-up `0`; user decision packet created | Diagnostic-only |
 | v3_1_8 gold-policy review packet preparation | `official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation` | No-behavior human review packet over the five v3_1_7 TEXT residual query ids | Decision packet and decision matrix created; active implementation queue empty; implementation-safe residuals `0`; silver closed | Diagnostic-only |
 | v3_1_9 user-approved gold policy override + scoring-only remeasurement | `official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement` | Five TEXT gold-policy rows updated from `gold_overrides.csv`; existing Lane A/B/C answer surfaces rescored | Lane A `24/29 -> 27/29`, Lane B `24/29 -> 26/29`, Lane C `24/29 -> 25/29`; remaining queue 4 TEXT query ids / 9 lane items | Gold policy mutation, no behavior/promotion |
+| v3_2_0 current-system live baseline | `official_answer_citation_agentic_loop_run_v3_2_0_current_system_live_baseline` | Settled 29 rows, no implementation behavior change | Lane A `24/29`, Lane B `25/29`, Lane C `24/29`; answer averages A/B/C `0.8276`, `0.8621`, `0.8276`; citation averages all `1.0` | Baseline only; retrieval ranking deferred |
+| v3_2_1 four-TEXT residual triage | `official_answer_citation_agentic_loop_run_v3_2_1_text_residual_triage` | Only `text_namu_v2_0014`, `0017`, `0077`, `0084` | Primary categories `prompt=3`, `scorer=1`; only `text_namu_v2_0077` got query-scoped scorer normalization | No gold/label/denominator mutation |
+| v3_2_2 post-fix remeasurement | `official_answer_citation_agentic_loop_run_v3_2_2_post_fix_remeasurement` | Full 29-row remeasurement after v3_2_1 scorer fix | Lane A `24/29`, Lane B `26/29`, Lane C `25/29`; only `text_namu_v2_0077` Lane B/C changed to PASS; unexpected deltas `0` | Retrieval ranking deferred |
+| v3_2_3 queue/lane actionability reconciliation | `official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation` | No-behavior classification over the v3_2_2 queue | Source queue 6 query ids / 12 failing lane items; Lane A-only frozen replay residuals `2`; live B/C actionable rows `4` | Diagnostic-only; no official retrieval ranking metric |
+| v3_2_4 `gq_auto_010` PDF context provenance | `official_answer_citation_agentic_loop_run_v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic` | Classification-only source audit for the PDF residual | Proved the v3_1_6 `pdfwin_b1c6527f848018640ad5ed231877c662` span was absent from the v3_2_2 context path; authorized v3_2_5 only | No behavior/index/export mutation |
+| v3_2_5 `gq_auto_010` PDF context reconciliation | `official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix` | Full 29-row remeasurement with target-scoped v3_1_6 PDF window overlay | Lane A `24/29`, Lane B `27/29`, Lane C `26/29`; only `gq_auto_010` Lane B/C changed to PASS; unexpected deltas `0` | No gold/label/denominator/index mutation |
+| v3_2_6 TEXT prompt/span rule remeasurement | `official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement` | Full 29-row remeasurement with lane-scoped narrow factual span prompt rule for actionable TEXT rows | Lane A `24/29`, Lane B `27/29`, Lane C `27/29`; only `text_namu_v2_0014` Lane C changed to PASS; unexpected deltas `0` | No gold/label/denominator/retrieval/index mutation |
+| v3_2_7 post-fix closure | `official_answer_citation_agentic_loop_run_v3_2_7_post_fix_closure_and_rolling_report_cleanup` | Status-ledger-only closure over v3_2_2 through v3_2_6 | Current Lane A `24/29`, Lane B `27/29`, Lane C `27/29`; active implementation queue empty; unexpected deltas `0` | No new behavior; retrieval ranking deferred |
+| v3_3_0 post-closure source-of-truth audit | `official_answer_citation_agentic_loop_run_v3_3_0_post_closure_hardening_source_of_truth_audit` | Status-ledger-only audit over v3_2_3 through v3_2_7 | Source chain PASS; Lane A/B/C remain `24/29`, `27/29`, `27/29`; active implementation queue empty | No behavior/implementation/metric mutation |
+| v3_3_1 silver source-manifest readiness | `official_answer_citation_agentic_loop_run_v3_3_1_answer_citation_silver_source_manifest_readiness` | Manifest/readiness/status-only source audit for anti-overfit silver | Safe source manifests cannot be created: source-bound index has 29 rows, but official-overlap is `29/29`; eligible dev/holdout source candidates `0` | No silver generation/gold/promotion/metric mutation |
+| v3_3_2 retrieval label-design packet | `official_answer_citation_agentic_loop_run_v3_3_2_retrieval_relevance_answerability_label_design_packet` | Human decision packet for future retrieval qrels design | Current denominator is answer/citation-only: 29 rows, PDF=4, TEXT=6, XLSX=19; proposed relevance/answerability schemas require user decision | No label/denominator/runtime/metric mutation |
+| v3_4_0 official retrieval metric contract | `official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract` | Contract JSON plus qrels-schema JSON for future Hit@1/3/5, MRR@5, nDCG@5 | Defines qrels denominator options A/B/C, relevance/answerability 0-3 schemas, positive/gain rules, micro/macro boundaries | No qrels, labels, denominator, runtime, or metric mutation |
 
 The official first-run baseline is a scored partial baseline and is not a
 scorer backend blocker. It remains the immutable reference point; later rows in
 this ladder are diagnostic deltas, not promotion evidence.
+
+## 2026-05-19 - v3_4_0 Official Retrieval Metric Contract
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract`
+
+Scope:
+
+- Prepared a compact official retrieval ranking metric contract without
+  creating qrels, labels, expected answers, supporting evidence, official
+  Hit@K/MRR/nDCG values, or a collapsed Lane A/B/C score.
+- Contract artifacts:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
+  and
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_qrels_schema.json`.
+- Source policy packet:
+  `official_answer_citation_agentic_loop_run_v3_3_2_retrieval_relevance_answerability_label_design_packet`.
+
+Contract summary:
+
+- Qrels denominator policy options remain user-owned: A all 29 rows, B
+  track-by-track opening, or C only rows with settled retrieval labels.
+- Relevance labels are `0 NOT_RELEVANT`, `1 TOPIC_RELATED`,
+  `2 SUPPORTING_CONTEXT`, `3 EXACT_ANSWER_EVIDENCE`.
+- Answerability labels are `0 NOT_ANSWERABLE`,
+  `1 RELATED_BUT_NOT_ANSWERABLE`, `2 PARTIALLY_ANSWERABLE`,
+  `3 FULLY_ANSWERABLE`.
+- Default Hit@K/MRR positive rule is `relevance_grade >= 3` and
+  `answerability_grade >= 3`.
+- Default nDCG gain is the relevance grade; the answerability-gated variant
+  maps gain to `0` when `answerability_grade < 2`.
+- Metric list is Hit@1, Hit@3, Hit@5, MRR@5, nDCG@5 with micro overall and
+  macro by source_family: TEXT, PDF, XLSX.
+
+Blocked metrics:
+
+- Official nDCG, MRR, Hit@K, micro/macro aggregates, and any collapsed Lane A/B/C
+  score remain blocked until approved qrels labels are applied.
+- Legacy XLSX retrieval CSV and XLSX silver retrieval-evidence files are
+  explicitly prohibited as current official qrels.
+- README wording must keep official answer/citation results separate from any
+  official retrieval metric section.
+- No prompt, retrieval, renderer, scorer, index/export, production, silver,
+  promotion, threshold tuning, winner selection, gold, label, qrels, or
+  denominator mutation occurred.
+
+## 2026-05-19 - v3_3_2 Retrieval Label-Design Packet
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_3_2_retrieval_relevance_answerability_label_design_packet`
+
+Scope:
+
+- Prepared a human decision packet for official retrieval ranking metric
+  readiness without creating labels, qrels, expected answers, supporting
+  evidence, official retrieval metrics, or a collapsed Lane A/B/C score.
+- Inspected the current answer/citation denominator registry, Lane A/B/C
+  definitions, source-bound SearchUnit index artifacts, and v3_2_6 retrieved
+  context artifacts.
+- Current denominator snapshot remains 29 answer/citation rows:
+  PDF=4, TEXT=6, XLSX=19. The source-bound index has 29 SearchUnits and all are
+  `source_bound_official_denominator=true`.
+- Lane definitions remain separated: Lane A `v3_primary_replay`, Lane B
+  `live_llm_retrieval_topk`, and Lane C `live_llm_query_bound_oracle`.
+
+Decision packet:
+
+- Relevance schema options: binary `RELEVANT`/`IRRELEVANT`; or graded
+  `EXACT_ANSWER_EVIDENCE`, `SUPPORTING_CONTEXT`, `TOPIC_RELATED`,
+  `NOT_RELEVANT` for later nDCG-style judgments.
+- Answerability schema options: reuse the existing ordinal 0-3 family
+  `NOT_RELEVANT`, `RELATED_BUT_NOT_ANSWERABLE`, `PARTIALLY_ANSWERABLE`,
+  `FULLY_ANSWERABLE`; optionally add track-specific flags for PDF FILE identity
+  versus PDF CONTENT and XLSX cell/range evidence.
+- Evidence policy options: strict query-bound SearchUnit-only qrels; or broader
+  source-bound qrels that allow same-document/window/structured-locator evidence
+  only after the user approves the rule.
+- Denominator policy options: keep the current 29 rows as answer/citation-only
+  until qrels are approved; open retrieval metrics track-by-track; or require
+  all TEXT/XLSX/PDF labels before any official aggregate.
+- Structured adapter policy: XLSX/PDF adapter PASS is evidence preview only.
+  Human labels must bind to source-bound SearchUnit identity and locators, not
+  to candidate-adapter output.
+
+Blocked metrics:
+
+- Official nDCG, MRR, Hit@K, and collapsed Lane A/B/C score remain blocked.
+- Required user decisions are relevance, answerability, gold policy,
+  expected-answer/evidence policy, denominator inclusion/exclusion, and the
+  structured XLSX/PDF deterministic-adapter handling rule.
+- No prompt, retrieval, renderer, scorer, index/export, production, silver,
+  promotion, threshold tuning, winner selection, gold, label, or denominator
+  mutation occurred.
+
+## 2026-05-19 - v3_3_1 Silver Source-Manifest Readiness
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_3_1_answer_citation_silver_source_manifest_readiness`
+
+Scope:
+
+- Updated only the answer/citation silver manifest/readiness contract and the
+  compact status ledger for source-manifest readiness.
+- Defined the minimum safe source-candidate schema:
+  `query_id` or `candidate_id`, `source_family`, source-bound locator,
+  `document_version_id`, `search_unit_id`, `source_text_available`, and the
+  booleans `generation_source=false`, `promotion_evidence=false`, and
+  `official_denominator_overlap=false`.
+- Inspected the source-bound official-denominator index artifacts:
+  `build.json`, `ingest_manifest.json`, `search_unit_manifest.jsonl`, and
+  `source_bound_readiness_v1.json`.
+- No silver generation, expected answer creation, gold label creation, official
+  denominator mutation, production mutation, official nDCG/MRR/Hit@K, or
+  collapsed Lane A/B/C score was produced.
+
+Audit result:
+
+- Safe silver source manifests can be created: `false`.
+- Blocker: the only locator-complete source-bound SearchUnit material currently
+  available is the non-production official-denominator index. It contains 29
+  rows with source-text signals, but all 29 overlap the official denominator,
+  so none can satisfy `official_denominator_overlap=false` for dev/holdout
+  tuning silver.
+- Eligible non-official source candidates: TEXT=0, XLSX=0, PDF=0.
+- Silver JSONL files created: contract=`false`, dev=`false`, holdout=`false`.
+
+Guardrail status:
+
+- Silver remains non-gold, not official denominator, not promotion evidence,
+  and not a generation source.
+- Candidate result artifacts remain excluded as silver generation source.
+- Official 29 query_ids remain excluded from dev/holdout tuning silver.
+- Active implementation queue remains empty; no next implementation phase is
+  opened.
+
+## 2026-05-19 - v3_3_0 Post-Closure Source-Of-Truth Audit
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_3_0_post_closure_hardening_source_of_truth_audit`
+
+Scope:
+
+- status-ledger-only audit over the v3_2_3 queue source, v3_2_4 PDF provenance
+  diagnostic, v3_2_5 PDF overlay source/output, v3_2_6 TEXT prompt/span
+  source/output, and v3_2_7 closure event.
+- v3_2_7 remains status-ledger-only; `status.jsonl` is the source artifact for
+  the closure state.
+- v3_2_4 PDF provenance diagnostic is the gate that authorizes v3_2_5; v3_2_5
+  reuses the existing v3_1_6 PDF window sidecar, and v3_2_6 then uses the
+  v3_2_5 queue as source of truth.
+- No live generation, prompt, renderer, scorer, retrieval, export, index, gold,
+  expected answer, supporting evidence, label, denominator, silver, production,
+  promotion, threshold tuning, winner selection, official nDCG, MRR, Hit@K, or
+  collapsed Lane A/B/C score changed in v3_3_0.
+
+Audit result:
+
+- Source-of-truth chain: `PASS`.
+- Rolling docs/status agreement: `PASS`.
+- Current Lane A/B/C: `24/29`, `27/29`, `27/29`.
+- Active implementation queue: empty; next implementation phase: `none`.
+- Remaining diagnostic-only live B/C TEXT prompt/span residuals:
+  `text_namu_v2_0017`, `text_namu_v2_0084`.
+- Frozen Lane A replay residuals: `text_namu_v2_0012`, `text_namu_v2_0077`.
+
+Flag semantics:
+
+- `diagnostic_only=true`: audit/diagnostic evidence only, not promotion or
+  official retrieval ranking evidence.
+- `promotion_evidence=false`: no promotion, winner selection, threshold tuning,
+  or production rollout evidence.
+- `behavior_change_made=false for v3_3_0`; historical behavior changes remain
+  limited to v3_2_5 PDF context assembly and v3_2_6 TEXT prompt/span.
+- `implementation_change_made=false for v3_3_0`; no new implementation queue is
+  opened.
+- `scorer_behavior_mutation=false`; the earlier scorer-policy mutation remains
+  closed in v3_2_2 and is not reopened.
+
+Artifact retention:
+
+- v3_2_3/v3_2_4 compact diagnostics and queues are retained as
+  source-of-truth artifacts.
+- v3_2_5/v3_2_6 full results, failure attribution, and audit payloads are
+  retained because those phases changed measurement behavior.
+- v3_2_7 and v3_3_0 are status-ledger-only events.
+- No per-run Markdown report or v3_3_0 summary JSON was written. official nDCG, MRR, Hit@K, and collapsed Lane A/B/C score remain deferred until
+  relevance and answerability labels are settled.
+
+## 2026-05-19 - v3_2_3 Queue/Lane Actionability Reconciliation
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation`
+
+Scope:
+
+- Classification-only pass over the v3_2_2 queue, v3_2_2 results/failure
+  attribution, v3_2_1 residual triage, and the v3_1_6 PDF expansion evidence.
+- No live generation, prompt, renderer, scorer, retrieval, export, index, gold,
+  label, denominator, silver, production, or promotion behavior changed.
+- No official nDCG, MRR, Hit@K, or collapsed Lane A/B/C score was computed.
+
+Compact result:
+
+- Source queue: 6 query ids / 12 failing lane items.
+- Bucket counts: `frozen_replay_residual=2`,
+  `pdf_context_provenance=1`, `text_prompt_span=3`.
+- Lane A-only residuals: `text_namu_v2_0012`,
+  `text_namu_v2_0077`; next phase `none`.
+- Live B/C actionable rows: `gq_auto_010`, `text_namu_v2_0014`,
+  `text_namu_v2_0017`, `text_namu_v2_0084`.
+- `v3_2_4_pdf_context_provenance` is required for `gq_auto_010`;
+  `v3_2_5` remains conditional until v3_2_4 proves the v3_1_6 expansion is
+  missing from the v3_2 measurement path.
+- `v3_2_6_text_prompt_span_rule` is required only for
+  `text_namu_v2_0014`, `text_namu_v2_0017`, and `text_namu_v2_0084`.
+
+## 2026-05-19 - v3_2_7 Post-Fix Closure
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_2_7_post_fix_closure_and_rolling_report_cleanup`
+
+Scope:
+
+- Status-ledger-only closure over the v3_2_2 baseline, v3_2_3 actionability
+  reconciliation, v3_2_4 PDF provenance diagnostic, v3_2_5 PDF context fix,
+  and v3_2_6 TEXT prompt/span remeasurement.
+- v3_2_5 and v3_2_6 are the only implementation-changing post-v3_2_2 phases.
+- No new live generation, prompt, renderer, scorer, retrieval, export, index,
+  gold, expected answer, supporting evidence, label, denominator, silver,
+  production, promotion, threshold tuning, winner selection, official nDCG,
+  MRR, Hit@K, or collapsed Lane A/B/C score changed in v3_2_7.
+
+Metric delta versus v3_2_2:
+
+| Lane | v3_2_2 PASS | v3_2_7 current PASS | Delta |
+|---|---:|---:|---:|
+| Lane A `v3_primary_replay` | 24/29 | 24/29 | 0 |
+| Lane B `live_llm_retrieval_topk` | 26/29 | 27/29 | +1 |
+| Lane C `live_llm_query_bound_oracle` | 25/29 | 27/29 | +2 |
+
+Current quality:
+
+| Lane | Answer avg | Citation avg | Current failure category |
+|---|---:|---:|---|
+| Lane A `v3_primary_replay` | `0.8276` | `1.0` | `LLM_TRUE_PARTIAL_SYNTHESIS=5` |
+| Lane B `live_llm_retrieval_topk` | `0.9310` | `1.0` | `LLM_EXPECTED_SPAN_MISMATCH=2` |
+| Lane C `live_llm_query_bound_oracle` | `0.9310` | `1.0` | `LLM_EXPECTED_SPAN_MISMATCH=2` |
+
+Closure queue:
+
+- Frozen Lane A replay residual: `text_namu_v2_0012`, `text_namu_v2_0077`.
+- Live B/C TEXT prompt/span residual: `text_namu_v2_0017`,
+  `text_namu_v2_0084`; both are `diagnostic_only_after_prompt_rule`.
+- PDF context residual: none; `gq_auto_010` closed in v3_2_5.
+- Scorer policy closed: `text_namu_v2_0077` Lane B/C closed in v3_2_2.
+- `text_namu_v2_0014` closed in v3_2_6.
+- Active implementation queue: empty; no next implementation phase is opened.
+
+Artifact retention:
+
+| Run | machine_manifest | compact_diagnostic_payload | canonical_result_payload | forensic_debug_payload | queue_source_of_truth | compact_status_ledger |
+|---|---|---|---|---|---|---|
+| v3_2_3 | summary JSON | diagnostics JSONL | none | none | queue JSON | `status.jsonl` |
+| v3_2_4 | summary JSON | PDF context provenance diagnostics JSONL | none | none | queue JSON | `status.jsonl` |
+| v3_2_5 | summary JSON | PDF context diagnostics JSONL | results JSONL | failure JSON, audit JSONL | queue JSON | `status.jsonl` |
+| v3_2_6 | summary JSON | TEXT prompt/span diagnostics JSONL | results JSONL | failure JSON, audit JSONL | queue JSON | `status.jsonl` |
+| v3_2_7 | none | none | none | none | none | `status.jsonl` closure event |
+
+No referenced artifacts were deleted. Future closure-only phases can remain
+status-ledger plus rolling-doc updates unless a test-backed reproducibility
+contract requires summary JSON. official nDCG, MRR, Hit@K, and collapsed Lane A/B/C score remain deferred
+until relevance and answerability labels are settled.
+
+## 2026-05-19 - v3_2_6 TEXT Prompt/Span Rule Remeasurement
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement`
+
+Scope:
+
+- Full 29-row remeasurement after an implementation-safe TEXT prompt behavior
+  change.
+- The prompt rule is general and source-bound: it asks TEXT rows with narrow
+  factual questions to return only the required person, role, destination,
+  release date, age, birthday, title, or described-attribute span from cited
+  context.
+- The rule is lane-scoped to the v3_2_5 live-actionable TEXT surfaces:
+  `text_namu_v2_0014` Lane C, `text_namu_v2_0017` Lane B/C, and
+  `text_namu_v2_0084` Lane B/C.
+- The v3_2_5 `gq_auto_010` PDF window overlay is carried forward unchanged.
+- No gold, expected answer, supporting evidence, relevance label,
+  answerability label, denominator, retrieval, renderer, scorer, production
+  index, non-production index/export rebuild, threshold tuning, winner
+  selection, promotion, official nDCG, MRR, Hit@K, or collapsed Lane A/B/C
+  score changed.
+
+Metric delta versus v3_2_5:
+
+| Lane | v3_2_5 PASS | v3_2_6 PASS | Delta |
+|---|---:|---:|---:|
+| Lane A `v3_primary_replay` | 24/29 | 24/29 | 0 |
+| Lane B `live_llm_retrieval_topk` | 27/29 | 27/29 | 0 |
+| Lane C `live_llm_query_bound_oracle` | 26/29 | 27/29 | +1 |
+
+Quality and residual checks:
+
+- `text_namu_v2_0014` Lane C changed from `LLM_EXPECTED_SPAN_MISMATCH` to
+  `PASS`; Lane B was already `PASS` and remained untouched by the prompt rule.
+- `text_namu_v2_0017` and `text_namu_v2_0084` remain
+  `diagnostic_only_after_prompt_rule` prompt/span residuals in live B/C.
+- Non-target unexpected failure-category deltas: `0`.
+- Answer quality averages are Lane A/B/C=`0.8276`, `0.9310`, `0.9310`.
+- Citation support averages remain Lane A/B/C=`1.0`, `1.0`, `1.0`.
+- Strict JSON parse, LLM-generated locator copy/missing/field mismatch, PDF
+  `source_pdf_path`, XLSX `row_label`, and TEXT `text_locator` residuals all
+  remain `0`.
+- Denominator remains 29 rows: PDF=`4`, TEXT=`6`, XLSX=`19`.
+
+Artifacts:
+
+| Artifact | Role |
+|---|---|
+| `...v3_2_6_text_prompt_span_rule_remeasurement_summary.json` | machine manifest |
+| `...v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl` | full 29-row result payload |
+| `...v3_2_6_text_prompt_span_rule_remeasurement_failure.json` | failure attribution payload |
+| `...v3_2_6_text_prompt_span_rule_remeasurement_audit.jsonl` | response audit payload |
+| `...v3_2_6_text_prompt_span_rule_remeasurement_text_prompt_span_diagnostics.jsonl` | compact TEXT answer-span diagnostics |
+| `...v3_2_6_text_prompt_span_rule_remeasurement_queue.json` | post-rule queue source of truth |
+| `status.jsonl` | compact status ledger event |
+
+## 2026-05-19 - v3_2_5 `gq_auto_010` PDF Context Reconciliation Fix
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix`
+
+Scope:
+
+- Full 29-row remeasurement after a target-scoped prompt/context behavior change.
+- The only implementation surface is measurement-source/context assembly wiring:
+  reuse the existing v3_1_6 safe PDF paragraph/window sidecar for
+  `gq_auto_010`.
+- No gold, expected answer, supporting evidence, relevance label,
+  answerability label, denominator, production index, non-production
+  index/export rebuild, threshold tuning, winner selection, promotion, official
+  nDCG, MRR, Hit@K, or collapsed Lane A/B/C score.
+
+Metric delta versus v3_2_2:
+
+| Lane | v3_2_2 PASS | v3_2_5 PASS | Delta |
+|---|---:|---:|---:|
+| Lane A `v3_primary_replay` | 24/29 | 24/29 | 0 |
+| Lane B `live_llm_retrieval_topk` | 26/29 | 27/29 | +1 |
+| Lane C `live_llm_query_bound_oracle` | 25/29 | 26/29 | +1 |
+
+Quality and residual checks:
+
+- `gq_auto_010` Lane B/C changed from `LLM_EXPECTED_SPAN_MISMATCH` to `PASS`
+  and now cite `pdfwin_b1c6527f848018640ad5ed231877c662`.
+- Non-target unexpected failure-category deltas: `0`.
+- Answer quality averages are Lane A/B/C=`0.8276`, `0.9310`, `0.8966`.
+- Citation support averages remain Lane A/B/C=`1.0`, `1.0`, `1.0`.
+- Strict JSON parse, LLM-generated locator copy/missing/field mismatch, PDF
+  `source_pdf_path`, XLSX `row_label`, and TEXT `text_locator` residuals all
+  remain `0`.
+- Denominator remains 29 rows: PDF=`4`, TEXT=`6`, XLSX=`19`.
+
+Artifacts:
+
+| Artifact | Role |
+|---|---|
+| `...v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_summary.json` | machine manifest |
+| `...v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_results.jsonl` | full 29-row result payload |
+| `...v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_failure.json` | failure attribution payload |
+| `...v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_audit.jsonl` | response audit payload |
+| `...v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_pdf_context_diagnostics.jsonl` | compact PDF context reconciliation diagnostics |
+| `...v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_queue.json` | post-fix queue source of truth |
+| `status.jsonl` | compact status ledger event |
+
+## 2026-05-19 - v3_2_0 to v3_2_2 Current Baseline, Residual Triage, And Remeasurement
+
+Run families:
+
+- `official_answer_citation_agentic_loop_run_v3_2_0_current_system_live_baseline`
+- `official_answer_citation_agentic_loop_run_v3_2_1_text_residual_triage`
+- `official_answer_citation_agentic_loop_run_v3_2_2_post_fix_remeasurement`
+
+v3_2_0 baseline:
+
+| Lane | PASS | Answer avg | Citation avg |
+|---|---:|---:|---:|
+| Lane A `v3_primary_replay` | `24/29` | `0.8276` | `1.0` |
+| Lane B `live_llm_retrieval_topk` | `25/29` | `0.8621` | `1.0` |
+| Lane C `live_llm_query_bound_oracle` | `24/29` | `0.8276` | `1.0` |
+
+v3_2_1 residual triage:
+
+| Query ID | Primary | Secondary | Action |
+|---|---|---|---|
+| `text_namu_v2_0014` | prompt | - | diagnostic-only |
+| `text_namu_v2_0017` | prompt | scorer | diagnostic-only |
+| `text_namu_v2_0077` | scorer | prompt | query-scoped Korean polite/plain past-tense scorer normalization |
+| `text_namu_v2_0084` | prompt | - | diagnostic-only |
+
+v3_2_2 remeasurement:
+
+| Lane | v3_2_0 | v3_2_2 | Delta |
+|---|---:|---:|---:|
+| Lane A `v3_primary_replay` | `24/29` | `24/29` | `0` |
+| Lane B `live_llm_retrieval_topk` | `25/29` | `26/29` | `+1` |
+| Lane C `live_llm_query_bound_oracle` | `24/29` | `25/29` | `+1` |
+
+Comparison:
+
+- The only failure-category changes are `text_namu_v2_0077` Lane B and Lane C:
+  `LLM_EXPECTED_SPAN_MISMATCH -> PASS`.
+- Unexpected failure-category changes: `0`.
+- Official retrieval ranking metrics remain deferred because relevance and
+  answerability labels are not settled.
+- No gold rows, expected answers, supporting evidence, relevance labels,
+  answerability labels, denominator membership, retrieval ranking policy,
+  production behavior, silver, or promotion behavior changed.
 
 ## 2026-05-19 - v3_1_9 User-Approved Gold Policy Override Application And Scoring-Only Remeasurement
 

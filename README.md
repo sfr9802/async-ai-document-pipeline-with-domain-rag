@@ -68,8 +68,11 @@ denominator, not promotion evidence, and not used for generation. expected
 values are audit-only, candidate result rows are not silver generation source,
 and official 29 query_ids are excluded from dev/holdout tuning silver. Initial
 source-bound silver JSONL files were blocked rather than fabricated:
-TEXT=0, XLSX=0, PDF=0. The next step is source-bound SearchUnit export/build and
-canonical SearchUnit citation payload wiring backed by safe source manifests.
+TEXT=0, XLSX=0, PDF=0. The official-denominator source-bound index and
+canonical SearchUnit citation payload wiring are now available, but 29/29
+source-bound SearchUnits overlap the official denominator. Safe non-official
+source-bound source manifests are still missing, so silver generation stays
+closed until coverage is settled.
 
 Canonical source-of-truth artifacts:
 

@@ -23,9 +23,34 @@ requirements.
 
 ## Current Status
 
-Overall status: `official_answer_citation_v3_1_9_user_gold_policy_override_application_recorded`;
+Overall status: `official_retrieval_qrels_human_minimal_review_packet_v3_4_1a_ready`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied.
+Previous closure status `official_answer_citation_v3_2_7_post_fix_sequence_closed`
+remains the audited closed state; v3_3_0 only hardens the source-of-truth
+record around it, and the v3_3_0 marker
+`official_answer_citation_v3_3_0_source_of_truth_audit_completed` remains
+valid. v3_3_1 then records the silver source-manifest readiness blocker
+without opening silver generation or any implementation queue. v3_3_2 prepares
+the human retrieval relevance/answerability label-design decision packet only.
+v3_3_3 then inspects repo and external-runtime source manifests for future
+answer/citation silver source-bound candidates and finds only TEXT=0, PDF=3,
+XLSX=4 strict non-official rows, below both the 100-row pilot threshold and the
+preferred 350/325/325 target. v3_4_0 now creates only the official retrieval
+metric contract and qrels-schema artifact for Hit@1/3/5, MRR@5, and nDCG@5.
+v3_4_1 then creates a human-labelable qrels candidate packet from v3_2_6 Lane B
+retrieved top-k context, Lane C query-bound oracle rows, and structured adapter
+candidate evidence. All final relevance/answerability labels remain pending.
+The v3_4_1 marker
+`official_retrieval_qrels_candidate_packet_v3_4_1_ready_for_human_review`
+remains valid as the raw candidate-packet source.
+v3_4_1a reduces that raw 219-row packet into a 29-row query-group review CSV,
+a 30-row ambiguity review CSV, a pending policy-approval JSON, and a planned
+auto-labeling policy JSON. The raw v3_4_1 CSV no longer needs direct human
+review unless the user explicitly opens a pool-complete audit.
+No denominator rows, official retrieval metrics, prompt, retrieval, renderer,
+scorer, index/export, silver generation, production, or Lane A/B/C score
+changed.
 
 - Official first-run baseline is `status=BLOCKED_OR_PARTIAL` with
   `status_detail=SCORED_BASELINE_PARTIAL`,
@@ -61,6 +86,66 @@ and `v3_comparable_live_measurement_completed` remain satisfied.
   rerun_allowed=true. The built index contains `faiss.index`, `build.json`,
   `ingest_manifest.json`, and `search_unit_manifest.jsonl` with 29/29 official
   rows and track counts PDF=4, TEXT=6, XLSX=19.
+- v3_3_2 retrieval-label design packet
+  `official_answer_citation_agentic_loop_run_v3_3_2_retrieval_relevance_answerability_label_design_packet`
+  records that the current 29-row set is the official answer/citation
+  denominator, not yet an official retrieval qrels denominator. official nDCG,
+  MRR, Hit@K, and any collapsed Lane A/B/C score remain blocked until the user
+  settles relevance labels, answerability labels, query-bound versus broader
+  source-bound evidence policy, denominator inclusion/exclusion, and structured
+  XLSX/PDF adapter policy.
+- v3_3_3 silver source-candidate discovery
+  `official_answer_citation_agentic_loop_run_v3_3_3_silver_source_candidate_discovery`
+  wrote compact inventory
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_3_3_silver_source_candidate_discovery_candidate_inventory.json`
+  and a `status.jsonl` event. Strict eligible non-official source-bound
+  candidates are TEXT=0, PDF=3, XLSX=4; total=7. A future 1,000-row
+  answer/citation silver benchmark is not feasible from current safe source
+  material. Raw TEXT chunks (135,602) and locator-complete XLSX retrieval
+  candidates (702) are not counted because they are missing the strict
+  source-manifest contract needed for answer/citation generation.
+- v3_4_0 official retrieval metric contract
+  `official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract`
+  wrote compact contract JSON and qrels-schema JSON:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
+  and
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_qrels_schema.json`.
+  The contract defines denominator policy options A/B/C, the 0-3 relevance and
+  answerability schemas, the default Hit@K/MRR positive rule, default and
+  answerability-gated nDCG gain rules, and micro/macro reporting boundaries.
+  Official nDCG, MRR, Hit@K, and any collapsed Lane A/B/C score remain blocked
+  until approved qrels labels are applied. Legacy XLSX retrieval CSV and silver
+  retrieval-evidence files are prohibited as current official qrels.
+- v3_4_1 official retrieval qrels candidate packet
+  `official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet`
+  wrote human-review artifacts:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.jsonl`,
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.csv`,
+  and
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_summary.json`.
+  Candidate packet count is 219 rows across 29 query_ids: PDF=22, TEXT=24,
+  XLSX=173. Candidate roles are retrieved_topk=145, query_bound_oracle=29, and
+  structured_adapter=45. Every row keeps `relevance_label=pending`,
+  `answerability_label=pending`, `label_status=pending_user_review`,
+  `official_denominator_overlap=true`, `qrels_candidate=true`,
+  `generation_source=false`, and `promotion_evidence=false`. No official
+  Hit@K, MRR, nDCG, micro/macro retrieval aggregate, or collapsed Lane A/B/C
+  score was computed.
+- v3_4_1a official retrieval qrels minimal human review packet
+  `official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet`
+  converted the raw v3_4_1 candidate packet into review-first artifacts:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_qrels_policy_approval.json`,
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_qrels_human_query_group_review.csv`,
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_qrels_ambiguous_candidate_review.csv`,
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_qrels_auto_label_plan.json`,
+  and
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_summary.json`.
+  Human review burden is reduced from 219 raw candidate rows to 29 query-group
+  rows plus 30 candidate-unit ambiguity rows, estimated 59 review rows total.
+  Expected answer/supporting evidence fields are omitted pending explicit policy
+  approval. Codex recommendations are not final labels, auto-labeling is not
+  applied, and official Hit@K, MRR, nDCG, micro/macro retrieval aggregate, and
+  collapsed Lane A/B/C score remain blocked.
 - SearchUnit citation payload wiring is implemented in the live runner, and
   XLSX/PDF deterministic adapter opt-in wiring is implemented for retrieved
   source-bound SearchUnits. These are wiring changes only: the historical v1 run
@@ -264,6 +349,163 @@ and `v3_comparable_live_measurement_completed` remain satisfied.
   (`text_namu_v2_0014`, `text_namu_v2_0017`, `text_namu_v2_0077`,
   `text_namu_v2_0084`) across nine lane items. No additional user policy packet
   is required unless a concrete metadata conflict appears.
+- v3_2_0 current-system live baseline
+  `official_answer_citation_agentic_loop_run_v3_2_0_current_system_live_baseline`
+  reran the settled 29-row answer/citation set without implementation behavior
+  changes. Lane A/B/C PASS are `24/29`, `25/29`, `24/29`. Answer quality
+  averages are A/B/C=`0.8276`, `0.8621`, `0.8276`; citation support averages
+  are A/B/C=`1.0`, `1.0`, `1.0`. The denominator policy is unchanged
+  (PDF=4, TEXT=6, XLSX=19). Retrieval ranking metrics remain deferred:
+  no official nDCG, MRR, Hit@K, or collapsed Lane A/B/C score was computed.
+- v3_2_1 TEXT residual triage
+  `official_answer_citation_agentic_loop_run_v3_2_1_text_residual_triage`
+  processed only the four remaining TEXT rows from v3_2_0 evidence. Primary
+  categories: `prompt=3`, `scorer=1`. `text_namu_v2_0077` received the only
+  implementation-safe change: a query-scoped scorer compatibility policy for
+  Korean polite/plain past-tense equivalence. `text_namu_v2_0014`,
+  `text_namu_v2_0017`, and `text_namu_v2_0084` remain diagnostic-only prompt
+  residuals. No gold, expected answer, supporting evidence, relevance label,
+  answerability label, denominator, retrieval, renderer, production, silver, or
+  promotion behavior changed.
+- v3_2_2 post-fix remeasurement
+  `official_answer_citation_agentic_loop_run_v3_2_2_post_fix_remeasurement`
+  reran all 29 rows because v3_2_1 changed scorer behavior. Lane A/B/C PASS are
+  `24/29`, `26/29`, `25/29`. Compared with v3_2_0, only
+  `text_namu_v2_0077` changed: Lane B and Lane C moved from
+  `LLM_EXPECTED_SPAN_MISMATCH` to `PASS`; unexpected failure-category changes
+  are `0`. Answer quality averages are A/B/C=`0.8276`, `0.8966`, `0.8621`;
+  citation support averages remain A/B/C=`1.0`, `1.0`, `1.0`. Retrieval ranking
+  metrics remain deferred and Lane A/B/C are not collapsed.
+- v3_2_3 queue/lane actionability reconciliation
+  `official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation`
+  classified the v3_2_2 queue without changing behavior. Source queue size is
+  six query ids / 12 failing lane items. `text_namu_v2_0012` and
+  `text_namu_v2_0077` are Lane A-only frozen replay residuals and are not live
+  prompt-fixable. Live B/C actionable rows are `gq_auto_010`,
+  `text_namu_v2_0014`, `text_namu_v2_0017`, and `text_namu_v2_0084`.
+  `gq_auto_010` goes to `v3_2_4_pdf_context_provenance`; `v3_2_5` stays
+  conditional until v3_2_4 proves that the v3_1_6 expansion is missing from the
+  v3_2 measurement path. TEXT prompt/span follow-up is limited to
+  `text_namu_v2_0014`, `text_namu_v2_0017`, and `text_namu_v2_0084` in
+  `v3_2_6_text_prompt_span_rule`. v3_2_3 wrote only summary JSON, diagnostics
+  JSONL, reconciled queue JSON, and a compact `status.jsonl` event; no per-run
+  Markdown, results JSONL, failure attribution, audit payload, official
+  retrieval ranking metric, or collapsed Lane A/B/C score was produced.
+- v3_2_4 `gq_auto_010` PDF context provenance diagnostic
+  `official_answer_citation_agentic_loop_run_v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic`
+  used v3_2_3 as the gate and inspected only existing artifacts/code paths. The
+  classification is
+  `open_because_v3_1_6_expansion_not_wired_into_v3_2_measurement`. Current
+  v3_2_2 Lane B/C fail while citing original SearchUnit
+  `7bf516bf-2a17-4303-86d8-3cffaa04846e`; the current v3_2_2 context evidence
+  does not include `pdfwin_b1c6527f848018640ad5ed231877c662` or the numeric
+  answer span (`4.9%`, `0.8%p`). v3_2_2 records
+  `retrieval_context_rerun=false` and
+  `retrieval_context_source_run_id=official_answer_citation_agentic_loop_run_v3_comparable_live_measurement`,
+  so the measurement used the frozen v3 context surface. v3_1_6 remains the
+  proof that the safe same-page PDF paragraph/window expansion was available,
+  locator-valid, contained the numeric span, and made Lane B/C PASS. v3_2_5 is
+  therefore needed as a measurement-source/context-assembly overlay, not an
+  index/export rebuild. No live generation, prompt, renderer, scorer, retrieval,
+  index/export, gold, label, denominator, silver, production, or promotion
+  behavior changed in v3_2_4.
+- v3_2_5 `gq_auto_010` PDF context reconciliation fix
+  `official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix`
+  reached status
+  `official_answer_citation_v3_2_5_gq_auto_010_pdf_context_reconciliation_fixed`
+  and ran only after v3_2_4 proved an implementation-safe PDF context
+  provenance fix was required. The runner now reuses the existing v3_1_6 safe PDF
+  paragraph/window sidecar for `gq_auto_010` only and passes that target-scoped
+  context expansion into the v3_2 measurement path. The reused expansion unit is
+  `pdfwin_b1c6527f848018640ad5ed231877c662`; it remains locator-valid
+  (`source_pdf_path`, `document_version_id=docv_fe2470815512a395`, page `8`,
+  physical page index `7`, region type `paragraph_window`) and contains the
+  numeric span (`4.9%`, `0.8%p`). Full 29-row remeasurement changed Lane A/B/C
+  PASS from v3_2_2 `24/29`, `26/29`, `25/29` to `24/29`, `27/29`, `26/29`.
+  The only failure-category deltas are `gq_auto_010` Lane B/C
+  `LLM_EXPECTED_SPAN_MISMATCH -> PASS`; non-target unexpected deltas are `0`.
+  Citation support averages stay A/B/C=`1.0`, `1.0`, `1.0`; strict JSON,
+  LLM-generated locator copy/missing/field mismatch, PDF `source_pdf_path`,
+  XLSX `row_label`, and TEXT `text_locator` residuals remain `0`. No
+  index/export rebuild, gold, expected answer, supporting evidence, label,
+  denominator, silver, production, promotion, threshold tuning, winner
+  selection, official retrieval ranking metric, or collapsed Lane A/B/C score
+  was produced.
+- v3_2_6 TEXT prompt/span rule remeasurement
+  `official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement`
+  reached status
+  `official_answer_citation_v3_2_6_text_prompt_span_rule_remeasured` before
+  v3_2_7 closure. It applied a target-scoped TEXT prompt/span rule: a general
+  narrow factual span
+  instruction only to the live actionable TEXT lanes from the v3_2_5 queue:
+  `text_namu_v2_0014` Lane C,
+  `text_namu_v2_0017` Lane B/C, and `text_namu_v2_0084` Lane B/C. The prompt
+  does not include row-specific expected answers, supporting evidence, gold
+  fields, or hardcoded answer strings. It also carries forward the existing
+  v3_2_5 `gq_auto_010` PDF context overlay so the PDF fix is not reopened.
+  Full 29-row remeasurement changed Lane A/B/C PASS from v3_2_5 `24/29`,
+  `27/29`, `26/29` to `24/29`, `27/29`, `27/29`. `text_namu_v2_0014` Lane C changed from `LLM_EXPECTED_SPAN_MISMATCH` to `PASS`; unexpected deltas are `0`.
+  `text_namu_v2_0017` and `text_namu_v2_0084` remain diagnostic-only prompt/span residuals. Citation support averages stay A/B/C=`1.0`, `1.0`,
+  `1.0`; strict JSON, LLM-generated locator copy/missing/field mismatch, PDF
+  `source_pdf_path`, XLSX `row_label`, and TEXT `text_locator` residuals remain
+  `0`. No gold, expected answer, supporting evidence, label, denominator,
+  retrieval, renderer, scorer, index/export, silver, production, promotion,
+  threshold tuning, winner selection, official retrieval ranking metric, or
+  collapsed Lane A/B/C score changed.
+- v3_2_7 post-fix closure and rolling report cleanup
+  `official_answer_citation_agentic_loop_run_v3_2_7_post_fix_closure_and_rolling_report_cleanup`
+  closes the v3_2 post-fix sequence with a status-ledger-only event and
+  rolling-doc update. v3_2_5 and v3_2_6 are the only implementation-changing post-v3_2_2 phases:
+  v3_2_5 reused the existing v3_1_6 PDF window sidecar for
+  `gq_auto_010`, and v3_2_6 applied the target/lane-scoped TEXT prompt/span
+  rule. Lane A/B/C are now `24/29`, `27/29`, `27/29`; answer averages are
+  A/B/C=`0.8276`, `0.9310`, `0.9310`; citation averages remain A/B/C=`1.0`,
+  `1.0`, `1.0`. `gq_auto_010` and `text_namu_v2_0014` are closed; the active
+  implementation queue is empty, and no next implementation phase is opened.
+  `text_namu_v2_0017` and `text_namu_v2_0084` remain diagnostic-only live B/C
+  TEXT prompt/span residuals; `text_namu_v2_0012` and `text_namu_v2_0077`
+  remain frozen Lane A replay residuals. Unexpected deltas are `0`. Official
+  nDCG, MRR, Hit@K, and collapsed Lane A/B/C score remain deferred because
+  relevance and answerability labels are not settled. No gold, expected answer,
+  supporting evidence, label, denominator, retrieval, renderer, scorer,
+  index/export, silver, production, promotion, threshold tuning, winner
+  selection, or official retrieval ranking metric changed.
+- v3_3_0 post-closure source-of-truth audit
+  `official_answer_citation_agentic_loop_run_v3_3_0_post_closure_hardening_source_of_truth_audit`
+  is source-of-truth audit only. It verifies the v3_2_3 through v3_2_7
+  relationship chain, confirms `status.jsonl` is the source for the v3_2_7
+  closure, and records the result as a compact status-ledger event without
+  per-run Markdown or summary JSON. Lane A/B/C remain `24/29`, `27/29`, `27/29`;
+  the active implementation queue remains empty; no next implementation phase
+  is opened. `text_namu_v2_0017` and `text_namu_v2_0084` remain diagnostic-only
+  live B/C TEXT prompt/span residuals, while `text_namu_v2_0012` and `text_namu_v2_0077` remain frozen Lane A replay residuals. v3_3_0 made no behavior, implementation, prompt,
+  renderer, scorer, retrieval, index/export, gold, label, denominator, silver,
+  production, promotion, threshold tuning, winner selection, official retrieval
+  metric, or collapsed Lane A/B/C score change. official nDCG, MRR, Hit@K, and collapsed Lane A/B/C score remain deferred.
+- v3_3_1 answer/citation silver source-manifest readiness
+  `official_answer_citation_agentic_loop_run_v3_3_1_answer_citation_silver_source_manifest_readiness`
+  updates only the silver manifest/readiness contract and compact status
+  ledger. Safe silver source manifests cannot be created yet: the
+  non-production source-bound SearchUnit index is build/load checked and has
+  source-bound locators plus source-text signals for 29/29 official rows, but
+  29/29 source-bound SearchUnits overlap the official denominator. Eligible
+  non-official dev/holdout source candidates remain TEXT=0, XLSX=0, PDF=0, so
+  safe non-official source-bound source manifests are still missing. Silver
+  generation stays closed until safe silver-source data coverage is settled.
+  No silver JSONL rows, expected answers, gold labels, promotion evidence,
+  official retrieval metrics, production mutation, or implementation queue were
+  created.
+- v3_3_3 source-candidate discovery
+  `official_answer_citation_agentic_loop_run_v3_3_3_silver_source_candidate_discovery`
+  inspected the current repo plus external runtime source manifests. Compact
+  inventory path:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_3_3_silver_source_candidate_discovery_candidate_inventory.json`.
+  Strict eligible non-official source-bound candidates are TEXT=0, PDF=3,
+  XLSX=4; total=7. The 1,000-row silver target is not feasible, and no track
+  reaches the 100-row pilot threshold. The run created no questions, expected
+  answers, supporting evidence, labels, denominator rows, official retrieval
+  metrics, prompt/retrieval/scorer/renderer/index/export/production changes, or
+  README metric claim.
 - v3_1_7 stayed diagnostic-only and not promotion evidence: no behavior changed,
   no live all-track generation was rerun, no production/denominator/gold/label
   mutation occurred, no official nDCG/MRR/Hit@K was computed, and
@@ -280,8 +522,9 @@ and `v3_comparable_live_measurement_completed` remain satisfied.
   created because safe source-bound answer/citation source manifests are still
   missing: TEXT=0, XLSX=0, PDF=0. The official-denominator source-bound index,
   build/load check, and canonical SearchUnit citation payload wiring are already
-  available; silver generation stays closed until safe silver-source data
-  coverage is settled.
+  available; 29/29 source-bound SearchUnits overlap the official denominator,
+  and safe non-official source-bound source manifests are still missing. silver
+  generation stays closed until safe silver-source data coverage is settled.
 - Current test surface is intentionally compact after legacy test deletion:
   `python -X utf8 -m pytest ai/tests --rag-current -q`; full `ai/tests`
   now mirrors the current profile and no longer carries broad/nightly legacy
@@ -295,11 +538,11 @@ and `v3_comparable_live_measurement_completed` remain satisfied.
 
 | Track | Current state | Current metric/evidence | Next action |
 |---|---|---|---|
-| `text_namu_v2_1` | v3_1_9 applied the user-approved gold policy override for five TEXT residual rows | Lane A/B/C after scoring-only remeasurement: `27/29`, `26/29`, `25/29`; remaining queue has 4 implementation-safe TEXT query ids / 9 lane items | Later implementation-safe renderer/scorer/prompt/retrieval work may inspect remaining residuals without reopening gold policy. |
+| `text_namu_v2_1` | v3_2_7 closes the post-fix implementation queue; `text_namu_v2_0014` is closed and `text_namu_v2_0017`/`text_namu_v2_0084` remain diagnostic-only | Current Lane A/B/C: `24/29`, `27/29`, `27/29`; TEXT Lane B/C residuals are `text_namu_v2_0017`, `text_namu_v2_0084`; `text_namu_v2_0012` and `text_namu_v2_0077` are frozen Lane A replay residuals | No next implementation phase is opened. Do not reopen gold policy automatically; only a later user-owned policy/answerability review should change expected-span decisions. |
 | `xlsx_business_structured` | v3_1_3 improved remaining XLSX date rows through source-bound answer/scorer compatibility | target XLSX rows now PASS in Lane B/C; XLSX `row_label` mismatch=0 | Keep date/number compatibility general; do not tune thresholds. |
-| `pdf_business_ocr_mm` | v3_1_6 applied safe same-page source-bound PDF paragraph/window context expansion for `gq_auto_010` | Target Lane B/C now PASS with locator-valid `pdfwin_b1c6527f848018640ad5ed231877c662`; all-track Lane B/C now `24/29`; residual strict JSON/locator counts stay `0` | Queue cleared; keep expansion guarded and do not broaden it. |
+| `pdf_business_ocr_mm` | v3_2_5 closes `gq_auto_010` by reusing the existing v3_1_6 safe PDF window sidecar in the current v3_2 path | v3_2_5 Lane B/C cite `pdfwin_b1c6527f848018640ad5ed231877c662` and PASS; non-target deltas `0`; no index/export rebuild | No PDF follow-up is required unless a later regression reopens this row. |
 | Current tests | `--rag-current` profile isolates official metric, source-of-truth, candidate, and guardrail tests | Legacy `ai/tests/test_*.py` suites outside the current profile were deleted | Keep the compact profile green; extend existing files for routine diagnostic coverage. Create a new test file only for a durable new subsystem and update the keep-set in the same change. |
-| Report artifacts | Classification-only, packet-preparation, and v3_1_9 policy-application phases use compact JSON/JSONL artifacts plus the status ledger | v3_1_9 creates only summary, applied overrides, gold diff, rescored results, remaining queue, and compact status event | Append human report notes to this progress file; do not create per-run Markdown or full forensic payloads unless behavior changes or a test-backed forensic contract requires them. |
+| Report artifacts | Classification-only phases use compact JSON/JSONL artifacts plus the status ledger; v3_2_7 closure and v3_3_0 audit are status-ledger-only | v3_3_0 retained existing v3_2_3/v3_2_4 compact diagnostics and v3_2_5/v3_2_6 behavior-changing forensic payloads; no per-run Markdown or summary JSON was written | Future closure-only phases can remain status ledger plus rolling docs unless a test-backed reproducibility contract requires summary JSON. |
 
 ## Current Verification Command
 
@@ -312,9 +555,138 @@ python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_
 
 Current verification:
 local results recorded in this progress log. Latest `--rag-current` verification
-after the v3_1_9 updates: 145 passed, 0 skipped, 0 failed. Marker profile
-`rag_current or rag_official_metric or rag_pdf_current`: 145 passed,
-0 deselected, 0 failed.
+after the v3_3_2 retrieval label-design packet: 175 passed, 0 skipped,
+0 failed. Marker profile `rag_current or rag_official_metric or rag_pdf_current`:
+175 passed, 0 skipped, 0 failed.
+
+Additional 2026-05-19 local verification for v3_3_2 retrieval
+relevance/answerability label-design packet:
+
+- `python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_3_2_retrieval_label_design_packet_blocks_metrics_until_user_decisions ai/tests/test_rag_diagnostic_status_sync.py::test_progress_docs_record_v3_3_2_retrieval_label_design_packet_without_metrics ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests -q`: PASS, 3 passed.
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 175 passed, 0 skipped, 0 failed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 175 passed, 0 skipped, 0 failed.
+- Guardrail summary: the packet proposes retrieval relevance and answerability
+  label-schema options only. No label, denominator, expected answer,
+  supporting evidence, prompt, retrieval, renderer, scorer, index/export,
+  silver, production, promotion, official retrieval ranking metric, collapsed
+  Lane A/B/C score, or implementation queue was opened.
+
+Additional 2026-05-19 local verification for v3_3_0 post-closure
+source-of-truth audit:
+
+- `python -X utf8 -m py_compile ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py`: PASS.
+- `python -X utf8 ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_3_0_post_closure_hardening_source_of_truth_audit`: PASS; appended/replaced the compact status-ledger audit event with source-of-truth audit `PASS` and rolling-doc/status agreement `PASS`.
+- `python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_3_0_post_closure_source_of_truth_audit_is_status_only_and_guarded ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_3_0_source_of_truth_audit_without_reopening_queue ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_3_0_source_of_truth_audit_does_not_mutate_gold_denominator_or_runtime_artifacts -q`: PASS, 3 passed.
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 171 passed, 0 skipped, 0 failed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 171 passed, 0 skipped, 0 failed.
+- `git diff --check`: PASS.
+- v3_3_0 guardrail summary: no behavior, implementation, prompt, renderer,
+  scorer, retrieval, export, index, gold, expected answer, supporting evidence,
+  label, denominator, silver, production, promotion, threshold tuning, winner
+  selection, official retrieval ranking metric, or collapsed Lane A/B/C score
+  changed. No next implementation phase was opened.
+
+Additional 2026-05-19 local verification for v3_3_1 silver source-manifest
+readiness:
+
+- `python -X utf8 -m pytest ai/tests/test_rag_answer_citation_silver_manifest_v1.py -q`: PASS, 7 passed.
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 173 passed, 0 skipped, 0 failed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 173 passed, 0 skipped, 0 failed.
+- Guardrail summary: silver source candidate schema is defined, but safe
+  manifest rows remain blocked because all currently available source-bound
+  SearchUnits are official-denominator overlap. No silver JSONL, gold,
+  expected answer, supporting evidence, label, denominator, production,
+  promotion, official retrieval ranking metric, or implementation queue was
+  opened.
+
+Additional 2026-05-19 local verification for v3_2_7 post-fix closure and
+rolling report cleanup:
+
+- `python -X utf8 -m py_compile ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py ai/tests/test_rag_diagnostic_status_sync.py ai/tests/test_rag_diagnostic_guardrail_git_diff.py ai/tests/test_rag_current_focused_test_profile_v1.py`: PASS.
+- `python -X utf8 ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_2_7_post_fix_closure_and_rolling_report_cleanup`: PASS; appended the compact status-ledger closure event.
+- `python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_7_post_fix_closure_status_event_is_guarded_and_compact ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_7_closure_uses_v3_2_6_queue_as_source_of_truth ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_2_7_closure_does_not_mutate_gold_denominator_or_runtime_artifacts ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_2_7_closure_without_promotion_or_next_phase ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests -q`: PASS, 5 passed.
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 168 passed, 0 skipped, 0 failed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 168 passed, 0 skipped, 0 failed.
+- v3_2_7 guardrail summary: no behavior, prompt, renderer, scorer, retrieval,
+  export, index, gold, expected answer, supporting evidence, label,
+  denominator, silver, production, promotion, threshold tuning, winner
+  selection, official retrieval ranking metric, or collapsed Lane A/B/C score
+  changed. v3_2_5 and v3_2_6 remain the only implementation-changing
+  post-v3_2_2 phases.
+
+Additional 2026-05-19 local verification for v3_2_6 TEXT prompt/span rule
+remeasurement:
+
+- `python -X utf8 ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement`: PASS; wrote full 29-row v3_2_6 remeasurement artifacts.
+- `python -X utf8 -m py_compile ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py ai/tests/test_rag_current_focused_test_profile_v1.py ai/tests/test_rag_diagnostic_status_sync.py ai/tests/test_rag_diagnostic_guardrail_git_diff.py`: PASS.
+- `python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_6_text_prompt_span_rule_remeasurement_is_guarded ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_6_text_prompt_span_rule_changes_only_actionable_live_text_lanes ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_6_queue_uses_v3_2_5_queue_as_source_of_truth ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_2_6_text_prompt_span_rule_does_not_mutate_gold_denominator_or_runtime_artifacts ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_2_6_text_prompt_span_rule_remeasurement_without_promotion ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests -q`: PASS, 6 passed.
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 164 passed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 164 passed.
+- v3_2_6 guardrail summary: the only behavior change is target/lane-scoped
+  TEXT prompt instruction for narrow factual answer spans. No gold, expected
+  answer, supporting evidence, relevance label, answerability label,
+  denominator, retrieval, renderer, scorer, production index, non-production
+  index/export rebuild, threshold tuning, winner selection, promotion,
+  official retrieval ranking metric, or collapsed Lane A/B/C score changed.
+
+Additional 2026-05-19 local verification for v3_2_5 `gq_auto_010` PDF context
+reconciliation fix:
+
+- `python -X utf8 ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix`: PASS; wrote full 29-row v3_2_5 remeasurement artifacts.
+- `python -X utf8 -m py_compile ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py ai/tests/test_rag_current_focused_test_profile_v1.py ai/tests/test_rag_diagnostic_status_sync.py ai/tests/test_rag_diagnostic_guardrail_git_diff.py`: PASS.
+- `python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_5_gq_auto_010_pdf_context_reconciliation_full_remeasurement_is_guarded ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_5_gq_auto_010_reconciliation_changes_only_target_lane_bc ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_5_pdf_context_reconciliation_overlay_is_target_scoped_and_locator_valid ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_2_5_pdf_context_reconciliation_does_not_mutate_gold_denominator_or_runtime_artifacts ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_2_5_pdf_context_reconciliation_fix_without_promotion ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests -q`: PASS, 6 passed.
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 159 passed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 159 passed.
+- v3_2_5 guardrail summary: the only behavior change is target-scoped
+  prompt/context assembly wiring for `gq_auto_010` using the existing v3_1_6 PDF
+  window sidecar. No gold, expected answer, supporting evidence, relevance
+  label, answerability label, denominator, production index, non-production
+  index/export rebuild, threshold tuning, winner selection, promotion,
+  official retrieval ranking metric, or collapsed Lane A/B/C score changed.
+
+Additional 2026-05-19 local verification for v3_2_4 `gq_auto_010` PDF context
+provenance diagnostic:
+
+- `python -X utf8 -m py_compile ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py ai/tests/test_rag_current_focused_test_profile_v1.py ai/tests/test_rag_diagnostic_status_sync.py ai/tests/test_rag_diagnostic_guardrail_git_diff.py`: PASS.
+- `python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_4_gq_auto_010_pdf_context_provenance_is_compact_no_behavior_and_source_bound ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_2_4_pdf_context_provenance_without_behavior_change ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_2_4_pdf_context_provenance_diagnostic_does_not_mutate_gold_denominator_or_runtime_artifacts -q`: PASS, 4 passed.
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 154 passed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 154 passed.
+- v3_2_4 guardrail summary: no live generation, prompt context assembly change,
+  renderer, scorer, retrieval, export, index, gold, expected answer, supporting
+  evidence, relevance label, answerability label, denominator, silver,
+  production, or promotion behavior changed. Official retrieval ranking metrics
+  remain deferred, and Lane A/B/C were not collapsed.
+
+Additional 2026-05-19 local verification for v3_2_3 queue/lane actionability
+reconciliation:
+
+- `python -X utf8 -m py_compile ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py ai/tests/test_rag_current_focused_test_profile_v1.py ai/tests/test_rag_diagnostic_status_sync.py ai/tests/test_rag_diagnostic_guardrail_git_diff.py`: PASS.
+- `python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_3_queue_lane_actionability_reconciliation_is_compact_and_guarded ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_2_3_no_behavior_diagnostic_without_promotion ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_2_3_no_behavior_diagnostic_does_not_mutate_gold_denominator_or_runtime_artifacts -q`: PASS, 4 passed.
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 151 passed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 151 passed.
+- v3_2_3 guardrail summary: no prompt, renderer, scorer, retrieval, export,
+  index, gold, expected answer, supporting evidence, relevance label,
+  answerability label, denominator, silver, production, or promotion behavior
+  changed. Official retrieval ranking metrics remain deferred, and Lane A/B/C
+  were not collapsed.
+
+Additional 2026-05-19 local verification for v3_2_0 current-system live
+baseline, v3_2_1 four-TEXT residual triage, and v3_2_2 post-fix
+remeasurement:
+
+- `python -X utf8 ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_2_0_current_system_live_baseline`: PASS; reran all 29 settled rows with no implementation behavior change and wrote JSON/JSONL v3_2_0 artifacts.
+- `python -X utf8 ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_2_1_text_residual_triage`: PASS; processed only `text_namu_v2_0014`, `text_namu_v2_0017`, `text_namu_v2_0077`, and `text_namu_v2_0084`.
+- `python -X utf8 ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_2_2_post_fix_remeasurement`: PASS; reran all 29 rows after the query-scoped scorer fix.
+- `python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_0_current_system_live_baseline_is_guarded ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_1_text_residual_triage_and_scorer_policy_are_guarded ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_2_post_fix_remeasurement_compares_only_intended_scorer_delta -q`: PASS, 3 passed.
+- `python -X utf8 -m pytest ai/tests/test_rag_current_focused_test_profile_v1.py -q`: PASS, 3 passed.
+- `python -X utf8 -m pytest ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_1_9_user_gold_policy_override_without_behavior_promotion -q`: PASS, 1 passed.
+- `python -X utf8 -m pytest ai/tests --rag-current -q`: PASS, 148 passed.
+- `python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q`: PASS, 148 passed.
+- v3_2 guardrail summary: gold, expected answer/evidence, relevance labels,
+  answerability labels, row membership, denominators, prompt behavior, renderer
+  behavior, and retrieval behavior were not changed. The only implementation
+  change was the v3_2_2-only scorer policy for `text_namu_v2_0077`; official
+  retrieval ranking metrics remain deferred.
 
 Additional 2026-05-19 local verification for v3_1_9 user-approved gold policy
 override application and scoring-only remeasurement:
@@ -651,21 +1023,25 @@ as the latest metric execution status.
 
 ## Next Recommended Steps
 
-1. The active implementation queue remains empty. The only open work is human
-   policy review for the five TEXT rows in the v3_1_8 packet.
-2. User decision options are `keep_current_strict_reference_boundary`,
-   `approve_scorer_or_renderer_review_without_gold_mutation`, or
-   `revise_gold_or_label_policy`; do not apply any option inside a diagnostic
-   Codex run.
-3. Do not create silver rows or change expected answers, supporting evidence,
+1. The active implementation queue remains empty. No next implementation phase
+   is opened by v3_2_7 or v3_3_0.
+2. Remaining live B/C TEXT prompt/span residuals are diagnostic-only:
+   `text_namu_v2_0017` and `text_namu_v2_0084`. `text_namu_v2_0012` and
+   `text_namu_v2_0077` remain frozen Lane A replay residuals, not live prompt
+   targets.
+3. Do not reopen gold policy, scorer policy, or answerability review from a
+   diagnostic Codex run. A later user-owned review would need an explicit
+   decision before any expected answer, label, or scorer-policy mutation.
+4. Do not create silver rows or change expected answers, supporting evidence,
    relevance labels, answerability labels, or gold policy unless the user makes
    that specific decision.
-4. Keep v3_1 diagnostic-only. Do not treat Lane B/C PASS counts as promotion
-   evidence and do not mix Lane A/B/C into a single official score.
-5. Keep the compact `ai/tests` surface current; extend existing files for
+5. Keep v3 diagnostic lanes diagnostic-only. Do not treat Lane B/C PASS counts
+   as promotion evidence and do not mix Lane A/B/C into a single official
+   score.
+6. Keep the compact `ai/tests` surface current; extend existing files for
    routine coverage and create a new test file only when a durable new subsystem
    needs one.
-6. Keep report output compact. New phases should record only the necessary
+7. Keep report output compact. New phases should record only the necessary
    machine artifacts plus an appended entry in this progress file; avoid
    per-run Markdown and full forensic payloads unless the run contract
    explicitly needs them.

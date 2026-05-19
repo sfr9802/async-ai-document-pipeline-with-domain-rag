@@ -1,8 +1,8 @@
 {
   "candidate_artifacts_used_as_generation_source": false,
   "candidate_result_rows_used_as_silver_generation_source": false,
-  "checked_at": "2026-05-17T11:15:00+00:00",
-  "decision": "create_manifest_and_readiness_only",
+  "checked_at": "2026-05-19T08:30:00+00:00",
+  "decision": "record_blocker_do_not_fabricate_rows",
   "expected_values_used_for_audit_only": true,
   "first_run_baseline_overwritten": false,
   "gold_csvs_mutated": false,
@@ -28,6 +28,32 @@
   "production_namespace_or_vector_path_mutated": false,
   "purpose": "anti_overfit_generalization_and_source_bound_contract",
   "schema_version": "answer_citation_silver_readiness_v1",
+  "minimum_safe_source_candidate_schema": {
+    "id_field": "query_id_or_candidate_id",
+    "required_fields": [
+      "source_family",
+      "source_bound_locator",
+      "document_version_id",
+      "search_unit_id",
+      "source_text_available",
+      "generation_source",
+      "promotion_evidence",
+      "official_denominator_overlap"
+    ],
+    "required_boolean_values": {
+      "generation_source": false,
+      "promotion_evidence": false,
+      "official_denominator_overlap": false
+    },
+    "forbidden_fields": [
+      "expected_answer",
+      "supporting_evidence",
+      "relevance_label",
+      "answerability_label",
+      "gold_label",
+      "human_label"
+    ]
+  },
   "silver_jsonl_files_created": {
     "contract": false,
     "dev": false,
@@ -35,20 +61,32 @@
   },
   "silver_set_used_for_generation": false,
   "source_bound_nonproduction_index": {
-    "entrypoint_status": "repo_worktree_entrypoint_present_but_not_run_for_index_build",
-    "index_built": false,
-    "load_check_passed": false,
+    "entrypoint_status": "source_bound_official_denominator_index_built_and_load_checked",
+    "index_built": true,
+    "load_check_passed": true,
+    "official_denominator_rows": 29,
+    "official_rows_by_track": {
+      "pdf_business_ocr_mm": 4,
+      "text_namu_v2_1": 6,
+      "xlsx_business_structured": 19
+    },
     "production_index_path_used": false,
     "target_index_path": "ai/eval/indexes/rag-data-official-denominator-v1"
   },
   "source_data_decision": {
     "safe_source_bound_answer_citation_source_data_available": false,
-    "why_no_jsonl_created": "Available repo-local materials either lack required source-bound locator fields, belong to official gold/human-label denominators, or are report-only candidate result artifacts that must not seed silver generation."
+    "safe_source_manifests_can_be_created": false,
+    "precise_blocker": "Only official-denominator source-bound SearchUnits are currently available; all 29 overlap the official denominator and cannot satisfy official_denominator_overlap=false for dev/holdout tuning silver.",
+    "why_no_jsonl_created": "The current source-bound SearchUnit export/build material is locator-complete and source-text available for the 29 official denominator rows, but every row has official_denominator_overlap=true. No safe non-official TEXT/XLSX/PDF source-bound source manifest exists for dev/holdout tuning silver, and rows were not fabricated."
   },
   "source_roots_and_artifacts_checked": {
     "official_agentic_failure_attribution": "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v1_failure_attribution.json",
     "official_metric_input_config": "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json",
+    "official_source_bound_index_build": "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+    "official_source_bound_index_ingest_manifest": "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+    "official_source_bound_search_unit_manifest": "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
     "official_source_bound_readiness": "ai/eval/reports/rag-ingestion/official_answer_citation_source_bound_index_build_readiness_v1.json",
+    "current_source_bound_readiness": "ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json",
     "pdf_candidate_results": "ai/eval/reports/rag-ingestion/pdf_answer_citation_table_value_candidate_results_v1.jsonl",
     "pdf_reviewed_gold_csv": "ai/eval/corpora/gold_queries_pdf_v1_reviewed.csv",
     "text_namu_corpus": "ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl",
@@ -104,6 +142,19 @@
       "reason": "Existing XLSX silver is retrieval/evidence oriented and often lacks answer-citation row/value fields; official gold rows and report-only candidate rows must not become tuning silver generation sources.",
       "status": "blocked"
     }
+  },
+  "official_denominator_overlap_scan": {
+    "source_bound_search_unit_manifest_rows": 29,
+    "official_denominator_overlap_true_count": 29,
+    "official_denominator_overlap_false_count": 0,
+    "excluded_official_query_id_count": 29,
+    "eligible_dev_holdout_source_candidate_count": 0,
+    "rows_by_source_family": {
+      "PDF": 4,
+      "TEXT": 6,
+      "XLSX": 19
+    },
+    "source_text_available_official_rows": 29
   },
   "status": "BLOCKED_SOURCE_BOUND_SILVER_SOURCE_DATA_MISSING",
   "xlsx_pdf_candidates_promoted": false

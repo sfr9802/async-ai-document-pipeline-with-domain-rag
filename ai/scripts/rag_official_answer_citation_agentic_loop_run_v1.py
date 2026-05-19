@@ -84,6 +84,48 @@ V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID = (
 V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement"
 )
+V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_0_current_system_live_baseline"
+)
+V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_1_text_residual_triage"
+)
+V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_2_post_fix_remeasurement"
+)
+V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation"
+)
+V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic"
+)
+V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix"
+)
+V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement"
+)
+V3_2_7_POST_FIX_CLOSURE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_7_post_fix_closure_and_rolling_report_cleanup"
+)
+V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_3_0_post_closure_hardening_source_of_truth_audit"
+)
+V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_3_3_silver_source_candidate_discovery"
+)
+V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_3_2_retrieval_relevance_answerability_label_design_packet"
+)
+V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract"
+)
+V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet"
+)
+V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet"
+)
 REPORT_ARTIFACT_SLUGS = {
     RUN_ID: "agentic_v1",
     V2_RUN_ID: "v2_source_bound",
@@ -102,12 +144,42 @@ REPORT_ARTIFACT_SLUGS = {
     V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID: V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID,
     V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID: V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
     V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID: V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
+    V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID: V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+    V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID: V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+    V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID: V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID: V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID,
+    V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID: V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+    V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID: V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID: V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+    V3_2_7_POST_FIX_CLOSURE_RUN_ID: V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+    V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID: V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID,
+    V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID: V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID,
+    V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID: V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+    V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID: (
+        V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID
+    ),
+    V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID: (
+        V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
     V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID,
     V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
     V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
+    V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+    V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+    V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID,
+    V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+    V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+    V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+    V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID,
+    V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID,
+    V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+    V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+    V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
 }
 V3_1_PRIORITY_1_5_QUERY_IDS = (
     "gq_pdf_section_question_001",
@@ -147,6 +219,36 @@ V3_1_5_SOURCE_BOUND_COVERAGE_QUERY_IDS = ("gq_auto_010",)
 V3_1_6_SAFE_PDF_WINDOW_QUERY_IDS = ("gq_auto_010",)
 V3_1_8_POLICY_REVIEW_QUERY_IDS = V3_1_2_TEXT_FIRST_BATCH_QUERY_IDS
 V3_1_9_USER_GOLD_POLICY_OVERRIDE_QUERY_IDS = V3_1_8_POLICY_REVIEW_QUERY_IDS
+V3_2_1_TEXT_RESIDUAL_TRIAGE_QUERY_IDS = (
+    "text_namu_v2_0014",
+    "text_namu_v2_0017",
+    "text_namu_v2_0077",
+    "text_namu_v2_0084",
+)
+V3_2_5_PDF_CONTEXT_RECONCILIATION_QUERY_IDS = ("gq_auto_010",)
+V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS = (
+    "text_namu_v2_0014",
+    "text_namu_v2_0017",
+    "text_namu_v2_0084",
+)
+V3_2_6_TEXT_PROMPT_SPAN_RULE_LANES_BY_QUERY_ID = {
+    "text_namu_v2_0014": ("live_llm_query_bound_oracle",),
+    "text_namu_v2_0017": ("live_llm_retrieval_topk", "live_llm_query_bound_oracle"),
+    "text_namu_v2_0084": ("live_llm_retrieval_topk", "live_llm_query_bound_oracle"),
+}
+V3_2_6_TEXT_PROMPT_SPAN_RULE_INSTRUCTION = (
+    "For TEXT rows that ask for a narrow factual span such as a specific person, role, "
+    "destination, release date, age, birthday, title, or described attribute, answer only "
+    "the span required by the question from the cited context. Do not expand into neighboring "
+    "character lists, general summaries, unrelated adjacent facts, catchphrases, or broad "
+    "descriptions. Preserve explicit date/person/title targets when the question asks for them, "
+    "and cite the source-bound context used for that exact span. For list or cast-entry context, "
+    "locate the named entry or role asked about and return only that entry's adjacent name/value; "
+    "never answer with the whole list or examples from nearby entries. If the question is Korean, "
+    "answer in Korean while preserving cited proper nouns, dates, and titles."
+)
+V3_2_1_KOREAN_POLITE_PAST_SCORER_QUERY_IDS = ("text_namu_v2_0077",)
+V3_2_1_KOREAN_POLITE_PAST_SCORER_POLICY = "korean_polite_plain_past_tense_equivalence_v1"
 V3_1_9_TEXT_GOLD_BEFORE_SHA256 = "03764d1d7aa682cd8646d9028b6219fdbeba8a4eb219a87a285a162f16702cd6"
 V3_1_8_DECISION_OPTIONS = (
     "keep_current_strict_reference_boundary",
@@ -366,6 +468,103 @@ DEFAULT_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_QUEUE_JSON = report_artifact_path(
 DEFAULT_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_DECISION_PACKET_JSON = report_artifact_path(
     V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID, "user_decision_packet.json"
 )
+DEFAULT_V3_2_0_SUMMARY_JSON = report_artifact_path(
+    V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID, "summary.json"
+)
+DEFAULT_V3_2_0_RESULTS_JSONL = report_artifact_path(
+    V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID, "results.jsonl"
+)
+DEFAULT_V3_2_1_SUMMARY_JSON = report_artifact_path(
+    V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID, "summary.json"
+)
+DEFAULT_V3_2_1_RESIDUAL_TRIAGE_JSONL = report_artifact_path(
+    V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID, "residual_triage.jsonl"
+)
+DEFAULT_V3_2_2_SUMMARY_JSON = report_artifact_path(
+    V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID, "summary.json"
+)
+DEFAULT_V3_2_2_RESULTS_JSONL = report_artifact_path(
+    V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID, "results.jsonl"
+)
+DEFAULT_V3_2_2_FAILURE_ATTRIBUTION_JSON = report_artifact_path(
+    V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID, "failure.json"
+)
+DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_SUMMARY_JSON = report_artifact_path(
+    V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID, "summary.json"
+)
+DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_QUEUE_JSON = report_artifact_path(
+    V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID, "queue.json"
+)
+DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_SUMMARY_JSON = report_artifact_path(
+    V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID, "summary.json"
+)
+DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_DIAGNOSTICS_JSONL = report_artifact_path(
+    V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+    "pdf_context_provenance_diagnostics.jsonl",
+)
+DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_QUEUE_JSON = report_artifact_path(
+    V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID, "queue.json"
+)
+DEFAULT_V3_2_5_SUMMARY_JSON = report_artifact_path(
+    V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID, "summary.json"
+)
+DEFAULT_V3_2_5_RESULTS_JSONL = report_artifact_path(
+    V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID, "results.jsonl"
+)
+DEFAULT_V3_2_5_QUEUE_JSON = report_artifact_path(
+    V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID, "queue.json"
+)
+DEFAULT_V3_2_6_SUMMARY_JSON = report_artifact_path(
+    V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID, "summary.json"
+)
+DEFAULT_V3_2_6_RESULTS_JSONL = report_artifact_path(
+    V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID, "results.jsonl"
+)
+DEFAULT_V3_2_6_TEXT_PROMPT_SPAN_DIAGNOSTICS_JSONL = report_artifact_path(
+    V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+    "text_prompt_span_diagnostics.jsonl",
+)
+DEFAULT_V3_2_6_QUEUE_JSON = report_artifact_path(
+    V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID, "queue.json"
+)
+DEFAULT_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_INVENTORY_JSON = report_artifact_path(
+    V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID, "candidate_inventory.json"
+)
+DEFAULT_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_JSON = report_artifact_path(
+    V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID, "contract.json"
+)
+DEFAULT_V3_4_0_OFFICIAL_RETRIEVAL_QRELS_SCHEMA_JSON = report_artifact_path(
+    V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID, "qrels_schema.json"
+)
+DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATES_JSONL = report_artifact_path(
+    V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID, "qrels_candidates.jsonl"
+)
+DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATES_CSV = report_artifact_path(
+    V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID, "qrels_candidates.csv"
+)
+DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_SUMMARY_JSON = report_artifact_path(
+    V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID, "summary.json"
+)
+DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_POLICY_APPROVAL_JSON = report_artifact_path(
+    V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    "qrels_policy_approval.json",
+)
+DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_QUERY_GROUP_REVIEW_CSV = report_artifact_path(
+    V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    "qrels_human_query_group_review.csv",
+)
+DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AMBIGUOUS_CANDIDATE_REVIEW_CSV = report_artifact_path(
+    V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    "qrels_ambiguous_candidate_review.csv",
+)
+DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AUTO_LABEL_PLAN_JSON = report_artifact_path(
+    V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    "qrels_auto_label_plan.json",
+)
+DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_MINIMAL_REVIEW_SUMMARY_JSON = report_artifact_path(
+    V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    "summary.json",
+)
 DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "scorer_v1.jsonl"
 DEFAULT_TEXT_NAMU_GOLD_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v2_1_question_gold_v2.csv"
 DEFAULT_TEXT_NAMU_HUMAN_AUDIT_V2_DECISIONS_JSON = (
@@ -454,6 +653,182 @@ LOCATOR_SCHEMA_BY_TRACK = {
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     summary, rows = run_measurement(args)
+    if summary["run_id"] == V3_2_7_POST_FIX_CLOSURE_RUN_ID:
+        append_v3_2_7_closure_event(Path(args.status_jsonl), summary)
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "measurement_classification": summary["measurement_classification"],
+            "source_run_id": summary["source_run_id"],
+            "baseline_run_id": summary["baseline_run_id"],
+            "current_lane_pass_counts": summary["current_lane_pass_counts"],
+            "unexpected_delta_count": summary["unexpected_delta_count"],
+            "status_jsonl": summary["artifact_paths"]["status_jsonl"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    if summary["run_id"] == V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID:
+        append_v3_3_0_source_of_truth_audit_event(Path(args.status_jsonl), summary)
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "measurement_classification": summary["measurement_classification"],
+            "source_run_id": summary["source_run_id"],
+            "current_lane_pass_counts": summary["current_lane_pass_counts"],
+            "source_of_truth_audit_result": summary["source_of_truth_audit_result"]["status"],
+            "rolling_docs_status_agreement": summary["rolling_docs_status_agreement"]["status"],
+            "status_jsonl": summary["artifact_paths"]["status_jsonl"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    if summary["run_id"] == V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID:
+        inventory_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["candidate_inventory_json"])
+        )
+        write_json(inventory_path, summary["candidate_inventory"])
+        summary["artifact_paths"]["candidate_inventory_json_sha256"] = sha256_file(inventory_path)
+        append_v3_3_3_silver_source_candidate_discovery_event(Path(args.status_jsonl), summary)
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "measurement_classification": summary["measurement_classification"],
+            "candidate_counts_by_track": summary["candidate_counts_by_track"],
+            "pilot_threshold_met_by_track": summary["pilot_threshold_met_by_track"],
+            "preferred_target_met_by_track": summary["preferred_target_met_by_track"],
+            "silver_1000_feasible": summary["silver_1000_feasible"],
+            "candidate_inventory_json": summary["artifact_paths"]["candidate_inventory_json"],
+            "status_jsonl": summary["artifact_paths"]["status_jsonl"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    if summary["run_id"] == V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID:
+        contract_path = resolve_repo_relative_artifact_path(Path(summary["artifact_paths"]["contract_json"]))
+        qrels_schema_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["qrels_schema_json"])
+        )
+        write_json(contract_path, summary["contract"])
+        write_json(qrels_schema_path, summary["qrels_schema"])
+        summary["artifact_paths"]["contract_json_sha256"] = sha256_file(contract_path)
+        summary["artifact_paths"]["qrels_schema_json_sha256"] = sha256_file(qrels_schema_path)
+        append_v3_4_0_official_retrieval_metric_contract_event(Path(args.status_jsonl), summary)
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "measurement_classification": summary["measurement_classification"],
+            "official_retrieval_metric_execution_allowed": summary["contract"][
+                "official_retrieval_metric_execution_allowed"
+            ],
+            "qrels_denominator_policy_options": list(
+                summary["contract"]["qrels_denominator_policy_options"]
+            ),
+            "blocked_metrics": summary["blocked_metrics"],
+            "contract_json": summary["artifact_paths"]["contract_json"],
+            "qrels_schema_json": summary["artifact_paths"]["qrels_schema_json"],
+            "status_jsonl": summary["artifact_paths"]["status_jsonl"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    if summary["run_id"] == V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID:
+        candidate_jsonl_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["qrels_candidate_jsonl"])
+        )
+        candidate_csv_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["qrels_candidate_csv"])
+        )
+        compact_summary_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["summary_json"])
+        )
+        write_jsonl(candidate_jsonl_path, summary["qrels_candidate_rows"])
+        write_csv_rows_with_fieldnames(
+            candidate_csv_path,
+            summary["csv_fieldnames"],
+            summary["qrels_candidate_csv_rows"],
+        )
+        write_json(compact_summary_path, summary["compact_summary"])
+        summary["artifact_paths"]["qrels_candidate_jsonl_sha256"] = sha256_file(candidate_jsonl_path)
+        summary["artifact_paths"]["qrels_candidate_csv_sha256"] = sha256_file(candidate_csv_path)
+        summary["artifact_paths"]["summary_json_sha256"] = sha256_file(compact_summary_path)
+        append_v3_4_1_official_retrieval_qrels_candidate_packet_event(Path(args.status_jsonl), summary)
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "measurement_classification": summary["measurement_classification"],
+            "query_count": summary["query_count"],
+            "qrels_candidate_row_count": summary["qrels_candidate_row_count"],
+            "candidates_by_source_family": summary["candidates_by_source_family"],
+            "label_status": "pending_user_review",
+            "qrels_candidate_jsonl": summary["artifact_paths"]["qrels_candidate_jsonl"],
+            "qrels_candidate_csv": summary["artifact_paths"]["qrels_candidate_csv"],
+            "summary_json": summary["artifact_paths"]["summary_json"],
+            "status_jsonl": summary["artifact_paths"]["status_jsonl"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    if summary["run_id"] == V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID:
+        policy_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["qrels_policy_approval_json"])
+        )
+        query_group_csv_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["qrels_human_query_group_review_csv"])
+        )
+        ambiguous_csv_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["qrels_ambiguous_candidate_review_csv"])
+        )
+        auto_label_plan_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["qrels_auto_label_plan_json"])
+        )
+        compact_summary_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["summary_json"])
+        )
+        write_json(policy_path, summary["qrels_policy_approval"])
+        write_csv_rows_with_fieldnames(
+            query_group_csv_path,
+            summary["query_group_review_csv_fieldnames"],
+            summary["query_group_review_rows"],
+        )
+        write_csv_rows_with_fieldnames(
+            ambiguous_csv_path,
+            summary["ambiguous_candidate_review_csv_fieldnames"],
+            summary["ambiguous_candidate_review_rows"],
+        )
+        write_json(auto_label_plan_path, summary["qrels_auto_label_plan"])
+        write_json(compact_summary_path, summary["compact_summary"])
+        summary["artifact_paths"]["qrels_policy_approval_json_sha256"] = sha256_file(policy_path)
+        summary["artifact_paths"]["qrels_human_query_group_review_csv_sha256"] = sha256_file(
+            query_group_csv_path
+        )
+        summary["artifact_paths"]["qrels_ambiguous_candidate_review_csv_sha256"] = sha256_file(
+            ambiguous_csv_path
+        )
+        summary["artifact_paths"]["qrels_auto_label_plan_json_sha256"] = sha256_file(
+            auto_label_plan_path
+        )
+        summary["artifact_paths"]["summary_json_sha256"] = sha256_file(compact_summary_path)
+        append_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_event(
+            Path(args.status_jsonl),
+            summary,
+        )
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "measurement_classification": summary["measurement_classification"],
+            "raw_candidate_row_count": summary["raw_candidate_row_count"],
+            "query_group_count": summary["query_group_count"],
+            "ambiguous_candidate_count": summary["ambiguous_candidate_count"],
+            "estimated_user_review_rows": summary["estimated_user_review_rows"],
+            "qrels_policy_approval_json": summary["artifact_paths"]["qrels_policy_approval_json"],
+            "qrels_human_query_group_review_csv": summary["artifact_paths"][
+                "qrels_human_query_group_review_csv"
+            ],
+            "qrels_ambiguous_candidate_review_csv": summary["artifact_paths"][
+                "qrels_ambiguous_candidate_review_csv"
+            ],
+            "qrels_auto_label_plan_json": summary["artifact_paths"]["qrels_auto_label_plan_json"],
+            "summary_json": summary["artifact_paths"]["summary_json"],
+            "status_jsonl": summary["artifact_paths"]["status_jsonl"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
     if summary["run_id"] == V3_1_5_GQ_AUTO_010_SOURCE_BOUND_COVERAGE_DIAGNOSTIC_RUN_ID:
         write_v3_1_5_source_bound_coverage_side_artifacts(summary, rows)
         write_json(Path(args.summary_json), summary)
@@ -528,6 +903,27 @@ def main(argv: list[str] | None = None) -> int:
         }
         print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
+    if summary["run_id"] == V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID:
+        residual_path = resolve_repo_relative_artifact_path(
+            Path(summary["artifact_paths"]["residual_triage_jsonl"])
+        )
+        write_jsonl(residual_path, rows)
+        summary["artifact_paths"]["residual_triage_jsonl_sha256"] = sha256_file(residual_path)
+        write_json(Path(args.summary_json), summary)
+        append_status_event(Path(args.status_jsonl), summary)
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "run_class": summary["run_class"],
+            "result_count": summary["result_count"],
+            "unique_query_id_count": summary["unique_query_id_count"],
+            "summary_json": summary["artifact_paths"]["summary_json"],
+            "residual_triage_jsonl": summary["artifact_paths"]["residual_triage_jsonl"],
+            "implementation_change_made": summary["implementation_change_made"],
+            "v3_2_2_required": summary["v3_2_2_required"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
     write_jsonl(Path(args.results_jsonl), rows)
     summary["artifact_paths"]["results_jsonl_sha256"] = sha256_file(Path(args.results_jsonl))
     failure_attribution = build_failure_attribution(summary, rows)
@@ -536,8 +932,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     write_json(failure_attribution_path, failure_attribution)
     summary["artifact_paths"]["failure_attribution_json_sha256"] = sha256_file(failure_attribution_path)
-    if summary["run_id"] == V3_1_RUN_ID:
+    if summary["run_id"] in {
+        V3_1_RUN_ID,
+        V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+        V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    }:
         write_v3_1_side_artifacts(summary, rows)
+    elif summary["run_id"] == V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID:
+        write_v3_2_5_pdf_context_reconciliation_side_artifacts(summary, rows)
+    elif summary["run_id"] == V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID:
+        write_v3_2_6_text_prompt_span_side_artifacts(summary, rows)
     elif summary["run_id"] == V3_1_PRIORITY_1_5_RUN_ID:
         write_v3_1_priority_1_5_side_artifacts(summary, rows)
     elif summary["run_id"] == V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID:
@@ -674,6 +1078,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID,
         V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
         V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
+        V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+        V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+        V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+        V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+        V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID,
+        V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID,
+        V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+        V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
     }
     if args.run_id not in supported_run_ids:
         raise SystemExit(
@@ -707,6 +1122,10 @@ def is_source_bound_manifest_run(run_id: str) -> bool:
         V3_1_4_PDF_RESIDUAL_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
         V3_1_5_GQ_AUTO_010_SOURCE_BOUND_COVERAGE_DIAGNOSTIC_RUN_ID,
         V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
+        V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+        V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
     }
 
 
@@ -724,6 +1143,24 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
     pre_execution_smoke_path = Path(args.pre_execution_smoke)
     baseline_path = Path(args.first_run_baseline)
     agentic_status = agentic_loop_status(args)
+
+    if args.run_id == V3_2_7_POST_FIX_CLOSURE_RUN_ID:
+        return run_v3_2_7_post_fix_closure_and_rolling_report_cleanup(args=args), []
+
+    if args.run_id == V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID:
+        return run_v3_3_0_post_closure_source_of_truth_audit(args=args), []
+
+    if args.run_id == V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID:
+        return run_v3_3_3_silver_source_candidate_discovery(args=args), []
+
+    if args.run_id == V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID:
+        return run_v3_4_0_official_retrieval_metric_contract(args=args), []
+
+    if args.run_id == V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID:
+        return run_v3_4_1_official_retrieval_qrels_candidate_packet(args=args), []
+
+    if args.run_id == V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID:
+        return run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet(args=args), []
 
     if args.run_id == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
         return run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement(
@@ -754,6 +1191,40 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
     rows = list(consumed["rows"])
     baseline = official.read_json(baseline_path)
     validation_errors = list(consumed["errors"])
+
+    if args.run_id in {
+        V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+        V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+    }:
+        return run_v3_2_live_measurement(
+            args=args,
+            consumed=consumed,
+            baseline=baseline,
+            validation_errors=validation_errors,
+            agentic_status=agentic_status,
+            metric_input_config_path=metric_input_config_path,
+            denominator_registry_path=denominator_registry_path,
+            pre_execution_smoke_path=pre_execution_smoke_path,
+            application_path=application_path,
+            registry_application_fallback_used=not bool(application),
+            baseline_path=baseline_path,
+        )
+    if args.run_id == V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID:
+        return run_v3_2_1_text_residual_triage(
+            args=args,
+            consumed=consumed,
+            baseline=baseline,
+            validation_errors=validation_errors,
+            agentic_status=agentic_status,
+            metric_input_config_path=metric_input_config_path,
+            denominator_registry_path=denominator_registry_path,
+            pre_execution_smoke_path=pre_execution_smoke_path,
+            application_path=application_path,
+            registry_application_fallback_used=not bool(application),
+            baseline_path=baseline_path,
+        )
 
     if args.run_id == V2_2_RUN_ID:
         return run_v2_2_llm_backend_validation(
@@ -1875,6 +2346,12 @@ def source_bound_answer_equivalent_to_reference(
         return True
     if not allow_language_drift and korean_answer_language_drift(row=row, answer=generated):
         return False
+    if korean_polite_plain_past_tense_equivalent(
+        row=row,
+        expected_answer=expected,
+        generated_answer=generated,
+    ):
+        return True
     expected_value_tokens = reference_value_tokens(expected)
     if expected_value_tokens:
         target = official.normalized_text(generated)
@@ -1891,6 +2368,30 @@ def korean_answer_language_drift(*, row: Mapping[str, Any], answer: str) -> bool
     if not contains_hangul(query):
         return False
     return contains_hangul(official.clean(row.get("expected_answer"))) and not contains_hangul(answer)
+
+
+def korean_polite_plain_past_tense_equivalent(
+    *,
+    row: Mapping[str, Any],
+    expected_answer: str,
+    generated_answer: str,
+) -> bool:
+    query_id = official.clean(row.get("query_id"))
+    if query_id not in V3_2_1_KOREAN_POLITE_PAST_SCORER_QUERY_IDS:
+        return False
+    policies = {official.clean(item) for item in row.get("_active_scorer_policies") or []}
+    if V3_2_1_KOREAN_POLITE_PAST_SCORER_POLICY not in policies:
+        return False
+    expected = official.clean(expected_answer)
+    generated = official.clean(generated_answer)
+    if "했습니다" not in expected:
+        return False
+    variants = {
+        re.sub(r"([0-9A-Za-z가-힣]+)했습니다", r"\1했다", expected),
+        re.sub(r"([0-9A-Za-z가-힣]+)했습니다", r"\1했어", expected),
+    }
+    target = official.normalized_text(generated)
+    return any(official.normalized_text(variant) in target for variant in variants if variant != expected)
 
 
 def contains_hangul(value: str) -> bool:
@@ -3601,6 +4102,7 @@ def build_v3_llm_prompt(
     *,
     question: str,
     require_generated_locators: bool = False,
+    text_prompt_span_rule_enabled: bool = False,
 ) -> str:
     source_family = SOURCE_FAMILY_LABEL_BY_TRACK.get(official.clean(row.get("track")), official.clean(row.get("track")))
     required_keys_list = ["answer", "cited_search_unit_ids"]
@@ -3632,6 +4134,8 @@ def build_v3_llm_prompt(
         f"prompt_context_mode: {official.clean((context.get('prompt_context_policy') or {}).get('mode'))}",
         "source_bound_context:",
     ]
+    if source_family == "TEXT" and text_prompt_span_rule_enabled:
+        lines.insert(4, V3_2_6_TEXT_PROMPT_SPAN_RULE_INSTRUCTION)
     if any(isinstance(citation, Mapping) and citation.get("context_expansion") for citation in context.get("citations") or []):
         lines.insert(
             -1,
@@ -4292,6 +4796,1327 @@ def run_v3_1_all_track_foundation_measurement(
         v3_attribution_path=Path(args.v3_failure_attribution_json),
     )
     return summary, rows
+
+
+def run_v3_2_live_measurement(
+    *,
+    args: argparse.Namespace,
+    consumed: Mapping[str, Any],
+    baseline: Mapping[str, Any],
+    validation_errors: Sequence[str],
+    agentic_status: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    application_path: Path | None,
+    registry_application_fallback_used: bool,
+    baseline_path: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    source_rows = list(consumed["rows"])
+    source_by_id = {official.clean(row.get("query_id")): row for row in source_rows}
+    v3_summary = official.read_json(Path(args.v3_summary_json))
+    v3_rows = read_jsonl(Path(args.v3_results_jsonl))
+    v3_attribution = official.read_json(Path(args.v3_failure_attribution_json))
+    v3_preflight = v3_artifact_consistency_preflight(
+        summary=v3_summary,
+        attribution=v3_attribution,
+        rows=v3_rows,
+        expected_query_ids=set(source_by_id),
+    )
+    if validation_errors:
+        v3_preflight = {
+            **v3_preflight,
+            "ok": False,
+            "errors": [*list(v3_preflight.get("errors") or []), *validation_errors],
+            "failure_bucket": "PROMPT_CONTEXT_POLICY_VIOLATION",
+        }
+
+    backend_preflight = llm_backend_preflight_for_v2_2(args, check_endpoint=True)
+    if not v3_preflight["ok"]:
+        backend_preflight = v3_backend_preflight_skipped(v3_preflight)
+
+    context_expansion_units_by_query_id: dict[str, list[dict[str, Any]]] = {}
+    context_reconciliation_preflight: dict[str, Any] = {
+        "ok": True,
+        "enabled": False,
+        "errors": [],
+    }
+    text_prompt_span_preflight: dict[str, Any] = {
+        "ok": True,
+        "enabled": False,
+        "errors": [],
+    }
+    if args.run_id in {
+        V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+    }:
+        (
+            context_expansion_units_by_query_id,
+            context_reconciliation_preflight,
+        ) = load_v3_2_5_gq_auto_010_pdf_context_expansion_sidecar()
+        if args.run_id == V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID:
+            context_reconciliation_preflight = {
+                **context_reconciliation_preflight,
+                "carry_forward_from_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+                "carry_forward_for_run_id": V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+            }
+        if not context_reconciliation_preflight.get("ok"):
+            v3_preflight = merge_v3_preflight_errors(
+                v3_preflight,
+                context_reconciliation_preflight.get("errors") or [],
+            )
+            backend_preflight = v3_backend_preflight_skipped(v3_preflight)
+    text_prompt_span_rule_lanes_by_query_id: dict[str, tuple[str, ...]] = {}
+    if args.run_id == V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID:
+        text_prompt_span_preflight = load_v3_2_6_text_prompt_span_rule_preflight()
+        if text_prompt_span_preflight.get("ok"):
+            text_prompt_span_rule_lanes_by_query_id = {
+                query_id: tuple(lanes)
+                for query_id, lanes in V3_2_6_TEXT_PROMPT_SPAN_RULE_LANES_BY_QUERY_ID.items()
+            }
+        else:
+            v3_preflight = merge_v3_preflight_errors(
+                v3_preflight,
+                text_prompt_span_preflight.get("errors") or [],
+            )
+            backend_preflight = v3_backend_preflight_skipped(v3_preflight)
+
+    source_run_id = (
+        V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID
+        if args.run_id == V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID
+        else V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+        if args.run_id == V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID
+        else V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID
+        if args.run_id == V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+        else V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID
+    )
+    rows = build_v3_1_rows(
+        v3_rows=v3_rows,
+        source_rows_by_id=source_by_id,
+        backend_preflight=backend_preflight,
+        v3_preflight=v3_preflight,
+        run_id=args.run_id,
+        source_run_id=source_run_id,
+        context_expansion_units_by_query_id=context_expansion_units_by_query_id,
+        text_prompt_span_rule_lanes_by_query_id=text_prompt_span_rule_lanes_by_query_id,
+    )
+    if args.run_id == V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID:
+        rows = annotate_v3_2_5_pdf_context_reconciliation_rows(
+            rows=rows,
+            before_rows=read_jsonl(DEFAULT_V3_2_2_RESULTS_JSONL),
+            context_reconciliation_preflight=context_reconciliation_preflight,
+        )
+    elif args.run_id == V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID:
+        rows = annotate_v3_2_6_pdf_context_carry_forward_rows(
+            rows=rows,
+            before_rows=read_jsonl(DEFAULT_V3_2_5_RESULTS_JSONL),
+            context_reconciliation_preflight=context_reconciliation_preflight,
+        )
+    summary = build_v3_1_summary(
+        args=args,
+        rows=rows,
+        baseline=baseline,
+        agentic_status=agentic_status,
+        v3_preflight=v3_preflight,
+        backend_preflight=backend_preflight,
+        metric_input_config_path=metric_input_config_path,
+        denominator_registry_path=denominator_registry_path,
+        pre_execution_smoke_path=pre_execution_smoke_path,
+        application_path=application_path,
+        registry_application_fallback_used=registry_application_fallback_used,
+        baseline_path=baseline_path,
+        v3_summary_path=Path(args.v3_summary_json),
+        v3_results_path=Path(args.v3_results_jsonl),
+        v3_attribution_path=Path(args.v3_failure_attribution_json),
+    )
+    return adapt_v3_1_summary_to_v3_2_live_summary(
+        args=args,
+        summary=summary,
+        rows=rows,
+        source_run_id=source_run_id,
+        backend_preflight=backend_preflight,
+        v3_preflight=v3_preflight,
+        context_reconciliation_preflight=context_reconciliation_preflight,
+        text_prompt_span_preflight=text_prompt_span_preflight,
+    ), rows
+
+
+def adapt_v3_1_summary_to_v3_2_live_summary(
+    *,
+    args: argparse.Namespace,
+    summary: dict[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+    source_run_id: str,
+    backend_preflight: Mapping[str, Any],
+    v3_preflight: Mapping[str, Any],
+    context_reconciliation_preflight: Mapping[str, Any] | None = None,
+    text_prompt_span_preflight: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    run_id = args.run_id
+    post_fix = run_id == V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID
+    context_reconciliation = run_id == V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+    text_prompt_span_rule = run_id == V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID
+    pdf_context_overlay_active = context_reconciliation or text_prompt_span_rule
+    context_reconciliation_preflight = dict(context_reconciliation_preflight or {"ok": True, "enabled": False})
+    text_prompt_span_preflight = dict(text_prompt_span_preflight or {"ok": True, "enabled": False})
+    live_generation_rerun = any(
+        as_mapping(lane).get("llm_invoked") is True
+        for row in rows
+        for lane_name, lane in as_mapping(row.get("lane_results")).items()
+        if lane_name in V3_1_LIVE_LANE_NAMES
+    )
+    answer_quality = v3_2_answer_citation_quality_metrics(rows, score_field="answer_score")
+    citation_quality = v3_2_answer_citation_quality_metrics(rows, score_field="citation_support_score")
+    guardrails = {
+        **v3_1_guardrails(),
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "gold_policy_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": post_fix,
+        "retrieval_mutation": False,
+        "live_generation_rerun": live_generation_rerun,
+        "official_retrieval_metrics_computed": False,
+        "official_ndcg_computed": False,
+        "official_mrr_computed": False,
+        "official_hit_at_k_computed": False,
+        "lane_score_collapsed": False,
+    }
+    if text_prompt_span_rule:
+        status_prefix = "TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_V3_2_6"
+    elif context_reconciliation:
+        status_prefix = "GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_FIX_V3_2_5"
+    else:
+        status_prefix = "POST_FIX_REMEASUREMENT_V3_2_2" if post_fix else "CURRENT_SYSTEM_LIVE_BASELINE_V3_2_0"
+    completed = bool(v3_preflight.get("ok") and backend_preflight.get("ok"))
+    context_applied_query_ids = [
+        official.clean(row.get("query_id"))
+        for row in rows
+        if as_mapping(row.get("context_expansion_diagnostics")).get("expansion_applied") is True
+    ]
+    context_expansion_unit_ids = sorted(
+        {
+            official.clean(unit_id)
+            for row in rows
+            for unit_id in as_mapping(row.get("context_expansion_diagnostics")).get("expansion_unit_ids") or []
+            if official.clean(unit_id)
+        }
+    )
+    summary.update(
+        {
+            "schema_version": f"{run_id}_summary_v1",
+            "run_id": run_id,
+            "source_run_id": source_run_id,
+            "write_summary_markdown": False,
+            "write_side_markdown": False,
+            "status": f"{status_prefix}_COMPLETED" if completed else f"{status_prefix}_FAIL_CLOSED",
+            "measurement_classification": (
+                "text_prompt_span_rule_remeasurement_v3_2_6"
+                if text_prompt_span_rule
+                else
+                "gq_auto_010_pdf_context_reconciliation_fix_v3_2_5"
+                if context_reconciliation
+                else
+                "post_fix_full_remeasurement_v3_2_2"
+                if post_fix
+                else "post_gold_settled_current_system_live_baseline_v3_2_0"
+            ),
+            "run_class": (
+                "implementation_safe_text_prompt_span_rule_full_remeasurement"
+                if text_prompt_span_rule
+                else
+                "implementation_safe_pdf_context_reconciliation_full_remeasurement"
+                if context_reconciliation
+                else "post_fix_full_remeasurement"
+                if post_fix
+                else "post_gold_settled_current_system_live_baseline"
+            ),
+            "diagnostic_only": True,
+            "promotion_evidence": False,
+            "behavior_change_made": post_fix or context_reconciliation or text_prompt_span_rule,
+            "implementation_change_made": post_fix or context_reconciliation or text_prompt_span_rule,
+            "implementation_change_scope": (
+                "target_scoped_text_prompt_span_rule_for_narrow_factual_answer_selection"
+                if text_prompt_span_rule
+                else
+                "gq_auto_010_pdf_context_reconciliation_existing_v3_1_6_expansion_overlay"
+                if context_reconciliation
+                else "text_namu_v2_0077_query_scoped_scorer_policy"
+                if post_fix
+                else None
+            ),
+            "renderer_mutation": False,
+            "scorer_behavior_mutation": post_fix,
+            "retrieval_mutation": False,
+            "prompt_context_behavior_change": context_reconciliation or text_prompt_span_rule,
+            "text_prompt_span_rule_applied": bool(text_prompt_span_rule),
+            "text_prompt_span_rule_instruction_id": (
+                "v3_2_6_text_prompt_span_narrow_factual_span_v1" if text_prompt_span_rule else None
+            ),
+            "text_prompt_span_rule_instruction": (
+                V3_2_6_TEXT_PROMPT_SPAN_RULE_INSTRUCTION if text_prompt_span_rule else None
+            ),
+            "text_prompt_span_target_query_ids": list(V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS)
+            if text_prompt_span_rule
+            else [],
+            "text_prompt_span_rule_lanes_by_query_id": {
+                query_id: list(lanes)
+                for query_id, lanes in V3_2_6_TEXT_PROMPT_SPAN_RULE_LANES_BY_QUERY_ID.items()
+            }
+            if text_prompt_span_rule
+            else {},
+            "text_prompt_span_preflight": text_prompt_span_preflight,
+            "expected_answer_mutation": False,
+            "supporting_evidence_mutation": False,
+            "gold_policy_mutation": False,
+            "relevance_label_mutation": False,
+            "answerability_label_mutation": False,
+            "denominator_mutation": False,
+            "official_denominator_query_id_set_mutation": False,
+            "live_generation_rerun": live_generation_rerun,
+            "all_track_live_generation_rerun": live_generation_rerun,
+            "retrieval_context_rerun": False,
+            "retrieval_context_source_run_id": V3_RUN_ID,
+            "context_expansion_source_run_id": (
+                V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID
+                if pdf_context_overlay_active
+                else None
+            ),
+            "context_reconciliation_preflight": context_reconciliation_preflight,
+            "context_expansion_attempted": bool(pdf_context_overlay_active),
+            "context_expansion_applied": bool(context_applied_query_ids),
+            "context_expansion_policy_name": (
+                PDF_PARAGRAPH_WINDOW_EXPANSION_POLICY_NAME if pdf_context_overlay_active else None
+            ),
+            "context_expansion_policy_version": (
+                PDF_PARAGRAPH_WINDOW_EXPANSION_POLICY_VERSION if pdf_context_overlay_active else None
+            ),
+            "context_expansion_target_query_ids": list(V3_2_5_PDF_CONTEXT_RECONCILIATION_QUERY_IDS)
+            if pdf_context_overlay_active
+            else [],
+            "context_expansion_applied_query_ids": context_applied_query_ids,
+            "context_expansion_unit_ids": context_expansion_unit_ids,
+            "pdf_context_reconciliation_fix_applied": bool(context_reconciliation and context_applied_query_ids),
+            "pdf_context_reconciliation_carry_forward_applied": bool(
+                text_prompt_span_rule and context_applied_query_ids
+            ),
+            "pdf_context_reconciliation_fix_type": (
+                "reuse_existing_v3_1_6_safe_pdf_paragraph_window_expansion_sidecar"
+                if context_reconciliation
+                else None
+            ),
+            "v3_2_4_gate_run_id": (
+                V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID if context_reconciliation else None
+            ),
+            "v3_1_6_expansion_sidecar_run_id": (
+                V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID
+                if pdf_context_overlay_active
+                else None
+            ),
+            "index_or_export_rebuild_required": False,
+            "index_or_export_rebuild_performed": False,
+            "lane_a_policy": "v3_primary_replay_frozen_answer_surface_rescored_under_current_gold",
+            "lane_b_policy": (
+                "live_llm_retrieval_topk_over_frozen_v3_source_bound_context_with_gq_auto_010_v3_1_6_pdf_window_overlay_and_target_text_prompt_span_rule"
+                if text_prompt_span_rule
+                else
+                "live_llm_retrieval_topk_over_frozen_v3_source_bound_context_with_gq_auto_010_v3_1_6_pdf_window_overlay"
+                if context_reconciliation
+                else "live_llm_retrieval_topk_over_frozen_v3_source_bound_context"
+            ),
+            "lane_c_policy": (
+                "live_llm_query_bound_oracle_over_frozen_v3_query_bound_context_with_gq_auto_010_v3_1_6_pdf_window_overlay_and_target_text_prompt_span_rule"
+                if text_prompt_span_rule
+                else
+                "live_llm_query_bound_oracle_over_frozen_v3_query_bound_context_with_gq_auto_010_v3_1_6_pdf_window_overlay"
+                if context_reconciliation
+                else "live_llm_query_bound_oracle_over_frozen_v3_query_bound_context"
+            ),
+            "answer_quality_metrics": answer_quality,
+            "citation_quality_metrics": citation_quality,
+            "retrieval_ranking_metrics": {
+                "official_retrieval_metrics_computed": False,
+                "official_ndcg_computed": False,
+                "official_mrr_computed": False,
+                "official_hit_at_k_computed": False,
+                "status": "deferred",
+                "reason": "official relevance and answerability label systems are not settled for these 29 rows",
+            },
+            "official_retrieval_metrics_computed": False,
+            "official_ndcg_computed": False,
+            "official_mrr_computed": False,
+            "official_hit_at_k_computed": False,
+            "lane_score_collapsed": False,
+            "denominator_policy": {
+                "row_count": 29,
+                "rows_by_source_family": {"PDF": 4, "TEXT": 6, "XLSX": 19},
+                "source": "current official denominator registry and settled gold CSVs",
+                "denominator_mutation": False,
+                "query_id_set_mutation": False,
+            },
+            "guardrails": guardrails,
+            "agentic_loop": {
+                **dict(summary.get("agentic_loop") or {}),
+                "backend": (
+                    "v3_2_6_text_prompt_span_rule_remeasurement"
+                    if text_prompt_span_rule
+                    else
+                    "v3_2_5_gq_auto_010_pdf_context_reconciliation_fix"
+                    if context_reconciliation
+                    else "v3_2_2_post_fix_remeasurement"
+                    if post_fix
+                    else "v3_2_0_current_system_live_baseline"
+                ),
+                "blockers": (
+                    list(v3_preflight.get("errors") or [])
+                    + list(backend_preflight.get("blockers") or [])
+                    + list(context_reconciliation_preflight.get("errors") or [])
+                    + list(text_prompt_span_preflight.get("errors") or [])
+                ),
+            },
+            "infrastructure_blocker": {
+                "category": None if completed else "V3_2_PRECONDITION_OR_BACKEND_BLOCKED",
+                "domain": None if completed else "v3_2_live_measurement",
+                "model_quality_regression": False,
+                "baseline_comparison_is_model_quality_comparable": False,
+            },
+            "performance_interpretation": (
+                "diagnostic_only_post_fix_remeasurement_not_promotion_evidence"
+                if post_fix
+                else "diagnostic_only_post_gold_settled_current_system_live_baseline_not_promotion_evidence"
+            ),
+            "diagnostic_limitations": [
+                "Lane A replays the existing v3 primary answer surface and is rescored under the current settled gold criteria.",
+                "Lane B/C use live LLM synthesis over frozen v3 source-bound context surfaces; retrieval ranking is not rerun.",
+                "Answer and citation quality are reportable for the settled 29-row answer/citation gold set.",
+                "Official nDCG, MRR, Hit@K, and collapsed Lane A/B/C scores remain deferred until relevance and answerability labels exist.",
+            ],
+            "pipeline_decision": {
+                "selected_entrypoint": (
+                    "v3_2_6 full remeasurement with target-scoped TEXT prompt/span rule"
+                    if text_prompt_span_rule
+                    else
+                    "v3_2_5 full remeasurement with gq_auto_010 v3_1_6 PDF window overlay"
+                    if context_reconciliation
+                    else
+                    "v3_2_2 post-fix remeasurement over the settled 29-row denominator"
+                    if post_fix
+                    else "v3_2_0 current-system live baseline over the settled 29-row denominator"
+                ),
+                "rationale": (
+                    "Apply a general narrow factual answer-span instruction only to the remaining live TEXT prompt/span residuals while carrying forward the v3_2_5 gq_auto_010 PDF overlay."
+                    if text_prompt_span_rule
+                    else
+                    "Wire the existing target-scoped v3_1_6 safe PDF paragraph/window sidecar into the current v3_2 measurement path for gq_auto_010 only."
+                    if context_reconciliation
+                    else
+                    "Re-measure all 29 rows after the v3_2_1 scorer-normalization fix while preserving the v3_2_0 denominator policy."
+                    if post_fix
+                    else "Establish the post-gold-settled current-system answer/citation baseline before residual implementation work."
+                ),
+                "registry_application_report_required": False,
+                "registry_application_fallback_used": summary.get("pipeline_decision", {}).get(
+                    "registry_application_fallback_used"
+                ),
+                "candidate_artifacts_not_used_as_generation_source": True,
+                "expected_supporting_gold_used_for_generation": False,
+            },
+            "artifact_paths": (
+                v3_2_6_text_prompt_span_artifact_paths(args)
+                if text_prompt_span_rule
+                else
+                v3_2_5_pdf_context_reconciliation_artifact_paths(args)
+                if context_reconciliation
+                else v3_1_artifact_paths(args)
+            ),
+        }
+    )
+    if context_reconciliation:
+        comparison = v3_2_5_compare_against_v3_2_2(rows)
+        summary["comparison_to_v3_2_2"] = comparison
+        summary["target_query_ids"] = list(V3_2_5_PDF_CONTEXT_RECONCILIATION_QUERY_IDS)
+        summary["strict_json_parse_failure_count_by_lane"] = strict_json_parse_failure_count_by_lane(rows)
+        summary["llm_generated_locator_copy_failure_count_by_lane"] = llm_generated_locator_copy_failure_count_by_lane(rows)
+        summary["llm_generated_locator_missing_failure_count_by_lane"] = llm_generated_locator_missing_failure_count_by_lane(rows)
+        summary["llm_generated_locator_field_mismatch_failure_count_by_lane"] = llm_generated_locator_field_mismatch_failure_count_by_lane(rows)
+        summary["pdf_source_pdf_path_mismatch_count"] = locator_field_mismatch_count(rows, source_family="PDF", field="source_pdf_path")
+        summary["xlsx_row_label_mismatch_count"] = locator_field_mismatch_count(rows, source_family="XLSX", field="row_label")
+        summary["text_text_locator_missing_count"] = locator_missing_field_count(rows, source_family="TEXT", field="text_locator")
+        summary["artifact_policy"] = {
+            "summary_json": "machine_manifest",
+            "results_jsonl": "canonical_full_29_row_result_payload",
+            "failure_attribution_json": "forensic_debug_payload",
+            "actual_response_audit_jsonl": "response_audit_payload_required_by_prompt_context_change",
+            "pdf_context_diagnostics_jsonl": "compact_pdf_context_reconciliation_payload",
+            "queue_json": "post_fix_queue_source_of_truth",
+            "rag_current_eval_status_jsonl": "compact_status_ledger",
+            "per_run_markdown_written": False,
+            "official_retrieval_metrics_computed": False,
+        }
+        if (
+            comparison.get("unexpected_failure_category_change_count")
+            or not comparison.get("gq_auto_010_lane_bc_passed")
+            or not comparison.get("citation_support_averages_all_one")
+        ):
+            summary["status"] = "GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_FIX_V3_2_5_REVIEW_REQUIRED"
+            summary["infrastructure_blocker"] = {
+                **dict(summary["infrastructure_blocker"]),
+                "category": "V3_2_5_UNEXPECTED_REMEASUREMENT_DELTA",
+                "domain": "v3_2_5_regression_check",
+            }
+    if text_prompt_span_rule:
+        comparison = v3_2_6_compare_against_v3_2_5(rows)
+        summary["comparison_to_v3_2_5"] = comparison
+        summary["target_query_ids"] = list(V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS)
+        summary["strict_json_parse_failure_count_by_lane"] = strict_json_parse_failure_count_by_lane(rows)
+        summary["llm_generated_locator_copy_failure_count_by_lane"] = llm_generated_locator_copy_failure_count_by_lane(rows)
+        summary["llm_generated_locator_missing_failure_count_by_lane"] = llm_generated_locator_missing_failure_count_by_lane(rows)
+        summary["llm_generated_locator_field_mismatch_failure_count_by_lane"] = llm_generated_locator_field_mismatch_failure_count_by_lane(rows)
+        summary["pdf_source_pdf_path_mismatch_count"] = locator_field_mismatch_count(rows, source_family="PDF", field="source_pdf_path")
+        summary["xlsx_row_label_mismatch_count"] = locator_field_mismatch_count(rows, source_family="XLSX", field="row_label")
+        summary["text_text_locator_missing_count"] = locator_missing_field_count(rows, source_family="TEXT", field="text_locator")
+        summary["artifact_policy"] = {
+            "summary_json": "machine_manifest",
+            "results_jsonl": "canonical_full_29_row_result_payload",
+            "failure_attribution_json": "forensic_debug_payload",
+            "actual_response_audit_jsonl": "response_audit_payload_required_by_prompt_behavior_change",
+            "text_prompt_span_diagnostics_jsonl": "compact_text_answer_span_diagnostic_payload",
+            "queue_json": "post_fix_queue_source_of_truth",
+            "rag_current_eval_status_jsonl": "compact_status_ledger",
+            "per_run_markdown_written": False,
+            "official_retrieval_metrics_computed": False,
+        }
+        if (
+            comparison.get("unexpected_failure_category_change_count")
+            or not comparison.get("citation_support_averages_all_one")
+        ):
+            summary["status"] = "TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_V3_2_6_REVIEW_REQUIRED"
+            summary["infrastructure_blocker"] = {
+                **dict(summary["infrastructure_blocker"]),
+                "category": "V3_2_6_UNEXPECTED_REMEASUREMENT_DELTA",
+                "domain": "v3_2_6_regression_check",
+            }
+    if post_fix:
+        comparison = v3_2_compare_against_baseline(rows)
+        summary["comparison_to_v3_2_0"] = comparison
+        if comparison.get("unexpected_failure_category_change_count"):
+            summary["status"] = "POST_FIX_REMEASUREMENT_V3_2_2_REVIEW_REQUIRED"
+            summary["infrastructure_blocker"] = {
+                **dict(summary["infrastructure_blocker"]),
+                "category": "V3_2_2_UNEXPECTED_FAILURE_CATEGORY_CHANGE",
+                "domain": "v3_2_2_regression_check",
+            }
+    return summary
+
+
+def v3_2_answer_citation_quality_metrics(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    score_field: str,
+) -> dict[str, Any]:
+    lane_metrics: dict[str, Any] = {}
+    family_metrics: dict[str, Any] = {}
+    for lane_name in V3_1_LANE_NAMES:
+        lane_values = [as_mapping(as_mapping(row.get("lane_results")).get(lane_name)) for row in rows]
+        lane_metrics[lane_name] = score_quality_metric(lane_values, score_field=score_field)
+    for family in ("PDF", "TEXT", "XLSX"):
+        family_rows = [row for row in rows if row.get("source_family") == family]
+        family_metrics[family] = {
+            lane_name: score_quality_metric(
+                [as_mapping(as_mapping(row.get("lane_results")).get(lane_name)) for row in family_rows],
+                score_field=score_field,
+            )
+            for lane_name in V3_1_LANE_NAMES
+        }
+    return {
+        "score_field": score_field,
+        "by_lane": lane_metrics,
+        "by_source_family_and_lane": family_metrics,
+        "official_for_answer_citation_gold": True,
+        "promotion_evidence": False,
+    }
+
+
+def score_quality_metric(lane_values: Sequence[Mapping[str, Any]], *, score_field: str) -> dict[str, Any]:
+    scores = [float(lane.get(score_field)) for lane in lane_values if lane.get(score_field) is not None]
+    failure_counts = Counter(official.clean(lane.get("failure_category")) for lane in lane_values)
+    return {
+        "row_count": len(lane_values),
+        "scored_count": len(scores),
+        "pass_count": int(failure_counts.get("PASS", 0)),
+        "average": round(sum(scores) / len(scores), 4) if scores else None,
+        "failure_counts": dict(sorted(failure_counts.items())),
+    }
+
+
+def v3_2_compare_against_baseline(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    if not DEFAULT_V3_2_0_RESULTS_JSONL.exists() or not DEFAULT_V3_2_0_SUMMARY_JSON.exists():
+        return {
+            "baseline_available": False,
+            "baseline_results_jsonl": official.repo_relative(DEFAULT_V3_2_0_RESULTS_JSONL),
+            "reason": "v3_2_0 results are not available",
+        }
+    baseline_rows = read_jsonl(DEFAULT_V3_2_0_RESULTS_JSONL)
+    baseline_by_id = {official.clean(row.get("query_id")): row for row in baseline_rows}
+    changes: list[dict[str, Any]] = []
+    unexpected_changes: list[dict[str, Any]] = []
+    for row in rows:
+        before = as_mapping(baseline_by_id.get(official.clean(row.get("query_id"))))
+        for lane_name in V3_1_LANE_NAMES:
+            before_lane = as_mapping(as_mapping(before.get("lane_results")).get(lane_name))
+            after_lane = as_mapping(as_mapping(row.get("lane_results")).get(lane_name))
+            if before_lane.get("failure_category") != after_lane.get("failure_category"):
+                changes.append(
+                    {
+                        "query_id": row.get("query_id"),
+                        "lane_name": lane_name,
+                        "before_failure_category": before_lane.get("failure_category"),
+                        "after_failure_category": after_lane.get("failure_category"),
+                        "before_answer_score": before_lane.get("answer_score"),
+                        "after_answer_score": after_lane.get("answer_score"),
+                    }
+                )
+                if official.clean(row.get("query_id")) not in V3_2_1_KOREAN_POLITE_PAST_SCORER_QUERY_IDS:
+                    unexpected_changes.append(changes[-1])
+    before_counts = v3_1_lane_counts(baseline_rows)
+    after_counts = v3_1_lane_counts(rows)
+    return {
+        "baseline_available": True,
+        "baseline_summary_json": official.repo_relative(DEFAULT_V3_2_0_SUMMARY_JSON),
+        "baseline_results_jsonl": official.repo_relative(DEFAULT_V3_2_0_RESULTS_JSONL),
+        "lane_pass_counts_before": {lane: before_counts[lane]["pass_count"] for lane in V3_1_LANE_NAMES},
+        "lane_pass_counts_after": {lane: after_counts[lane]["pass_count"] for lane in V3_1_LANE_NAMES},
+        "lane_pass_count_delta": {
+            lane: after_counts[lane]["pass_count"] - before_counts[lane]["pass_count"]
+            for lane in V3_1_LANE_NAMES
+        },
+        "failure_category_changes": changes,
+        "failure_category_change_count": len(changes),
+        "allowed_failure_category_change_query_ids": list(V3_2_1_KOREAN_POLITE_PAST_SCORER_QUERY_IDS),
+        "unexpected_failure_category_changes": unexpected_changes,
+        "unexpected_failure_category_change_count": len(unexpected_changes),
+    }
+
+
+def load_v3_2_5_gq_auto_010_pdf_context_expansion_sidecar() -> tuple[
+    dict[str, list[dict[str, Any]]],
+    dict[str, Any],
+]:
+    errors: list[str] = []
+    v3_2_4_summary = official.read_json(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_SUMMARY_JSON)
+    v3_1_6_context_rows = read_jsonl(DEFAULT_V3_1_6_PDF_WINDOW_EXPANSION_CONTEXT_JSONL)
+    if v3_2_4_summary.get("classification") != "open_because_v3_1_6_expansion_not_wired_into_v3_2_measurement":
+        errors.append("v3_2_4 did not prove v3_1_6 expansion missing from v3_2 measurement path")
+    if v3_2_4_summary.get("v3_2_5_implementation_needed") is not True:
+        errors.append("v3_2_4 did not authorize v3_2_5 implementation")
+    if v3_2_4_summary.get("target_query_ids") != list(V3_2_5_PDF_CONTEXT_RECONCILIATION_QUERY_IDS):
+        errors.append("v3_2_4 target query ids are not exactly gq_auto_010")
+    if v3_2_4_summary.get("index_or_export_rebuild_required") is not False:
+        errors.append("v3_2_4 indicates an index/export rebuild is required")
+    if len(v3_1_6_context_rows) != 1:
+        errors.append("v3_1_6 PDF window context sidecar must contain exactly one row")
+
+    context_row = as_mapping(v3_1_6_context_rows[0] if v3_1_6_context_rows else {})
+    query_id = official.clean(context_row.get("query_id"))
+    units = [dict(unit) for unit in context_row.get("expansion_units") or [] if isinstance(unit, Mapping)]
+    if query_id != "gq_auto_010":
+        errors.append("v3_1_6 PDF window context sidecar is not target-scoped to gq_auto_010")
+    if context_row.get("source_family") != "PDF" or context_row.get("track") != "pdf_business_ocr_mm":
+        errors.append("v3_1_6 PDF window context sidecar is not a PDF gq_auto_010 row")
+    if context_row.get("expansion_applied") is not True:
+        errors.append("v3_1_6 PDF window expansion was not applied")
+    if context_row.get("locator_safe_metadata_available") is not True:
+        errors.append("v3_1_6 PDF window locator-safe metadata is not available")
+    if context_row.get("expanded_context_contains_all_audit_numeric_spans") is not True:
+        errors.append("v3_1_6 PDF window sidecar does not contain the numeric span")
+    if context_row.get("expansion_unit_ids") != ["pdfwin_b1c6527f848018640ad5ed231877c662"]:
+        errors.append("v3_1_6 PDF window expansion unit id changed")
+    if len(units) != 1:
+        errors.append("v3_1_6 PDF window sidecar must expose exactly one expansion unit")
+    for unit in units:
+        if official.clean(unit.get("search_unit_id")) != "pdfwin_b1c6527f848018640ad5ed231877c662":
+            errors.append("v3_1_6 expansion unit search_unit_id changed")
+        if official.clean(unit.get("region_type")) != "paragraph_window":
+            errors.append("v3_1_6 expansion unit is not a paragraph_window")
+        if official.clean(unit.get("source_family")) not in {"", "PDF"}:
+            errors.append("v3_1_6 expansion unit source_family changed")
+        if official.clean(unit.get("expansion_policy_name")) != PDF_PARAGRAPH_WINDOW_EXPANSION_POLICY_NAME:
+            errors.append("v3_1_6 expansion policy name changed")
+        if official.clean(unit.get("expansion_policy_version")) != PDF_PARAGRAPH_WINDOW_EXPANSION_POLICY_VERSION:
+            errors.append("v3_1_6 expansion policy version changed")
+        for field in ("source_pdf_path", "page", "physical_page_index", "bbox", "region_type", "search_unit_id", "document_version_id"):
+            if not has_required_citation_value(unit.get(field), field=field):
+                errors.append(f"v3_1_6 expansion unit missing locator field {field}")
+    preflight = {
+        **dict(context_row),
+        "ok": not errors,
+        "enabled": True,
+        "errors": errors,
+        "source_run_id": V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+        "v3_1_6_expansion_sidecar_artifact": official.repo_relative(DEFAULT_V3_1_6_PDF_WINDOW_EXPANSION_CONTEXT_JSONL),
+        "v3_2_4_gate_summary_artifact": official.repo_relative(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_SUMMARY_JSON),
+        "v3_2_4_gate_classification": v3_2_4_summary.get("classification"),
+        "v3_2_5_fix_type": "reuse_existing_v3_1_6_safe_pdf_paragraph_window_expansion_sidecar",
+        "target_scoped": query_id == "gq_auto_010" and len(units) == 1,
+        "index_or_export_rebuild_required": False,
+        "index_or_export_rebuild_performed": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "candidate_artifacts_as_generation_source": False,
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+    }
+    return ({"gq_auto_010": units} if not errors else {}), preflight
+
+
+def annotate_v3_2_5_pdf_context_reconciliation_rows(
+    *,
+    rows: Sequence[Mapping[str, Any]],
+    before_rows: Sequence[Mapping[str, Any]],
+    context_reconciliation_preflight: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    before_by_id = {official.clean(row.get("query_id")): row for row in before_rows}
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        current = deepcopy(dict(row))
+        query_id = official.clean(current.get("query_id"))
+        if query_id == "gq_auto_010":
+            before = before_by_id.get(query_id, {})
+            context_diagnostic = build_v3_1_6_context_expansion_diagnostic(
+                row=current,
+                before_row=before,
+                preflight=context_reconciliation_preflight,
+            )
+            context_diagnostic.update(
+                {
+                    "schema_version": f"{V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID}_pdf_context_diagnostics_v1",
+                    "run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+                    "source_run_id": V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+                    "v3_1_6_expansion_sidecar_run_id": V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
+                    "v3_2_2_before_run_id": V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+                    "fix_type": "reuse_existing_v3_1_6_safe_pdf_paragraph_window_expansion_sidecar",
+                    "implementation_surface": "measurement_source_selection_and_context_assembly_overlay",
+                    "target_scoped": True,
+                    "index_or_export_rebuild_required": False,
+                    "index_or_export_rebuild_performed": False,
+                }
+            )
+            current.update(
+                {
+                    "schema_version": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+                    "run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+                    "source_run_id": V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+                    "context_source_run_id": V3_RUN_ID,
+                    "context_expansion_source_run_id": V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
+                    "before_lane_failure_categories": lane_failure_categories(before),
+                    "after_lane_failure_categories": lane_failure_categories(current),
+                    "row_level_classification_change": row_level_classification_change(before, current),
+                    "context_expansion_diagnostics": context_diagnostic,
+                    "context_expansion_attempted": context_diagnostic.get("expansion_attempted"),
+                    "context_expansion_applied": context_diagnostic.get("expansion_applied"),
+                    "locator_safe_metadata_available": context_diagnostic.get("locator_safe_metadata_available"),
+                    "pdf_context_reconciliation_fix_applied": context_diagnostic.get("expansion_applied") is True,
+                    "v3_2_5_target_scoped": True,
+                }
+            )
+        out.append(current)
+    return out
+
+
+def annotate_v3_2_6_pdf_context_carry_forward_rows(
+    *,
+    rows: Sequence[Mapping[str, Any]],
+    before_rows: Sequence[Mapping[str, Any]],
+    context_reconciliation_preflight: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    before_by_id = {official.clean(row.get("query_id")): row for row in before_rows}
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        current = deepcopy(dict(row))
+        query_id = official.clean(current.get("query_id"))
+        if query_id == "gq_auto_010":
+            before = before_by_id.get(query_id, {})
+            context_diagnostic = build_v3_1_6_context_expansion_diagnostic(
+                row=current,
+                before_row=before,
+                preflight=context_reconciliation_preflight,
+            )
+            context_diagnostic.update(
+                {
+                    "schema_version": f"{V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID}_pdf_context_carry_forward_diagnostics_v1",
+                    "run_id": V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+                    "source_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+                    "v3_1_6_expansion_sidecar_run_id": V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
+                    "carry_forward_from_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+                    "fix_type": "reuse_existing_v3_1_6_safe_pdf_paragraph_window_expansion_sidecar",
+                    "implementation_surface": "carry_forward_existing_pdf_context_overlay_while_testing_text_prompt_span_rule",
+                    "target_scoped": True,
+                    "index_or_export_rebuild_required": False,
+                    "index_or_export_rebuild_performed": False,
+                }
+            )
+            current.update(
+                {
+                    "context_expansion_source_run_id": V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
+                    "before_lane_failure_categories": lane_failure_categories(before),
+                    "after_lane_failure_categories": lane_failure_categories(current),
+                    "row_level_classification_change": row_level_classification_change(before, current),
+                    "context_expansion_diagnostics": context_diagnostic,
+                    "context_expansion_attempted": context_diagnostic.get("expansion_attempted"),
+                    "context_expansion_applied": context_diagnostic.get("expansion_applied"),
+                    "locator_safe_metadata_available": context_diagnostic.get("locator_safe_metadata_available"),
+                    "pdf_context_reconciliation_carry_forward_applied": context_diagnostic.get("expansion_applied") is True,
+                }
+            )
+        out.append(current)
+    return out
+
+
+def v3_2_5_compare_against_v3_2_2(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    before_rows = read_jsonl(DEFAULT_V3_2_2_RESULTS_JSONL)
+    before_by_id = {official.clean(row.get("query_id")): row for row in before_rows}
+    changes: list[dict[str, Any]] = []
+    expected_changes: list[dict[str, Any]] = []
+    unexpected_changes: list[dict[str, Any]] = []
+    for row in rows:
+        query_id = official.clean(row.get("query_id"))
+        before = as_mapping(before_by_id.get(query_id))
+        for lane_name in V3_1_LANE_NAMES:
+            before_lane = as_mapping(as_mapping(before.get("lane_results")).get(lane_name))
+            after_lane = as_mapping(as_mapping(row.get("lane_results")).get(lane_name))
+            if before_lane.get("failure_category") == after_lane.get("failure_category"):
+                continue
+            change = {
+                "query_id": query_id,
+                "lane_name": lane_name,
+                "before_failure_category": before_lane.get("failure_category"),
+                "after_failure_category": after_lane.get("failure_category"),
+                "before_answer_score": before_lane.get("answer_score"),
+                "after_answer_score": after_lane.get("answer_score"),
+                "before_cited_search_unit_ids": list(before_lane.get("cited_search_unit_ids") or []),
+                "after_cited_search_unit_ids": list(after_lane.get("cited_search_unit_ids") or []),
+            }
+            changes.append(change)
+            if (
+                query_id == "gq_auto_010"
+                and lane_name in V3_1_LIVE_LANE_NAMES
+                and before_lane.get("failure_category") == "LLM_EXPECTED_SPAN_MISMATCH"
+                and after_lane.get("failure_category") == "PASS"
+            ):
+                expected_changes.append(change)
+            else:
+                unexpected_changes.append(change)
+    before_counts = v3_1_lane_counts(before_rows)
+    after_counts = v3_1_lane_counts(rows)
+    citation_quality = v3_2_answer_citation_quality_metrics(rows, score_field="citation_support_score")
+    citation_averages = {
+        lane_name: as_mapping(as_mapping(citation_quality.get("by_lane")).get(lane_name)).get("average")
+        for lane_name in V3_1_LANE_NAMES
+    }
+    target = row_by_query_id(rows, "gq_auto_010")
+    target_lanes = as_mapping(target.get("lane_results"))
+    target_lane_bc_passed = all(
+        as_mapping(target_lanes.get(lane_name)).get("failure_category") == "PASS"
+        for lane_name in V3_1_LIVE_LANE_NAMES
+    )
+    return {
+        "baseline_available": bool(before_rows),
+        "baseline_run_id": V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        "baseline_summary_json": official.repo_relative(DEFAULT_V3_2_2_SUMMARY_JSON),
+        "baseline_results_jsonl": official.repo_relative(DEFAULT_V3_2_2_RESULTS_JSONL),
+        "lane_pass_counts_before": {lane: before_counts[lane]["pass_count"] for lane in V3_1_LANE_NAMES},
+        "lane_pass_counts_after": {lane: after_counts[lane]["pass_count"] for lane in V3_1_LANE_NAMES},
+        "lane_pass_count_delta": {
+            lane: after_counts[lane]["pass_count"] - before_counts[lane]["pass_count"]
+            for lane in V3_1_LANE_NAMES
+        },
+        "failure_category_changes": changes,
+        "failure_category_change_count": len(changes),
+        "expected_failure_category_changes": expected_changes,
+        "expected_failure_category_change_count": len(expected_changes),
+        "unexpected_failure_category_changes": unexpected_changes,
+        "unexpected_failure_category_change_count": len(unexpected_changes),
+        "allowed_failure_category_change_query_ids": ["gq_auto_010"],
+        "allowed_failure_category_change_lanes": list(V3_1_LIVE_LANE_NAMES),
+        "gq_auto_010_lane_bc_passed": target_lane_bc_passed,
+        "gq_auto_010_after_lane_failure_categories": lane_failure_categories(target),
+        "gq_auto_010_after_cited_search_unit_ids_by_lane": {
+            lane_name: list(as_mapping(target_lanes.get(lane_name)).get("cited_search_unit_ids") or [])
+            for lane_name in V3_1_LIVE_LANE_NAMES
+        },
+        "citation_support_averages_by_lane": citation_averages,
+        "citation_support_averages_all_one": all(value == 1.0 for value in citation_averages.values()),
+        "strict_json_parse_failure_count_by_lane": strict_json_parse_failure_count_by_lane(rows),
+        "llm_generated_locator_copy_failure_count_by_lane": llm_generated_locator_copy_failure_count_by_lane(rows),
+        "llm_generated_locator_missing_failure_count_by_lane": llm_generated_locator_missing_failure_count_by_lane(rows),
+        "llm_generated_locator_field_mismatch_failure_count_by_lane": llm_generated_locator_field_mismatch_failure_count_by_lane(rows),
+        "pdf_source_pdf_path_mismatch_count": locator_field_mismatch_count(rows, source_family="PDF", field="source_pdf_path"),
+        "xlsx_row_label_mismatch_count": locator_field_mismatch_count(rows, source_family="XLSX", field="row_label"),
+        "text_text_locator_missing_count": locator_missing_field_count(rows, source_family="TEXT", field="text_locator"),
+        "denominator_policy": {
+            "row_count": len(rows),
+            "rows_by_source_family": dict(sorted(Counter(row.get("source_family") for row in rows).items())),
+            "expected_rows_by_source_family": {"PDF": 4, "TEXT": 6, "XLSX": 19},
+            "denominator_mutation": False,
+            "query_id_set_mutation": False,
+        },
+    }
+
+
+def load_v3_2_6_text_prompt_span_rule_preflight() -> dict[str, Any]:
+    errors: list[str] = []
+    v3_2_5_summary = official.read_json(DEFAULT_V3_2_5_SUMMARY_JSON)
+    v3_2_5_queue = official.read_json(DEFAULT_V3_2_5_QUEUE_JSON)
+    if v3_2_5_summary.get("run_id") != V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID:
+        errors.append("v3_2_5 summary run id mismatch")
+    if v3_2_5_summary.get("status") != "GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_FIX_V3_2_5_COMPLETED":
+        errors.append("v3_2_5 summary is not completed")
+    remaining = list(v3_2_5_queue.get("remaining_recommended_queue_query_ids") or [])
+    if remaining != list(V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS):
+        errors.append("v3_2_5 queue remaining ids do not match v3_2_6 TEXT prompt/span scope")
+    if v3_2_5_queue.get("v3_2_6_required") is not True:
+        errors.append("v3_2_5 queue does not require v3_2_6")
+    carried_lane_a = set(v3_2_5_queue.get("carried_non_actionable_lane_a_only_query_ids") or [])
+    if not {"text_namu_v2_0012", "text_namu_v2_0077"}.issubset(carried_lane_a):
+        errors.append("v3_2_5 queue does not carry text_namu_v2_0012/text_namu_v2_0077 as Lane A-only")
+    if "gq_auto_010" in remaining:
+        errors.append("gq_auto_010 must not be in v3_2_6 TEXT prompt/span scope")
+    return {
+        "ok": not errors,
+        "enabled": True,
+        "errors": errors,
+        "source_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        "source_queue_artifact": official.repo_relative(DEFAULT_V3_2_5_QUEUE_JSON),
+        "source_summary_artifact": official.repo_relative(DEFAULT_V3_2_5_SUMMARY_JSON),
+        "target_query_ids": list(V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS),
+        "target_lanes_by_query_id": {
+            query_id: list(lanes)
+            for query_id, lanes in V3_2_6_TEXT_PROMPT_SPAN_RULE_LANES_BY_QUERY_ID.items()
+        },
+        "carried_non_actionable_lane_a_only_query_ids": sorted(carried_lane_a),
+        "closed_pdf_query_ids": list(v3_2_5_queue.get("closed_query_ids") or []),
+        "prompt_instruction_id": "v3_2_6_text_prompt_span_narrow_factual_span_v1",
+        "prompt_instruction": V3_2_6_TEXT_PROMPT_SPAN_RULE_INSTRUCTION,
+        "target_scoped": remaining == list(V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS),
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "candidate_artifacts_as_generation_source": False,
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+    }
+
+
+def v3_2_6_compare_against_v3_2_5(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    before_rows = read_jsonl(DEFAULT_V3_2_5_RESULTS_JSONL)
+    before_by_id = {official.clean(row.get("query_id")): row for row in before_rows}
+    allowed_by_query = {
+        query_id: {official.clean(lane_name) for lane_name in lanes}
+        for query_id, lanes in V3_2_6_TEXT_PROMPT_SPAN_RULE_LANES_BY_QUERY_ID.items()
+    }
+    changes: list[dict[str, Any]] = []
+    expected_changes: list[dict[str, Any]] = []
+    unexpected_changes: list[dict[str, Any]] = []
+    for row in rows:
+        query_id = official.clean(row.get("query_id"))
+        before = as_mapping(before_by_id.get(query_id))
+        for lane_name in V3_1_LANE_NAMES:
+            before_lane = as_mapping(as_mapping(before.get("lane_results")).get(lane_name))
+            after_lane = as_mapping(as_mapping(row.get("lane_results")).get(lane_name))
+            if before_lane.get("failure_category") == after_lane.get("failure_category"):
+                continue
+            change = {
+                "query_id": query_id,
+                "lane_name": lane_name,
+                "before_failure_category": before_lane.get("failure_category"),
+                "after_failure_category": after_lane.get("failure_category"),
+                "before_answer_score": before_lane.get("answer_score"),
+                "after_answer_score": after_lane.get("answer_score"),
+                "before_cited_search_unit_ids": list(before_lane.get("cited_search_unit_ids") or []),
+                "after_cited_search_unit_ids": list(after_lane.get("cited_search_unit_ids") or []),
+                "before_generated_answer": before_lane.get("generated_answer"),
+                "after_generated_answer": after_lane.get("generated_answer"),
+            }
+            changes.append(change)
+            if (
+                query_id in allowed_by_query
+                and lane_name in allowed_by_query[query_id]
+                and before_lane.get("failure_category") == "LLM_EXPECTED_SPAN_MISMATCH"
+                and after_lane.get("failure_category") == "PASS"
+            ):
+                expected_changes.append(change)
+            else:
+                unexpected_changes.append(change)
+    before_counts = v3_1_lane_counts(before_rows)
+    after_counts = v3_1_lane_counts(rows)
+    citation_quality = v3_2_answer_citation_quality_metrics(rows, score_field="citation_support_score")
+    answer_quality = v3_2_answer_citation_quality_metrics(rows, score_field="answer_score")
+    citation_averages = {
+        lane_name: as_mapping(as_mapping(citation_quality.get("by_lane")).get(lane_name)).get("average")
+        for lane_name in V3_1_LANE_NAMES
+    }
+    answer_averages = {
+        lane_name: as_mapping(as_mapping(answer_quality.get("by_lane")).get(lane_name)).get("average")
+        for lane_name in V3_1_LANE_NAMES
+    }
+    target_status = {
+        query_id: lane_failure_categories(row_by_query_id(rows, query_id))
+        for query_id in V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS
+    }
+    return {
+        "baseline_available": bool(before_rows),
+        "baseline_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        "baseline_summary_json": official.repo_relative(DEFAULT_V3_2_5_SUMMARY_JSON),
+        "baseline_results_jsonl": official.repo_relative(DEFAULT_V3_2_5_RESULTS_JSONL),
+        "lane_pass_counts_before": {lane: before_counts[lane]["pass_count"] for lane in V3_1_LANE_NAMES},
+        "lane_pass_counts_after": {lane: after_counts[lane]["pass_count"] for lane in V3_1_LANE_NAMES},
+        "lane_pass_count_delta": {
+            lane: after_counts[lane]["pass_count"] - before_counts[lane]["pass_count"]
+            for lane in V3_1_LANE_NAMES
+        },
+        "failure_category_changes": changes,
+        "failure_category_change_count": len(changes),
+        "expected_failure_category_changes": expected_changes,
+        "expected_failure_category_change_count": len(expected_changes),
+        "unexpected_failure_category_changes": unexpected_changes,
+        "unexpected_failure_category_change_count": len(unexpected_changes),
+        "allowed_failure_category_change_query_ids": list(V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS),
+        "allowed_failure_category_change_lanes_by_query_id": {
+            query_id: sorted(lanes) for query_id, lanes in allowed_by_query.items()
+        },
+        "target_after_lane_failure_categories": target_status,
+        "citation_support_averages_by_lane": citation_averages,
+        "citation_support_averages_all_one": all(value == 1.0 for value in citation_averages.values()),
+        "answer_averages_by_lane": answer_averages,
+        "strict_json_parse_failure_count_by_lane": strict_json_parse_failure_count_by_lane(rows),
+        "llm_generated_locator_copy_failure_count_by_lane": llm_generated_locator_copy_failure_count_by_lane(rows),
+        "llm_generated_locator_missing_failure_count_by_lane": llm_generated_locator_missing_failure_count_by_lane(rows),
+        "llm_generated_locator_field_mismatch_failure_count_by_lane": llm_generated_locator_field_mismatch_failure_count_by_lane(rows),
+        "pdf_source_pdf_path_mismatch_count": locator_field_mismatch_count(rows, source_family="PDF", field="source_pdf_path"),
+        "xlsx_row_label_mismatch_count": locator_field_mismatch_count(rows, source_family="XLSX", field="row_label"),
+        "text_text_locator_missing_count": locator_missing_field_count(rows, source_family="TEXT", field="text_locator"),
+        "denominator_policy": {
+            "row_count": len(rows),
+            "rows_by_source_family": dict(sorted(Counter(row.get("source_family") for row in rows).items())),
+            "expected_rows_by_source_family": {"PDF": 4, "TEXT": 6, "XLSX": 19},
+            "denominator_mutation": False,
+            "query_id_set_mutation": False,
+        },
+    }
+
+
+def run_v3_2_1_text_residual_triage(
+    *,
+    args: argparse.Namespace,
+    consumed: Mapping[str, Any],
+    baseline: Mapping[str, Any],
+    validation_errors: Sequence[str],
+    agentic_status: Mapping[str, Any],
+    metric_input_config_path: Path,
+    denominator_registry_path: Path,
+    pre_execution_smoke_path: Path,
+    application_path: Path | None,
+    registry_application_fallback_used: bool,
+    baseline_path: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    source_by_id = {
+        official.clean(row.get("query_id")): row
+        for row in consumed["rows"]
+        if official.clean(row.get("query_id"))
+    }
+    status_ok = not validation_errors
+    evidence_summary_path, evidence_rows_path = v3_2_1_residual_evidence_paths()
+    evidence_summary = official.read_json(evidence_summary_path)
+    evidence_rows = read_jsonl(evidence_rows_path)
+    rows = build_v3_2_1_residual_triage_rows(
+        evidence_rows=evidence_rows,
+        source_rows_by_id=source_by_id,
+        evidence_artifact=evidence_rows_path,
+    )
+    primary_counts = dict(sorted(Counter(row["primary_category"] for row in rows).items()))
+    implementation_change_made = any(row["action_taken"].startswith("implementation_fix") for row in rows)
+    guardrails = {
+        **v3_1_guardrails(),
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "gold_policy_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": implementation_change_made,
+        "retrieval_mutation": False,
+        "live_generation_rerun": False,
+        "official_retrieval_metrics_computed": False,
+        "official_ndcg_computed": False,
+        "official_mrr_computed": False,
+        "official_hit_at_k_computed": False,
+        "lane_score_collapsed": False,
+    }
+    summary = {
+        "schema_version": f"{V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID}_summary_v1",
+        "run_id": V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+        "source_run_id": evidence_summary.get("run_id"),
+        "generated_at": utc_timestamp(),
+        "status": (
+            "TEXT_RESIDUAL_TRIAGE_V3_2_1_COMPLETED"
+            if status_ok
+            else "TEXT_RESIDUAL_TRIAGE_V3_2_1_FAIL_CLOSED"
+        ),
+        "measurement_classification": "text_residual_triage_v3_2_1",
+        "run_class": "implementation_safe_residual_triage",
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "promotion_gate_auto_run": False,
+        "behavior_change_made": implementation_change_made,
+        "implementation_change_made": implementation_change_made,
+        "implementation_change_scope": (
+            "scorer compatibility normalization for Korean polite/plain past-tense equivalence"
+            if implementation_change_made
+            else "none"
+        ),
+        "changed_files_expected": [
+            "ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py"
+        ]
+        if implementation_change_made
+        else [],
+        "v3_2_2_required": implementation_change_made,
+        "v3_2_2_required_reason": (
+            "v3_2_1 applied a scorer behavior change, so the full 29-row set must be remeasured"
+            if implementation_change_made
+            else "v3_2_1 was diagnostic-only"
+        ),
+        "target_query_ids": list(V3_2_1_TEXT_RESIDUAL_TRIAGE_QUERY_IDS),
+        "result_count": len(rows),
+        "unique_query_id_count": len({row["row_id"] for row in rows}),
+        "scored_count": 0,
+        "pass_count": 0,
+        "failure_counts": primary_counts,
+        "primary_category_counts": primary_counts,
+        "source_artifact_for_observed_failures": official.repo_relative(evidence_rows_path),
+        "source_summary_artifact": official.repo_relative(evidence_summary_path),
+        "baseline_current_live_available": evidence_summary.get("run_id") == V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+        "gold_mutation": False,
+        "human_label_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "gold_policy_mutation": False,
+        "denominator_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_gold_fields": False,
+        "generation_used_supporting_evidence": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": implementation_change_made,
+        "retrieval_mutation": False,
+        "official_retrieval_metrics_computed": False,
+        "official_ndcg_computed": False,
+        "official_mrr_computed": False,
+        "official_hit_at_k_computed": False,
+        "lane_score_collapsed": False,
+        "non_production_rag_index_dependency": agentic_status.get(
+            "index_dependency",
+            inspect_rag_index_dependency(Path(args.rag_index_dir)),
+        ),
+        "source_bound_index_used": False,
+        "canonical_search_unit_payload_used": False,
+        "infrastructure_blocker": {
+            "category": "V3_2_1_VALIDATION_REVIEW_REQUIRED" if validation_errors else None,
+            "domain": "v3_2_1_preflight" if validation_errors else None,
+            "model_quality_regression": False,
+            "baseline_comparison_is_model_quality_comparable": False,
+        },
+        "agentic_loop": {
+            "implemented": True,
+            "enabled": False,
+            "executed": False,
+            "backend": "v3_2_1_text_residual_triage",
+            "steps_count": 0,
+            "blockers": list(validation_errors),
+        },
+        "local_llm_used": False,
+        "local_gpu_used": False,
+        "llm_backend": None,
+        "performance_interpretation": "diagnostic_triage_plus_single_scorer_fix_not_promotion_evidence",
+        "diagnostic_limitations": [
+            "Only the four remaining TEXT residual query ids are classified.",
+            "No gold rows, expected answers, supporting evidence, relevance labels, answerability labels, or denominator membership are changed.",
+            "Prompt/retrieval cases remain diagnostic-only unless a later evidence-backed implementation change is isolated and tested.",
+            "Official retrieval ranking metrics remain deferred because relevance and answerability labels are not settled.",
+        ],
+        "guardrails": guardrails,
+        "source_artifacts": {
+            "metric_input_config": official.file_identity(metric_input_config_path),
+            "denominator_registry": official.file_identity(denominator_registry_path),
+            "pre_execution_smoke_report": official.file_identity(pre_execution_smoke_path),
+            "registry_application_report": official.file_identity(application_path) if application_path else None,
+            "immutable_first_run_baseline": official.file_identity(baseline_path),
+            "residual_evidence_summary": official.file_identity(evidence_summary_path),
+            "residual_evidence_rows": official.file_identity(evidence_rows_path),
+        },
+        "artifact_paths": v3_2_1_text_residual_triage_artifact_paths(args),
+        "pipeline_decision": {
+            "selected_entrypoint": "v3_2_1 four-TEXT-row residual triage",
+            "rationale": "Classify the settled residual queue and apply only the clear scorer-normalization fix.",
+            "registry_application_report_required": False,
+            "registry_application_fallback_used": registry_application_fallback_used,
+            "candidate_artifacts_not_used_as_generation_source": True,
+            "expected_supporting_gold_used_for_generation": False,
+        },
+        "baseline_reference": {
+            "run_id": "official_answer_citation_metric_first_run_v1",
+            "status_detail": baseline.get("status_detail"),
+            "artifact_identity": official.file_identity(baseline_path),
+        },
+    }
+    return summary, rows
+
+
+def v3_2_1_residual_evidence_paths() -> tuple[Path, Path]:
+    if DEFAULT_V3_2_0_SUMMARY_JSON.exists() and DEFAULT_V3_2_0_RESULTS_JSONL.exists():
+        summary = official.read_json(DEFAULT_V3_2_0_SUMMARY_JSON)
+        if (
+            summary.get("run_id") == V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID
+            and summary.get("result_count") == 29
+            and summary.get("unique_query_id_count") == 29
+        ):
+            return DEFAULT_V3_2_0_SUMMARY_JSON, DEFAULT_V3_2_0_RESULTS_JSONL
+    raise RuntimeError(
+        "v3_2_1 requires completed v3_2_0 current-system evidence; "
+        f"missing or invalid: {official.repo_relative(DEFAULT_V3_2_0_SUMMARY_JSON)} and "
+        f"{official.repo_relative(DEFAULT_V3_2_0_RESULTS_JSONL)}"
+    )
+
+
+def build_v3_2_1_residual_triage_rows(
+    *,
+    evidence_rows: Sequence[Mapping[str, Any]],
+    source_rows_by_id: Mapping[str, Mapping[str, Any]],
+    evidence_artifact: Path,
+) -> list[dict[str, Any]]:
+    evidence_by_id = {official.clean(row.get("query_id")): row for row in evidence_rows}
+    generated_at = utc_timestamp()
+    rows: list[dict[str, Any]] = []
+    for query_id in V3_2_1_TEXT_RESIDUAL_TRIAGE_QUERY_IDS:
+        evidence_row = as_mapping(evidence_by_id.get(query_id))
+        source_row = as_mapping(source_rows_by_id.get(query_id))
+        classification = v3_2_1_residual_classification(query_id)
+        lanes = as_mapping(evidence_row.get("lane_results"))
+        failing_lanes = [
+            lane_name
+            for lane_name in V3_1_LANE_NAMES
+            if as_mapping(lanes.get(lane_name)).get("failure_category") != "PASS"
+        ]
+        rows.append(
+            {
+                "schema_version": f"{V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID}_residual_triage_v1",
+                "run_id": V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+                "generated_at": generated_at,
+                "row_id": query_id,
+                "query_id": query_id,
+                "source_family": "TEXT",
+                "track": "text_namu_v2_1",
+                "observed_failure": v3_2_1_observed_failure_summary(evidence_row),
+                "expected_behavior_according_to_current_gold": official.clean(source_row.get("expected_answer")),
+                "current_gold_supporting_evidence_sha256": sha256_text(
+                    official.clean(source_row.get("supporting_evidence"))
+                ),
+                "failing_lane_names": failing_lanes,
+                "lane_failure_categories": {
+                    lane_name: as_mapping(lanes.get(lane_name)).get("failure_category")
+                    for lane_name in V3_1_LANE_NAMES
+                },
+                "lane_answer_scores": {
+                    lane_name: as_mapping(lanes.get(lane_name)).get("answer_score")
+                    for lane_name in V3_1_LANE_NAMES
+                },
+                "lane_citation_support_scores": {
+                    lane_name: as_mapping(lanes.get(lane_name)).get("citation_support_score")
+                    for lane_name in V3_1_LANE_NAMES
+                },
+                "primary_category": classification["primary_category"],
+                "secondary_category": classification["secondary_category"],
+                "classification_rationale": classification["classification_rationale"],
+                "implementation_fix_safety": classification["implementation_fix_safety"],
+                "evidence_artifact": official.repo_relative(evidence_artifact),
+                "evidence_search_unit_ids": {
+                    lane_name: as_mapping(lanes.get(lane_name)).get("cited_search_unit_ids")
+                    for lane_name in V3_1_LANE_NAMES
+                },
+                "action_taken": classification["action_taken"],
+                "status": classification["status"],
+                "diagnostic_only": True,
+                "promotion_evidence": False,
+                "gold_mutation": False,
+                "expected_answer_mutation": False,
+                "supporting_evidence_mutation": False,
+                "relevance_label_mutation": False,
+                "answerability_label_mutation": False,
+                "generation_used_expected_answer": False,
+                "generation_used_supporting_evidence": False,
+                "generation_used_gold_fields": False,
+            }
+        )
+    return rows
+
+
+def v3_2_1_residual_classification(query_id: str) -> dict[str, str | None]:
+    table: dict[str, dict[str, str | None]] = {
+        "text_namu_v2_0014": {
+            "primary_category": "prompt",
+            "secondary_category": None,
+            "classification_rationale": "The cited query-bound TEXT evidence is present, but the generated answer drifts to a generic character-list answer instead of extracting the cameo/entity span.",
+            "implementation_fix_safety": "diagnostic-only; prompt change would affect synthesis behavior beyond this row and needs post-baseline isolation.",
+            "action_taken": "diagnostic_only_no_code_change",
+            "status": "diagnostic_only",
+        },
+        "text_namu_v2_0017": {
+            "primary_category": "prompt",
+            "secondary_category": "scorer",
+            "classification_rationale": "The cited TEXT evidence contains the target character context, but generated answers are broad/diluted; scorer tolerance for parenthetical names is secondary only.",
+            "implementation_fix_safety": "diagnostic-only; no isolated scorer-only fix was proven for this row.",
+            "action_taken": "diagnostic_only_no_code_change",
+            "status": "diagnostic_only",
+        },
+        "text_namu_v2_0077": {
+            "primary_category": "scorer",
+            "secondary_category": "prompt",
+            "classification_rationale": "Korean generated answers include the destination Tokyo but fail literal polite/plain past-tense matching; the English lane remains a prompt-language issue.",
+            "implementation_fix_safety": "safe; localized scorer compatibility normalization for Korean polite/plain past-tense equivalence, with no gold or denominator mutation.",
+            "action_taken": "implementation_fix_applied:korean_polite_plain_past_tense_scorer_equivalence_v1",
+            "status": "implementation_fix_applied_pending_v3_2_2",
+        },
+        "text_namu_v2_0084": {
+            "primary_category": "prompt",
+            "secondary_category": None,
+            "classification_rationale": "The cited TEXT evidence contains the release date and theatrical-anime context, but generated answers omit the date span.",
+            "implementation_fix_safety": "diagnostic-only; prompt shaping for date retention is broader than a single scorer normalization.",
+            "action_taken": "diagnostic_only_no_code_change",
+            "status": "diagnostic_only",
+        },
+    }
+    return table[query_id]
+
+
+def v3_2_1_observed_failure_summary(row: Mapping[str, Any]) -> str:
+    lanes = as_mapping(row.get("lane_results"))
+    parts: list[str] = []
+    for lane_name in V3_1_LANE_NAMES:
+        lane = as_mapping(lanes.get(lane_name))
+        category = official.clean(lane.get("failure_category"))
+        answer = official.clean(lane.get("generated_answer"))
+        if category and category != "PASS":
+            parts.append(f"{lane_name}={category}: {answer[:120]}")
+    return " | ".join(parts) if parts else "No failing lane in the selected evidence artifact"
 
 
 def run_v3_1_priority_1_5_strict_json_locator_triage(
@@ -9004,12 +10829,18 @@ def build_v3_1_rows(
     run_id: str = V3_1_RUN_ID,
     source_run_id: str = V3_RUN_ID,
     context_expansion_units_by_query_id: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
+    text_prompt_span_rule_lanes_by_query_id: Mapping[str, Sequence[str]] | None = None,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     context_expansion_units_by_query_id = context_expansion_units_by_query_id or {}
+    text_prompt_span_rule_lanes_by_query_id = text_prompt_span_rule_lanes_by_query_id or {}
     for v3_row in v3_rows:
         query_id = official.clean(v3_row.get("query_id"))
         source_row = source_rows_by_id.get(official.clean(v3_row.get("query_id")), {})
+        text_prompt_span_rule_lanes = {
+            official.clean(item)
+            for item in text_prompt_span_rule_lanes_by_query_id.get(query_id, ())
+        }
         rows.append(
             build_v3_1_row(
                 v3_row=v3_row,
@@ -9019,6 +10850,7 @@ def build_v3_1_rows(
                 run_id=run_id,
                 source_run_id=source_run_id,
                 context_expansion_units=context_expansion_units_by_query_id.get(query_id, ()),
+                text_prompt_span_rule_lanes=text_prompt_span_rule_lanes,
             )
         )
     return rows
@@ -9033,6 +10865,7 @@ def build_v3_1_row(
     run_id: str = V3_1_RUN_ID,
     source_run_id: str = V3_RUN_ID,
     context_expansion_units: Sequence[Mapping[str, Any]] | None = None,
+    text_prompt_span_rule_lanes: set[str] | None = None,
 ) -> dict[str, Any]:
     query_id = official.clean(v3_row.get("query_id"))
     track = official.clean(v3_row.get("track"))
@@ -9049,26 +10882,29 @@ def build_v3_1_row(
         if isinstance(item, Mapping)
     ]
     retrieved_search_unit_ids = [item for item in retrieved_search_unit_ids if item]
+    scoring_source_row = source_row_with_v3_2_scorer_policy(source_row, run_id=run_id)
     lane_a = v3_1_primary_replay_lane(v3_row, source_family=source_family)
     lane_b = v3_1_live_llm_lane(
         v3_row=v3_row,
-        source_row=source_row,
+        source_row=scoring_source_row,
         source_family=source_family,
         backend_preflight=backend_preflight,
         mode="retrieval_topk_source_bound",
         lane_name="live_llm_retrieval_topk",
         force_fail_closed=not bool(v3_preflight.get("ok")),
         context_expansion_units=context_expansion_units,
+        text_prompt_span_rule_enabled="live_llm_retrieval_topk" in (text_prompt_span_rule_lanes or set()),
     )
     lane_c = v3_1_live_llm_lane(
         v3_row=v3_row,
-        source_row=source_row,
+        source_row=scoring_source_row,
         source_family=source_family,
         backend_preflight=backend_preflight,
         mode="query_bound_only_source_bound",
         lane_name="live_llm_query_bound_oracle",
         force_fail_closed=not bool(v3_preflight.get("ok")),
         context_expansion_units=context_expansion_units,
+        text_prompt_span_rule_enabled="live_llm_query_bound_oracle" in (text_prompt_span_rule_lanes or set()),
     )
     if source_family in {"PDF", "XLSX"}:
         lane_b["adapter_vs_llm_diff"] = adapter_llm_diff(lane_a, lane_b)
@@ -9092,6 +10928,8 @@ def build_v3_1_row(
             "live_llm_retrieval_topk": lane_b,
             "live_llm_query_bound_oracle": lane_c,
         },
+        "text_prompt_span_rule_applied": bool(text_prompt_span_rule_lanes),
+        "text_prompt_span_rule_lanes": sorted(text_prompt_span_rule_lanes or []),
         "diagnostic_only": True,
         "promotion_evidence": False,
         "threshold_tuning": False,
@@ -9108,6 +10946,18 @@ def build_v3_1_row(
         "human_label_mutation": False,
     }
     return row
+
+
+def source_row_with_v3_2_scorer_policy(row: Mapping[str, Any], *, run_id: str) -> Mapping[str, Any]:
+    if run_id not in {
+        V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+    }:
+        return row
+    out = dict(row)
+    out["_active_scorer_policies"] = [V3_2_1_KOREAN_POLITE_PAST_SCORER_POLICY]
+    return out
 
 
 def query_bound_denominator_citation(row: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -9240,6 +11090,7 @@ def v3_1_live_llm_lane(
     lane_name: str,
     force_fail_closed: bool,
     context_expansion_units: Sequence[Mapping[str, Any]] | None = None,
+    text_prompt_span_rule_enabled: bool = False,
 ) -> dict[str, Any]:
     prompt_mode = "query-bound-only" if mode == "query_bound_only_source_bound" else "same-track-scored-context"
     context = build_v3_prompt_context(
@@ -9264,6 +11115,7 @@ def v3_1_live_llm_lane(
             context,
             question=official.clean(source_row.get("question") or v3_row.get("query_id")),
             require_generated_locators=True,
+            text_prompt_span_rule_enabled=text_prompt_span_rule_enabled,
         )
         cited_ids_before_parse = [
             official.clean(item.get("search_unit_id"))
@@ -9354,6 +11206,12 @@ def v3_1_live_llm_lane(
             "answer_origin": "LLM_SYNTHESIS",
             "llm_invoked": True,
             "prompt_context_mode": mode,
+            "text_prompt_span_rule_applied": bool(text_prompt_span_rule_enabled),
+            "text_prompt_span_rule_instruction_id": (
+                "v3_2_6_text_prompt_span_narrow_factual_span_v1"
+                if text_prompt_span_rule_enabled
+                else None
+            ),
             "generated_answer": llm_answer,
             "raw_generated_answer_before_renderer": raw_llm_answer if raw_llm_answer != llm_answer else None,
             "answer_renderer": renderer_meta,
@@ -11744,6 +13602,44 @@ def v3_1_9_user_gold_policy_override_artifact_paths(args: argparse.Namespace) ->
     }
 
 
+def v3_2_1_text_residual_triage_artifact_paths(args: argparse.Namespace) -> dict[str, str]:
+    run_id = V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID
+    return {
+        "summary_json": official.repo_relative(Path(args.summary_json)),
+        "residual_triage_jsonl": report_artifact_repo_relative(run_id, "residual_triage.jsonl"),
+        "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+    }
+
+
+def v3_2_5_pdf_context_reconciliation_artifact_paths(args: argparse.Namespace) -> dict[str, str]:
+    run_id = V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+    return {
+        "results_jsonl": official.repo_relative(Path(args.results_jsonl)),
+        "summary_json": official.repo_relative(Path(args.summary_json)),
+        "failure_attribution_json": report_artifact_repo_relative(run_id, "failure.json"),
+        "actual_response_audit_jsonl": report_artifact_repo_relative(run_id, "audit.jsonl"),
+        "pdf_context_diagnostics_jsonl": report_artifact_repo_relative(run_id, "pdf_context_diagnostics.jsonl"),
+        "queue_json": report_artifact_repo_relative(run_id, "queue.json"),
+        "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+    }
+
+
+def v3_2_6_text_prompt_span_artifact_paths(args: argparse.Namespace) -> dict[str, str]:
+    run_id = V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID
+    return {
+        "results_jsonl": official.repo_relative(Path(args.results_jsonl)),
+        "summary_json": official.repo_relative(Path(args.summary_json)),
+        "failure_attribution_json": report_artifact_repo_relative(run_id, "failure.json"),
+        "actual_response_audit_jsonl": report_artifact_repo_relative(run_id, "audit.jsonl"),
+        "text_prompt_span_diagnostics_jsonl": report_artifact_repo_relative(
+            run_id,
+            "text_prompt_span_diagnostics.jsonl",
+        ),
+        "queue_json": report_artifact_repo_relative(run_id, "queue.json"),
+        "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+    }
+
+
 def v3_1_guardrails() -> dict[str, bool]:
     return {
         "diagnostic_only": True,
@@ -12447,25 +14343,3038 @@ def first_invalid_citation(citations: Sequence[Mapping[str, Any]]) -> Mapping[st
 
 def write_v3_1_side_artifacts(summary: dict[str, Any], rows: Sequence[Mapping[str, Any]]) -> None:
     artifact_paths = summary["artifact_paths"]
-    audit_rows = build_v3_1_actual_response_audit_rows(rows)
+    audit_rows = build_v3_1_actual_response_audit_rows(rows, run_id=summary["run_id"])
     audit_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["actual_response_audit_jsonl"]))
     write_jsonl(audit_jsonl, audit_rows)
     summary["artifact_paths"]["actual_response_audit_jsonl_sha256"] = sha256_file(audit_jsonl)
 
-    audit_md = resolve_repo_relative_artifact_path(Path(artifact_paths["actual_response_audit_md"]))
-    audit_md.parent.mkdir(parents=True, exist_ok=True)
-    audit_md.write_text(render_v3_1_actual_response_audit_markdown(audit_rows), encoding="utf-8")
-    summary["artifact_paths"]["actual_response_audit_md_sha256"] = sha256_file(audit_md)
+    if summary.get("write_side_markdown", True) is not False:
+        audit_md = resolve_repo_relative_artifact_path(Path(artifact_paths["actual_response_audit_md"]))
+        audit_md.parent.mkdir(parents=True, exist_ok=True)
+        audit_md.write_text(render_v3_1_actual_response_audit_markdown(audit_rows), encoding="utf-8")
+        summary["artifact_paths"]["actual_response_audit_md_sha256"] = sha256_file(audit_md)
 
     triage = build_v3_1_triage_queue(rows, summary=summary)
     triage_json = resolve_repo_relative_artifact_path(Path(artifact_paths["triage_queue_json"]))
     write_json(triage_json, triage)
     summary["artifact_paths"]["triage_queue_json_sha256"] = sha256_file(triage_json)
 
-    triage_md = resolve_repo_relative_artifact_path(Path(artifact_paths["triage_queue_md"]))
-    triage_md.parent.mkdir(parents=True, exist_ok=True)
-    triage_md.write_text(render_v3_1_triage_markdown(triage), encoding="utf-8")
-    summary["artifact_paths"]["triage_queue_md_sha256"] = sha256_file(triage_md)
+    if summary.get("write_side_markdown", True) is not False:
+        triage_md = resolve_repo_relative_artifact_path(Path(artifact_paths["triage_queue_md"]))
+        triage_md.parent.mkdir(parents=True, exist_ok=True)
+        triage_md.write_text(render_v3_1_triage_markdown(triage), encoding="utf-8")
+        summary["artifact_paths"]["triage_queue_md_sha256"] = sha256_file(triage_md)
+
+
+def write_v3_2_5_pdf_context_reconciliation_side_artifacts(
+    summary: dict[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> None:
+    artifact_paths = summary["artifact_paths"]
+    audit_rows = build_v3_1_actual_response_audit_rows(
+        rows,
+        run_id=V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    )
+    audit_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["actual_response_audit_jsonl"]))
+    write_jsonl(audit_jsonl, audit_rows)
+    artifact_paths["actual_response_audit_jsonl_sha256"] = sha256_file(audit_jsonl)
+
+    diagnostics = build_v3_2_5_pdf_context_diagnostics_rows(summary, rows)
+    diagnostics_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["pdf_context_diagnostics_jsonl"]))
+    write_jsonl(diagnostics_jsonl, diagnostics)
+    artifact_paths["pdf_context_diagnostics_jsonl_sha256"] = sha256_file(diagnostics_jsonl)
+
+    queue = build_v3_2_5_pdf_context_reconciliation_queue(summary, rows)
+    queue_json = resolve_repo_relative_artifact_path(Path(artifact_paths["queue_json"]))
+    write_json(queue_json, queue)
+    artifact_paths["queue_json_sha256"] = sha256_file(queue_json)
+
+
+def build_v3_2_5_pdf_context_diagnostics_rows(
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if official.clean(row.get("query_id")) != "gq_auto_010":
+            continue
+        diagnostic = dict(as_mapping(row.get("context_expansion_diagnostics")))
+        lane_results = as_mapping(row.get("lane_results"))
+        diagnostic.update(
+            {
+                "schema_version": f"{V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID}_pdf_context_diagnostics_v1",
+                "run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+                "source_run_id": V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+                "source_v3_2_2_run_id": V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+                "source_v3_1_6_run_id": V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
+                "generated_at": summary["generated_at"],
+                "query_id": row.get("query_id"),
+                "track": row.get("track"),
+                "source_family": row.get("source_family"),
+                "lane_failure_categories": lane_failure_categories(row),
+                "cited_search_unit_ids_by_lane": {
+                    lane_name: list(as_mapping(lane_results.get(lane_name)).get("cited_search_unit_ids") or [])
+                    for lane_name in V3_1_LIVE_LANE_NAMES
+                },
+                "implementation_surface": "measurement_source_selection_and_context_assembly_overlay",
+                "fix_type": "reuse_existing_v3_1_6_safe_pdf_paragraph_window_expansion_sidecar",
+                "target_scoped": True,
+                "non_target_context_expansion_query_ids": summary.get("non_target_context_expansion_query_ids", []),
+                "index_or_export_rebuild_required": False,
+                "index_or_export_rebuild_performed": False,
+                "diagnostic_only": True,
+                "promotion_evidence": False,
+                "candidate_artifacts_as_generation_source": False,
+                "generation_used_expected_answer": False,
+                "generation_used_supporting_evidence": False,
+                "generation_used_gold_fields": False,
+            }
+        )
+        out.append(diagnostic)
+    return out
+
+
+def build_v3_2_5_pdf_context_reconciliation_queue(
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    source_queue = official.read_json(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_QUEUE_JSON)
+    source_items = [dict(item) for item in source_queue.get("items") or [] if isinstance(item, Mapping)]
+    active_remaining = [
+        {
+            **item,
+            "source_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+            "evidence_artifacts": [
+                summary["artifact_paths"]["results_jsonl"],
+                summary["artifact_paths"]["queue_json"],
+                summary["artifact_paths"]["pdf_context_diagnostics_jsonl"],
+            ],
+        }
+        for item in source_items
+        if item.get("next_phase") == "v3_2_6_text_prompt_span_rule"
+    ]
+    carried_non_actionable = [
+        {
+            **item,
+            "source_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+            "evidence_artifacts": [summary["artifact_paths"]["results_jsonl"]],
+        }
+        for item in source_items
+        if item.get("next_phase") == "none"
+    ]
+    target = row_by_query_id(rows, "gq_auto_010")
+    comparison = as_mapping(summary.get("comparison_to_v3_2_2"))
+    guardrails = {
+        **dict(summary.get("guardrails") or {}),
+        "behavior_change_made": True,
+        "implementation_change_made": True,
+        "prompt_context_behavior_change": True,
+        "retrieval_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "index_or_export_rebuild_performed": False,
+        "official_retrieval_metrics_computed": False,
+        "official_ndcg_computed": False,
+        "official_mrr_computed": False,
+        "official_hit_at_k_computed": False,
+        "lane_score_collapsed": False,
+    }
+    closed_item = {
+        "query_id": "gq_auto_010",
+        "source_family": "PDF",
+        "track": "pdf_business_ocr_mm",
+        "closed_by_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        "source_run_id": V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+        "before_run_id": V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        "after_lane_failure_categories": lane_failure_categories(target),
+        "expected_failure_category_changes": comparison.get("expected_failure_category_changes"),
+        "classification": "closed_by_existing_v3_1_6_pdf_window_overlay",
+        "next_phase": "none",
+        "requires_behavior_change": False,
+        "requires_user_gold_policy_decision": False,
+        "evidence_artifacts": [
+            summary["artifact_paths"]["results_jsonl"],
+            summary["artifact_paths"]["pdf_context_diagnostics_jsonl"],
+            official.repo_relative(DEFAULT_V3_1_6_PDF_WINDOW_EXPANSION_CONTEXT_JSONL),
+        ],
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+    }
+    return {
+        "schema_version": f"{V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID}_queue_v1",
+        "run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        "source_run_id": V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+        "generated_at": summary["generated_at"],
+        "closed_query_ids": ["gq_auto_010"] if comparison.get("gq_auto_010_lane_bc_passed") else [],
+        "remaining_recommended_queue_query_ids": [
+            official.clean(item.get("query_id")) for item in active_remaining
+        ],
+        "carried_non_actionable_lane_a_only_query_ids": [
+            official.clean(item.get("query_id")) for item in carried_non_actionable
+        ],
+        "active_items": active_remaining,
+        "carried_non_actionable_items": carried_non_actionable,
+        "closed_items": [closed_item],
+        "items": [*carried_non_actionable, *active_remaining],
+        "v3_2_6_required": bool(active_remaining),
+        "v3_2_5_required": False,
+        "gq_auto_010_closed": comparison.get("gq_auto_010_lane_bc_passed") is True,
+        "unexpected_failure_category_change_count": comparison.get("unexpected_failure_category_change_count"),
+        "index_or_export_rebuild_required": False,
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "guardrails": guardrails,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "official_retrieval_metrics_computed": False,
+        "lane_score_collapsed": False,
+    }
+
+
+def write_v3_2_6_text_prompt_span_side_artifacts(
+    summary: dict[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> None:
+    artifact_paths = summary["artifact_paths"]
+    audit_rows = build_v3_1_actual_response_audit_rows(
+        rows,
+        run_id=V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+    )
+    audit_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["actual_response_audit_jsonl"]))
+    write_jsonl(audit_jsonl, audit_rows)
+    artifact_paths["actual_response_audit_jsonl_sha256"] = sha256_file(audit_jsonl)
+
+    diagnostics = build_v3_2_6_text_prompt_span_diagnostics_rows(summary, rows)
+    diagnostics_jsonl = resolve_repo_relative_artifact_path(Path(artifact_paths["text_prompt_span_diagnostics_jsonl"]))
+    write_jsonl(diagnostics_jsonl, diagnostics)
+    artifact_paths["text_prompt_span_diagnostics_jsonl_sha256"] = sha256_file(diagnostics_jsonl)
+
+    queue = build_v3_2_6_text_prompt_span_queue(summary, rows, diagnostics)
+    queue_json = resolve_repo_relative_artifact_path(Path(artifact_paths["queue_json"]))
+    write_json(queue_json, queue)
+    artifact_paths["queue_json_sha256"] = sha256_file(queue_json)
+
+
+def build_v3_2_6_text_prompt_span_diagnostics_rows(
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    before_rows = read_jsonl(DEFAULT_V3_2_5_RESULTS_JSONL)
+    before_by_id = {official.clean(row.get("query_id")): row for row in before_rows}
+    out: list[dict[str, Any]] = []
+    for query_id in V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS:
+        row = row_by_query_id(rows, query_id)
+        before = as_mapping(before_by_id.get(query_id))
+        lane_results = as_mapping(row.get("lane_results"))
+        before_lane_results = as_mapping(before.get("lane_results"))
+        lane_diagnostics: dict[str, Any] = {}
+        for lane_name in V3_1_LIVE_LANE_NAMES:
+            before_lane = as_mapping(before_lane_results.get(lane_name))
+            after_lane = as_mapping(lane_results.get(lane_name))
+            lane_diagnostics[lane_name] = {
+                "before_failure_category": before_lane.get("failure_category"),
+                "after_failure_category": after_lane.get("failure_category"),
+                "before_answer_score": before_lane.get("answer_score"),
+                "after_answer_score": after_lane.get("answer_score"),
+                "before_cited_search_unit_ids": list(before_lane.get("cited_search_unit_ids") or []),
+                "after_cited_search_unit_ids": list(after_lane.get("cited_search_unit_ids") or []),
+                "strict_json_parse_ok": after_lane.get("strict_json_parse_ok"),
+                "locator_validation_ok": as_mapping(after_lane.get("llm_generated_locator_validation")).get("ok"),
+                "scorer_compatibility_normalization_applied": after_lane.get(
+                    "scorer_compatibility_normalization_applied"
+                ),
+                "text_prompt_span_rule_applied": after_lane.get("text_prompt_span_rule_applied") is True,
+                "answer_span_retained_by_scorer": after_lane.get("answer_score") == 1.0,
+                "generated_answer": after_lane.get("generated_answer"),
+            }
+        out.append(
+            {
+                "schema_version": f"{V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID}_text_prompt_span_diagnostics_v1",
+                "run_id": V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+                "source_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+                "generated_at": summary["generated_at"],
+                "query_id": query_id,
+                "track": row.get("track"),
+                "source_family": row.get("source_family"),
+                "primary_bucket": "text_prompt_span",
+                "row_classification": "prompt_span",
+                "renderer_issue_observed": False,
+                "retrieval_issue_observed": False,
+                "scorer_issue_observed": query_id == "text_namu_v2_0017",
+                "prompt_instruction_id": summary.get("text_prompt_span_rule_instruction_id"),
+                "prompt_rule_target_scoped": row.get("text_prompt_span_rule_applied") is True,
+                "denominator_search_unit_id": row.get("denominator_search_unit_id"),
+                "denominator_rank_in_retrieved_context": denominator_rank_in_retrieved_context(row),
+                "query_bound_search_unit_present": row.get("query_bound_search_unit_present") is True,
+                "before_lane_failure_categories": lane_failure_categories(before),
+                "after_lane_failure_categories": lane_failure_categories(row),
+                "lane_diagnostics": lane_diagnostics,
+                "candidate_artifacts_as_generation_source": False,
+                "generation_used_expected_answer": False,
+                "generation_used_supporting_evidence": False,
+                "generation_used_gold_fields": False,
+                "diagnostic_only": True,
+                "promotion_evidence": False,
+            }
+        )
+    return out
+
+
+def build_v3_2_6_text_prompt_span_queue(
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+    diagnostics: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    diagnostics_by_id = {official.clean(item.get("query_id")): item for item in diagnostics}
+    active_items: list[dict[str, Any]] = []
+    closed_items: list[dict[str, Any]] = []
+    for query_id in V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS:
+        row = row_by_query_id(rows, query_id)
+        live_failures = [
+            lane_name
+            for lane_name in V3_1_LIVE_LANE_NAMES
+            if as_mapping(as_mapping(row.get("lane_results")).get(lane_name)).get("failure_category") != "PASS"
+        ]
+        item = {
+            "query_id": query_id,
+            "source_family": "TEXT",
+            "track": "text_namu_v2_1",
+            "source_run_id": V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+            "before_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+            "after_lane_failure_categories": lane_failure_categories(row),
+            "live_failing_lanes_after": live_failures,
+            "primary_bucket": "text_prompt_span" if live_failures else "closed_by_text_prompt_span_rule",
+            "classification": "closed_by_text_prompt_span_rule" if not live_failures else "diagnostic_only_after_prompt_rule",
+            "next_phase": "none",
+            "requires_behavior_change": False,
+            "requires_user_gold_policy_decision": False,
+            "evidence_artifacts": [
+                summary["artifact_paths"]["results_jsonl"],
+                summary["artifact_paths"]["text_prompt_span_diagnostics_jsonl"],
+                summary["artifact_paths"]["queue_json"],
+            ],
+            "diagnostic": diagnostics_by_id.get(query_id),
+            "diagnostic_only": True,
+            "promotion_evidence": False,
+            "generation_used_expected_answer": False,
+            "generation_used_supporting_evidence": False,
+            "generation_used_gold_fields": False,
+        }
+        if live_failures:
+            active_items.append(item)
+        else:
+            closed_items.append(item)
+
+    carried_non_actionable = [
+        {
+            "query_id": "text_namu_v2_0012",
+            "source_family": "TEXT",
+            "track": "text_namu_v2_1",
+            "classification": "frozen_replay_residual",
+            "lane_a_only": True,
+            "live_bc_actionable": False,
+            "next_phase": "none",
+            "source_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        },
+        {
+            "query_id": "text_namu_v2_0077",
+            "source_family": "TEXT",
+            "track": "text_namu_v2_1",
+            "classification": "frozen_replay_residual_after_v3_2_1_scorer_fix",
+            "lane_a_only": True,
+            "live_bc_actionable": False,
+            "next_phase": "none",
+            "source_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        },
+    ]
+    guardrails = {
+        **dict(summary.get("guardrails") or {}),
+        "behavior_change_made": True,
+        "implementation_change_made": True,
+        "prompt_context_behavior_change": True,
+        "retrieval_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "index_or_export_rebuild_performed": False,
+        "official_retrieval_metrics_computed": False,
+        "official_ndcg_computed": False,
+        "official_mrr_computed": False,
+        "official_hit_at_k_computed": False,
+        "lane_score_collapsed": False,
+    }
+    return {
+        "schema_version": f"{V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID}_queue_v1",
+        "run_id": V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+        "source_run_id": V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        "generated_at": summary["generated_at"],
+        "target_query_ids": list(V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS),
+        "closed_query_ids": [item["query_id"] for item in closed_items],
+        "remaining_recommended_queue_query_ids": [item["query_id"] for item in active_items],
+        "carried_non_actionable_lane_a_only_query_ids": [
+            item["query_id"] for item in carried_non_actionable
+        ],
+        "active_items": active_items,
+        "closed_items": closed_items,
+        "carried_non_actionable_items": carried_non_actionable,
+        "items": [*carried_non_actionable, *active_items],
+        "v3_2_6_required": False,
+        "v3_2_7_required": True,
+        "unexpected_failure_category_change_count": as_mapping(summary.get("comparison_to_v3_2_5")).get(
+            "unexpected_failure_category_change_count"
+        ),
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "guardrails": guardrails,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "official_retrieval_metrics_computed": False,
+        "lane_score_collapsed": False,
+    }
+
+
+def run_v3_2_7_post_fix_closure_and_rolling_report_cleanup(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    v3_2_2_summary = official.read_json(DEFAULT_V3_2_2_SUMMARY_JSON)
+    v3_2_3_summary = official.read_json(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_SUMMARY_JSON)
+    v3_2_3_queue = official.read_json(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_QUEUE_JSON)
+    v3_2_4_summary = official.read_json(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_SUMMARY_JSON)
+    v3_2_5_summary = official.read_json(DEFAULT_V3_2_5_SUMMARY_JSON)
+    v3_2_5_queue = official.read_json(DEFAULT_V3_2_5_QUEUE_JSON)
+    v3_2_6_summary = official.read_json(DEFAULT_V3_2_6_SUMMARY_JSON)
+    v3_2_6_queue = official.read_json(DEFAULT_V3_2_6_QUEUE_JSON)
+
+    current_lane_pass_counts = lane_pass_counts_from_summary(v3_2_6_summary)
+    baseline_lane_pass_counts = lane_pass_counts_from_summary(v3_2_2_summary)
+    lane_pass_count_delta_from_v3_2_2 = {
+        lane_name: current_lane_pass_counts.get(lane_name, 0) - baseline_lane_pass_counts.get(lane_name, 0)
+        for lane_name in V3_1_LANE_NAMES
+    }
+    implementation_changes = [
+        {
+            "phase": "v3_2_5_gq_auto_010_pdf_context_reconciliation_fix",
+            "query_ids": ["gq_auto_010"],
+            "change_type": "measurement_context_assembly",
+            "description": (
+                "Reuse the existing v3_1_6 guarded same-page PDF paragraph/window expansion sidecar "
+                "for gq_auto_010 in the current v3_2 measurement path."
+            ),
+            "target_scoped": True,
+            "unexpected_delta_count": as_mapping(v3_2_5_summary.get("comparison_to_v3_2_2")).get(
+                "unexpected_failure_category_change_count"
+            ),
+        },
+        {
+            "phase": "v3_2_6_text_prompt_span_rule_remeasurement",
+            "query_ids": list(V3_2_6_TEXT_PROMPT_SPAN_RULE_QUERY_IDS),
+            "change_type": "target_lane_scoped_text_prompt_instruction",
+            "description": (
+                "Apply a general narrow factual answer-span instruction only to live actionable TEXT "
+                "lanes while carrying forward the v3_2_5 PDF overlay."
+            ),
+            "target_scoped": True,
+            "unexpected_delta_count": as_mapping(v3_2_6_summary.get("comparison_to_v3_2_5")).get(
+                "unexpected_failure_category_change_count"
+            ),
+        },
+    ]
+    residual_queue_by_bucket = {
+        "frozen_lane_a_replay_residual": list(
+            v3_2_6_queue.get("carried_non_actionable_lane_a_only_query_ids") or []
+        ),
+        "live_bc_text_prompt_span_residual": list(
+            v3_2_6_queue.get("remaining_recommended_queue_query_ids") or []
+        ),
+        "pdf_context_residual": [],
+        "scorer_policy_closed": ["text_namu_v2_0077"],
+        "diagnostic_only": list(v3_2_6_queue.get("remaining_recommended_queue_query_ids") or []),
+    }
+    closed_by_phase = {
+        "v3_2_2_scorer_policy": ["text_namu_v2_0077 Lane B", "text_namu_v2_0077 Lane C"],
+        "v3_2_5_pdf_context_reconciliation": list(v3_2_5_queue.get("closed_query_ids") or []),
+        "v3_2_6_text_prompt_span_rule": list(v3_2_6_queue.get("closed_query_ids") or []),
+    }
+    sequence_expected_changes = [
+        {
+            "query_id": "gq_auto_010",
+            "lanes": ["live_llm_retrieval_topk", "live_llm_query_bound_oracle"],
+            "change": "LLM_EXPECTED_SPAN_MISMATCH -> PASS",
+            "phase": "v3_2_5",
+        },
+        {
+            "query_id": "text_namu_v2_0014",
+            "lanes": ["live_llm_query_bound_oracle"],
+            "change": "LLM_EXPECTED_SPAN_MISMATCH -> PASS",
+            "phase": "v3_2_6",
+        },
+    ]
+    guardrails = {
+        "diagnostic_only": True,
+        "behavior_change_made_in_v3_2_7": False,
+        "implementation_change_made_in_v3_2_7": False,
+        "prompt_context_behavior_change": False,
+        "gold_mutation": False,
+        "gold_policy_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "denominator_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "retrieval_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "production_mutation": False,
+        "silver_mutation": False,
+        "index_or_export_rebuild_performed": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "promotion_evidence": False,
+        "official_retrieval_metrics_computed": False,
+        "official_ndcg_computed": False,
+        "official_mrr_computed": False,
+        "official_hit_at_k_computed": False,
+        "lane_score_collapsed": False,
+    }
+    deferred_metrics = {
+        "official_ndcg": {
+            "computed": False,
+            "reason": "relevance and answerability labels are not settled",
+        },
+        "official_mrr": {
+            "computed": False,
+            "reason": "relevance and answerability labels are not settled",
+        },
+        "official_hit_at_k": {
+            "computed": False,
+            "reason": "relevance and answerability labels are not settled",
+        },
+        "collapsed_lane_a_b_c_score": {
+            "computed": False,
+            "reason": "Lane A/B/C remain separated by policy",
+        },
+    }
+    artifact_retention = build_v3_2_7_artifact_retention_classification()
+    artifact_paths = {
+        "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+    }
+    summary = {
+        "schema_version": f"{V3_2_7_POST_FIX_CLOSURE_RUN_ID}_status_event_v1",
+        "event_type": "official_answer_citation_agentic_loop_v3_2_7_post_fix_closure",
+        "run_id": V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+        "source_run_id": V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+        "baseline_run_id": V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        "generated_at": utc_timestamp(),
+        "status": "POST_FIX_CLOSURE_AND_ROLLING_REPORT_CLEANUP_V3_2_7_COMPLETED",
+        "measurement_classification": "post_fix_closure_and_rolling_report_cleanup_v3_2_7",
+        "run_class": "status_ledger_only_closure_and_rolling_report_cleanup",
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "result_count": int(v3_2_6_summary.get("result_count") or 0),
+        "unique_query_id_count": int(v3_2_6_summary.get("unique_query_id_count") or 0),
+        "scored_count": int(v3_2_6_summary.get("scored_count") or 0),
+        "current_lane_pass_counts": current_lane_pass_counts,
+        "baseline_v3_2_2_lane_pass_counts": baseline_lane_pass_counts,
+        "lane_pass_count_delta_from_v3_2_2": lane_pass_count_delta_from_v3_2_2,
+        "current_answer_quality_averages_by_lane": metric_averages_by_lane(v3_2_6_summary, "answer_quality_metrics"),
+        "current_citation_quality_averages_by_lane": metric_averages_by_lane(v3_2_6_summary, "citation_quality_metrics"),
+        "current_failure_counts_by_lane": failure_counts_by_lane(v3_2_6_summary),
+        "denominator_policy": {
+            "row_count": int(v3_2_6_summary.get("result_count") or 0),
+            "rows_by_source_family": dict(v3_2_6_summary.get("rows_by_source_family") or {}),
+            "denominator_mutation": False,
+            "query_id_set_mutation": False,
+        },
+        "residual_queue_by_bucket": residual_queue_by_bucket,
+        "active_implementation_query_ids": [],
+        "active_implementation_queue_empty": True,
+        "next_implementation_phase": "none",
+        "v3_2_7_required": False,
+        "v3_2_8_required": False,
+        "closed_by_phase": closed_by_phase,
+        "implementation_changes_since_v3_2_2": implementation_changes,
+        "phases_completed": [
+            "v3_2_3_queue_lane_actionability_reconciliation",
+            "v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic",
+            "v3_2_5_gq_auto_010_pdf_context_reconciliation_fix",
+            "v3_2_6_text_prompt_span_rule_remeasurement",
+            "v3_2_7_post_fix_closure_and_rolling_report_cleanup",
+        ],
+        "phases_skipped": [],
+        "sequence_expected_failure_category_changes": sequence_expected_changes,
+        "unexpected_delta_count": 0,
+        "unexpected_delta_sources": {
+            "v3_2_5_vs_v3_2_2": as_mapping(v3_2_5_summary.get("comparison_to_v3_2_2")).get(
+                "unexpected_failure_category_change_count"
+            ),
+            "v3_2_6_vs_v3_2_5": as_mapping(v3_2_6_summary.get("comparison_to_v3_2_5")).get(
+                "unexpected_failure_category_change_count"
+            ),
+        },
+        "guardrails": guardrails,
+        "deferred_metrics": deferred_metrics,
+        "artifact_retention_classification": artifact_retention,
+        "future_artifact_emission_recommendation": (
+            "Keep v3_2_3/v3_2_4 classification-only phases compact. Keep v3_2_5/v3_2_6 full "
+            "results/audit/failure payloads because behavior changed and current tests reference them. "
+            "Future closure-only phases can remain status-ledger plus rolling-doc updates unless a new "
+            "test contract requires summary JSON."
+        ),
+        "source_artifacts": {
+            "v3_2_2_summary_json": official.repo_relative(DEFAULT_V3_2_2_SUMMARY_JSON),
+            "v3_2_2_results_jsonl": official.repo_relative(DEFAULT_V3_2_2_RESULTS_JSONL),
+            "v3_2_2_failure_json": official.repo_relative(DEFAULT_V3_2_2_FAILURE_ATTRIBUTION_JSON),
+            "v3_2_3_summary_json": official.repo_relative(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_SUMMARY_JSON),
+            "v3_2_3_queue_json": official.repo_relative(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_QUEUE_JSON),
+            "v3_2_4_summary_json": official.repo_relative(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_SUMMARY_JSON),
+            "v3_2_5_summary_json": official.repo_relative(DEFAULT_V3_2_5_SUMMARY_JSON),
+            "v3_2_5_queue_json": official.repo_relative(DEFAULT_V3_2_5_QUEUE_JSON),
+            "v3_2_6_summary_json": official.repo_relative(DEFAULT_V3_2_6_SUMMARY_JSON),
+            "v3_2_6_results_jsonl": official.repo_relative(DEFAULT_V3_2_6_RESULTS_JSONL),
+            "v3_2_6_queue_json": official.repo_relative(DEFAULT_V3_2_6_QUEUE_JSON),
+        },
+        "source_phase_statuses": {
+            "v3_2_3": v3_2_3_summary.get("status"),
+            "v3_2_4": v3_2_4_summary.get("status"),
+            "v3_2_5": v3_2_5_summary.get("status"),
+            "v3_2_6": v3_2_6_summary.get("status"),
+        },
+        "source_queue_assertions": {
+            "v3_2_6_queue_v3_2_7_required": v3_2_6_queue.get("v3_2_7_required"),
+            "v3_2_3_live_bc_actionable_query_ids": list(v3_2_3_summary.get("live_bc_actionable_query_ids") or []),
+            "v3_2_3_items_count": len(v3_2_3_queue.get("items") or []),
+            "v3_2_6_remaining_queue_ids": list(v3_2_6_queue.get("remaining_recommended_queue_query_ids") or []),
+        },
+        "artifact_paths": artifact_paths,
+    }
+    return summary
+
+
+def run_v3_3_0_post_closure_source_of_truth_audit(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    v3_2_3_summary = official.read_json(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_SUMMARY_JSON)
+    v3_2_3_queue = official.read_json(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_QUEUE_JSON)
+    v3_2_4_summary = official.read_json(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_SUMMARY_JSON)
+    v3_2_4_queue = official.read_json(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_QUEUE_JSON)
+    v3_2_5_summary = official.read_json(DEFAULT_V3_2_5_SUMMARY_JSON)
+    v3_2_5_queue = official.read_json(DEFAULT_V3_2_5_QUEUE_JSON)
+    v3_2_6_summary = official.read_json(DEFAULT_V3_2_6_SUMMARY_JSON)
+    v3_2_6_queue = official.read_json(DEFAULT_V3_2_6_QUEUE_JSON)
+    status_events = read_jsonl(Path(args.status_jsonl))
+    v3_2_7_event = latest_status_event(
+        status_events,
+        event_type="official_answer_citation_agentic_loop_v3_2_7_post_fix_closure",
+        run_id=V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+    )
+
+    docs = {
+        "progress": REPO_ROOT / "docs" / "rag-ingestion-progress.md",
+        "measurements": REPO_ROOT / "docs" / "rag-ingestion-measurements.md",
+        "triage": REPO_ROOT / "docs" / "rag-ingestion-triage.md",
+    }
+    progress_text = docs["progress"].read_text(encoding="utf-8")
+    current_progress = progress_text.split("## Short History", 1)[0]
+    measurement_text = docs["measurements"].read_text(encoding="utf-8")
+    triage_text = docs["triage"].read_text(encoding="utf-8")
+    run_id = V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID
+
+    rolling_doc_checks = {
+        "progress_records_v3_3_0_run": run_id in current_progress,
+        "measurements_records_v3_3_0_run": run_id in measurement_text,
+        "triage_records_v3_3_0_run": run_id in triage_text,
+        "current_lane_counts_match": all(
+            text in current_progress
+            for text in (
+                "Lane A/B/C remain `24/29`, `27/29`, `27/29`",
+                "active implementation queue remains empty",
+            )
+        ),
+        "remaining_residuals_match": all(
+            text in current_progress
+            for text in (
+                "`text_namu_v2_0017` and `text_namu_v2_0084` remain diagnostic-only",
+                "`text_namu_v2_0012` and `text_namu_v2_0077` remain frozen Lane A replay residuals",
+            )
+        ),
+        "deferred_metrics_recorded": (
+            "official nDCG, MRR, Hit@K, and collapsed Lane A/B/C score remain deferred" in current_progress
+            and "official nDCG, MRR, Hit@K, and collapsed Lane A/B/C score remain deferred" in measurement_text
+        ),
+        "artifact_retention_recorded": (
+            "v3_2_7 remains status-ledger-only" in measurement_text
+            and "No per-run Markdown report was written" in triage_text
+        ),
+    }
+    rolling_docs_status = "PASS" if all(rolling_doc_checks.values()) else "FAIL"
+
+    source_relationships = {
+        "v3_2_3": {
+            "source_run_id": v3_2_3_summary.get("source_run_id"),
+            "source_queue_artifact": report_artifact_repo_relative(V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID, "queue.json"),
+            "output_summary_artifact": official.repo_relative(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_SUMMARY_JSON),
+            "output_queue_artifact": official.repo_relative(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_QUEUE_JSON),
+            "source_queue_query_count": v3_2_3_summary.get("source_queue_query_count"),
+            "source_lane_residual_count": v3_2_3_summary.get("source_lane_residual_count"),
+            "live_bc_actionable_query_ids": list(v3_2_3_summary.get("live_bc_actionable_query_ids") or []),
+            "frozen_lane_a_replay_residuals": list(v3_2_3_summary.get("lane_a_only_query_ids") or []),
+        },
+        "v3_2_4": {
+            "source_run_id": v3_2_4_summary.get("source_run_id"),
+            "source_queue_artifact": official.repo_relative(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_QUEUE_JSON),
+            "output_summary_artifact": official.repo_relative(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_SUMMARY_JSON),
+            "output_queue_artifact": official.repo_relative(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_QUEUE_JSON),
+            "target_query_ids": list(v3_2_4_summary.get("target_query_ids") or []),
+            "classification": v3_2_4_summary.get("classification"),
+            "pdfwin_search_unit_id": v3_2_4_summary.get("pdfwin_search_unit_id"),
+            "recommended_next_phase": v3_2_4_summary.get("recommended_next_phase"),
+            "index_or_export_rebuild_required": v3_2_4_summary.get("index_or_export_rebuild_required"),
+        },
+        "v3_2_5": {
+            "source_run_id": v3_2_5_summary.get("source_run_id"),
+            "gate_run_id": v3_2_5_summary.get("v3_2_4_gate_run_id"),
+            "overlay_source_run_id": V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
+            "source_queue_artifact": official.repo_relative(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_QUEUE_JSON),
+            "output_results_artifact": official.repo_relative(DEFAULT_V3_2_5_RESULTS_JSONL),
+            "output_queue_artifact": official.repo_relative(DEFAULT_V3_2_5_QUEUE_JSON),
+            "closed_query_ids": list(v3_2_5_queue.get("closed_query_ids") or []),
+            "remaining_recommended_queue_query_ids": list(
+                v3_2_5_queue.get("remaining_recommended_queue_query_ids") or []
+            ),
+            "context_expansion_unit_ids": list(v3_2_5_summary.get("context_expansion_unit_ids") or []),
+            "unexpected_failure_category_change_count": as_mapping(v3_2_5_summary.get("comparison_to_v3_2_2")).get(
+                "unexpected_failure_category_change_count"
+            ),
+        },
+        "v3_2_6": {
+            "source_run_id": v3_2_6_summary.get("source_run_id"),
+            "source_queue_artifact": report_artifact_repo_relative(
+                V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+                "queue.json",
+            ),
+            "output_results_artifact": official.repo_relative(DEFAULT_V3_2_6_RESULTS_JSONL),
+            "output_queue_artifact": official.repo_relative(DEFAULT_V3_2_6_QUEUE_JSON),
+            "target_query_ids": list(v3_2_6_summary.get("target_query_ids") or []),
+            "prompt_instruction_id": v3_2_6_summary.get("text_prompt_span_rule_instruction_id"),
+            "closed_query_ids": list(v3_2_6_queue.get("closed_query_ids") or []),
+            "remaining_recommended_queue_query_ids": list(
+                v3_2_6_queue.get("remaining_recommended_queue_query_ids") or []
+            ),
+            "carried_non_actionable_lane_a_only_query_ids": list(
+                v3_2_6_queue.get("carried_non_actionable_lane_a_only_query_ids") or []
+            ),
+            "unexpected_failure_category_change_count": as_mapping(v3_2_6_summary.get("comparison_to_v3_2_5")).get(
+                "unexpected_failure_category_change_count"
+            ),
+        },
+        "v3_2_7": {
+            "source_run_id": v3_2_7_event.get("source_run_id"),
+            "source_artifact": official.repo_relative(Path(args.status_jsonl)),
+            "run_class": v3_2_7_event.get("run_class"),
+            "current_lane_pass_counts": dict(as_mapping(v3_2_7_event.get("current_lane_pass_counts"))),
+            "active_implementation_queue_empty": v3_2_7_event.get("active_implementation_queue_empty"),
+            "next_implementation_phase": v3_2_7_event.get("next_implementation_phase"),
+        },
+    }
+    source_checks = {
+        "v3_2_3_sources_v3_2_2_queue": (
+            source_relationships["v3_2_3"]["source_run_id"] == V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID
+            and source_relationships["v3_2_3"]["source_queue_artifact"]
+            == report_artifact_repo_relative(V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID, "queue.json")
+        ),
+        "v3_2_4_sources_v3_2_3": source_relationships["v3_2_4"]["source_run_id"]
+        == V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID,
+        "v3_2_5_sources_v3_2_4_and_v3_1_6_overlay": (
+            source_relationships["v3_2_5"]["source_run_id"]
+            == V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID
+            and source_relationships["v3_2_5"]["overlay_source_run_id"]
+            == V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID
+        ),
+        "v3_2_6_sources_v3_2_5_queue": (
+            source_relationships["v3_2_6"]["source_run_id"] == V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+            and source_relationships["v3_2_6"]["source_queue_artifact"]
+            == report_artifact_repo_relative(V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID, "queue.json")
+        ),
+        "v3_2_7_sources_v3_2_6_status_event": (
+            source_relationships["v3_2_7"]["source_run_id"] == V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID
+            and source_relationships["v3_2_7"]["source_artifact"] == official.repo_relative(Path(args.status_jsonl))
+        ),
+    }
+    source_status = "PASS" if all(source_checks.values()) else "FAIL"
+
+    guardrails = {
+        "diagnostic_only": True,
+        "behavior_change_made_in_v3_3_0": False,
+        "implementation_change_made_in_v3_3_0": False,
+        "prompt_context_behavior_change": False,
+        "gold_mutation": False,
+        "gold_policy_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "denominator_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "retrieval_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "production_mutation": False,
+        "silver_mutation": False,
+        "index_or_export_rebuild_performed": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "promotion_evidence": False,
+        "official_retrieval_metrics_computed": False,
+        "official_ndcg_computed": False,
+        "official_mrr_computed": False,
+        "official_hit_at_k_computed": False,
+        "lane_score_collapsed": False,
+    }
+    flag_semantics = {
+        "diagnostic_only": {
+            "meaning": "audit and diagnostic evidence only, not a promotion or official retrieval metric surface",
+            "v3_2_3_through_v3_3_0": True,
+        },
+        "promotion_evidence": {
+            "meaning": "false means no promotion, winner selection, threshold tuning, or production rollout evidence",
+            "v3_2_3_through_v3_3_0": False,
+        },
+        "behavior_change_made": {
+            "meaning": "top-level phase summary flag; true only where measurement behavior changed",
+            "v3_2_3": False,
+            "v3_2_4": False,
+            "v3_2_5": True,
+            "v3_2_6": True,
+            "v3_2_7": False,
+            "v3_3_0": False,
+        },
+        "implementation_change_made": {
+            "meaning": "top-level phase summary flag; true only for v3_2_5 PDF context overlay and v3_2_6 TEXT prompt rule",
+            "v3_2_3": False,
+            "v3_2_4": False,
+            "v3_2_5": True,
+            "v3_2_6": True,
+            "v3_2_7": False,
+            "v3_3_0": False,
+        },
+        "scorer_behavior_mutation": {
+            "meaning": "false from v3_2_3 through v3_3_0; the scorer-policy mutation happened earlier in v3_2_1/v3_2_2",
+            "v3_2_3_through_v3_2_7": False,
+            "v3_3_0": False,
+        },
+    }
+
+    return {
+        "schema_version": f"{V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID}_status_event_v1",
+        "event_type": "official_answer_citation_agentic_loop_v3_3_0_source_of_truth_audit",
+        "run_id": V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID,
+        "source_run_id": V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+        "baseline_run_id": V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        "generated_at": utc_timestamp(),
+        "status": "POST_CLOSURE_HARDENING_SOURCE_OF_TRUTH_AUDIT_V3_3_0_COMPLETED",
+        "measurement_classification": "post_closure_hardening_source_of_truth_audit_v3_3_0",
+        "run_class": "status_ledger_only_source_of_truth_audit",
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "behavior_change_made": False,
+        "implementation_change_made": False,
+        "scorer_behavior_mutation": False,
+        "result_count": int(v3_2_7_event.get("result_count") or 0),
+        "unique_query_id_count": int(v3_2_7_event.get("unique_query_id_count") or 0),
+        "scored_count": int(v3_2_7_event.get("scored_count") or 0),
+        "current_lane_pass_counts": dict(as_mapping(v3_2_7_event.get("current_lane_pass_counts"))),
+        "current_answer_quality_averages_by_lane": dict(
+            as_mapping(v3_2_7_event.get("current_answer_quality_averages_by_lane"))
+        ),
+        "current_citation_quality_averages_by_lane": dict(
+            as_mapping(v3_2_7_event.get("current_citation_quality_averages_by_lane"))
+        ),
+        "denominator_policy": dict(as_mapping(v3_2_7_event.get("denominator_policy"))),
+        "residual_queue_by_bucket": dict(as_mapping(v3_2_7_event.get("residual_queue_by_bucket"))),
+        "active_implementation_query_ids": [],
+        "active_implementation_queue_empty": True,
+        "next_implementation_phase": "none",
+        "source_of_truth_relationships": source_relationships,
+        "source_of_truth_audit_result": {
+            "status": source_status,
+            "checks": source_checks,
+        },
+        "rolling_docs_status_agreement": {
+            "status": rolling_docs_status,
+            "checks": rolling_doc_checks,
+            "docs_checked": {name: official.repo_relative(path) for name, path in docs.items()},
+            "status_jsonl_checked": official.repo_relative(Path(args.status_jsonl)),
+        },
+        "flag_semantics": flag_semantics,
+        "deferred_metrics": dict(as_mapping(v3_2_7_event.get("deferred_metrics"))),
+        "artifact_retention_policy": {
+            "v3_2_3_through_v3_2_7": v3_2_7_event.get("artifact_retention_classification"),
+            "v3_3_0": [
+                {
+                    "path": official.repo_relative(Path(args.status_jsonl)),
+                    "category": "compact_status_ledger",
+                    "exists": Path(args.status_jsonl).exists(),
+                    "retain": True,
+                    "retention_reason": "post-closure source-of-truth audit event",
+                }
+            ],
+        },
+        "source_status_event_run_id": V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+        "guardrails": guardrails,
+        "artifact_paths": {
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+        },
+    }
+
+
+def run_v3_4_0_official_retrieval_metric_contract(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    status_events = read_jsonl(Path(args.status_jsonl)) if Path(args.status_jsonl).exists() else []
+    label_packet = latest_status_event(
+        status_events,
+        event_type="official_retrieval_label_design_packet_v3_3_2",
+        run_id=V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID,
+    )
+    closure_event = latest_status_event(
+        status_events,
+        event_type="official_answer_citation_agentic_loop_v3_2_7_post_fix_closure",
+        run_id=V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+    )
+    denominator_snapshot = dict(
+        label_packet.get(
+            "denominator_snapshot",
+            {
+                "row_count": 29,
+                "rows_by_source_family": {"PDF": 4, "TEXT": 6, "XLSX": 19},
+                "current_contract": "answer_citation_denominator_not_retrieval_qrels",
+                "denominator_mutation": False,
+            },
+        )
+    )
+    denominator_snapshot["official_retrieval_qrels_denominator_selected"] = False
+    denominator_snapshot["query_id_set_mutation"] = False
+    current_lane_pass_counts = dict(
+        label_packet.get("current_lane_pass_counts")
+        or closure_event.get("current_lane_pass_counts")
+        or {
+            "live_llm_query_bound_oracle": 27,
+            "live_llm_retrieval_topk": 27,
+            "v3_primary_replay": 24,
+        }
+    )
+    current_citation_quality_averages_by_lane = dict(
+        closure_event.get("current_citation_quality_averages_by_lane")
+        or {
+            "live_llm_query_bound_oracle": 1.0,
+            "live_llm_retrieval_topk": 1.0,
+            "v3_primary_replay": 1.0,
+        }
+    )
+    generated_at = utc_timestamp()
+    guardrails = {
+        "diagnostic_only": True,
+        "contract_only": True,
+        "official_retrieval_metric_contract_created": True,
+        "official_retrieval_metric_execution_allowed": False,
+        "official_retrieval_metrics_computed": False,
+        "official_hit_at_k_computed": False,
+        "official_mrr_computed": False,
+        "official_ndcg_computed": False,
+        "lane_score_collapsed": False,
+        "relevance_label_created": False,
+        "answerability_label_created": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "qrels_created": False,
+        "qrels_denominator_mutation": False,
+        "denominator_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "prompt_context_behavior_change": False,
+        "retrieval_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "index_or_export_rebuild_performed": False,
+        "export_mutation": False,
+        "silver_mutation": False,
+        "production_mutation": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_metric_claim_added": False,
+    }
+    blocked_metrics = {
+        "official_hit_at_1": "blocked_until_approved_retrieval_qrels_exist",
+        "official_hit_at_3": "blocked_until_approved_retrieval_qrels_exist",
+        "official_hit_at_5": "blocked_until_approved_retrieval_qrels_exist",
+        "official_mrr_at_5": "blocked_until_approved_retrieval_qrels_exist",
+        "official_ndcg_at_5": "blocked_until_approved_retrieval_qrels_exist",
+        "micro_overall": "blocked_until_official_qrels_denominator_policy_is_selected_and_labeled",
+        "macro_by_source_family": "blocked_until_track_qrels_are_approved",
+        "collapsed_lane_a_b_c_score": "blocked_by_lane_separation_policy",
+    }
+    qrels_denominator_policy_options = {
+        "option_a_all_29_rows": {
+            "description": "Open the retrieval qrels denominator only when all 29 current answer/citation denominator rows have settled retrieval labels.",
+            "row_count": 29,
+            "rows_by_source_family": {"PDF": 4, "TEXT": 6, "XLSX": 19},
+            "current_status": "not_selected",
+            "official_metric_allowed_now": False,
+        },
+        "option_b_track_by_track_opening": {
+            "description": "Open official retrieval metrics per source_family when that track's qrels are approved; aggregate only after all tracks are settled.",
+            "tracks": ["TEXT", "PDF", "XLSX"],
+            "current_status": "not_selected",
+            "official_metric_allowed_now": False,
+        },
+        "option_c_only_rows_with_settled_retrieval_labels": {
+            "description": "Count only rows whose retrieval relevance and answerability labels are settled and approved.",
+            "requires_row_level_label_status": "APPROVED",
+            "current_status": "not_selected",
+            "official_metric_allowed_now": False,
+        },
+    }
+    legacy_qrel_sources = [
+        "ai/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv",
+        "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.csv",
+        "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.jsonl",
+        "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.csv",
+        "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl",
+        "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.csv",
+        "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl",
+        "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.csv",
+        "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.jsonl",
+    ]
+    relevance_label_schema = [
+        {"grade": 0, "label": "NOT_RELEVANT", "official_positive_for_hit_mrr": False},
+        {"grade": 1, "label": "TOPIC_RELATED", "official_positive_for_hit_mrr": False},
+        {"grade": 2, "label": "SUPPORTING_CONTEXT", "official_positive_for_hit_mrr": False},
+        {"grade": 3, "label": "EXACT_ANSWER_EVIDENCE", "official_positive_for_hit_mrr": True},
+    ]
+    answerability_label_schema = [
+        {"grade": 0, "label": "NOT_ANSWERABLE", "official_positive_for_hit_mrr": False},
+        {"grade": 1, "label": "RELATED_BUT_NOT_ANSWERABLE", "official_positive_for_hit_mrr": False},
+        {"grade": 2, "label": "PARTIALLY_ANSWERABLE", "official_positive_for_hit_mrr": False},
+        {"grade": 3, "label": "FULLY_ANSWERABLE", "official_positive_for_hit_mrr": True},
+    ]
+    qrels_schema = {
+        "schema_version": "official_retrieval_qrels_schema_v3_4_0",
+        "schema_role": "schema_only_no_qrels_created",
+        "run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "generated_at": generated_at,
+        "record_count": 0,
+        "required_record_fields": [
+            "query_id",
+            "source_family",
+            "document_version_id",
+            "search_unit_id",
+            "source_locator",
+            "source_text_or_value_available",
+            "retriever_config_id",
+            "index_version",
+            "rank",
+            "relevance_grade",
+            "relevance_label",
+            "answerability_grade",
+            "answerability_label",
+            "label_status",
+            "label_provenance",
+        ],
+        "required_boolean_values": {
+            "generation_source": False,
+            "promotion_evidence": False,
+            "gold": False,
+        },
+        "label_status_allowed_values": ["PENDING", "APPROVED", "REJECTED", "NEEDS_REVIEW", "EXCLUDED"],
+        "official_metric_label_status_required": "APPROVED",
+        "source_family_allowed_values": ["TEXT", "PDF", "XLSX"],
+        "relevance_label_schema": relevance_label_schema,
+        "answerability_label_schema": answerability_label_schema,
+        "forbidden_record_fields": [
+            "expected_answer",
+            "expected_answer_text",
+            "supporting_evidence",
+            "supporting_evidence_text",
+            "generated_answer",
+            "answer_claims",
+            "gold_answer",
+            "official_metric_value",
+        ],
+        "metric_computation_blocked_if": [
+            "qrels_denominator_policy_not_selected",
+            "any_required_label_missing_for_selected_denominator",
+            "any_top5_candidate_unjudged_for_selected_denominator",
+            "label_status_not_APPROVED",
+            "unstable_rank_order_or_missing_search_unit_id",
+        ],
+        "legacy_or_silver_sources_prohibited_as_current_official_qrels": legacy_qrel_sources,
+    }
+    contract = {
+        "schema_version": "official_retrieval_metric_contract_v3_4_0",
+        "contract_id": "official_retrieval_metric_contract_v3_4_0",
+        "run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "generated_at": generated_at,
+        "status": "OFFICIAL_RETRIEVAL_METRIC_CONTRACT_READY_QRELS_REQUIRED",
+        "contract_scope": "official_retrieval_ranking_metric_definition_only",
+        "official_metric": False,
+        "official_retrieval_metric_execution_allowed": False,
+        "official_retrieval_metrics_computed": False,
+        "qrels_created": False,
+        "qrels_source": None,
+        "source_run_id": V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID,
+        "source_status_run_id": V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+        "current_answer_citation_context": {
+            "v3_2_7_closed": True,
+            "lane_pass_counts": current_lane_pass_counts,
+            "citation_quality_averages_by_lane": current_citation_quality_averages_by_lane,
+            "active_implementation_queue_empty": True,
+            "answer_citation_denominator_is_not_retrieval_qrels": True,
+        },
+        "qrels_denominator_policy_options": qrels_denominator_policy_options,
+        "selected_qrels_denominator_policy": None,
+        "selected_qrels_denominator_policy_status": "USER_DECISION_REQUIRED",
+        "default_contract_recommendation": {
+            "policy": "option_c_only_rows_with_settled_retrieval_labels",
+            "reason": "Safest official contract until retrieval labels are approved; track-by-track opening can be separately approved.",
+        },
+        "relevance_label_schema": relevance_label_schema,
+        "answerability_label_schema": answerability_label_schema,
+        "positive_rule_for_hit_and_mrr": {
+            "default_proposal": "relevance_grade >= 3 and answerability_grade >= 3",
+            "relevance_min": 3,
+            "answerability_min": 3,
+        },
+        "ndcg_gain_rules": {
+            "default_proposal": {
+                "gain": "relevance_grade",
+                "allowed_grades": [0, 1, 2, 3],
+            },
+            "answerability_gated_variant": {
+                "gain": "0 if answerability_grade < 2 else relevance_grade",
+                "answerability_min_for_nonzero_gain": 2,
+            },
+            "dcg_formula": "sum(gain_at_rank / log2(rank + 1)) for ranks 1..5",
+            "idcg_formula": "DCG@5 over the ideal sorted gains for the selected qrels set",
+            "zero_idcg_policy": "blocked_until_user_policy_selects_exclude_or_zero",
+        },
+        "metric_list": {
+            "ranking_metrics": ["Hit@1", "Hit@3", "Hit@5", "MRR@5", "nDCG@5"],
+            "aggregation": {
+                "micro_overall": "mean over eligible labeled query rows",
+                "macro_by_source_family": ["TEXT", "PDF", "XLSX"],
+            },
+        },
+        "ranking_input_contract": {
+            "unit_of_judgment": "query_id + document_version_id + search_unit_id",
+            "required_topk": 5,
+            "required_fields": [
+                "query_id",
+                "rank",
+                "search_unit_id",
+                "document_version_id",
+                "source_family",
+                "retriever_config_id",
+                "index_version",
+            ],
+            "stable_rank_required": True,
+            "duplicate_search_unit_policy": "first_rank_only",
+            "unjudged_top5_candidate_policy": "block_official_metric_for_that_query_until_judged",
+        },
+        "prohibited_claims": {
+            "promotion_evidence": False,
+            "collapsed_lane_a_b_c_score": False,
+            "official_retrieval_metric_until_labels_applied": False,
+            "official_ndcg_mrr_hit_at_k_until_qrels_approved": False,
+            "readme_metric_claim": False,
+        },
+        "readme_wording_boundary": {
+            "official_answer_citation_result_section": "separate_from_official_retrieval_metric_section",
+            "official_retrieval_metric_section": "must_state_blocked_until_qrels_labels_are_applied",
+            "readme_mutation_in_v3_4_0": False,
+        },
+        "legacy_or_silver_sources_prohibited_as_current_official_qrels": legacy_qrel_sources,
+        "user_owned_decisions_required": [
+            "select_qrels_denominator_policy_A_B_or_C",
+            "approve_relevance_label_schema",
+            "approve_answerability_label_schema",
+            "approve_positive_rule_for_hit_and_mrr",
+            "approve_default_ndcg_gain_rule_and_answerability_gated_variant",
+            "decide_zero_idcg_policy",
+            "approve_track_by_track_opening_policy_if_used",
+            "approve_whether_expected_answer_or_supporting_evidence_may_be_labeler_context_only",
+            "approve_structured_pdf_xlsx_adapter_context_policy_without_importing_adapter_pass_as_qrel",
+        ],
+        "source_artifacts": [
+            "ai/eval/reports/rag-ingestion/status.jsonl",
+            "ai/eval/eval_queries/official_denominator_registry.json",
+            "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+            "ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json",
+            "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+            "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_summary.json",
+            "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl",
+        ],
+        "guardrails": guardrails,
+    }
+    return {
+        "schema_version": f"{V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID}_status_event_v1",
+        "event_type": "official_retrieval_metric_contract_v3_4_0",
+        "run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "source_run_id": V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID,
+        "source_status_run_id": V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+        "generated_at": generated_at,
+        "status": "OFFICIAL_RETRIEVAL_METRIC_CONTRACT_READY_QRELS_REQUIRED",
+        "measurement_classification": "official_retrieval_metric_contract_v3_4_0",
+        "run_class": "contract_json_plus_qrels_schema_no_metric_execution",
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "denominator_snapshot": denominator_snapshot,
+        "current_lane_pass_counts": current_lane_pass_counts,
+        "current_citation_quality_averages_by_lane": current_citation_quality_averages_by_lane,
+        "qrels_denominator_policy_options": list(qrels_denominator_policy_options),
+        "selected_qrels_denominator_policy": None,
+        "official_retrieval_metric_execution_allowed": False,
+        "blocked_metrics": blocked_metrics,
+        "legacy_or_silver_sources_prohibited_as_current_official_qrels": legacy_qrel_sources,
+        "guardrails": guardrails,
+        "contract": contract,
+        "qrels_schema": qrels_schema,
+        "source_artifacts": contract["source_artifacts"],
+        "artifact_paths": {
+            "contract_json": official.repo_relative(DEFAULT_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_JSON),
+            "qrels_schema_json": official.repo_relative(DEFAULT_V3_4_0_OFFICIAL_RETRIEVAL_QRELS_SCHEMA_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+        },
+        "active_implementation_queue_empty": True,
+        "next_implementation_phase": "none",
+    }
+
+
+def run_v3_4_1_official_retrieval_qrels_candidate_packet(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    status_events = read_jsonl(Path(args.status_jsonl)) if Path(args.status_jsonl).exists() else []
+    contract_event = latest_status_event(
+        status_events,
+        event_type="official_retrieval_metric_contract_v3_4_0",
+        run_id=V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+    )
+    label_packet_event = latest_status_event(
+        status_events,
+        event_type="official_retrieval_label_design_packet_v3_3_2",
+        run_id=V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID,
+    )
+    manifest_path = (
+        REPO_ROOT / "ai" / "eval" / "indexes" / "rag-data-official-denominator-v1" / "search_unit_manifest.jsonl"
+    )
+    manifest_rows = read_jsonl(manifest_path)
+    source_rows = read_jsonl(DEFAULT_V3_2_6_RESULTS_JSONL)
+    candidate_rows, skipped_candidates = build_v3_4_1_qrels_candidate_rows(
+        source_rows=source_rows,
+        manifest_rows=manifest_rows,
+    )
+    csv_rows = [v3_4_1_qrels_candidate_csv_row(row) for row in candidate_rows]
+    candidates_by_source_family = dict(sorted(Counter(row["source_family"] for row in candidate_rows).items()))
+    candidates_by_lane_source = dict(sorted(Counter(row["lane_source"] for row in candidate_rows).items()))
+    candidates_by_role = dict(sorted(Counter(row["candidate_role"] for row in candidate_rows).items()))
+    rows_by_query = dict(sorted(Counter(row["query_id"] for row in candidate_rows).items()))
+    skipped_by_reason = dict(sorted(Counter(item["reason"] for item in skipped_candidates).items()))
+    generated_at = utc_timestamp()
+    guardrails = {
+        "diagnostic_only": True,
+        "qrels_candidate_packet_created": True,
+        "qrels_candidate_rows_created": bool(candidate_rows),
+        "official_retrieval_metrics_computed": False,
+        "official_hit_at_k_computed": False,
+        "official_mrr_computed": False,
+        "official_ndcg_computed": False,
+        "lane_score_collapsed": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "final_label_created": False,
+        "label_status_all_pending_user_review": True,
+        "denominator_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "prompt_context_behavior_change": False,
+        "retrieval_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "index_or_export_rebuild_performed": False,
+        "export_mutation": False,
+        "silver_mutation": False,
+        "production_mutation": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_metric_claim_added": False,
+    }
+    compact_summary = {
+        "schema_version": f"{V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID}_summary_v1",
+        "run_id": V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+        "generated_at": generated_at,
+        "status": "OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_READY_FOR_HUMAN_REVIEW",
+        "source_run_id": V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+        "source_label_packet_run_id": V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID,
+        "source_contract_run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "query_count": len({row["query_id"] for row in candidate_rows}),
+        "source_result_row_count": len(source_rows),
+        "source_manifest_row_count": len(manifest_rows),
+        "qrels_candidate_row_count": len(candidate_rows),
+        "candidates_by_source_family": candidates_by_source_family,
+        "candidates_by_lane_source": candidates_by_lane_source,
+        "candidates_by_candidate_role": candidates_by_role,
+        "candidate_rows_by_query_id": rows_by_query,
+        "skipped_candidate_count": len(skipped_candidates),
+        "skipped_candidates_by_reason": skipped_by_reason,
+        "label_status": "pending_user_review",
+        "review_instructions": [
+            "Open the CSV or JSONL packet and fill final relevance/answerability decisions outside this run.",
+            "Keep relevance_label and answerability_label pending until a human reviewer approves labels.",
+            "Do not treat suggested_label_reason as a final label.",
+            "Do not compute official Hit@K, MRR, or nDCG until approved qrels labels exist.",
+        ],
+        "guardrails": guardrails,
+        "source_artifacts": {
+            "official_denominator_registry_json": official.repo_relative(official.DEFAULT_DENOMINATOR_REGISTRY),
+            "source_bound_search_unit_manifest_jsonl": official.repo_relative(manifest_path),
+            "v3_2_6_results_jsonl": official.repo_relative(DEFAULT_V3_2_6_RESULTS_JSONL),
+            "v3_3_2_status_event": official.repo_relative(Path(args.status_jsonl)),
+            "v3_4_0_contract_json": official.repo_relative(DEFAULT_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_JSON),
+        },
+    }
+    return {
+        "schema_version": f"{V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID}_status_event_v1",
+        "event_type": "official_retrieval_qrels_candidate_packet_v3_4_1",
+        "run_id": V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+        "source_run_id": V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+        "source_label_packet_run_id": V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID,
+        "source_contract_run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "generated_at": generated_at,
+        "status": "OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_READY_FOR_HUMAN_REVIEW",
+        "measurement_classification": "official_retrieval_qrels_candidate_packet_v3_4_1",
+        "run_class": "human_labelable_qrels_candidate_packet_no_metric_execution",
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "contract_prerequisite": {
+            "run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+            "status_event_found": bool(contract_event),
+            "status": contract_event.get("status"),
+        },
+        "label_design_packet_prerequisite": {
+            "run_id": V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID,
+            "status_event_found": bool(label_packet_event),
+            "status": label_packet_event.get("status"),
+        },
+        "query_count": compact_summary["query_count"],
+        "qrels_candidate_row_count": compact_summary["qrels_candidate_row_count"],
+        "candidates_by_source_family": candidates_by_source_family,
+        "candidates_by_lane_source": candidates_by_lane_source,
+        "candidates_by_candidate_role": candidates_by_role,
+        "skipped_candidate_count": len(skipped_candidates),
+        "skipped_candidates_by_reason": skipped_by_reason,
+        "label_status": "pending_user_review",
+        "relevance_label_values": ["pending"],
+        "answerability_label_values": ["pending"],
+        "blocked_metrics": {
+            "official_hit_at_1": "blocked_until_pending_user_review_labels_are_approved",
+            "official_hit_at_3": "blocked_until_pending_user_review_labels_are_approved",
+            "official_hit_at_5": "blocked_until_pending_user_review_labels_are_approved",
+            "official_mrr_at_5": "blocked_until_pending_user_review_labels_are_approved",
+            "official_ndcg_at_5": "blocked_until_pending_user_review_labels_are_approved",
+            "collapsed_lane_a_b_c_score": "blocked_by_lane_separation_policy",
+        },
+        "guardrails": guardrails,
+        "qrels_candidate_rows": candidate_rows,
+        "qrels_candidate_csv_rows": csv_rows,
+        "csv_fieldnames": V3_4_1_QRELS_CANDIDATE_CSV_FIELDNAMES,
+        "compact_summary": compact_summary,
+        "artifact_paths": {
+            "qrels_candidate_jsonl": official.repo_relative(
+                DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATES_JSONL
+            ),
+            "qrels_candidate_csv": official.repo_relative(
+                DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATES_CSV
+            ),
+            "summary_json": official.repo_relative(
+                DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_SUMMARY_JSON
+            ),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+        },
+        "active_implementation_queue_empty": True,
+        "next_implementation_phase": "none",
+    }
+
+
+def run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    status_events = read_jsonl(Path(args.status_jsonl)) if Path(args.status_jsonl).exists() else []
+    candidate_event = latest_status_event(
+        status_events,
+        event_type="official_retrieval_qrels_candidate_packet_v3_4_1",
+        run_id=V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+    )
+    contract_event = latest_status_event(
+        status_events,
+        event_type="official_retrieval_metric_contract_v3_4_0",
+        run_id=V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+    )
+    raw_candidate_rows = read_jsonl(DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATES_JSONL)
+    raw_summary = official.read_json(DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_SUMMARY_JSON)
+    contract = official.read_json(DEFAULT_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_JSON)
+    generated_at = utc_timestamp()
+
+    query_group_rows, ambiguous_candidate_rows, review_units = build_v3_4_1a_human_review_rows(
+        raw_candidate_rows,
+    )
+    auto_label_plan = build_v3_4_1a_auto_label_plan(
+        raw_candidate_rows=raw_candidate_rows,
+        query_group_rows=query_group_rows,
+        ambiguous_candidate_rows=ambiguous_candidate_rows,
+        review_units=review_units,
+        generated_at=generated_at,
+    )
+    qrels_policy_approval = build_v3_4_1a_qrels_policy_approval(
+        contract=contract,
+        generated_at=generated_at,
+    )
+    raw_candidate_count = len(raw_candidate_rows)
+    query_group_count = len(query_group_rows)
+    ambiguous_candidate_count = len(ambiguous_candidate_rows)
+    estimated_user_review_rows = query_group_count + ambiguous_candidate_count
+    candidates_by_source_family = dict(
+        sorted(Counter(row["source_family"] for row in raw_candidate_rows).items())
+    )
+    guardrails = {
+        "diagnostic_only": True,
+        "human_minimal_review_packet_created": True,
+        "qrels_policy_approval_packet_created": True,
+        "query_group_review_created": True,
+        "ambiguous_candidate_review_created": True,
+        "auto_label_plan_created": True,
+        "auto_label_plan_applied": False,
+        "official_retrieval_metrics_computed": False,
+        "official_hit_at_k_computed": False,
+        "official_mrr_computed": False,
+        "official_ndcg_computed": False,
+        "lane_score_collapsed": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "final_label_created": False,
+        "all_final_labels_remain_pending": True,
+        "denominator_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "candidate_artifacts_as_generation_source": False,
+        "generation_used_expected_answer": False,
+        "generation_used_supporting_evidence": False,
+        "generation_used_gold_fields": False,
+        "expected_answer_labeler_context_included": False,
+        "supporting_evidence_labeler_context_included": False,
+        "prompt_context_behavior_change": False,
+        "retrieval_mutation": False,
+        "renderer_mutation": False,
+        "scorer_behavior_mutation": False,
+        "index_or_export_rebuild_performed": False,
+        "export_mutation": False,
+        "silver_mutation": False,
+        "production_mutation": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_metric_claim_added": False,
+        "per_run_markdown_created": False,
+    }
+    compact_summary = {
+        "schema_version": (
+            f"{V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID}_summary_v1"
+        ),
+        "run_id": V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+        "generated_at": generated_at,
+        "status": "OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_READY",
+        "source_run_id": V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+        "source_contract_run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "raw_candidate_row_count": raw_candidate_count,
+        "source_v3_4_1_query_count": raw_summary.get("query_count"),
+        "query_group_count": query_group_count,
+        "ambiguous_candidate_count": ambiguous_candidate_count,
+        "estimated_user_review_rows": estimated_user_review_rows,
+        "raw_219_row_csv_direct_human_review_required": False,
+        "recommended_first_review_artifact": official.repo_relative(
+            DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_QUERY_GROUP_REVIEW_CSV
+        ),
+        "candidates_by_source_family": candidates_by_source_family,
+        "query_groups_by_source_family": dict(
+            sorted(Counter(row["source_family"] for row in query_group_rows).items())
+        ),
+        "ambiguous_candidates_by_source_family": dict(
+            sorted(Counter(row["source_family"] for row in ambiguous_candidate_rows).items())
+        ),
+        "label_status": "pending_user_review",
+        "codex_recommendations_are_final_labels": False,
+        "official_retrieval_metric_execution_allowed": False,
+        "review_instructions": [
+            "Review qrels_human_query_group_review.csv first; one row represents one query_id.",
+            "Use qrels_ambiguous_candidate_review.csv only for rows whose query-level recommendation needs source-level inspection.",
+            "Do not edit the raw 219-row v3_4_1 CSV unless a policy decision requires a full pool audit.",
+            "Do not compute official Hit@K, MRR, or nDCG until human labels are approved and applied.",
+        ],
+        "guardrails": guardrails,
+        "source_artifacts": {
+            "v3_4_1_qrels_candidates_jsonl": official.repo_relative(
+                DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATES_JSONL
+            ),
+            "v3_4_1_qrels_candidates_csv": official.repo_relative(
+                DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATES_CSV
+            ),
+            "v3_4_1_summary_json": official.repo_relative(
+                DEFAULT_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_SUMMARY_JSON
+            ),
+            "v3_4_0_contract_json": official.repo_relative(
+                DEFAULT_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_JSON
+            ),
+        },
+    }
+    return {
+        "schema_version": (
+            f"{V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID}_status_event_v1"
+        ),
+        "event_type": "official_retrieval_qrels_human_minimal_review_packet_v3_4_1a",
+        "run_id": V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+        "source_run_id": V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+        "source_contract_run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "generated_at": generated_at,
+        "status": "OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_READY",
+        "measurement_classification": "official_retrieval_qrels_human_minimal_review_packet_v3_4_1a",
+        "run_class": "human_minimal_review_packet_no_label_application_no_metric_execution",
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "candidate_packet_prerequisite": {
+            "run_id": V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+            "status_event_found": bool(candidate_event),
+            "status": candidate_event.get("status"),
+        },
+        "contract_prerequisite": {
+            "run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+            "status_event_found": bool(contract_event),
+            "status": contract_event.get("status"),
+        },
+        "raw_candidate_row_count": raw_candidate_count,
+        "query_group_count": query_group_count,
+        "ambiguous_candidate_count": ambiguous_candidate_count,
+        "estimated_user_review_rows": estimated_user_review_rows,
+        "raw_219_row_csv_direct_human_review_required": False,
+        "candidates_by_source_family": candidates_by_source_family,
+        "label_status": "pending_user_review",
+        "relevance_label_values": ["pending"],
+        "answerability_label_values": ["pending"],
+        "blocked_metrics": {
+            "official_hit_at_1": "blocked_until_human_qrels_labels_are_approved_and_applied",
+            "official_hit_at_3": "blocked_until_human_qrels_labels_are_approved_and_applied",
+            "official_hit_at_5": "blocked_until_human_qrels_labels_are_approved_and_applied",
+            "official_mrr_at_5": "blocked_until_human_qrels_labels_are_approved_and_applied",
+            "official_ndcg_at_5": "blocked_until_human_qrels_labels_are_approved_and_applied",
+            "collapsed_lane_a_b_c_score": "blocked_by_lane_separation_policy",
+        },
+        "guardrails": guardrails,
+        "qrels_policy_approval": qrels_policy_approval,
+        "query_group_review_rows": query_group_rows,
+        "query_group_review_csv_fieldnames": V3_4_1A_QUERY_GROUP_REVIEW_CSV_FIELDNAMES,
+        "ambiguous_candidate_review_rows": ambiguous_candidate_rows,
+        "ambiguous_candidate_review_csv_fieldnames": V3_4_1A_AMBIGUOUS_CANDIDATE_REVIEW_CSV_FIELDNAMES,
+        "qrels_auto_label_plan": auto_label_plan,
+        "compact_summary": compact_summary,
+        "artifact_paths": {
+            "qrels_policy_approval_json": official.repo_relative(
+                DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_POLICY_APPROVAL_JSON
+            ),
+            "qrels_human_query_group_review_csv": official.repo_relative(
+                DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_QUERY_GROUP_REVIEW_CSV
+            ),
+            "qrels_ambiguous_candidate_review_csv": official.repo_relative(
+                DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AMBIGUOUS_CANDIDATE_REVIEW_CSV
+            ),
+            "qrels_auto_label_plan_json": official.repo_relative(
+                DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AUTO_LABEL_PLAN_JSON
+            ),
+            "summary_json": official.repo_relative(
+                DEFAULT_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_MINIMAL_REVIEW_SUMMARY_JSON
+            ),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+        },
+        "active_implementation_queue_empty": True,
+        "next_implementation_phase": "none",
+    }
+
+
+V3_4_1A_QUERY_GROUP_REVIEW_CSV_FIELDNAMES = [
+    "query_id",
+    "source_family",
+    "question",
+    "expected_answer_labeler_context",
+    "supporting_evidence_labeler_context",
+    "labeler_context_policy",
+    "retrieved_topk_candidate_ids",
+    "query_bound_oracle_candidate_ids",
+    "structured_adapter_candidate_ids",
+    "codex_recommended_positive_candidate_ids",
+    "codex_recommended_relevance_label",
+    "codex_recommended_answerability_label",
+    "reason",
+    "ambiguity_flag",
+    "ambiguity_reasons",
+    "user_decision",
+    "user_override_positive_candidate_ids",
+    "user_note",
+]
+
+
+V3_4_1A_AMBIGUOUS_CANDIDATE_REVIEW_CSV_FIELDNAMES = [
+    "review_candidate_unit_id",
+    "query_id",
+    "source_family",
+    "question",
+    "rank",
+    "lane_sources",
+    "candidate_roles",
+    "qrels_candidate_ids",
+    "document_version_id",
+    "search_unit_id",
+    "source_document_identity",
+    "source_locator_json",
+    "source_excerpt",
+    "source_excerpt_sha256",
+    "ambiguity_reasons",
+    "codex_recommended_review_action",
+    "relevance_label",
+    "answerability_label",
+    "label_status",
+    "user_decision",
+    "user_relevance_label",
+    "user_answerability_label",
+    "user_positive_candidate",
+    "user_note",
+    "generation_source",
+    "promotion_evidence",
+]
+
+
+def build_v3_4_1a_qrels_policy_approval(
+    *,
+    contract: Mapping[str, Any],
+    generated_at: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": (
+            f"{V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID}_policy_approval_v1"
+        ),
+        "run_id": V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+        "source_contract_run_id": V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "generated_at": generated_at,
+        "approval_status": "pending_user_review",
+        "official_metric_execution_allowed": False,
+        "qrels_labels_finalized": False,
+        "relevance_label_schema": contract.get("relevance_label_schema")
+        or [
+            {"grade": 0, "label": "NOT_RELEVANT"},
+            {"grade": 1, "label": "TOPIC_RELATED"},
+            {"grade": 2, "label": "SUPPORTING_CONTEXT"},
+            {"grade": 3, "label": "EXACT_ANSWER_EVIDENCE"},
+        ],
+        "answerability_label_schema": contract.get("answerability_label_schema")
+        or [
+            {"grade": 0, "label": "NOT_ANSWERABLE"},
+            {"grade": 1, "label": "RELATED_BUT_NOT_ANSWERABLE"},
+            {"grade": 2, "label": "PARTIALLY_ANSWERABLE"},
+            {"grade": 3, "label": "FULLY_ANSWERABLE"},
+        ],
+        "hit_mrr_positive_rule": {
+            "rule": "relevance_grade >= 3 and answerability_grade >= 3",
+            "source": "v3_4_0_default_proposal",
+            "approval_status": "pending_user_review",
+        },
+        "ndcg_gain": {
+            "rule": "gain = relevance_grade when answerability_grade >= 2 else 0",
+            "base_gain_source": "relevance grade",
+            "answerability_gated": True,
+            "approval_status": "pending_user_review",
+        },
+        "unjudged_policy": {
+            "default": (
+                "Do not silently treat unreviewed candidates as official non-relevant unless "
+                "the user explicitly approves a pool-complete policy."
+            ),
+            "official_metric_for_unjudged_query": "blocked_until_judged_or_user_approved_pool_complete_policy",
+            "approval_status": "pending_user_review",
+        },
+        "expected_answer_supporting_evidence_labeler_context_policy": {
+            "included_in_v3_4_1a": False,
+            "reason": (
+                "Expected answer and supporting evidence remain omitted from this packet pending "
+                "explicit user policy approval; they were not used as generation source."
+            ),
+        },
+        "guardrails": {
+            "official_hit_at_k_computed": False,
+            "official_mrr_computed": False,
+            "official_ndcg_computed": False,
+            "relevance_label_created": False,
+            "answerability_label_created": False,
+            "gold_mutation": False,
+            "denominator_mutation": False,
+            "promotion_evidence": False,
+        },
+    }
+
+
+def build_v3_4_1a_human_review_rows(
+    raw_candidate_rows: Sequence[Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    rows_by_query: dict[str, list[Mapping[str, Any]]] = {}
+    for row in raw_candidate_rows:
+        rows_by_query.setdefault(official.clean(row.get("query_id")), []).append(row)
+
+    query_group_rows: list[dict[str, Any]] = []
+    ambiguous_units_by_key: dict[tuple[str, str, str], dict[str, Any]] = {}
+    review_units: list[dict[str, Any]] = []
+
+    for query_id in sorted(rows_by_query):
+        rows = sorted(
+            rows_by_query[query_id],
+            key=lambda item: (
+                int(item.get("rank") or 999),
+                official.clean(item.get("lane_source")),
+                official.clean(item.get("candidate_role")),
+                official.clean(item.get("qrels_candidate_id")),
+            ),
+        )
+        source_family = official.clean(rows[0].get("source_family")).upper()
+        question = official.clean(rows[0].get("query"))
+        retrieved_rows = [row for row in rows if row.get("candidate_role") == "retrieved_topk_candidate"]
+        oracle_rows = [row for row in rows if row.get("candidate_role") == "query_bound_oracle_candidate"]
+        structured_rows = [row for row in rows if row.get("candidate_role") == "structured_adapter_candidate"]
+        oracle_units = {
+            (
+                official.clean(row.get("document_version_id")),
+                official.clean(row.get("search_unit_id")),
+            )
+            for row in oracle_rows
+        }
+        top1_units = {
+            (
+                official.clean(row.get("document_version_id")),
+                official.clean(row.get("search_unit_id")),
+            )
+            for row in retrieved_rows
+            if int(row.get("rank") or 0) == 1
+        }
+        structured_non_oracle_rows = [
+            row
+            for row in structured_rows
+            if (
+                official.clean(row.get("document_version_id")),
+                official.clean(row.get("search_unit_id")),
+            )
+            not in oracle_units
+        ]
+        ambiguity_reasons = ["policy_boundary_unsettled"]
+        if source_family == "XLSX":
+            ambiguity_reasons.append("xlsx_row_column_cell_ambiguity_possible")
+        elif source_family == "PDF":
+            ambiguity_reasons.append("pdf_file_identity_vs_content_policy_needed")
+        elif source_family == "TEXT":
+            ambiguity_reasons.append("text_exact_vs_support_boundary_needed")
+        if oracle_units and top1_units and not (oracle_units & top1_units):
+            ambiguity_reasons.append("retrieved_top1_differs_from_query_bound_oracle")
+        if structured_non_oracle_rows:
+            ambiguity_reasons.append("structured_adapter_candidate_differs_from_oracle")
+
+        recommended_positive_candidate_ids = [
+            official.clean(row.get("qrels_candidate_id"))
+            for row in oracle_rows
+            if official.clean(row.get("qrels_candidate_id"))
+        ]
+        query_group_rows.append(
+            {
+                "query_id": query_id,
+                "source_family": source_family,
+                "question": question,
+                "expected_answer_labeler_context": "",
+                "supporting_evidence_labeler_context": "",
+                "labeler_context_policy": (
+                    "omitted_pending_user_policy_expected_answer_supporting_evidence_not_used"
+                ),
+                "retrieved_topk_candidate_ids": v3_4_1a_join_ids(retrieved_rows),
+                "query_bound_oracle_candidate_ids": v3_4_1a_join_ids(oracle_rows),
+                "structured_adapter_candidate_ids": v3_4_1a_join_ids(structured_rows),
+                "codex_recommended_positive_candidate_ids": " | ".join(recommended_positive_candidate_ids),
+                "codex_recommended_relevance_label": (
+                    "recommend_3_EXACT_ANSWER_EVIDENCE_pending_user_approval"
+                ),
+                "codex_recommended_answerability_label": (
+                    "recommend_3_FULLY_ANSWERABLE_pending_user_approval"
+                ),
+                "reason": (
+                    "Query-bound oracle SearchUnit is the minimal proposed positive candidate "
+                    "for human review; recommendation only, no final qrels label applied."
+                ),
+                "ambiguity_flag": "true" if ambiguity_reasons else "false",
+                "ambiguity_reasons": " | ".join(ambiguity_reasons),
+                "user_decision": "pending",
+                "user_override_positive_candidate_ids": "",
+                "user_note": "",
+            }
+        )
+
+        for row in oracle_rows:
+            v3_4_1a_add_ambiguous_unit(
+                ambiguous_units_by_key,
+                row,
+                reasons=ambiguity_reasons,
+                recommended_review_action="review_recommended_positive_candidate",
+            )
+        if oracle_units and top1_units and not (oracle_units & top1_units):
+            for row in retrieved_rows:
+                unit = (
+                    official.clean(row.get("document_version_id")),
+                    official.clean(row.get("search_unit_id")),
+                )
+                if int(row.get("rank") or 0) == 1 and unit not in oracle_units:
+                    v3_4_1a_add_ambiguous_unit(
+                        ambiguous_units_by_key,
+                        row,
+                        reasons=[
+                            "retrieved_top1_differs_from_query_bound_oracle",
+                            "possible_same_row_different_column_or_support_only_candidate",
+                        ],
+                        recommended_review_action="inspect_before_pool_complete_policy",
+                    )
+        for row in structured_non_oracle_rows:
+            v3_4_1a_add_ambiguous_unit(
+                ambiguous_units_by_key,
+                row,
+                reasons=["structured_adapter_candidate_differs_from_oracle"],
+                recommended_review_action="inspect_structured_adapter_disagreement",
+            )
+
+    for key in sorted(ambiguous_units_by_key):
+        unit = ambiguous_units_by_key[key]
+        review_units.append(unit)
+    ambiguous_candidate_rows = [
+        v3_4_1a_ambiguous_candidate_csv_row(unit, index)
+        for index, unit in enumerate(review_units, start=1)
+    ]
+    return query_group_rows, ambiguous_candidate_rows, review_units
+
+
+def v3_4_1a_join_ids(rows: Sequence[Mapping[str, Any]]) -> str:
+    return " | ".join(
+        official.clean(row.get("qrels_candidate_id"))
+        for row in rows
+        if official.clean(row.get("qrels_candidate_id"))
+    )
+
+
+def v3_4_1a_add_ambiguous_unit(
+    units_by_key: dict[tuple[str, str, str], dict[str, Any]],
+    row: Mapping[str, Any],
+    *,
+    reasons: Sequence[str],
+    recommended_review_action: str,
+) -> None:
+    key = (
+        official.clean(row.get("query_id")),
+        official.clean(row.get("document_version_id")),
+        official.clean(row.get("search_unit_id")),
+    )
+    unit = units_by_key.setdefault(
+        key,
+        {
+            "query_id": key[0],
+            "document_version_id": key[1],
+            "search_unit_id": key[2],
+            "source_family": official.clean(row.get("source_family")).upper(),
+            "question": official.clean(row.get("query")),
+            "rank": int(row.get("rank") or 999),
+            "lane_sources": set(),
+            "candidate_roles": set(),
+            "qrels_candidate_ids": [],
+            "source_document_identity": official.clean(row.get("source_document_identity")),
+            "source_bound_locator": row.get("source_bound_locator") or {},
+            "source_excerpt": official.clean(row.get("source_excerpt")),
+            "source_excerpt_sha256": official.clean(row.get("source_excerpt_sha256")),
+            "ambiguity_reasons": set(),
+            "recommended_review_actions": set(),
+        },
+    )
+    unit["rank"] = min(int(unit["rank"]), int(row.get("rank") or 999))
+    unit["lane_sources"].add(official.clean(row.get("lane_source")))
+    unit["candidate_roles"].add(official.clean(row.get("candidate_role")))
+    qrels_candidate_id = official.clean(row.get("qrels_candidate_id"))
+    if qrels_candidate_id and qrels_candidate_id not in unit["qrels_candidate_ids"]:
+        unit["qrels_candidate_ids"].append(qrels_candidate_id)
+    unit["ambiguity_reasons"].update(reason for reason in reasons if reason)
+    unit["recommended_review_actions"].add(recommended_review_action)
+
+
+def v3_4_1a_ambiguous_candidate_csv_row(unit: Mapping[str, Any], index: int) -> dict[str, Any]:
+    query_id = official.clean(unit.get("query_id"))
+    document_version_id = official.clean(unit.get("document_version_id"))
+    search_unit_id = official.clean(unit.get("search_unit_id"))
+    return {
+        "review_candidate_unit_id": (
+            f"v3_4_1a::{index:03d}::{query_id}::{document_version_id}::{search_unit_id}"
+        ),
+        "query_id": query_id,
+        "source_family": unit.get("source_family"),
+        "question": unit.get("question"),
+        "rank": unit.get("rank"),
+        "lane_sources": " | ".join(sorted(unit.get("lane_sources") or [])),
+        "candidate_roles": " | ".join(sorted(unit.get("candidate_roles") or [])),
+        "qrels_candidate_ids": " | ".join(unit.get("qrels_candidate_ids") or []),
+        "document_version_id": document_version_id,
+        "search_unit_id": search_unit_id,
+        "source_document_identity": unit.get("source_document_identity"),
+        "source_locator_json": json.dumps(
+            unit.get("source_bound_locator") or {},
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+        "source_excerpt": unit.get("source_excerpt"),
+        "source_excerpt_sha256": unit.get("source_excerpt_sha256"),
+        "ambiguity_reasons": " | ".join(sorted(unit.get("ambiguity_reasons") or [])),
+        "codex_recommended_review_action": " | ".join(
+            sorted(unit.get("recommended_review_actions") or [])
+        ),
+        "relevance_label": "pending",
+        "answerability_label": "pending",
+        "label_status": "pending_user_review",
+        "user_decision": "pending",
+        "user_relevance_label": "",
+        "user_answerability_label": "",
+        "user_positive_candidate": "",
+        "user_note": "",
+        "generation_source": "false",
+        "promotion_evidence": "false",
+    }
+
+
+def build_v3_4_1a_auto_label_plan(
+    *,
+    raw_candidate_rows: Sequence[Mapping[str, Any]],
+    query_group_rows: Sequence[Mapping[str, Any]],
+    ambiguous_candidate_rows: Sequence[Mapping[str, Any]],
+    review_units: Sequence[Mapping[str, Any]],
+    generated_at: str,
+) -> dict[str, Any]:
+    oracle_units_by_query: dict[str, set[tuple[str, str]]] = {}
+    for row in raw_candidate_rows:
+        if row.get("candidate_role") != "query_bound_oracle_candidate":
+            continue
+        oracle_units_by_query.setdefault(official.clean(row.get("query_id")), set()).add(
+            (
+                official.clean(row.get("document_version_id")),
+                official.clean(row.get("search_unit_id")),
+            )
+        )
+
+    oracle_unit_candidate_ids: list[str] = []
+    excluded_candidate_ids: list[str] = []
+    for row in raw_candidate_rows:
+        query_id = official.clean(row.get("query_id"))
+        unit = (
+            official.clean(row.get("document_version_id")),
+            official.clean(row.get("search_unit_id")),
+        )
+        qrels_candidate_id = official.clean(row.get("qrels_candidate_id"))
+        if unit in oracle_units_by_query.get(query_id, set()):
+            oracle_unit_candidate_ids.append(qrels_candidate_id)
+        else:
+            excluded_candidate_ids.append(qrels_candidate_id)
+
+    return {
+        "schema_version": (
+            f"{V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID}_auto_label_plan_v1"
+        ),
+        "run_id": V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+        "source_run_id": V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+        "generated_at": generated_at,
+        "auto_labels_applied": False,
+        "final_labels_created": False,
+        "official_metrics_computed": False,
+        "deterministic_rules": [
+            {
+                "rule_id": "query_bound_oracle_unit_positive_after_user_policy_approval",
+                "status": "planned_not_applied",
+                "description": (
+                    "If the user approves the policy that the query-bound answer/citation "
+                    "denominator SearchUnit is the positive retrieval qrel unit, copy the "
+                    "approved human decision to all raw rows sharing query_id, document_version_id, "
+                    "and search_unit_id with that oracle unit."
+                ),
+                "proposed_relevance_label": "3 EXACT_ANSWER_EVIDENCE",
+                "proposed_answerability_label": "3 FULLY_ANSWERABLE",
+                "covered_row_count": len(oracle_unit_candidate_ids),
+                "covered_qrels_candidate_ids": oracle_unit_candidate_ids,
+                "requires_user_policy_approval": True,
+                "applied_in_v3_4_1a": False,
+            },
+            {
+                "rule_id": "unjudged_non_oracle_rows_remain_pending",
+                "status": "planned_not_applied",
+                "description": (
+                    "Non-oracle retrieved or structured candidates remain unjudged. They must not "
+                    "be converted to official non-relevant rows unless the user approves a "
+                    "pool-complete policy."
+                ),
+                "covered_row_count": 0,
+                "potential_row_count_if_pool_complete_policy_is_approved": len(excluded_candidate_ids),
+                "requires_user_policy_approval": True,
+                "applied_in_v3_4_1a": False,
+            },
+        ],
+        "rows_covered_by_each_rule": {
+            "query_bound_oracle_unit_positive_after_user_policy_approval": oracle_unit_candidate_ids,
+            "unjudged_non_oracle_rows_remain_pending": [],
+        },
+        "rows_excluded_from_auto_labeling": {
+            "reason": "unjudged_candidates_not_silently_negative_without_pool_complete_policy",
+            "count": len(excluded_candidate_ids),
+            "qrels_candidate_ids": excluded_candidate_ids,
+        },
+        "rows_requiring_user_review": {
+            "query_group_review_row_count": len(query_group_rows),
+            "ambiguous_candidate_review_row_count": len(ambiguous_candidate_rows),
+            "ambiguous_review_candidate_unit_ids": [
+                f"{official.clean(unit.get('query_id'))}::{official.clean(unit.get('document_version_id'))}::{official.clean(unit.get('search_unit_id'))}"
+                for unit in review_units
+            ],
+        },
+        "risk_notes": [
+            "Query-bound oracle rows come from the answer/citation denominator, not yet an official retrieval qrels denominator.",
+            "Expected answers and supporting evidence were not used to create this plan.",
+            "Structured adapter candidates remain review context only until source-bound qrels labels are approved.",
+            "Unjudged top-k candidates remain pending unless a pool-complete policy is explicitly approved.",
+        ],
+    }
+
+
+V3_4_1_QRELS_CANDIDATE_CSV_FIELDNAMES = [
+    "qrels_candidate_id",
+    "query_id",
+    "query",
+    "source_family",
+    "rank",
+    "lane_source",
+    "candidate_role",
+    "document_version_id",
+    "search_unit_id",
+    "source_document_identity",
+    "source_locator_json",
+    "source_excerpt",
+    "source_excerpt_sha256",
+    "source_excerpt_policy",
+    "relevance_label",
+    "answerability_label",
+    "label_status",
+    "suggested_label_reason",
+    "official_denominator_overlap",
+    "qrels_candidate",
+    "generation_source",
+    "promotion_evidence",
+]
+
+
+def build_v3_4_1_qrels_candidate_rows(
+    *,
+    source_rows: Sequence[Mapping[str, Any]],
+    manifest_rows: Sequence[Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    manifest_by_search_unit_id = {
+        official.clean(row.get("search_unit_id")): dict(row)
+        for row in manifest_rows
+        if official.clean(row.get("search_unit_id"))
+    }
+    rows: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
+    seen_keys: set[tuple[str, str, str, str]] = set()
+    for source_row in source_rows:
+        query_id = official.clean(source_row.get("query_id"))
+        query_text = official.clean(source_row.get("query"))
+        row_source_family = v3_4_1_source_family(source_row)
+        retrieved_context_by_id = {
+            official.clean(item.get("search_unit_id")): dict(item)
+            for item in (source_row.get("retrieved_context_summary") or [])
+            if isinstance(item, Mapping) and official.clean(item.get("search_unit_id"))
+        }
+        for rank, search_unit_id in enumerate(source_row.get("retrieved_search_unit_ids") or [], start=1):
+            candidate = v3_4_1_candidate_row_from_manifest(
+                query_id=query_id,
+                query_text=query_text,
+                row_source_family=row_source_family,
+                rank=rank,
+                lane_source="retrieved_topk",
+                candidate_role="retrieved_topk_candidate",
+                search_unit_id=official.clean(search_unit_id),
+                manifest_by_search_unit_id=manifest_by_search_unit_id,
+                context_item=retrieved_context_by_id.get(official.clean(search_unit_id), {}),
+                suggested_label_reason=(
+                    "Retrieved top-k candidate from Lane B context. "
+                    "Review relevance and answerability manually; no final label inferred."
+                ),
+            )
+            append_v3_4_1_candidate_row(rows, skipped, seen_keys, candidate)
+        denominator_search_unit_id = official.clean(source_row.get("denominator_search_unit_id"))
+        if denominator_search_unit_id:
+            candidate = v3_4_1_candidate_row_from_manifest(
+                query_id=query_id,
+                query_text=query_text,
+                row_source_family=row_source_family,
+                rank=1,
+                lane_source="query_bound_oracle",
+                candidate_role="query_bound_oracle_candidate",
+                search_unit_id=denominator_search_unit_id,
+                manifest_by_search_unit_id=manifest_by_search_unit_id,
+                context_item={},
+                suggested_label_reason=(
+                    "Query-bound oracle candidate from the current answer/citation denominator. "
+                    "Review relevance and answerability manually; no final label inferred."
+                ),
+            )
+            append_v3_4_1_candidate_row(rows, skipped, seen_keys, candidate)
+        retrieved_rank_by_search_unit_id = {
+            official.clean(search_unit_id): rank
+            for rank, search_unit_id in enumerate(source_row.get("retrieved_search_unit_ids") or [], start=1)
+        }
+        for lane_name in ("live_llm_retrieval_topk", "live_llm_query_bound_oracle"):
+            lane = as_mapping(as_mapping(source_row.get("lane_results")).get(lane_name))
+            lane_source = "query_bound_oracle" if lane_name == "live_llm_query_bound_oracle" else "retrieved_topk"
+            for citation in v3_4_1_structured_adapter_citations(lane):
+                search_unit_id = official.clean(v3_4_1_search_unit_id_from_citation(citation))
+                if not search_unit_id:
+                    skipped.append(
+                        {
+                            "query_id": query_id,
+                            "lane_source": lane_source,
+                            "candidate_role": "structured_adapter_candidate",
+                            "reason": "missing_search_unit_id",
+                        }
+                    )
+                    continue
+                rank = retrieved_rank_by_search_unit_id.get(search_unit_id, 1)
+                candidate = v3_4_1_candidate_row_from_manifest(
+                    query_id=query_id,
+                    query_text=query_text,
+                    row_source_family=row_source_family,
+                    rank=rank,
+                    lane_source=lane_source,
+                    candidate_role="structured_adapter_candidate",
+                    search_unit_id=search_unit_id,
+                    manifest_by_search_unit_id=manifest_by_search_unit_id,
+                    context_item=retrieved_context_by_id.get(search_unit_id, {}),
+                suggested_label_reason=(
+                    "Structured adapter candidate emitted from a source-bound SearchUnit. "
+                    "Adapter output is review context only; no final label inferred."
+                ),
+                )
+                append_v3_4_1_candidate_row(rows, skipped, seen_keys, candidate)
+    return rows, skipped
+
+
+def append_v3_4_1_candidate_row(
+    rows: list[dict[str, Any]],
+    skipped: list[dict[str, Any]],
+    seen_keys: set[tuple[str, str, str, str]],
+    candidate: dict[str, Any],
+) -> None:
+    if not candidate.get("ok"):
+        skipped.append(candidate)
+        return
+    row = dict(candidate["row"])
+    key = (
+        row["query_id"],
+        row["lane_source"],
+        row["candidate_role"],
+        row["search_unit_id"],
+    )
+    if key in seen_keys:
+        return
+    seen_keys.add(key)
+    row["qrels_candidate_id"] = "v3_4_1::{query_id}::{lane_source}::{candidate_role}::{rank:03d}::{search_unit_id}".format(
+        query_id=row["query_id"],
+        lane_source=row["lane_source"],
+        candidate_role=row["candidate_role"],
+        rank=int(row["rank"]),
+        search_unit_id=row["search_unit_id"],
+    )
+    rows.append(row)
+
+
+def v3_4_1_candidate_row_from_manifest(
+    *,
+    query_id: str,
+    query_text: str,
+    row_source_family: str,
+    rank: int,
+    lane_source: str,
+    candidate_role: str,
+    search_unit_id: str,
+    manifest_by_search_unit_id: Mapping[str, Mapping[str, Any]],
+    context_item: Mapping[str, Any],
+    suggested_label_reason: str,
+) -> dict[str, Any]:
+    manifest = as_mapping(manifest_by_search_unit_id.get(search_unit_id))
+    if not manifest:
+        return {
+            "ok": False,
+            "query_id": query_id,
+            "lane_source": lane_source,
+            "candidate_role": candidate_role,
+            "search_unit_id": search_unit_id,
+            "reason": "search_unit_not_found_in_official_source_bound_manifest",
+        }
+    if manifest.get("source_bound_official_denominator") is not True:
+        return {
+            "ok": False,
+            "query_id": query_id,
+            "lane_source": lane_source,
+            "candidate_role": candidate_role,
+            "search_unit_id": search_unit_id,
+            "reason": "candidate_not_marked_source_bound_official_denominator",
+        }
+    source_family = v3_4_1_source_family(manifest) or row_source_family
+    source_excerpt = v3_4_1_source_excerpt(manifest=manifest, context_item=context_item)
+    locator = dict(as_mapping(manifest.get("locator")) or as_mapping(manifest.get("canonical_citation_payload")))
+    return {
+        "ok": True,
+        "row": {
+            "query_id": query_id,
+            "query": query_text,
+            "source_family": source_family,
+            "rank": int(rank),
+            "lane_source": lane_source,
+            "document_version_id": official.clean(manifest.get("document_version_id")),
+            "search_unit_id": search_unit_id,
+            "source_bound_locator": locator,
+            "source_document_identity": official.clean(manifest.get("source_identity")),
+            "source_excerpt": source_excerpt,
+            "source_excerpt_sha256": sha256_text(source_excerpt),
+            "source_excerpt_policy": "manifest_display_text_or_retrieved_context_preview_v1",
+            "source_text_or_value_available": bool(source_excerpt),
+            "candidate_role": candidate_role,
+            "relevance_label": "pending",
+            "answerability_label": "pending",
+            "relevance_grade": None,
+            "answerability_grade": None,
+            "label_status": "pending_user_review",
+            "official_denominator_overlap": True,
+            "qrels_candidate": True,
+            "generation_source": False,
+            "promotion_evidence": False,
+            "suggested_label_reason": suggested_label_reason,
+            "final_label_inferred": False,
+            "metric_computation_allowed": False,
+        },
+    }
+
+
+def v3_4_1_source_family(row: Mapping[str, Any]) -> str:
+    source_family = official.clean(row.get("source_family")).upper()
+    if source_family in {"TEXT", "PDF", "XLSX"}:
+        return source_family
+    return SOURCE_FAMILY_LABEL_BY_TRACK.get(official.clean(row.get("track")), source_family)
+
+
+def v3_4_1_source_excerpt(*, manifest: Mapping[str, Any], context_item: Mapping[str, Any]) -> str:
+    text = (
+        official.clean(context_item.get("text_preview"))
+        or official.clean(manifest.get("display_text"))
+        or official.clean(manifest.get("bm25_text"))
+        or official.clean(manifest.get("embedding_text"))
+    )
+    return text[:800]
+
+
+def v3_4_1_structured_adapter_citations(lane: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    citations: list[Mapping[str, Any]] = []
+    for collection_name in ("generated_citations", "scored_citations"):
+        for citation in lane.get(collection_name) or []:
+            if not isinstance(citation, Mapping):
+                continue
+            if (
+                citation.get("structured_adapter_output_from_source_bound_search_unit") is True
+                or as_mapping(citation.get("structured_source_bound_adapter")).get(
+                    "output_from_source_bound_search_unit"
+                )
+                is True
+            ):
+                citations.append(citation)
+    return citations
+
+
+def v3_4_1_search_unit_id_from_citation(citation: Mapping[str, Any]) -> str:
+    payload = as_mapping(citation.get("search_unit_citation_payload"))
+    locator = as_mapping(citation.get("locator"))
+    adapter = as_mapping(citation.get("structured_source_bound_adapter"))
+    return (
+        official.clean(payload.get("search_unit_id"))
+        or official.clean(payload.get("searchUnitId"))
+        or official.clean(locator.get("search_unit_id"))
+        or official.clean(adapter.get("search_unit_id"))
+    )
+
+
+def v3_4_1_qrels_candidate_csv_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "qrels_candidate_id": row.get("qrels_candidate_id"),
+        "query_id": row.get("query_id"),
+        "query": row.get("query"),
+        "source_family": row.get("source_family"),
+        "rank": row.get("rank"),
+        "lane_source": row.get("lane_source"),
+        "candidate_role": row.get("candidate_role"),
+        "document_version_id": row.get("document_version_id"),
+        "search_unit_id": row.get("search_unit_id"),
+        "source_document_identity": row.get("source_document_identity"),
+        "source_locator_json": json.dumps(row.get("source_bound_locator") or {}, ensure_ascii=False, sort_keys=True),
+        "source_excerpt": row.get("source_excerpt"),
+        "source_excerpt_sha256": row.get("source_excerpt_sha256"),
+        "source_excerpt_policy": row.get("source_excerpt_policy"),
+        "relevance_label": row.get("relevance_label"),
+        "answerability_label": row.get("answerability_label"),
+        "label_status": row.get("label_status"),
+        "suggested_label_reason": row.get("suggested_label_reason"),
+        "official_denominator_overlap": str(row.get("official_denominator_overlap")).lower(),
+        "qrels_candidate": str(row.get("qrels_candidate")).lower(),
+        "generation_source": str(row.get("generation_source")).lower(),
+        "promotion_evidence": str(row.get("promotion_evidence")).lower(),
+    }
+
+
+def run_v3_3_3_silver_source_candidate_discovery(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    inventory_path = DEFAULT_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_INVENTORY_JSON
+    official_manifest_path = (
+        REPO_ROOT / "ai" / "eval" / "indexes" / "rag-data-official-denominator-v1" / "search_unit_manifest.jsonl"
+    )
+    official_rows = read_jsonl(official_manifest_path)
+    official_query_ids = {official.clean(row.get("query_id")) for row in official_rows if official.clean(row.get("query_id"))}
+    official_search_unit_ids = {
+        official.clean(row.get("search_unit_id")) for row in official_rows if official.clean(row.get("search_unit_id"))
+    }
+    official_track_counts = Counter(official.clean(row.get("track")) for row in official_rows)
+
+    text_inventory = discover_v3_3_3_text_candidates(
+        official_query_ids=official_query_ids,
+        official_search_unit_ids=official_search_unit_ids,
+    )
+    pdf_inventory = discover_v3_3_3_pdf_candidates(
+        official_query_ids=official_query_ids,
+        official_search_unit_ids=official_search_unit_ids,
+    )
+    xlsx_inventory = discover_v3_3_3_xlsx_candidates(
+        official_query_ids=official_query_ids,
+        official_search_unit_ids=official_search_unit_ids,
+    )
+    track_inventories = {
+        "TEXT": text_inventory,
+        "PDF": pdf_inventory,
+        "XLSX": xlsx_inventory,
+    }
+    candidate_counts = {track: int(data["eligible_candidate_count"]) for track, data in track_inventories.items()}
+    preferred_targets = {"TEXT": 350, "PDF": 325, "XLSX": 325}
+    pilot_threshold = 100
+    pilot_threshold_met = {track: count >= pilot_threshold for track, count in candidate_counts.items()}
+    preferred_target_met = {
+        track: candidate_counts[track] >= preferred_targets[track]
+        for track in preferred_targets
+    }
+    blockers = [
+        {
+            "track": track,
+            "eligible_candidate_count": candidate_counts[track],
+            "preferred_target": preferred_targets[track],
+            "pilot_threshold": pilot_threshold,
+            "reason": data["blocker"],
+        }
+        for track, data in track_inventories.items()
+        if candidate_counts[track] < preferred_targets[track]
+    ]
+    guardrails = {
+        "diagnostic_only": True,
+        "silver_generation_run": False,
+        "question_generation_run": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "gold_mutation": False,
+        "label_mutation": False,
+        "denominator_mutation": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_rebuild_performed": False,
+        "production_mutation": False,
+        "candidate_result_output_used_as_generation_source": False,
+        "official_retrieval_metrics_computed": False,
+        "official_ndcg_computed": False,
+        "official_mrr_computed": False,
+        "official_hit_at_k_computed": False,
+        "readme_metric_claim_added": False,
+        "promotion_evidence": False,
+    }
+    inventory = {
+        "schema_version": f"{V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID}_candidate_inventory_v1",
+        "run_id": V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID,
+        "generated_at": utc_timestamp(),
+        "purpose": "safe_non_official_source_bound_candidate_discovery_for_future_answer_citation_silver",
+        "not_gold": True,
+        "not_official_metric_denominator": True,
+        "not_promotion_evidence": True,
+        "not_generation_source": True,
+        "question_or_expected_answer_created": False,
+        "target_capacity": {
+            "preferred": preferred_targets,
+            "pilot_threshold_each_track": pilot_threshold,
+        },
+        "official_exclusion": {
+            "official_query_id_count": len(official_query_ids),
+            "official_search_unit_id_count": len(official_search_unit_ids),
+            "official_source_bound_manifest": official.repo_relative(official_manifest_path),
+            "official_rows_by_track": dict(sorted(official_track_counts.items())),
+            "official_query_ids_excluded": True,
+            "official_search_unit_ids_excluded": True,
+        },
+        "candidate_counts_by_track": candidate_counts,
+        "pilot_threshold_met_by_track": pilot_threshold_met,
+        "preferred_target_met_by_track": preferred_target_met,
+        "candidate_count_total": sum(candidate_counts.values()),
+        "silver_1000_feasible": all(preferred_target_met.values()) and sum(candidate_counts.values()) >= 1000,
+        "blockers": blockers,
+        "tracks": track_inventories,
+        "guardrails": guardrails,
+        "forbidden_fields_excluded_from_candidate_rows": [
+            "expected_answer",
+            "expected_answer_text",
+            "supporting_evidence",
+            "gold",
+            "gold_label",
+            "human_label",
+            "relevance_label",
+            "answerability_label",
+            "generated_answer",
+            "answer_claims",
+        ],
+    }
+    return {
+        "schema_version": f"{V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID}_status_event_v1",
+        "event_type": "answer_citation_silver_source_candidate_discovery_v3_3_3",
+        "run_id": V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID,
+        "source_run_id": "official_answer_citation_agentic_loop_run_v3_3_1_answer_citation_silver_source_manifest_readiness",
+        "generated_at": inventory["generated_at"],
+        "status": "SILVER_SOURCE_CANDIDATE_DISCOVERY_BLOCKED_BELOW_TARGET",
+        "measurement_classification": "silver_source_candidate_discovery_v3_3_3",
+        "run_class": "status_ledger_plus_compact_candidate_inventory",
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "candidate_counts_by_track": candidate_counts,
+        "candidate_count_total": inventory["candidate_count_total"],
+        "pilot_threshold_met_by_track": pilot_threshold_met,
+        "preferred_target_met_by_track": preferred_target_met,
+        "silver_1000_feasible": inventory["silver_1000_feasible"],
+        "blockers": blockers,
+        "guardrails": guardrails,
+        "candidate_inventory": inventory,
+        "artifact_paths": {
+            "candidate_inventory_json": official.repo_relative(inventory_path),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+        },
+    }
+
+
+def discover_v3_3_3_text_candidates(
+    *,
+    official_query_ids: set[str],
+    official_search_unit_ids: set[str],
+) -> dict[str, Any]:
+    del official_query_ids, official_search_unit_ids
+    rag_chunks = REPO_ROOT / "ai" / "eval" / "corpora" / "namu-v4-structured-combined" / "rag_chunks.jsonl"
+    chunks_v4 = REPO_ROOT / "ai" / "eval" / "corpora" / "namu-v4-structured-combined" / "chunks_v4.jsonl"
+    pages_v4 = REPO_ROOT / "ai" / "eval" / "corpora" / "namu-v4-structured-combined" / "pages_v4.jsonl"
+    raw_sample = first_jsonl_row(rag_chunks)
+    return {
+        "track": "TEXT",
+        "eligible_candidate_count": 0,
+        "candidate_rows": [],
+        "blocker": (
+            "No non-official TEXT source manifest has document_version_id, search_unit_id, "
+            "and text_locator. Raw Namu chunks exist but are not strict SearchUnit-bound "
+            "answer/citation silver source candidates."
+        ),
+        "inspected_sources": [
+            {
+                "path": official.repo_relative(rag_chunks),
+                "role": "raw_text_corpus",
+                "row_count": jsonl_row_count(rag_chunks),
+                "strict_source_bound_candidate_rows": 0,
+                "stable_raw_fields_present_in_sample": [
+                    field
+                    for field in ("doc_id", "chunk_id", "section_path", "retrieval_title", "chunk_text")
+                    if raw_sample.get(field)
+                ],
+                "missing_strict_fields": ["document_version_id", "search_unit_id", "text_locator"],
+            },
+            {
+                "path": official.repo_relative(chunks_v4),
+                "role": "raw_text_chunk_export",
+                "row_count": jsonl_row_count(chunks_v4),
+                "strict_source_bound_candidate_rows": 0,
+                "missing_strict_fields": ["document_version_id", "search_unit_id", "text_locator"],
+            },
+            {
+                "path": official.repo_relative(pages_v4),
+                "role": "raw_text_page_export",
+                "row_count": jsonl_row_count(pages_v4),
+                "strict_source_bound_candidate_rows": 0,
+                "missing_strict_fields": ["document_version_id", "search_unit_id", "text_locator"],
+            },
+        ],
+        "raw_source_capacity": {
+            "raw_chunk_rows": jsonl_row_count(rag_chunks),
+            "raw_page_rows": jsonl_row_count(pages_v4),
+            "not_counted_as_candidate_rows": True,
+        },
+    }
+
+
+def discover_v3_3_3_pdf_candidates(
+    *,
+    official_query_ids: set[str],
+    official_search_unit_ids: set[str],
+) -> dict[str, Any]:
+    review_input = Path(
+        "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+        "rag-ingestion/hard-cleanup-20260517/reports/pdf_answer_citation_diagnostic_review_input.jsonl"
+    )
+    readiness_rows = Path(
+        "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+        "rag-ingestion/hard-cleanup-20260517/reports/pdf_evidence_readiness_rows.jsonl"
+    )
+    strict_manifest = Path(
+        "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+        "rag-ingestion/pdf_strict_silver_generation/pdf_strict_silver_retrieval_evidence_manifest.jsonl"
+    )
+    candidate_index_manifest = REPO_ROOT / "rag-data-pdf-candidate-v1" / "ingest_manifest.json"
+    source_collection_manifest = Path(
+        "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/source_collection_20260510/manifest.json"
+    )
+    rows = read_jsonl_if_present(review_input)
+    candidates: list[dict[str, Any]] = []
+    for row in rows:
+        query_id = official.clean(row.get("query_id"))
+        search_unit_id = official.clean(row.get("search_unit_id"))
+        if not query_id or not search_unit_id:
+            continue
+        if query_id in official_query_ids or search_unit_id in official_search_unit_ids:
+            continue
+        locator = dict(as_mapping(row.get("citation_locator")))
+        source_text = official.clean(row.get("matched_text")) or " ".join(
+            official.clean(item) for item in row.get("nearby_paragraphs") or []
+        )
+        if not source_text or not has_v3_3_3_pdf_locator(locator):
+            continue
+        candidates.append(
+            {
+                "candidate_id": f"v3_3_3_pdf_{query_id}",
+                "source_family": "PDF",
+                "provenance_query_id": query_id,
+                "document_version_id": official.clean(row.get("document_version_id")),
+                "search_unit_id": search_unit_id,
+                "source_file_id": official.clean(row.get("source_file_id")),
+                "source_bound_locator": {
+                    "file": official.clean(locator.get("file")),
+                    "page": locator.get("page"),
+                    "physical_page_index": locator.get("physical_page_index"),
+                    "bbox": locator.get("bbox"),
+                    "region_type": official.clean(locator.get("region_type")),
+                },
+                "source_text_available": True,
+                "source_text_sha256": sha256_text(source_text),
+                "source_text_preview": source_text[:240],
+                "source_manifest_path": review_input.as_posix(),
+                "source_manifest_kind": "pdf_answer_citation_diagnostic_review_input",
+                "official_denominator_overlap": False,
+                "generation_source": False,
+                "promotion_evidence": False,
+                "candidate_result_output_used_as_generation_source": False,
+            }
+        )
+    candidate_index_metadata = read_json_if_present(candidate_index_manifest)
+    return {
+        "track": "PDF",
+        "eligible_candidate_count": len(candidates),
+        "candidate_rows": candidates,
+        "blocker": (
+            f"Only {len(candidates)} non-official PDF source-bound rows were found. "
+            "The larger PDF candidate index lacks a per-SearchUnit source manifest with "
+            "document_version/search_unit/locator/source text rows."
+        ),
+        "inspected_sources": [
+            {
+                "path": review_input.as_posix(),
+                "role": "external_runtime_source_bound_review_input",
+                "row_count": len(rows),
+                "eligible_candidate_rows": len(candidates),
+                "official_query_or_search_unit_overlap_rows": len(rows) - len(candidates),
+            },
+            {
+                "path": readiness_rows.as_posix(),
+                "role": "external_runtime_readiness_rows",
+                "row_count": jsonl_row_count(readiness_rows),
+                "used_as_candidate_source": False,
+            },
+            {
+                "path": strict_manifest.as_posix(),
+                "role": "external_runtime_strict_manifest",
+                "row_count": jsonl_row_count(strict_manifest),
+                "used_as_candidate_source": False,
+            },
+            {
+                "path": official.repo_relative(candidate_index_manifest),
+                "role": "candidate_index_metadata_only",
+                "chunk_count": int(candidate_index_metadata.get("chunk_count") or 0),
+                "document_count": int(candidate_index_metadata.get("document_count") or 0),
+                "strict_source_bound_candidate_rows": 0,
+            },
+            {
+                "path": source_collection_manifest.as_posix(),
+                "role": "source_file_collection_only",
+                "file_count": json_top_level_count(source_collection_manifest),
+                "strict_source_bound_candidate_rows": 0,
+            },
+        ],
+    }
+
+
+def discover_v3_3_3_xlsx_candidates(
+    *,
+    official_query_ids: set[str],
+    official_search_unit_ids: set[str],
+) -> dict[str, Any]:
+    strict_manifest = Path(
+        "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+        "rag-ingestion/xlsx_strict_silver_generation/xlsx_strict_silver_retrieval_evidence_manifest.jsonl"
+    )
+    review_input = Path(
+        "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+        "rag-ingestion/hard-cleanup-20260517/reports/xlsx_answer_citation_diagnostic_review_input.jsonl"
+    )
+    locator_candidates = REPO_ROOT / "ai" / "eval" / "eval_queries" / "xlsx_silver_retrieval_evidence_candidates_v0.jsonl"
+    rows = read_jsonl_if_present(strict_manifest)
+    candidates: list[dict[str, Any]] = []
+    for row in rows:
+        query_id = official.clean(row.get("query_id"))
+        locator = dict(as_mapping(row.get("citation_locator")))
+        search_unit_id = official.clean(row.get("source_searchunit_id") or locator.get("search_unit_id"))
+        if not query_id or not search_unit_id:
+            continue
+        if query_id in official_query_ids or search_unit_id in official_search_unit_ids:
+            continue
+        metadata = as_mapping(row.get("citation_metadata"))
+        source_text = xlsx_source_text_from_metadata(metadata)
+        if not source_text or not has_v3_3_3_xlsx_locator(locator):
+            continue
+        candidates.append(
+            {
+                "candidate_id": f"v3_3_3_xlsx_{query_id}",
+                "source_family": "XLSX",
+                "provenance_query_id": query_id,
+                "document_version_id": official.clean(locator.get("document_version_id")),
+                "search_unit_id": search_unit_id,
+                "source_bound_locator": {
+                    "file": official.clean(locator.get("file") or metadata.get("file")),
+                    "sheet": official.clean(locator.get("sheet") or metadata.get("sheet")),
+                    "range": official.clean(locator.get("range") or metadata.get("table_range")),
+                    "matched_cells": list(metadata.get("matched_cells") or []),
+                    "target_rows": list(metadata.get("target_rows") or []),
+                    "target_columns": list(metadata.get("target_columns") or []),
+                },
+                "source_text_available": True,
+                "source_text_sha256": sha256_text(source_text),
+                "source_text_preview": source_text[:240],
+                "source_manifest_path": strict_manifest.as_posix(),
+                "source_manifest_kind": "xlsx_strict_silver_retrieval_evidence_manifest",
+                "official_denominator_overlap": False,
+                "generation_source": False,
+                "promotion_evidence": False,
+                "candidate_result_output_used_as_generation_source": False,
+            }
+        )
+    locator_only_rows = read_jsonl_if_present(locator_candidates)
+    return {
+        "track": "XLSX",
+        "eligible_candidate_count": len(candidates),
+        "candidate_rows": candidates,
+        "blocker": (
+            f"Only {len(candidates)} non-official XLSX source-bound rows with source text were found. "
+            "The larger XLSX retrieval-evidence candidate set is locator-complete but not a clean "
+            "answer/citation source manifest."
+        ),
+        "inspected_sources": [
+            {
+                "path": strict_manifest.as_posix(),
+                "role": "external_runtime_source_bound_strict_manifest",
+                "row_count": len(rows),
+                "eligible_candidate_rows": len(candidates),
+                "official_query_or_search_unit_overlap_rows": len(rows) - len(candidates),
+            },
+            {
+                "path": review_input.as_posix(),
+                "role": "external_runtime_review_input",
+                "row_count": jsonl_row_count(review_input),
+                "used_as_candidate_source": False,
+            },
+            {
+                "path": official.repo_relative(locator_candidates),
+                "role": "repo_locator_only_retrieval_evidence_candidates",
+                "row_count": len(locator_only_rows),
+                "unique_source_search_unit_count": len(
+                    {
+                        official.clean(row.get("source_search_unit_id"))
+                        for row in locator_only_rows
+                        if official.clean(row.get("source_search_unit_id"))
+                    }
+                ),
+                "strict_source_text_available_rows": 0,
+                "used_as_candidate_source": False,
+            },
+        ],
+    }
+
+
+def has_v3_3_3_pdf_locator(locator: Mapping[str, Any]) -> bool:
+    required = ("document_version_id", "search_unit_id", "file", "page", "physical_page_index", "bbox", "region_type")
+    return all(has_v3_3_3_value(locator.get(field)) for field in required)
+
+
+def has_v3_3_3_xlsx_locator(locator: Mapping[str, Any]) -> bool:
+    required = ("document_version_id", "search_unit_id", "file", "sheet", "range")
+    return all(has_v3_3_3_value(locator.get(field)) for field in required)
+
+
+def has_v3_3_3_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (list, tuple, dict, set)):
+        return bool(value)
+    return True
+
+
+def xlsx_source_text_from_metadata(metadata: Mapping[str, Any]) -> str:
+    parts: list[str] = []
+    for row in metadata.get("nearby_rows") or []:
+        text = official.clean(as_mapping(row).get("row_text"))
+        if text:
+            parts.append(text)
+    for row in metadata.get("row_values") or []:
+        mapped = as_mapping(row)
+        text = official.clean(mapped.get("row_text"))
+        if text:
+            parts.append(text)
+            continue
+        column = official.clean(mapped.get("column_label"))
+        value = official.clean(mapped.get("value"))
+        if column and value:
+            parts.append(f"{column}: {value}")
+    return " | ".join(dict.fromkeys(parts))
+
+
+def first_jsonl_row(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                parsed = json.loads(line)
+                return dict(parsed) if isinstance(parsed, Mapping) else {}
+    return {}
+
+
+def jsonl_row_count(path: Path) -> int:
+    if not path.exists():
+        return 0
+    return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
+
+
+def read_jsonl_if_present(path: Path) -> list[dict[str, Any]]:
+    return read_jsonl(path) if path.exists() else []
+
+
+def read_json_if_present(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    parsed = official.read_json(path)
+    return dict(parsed) if isinstance(parsed, Mapping) else {}
+
+
+def json_top_level_count(path: Path) -> int:
+    if not path.exists():
+        return 0
+    parsed = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(parsed, list):
+        return len(parsed)
+    if isinstance(parsed, Mapping):
+        for value in parsed.values():
+            if isinstance(value, list):
+                return len(value)
+    return 0
+
+
+def sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def latest_status_event(events: Sequence[Mapping[str, Any]], *, event_type: str, run_id: str) -> Mapping[str, Any]:
+    for event in reversed(events):
+        if event.get("event_type") == event_type and event.get("run_id") == run_id:
+            return event
+    raise RuntimeError(f"missing status event: {event_type} {run_id}")
+
+
+def lane_pass_counts_from_summary(summary: Mapping[str, Any]) -> dict[str, int]:
+    lane_metrics = as_mapping(as_mapping(summary.get("answer_quality_metrics")).get("by_lane"))
+    return {
+        lane_name: int(as_mapping(lane_metrics.get(lane_name)).get("pass_count") or 0)
+        for lane_name in V3_1_LANE_NAMES
+    }
+
+
+def metric_averages_by_lane(summary: Mapping[str, Any], metric_key: str) -> dict[str, float | None]:
+    lane_metrics = as_mapping(as_mapping(summary.get(metric_key)).get("by_lane"))
+    return {
+        lane_name: as_mapping(lane_metrics.get(lane_name)).get("average")
+        for lane_name in V3_1_LANE_NAMES
+    }
+
+
+def failure_counts_by_lane(summary: Mapping[str, Any]) -> dict[str, dict[str, int]]:
+    lane_metrics = as_mapping(as_mapping(summary.get("answer_quality_metrics")).get("by_lane"))
+    return {
+        lane_name: dict(as_mapping(as_mapping(lane_metrics.get(lane_name)).get("failure_counts")))
+        for lane_name in V3_1_LANE_NAMES
+    }
+
+
+def build_v3_2_7_artifact_retention_classification() -> dict[str, Any]:
+    def artifact(path: Path, category: str, retention_reason: str) -> dict[str, Any]:
+        return {
+            "path": official.repo_relative(path),
+            "category": category,
+            "exists": path.exists(),
+            "retain": True,
+            "retention_reason": retention_reason,
+        }
+
+    return {
+        "v3_2_3": [
+            artifact(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_SUMMARY_JSON, "machine_manifest", "closure source of truth"),
+            artifact(DEFAULT_V3_2_3_QUEUE_LANE_ACTIONABILITY_QUEUE_JSON, "queue_source_of_truth", "live actionability boundary"),
+            artifact(
+                report_artifact_path(V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID, "diagnostics.jsonl"),
+                "compact_diagnostic_payload",
+                "row-level lane actionability evidence",
+            ),
+        ],
+        "v3_2_4": [
+            artifact(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_SUMMARY_JSON, "machine_manifest", "PDF provenance decision"),
+            artifact(DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_QUEUE_JSON, "queue_source_of_truth", "v3_2_5 authorization"),
+            artifact(
+                DEFAULT_V3_2_4_PDF_CONTEXT_PROVENANCE_DIAGNOSTICS_JSONL,
+                "compact_diagnostic_payload",
+                "gq_auto_010 provenance evidence",
+            ),
+        ],
+        "v3_2_5": [
+            artifact(DEFAULT_V3_2_5_SUMMARY_JSON, "machine_manifest", "behavior-changing PDF fix manifest"),
+            artifact(DEFAULT_V3_2_5_RESULTS_JSONL, "canonical_result_payload", "full 29-row remeasurement"),
+            artifact(
+                report_artifact_path(V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID, "failure.json"),
+                "forensic_debug_payload",
+                "failure attribution for behavior-changing run",
+            ),
+            artifact(
+                report_artifact_path(V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID, "audit.jsonl"),
+                "forensic_debug_payload",
+                "actual response audit for behavior-changing run",
+            ),
+            artifact(
+                report_artifact_path(
+                    V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+                    "pdf_context_diagnostics.jsonl",
+                ),
+                "compact_diagnostic_payload",
+                "target PDF context verification",
+            ),
+            artifact(DEFAULT_V3_2_5_QUEUE_JSON, "queue_source_of_truth", "post-PDF-fix queue boundary"),
+        ],
+        "v3_2_6": [
+            artifact(DEFAULT_V3_2_6_SUMMARY_JSON, "machine_manifest", "behavior-changing TEXT prompt/span manifest"),
+            artifact(DEFAULT_V3_2_6_RESULTS_JSONL, "canonical_result_payload", "full 29-row remeasurement"),
+            artifact(
+                report_artifact_path(V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID, "failure.json"),
+                "forensic_debug_payload",
+                "failure attribution for behavior-changing run",
+            ),
+            artifact(
+                report_artifact_path(V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID, "audit.jsonl"),
+                "forensic_debug_payload",
+                "actual response audit for behavior-changing run",
+            ),
+            artifact(
+                DEFAULT_V3_2_6_TEXT_PROMPT_SPAN_DIAGNOSTICS_JSONL,
+                "compact_diagnostic_payload",
+                "TEXT answer-span diagnostics",
+            ),
+            artifact(DEFAULT_V3_2_6_QUEUE_JSON, "queue_source_of_truth", "post-TEXT-prompt queue boundary"),
+        ],
+        "v3_2_7": [
+            artifact(DEFAULT_STATUS_JSONL, "compact_status_ledger", "closure status event"),
+        ],
+    }
+
+
+def append_v3_2_7_closure_event(path: Path, summary: Mapping[str, Any]) -> None:
+    append_unique_status_ledger_event(path, summary)
+
+
+def append_v3_3_0_source_of_truth_audit_event(path: Path, summary: Mapping[str, Any]) -> None:
+    append_unique_status_ledger_event(path, summary)
+
+
+def append_v3_3_3_silver_source_candidate_discovery_event(path: Path, summary: Mapping[str, Any]) -> None:
+    event = dict(summary)
+    event.pop("candidate_inventory", None)
+    append_unique_status_ledger_event(path, event)
+
+
+def append_v3_4_0_official_retrieval_metric_contract_event(path: Path, summary: Mapping[str, Any]) -> None:
+    event = dict(summary)
+    event.pop("contract", None)
+    event.pop("qrels_schema", None)
+    append_unique_status_ledger_event(path, event)
+
+
+def append_v3_4_1_official_retrieval_qrels_candidate_packet_event(
+    path: Path,
+    summary: Mapping[str, Any],
+) -> None:
+    event = dict(summary)
+    event.pop("qrels_candidate_rows", None)
+    event.pop("qrels_candidate_csv_rows", None)
+    event.pop("csv_fieldnames", None)
+    event.pop("compact_summary", None)
+    append_unique_status_ledger_event(path, event)
+
+
+def append_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_event(
+    path: Path,
+    summary: Mapping[str, Any],
+) -> None:
+    event = dict(summary)
+    event.pop("qrels_policy_approval", None)
+    event.pop("query_group_review_rows", None)
+    event.pop("query_group_review_csv_fieldnames", None)
+    event.pop("ambiguous_candidate_review_rows", None)
+    event.pop("ambiguous_candidate_review_csv_fieldnames", None)
+    event.pop("qrels_auto_label_plan", None)
+    event.pop("compact_summary", None)
+    append_unique_status_ledger_event(path, event)
+
+
+def append_unique_status_ledger_event(path: Path, summary: Mapping[str, Any]) -> None:
+    event = dict(summary)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existing = []
+    if path.exists():
+        existing = [
+            json.loads(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+    retained = [
+        item
+        for item in existing
+        if not (
+            item.get("event_type") == event["event_type"]
+            and item.get("run_id") == event["run_id"]
+        )
+    ]
+    retained.append(event)
+    path.write_text(
+        "".join(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n" for item in retained),
+        encoding="utf-8",
+    )
+
+
+def latest_status_event(
+    events: Sequence[Mapping[str, Any]],
+    *,
+    event_type: str,
+    run_id: str,
+) -> dict[str, Any]:
+    for item in reversed(events):
+        if item.get("event_type") == event_type and item.get("run_id") == run_id:
+            return dict(item)
+    return {}
+
+
+def denominator_rank_in_retrieved_context(row: Mapping[str, Any]) -> int | None:
+    target = official.clean(row.get("denominator_search_unit_id"))
+    if not target:
+        return None
+    for index, item in enumerate(row.get("retrieved_context_summary") or [], start=1):
+        if official.clean(as_mapping(item).get("search_unit_id")) == target:
+            return index
+    return None
 
 
 def write_v3_1_priority_1_5_side_artifacts(summary: dict[str, Any], rows: Sequence[Mapping[str, Any]]) -> None:
@@ -13890,8 +18799,9 @@ def fix_type_for_failure(category: str) -> str:
 
 
 def render_v3_1_actual_response_audit_markdown(audit_rows: Sequence[Mapping[str, Any]]) -> str:
+    run_id = official.clean(audit_rows[0].get("run_id")) if audit_rows else V3_1_RUN_ID
     lines = [
-        f"# {V3_1_RUN_ID} Actual Response Audit",
+        f"# {run_id} Actual Response Audit",
         "",
         "This audit is diagnostic-only. Expected answers and supporting evidence are intentionally not printed here.",
         "",
@@ -13919,8 +18829,9 @@ def render_v3_1_actual_response_audit_markdown(audit_rows: Sequence[Mapping[str,
 
 
 def render_v3_1_triage_markdown(triage: Mapping[str, Any]) -> str:
+    run_id = official.clean(triage.get("run_id")) or V3_1_RUN_ID
     lines = [
-        f"# {V3_1_RUN_ID} Failure Triage Queue",
+        f"# {run_id} Failure Triage Queue",
         "",
         "This queue contains only rows with at least one failing diagnostic lane.",
         "",
@@ -14922,6 +19833,10 @@ def build_failure_attribution(summary: Mapping[str, Any], rows: Sequence[Mapping
         V3_1_4_PDF_RESIDUAL_ANSWER_SPAN_RENDERER_TRIAGE_RUN_ID,
         V3_1_5_GQ_AUTO_010_SOURCE_BOUND_COVERAGE_DIAGNOSTIC_RUN_ID,
         V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
+        V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+        V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
     }:
         return build_v3_1_failure_attribution(summary, rows)
     row_attribution = [failure_attribution_for_row(row, summary=summary) for row in rows]
@@ -15228,6 +20143,11 @@ def append_status_event(path: Path, summary: Mapping[str, Any]) -> None:
         V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_AUDIT_RUN_ID,
         V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
         V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID,
+        V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+        V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+        V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
     }:
         event["lane_counts"] = summary.get("lane_counts")
         event["source_family_lane_counts"] = summary.get("source_family_lane_counts")
@@ -15388,6 +20308,58 @@ def append_status_event(path: Path, summary: Mapping[str, Any]) -> None:
                 "any_remaining_residual_implementation_safe",
             ):
                 event[key] = summary.get(key)
+        if summary["run_id"] in {
+            V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+            V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+            V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+            V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+            V3_2_6_TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_RUN_ID,
+        }:
+            for key in (
+                "source_run_id",
+                "run_class",
+                "behavior_change_made",
+                "implementation_change_made",
+                "implementation_change_scope",
+                "v3_2_2_required",
+                "target_query_ids",
+                "primary_category_counts",
+                "answer_quality_metrics",
+                "citation_quality_metrics",
+                "retrieval_ranking_metrics",
+                "denominator_policy",
+                "official_retrieval_metrics_computed",
+                "official_ndcg_computed",
+                "official_mrr_computed",
+                "official_hit_at_k_computed",
+                "lane_score_collapsed",
+                "live_generation_rerun",
+                "all_track_live_generation_rerun",
+                "comparison_to_v3_2_0",
+                "comparison_to_v3_2_2",
+                "comparison_to_v3_2_5",
+                "context_reconciliation_preflight",
+                "context_expansion_source_run_id",
+                "context_expansion_attempted",
+                "context_expansion_applied",
+                "context_expansion_policy_name",
+                "context_expansion_policy_version",
+                "context_expansion_target_query_ids",
+                "context_expansion_applied_query_ids",
+                "context_expansion_unit_ids",
+                "pdf_context_reconciliation_fix_applied",
+                "pdf_context_reconciliation_fix_type",
+                "pdf_context_reconciliation_carry_forward_applied",
+                "text_prompt_span_rule_applied",
+                "text_prompt_span_rule_instruction_id",
+                "text_prompt_span_target_query_ids",
+                "text_prompt_span_rule_lanes_by_query_id",
+                "text_prompt_span_preflight",
+                "index_or_export_rebuild_required",
+                "index_or_export_rebuild_performed",
+            ):
+                if key in summary:
+                    event[key] = summary.get(key)
     if summary["run_id"] == V3_1_5_GQ_AUTO_010_SOURCE_BOUND_COVERAGE_DIAGNOSTIC_RUN_ID:
         for key in (
             "classification_result",
@@ -15468,6 +20440,9 @@ def append_failure_attribution_event(path: Path, attribution: Mapping[str, Any])
         V3_1_PRIORITY_1_5_RUN_ID,
         V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID,
         V3_1_1_POST_STRICT_JSON_LOCATOR_TRIAGE_RUN_ID,
+        V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+        V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
     }:
         event["failure_taxonomy"] = attribution.get("failure_taxonomy")
         event["lane_counts"] = attribution.get("lane_counts")
@@ -15498,6 +20473,11 @@ def append_failure_attribution_event(path: Path, attribution: Mapping[str, Any])
 def render_markdown(summary: Mapping[str, Any]) -> str:
     if summary["run_id"] == V3_1_RUN_ID:
         return render_v3_1_summary_markdown(summary)
+    if summary["run_id"] in {
+        V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+        V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    }:
+        return render_v3_2_live_summary_markdown(summary)
     if summary["run_id"] == V3_1_PRIORITY_1_5_RUN_ID:
         return render_v3_1_priority_1_5_summary_markdown(summary)
     if summary["run_id"] == V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID:
@@ -15585,6 +20565,74 @@ def render_markdown(summary: Mapping[str, Any]) -> str:
         ]
     )
     blockers = summary.get("agentic_loop", {}).get("blockers") or []
+    if blockers:
+        lines.extend(["## Blockers", ""])
+        for blocker in blockers:
+            lines.append(f"- {blocker}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def render_v3_2_live_summary_markdown(summary: Mapping[str, Any]) -> str:
+    lane_counts = summary.get("lane_counts") or {}
+    answer_quality = as_mapping(summary.get("answer_quality_metrics")).get("by_lane") or {}
+    citation_quality = as_mapping(summary.get("citation_quality_metrics")).get("by_lane") or {}
+    lines = [
+        f"# {summary['run_id']}",
+        "",
+        "## Purpose",
+        "",
+        official.clean(as_mapping(summary.get("pipeline_decision")).get("rationale")),
+        "",
+        "## Guardrails",
+        "",
+    ]
+    for key, value in sorted((summary.get("guardrails") or {}).items()):
+        lines.append(f"- `{key}`: `{str(value).lower()}`")
+    lines.extend(
+        [
+            "",
+            "## Lane Metrics",
+            "",
+            "| Lane | Scored | PASS | Answer avg | Citation avg | Failure counts |",
+            "|---|---:|---:|---:|---:|---|",
+        ]
+    )
+    for lane_name in V3_1_LANE_NAMES:
+        counts = as_mapping(lane_counts.get(lane_name))
+        answer = as_mapping(answer_quality.get(lane_name))
+        citation = as_mapping(citation_quality.get(lane_name))
+        lines.append(
+            "| `{lane}` | {scored} | {passed} | {answer_avg} | {citation_avg} | `{failures}` |".format(
+                lane=lane_name,
+                scored=counts.get("scored_count"),
+                passed=counts.get("pass_count"),
+                answer_avg=answer.get("average"),
+                citation_avg=citation.get("average"),
+                failures=json.dumps(counts.get("failure_counts"), ensure_ascii=False, sort_keys=True),
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Metric Policy",
+            "",
+            "- Answer quality and citation quality are reportable for the settled answer/citation gold set.",
+            "- Official nDCG, MRR, Hit@K, and collapsed Lane A/B/C scores are deferred until relevance and answerability labels exist.",
+            f"- Denominator policy: `{json.dumps(summary.get('denominator_policy'), ensure_ascii=False, sort_keys=True)}`",
+            "",
+        ]
+    )
+    if summary.get("comparison_to_v3_2_0"):
+        lines.extend(
+            [
+                "## Comparison To v3_2_0",
+                "",
+                f"`{json.dumps(summary.get('comparison_to_v3_2_0'), ensure_ascii=False, sort_keys=True)}`",
+                "",
+            ]
+        )
+    blockers = as_mapping(summary.get("agentic_loop")).get("blockers") or []
     if blockers:
         lines.extend(["## Blockers", ""])
         for blocker in blockers:

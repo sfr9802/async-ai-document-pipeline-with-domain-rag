@@ -73,6 +73,48 @@ AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID = (
 AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement"
 )
+AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_0_current_system_live_baseline"
+)
+AGENTIC_V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_1_text_residual_triage"
+)
+AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_2_post_fix_remeasurement"
+)
+AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation"
+)
+AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic"
+)
+AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix"
+)
+AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement"
+)
+AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_2_7_post_fix_closure_and_rolling_report_cleanup"
+)
+AGENTIC_V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_3_0_post_closure_hardening_source_of_truth_audit"
+)
+AGENTIC_V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_3_2_retrieval_relevance_answerability_label_design_packet"
+)
+AGENTIC_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_3_3_silver_source_candidate_discovery"
+)
+AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract"
+)
+AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet"
+)
+AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -105,12 +147,46 @@ REPORT_ARTIFACT_SLUGS = {
     AGENTIC_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_RUN_ID: AGENTIC_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_RUN_ID,
     AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID: AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
     AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID: AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID,
+    AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID: AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+    AGENTIC_V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID: AGENTIC_V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+    AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID: AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID: AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID,
+    AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID: AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+    AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID: AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID: AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID,
+    AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID: AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+    AGENTIC_V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID: AGENTIC_V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID,
+    AGENTIC_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID: (
+        AGENTIC_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID
+    ),
+    AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID: (
+        AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID
+    ),
+    AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID: (
+        AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID
+    ),
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID: (
+        AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID,
     AGENTIC_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_RUN_ID,
     AGENTIC_V3_1_8_GOLD_POLICY_REVIEW_PACKET_RUN_ID,
     AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID,
+    AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+    AGENTIC_V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+    AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID,
+    AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+    AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID,
+    AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID,
+    AGENTIC_V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID,
+    AGENTIC_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID,
+    AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+    AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
 }
 
 
@@ -259,6 +335,170 @@ AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_REMAINING_JSON = report_artifact_path(
     AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID,
     "remaining_triage_queue.json",
 )
+AGENTIC_V3_2_0_RESULTS = report_artifact_path(
+    AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+    "results.jsonl",
+)
+AGENTIC_V3_2_0_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_2_0_ATTRIBUTION_JSON = report_artifact_path(
+    AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+    "failure.json",
+)
+AGENTIC_V3_2_0_AUDIT_JSONL = report_artifact_path(
+    AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+    "audit.jsonl",
+)
+AGENTIC_V3_2_0_QUEUE_JSON = report_artifact_path(
+    AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+    "queue.json",
+)
+AGENTIC_V3_2_1_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_2_1_RESIDUAL_TRIAGE_JSONL = report_artifact_path(
+    AGENTIC_V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID,
+    "residual_triage.jsonl",
+)
+AGENTIC_V3_2_2_RESULTS = report_artifact_path(
+    AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    "results.jsonl",
+)
+AGENTIC_V3_2_2_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_2_2_ATTRIBUTION_JSON = report_artifact_path(
+    AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    "failure.json",
+)
+AGENTIC_V3_2_2_AUDIT_JSONL = report_artifact_path(
+    AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    "audit.jsonl",
+)
+AGENTIC_V3_2_2_QUEUE_JSON = report_artifact_path(
+    AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+    "queue.json",
+)
+AGENTIC_V3_2_3_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_2_3_DIAGNOSTICS_JSONL = report_artifact_path(
+    AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID,
+    "diagnostics.jsonl",
+)
+AGENTIC_V3_2_3_QUEUE_JSON = report_artifact_path(
+    AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID,
+    "queue.json",
+)
+AGENTIC_V3_2_4_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_2_4_DIAGNOSTICS_JSONL = report_artifact_path(
+    AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+    "pdf_context_provenance_diagnostics.jsonl",
+)
+AGENTIC_V3_2_4_QUEUE_JSON = report_artifact_path(
+    AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID,
+    "queue.json",
+)
+AGENTIC_V3_2_5_RESULTS = report_artifact_path(
+    AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    "results.jsonl",
+)
+AGENTIC_V3_2_5_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_2_5_ATTRIBUTION_JSON = report_artifact_path(
+    AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    "failure.json",
+)
+AGENTIC_V3_2_5_AUDIT_JSONL = report_artifact_path(
+    AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    "audit.jsonl",
+)
+AGENTIC_V3_2_5_PDF_CONTEXT_DIAGNOSTICS_JSONL = report_artifact_path(
+    AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    "pdf_context_diagnostics.jsonl",
+)
+AGENTIC_V3_2_5_QUEUE_JSON = report_artifact_path(
+    AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+    "queue.json",
+)
+AGENTIC_V3_2_6_RESULTS = report_artifact_path(
+    AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID,
+    "results.jsonl",
+)
+AGENTIC_V3_2_6_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_2_6_ATTRIBUTION_JSON = report_artifact_path(
+    AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID,
+    "failure.json",
+)
+AGENTIC_V3_2_6_AUDIT_JSONL = report_artifact_path(
+    AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID,
+    "audit.jsonl",
+)
+AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_DIAGNOSTICS_JSONL = report_artifact_path(
+    AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID,
+    "text_prompt_span_diagnostics.jsonl",
+)
+AGENTIC_V3_2_6_QUEUE_JSON = report_artifact_path(
+    AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID,
+    "queue.json",
+)
+AGENTIC_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_INVENTORY_JSON = report_artifact_path(
+    AGENTIC_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID,
+    "candidate_inventory.json",
+)
+AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_JSON = report_artifact_path(
+    AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+    "contract.json",
+)
+AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_QRELS_SCHEMA_JSON = report_artifact_path(
+    AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+    "qrels_schema.json",
+)
+AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_JSONL = report_artifact_path(
+    AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+    "qrels_candidates.jsonl",
+)
+AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_CSV = report_artifact_path(
+    AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+    "qrels_candidates.csv",
+)
+AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_POLICY_APPROVAL_JSON = report_artifact_path(
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    "qrels_policy_approval.json",
+)
+AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_QUERY_GROUP_REVIEW_CSV = report_artifact_path(
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    "qrels_human_query_group_review.csv",
+)
+AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AMBIGUOUS_CANDIDATE_REVIEW_CSV = report_artifact_path(
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    "qrels_ambiguous_candidate_review.csv",
+)
+AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AUTO_LABEL_PLAN_JSON = report_artifact_path(
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    "qrels_auto_label_plan.json",
+)
+AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_MINIMAL_REVIEW_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID,
+    "summary.json",
+)
 AGENTIC_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data"
 EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES: set[str] = set()
 CURRENT_REPORT_PATHS = {
@@ -294,6 +534,47 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_DIFF_JSONL,
     AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RESCORED_JSONL,
     AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_REMAINING_JSON,
+    AGENTIC_V3_2_0_RESULTS,
+    AGENTIC_V3_2_0_SUMMARY_JSON,
+    AGENTIC_V3_2_0_ATTRIBUTION_JSON,
+    AGENTIC_V3_2_0_AUDIT_JSONL,
+    AGENTIC_V3_2_0_QUEUE_JSON,
+    AGENTIC_V3_2_1_SUMMARY_JSON,
+    AGENTIC_V3_2_1_RESIDUAL_TRIAGE_JSONL,
+    AGENTIC_V3_2_2_RESULTS,
+    AGENTIC_V3_2_2_SUMMARY_JSON,
+    AGENTIC_V3_2_2_ATTRIBUTION_JSON,
+    AGENTIC_V3_2_2_AUDIT_JSONL,
+    AGENTIC_V3_2_2_QUEUE_JSON,
+    AGENTIC_V3_2_3_SUMMARY_JSON,
+    AGENTIC_V3_2_3_DIAGNOSTICS_JSONL,
+    AGENTIC_V3_2_3_QUEUE_JSON,
+    AGENTIC_V3_2_4_SUMMARY_JSON,
+    AGENTIC_V3_2_4_DIAGNOSTICS_JSONL,
+    AGENTIC_V3_2_4_QUEUE_JSON,
+    AGENTIC_V3_2_5_RESULTS,
+    AGENTIC_V3_2_5_SUMMARY_JSON,
+    AGENTIC_V3_2_5_ATTRIBUTION_JSON,
+    AGENTIC_V3_2_5_AUDIT_JSONL,
+    AGENTIC_V3_2_5_PDF_CONTEXT_DIAGNOSTICS_JSONL,
+    AGENTIC_V3_2_5_QUEUE_JSON,
+    AGENTIC_V3_2_6_RESULTS,
+    AGENTIC_V3_2_6_SUMMARY_JSON,
+    AGENTIC_V3_2_6_ATTRIBUTION_JSON,
+    AGENTIC_V3_2_6_AUDIT_JSONL,
+    AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_DIAGNOSTICS_JSONL,
+    AGENTIC_V3_2_6_QUEUE_JSON,
+    AGENTIC_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_INVENTORY_JSON,
+    AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_JSON,
+    AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_QRELS_SCHEMA_JSON,
+    AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_JSONL,
+    AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_CSV,
+    AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_SUMMARY_JSON,
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_POLICY_APPROVAL_JSON,
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_QUERY_GROUP_REVIEW_CSV,
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AMBIGUOUS_CANDIDATE_REVIEW_CSV,
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AUTO_LABEL_PLAN_JSON,
+    AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_MINIMAL_REVIEW_SUMMARY_JSON,
 }
 ARCHIVED_REPORT_PATHS = {
     AGENTIC_RESULTS,
@@ -1449,6 +1730,7 @@ def test_v2_1_citation_contract_repair_artifacts_discard_off_track_citations() -
             and not path.name.startswith(f"{AGENTIC_V3_1_TEXT_LOCATOR_RESIDUAL_RUN_ID}_")
             and not path.name.startswith(f"{AGENTIC_V3_1_4_PDF_RESIDUAL_RUN_ID}_")
             and not path.name.startswith(f"{AGENTIC_V3_1_7_POST_RESIDUAL_QUEUE_CLOSURE_RUN_ID}_")
+            and not path.name.startswith(f"{AGENTIC_V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID}_")
         ]
     assert unexpected_residual_reports == []
     assert "source-bound denominator index" in summary["pipeline_decision"]["rationale"]
@@ -3454,6 +3736,1675 @@ def test_v3_1_9_gold_csv_contains_only_the_user_approved_text_overrides() -> Non
     assert summary["official_denominator_query_id_set_mutation"] is False
 
 
+def test_v3_2_0_current_system_live_baseline_is_guarded() -> None:
+    summary = read_json(AGENTIC_V3_2_0_SUMMARY_JSON)
+    results = read_jsonl(AGENTIC_V3_2_0_RESULTS)
+    attribution = read_json(AGENTIC_V3_2_0_ATTRIBUTION_JSON)
+    audit_rows = read_jsonl(AGENTIC_V3_2_0_AUDIT_JSONL)
+    queue = read_json(AGENTIC_V3_2_0_QUEUE_JSON)
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+
+    assert summary["run_id"] == AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_1_9_GOLD_POLICY_OVERRIDE_RUN_ID
+    assert summary["measurement_classification"] == "post_gold_settled_current_system_live_baseline_v3_2_0"
+    assert summary["status"] == "CURRENT_SYSTEM_LIVE_BASELINE_V3_2_0_COMPLETED"
+    assert summary["result_count"] == 29
+    assert summary["unique_query_id_count"] == 29
+    assert len(results) == 29
+    assert len(audit_rows) == 29
+    assert summary["rows_by_source_family"] == {"PDF": 4, "TEXT": 6, "XLSX": 19}
+    assert set(summary["lane_counts"]) == {"v3_primary_replay", "live_llm_retrieval_topk", "live_llm_query_bound_oracle"}
+    assert summary["lane_counts"]["v3_primary_replay"]["pass_count"] == 24
+    assert summary["lane_counts"]["live_llm_retrieval_topk"]["pass_count"] == 25
+    assert summary["lane_counts"]["live_llm_query_bound_oracle"]["pass_count"] == 24
+    assert summary["answer_quality_metrics"]["by_lane"]["live_llm_retrieval_topk"]["average"] == 0.8621
+    assert all(metric["average"] == 1.0 for metric in summary["citation_quality_metrics"]["by_lane"].values())
+    assert summary["retrieval_ranking_metrics"]["status"] == "deferred"
+    assert summary["official_retrieval_metrics_computed"] is False
+    assert summary["official_ndcg_computed"] is False
+    assert summary["official_mrr_computed"] is False
+    assert summary["official_hit_at_k_computed"] is False
+    assert summary["lane_score_collapsed"] is False
+    assert summary["write_summary_markdown"] is False
+    assert summary["write_side_markdown"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["relevance_label_mutation"] is False
+    assert summary["answerability_label_mutation"] is False
+    assert attribution["run_id"] == AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID
+    assert queue["run_id"] == AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID
+    )
+    assert measurement["retrieval_ranking_metrics"]["status"] == "deferred"
+    assert measurement["lane_score_collapsed"] is False
+    assert_generation_guardrail_flags_false(summary)
+    assert_generation_guardrail_flags_false(results)
+    assert_generation_guardrail_flags_false(attribution)
+    assert_generation_guardrail_flags_false(audit_rows)
+    assert_generation_guardrail_flags_false(queue)
+    assert_no_gold_generation_source_fields(summary)
+    assert_no_gold_generation_source_fields(results)
+    assert_no_gold_generation_source_fields(attribution)
+    assert_no_gold_generation_source_fields(audit_rows)
+    assert_no_gold_generation_source_fields(queue)
+
+
+def test_v3_2_1_text_residual_triage_and_scorer_policy_are_guarded() -> None:
+    summary = read_json(AGENTIC_V3_2_1_SUMMARY_JSON)
+    rows = read_jsonl(AGENTIC_V3_2_1_RESIDUAL_TRIAGE_JSONL)
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+
+    target_ids = [
+        "text_namu_v2_0014",
+        "text_namu_v2_0017",
+        "text_namu_v2_0077",
+        "text_namu_v2_0084",
+    ]
+    assert summary["run_id"] == AGENTIC_V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID
+    assert summary["status"] == "TEXT_RESIDUAL_TRIAGE_V3_2_1_COMPLETED"
+    assert summary["target_query_ids"] == target_ids
+    assert summary["result_count"] == 4
+    assert [row["row_id"] for row in rows] == target_ids
+    assert summary["primary_category_counts"] == {"prompt": 3, "scorer": 1}
+    by_id = {row["row_id"]: row for row in rows}
+    assert by_id["text_namu_v2_0077"]["primary_category"] == "scorer"
+    assert by_id["text_namu_v2_0077"]["secondary_category"] == "prompt"
+    assert by_id["text_namu_v2_0077"]["action_taken"].startswith("implementation_fix_applied:")
+    assert by_id["text_namu_v2_0014"]["primary_category"] == "prompt"
+    assert by_id["text_namu_v2_0017"]["secondary_category"] == "scorer"
+    assert by_id["text_namu_v2_0084"]["primary_category"] == "prompt"
+    assert all(row["evidence_artifact"] == AGENTIC_V3_2_0_RESULTS.relative_to(ROOT).as_posix() for row in rows)
+    assert summary["implementation_change_made"] is True
+    assert summary["v3_2_2_required"] is True
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["relevance_label_mutation"] is False
+    assert summary["answerability_label_mutation"] is False
+    assert summary["official_retrieval_metrics_computed"] is False
+    assert summary["lane_score_collapsed"] is False
+
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    assert runner.source_bound_answer_equivalent_to_reference(
+        row={
+            "query_id": "text_namu_v2_0077",
+            "question": "미츠하는 타키를 만나려고 어디로 향했어",
+            "expected_answer": "도쿄로 향했습니다.",
+            "_active_scorer_policies": [runner.V3_2_1_KOREAN_POLITE_PAST_SCORER_POLICY],
+        },
+        expected_answer="도쿄로 향했습니다.",
+        generated_answer="미츠하는 타키를 만나기 위해 도쿄로 향했다.",
+    )
+    assert not runner.source_bound_answer_equivalent_to_reference(
+        row={
+            "query_id": "text_namu_v2_0077",
+            "question": "미츠하는 타키를 만나려고 어디로 향했어",
+            "expected_answer": "도쿄로 향했습니다.",
+        },
+        expected_answer="도쿄로 향했습니다.",
+        generated_answer="미츠하는 타키를 만나기 위해 도쿄로 향했다.",
+    )
+    assert not runner.source_bound_answer_equivalent_to_reference(
+        row={
+            "query_id": "not_target",
+            "question": "테스트했어",
+            "expected_answer": "테스트했습니다.",
+        },
+        expected_answer="테스트했습니다.",
+        generated_answer="테스트했다",
+    )
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID
+    )
+    assert measurement["source_run_id"] == AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID
+    assert measurement["v3_2_2_required"] is True
+    assert_generation_guardrail_flags_false(summary)
+    assert_generation_guardrail_flags_false(rows)
+    assert_no_gold_generation_source_fields(summary)
+    assert_no_gold_generation_source_fields(rows)
+
+
+def test_v3_2_2_post_fix_remeasurement_compares_only_intended_scorer_delta() -> None:
+    summary = read_json(AGENTIC_V3_2_2_SUMMARY_JSON)
+    results = read_jsonl(AGENTIC_V3_2_2_RESULTS)
+    attribution = read_json(AGENTIC_V3_2_2_ATTRIBUTION_JSON)
+    audit_rows = read_jsonl(AGENTIC_V3_2_2_AUDIT_JSONL)
+    queue = read_json(AGENTIC_V3_2_2_QUEUE_JSON)
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+
+    assert summary["run_id"] == AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_2_1_TEXT_RESIDUAL_TRIAGE_RUN_ID
+    assert summary["measurement_classification"] == "post_fix_full_remeasurement_v3_2_2"
+    assert summary["status"] == "POST_FIX_REMEASUREMENT_V3_2_2_COMPLETED"
+    assert len(results) == 29
+    assert summary["lane_counts"]["v3_primary_replay"]["pass_count"] == 24
+    assert summary["lane_counts"]["live_llm_retrieval_topk"]["pass_count"] == 26
+    assert summary["lane_counts"]["live_llm_query_bound_oracle"]["pass_count"] == 25
+    comparison = summary["comparison_to_v3_2_0"]
+    assert comparison["lane_pass_count_delta"] == {
+        "live_llm_query_bound_oracle": 1,
+        "live_llm_retrieval_topk": 1,
+        "v3_primary_replay": 0,
+    }
+    assert comparison["unexpected_failure_category_change_count"] == 0
+    assert {
+        (item["query_id"], item["lane_name"], item["before_failure_category"], item["after_failure_category"])
+        for item in comparison["failure_category_changes"]
+    } == {
+        ("text_namu_v2_0077", "live_llm_retrieval_topk", "LLM_EXPECTED_SPAN_MISMATCH", "PASS"),
+        ("text_namu_v2_0077", "live_llm_query_bound_oracle", "LLM_EXPECTED_SPAN_MISMATCH", "PASS"),
+    }
+    row_0077 = next(row for row in results if row["query_id"] == "text_namu_v2_0077")
+    assert row_0077["lane_results"]["live_llm_retrieval_topk"]["failure_category"] == "PASS"
+    assert row_0077["lane_results"]["live_llm_query_bound_oracle"]["failure_category"] == "PASS"
+    assert row_0077["lane_results"]["v3_primary_replay"]["failure_category"] == "LLM_TRUE_PARTIAL_SYNTHESIS"
+    assert summary["retrieval_ranking_metrics"]["status"] == "deferred"
+    assert summary["official_retrieval_metrics_computed"] is False
+    assert summary["lane_score_collapsed"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert attribution["run_id"] == AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID
+    assert queue["run_id"] == AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID
+    )
+    assert measurement["comparison_to_v3_2_0"]["unexpected_failure_category_change_count"] == 0
+    assert_generation_guardrail_flags_false(summary)
+    assert_generation_guardrail_flags_false(results)
+    assert_generation_guardrail_flags_false(attribution)
+    assert_generation_guardrail_flags_false(audit_rows)
+    assert_generation_guardrail_flags_false(queue)
+    assert_no_gold_generation_source_fields(summary)
+    assert_no_gold_generation_source_fields(results)
+    assert_no_gold_generation_source_fields(attribution)
+    assert_no_gold_generation_source_fields(audit_rows)
+    assert_no_gold_generation_source_fields(queue)
+
+
+def test_v3_2_3_queue_lane_actionability_reconciliation_is_compact_and_guarded() -> None:
+    summary = read_json(AGENTIC_V3_2_3_SUMMARY_JSON)
+    diagnostics = read_jsonl(AGENTIC_V3_2_3_DIAGNOSTICS_JSONL)
+    queue = read_json(AGENTIC_V3_2_3_QUEUE_JSON)
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+
+    assert summary["run_id"] == AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID
+    assert summary["status"] == "QUEUE_LANE_ACTIONABILITY_RECONCILIATION_V3_2_3_COMPLETED"
+    assert summary["measurement_classification"] == "queue_lane_actionability_reconciliation_v3_2_3_no_behavior_change"
+    assert summary["run_class"] == "classification_only_queue_lane_actionability_reconciliation"
+    assert summary["source_queue_query_count"] == 6
+    assert summary["source_lane_residual_count"] == 12
+    assert summary["actionability_bucket_counts"] == {
+        "frozen_replay_residual": 2,
+        "pdf_context_provenance": 1,
+        "text_prompt_span": 3,
+    }
+    assert summary["next_phase_counts"] == {
+        "none": 2,
+        "v3_2_4_pdf_context_provenance": 1,
+        "v3_2_6_text_prompt_span_rule": 3,
+    }
+    assert summary["lane_a_only_query_ids"] == ["text_namu_v2_0012", "text_namu_v2_0077"]
+    assert summary["live_bc_actionable_query_ids"] == [
+        "text_namu_v2_0014",
+        "text_namu_v2_0017",
+        "text_namu_v2_0084",
+        "gq_auto_010",
+    ]
+    assert summary["v3_2_4_required"] is True
+    assert summary["v3_2_4_scope_query_ids"] == ["gq_auto_010"]
+    assert summary["v3_2_5_required"] is False
+    assert summary["v3_2_5_decision"] == (
+        "deferred_until_v3_2_4_proves_v3_1_6_expansion_missing_from_v3_2_measurement_path"
+    )
+    assert summary["v3_2_6_required"] is True
+    assert summary["v3_2_6_scope_query_ids"] == [
+        "text_namu_v2_0014",
+        "text_namu_v2_0017",
+        "text_namu_v2_0084",
+    ]
+    assert summary["artifact_policy"]["per_run_markdown_written"] is False
+    assert summary["artifact_policy"]["results_jsonl_written"] is False
+    assert summary["artifact_policy"]["failure_attribution_json_written"] is False
+    assert summary["artifact_policy"]["audit_jsonl_written"] is False
+
+    assert len(diagnostics) == 6
+    by_id = {row["query_id"]: row for row in diagnostics}
+    assert set(by_id) == {
+        "gq_auto_010",
+        "text_namu_v2_0012",
+        "text_namu_v2_0014",
+        "text_namu_v2_0017",
+        "text_namu_v2_0077",
+        "text_namu_v2_0084",
+    }
+    assert by_id["text_namu_v2_0012"]["lane_a_only"] is True
+    assert by_id["text_namu_v2_0012"]["live_bc_actionable"] is False
+    assert by_id["text_namu_v2_0012"]["primary_bucket"] == "frozen_replay_residual"
+    assert by_id["text_namu_v2_0077"]["lane_a_only"] is True
+    assert by_id["text_namu_v2_0077"]["live_bc_actionable"] is False
+    assert by_id["text_namu_v2_0077"]["primary_bucket"] == "frozen_replay_residual"
+    assert by_id["text_namu_v2_0077"]["passing_lanes"] == [
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle",
+    ]
+    assert by_id["gq_auto_010"]["source_family"] == "PDF"
+    assert by_id["gq_auto_010"]["primary_bucket"] == "pdf_context_provenance"
+    assert by_id["gq_auto_010"]["next_phase"] == "v3_2_4_pdf_context_provenance"
+    assert by_id["gq_auto_010"]["failing_lanes"] == [
+        "live_llm_retrieval_topk",
+        "live_llm_query_bound_oracle",
+    ]
+    assert "TEXT prompt residual" not in by_id["gq_auto_010"]["rationale"]
+    assert {
+        query_id
+        for query_id, row in by_id.items()
+        if row["next_phase"] == "v3_2_6_text_prompt_span_rule"
+    } == {"text_namu_v2_0014", "text_namu_v2_0017", "text_namu_v2_0084"}
+
+    assert queue["run_id"] == AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID
+    assert [item["query_id"] for item in queue["items"]] == [
+        "text_namu_v2_0012",
+        "text_namu_v2_0014",
+        "text_namu_v2_0017",
+        "text_namu_v2_0077",
+        "text_namu_v2_0084",
+        "gq_auto_010",
+    ]
+    assert [item["query_id"] for item in queue["active_items"]] == [
+        "text_namu_v2_0014",
+        "text_namu_v2_0017",
+        "text_namu_v2_0084",
+        "gq_auto_010",
+    ]
+    assert [item["query_id"] for item in queue["carried_non_actionable_lane_items"]] == [
+        "text_namu_v2_0012",
+        "text_namu_v2_0077",
+    ]
+
+    for suffix in (
+        "results.jsonl",
+        "failure.json",
+        "audit.jsonl",
+        "summary.md",
+        "queue.md",
+        "audit.md",
+    ):
+        assert not report_artifact_path(AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID, suffix).exists()
+
+    for payload in (summary, *diagnostics, queue):
+        assert payload["diagnostic_only"] is True
+        assert payload["promotion_evidence"] is False
+        assert payload["generation_used_expected_answer"] is False
+        assert payload["generation_used_supporting_evidence"] is False
+        assert payload["generation_used_gold_fields"] is False
+        assert payload["official_retrieval_metrics_computed"] is False
+
+    for field in (
+        "behavior_change_made",
+        "implementation_change_made",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "relevance_label_mutation",
+        "answerability_label_mutation",
+        "official_denominator_query_id_set_mutation",
+        "retrieval_mutation",
+        "renderer_mutation",
+        "scorer_behavior_mutation",
+        "live_generation_rerun",
+        "lane_score_collapsed",
+    ):
+        assert summary[field] is False, field
+        assert queue["guardrails"][field] is False, field
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID
+    )
+    assert measurement["source_run_id"] == AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID
+    assert measurement["source_queue_query_count"] == 6
+    assert measurement["source_lane_residual_count"] == 12
+    assert measurement["v3_2_4_required"] is True
+    assert measurement["v3_2_5_required"] is False
+    assert measurement["v3_2_6_required"] is True
+    assert_no_gold_generation_source_fields(summary)
+    assert_no_gold_generation_source_fields(diagnostics)
+    assert_no_gold_generation_source_fields(queue)
+
+
+def test_v3_2_4_gq_auto_010_pdf_context_provenance_is_compact_no_behavior_and_source_bound() -> None:
+    summary = read_json(AGENTIC_V3_2_4_SUMMARY_JSON)
+    diagnostics = read_jsonl(AGENTIC_V3_2_4_DIAGNOSTICS_JSONL)
+    queue = read_json(AGENTIC_V3_2_4_QUEUE_JSON)
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+
+    assert summary["run_id"] == AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID
+    assert summary["target_query_ids"] == ["gq_auto_010"]
+    assert summary["status"] == "GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_DIAGNOSTIC_V3_2_4_COMPLETED"
+    assert summary["measurement_classification"] == (
+        "gq_auto_010_pdf_context_provenance_diagnostic_v3_2_4_no_behavior_change"
+    )
+    assert summary["run_class"] == "classification_only_pdf_context_provenance_diagnostic"
+    assert summary["classification"] == "open_because_v3_1_6_expansion_not_wired_into_v3_2_measurement"
+    assert summary["current_failing_lanes"] == ["live_llm_retrieval_topk", "live_llm_query_bound_oracle"]
+    assert summary["current_passing_lanes"] == ["v3_primary_replay"]
+    assert summary["v3_2_2_retrieval_context_source_run_id"] == AGENTIC_V3_RUN_ID
+    assert summary["v3_2_2_retrieval_context_rerun"] is False
+    assert summary["v3_2_2_retrieval_context_rerun_false_affected_measurement"] is True
+    assert summary["pdfwin_search_unit_id"] == "pdfwin_b1c6527f848018640ad5ed231877c662"
+    assert summary["pdfwin_present_in_current_prompt_context"] is False
+    assert summary["pdfwin_present_in_v3_1_6_artifact_lineage"] is True
+    assert summary["current_prompt_context_contains_numeric_answer_span"] is False
+    assert summary["v3_1_5_classification"] == "query_bound_searchunit_too_narrow"
+    assert summary["v3_1_5_raw_source_pdf_text_contains_numeric_span"] is True
+    assert summary["v3_1_5_current_cited_searchunit_contains_numeric_span"] is False
+    assert summary["v3_1_6_expansion_applied"] is True
+    assert summary["v3_1_6_expansion_unit_ids"] == ["pdfwin_b1c6527f848018640ad5ed231877c662"]
+    assert summary["v3_1_6_expanded_context_contains_numeric_span"] is True
+    assert summary["expanded_context_present_in_current_v3_2_2_context"] is False
+    assert summary["live_llm_span_selection_despite_expanded_context_present"] is False
+    assert summary["measurement_artifact_mismatch_detected"] is False
+    assert summary["index_or_export_rebuild_required"] is False
+    assert summary["v3_2_5_implementation_needed"] is True
+    assert summary["v3_2_5_implementation_surface"] == "measurement_source_selection_and_context_assembly_overlay"
+    assert summary["recommended_next_phase"] == (
+        "v3_2_5_wire_v3_1_6_pdf_window_expansion_into_v3_2_measurement"
+    )
+    assert summary["artifact_policy"]["per_run_markdown_written"] is False
+    assert summary["artifact_policy"]["results_jsonl_written"] is False
+    assert summary["artifact_policy"]["failure_attribution_json_written"] is False
+    assert summary["artifact_policy"]["audit_jsonl_written"] is False
+
+    assert len(diagnostics) == 1
+    row = diagnostics[0]
+    assert row["query_id"] == "gq_auto_010"
+    assert row["classification"] == summary["classification"]
+    assert row["current_cited_search_unit_ids_by_lane"] == {
+        "live_llm_query_bound_oracle": ["7bf516bf-2a17-4303-86d8-3cffaa04846e"],
+        "live_llm_retrieval_topk": ["7bf516bf-2a17-4303-86d8-3cffaa04846e"],
+    }
+    assert row["pdfwin_present_in_current_lane_payload_by_lane"] == {
+        "live_llm_query_bound_oracle": False,
+        "live_llm_retrieval_topk": False,
+    }
+    assert row["current_lane_context_contains_numeric_answer_span_by_lane"] == {
+        "live_llm_query_bound_oracle": False,
+        "live_llm_retrieval_topk": False,
+    }
+    assert row["v3_1_6_after_lane_failure_categories"]["live_llm_query_bound_oracle"] == "PASS"
+    assert row["v3_1_6_after_lane_failure_categories"]["live_llm_retrieval_topk"] == "PASS"
+
+    assert queue["run_id"] == AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID
+    assert queue["classification"] == summary["classification"]
+    assert queue["remaining_recommended_queue_query_ids"] == ["gq_auto_010"]
+    assert queue["v3_2_5_required"] is True
+    assert queue["items"][0]["implementation_surface"] == "measurement_source_selection_and_context_assembly_overlay"
+    assert queue["items"][0]["index_or_export_rebuild_required"] is False
+
+    for suffix in (
+        "results.jsonl",
+        "failure.json",
+        "audit.jsonl",
+        "summary.md",
+        "queue.md",
+        "audit.md",
+    ):
+        assert not report_artifact_path(AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID, suffix).exists()
+
+    for payload in (summary, row, queue):
+        assert payload["diagnostic_only"] is True
+        assert payload["promotion_evidence"] is False
+        assert payload["generation_used_expected_answer"] is False
+        assert payload["generation_used_supporting_evidence"] is False
+        assert payload["generation_used_gold_fields"] is False
+        assert payload["official_retrieval_metrics_computed"] is False
+
+    for field in (
+        "behavior_change_made",
+        "implementation_change_made",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "relevance_label_mutation",
+        "answerability_label_mutation",
+        "official_denominator_query_id_set_mutation",
+        "retrieval_mutation",
+        "renderer_mutation",
+        "scorer_behavior_mutation",
+        "live_generation_rerun",
+        "retrieval_context_rerun",
+        "index_or_export_rebuild_performed",
+        "lane_score_collapsed",
+    ):
+        assert summary[field] is False, field
+        assert queue["guardrails"][field] is False, field
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID
+    )
+    assert measurement["classification"] == summary["classification"]
+    assert measurement["v3_2_5_required"] is True
+    assert measurement["v3_2_5_implementation_surface"] == "measurement_source_selection_and_context_assembly_overlay"
+    assert measurement["index_or_export_rebuild_required"] is False
+    assert_no_gold_generation_source_fields(summary)
+    assert_no_gold_generation_source_fields(diagnostics)
+    assert_no_gold_generation_source_fields(queue)
+
+
+def test_v3_2_5_gq_auto_010_pdf_context_reconciliation_full_remeasurement_is_guarded() -> None:
+    summary = read_json(AGENTIC_V3_2_5_SUMMARY_JSON)
+    results = read_jsonl(AGENTIC_V3_2_5_RESULTS)
+    attribution = read_json(AGENTIC_V3_2_5_ATTRIBUTION_JSON)
+    audit_rows = read_jsonl(AGENTIC_V3_2_5_AUDIT_JSONL)
+    diagnostics = read_jsonl(AGENTIC_V3_2_5_PDF_CONTEXT_DIAGNOSTICS_JSONL)
+    queue = read_json(AGENTIC_V3_2_5_QUEUE_JSON)
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+
+    assert summary["run_id"] == AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_2_4_GQ_AUTO_010_PDF_CONTEXT_PROVENANCE_RUN_ID
+    assert summary["status"] == "GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_FIX_V3_2_5_COMPLETED"
+    assert summary["measurement_classification"] == "gq_auto_010_pdf_context_reconciliation_fix_v3_2_5"
+    assert summary["run_class"] == "implementation_safe_pdf_context_reconciliation_full_remeasurement"
+    assert summary["result_count"] == 29
+    assert summary["unique_query_id_count"] == 29
+    assert summary["denominator_policy"] == {
+        "row_count": 29,
+        "rows_by_source_family": {"PDF": 4, "TEXT": 6, "XLSX": 19},
+        "source": "current official denominator registry and settled gold CSVs",
+        "denominator_mutation": False,
+        "query_id_set_mutation": False,
+    }
+    assert len(results) == 29
+    assert len(audit_rows) == 29
+    assert len(diagnostics) == 1
+    assert attribution["run_id"] == AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+
+    assert {lane: summary["lane_counts"][lane]["pass_count"] for lane in summary["lane_counts"]} == {
+        "live_llm_query_bound_oracle": 26,
+        "live_llm_retrieval_topk": 27,
+        "v3_primary_replay": 24,
+    }
+    assert {lane: summary["citation_quality_metrics"]["by_lane"][lane]["average"] for lane in summary["lane_counts"]} == {
+        "live_llm_query_bound_oracle": 1.0,
+        "live_llm_retrieval_topk": 1.0,
+        "v3_primary_replay": 1.0,
+    }
+    comparison = summary["comparison_to_v3_2_2"]
+    assert comparison["lane_pass_counts_before"] == {
+        "live_llm_query_bound_oracle": 25,
+        "live_llm_retrieval_topk": 26,
+        "v3_primary_replay": 24,
+    }
+    assert comparison["lane_pass_counts_after"] == {
+        "live_llm_query_bound_oracle": 26,
+        "live_llm_retrieval_topk": 27,
+        "v3_primary_replay": 24,
+    }
+    assert comparison["lane_pass_count_delta"] == {
+        "live_llm_query_bound_oracle": 1,
+        "live_llm_retrieval_topk": 1,
+        "v3_primary_replay": 0,
+    }
+    assert comparison["expected_failure_category_change_count"] == 2
+    assert comparison["unexpected_failure_category_change_count"] == 0
+    assert comparison["gq_auto_010_lane_bc_passed"] is True
+    assert comparison["citation_support_averages_all_one"] is True
+    assert comparison["denominator_policy"]["rows_by_source_family"] == {"PDF": 4, "TEXT": 6, "XLSX": 19}
+
+    assert summary["strict_json_parse_failure_count_by_lane"] == {
+        "live_llm_query_bound_oracle": 0,
+        "live_llm_retrieval_topk": 0,
+        "v3_primary_replay": 0,
+    }
+    assert summary["llm_generated_locator_copy_failure_count_by_lane"] == {
+        "live_llm_query_bound_oracle": 0,
+        "live_llm_retrieval_topk": 0,
+        "v3_primary_replay": 0,
+    }
+    assert summary["llm_generated_locator_missing_failure_count_by_lane"] == {
+        "live_llm_query_bound_oracle": 0,
+        "live_llm_retrieval_topk": 0,
+        "v3_primary_replay": 0,
+    }
+    assert summary["llm_generated_locator_field_mismatch_failure_count_by_lane"] == {
+        "live_llm_query_bound_oracle": 0,
+        "live_llm_retrieval_topk": 0,
+        "v3_primary_replay": 0,
+    }
+    assert summary["pdf_source_pdf_path_mismatch_count"] == 0
+    assert summary["xlsx_row_label_mismatch_count"] == 0
+    assert summary["text_text_locator_missing_count"] == 0
+
+    assert summary["context_expansion_applied_query_ids"] == ["gq_auto_010"]
+    assert summary["context_expansion_unit_ids"] == ["pdfwin_b1c6527f848018640ad5ed231877c662"]
+    assert summary["context_expansion_source_run_id"] == AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID
+    assert summary["pdf_context_reconciliation_fix_type"] == (
+        "reuse_existing_v3_1_6_safe_pdf_paragraph_window_expansion_sidecar"
+    )
+    assert summary["index_or_export_rebuild_required"] is False
+    assert summary["index_or_export_rebuild_performed"] is False
+    assert summary["artifact_policy"]["per_run_markdown_written"] is False
+    assert queue["closed_query_ids"] == ["gq_auto_010"]
+    assert queue["remaining_recommended_queue_query_ids"] == [
+        "text_namu_v2_0014",
+        "text_namu_v2_0017",
+        "text_namu_v2_0084",
+    ]
+
+    for suffix in ("summary.md", "queue.md", "audit.md"):
+        assert not report_artifact_path(AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID, suffix).exists()
+
+    for field in (
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "relevance_label_mutation",
+        "answerability_label_mutation",
+        "official_denominator_query_id_set_mutation",
+        "renderer_mutation",
+        "retrieval_mutation",
+        "scorer_behavior_mutation",
+        "index_or_export_rebuild_performed",
+        "official_retrieval_metrics_computed",
+        "lane_score_collapsed",
+    ):
+        assert summary[field] is False, field
+    assert summary["behavior_change_made"] is True
+    assert summary["implementation_change_made"] is True
+    assert summary["prompt_context_behavior_change"] is True
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+    )
+    assert measurement["comparison_to_v3_2_2"]["unexpected_failure_category_change_count"] == 0
+    assert measurement["pdf_context_reconciliation_fix_applied"] is True
+    assert_no_gold_generation_source_fields(summary)
+    assert_no_gold_generation_source_fields(results)
+    assert_no_gold_generation_source_fields(audit_rows)
+    assert_no_gold_generation_source_fields(diagnostics)
+    assert_no_gold_generation_source_fields(queue)
+
+
+def test_v3_2_5_gq_auto_010_reconciliation_changes_only_target_lane_bc() -> None:
+    before_rows = read_jsonl(AGENTIC_V3_2_2_RESULTS)
+    after_rows = read_jsonl(AGENTIC_V3_2_5_RESULTS)
+    before_by_id = {row["query_id"]: row for row in before_rows}
+    after_by_id = {row["query_id"]: row for row in after_rows}
+    changes = []
+    for query_id, after in after_by_id.items():
+        before = before_by_id[query_id]
+        for lane_name in ("v3_primary_replay", "live_llm_retrieval_topk", "live_llm_query_bound_oracle"):
+            before_lane = before["lane_results"][lane_name]
+            after_lane = after["lane_results"][lane_name]
+            if before_lane["failure_category"] != after_lane["failure_category"]:
+                changes.append((query_id, lane_name, before_lane["failure_category"], after_lane["failure_category"]))
+
+    assert changes == [
+        ("gq_auto_010", "live_llm_retrieval_topk", "LLM_EXPECTED_SPAN_MISMATCH", "PASS"),
+        ("gq_auto_010", "live_llm_query_bound_oracle", "LLM_EXPECTED_SPAN_MISMATCH", "PASS"),
+    ]
+    target = after_by_id["gq_auto_010"]
+    for lane_name in ("live_llm_retrieval_topk", "live_llm_query_bound_oracle"):
+        lane = target["lane_results"][lane_name]
+        assert lane["cited_search_unit_ids"] == ["pdfwin_b1c6527f848018640ad5ed231877c662"]
+        assert lane["citation_support_score"] == 1.0
+        assert lane["answer_score"] == 1.0
+    non_target_context_expansions = [
+        row["query_id"]
+        for row in after_rows
+        if row["query_id"] != "gq_auto_010" and row.get("context_expansion_diagnostics")
+    ]
+    assert non_target_context_expansions == []
+
+
+def test_v3_2_5_pdf_context_reconciliation_overlay_is_target_scoped_and_locator_valid() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    units_by_query_id, preflight = runner.load_v3_2_5_gq_auto_010_pdf_context_expansion_sidecar()
+    assert set(units_by_query_id) == {"gq_auto_010"}
+    assert preflight["ok"] is True
+    assert preflight["target_scoped"] is True
+    unit = units_by_query_id["gq_auto_010"][0]
+    assert unit["search_unit_id"] == "pdfwin_b1c6527f848018640ad5ed231877c662"
+    assert unit["region_type"] == "paragraph_window"
+    assert unit["document_version_id"] == "docv_fe2470815512a395"
+    assert unit["page"] == 8
+    assert unit["physical_page_index"] == 7
+    assert "4.9%" in unit["normalized_excerpt"]
+    assert "0.8%p" in unit["normalized_excerpt"]
+
+    v3_rows = read_jsonl(AGENTIC_V3_RESULTS)
+    target_row = next(row for row in v3_rows if row["query_id"] == "gq_auto_010")
+    context = runner.build_v3_prompt_context_from_row(
+        target_row,
+        use_query_bound_only=True,
+        mode="query-bound-only",
+        context_expansion_units=units_by_query_id["gq_auto_010"],
+    )
+    expansion_citations = [item for item in context["citations"] if item.get("context_expansion")]
+    assert len(expansion_citations) == 1
+    assert expansion_citations[0]["search_unit_id"] == "pdfwin_b1c6527f848018640ad5ed231877c662"
+    assert expansion_citations[0]["query_bound"] is True
+    assert context["prompt_context_policy"]["diagnostic_context_expansion_count"] == 1
+    assert context["prompt_context_policy"]["generation_used_expected_answer"] is False
+    assert context["prompt_context_policy"]["generation_used_supporting_evidence"] is False
+    assert context["prompt_context_policy"]["generation_used_gold_fields"] is False
+
+
+def test_v3_2_6_text_prompt_span_rule_remeasurement_is_guarded() -> None:
+    summary = read_json(AGENTIC_V3_2_6_SUMMARY_JSON)
+    results = read_jsonl(AGENTIC_V3_2_6_RESULTS)
+    attribution = read_json(AGENTIC_V3_2_6_ATTRIBUTION_JSON)
+    audit_rows = read_jsonl(AGENTIC_V3_2_6_AUDIT_JSONL)
+    diagnostics = read_jsonl(AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_DIAGNOSTICS_JSONL)
+    queue = read_json(AGENTIC_V3_2_6_QUEUE_JSON)
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+
+    assert summary["run_id"] == AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+    assert summary["status"] == "TEXT_PROMPT_SPAN_RULE_REMEASUREMENT_V3_2_6_COMPLETED"
+    assert summary["measurement_classification"] == "text_prompt_span_rule_remeasurement_v3_2_6"
+    assert summary["run_class"] == "implementation_safe_text_prompt_span_rule_full_remeasurement"
+    assert summary["target_query_ids"] == [
+        "text_namu_v2_0014",
+        "text_namu_v2_0017",
+        "text_namu_v2_0084",
+    ]
+    assert summary["text_prompt_span_rule_lanes_by_query_id"] == {
+        "text_namu_v2_0014": ["live_llm_query_bound_oracle"],
+        "text_namu_v2_0017": ["live_llm_retrieval_topk", "live_llm_query_bound_oracle"],
+        "text_namu_v2_0084": ["live_llm_retrieval_topk", "live_llm_query_bound_oracle"],
+    }
+    assert summary["result_count"] == 29
+    assert summary["unique_query_id_count"] == 29
+    assert len(results) == 29
+    assert len(audit_rows) == 29
+    assert len(diagnostics) == 3
+    assert attribution["run_id"] == AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID
+    assert summary["denominator_policy"]["rows_by_source_family"] == {"PDF": 4, "TEXT": 6, "XLSX": 19}
+
+    comparison = summary["comparison_to_v3_2_5"]
+    assert comparison["lane_pass_counts_before"] == {
+        "live_llm_query_bound_oracle": 26,
+        "live_llm_retrieval_topk": 27,
+        "v3_primary_replay": 24,
+    }
+    assert comparison["lane_pass_counts_after"] == {
+        "live_llm_query_bound_oracle": 27,
+        "live_llm_retrieval_topk": 27,
+        "v3_primary_replay": 24,
+    }
+    assert comparison["lane_pass_count_delta"] == {
+        "live_llm_query_bound_oracle": 1,
+        "live_llm_retrieval_topk": 0,
+        "v3_primary_replay": 0,
+    }
+    assert comparison["expected_failure_category_change_count"] == 1
+    assert comparison["unexpected_failure_category_change_count"] == 0
+    assert comparison["citation_support_averages_all_one"] is True
+    assert comparison["target_after_lane_failure_categories"]["text_namu_v2_0014"] == {
+        "live_llm_query_bound_oracle": "PASS",
+        "live_llm_retrieval_topk": "PASS",
+        "v3_primary_replay": "LLM_TRUE_PARTIAL_SYNTHESIS",
+    }
+    assert comparison["target_after_lane_failure_categories"]["text_namu_v2_0017"] == {
+        "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+        "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH",
+        "v3_primary_replay": "LLM_TRUE_PARTIAL_SYNTHESIS",
+    }
+    assert comparison["target_after_lane_failure_categories"]["text_namu_v2_0084"] == {
+        "live_llm_query_bound_oracle": "LLM_EXPECTED_SPAN_MISMATCH",
+        "live_llm_retrieval_topk": "LLM_EXPECTED_SPAN_MISMATCH",
+        "v3_primary_replay": "LLM_TRUE_PARTIAL_SYNTHESIS",
+    }
+    assert summary["strict_json_parse_failure_count_by_lane"] == {
+        "live_llm_query_bound_oracle": 0,
+        "live_llm_retrieval_topk": 0,
+        "v3_primary_replay": 0,
+    }
+    assert summary["llm_generated_locator_copy_failure_count_by_lane"] == {
+        "live_llm_query_bound_oracle": 0,
+        "live_llm_retrieval_topk": 0,
+        "v3_primary_replay": 0,
+    }
+    assert summary["llm_generated_locator_missing_failure_count_by_lane"] == {
+        "live_llm_query_bound_oracle": 0,
+        "live_llm_retrieval_topk": 0,
+        "v3_primary_replay": 0,
+    }
+    assert summary["llm_generated_locator_field_mismatch_failure_count_by_lane"] == {
+        "live_llm_query_bound_oracle": 0,
+        "live_llm_retrieval_topk": 0,
+        "v3_primary_replay": 0,
+    }
+    assert summary["pdf_source_pdf_path_mismatch_count"] == 0
+    assert summary["xlsx_row_label_mismatch_count"] == 0
+    assert summary["text_text_locator_missing_count"] == 0
+    assert summary["context_expansion_applied_query_ids"] == ["gq_auto_010"]
+    assert summary["pdf_context_reconciliation_carry_forward_applied"] is True
+    assert summary["artifact_policy"]["per_run_markdown_written"] is False
+
+    for suffix in ("summary.md", "queue.md", "audit.md"):
+        assert not report_artifact_path(AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID, suffix).exists()
+
+    for field in (
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "relevance_label_mutation",
+        "answerability_label_mutation",
+        "official_denominator_query_id_set_mutation",
+        "renderer_mutation",
+        "retrieval_mutation",
+        "scorer_behavior_mutation",
+        "index_or_export_rebuild_performed",
+        "official_retrieval_metrics_computed",
+        "lane_score_collapsed",
+    ):
+        assert summary[field] is False, field
+    assert summary["behavior_change_made"] is True
+    assert summary["implementation_change_made"] is True
+    assert summary["prompt_context_behavior_change"] is True
+
+    measurement = next(
+        event
+        for event in reversed(status_events)
+        if event.get("event_type") == "official_answer_citation_agentic_loop_measurement"
+        and event.get("run_id") == AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID
+    )
+    assert measurement["comparison_to_v3_2_5"]["unexpected_failure_category_change_count"] == 0
+    assert_no_gold_generation_source_fields(summary)
+    assert_no_gold_generation_source_fields(results)
+    assert_no_gold_generation_source_fields(audit_rows)
+    assert_no_gold_generation_source_fields(diagnostics)
+    assert_no_gold_generation_source_fields(queue)
+
+
+def test_v3_2_6_text_prompt_span_rule_changes_only_actionable_live_text_lanes() -> None:
+    before_rows = read_jsonl(AGENTIC_V3_2_5_RESULTS)
+    after_rows = read_jsonl(AGENTIC_V3_2_6_RESULTS)
+    before_by_id = {row["query_id"]: row for row in before_rows}
+    after_by_id = {row["query_id"]: row for row in after_rows}
+    changes = []
+    for query_id, after in after_by_id.items():
+        before = before_by_id[query_id]
+        for lane_name in ("v3_primary_replay", "live_llm_retrieval_topk", "live_llm_query_bound_oracle"):
+            before_lane = before["lane_results"][lane_name]
+            after_lane = after["lane_results"][lane_name]
+            if before_lane["failure_category"] != after_lane["failure_category"]:
+                changes.append((query_id, lane_name, before_lane["failure_category"], after_lane["failure_category"]))
+
+    assert changes == [
+        (
+            "text_namu_v2_0014",
+            "live_llm_query_bound_oracle",
+            "LLM_EXPECTED_SPAN_MISMATCH",
+            "PASS",
+        ),
+    ]
+    target = after_by_id["text_namu_v2_0014"]
+    assert target["text_prompt_span_rule_lanes"] == ["live_llm_query_bound_oracle"]
+    assert target["lane_results"]["live_llm_retrieval_topk"]["text_prompt_span_rule_applied"] is False
+    assert target["lane_results"]["live_llm_query_bound_oracle"]["text_prompt_span_rule_applied"] is True
+    assert after_by_id["text_namu_v2_0012"]["text_prompt_span_rule_applied"] is False
+    assert after_by_id["text_namu_v2_0077"]["text_prompt_span_rule_applied"] is False
+    assert after_by_id["gq_auto_010"].get("pdf_context_reconciliation_carry_forward_applied") is True
+
+
+def test_v3_2_6_queue_uses_v3_2_5_queue_as_source_of_truth() -> None:
+    summary = read_json(AGENTIC_V3_2_6_SUMMARY_JSON)
+    queue = read_json(AGENTIC_V3_2_6_QUEUE_JSON)
+
+    assert summary["text_prompt_span_preflight"]["source_run_id"] == (
+        AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+    )
+    assert summary["text_prompt_span_preflight"]["source_queue_artifact"] == report_artifact_repo_relative(
+        AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        "queue.json",
+    )
+    assert queue["source_run_id"] == AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID
+    assert queue["closed_query_ids"] == ["text_namu_v2_0014"]
+    assert queue["remaining_recommended_queue_query_ids"] == [
+        "text_namu_v2_0017",
+        "text_namu_v2_0084",
+    ]
+    assert queue["carried_non_actionable_lane_a_only_query_ids"] == [
+        "text_namu_v2_0012",
+        "text_namu_v2_0077",
+    ]
+    assert queue["v3_2_6_required"] is False
+    assert queue["v3_2_7_required"] is True
+    assert queue["unexpected_failure_category_change_count"] == 0
+    assert queue["guardrails"]["retrieval_mutation"] is False
+    assert queue["guardrails"]["scorer_behavior_mutation"] is False
+    assert queue["guardrails"]["lane_score_collapsed"] is False
+
+
+def test_v3_2_7_post_fix_closure_status_event_is_guarded_and_compact() -> None:
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+    event = next(
+        item
+        for item in reversed(status_events)
+        if item.get("event_type") == "official_answer_citation_agentic_loop_v3_2_7_post_fix_closure"
+        and item.get("run_id") == AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID
+    )
+
+    assert event["source_run_id"] == AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID
+    assert event["baseline_run_id"] == AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID
+    assert event["status"] == "POST_FIX_CLOSURE_AND_ROLLING_REPORT_CLEANUP_V3_2_7_COMPLETED"
+    assert event["run_class"] == "status_ledger_only_closure_and_rolling_report_cleanup"
+    assert event["current_lane_pass_counts"] == {
+        "live_llm_query_bound_oracle": 27,
+        "live_llm_retrieval_topk": 27,
+        "v3_primary_replay": 24,
+    }
+    assert event["baseline_v3_2_2_lane_pass_counts"] == {
+        "live_llm_query_bound_oracle": 25,
+        "live_llm_retrieval_topk": 26,
+        "v3_primary_replay": 24,
+    }
+    assert event["lane_pass_count_delta_from_v3_2_2"] == {
+        "live_llm_query_bound_oracle": 2,
+        "live_llm_retrieval_topk": 1,
+        "v3_primary_replay": 0,
+    }
+    assert event["current_answer_quality_averages_by_lane"] == {
+        "live_llm_query_bound_oracle": 0.931,
+        "live_llm_retrieval_topk": 0.931,
+        "v3_primary_replay": 0.8276,
+    }
+    assert event["current_citation_quality_averages_by_lane"] == {
+        "live_llm_query_bound_oracle": 1.0,
+        "live_llm_retrieval_topk": 1.0,
+        "v3_primary_replay": 1.0,
+    }
+    assert event["denominator_policy"] == {
+        "denominator_mutation": False,
+        "query_id_set_mutation": False,
+        "row_count": 29,
+        "rows_by_source_family": {"PDF": 4, "TEXT": 6, "XLSX": 19},
+    }
+    assert event["unexpected_delta_count"] == 0
+    assert event["unexpected_delta_sources"] == {
+        "v3_2_5_vs_v3_2_2": 0,
+        "v3_2_6_vs_v3_2_5": 0,
+    }
+    assert event["artifact_paths"] == {"status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl"}
+    assert not report_artifact_path(AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID, "summary.md").exists()
+    assert not report_artifact_path(AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID, "summary.json").exists()
+    assert event["deferred_metrics"]["official_ndcg"]["computed"] is False
+    assert event["deferred_metrics"]["official_mrr"]["computed"] is False
+    assert event["deferred_metrics"]["official_hit_at_k"]["computed"] is False
+    assert event["deferred_metrics"]["collapsed_lane_a_b_c_score"]["computed"] is False
+    assert event["guardrails"]["official_retrieval_metrics_computed"] is False
+    assert event["guardrails"]["lane_score_collapsed"] is False
+    assert event["guardrails"]["gold_mutation"] is False
+    assert event["guardrails"]["expected_answer_mutation"] is False
+    assert event["guardrails"]["supporting_evidence_mutation"] is False
+    assert event["guardrails"]["denominator_mutation"] is False
+    assert event["guardrails"]["prompt_context_behavior_change"] is False
+    assert_no_gold_generation_source_fields(event)
+
+
+def test_v3_2_7_closure_uses_v3_2_6_queue_as_source_of_truth() -> None:
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+    event = next(
+        item
+        for item in reversed(status_events)
+        if item.get("event_type") == "official_answer_citation_agentic_loop_v3_2_7_post_fix_closure"
+        and item.get("run_id") == AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID
+    )
+
+    assert event["source_artifacts"]["v3_2_6_queue_json"] == report_artifact_repo_relative(
+        AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID,
+        "queue.json",
+    )
+    assert event["source_queue_assertions"]["v3_2_6_queue_v3_2_7_required"] is True
+    assert event["v3_2_7_required"] is False
+    assert event["v3_2_8_required"] is False
+    assert event["next_implementation_phase"] == "none"
+    assert event["active_implementation_query_ids"] == []
+    assert event["active_implementation_queue_empty"] is True
+    assert event["residual_queue_by_bucket"] == {
+        "diagnostic_only": ["text_namu_v2_0017", "text_namu_v2_0084"],
+        "frozen_lane_a_replay_residual": ["text_namu_v2_0012", "text_namu_v2_0077"],
+        "live_bc_text_prompt_span_residual": ["text_namu_v2_0017", "text_namu_v2_0084"],
+        "pdf_context_residual": [],
+        "scorer_policy_closed": ["text_namu_v2_0077"],
+    }
+    assert event["closed_by_phase"] == {
+        "v3_2_2_scorer_policy": ["text_namu_v2_0077 Lane B", "text_namu_v2_0077 Lane C"],
+        "v3_2_5_pdf_context_reconciliation": ["gq_auto_010"],
+        "v3_2_6_text_prompt_span_rule": ["text_namu_v2_0014"],
+    }
+    assert {item["category"] for item in event["artifact_retention_classification"]["v3_2_6"]} == {
+        "machine_manifest",
+        "canonical_result_payload",
+        "forensic_debug_payload",
+        "compact_diagnostic_payload",
+        "queue_source_of_truth",
+    }
+    assert event["artifact_retention_classification"]["v3_2_7"][0]["category"] == "compact_status_ledger"
+    assert "Future closure-only phases can remain status-ledger" in event[
+        "future_artifact_emission_recommendation"
+    ]
+
+
+def test_v3_3_0_post_closure_source_of_truth_audit_is_status_only_and_guarded() -> None:
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+    event = next(
+        item
+        for item in reversed(status_events)
+        if item.get("event_type") == "official_answer_citation_agentic_loop_v3_3_0_source_of_truth_audit"
+        and item.get("run_id") == AGENTIC_V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID
+    )
+
+    assert event["source_run_id"] == AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID
+    assert event["baseline_run_id"] == AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID
+    assert event["status"] == "POST_CLOSURE_HARDENING_SOURCE_OF_TRUTH_AUDIT_V3_3_0_COMPLETED"
+    assert event["run_class"] == "status_ledger_only_source_of_truth_audit"
+    assert event["diagnostic_only"] is True
+    assert event["promotion_evidence"] is False
+    assert event["current_lane_pass_counts"] == {
+        "live_llm_query_bound_oracle": 27,
+        "live_llm_retrieval_topk": 27,
+        "v3_primary_replay": 24,
+    }
+    assert event["active_implementation_queue_empty"] is True
+    assert event["next_implementation_phase"] == "none"
+    assert event["rolling_docs_status_agreement"]["status"] == "PASS"
+    assert event["source_of_truth_audit_result"]["status"] == "PASS"
+    assert event["source_of_truth_relationships"]["v3_2_3"]["source_queue_artifact"] == report_artifact_repo_relative(
+        AGENTIC_V3_2_2_POST_FIX_REMEASUREMENT_RUN_ID,
+        "queue.json",
+    )
+    assert event["source_of_truth_relationships"]["v3_2_4"]["source_run_id"] == (
+        AGENTIC_V3_2_3_QUEUE_LANE_ACTIONABILITY_RUN_ID
+    )
+    assert event["source_of_truth_relationships"]["v3_2_5"]["overlay_source_run_id"] == (
+        AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID
+    )
+    assert event["source_of_truth_relationships"]["v3_2_6"]["source_queue_artifact"] == report_artifact_repo_relative(
+        AGENTIC_V3_2_5_GQ_AUTO_010_PDF_CONTEXT_RECONCILIATION_RUN_ID,
+        "queue.json",
+    )
+    assert event["source_of_truth_relationships"]["v3_2_7"]["source_artifact"] == (
+        "ai/eval/reports/rag-ingestion/status.jsonl"
+    )
+    assert event["residual_queue_by_bucket"] == {
+        "diagnostic_only": ["text_namu_v2_0017", "text_namu_v2_0084"],
+        "frozen_lane_a_replay_residual": ["text_namu_v2_0012", "text_namu_v2_0077"],
+        "live_bc_text_prompt_span_residual": ["text_namu_v2_0017", "text_namu_v2_0084"],
+        "pdf_context_residual": [],
+        "scorer_policy_closed": ["text_namu_v2_0077"],
+    }
+    assert event["flag_semantics"]["behavior_change_made"]["v3_2_7"] is False
+    assert event["flag_semantics"]["implementation_change_made"]["v3_2_7"] is False
+    assert event["flag_semantics"]["scorer_behavior_mutation"]["v3_2_3_through_v3_2_7"] is False
+    assert event["deferred_metrics"]["official_ndcg"]["computed"] is False
+    assert event["deferred_metrics"]["official_mrr"]["computed"] is False
+    assert event["deferred_metrics"]["official_hit_at_k"]["computed"] is False
+    assert event["deferred_metrics"]["collapsed_lane_a_b_c_score"]["computed"] is False
+    assert event["guardrails"]["behavior_change_made_in_v3_3_0"] is False
+    assert event["guardrails"]["implementation_change_made_in_v3_3_0"] is False
+    assert event["guardrails"]["diagnostic_only"] is True
+    assert event["guardrails"]["promotion_evidence"] is False
+    assert event["guardrails"]["scorer_behavior_mutation"] is False
+    assert not report_artifact_path(AGENTIC_V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID, "summary.json").exists()
+    assert not report_artifact_path(AGENTIC_V3_3_0_POST_CLOSURE_SOURCE_OF_TRUTH_AUDIT_RUN_ID, "summary.md").exists()
+    assert_no_gold_generation_source_fields(event)
+
+
+def test_v3_3_2_retrieval_label_design_packet_blocks_metrics_until_user_decisions() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v3_3_2_retrieval_relevance_answerability_label_design_packet"
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+    event = next(
+        item
+        for item in reversed(status_events)
+        if item.get("event_type") == "official_retrieval_label_design_packet_v3_3_2"
+        and item.get("run_id") == run_id
+    )
+
+    assert event["status"] == "NEEDS_USER_DECISION_FOR_OFFICIAL_RETRIEVAL_QRELS"
+    assert event["run_class"] == "human_decision_packet_only"
+    assert event["diagnostic_only"] is True
+    assert event["promotion_evidence"] is False
+    assert event["source_run_id"] == AGENTIC_V3_2_6_TEXT_PROMPT_SPAN_RULE_RUN_ID
+    assert event["source_status_run_id"] == AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID
+    assert event["denominator_snapshot"] == {
+        "row_count": 29,
+        "rows_by_source_family": {"PDF": 4, "TEXT": 6, "XLSX": 19},
+        "current_contract": "answer_citation_denominator_not_retrieval_qrels",
+        "denominator_mutation": False,
+    }
+    assert event["current_lane_pass_counts"] == {
+        "live_llm_query_bound_oracle": 27,
+        "live_llm_retrieval_topk": 27,
+        "v3_primary_replay": 24,
+    }
+    assert event["lane_definitions"]["v3_primary_replay"]["structured_adapter_retained_for"] == ["PDF", "XLSX"]
+    assert event["lane_definitions"]["live_llm_retrieval_topk"]["context_policy"] == (
+        "source_bound_retrieved_topk"
+    )
+    assert event["lane_definitions"]["live_llm_query_bound_oracle"]["context_policy"] == (
+        "query_bound_searchunit_only"
+    )
+
+    assert event["source_bound_search_unit_snapshot"] == {
+        "manifest_rows": 29,
+        "source_bound_official_denominator_true_count": 29,
+        "source_text_available_count": 29,
+        "promotion_evidence_true_count": 0,
+        "candidate_artifact_generation_source_true_count": 0,
+    }
+    assert set(event["source_artifacts"]) >= {
+        "ai/eval/eval_queries/official_denominator_registry.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl",
+    }
+
+    schema = event["proposed_label_schema_options"]
+    assert schema["relevance"]["binary"] == ["RELEVANT", "IRRELEVANT"]
+    assert schema["relevance"]["graded"] == [
+        "EXACT_ANSWER_EVIDENCE",
+        "SUPPORTING_CONTEXT",
+        "TOPIC_RELATED",
+        "NOT_RELEVANT",
+    ]
+    assert schema["answerability"]["ordinal_0_3"] == [
+        "NOT_RELEVANT",
+        "RELATED_BUT_NOT_ANSWERABLE",
+        "PARTIALLY_ANSWERABLE",
+        "FULLY_ANSWERABLE",
+    ]
+    assert schema["human_review_record_fields"]["label_status"] == "pending"
+    assert schema["human_review_record_fields"]["decision_fields_blank"] is True
+    assert schema["structured_adapter_policy"]["adapter_pass_is_qrel"] is False
+
+    assert event["required_user_decisions"] == [
+        "relevance",
+        "answerability",
+        "gold_policy",
+        "expected_answer_evidence_policy",
+        "denominator_inclusion_exclusion_policy",
+        "structured_xlsx_pdf_deterministic_adapter_policy",
+    ]
+    assert event["blocked_metrics"] == {
+        "official_ndcg": "blocked_until_human_relevance_and_answerability_qrels_exist",
+        "official_mrr": "blocked_until_human_relevance_and_answerability_qrels_exist",
+        "official_hit_at_k": "blocked_until_human_relevance_and_answerability_qrels_exist",
+        "collapsed_lane_a_b_c_score": "blocked_by_lane_separation_policy",
+    }
+
+    guardrails = event["guardrails"]
+    for key in (
+        "relevance_label_mutation",
+        "answerability_label_mutation",
+        "denominator_mutation",
+        "official_denominator_query_id_set_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "gold_mutation",
+        "prompt_context_behavior_change",
+        "retrieval_mutation",
+        "renderer_mutation",
+        "scorer_behavior_mutation",
+        "index_or_export_rebuild_performed",
+        "silver_mutation",
+        "production_mutation",
+        "promotion_evidence",
+        "official_retrieval_metrics_computed",
+        "official_ndcg_computed",
+        "official_mrr_computed",
+        "official_hit_at_k_computed",
+        "lane_score_collapsed",
+        "implementation_change_made_in_v3_3_2",
+        "behavior_change_made_in_v3_3_2",
+    ):
+        assert guardrails[key] is False, key
+    assert event["active_implementation_queue_empty"] is True
+    assert event["next_implementation_phase"] == "none"
+
+
+def test_v3_4_0_official_retrieval_metric_contract_blocks_metrics_until_qrels_are_approved() -> None:
+    run_id = AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+    event = next(
+        item
+        for item in reversed(status_events)
+        if item.get("event_type") == "official_retrieval_metric_contract_v3_4_0"
+        and item.get("run_id") == run_id
+    )
+    contract = read_json(report_artifact_path(run_id, "contract.json"))
+    qrels_schema = read_json(report_artifact_path(run_id, "qrels_schema.json"))
+
+    assert event["status"] == "OFFICIAL_RETRIEVAL_METRIC_CONTRACT_READY_QRELS_REQUIRED"
+    assert event["run_class"] == "contract_json_plus_qrels_schema_no_metric_execution"
+    assert event["diagnostic_only"] is True
+    assert event["promotion_evidence"] is False
+    assert event["source_run_id"] == AGENTIC_V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID
+    assert event["source_status_run_id"] == AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID
+    assert event["denominator_snapshot"] == {
+        "row_count": 29,
+        "rows_by_source_family": {"PDF": 4, "TEXT": 6, "XLSX": 19},
+        "current_contract": "answer_citation_denominator_not_retrieval_qrels",
+        "denominator_mutation": False,
+        "official_retrieval_qrels_denominator_selected": False,
+        "query_id_set_mutation": False,
+    }
+    assert event["current_lane_pass_counts"] == {
+        "live_llm_query_bound_oracle": 27,
+        "live_llm_retrieval_topk": 27,
+        "v3_primary_replay": 24,
+    }
+    assert event["current_citation_quality_averages_by_lane"] == {
+        "live_llm_query_bound_oracle": 1.0,
+        "live_llm_retrieval_topk": 1.0,
+        "v3_primary_replay": 1.0,
+    }
+    assert event["qrels_denominator_policy_options"] == [
+        "option_a_all_29_rows",
+        "option_b_track_by_track_opening",
+        "option_c_only_rows_with_settled_retrieval_labels",
+    ]
+    assert event["selected_qrels_denominator_policy"] is None
+    assert event["official_retrieval_metric_execution_allowed"] is False
+    assert event["blocked_metrics"] == {
+        "collapsed_lane_a_b_c_score": "blocked_by_lane_separation_policy",
+        "macro_by_source_family": "blocked_until_track_qrels_are_approved",
+        "micro_overall": "blocked_until_official_qrels_denominator_policy_is_selected_and_labeled",
+        "official_hit_at_1": "blocked_until_approved_retrieval_qrels_exist",
+        "official_hit_at_3": "blocked_until_approved_retrieval_qrels_exist",
+        "official_hit_at_5": "blocked_until_approved_retrieval_qrels_exist",
+        "official_mrr_at_5": "blocked_until_approved_retrieval_qrels_exist",
+        "official_ndcg_at_5": "blocked_until_approved_retrieval_qrels_exist",
+    }
+
+    assert contract["schema_version"] == "official_retrieval_metric_contract_v3_4_0"
+    assert contract["official_metric"] is False
+    assert contract["official_retrieval_metric_execution_allowed"] is False
+    assert contract["official_retrieval_metrics_computed"] is False
+    assert contract["qrels_created"] is False
+    assert contract["qrels_source"] is None
+    assert contract["selected_qrels_denominator_policy"] is None
+    assert contract["selected_qrels_denominator_policy_status"] == "USER_DECISION_REQUIRED"
+    assert set(contract["qrels_denominator_policy_options"]) == {
+        "option_a_all_29_rows",
+        "option_b_track_by_track_opening",
+        "option_c_only_rows_with_settled_retrieval_labels",
+    }
+    assert contract["relevance_label_schema"] == [
+        {"grade": 0, "label": "NOT_RELEVANT", "official_positive_for_hit_mrr": False},
+        {"grade": 1, "label": "TOPIC_RELATED", "official_positive_for_hit_mrr": False},
+        {"grade": 2, "label": "SUPPORTING_CONTEXT", "official_positive_for_hit_mrr": False},
+        {"grade": 3, "label": "EXACT_ANSWER_EVIDENCE", "official_positive_for_hit_mrr": True},
+    ]
+    assert contract["answerability_label_schema"] == [
+        {"grade": 0, "label": "NOT_ANSWERABLE", "official_positive_for_hit_mrr": False},
+        {"grade": 1, "label": "RELATED_BUT_NOT_ANSWERABLE", "official_positive_for_hit_mrr": False},
+        {"grade": 2, "label": "PARTIALLY_ANSWERABLE", "official_positive_for_hit_mrr": False},
+        {"grade": 3, "label": "FULLY_ANSWERABLE", "official_positive_for_hit_mrr": True},
+    ]
+    assert contract["positive_rule_for_hit_and_mrr"] == {
+        "default_proposal": "relevance_grade >= 3 and answerability_grade >= 3",
+        "relevance_min": 3,
+        "answerability_min": 3,
+    }
+    assert contract["ndcg_gain_rules"]["default_proposal"] == {
+        "gain": "relevance_grade",
+        "allowed_grades": [0, 1, 2, 3],
+    }
+    assert contract["ndcg_gain_rules"]["answerability_gated_variant"] == {
+        "gain": "0 if answerability_grade < 2 else relevance_grade",
+        "answerability_min_for_nonzero_gain": 2,
+    }
+    assert contract["metric_list"] == {
+        "ranking_metrics": ["Hit@1", "Hit@3", "Hit@5", "MRR@5", "nDCG@5"],
+        "aggregation": {
+            "micro_overall": "mean over eligible labeled query rows",
+            "macro_by_source_family": ["TEXT", "PDF", "XLSX"],
+        },
+    }
+    assert contract["prohibited_claims"] == {
+        "promotion_evidence": False,
+        "collapsed_lane_a_b_c_score": False,
+        "official_retrieval_metric_until_labels_applied": False,
+        "official_ndcg_mrr_hit_at_k_until_qrels_approved": False,
+        "readme_metric_claim": False,
+    }
+    assert contract["readme_wording_boundary"]["official_answer_citation_result_section"] == (
+        "separate_from_official_retrieval_metric_section"
+    )
+    assert contract["readme_wording_boundary"]["readme_mutation_in_v3_4_0"] is False
+    assert qrels_schema["schema_role"] == "schema_only_no_qrels_created"
+    assert qrels_schema["record_count"] == 0
+    assert qrels_schema["official_metric_label_status_required"] == "APPROVED"
+    assert qrels_schema["required_boolean_values"] == {
+        "generation_source": False,
+        "gold": False,
+        "promotion_evidence": False,
+    }
+    assert qrels_schema["source_family_allowed_values"] == ["TEXT", "PDF", "XLSX"]
+    assert "expected_answer" in qrels_schema["forbidden_record_fields"]
+    assert "supporting_evidence" in qrels_schema["forbidden_record_fields"]
+    assert "official_metric_value" in qrels_schema["forbidden_record_fields"]
+
+    prohibited_qrels = set(event["legacy_or_silver_sources_prohibited_as_current_official_qrels"])
+    assert "ai/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv" in prohibited_qrels
+    assert "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_candidates_v0.jsonl" in prohibited_qrels
+    assert contract["legacy_or_silver_sources_prohibited_as_current_official_qrels"] == (
+        qrels_schema["legacy_or_silver_sources_prohibited_as_current_official_qrels"]
+    )
+
+    guardrails = event["guardrails"]
+    for key in (
+        "official_retrieval_metrics_computed",
+        "official_ndcg_computed",
+        "official_mrr_computed",
+        "official_hit_at_k_computed",
+        "lane_score_collapsed",
+        "relevance_label_created",
+        "answerability_label_created",
+        "relevance_label_mutation",
+        "answerability_label_mutation",
+        "qrels_created",
+        "qrels_denominator_mutation",
+        "denominator_mutation",
+        "official_denominator_query_id_set_mutation",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "prompt_context_behavior_change",
+        "retrieval_mutation",
+        "renderer_mutation",
+        "scorer_behavior_mutation",
+        "index_or_export_rebuild_performed",
+        "silver_mutation",
+        "production_mutation",
+        "promotion_evidence",
+        "threshold_tuning",
+        "winner_selection",
+        "readme_metric_claim_added",
+    ):
+        assert guardrails[key] is False, key
+    assert guardrails["contract_only"] is True
+    assert guardrails["diagnostic_only"] is True
+    assert event["active_implementation_queue_empty"] is True
+    assert event["next_implementation_phase"] == "none"
+    assert not report_artifact_path(run_id, "results.jsonl").exists()
+    assert not report_artifact_path(run_id, "summary.json").exists()
+    assert not report_artifact_path(run_id, "summary.md").exists()
+    assert_no_gold_generation_source_fields(event)
+    assert_no_gold_generation_source_fields(contract)
+    assert_no_gold_generation_source_fields(qrels_schema)
+
+
+def test_v3_4_1_official_retrieval_qrels_candidate_packet_is_pending_human_review_only() -> None:
+    run_id = AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+    event = next(
+        item
+        for item in reversed(status_events)
+        if item.get("event_type") == "official_retrieval_qrels_candidate_packet_v3_4_1"
+        and item.get("run_id") == run_id
+    )
+    summary = read_json(AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_SUMMARY_JSON)
+    rows = read_jsonl(AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_JSONL)
+    csv_rows = read_csv(AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_CSV)
+    csv_fieldnames = list(csv_rows[0]) if csv_rows else []
+
+    assert event["status"] == "OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_READY_FOR_HUMAN_REVIEW"
+    assert event["run_class"] == "human_labelable_qrels_candidate_packet_no_metric_execution"
+    assert event["diagnostic_only"] is True
+    assert event["promotion_evidence"] is False
+    assert event["contract_prerequisite"] == {
+        "run_id": AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "status_event_found": True,
+        "status": "OFFICIAL_RETRIEVAL_METRIC_CONTRACT_READY_QRELS_REQUIRED",
+    }
+    assert event["label_design_packet_prerequisite"] == {
+        "run_id": AGENTIC_V3_3_2_RETRIEVAL_LABEL_DESIGN_PACKET_RUN_ID,
+        "status_event_found": True,
+        "status": "NEEDS_USER_DECISION_FOR_OFFICIAL_RETRIEVAL_QRELS",
+    }
+    assert event["query_count"] == 29
+    assert event["qrels_candidate_row_count"] == 219
+    assert event["candidates_by_source_family"] == {"PDF": 22, "TEXT": 24, "XLSX": 173}
+    assert event["candidates_by_lane_source"] == {"query_bound_oracle": 51, "retrieved_topk": 168}
+    assert event["candidates_by_candidate_role"] == {
+        "query_bound_oracle_candidate": 29,
+        "retrieved_topk_candidate": 145,
+        "structured_adapter_candidate": 45,
+    }
+    assert event["relevance_label_values"] == ["pending"]
+    assert event["answerability_label_values"] == ["pending"]
+    assert event["label_status"] == "pending_user_review"
+    assert event["blocked_metrics"] == {
+        "collapsed_lane_a_b_c_score": "blocked_by_lane_separation_policy",
+        "official_hit_at_1": "blocked_until_pending_user_review_labels_are_approved",
+        "official_hit_at_3": "blocked_until_pending_user_review_labels_are_approved",
+        "official_hit_at_5": "blocked_until_pending_user_review_labels_are_approved",
+        "official_mrr_at_5": "blocked_until_pending_user_review_labels_are_approved",
+        "official_ndcg_at_5": "blocked_until_pending_user_review_labels_are_approved",
+    }
+    assert event["artifact_paths"]["qrels_candidate_jsonl"] == (
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_"
+        "qrels_candidates.jsonl"
+    )
+    assert event["artifact_paths"]["qrels_candidate_csv"] == (
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_"
+        "qrels_candidates.csv"
+    )
+    assert event["artifact_paths"]["summary_json"] == (
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_"
+        "summary.json"
+    )
+
+    assert summary["query_count"] == 29
+    assert summary["qrels_candidate_row_count"] == 219
+    assert summary["candidates_by_source_family"] == {"PDF": 22, "TEXT": 24, "XLSX": 173}
+    assert summary["skipped_candidate_count"] == 0
+    assert summary["label_status"] == "pending_user_review"
+    assert len(rows) == 219
+    assert len(csv_rows) == 219
+    assert set(csv_fieldnames) >= {
+        "qrels_candidate_id",
+        "query_id",
+        "source_family",
+        "rank",
+        "lane_source",
+        "candidate_role",
+        "document_version_id",
+        "search_unit_id",
+        "source_locator_json",
+        "source_excerpt_sha256",
+        "relevance_label",
+        "answerability_label",
+        "label_status",
+    }
+    assert len({row["qrels_candidate_id"] for row in rows}) == 219
+    assert {row["query_id"] for row in rows} == set(summary["candidate_rows_by_query_id"])
+    assert {row["source_family"] for row in rows} == {"PDF", "TEXT", "XLSX"}
+    assert {row["lane_source"] for row in rows} == {"query_bound_oracle", "retrieved_topk"}
+    assert {row["candidate_role"] for row in rows} == {
+        "query_bound_oracle_candidate",
+        "retrieved_topk_candidate",
+        "structured_adapter_candidate",
+    }
+    for row in rows:
+        assert row["relevance_label"] == "pending"
+        assert row["answerability_label"] == "pending"
+        assert row["relevance_grade"] is None
+        assert row["answerability_grade"] is None
+        assert row["label_status"] == "pending_user_review"
+        assert row["official_denominator_overlap"] is True
+        assert row["qrels_candidate"] is True
+        assert row["generation_source"] is False
+        assert row["promotion_evidence"] is False
+        assert row["final_label_inferred"] is False
+        assert row["metric_computation_allowed"] is False
+        assert row["document_version_id"]
+        assert row["search_unit_id"]
+        assert row["source_bound_locator"]
+        assert row["source_text_or_value_available"] is True
+        assert row["source_excerpt_sha256"]
+        assert "no final label inferred" in row["suggested_label_reason"]
+    for csv_row in csv_rows:
+        assert csv_row["relevance_label"] == "pending"
+        assert csv_row["answerability_label"] == "pending"
+        assert csv_row["label_status"] == "pending_user_review"
+        assert csv_row["generation_source"] == "false"
+        assert csv_row["promotion_evidence"] == "false"
+
+    guardrails = event["guardrails"]
+    for key in (
+        "official_retrieval_metrics_computed",
+        "official_ndcg_computed",
+        "official_mrr_computed",
+        "official_hit_at_k_computed",
+        "lane_score_collapsed",
+        "relevance_label_mutation",
+        "answerability_label_mutation",
+        "final_label_created",
+        "denominator_mutation",
+        "official_denominator_query_id_set_mutation",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "candidate_artifacts_as_generation_source",
+        "generation_used_expected_answer",
+        "generation_used_supporting_evidence",
+        "generation_used_gold_fields",
+        "prompt_context_behavior_change",
+        "retrieval_mutation",
+        "renderer_mutation",
+        "scorer_behavior_mutation",
+        "index_or_export_rebuild_performed",
+        "export_mutation",
+        "silver_mutation",
+        "production_mutation",
+        "promotion_evidence",
+        "threshold_tuning",
+        "winner_selection",
+        "readme_metric_claim_added",
+    ):
+        assert guardrails[key] is False, key
+    assert guardrails["qrels_candidate_packet_created"] is True
+    assert guardrails["qrels_candidate_rows_created"] is True
+    assert guardrails["label_status_all_pending_user_review"] is True
+    assert event["active_implementation_queue_empty"] is True
+    assert event["next_implementation_phase"] == "none"
+    assert not report_artifact_path(run_id, "results.jsonl").exists()
+    assert not report_artifact_path(run_id, "summary.md").exists()
+    assert_no_gold_generation_source_fields(event)
+    assert_no_gold_generation_source_fields(summary)
+    assert_no_gold_generation_source_fields(rows)
+
+
+def test_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_is_policy_only() -> None:
+    run_id = AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_RUN_ID
+    status_events = read_jsonl(REPORT_DIR / "status.jsonl")
+    event = next(
+        item
+        for item in reversed(status_events)
+        if item.get("event_type") == "official_retrieval_qrels_human_minimal_review_packet_v3_4_1a"
+        and item.get("run_id") == run_id
+    )
+    policy = read_json(AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_POLICY_APPROVAL_JSON)
+    query_rows = read_csv(AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_HUMAN_QUERY_GROUP_REVIEW_CSV)
+    ambiguous_rows = read_csv(AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AMBIGUOUS_CANDIDATE_REVIEW_CSV)
+    auto_label_plan = read_json(AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_AUTO_LABEL_PLAN_JSON)
+    summary = read_json(AGENTIC_V3_4_1A_OFFICIAL_RETRIEVAL_QRELS_MINIMAL_REVIEW_SUMMARY_JSON)
+
+    assert event["status"] == "OFFICIAL_RETRIEVAL_QRELS_HUMAN_MINIMAL_REVIEW_PACKET_READY"
+    assert event["run_class"] == "human_minimal_review_packet_no_label_application_no_metric_execution"
+    assert event["candidate_packet_prerequisite"] == {
+        "run_id": AGENTIC_V3_4_1_OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_RUN_ID,
+        "status_event_found": True,
+        "status": "OFFICIAL_RETRIEVAL_QRELS_CANDIDATE_PACKET_READY_FOR_HUMAN_REVIEW",
+    }
+    assert event["contract_prerequisite"] == {
+        "run_id": AGENTIC_V3_4_0_OFFICIAL_RETRIEVAL_METRIC_CONTRACT_RUN_ID,
+        "status_event_found": True,
+        "status": "OFFICIAL_RETRIEVAL_METRIC_CONTRACT_READY_QRELS_REQUIRED",
+    }
+    assert event["raw_candidate_row_count"] == 219
+    assert event["query_group_count"] == 29
+    assert event["ambiguous_candidate_count"] == 30
+    assert event["estimated_user_review_rows"] == 59
+    assert event["raw_219_row_csv_direct_human_review_required"] is False
+    assert event["candidates_by_source_family"] == {"PDF": 22, "TEXT": 24, "XLSX": 173}
+    assert event["relevance_label_values"] == ["pending"]
+    assert event["answerability_label_values"] == ["pending"]
+    assert len(query_rows) == 29
+    assert len(ambiguous_rows) == 30
+    assert summary["raw_candidate_row_count"] == 219
+    assert summary["query_group_count"] == 29
+    assert summary["ambiguous_candidate_count"] == 30
+    assert summary["estimated_user_review_rows"] == 59
+    assert summary["raw_219_row_csv_direct_human_review_required"] is False
+    assert summary["query_groups_by_source_family"] == {"PDF": 4, "TEXT": 6, "XLSX": 19}
+    assert summary["ambiguous_candidates_by_source_family"] == {"PDF": 4, "TEXT": 6, "XLSX": 20}
+
+    assert policy["approval_status"] == "pending_user_review"
+    assert policy["official_metric_execution_allowed"] is False
+    assert policy["qrels_labels_finalized"] is False
+    assert policy["hit_mrr_positive_rule"]["rule"] == "relevance_grade >= 3 and answerability_grade >= 3"
+    assert policy["ndcg_gain"]["answerability_gated"] is True
+    assert policy["expected_answer_supporting_evidence_labeler_context_policy"]["included_in_v3_4_1a"] is False
+    assert "Do not silently treat unreviewed candidates" in policy["unjudged_policy"]["default"]
+
+    expected_query_fields = {
+        "query_id",
+        "source_family",
+        "question",
+        "expected_answer_labeler_context",
+        "supporting_evidence_labeler_context",
+        "retrieved_topk_candidate_ids",
+        "query_bound_oracle_candidate_ids",
+        "structured_adapter_candidate_ids",
+        "codex_recommended_positive_candidate_ids",
+        "codex_recommended_relevance_label",
+        "codex_recommended_answerability_label",
+        "user_decision",
+        "user_override_positive_candidate_ids",
+        "user_note",
+    }
+    assert set(query_rows[0]) >= expected_query_fields
+    for row in query_rows:
+        assert row["expected_answer_labeler_context"] == ""
+        assert row["supporting_evidence_labeler_context"] == ""
+        assert row["labeler_context_policy"] == (
+            "omitted_pending_user_policy_expected_answer_supporting_evidence_not_used"
+        )
+        assert row["codex_recommended_positive_candidate_ids"]
+        assert row["codex_recommended_relevance_label"].endswith("pending_user_approval")
+        assert row["codex_recommended_answerability_label"].endswith("pending_user_approval")
+        assert row["user_decision"] == "pending"
+
+    assert set(ambiguous_rows[0]) >= {
+        "review_candidate_unit_id",
+        "query_id",
+        "source_family",
+        "qrels_candidate_ids",
+        "document_version_id",
+        "search_unit_id",
+        "source_locator_json",
+        "source_excerpt_sha256",
+        "ambiguity_reasons",
+        "relevance_label",
+        "answerability_label",
+        "label_status",
+        "generation_source",
+        "promotion_evidence",
+    }
+    for row in ambiguous_rows:
+        assert row["relevance_label"] == "pending"
+        assert row["answerability_label"] == "pending"
+        assert row["label_status"] == "pending_user_review"
+        assert row["user_decision"] == "pending"
+        assert row["generation_source"] == "false"
+        assert row["promotion_evidence"] == "false"
+        assert row["source_locator_json"]
+        assert row["source_excerpt_sha256"]
+        assert row["ambiguity_reasons"]
+
+    assert auto_label_plan["auto_labels_applied"] is False
+    assert auto_label_plan["final_labels_created"] is False
+    assert auto_label_plan["official_metrics_computed"] is False
+    assert auto_label_plan["deterministic_rules"][0]["covered_row_count"] == 102
+    assert auto_label_plan["deterministic_rules"][0]["applied_in_v3_4_1a"] is False
+    assert auto_label_plan["rows_excluded_from_auto_labeling"]["count"] == 117
+    assert auto_label_plan["rows_requiring_user_review"]["query_group_review_row_count"] == 29
+    assert auto_label_plan["rows_requiring_user_review"]["ambiguous_candidate_review_row_count"] == 30
+
+    guardrails = event["guardrails"]
+    assert guardrails["human_minimal_review_packet_created"] is True
+    assert guardrails["qrels_policy_approval_packet_created"] is True
+    assert guardrails["query_group_review_created"] is True
+    assert guardrails["ambiguous_candidate_review_created"] is True
+    assert guardrails["auto_label_plan_created"] is True
+    assert guardrails["all_final_labels_remain_pending"] is True
+    assert guardrails["expected_answer_labeler_context_included"] is False
+    assert guardrails["supporting_evidence_labeler_context_included"] is False
+    assert guardrails["per_run_markdown_created"] is False
+    for key in (
+        "auto_label_plan_applied",
+        "official_retrieval_metrics_computed",
+        "official_ndcg_computed",
+        "official_mrr_computed",
+        "official_hit_at_k_computed",
+        "lane_score_collapsed",
+        "relevance_label_mutation",
+        "answerability_label_mutation",
+        "final_label_created",
+        "denominator_mutation",
+        "official_denominator_query_id_set_mutation",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "candidate_artifacts_as_generation_source",
+        "generation_used_expected_answer",
+        "generation_used_supporting_evidence",
+        "generation_used_gold_fields",
+        "prompt_context_behavior_change",
+        "retrieval_mutation",
+        "renderer_mutation",
+        "scorer_behavior_mutation",
+        "index_or_export_rebuild_performed",
+        "export_mutation",
+        "silver_mutation",
+        "production_mutation",
+        "promotion_evidence",
+        "threshold_tuning",
+        "winner_selection",
+        "readme_metric_claim_added",
+    ):
+        assert guardrails[key] is False, key
+    assert not report_artifact_path(run_id, "results.jsonl").exists()
+    assert not report_artifact_path(run_id, "summary.md").exists()
+    assert_no_gold_generation_source_fields(event)
+    assert_no_gold_generation_source_fields(summary)
+    assert_no_gold_generation_source_fields(policy)
+    assert_no_gold_generation_source_fields(auto_label_plan)
+    assert_no_gold_generation_source_fields(query_rows)
+    assert_no_gold_generation_source_fields(ambiguous_rows)
+
+
 def test_v3_1_7_pdf_window_expansion_preflight_fails_closed_without_safe_locator_metadata() -> None:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_official_answer_citation_agentic_loop_run_v1 as runner
@@ -3760,12 +5711,17 @@ def assert_no_unexpected_eval_query_status(stdout: str) -> None:
         "ai/eval/eval_queries/official_denominator_registry.json",
         "ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv",
     }
+    allowed_current_silver_policy_paths = {
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+    }
+    allowed_paths = allowed_v3_1_9_policy_paths | allowed_current_silver_policy_paths
     unexpected = []
     for line in stdout.splitlines():
         if not line.strip():
             continue
         path = line[3:].strip().replace("\\", "/") if len(line) > 3 else line.strip().replace("\\", "/")
-        if path not in allowed_v3_1_9_policy_paths:
+        if path not in allowed_paths:
             unexpected.append(line)
     assert unexpected == []
 

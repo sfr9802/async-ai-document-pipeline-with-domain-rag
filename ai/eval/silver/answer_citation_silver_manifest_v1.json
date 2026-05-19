@@ -4,7 +4,7 @@
     "contract_jsonl": {
       "created": false,
       "path": "ai/eval/silver/answer_citation_silver_contract_v1.jsonl",
-      "reason": "source-bound contract smoke records were not created because required locator fields are incomplete"
+      "reason": "source-bound contract smoke records were not created because no safe non-official source-bound answer/citation source manifest rows are available"
     },
     "dev_jsonl": {
       "created": false,
@@ -22,7 +22,7 @@
     }
   },
   "expected_values_used_for_audit_only": true,
-  "generated_at": "2026-05-17T11:15:00+00:00",
+  "generated_at": "2026-05-19T08:30:00+00:00",
   "label_confidence": [
     "high",
     "medium",
@@ -41,7 +41,11 @@
   },
   "non_production_index": {
     "candidate_index_path_used": false,
+    "index_built": true,
     "index_version": "official-answer-citation-agentic-loop-v1-nonprod-official-denominator-source-bound",
+    "load_check_passed": true,
+    "official_denominator_overlap_rows": 29,
+    "official_denominator_source_bound": true,
     "production_index_path_used": false,
     "target_index_path": "ai/eval/indexes/rag-data-official-denominator-v1"
   },
@@ -49,6 +53,32 @@
   "production_index_path_used": false,
   "purpose": "anti_overfit_generalization_and_source_bound_contract",
   "schema_version": "answer_citation_silver_manifest_v1",
+  "minimum_safe_source_candidate_schema": {
+    "id_field": "query_id_or_candidate_id",
+    "required_fields": [
+      "source_family",
+      "source_bound_locator",
+      "document_version_id",
+      "search_unit_id",
+      "source_text_available",
+      "generation_source",
+      "promotion_evidence",
+      "official_denominator_overlap"
+    ],
+    "required_boolean_values": {
+      "generation_source": false,
+      "promotion_evidence": false,
+      "official_denominator_overlap": false
+    },
+    "forbidden_fields": [
+      "expected_answer",
+      "supporting_evidence",
+      "relevance_label",
+      "answerability_label",
+      "gold_label",
+      "human_label"
+    ]
+  },
   "silver_set_is_gold": false,
   "silver_set_is_official_metric_denominator": false,
   "silver_set_is_promotion_evidence": false,
@@ -64,12 +94,50 @@
     "ai/eval/reports/rag-ingestion/official_metric_input_config_v1.json",
     "ai/eval/eval_queries/official_denominator_registry.json",
     "ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl",
+    "ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json",
+    "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+    "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+    "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
     "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl",
     "ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl",
     "ai/eval/corpora/gold_queries_pdf_v1_reviewed.csv",
     "ai/eval/eval_queries/gold_queries_pdf_question_gold_v2.csv",
     "ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv"
   ],
+  "source_bound_material_audit": {
+    "decision": "blocked_do_not_fabricate_rows",
+    "safe_source_manifests_can_be_created": false,
+    "blocker": "Only official-denominator source-bound SearchUnits are currently available; all 29 overlap the official denominator and cannot satisfy official_denominator_overlap=false for dev/holdout tuning silver.",
+    "minimum_schema_status": "defined_but_no_eligible_rows",
+    "inspected_source_bound_artifacts": [
+      "ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json",
+      "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+      "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+      "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl"
+    ],
+    "official_denominator_overlap_scan": {
+      "source_bound_search_unit_manifest_rows": 29,
+      "official_denominator_overlap_true_count": 29,
+      "official_denominator_overlap_false_count": 0,
+      "excluded_official_query_id_count": 29,
+      "eligible_dev_holdout_source_candidate_count": 0,
+      "rows_by_source_family": {
+        "PDF": 4,
+        "TEXT": 6,
+        "XLSX": 19
+      }
+    },
+    "per_source_family_safe_candidate_counts": {
+      "TEXT": 0,
+      "XLSX": 0,
+      "PDF": 0
+    },
+    "source_text_availability": {
+      "official_source_bound_rows_with_source_text": 29,
+      "eligible_non_official_rows_with_source_text": 0,
+      "source_text_available_flag_required_for_future_rows": true
+    }
+  },
   "splits": {
     "contract": {
       "allowed_use": "implementation_regression_only",

@@ -16,6 +16,10 @@ EXTERNAL_REPORT_ARCHIVE_DIR = Path(
 SILVER_DIR = ROOT / "ai" / "eval" / "silver"
 MANIFEST = SILVER_DIR / "answer_citation_silver_manifest_v1.json"
 READINESS = SILVER_DIR / "answer_citation_silver_readiness_v1.json"
+STATUS_JSONL = REPORT_DIR / "status.jsonl"
+SOURCE_BOUND_SEARCH_UNIT_MANIFEST = (
+    ROOT / "ai" / "eval" / "indexes" / "rag-data-official-denominator-v1" / "search_unit_manifest.jsonl"
+)
 SILVER_JSONL_BY_SPLIT = {
     "contract": SILVER_DIR / "answer_citation_silver_contract_v1.jsonl",
     "dev": SILVER_DIR / "answer_citation_silver_dev_v1.jsonl",
@@ -43,10 +47,42 @@ def test_answer_citation_silver_manifest_locks_policy_and_taxonomy() -> None:
     assert manifest["official_denominator_query_ids_excluded_from_tuning_silver"] is True
     assert manifest["candidate_artifacts_used_as_generation_source"] is False
     assert manifest["production_index_path_used"] is False
+    assert manifest["minimum_safe_source_candidate_schema"] == {
+        "id_field": "query_id_or_candidate_id",
+        "required_fields": [
+            "source_family",
+            "source_bound_locator",
+            "document_version_id",
+            "search_unit_id",
+            "source_text_available",
+            "generation_source",
+            "promotion_evidence",
+            "official_denominator_overlap",
+        ],
+        "required_boolean_values": {
+            "generation_source": False,
+            "promotion_evidence": False,
+            "official_denominator_overlap": False,
+        },
+        "forbidden_fields": [
+            "expected_answer",
+            "supporting_evidence",
+            "relevance_label",
+            "answerability_label",
+            "gold_label",
+            "human_label",
+        ],
+    }
     assert manifest["non_production_index"]["target_index_path"] == (
         "ai/eval/indexes/rag-data-official-denominator-v1"
     )
     assert manifest["non_production_index"]["production_index_path_used"] is False
+    overlap_scan = manifest["source_bound_material_audit"]["official_denominator_overlap_scan"]
+    assert overlap_scan["source_bound_search_unit_manifest_rows"] == 29
+    assert overlap_scan["official_denominator_overlap_true_count"] == 29
+    assert overlap_scan["official_denominator_overlap_false_count"] == 0
+    assert overlap_scan["eligible_dev_holdout_source_candidate_count"] == 0
+    assert manifest["source_bound_material_audit"]["safe_source_manifests_can_be_created"] is False
 
     assert set(manifest["splits"]) == {"contract", "dev", "holdout", "sealed"}
     assert manifest["splits"]["contract"]["allowed_use"] == "implementation_regression_only"
@@ -96,6 +132,19 @@ def test_answer_citation_silver_rows_or_readiness_are_source_bound_and_non_leaky
         assert readiness["candidate_artifacts_used_as_generation_source"] is False
         assert readiness["expected_values_used_for_audit_only"] is True
         assert readiness["silver_set_used_for_generation"] is False
+        assert readiness["minimum_safe_source_candidate_schema"]["required_boolean_values"] == {
+            "generation_source": False,
+            "promotion_evidence": False,
+            "official_denominator_overlap": False,
+        }
+        blocker = readiness["source_data_decision"]
+        assert blocker["safe_source_bound_answer_citation_source_data_available"] is False
+        assert blocker["safe_source_manifests_can_be_created"] is False
+        assert blocker["precise_blocker"] == (
+            "Only official-denominator source-bound SearchUnits are currently available; all 29 overlap "
+            "the official denominator and cannot satisfy official_denominator_overlap=false for "
+            "dev/holdout tuning silver."
+        )
         return
 
     case_ids = [clean(row.get("silver_case_id")) for row in all_rows]
@@ -178,6 +227,12 @@ def test_answer_citation_silver_readiness_records_exact_current_blockers() -> No
         "row_label",
         "target_column",
     ]
+    overlap_scan = readiness["official_denominator_overlap_scan"]
+    assert overlap_scan["source_bound_search_unit_manifest_rows"] == 29
+    assert overlap_scan["official_denominator_overlap_true_count"] == 29
+    assert overlap_scan["official_denominator_overlap_false_count"] == 0
+    assert overlap_scan["eligible_dev_holdout_source_candidate_count"] == 0
+    assert overlap_scan["excluded_official_query_id_count"] == 29
 
 
 def test_answer_citation_silver_use_policy_matches_current_artifact_boundaries() -> None:
@@ -234,9 +289,62 @@ def test_docs_record_answer_citation_silver_strategy_without_promotion_claims() 
 
     current_normalized = " ".join(current_progress.split())
     assert "official-denominator source-bound index, build/load check, and canonical SearchUnit citation payload wiring are already available" in current_normalized
+    assert "29/29 source-bound SearchUnits overlap the official denominator" in current_normalized
+    assert "safe non-official source-bound source manifests are still missing" in current_normalized
     assert "silver generation stays closed until safe silver-source data coverage is settled" in current_normalized
 
     assert "silver promotion evidence" not in current_progress.lower()
+
+
+def test_answer_citation_silver_source_material_is_not_official_denominator_overlap() -> None:
+    readiness = read_json(READINESS)
+    manifest = read_json(MANIFEST)
+    source_bound_rows = read_jsonl(SOURCE_BOUND_SEARCH_UNIT_MANIFEST)
+    official_query_ids = official_denominator_query_ids()
+
+    assert len(source_bound_rows) == 29
+    assert {clean(row.get("query_id")) for row in source_bound_rows} == official_query_ids
+    assert all(row["source_bound_official_denominator"] is True for row in source_bound_rows)
+    assert all(row["promotion_evidence"] is False for row in source_bound_rows)
+    assert all(row["candidate_artifact_generation_source"] is False for row in source_bound_rows)
+    assert all(has_value(row.get("document_version_id")) for row in source_bound_rows)
+    assert all(has_value(row.get("search_unit_id")) for row in source_bound_rows)
+    assert all(has_value(row.get("embedding_text") or row.get("bm25_text") or row.get("display_text")) for row in source_bound_rows)
+
+    assert readiness["official_denominator_overlap_scan"]["eligible_dev_holdout_source_candidate_count"] == 0
+    assert readiness["per_track_counts"] == {"text_namu_v2_1": 0, "xlsx_business_structured": 0, "pdf_business_ocr_mm": 0}
+    assert manifest["source_bound_material_audit"]["per_source_family_safe_candidate_counts"] == {
+        "TEXT": 0,
+        "XLSX": 0,
+        "PDF": 0,
+    }
+    for split in ("dev", "holdout", "contract"):
+        assert SILVER_JSONL_BY_SPLIT[split].exists() is False
+
+
+def test_v3_3_1_status_event_records_silver_source_manifest_blocker_without_generation() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v3_3_1_answer_citation_silver_source_manifest_readiness"
+    event = next(
+        item
+        for item in reversed(read_jsonl(STATUS_JSONL))
+        if item.get("event_type") == "answer_citation_silver_source_manifest_readiness_v3_3_1"
+        and item.get("run_id") == run_id
+    )
+
+    assert event["run_class"] == "status_ledger_only_silver_source_manifest_readiness"
+    assert event["safe_source_manifests_can_be_created"] is False
+    assert event["silver_jsonl_files_created"] == {"contract": False, "dev": False, "holdout": False}
+    assert event["source_data_blocker"]["official_denominator_overlap_true_count"] == 29
+    assert event["source_data_blocker"]["eligible_dev_holdout_source_candidate_count"] == 0
+    assert event["guardrails"]["silver_generation_run"] is False
+    assert event["guardrails"]["generation_source_mutation"] is False
+    assert event["guardrails"]["promotion_evidence"] is False
+    assert event["guardrails"]["gold_mutation"] is False
+    assert event["guardrails"]["expected_answer_mutation"] is False
+    assert event["guardrails"]["supporting_evidence_mutation"] is False
+    assert event["guardrails"]["official_denominator_query_id_set_mutation"] is False
+    assert event["guardrails"]["official_retrieval_metrics_computed"] is False
+    assert event["guardrails"]["production_mutation"] is False
 
 
 def assert_text_locator(row: dict[str, Any]) -> None:

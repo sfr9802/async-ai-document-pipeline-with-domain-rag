@@ -49,13 +49,45 @@ def test_current_profile_includes_required_official_candidate_and_pdf_tests() ->
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_8_gold_policy_packet_preparation_is_compact_and_guarded",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_9_user_gold_policy_override_application_and_rescore_is_guarded",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_9_gold_csv_contains_only_the_user_approved_text_overrides",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_0_current_system_live_baseline_is_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_1_text_residual_triage_and_scorer_policy_are_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_2_post_fix_remeasurement_compares_only_intended_scorer_delta",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_3_queue_lane_actionability_reconciliation_is_compact_and_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_4_gq_auto_010_pdf_context_provenance_is_compact_no_behavior_and_source_bound",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_5_gq_auto_010_pdf_context_reconciliation_full_remeasurement_is_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_5_gq_auto_010_reconciliation_changes_only_target_lane_bc",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_5_pdf_context_reconciliation_overlay_is_target_scoped_and_locator_valid",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_6_text_prompt_span_rule_remeasurement_is_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_6_text_prompt_span_rule_changes_only_actionable_live_text_lanes",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_6_queue_uses_v3_2_5_queue_as_source_of_truth",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_7_post_fix_closure_status_event_is_guarded_and_compact",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_2_7_closure_uses_v3_2_6_queue_as_source_of_truth",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_3_0_post_closure_source_of_truth_audit_is_status_only_and_guarded",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_3_2_retrieval_label_design_packet_blocks_metrics_until_user_decisions",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_4_0_official_retrieval_metric_contract_blocks_metrics_until_qrels_are_approved",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_4_1_official_retrieval_qrels_candidate_packet_is_pending_human_review_only",
+        "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_is_policy_only",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_1_7_pdf_prompt_context_expansion_is_target_bound_and_query_bound",
+        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_2_5_pdf_context_reconciliation_fix_without_promotion",
+        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_2_6_text_prompt_span_rule_remeasurement_without_promotion",
+        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_2_7_closure_without_promotion_or_next_phase",
+        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_3_0_source_of_truth_audit_without_reopening_queue",
+        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_docs_record_v3_3_2_retrieval_label_design_packet_without_metrics",
+        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_docs_record_v3_4_0_official_retrieval_metric_contract_without_metrics",
+        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_docs_record_v3_4_1_official_retrieval_qrels_candidate_packet_without_metrics",
+        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_records_v3_4_1a_human_minimal_review_packet_without_metrics",
+        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_2_5_pdf_context_reconciliation_does_not_mutate_gold_denominator_or_runtime_artifacts",
+        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_2_6_text_prompt_span_rule_does_not_mutate_gold_denominator_or_runtime_artifacts",
+        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_2_7_closure_does_not_mutate_gold_denominator_or_runtime_artifacts",
+        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_3_0_source_of_truth_audit_does_not_mutate_gold_denominator_or_runtime_artifacts",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_residual_audit_does_not_mutate_protected_artifacts",
         "ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests",
     }
 
     for nodeid in required_nodeids:
         assert rag_conftest.is_rag_current_required_nodeid(nodeid), nodeid
+        rel_file, test_name = nodeid.split("::", 1)
+        assert f"def {test_name}(" in (ROOT / rel_file).read_text(encoding="utf-8"), nodeid
 
 
 def test_current_profile_excludes_missing_artifact_noise_from_default_current_loop() -> None:
