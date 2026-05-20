@@ -1,19 +1,48 @@
 # RAG Ingestion Measurements
 
-Last updated: 2026-05-20 KST.
+Last updated: 2026-05-21 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new
 measurement sections at the top, keep older sections as compact history, and do
 not create per-run Markdown reports for routine diagnostic runs.
 
-Machine-readable JSON/JSONL artifacts can remain under
-`ai/eval/reports/rag-ingestion/`, but those files are evidence payloads, not the
-primary human report surface.
+Machine-readable JSON/JSONL artifacts are evidence payloads, not the primary
+human report surface. As of the 2026-05-21 cleanup, `ai/eval/reports/` keeps
+only `rag-ingestion/`, and that directory keeps only `status.jsonl` plus the
+latest v3_6_9 SearchUnit/SearchView/SourceAtom refactor artifacts. Older
+measurement payloads, including the official baseline/scorer/input/smoke files
+and v3_1-v3_6_8 diagnostics, live in:
+
+`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`
+
 Historical `_archive/legacy` artifact paths in older entries are logical
 provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+
+## 2026-05-21 - Report Artifact Layout Rollup
+
+Purpose: make the repo-local report surface small enough to scan while keeping
+older evidence reproducible through the external archive resolver.
+
+Current repo-local machine payloads:
+
+- `ai/eval/reports/rag-ingestion/status.jsonl`
+- v3_6_9 SearchUnit/SearchView/SourceAtom refactor summary, contract refactor,
+  adapter diagnostics, SourceAtom hydration smoke, and failure buckets JSON.
+
+Archived payload families:
+
+- `ai/eval/reports/rag-ingestion/*` except the six current files above:
+  `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`
+- former `ai/eval/reports/phase7/` and
+  `ai/eval/reports/legacy-baseline-final/`:
+  `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`
+
+Reader contract: use this file for metric ladder context, use
+`docs/rag-ingestion-triage.md` for queue/row-level decisions, and use
+`docs/rag-ingestion-progress.md` for current status and guardrails.
 
 ## Current Measurement Ladder
 

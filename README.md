@@ -51,6 +51,18 @@ AI 작업은 오래 걸리고 실패 가능성도 높습니다. 이 저장소는
 
 채용 관점에서 봐야 할 포인트는 높은 숫자 하나보다, 작은 검증 세트라도 기준을 정하고 과장 없이 추적하는 태도입니다.
 
+### 4. 현재 진단 지표 스냅샷
+
+아래 수치는 제품 성능 리더보드가 아니라, 현재 RAG 근거 구조가 어디까지 재현 가능하게 측정됐는지 보여주는 checkpoint입니다. `Top@K/Hit@K`는 정답 근거가 상위 K개 후보 안에 들어왔는지, `MRR@5`는 첫 정답 근거의 순위를, `nDCG@5`는 binary exact-evidence 관련도를 봅니다. `p95/p99 latency`는 해당 측정 표면에서 요청 시간이 각각 95%, 99% 지점 안에 들어오는 wall-clock latency입니다.
+
+| Surface | Denominator / sample | 현재 값 | 읽는 법 |
+|---|---:|---|---|
+| Official exact-evidence retrieval smoke `v3_4_3` | 28 included queries | Hit@1 `27/28` = `96.4%`, Hit@3 `28/28`, Hit@5 `28/28`, MRR@5 `0.982`, binary nDCG@5 `0.987` | 작은 source-bound smoke입니다. 대표 제품 성능이나 promotion evidence로 쓰지 않습니다. |
+| Comparable live answer/citation measurement `v3_2_2` | 29 official rows | Lane A `24/29`, Lane B retrieval top-k `26/29`, Lane C query-bound oracle `25/29`; citation support average `1.0` | answer/citation gold 기준의 diagnostic-only 재측정입니다. Lane A/B/C를 하나의 점수로 합치지 않습니다. |
+| README local LLM response loop | 100 rows, gold 25 / silver 75 | p95 latency `0.464s`, p99 latency `0.516s`, max `0.528s` | `gemma4-e2b-local` llama.cpp endpoint에 `query + SearchView evidence`만 보낸 documentation-only run입니다. throughput/production SLA가 아닙니다. |
+| Phase 7 v4 retrieval recommendation | historical active-v4 retrieval lane | `candidate_k=40`, MMR on, recommended `mmr_lambda=0.70` | metric-best plateau에는 `0.60`도 있었지만 운영 추천은 diversity tie-break로 `0.70`입니다. 현재 `v3.7` source-registry 지표와는 분리합니다. |
+| Source-first citable index `v3_7_1` | 136,280 SearchViews | TEXT `135,608`, PDF `329`, XLSX `343`; retrieval/answer/citation metric not computed | vector DB는 후보 생성 표면이고, citation truth는 SourceAtom/source registry에서 hydrate합니다. 다음 단계는 source-registry-backed retrieval smoke입니다. |
+
 ## 전체 흐름
 
 ```mermaid

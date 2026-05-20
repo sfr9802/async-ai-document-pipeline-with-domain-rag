@@ -1,6 +1,6 @@
 # RAG Ingestion Triage
 
-Last updated: 2026-05-19 KST.
+Last updated: 2026-05-21 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of
@@ -13,6 +13,22 @@ queue or decision-boundary detail belongs here.
 Historical `_archive/legacy` artifact paths below are logical provenance names.
 Their physical generated payloads may live in the external runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+As of the 2026-05-21 cleanup, the current repo-local report directory keeps
+only `status.jsonl` plus the latest v3_6_9 SearchUnit/SearchView/SourceAtom
+refactor artifacts; older triage payloads are consolidated under
+`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`.
+The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
+archived under
+`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
+
+## 2026-05-21 - Report Layout Triage Note
+
+No queue state changed in this cleanup. The change is evidence layout only:
+keep current status and the latest v3_6_9 contract proof in
+`ai/eval/reports/rag-ingestion/`, and resolve older queue, failure, audit, and
+measurement payloads from the external archive. This file remains the rolling
+row-level triage surface; avoid recreating per-run Markdown reports unless a
+future run genuinely needs a separate forensic artifact.
 
 ## Triage Policy
 

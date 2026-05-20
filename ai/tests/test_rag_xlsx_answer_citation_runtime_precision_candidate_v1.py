@@ -8,6 +8,45 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = ROOT / "ai" / "scripts" / "rag_xlsx_answer_citation_runtime_precision_candidate_v1.py"
+REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
+
+
+def windows_long_path(path: Path) -> Path:
+    if sys.platform != "win32":
+        return path
+    path_text = str(path)
+    if path_text.startswith("\\\\?\\"):
+        return path
+    if path.is_absolute():
+        return Path("\\\\?\\" + path_text)
+    return path
+
+
+EXTERNAL_REPORT_ARCHIVE_DIRS = (
+    windows_long_path(Path(
+        "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+        "rag-ingestion/repo-wide-cleanup-20260521/reports/rag-ingestion-legacy"
+    )),
+    windows_long_path(Path(
+        "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+        "rag-ingestion/repo-wide-cleanup-20260519/reports/rag-ingestion-legacy"
+    )),
+)
+
+
+def resolve_report_artifact_path(path: Path) -> Path:
+    if path.exists():
+        return path
+    if path.parent == REPORT_DIR:
+        for archive_dir in EXTERNAL_REPORT_ARCHIVE_DIRS:
+            archived = archive_dir / path.name
+            if archived.exists():
+                return archived
+        legacy = REPORT_ARCHIVE_DIR / path.name
+        if legacy.exists():
+            return legacy
+    return path
 
 
 def load_module():
@@ -223,18 +262,13 @@ def test_runtime_candidate_run_emits_report_only_artifacts_without_mutating_base
     module = load_module()
     results_path = tmp_path / "runtime.jsonl"
     status_path = tmp_path / "status.md"
-    baseline_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "baseline_v1.json"
+    baseline_path = resolve_report_artifact_path(REPORT_DIR / "baseline_v1.json")
     baseline_before = baseline_path.read_bytes()
 
     report = module.run_candidate(
         baseline_report_path=baseline_path,
         report_only_repair_candidate_path=None,
-        scorer_results_path=ROOT
-        / "ai"
-        / "eval"
-        / "reports"
-        / "rag-ingestion"
-        / "scorer_v1.jsonl",
+        scorer_results_path=resolve_report_artifact_path(REPORT_DIR / "scorer_v1.jsonl"),
         xlsx_gold_csv_path=ROOT / "ai" / "eval" / "eval_queries" / "gold_queries_xlsx_question_gold_v2.csv",
         output_report=None,
         output_md=None,

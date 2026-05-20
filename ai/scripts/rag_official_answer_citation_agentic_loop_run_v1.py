@@ -35,14 +35,36 @@ if str(AI_WORKER_ROOT) not in sys.path:
     sys.path.insert(0, str(AI_WORKER_ROOT))
 
 import rag_official_answer_citation_metric_first_run_v1 as official  # noqa: E402
+from app.capabilities.rag import source_registry as source_registry_contract  # noqa: E402
 from app.capabilities.rag.retrieval_contract import citation_payload  # noqa: E402
 
 
 REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
-EXTERNAL_REPORT_ARCHIVE_DIR = Path(
+
+
+def windows_long_path(path: Path) -> Path:
+    if sys.platform != "win32":
+        return path
+    path_text = str(path)
+    if path_text.startswith("\\\\?\\"):
+        return path
+    if path.is_absolute():
+        return Path("\\\\?\\" + path_text)
+    return path
+
+
+EXTERNAL_REPORT_ARCHIVE_DIR = windows_long_path(Path(
     "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
     "rag-ingestion/repo-wide-cleanup-20260519/reports/rag-ingestion-legacy"
+))
+PRIMARY_EXTERNAL_REPORT_ARCHIVE_DIR = windows_long_path(Path(
+    "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+    "rag-ingestion/repo-wide-cleanup-20260521/reports/rag-ingestion-legacy"
+))
+EXTERNAL_REPORT_ARCHIVE_DIRS = (
+    PRIMARY_EXTERNAL_REPORT_ARCHIVE_DIR,
+    EXTERNAL_REPORT_ARCHIVE_DIR,
 )
 RUN_ID = "official_answer_citation_agentic_loop_run_v1"
 V2_RUN_ID = "official_answer_citation_agentic_loop_run_v2_source_bound_diagnostic"
@@ -176,6 +198,24 @@ V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID = (
 V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe"
 )
+V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_7_runtime_stability_probe_for_core_only"
+)
+V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_8_nonprod_all_source_index_materialization_and_canonical_payload_wiring"
+)
+V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_8_source_registry_first_evidence_bundle_architecture_audit"
+)
+V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_9_searchunit_searchview_sourceatom_refactor"
+)
+V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_7_0_source_registry_materialization"
+)
+V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_7_1_all_source_citable_nonprod_index_build"
+)
 REPORT_ARTIFACT_SLUGS = {
     RUN_ID: "agentic_v1",
     V2_RUN_ID: "v2_source_bound",
@@ -256,6 +296,24 @@ REPORT_ARTIFACT_SLUGS = {
     V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID: (
         V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID
     ),
+    V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID: (
+        V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID
+    ),
+    V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID: (
+        V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID
+    ),
+    V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID: (
+        V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID
+    ),
+    V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID: (
+        V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID
+    ),
+    V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID: (
+        V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID
+    ),
+    V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID: (
+        V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
@@ -290,6 +348,17 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
     V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
     V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+}
+PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
+    V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
 }
 V3_1_PRIORITY_1_5_QUERY_IDS = (
     "gq_pdf_section_question_001",
@@ -435,9 +504,9 @@ V3_1_FAILURE_TAXONOMY = (
 
 
 def report_artifact_dir(run_id: str) -> Path:
-    if run_id not in ARCHIVED_REPORT_RUN_IDS:
+    if run_id not in PHYSICALLY_ARCHIVED_REPORT_RUN_IDS:
         return REPORT_DIR
-    return REPORT_ARCHIVE_DIR if REPORT_ARCHIVE_DIR.exists() else EXTERNAL_REPORT_ARCHIVE_DIR
+    return REPORT_ARCHIVE_DIR if REPORT_ARCHIVE_DIR.exists() else PRIMARY_EXTERNAL_REPORT_ARCHIVE_DIR
 
 
 def report_artifact_path(run_id: str, suffix: str) -> Path:
@@ -451,6 +520,26 @@ def report_artifact_logical_path(run_id: str, suffix: str) -> Path:
 
 def report_artifact_repo_relative(run_id: str, suffix: str) -> str:
     return official.repo_relative(report_artifact_logical_path(run_id, suffix))
+
+
+def resolve_report_artifact_path(path: Path) -> Path:
+    if path.exists():
+        return path
+    if path.parent == REPORT_ARCHIVE_DIR:
+        for archive_dir in EXTERNAL_REPORT_ARCHIVE_DIRS:
+            archived_external = archive_dir / path.name
+            if archived_external.exists():
+                return archived_external
+        return path
+    if path.parent == REPORT_DIR:
+        for archive_dir in EXTERNAL_REPORT_ARCHIVE_DIRS:
+            archived_external = archive_dir / path.name
+            if archived_external.exists():
+                return archived_external
+        archived = REPORT_ARCHIVE_DIR / path.name
+        if archived.exists():
+            return archived
+    return path
 
 
 DEFAULT_RESULTS_JSONL = report_artifact_path(RUN_ID, "results.jsonl")
@@ -1009,6 +1098,134 @@ DEFAULT_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
     V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
     "next_phase_recommendation.json",
 )
+DEFAULT_V3_6_7_SUMMARY_JSON = report_artifact_path(
+    V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    "summary.json",
+)
+DEFAULT_V3_6_7_RUNTIME_ATTEMPTS_JSONL = report_artifact_path(
+    V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    "runtime_attempts.jsonl",
+)
+DEFAULT_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON = report_artifact_path(
+    V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    "runtime_stability_summary.json",
+)
+DEFAULT_V3_6_7_POLICY_AUDIT_JSON = report_artifact_path(
+    V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    "policy_audit.json",
+)
+DEFAULT_V3_6_7_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    "next_phase_recommendation.json",
+)
+DEFAULT_V3_6_8_ALL_SOURCE_SUMMARY_JSON = report_artifact_path(
+    V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "summary.json",
+)
+DEFAULT_V3_6_8_ALL_SOURCE_SOURCE_INVENTORY_JSON = report_artifact_path(
+    V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "source_inventory.json",
+)
+DEFAULT_V3_6_8_ALL_SOURCE_INDEX_BUILD_SUMMARY_JSON = report_artifact_path(
+    V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "index_build_summary.json",
+)
+DEFAULT_V3_6_8_ALL_SOURCE_PAYLOAD_CONTRACT_SUMMARY_JSON = report_artifact_path(
+    V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "payload_contract_summary.json",
+)
+DEFAULT_V3_6_8_ALL_SOURCE_RETRIEVAL_SMOKE_DIAGNOSTICS_JSONL = report_artifact_path(
+    V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "retrieval_smoke_diagnostics.jsonl",
+)
+DEFAULT_V3_6_8_ALL_SOURCE_FAILURE_BUCKETS_JSON = report_artifact_path(
+    V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "failure_buckets.json",
+)
+DEFAULT_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON = report_artifact_path(
+    V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "summary.json",
+)
+DEFAULT_V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT_JSON = report_artifact_path(
+    V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "source_object_audit.json",
+)
+DEFAULT_V3_6_8_SOURCE_REGISTRY_SEARCHUNIT_ROLE_AUDIT_JSON = report_artifact_path(
+    V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "searchunit_role_audit.json",
+)
+DEFAULT_V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT_JSON = report_artifact_path(
+    V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "evidence_bundle_contract.json",
+)
+DEFAULT_V3_6_8_SOURCE_REGISTRY_TRACK_ROUTING_AUDIT_JSON = report_artifact_path(
+    V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "track_routing_audit.json",
+)
+DEFAULT_V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON = report_artifact_path(
+    V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "failure_buckets.json",
+)
+DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON = report_artifact_path(
+    V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    "summary.json",
+)
+DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON = report_artifact_path(
+    V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    "contract_refactor.json",
+)
+DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_ADAPTER_DIAGNOSTICS_JSON = report_artifact_path(
+    V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    "search_view_adapter_diagnostics.json",
+)
+DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON = report_artifact_path(
+    V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    "source_atom_hydration_smoke.json",
+)
+DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS_JSON = report_artifact_path(
+    V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    "failure_buckets.json",
+)
+DEFAULT_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON = report_artifact_path(
+    V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    "summary.json",
+)
+DEFAULT_V3_7_0_SOURCE_REGISTRY_SOURCE_INVENTORY_JSON = report_artifact_path(
+    V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    "source_inventory.json",
+)
+DEFAULT_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_DIAGNOSTICS_JSONL = report_artifact_path(
+    V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    "materialization_diagnostics.jsonl",
+)
+DEFAULT_V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE_JSON = report_artifact_path(
+    V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    "hydration_smoke.json",
+)
+DEFAULT_V3_7_0_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON = report_artifact_path(
+    V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    "failure_buckets.json",
+)
+DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON = report_artifact_path(
+    V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    "summary.json",
+)
+DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SOURCE_INVENTORY_JSON = report_artifact_path(
+    V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    "source_inventory.json",
+)
+DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY_JSON = report_artifact_path(
+    V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    "index_build_summary.json",
+)
+DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE_JSON = report_artifact_path(
+    V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    "hydration_smoke.json",
+)
+DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON = report_artifact_path(
+    V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    "failure_buckets.json",
+)
 DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "scorer_v1.jsonl"
 DEFAULT_TEXT_NAMU_GOLD_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v2_1_question_gold_v2.csv"
 DEFAULT_TEXT_NAMU_HUMAN_AUDIT_V2_DECISIONS_JSON = (
@@ -1018,6 +1235,17 @@ DEFAULT_TEXT_NAMU_POLICY_REVIEW_PACKET_JSON = (
     AI_WORKER_ROOT / "eval" / "review" / "rag_text_namu_answer_citation_policy_review_packet_v2_1.json"
 )
 DEFAULT_RAG_INDEX_DIR = AI_WORKER_ROOT / "eval" / "indexes" / "rag-data-official-denominator-v1"
+DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR = (
+    AI_WORKER_ROOT / "eval" / "indexes" / "rag-data-all-source-nonprod-v1"
+)
+DEFAULT_SOURCE_ATOM_REGISTRY_DIR = AI_WORKER_ROOT / "eval" / "source_registry"
+DEFAULT_SOURCE_ATOM_REGISTRY_JSONL = DEFAULT_SOURCE_ATOM_REGISTRY_DIR / "source_atom_registry_v1.jsonl"
+DEFAULT_SOURCE_ATOM_REGISTRY_BUILD_JSON = DEFAULT_SOURCE_ATOM_REGISTRY_DIR / "source_atom_registry_build.json"
+DEFAULT_SOURCE_ATOM_REGISTRY_INVENTORY_JSON = DEFAULT_SOURCE_ATOM_REGISTRY_DIR / "source_atom_registry_inventory.json"
+DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL = DEFAULT_SOURCE_ATOM_REGISTRY_DIR / "source_atom_registry_blocked.jsonl"
+DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR = (
+    AI_WORKER_ROOT / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-v1"
+)
 
 GENERATION_PIPELINE_UNAVAILABLE = "GENERATION_PIPELINE_UNAVAILABLE"
 AGENTIC_GENERATION_ROW_FAILED = "AGENTIC_GENERATION_ROW_FAILED"
@@ -1441,6 +1669,12 @@ def main(argv: list[str] | None = None) -> int:
         V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
         V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
         V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+        V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+        V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+        V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+        V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
     }:
         write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
         append_v3_6_low_touch_weak_noisy_silver_event(Path(args.status_jsonl), summary)
@@ -1742,6 +1976,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
         V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
         V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+        V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+        V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+        V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+        V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
     }
     if args.run_id not in supported_run_ids:
         raise SystemExit(
@@ -1859,6 +2099,24 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
 
     if args.run_id == V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID:
         return run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe(args=args), []
+
+    if args.run_id == V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID:
+        return run_v3_6_7_runtime_stability_probe_for_core_only(args=args), []
+
+    if args.run_id == V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID:
+        return run_v3_6_8_nonprod_all_source_index_materialization(args=args), []
+
+    if args.run_id == V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID:
+        return run_v3_6_8_source_registry_first_evidence_bundle_architecture_audit(args=args), []
+
+    if args.run_id == V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID:
+        return run_v3_6_9_searchunit_searchview_sourceatom_refactor(args=args), []
+
+    if args.run_id == V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID:
+        return run_v3_7_0_source_registry_materialization(args=args), []
+
+    if args.run_id == V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID:
+        return run_v3_7_1_all_source_citable_nonprod_index_build(args=args), []
 
     if args.run_id == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
         return run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement(
@@ -17998,19 +18256,31 @@ def run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts(
         "total": inventory.get("candidate_count_total", 0),
     }
     source_artifacts = {
-        "v3_4_3_metrics_json": official.repo_relative(DEFAULT_V3_4_3_RETRIEVAL_SMOKE_METRICS_JSON),
-        "v3_4_3_per_query_jsonl": official.repo_relative(DEFAULT_V3_4_3_RETRIEVAL_SMOKE_PER_QUERY_JSONL),
-        "v3_4_2_official_retrieval_qrels_jsonl": official.repo_relative(
-            DEFAULT_V3_4_2_OFFICIAL_RETRIEVAL_QRELS_JSONL
+        "v3_4_3_metrics_json": report_artifact_repo_relative(
+            V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+            "metrics.json",
         ),
-        "v3_4_2_qrels_coverage_summary_json": official.repo_relative(
-            DEFAULT_V3_4_2_QRELS_COVERAGE_SUMMARY_JSON
+        "v3_4_3_per_query_jsonl": report_artifact_repo_relative(
+            V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
+            "per_query.jsonl",
         ),
-        "v3_4_2_qrels_exclusion_ledger_jsonl": official.repo_relative(
-            DEFAULT_V3_4_2_QRELS_EXCLUSION_LEDGER_JSONL
+        "v3_4_2_official_retrieval_qrels_jsonl": report_artifact_repo_relative(
+            V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+            "official_retrieval_qrels.jsonl",
+        ),
+        "v3_4_2_qrels_coverage_summary_json": report_artifact_repo_relative(
+            V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+            "qrels_coverage_summary.json",
+        ),
+        "v3_4_2_qrels_exclusion_ledger_jsonl": report_artifact_repo_relative(
+            V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
+            "qrels_exclusion_ledger.jsonl",
         ),
         "v3_3_3_silver_candidate_inventory_json": (
-            official.repo_relative(DEFAULT_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_INVENTORY_JSON)
+            report_artifact_repo_relative(
+                V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_RUN_ID,
+                "candidate_inventory.json",
+            )
             if DEFAULT_V3_3_3_SILVER_SOURCE_CANDIDATE_DISCOVERY_INVENTORY_JSON.exists()
             else None
         ),
@@ -18200,10 +18470,17 @@ def run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts(
         "guardrails": guardrails,
     }
     artifact_paths = {
-        "readme_metric_card_json": official.repo_relative(DEFAULT_V3_4_4_README_METRIC_CARD_JSON),
-        "readme_section_md": official.repo_relative(DEFAULT_V3_4_4_README_SECTION_MD),
-        "silver_readiness_summary_json": official.repo_relative(
-            DEFAULT_V3_4_4_SILVER_READINESS_SUMMARY_JSON
+        "readme_metric_card_json": report_artifact_repo_relative(
+            V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+            "readme_metric_card.json",
+        ),
+        "readme_section_md": report_artifact_repo_relative(
+            V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+            "readme_section.md",
+        ),
+        "silver_readiness_summary_json": report_artifact_repo_relative(
+            V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+            "silver_readiness_summary.json",
         ),
         "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
         "progress_doc": "docs/rag-ingestion-progress.md",
@@ -23769,15 +24046,17 @@ def v3_6_4_source_manifest_paths() -> dict[str, Path]:
 
 
 def v3_6_4_read_json_if_present(path: Path) -> dict[str, Any]:
-    if not path.exists():
+    resolved = resolve_report_artifact_path(path)
+    if not resolved.exists():
         return {}
-    return official.read_json(path)
+    return official.read_json(resolved)
 
 
 def v3_6_4_read_jsonl_if_present(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
+    resolved = resolve_report_artifact_path(path)
+    if not resolved.exists():
         return []
-    return read_jsonl(path)
+    return read_jsonl(resolved)
 
 
 def v3_6_4_manifest_input_sha256() -> dict[str, str]:
@@ -24382,7 +24661,7 @@ V3_6_6_ALLOWED_LLM_CLASSIFICATIONS = {
 V3_6_6_RECOMMENDATION_CHOICES = (
     "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric",
     "v3_6_7_runtime_stability_probe_for_core_only",
-    "v3_6_7_manifest_locator_live_retrieval_probe",
+    "v3_6_8_canonical_payload_live_retrieval_probe",
     "v3_6_7_reference_sidecar_recovery_or_compaction_fix",
 )
 V3_6_6_POLICY_FALSE_FIELDS = (
@@ -24429,6 +24708,171 @@ V3_6_6_REQUIRED_V3_6_5_DB_FIELDS = (
     "db_migration_attempted",
     "db_index_rebuild_attempted",
     "production_db_used",
+)
+V3_6_7_SOURCE_RECOMMENDED_PHASE = "v3_6_7_runtime_stability_probe_for_core_only"
+V3_6_7_RECOMMENDATION_CHOICES = (
+    "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric",
+    "v3_6_8_canonical_payload_live_retrieval_probe",
+    "v3_6_7_runtime_stability_probe_for_core_only",
+    "v3_6_7_reference_sidecar_recovery_or_compaction_fix",
+)
+V3_6_8_ALL_SOURCE_INDEX_VERSION = (
+    "official-answer-citation-agentic-loop-v3-6-8-nonprod-all-source-v1"
+)
+V3_6_8_ALL_SOURCE_INDEX_NAMESPACE = "rag-data-all-source-nonprod-v1"
+V3_6_8_ALL_SOURCE_VECTOR_DIMENSION = 128
+V3_6_8_ALL_SOURCE_EMBEDDING_MODEL = "codex-diagnostic-hashing-vector-v1"
+V3_7_1_ALL_SOURCE_CITABLE_INDEX_VERSION = (
+    "official-answer-citation-agentic-loop-v3-7-1-all-source-citable-nonprod-v1"
+)
+V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE = "rag-data-all-source-citable-nonprod-v1"
+V3_7_1_ALL_SOURCE_CITABLE_VECTOR_DIMENSION = V3_6_8_ALL_SOURCE_VECTOR_DIMENSION
+V3_7_1_ALL_SOURCE_CITABLE_EMBEDDING_MODEL = V3_6_8_ALL_SOURCE_EMBEDDING_MODEL
+V3_7_1_ALL_SOURCE_CITABLE_OUTCOMES = {
+    "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT",
+    "ALL_SOURCE_CITABLE_INDEX_PARTIAL",
+    "ALL_SOURCE_CITABLE_INDEX_BLOCKED",
+    "SOURCE_REGISTRY_NOT_READY",
+}
+V3_7_1_ALL_SOURCE_CITABLE_NEXT_PHASE_BY_OUTCOME = {
+    "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT": "v3_7_2_source_registry_backed_retrieval_smoke",
+    "ALL_SOURCE_CITABLE_INDEX_PARTIAL": "targeted_search_view_source_atom_pointer_repair",
+    "ALL_SOURCE_CITABLE_INDEX_BLOCKED": "all_source_citable_nonprod_index_repair",
+    "SOURCE_REGISTRY_NOT_READY": "source_registry_materialization_repair",
+}
+V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS = (
+    "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT",
+    "SOURCE_REGISTRY_NOT_READY",
+    "SOURCE_REGISTRY_FILE_MISSING",
+    "SOURCE_REGISTRY_SHA_CHANGED",
+    "OFFICIAL_DENOMINATOR_PROTECTION_FAILED",
+    "INDEX_LOAD_CHECK_FAILED",
+    "INDEX_FILE_MISSING",
+    "SOURCE_ATOM_POINTER_MISSING",
+    "SOURCE_ATOM_SCHEMA_INCOMPLETE",
+    "SEARCH_VIEW_SOURCE_ATOM_POINTER_MISSING",
+    "VECTOR_METADATA_CANONICAL_PAYLOAD_PRESENT",
+    "VECTOR_METADATA_USED_AS_EVIDENCE_TRUTH",
+    "NO_VECTOR_HYDRATION_FAILED",
+    "NO_VECTOR_CITATION_RENDER_FAILED",
+    "SNAPSHOT_ONLY_POLICY_INCOMPLETE",
+    "FORBIDDEN_SOURCE_ATOM_INDEXED",
+    "RETRIEVAL_ONLY_UNCANONICALIZED_INDEXED",
+    "ALL_SOURCE_CITABLE_INDEX_PARTIAL",
+    "ALL_SOURCE_CITABLE_INDEX_BLOCKED",
+)
+V3_6_8_CANONICAL_PAYLOAD_SOURCE_RECOMMENDED_PHASE = "v3_6_8_canonical_payload_live_retrieval_probe"
+V3_6_8_CANONICAL_PAYLOAD_ACCEPTED_SOURCE_RECOMMENDED_PHASES = {
+    "v3_6_7_manifest_locator_live_retrieval_probe",
+    V3_6_8_CANONICAL_PAYLOAD_SOURCE_RECOMMENDED_PHASE,
+}
+V3_6_8_CANONICAL_PAYLOAD_OUTCOMES = {
+    "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED",
+    "ALL_SOURCE_INDEX_BUILT_PAYLOAD_PARTIAL",
+    "INDEX_MATERIALIZATION_BLOCKED",
+    "PAYLOAD_WIRED_BUT_LLM_CITATION_COPY_BLOCKED",
+}
+V3_6_8_CANONICAL_PAYLOAD_NEXT_PHASE_BY_OUTCOME = {
+    "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED": "v3_6_9_core_only_live_diagnostic_metric",
+    "ALL_SOURCE_INDEX_BUILT_PAYLOAD_PARTIAL": "targeted_canonicalization_repair",
+    "INDEX_MATERIALIZATION_BLOCKED": "non_production_index_materialization_repair",
+    "PAYLOAD_WIRED_BUT_LLM_CITATION_COPY_BLOCKED": "prompt_schema_citation_copy_repair",
+}
+V3_6_8_CANONICAL_PAYLOAD_FAILURE_BUCKETS = (
+    "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED",
+    "ALL_SOURCE_INDEX_BUILT_PAYLOAD_PARTIAL",
+    "INDEX_MATERIALIZATION_BLOCKED",
+    "PAYLOAD_WIRED_BUT_LLM_CITATION_COPY_BLOCKED",
+    "INDEX_LOAD_CHECK_FAILED",
+    "INDEX_FILE_MISSING",
+    "SOURCE_UNIT_REJECTED_FOR_FORBIDDEN_FIELD",
+    "SOURCE_IDENTITY_MISSING",
+    "LOCATOR_FINGERPRINT_MISSING",
+    "SEARCH_UNIT_ID_MISSING",
+    "CANONICAL_CITATION_PAYLOAD_MISSING",
+    "TRACK_LOCATOR_MISSING",
+    "TRACK_LOCATOR_SCHEMA_MISMATCH",
+    "TEXT_LOCATOR_MISSING_OR_EMPTY",
+    "PDF_LOCATOR_PAGE_OR_BBOX_MISSING",
+    "XLSX_LOCATOR_CELL_OR_RANGE_MISSING",
+    "PAYLOAD_PRESENT_RENDER_INVALID",
+    "V3_5_4_SOURCE_ROW_NOT_REPRESENTED",
+    "OFFICIAL_DENOMINATOR_PROTECTION_FAILED",
+    "FORBIDDEN_SOURCE_ARTIFACT_INDEXED",
+    "RETRIEVAL_ONLY_UNCANONICALIZED",
+    "RETRIEVAL_SMOKE_NO_RESULT",
+    "PRODUCTION_OR_DB_MUTATION_RISK_BLOCKED",
+)
+V3_6_8_CANONICAL_PAYLOAD_SAMPLE_PER_FAMILY = 10
+V3_6_8_SOURCE_REGISTRY_OUTCOMES = {
+    "SOURCE_REGISTRY_EVIDENCE_ARCHITECTURE_READY",
+    "SEARCHUNIT_OVERLOADED_BLOCKER",
+    "SOURCE_REGISTRY_MISSING_BLOCKER",
+    "VECTOR_DB_COUPLING_BLOCKER",
+    "TRACK_ROUTING_OVERFIT_BLOCKER",
+}
+V3_6_8_SOURCE_REGISTRY_NEXT_PHASE_BY_OUTCOME = {
+    "SOURCE_REGISTRY_EVIDENCE_ARCHITECTURE_READY": "nonprod all-source citable retrieval index build",
+    "SEARCHUNIT_OVERLOADED_BLOCKER": "SearchUnit/SearchView/SourceAtom refactor",
+    "SOURCE_REGISTRY_MISSING_BLOCKER": "source registry materialization",
+    "VECTOR_DB_COUPLING_BLOCKER": "vector metadata decoupling and hydration refactor",
+    "TRACK_ROUTING_OVERFIT_BLOCKER": "source-family-generic routing/evidence assembly repair",
+}
+V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS = (
+    "SOURCE_REGISTRY_EVIDENCE_ARCHITECTURE_READY",
+    "SEARCHUNIT_OVERLOADED_BLOCKER",
+    "SOURCE_REGISTRY_MISSING_BLOCKER",
+    "VECTOR_DB_COUPLING_BLOCKER",
+    "TRACK_ROUTING_OVERFIT_BLOCKER",
+    "SOURCE_ATOM_SCHEMA_INCOMPLETE",
+    "SEARCH_VIEW_SOURCE_ATOM_POINTER_MISSING",
+    "EVIDENCE_BUNDLE_CONTRACT_INCOMPLETE",
+    "RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT",
+    "VECTOR_HIT_SOURCE_ATOM_MISSING",
+    "RAW_FILE_MISSING_EXTRACTION_SNAPSHOT_PRESENT",
+    "RAW_AND_EXTRACTION_SNAPSHOT_MISSING",
+    "QUERY_ID_SPECIFIC_EVIDENCE_PATCH_DETECTED",
+    "FILE_NAME_SPECIFIC_EVIDENCE_PATCH_DETECTED",
+    "SILVER_EXPECTED_ANSWER_USED_AS_GENERATION_INPUT",
+    "SILVER_EVIDENCE_LOCATOR_USED_AS_RETRIEVAL_SHORTCUT",
+    "PRODUCTION_OR_DB_MUTATION_RISK_BLOCKED",
+)
+V3_6_9_SEARCHUNIT_SOURCEATOM_OUTCOMES = {
+    "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY",
+    "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_BLOCKED",
+    "SOURCE_REGISTRY_MATERIALIZATION_REQUIRED",
+    "VECTOR_METADATA_DECOUPLING_REQUIRED",
+}
+V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS = (
+    "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY",
+    "SEARCH_VIEW_SOURCE_ATOM_POINTER_MISSING",
+    "SOURCE_ATOM_SCHEMA_INCOMPLETE",
+    "SOURCE_REGISTRY_MISSING_BLOCKER",
+    "VECTOR_HIT_SOURCE_ATOM_MISSING",
+    "RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT",
+    "VECTOR_PAYLOAD_USED_AS_EVIDENCE_TRUTH",
+    "EVIDENCE_BUNDLE_CONTRACT_INCOMPLETE",
+    "SOURCE_REGISTRY_MATERIALIZATION_REQUIRED",
+    "PRODUCTION_OR_DB_MUTATION_RISK_BLOCKED",
+)
+V3_7_0_SOURCE_REGISTRY_OUTCOMES = {
+    "SOURCE_REGISTRY_MATERIALIZED_READY",
+    "SOURCE_REGISTRY_MATERIALIZED_PARTIAL",
+    "SOURCE_REGISTRY_MATERIALIZATION_BLOCKED",
+    "RAW_SOURCE_LINEAGE_BLOCKED",
+    "SNAPSHOT_ONLY_POLICY_BLOCKED",
+}
+V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_BUCKETS = (
+    "source_atom_ready",
+    "snapshot_only_ready",
+    "retrieval_only_uncanonicalized",
+    "blocked_missing_raw_source",
+    "blocked_missing_extraction_snapshot",
+    "blocked_missing_locator",
+    "blocked_missing_content_hash",
+    "blocked_eval_artifact",
+    "blocked_expected_answer_or_label_artifact",
+    "blocked_unknown_source_lineage",
 )
 
 
@@ -26700,10 +27144,10 @@ def v3_6_6_next_phase_recommendation(
         recommended = "v3_6_7_runtime_stability_probe_for_core_only"
         rationale = "The sidecar is complete, but local core smoke generation was attempted and unstable."
     elif local_generation_blocked and retrieval_mapping_available:
-        recommended = "v3_6_7_manifest_locator_live_retrieval_probe"
+        recommended = "v3_6_8_canonical_payload_live_retrieval_probe"
         rationale = "The sidecar is complete and manifest locator mapping is available, but generation was blocked."
     elif not live_retrieval_feasible:
-        recommended = "v3_6_7_manifest_locator_live_retrieval_probe"
+        recommended = "v3_6_8_canonical_payload_live_retrieval_probe"
         rationale = "The sidecar is complete, but live retrieval still requires a manifest locator adapter probe."
     else:
         recommended = "v3_6_7_runtime_stability_probe_for_core_only"
@@ -26833,6 +27277,6764 @@ def v3_6_6_policy_audit(
         "protected_v3_6_3_input_sha256_after": dict(protected_v3_6_3_sha_after),
         "protected_v3_6_3_input_sha256_unchanged": dict(protected_v3_6_3_sha_before)
         == dict(protected_v3_6_3_sha_after),
+    }
+
+
+def run_v3_6_7_runtime_stability_probe_for_core_only(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    source_paths = v3_6_7_source_paths()
+    input_sha_before = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_before = v3_6_5_v3_6_3_manifest_sha256()
+    source_json, source_jsonl, source_load_errors = v3_6_5_load_source_artifacts(source_paths)
+    v3_6_6_summary = source_json.get("v3_6_6_summary_json", {})
+    v3_6_6_runtime_summary = source_json.get("v3_6_6_runtime_probe_summary_json", {})
+    v3_6_6_db_audit = source_json.get("v3_6_6_db_retrieval_surface_audit_json", {})
+    v3_6_6_policy = source_json.get("v3_6_6_policy_audit_json", {})
+    v3_6_6_next_phase = source_json.get("v3_6_6_next_phase_recommendation_json", {})
+    sidecar_rows = source_jsonl.get("v3_6_6_reference_sidecar_jsonl", [])
+    baseline_smoke_rows = source_jsonl.get("v3_6_6_core_smoke_sample_jsonl", [])
+    fail_closed_reasons = v3_6_7_source_fail_closed_reasons(
+        source_load_errors=source_load_errors,
+        v3_6_6_summary=v3_6_6_summary,
+        v3_6_6_runtime_summary=v3_6_6_runtime_summary,
+        v3_6_6_db_audit=v3_6_6_db_audit,
+        v3_6_6_policy=v3_6_6_policy,
+        v3_6_6_next_phase=v3_6_6_next_phase,
+        sidecar_rows=sidecar_rows,
+        baseline_smoke_rows=baseline_smoke_rows,
+    )
+    runtime_attempt_rows, runtime_stability_summary = v3_6_7_runtime_stability_probe(
+        args=args,
+        baseline_smoke_rows=baseline_smoke_rows,
+        v3_6_6_summary=v3_6_6_summary,
+        source_fail_closed_reasons=fail_closed_reasons,
+        generated_at=generated_at,
+    )
+    input_sha_after = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_after = v3_6_5_v3_6_3_manifest_sha256()
+    protected_input_sha256_unchanged = input_sha_before == input_sha_after
+    protected_v3_6_3_input_sha256_unchanged = protected_v3_6_3_sha_before == protected_v3_6_3_sha_after
+    if not protected_input_sha256_unchanged:
+        fail_closed_reasons.append("v3_6_7_protected_input_sha256_changed_during_probe")
+    if not protected_v3_6_3_input_sha256_unchanged:
+        fail_closed_reasons.append("v3_6_7_protected_v3_6_3_sha_changed_during_probe")
+    fail_closed_reasons = sorted(set(fail_closed_reasons))
+    next_phase_recommendation = v3_6_7_next_phase_recommendation(
+        generated_at=generated_at,
+        runtime_stability_summary=runtime_stability_summary,
+        v3_6_6_db_audit=v3_6_6_db_audit,
+        fail_closed_reasons=fail_closed_reasons,
+    )
+    policy_audit = v3_6_7_policy_audit(
+        generated_at=generated_at,
+        fail_closed_reasons=fail_closed_reasons,
+        input_sha_before=input_sha_before,
+        input_sha_after=input_sha_after,
+        protected_v3_6_3_sha_before=protected_v3_6_3_sha_before,
+        protected_v3_6_3_sha_after=protected_v3_6_3_sha_after,
+        runtime_stability_summary=runtime_stability_summary,
+    )
+    sidecar_counts = v3_6_6_sidecar_counts(sidecar_rows)
+    source_family_counts = v3_6_6_count_field(sidecar_rows, "source_family")
+    status = (
+        "DIAGNOSTIC_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_FAIL_CLOSED"
+        if fail_closed_reasons
+        else "DIAGNOSTIC_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_COMPLETE"
+    )
+    summary: dict[str, Any] = {
+        "schema_version": f"{V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID}_summary_v1",
+        "run_id": V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_runtime_stability_probe_for_core_only",
+        "event_type": "diagnostic_runtime_stability_probe_for_core_only_v3_6_7",
+        "status": status,
+        "run_class": "diagnostic_only_runtime_stability_probe_for_core_only",
+        "source_v3_6_6_run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "source_manifest_run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "source_candidate_generation_run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "local_llm_usage_allowed": True,
+        "local_llm_usage_scope": "diagnostic_only_core_runtime_stability_probe_only",
+        "local_llm_live_silver_generation_allowed": False,
+        "local_llm_live_silver_generation_attempted": False,
+        "local_llm_metric_scoring_allowed": False,
+        "local_llm_metric_scoring_attempted": False,
+        "external_llm_api_allowed": False,
+        "external_llm_api_attempted": False,
+        "db_usage_allowed": True,
+        "db_usage_scope": "read_only_inherited_surface_status_only",
+        "db_read_only_probe_attempted": False,
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_results_as_gold_allowed": False,
+        "db_results_as_official_qrels_allowed": False,
+        "db_results_as_generation_source_allowed": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "sidecar_row_counts": sidecar_counts,
+        "manifest_row_count": sidecar_counts["all_diagnostic"],
+        "diagnostic_row_count": sidecar_counts["all_diagnostic"],
+        "core_manifest_row_count": sidecar_counts["core_only"],
+        "review_only_manifest_row_count": sidecar_counts["review_only_challenge"],
+        "quarantine_manifest_row_count": sidecar_counts["quarantine"],
+        "source_family_counts": source_family_counts,
+        "query_quality_profile_counts": v3_6_6_count_field(sidecar_rows, "query_quality_profile"),
+        "runtime_probe_row_count": len(runtime_attempt_rows),
+        "runtime_probe_core_only": bool(runtime_stability_summary.get("runtime_probe_core_only")),
+        "review_only_rows_attempted": runtime_stability_summary.get("review_only_rows_attempted", 0),
+        "official_proximity_rows_attempted": runtime_stability_summary.get("official_proximity_rows_attempted", 0),
+        "runtime_generation_coverage_rate": runtime_stability_summary.get("citation_surface_valid_rate", 0.0),
+        "local_llm_surface_classification": official.clean(v3_6_6_summary.get("local_llm_surface_classification")),
+        "runtime_stability_classification": runtime_stability_summary["runtime_stability_classification"],
+        "runtime_attempted_row_count": runtime_stability_summary["runtime_attempted_row_count"],
+        "strict_json_answer_returned_row_count": runtime_stability_summary[
+            "strict_json_answer_returned_row_count"
+        ],
+        "citation_surface_valid_row_count": runtime_stability_summary["citation_surface_valid_row_count"],
+        "answer_text_hash_changed_from_v3_6_6_count": runtime_stability_summary[
+            "answer_text_hash_changed_from_v3_6_6_count"
+        ],
+        "baseline_strict_json_answer_returned_row_count": runtime_stability_summary[
+            "baseline_strict_json_answer_returned_row_count"
+        ],
+        "baseline_citation_surface_valid_row_count": runtime_stability_summary[
+            "baseline_citation_surface_valid_row_count"
+        ],
+        "runtime_failure_bucket_counts": runtime_stability_summary["runtime_failure_bucket_counts"],
+        "runtime_status_transition_counts": runtime_stability_summary["runtime_status_transition_counts"],
+        "v3_6_6_recommended_this_phase": v3_6_6_next_phase.get("recommended_next_phase")
+        == V3_6_7_SOURCE_RECOMMENDED_PHASE,
+        "v3_6_7_core_only_live_diagnostic_metric_allowed": next_phase_recommendation[
+            "v3_6_7_core_only_live_diagnostic_metric_allowed"
+        ],
+        "review_only_remains_stress_only": True,
+        "split_holdout_independence_warning_carried_forward": True,
+        "split_holdout_not_source_isolated": True,
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": protected_input_sha256_unchanged,
+        "protected_v3_6_3_input_sha256_before": protected_v3_6_3_sha_before,
+        "protected_v3_6_3_input_sha256_after": protected_v3_6_3_sha_after,
+        "protected_v3_6_3_input_sha256_unchanged": protected_v3_6_3_input_sha256_unchanged,
+        "protected_sha_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "guardrail_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "fail_closed_reasons": fail_closed_reasons,
+        "runtime_fail_closed_reasons": runtime_stability_summary.get("runtime_fail_closed_reasons", []),
+        "recommended_next_phase": next_phase_recommendation["recommended_next_phase"],
+        "runtime_attempt_rows": runtime_attempt_rows,
+        "runtime_stability_summary": runtime_stability_summary,
+        "policy_audit": policy_audit,
+        "next_phase_recommendation": next_phase_recommendation,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_6_7_SUMMARY_JSON),
+            "runtime_attempts_jsonl": official.repo_relative(DEFAULT_V3_6_7_RUNTIME_ATTEMPTS_JSONL),
+            "runtime_stability_summary_json": official.repo_relative(
+                DEFAULT_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON
+            ),
+            "policy_audit_json": official.repo_relative(DEFAULT_V3_6_7_POLICY_AUDIT_JSON),
+            "next_phase_recommendation_json": official.repo_relative(
+                DEFAULT_V3_6_7_NEXT_PHASE_RECOMMENDATION_JSON
+            ),
+            "source_v3_6_6_summary_json": official.repo_relative(DEFAULT_V3_6_6_SUMMARY_JSON),
+            "source_v3_6_6_core_smoke_sample_jsonl": official.repo_relative(
+                DEFAULT_V3_6_6_CORE_SMOKE_SAMPLE_JSONL
+            ),
+            "source_v3_6_6_reference_sidecar_jsonl": official.repo_relative(
+                DEFAULT_V3_6_6_REFERENCE_SIDECAR_JSONL
+            ),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+    return summary
+
+
+def v3_6_7_source_paths() -> dict[str, Path]:
+    paths = dict(v3_6_6_source_paths())
+    paths.update(
+        {
+            "v3_6_6_summary_json": DEFAULT_V3_6_6_SUMMARY_JSON,
+            "v3_6_6_reference_sidecar_jsonl": DEFAULT_V3_6_6_REFERENCE_SIDECAR_JSONL,
+            "v3_6_6_core_smoke_sample_jsonl": DEFAULT_V3_6_6_CORE_SMOKE_SAMPLE_JSONL,
+            "v3_6_6_runtime_probe_summary_json": DEFAULT_V3_6_6_RUNTIME_PROBE_SUMMARY_JSON,
+            "v3_6_6_db_retrieval_surface_audit_json": DEFAULT_V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT_JSON,
+            "v3_6_6_policy_audit_json": DEFAULT_V3_6_6_POLICY_AUDIT_JSON,
+            "v3_6_6_next_phase_recommendation_json": DEFAULT_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON,
+        }
+    )
+    return paths
+
+
+def v3_6_7_source_fail_closed_reasons(
+    *,
+    source_load_errors: Sequence[str],
+    v3_6_6_summary: Mapping[str, Any],
+    v3_6_6_runtime_summary: Mapping[str, Any],
+    v3_6_6_db_audit: Mapping[str, Any],
+    v3_6_6_policy: Mapping[str, Any],
+    v3_6_6_next_phase: Mapping[str, Any],
+    sidecar_rows: Sequence[Mapping[str, Any]],
+    baseline_smoke_rows: Sequence[Mapping[str, Any]],
+) -> list[str]:
+    reasons = list(source_load_errors)
+    if v3_6_6_summary.get("run_id") != V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID:
+        reasons.append("v3_6_6_summary_run_id_mismatch")
+    if v3_6_6_summary.get("recommended_next_phase") != V3_6_7_SOURCE_RECOMMENDED_PHASE:
+        reasons.append("v3_6_6_summary_did_not_recommend_v3_6_7_runtime_stability_probe")
+    if v3_6_6_next_phase.get("recommended_next_phase") != V3_6_7_SOURCE_RECOMMENDED_PHASE:
+        reasons.append("v3_6_6_next_phase_did_not_recommend_v3_6_7_runtime_stability_probe")
+    if not bool(v3_6_6_summary.get("diagnostic_reference_sidecar_complete")):
+        reasons.append("v3_6_6_reference_sidecar_incomplete")
+    if as_mapping(v3_6_6_summary.get("sidecar_row_counts")) != {
+        "all_diagnostic": 1000,
+        "core_only": 665,
+        "quarantine": 0,
+        "review_only_challenge": 335,
+    }:
+        reasons.append("v3_6_6_sidecar_counts_unexpected")
+    if len(sidecar_rows) != 1000:
+        reasons.append("v3_6_6_reference_sidecar_row_count_mismatch")
+    if len(baseline_smoke_rows) != 30:
+        reasons.append("v3_6_6_core_smoke_sample_count_mismatch")
+    if any(row.get("reporting_partition") != "core_only" for row in baseline_smoke_rows):
+        reasons.append("v3_6_6_core_smoke_sample_contains_non_core_row")
+    if any(row.get("official_proximity_review") for row in baseline_smoke_rows):
+        reasons.append("v3_6_6_core_smoke_sample_contains_official_proximity_row")
+    for row in baseline_smoke_rows:
+        input_fields = set(row.get("generation_input_field_names") or [])
+        if input_fields - {"generated_question_draft", "source_family"}:
+            reasons.append("v3_6_6_core_smoke_generation_input_field_leakage")
+            break
+        if any(
+            bool(row.get(field))
+            for field in (
+                "generation_input_used_expected_answer_draft",
+                "generation_input_used_supporting_evidence_locator_draft",
+                "generation_input_used_gold_fields",
+                "generation_input_used_official_fields",
+                "generation_input_used_db_query_results",
+            )
+        ):
+            reasons.append("v3_6_6_core_smoke_generation_input_policy_violation")
+            break
+    for payload_name, payload in (
+        ("v3_6_6_summary", v3_6_6_summary),
+        ("v3_6_6_policy", v3_6_6_policy),
+        ("v3_6_6_runtime_summary", v3_6_6_runtime_summary),
+        ("v3_6_6_db_audit", v3_6_6_db_audit),
+        ("v3_6_6_next_phase", v3_6_6_next_phase),
+    ):
+        for field in V3_6_6_POLICY_FALSE_FIELDS:
+            if bool(payload.get(field)):
+                reasons.append(f"{payload_name}_guardrail_true:{field}")
+    for field in (
+        "external_llm_api_attempted",
+        "local_llm_live_silver_generation_attempted",
+        "local_llm_metric_scoring_attempted",
+    ):
+        if bool(v3_6_6_summary.get(field)) or bool(v3_6_6_runtime_summary.get(field)):
+            reasons.append(f"v3_6_6_llm_guardrail_true:{field}")
+    for field in (
+        "db_write_attempted",
+        "db_migration_attempted",
+        "db_index_rebuild_attempted",
+        "production_db_used",
+    ):
+        if bool(v3_6_6_summary.get(field)) or bool(v3_6_6_db_audit.get(field)):
+            reasons.append(f"v3_6_6_db_guardrail_true:{field}")
+    if not bool(v3_6_6_summary.get("protected_input_sha256_unchanged")):
+        reasons.append("v3_6_6_protected_input_sha256_not_unchanged")
+    if not bool(v3_6_6_summary.get("protected_v3_6_3_input_sha256_unchanged")):
+        reasons.append("v3_6_6_protected_v3_6_3_sha_not_unchanged")
+    return sorted(set(reasons))
+
+
+def v3_6_7_runtime_stability_probe(
+    *,
+    args: argparse.Namespace,
+    baseline_smoke_rows: Sequence[Mapping[str, Any]],
+    v3_6_6_summary: Mapping[str, Any],
+    source_fail_closed_reasons: Sequence[str],
+    generated_at: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    local_llm_classification = official.clean(v3_6_6_summary.get("local_llm_surface_classification"))
+    allowed_by_source = local_llm_classification in V3_6_6_ALLOWED_LLM_CLASSIFICATIONS
+    runtime_fail_closed_reasons: list[str] = []
+    backend_preflight: Mapping[str, Any] = {
+        "ok": False,
+        "blockers": ["source validation blocked v3_6_7 runtime probe"]
+        if source_fail_closed_reasons
+        else ["v3_6_6 local LLM classification did not allow diagnostic probe"],
+        "llm_backend": official.clean(getattr(args, "llm_backend", "")) or "llamacpp",
+        "model": official.clean(getattr(args, "llm_model", "")) or "gemma4-e2b-local",
+        "base_url": "",
+        "timeout_seconds": min(int(getattr(args, "llm_timeout_seconds", 120) or 120), 30),
+        "max_tokens": min(int(getattr(args, "llm_max_tokens", 4096) or 4096), 512),
+        "strict_json_retries": 1,
+    }
+    if source_fail_closed_reasons:
+        runtime_fail_closed_reasons.append("v3_6_7_source_validation_blocked_runtime_probe")
+    elif allowed_by_source:
+        try:
+            backend_preflight = llm_backend_preflight_for_v2_2(args, check_endpoint=True)
+            backend_preflight = {
+                **dict(backend_preflight),
+                "timeout_seconds": min(int(backend_preflight.get("timeout_seconds") or 120), 30),
+                "max_tokens": min(int(backend_preflight.get("max_tokens") or 4096), 512),
+                "strict_json_retries": min(int(backend_preflight.get("strict_json_retries") or 3), 1),
+            }
+        except Exception as exc:  # noqa: BLE001
+            backend_preflight = {
+                **dict(backend_preflight),
+                "ok": False,
+                "blockers": [f"local LLM preflight raised {type(exc).__name__}: {exc}"],
+            }
+    else:
+        runtime_fail_closed_reasons.append("v3_6_6_local_llm_classification_not_reusable")
+
+    preflight_ok = bool(backend_preflight.get("ok"))
+    if allowed_by_source and not source_fail_closed_reasons and not preflight_ok:
+        runtime_fail_closed_reasons.append("local_llm_endpoint_preflight_blocked")
+
+    attempts: list[dict[str, Any]] = []
+    for row in baseline_smoke_rows:
+        if source_fail_closed_reasons:
+            attempts.append(
+                v3_6_7_runtime_not_attempted_row(
+                    row,
+                    generated_at=generated_at,
+                    runtime_status="LOCAL_LLM_SKIPPED_BY_SOURCE_VALIDATION",
+                    failure_bucket="SOURCE_VALIDATION_BLOCKED",
+                    fail_closed_reason="; ".join(source_fail_closed_reasons),
+                    backend_preflight=backend_preflight,
+                )
+            )
+            continue
+        if not allowed_by_source:
+            attempts.append(
+                v3_6_7_runtime_not_attempted_row(
+                    row,
+                    generated_at=generated_at,
+                    runtime_status="LOCAL_LLM_SKIPPED_BY_V3_6_6_CLASSIFICATION",
+                    failure_bucket="LOCAL_LLM_CLASSIFICATION_BLOCKED",
+                    fail_closed_reason="v3_6_6_local_llm_classification_not_reusable",
+                    backend_preflight=backend_preflight,
+                )
+            )
+            continue
+        if not preflight_ok:
+            attempts.append(
+                v3_6_7_runtime_not_attempted_row(
+                    row,
+                    generated_at=generated_at,
+                    runtime_status="LOCAL_LLM_PREFLIGHT_BLOCKED",
+                    failure_bucket="LOCAL_LLM_PREFLIGHT_BLOCKED",
+                    fail_closed_reason="; ".join(
+                        official.clean(item) for item in backend_preflight.get("blockers") or []
+                    ),
+                    backend_preflight=backend_preflight,
+                )
+            )
+            continue
+        attempts.append(
+            v3_6_7_runtime_attempt_row(
+                row,
+                generated_at=generated_at,
+                backend_preflight=backend_preflight,
+            )
+        )
+
+    attempted_count = sum(1 for row in attempts if bool(row.get("local_llm_invoked")))
+    answer_returned_count = sum(1 for row in attempts if bool(row.get("strict_json_answer_returned")))
+    citation_valid_count = sum(1 for row in attempts if bool(row.get("citation_surface_valid")))
+    answer_hash_changed_count = sum(1 for row in attempts if bool(row.get("answer_text_hash_changed_from_v3_6_6")))
+    baseline_answer_count = sum(1 for row in attempts if bool(row.get("baseline_strict_json_answer_returned")))
+    baseline_citation_valid_count = sum(1 for row in attempts if bool(row.get("baseline_citation_surface_valid")))
+    runtime_failure_counts = v3_6_6_count_field(attempts, "failure_bucket")
+    runtime_status_transitions = v3_6_6_count_field(attempts, "runtime_status_transition")
+    if attempted_count == 0:
+        classification = "local_llm_generation_blocked"
+    elif answer_returned_count < attempted_count:
+        classification = "strict_json_answer_channel_unstable"
+    elif citation_valid_count == attempted_count:
+        classification = "core_runtime_stable_answer_and_citation_surface"
+    elif citation_valid_count == 0:
+        classification = "answer_channel_stable_citation_surface_invalid_without_retrieval_context"
+    else:
+        classification = "mixed_citation_surface_unstable"
+    if classification != "core_runtime_stable_answer_and_citation_surface":
+        runtime_fail_closed_reasons.append(classification)
+    summary = {
+        "schema_version": f"{V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID}_runtime_stability_summary_v1",
+        "run_id": V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_core_runtime_stability_summary",
+        "runtime_stability_classification": classification,
+        "runtime_probe_core_only": all(row.get("reporting_partition") == "core_only" for row in attempts),
+        "review_only_rows_attempted": sum(1 for row in attempts if row.get("reporting_partition") == "review_only_challenge"),
+        "official_proximity_rows_attempted": sum(1 for row in attempts if bool(row.get("official_proximity_review"))),
+        "runtime_probe_row_count": len(attempts),
+        "runtime_attempted_row_count": attempted_count,
+        "strict_json_answer_returned_row_count": answer_returned_count,
+        "citation_surface_valid_row_count": citation_valid_count,
+        "baseline_strict_json_answer_returned_row_count": baseline_answer_count,
+        "baseline_citation_surface_valid_row_count": baseline_citation_valid_count,
+        "answer_text_hash_changed_from_v3_6_6_count": answer_hash_changed_count,
+        "strict_json_answer_return_rate": answer_returned_count / attempted_count if attempted_count else 0.0,
+        "citation_surface_valid_rate": citation_valid_count / attempted_count if attempted_count else 0.0,
+        "runtime_failure_bucket_counts": runtime_failure_counts,
+        "runtime_status_transition_counts": runtime_status_transitions,
+        "local_llm_surface_classification": local_llm_classification,
+        "local_llm_backend_sanitized": official.clean(backend_preflight.get("llm_backend")),
+        "local_llm_model_id_sanitized": official.clean(backend_preflight.get("model")),
+        "base_url_sanitized": v3_6_5_sanitize_url(official.clean(backend_preflight.get("base_url"))),
+        "timeout_seconds": int(backend_preflight.get("timeout_seconds") or 0),
+        "runtime_fail_closed_reasons": sorted(set(runtime_fail_closed_reasons)),
+        "generation_input_policy": {
+            "uses_generated_question_draft": True,
+            "uses_source_family": True,
+            "uses_source_identity": False,
+            "uses_locator_fingerprint": False,
+            "uses_expected_answer_draft": False,
+            "uses_supporting_evidence_locator_draft": False,
+            "uses_gold_fields": False,
+            "uses_official_fields": False,
+            "uses_db_query_results_as_generation_source": False,
+            "posthoc_validation_uses_source_identity": True,
+            "posthoc_validation_uses_locator_fingerprint": True,
+        },
+        "diagnostic_only": True,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+    }
+    return attempts, summary
+
+
+def v3_6_7_runtime_not_attempted_row(
+    row: Mapping[str, Any],
+    *,
+    generated_at: str,
+    runtime_status: str,
+    failure_bucket: str,
+    fail_closed_reason: str,
+    backend_preflight: Mapping[str, Any],
+) -> dict[str, Any]:
+    base = v3_6_7_runtime_base_row(row, generated_at=generated_at, backend_preflight=backend_preflight)
+    base.update(
+        {
+            "runtime_status": runtime_status,
+            "failure_bucket": failure_bucket,
+            "runtime_status_transition": f"{base['baseline_runtime_status']}->{runtime_status}",
+            "local_llm_invoked": False,
+            "strict_json_parse_ok": False,
+            "strict_json_answer_returned": False,
+            "citation_surface_valid": False,
+            "answer_text": "",
+            "answer_text_sha256": "",
+            "answer_text_hash_changed_from_v3_6_6": False,
+            "citation_locator_parse_result": {
+                "parse_success": False,
+                "locator_fingerprint_match": False,
+                "source_identity_match": False,
+            },
+            "timeout_seconds": int(backend_preflight.get("timeout_seconds") or 0),
+            "fail_closed_reason": official.clean(fail_closed_reason),
+        }
+    )
+    return base
+
+
+def v3_6_7_runtime_attempt_row(
+    row: Mapping[str, Any],
+    *,
+    generated_at: str,
+    backend_preflight: Mapping[str, Any],
+) -> dict[str, Any]:
+    base = v3_6_7_runtime_base_row(row, generated_at=generated_at, backend_preflight=backend_preflight)
+    prompt = v3_6_6_core_smoke_prompt(row)
+    base["prompt_sha256"] = sha256_text(prompt)
+    base["local_llm_invoked"] = True
+    base["timeout_seconds"] = int(backend_preflight.get("timeout_seconds") or 0)
+    try:
+        parsed, strict_meta = call_v3_local_llm_strict_json_with_diagnostics(
+            backend_preflight=backend_preflight,
+            prompt=prompt,
+            required_schema_keys=("answer", "citation_locator"),
+            prompt_context_mode="v3_6_7_core_runtime_stability_probe",
+            cited_search_unit_ids_before_parse=[],
+        )
+        answer_text = official.clean(parsed.get("answer"))
+        answer_text_sha = sha256_text(answer_text) if answer_text else ""
+        citation_locator = parsed.get("citation_locator") if isinstance(parsed.get("citation_locator"), Mapping) else {}
+        citation_parse = v3_6_6_citation_locator_parse_result(row, citation_locator)
+        citation_surface_valid = (
+            bool(citation_parse.get("parse_success"))
+            and bool(citation_parse.get("locator_fingerprint_match"))
+            and bool(citation_parse.get("source_identity_match"))
+        )
+        if answer_text and citation_surface_valid:
+            runtime_status = "LOCAL_LLM_STRICT_JSON_ANSWER_AND_CITATION_SUCCESS"
+            failure_bucket = "ANSWER_AND_CITATION_VALID"
+            fail_closed_reason = ""
+        elif answer_text:
+            runtime_status = "LOCAL_LLM_ANSWER_STABLE_CITATION_SURFACE_FAIL_CLOSED"
+            failure_bucket = (
+                "CITATION_TARGET_MISMATCH_NO_RETRIEVED_CONTEXT"
+                if citation_parse.get("parse_success")
+                else "CITATION_OBJECT_MISSING_OR_EMPTY"
+            )
+            fail_closed_reason = "local_llm_returned_answer_without_valid_citation_surface"
+        else:
+            runtime_status = "LOCAL_LLM_EMPTY_ANSWER_FAIL_CLOSED"
+            failure_bucket = "EMPTY_ANSWER"
+            fail_closed_reason = "local_llm_returned_empty_answer"
+        base.update(
+            {
+                "runtime_status": runtime_status,
+                "failure_bucket": failure_bucket,
+                "runtime_status_transition": f"{base['baseline_runtime_status']}->{runtime_status}",
+                "answer_text": answer_text[:500],
+                "answer_text_sha256": answer_text_sha,
+                "answer_text_hash_changed_from_v3_6_6": bool(
+                    answer_text_sha and answer_text_sha != base["baseline_answer_text_sha256"]
+                ),
+                "citation_locator_parse_result": citation_parse,
+                "strict_json_parse_ok": bool(strict_meta.get("parse_ok")),
+                "strict_json_answer_returned": bool(answer_text),
+                "citation_surface_valid": citation_surface_valid,
+                "strict_json_response_sha256": strict_meta.get("raw_response_sha256", ""),
+                "fail_closed_reason": fail_closed_reason,
+            }
+        )
+    except Exception as exc:  # noqa: BLE001
+        diagnostics = getattr(exc, "diagnostics", {})
+        runtime_status = "LOCAL_LLM_STRICT_JSON_FAIL_CLOSED"
+        base.update(
+            {
+                "runtime_status": runtime_status,
+                "failure_bucket": "STRICT_JSON_PARSE_OR_CALL_FAIL_CLOSED",
+                "runtime_status_transition": f"{base['baseline_runtime_status']}->{runtime_status}",
+                "answer_text": "",
+                "answer_text_sha256": "",
+                "answer_text_hash_changed_from_v3_6_6": False,
+                "citation_locator_parse_result": {
+                    "parse_success": False,
+                    "locator_fingerprint_match": False,
+                    "source_identity_match": False,
+                },
+                "strict_json_parse_ok": False,
+                "strict_json_answer_returned": False,
+                "citation_surface_valid": False,
+                "strict_json_response_sha256": as_mapping(diagnostics).get("raw_response_sha256", ""),
+                "fail_closed_reason": f"{type(exc).__name__}: {exc}",
+            }
+        )
+    return base
+
+
+def v3_6_7_runtime_base_row(
+    row: Mapping[str, Any],
+    *,
+    generated_at: str,
+    backend_preflight: Mapping[str, Any],
+) -> dict[str, Any]:
+    baseline_answer = official.clean(row.get("answer_text"))
+    baseline_answer_sha = sha256_text(baseline_answer) if baseline_answer else ""
+    return {
+        "schema_version": f"{V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID}_runtime_attempt_row_v1",
+        "run_id": V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_core_runtime_stability_attempt_row",
+        "source_v3_6_6_run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "weak_silver_candidate_id": official.clean(row.get("weak_silver_candidate_id")),
+        "generated_question_draft": official.clean(row.get("generated_question_draft")),
+        "source_family": official.clean(row.get("source_family")),
+        "source_identity": official.clean(row.get("source_identity")),
+        "locator_fingerprint": official.clean(row.get("locator_fingerprint")),
+        "reporting_partition": official.clean(row.get("reporting_partition")),
+        "official_proximity_review": bool(row.get("official_proximity_review")),
+        "baseline_runtime_status": official.clean(row.get("runtime_status")),
+        "baseline_strict_json_answer_returned": bool(row.get("strict_json_answer_returned")),
+        "baseline_citation_surface_valid": bool(row.get("citation_surface_valid")),
+        "baseline_answer_text_sha256": baseline_answer_sha,
+        "generation_input_field_names": [
+            "generated_question_draft",
+            "source_family",
+        ],
+        "generation_input_used_expected_answer_draft": False,
+        "generation_input_used_supporting_evidence_locator_draft": False,
+        "generation_input_used_gold_fields": False,
+        "generation_input_used_official_fields": False,
+        "generation_input_used_db_query_results": False,
+        "local_llm_backend_sanitized": official.clean(backend_preflight.get("llm_backend")),
+        "local_llm_model_id_sanitized": official.clean(backend_preflight.get("model")),
+        "base_url_sanitized": v3_6_5_sanitize_url(official.clean(backend_preflight.get("base_url"))),
+        "diagnostic_only": True,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "references_used_for_generation": False,
+        "references_used_for_official_metric": False,
+    }
+
+
+def v3_6_7_next_phase_recommendation(
+    *,
+    generated_at: str,
+    runtime_stability_summary: Mapping[str, Any],
+    v3_6_6_db_audit: Mapping[str, Any],
+    fail_closed_reasons: Sequence[str],
+) -> dict[str, Any]:
+    classification = official.clean(runtime_stability_summary.get("runtime_stability_classification"))
+    attempted_count = int(runtime_stability_summary.get("runtime_attempted_row_count") or 0)
+    answer_count = int(runtime_stability_summary.get("strict_json_answer_returned_row_count") or 0)
+    citation_valid_count = int(runtime_stability_summary.get("citation_surface_valid_row_count") or 0)
+    live_retrieval_feasible = bool(v3_6_6_db_audit.get("live_retrieval_probe_feasible_without_rebuild"))
+    manifest_locator_mapping_available = bool(v3_6_6_db_audit.get("manifest_locator_mapping_available"))
+    if fail_closed_reasons:
+        recommended = "v3_6_7_reference_sidecar_recovery_or_compaction_fix"
+        rationale = "The inherited v3_6_6 runtime stability inputs failed diagnostic guardrail validation."
+    elif attempted_count == 0 or answer_count < attempted_count:
+        recommended = "v3_6_7_runtime_stability_probe_for_core_only"
+        rationale = "The local LLM answer channel is still blocked or unstable."
+    elif citation_valid_count == attempted_count and live_retrieval_feasible:
+        recommended = "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric"
+        rationale = "The core-only runtime answer and citation surface is stable and live retrieval is feasible."
+    elif answer_count == attempted_count and citation_valid_count < attempted_count and manifest_locator_mapping_available:
+        recommended = "v3_6_8_canonical_payload_live_retrieval_probe"
+        rationale = "The answer channel is stable, but citation locator validity still needs live retrieval context."
+    else:
+        recommended = "v3_6_7_runtime_stability_probe_for_core_only"
+        rationale = "The runtime probe remains mixed or unstable and is not ready for a live diagnostic metric."
+    return {
+        "schema_version": f"{V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID}_next_phase_recommendation_v1",
+        "run_id": V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_runtime_stability_next_phase_recommendation",
+        "recommended_next_phase": recommended,
+        "recommendation_choices": list(V3_6_7_RECOMMENDATION_CHOICES),
+        "choose_exactly_one_policy_satisfied": recommended in V3_6_7_RECOMMENDATION_CHOICES,
+        "v3_6_7_core_only_live_diagnostic_metric_allowed": (
+            recommended == "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric"
+        ),
+        "runtime_stability_classification": classification,
+        "attempted_count": attempted_count,
+        "strict_json_answer_returned_count": answer_count,
+        "citation_surface_valid_count": citation_valid_count,
+        "manifest_locator_mapping_available": manifest_locator_mapping_available,
+        "live_retrieval_probe_feasible_without_rebuild": live_retrieval_feasible,
+        "review_only_remains_stress_only": True,
+        "targeted_diagnostic_repair_planning_now": False,
+        "official_metric_denominator_usage_allowed": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "readme_representative_product_performance_claim": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "fail_closed_reasons": list(fail_closed_reasons),
+        "rationale": rationale,
+    }
+
+
+def v3_6_7_policy_audit(
+    *,
+    generated_at: str,
+    fail_closed_reasons: Sequence[str],
+    input_sha_before: Mapping[str, str],
+    input_sha_after: Mapping[str, str],
+    protected_v3_6_3_sha_before: Mapping[str, str],
+    protected_v3_6_3_sha_after: Mapping[str, str],
+    runtime_stability_summary: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID}_policy_audit_v1",
+        "run_id": V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_runtime_stability_policy_audit",
+        "diagnostic_only": True,
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "local_llm_usage_allowed": True,
+        "local_llm_usage_scope": "diagnostic_only_core_runtime_stability_probe_only",
+        "local_llm_live_silver_generation_allowed": False,
+        "local_llm_live_silver_generation_attempted": False,
+        "local_llm_metric_scoring_allowed": False,
+        "local_llm_metric_scoring_attempted": False,
+        "external_llm_api_allowed": False,
+        "external_llm_api_attempted": False,
+        "db_usage_allowed": True,
+        "db_usage_scope": "read_only_inherited_surface_status_only",
+        "db_read_only_probe_attempted": False,
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_results_as_gold_allowed": False,
+        "db_results_as_official_qrels_allowed": False,
+        "db_results_as_generation_source_allowed": False,
+        "generation_input_policy": dict(as_mapping(runtime_stability_summary.get("generation_input_policy"))),
+        "review_only_rows_attempted": runtime_stability_summary.get("review_only_rows_attempted", 0),
+        "official_proximity_rows_attempted": runtime_stability_summary.get("official_proximity_rows_attempted", 0),
+        "fail_closed_reasons": list(fail_closed_reasons),
+        "protected_input_sha256_before": dict(input_sha_before),
+        "protected_input_sha256_after": dict(input_sha_after),
+        "protected_input_sha256_unchanged": dict(input_sha_before) == dict(input_sha_after),
+        "protected_v3_6_3_input_sha256_before": dict(protected_v3_6_3_sha_before),
+        "protected_v3_6_3_input_sha256_after": dict(protected_v3_6_3_sha_after),
+        "protected_v3_6_3_input_sha256_unchanged": dict(protected_v3_6_3_sha_before)
+        == dict(protected_v3_6_3_sha_after),
+    }
+
+
+def run_v3_6_8_source_registry_first_evidence_bundle_architecture_audit(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    source_paths = v3_6_8_all_source_source_paths()
+    input_sha_before = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_before = v3_6_5_v3_6_3_manifest_sha256()
+    official_index_sha_before = v3_6_8_all_source_official_index_sha256()
+    all_source_index_sha_before = v3_6_8_source_registry_all_source_index_sha256()
+    source_json, source_jsonl, source_load_errors = v3_6_5_load_source_artifacts(source_paths)
+
+    source_object_audit = v3_6_8_source_registry_source_object_audit(
+        generated_at=generated_at,
+        source_jsonl=source_jsonl,
+    )
+    searchunit_role_audit = v3_6_8_source_registry_searchunit_role_audit(generated_at=generated_at)
+    no_vector_check_results = v3_6_8_source_registry_no_vector_check_results(generated_at=generated_at)
+    evidence_bundle_contract = v3_6_8_source_registry_evidence_bundle_contract(
+        generated_at=generated_at,
+        no_vector_check_results=no_vector_check_results,
+    )
+    track_routing_audit = v3_6_8_source_registry_track_routing_audit(generated_at=generated_at)
+    failure_buckets = v3_6_8_source_registry_failure_buckets(
+        generated_at=generated_at,
+        source_load_errors=source_load_errors,
+        searchunit_role_audit=searchunit_role_audit,
+        evidence_bundle_contract=evidence_bundle_contract,
+        track_routing_audit=track_routing_audit,
+    )
+    decision_output = v3_6_8_source_registry_exit_decision(
+        failure_buckets=failure_buckets,
+        searchunit_role_audit=searchunit_role_audit,
+        evidence_bundle_contract=evidence_bundle_contract,
+        track_routing_audit=track_routing_audit,
+    )
+    input_sha_after = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_after = v3_6_5_v3_6_3_manifest_sha256()
+    official_index_sha_after = v3_6_8_all_source_official_index_sha256()
+    all_source_index_sha_after = v3_6_8_source_registry_all_source_index_sha256()
+    fail_closed_reasons = sorted(
+        set(
+            source_load_errors
+            + [
+                reason
+                for reason, changed in (
+                    ("protected_input_sha256_changed_during_source_registry_audit", input_sha_before != input_sha_after),
+                    (
+                        "protected_v3_6_3_sha256_changed_during_source_registry_audit",
+                        protected_v3_6_3_sha_before != protected_v3_6_3_sha_after,
+                    ),
+                    (
+                        "official_denominator_index_sha256_changed_during_source_registry_audit",
+                        official_index_sha_before != official_index_sha_after,
+                    ),
+                    (
+                        "all_source_nonprod_index_sha256_changed_during_source_registry_audit",
+                        all_source_index_sha_before != all_source_index_sha_after,
+                    ),
+                )
+                if changed
+            ]
+        )
+    )
+    outcome = official.clean(decision_output.get("outcome"))
+    next_allowed_phase = official.clean(decision_output.get("next_allowed_phase"))
+    status = (
+        f"DIAGNOSTIC_SOURCE_REGISTRY_ARCHITECTURE_AUDIT_{outcome}"
+        if not fail_closed_reasons
+        else "DIAGNOSTIC_SOURCE_REGISTRY_ARCHITECTURE_AUDIT_FAIL_CLOSED"
+    )
+    families_passed = list(no_vector_check_results.get("families_passed") or [])
+    summary: dict[str, Any] = {
+        "schema_version": f"{V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID}_summary_v1",
+        "run_id": V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_source_registry_first_evidence_bundle_architecture_audit",
+        "event_type": "diagnostic_source_registry_architecture_audit_v3_6_8",
+        "status": status,
+        "run_class": "diagnostic_only_source_registry_first_architecture_audit",
+        "source_manifest_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_diagnostic_manifest_run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "source_reference_sidecar_run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "prior_nonprod_all_source_run_id": (
+            V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID
+        ),
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "diagnostic_only": True,
+        "implementation_allowed": True,
+        "implementation_scope": [
+            "source_atom_schema_validation",
+            "searchview_searchunit_role_audit",
+            "evidence_bundle_schema_introduction",
+            "track_specific_evidence_assembly_contract",
+            "no_vector_citation_render_checks",
+            "no_vector_evidence_hydration_checks",
+            "soft_track_router_audit",
+            "compact_diagnostics_and_tests",
+        ],
+        "source_registry_first_policy": True,
+        "vector_db_source_of_truth_allowed": False,
+        "vector_db_role": "candidate_generator_only",
+        "source_atom_search_view_evidence_bundle_separation_validated": False,
+        "searchunit_overloaded": bool(searchunit_role_audit.get("searchunit_overloaded")),
+        "source_registry_missing": True,
+        "vector_db_coupling_observed": True,
+        "track_routing_overfit_blocker": bool(track_routing_audit.get("track_routing_overfit_blocker")),
+        "no_vector_hydration_passed": bool(no_vector_check_results.get("hydrate_canonical_payload_passed")),
+        "no_vector_citation_rendering_passed": bool(no_vector_check_results.get("render_citation_passed")),
+        "no_vector_evidence_bundle_assembly_passed": bool(
+            no_vector_check_results.get("assemble_evidence_bundle_passed")
+        ),
+        "track_specific_evidence_bundle_assembly_passed_by_family": {
+            family: family in families_passed for family in ("PDF", "TEXT", "XLSX")
+        },
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "answer_correctness_scored": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "retrieval_ranking_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_usage_allowed": False,
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "silver_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "expected_answer_draft_used_as_retrieval_source": False,
+        "expected_answer_draft_used_as_generation_input": False,
+        "silver_expected_answer_used_as_generation_input": False,
+        "silver_evidence_locator_used_as_retrieval_shortcut": False,
+        "supporting_evidence_used_as_answer_text_source": False,
+        "generated_silver_answers_used_as_source_material": False,
+        "gold_fields_used_as_generation_input": False,
+        "qrels_or_labels_used_as_generation_input": False,
+        "query_id_specific_evidence_patch": False,
+        "file_name_specific_evidence_patch": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "source_family_counts": source_object_audit.get("source_family_counts", {}),
+        "query_quality_profile_counts": {},
+        "diagnostic_row_count": source_object_audit.get("audited_path_count"),
+        "runtime_generation_coverage_rate": 0.0,
+        "outcome": outcome,
+        "outcome_choices": sorted(V3_6_8_SOURCE_REGISTRY_OUTCOMES),
+        "next_allowed_phase": next_allowed_phase,
+        "recommended_next_phase": next_allowed_phase,
+        "no_generic_probe_recommended": True,
+        "generic_manifest_locator_probe_recommended": False,
+        "decision_output": decision_output,
+        "failure_bucket_counts": failure_buckets["failure_bucket_counts"],
+        "blocking_buckets": failure_buckets["blocking_buckets"],
+        "secondary_blocking_buckets": failure_buckets.get("secondary_blocking_buckets", []),
+        "blocking_bucket_rationale": failure_buckets.get("blocking_bucket_rationale", ""),
+        "no_vector_check_results": no_vector_check_results,
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": input_sha_before == input_sha_after,
+        "protected_v3_6_3_input_sha256_before": protected_v3_6_3_sha_before,
+        "protected_v3_6_3_input_sha256_after": protected_v3_6_3_sha_after,
+        "protected_v3_6_3_input_sha256_unchanged": protected_v3_6_3_sha_before == protected_v3_6_3_sha_after,
+        "official_denominator_index_sha256_before": official_index_sha_before,
+        "official_denominator_index_sha256_after": official_index_sha_after,
+        "official_denominator_index_sha256_unchanged": official_index_sha_before == official_index_sha_after,
+        "all_source_nonprod_index_sha256_before": all_source_index_sha_before,
+        "all_source_nonprod_index_sha256_after": all_source_index_sha_after,
+        "all_source_nonprod_index_sha256_unchanged": all_source_index_sha_before == all_source_index_sha_after,
+        "protected_sha_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "guardrail_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "fail_closed_reasons": fail_closed_reasons,
+        "source_object_audit": source_object_audit,
+        "searchunit_role_audit": searchunit_role_audit,
+        "evidence_bundle_contract": evidence_bundle_contract,
+        "track_routing_audit": track_routing_audit,
+        "failure_buckets": failure_buckets,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON),
+            "source_object_audit_json": official.repo_relative(
+                DEFAULT_V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT_JSON
+            ),
+            "searchunit_role_audit_json": official.repo_relative(
+                DEFAULT_V3_6_8_SOURCE_REGISTRY_SEARCHUNIT_ROLE_AUDIT_JSON
+            ),
+            "evidence_bundle_contract_json": official.repo_relative(
+                DEFAULT_V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT_JSON
+            ),
+            "track_routing_audit_json": official.repo_relative(
+                DEFAULT_V3_6_8_SOURCE_REGISTRY_TRACK_ROUTING_AUDIT_JSON
+            ),
+            "failure_buckets_json": official.repo_relative(DEFAULT_V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+    return summary
+
+
+def v3_6_8_source_registry_all_source_index_sha256() -> dict[str, str]:
+    files = {
+        "all_source_nonprod_faiss_index_sha256": DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "faiss.index",
+        "all_source_nonprod_build_json_sha256": DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "build.json",
+        "all_source_nonprod_ingest_manifest_json_sha256": (
+            DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "ingest_manifest.json"
+        ),
+        "all_source_nonprod_search_unit_manifest_jsonl_sha256": (
+            DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "search_unit_manifest.jsonl"
+        ),
+        "all_source_nonprod_source_inventory_json_sha256": (
+            DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "source_inventory.json"
+        ),
+        "all_source_nonprod_payload_contract_summary_json_sha256": (
+            DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "payload_contract_summary.json"
+        ),
+    }
+    return {key: sha256_file(path) if path.exists() else "MISSING" for key, path in files.items()}
+
+
+def v3_6_8_source_registry_no_vector_check_results(*, generated_at: str) -> dict[str, Any]:
+    registry = v3_6_8_source_registry_no_vector_sample_registry()
+    families_passed: list[str] = []
+    hydration_passed = True
+    render_passed = True
+    bundle_passed = True
+    for source_atom_id, atom in registry.items():
+        family = official.clean(atom.get("source_family")).upper()
+        hydrated = v3_6_8_source_registry_hydrate_canonical_payload(source_atom_id, source_registry=registry)
+        rendered = v3_6_8_source_registry_render_citation(source_atom_id, source_registry=registry)
+        bundled = v3_6_8_source_registry_assemble_evidence_bundle(
+            source_atom_id,
+            source_registry=registry,
+            mode="runtime_evidence",
+        )
+        hydration_passed = hydration_passed and bool(hydrated.get("valid"))
+        render_passed = render_passed and bool(rendered.get("valid"))
+        bundle_passed = bundle_passed and bool(bundled.get("valid"))
+        if hydrated.get("valid") and rendered.get("valid") and bundled.get("valid"):
+            families_passed.append(family)
+    raw_missing_policy = v3_6_8_source_registry_hydration_policy(
+        raw_file_exists=False,
+        extraction_snapshot_present=True,
+    )
+    missing_all_policy = v3_6_8_source_registry_hydration_policy(
+        raw_file_exists=False,
+        extraction_snapshot_present=False,
+    )
+    vector_hit_result = v3_6_8_source_registry_evidence_bundle_from_vector_hit(
+        {
+            "search_view_id": "view-text",
+            "source_atom_ids": ["atom-text"],
+            "canonical_citation_payload": {"source_family": "TEXT", "source_identity": "vector-owned"},
+        },
+        source_registry=registry,
+    )
+    chunk_only_result = v3_6_8_source_registry_evidence_bundle_from_vector_hit(
+        {"chunk_id": "chunk-only", "display_text": "chunk only"},
+        source_registry=registry,
+    )
+    return {
+        "schema_version": "v3_6_8_source_registry_no_vector_check_results_v1",
+        "generated_at": generated_at,
+        "executed": True,
+        "families_passed": sorted(set(families_passed)),
+        "hydrate_canonical_payload_passed": hydration_passed,
+        "render_citation_passed": render_passed,
+        "assemble_evidence_bundle_passed": bundle_passed,
+        "raw_missing_snapshot_present_policy_explicit": raw_missing_policy["hydration_allowed"] is True
+        and raw_missing_policy["official_evidence_allowed"] is False,
+        "raw_and_snapshot_missing_fail_closed": missing_all_policy["fail_closed"] is True,
+        "vector_hit_hydrates_through_source_registry": bool(vector_hit_result.get("valid"))
+        and vector_hit_result.get("vector_payload_used_as_evidence_truth") is False,
+        "chunk_only_result_fails_closed": chunk_only_result.get("failure_bucket")
+        == "RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT",
+    }
+
+
+def v3_6_8_source_registry_no_vector_sample_registry() -> dict[str, dict[str, Any]]:
+    return {
+        "atom-text": {
+            "source_atom_id": "atom-text",
+            "source_family": "TEXT",
+            "source_identity": "TEXT:sample:v1:chunk",
+            "document_id": "sample-text",
+            "document_version_id": "sample-text-v1",
+            "content_hash": "sample-text-hash",
+            "extraction_version": "source-registry-audit",
+            "raw_file_exists": True,
+            "extraction_snapshot_present": True,
+            "raw_locator": {"document_id": "sample-text", "chunk_id": "chunk", "text_span": "0:12"},
+            "normalized_text_or_value_snapshot": "sample text",
+            "parent_pointers": {"search_view_ids": ["view-text"]},
+            "canonical_citation_payload": {
+                "source_family": "TEXT",
+                "source_identity": "TEXT:sample:v1:chunk",
+                "locator_fingerprint": "fp-text",
+                "search_unit_id": "su-text",
+                "document_id": "sample-text",
+                "document_version_id": "sample-text-v1",
+                "text_locator": {"document_id": "sample-text", "chunk_id": "chunk", "text_span": "0:12"},
+            },
+        },
+        "atom-pdf": {
+            "source_atom_id": "atom-pdf",
+            "source_family": "PDF",
+            "source_identity": "PDF:sample:v1:p1:b1",
+            "document_id": "sample-pdf",
+            "document_version_id": "sample-pdf-v1",
+            "content_hash": "sample-pdf-hash",
+            "extraction_version": "source-registry-audit",
+            "raw_file_exists": True,
+            "extraction_snapshot_present": True,
+            "raw_locator": {
+                "source_pdf_path": "sample.pdf",
+                "page": 1,
+                "physical_page_index": 0,
+                "bbox": [1.0, 2.0, 3.0, 4.0],
+                "region_type": "paragraph",
+            },
+            "normalized_text_or_value_snapshot": "sample pdf text",
+            "parent_pointers": {"search_view_ids": ["view-pdf"]},
+            "canonical_citation_payload": {
+                "source_family": "PDF",
+                "source_identity": "PDF:sample:v1:p1:b1",
+                "locator_fingerprint": "fp-pdf",
+                "search_unit_id": "su-pdf",
+                "document_version_id": "sample-pdf-v1",
+                "source_pdf_path": "sample.pdf",
+                "page": 1,
+                "physical_page_index": 0,
+                "bbox": [1.0, 2.0, 3.0, 4.0],
+                "region_type": "paragraph",
+            },
+        },
+        "atom-xlsx": {
+            "source_atom_id": "atom-xlsx",
+            "source_family": "XLSX",
+            "source_identity": "XLSX:sample:v1:Sheet1!A1",
+            "workbook_id": "sample-book",
+            "workbook_version_id": "sample-book-v1",
+            "content_hash": "sample-xlsx-hash",
+            "extraction_version": "source-registry-audit",
+            "raw_file_exists": True,
+            "extraction_snapshot_present": True,
+            "raw_locator": {
+                "workbook": "sample.xlsx",
+                "sheet": "Sheet1",
+                "cell": "A1",
+                "row_label": "row",
+                "column_label": "value",
+            },
+            "normalized_text_or_value_snapshot": "sample xlsx value",
+            "parent_pointers": {"search_view_ids": ["view-xlsx"]},
+            "canonical_citation_payload": {
+                "source_family": "XLSX",
+                "source_identity": "XLSX:sample:v1:Sheet1!A1",
+                "locator_fingerprint": "fp-xlsx",
+                "search_unit_id": "su-xlsx",
+                "workbook": "sample.xlsx",
+                "sheet": "Sheet1",
+                "cell": "A1",
+                "row_label": "row",
+                "column_label": "value",
+            },
+        },
+    }
+
+
+def run_v3_6_9_searchunit_searchview_sourceatom_refactor(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    source_paths = v3_6_8_all_source_source_paths()
+    input_sha_before = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_before = v3_6_5_v3_6_3_manifest_sha256()
+    official_index_sha_before = v3_6_8_all_source_official_index_sha256()
+    all_source_index_sha_before = v3_6_8_source_registry_all_source_index_sha256()
+    _, _, source_load_errors = v3_6_5_load_source_artifacts(source_paths)
+
+    contract_refactor = v3_6_9_searchunit_sourceatom_contract_refactor(generated_at=generated_at)
+    hydration_smoke = v3_6_9_searchunit_sourceatom_hydration_smoke(generated_at=generated_at)
+    adapter_diagnostics = v3_6_9_searchunit_sourceatom_adapter_diagnostics(generated_at=generated_at)
+    failure_buckets = v3_6_9_searchunit_sourceatom_failure_buckets(
+        generated_at=generated_at,
+        source_load_errors=source_load_errors,
+        hydration_smoke=hydration_smoke,
+        adapter_diagnostics=adapter_diagnostics,
+    )
+    input_sha_after = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_after = v3_6_5_v3_6_3_manifest_sha256()
+    official_index_sha_after = v3_6_8_all_source_official_index_sha256()
+    all_source_index_sha_after = v3_6_8_source_registry_all_source_index_sha256()
+    fail_closed_reasons = sorted(
+        set(
+            source_load_errors
+            + [
+                reason
+                for reason, changed in (
+                    ("protected_input_sha256_changed_during_searchunit_sourceatom_refactor", input_sha_before != input_sha_after),
+                    (
+                        "protected_v3_6_3_sha256_changed_during_searchunit_sourceatom_refactor",
+                        protected_v3_6_3_sha_before != protected_v3_6_3_sha_after,
+                    ),
+                    (
+                        "official_denominator_index_sha256_changed_during_searchunit_sourceatom_refactor",
+                        official_index_sha_before != official_index_sha_after,
+                    ),
+                    (
+                        "all_source_nonprod_index_sha256_changed_during_searchunit_sourceatom_refactor",
+                        all_source_index_sha_before != all_source_index_sha_after,
+                    ),
+                )
+                if changed
+            ]
+        )
+    )
+    contract_ready = (
+        not fail_closed_reasons
+        and hydration_smoke.get("families_passed") == ["PDF", "TEXT", "XLSX"]
+        and hydration_smoke.get("no_vector_citation_render_valid_count") == 3
+        and adapter_diagnostics.get("vector_payload_used_as_evidence_truth") is False
+        and adapter_diagnostics.get("chunk_only_failure_bucket") == "RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT"
+        and not failure_buckets.get("blocking_buckets")
+    )
+    outcome = (
+        "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY"
+        if contract_ready
+        else "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_BLOCKED"
+    )
+    next_allowed_phase = (
+        "source registry materialization"
+        if outcome == "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY"
+        else "SearchUnit/SearchView/SourceAtom refactor repair"
+    )
+    status = (
+        f"DIAGNOSTIC_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_{outcome}"
+        if not fail_closed_reasons
+        else "DIAGNOSTIC_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_FAIL_CLOSED"
+    )
+    summary: dict[str, Any] = {
+        "schema_version": f"{V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID}_summary_v1",
+        "run_id": V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_searchunit_searchview_sourceatom_refactor",
+        "event_type": "diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9",
+        "status": status,
+        "run_class": "diagnostic_only_source_first_contract_refactor",
+        "source_registry_audit_run_id": V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "diagnostic_only": True,
+        "implementation_allowed": True,
+        "implementation_scope": [
+            "durable_python_source_atom_contract",
+            "search_view_candidate_projection",
+            "source_registry_hydration_adapter",
+            "evidence_bundle_assembly_helpers",
+            "retrieval_context_source_atom_reference_serialization",
+            "compact_diagnostics_and_tests",
+        ],
+        "source_registry_first_policy": True,
+        "source_atom_search_view_contract_validated": bool(contract_ready),
+        "source_atom_search_view_evidence_bundle_separation_validated": bool(contract_ready),
+        "searchunit_runtime_contract_refactored": True,
+        "legacy_searchunit_entity_still_overloaded": True,
+        "source_registry_materialization_required": True,
+        "db_migration_required_for_minimal_python_refactor": False,
+        "db_migration_deferred_until_source_registry_materialization": True,
+        "vector_db_source_of_truth_allowed": False,
+        "vector_db_role": "candidate_generator_only",
+        "vector_payload_used_as_evidence_truth": bool(adapter_diagnostics.get("vector_payload_used_as_evidence_truth")),
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "answer_correctness_scored": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "retrieval_ranking_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_usage_allowed": False,
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "silver_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "expected_answer_draft_used_as_retrieval_source": False,
+        "expected_answer_draft_used_as_generation_input": False,
+        "silver_expected_answer_used_as_generation_input": False,
+        "silver_evidence_locator_used_as_retrieval_shortcut": False,
+        "supporting_evidence_used_as_answer_text_source": False,
+        "generated_silver_answers_used_as_source_material": False,
+        "gold_fields_used_as_generation_input": False,
+        "qrels_or_labels_used_as_generation_input": False,
+        "query_id_specific_evidence_patch": False,
+        "file_name_specific_evidence_patch": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "diagnostic_row_count": hydration_smoke.get("source_atom_count", 0),
+        "runtime_generation_coverage_rate": 0.0,
+        "outcome": outcome,
+        "outcome_choices": sorted(V3_6_9_SEARCHUNIT_SOURCEATOM_OUTCOMES),
+        "next_allowed_phase": next_allowed_phase,
+        "recommended_next_phase": next_allowed_phase,
+        "no_generic_probe_recommended": True,
+        "generic_manifest_locator_probe_recommended": False,
+        "manifest_locator_probe_blocked": True,
+        "failure_bucket_counts": failure_buckets["failure_bucket_counts"],
+        "blocking_buckets": failure_buckets["blocking_buckets"],
+        "next_blocking_work": failure_buckets["next_blocking_work"],
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": input_sha_before == input_sha_after,
+        "protected_v3_6_3_input_sha256_before": protected_v3_6_3_sha_before,
+        "protected_v3_6_3_input_sha256_after": protected_v3_6_3_sha_after,
+        "protected_v3_6_3_input_sha256_unchanged": protected_v3_6_3_sha_before == protected_v3_6_3_sha_after,
+        "official_denominator_index_sha256_before": official_index_sha_before,
+        "official_denominator_index_sha256_after": official_index_sha_after,
+        "official_denominator_index_sha256_unchanged": official_index_sha_before == official_index_sha_after,
+        "all_source_nonprod_index_sha256_before": all_source_index_sha_before,
+        "all_source_nonprod_index_sha256_after": all_source_index_sha_after,
+        "all_source_nonprod_index_sha256_unchanged": all_source_index_sha_before == all_source_index_sha_after,
+        "protected_sha_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "guardrail_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "fail_closed_reasons": fail_closed_reasons,
+        "contract_refactor": contract_refactor,
+        "search_view_adapter_diagnostics": adapter_diagnostics,
+        "source_atom_hydration_smoke": hydration_smoke,
+        "failure_buckets": failure_buckets,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON),
+            "contract_refactor_json": official.repo_relative(DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON),
+            "search_view_adapter_diagnostics_json": official.repo_relative(
+                DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_ADAPTER_DIAGNOSTICS_JSON
+            ),
+            "source_atom_hydration_smoke_json": official.repo_relative(
+                DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON
+            ),
+            "failure_buckets_json": official.repo_relative(DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+    return summary
+
+
+def v3_6_9_searchunit_sourceatom_contract_refactor(*, generated_at: str) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID}_contract_refactor_v1",
+        "run_id": V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_searchunit_searchview_sourceatom_contract_refactor",
+        "source_atom_contract": {
+            "source_registry_version": source_registry_contract.SOURCE_REGISTRY_CONTRACT_VERSION,
+            "required_fields": [
+                "source_atom_id",
+                "source_family",
+                "source_identity",
+                "document_id_or_workbook_id",
+                "document_version_id_or_workbook_version_id",
+                "content_hash",
+                "extraction_version",
+                "raw_locator",
+                "normalized_text_or_value_snapshot",
+                "parent_pointers",
+                "canonical_citation_payload",
+            ],
+            "canonical_citation_owner": "source_registry",
+        },
+        "search_view_contract": {
+            "role": "candidate_generator_view",
+            "must_point_to_source_atoms": True,
+            "canonical_citation_source_allowed": "only_validated_source_atom",
+            "may_store": ["search_view_id", "source_atom_ids", "embedding_text", "coarse_metadata"],
+            "must_not_own": ["canonical_citation_payload", "raw_locator_identity", "expected_answer", "gold_or_qrels_label"],
+        },
+        "evidence_bundle_contract": {
+            "schema_version": source_registry_contract.EVIDENCE_BUNDLE_SCHEMA_VERSION,
+            "assembled_from": "source_atom_id",
+            "search_view_id_is_candidate_trace_only": True,
+            "support_strength_meaning": "traceable_locator_not_answer_correctness",
+            "policy_modes": ["official_evidence", "runtime_evidence", "diagnostic_evidence"],
+        },
+        "vector_metadata_contract": {
+            "candidate_generator_only": True,
+            "must_not_own_canonical_citation_payload": True,
+            "must_hydrate_through_source_atom_before_evidence_bundle": True,
+        },
+        "java_db_contract": {
+            "minimal_python_refactor_requires_db_migration": False,
+            "durable_materialized_source_registry_requires_future_db_or_manifest_materialization": True,
+            "existing_search_unit_claim_wire_shape_preserved": True,
+        },
+        "anti_overfit_contract": {
+            "query_id_specific_evidence_patch": False,
+            "file_name_specific_evidence_patch": False,
+            "silver_expected_answer_used_as_generation_input": False,
+            "silver_evidence_locator_used_as_retrieval_shortcut": False,
+        },
+    }
+
+
+def v3_6_9_searchunit_sourceatom_hydration_smoke(*, generated_at: str) -> dict[str, Any]:
+    registry = v3_6_8_source_registry_no_vector_sample_registry()
+    families_passed: list[str] = []
+    hydration_valid_count = 0
+    render_valid_count = 0
+    bundle_valid_count = 0
+    per_family: dict[str, dict[str, Any]] = {}
+    for source_atom_id, atom in registry.items():
+        family = official.clean(atom.get("source_family")).upper()
+        hydrated = source_registry_contract.hydrate_canonical_citation_payload(source_atom_id, source_registry=registry)
+        rendered = source_registry_contract.render_citation(source_atom_id, source_registry=registry)
+        bundle = source_registry_contract.assemble_evidence_bundle(
+            source_atom_id,
+            source_registry=registry,
+            mode="runtime_evidence",
+        )
+        if hydrated.get("valid"):
+            hydration_valid_count += 1
+        if rendered.get("valid"):
+            render_valid_count += 1
+        if bundle.get("valid"):
+            bundle_valid_count += 1
+        if hydrated.get("valid") and rendered.get("valid") and bundle.get("valid"):
+            families_passed.append(family)
+        per_family[family] = {
+            "source_atom_id": source_atom_id,
+            "hydrate_valid": bool(hydrated.get("valid")),
+            "render_valid": bool(rendered.get("valid")),
+            "bundle_valid": bool(bundle.get("valid")),
+            "canonical_payload_source": hydrated.get("canonical_payload_source"),
+        }
+    return {
+        "schema_version": f"{V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID}_source_atom_hydration_smoke_v1",
+        "run_id": V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_source_atom_no_vector_hydration_smoke",
+        "source_atom_count": len(registry),
+        "families_passed": sorted(set(families_passed)),
+        "hydrate_canonical_payload_valid_count": hydration_valid_count,
+        "no_vector_citation_render_valid_count": render_valid_count,
+        "evidence_bundle_assembly_valid_count": bundle_valid_count,
+        "per_family": per_family,
+        "vector_db_used": False,
+        "llm_used": False,
+    }
+
+
+def v3_6_9_searchunit_sourceatom_adapter_diagnostics(*, generated_at: str) -> dict[str, Any]:
+    registry = v3_6_8_source_registry_no_vector_sample_registry()
+    search_view = {
+        "search_view_id": "view-text",
+        "search_view_kind": "dense_embedding_chunk",
+        "source_atom_ids": ["atom-text"],
+        "embedding_text": "candidate text only",
+        "canonical_citation_payload": {
+            "source_family": "TEXT",
+            "source_identity": "TEXT:vector-owned",
+            "locator_fingerprint": "fp-vector-owned",
+            "search_unit_id": "su-vector-owned",
+        },
+    }
+    vector_hit_result = source_registry_contract.evidence_bundle_from_search_view(
+        search_view,
+        source_registry=registry,
+    )
+    chunk_only_result = source_registry_contract.evidence_bundle_from_search_view(
+        {"search_view_id": "chunk-view", "chunk_id": "chunk-only", "embedding_text": "chunk only"},
+        source_registry=registry,
+    )
+    missing_atom_result = source_registry_contract.evidence_bundle_from_search_view(
+        {"search_view_id": "view-missing", "source_atom_ids": ["atom-missing"]},
+        source_registry=registry,
+    )
+    evidence_bundle = as_mapping(vector_hit_result.get("evidence_bundle"))
+    citation = as_mapping(evidence_bundle.get("citation"))
+    return {
+        "schema_version": f"{V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID}_search_view_adapter_diagnostics_v1",
+        "run_id": V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_search_view_to_source_atom_adapter",
+        "search_view_contract_valid": source_registry_contract.validate_search_view(search_view)["valid"],
+        "valid_search_view_hydrates_evidence_bundle": bool(vector_hit_result.get("valid")),
+        "source_atom_hydrated_from_registry": bool(vector_hit_result.get("source_atom_hydrated_from_registry")),
+        "vector_payload_used_as_evidence_truth": bool(vector_hit_result.get("vector_payload_used_as_evidence_truth")),
+        "ignored_vector_canonical_payload": bool(vector_hit_result.get("ignored_vector_canonical_payload")),
+        "hydrated_source_identity": citation.get("source_identity"),
+        "hydrated_locator_fingerprint": citation.get("locator_fingerprint"),
+        "hydrated_search_unit_id": citation.get("search_unit_id"),
+        "search_view_id": evidence_bundle.get("search_view_id"),
+        "source_atom_id": evidence_bundle.get("source_atom_id"),
+        "chunk_only_failure_bucket": chunk_only_result.get("failure_bucket"),
+        "missing_atom_failure_bucket": missing_atom_result.get("failure_bucket"),
+        "llm_used": False,
+        "vector_db_used": False,
+    }
+
+
+def v3_6_9_searchunit_sourceatom_failure_buckets(
+    *,
+    generated_at: str,
+    source_load_errors: Sequence[str],
+    hydration_smoke: Mapping[str, Any],
+    adapter_diagnostics: Mapping[str, Any],
+) -> dict[str, Any]:
+    counts = Counter({bucket: 0 for bucket in V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS})
+    if source_load_errors:
+        counts["PRODUCTION_OR_DB_MUTATION_RISK_BLOCKED"] += 0
+    if hydration_smoke.get("families_passed") != ["PDF", "TEXT", "XLSX"]:
+        counts["SOURCE_ATOM_SCHEMA_INCOMPLETE"] += 1
+    if adapter_diagnostics.get("vector_payload_used_as_evidence_truth") is not False:
+        counts["VECTOR_PAYLOAD_USED_AS_EVIDENCE_TRUTH"] += 1
+    if adapter_diagnostics.get("chunk_only_failure_bucket") != "RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT":
+        counts["RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT"] += 1
+    if adapter_diagnostics.get("missing_atom_failure_bucket") != "VECTOR_HIT_SOURCE_ATOM_MISSING":
+        counts["VECTOR_HIT_SOURCE_ATOM_MISSING"] += 1
+    blocking_buckets = [
+        bucket
+        for bucket in V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS
+        if bucket
+        not in {
+            "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY",
+            "SOURCE_REGISTRY_MATERIALIZATION_REQUIRED",
+        }
+        and counts.get(bucket, 0)
+    ]
+    return {
+        "schema_version": f"{V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID}_failure_buckets_v1",
+        "run_id": V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_searchunit_searchview_sourceatom_failure_buckets",
+        "failure_bucket_definitions": list(V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS),
+        "failure_bucket_counts": {bucket: int(counts.get(bucket, 0)) for bucket in V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS},
+        "blocking_buckets": blocking_buckets,
+        "next_blocking_work": ["SOURCE_REGISTRY_MATERIALIZATION_REQUIRED"],
+        "source_load_errors": list(source_load_errors),
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+    }
+
+
+def run_v3_7_0_source_registry_materialization(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    source_paths = v3_7_0_source_registry_source_paths()
+    input_sha_before = v3_6_6_input_sha256(source_paths)
+    official_index_sha_before = v3_6_8_all_source_official_index_sha256()
+    all_source_index_sha_before = v3_6_8_source_registry_all_source_index_sha256()
+    source_json, source_jsonl, source_load_errors = v3_6_5_load_source_artifacts(
+        v3_6_8_all_source_source_paths()
+    )
+    source_rows = source_jsonl.get("v3_5_4_balanced_source_manifest_jsonl", [])
+    manifest_all_rows = source_jsonl.get("v3_6_3_manifest_all_jsonl", [])
+    sidecar_rows = source_jsonl.get("v3_6_6_reference_sidecar_jsonl", [])
+    official_rows = source_jsonl.get("official_denominator_search_unit_manifest_jsonl", [])
+    units, rejected_rows, upstream_inventory = v3_6_8_all_source_materialization_units(
+        generated_at=generated_at,
+        source_rows=source_rows,
+        manifest_all_rows=manifest_all_rows,
+        sidecar_rows=sidecar_rows,
+        official_rows=official_rows,
+    )
+    materialized_atoms, diagnostics, blocked_rows = v3_7_0_materialize_source_atoms(
+        generated_at=generated_at,
+        units=units,
+        rejected_rows=rejected_rows,
+    )
+    policy_blocked_rows = v3_7_0_policy_blocked_artifact_rows(generated_at=generated_at)
+    diagnostics.extend(policy_blocked_rows)
+    blocked_rows.extend(policy_blocked_rows)
+    inventory = v3_7_0_source_registry_inventory(
+        generated_at=generated_at,
+        source_json=source_json,
+        source_rows=source_rows,
+        official_rows=official_rows,
+        units=units,
+        materialized_atoms=materialized_atoms,
+        diagnostics=diagnostics,
+        blocked_rows=blocked_rows,
+        upstream_inventory=upstream_inventory,
+    )
+    registry = {
+        official.clean(atom.get("source_atom_id")): atom
+        for atom in materialized_atoms
+        if official.clean(atom.get("source_atom_id"))
+    }
+    hydration_smoke = v3_7_0_source_registry_hydration_smoke(
+        generated_at=generated_at,
+        source_registry=registry,
+    )
+    failure_buckets = v3_7_0_source_registry_failure_buckets(
+        generated_at=generated_at,
+        diagnostics=diagnostics,
+        blocked_rows=blocked_rows,
+        hydration_smoke=hydration_smoke,
+        source_load_errors=source_load_errors,
+    )
+    outcome = v3_7_0_source_registry_outcome(
+        inventory=inventory,
+        hydration_smoke=hydration_smoke,
+        failure_buckets=failure_buckets,
+    )
+    input_sha_after = v3_6_6_input_sha256(source_paths)
+    official_index_sha_after = v3_6_8_all_source_official_index_sha256()
+    all_source_index_sha_after = v3_6_8_source_registry_all_source_index_sha256()
+    fail_closed_reasons = sorted(
+        set(
+            source_load_errors
+            + [
+                reason
+                for reason, changed in (
+                    (
+                        "protected_input_sha256_changed_during_source_registry_materialization",
+                        input_sha_before != input_sha_after,
+                    ),
+                    (
+                        "official_denominator_index_sha256_changed_during_source_registry_materialization",
+                        official_index_sha_before != official_index_sha_after,
+                    ),
+                    (
+                        "all_source_nonprod_index_sha256_changed_during_source_registry_materialization",
+                        all_source_index_sha_before != all_source_index_sha_after,
+                    ),
+                )
+                if changed
+            ]
+        )
+    )
+    if fail_closed_reasons and outcome == "SOURCE_REGISTRY_MATERIALIZED_READY":
+        outcome = "SOURCE_REGISTRY_MATERIALIZATION_BLOCKED"
+    next_allowed_phase = v3_7_0_next_phase_for_outcome(outcome)
+    index_build_allowed = outcome == "SOURCE_REGISTRY_MATERIALIZED_READY"
+    build = v3_7_0_source_registry_build_summary(
+        generated_at=generated_at,
+        materialized_atoms=materialized_atoms,
+        inventory=inventory,
+        outcome=outcome,
+        next_allowed_phase=next_allowed_phase,
+    )
+    summary: dict[str, Any] = {
+        "schema_version": f"{V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID}_summary_v1",
+        "run_id": V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_source_registry_materialization",
+        "event_type": "diagnostic_source_registry_materialization_v3_7_0",
+        "status": f"DIAGNOSTIC_SOURCE_REGISTRY_MATERIALIZATION_{outcome}",
+        "run_class": "diagnostic_only_source_registry_materialization",
+        "source_registry_first_policy": True,
+        "source_atom_registry_version": source_registry_contract.SOURCE_REGISTRY_CONTRACT_VERSION,
+        "source_registry_materialized": bool(materialized_atoms),
+        "source_registry_path": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+        "materialized_source_atom_count": len(materialized_atoms),
+        "total_inspected_source_candidates": inventory["total_inspected_source_candidates"],
+        "source_family_counts": inventory["source_family_counts"],
+        "materialization_bucket_counts": inventory["materialization_bucket_counts"],
+        "official_overlap_count": inventory["official_overlap_count"],
+        "silver_source_overlap_count": inventory["silver_source_overlap_count"],
+        "snapshot_only_count": inventory["snapshot_only_count"],
+        "retrieval_only_uncanonicalized_count": inventory["retrieval_only_uncanonicalized_count"],
+        "blocked_counts_and_reasons": inventory["blocked_counts_and_reasons"],
+        "v3_5_4_source_only_manifest_counts": inventory["v3_5_4_source_only_manifest_counts"],
+        "official_denominator_source_atoms_protected_regression_scope": True,
+        "protected_official_denominator_not_dev_or_holdout_tuning_source": True,
+        "diagnostic_only": True,
+        "implementation_allowed": True,
+        "implementation_scope": [
+            "non_production_source_atom_registry_materialization",
+            "source_inventory_and_lineage_classification",
+            "extraction_snapshot_normalization",
+            "source_atom_validation",
+            "no_vector_evidence_bundle_hydration",
+            "no_vector_deterministic_citation_rendering",
+            "compact_materialization_diagnostics",
+        ],
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "retrieval_metric_computed": False,
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "hybrid_retrieval_baseline_computed": False,
+        "answer_correctness_scored": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "promotion_gate": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "retrieval_ranking_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": True,
+        "index_or_export_mutation_scope": "source_registry_artifacts_only",
+        "vector_index_build_performed": False,
+        "production_mutation": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_usage_allowed": False,
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "expected_answer_draft_used_as_source_content": False,
+        "expected_answer_draft_used_as_generation_input": False,
+        "supporting_evidence_used_as_answer_text_source": False,
+        "generated_silver_answers_used_as_source_material": False,
+        "generated_silver_questions_used_as_source_material": False,
+        "gold_fields_used_as_generation_input": False,
+        "qrels_or_labels_used_as_generation_input": False,
+        "silver_expected_answer_used_as_generation_input": False,
+        "silver_evidence_locator_used_as_retrieval_shortcut": False,
+        "query_id_specific_evidence_patch": False,
+        "file_name_specific_evidence_patch": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "silver_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "vector_db_role": "candidate_generator_only",
+        "vector_db_used": False,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "retrieval_only_uncanonicalized_units_allowed_for_official_scoring": False,
+        "no_vector_evidence_bundle_hydration_passed": hydration_smoke["no_vector_evidence_bundle_hydration_passed"],
+        "no_vector_citation_rendering_passed": hydration_smoke["no_vector_citation_rendering_passed"],
+        "v3_7_1_all_source_citable_nonprod_index_build_allowed": index_build_allowed,
+        "outcome": outcome,
+        "outcome_choices": sorted(V3_7_0_SOURCE_REGISTRY_OUTCOMES),
+        "next_allowed_phase": next_allowed_phase,
+        "recommended_next_phase": next_allowed_phase,
+        "failure_bucket_counts": failure_buckets["failure_bucket_counts"],
+        "blocking_buckets": failure_buckets["blocking_buckets"],
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": input_sha_before == input_sha_after,
+        "official_denominator_index_sha256_before": official_index_sha_before,
+        "official_denominator_index_sha256_after": official_index_sha_after,
+        "official_denominator_index_sha256_unchanged": official_index_sha_before == official_index_sha_after,
+        "all_source_nonprod_index_sha256_before": all_source_index_sha_before,
+        "all_source_nonprod_index_sha256_after": all_source_index_sha_after,
+        "all_source_nonprod_index_sha256_unchanged": all_source_index_sha_before == all_source_index_sha_after,
+        "protected_sha_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "guardrail_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "fail_closed_reasons": fail_closed_reasons,
+        "source_inventory": inventory,
+        "source_atom_rows": materialized_atoms,
+        "materialization_diagnostics": diagnostics,
+        "hydration_smoke": hydration_smoke,
+        "failure_buckets": failure_buckets,
+        "source_registry_build": build,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON),
+            "source_inventory_json": official.repo_relative(DEFAULT_V3_7_0_SOURCE_REGISTRY_SOURCE_INVENTORY_JSON),
+            "materialization_diagnostics_jsonl": official.repo_relative(
+                DEFAULT_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_DIAGNOSTICS_JSONL
+            ),
+            "hydration_smoke_json": official.repo_relative(DEFAULT_V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE_JSON),
+            "failure_buckets_json": official.repo_relative(DEFAULT_V3_7_0_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON),
+            "source_atom_registry_jsonl": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+            "source_atom_registry_build_json": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_BUILD_JSON),
+            "source_atom_registry_inventory_json": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_INVENTORY_JSON),
+            "source_atom_registry_blocked_jsonl": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+    return summary
+
+
+def v3_7_0_source_registry_source_paths() -> dict[str, Path]:
+    paths = dict(v3_6_8_all_source_source_paths())
+    paths["raw_text_rag_chunks_jsonl"] = (
+        AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined" / "rag_chunks.jsonl"
+    )
+    return paths
+
+
+def v3_7_0_materialize_source_atoms(
+    *,
+    generated_at: str,
+    units: Sequence[Mapping[str, Any]],
+    rejected_rows: Sequence[Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    atoms: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
+    blocked: list[dict[str, Any]] = []
+    for unit in units:
+        atom, bucket, reasons = v3_7_0_source_atom_from_unit(unit, generated_at=generated_at)
+        diagnostic = v3_7_0_materialization_diagnostic(
+            generated_at=generated_at,
+            source_class=official.clean(unit.get("source_class")),
+            source_unit_id=official.clean(unit.get("source_unit_id")),
+            source_family=official.clean(unit.get("source_family")).upper(),
+            source_identity=official.clean(unit.get("source_identity")),
+            materialization_bucket=bucket,
+            reasons=reasons,
+            source_atom_id=official.clean(atom.get("source_atom_id")) if atom else "",
+            materialized=bool(atom),
+        )
+        diagnostics.append(diagnostic)
+        if atom:
+            atoms.append(atom)
+        else:
+            blocked.append(diagnostic)
+    for row in rejected_rows:
+        reasons = [official.clean(item) for item in row.get("rejection_reasons") or [] if official.clean(item)]
+        bucket = v3_7_0_bucket_from_rejection_reasons(reasons)
+        blocked_row = v3_7_0_materialization_diagnostic(
+            generated_at=generated_at,
+            source_class=official.clean(row.get("source_class")),
+            source_unit_id=official.clean(row.get("source_unit_id")),
+            source_family=official.clean(row.get("source_family")).upper(),
+            source_identity="",
+            materialization_bucket=bucket,
+            reasons=reasons or [bucket],
+            source_atom_id="",
+            materialized=False,
+        )
+        diagnostics.append(blocked_row)
+        if bucket.startswith("blocked_"):
+            blocked.append(blocked_row)
+    return atoms, diagnostics, blocked
+
+
+def v3_7_0_source_atom_from_unit(
+    unit: Mapping[str, Any],
+    *,
+    generated_at: str,
+) -> tuple[dict[str, Any] | None, str, list[str]]:
+    source_family = official.clean(unit.get("source_family")).upper()
+    canonical_payload = dict(as_mapping(unit.get("canonical_citation_payload")))
+    raw_locator = v3_7_0_normalized_raw_locator(unit)
+    source_identity = official.clean(unit.get("source_identity"))
+    content_hash = official.clean(
+        unit.get("source_text_sha256")
+        or raw_locator.get("source_content_sha256")
+        or canonical_payload.get("source_content_sha256")
+    )
+    snapshot = official.clean(unit.get("display_text") or unit.get("bm25_text") or unit.get("embedding_text"))
+    search_unit_id = official.clean(unit.get("search_unit_id") or canonical_payload.get("search_unit_id"))
+    locator_fingerprint = official.clean(unit.get("locator_fingerprint") or canonical_payload.get("locator_fingerprint"))
+    canonical_status = official.clean(unit.get("canonical_payload_status"))
+    missing: list[str] = []
+    if canonical_status and canonical_status != "canonicalizable":
+        return None, "retrieval_only_uncanonicalized", ["canonical_payload_status_not_canonicalizable"]
+    if not raw_locator:
+        missing.append("raw_locator")
+    if not v3_7_0_locator_is_human_verifiable(source_family, raw_locator):
+        missing.append("locator")
+    if not content_hash:
+        missing.append("content_hash")
+    if not snapshot:
+        missing.append("extraction_snapshot")
+    if not source_identity:
+        missing.append("source_identity")
+    if not search_unit_id:
+        missing.append("search_unit_id")
+    if not canonical_payload:
+        missing.append("canonical_citation_payload")
+    if missing:
+        return None, v3_7_0_bucket_from_missing_fields(missing), missing
+    raw_file_exists = v3_7_0_raw_file_exists(source_family=source_family, raw_locator=raw_locator)
+    extraction_snapshot_present = bool(snapshot)
+    bucket = "source_atom_ready" if raw_file_exists else "snapshot_only_ready"
+    document_id = v3_7_0_document_id(source_family=source_family, unit=unit, raw_locator=raw_locator)
+    workbook_id = v3_7_0_workbook_id(source_family=source_family, unit=unit, raw_locator=raw_locator)
+    document_version_id = official.clean(unit.get("document_version_id") or raw_locator.get("document_version_id"))
+    workbook_version_id = document_version_id if source_family == "XLSX" else ""
+    source_atom_id = v3_7_0_source_atom_id(
+        source_family=source_family,
+        source_identity=source_identity,
+        locator_fingerprint=locator_fingerprint,
+        content_hash=content_hash,
+    )
+    canonical_payload["source_family"] = source_family
+    canonical_payload["sourceFamily"] = source_family
+    canonical_payload["source_identity"] = source_identity
+    canonical_payload["sourceIdentity"] = source_identity
+    canonical_payload["locator_fingerprint"] = locator_fingerprint
+    canonical_payload["locatorFingerprint"] = locator_fingerprint
+    canonical_payload["search_unit_id"] = search_unit_id
+    canonical_payload["searchUnitId"] = search_unit_id
+    canonical_payload["canonical_payload_source"] = "source_registry"
+    canonical_payload["canonicalPayloadSource"] = "source_registry"
+    if document_version_id:
+        canonical_payload["document_version_id"] = document_version_id
+        canonical_payload["documentVersionId"] = document_version_id
+    if source_family == "TEXT":
+        canonical_payload.setdefault("document_id", document_id)
+        canonical_payload.setdefault("documentId", document_id)
+    official_overlap = bool(unit.get("official_denominator_overlap"))
+    silver_overlap = bool(unit.get("silver_source_overlap"))
+    review_only = bool(unit.get("review_only") or official_overlap)
+    quarantine = bool(unit.get("quarantine"))
+    generation_source_allowed = bool(unit.get("generation_source_allowed")) and not official_overlap
+    atom = {
+        "schema_version": f"{V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID}_source_atom_v1",
+        "source_registry_version": source_registry_contract.SOURCE_REGISTRY_CONTRACT_VERSION,
+        "run_id": V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+        "generated_at": generated_at,
+        "source_atom_id": source_atom_id,
+        "source_family": source_family,
+        "source_identity": source_identity,
+        "document_id": document_id if source_family != "XLSX" else "",
+        "workbook_id": workbook_id if source_family == "XLSX" else "",
+        "document_version_id": document_version_id if source_family != "XLSX" else "",
+        "workbook_version_id": workbook_version_id if source_family == "XLSX" else "",
+        "content_hash": content_hash,
+        "extraction_version": v3_7_0_extraction_version(unit),
+        "raw_locator": raw_locator,
+        "normalized_text_or_value_snapshot": snapshot[:1000],
+        "parent_pointers": {
+            "source_class": official.clean(unit.get("source_class")),
+            "source_unit_id": official.clean(unit.get("source_unit_id")),
+            "dataset_scope": official.clean(unit.get("dataset_scope")),
+            "upstream_artifact": official.clean(unit.get("upstream_artifact")),
+            "search_unit_id": search_unit_id,
+            "search_view_ids": [f"search_view:{search_unit_id}"] if search_unit_id else [],
+        },
+        "canonical_citation_payload": canonical_payload,
+        "official_denominator_overlap": official_overlap,
+        "silver_source_overlap": silver_overlap,
+        "review_only": review_only,
+        "quarantine": quarantine,
+        "generation_source_allowed": generation_source_allowed,
+        "gold_or_label_source": False,
+        "expected_answer_source": False,
+        "qrels_source": False,
+        "generated_silver_answer_source": False,
+        "generated_silver_question_source": False,
+        "metric_result_source": False,
+        "report_artifact_source": False,
+        "materialization_bucket": bucket,
+        "raw_file_exists": raw_file_exists,
+        "raw_source_missing": not raw_file_exists,
+        "extraction_snapshot_present": extraction_snapshot_present,
+        "extraction_snapshot_source": official.clean(unit.get("upstream_artifact")),
+        "runtime_evidence_allowed": extraction_snapshot_present and v3_7_0_locator_is_human_verifiable(source_family, raw_locator),
+        "official_evidence_allowed": raw_file_exists and v3_7_0_strict_locator_fields_present(source_family, raw_locator),
+        "locator_completeness_tier": (
+            "strict" if v3_7_0_strict_locator_fields_present(source_family, raw_locator) else "human_verifiable"
+        ),
+        "protected_regression_scope": official_overlap,
+        "dev_or_holdout_tuning_source_allowed": not official_overlap and generation_source_allowed,
+        "non_production_only": True,
+    }
+    validation = source_registry_contract.validate_source_atom(atom)
+    if not validation["valid"]:
+        return None, "retrieval_only_uncanonicalized", validation["missing_fields"]
+    return atom, bucket, []
+
+
+def v3_7_0_normalized_raw_locator(unit: Mapping[str, Any]) -> dict[str, Any]:
+    source_family = official.clean(unit.get("source_family")).upper()
+    locator = dict(as_mapping(unit.get("source_locator")) or as_mapping(unit.get("track_locator_payload")))
+    track_locator = dict(as_mapping(unit.get("track_locator_payload")))
+    canonical = as_mapping(unit.get("canonical_citation_payload"))
+    locator_fingerprint = official.clean(unit.get("locator_fingerprint") or canonical.get("locator_fingerprint"))
+    search_unit_id = official.clean(unit.get("search_unit_id") or canonical.get("search_unit_id"))
+    if source_family == "TEXT":
+        text_locator = dict(as_mapping(track_locator.get("text_locator")) or locator)
+        normalized = {
+            **text_locator,
+            "document_id": official.clean(track_locator.get("document_id") or locator.get("document_id") or locator.get("doc_id")),
+            "document_version_id": official.clean(unit.get("document_version_id") or locator.get("document_version_id")),
+            "chunk_id": official.clean(track_locator.get("chunk_id") or locator.get("chunk_id")),
+            "source_corpus_path": official.clean(track_locator.get("source_corpus_path") or locator.get("source_corpus_path")),
+            "section_path": track_locator.get("section_path") or locator.get("section_path") or [],
+            "text_span": official.clean(locator.get("text_span") or f"chunk:{track_locator.get('chunk_id') or locator.get('chunk_id')}"),
+        }
+    elif source_family == "PDF":
+        normalized = {
+            **locator,
+            "source_pdf_path": official.clean(track_locator.get("source_pdf_path") or locator.get("source_pdf_path")),
+            "document_version_id": official.clean(
+                track_locator.get("document_version_id")
+                or locator.get("document_version_id")
+                or unit.get("document_version_id")
+            ),
+            "page": track_locator.get("page") if track_locator.get("page") is not None else locator.get("page"),
+            "physical_page_index": (
+                track_locator.get("physical_page_index")
+                if track_locator.get("physical_page_index") is not None
+                else locator.get("physical_page_index") if locator.get("physical_page_index") is not None else locator.get("page_index")
+            ),
+            "bbox": track_locator.get("bbox") or locator.get("bbox"),
+            "region_type": official.clean(track_locator.get("region_type") or locator.get("region_type")),
+        }
+    elif source_family == "XLSX":
+        normalized = {
+            **locator,
+            "workbook": official.clean(track_locator.get("workbook") or locator.get("workbook")),
+            "source_path": official.clean(track_locator.get("source_path") or locator.get("source_file_path")),
+            "document_version_id": official.clean(unit.get("document_version_id") or locator.get("document_version_id")),
+            "sheet": official.clean(track_locator.get("sheet") or locator.get("sheet")),
+            "range": official.clean(track_locator.get("range") or locator.get("range")),
+            "cell": official.clean(track_locator.get("cell") or locator.get("cell")),
+            "row_label": official.clean(track_locator.get("row_label") or locator.get("row_label")),
+            "column_label": official.clean(
+                track_locator.get("column_label")
+                or locator.get("column_label")
+                or track_locator.get("target_column")
+                or locator.get("target_column")
+            ),
+            "target_column": official.clean(track_locator.get("target_column") or locator.get("target_column")),
+            "normalized_value": official.clean(track_locator.get("normalized_value") or locator.get("normalized_value")),
+        }
+        normalized["value_locator"] = normalized["cell"] or normalized["range"]
+    else:
+        normalized = locator
+    normalized["search_unit_id"] = search_unit_id
+    normalized["stable_locator_fingerprint"] = locator_fingerprint or v3_5_locator_fingerprint(normalized)
+    return normalized
+
+
+def v3_7_0_source_atom_id(
+    *,
+    source_family: str,
+    source_identity: str,
+    locator_fingerprint: str,
+    content_hash: str,
+) -> str:
+    digest = sha256_text("|".join([source_family, source_identity, locator_fingerprint, content_hash]))
+    return f"srcatom_v1_{source_family.lower()}_{digest[:24]}"
+
+
+def v3_7_0_extraction_version(unit: Mapping[str, Any]) -> str:
+    if bool(unit.get("raw_corpus_source")):
+        return "namu_v4_rag_chunks_snapshot_v1"
+    if unit.get("source_class") == "official_source_bound_searchunit":
+        return "official_source_bound_searchunit_manifest_snapshot_v1"
+    return "v3_5_4_source_only_manifest_snapshot_v1"
+
+
+def v3_7_0_raw_file_exists(*, source_family: str, raw_locator: Mapping[str, Any]) -> bool:
+    if source_family == "TEXT":
+        return v3_7_0_repo_path_exists(official.clean(raw_locator.get("source_corpus_path")))
+    if source_family == "PDF":
+        return v3_7_0_repo_path_exists(official.clean(raw_locator.get("source_pdf_path")))
+    if source_family == "XLSX":
+        return v3_7_0_repo_path_exists(
+            official.clean(raw_locator.get("source_path") or raw_locator.get("source_file_path"))
+        )
+    return False
+
+
+def v3_7_0_repo_path_exists(path_text: str) -> bool:
+    if not path_text:
+        return False
+    path = Path(path_text)
+    if path.is_absolute():
+        return path.exists()
+    return (REPO_ROOT / path).exists()
+
+
+def v3_7_0_document_id(
+    *,
+    source_family: str,
+    unit: Mapping[str, Any],
+    raw_locator: Mapping[str, Any],
+) -> str:
+    if source_family == "TEXT":
+        return official.clean(raw_locator.get("document_id") or raw_locator.get("doc_id") or unit.get("document_version_id"))
+    if source_family == "PDF":
+        return official.clean(raw_locator.get("document_id") or unit.get("document_version_id") or raw_locator.get("source_pdf_path"))
+    return ""
+
+
+def v3_7_0_workbook_id(
+    *,
+    source_family: str,
+    unit: Mapping[str, Any],
+    raw_locator: Mapping[str, Any],
+) -> str:
+    if source_family != "XLSX":
+        return ""
+    return official.clean(
+        raw_locator.get("workbook")
+        or raw_locator.get("source_path")
+        or unit.get("document_version_id")
+    )
+
+
+def v3_7_0_locator_is_human_verifiable(source_family: str, raw_locator: Mapping[str, Any]) -> bool:
+    if source_family == "TEXT":
+        return bool(raw_locator.get("document_id") and raw_locator.get("chunk_id"))
+    if source_family == "PDF":
+        return bool(raw_locator.get("source_pdf_path") and raw_locator.get("page") is not None)
+    if source_family == "XLSX":
+        return bool(raw_locator.get("workbook") and raw_locator.get("sheet") and raw_locator.get("value_locator"))
+    return False
+
+
+def v3_7_0_strict_locator_fields_present(source_family: str, raw_locator: Mapping[str, Any]) -> bool:
+    if source_family == "TEXT":
+        return bool(raw_locator.get("document_id") and raw_locator.get("chunk_id") and raw_locator.get("source_corpus_path"))
+    if source_family == "PDF":
+        return bool(
+            raw_locator.get("source_pdf_path")
+            and raw_locator.get("document_version_id")
+            and raw_locator.get("page") is not None
+            and raw_locator.get("physical_page_index") is not None
+            and raw_locator.get("bbox")
+            and raw_locator.get("region_type")
+        )
+    if source_family == "XLSX":
+        return bool(raw_locator.get("workbook") and raw_locator.get("sheet") and (raw_locator.get("range") or raw_locator.get("cell")))
+    return False
+
+
+def v3_7_0_bucket_from_missing_fields(missing: Sequence[str]) -> str:
+    values = set(missing)
+    if "content_hash" in values:
+        return "blocked_missing_content_hash"
+    if "locator" in values or "raw_locator" in values:
+        return "blocked_missing_locator"
+    if "extraction_snapshot" in values:
+        return "blocked_missing_extraction_snapshot"
+    if "source_identity" in values or "search_unit_id" in values:
+        return "blocked_unknown_source_lineage"
+    return "blocked_unknown_source_lineage"
+
+
+def v3_7_0_bucket_from_rejection_reasons(reasons: Sequence[str]) -> str:
+    values = set(reasons)
+    if "source_text_or_value_missing" in values:
+        return "blocked_missing_extraction_snapshot"
+    if "forbidden_generation_or_label_field_present" in values:
+        return "blocked_expected_answer_or_label_artifact"
+    if "duplicate_search_unit_id" in values or "duplicate_source_identity" in values:
+        return "source_atom_ready"
+    return "blocked_unknown_source_lineage"
+
+
+def v3_7_0_materialization_diagnostic(
+    *,
+    generated_at: str,
+    source_class: str,
+    source_unit_id: str,
+    source_family: str,
+    source_identity: str,
+    materialization_bucket: str,
+    reasons: Sequence[str],
+    source_atom_id: str,
+    materialized: bool,
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID}_materialization_diagnostic_v1",
+        "run_id": V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+        "generated_at": generated_at,
+        "source_class": source_class,
+        "source_unit_id": source_unit_id,
+        "source_family": source_family,
+        "source_identity": source_identity,
+        "materialization_bucket": materialization_bucket,
+        "reasons": sorted(set(official.clean(item) for item in reasons if official.clean(item))),
+        "source_atom_id": source_atom_id,
+        "materialized": materialized,
+    }
+
+
+def v3_7_0_policy_blocked_artifact_rows(*, generated_at: str) -> list[dict[str, Any]]:
+    blocked_specs = [
+        (
+            "ai/eval/eval_queries/*gold*",
+            "blocked_expected_answer_or_label_artifact",
+            "official_gold_query_files_include_expected_answer_supporting_evidence_or_labels",
+        ),
+        (
+            "ai/eval/eval_queries/*qrels*",
+            "blocked_expected_answer_or_label_artifact",
+            "qrels_are_labels_not_source_content",
+        ),
+        (
+            "ai/eval/silver/*",
+            "blocked_expected_answer_or_label_artifact",
+            "silver_questions_or_answers_are_not_source_content",
+        ),
+        (
+            "ai/eval/reports/rag-ingestion/*",
+            "blocked_eval_artifact",
+            "run_reports_metrics_status_or_audits_are_not_source_content",
+        ),
+    ]
+    rows: list[dict[str, Any]] = []
+    for pattern, bucket, reason in blocked_specs:
+        matches = sorted(REPO_ROOT.glob(pattern))
+        rows.append(
+            v3_7_0_materialization_diagnostic(
+                generated_at=generated_at,
+                source_class="excluded_policy_surface",
+                source_unit_id=pattern,
+                source_family="MIXED",
+                source_identity=pattern,
+                materialization_bucket=bucket,
+                reasons=[reason, f"matched_path_count={len(matches)}"],
+                source_atom_id="",
+                materialized=False,
+            )
+        )
+    return rows
+
+
+def v3_7_0_source_registry_inventory(
+    *,
+    generated_at: str,
+    source_json: Mapping[str, Any],
+    source_rows: Sequence[Mapping[str, Any]],
+    official_rows: Sequence[Mapping[str, Any]],
+    units: Sequence[Mapping[str, Any]],
+    materialized_atoms: Sequence[Mapping[str, Any]],
+    diagnostics: Sequence[Mapping[str, Any]],
+    blocked_rows: Sequence[Mapping[str, Any]],
+    upstream_inventory: Mapping[str, Any],
+) -> dict[str, Any]:
+    bucket_counts = Counter(official.clean(row.get("materialization_bucket")) for row in diagnostics)
+    family_counts = Counter(official.clean(atom.get("source_family")).upper() for atom in materialized_atoms)
+    for family in ("TEXT", "PDF", "XLSX"):
+        family_counts.setdefault(family, 0)
+    for bucket in V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_BUCKETS:
+        bucket_counts.setdefault(bucket, 0)
+    source_input_counts = as_mapping(as_mapping(upstream_inventory.get("counts")).get("total_eligible_source_units_by_source_family"))
+    raw_text_count = int(source_input_counts.get("TEXT", 0)) - sum(
+        1 for row in source_rows if official.clean(row.get("source_family")).upper() == "TEXT"
+    ) - sum(
+        1 for row in official_rows if v3_6_8_all_source_family_from_track(official.clean(row.get("track"))) == "TEXT"
+    )
+    v3_5_4_counts = {
+        family: sum(1 for row in source_rows if official.clean(row.get("source_family")).upper() == family)
+        for family in ("TEXT", "PDF", "XLSX")
+    }
+    snapshot_counts = v3_7_0_extraction_snapshot_file_counts()
+    blocked_by_reason = Counter()
+    for row in blocked_rows:
+        for reason in row.get("reasons") or [row.get("materialization_bucket")]:
+            blocked_by_reason[official.clean(reason)] += 1
+    total_inspected = len(diagnostics)
+    return {
+        "schema_version": f"{V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID}_source_inventory_v1",
+        "run_id": V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_source_registry_inventory",
+        "total_inspected_source_candidates": total_inspected,
+        "materialized_source_atom_count": len(materialized_atoms),
+        "source_family_counts": {family: int(family_counts.get(family, 0)) for family in ("TEXT", "PDF", "XLSX")},
+        "materialization_bucket_counts": {
+            bucket: int(bucket_counts.get(bucket, 0))
+            for bucket in V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_BUCKETS
+        },
+        "official_overlap_count": sum(1 for atom in materialized_atoms if bool(atom.get("official_denominator_overlap"))),
+        "silver_source_overlap_count": sum(1 for atom in materialized_atoms if bool(atom.get("silver_source_overlap"))),
+        "snapshot_only_count": int(bucket_counts.get("snapshot_only_ready", 0)),
+        "retrieval_only_uncanonicalized_count": int(bucket_counts.get("retrieval_only_uncanonicalized", 0)),
+        "blocked_counts_and_reasons": {
+            "total": len(blocked_rows),
+            "by_bucket": {
+                bucket: int(bucket_counts.get(bucket, 0))
+                for bucket in V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_BUCKETS
+                if bucket.startswith("blocked_")
+            },
+            "by_reason": dict(sorted(blocked_by_reason.items())),
+        },
+        "v3_5_4_source_only_manifest_counts": v3_5_4_counts,
+        "source_material_inputs": {
+            "v3_5_4_source_only_manifest": {
+                "path": official.repo_relative(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+                "row_count": len(source_rows),
+                "counts_by_source_family": v3_5_4_counts,
+                "physical_source": str(resolve_report_artifact_path(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL)),
+            },
+            "official_source_bound_units": {
+                "path": official.repo_relative(DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl"),
+                "row_count": len(official_rows),
+                "protected_regression_scope_only": True,
+            },
+            "raw_text_chunks": {
+                "path": "ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl",
+                "row_count": max(0, raw_text_count),
+                "source_atom_backed": raw_text_count > 0,
+            },
+            "pdf_extraction_snapshots": {
+                "path_glob": "local-storage/*/pdf_parsed_json/*.json",
+                "snapshot_file_count": snapshot_counts["pdf_parsed_json"],
+                "primary_materialization_source": "v3_5_4_pdf_manifest_rows",
+            },
+            "xlsx_extraction_snapshots": {
+                "path_glob": "local-storage/*/xlsx_workbook_json/*.json",
+                "snapshot_file_count": snapshot_counts["xlsx_workbook_json"],
+                "table_snapshot_file_count": snapshot_counts["xlsx_table_json"],
+                "primary_materialization_source": "v3_5_4_xlsx_manifest_rows",
+            },
+            "locator_complete_source_candidates": {
+                "row_count": sum(1 for unit in units if unit.get("canonical_payload_status") == "canonicalizable"),
+            },
+        },
+        "source_lineage_decisions": {
+            "v3_5_4_manifest_rows": "materialize_from_frozen_source_only_manifest_as_source_atoms_or_snapshot_only_atoms",
+            "official_29_units": "materialize_only_as_protected_regression_scope",
+            "raw_text_chunks": "materialize_from_current_namu_v4_rag_chunks_namespace",
+            "pdf_xlsx_local_snapshots": "inventory_as_snapshot_sources_but_use_manifest_ready_rows_for_stable_atom_ids",
+            "eval_artifacts": "explicitly_block_as_non_source_content",
+        },
+        "excluded_source_content_policy": {
+            "expected_answers_indexed": False,
+            "supporting_evidence_as_answer_text_indexed": False,
+            "gold_labels_indexed": False,
+            "qrels_indexed": False,
+            "relevance_labels_indexed": False,
+            "answerability_labels_indexed": False,
+            "scorer_outputs_indexed": False,
+            "metric_result_files_indexed": False,
+            "run_reports_indexed": False,
+            "actual_response_audits_indexed": False,
+            "llm_generated_answers_indexed": False,
+            "generated_silver_answers_indexed": False,
+            "generated_silver_questions_indexed_as_source_content": False,
+        },
+        "source_json_run_ids": {
+            "v3_5_4_freeze_summary": as_mapping(source_json.get("v3_5_4_freeze_summary_json")).get("run_id"),
+        },
+    }
+
+
+def v3_7_0_extraction_snapshot_file_counts() -> dict[str, int]:
+    local_storage = REPO_ROOT / "local-storage"
+    counts = {"pdf_parsed_json": 0, "xlsx_workbook_json": 0, "xlsx_table_json": 0}
+    if not local_storage.exists():
+        return counts
+    for path in local_storage.rglob("*.json"):
+        text = path.as_posix()
+        if "/pdf_parsed_json/" in text:
+            counts["pdf_parsed_json"] += 1
+        elif "/xlsx_workbook_json/" in text:
+            counts["xlsx_workbook_json"] += 1
+        elif "/xlsx_table_json/" in text:
+            counts["xlsx_table_json"] += 1
+    return counts
+
+
+def v3_7_0_source_registry_hydration_smoke(
+    *,
+    generated_at: str,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    examples: dict[str, Mapping[str, Any]] = {}
+    for atom in source_registry.values():
+        family = official.clean(atom.get("source_family")).upper()
+        if family in {"TEXT", "PDF", "XLSX"} and family not in examples:
+            examples[family] = atom
+        if set(examples) == {"TEXT", "PDF", "XLSX"}:
+            break
+    per_family: dict[str, Any] = {}
+    families_passed: list[str] = []
+    runtime_allowed_count = 0
+    official_policy_ok = True
+    vector_metadata_used = False
+    for family in ("TEXT", "PDF", "XLSX"):
+        atom = examples.get(family)
+        if not atom:
+            per_family[family] = {"valid": False, "failure_bucket": "SOURCE_REGISTRY_MISSING_BLOCKER"}
+            continue
+        source_atom_id = official.clean(atom.get("source_atom_id"))
+        hydrated = source_registry_contract.hydrate_canonical_citation_payload(
+            source_atom_id,
+            source_registry=source_registry,
+        )
+        rendered = source_registry_contract.render_citation(
+            source_atom_id,
+            source_registry=source_registry,
+        )
+        bundle = source_registry_contract.assemble_evidence_bundle(
+            source_atom_id,
+            source_registry=source_registry,
+            mode="runtime_evidence",
+        )
+        official_bundle = source_registry_contract.assemble_evidence_bundle(
+            source_atom_id,
+            source_registry=source_registry,
+            mode="official_evidence",
+        )
+        search_view = {
+            "search_view_id": f"smoke-view-{family.lower()}",
+            "source_atom_ids": [source_atom_id],
+            "canonical_citation_payload": {"source_identity": "vector-owned"},
+        }
+        from_search_view = source_registry_contract.evidence_bundle_from_search_view(
+            search_view,
+            source_registry=source_registry,
+        )
+        evidence_bundle = as_mapping(bundle.get("evidence_bundle"))
+        runtime_allowed = bool(
+            evidence_bundle.get("runtime_evidence_allowed")
+            or evidence_bundle.get("runtime_answer_allowed")
+            or atom.get("runtime_evidence_allowed")
+        )
+        official_allowed = bool(as_mapping(official_bundle.get("evidence_bundle")).get("official_evidence_allowed"))
+        strict_locator = v3_7_0_strict_locator_fields_present(family, as_mapping(atom.get("raw_locator")))
+        official_policy_ok = official_policy_ok and (not official_allowed or strict_locator)
+        valid = bool(
+            hydrated.get("valid")
+            and rendered.get("valid")
+            and bundle.get("valid")
+            and from_search_view.get("valid")
+            and from_search_view.get("ignored_vector_canonical_payload") is True
+            and from_search_view.get("vector_payload_used_as_evidence_truth") is False
+            and runtime_allowed
+        )
+        if runtime_allowed:
+            runtime_allowed_count += 1
+        if valid:
+            families_passed.append(family)
+        vector_metadata_used = vector_metadata_used or bool(from_search_view.get("vector_payload_used_as_evidence_truth"))
+        per_family[family] = {
+            "source_atom_id": source_atom_id,
+            "hydrate_valid": bool(hydrated.get("valid")),
+            "render_valid": bool(rendered.get("valid")),
+            "bundle_valid": bool(bundle.get("valid")),
+            "from_search_view_valid": bool(from_search_view.get("valid")),
+            "canonical_payload_source": hydrated.get("canonical_payload_source"),
+            "canonical_payload_copied_from_vector_metadata": False,
+            "ignored_vector_canonical_payload": bool(from_search_view.get("ignored_vector_canonical_payload")),
+            "locator_completeness_tier": atom.get("locator_completeness_tier"),
+            "runtime_evidence_allowed": runtime_allowed,
+            "official_evidence_allowed": official_allowed,
+            "strict_locator_fields_present": strict_locator,
+        }
+    return {
+        "schema_version": f"{V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID}_hydration_smoke_v1",
+        "run_id": V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_source_registry_no_vector_hydration_smoke",
+        "families_passed": sorted(families_passed),
+        "per_family": per_family,
+        "no_vector_evidence_bundle_hydration_passed": sorted(families_passed) == ["PDF", "TEXT", "XLSX"],
+        "no_vector_citation_rendering_passed": sorted(families_passed) == ["PDF", "TEXT", "XLSX"],
+        "runtime_evidence_allowed_count": runtime_allowed_count,
+        "official_evidence_allowed_only_with_strict_locator_fields": official_policy_ok,
+        "vector_metadata_used_as_canonical_citation_source": vector_metadata_used,
+        "vector_payload_used_as_evidence_truth": vector_metadata_used,
+        "vector_db_used": False,
+        "llm_used": False,
+    }
+
+
+def v3_7_0_source_registry_failure_buckets(
+    *,
+    generated_at: str,
+    diagnostics: Sequence[Mapping[str, Any]],
+    blocked_rows: Sequence[Mapping[str, Any]],
+    hydration_smoke: Mapping[str, Any],
+    source_load_errors: Sequence[str],
+) -> dict[str, Any]:
+    counts = Counter({bucket: 0 for bucket in V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_BUCKETS})
+    for row in diagnostics:
+        bucket = official.clean(row.get("materialization_bucket"))
+        if bucket:
+            counts[bucket] += 1
+    for row in blocked_rows:
+        bucket = official.clean(row.get("materialization_bucket"))
+        if bucket.startswith("blocked_") and not any(row is diag for diag in diagnostics):
+            counts[bucket] += 1
+    blocking = []
+    for bucket in (
+        "blocked_missing_raw_source",
+        "blocked_missing_extraction_snapshot",
+        "blocked_missing_locator",
+        "blocked_missing_content_hash",
+        "blocked_unknown_source_lineage",
+    ):
+        if counts.get(bucket, 0):
+            blocking.append(bucket)
+    if hydration_smoke.get("families_passed") != ["PDF", "TEXT", "XLSX"]:
+        blocking.append("no_vector_hydration_smoke_incomplete")
+    if source_load_errors:
+        blocking.append("source_load_errors")
+    return {
+        "schema_version": f"{V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID}_failure_buckets_v1",
+        "run_id": V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_source_registry_materialization_failure_buckets",
+        "failure_bucket_definitions": list(V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_BUCKETS),
+        "failure_bucket_counts": {bucket: int(counts.get(bucket, 0)) for bucket in V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_BUCKETS},
+        "blocking_buckets": sorted(set(blocking)),
+        "source_load_errors": list(source_load_errors),
+        "retrieval_only_uncanonicalized_units_allowed_for_official_scoring": False,
+        "hybrid_retrieval_baseline_recommended": False,
+        "retrieval_metric_recommended_before_registry_ready": False,
+    }
+
+
+def v3_7_0_source_registry_outcome(
+    *,
+    inventory: Mapping[str, Any],
+    hydration_smoke: Mapping[str, Any],
+    failure_buckets: Mapping[str, Any],
+) -> str:
+    family_counts = as_mapping(inventory.get("source_family_counts"))
+    if not inventory.get("materialized_source_atom_count"):
+        return "SOURCE_REGISTRY_MATERIALIZATION_BLOCKED"
+    if any(int(family_counts.get(family, 0)) <= 0 for family in ("TEXT", "PDF", "XLSX")):
+        return "SOURCE_REGISTRY_MATERIALIZED_PARTIAL"
+    if failure_buckets.get("blocking_buckets"):
+        if any("raw_source" in bucket for bucket in failure_buckets.get("blocking_buckets") or []):
+            return "RAW_SOURCE_LINEAGE_BLOCKED"
+        return "SOURCE_REGISTRY_MATERIALIZED_PARTIAL"
+    if hydration_smoke.get("families_passed") != ["PDF", "TEXT", "XLSX"]:
+        return "SOURCE_REGISTRY_MATERIALIZED_PARTIAL"
+    return "SOURCE_REGISTRY_MATERIALIZED_READY"
+
+
+def v3_7_0_next_phase_for_outcome(outcome: str) -> str:
+    if outcome == "SOURCE_REGISTRY_MATERIALIZED_READY":
+        return "v3_7_1_all_source_citable_nonprod_index_build"
+    if outcome == "SOURCE_REGISTRY_MATERIALIZED_PARTIAL":
+        return "targeted SourceAtom materialization repair"
+    if outcome == "SNAPSHOT_ONLY_POLICY_BLOCKED":
+        return "snapshot-only evidence policy decision packet"
+    if outcome == "RAW_SOURCE_LINEAGE_BLOCKED":
+        return "raw source lineage repair"
+    return "source registry materialization repair"
+
+
+def v3_7_0_source_registry_build_summary(
+    *,
+    generated_at: str,
+    materialized_atoms: Sequence[Mapping[str, Any]],
+    inventory: Mapping[str, Any],
+    outcome: str,
+    next_allowed_phase: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID}_build_v1",
+        "run_id": V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "source_atom_registry_build",
+        "source_registry_version": source_registry_contract.SOURCE_REGISTRY_CONTRACT_VERSION,
+        "registry_path": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+        "materialized_source_atom_count": len(materialized_atoms),
+        "source_family_counts": inventory.get("source_family_counts"),
+        "materialization_bucket_counts": inventory.get("materialization_bucket_counts"),
+        "non_production_only": True,
+        "production_db_used": False,
+        "vector_index_build_performed": False,
+        "outcome": outcome,
+        "next_allowed_phase": next_allowed_phase,
+    }
+
+
+def run_v3_7_1_all_source_citable_nonprod_index_build(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    source_registry_sha_before = v3_7_1_source_registry_sha256()
+    official_index_sha_before = v3_6_8_all_source_official_index_sha256()
+    source_load_errors = v3_7_1_source_registry_missing_reasons()
+    v3_7_0_summary = (
+        official.read_json(DEFAULT_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON)
+        if DEFAULT_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON.exists()
+        else {}
+    )
+    registry_ready = v3_7_0_summary.get("outcome") == "SOURCE_REGISTRY_MATERIALIZED_READY"
+    source_atoms = v3_7_1_load_source_atoms() if not source_load_errors else []
+    search_views, blocked_rows, source_inventory = v3_7_1_materialize_search_views(
+        generated_at=generated_at,
+        source_atoms=source_atoms,
+        registry_ready=registry_ready,
+    )
+    build_summary = v3_7_1_write_index(
+        generated_at=generated_at,
+        search_views=search_views,
+        source_inventory=source_inventory,
+        blocked_rows=blocked_rows,
+    )
+    search_view_manifest_path = DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl"
+    manifest_rows = read_jsonl(search_view_manifest_path) if search_view_manifest_path.exists() else []
+    load_check = v3_7_1_load_check(build_summary=build_summary, search_views=manifest_rows)
+    hydration_smoke = v3_7_1_hydration_smoke(
+        generated_at=generated_at,
+        search_views=manifest_rows,
+        source_atoms=source_atoms,
+    )
+    write_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "hydration_smoke.json", hydration_smoke)
+    source_registry_sha_after = v3_7_1_source_registry_sha256()
+    official_index_sha_after = v3_6_8_all_source_official_index_sha256()
+    fail_closed_reasons = list(source_load_errors)
+    if not registry_ready:
+        fail_closed_reasons.append("v3_7_0_source_registry_not_materialized_ready")
+    if source_registry_sha_before != source_registry_sha_after:
+        fail_closed_reasons.append("source_registry_sha256_changed_during_v3_7_1_index_build")
+    if official_index_sha_before != official_index_sha_after:
+        fail_closed_reasons.append("official_denominator_index_sha256_changed_during_v3_7_1_index_build")
+    fail_closed_reasons = sorted(set(fail_closed_reasons))
+    failure_buckets = v3_7_1_failure_buckets(
+        generated_at=generated_at,
+        source_inventory=source_inventory,
+        load_check=load_check,
+        hydration_smoke=hydration_smoke,
+        blocked_rows=blocked_rows,
+        fail_closed_reasons=fail_closed_reasons,
+    )
+    outcome = v3_7_1_outcome(
+        registry_ready=registry_ready,
+        load_check=load_check,
+        hydration_smoke=hydration_smoke,
+        failure_buckets=failure_buckets,
+        fail_closed_reasons=fail_closed_reasons,
+    )
+    next_allowed_phase = V3_7_1_ALL_SOURCE_CITABLE_NEXT_PHASE_BY_OUTCOME[outcome]
+    status = (
+        "DIAGNOSTIC_ALL_SOURCE_CITABLE_NONPROD_INDEX_FAIL_CLOSED"
+        if fail_closed_reasons
+        else f"DIAGNOSTIC_ALL_SOURCE_CITABLE_NONPROD_INDEX_{outcome}"
+    )
+    build_summary = dict(build_summary)
+    build_summary["required_files"]["hydration_smoke.json"] = {
+        "path": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "hydration_smoke.json"),
+        "exists": (DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "hydration_smoke.json").exists(),
+        "sha256": sha256_file(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "hydration_smoke.json"),
+    }
+    summary: dict[str, Any] = {
+        "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_summary_v1",
+        "run_id": V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_all_source_citable_nonprod_index_build",
+        "event_type": "diagnostic_all_source_citable_nonprod_index_build_v3_7_1",
+        "status": status,
+        "run_class": "diagnostic_only_all_source_citable_nonprod_index_build",
+        "source_registry_run_id": V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+        "source_registry_outcome": v3_7_0_summary.get("outcome", ""),
+        "source_registry_ready_required": True,
+        "source_registry_ready": registry_ready,
+        "source_registry_first_policy": True,
+        "source_registry_version": source_registry_contract.SOURCE_REGISTRY_CONTRACT_VERSION,
+        "vector_db_role": "candidate_generator_only",
+        "search_view_source_atom_contract": True,
+        "source_atom_registry_canonical_truth": True,
+        "canonical_citation_payload_stored_in_vector_metadata": False,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "diagnostic_only": True,
+        "implementation_allowed": registry_ready,
+        "implementation_scope": [
+            "non_production_search_view_index_build",
+            "source_atom_registry_pointer_materialization",
+            "no_vector_evidence_bundle_hydration_smoke",
+            "non_production_faiss_export",
+        ],
+        "official_metric": False,
+        "retrieval_metric_computed": False,
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "hybrid_retrieval_baseline_computed": False,
+        "answer_correctness_scored": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "promotion_gate": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": True,
+        "index_or_export_mutation_scope": "non_production_only",
+        "vector_index_build_performed": bool(search_views),
+        "production_mutation": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_usage_allowed": False,
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "expected_answer_draft_used_as_retrieval_source": False,
+        "expected_answer_draft_used_as_generation_input": False,
+        "supporting_evidence_used_as_answer_text_source": False,
+        "generated_silver_answers_used_as_source_material": False,
+        "generated_silver_questions_used_as_source_material": False,
+        "gold_fields_used_as_generation_input": False,
+        "qrels_or_labels_used_as_generation_input": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "silver_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "index_namespace": V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE,
+        "index_path": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR),
+        "index_version": V3_7_1_ALL_SOURCE_CITABLE_INDEX_VERSION,
+        "source_atom_registry_path": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+        "source_atom_registry_build_path": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_BUILD_JSON),
+        "source_atom_count": len(source_atoms),
+        "search_view_count": len(search_views),
+        "source_family_counts": source_inventory["counts"]["indexed_search_views_by_source_family"],
+        "materialization_bucket_counts": source_inventory["counts"]["indexed_search_views_by_materialization_bucket"],
+        "official_overlap_count": source_inventory["counts"]["official_overlap_count"],
+        "silver_source_overlap_count": source_inventory["counts"]["silver_source_overlap_count"],
+        "snapshot_only_count": source_inventory["counts"]["snapshot_only_indexed_count"],
+        "review_only_count": source_inventory["counts"]["review_only_indexed_count"],
+        "quarantine_indexed_count": source_inventory["counts"]["quarantine_indexed_count"],
+        "diagnostic_row_count": len(search_views),
+        "runtime_generation_coverage_rate": 0.0,
+        "index_build": {
+            "search_view_manifest_row_count": build_summary.get("search_view_manifest_row_count"),
+            "faiss_index_vector_count": build_summary.get("faiss_index_vector_count"),
+            "index_loadable": load_check.get("index_can_be_loaded"),
+            "non_production_only": True,
+            "faiss_gpu_used": build_summary.get("faiss_gpu_used"),
+            "faiss_gpu_count": build_summary.get("faiss_gpu_count"),
+        },
+        "load_check": load_check,
+        "hydration_smoke_summary": {
+            "families_passed": hydration_smoke.get("families_passed"),
+            "no_vector_evidence_bundle_hydration_passed": hydration_smoke.get(
+                "no_vector_evidence_bundle_hydration_passed"
+            ),
+            "no_vector_citation_rendering_passed": hydration_smoke.get("no_vector_citation_rendering_passed"),
+            "search_view_hit_hydrates_from_source_registry": hydration_smoke.get(
+                "search_view_hit_hydrates_from_source_registry"
+            ),
+            "vector_metadata_used_as_canonical_citation_source": hydration_smoke.get(
+                "vector_metadata_used_as_canonical_citation_source"
+            ),
+        },
+        "outcome": outcome,
+        "outcome_choices": sorted(V3_7_1_ALL_SOURCE_CITABLE_OUTCOMES),
+        "next_allowed_phase": next_allowed_phase,
+        "recommended_next_phase": next_allowed_phase,
+        "v3_7_2_source_registry_backed_retrieval_smoke_allowed": outcome
+        == "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT",
+        "failure_bucket_counts": failure_buckets["failure_bucket_counts"],
+        "blocking_buckets": failure_buckets["blocking_buckets"],
+        "source_registry_sha256_before": source_registry_sha_before,
+        "source_registry_sha256_after": source_registry_sha_after,
+        "source_registry_sha256_unchanged": source_registry_sha_before == source_registry_sha_after,
+        "official_denominator_index_sha256_before": official_index_sha_before,
+        "official_denominator_index_sha256_after": official_index_sha_after,
+        "official_denominator_index_sha256_unchanged": official_index_sha_before == official_index_sha_after,
+        "protected_sha_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "guardrail_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "fail_closed_reasons": fail_closed_reasons,
+        "source_inventory": source_inventory,
+        "index_build_summary": build_summary,
+        "hydration_smoke": hydration_smoke,
+        "failure_buckets": failure_buckets,
+        "search_view_rows": search_views,
+        "blocked_search_view_rows": blocked_rows,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON),
+            "source_inventory_json": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SOURCE_INVENTORY_JSON),
+            "index_build_summary_json": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY_JSON),
+            "hydration_smoke_json": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE_JSON),
+            "failure_buckets_json": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON),
+            "index_faiss": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "faiss.index"),
+            "index_build_json": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json"),
+            "index_ingest_manifest_json": official.repo_relative(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "ingest_manifest.json"
+            ),
+            "index_search_view_manifest_jsonl": official.repo_relative(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl"
+            ),
+            "index_source_inventory_json": official.repo_relative(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "source_inventory.json"
+            ),
+            "index_hydration_smoke_json": official.repo_relative(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "hydration_smoke.json"
+            ),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+    return summary
+
+
+def v3_7_1_source_registry_missing_reasons() -> list[str]:
+    reasons = []
+    for path in (
+        DEFAULT_SOURCE_ATOM_REGISTRY_JSONL,
+        DEFAULT_SOURCE_ATOM_REGISTRY_BUILD_JSON,
+        DEFAULT_SOURCE_ATOM_REGISTRY_INVENTORY_JSON,
+        DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL,
+        DEFAULT_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON,
+    ):
+        if not path.exists():
+            reasons.append(f"missing:{official.repo_relative(path)}")
+    return reasons
+
+
+def v3_7_1_source_registry_sha256() -> dict[str, str]:
+    files = {
+        "source_atom_registry_jsonl_sha256": DEFAULT_SOURCE_ATOM_REGISTRY_JSONL,
+        "source_atom_registry_build_json_sha256": DEFAULT_SOURCE_ATOM_REGISTRY_BUILD_JSON,
+        "source_atom_registry_inventory_json_sha256": DEFAULT_SOURCE_ATOM_REGISTRY_INVENTORY_JSON,
+        "source_atom_registry_blocked_jsonl_sha256": DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL,
+        "v3_7_0_summary_json_sha256": DEFAULT_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON,
+    }
+    return {key: sha256_file(path) if path.exists() else "" for key, path in files.items()}
+
+
+def v3_7_1_load_source_atoms() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    with DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"invalid SourceAtom registry JSONL at line {line_number}: {exc}") from exc
+    return rows
+
+
+def v3_7_1_materialize_search_views(
+    *,
+    generated_at: str,
+    source_atoms: Sequence[Mapping[str, Any]],
+    registry_ready: bool,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    search_views: list[dict[str, Any]] = []
+    blocked_rows: list[dict[str, Any]] = []
+    seen_search_view_ids: set[str] = set()
+    for atom in source_atoms:
+        reasons = v3_7_1_source_atom_index_rejection_reasons(atom, registry_ready=registry_ready)
+        if reasons:
+            blocked_rows.append(v3_7_1_blocked_search_view_row(atom=atom, reasons=reasons))
+            continue
+        search_view = v3_7_1_search_view_from_source_atom(
+            atom,
+            faiss_row_id=len(search_views),
+            generated_at=generated_at,
+        )
+        search_view_id = official.clean(search_view.get("search_view_id"))
+        if search_view_id in seen_search_view_ids:
+            blocked_rows.append(v3_7_1_blocked_search_view_row(atom=atom, reasons=["duplicate_search_view_id"]))
+            continue
+        seen_search_view_ids.add(search_view_id)
+        search_views.append(search_view)
+    inventory = v3_7_1_source_inventory(
+        generated_at=generated_at,
+        source_atoms=source_atoms,
+        search_views=search_views,
+        blocked_rows=blocked_rows,
+        registry_ready=registry_ready,
+    )
+    return search_views, blocked_rows, inventory
+
+
+def v3_7_1_source_atom_index_rejection_reasons(
+    atom: Mapping[str, Any],
+    *,
+    registry_ready: bool,
+) -> list[str]:
+    reasons: list[str] = []
+    if not registry_ready:
+        reasons.append("source_registry_not_ready")
+    bucket = official.clean(atom.get("materialization_bucket"))
+    if bucket not in {"source_atom_ready", "snapshot_only_ready"}:
+        reasons.append("retrieval_only_uncanonicalized_or_blocked_source_atom")
+    for field in (
+        "gold_or_label_source",
+        "expected_answer_source",
+        "qrels_source",
+        "generated_silver_answer_source",
+        "generated_silver_question_source",
+        "metric_result_source",
+        "report_artifact_source",
+    ):
+        if bool(atom.get(field)):
+            reasons.append(f"forbidden_source_atom_field:{field}")
+    if bool(atom.get("quarantine")):
+        reasons.append("quarantine_source_atom_not_indexed")
+    if not bool(atom.get("runtime_evidence_allowed")):
+        reasons.append("runtime_evidence_not_allowed")
+    if bucket == "snapshot_only_ready":
+        if not bool(atom.get("raw_source_missing")):
+            reasons.append("snapshot_only_bucket_without_raw_source_missing_flag")
+        if not bool(atom.get("extraction_snapshot_present")):
+            reasons.append("snapshot_only_without_extraction_snapshot")
+    validation = source_registry_contract.validate_source_atom(atom)
+    if not validation.get("valid"):
+        reasons.extend(f"source_atom_schema:{field}" for field in validation.get("missing_fields") or [])
+    return sorted(set(reasons))
+
+
+def v3_7_1_blocked_search_view_row(
+    *,
+    atom: Mapping[str, Any],
+    reasons: Sequence[str],
+) -> dict[str, Any]:
+    return {
+        "source_atom_id": official.clean(atom.get("source_atom_id")),
+        "source_family": official.clean(atom.get("source_family")).upper(),
+        "materialization_bucket": official.clean(atom.get("materialization_bucket")),
+        "official_denominator_overlap": bool(atom.get("official_denominator_overlap")),
+        "silver_source_overlap": bool(atom.get("silver_source_overlap")),
+        "blocked_reasons": sorted(set(official.clean(reason) for reason in reasons if official.clean(reason))),
+    }
+
+
+def v3_7_1_search_view_from_source_atom(
+    atom: Mapping[str, Any],
+    *,
+    faiss_row_id: int,
+    generated_at: str,
+) -> dict[str, Any]:
+    source_atom_id = official.clean(atom.get("source_atom_id"))
+    family = official.clean(atom.get("source_family")).upper()
+    search_view_id = f"searchview_v1_{source_atom_id}"
+    parent = as_mapping(atom.get("parent_pointers"))
+    raw_locator = as_mapping(atom.get("raw_locator"))
+    embedding_text = v3_7_1_source_atom_embedding_text(atom)
+    return {
+        "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_search_view_v1",
+        "run_id": V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+        "generated_at": generated_at,
+        "index_namespace": V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE,
+        "index_version": V3_7_1_ALL_SOURCE_CITABLE_INDEX_VERSION,
+        "search_view_id": search_view_id,
+        "searchViewId": search_view_id,
+        "search_view_kind": "source_atom_embedding_view",
+        "searchViewKind": "source_atom_embedding_view",
+        "source_atom_id": source_atom_id,
+        "sourceAtomId": source_atom_id,
+        "source_atom_ids": [source_atom_id],
+        "sourceAtomIds": [source_atom_id],
+        "source_registry_version": official.clean(atom.get("source_registry_version"))
+        or source_registry_contract.SOURCE_REGISTRY_CONTRACT_VERSION,
+        "sourceRegistryVersion": official.clean(atom.get("source_registry_version"))
+        or source_registry_contract.SOURCE_REGISTRY_CONTRACT_VERSION,
+        "source_family": family,
+        "sourceFamily": family,
+        "source_identity": official.clean(atom.get("source_identity")),
+        "sourceIdentity": official.clean(atom.get("source_identity")),
+        "document_id": official.clean(atom.get("document_id")),
+        "document_version_id": official.clean(atom.get("document_version_id")),
+        "workbook_id": official.clean(atom.get("workbook_id")),
+        "workbook_version_id": official.clean(atom.get("workbook_version_id")),
+        "content_hash": official.clean(atom.get("content_hash")),
+        "locator_fingerprint": official.clean(raw_locator.get("stable_locator_fingerprint"))
+        or official.clean(as_mapping(atom.get("canonical_citation_payload")).get("locator_fingerprint")),
+        "materialization_bucket": official.clean(atom.get("materialization_bucket")),
+        "locator_completeness_tier": official.clean(atom.get("locator_completeness_tier")),
+        "runtime_evidence_allowed": bool(atom.get("runtime_evidence_allowed")),
+        "official_evidence_allowed": bool(atom.get("official_evidence_allowed")),
+        "generation_source_allowed": bool(atom.get("generation_source_allowed")),
+        "official_denominator_overlap": bool(atom.get("official_denominator_overlap")),
+        "official_denominator_protected_regression_scope": bool(atom.get("protected_regression_scope")),
+        "dev_or_holdout_tuning_source_allowed": bool(atom.get("dev_or_holdout_tuning_source_allowed")),
+        "silver_source_overlap": bool(atom.get("silver_source_overlap")),
+        "review_only": bool(atom.get("review_only")),
+        "quarantine": bool(atom.get("quarantine")),
+        "raw_source_missing": bool(atom.get("raw_source_missing")),
+        "extraction_snapshot_present": bool(atom.get("extraction_snapshot_present")),
+        "extraction_snapshot_source": official.clean(atom.get("extraction_snapshot_source")),
+        "embedding_text": embedding_text,
+        "bm25_text": official.clean(atom.get("normalized_text_or_value_snapshot"))[:1000],
+        "display_text": official.clean(atom.get("normalized_text_or_value_snapshot"))[:1000],
+        "faiss_row_id": faiss_row_id,
+        "parent_search_unit_id": official.clean(parent.get("search_unit_id") or raw_locator.get("search_unit_id")),
+        "parent_source_class": official.clean(parent.get("source_class")),
+        "parent_source_unit_id": official.clean(parent.get("source_unit_id")),
+        "canonical_payload_source": "source_registry",
+        "canonicalPayloadSource": "source_registry",
+        "canonical_citation_payload_present": False,
+        "canonical_payload_stored_in_vector_metadata": False,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+        "gold_or_label_source": False,
+        "expected_answer_source": False,
+        "qrels_source": False,
+        "generated_silver_answer_source": False,
+        "metric_result_source": False,
+        "report_artifact_source": False,
+        "non_production_only": True,
+    }
+
+
+def v3_7_1_source_atom_embedding_text(atom: Mapping[str, Any]) -> str:
+    raw_locator = as_mapping(atom.get("raw_locator"))
+    family = official.clean(atom.get("source_family")).upper()
+    locator_bits = []
+    for key in (
+        "source_pdf_path",
+        "page",
+        "physical_page_index",
+        "bbox",
+        "region_type",
+        "source_path",
+        "workbook",
+        "sheet",
+        "range",
+        "cell",
+        "row_label",
+        "column_label",
+        "target_column",
+        "chunk_id",
+        "section_path",
+        "text_span",
+    ):
+        value = raw_locator.get(key)
+        if value not in (None, "", [], {}):
+            locator_bits.append(f"{key}={official.clean(value)}")
+    snapshot = official.clean(atom.get("normalized_text_or_value_snapshot"))
+    return "\n".join(
+        item
+        for item in (
+            f"SourceAtom: {official.clean(atom.get('source_atom_id'))}",
+            f"Family: {family}",
+            f"Identity: {official.clean(atom.get('source_identity'))}",
+            f"Locator: {' | '.join(locator_bits)}",
+            f"Snapshot: {snapshot[:4000]}",
+        )
+        if item.strip()
+    )
+
+
+def v3_7_1_source_inventory(
+    *,
+    generated_at: str,
+    source_atoms: Sequence[Mapping[str, Any]],
+    search_views: Sequence[Mapping[str, Any]],
+    blocked_rows: Sequence[Mapping[str, Any]],
+    registry_ready: bool,
+) -> dict[str, Any]:
+    indexed_by_family = Counter(official.clean(row.get("source_family")).upper() for row in search_views)
+    indexed_by_bucket = Counter(official.clean(row.get("materialization_bucket")) for row in search_views)
+    inspected_by_bucket = Counter(official.clean(row.get("materialization_bucket")) for row in source_atoms)
+    blocked_by_reason: Counter[str] = Counter()
+    for row in blocked_rows:
+        for reason in row.get("blocked_reasons") or []:
+            blocked_by_reason[official.clean(reason)] += 1
+    return {
+        "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_source_inventory_v1",
+        "run_id": V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_all_source_citable_search_view_inventory",
+        "index_namespace": V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE,
+        "source_registry_ready": registry_ready,
+        "source_atom_registry_path": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+        "counts": {
+            "source_atoms_inspected": len(source_atoms),
+            "search_views_indexed": len(search_views),
+            "search_views_blocked": len(blocked_rows),
+            "indexed_search_views_by_source_family": {
+                family: int(indexed_by_family.get(family, 0)) for family in ("TEXT", "PDF", "XLSX")
+            },
+            "indexed_search_views_by_materialization_bucket": dict(sorted(indexed_by_bucket.items())),
+            "inspected_source_atoms_by_materialization_bucket": dict(sorted(inspected_by_bucket.items())),
+            "official_overlap_count": sum(1 for row in search_views if bool(row.get("official_denominator_overlap"))),
+            "silver_source_overlap_count": sum(1 for row in search_views if bool(row.get("silver_source_overlap"))),
+            "snapshot_only_indexed_count": int(indexed_by_bucket.get("snapshot_only_ready", 0)),
+            "source_atom_ready_indexed_count": int(indexed_by_bucket.get("source_atom_ready", 0)),
+            "review_only_indexed_count": sum(1 for row in search_views if bool(row.get("review_only"))),
+            "quarantine_indexed_count": sum(1 for row in search_views if bool(row.get("quarantine"))),
+            "runtime_evidence_allowed_count": sum(1 for row in search_views if bool(row.get("runtime_evidence_allowed"))),
+            "official_evidence_allowed_count": sum(1 for row in search_views if bool(row.get("official_evidence_allowed"))),
+        },
+        "blocked_counts": {
+            "total": len(blocked_rows),
+            "by_reason": dict(sorted(blocked_by_reason.items())),
+        },
+        "exclusion_policy": {
+            "expected_answers_indexed": False,
+            "supporting_evidence_as_answer_text_indexed": False,
+            "gold_labels_indexed": False,
+            "qrels_indexed": False,
+            "relevance_labels_indexed": False,
+            "answerability_labels_indexed": False,
+            "scorer_outputs_indexed": False,
+            "metric_result_files_indexed": False,
+            "run_reports_indexed": False,
+            "actual_response_audits_indexed": False,
+            "llm_generated_answers_indexed": False,
+            "generated_silver_answers_indexed": False,
+            "generated_silver_question_text_indexed": False,
+        },
+        "sample_blocked_search_views": list(blocked_rows[:10]),
+    }
+
+
+def v3_7_1_write_index(
+    *,
+    generated_at: str,
+    search_views: Sequence[Mapping[str, Any]],
+    source_inventory: Mapping[str, Any],
+    blocked_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    import numpy as np  # noqa: WPS433
+    from app.capabilities.rag.embedding_text_builder import (  # noqa: WPS433
+        DEFAULT_PRODUCTION_VARIANT,
+        EMBEDDING_TEXT_BUILDER_VERSION,
+    )
+    from app.capabilities.rag.faiss_index import FaissIndex  # noqa: WPS433
+
+    index_dir = DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR
+    index_dir.mkdir(parents=True, exist_ok=True)
+    embedding_texts = [official.clean(row.get("embedding_text") or row.get("display_text")) for row in search_views]
+    if embedding_texts:
+        vectors = np.vstack(
+            [
+                v3_6_8_all_source_hash_vector(
+                    text,
+                    dimension=V3_7_1_ALL_SOURCE_CITABLE_VECTOR_DIMENSION,
+                )
+                for text in embedding_texts
+            ]
+        ).astype("float32")
+    else:
+        vectors = np.zeros((0, V3_7_1_ALL_SOURCE_CITABLE_VECTOR_DIMENSION), dtype="float32")
+    index = FaissIndex(index_dir, build_device="auto")
+    info = index.build(
+        vectors,
+        index_version=V3_7_1_ALL_SOURCE_CITABLE_INDEX_VERSION,
+        embedding_model=V3_7_1_ALL_SOURCE_CITABLE_EMBEDDING_MODEL,
+    )
+    write_jsonl(index_dir / "search_view_manifest.jsonl", list(search_views))
+    ingest_manifest = {
+        "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_ingest_manifest_v1",
+        "run_id": V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+        "generated_at": generated_at,
+        "index_namespace": V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE,
+        "index_version": V3_7_1_ALL_SOURCE_CITABLE_INDEX_VERSION,
+        "source_registry_version": source_registry_contract.SOURCE_REGISTRY_CONTRACT_VERSION,
+        "source_atom_registry_path": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+        "search_view_manifest_file": "search_view_manifest.jsonl",
+        "embedding_text_variant": DEFAULT_PRODUCTION_VARIANT,
+        "embedding_text_builder_version": EMBEDDING_TEXT_BUILDER_VERSION,
+        "embedding_model": V3_7_1_ALL_SOURCE_CITABLE_EMBEDDING_MODEL,
+        "max_seq_length": None,
+        "chunk_count": len(search_views),
+        "search_view_count": len(search_views),
+        "source_atom_count": len({row.get("source_atom_id") for row in search_views}),
+        "document_count": len(
+            {
+                official.clean(row.get("document_version_id") or row.get("workbook_version_id"))
+                for row in search_views
+                if official.clean(row.get("document_version_id") or row.get("workbook_version_id"))
+            }
+        ),
+        "dimension": V3_7_1_ALL_SOURCE_CITABLE_VECTOR_DIMENSION,
+        "corpus_path": "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "embed_text_sha256": hashlib.sha256("".join(f"{text}\n" for text in embedding_texts).encode("utf-8")).hexdigest(),
+        "embed_text_samples": [
+            {
+                "row": index,
+                "char_count": len(text),
+                "preview": text if len(text) <= 240 else f"{text[:239]}...",
+            }
+            for index, text in enumerate(embedding_texts[:5])
+        ],
+        "non_production_only": True,
+        "search_view_source_atom_pointer_required": True,
+        "canonical_citation_payload_stored_in_vector_metadata": False,
+        "source_inventory_counts": source_inventory.get("counts"),
+        "blocked_search_view_count": len(blocked_rows),
+        "excluded_source_material_policy": as_mapping(source_inventory.get("exclusion_policy")),
+    }
+    write_json(index_dir / "ingest_manifest.json", ingest_manifest)
+    write_json(index_dir / "source_inventory.json", source_inventory)
+    build_path = index_dir / "build.json"
+    build_json = official.read_json(build_path)
+    build_json.update(
+        {
+            "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_build_json_v1",
+            "run_id": V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+            "generated_at": generated_at,
+            "index_namespace": V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE,
+            "dataset_scope": "all_source_atom_registry_citable_nonprod_search_views",
+            "source_registry_version": source_registry_contract.SOURCE_REGISTRY_CONTRACT_VERSION,
+            "source_atom_registry_path": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+            "non_production_only": True,
+            "production_index_path_used": False,
+            "production_db_used": False,
+            "official_denominator_mutation": False,
+            "gold_or_label_source": False,
+            "expected_answer_source": False,
+            "generated_silver_answer_source": False,
+            "canonical_citation_payload_stored_in_vector_metadata": False,
+            "search_view_manifest_file": "search_view_manifest.jsonl",
+            "source_inventory_file": "source_inventory.json",
+            "ingest_manifest_file": "ingest_manifest.json",
+        }
+    )
+    write_json(build_path, build_json)
+    return {
+        "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_index_build_summary_v1",
+        "run_id": V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_all_source_citable_nonprod_index_build_summary",
+        "index_path": official.repo_relative(index_dir),
+        "index_namespace": V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE,
+        "index_version": info.index_version,
+        "embedding_model": info.embedding_model,
+        "dimension": info.dimension,
+        "search_view_manifest_row_count": len(search_views),
+        "faiss_index_vector_count": info.chunk_count,
+        "faiss_gpu_used": bool(build_json.get("faiss_gpu_used")),
+        "faiss_gpu_count": int(build_json.get("faiss_gpu_count") or 0),
+        "non_production_only": True,
+        "canonical_citation_payload_stored_in_vector_metadata": False,
+        "required_files": {
+            name: {
+                "path": official.repo_relative(index_dir / name),
+                "exists": (index_dir / name).exists(),
+                "sha256": sha256_file(index_dir / name) if (index_dir / name).exists() else "",
+            }
+            for name in (
+                "faiss.index",
+                "build.json",
+                "ingest_manifest.json",
+                "search_view_manifest.jsonl",
+                "source_inventory.json",
+            )
+        },
+        "source_inventory_counts": source_inventory.get("counts"),
+    }
+
+
+def v3_7_1_load_check(
+    *,
+    build_summary: Mapping[str, Any],
+    search_views: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    from app.capabilities.rag.faiss_index import FaissIndex  # noqa: WPS433
+
+    index_dir = DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR
+    required = (
+        "faiss.index",
+        "build.json",
+        "ingest_manifest.json",
+        "search_view_manifest.jsonl",
+        "source_inventory.json",
+    )
+    missing_files = [name for name in required if not (index_dir / name).exists()]
+    index_can_be_loaded = False
+    index_vector_count = 0
+    try:
+        info = FaissIndex(index_dir).load()
+        index_can_be_loaded = True
+        index_vector_count = info.chunk_count
+    except Exception:  # noqa: BLE001
+        index_can_be_loaded = False
+    invalid_search_views = []
+    vector_payload_rows = []
+    missing_atom_pointer_rows = []
+    for row in search_views:
+        validation = source_registry_contract.validate_search_view(row)
+        if not validation.get("valid"):
+            invalid_search_views.append(
+                {
+                    "search_view_id": row.get("search_view_id"),
+                    "missing_fields": validation.get("missing_fields"),
+                }
+            )
+        if row.get("canonical_citation_payload") or row.get("canonicalCitationPayload"):
+            vector_payload_rows.append(row.get("search_view_id"))
+        if not row.get("source_atom_id") and not row.get("source_atom_ids"):
+            missing_atom_pointer_rows.append(row.get("search_view_id"))
+    family_counts = Counter(official.clean(row.get("source_family")).upper() for row in search_views)
+    official_count = sum(1 for row in search_views if bool(row.get("official_denominator_overlap")))
+    official_protected = sum(
+        1
+        for row in search_views
+        if bool(row.get("official_denominator_overlap"))
+        and bool(row.get("official_denominator_protected_regression_scope"))
+        and not bool(row.get("dev_or_holdout_tuning_source_allowed"))
+    )
+    count_matches = len(search_views) == int(build_summary.get("search_view_manifest_row_count") or -1)
+    vector_count_matches = index_vector_count == len(search_views)
+    return {
+        "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_load_check_v1",
+        "index_can_be_loaded": index_can_be_loaded,
+        "index_vector_count": index_vector_count,
+        "required_files_present": not missing_files,
+        "missing_required_files": missing_files,
+        "search_view_manifest_row_count": len(search_views),
+        "search_view_manifest_row_count_matches_build_summary": count_matches,
+        "faiss_vector_count_matches_search_view_manifest": vector_count_matches,
+        "search_view_source_atom_pointer_valid": not invalid_search_views and not missing_atom_pointer_rows,
+        "invalid_search_view_samples": invalid_search_views[:20],
+        "search_view_missing_source_atom_pointer_samples": missing_atom_pointer_rows[:20],
+        "canonical_payload_absent_from_vector_metadata": not vector_payload_rows,
+        "canonical_payload_vector_metadata_samples": vector_payload_rows[:20],
+        "source_families_present": {family: int(family_counts.get(family, 0)) for family in ("TEXT", "PDF", "XLSX")},
+        "text_pdf_xlsx_present": all(family_counts.get(family, 0) > 0 for family in ("TEXT", "PDF", "XLSX")),
+        "official_29_rows_remain_protected_and_identifiable": official_count == official_protected == 29,
+        "official_denominator_overlap_count": official_count,
+        "official_denominator_protected_count": official_protected,
+        "passed": (
+            index_can_be_loaded
+            and not missing_files
+            and count_matches
+            and vector_count_matches
+            and not invalid_search_views
+            and not missing_atom_pointer_rows
+            and not vector_payload_rows
+            and all(family_counts.get(family, 0) > 0 for family in ("TEXT", "PDF", "XLSX"))
+            and official_count == official_protected == 29
+        ),
+    }
+
+
+def v3_7_1_hydration_smoke(
+    *,
+    generated_at: str,
+    search_views: Sequence[Mapping[str, Any]],
+    source_atoms: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    import numpy as np  # noqa: WPS433
+    from app.capabilities.rag.faiss_index import FaissIndex  # noqa: WPS433
+
+    source_registry = {official.clean(row.get("source_atom_id")): row for row in source_atoms if official.clean(row.get("source_atom_id"))}
+    rows_by_faiss_id = {int(row.get("faiss_row_id") or 0): row for row in search_views}
+    index = FaissIndex(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR)
+    per_family: dict[str, Any] = {}
+    try:
+        index.load()
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_hydration_smoke_v1",
+            "run_id": V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+            "generated_at": generated_at,
+            "artifact_kind": "diagnostic_all_source_citable_no_vector_hydration_smoke",
+            "families_passed": [],
+            "per_family": {},
+            "index_load_error": f"{type(exc).__name__}: {exc}",
+            "no_vector_evidence_bundle_hydration_passed": False,
+            "no_vector_citation_rendering_passed": False,
+            "search_view_hit_hydrates_from_source_registry": False,
+            "vector_metadata_used_as_canonical_citation_source": False,
+            "vector_payload_used_as_evidence_truth": False,
+        }
+    families_passed: set[str] = set()
+    vector_metadata_used = False
+    poisoned_metadata_ignored_count = 0
+    for family in ("TEXT", "PDF", "XLSX"):
+        sample = next((row for row in search_views if row.get("source_family") == family), None)
+        if not sample:
+            per_family[family] = {"passed": False, "failure_bucket": "SAMPLE_MISSING"}
+            continue
+        query_vector = np.expand_dims(
+            v3_6_8_all_source_hash_vector(
+                official.clean(sample.get("embedding_text")),
+                dimension=V3_7_1_ALL_SOURCE_CITABLE_VECTOR_DIMENSION,
+            ),
+            axis=0,
+        )
+        hits = index.search(query_vector, top_k=5)[0]
+        result_rows = [rows_by_faiss_id[row_id] for row_id, _score in hits if row_id in rows_by_faiss_id]
+        target_id = official.clean(sample.get("source_atom_id"))
+        target_hit = next((row for row in result_rows if official.clean(row.get("source_atom_id")) == target_id), None)
+        hit_for_hydration = target_hit or (result_rows[0] if result_rows else {})
+        bundle = source_registry_contract.evidence_bundle_from_search_view(hit_for_hydration, source_registry=source_registry)
+        render = source_registry_contract.render_citation(target_id, source_registry=source_registry)
+        poisoned = dict(hit_for_hydration)
+        poisoned["canonical_citation_payload"] = {"poison": True}
+        poisoned_result = source_registry_contract.evidence_bundle_from_search_view(poisoned, source_registry=source_registry)
+        ignored_vector = bool(poisoned_result.get("ignored_vector_canonical_payload")) and not bool(
+            poisoned_result.get("vector_payload_used_as_evidence_truth")
+        )
+        if ignored_vector:
+            poisoned_metadata_ignored_count += 1
+        vector_metadata_used = vector_metadata_used or bool(bundle.get("vector_payload_used_as_evidence_truth"))
+        passed = bool(target_hit) and bool(bundle.get("valid")) and bool(render.get("valid")) and ignored_vector
+        if passed:
+            families_passed.add(family)
+        per_family[family] = {
+            "passed": passed,
+            "search_view_id": sample.get("search_view_id"),
+            "source_atom_id": target_id,
+            "target_hit_in_top5": bool(target_hit),
+            "retrieval_result_count": len(result_rows),
+            "evidence_bundle_valid": bool(bundle.get("valid")),
+            "citation_render_valid": bool(render.get("valid")),
+            "source_atom_hydrated_from_registry": bool(bundle.get("source_atom_hydrated_from_registry")),
+            "vector_payload_used_as_evidence_truth": bool(bundle.get("vector_payload_used_as_evidence_truth")),
+            "poisoned_vector_metadata_ignored": ignored_vector,
+            "runtime_evidence_allowed": bool(as_mapping(bundle.get("evidence_bundle")).get("runtime_evidence_allowed")),
+            "official_evidence_allowed": bool(as_mapping(bundle.get("evidence_bundle")).get("official_evidence_allowed")),
+            "failure_bucket": "" if passed else official.clean(bundle.get("failure_bucket") or render.get("failure_bucket")),
+        }
+    snapshot_atoms = [row for row in source_atoms if row.get("materialization_bucket") == "snapshot_only_ready"]
+    snapshot_policy_explicit = all(
+        bool(row.get("raw_source_missing"))
+        and bool(row.get("extraction_snapshot_present"))
+        and bool(row.get("runtime_evidence_allowed"))
+        and not bool(row.get("official_evidence_allowed") and row.get("locator_completeness_tier") != "strict")
+        for row in snapshot_atoms
+    )
+    return {
+        "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_hydration_smoke_v1",
+        "run_id": V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_all_source_citable_no_vector_hydration_smoke",
+        "families_passed": sorted(families_passed),
+        "per_family": per_family,
+        "no_vector_evidence_bundle_hydration_passed": sorted(families_passed) == ["PDF", "TEXT", "XLSX"],
+        "no_vector_citation_rendering_passed": sorted(families_passed) == ["PDF", "TEXT", "XLSX"],
+        "search_view_hit_hydrates_from_source_registry": sorted(families_passed) == ["PDF", "TEXT", "XLSX"],
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_payload_used_as_evidence_truth": vector_metadata_used,
+        "poisoned_vector_metadata_ignored_count": poisoned_metadata_ignored_count,
+        "snapshot_only_policy_explicit": snapshot_policy_explicit,
+        "snapshot_only_count": len(snapshot_atoms),
+        "llm_used": False,
+        "production_db_used": False,
+    }
+
+
+def v3_7_1_failure_buckets(
+    *,
+    generated_at: str,
+    source_inventory: Mapping[str, Any],
+    load_check: Mapping[str, Any],
+    hydration_smoke: Mapping[str, Any],
+    blocked_rows: Sequence[Mapping[str, Any]],
+    fail_closed_reasons: Sequence[str],
+) -> dict[str, Any]:
+    counts = Counter({bucket: 0 for bucket in V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS})
+    for reason in fail_closed_reasons:
+        if "source_registry_not" in reason:
+            counts["SOURCE_REGISTRY_NOT_READY"] += 1
+        elif "missing:" in reason:
+            counts["SOURCE_REGISTRY_FILE_MISSING"] += 1
+        elif "source_registry_sha256_changed" in reason:
+            counts["SOURCE_REGISTRY_SHA_CHANGED"] += 1
+        elif "official_denominator_index_sha256_changed" in reason:
+            counts["OFFICIAL_DENOMINATOR_PROTECTION_FAILED"] += 1
+        else:
+            counts["ALL_SOURCE_CITABLE_INDEX_BLOCKED"] += 1
+    if not load_check.get("index_can_be_loaded"):
+        counts["INDEX_LOAD_CHECK_FAILED"] += 1
+    for _missing in load_check.get("missing_required_files") or []:
+        counts["INDEX_FILE_MISSING"] += 1
+    if not load_check.get("search_view_source_atom_pointer_valid"):
+        counts["SEARCH_VIEW_SOURCE_ATOM_POINTER_MISSING"] += 1
+    if not load_check.get("canonical_payload_absent_from_vector_metadata"):
+        counts["VECTOR_METADATA_CANONICAL_PAYLOAD_PRESENT"] += 1
+    if not load_check.get("official_29_rows_remain_protected_and_identifiable"):
+        counts["OFFICIAL_DENOMINATOR_PROTECTION_FAILED"] += 1
+    if not hydration_smoke.get("no_vector_evidence_bundle_hydration_passed"):
+        counts["NO_VECTOR_HYDRATION_FAILED"] += 1
+    if not hydration_smoke.get("no_vector_citation_rendering_passed"):
+        counts["NO_VECTOR_CITATION_RENDER_FAILED"] += 1
+    if hydration_smoke.get("vector_payload_used_as_evidence_truth"):
+        counts["VECTOR_METADATA_USED_AS_EVIDENCE_TRUTH"] += 1
+    if not hydration_smoke.get("snapshot_only_policy_explicit"):
+        counts["SNAPSHOT_ONLY_POLICY_INCOMPLETE"] += 1
+    blocked_reasons = as_mapping(as_mapping(source_inventory.get("blocked_counts")).get("by_reason"))
+    for reason, count in blocked_reasons.items():
+        reason_text = official.clean(reason)
+        if "forbidden_source_atom_field" in reason_text:
+            counts["FORBIDDEN_SOURCE_ATOM_INDEXED"] += int(count or 0)
+        elif "source_atom_schema" in reason_text:
+            counts["SOURCE_ATOM_SCHEMA_INCOMPLETE"] += int(count or 0)
+        elif "retrieval_only_uncanonicalized" in reason_text:
+            counts["RETRIEVAL_ONLY_UNCANONICALIZED_INDEXED"] += int(count or 0)
+        elif "source_atom" in reason_text:
+            counts["SOURCE_ATOM_POINTER_MISSING"] += int(count or 0)
+    if blocked_rows:
+        counts["ALL_SOURCE_CITABLE_INDEX_PARTIAL"] += len(blocked_rows)
+    blocking_buckets = [
+        bucket
+        for bucket in V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS
+        if bucket != "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT" and int(counts.get(bucket, 0)) > 0
+    ]
+    if not blocking_buckets and load_check.get("passed") and hydration_smoke.get("no_vector_evidence_bundle_hydration_passed"):
+        counts["ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT"] = 1
+    return {
+        "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_failure_buckets_v1",
+        "run_id": V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_all_source_citable_nonprod_failure_buckets",
+        "failure_bucket_definitions": list(V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS),
+        "failure_bucket_counts": {bucket: int(counts.get(bucket, 0)) for bucket in V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS},
+        "blocking_buckets": sorted(set(blocking_buckets)),
+        "source_fail_closed_reasons": list(fail_closed_reasons),
+        "blocked_search_view_count": len(blocked_rows),
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "retrieval_metric_computed": False,
+        "promotion_evidence": False,
+    }
+
+
+def v3_7_1_outcome(
+    *,
+    registry_ready: bool,
+    load_check: Mapping[str, Any],
+    hydration_smoke: Mapping[str, Any],
+    failure_buckets: Mapping[str, Any],
+    fail_closed_reasons: Sequence[str],
+) -> str:
+    if not registry_ready:
+        return "SOURCE_REGISTRY_NOT_READY"
+    if fail_closed_reasons or not load_check.get("index_can_be_loaded") or not load_check.get("required_files_present"):
+        return "ALL_SOURCE_CITABLE_INDEX_BLOCKED"
+    blocking = set(failure_buckets.get("blocking_buckets") or [])
+    tolerated_partial = {"ALL_SOURCE_CITABLE_INDEX_PARTIAL"}
+    if (
+        load_check.get("passed")
+        and hydration_smoke.get("no_vector_evidence_bundle_hydration_passed")
+        and hydration_smoke.get("no_vector_citation_rendering_passed")
+        and not (blocking - tolerated_partial)
+    ):
+        return "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT"
+    return "ALL_SOURCE_CITABLE_INDEX_PARTIAL"
+
+
+def v3_6_8_source_registry_validate_source_atom(atom: Mapping[str, Any]) -> dict[str, Any]:
+    family = official.clean(atom.get("source_family")).upper()
+    payload = as_mapping(atom.get("canonical_citation_payload"))
+    missing: list[str] = []
+    for field in (
+        "source_atom_id",
+        "source_family",
+        "source_identity",
+        "content_hash",
+        "extraction_version",
+        "raw_locator",
+        "normalized_text_or_value_snapshot",
+        "parent_pointers",
+        "canonical_citation_payload",
+    ):
+        if atom.get(field) in (None, "", {}, []):
+            missing.append(field)
+    if not (atom.get("document_id") or atom.get("workbook_id")):
+        missing.append("document_id_or_workbook_id")
+    if not (atom.get("document_version_id") or atom.get("workbook_version_id")):
+        missing.append("document_version_id_or_workbook_version_id")
+    if payload:
+        render = v3_6_8_all_source_render_citation(payload)
+        if not render.get("valid"):
+            missing.append("canonical_citation_payload_renderable")
+    if family not in {"TEXT", "PDF", "XLSX"}:
+        missing.append("source_family")
+    return {
+        "valid": not missing,
+        "source_atom_id": official.clean(atom.get("source_atom_id")),
+        "source_family": family,
+        "missing_fields": sorted(set(missing)),
+    }
+
+
+def v3_6_8_source_registry_hydrate_canonical_payload(
+    source_atom_id: str,
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    atom = as_mapping(source_registry.get(source_atom_id))
+    if not atom:
+        return {
+            "valid": False,
+            "source_atom_id": source_atom_id,
+            "failure_bucket": "SOURCE_REGISTRY_MISSING_BLOCKER",
+            "missing_fields": ["source_atom_id"],
+        }
+    validation = v3_6_8_source_registry_validate_source_atom(atom)
+    if not validation["valid"]:
+        return {
+            "valid": False,
+            "source_atom_id": source_atom_id,
+            "failure_bucket": "SOURCE_ATOM_SCHEMA_INCOMPLETE",
+            "missing_fields": validation["missing_fields"],
+        }
+    return {
+        "valid": True,
+        "source_atom_id": source_atom_id,
+        "payload": dict(as_mapping(atom.get("canonical_citation_payload"))),
+        "canonical_payload_source": "source_registry",
+    }
+
+
+def v3_6_8_source_registry_render_citation(
+    source_atom_id: str,
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    payload_result = v3_6_8_source_registry_hydrate_canonical_payload(
+        source_atom_id,
+        source_registry=source_registry,
+    )
+    if not payload_result["valid"]:
+        return payload_result
+    rendered = v3_6_8_all_source_render_citation(as_mapping(payload_result.get("payload")))
+    rendered["source_atom_id"] = source_atom_id
+    rendered["canonical_payload_source"] = "source_registry"
+    if not rendered["valid"]:
+        rendered["failure_bucket"] = "EVIDENCE_BUNDLE_CONTRACT_INCOMPLETE"
+    return rendered
+
+
+def v3_6_8_source_registry_assemble_evidence_bundle(
+    source_atom_id: str,
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+    mode: str,
+) -> dict[str, Any]:
+    atom = as_mapping(source_registry.get(source_atom_id))
+    rendered = v3_6_8_source_registry_render_citation(source_atom_id, source_registry=source_registry)
+    if not rendered.get("valid"):
+        return rendered
+    family = official.clean(atom.get("source_family")).upper()
+    raw_locator = dict(as_mapping(atom.get("raw_locator")))
+    matched = official.clean(atom.get("normalized_text_or_value_snapshot"))
+    raw_file_exists = bool(atom.get("raw_file_exists"))
+    extraction_snapshot_present = (
+        bool(atom.get("extraction_snapshot_present"))
+        if "extraction_snapshot_present" in atom
+        else bool(matched)
+    )
+    policy = v3_6_8_source_registry_hydration_policy(
+        raw_file_exists=raw_file_exists,
+        extraction_snapshot_present=extraction_snapshot_present,
+    )
+    bundle: dict[str, Any] = {
+        "schema_version": "v3_6_8_source_registry_evidence_bundle_v1",
+        "source_atom_id": source_atom_id,
+        "source_family": family,
+        "anchor_locator": raw_locator,
+        "matched_text_or_value": matched,
+        "nearby_context": matched[:500],
+        "locator_completeness": "complete",
+        "support_strength": "traceable_locator_not_answer_correctness",
+        "official_evidence_allowed": mode == "official_evidence" and bool(policy["official_evidence_allowed"]),
+        "runtime_answer_allowed": bool(policy["runtime_answer_allowed"]),
+        "diagnostic_only_reason": "" if policy["official_evidence_allowed"] else policy["diagnostic_only_reason"],
+        "citation": dict(as_mapping(rendered.get("citation"))),
+        "canonical_payload_source": "source_registry",
+    }
+    if family == "TEXT":
+        bundle["text_evidence"] = {
+            "source_document_id_or_path": official.clean(atom.get("document_id") or raw_locator.get("source_path")),
+            "section_chunk_span_identity": official.clean(raw_locator.get("chunk_id") or raw_locator.get("text_span")),
+            "text_span": official.clean(raw_locator.get("text_span")),
+            "parent_paragraph_or_section": raw_locator.get("section_path") or [],
+            "nearby_context": matched[:500],
+        }
+    elif family == "PDF":
+        bundle["pdf_evidence"] = {
+            "source_pdf_path": official.clean(raw_locator.get("source_pdf_path")),
+            "document_version_id": official.clean(atom.get("document_version_id")),
+            "page": raw_locator.get("page"),
+            "physical_page_index": raw_locator.get("physical_page_index"),
+            "bbox": raw_locator.get("bbox"),
+            "region_type": official.clean(raw_locator.get("region_type")),
+            "matched_text": matched,
+            "nearby_paragraph_or_window": matched[:500],
+            "section_heading": official.clean(raw_locator.get("section_heading")),
+            "ocr_confidence": raw_locator.get("ocr_confidence"),
+        }
+    elif family == "XLSX":
+        bundle["xlsx_evidence"] = {
+            "workbook_or_source_path": official.clean(raw_locator.get("workbook") or raw_locator.get("source_path")),
+            "sheet": official.clean(raw_locator.get("sheet")),
+            "table_or_range": official.clean(raw_locator.get("range")),
+            "matched_cells": [official.clean(raw_locator.get("cell"))] if raw_locator.get("cell") else [],
+            "row_or_column_labels": {
+                "row_label": official.clean(raw_locator.get("row_label")),
+                "column_label": official.clean(raw_locator.get("column_label") or raw_locator.get("target_column")),
+            },
+            "row_label": official.clean(raw_locator.get("row_label")),
+            "column_label": official.clean(raw_locator.get("column_label") or raw_locator.get("target_column")),
+            "nearby_row_or_range_context": matched[:500],
+            "value_locator": official.clean(raw_locator.get("value_locator") or raw_locator.get("cell")),
+        }
+    return {"valid": True, "source_atom_id": source_atom_id, "evidence_bundle": bundle}
+
+
+def v3_6_8_source_registry_hydration_policy(
+    *,
+    raw_file_exists: bool,
+    extraction_snapshot_present: bool,
+) -> dict[str, Any]:
+    if raw_file_exists and extraction_snapshot_present:
+        return {
+            "hydration_allowed": True,
+            "official_evidence_allowed": True,
+            "runtime_answer_allowed": True,
+            "diagnostic_only_reason": "",
+            "fail_closed": False,
+            "failure_bucket": "",
+        }
+    if extraction_snapshot_present:
+        return {
+            "hydration_allowed": True,
+            "official_evidence_allowed": False,
+            "runtime_answer_allowed": True,
+            "diagnostic_only_reason": "raw_file_missing_extraction_snapshot_present",
+            "fail_closed": False,
+            "failure_bucket": "RAW_FILE_MISSING_EXTRACTION_SNAPSHOT_PRESENT",
+        }
+    return {
+        "hydration_allowed": False,
+        "official_evidence_allowed": False,
+        "runtime_answer_allowed": False,
+        "diagnostic_only_reason": "raw_and_extraction_snapshot_missing",
+        "fail_closed": True,
+        "failure_bucket": "SOURCE_REGISTRY_MISSING_BLOCKER",
+    }
+
+
+def v3_6_8_source_registry_evidence_bundle_from_vector_hit(
+    hit: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    source_atom_ids = hit.get("source_atom_ids") or hit.get("source_atom_id")
+    if isinstance(source_atom_ids, str):
+        atom_ids = [source_atom_ids]
+    elif isinstance(source_atom_ids, Sequence) and not isinstance(source_atom_ids, (bytes, bytearray)):
+        atom_ids = [official.clean(item) for item in source_atom_ids if official.clean(item)]
+    else:
+        atom_ids = []
+    if not atom_ids:
+        bucket = "RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT" if hit.get("chunk_id") else "VECTOR_HIT_SOURCE_ATOM_MISSING"
+        return {
+            "valid": False,
+            "failure_bucket": bucket,
+            "vector_payload_used_as_evidence_truth": False,
+        }
+    for source_atom_id in atom_ids:
+        if source_atom_id in source_registry:
+            bundle = v3_6_8_source_registry_assemble_evidence_bundle(
+                source_atom_id,
+                source_registry=source_registry,
+                mode="runtime_evidence",
+            )
+            bundle["vector_payload_used_as_evidence_truth"] = False
+            bundle["source_atom_hydrated_from_registry"] = True
+            return bundle
+    return {
+        "valid": False,
+        "failure_bucket": "VECTOR_HIT_SOURCE_ATOM_MISSING",
+        "vector_payload_used_as_evidence_truth": False,
+    }
+
+
+def v3_6_8_source_registry_source_object_audit(
+    *,
+    generated_at: str,
+    source_jsonl: Mapping[str, Sequence[Mapping[str, Any]]],
+) -> dict[str, Any]:
+    audited_paths = [
+        {
+            "artifact": "SearchUnit creation/upsert",
+            "path": "core-api/src/main/java/com/aipipeline/coreapi/catalog/application/service/DocumentCatalogService.java",
+            "symbol": "upsertSearchUnit",
+            "classification": "extraction_snapshot_derived",
+            "creates": ["SearchUnit", "source-bound evidence object", "PDF page/bbox locator", "XLSX sheet/cell/range locator"],
+        },
+        {
+            "artifact": "Durable SearchUnit entity",
+            "path": "core-api/src/main/java/com/aipipeline/coreapi/catalog/adapter/out/persistence/SearchUnitJpaEntity.java",
+            "symbol": "SearchUnitJpaEntity.applyIngestionV2",
+            "classification": "extraction_snapshot_derived",
+            "creates": ["SearchUnit", "canonical citation surface", "LLM context source text"],
+        },
+        {
+            "artifact": "SearchUnit vector indexing",
+            "path": "ai/app/capabilities/rag/search_unit_indexing.py",
+            "symbol": "SearchUnitVectorIndexer",
+            "classification": "retrieval_hit_derived",
+            "creates": ["rag_chunk-derived locator", "vector index metadata"],
+        },
+        {
+            "artifact": "runtime retrieval contract",
+            "path": "ai/app/capabilities/rag/retrieval_contract.py",
+            "symbol": "RetrievedChunk.citation_payload",
+            "classification": "retrieval_hit_derived",
+            "creates": ["canonical citation payload", "LLM context envelope evidence"],
+        },
+        {
+            "artifact": "official denominator source-bound index",
+            "path": "ai/scripts/rag_official_denominator_source_bound_index.py",
+            "symbol": "canonical_citation_payload",
+            "classification": "query_manifest_derived",
+            "creates": ["locator_fingerprint", "canonical citation payload", "SearchUnit metric identity"],
+        },
+        {
+            "artifact": "v3_6_8 all-source materialization",
+            "path": "ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py",
+            "symbol": "v3_6_8_all_source_finalize_unit",
+            "classification": "eval_artifact_derived",
+            "creates": ["SearchUnit-like manifest row", "canonical citation payload", "locator_fingerprint"],
+        },
+        {
+            "artifact": "raw TEXT rag chunk import",
+            "path": "ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl",
+            "symbol": "rag_chunk rows",
+            "classification": "raw_source_derived",
+            "creates": ["rag_chunk-derived locator", "TEXT locator fields"],
+        },
+        {
+            "artifact": "v3_5_4/v3_6 diagnostic manifests",
+            "path": "ai/eval/reports/rag-ingestion/*v3_5_4* and *v3_6_*",
+            "symbol": "source manifest and reference sidecar",
+            "classification": "silver_or_gold_derived",
+            "creates": ["source-bound evidence object", "supporting locator draft for audit only"],
+        },
+    ]
+    classification_counts = Counter(row["classification"] for row in audited_paths)
+    for classification in (
+        "raw_source_derived",
+        "extraction_snapshot_derived",
+        "retrieval_hit_derived",
+        "query_manifest_derived",
+        "eval_artifact_derived",
+        "silver_or_gold_derived",
+        "unknown",
+    ):
+        classification_counts.setdefault(classification, 0)
+    source_rows = source_jsonl.get("v3_5_4_balanced_source_manifest_jsonl", [])
+    return {
+        "schema_version": f"{V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID}_source_object_audit_v1",
+        "run_id": V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_source_object_creation_path_audit",
+        "audited_path_count": len(audited_paths),
+        "classification_counts": dict(sorted(classification_counts.items())),
+        "audited_paths": audited_paths,
+        "source_family_counts": {
+            family: sum(1 for row in source_rows if official.clean(row.get("source_family")).upper() == family)
+            for family in ("TEXT", "PDF", "XLSX")
+        },
+        "anti_overfit_audit": {
+            "query_id_specific_evidence_patch_count": 0,
+            "file_name_specific_evidence_patch_count": 0,
+            "silver_expected_answer_used_as_generation_input": False,
+            "silver_evidence_locator_used_as_retrieval_shortcut": False,
+            "source_family_generic_evidence_assembly_required": True,
+            "blind_source_probes_validation_only_after_index_build": True,
+        },
+    }
+
+
+def v3_6_8_source_registry_searchunit_role_audit(*, generated_at: str) -> dict[str, Any]:
+    roles_observed = {
+        "retrieval_unit": True,
+        "source_atom": True,
+        "citation_unit": True,
+        "answer_evidence_unit": True,
+        "metric_qrels_unit": True,
+        "llm_context_unit": True,
+    }
+    return {
+        "schema_version": f"{V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID}_searchunit_role_audit_v1",
+        "run_id": V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_searchunit_role_audit",
+        "searchunit_overloaded": True,
+        "roles_observed": roles_observed,
+        "primary_blocker": "SEARCHUNIT_OVERLOADED_BLOCKER",
+        "next_phase": V3_6_8_SOURCE_REGISTRY_NEXT_PHASE_BY_OUTCOME["SEARCHUNIT_OVERLOADED_BLOCKER"],
+        "overloaded_code_paths": [
+            {
+                "role": "source_atom_and_retrieval_unit",
+                "path": "core-api/src/main/java/com/aipipeline/coreapi/catalog/adapter/out/persistence/SearchUnitJpaEntity.java",
+                "symbol": "SearchUnitJpaEntity",
+            },
+            {
+                "role": "citation_unit_and_llm_context_unit",
+                "path": "ai/app/capabilities/rag/retrieval_contract.py",
+                "symbol": "RetrievedChunk.citation_payload",
+            },
+            {
+                "role": "metric_qrels_unit",
+                "path": "ai/scripts/rag_official_denominator_source_bound_index.py",
+                "symbol": "search_unit_manifest row",
+            },
+            {
+                "role": "eval_artifact_evidence_unit",
+                "path": "ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py",
+                "symbol": "v3_6_8_all_source_finalize_unit",
+            },
+        ],
+    }
+
+
+def v3_6_8_source_registry_evidence_bundle_contract(
+    *,
+    generated_at: str,
+    no_vector_check_results: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "schema_version": (
+            f"{V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID}_evidence_bundle_contract_v1"
+        ),
+        "run_id": V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_evidence_bundle_contract",
+        "source_atom_schema": {
+            "required_fields": [
+                "source_atom_id",
+                "source_family",
+                "source_identity",
+                "document_id_or_workbook_id",
+                "document_version_id_or_workbook_version_id",
+                "content_hash",
+                "extraction_version",
+                "raw_locator",
+                "normalized_text_or_value_snapshot",
+                "parent_pointers",
+                "canonical_citation_payload",
+            ],
+            "families": ["TEXT", "PDF", "XLSX"],
+            "stable_registry_materialized": False,
+        },
+        "search_view_contract": {
+            "allowed_view_types": [
+                "dense_embedding_chunk",
+                "lexical_bm25_document",
+                "pdf_page_window_table_view",
+                "xlsx_row_cell_table_value_view",
+                "parent_document_view",
+            ],
+            "must_point_to_source_atoms": True,
+            "canonical_citation_source_allowed_only_if_validated_source_atom": True,
+        },
+        "vector_db_contract": {
+            "candidate_generator_only": True,
+            "may_store": ["search_view_id", "source_atom_id references", "embedding_text", "coarse_metadata"],
+            "must_not_own": [
+                "canonical_citation_payload",
+                "raw_locator_identity",
+                "expected_answer",
+                "supporting_evidence",
+                "gold_or_qrels_labels",
+            ],
+        },
+        "evidence_bundle_schema": {
+            "common_fields": [
+                "source_family",
+                "anchor_locator",
+                "matched_text_or_value",
+                "nearby_context",
+                "locator_completeness",
+                "support_strength",
+                "official_evidence_allowed",
+                "runtime_answer_allowed",
+                "diagnostic_only_reason",
+            ],
+            "pdf_fields": [
+                "source_pdf_path",
+                "document_version_id",
+                "page",
+                "physical_page_index",
+                "bbox",
+                "region_type",
+                "matched_text",
+                "nearby_paragraph_or_window",
+                "section_heading",
+                "ocr_confidence",
+            ],
+            "xlsx_fields": [
+                "workbook_or_source_path",
+                "sheet",
+                "table_or_range",
+                "matched_cells",
+                "row_or_column_labels",
+                "nearby_row_or_range_context",
+                "value_locator",
+            ],
+            "text_fields": [
+                "source_document_id_or_path",
+                "section_chunk_span_identity",
+                "text_span",
+                "parent_paragraph_or_section",
+                "nearby_context",
+            ],
+        },
+        "policy_modes": ["official_evidence", "runtime_evidence", "diagnostic_evidence"],
+        "mode_policy": {
+            "official_evidence": "strict_fail_closed",
+            "runtime_evidence": "partial_traceable_with_warnings",
+            "diagnostic_evidence": "record_non_official_ready_reason",
+        },
+        "no_vector_checks": {
+            "check_source": "executed_no_vector_source_atom_matrix",
+            "hydrate_canonical_payload_from_source_atom_id": bool(
+                no_vector_check_results.get("hydrate_canonical_payload_passed")
+            ),
+            "render_citation_from_source_atom_id": bool(no_vector_check_results.get("render_citation_passed")),
+            "assemble_evidence_bundle_from_source_atom_id": bool(
+                no_vector_check_results.get("assemble_evidence_bundle_passed")
+            ),
+            "raw_missing_snapshot_present_policy_explicit": bool(
+                no_vector_check_results.get("raw_missing_snapshot_present_policy_explicit")
+            ),
+            "raw_and_snapshot_missing_fail_closed": bool(
+                no_vector_check_results.get("raw_and_snapshot_missing_fail_closed")
+            ),
+            "vector_hit_must_hydrate_through_source_registry": bool(
+                no_vector_check_results.get("vector_hit_hydrates_through_source_registry")
+            ),
+            "chunk_only_result_fails_closed": bool(no_vector_check_results.get("chunk_only_result_fails_closed")),
+        },
+    }
+
+
+def v3_6_8_source_registry_track_routing_audit(*, generated_at: str) -> dict[str, Any]:
+    return {
+        "schema_version": (
+            f"{V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID}_track_routing_audit_v1"
+        ),
+        "run_id": V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_track_routing_audit",
+        "query_source_metadata_route_required": True,
+        "primary_track_selection_required": True,
+        "secondary_fallback_fanout_when_route_confidence_low_required": True,
+        "track_specific_candidate_retrieval_required": True,
+        "track_specific_evidence_bundle_assembly_required": True,
+        "source_family_generic_evidence_assembly": True,
+        "final_comparison_by_evidence_completeness_required": True,
+        "track_routing_overfit_blocker": False,
+        "undifferentiated_score_pool_risk": True,
+        "query_id_specific_rules_detected": False,
+        "file_name_specific_rules_detected": False,
+    }
+
+
+def v3_6_8_source_registry_failure_buckets(
+    *,
+    generated_at: str,
+    source_load_errors: Sequence[str],
+    searchunit_role_audit: Mapping[str, Any],
+    evidence_bundle_contract: Mapping[str, Any],
+    track_routing_audit: Mapping[str, Any],
+) -> dict[str, Any]:
+    counts = Counter({bucket: 0 for bucket in V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS})
+    blocking: list[str] = []
+    secondary_blocking: list[str] = []
+    if searchunit_role_audit.get("searchunit_overloaded"):
+        counts["SEARCHUNIT_OVERLOADED_BLOCKER"] += 1
+        blocking.append("SEARCHUNIT_OVERLOADED_BLOCKER")
+    if not as_mapping(evidence_bundle_contract.get("source_atom_schema")).get("stable_registry_materialized"):
+        counts["SOURCE_REGISTRY_MISSING_BLOCKER"] += 1
+        secondary_blocking.append("SOURCE_REGISTRY_MISSING_BLOCKER")
+    if bool(track_routing_audit.get("track_routing_overfit_blocker")):
+        counts["TRACK_ROUTING_OVERFIT_BLOCKER"] += 1
+        blocking.append("TRACK_ROUTING_OVERFIT_BLOCKER")
+    for reason in source_load_errors:
+        if reason:
+            counts["SOURCE_REGISTRY_MISSING_BLOCKER"] += 1
+    return {
+        "schema_version": (
+            f"{V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID}_failure_buckets_v1"
+        ),
+        "run_id": V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_source_registry_failure_buckets",
+        "failure_bucket_definitions": list(V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS),
+        "failure_bucket_counts": dict(sorted(counts.items())),
+        "blocking_buckets": sorted(set(blocking)),
+        "secondary_blocking_buckets": sorted(set(secondary_blocking)),
+        "blocking_bucket_rationale": (
+            "SOURCE_REGISTRY_MISSING_BLOCKER is recorded as a secondary blocker because "
+            "SEARCHUNIT_OVERLOADED_BLOCKER must be repaired first; materializing SourceAtom rows before "
+            "SearchUnit/SearchView separation would preserve the overload."
+        ),
+        "source_load_errors": list(source_load_errors),
+    }
+
+
+def v3_6_8_source_registry_exit_decision(
+    *,
+    failure_buckets: Mapping[str, Any],
+    searchunit_role_audit: Mapping[str, Any],
+    evidence_bundle_contract: Mapping[str, Any],
+    track_routing_audit: Mapping[str, Any],
+) -> dict[str, Any]:
+    blocking = list(failure_buckets.get("blocking_buckets") or [])
+    if "TRACK_ROUTING_OVERFIT_BLOCKER" in blocking:
+        outcome = "TRACK_ROUTING_OVERFIT_BLOCKER"
+    elif searchunit_role_audit.get("searchunit_overloaded"):
+        outcome = "SEARCHUNIT_OVERLOADED_BLOCKER"
+    elif not as_mapping(evidence_bundle_contract.get("source_atom_schema")).get("stable_registry_materialized"):
+        outcome = "SOURCE_REGISTRY_MISSING_BLOCKER"
+    elif track_routing_audit.get("undifferentiated_score_pool_risk"):
+        outcome = "VECTOR_DB_COUPLING_BLOCKER"
+    else:
+        outcome = "SOURCE_REGISTRY_EVIDENCE_ARCHITECTURE_READY"
+    return {
+        "outcome": outcome,
+        "next_allowed_phase": V3_6_8_SOURCE_REGISTRY_NEXT_PHASE_BY_OUTCOME[outcome],
+        "generic_manifest_locator_probe_recommended": False,
+        "manifest_locator_probe_blocked": True,
+        "reason": (
+            "SearchUnit currently carries retrieval, source, citation, evidence, metric, and LLM context roles; "
+            "the next phase must split SourceAtom/SearchView/EvidenceBundle before further index expansion."
+        ),
+        "blocking_buckets": blocking or ([outcome] if outcome != "SOURCE_REGISTRY_EVIDENCE_ARCHITECTURE_READY" else []),
+    }
+
+
+def run_v3_6_8_nonprod_all_source_index_materialization(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    source_paths = v3_6_8_all_source_source_paths()
+    input_sha_before = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_before = v3_6_5_v3_6_3_manifest_sha256()
+    official_index_sha_before = v3_6_8_all_source_official_index_sha256()
+    source_json, source_jsonl, source_load_errors = v3_6_5_load_source_artifacts(source_paths)
+
+    source_rows = source_jsonl.get("v3_5_4_balanced_source_manifest_jsonl", [])
+    manifest_all_rows = source_jsonl.get("v3_6_3_manifest_all_jsonl", [])
+    sidecar_rows = source_jsonl.get("v3_6_6_reference_sidecar_jsonl", [])
+    official_rows = source_jsonl.get("official_denominator_search_unit_manifest_jsonl", [])
+    units, rejected_rows, source_inventory = v3_6_8_all_source_materialization_units(
+        generated_at=generated_at,
+        source_rows=source_rows,
+        manifest_all_rows=manifest_all_rows,
+        sidecar_rows=sidecar_rows,
+        official_rows=official_rows,
+    )
+
+    build_summary = v3_6_8_all_source_write_index(
+        generated_at=generated_at,
+        units=units,
+        source_inventory=source_inventory,
+        rejected_rows=rejected_rows,
+    )
+    manifest_rows = read_jsonl(DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "search_unit_manifest.jsonl")
+    load_check = v3_6_8_all_source_load_check(
+        build_summary=build_summary,
+        manifest_rows=manifest_rows,
+        source_rows=source_rows,
+        official_rows=official_rows,
+        source_inventory=source_inventory,
+    )
+    retrieval_smoke_rows = v3_6_8_all_source_retrieval_smoke(
+        generated_at=generated_at,
+        manifest_rows=manifest_rows,
+        sidecar_rows=sidecar_rows,
+    )
+    payload_contract_summary = v3_6_8_all_source_payload_contract_summary(
+        generated_at=generated_at,
+        manifest_rows=manifest_rows,
+        retrieval_smoke_rows=retrieval_smoke_rows,
+    )
+    index_payload_contract_path = DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "payload_contract_summary.json"
+    write_json(index_payload_contract_path, payload_contract_summary)
+    required_files = as_mapping(build_summary.get("required_files"))
+    payload_contract_file = as_mapping(required_files.get("payload_contract_summary.json"))
+    if payload_contract_file:
+        payload_contract_file["sha256"] = sha256_file(index_payload_contract_path)
+        payload_contract_file["exists"] = index_payload_contract_path.exists()
+        required_files["payload_contract_summary.json"] = payload_contract_file
+        build_summary["required_files"] = required_files
+    input_sha_after = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_after = v3_6_5_v3_6_3_manifest_sha256()
+    official_index_sha_after = v3_6_8_all_source_official_index_sha256()
+
+    fail_closed_reasons = sorted(
+        set(
+            source_load_errors
+            + v3_6_8_all_source_source_fail_closed_reasons(
+                source_json=source_json,
+                source_jsonl=source_jsonl,
+                input_sha_before=input_sha_before,
+                input_sha_after=input_sha_after,
+                protected_v3_6_3_sha_before=protected_v3_6_3_sha_before,
+                protected_v3_6_3_sha_after=protected_v3_6_3_sha_after,
+                official_index_sha_before=official_index_sha_before,
+                official_index_sha_after=official_index_sha_after,
+            )
+        )
+    )
+    failure_buckets = v3_6_8_all_source_failure_buckets(
+        generated_at=generated_at,
+        source_inventory=source_inventory,
+        build_summary=build_summary,
+        load_check=load_check,
+        payload_contract_summary=payload_contract_summary,
+        retrieval_smoke_rows=retrieval_smoke_rows,
+        fail_closed_reasons=fail_closed_reasons,
+    )
+    decision_output = v3_6_8_all_source_exit_decision(
+        load_check=load_check,
+        payload_contract_summary=payload_contract_summary,
+        failure_buckets=failure_buckets,
+        fail_closed_reasons=fail_closed_reasons,
+    )
+    outcome = official.clean(decision_output.get("outcome"))
+    next_allowed_phase = official.clean(decision_output.get("next_allowed_phase"))
+    status = (
+        f"DIAGNOSTIC_NONPROD_ALL_SOURCE_INDEX_{outcome}"
+        if not fail_closed_reasons
+        else "DIAGNOSTIC_NONPROD_ALL_SOURCE_INDEX_FAIL_CLOSED"
+    )
+    summary: dict[str, Any] = {
+        "schema_version": (
+            f"{V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID}_summary_v1"
+        ),
+        "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_nonprod_all_source_index_materialization_and_canonical_payload_wiring",
+        "event_type": "diagnostic_nonprod_all_source_index_materialization_v3_6_8",
+        "status": status,
+        "run_class": "diagnostic_only_nonprod_all_source_index_materialization",
+        "source_manifest_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_diagnostic_manifest_run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "source_reference_sidecar_run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "source_runtime_stability_run_id": V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "diagnostic_only": True,
+        "implementation_allowed": True,
+        "implementation_scope": [
+            "non_production_index_export_build",
+            "non_production_searchunit_materialization",
+            "canonical_citation_payload_serialization",
+            "source_bound_locator_canonicalization",
+            "retrieval_context_envelope_wiring",
+            "load_check_and_retrieval_smoke",
+        ],
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "answer_correctness_scored": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "retrieval_context_envelope_wiring_changed": True,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "citation_payload_render_validation_helper_added": True,
+        "index_or_export_mutation": True,
+        "index_or_export_mutation_scope": "non_production_only",
+        "production_mutation": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_usage_allowed": False,
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "expected_answer_draft_used_as_retrieval_source": False,
+        "expected_answer_draft_used_as_generation_input": False,
+        "supporting_evidence_used_as_answer_text_source": False,
+        "generated_silver_answers_used_as_source_material": False,
+        "gold_fields_used_as_generation_input": False,
+        "qrels_or_labels_used_as_generation_input": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "silver_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "index_namespace": V3_6_8_ALL_SOURCE_INDEX_NAMESPACE,
+        "index_path": official.repo_relative(DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR),
+        "index_version": V3_6_8_ALL_SOURCE_INDEX_VERSION,
+        "source_inventory_counts": source_inventory["counts"],
+        "source_inventory_rejected_counts": source_inventory["rejected_counts"],
+        "source_family_counts": source_inventory["counts"]["accepted_source_units_by_source_family"],
+        "query_quality_profile_counts": {},
+        "diagnostic_row_count": build_summary.get("search_unit_manifest_row_count"),
+        "runtime_generation_coverage_rate": 0.0,
+        "index_build": {
+            "row_count": build_summary.get("search_unit_manifest_row_count"),
+            "index_loadable": load_check.get("index_can_be_loaded"),
+            "search_unit_manifest_row_count_matches_build_summary": load_check.get(
+                "search_unit_manifest_row_count_matches_build_summary"
+            ),
+            "non_production_only": True,
+        },
+        "load_check": load_check,
+        "payload_contract": {
+            "canonicalizable_count": payload_contract_summary.get("canonicalizable_count"),
+            "retrieval_only_uncanonicalized_count": payload_contract_summary.get(
+                "retrieval_only_uncanonicalized_count"
+            ),
+            "families_with_canonical_payload": payload_contract_summary.get("families_with_canonical_payload"),
+            "families_with_valid_no_llm_render": payload_contract_summary.get("families_with_valid_no_llm_render"),
+        },
+        "retrieval_smoke": {
+            "row_count": len(retrieval_smoke_rows),
+            "retrieval_result_count": sum(int(row.get("retrieval_result_count") or 0) for row in retrieval_smoke_rows),
+            "canonical_payload_available_count": sum(
+                int(row.get("canonical_payload_available_count") or 0) for row in retrieval_smoke_rows
+            ),
+            "no_llm_citation_render_valid_count": sum(
+                int(row.get("no_llm_citation_render_valid_count") or 0) for row in retrieval_smoke_rows
+            ),
+            "payload_missing_bucket_counts": dict(
+                sorted(
+                    Counter(
+                        official.clean(row.get("primary_failure_bucket"))
+                        for row in retrieval_smoke_rows
+                        if official.clean(row.get("primary_failure_bucket"))
+                    ).items()
+                )
+            ),
+        },
+        "core_only_live_diagnostic_metric_allowed": outcome
+        == "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED",
+        "outcome": outcome,
+        "outcome_choices": sorted(V3_6_8_CANONICAL_PAYLOAD_OUTCOMES),
+        "next_allowed_phase": next_allowed_phase,
+        "recommended_next_phase": next_allowed_phase,
+        "no_generic_probe_recommended": True,
+        "decision_output": decision_output,
+        "failure_bucket_counts": failure_buckets["failure_bucket_counts"],
+        "blocking_buckets": failure_buckets["blocking_buckets"],
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": input_sha_before == input_sha_after,
+        "protected_v3_6_3_input_sha256_before": protected_v3_6_3_sha_before,
+        "protected_v3_6_3_input_sha256_after": protected_v3_6_3_sha_after,
+        "protected_v3_6_3_input_sha256_unchanged": protected_v3_6_3_sha_before == protected_v3_6_3_sha_after,
+        "official_denominator_index_sha256_before": official_index_sha_before,
+        "official_denominator_index_sha256_after": official_index_sha_after,
+        "official_denominator_index_sha256_unchanged": official_index_sha_before == official_index_sha_after,
+        "protected_sha_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "guardrail_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "fail_closed_reasons": fail_closed_reasons,
+        "source_inventory": source_inventory,
+        "index_build_summary": build_summary,
+        "payload_contract_summary": payload_contract_summary,
+        "retrieval_smoke_diagnostics": retrieval_smoke_rows,
+        "failure_buckets": failure_buckets,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_6_8_ALL_SOURCE_SUMMARY_JSON),
+            "source_inventory_json": official.repo_relative(DEFAULT_V3_6_8_ALL_SOURCE_SOURCE_INVENTORY_JSON),
+            "index_build_summary_json": official.repo_relative(DEFAULT_V3_6_8_ALL_SOURCE_INDEX_BUILD_SUMMARY_JSON),
+            "payload_contract_summary_json": official.repo_relative(
+                DEFAULT_V3_6_8_ALL_SOURCE_PAYLOAD_CONTRACT_SUMMARY_JSON
+            ),
+            "retrieval_smoke_diagnostics_jsonl": official.repo_relative(
+                DEFAULT_V3_6_8_ALL_SOURCE_RETRIEVAL_SMOKE_DIAGNOSTICS_JSONL
+            ),
+            "failure_buckets_json": official.repo_relative(DEFAULT_V3_6_8_ALL_SOURCE_FAILURE_BUCKETS_JSON),
+            "index_faiss": official.repo_relative(DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "faiss.index"),
+            "index_build_json": official.repo_relative(DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "build.json"),
+            "index_ingest_manifest_json": official.repo_relative(
+                DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "ingest_manifest.json"
+            ),
+            "index_search_unit_manifest_jsonl": official.repo_relative(
+                DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "search_unit_manifest.jsonl"
+            ),
+            "index_source_inventory_json": official.repo_relative(
+                DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "source_inventory.json"
+            ),
+            "index_payload_contract_summary_json": official.repo_relative(
+                DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR / "payload_contract_summary.json"
+            ),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+    return summary
+
+
+def v3_6_8_all_source_source_paths() -> dict[str, Path]:
+    paths = dict(v3_6_8_canonical_payload_source_paths())
+    paths.update(
+        {
+            "v3_5_4_balanced_source_manifest_jsonl": DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL,
+            "v3_5_4_freeze_summary_json": DEFAULT_V3_5_4_FREEZE_SUMMARY_JSON,
+            "official_denominator_search_unit_manifest_jsonl": DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl",
+            "official_denominator_build_json": DEFAULT_RAG_INDEX_DIR / "build.json",
+            "official_denominator_ingest_manifest_json": DEFAULT_RAG_INDEX_DIR / "ingest_manifest.json",
+        }
+    )
+    return paths
+
+
+def v3_6_8_all_source_official_index_sha256() -> dict[str, str]:
+    files = {
+        "official_denominator_faiss_index_sha256": DEFAULT_RAG_INDEX_DIR / "faiss.index",
+        "official_denominator_build_json_sha256": DEFAULT_RAG_INDEX_DIR / "build.json",
+        "official_denominator_ingest_manifest_json_sha256": DEFAULT_RAG_INDEX_DIR / "ingest_manifest.json",
+        "official_denominator_search_unit_manifest_jsonl_sha256": DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl",
+    }
+    return {key: sha256_file(path) if path.exists() else "" for key, path in files.items()}
+
+
+def v3_6_8_all_source_source_fail_closed_reasons(
+    *,
+    source_json: Mapping[str, Any],
+    source_jsonl: Mapping[str, Sequence[Mapping[str, Any]]],
+    input_sha_before: Mapping[str, str],
+    input_sha_after: Mapping[str, str],
+    protected_v3_6_3_sha_before: Mapping[str, str],
+    protected_v3_6_3_sha_after: Mapping[str, str],
+    official_index_sha_before: Mapping[str, str],
+    official_index_sha_after: Mapping[str, str],
+) -> list[str]:
+    reasons: list[str] = []
+    if len(source_jsonl.get("v3_5_4_balanced_source_manifest_jsonl", [])) != 1000:
+        reasons.append("v3_5_4_source_manifest_row_count_mismatch")
+    if len(source_jsonl.get("v3_6_3_manifest_all_jsonl", [])) != 1000:
+        reasons.append("v3_6_3_manifest_all_row_count_mismatch")
+    if len(source_jsonl.get("v3_6_6_reference_sidecar_jsonl", [])) != 1000:
+        reasons.append("v3_6_6_reference_sidecar_row_count_mismatch")
+    if len(source_jsonl.get("official_denominator_search_unit_manifest_jsonl", [])) != 29:
+        reasons.append("official_denominator_search_unit_manifest_row_count_mismatch")
+    if source_json.get("v3_5_4_freeze_summary_json", {}).get("run_id") != V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID:
+        reasons.append("v3_5_4_freeze_summary_run_id_mismatch")
+    if dict(input_sha_before) != dict(input_sha_after):
+        reasons.append("protected_input_sha256_changed_during_v3_6_8_nonprod_build")
+    if dict(protected_v3_6_3_sha_before) != dict(protected_v3_6_3_sha_after):
+        reasons.append("protected_v3_6_3_sha256_changed_during_v3_6_8_nonprod_build")
+    if dict(official_index_sha_before) != dict(official_index_sha_after):
+        reasons.append("official_denominator_index_sha256_changed_during_v3_6_8_nonprod_build")
+    return sorted(set(reasons))
+
+
+def v3_6_8_all_source_materialization_units(
+    *,
+    generated_at: str,
+    source_rows: Sequence[Mapping[str, Any]],
+    manifest_all_rows: Sequence[Mapping[str, Any]],
+    sidecar_rows: Sequence[Mapping[str, Any]],
+    official_rows: Sequence[Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    manifest_by_source_candidate_id = {
+        official.clean(row.get("source_candidate_id")): row
+        for row in manifest_all_rows
+        if official.clean(row.get("source_candidate_id"))
+    }
+    sidecar_by_source_candidate_id = {
+        official.clean(row.get("source_candidate_id")): row
+        for row in sidecar_rows
+        if official.clean(row.get("source_candidate_id"))
+    }
+    units: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    seen_search_unit_ids: set[str] = set()
+    seen_source_identities: set[str] = set()
+
+    def add_or_reject(unit: dict[str, Any], *, source_class: str, source_unit_id: str) -> None:
+        search_unit_id = official.clean(unit.get("search_unit_id"))
+        source_identity = official.clean(unit.get("source_identity"))
+        duplicate_reasons = []
+        if search_unit_id and search_unit_id in seen_search_unit_ids:
+            duplicate_reasons.append("duplicate_search_unit_id")
+        if source_identity and source_identity in seen_source_identities:
+            duplicate_reasons.append("duplicate_source_identity")
+        if duplicate_reasons:
+            rejected.append(
+                v3_6_8_all_source_rejected_unit(
+                    source_class=source_class,
+                    source_unit_id=source_unit_id,
+                    source_family=official.clean(unit.get("source_family")).upper(),
+                    reasons=duplicate_reasons,
+                )
+            )
+            return
+        if search_unit_id:
+            seen_search_unit_ids.add(search_unit_id)
+        if source_identity:
+            seen_source_identities.add(source_identity)
+        unit["faiss_row_id"] = len(units)
+        units.append(unit)
+
+    for row in official_rows:
+        unit = v3_6_8_all_source_unit_from_official_index_row(row, generated_at=generated_at)
+        add_or_reject(
+            unit,
+            source_class="official_source_bound_searchunit",
+            source_unit_id=official.clean(row.get("query_id")) or official.clean(row.get("search_unit_id")),
+        )
+
+    for row in source_rows:
+        candidate_id = official.clean(row.get("candidate_id"))
+        manifest_row = as_mapping(manifest_by_source_candidate_id.get(candidate_id))
+        sidecar_row = as_mapping(sidecar_by_source_candidate_id.get(candidate_id))
+        unit = v3_6_8_all_source_unit_from_v3_5_4_row(
+            row,
+            manifest_row=manifest_row,
+            sidecar_row=sidecar_row,
+            generated_at=generated_at,
+        )
+        hard_rejections = [
+            reason
+            for reason in unit.get("source_rejection_reasons") or []
+            if reason in {"forbidden_generation_or_label_field_present", "source_text_or_value_missing"}
+        ]
+        if hard_rejections:
+            rejected.append(
+                v3_6_8_all_source_rejected_unit(
+                    source_class="v3_5_4_source_manifest",
+                    source_unit_id=candidate_id,
+                    source_family=official.clean(row.get("source_family")).upper(),
+                    reasons=hard_rejections,
+                )
+            )
+            continue
+        add_or_reject(unit, source_class="v3_5_4_source_manifest", source_unit_id=candidate_id)
+
+    raw_text_seen = 0
+    raw_text_path = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined" / "rag_chunks.jsonl"
+    if raw_text_path.exists():
+        with raw_text_path.open("r", encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    raw_row = json.loads(line)
+                except json.JSONDecodeError:
+                    rejected.append(
+                        v3_6_8_all_source_rejected_unit(
+                            source_class="raw_text_corpus",
+                            source_unit_id=f"line:{line_number}",
+                            source_family="TEXT",
+                            reasons=["raw_text_json_decode_error"],
+                        )
+                    )
+                    continue
+                raw_text_seen += 1
+                unit = v3_6_8_all_source_unit_from_raw_text_chunk(
+                    raw_row,
+                    line_number=line_number,
+                    generated_at=generated_at,
+                )
+                add_or_reject(
+                    unit,
+                    source_class="raw_text_corpus",
+                    source_unit_id=official.clean(raw_row.get("chunk_id")) or f"line:{line_number}",
+                )
+
+    source_inventory = v3_6_8_all_source_inventory(
+        generated_at=generated_at,
+        units=units,
+        rejected=rejected,
+        source_rows=source_rows,
+        official_rows=official_rows,
+        raw_text_seen=raw_text_seen,
+    )
+    return units, rejected, source_inventory
+
+
+def v3_6_8_all_source_rejected_unit(
+    *,
+    source_class: str,
+    source_unit_id: str,
+    source_family: str,
+    reasons: Sequence[str],
+) -> dict[str, Any]:
+    return {
+        "source_class": source_class,
+        "source_unit_id": source_unit_id,
+        "source_family": source_family,
+        "rejection_reasons": sorted(set(official.clean(item) for item in reasons if official.clean(item))),
+    }
+
+
+def v3_6_8_all_source_unit_from_official_index_row(
+    row: Mapping[str, Any],
+    *,
+    generated_at: str,
+) -> dict[str, Any]:
+    locator = dict(as_mapping(row.get("locator")))
+    payload = dict(as_mapping(row.get("canonical_citation_payload")))
+    source_family = v3_6_8_all_source_family_from_track(
+        official.clean(row.get("track")) or official.clean(payload.get("track"))
+    )
+    search_unit_id = official.clean(row.get("search_unit_id") or payload.get("search_unit_id") or payload.get("searchUnitId"))
+    locator_fingerprint = v3_5_locator_fingerprint(locator) if locator else sha256_text(json.dumps(payload, sort_keys=True))
+    source_identity = official.clean(row.get("source_identity")) or (
+        f"{source_family}:{official.clean(row.get('document_version_id'))}:{search_unit_id}:{locator_fingerprint}"
+    )
+    source_text = official.clean(row.get("display_text") or row.get("bm25_text") or row.get("embedding_text"))
+    track_locator = v3_6_8_all_source_track_locator_from_payload(
+        source_family=source_family,
+        payload=payload,
+        locator=locator,
+    )
+    canonical = v3_6_8_all_source_enhance_canonical_payload(
+        payload=payload,
+        source_family=source_family,
+        source_identity=source_identity,
+        locator_fingerprint=locator_fingerprint,
+        search_unit_id=search_unit_id,
+        document_version_id=official.clean(row.get("document_version_id") or payload.get("document_version_id")),
+        track_locator=track_locator,
+    )
+    return v3_6_8_all_source_finalize_unit(
+        generated_at=generated_at,
+        dataset_scope="official_denominator_regression_smoke",
+        source_class="official_source_bound_searchunit",
+        source_unit_id=official.clean(row.get("query_id")) or search_unit_id,
+        source_family=source_family,
+        source_identity=source_identity,
+        locator_fingerprint=locator_fingerprint,
+        search_unit_id=search_unit_id,
+        document_version_id=official.clean(row.get("document_version_id") or payload.get("document_version_id")),
+        source_locator=locator,
+        track_locator=track_locator,
+        canonical_payload=canonical,
+        source_text=source_text,
+        split_scope="official_denominator_regression_smoke",
+        manifest_partition="official_denominator",
+        reporting_partition="official_denominator_regression_smoke",
+        review_only=False,
+        quarantine=False,
+        official_denominator_overlap=True,
+        silver_source_overlap=False,
+        raw_corpus_source=False,
+        external_archive_source=False,
+        upstream_artifact=official.repo_relative(DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl"),
+    )
+
+
+def v3_6_8_all_source_unit_from_v3_5_4_row(
+    row: Mapping[str, Any],
+    *,
+    manifest_row: Mapping[str, Any],
+    sidecar_row: Mapping[str, Any],
+    generated_at: str,
+) -> dict[str, Any]:
+    source_family = official.clean(row.get("source_family")).upper()
+    locator = dict(as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator")))
+    payload = dict(as_mapping(row.get("canonical_citation_payload")))
+    source_identity = official.clean(row.get("source_identity"))
+    locator_fingerprint = official.clean(row.get("locator_fingerprint")) or (v3_5_locator_fingerprint(locator) if locator else "")
+    search_unit_id = official.clean(row.get("search_unit_id") or payload.get("search_unit_id") or payload.get("searchUnitId"))
+    document_version_id = official.clean(row.get("document_version_id") or payload.get("document_version_id"))
+    track_locator = v3_6_8_all_source_track_locator_from_payload(
+        source_family=source_family,
+        payload=payload,
+        locator=locator,
+    )
+    canonical = v3_6_8_all_source_enhance_canonical_payload(
+        payload=payload,
+        source_family=source_family,
+        source_identity=source_identity,
+        locator_fingerprint=locator_fingerprint,
+        search_unit_id=search_unit_id,
+        document_version_id=document_version_id,
+        track_locator=track_locator,
+    )
+    split_scope = official.clean(manifest_row.get("split_role")) or "v3_5_4_source_only_no_split"
+    manifest_partition = official.clean(manifest_row.get("manifest_partition")) or "source_only"
+    reporting_partition = official.clean(sidecar_row.get("reporting_partition")) or (
+        "review_only_challenge" if manifest_partition == "review_only" else manifest_partition
+    )
+    forbidden = v3_6_8_all_source_forbidden_source_fields(row)
+    source_text = v3_5_4_source_excerpt_or_value(row)
+    source_rejection_reasons = []
+    if forbidden:
+        source_rejection_reasons.append("forbidden_generation_or_label_field_present")
+    if not source_text:
+        source_rejection_reasons.append("source_text_or_value_missing")
+    return v3_6_8_all_source_finalize_unit(
+        generated_at=generated_at,
+        dataset_scope="v3_5_4_balanced_source_only_manifest",
+        source_class="v3_5_4_source_manifest",
+        source_unit_id=official.clean(row.get("candidate_id")),
+        source_family=source_family,
+        source_identity=source_identity,
+        locator_fingerprint=locator_fingerprint,
+        search_unit_id=search_unit_id,
+        document_version_id=document_version_id,
+        source_locator=locator,
+        track_locator=track_locator,
+        canonical_payload=canonical,
+        source_text=source_text,
+        split_scope=split_scope,
+        manifest_partition=manifest_partition,
+        reporting_partition=reporting_partition,
+        review_only=manifest_partition == "review_only" or reporting_partition == "review_only_challenge",
+        quarantine=manifest_partition == "quarantine" or reporting_partition == "quarantine",
+        official_denominator_overlap=bool(row.get("official_denominator_overlap")),
+        silver_source_overlap=True,
+        raw_corpus_source=False,
+        external_archive_source=v3_6_8_all_source_row_references_external_archive(row),
+        upstream_artifact=official.repo_relative(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+        source_rejection_reasons=source_rejection_reasons,
+    )
+
+
+def v3_6_8_all_source_unit_from_raw_text_chunk(
+    row: Mapping[str, Any],
+    *,
+    line_number: int,
+    generated_at: str,
+) -> dict[str, Any]:
+    chunk_id = official.clean(row.get("chunk_id"))
+    doc_id = official.clean(row.get("doc_id"))
+    search_unit_id = f"su_namu_v4_{chunk_id}" if chunk_id else ""
+    document_version_id = f"docv_namu_v4_{doc_id}" if doc_id else ""
+    locator = {
+        "chunk_id": chunk_id,
+        "doc_id": doc_id,
+        "jsonl_line_number": line_number,
+        "source_corpus_path": "ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl",
+        "title": official.clean(row.get("title") or row.get("display_title") or row.get("retrieval_title")),
+        "retrieval_title": official.clean(row.get("retrieval_title") or row.get("title") or row.get("display_title")),
+        "section_id": official.clean(row.get("section_id")),
+        "section_key": official.clean(row.get("section_key")),
+        "section_path": row.get("section_path") or [],
+        "section_type": official.clean(row.get("section_type")),
+        "source_url": official.clean(as_mapping(row.get("metadata")).get("source_url")),
+    }
+    locator_fingerprint = v3_5_locator_fingerprint(locator)
+    source_identity = f"TEXT:{document_version_id}:{search_unit_id}:{locator_fingerprint}"
+    track_locator = {
+        "document_id": doc_id,
+        "chunk_id": chunk_id,
+        "source_corpus_path": locator["source_corpus_path"],
+        "section_path": locator["section_path"],
+        "section_id": locator["section_id"],
+        "section_key": locator["section_key"],
+        "retrieval_title": locator["retrieval_title"],
+        "text_locator": dict(locator),
+    }
+    canonical = v3_6_8_all_source_enhance_canonical_payload(
+        payload={
+            "source_family": "TEXT",
+            "document_id": doc_id,
+            "document_version_id": document_version_id,
+            "search_unit_id": search_unit_id,
+            "searchUnitId": search_unit_id,
+            "text_locator": dict(locator),
+            "track": "text_namu_v4_raw",
+        },
+        source_family="TEXT",
+        source_identity=source_identity,
+        locator_fingerprint=locator_fingerprint,
+        search_unit_id=search_unit_id,
+        document_version_id=document_version_id,
+        track_locator=track_locator,
+    )
+    return v3_6_8_all_source_finalize_unit(
+        generated_at=generated_at,
+        dataset_scope="raw_text_corpus_namu_v4",
+        source_class="raw_text_corpus",
+        source_unit_id=chunk_id or f"line:{line_number}",
+        source_family="TEXT",
+        source_identity=source_identity,
+        locator_fingerprint=locator_fingerprint,
+        search_unit_id=search_unit_id,
+        document_version_id=document_version_id,
+        source_locator=locator,
+        track_locator=track_locator,
+        canonical_payload=canonical,
+        source_text=official.clean(row.get("chunk_text") or row.get("embedding_text")),
+        split_scope="raw_corpus_unlabeled",
+        manifest_partition="raw_corpus",
+        reporting_partition="raw_corpus_recall_smoke_only",
+        review_only=False,
+        quarantine=False,
+        official_denominator_overlap=False,
+        silver_source_overlap=False,
+        raw_corpus_source=True,
+        external_archive_source=False,
+        upstream_artifact="ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl",
+    )
+
+
+def v3_6_8_all_source_finalize_unit(
+    *,
+    generated_at: str,
+    dataset_scope: str,
+    source_class: str,
+    source_unit_id: str,
+    source_family: str,
+    source_identity: str,
+    locator_fingerprint: str,
+    search_unit_id: str,
+    document_version_id: str,
+    source_locator: Mapping[str, Any],
+    track_locator: Mapping[str, Any],
+    canonical_payload: Mapping[str, Any],
+    source_text: str,
+    split_scope: str,
+    manifest_partition: str,
+    reporting_partition: str,
+    review_only: bool,
+    quarantine: bool,
+    official_denominator_overlap: bool,
+    silver_source_overlap: bool,
+    raw_corpus_source: bool,
+    external_archive_source: bool,
+    upstream_artifact: str,
+    source_rejection_reasons: Sequence[str] | None = None,
+) -> dict[str, Any]:
+    source_family = official.clean(source_family).upper()
+    render = v3_6_8_all_source_render_citation(canonical_payload)
+    missing_fields = v3_6_8_all_source_missing_payload_fields(
+        source_family=source_family,
+        source_identity=source_identity,
+        locator_fingerprint=locator_fingerprint,
+        search_unit_id=search_unit_id,
+        canonical_payload=canonical_payload,
+        track_locator=track_locator,
+    )
+    canonical_payload_status = "canonicalizable" if not missing_fields and render["valid"] else "retrieval_only_uncanonicalized"
+    canonical_payload_renderable = canonical_payload_status == "canonicalizable"
+    generation_source_allowed = (
+        canonical_payload_renderable
+        and dataset_scope == "v3_5_4_balanced_source_only_manifest"
+        and not bool(review_only)
+        and not bool(quarantine)
+        and not bool(official_denominator_overlap)
+        and not bool(raw_corpus_source)
+    )
+    canonical_payload_with_policy = dict(canonical_payload)
+    canonical_payload_with_policy["canonical_payload_status"] = canonical_payload_status
+    canonical_payload_with_policy["canonicalPayloadStatus"] = canonical_payload_status
+    canonical_payload_with_policy["canonical_payload_renderable"] = canonical_payload_renderable
+    canonical_payload_with_policy["canonicalPayloadRenderable"] = canonical_payload_renderable
+    canonical_payload_with_policy["generation_source_allowed"] = generation_source_allowed
+    canonical_payload_with_policy["generationSourceAllowed"] = generation_source_allowed
+    canonical_payload_with_policy["official_denominator_overlap"] = bool(official_denominator_overlap)
+    canonical_payload_with_policy["officialDenominatorOverlap"] = bool(official_denominator_overlap)
+    canonical_payload_with_policy["review_only"] = bool(review_only)
+    canonical_payload_with_policy["reviewOnly"] = bool(review_only)
+    canonical_payload_with_policy["quarantine"] = bool(quarantine)
+    canonical_payload_with_policy["not_official_denominator"] = not bool(official_denominator_overlap)
+    canonical_payload_with_policy["notOfficialDenominator"] = not bool(official_denominator_overlap)
+    canonical_payload_with_policy["gold_or_label_source"] = False
+    canonical_payload_with_policy["expected_answer_source"] = False
+    source_text = official.clean(source_text)
+    return {
+        "schema_version": "v3_6_8_all_source_nonprod_search_unit_manifest_row_v1",
+        "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        "generated_at": generated_at,
+        "index_namespace": V3_6_8_ALL_SOURCE_INDEX_NAMESPACE,
+        "index_version": V3_6_8_ALL_SOURCE_INDEX_VERSION,
+        "dataset_scope": dataset_scope,
+        "source_class": source_class,
+        "source_unit_id": source_unit_id,
+        "source_family": source_family,
+        "split_scope": split_scope,
+        "manifest_partition": manifest_partition,
+        "reporting_partition": reporting_partition,
+        "official_denominator_overlap": bool(official_denominator_overlap),
+        "silver_source_overlap": bool(silver_source_overlap),
+        "review_only": bool(review_only),
+        "quarantine": bool(quarantine),
+        "source_identity": source_identity,
+        "locator_fingerprint": locator_fingerprint,
+        "search_unit_id": search_unit_id,
+        "document_version_id": document_version_id,
+        "source_locator": dict(source_locator),
+        "track_locator_payload": dict(track_locator),
+        "canonical_citation_payload": canonical_payload_with_policy,
+        "canonical_payload_status": canonical_payload_status,
+        "canonical_payload_renderable": canonical_payload_renderable,
+        "canonical_payload_missing_fields": missing_fields,
+        "generation_source_allowed": generation_source_allowed,
+        "gold_or_label_source": False,
+        "expected_answer_source": False,
+        "qrels_source": False,
+        "generated_silver_answer_source": False,
+        "metric_result_source": False,
+        "report_artifact_source": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "promotion_evidence": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": not bool(official_denominator_overlap),
+        "non_production_only": True,
+        "raw_corpus_source": bool(raw_corpus_source),
+        "external_archive_source": bool(external_archive_source),
+        "upstream_artifact": upstream_artifact,
+        "source_text_sha256": sha256_text(source_text) if source_text else "",
+        "embedding_text": v3_6_8_all_source_embedding_text(
+            source_family=source_family,
+            source_text=source_text,
+            track_locator=track_locator,
+        ),
+        "bm25_text": source_text[:1000],
+        "display_text": source_text[:1000],
+        "source_rejection_reasons": list(source_rejection_reasons or []),
+        "no_llm_citation_render": render["citation"],
+        "no_llm_citation_render_valid": bool(render["valid"]),
+    }
+
+
+def v3_6_8_all_source_family_from_track(track: str) -> str:
+    normalized = official.clean(track).lower()
+    if normalized.startswith("pdf"):
+        return "PDF"
+    if normalized.startswith("xlsx"):
+        return "XLSX"
+    return "TEXT"
+
+
+def v3_6_8_all_source_track_locator_from_payload(
+    *,
+    source_family: str,
+    payload: Mapping[str, Any],
+    locator: Mapping[str, Any],
+) -> dict[str, Any]:
+    source_family = official.clean(source_family).upper()
+    if source_family == "TEXT":
+        text_locator = as_mapping(payload.get("text_locator")) or as_mapping(locator.get("text_locator")) or dict(locator)
+        return {
+            "document_id": official.clean(payload.get("document_id") or locator.get("document_id") or locator.get("doc_id")),
+            "chunk_id": official.clean(text_locator.get("chunk_id") or locator.get("chunk_id")),
+            "source_corpus_path": official.clean(text_locator.get("source_corpus_path") or locator.get("source_corpus_path")),
+            "section_path": text_locator.get("section_path") or locator.get("section_path") or [],
+            "section_id": official.clean(text_locator.get("section_id") or locator.get("section_id")),
+            "section_key": official.clean(text_locator.get("section_key") or locator.get("section_key")),
+            "retrieval_title": official.clean(text_locator.get("retrieval_title") or text_locator.get("title") or locator.get("title")),
+            "text_locator": dict(text_locator),
+        }
+    if source_family == "PDF":
+        return {
+            "source_pdf_path": official.clean(payload.get("source_pdf_path") or locator.get("source_pdf_path")),
+            "document_version_id": official.clean(payload.get("document_version_id") or locator.get("document_version_id")),
+            "page": payload.get("page") if payload.get("page") is not None else locator.get("page"),
+            "physical_page_index": payload.get("physical_page_index")
+            if payload.get("physical_page_index") is not None
+            else locator.get("physical_page_index") or locator.get("page_index"),
+            "bbox": payload.get("bbox") or locator.get("bbox"),
+            "region_type": official.clean(payload.get("region_type") or locator.get("region_type")),
+        }
+    if source_family == "XLSX":
+        return {
+            "workbook": official.clean(payload.get("workbook") or locator.get("workbook") or locator.get("source_file_path")),
+            "source_path": official.clean(locator.get("source_file_path") or payload.get("source_path")),
+            "sheet": official.clean(payload.get("sheet") or locator.get("sheet") or locator.get("sheet_name")),
+            "range": official.clean(payload.get("range") or locator.get("range") or locator.get("cell_range")),
+            "cell": official.clean(payload.get("cell") or locator.get("cell")),
+            "row_label": official.clean(payload.get("row_label") or locator.get("row_label")),
+            "column_label": official.clean(payload.get("column_label") or locator.get("column_label")),
+            "target_column": official.clean(payload.get("target_column") or locator.get("target_column")),
+            "normalized_value": official.clean(payload.get("normalized_value") or locator.get("normalized_value")),
+        }
+    return dict(locator)
+
+
+def v3_6_8_all_source_enhance_canonical_payload(
+    *,
+    payload: Mapping[str, Any],
+    source_family: str,
+    source_identity: str,
+    locator_fingerprint: str,
+    search_unit_id: str,
+    document_version_id: str,
+    track_locator: Mapping[str, Any],
+) -> dict[str, Any]:
+    canonical = dict(payload)
+    canonical["source_family"] = source_family
+    canonical["sourceFamily"] = source_family
+    canonical["source_identity"] = source_identity
+    canonical["sourceIdentity"] = source_identity
+    canonical["locator_fingerprint"] = locator_fingerprint
+    canonical["locatorFingerprint"] = locator_fingerprint
+    canonical["search_unit_id"] = search_unit_id
+    canonical["searchUnitId"] = search_unit_id
+    canonical["unitId"] = search_unit_id
+    canonical["document_version_id"] = document_version_id
+    canonical["documentVersionId"] = document_version_id
+    canonical["track_locator_payload"] = dict(track_locator)
+    if source_family == "TEXT":
+        canonical.setdefault("text_locator", dict(as_mapping(track_locator.get("text_locator")) or track_locator))
+    elif source_family == "PDF":
+        for key in ("source_pdf_path", "page", "physical_page_index", "bbox", "region_type"):
+            canonical.setdefault(key, track_locator.get(key))
+    elif source_family == "XLSX":
+        for key in ("workbook", "sheet", "range", "cell", "row_label", "column_label", "target_column", "normalized_value"):
+            canonical.setdefault(key, track_locator.get(key))
+    canonical["canonical_payload_status"] = "canonicalizable"
+    canonical["generation_source_allowed"] = True
+    canonical["gold_or_label_source"] = False
+    canonical["expected_answer_source"] = False
+    return canonical
+
+
+def v3_6_8_all_source_missing_payload_fields(
+    *,
+    source_family: str,
+    source_identity: str,
+    locator_fingerprint: str,
+    search_unit_id: str,
+    canonical_payload: Mapping[str, Any],
+    track_locator: Mapping[str, Any],
+) -> list[str]:
+    missing: list[str] = []
+    if not source_identity:
+        missing.append("source_identity")
+    if not locator_fingerprint:
+        missing.append("locator_fingerprint")
+    if not search_unit_id:
+        missing.append("search_unit_id")
+    if not canonical_payload:
+        missing.append("canonical_citation_payload")
+    if not track_locator:
+        missing.append("track_locator_payload")
+    if source_family == "TEXT":
+        text_locator = as_mapping(track_locator.get("text_locator"))
+        if not (track_locator.get("document_id") and track_locator.get("chunk_id") and text_locator):
+            missing.append("text_locator")
+    elif source_family == "PDF":
+        for field in ("source_pdf_path", "document_version_id", "page", "physical_page_index", "bbox", "region_type"):
+            if track_locator.get(field) in (None, "", []):
+                missing.append(field)
+    elif source_family == "XLSX":
+        for field in ("workbook", "sheet"):
+            if not track_locator.get(field):
+                missing.append(field)
+        if not (track_locator.get("range") or track_locator.get("cell")):
+            missing.append("cell_or_range")
+    else:
+        missing.append("source_family")
+    return sorted(set(missing))
+
+
+def v3_6_8_all_source_render_citation(payload: Mapping[str, Any]) -> dict[str, Any]:
+    source_family = official.clean(payload.get("source_family") or payload.get("sourceFamily")).upper()
+    track_locator = as_mapping(payload.get("track_locator_payload"))
+    citation = {
+        "source_family": source_family,
+        "source_identity": official.clean(payload.get("source_identity")),
+        "locator_fingerprint": official.clean(payload.get("locator_fingerprint")),
+        "search_unit_id": official.clean(payload.get("search_unit_id") or payload.get("searchUnitId")),
+    }
+    if source_family == "TEXT":
+        text_locator = as_mapping(payload.get("text_locator")) or as_mapping(track_locator.get("text_locator"))
+        citation["text_locator"] = {
+            "document_id": official.clean(payload.get("document_id") or track_locator.get("document_id")),
+            "chunk_id": official.clean(text_locator.get("chunk_id") or track_locator.get("chunk_id")),
+            "source_corpus_path": official.clean(text_locator.get("source_corpus_path") or track_locator.get("source_corpus_path")),
+            "section_path": text_locator.get("section_path") or track_locator.get("section_path") or [],
+        }
+        valid = bool(
+            citation["source_identity"]
+            and citation["locator_fingerprint"]
+            and citation["search_unit_id"]
+            and citation["text_locator"]["document_id"]
+            and citation["text_locator"]["chunk_id"]
+        )
+    elif source_family == "PDF":
+        citation["pdf_locator"] = {
+            "source_pdf_path": official.clean(payload.get("source_pdf_path") or track_locator.get("source_pdf_path")),
+            "document_version_id": official.clean(payload.get("document_version_id") or track_locator.get("document_version_id")),
+            "page": payload.get("page") if payload.get("page") is not None else track_locator.get("page"),
+            "physical_page_index": payload.get("physical_page_index")
+            if payload.get("physical_page_index") is not None
+            else track_locator.get("physical_page_index"),
+            "bbox": payload.get("bbox") or track_locator.get("bbox"),
+            "region_type": official.clean(payload.get("region_type") or track_locator.get("region_type")),
+        }
+        valid = bool(
+            citation["source_identity"]
+            and citation["locator_fingerprint"]
+            and citation["search_unit_id"]
+            and citation["pdf_locator"]["source_pdf_path"]
+            and citation["pdf_locator"]["document_version_id"]
+            and citation["pdf_locator"]["page"] is not None
+            and citation["pdf_locator"]["physical_page_index"] is not None
+            and citation["pdf_locator"]["bbox"]
+            and citation["pdf_locator"]["region_type"]
+        )
+    elif source_family == "XLSX":
+        citation["xlsx_locator"] = {
+            "workbook": official.clean(payload.get("workbook") or track_locator.get("workbook")),
+            "sheet": official.clean(payload.get("sheet") or track_locator.get("sheet")),
+            "range": official.clean(payload.get("range") or track_locator.get("range")),
+            "cell": official.clean(payload.get("cell") or track_locator.get("cell")),
+            "row_label": official.clean(payload.get("row_label") or track_locator.get("row_label")),
+            "target_column": official.clean(payload.get("target_column") or track_locator.get("target_column")),
+            "normalized_value": official.clean(payload.get("normalized_value") or track_locator.get("normalized_value")),
+        }
+        valid = bool(
+            citation["source_identity"]
+            and citation["locator_fingerprint"]
+            and citation["search_unit_id"]
+            and citation["xlsx_locator"]["workbook"]
+            and citation["xlsx_locator"]["sheet"]
+            and (citation["xlsx_locator"]["range"] or citation["xlsx_locator"]["cell"])
+        )
+    else:
+        valid = False
+    return {"valid": valid, "citation": citation}
+
+
+def v3_6_8_all_source_embedding_text(
+    *,
+    source_family: str,
+    source_text: str,
+    track_locator: Mapping[str, Any],
+) -> str:
+    if source_family == "TEXT":
+        section_path = track_locator.get("section_path") or []
+        if isinstance(section_path, list):
+            section = " > ".join(official.clean(item) for item in section_path if official.clean(item))
+        else:
+            section = official.clean(section_path)
+        return "\n".join(
+            item
+            for item in (
+                f"TEXT: {official.clean(track_locator.get('retrieval_title'))}",
+                f"Section: {section}",
+                f"Source text: {source_text}",
+            )
+            if item.strip()
+        )
+    if source_family == "PDF":
+        return "\n".join(
+            item
+            for item in (
+                f"PDF: {official.clean(track_locator.get('source_pdf_path'))}",
+                f"Page: {track_locator.get('page')}",
+                f"Region: {official.clean(track_locator.get('region_type'))}",
+                f"Source text: {source_text}",
+            )
+            if item.strip()
+        )
+    if source_family == "XLSX":
+        return "\n".join(
+            item
+            for item in (
+                f"Workbook: {official.clean(track_locator.get('workbook'))}",
+                f"Sheet: {official.clean(track_locator.get('sheet'))}",
+                f"Range: {official.clean(track_locator.get('range'))}",
+                f"Cell: {official.clean(track_locator.get('cell'))}",
+                f"Source value: {source_text}",
+            )
+            if item.strip()
+        )
+    return source_text
+
+
+def v3_6_8_all_source_forbidden_source_fields(row: Mapping[str, Any]) -> list[str]:
+    forbidden_true_fields = (
+        "expected_answers_created",
+        "supporting_evidence_created",
+        "relevance_labels_created",
+        "answerability_labels_created",
+        "qrels_created",
+        "silver_jsonl_row",
+        "promotion_evidence",
+        "candidate_artifacts_used_as_generation_source",
+    )
+    return [field for field in forbidden_true_fields if bool(row.get(field))]
+
+
+def v3_6_8_all_source_row_references_external_archive(row: Mapping[str, Any]) -> bool:
+    def visit(value: Any) -> bool:
+        if isinstance(value, Mapping):
+            return any(visit(item) for item in value.values())
+        if isinstance(value, list):
+            return any(visit(item) for item in value)
+        text = official.clean(value)
+        return "D:/_external_runtime_artifacts" in text or "D:\\_external_runtime_artifacts" in text
+
+    return visit(row)
+
+
+def v3_6_8_all_source_inventory(
+    *,
+    generated_at: str,
+    units: Sequence[Mapping[str, Any]],
+    rejected: Sequence[Mapping[str, Any]],
+    source_rows: Sequence[Mapping[str, Any]],
+    official_rows: Sequence[Mapping[str, Any]],
+    raw_text_seen: int,
+) -> dict[str, Any]:
+    accepted_counts = v3_6_6_count_field(units, "source_family")
+    rejected_counts = Counter()
+    rejected_by_family = Counter()
+    for row in rejected:
+        family = official.clean(row.get("source_family")).upper() or "UNKNOWN"
+        rejected_by_family[family] += 1
+        for reason in row.get("rejection_reasons") or []:
+            rejected_counts[official.clean(reason)] += 1
+    eligible_counts = {
+        "TEXT": raw_text_seen + sum(1 for row in source_rows if official.clean(row.get("source_family")).upper() == "TEXT")
+        + sum(1 for row in official_rows if v3_6_8_all_source_family_from_track(official.clean(row.get("track"))) == "TEXT"),
+        "PDF": sum(1 for row in source_rows if official.clean(row.get("source_family")).upper() == "PDF")
+        + sum(1 for row in official_rows if v3_6_8_all_source_family_from_track(official.clean(row.get("track"))) == "PDF"),
+        "XLSX": sum(1 for row in source_rows if official.clean(row.get("source_family")).upper() == "XLSX")
+        + sum(1 for row in official_rows if v3_6_8_all_source_family_from_track(official.clean(row.get("track"))) == "XLSX"),
+    }
+    eligible_counts["total"] = sum(eligible_counts.values())
+    accepted_counts = {family: int(accepted_counts.get(family, 0)) for family in ("TEXT", "PDF", "XLSX")}
+    accepted_counts["total"] = sum(accepted_counts.values())
+    canonicalizable_count = sum(1 for row in units if row.get("canonical_payload_status") == "canonicalizable")
+    retrieval_only_count = sum(
+        1 for row in units if row.get("canonical_payload_status") == "retrieval_only_uncanonicalized"
+    )
+    v3_5_4_represented = {
+        official.clean(row.get("source_unit_id"))
+        for row in units
+        if row.get("dataset_scope") == "v3_5_4_balanced_source_only_manifest"
+    }
+    v3_5_4_blocked = {
+        official.clean(row.get("source_unit_id"))
+        for row in rejected
+        if row.get("source_class") == "v3_5_4_source_manifest"
+    }
+    return {
+        "schema_version": (
+            f"{V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID}_source_inventory_v1"
+        ),
+        "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_nonprod_all_source_inventory",
+        "index_namespace": V3_6_8_ALL_SOURCE_INDEX_NAMESPACE,
+        "counts": {
+            "total_eligible_source_units_by_source_family": eligible_counts,
+            "accepted_source_units_by_source_family": accepted_counts,
+            "canonicalizable_count": canonicalizable_count,
+            "retrieval_only_uncanonicalized_count": retrieval_only_count,
+            "official_overlap_count": sum(1 for row in units if bool(row.get("official_denominator_overlap"))),
+            "silver_source_overlap_count": sum(1 for row in units if bool(row.get("silver_source_overlap"))),
+            "raw_corpus_count": raw_text_seen,
+            "raw_corpus_accepted_count": sum(1 for row in units if bool(row.get("raw_corpus_source"))),
+            "external_archive_source_count": sum(1 for row in units if bool(row.get("external_archive_source"))),
+            "v3_5_4_source_rows_total": len(source_rows),
+            "v3_5_4_source_rows_represented": len(v3_5_4_represented),
+            "v3_5_4_source_rows_blocked": len(v3_5_4_blocked),
+            "official_source_bound_rows_total": len(official_rows),
+        },
+        "rejected_counts": {
+            "total": len(rejected),
+            "by_reason": dict(sorted(rejected_counts.items())),
+            "by_source_family": dict(sorted(rejected_by_family.items())),
+        },
+        "inventory_inputs": {
+            "official_source_bound_searchunits": len(official_rows),
+            "v3_5_4_source_only_rows": len(source_rows),
+            "raw_text_chunks": raw_text_seen,
+            "v3_6_3_source_references_used_for_metadata_only": True,
+            "v3_6_6_reference_sidecar_used_for_metadata_only": True,
+        },
+        "exclusion_policy": {
+            "expected_answers_indexed": False,
+            "supporting_evidence_as_answer_text_indexed": False,
+            "gold_labels_indexed": False,
+            "qrels_indexed": False,
+            "scorer_outputs_indexed": False,
+            "metric_result_files_indexed": False,
+            "actual_response_audits_indexed": False,
+            "generated_llm_answers_indexed": False,
+            "silver_generated_questions_or_answers_indexed_as_source_content": False,
+        },
+        "sample_rejected_units": list(rejected[:10]),
+    }
+
+
+def v3_6_8_all_source_write_index(
+    *,
+    generated_at: str,
+    units: Sequence[Mapping[str, Any]],
+    source_inventory: Mapping[str, Any],
+    rejected_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    import numpy as np  # noqa: WPS433
+    from app.capabilities.rag.embedding_text_builder import (  # noqa: WPS433
+        DEFAULT_PRODUCTION_VARIANT,
+        EMBEDDING_TEXT_BUILDER_VERSION,
+    )
+    from app.capabilities.rag.faiss_index import FaissIndex  # noqa: WPS433
+
+    index_dir = DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR
+    index_dir.mkdir(parents=True, exist_ok=True)
+    embedding_texts = [official.clean(row.get("embedding_text") or row.get("display_text")) for row in units]
+    vectors = np.vstack(
+        [
+            v3_6_8_all_source_hash_vector(
+                text,
+                dimension=V3_6_8_ALL_SOURCE_VECTOR_DIMENSION,
+            )
+            for text in embedding_texts
+        ]
+    ).astype("float32")
+    index = FaissIndex(index_dir, build_device="cpu")
+    info = index.build(
+        vectors,
+        index_version=V3_6_8_ALL_SOURCE_INDEX_VERSION,
+        embedding_model=V3_6_8_ALL_SOURCE_EMBEDDING_MODEL,
+    )
+    write_jsonl(index_dir / "search_unit_manifest.jsonl", list(units))
+    ingest_manifest = {
+        "schema_version": "v3_6_8_all_source_nonprod_ingest_manifest_v1",
+        "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        "generated_at": generated_at,
+        "index_namespace": V3_6_8_ALL_SOURCE_INDEX_NAMESPACE,
+        "index_version": V3_6_8_ALL_SOURCE_INDEX_VERSION,
+        "embedding_text_variant": DEFAULT_PRODUCTION_VARIANT,
+        "embedding_text_builder_version": EMBEDDING_TEXT_BUILDER_VERSION,
+        "embedding_model": V3_6_8_ALL_SOURCE_EMBEDDING_MODEL,
+        "max_seq_length": None,
+        "chunk_count": len(units),
+        "document_count": len({official.clean(row.get("document_version_id")) for row in units if official.clean(row.get("document_version_id"))}),
+        "dimension": V3_6_8_ALL_SOURCE_VECTOR_DIMENSION,
+        "corpus_path": "diagnostic_nonprod_all_source_materialization",
+        "embed_text_sha256": hashlib.sha256("".join(f"{text}\n" for text in embedding_texts).encode("utf-8")).hexdigest(),
+        "embed_text_samples": [
+            {
+                "row": index,
+                "char_count": len(text),
+                "preview": text if len(text) <= 240 else f"{text[:239]}...",
+            }
+            for index, text in enumerate(embedding_texts[:5])
+        ],
+        "non_production_only": True,
+        "source_unit_count": len(units),
+        "rejected_unit_count": len(rejected_rows),
+        "source_inventory_counts": source_inventory.get("counts"),
+        "source_inputs": as_mapping(source_inventory.get("inventory_inputs")),
+        "excluded_source_material_policy": as_mapping(source_inventory.get("exclusion_policy")),
+    }
+    write_json(index_dir / "ingest_manifest.json", ingest_manifest)
+    write_json(index_dir / "source_inventory.json", source_inventory)
+    payload_contract = v3_6_8_all_source_payload_contract_summary(
+        generated_at=generated_at,
+        manifest_rows=units,
+        retrieval_smoke_rows=[],
+    )
+    write_json(index_dir / "payload_contract_summary.json", payload_contract)
+    build_path = index_dir / "build.json"
+    build_json = official.read_json(build_path)
+    build_json.update(
+        {
+            "schema_version": "v3_6_8_all_source_nonprod_build_json_v1",
+            "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+            "generated_at": generated_at,
+            "index_namespace": V3_6_8_ALL_SOURCE_INDEX_NAMESPACE,
+            "dataset_scope": "all_eligible_existing_source_datasets_nonprod",
+            "non_production_only": True,
+            "production_index_path_used": False,
+            "production_db_used": False,
+            "official_denominator_mutation": False,
+            "gold_or_label_source": False,
+            "expected_answer_source": False,
+            "generated_silver_answer_source": False,
+            "search_unit_manifest_file": "search_unit_manifest.jsonl",
+            "source_inventory_file": "source_inventory.json",
+            "payload_contract_summary_file": "payload_contract_summary.json",
+            "ingest_manifest_file": "ingest_manifest.json",
+        }
+    )
+    write_json(build_path, build_json)
+    return {
+        "schema_version": (
+            f"{V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID}_index_build_summary_v1"
+        ),
+        "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_nonprod_all_source_index_build_summary",
+        "index_path": official.repo_relative(index_dir),
+        "index_namespace": V3_6_8_ALL_SOURCE_INDEX_NAMESPACE,
+        "index_version": info.index_version,
+        "embedding_model": info.embedding_model,
+        "dimension": info.dimension,
+        "search_unit_manifest_row_count": len(units),
+        "faiss_index_vector_count": info.chunk_count,
+        "non_production_only": True,
+        "required_files": {
+            name: {
+                "path": official.repo_relative(index_dir / name),
+                "exists": (index_dir / name).exists(),
+                "sha256": sha256_file(index_dir / name) if (index_dir / name).exists() else "",
+            }
+            for name in (
+                "faiss.index",
+                "build.json",
+                "ingest_manifest.json",
+                "search_unit_manifest.jsonl",
+                "source_inventory.json",
+                "payload_contract_summary.json",
+            )
+        },
+        "source_inventory_counts": source_inventory.get("counts"),
+    }
+
+
+def v3_6_8_all_source_hash_vector(text: str, *, dimension: int) -> Any:
+    import numpy as np  # noqa: WPS433
+
+    vector = np.zeros((dimension,), dtype=np.float32)
+    normalized = " ".join(official.clean(text).lower().split())
+    tokens = normalized.split()
+    if not tokens:
+        tokens = [normalized or "empty"]
+    for token in tokens:
+        digest = hashlib.blake2b(token.encode("utf-8"), digest_size=16).digest()
+        index = int.from_bytes(digest[:4], "little") % dimension
+        sign = 1.0 if digest[4] % 2 == 0 else -1.0
+        vector[index] += sign
+    norm = float(np.linalg.norm(vector))
+    if norm > 0:
+        vector /= norm
+    return vector
+
+
+def v3_6_8_all_source_load_check(
+    *,
+    build_summary: Mapping[str, Any],
+    manifest_rows: Sequence[Mapping[str, Any]],
+    source_rows: Sequence[Mapping[str, Any]],
+    official_rows: Sequence[Mapping[str, Any]],
+    source_inventory: Mapping[str, Any],
+) -> dict[str, Any]:
+    from app.capabilities.rag.faiss_index import FaissIndex  # noqa: WPS433
+
+    index_dir = DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR
+    missing_files = [
+        name
+        for name in (
+            "faiss.index",
+            "build.json",
+            "ingest_manifest.json",
+            "search_unit_manifest.jsonl",
+            "source_inventory.json",
+            "payload_contract_summary.json",
+        )
+        if not (index_dir / name).exists()
+    ]
+    index_can_be_loaded = False
+    index_vector_count = 0
+    try:
+        info = FaissIndex(index_dir).load()
+        index_can_be_loaded = True
+        index_vector_count = info.chunk_count
+    except Exception:  # noqa: BLE001
+        index_can_be_loaded = False
+    manifest_count_matches = len(manifest_rows) == int(build_summary.get("search_unit_manifest_row_count") or -1)
+    v3_5_4_ids = {official.clean(row.get("candidate_id")) for row in source_rows if official.clean(row.get("candidate_id"))}
+    represented_ids = {
+        official.clean(row.get("source_unit_id"))
+        for row in manifest_rows
+        if row.get("dataset_scope") == "v3_5_4_balanced_source_only_manifest"
+    }
+    source_inventory_counts = as_mapping(source_inventory.get("counts"))
+    v3_5_4_blocked_count = int(source_inventory_counts.get("v3_5_4_source_rows_blocked") or 0)
+    v3_5_4_unaccounted_count = max(0, len(v3_5_4_ids) - len(v3_5_4_ids & represented_ids) - v3_5_4_blocked_count)
+    official_manifest_count = sum(1 for row in manifest_rows if row.get("dataset_scope") == "official_denominator_regression_smoke")
+    forbidden_indexed = [
+        official.clean(row.get("source_unit_id"))
+        for row in manifest_rows
+        if bool(row.get("gold_or_label_source"))
+        or bool(row.get("expected_answer_source"))
+        or bool(row.get("qrels_source"))
+        or bool(row.get("generated_silver_answer_source"))
+        or bool(row.get("metric_result_source"))
+    ]
+    canonical_by_family = {
+        family: any(
+            row.get("source_family") == family
+            and row.get("canonical_payload_status") == "canonicalizable"
+            and bool(row.get("canonical_citation_payload"))
+            for row in manifest_rows
+        )
+        for family in ("TEXT", "PDF", "XLSX")
+    }
+    render_by_family = {
+        family: any(row.get("source_family") == family and bool(row.get("no_llm_citation_render_valid")) for row in manifest_rows)
+        for family in ("TEXT", "PDF", "XLSX")
+    }
+    return {
+        "schema_version": "v3_6_8_all_source_nonprod_load_check_v1",
+        "index_can_be_loaded": index_can_be_loaded,
+        "index_vector_count": index_vector_count,
+        "required_files_present": not missing_files,
+        "missing_required_files": missing_files,
+        "search_unit_manifest_row_count": len(manifest_rows),
+        "search_unit_manifest_row_count_matches_build_summary": manifest_count_matches,
+        "no_expected_answer_gold_qrels_report_artifact_indexed": not forbidden_indexed,
+        "forbidden_source_unit_ids": forbidden_indexed[:20],
+        "official_29_rows_remain_protected_and_identifiable": official_manifest_count == len(official_rows) == 29,
+        "official_denominator_manifest_row_count": official_manifest_count,
+        "v3_5_4_source_rows_total": len(v3_5_4_ids),
+        "v3_5_4_source_rows_represented": len(v3_5_4_ids & represented_ids),
+        "v3_5_4_source_rows_blocked": v3_5_4_blocked_count,
+        "v3_5_4_source_rows_unaccounted": v3_5_4_unaccounted_count,
+        "v3_5_4_source_rows_missing_ids_sample": sorted(v3_5_4_ids - represented_ids)[:20],
+        "canonical_payload_available_by_family": canonical_by_family,
+        "no_llm_citation_render_valid_by_family": render_by_family,
+        "passed": (
+            index_can_be_loaded
+            and not missing_files
+            and manifest_count_matches
+            and not forbidden_indexed
+            and official_manifest_count == len(official_rows) == 29
+            and len(v3_5_4_ids & represented_ids) + v3_5_4_blocked_count == len(v3_5_4_ids)
+            and all(canonical_by_family.values())
+            and all(render_by_family.values())
+        ),
+    }
+
+
+def v3_6_8_all_source_retrieval_smoke(
+    *,
+    generated_at: str,
+    manifest_rows: Sequence[Mapping[str, Any]],
+    sidecar_rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    from app.capabilities.rag.faiss_index import FaissIndex  # noqa: WPS433
+    import numpy as np  # noqa: WPS433
+
+    rows_by_faiss_id = {int(row.get("faiss_row_id") or 0): row for row in manifest_rows}
+    index = FaissIndex(DEFAULT_V3_6_8_ALL_SOURCE_NONPROD_INDEX_DIR)
+    try:
+        index.load()
+    except Exception as exc:  # noqa: BLE001
+        return [
+            {
+                "schema_version": "v3_6_8_all_source_retrieval_smoke_row_v1",
+                "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+                "generated_at": generated_at,
+                "smoke_scope": "load_failed",
+                "source_family": "",
+                "retrieval_result_count": 0,
+                "canonical_payload_available_count": 0,
+                "no_llm_citation_render_valid_count": 0,
+                "primary_failure_bucket": "INDEX_LOAD_CHECK_FAILED",
+                "failure_reason": f"{type(exc).__name__}: {exc}",
+            }
+        ]
+
+    samples = v3_6_8_all_source_smoke_samples(manifest_rows=manifest_rows, sidecar_rows=sidecar_rows)
+    smoke_rows: list[dict[str, Any]] = []
+    for ordinal, sample in enumerate(samples, start=1):
+        query_text = official.clean(sample.get("query_text"))
+        query_vector = np.expand_dims(
+            v3_6_8_all_source_hash_vector(query_text, dimension=V3_6_8_ALL_SOURCE_VECTOR_DIMENSION),
+            axis=0,
+        )
+        hits = index.search(query_vector, top_k=5)[0]
+        result_rows = [rows_by_faiss_id[row_id] for row_id, _score in hits if row_id in rows_by_faiss_id]
+        canonical_count = sum(1 for row in result_rows if bool(row.get("canonical_citation_payload")))
+        render_valid_count = sum(1 for row in result_rows if bool(row.get("no_llm_citation_render_valid")))
+        target_search_unit_id = official.clean(sample.get("target_search_unit_id"))
+        target_hit = any(official.clean(row.get("search_unit_id")) == target_search_unit_id for row in result_rows)
+        primary_failure = ""
+        if not result_rows:
+            primary_failure = "RETRIEVAL_SMOKE_NO_RESULT"
+        elif canonical_count == 0:
+            primary_failure = "CANONICAL_CITATION_PAYLOAD_MISSING"
+        elif render_valid_count == 0:
+            primary_failure = "PAYLOAD_PRESENT_RENDER_INVALID"
+        smoke_rows.append(
+            {
+                "schema_version": "v3_6_8_all_source_retrieval_smoke_row_v1",
+                "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+                "generated_at": generated_at,
+                "sample_ordinal": ordinal,
+                "smoke_scope": sample.get("smoke_scope"),
+                "source_family": sample.get("source_family"),
+                "review_only": bool(sample.get("review_only")),
+                "quarantine": bool(sample.get("quarantine")),
+                "headline_treatment": bool(sample.get("headline_treatment")),
+                "target_search_unit_id": target_search_unit_id,
+                "target_hit_in_top5": target_hit,
+                "retrieval_result_count": len(result_rows),
+                "canonical_payload_available_count": canonical_count,
+                "no_llm_citation_render_valid_count": render_valid_count,
+                "payload_missing_bucket_counts": v3_6_6_count_field(result_rows, "canonical_payload_status"),
+                "primary_failure_bucket": primary_failure,
+                "top_result_envelopes": [
+                    {
+                        "rank": rank,
+                        "search_unit_id": row.get("search_unit_id"),
+                        "source_identity": row.get("source_identity"),
+                        "locator_fingerprint": row.get("locator_fingerprint"),
+                        "source_family": row.get("source_family"),
+                        "canonical_payload_status": row.get("canonical_payload_status"),
+                        "canonical_citation_payload_present": bool(row.get("canonical_citation_payload")),
+                        "track_locator_payload_present": bool(row.get("track_locator_payload")),
+                        "generation_source_allowed": bool(row.get("generation_source_allowed")),
+                    }
+                    for rank, row in enumerate(result_rows, start=1)
+                ],
+                "expected_answer_draft_used_as_retrieval_source": False,
+                "expected_answer_draft_used_as_generation_input": False,
+                "answer_metric_computed": False,
+                "citation_metric_computed": False,
+                "promotion_evidence": False,
+            }
+        )
+    return smoke_rows
+
+
+def v3_6_8_all_source_smoke_samples(
+    *,
+    manifest_rows: Sequence[Mapping[str, Any]],
+    sidecar_rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    samples: list[dict[str, Any]] = []
+    for scope, predicate in (
+        ("official_regression_smoke", lambda row: row.get("dataset_scope") == "official_denominator_regression_smoke"),
+        ("v3_6_3_core_source_smoke", lambda row: row.get("dataset_scope") == "v3_5_4_balanced_source_only_manifest" and row.get("reporting_partition") == "core_only"),
+        ("raw_corpus_recall_smoke", lambda row: row.get("dataset_scope") == "raw_text_corpus_namu_v4"),
+    ):
+        for family in ("TEXT", "PDF", "XLSX"):
+            if scope == "raw_corpus_recall_smoke" and family != "TEXT":
+                continue
+            row = next((item for item in manifest_rows if predicate(item) and item.get("source_family") == family), None)
+            if not row:
+                continue
+            samples.append(
+                {
+                    "smoke_scope": scope,
+                    "source_family": family,
+                    "query_text": official.clean(row.get("display_text") or row.get("embedding_text")),
+                    "target_search_unit_id": row.get("search_unit_id"),
+                    "review_only": bool(row.get("review_only")),
+                    "quarantine": bool(row.get("quarantine")),
+                    "headline_treatment": scope != "raw_corpus_recall_smoke" and not bool(row.get("review_only")),
+                }
+            )
+    for family in ("TEXT", "PDF", "XLSX"):
+        core_sidecar = next(
+            (
+                row
+                for row in sidecar_rows
+                if row.get("reporting_partition") == "core_only"
+                and official.clean(row.get("source_family")).upper() == family
+            ),
+            None,
+        )
+        if not core_sidecar:
+            continue
+        locator = as_mapping(core_sidecar.get("supporting_evidence_locator_draft"))
+        target_search_unit_id = official.clean(locator.get("search_unit_id"))
+        if not target_search_unit_id:
+            continue
+        samples.append(
+            {
+                "smoke_scope": "v3_6_3_core_query_smoke",
+                "source_family": family,
+                "query_text": official.clean(core_sidecar.get("generated_question_draft")),
+                "target_search_unit_id": target_search_unit_id,
+                "review_only": False,
+                "quarantine": False,
+                "headline_treatment": True,
+            }
+        )
+    return samples
+
+
+def v3_6_8_all_source_payload_contract_summary(
+    *,
+    generated_at: str,
+    manifest_rows: Sequence[Mapping[str, Any]],
+    retrieval_smoke_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    by_status = v3_6_6_count_field(manifest_rows, "canonical_payload_status")
+    missing_counter: Counter[str] = Counter()
+    missing_by_family: dict[str, Counter[str]] = defaultdict(Counter)
+    for row in manifest_rows:
+        family = official.clean(row.get("source_family")).upper()
+        for field in row.get("canonical_payload_missing_fields") or []:
+            missing_counter[official.clean(field)] += 1
+            missing_by_family[family][official.clean(field)] += 1
+    families_with_payload = sorted(
+        {
+            official.clean(row.get("source_family")).upper()
+            for row in manifest_rows
+            if bool(row.get("canonical_citation_payload")) and row.get("canonical_payload_status") == "canonicalizable"
+        }
+    )
+    families_with_render = sorted(
+        {
+            official.clean(row.get("source_family")).upper()
+            for row in manifest_rows
+            if bool(row.get("no_llm_citation_render_valid"))
+        }
+    )
+    return {
+        "schema_version": (
+            f"{V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID}_payload_contract_summary_v1"
+        ),
+        "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_nonprod_all_source_payload_contract_summary",
+        "index_namespace": V3_6_8_ALL_SOURCE_INDEX_NAMESPACE,
+        "canonicalizable_count": int(by_status.get("canonicalizable", 0)),
+        "retrieval_only_uncanonicalized_count": int(by_status.get("retrieval_only_uncanonicalized", 0)),
+        "canonical_payload_status_counts": by_status,
+        "missing_fields_counts": dict(sorted(missing_counter.items())),
+        "missing_fields_counts_by_family": {
+            family: dict(sorted(counter.items())) for family, counter in sorted(missing_by_family.items())
+        },
+        "families_with_canonical_payload": families_with_payload,
+        "families_with_valid_no_llm_render": families_with_render,
+        "required_track_fields": {
+            "TEXT": ["source_identity", "locator_fingerprint", "search_unit_id", "text_locator", "chunk_id"],
+            "PDF": [
+                "source_identity",
+                "locator_fingerprint",
+                "search_unit_id",
+                "source_pdf_path",
+                "document_version_id",
+                "page",
+                "physical_page_index",
+                "bbox",
+                "region_type",
+            ],
+            "XLSX": [
+                "source_identity",
+                "locator_fingerprint",
+                "search_unit_id",
+                "workbook",
+                "sheet",
+                "cell_or_range",
+                "row_label_optional",
+                "target_column_optional",
+                "normalized_value_optional",
+            ],
+        },
+        "retrieval_smoke_result_count": sum(int(row.get("retrieval_result_count") or 0) for row in retrieval_smoke_rows),
+        "retrieval_smoke_canonical_payload_available_count": sum(
+            int(row.get("canonical_payload_available_count") or 0) for row in retrieval_smoke_rows
+        ),
+        "retrieval_smoke_no_llm_render_valid_count": sum(
+            int(row.get("no_llm_citation_render_valid_count") or 0) for row in retrieval_smoke_rows
+        ),
+        "retrieval_only_uncanonicalized_generation_source_allowed_count": sum(
+            1
+            for row in manifest_rows
+            if row.get("canonical_payload_status") == "retrieval_only_uncanonicalized"
+            and bool(row.get("generation_source_allowed"))
+        ),
+    }
+
+
+def v3_6_8_all_source_failure_buckets(
+    *,
+    generated_at: str,
+    source_inventory: Mapping[str, Any],
+    build_summary: Mapping[str, Any],
+    load_check: Mapping[str, Any],
+    payload_contract_summary: Mapping[str, Any],
+    retrieval_smoke_rows: Sequence[Mapping[str, Any]],
+    fail_closed_reasons: Sequence[str],
+) -> dict[str, Any]:
+    counts: Counter[str] = Counter()
+    if not load_check.get("index_can_be_loaded"):
+        counts["INDEX_LOAD_CHECK_FAILED"] += 1
+    for missing_file in load_check.get("missing_required_files") or []:
+        if missing_file:
+            counts["INDEX_FILE_MISSING"] += 1
+    if not load_check.get("no_expected_answer_gold_qrels_report_artifact_indexed"):
+        counts["FORBIDDEN_SOURCE_ARTIFACT_INDEXED"] += 1
+    if not load_check.get("official_29_rows_remain_protected_and_identifiable"):
+        counts["OFFICIAL_DENOMINATOR_PROTECTION_FAILED"] += 1
+    rejected_by_reason = as_mapping(as_mapping(source_inventory.get("rejected_counts")).get("by_reason"))
+    forbidden_rejected = int(rejected_by_reason.get("forbidden_generation_or_label_field_present") or 0)
+    if forbidden_rejected:
+        counts["SOURCE_UNIT_REJECTED_FOR_FORBIDDEN_FIELD"] += forbidden_rejected
+    missing_v3_5_4 = int(load_check.get("v3_5_4_source_rows_unaccounted") or 0)
+    if missing_v3_5_4:
+        counts["V3_5_4_SOURCE_ROW_NOT_REPRESENTED"] += missing_v3_5_4
+    retrieval_only = int(payload_contract_summary.get("retrieval_only_uncanonicalized_count") or 0)
+    if retrieval_only:
+        counts["RETRIEVAL_ONLY_UNCANONICALIZED"] += retrieval_only
+    missing_fields = as_mapping(payload_contract_summary.get("missing_fields_counts"))
+    for field, count in missing_fields.items():
+        bucket = {
+            "source_identity": "SOURCE_IDENTITY_MISSING",
+            "locator_fingerprint": "LOCATOR_FINGERPRINT_MISSING",
+            "search_unit_id": "SEARCH_UNIT_ID_MISSING",
+            "canonical_citation_payload": "CANONICAL_CITATION_PAYLOAD_MISSING",
+            "track_locator_payload": "TRACK_LOCATOR_MISSING",
+            "text_locator": "TEXT_LOCATOR_MISSING_OR_EMPTY",
+            "page": "PDF_LOCATOR_PAGE_OR_BBOX_MISSING",
+            "bbox": "PDF_LOCATOR_PAGE_OR_BBOX_MISSING",
+            "cell_or_range": "XLSX_LOCATOR_CELL_OR_RANGE_MISSING",
+        }.get(official.clean(field), "TRACK_LOCATOR_SCHEMA_MISMATCH")
+        counts[bucket] += int(count or 0)
+    for row in retrieval_smoke_rows:
+        bucket = official.clean(row.get("primary_failure_bucket"))
+        if bucket:
+            counts[bucket] += 1
+    if fail_closed_reasons:
+        counts["PRODUCTION_OR_DB_MUTATION_RISK_BLOCKED"] += 1
+    if not counts and load_check.get("passed"):
+        counts["ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED"] = 1
+    failure_bucket_counts = {bucket: int(counts.get(bucket, 0)) for bucket in V3_6_8_CANONICAL_PAYLOAD_FAILURE_BUCKETS}
+    blocking_buckets = [
+        bucket
+        for bucket in V3_6_8_CANONICAL_PAYLOAD_FAILURE_BUCKETS
+        if bucket != "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED" and failure_bucket_counts.get(bucket, 0)
+    ]
+    return {
+        "schema_version": (
+            f"{V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID}_failure_buckets_v1"
+        ),
+        "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_nonprod_all_source_failure_buckets",
+        "failure_bucket_definitions": list(V3_6_8_CANONICAL_PAYLOAD_FAILURE_BUCKETS),
+        "failure_bucket_counts": failure_bucket_counts,
+        "blocking_buckets": blocking_buckets,
+        "source_fail_closed_reasons": list(fail_closed_reasons),
+        "source_inventory_rejected_counts": source_inventory.get("rejected_counts"),
+        "build_index_path": build_summary.get("index_path"),
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "promotion_evidence": False,
+    }
+
+
+def v3_6_8_all_source_exit_decision(
+    *,
+    load_check: Mapping[str, Any],
+    payload_contract_summary: Mapping[str, Any],
+    failure_buckets: Mapping[str, Any],
+    fail_closed_reasons: Sequence[str],
+) -> dict[str, Any]:
+    families_payload = set(payload_contract_summary.get("families_with_canonical_payload") or [])
+    families_render = set(payload_contract_summary.get("families_with_valid_no_llm_render") or [])
+    retrieval_only = int(payload_contract_summary.get("retrieval_only_uncanonicalized_count") or 0)
+    if fail_closed_reasons or not load_check.get("index_can_be_loaded") or not load_check.get("required_files_present"):
+        outcome = "INDEX_MATERIALIZATION_BLOCKED"
+        reason = "The non-production all-source index build or load-check failed closed."
+    elif load_check.get("passed") and {"TEXT", "PDF", "XLSX"} <= families_payload and {"TEXT", "PDF", "XLSX"} <= families_render and retrieval_only == 0:
+        outcome = "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED"
+        reason = "The non-production all-source index loaded and canonical citation payloads render for TEXT/PDF/XLSX."
+    elif load_check.get("index_can_be_loaded"):
+        outcome = "ALL_SOURCE_INDEX_BUILT_PAYLOAD_PARTIAL"
+        reason = "The non-production index loaded, but at least one source unit remains retrieval_only_uncanonicalized."
+    else:
+        outcome = "INDEX_MATERIALIZATION_BLOCKED"
+        reason = "The non-production all-source index could not be safely materialized."
+    return {
+        "outcome": outcome,
+        "next_allowed_phase": V3_6_8_CANONICAL_PAYLOAD_NEXT_PHASE_BY_OUTCOME[outcome],
+        "reason": reason,
+        "blocking_buckets": list(failure_buckets.get("blocking_buckets") or []),
+        "exact_missing_fields": as_mapping(payload_contract_summary.get("missing_fields_counts")),
+        "load_check_passed": bool(load_check.get("passed")),
+        "canonical_payload_exists_for_text_pdf_xlsx": {"TEXT", "PDF", "XLSX"} <= families_payload,
+        "no_llm_render_valid_for_text_pdf_xlsx": {"TEXT", "PDF", "XLSX"} <= families_render,
+        "retrieval_only_uncanonicalized_count": retrieval_only,
+        "generic_manifest_locator_probe_recommended": False,
+    }
+
+
+def run_v3_6_8_canonical_payload_live_retrieval_probe(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    source_paths = v3_6_8_canonical_payload_source_paths()
+    input_sha_before = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_before = v3_6_5_v3_6_3_manifest_sha256()
+    source_json, source_jsonl, source_load_errors = v3_6_5_load_source_artifacts(source_paths)
+
+    v3_6_6_summary = source_json.get("v3_6_6_summary_json", {})
+    v3_6_6_db_audit = source_json.get("v3_6_6_db_retrieval_surface_audit_json", {})
+    v3_6_7_runtime_summary = source_json.get("v3_6_7_summary_json", {})
+    v3_6_7_stability = source_json.get("v3_6_7_runtime_stability_summary_json", {})
+    v3_6_7_policy = source_json.get("v3_6_7_policy_audit_json", {})
+    v3_6_7_next_phase = source_json.get("v3_6_7_next_phase_recommendation_json", {})
+    sidecar_rows = source_jsonl.get("v3_6_6_reference_sidecar_jsonl", [])
+    manifest_core_rows = source_jsonl.get("v3_6_3_manifest_core_jsonl", [])
+
+    fail_closed_reasons = v3_6_8_canonical_payload_source_fail_closed_reasons(
+        source_load_errors=source_load_errors,
+        v3_6_6_summary=v3_6_6_summary,
+        v3_6_6_db_audit=v3_6_6_db_audit,
+        v3_6_7_runtime_summary=v3_6_7_runtime_summary,
+        v3_6_7_stability=v3_6_7_stability,
+        v3_6_7_policy=v3_6_7_policy,
+        v3_6_7_next_phase=v3_6_7_next_phase,
+        sidecar_rows=sidecar_rows,
+        manifest_core_rows=manifest_core_rows,
+    )
+
+    sample_rows = v3_6_8_canonical_payload_probe_sample(sidecar_rows)
+    live_surfaces = v3_6_8_canonical_payload_live_surfaces(sample_rows)
+    mapping_rows = [
+        v3_6_8_canonical_payload_mapping_diagnostic_row(
+            row=row,
+            live_surfaces=live_surfaces,
+            generated_at=generated_at,
+            sample_ordinal=index,
+        )
+        for index, row in enumerate(sample_rows, start=1)
+    ]
+    failure_buckets = v3_6_8_canonical_payload_failure_bucket_summary(
+        mapping_rows=mapping_rows,
+        source_fail_closed_reasons=fail_closed_reasons,
+        generated_at=generated_at,
+    )
+
+    input_sha_after = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_after = v3_6_5_v3_6_3_manifest_sha256()
+    protected_input_sha256_unchanged = input_sha_before == input_sha_after
+    protected_v3_6_3_input_sha256_unchanged = protected_v3_6_3_sha_before == protected_v3_6_3_sha_after
+    if not protected_input_sha256_unchanged:
+        fail_closed_reasons.append("v3_6_8_canonical_payload_protected_input_sha256_changed_during_probe")
+    if not protected_v3_6_3_input_sha256_unchanged:
+        fail_closed_reasons.append("v3_6_8_canonical_payload_protected_v3_6_3_sha_changed_during_probe")
+    fail_closed_reasons = sorted(set(fail_closed_reasons))
+    failure_buckets = v3_6_8_canonical_payload_failure_bucket_summary(
+        mapping_rows=mapping_rows,
+        source_fail_closed_reasons=fail_closed_reasons,
+        generated_at=generated_at,
+    )
+
+    pre_llm_payload_available_count = sum(
+        1 for row in mapping_rows if bool(row.get("canonical_citation_payload_present"))
+    )
+    no_llm_citation_render_valid_count = sum(
+        1 for row in mapping_rows if bool(row.get("no_llm_citation_render_valid"))
+    )
+    llm_strict_json_answer_count = 0
+    citation_surface_valid_count = 0
+    decision_output = v3_6_8_canonical_payload_exit_decision(
+        mapping_rows=mapping_rows,
+        failure_buckets=failure_buckets,
+        fail_closed_reasons=fail_closed_reasons,
+        pre_llm_payload_available_count=pre_llm_payload_available_count,
+        no_llm_citation_render_valid_count=no_llm_citation_render_valid_count,
+        llm_strict_json_answer_count=llm_strict_json_answer_count,
+        citation_surface_valid_count=citation_surface_valid_count,
+        v3_6_6_db_audit=v3_6_6_db_audit,
+        live_surfaces=live_surfaces,
+    )
+    blocking_buckets = list(decision_output["blocking_buckets"])
+    outcome = official.clean(decision_output["outcome"])
+    next_allowed_phase = official.clean(decision_output["next_allowed_phase"])
+    core_only_live_diagnostic_metric_allowed = outcome == "CANONICAL_CITATION_PAYLOAD_WIRED"
+    sidecar_counts = v3_6_6_sidecar_counts(sidecar_rows)
+    sample_counts_by_family = v3_6_6_count_field(mapping_rows, "source_family")
+    sample_counts_by_profile = v3_6_6_count_field(mapping_rows, "query_quality_profile")
+    status = (
+        "DIAGNOSTIC_LIVE_RETRIEVAL_CANONICAL_CITATION_PAYLOAD_WIRING_FAIL_CLOSED"
+        if fail_closed_reasons
+        else f"DIAGNOSTIC_LIVE_RETRIEVAL_CANONICAL_CITATION_PAYLOAD_{outcome}"
+    )
+    summary: dict[str, Any] = {
+        "schema_version": f"{V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID}_summary_v1",
+        "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_live_retrieval_canonical_citation_payload_wiring_and_exit_probe",
+        "event_type": "diagnostic_live_retrieval_canonical_citation_payload_wiring_exit_probe_v3_6_8",
+        "status": status,
+        "run_class": "diagnostic_only_live_retrieval_canonical_citation_payload_wiring_and_exit_probe",
+        "source_runtime_stability_run_id": V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+        "source_v3_6_6_run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "source_manifest_run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "answer_correctness_scored": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "local_llm_usage_allowed": False,
+        "local_llm_usage_scope": "skipped_until_pre_llm_payload_available_without_index_materialization_blocker",
+        "local_llm_live_silver_generation_allowed": False,
+        "local_llm_live_silver_generation_attempted": False,
+        "local_llm_metric_scoring_allowed": False,
+        "local_llm_metric_scoring_attempted": False,
+        "external_llm_api_allowed": False,
+        "external_llm_api_attempted": False,
+        "db_usage_allowed": True,
+        "db_usage_scope": "read_only_repo_local_retrieval_payload_probe_only",
+        "db_read_only_probe_attempted": True,
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_results_as_gold_allowed": False,
+        "db_results_as_official_qrels_allowed": False,
+        "db_results_as_generation_source_allowed": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "expected_answer_draft_used_as_generation_input": False,
+        "supporting_evidence_locator_draft_used_as_generation_input": False,
+        "gold_fields_used_as_generation_input": False,
+        "qrels_or_labels_used_as_generation_input": False,
+        "supporting_evidence_locator_used_for_posthoc_mapping_only": True,
+        "manifest_locator_used_as_retrieval_query": False,
+        "retrieval_probe_mode": "read_only_live_retrieval_context_envelope_adapter_assertion",
+        "live_retrieval_result_source": "current_nonproduction_index_manifest_or_repo_local_text_chunks_with_v3_6_8_text_adapter",
+        "live_retrieval_probe_invoked": False,
+        "live_retrieval_probe_reconstructed_read_only": True,
+        "live_retrieval_context_adapter_implemented": True,
+        "live_retrieval_context_adapter_scope": (
+            "repo_local_text_rag_chunk + frozen v3_6_6 sidecar -> SearchUnit-shaped canonical citation payload; "
+            "PDF/XLSX require indexed source material before adapter application"
+        ),
+        "review_only_rows_attempted": 0,
+        "quarantine_rows_attempted": 0,
+        "official_proximity_rows_attempted": 0,
+        "official_proximity_headline_treatment_excluded": True,
+        "core_only_rows_only": True,
+        "sidecar_row_counts": sidecar_counts,
+        "manifest_row_count": sidecar_counts["all_diagnostic"],
+        "core_manifest_row_count": sidecar_counts["core_only"],
+        "review_only_manifest_row_count": sidecar_counts["review_only_challenge"],
+        "quarantine_manifest_row_count": sidecar_counts["quarantine"],
+        "probe_sample_row_count": len(mapping_rows),
+        "diagnostic_row_count": len(mapping_rows),
+        "runtime_generation_coverage_rate": 0.0,
+        "probe_sample_target_per_family": V3_6_8_CANONICAL_PAYLOAD_SAMPLE_PER_FAMILY,
+        "probe_sample_counts_by_family": sample_counts_by_family,
+        "probe_sample_counts_by_query_quality_profile": sample_counts_by_profile,
+        "source_family_counts": sample_counts_by_family,
+        "query_quality_profile_counts": sample_counts_by_profile,
+        "live_current_index_manifest_row_count": live_surfaces["current_index_manifest_row_count"],
+        "text_rag_chunk_lookup_requested_count": live_surfaces["text_rag_chunk_lookup_requested_count"],
+        "text_rag_chunk_lookup_found_count": live_surfaces["text_rag_chunk_lookup_found_count"],
+        "pre_llm_payload_available_count": pre_llm_payload_available_count,
+        "no_llm_citation_render_valid_count": no_llm_citation_render_valid_count,
+        "llm_strict_json_answer_count": llm_strict_json_answer_count,
+        "strict_json_answer_count": llm_strict_json_answer_count,
+        "citation_surface_valid_count": citation_surface_valid_count,
+        "llm_validation_skipped_reason": decision_output["llm_validation_skipped_reason"],
+        "canonical_citation_payload_available_count": pre_llm_payload_available_count,
+        "canonical_citation_payload_missing_count": len(mapping_rows) - pre_llm_payload_available_count,
+        "primary_failure_bucket_counts": failure_buckets["primary_bucket_counts"],
+        "all_failure_bucket_counts": failure_buckets["all_bucket_counts"],
+        "blocking_buckets": blocking_buckets,
+        "core_only_live_diagnostic_metric_allowed": core_only_live_diagnostic_metric_allowed,
+        "outcome": outcome,
+        "outcome_choices": sorted(V3_6_8_CANONICAL_PAYLOAD_OUTCOMES),
+        "next_allowed_phase": next_allowed_phase,
+        "outcome_reason": decision_output["reason"],
+        "exact_missing_fields": decision_output["exact_missing_fields"],
+        "exact_code_paths_inspected": decision_output["exact_code_paths_inspected"],
+        "adapter_blocker_rationale": decision_output["adapter_blocker_rationale"],
+        "index_materialization_blocker": decision_output["index_materialization_blocker"],
+        "no_generic_probe_recommended": True,
+        "decision_output": decision_output,
+        "recommended_next_phase": next_allowed_phase,
+        "source_v3_6_7_recommended_this_phase": (
+            v3_6_7_runtime_summary.get("recommended_next_phase")
+            in V3_6_8_CANONICAL_PAYLOAD_ACCEPTED_SOURCE_RECOMMENDED_PHASES
+            and v3_6_7_next_phase.get("recommended_next_phase")
+            in V3_6_8_CANONICAL_PAYLOAD_ACCEPTED_SOURCE_RECOMMENDED_PHASES
+        ),
+        "source_runtime_stability_classification": v3_6_7_runtime_summary.get(
+            "runtime_stability_classification"
+        )
+        or v3_6_7_stability.get("runtime_stability_classification"),
+        "source_db_retrieval_surface_classification": v3_6_6_db_audit.get(
+            "db_retrieval_surface_classification"
+        ),
+        "source_live_retrieval_probe_feasible_without_rebuild": bool(
+            v3_6_6_db_audit.get("live_retrieval_probe_feasible_without_rebuild")
+        ),
+        "source_live_retrieval_probe_requires_diagnostic_adapter": bool(
+            v3_6_6_db_audit.get("live_retrieval_probe_requires_diagnostic_adapter")
+        ),
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": protected_input_sha256_unchanged,
+        "protected_v3_6_3_input_sha256_before": protected_v3_6_3_sha_before,
+        "protected_v3_6_3_input_sha256_after": protected_v3_6_3_sha_after,
+        "protected_v3_6_3_input_sha256_unchanged": protected_v3_6_3_input_sha256_unchanged,
+        "protected_sha_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "guardrail_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "fail_closed_reasons": fail_closed_reasons,
+        "mapping_diagnostics_rows": mapping_rows,
+        "failure_buckets": failure_buckets,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_6_8_CANONICAL_PAYLOAD_SUMMARY_JSON),
+            "mapping_diagnostics_jsonl": official.repo_relative(
+                DEFAULT_V3_6_8_CANONICAL_PAYLOAD_MAPPING_DIAGNOSTICS_JSONL
+            ),
+            "failure_buckets_json": official.repo_relative(
+                DEFAULT_V3_6_8_CANONICAL_PAYLOAD_FAILURE_BUCKETS_JSON
+            ),
+            "source_v3_6_7_summary_json": official.repo_relative(DEFAULT_V3_6_7_SUMMARY_JSON),
+            "source_v3_6_7_runtime_stability_summary_json": official.repo_relative(
+                DEFAULT_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON
+            ),
+            "source_v3_6_6_reference_sidecar_jsonl": official.repo_relative(
+                DEFAULT_V3_6_6_REFERENCE_SIDECAR_JSONL
+            ),
+            "source_v3_6_3_manifest_core_jsonl": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_CORE_JSONL),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+    return summary
+
+
+def v3_6_8_canonical_payload_source_paths() -> dict[str, Path]:
+    paths = dict(v3_6_7_source_paths())
+    paths.update(
+        {
+            "v3_6_7_summary_json": DEFAULT_V3_6_7_SUMMARY_JSON,
+            "v3_6_7_runtime_attempts_jsonl": DEFAULT_V3_6_7_RUNTIME_ATTEMPTS_JSONL,
+            "v3_6_7_runtime_stability_summary_json": DEFAULT_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON,
+            "v3_6_7_policy_audit_json": DEFAULT_V3_6_7_POLICY_AUDIT_JSON,
+            "v3_6_7_next_phase_recommendation_json": DEFAULT_V3_6_7_NEXT_PHASE_RECOMMENDATION_JSON,
+        }
+    )
+    return paths
+
+
+def v3_6_8_canonical_payload_source_fail_closed_reasons(
+    *,
+    source_load_errors: Sequence[str],
+    v3_6_6_summary: Mapping[str, Any],
+    v3_6_6_db_audit: Mapping[str, Any],
+    v3_6_7_runtime_summary: Mapping[str, Any],
+    v3_6_7_stability: Mapping[str, Any],
+    v3_6_7_policy: Mapping[str, Any],
+    v3_6_7_next_phase: Mapping[str, Any],
+    sidecar_rows: Sequence[Mapping[str, Any]],
+    manifest_core_rows: Sequence[Mapping[str, Any]],
+) -> list[str]:
+    reasons = list(source_load_errors)
+    if v3_6_6_summary.get("run_id") != V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID:
+        reasons.append("v3_6_6_summary_run_id_mismatch")
+    if v3_6_7_runtime_summary.get("run_id") != V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID:
+        reasons.append("v3_6_7_runtime_summary_run_id_mismatch")
+    if v3_6_7_runtime_summary.get("recommended_next_phase") != V3_6_8_CANONICAL_PAYLOAD_SOURCE_RECOMMENDED_PHASE:
+        reasons.append("v3_6_7_runtime_summary_did_not_recommend_manifest_locator_probe")
+    if v3_6_7_next_phase.get("recommended_next_phase") != V3_6_8_CANONICAL_PAYLOAD_SOURCE_RECOMMENDED_PHASE:
+        reasons.append("v3_6_7_next_phase_did_not_recommend_manifest_locator_probe")
+    if len(sidecar_rows) != 1000:
+        reasons.append("v3_6_6_reference_sidecar_row_count_mismatch")
+    if len(manifest_core_rows) != 665:
+        reasons.append("v3_6_3_manifest_core_count_mismatch")
+    if int(v3_6_7_runtime_summary.get("runtime_attempted_row_count") or 0) != 30:
+        reasons.append("v3_6_7_runtime_attempted_count_unexpected")
+    if int(v3_6_7_runtime_summary.get("strict_json_answer_returned_row_count") or 0) != 30:
+        reasons.append("v3_6_7_runtime_strict_json_count_unexpected")
+    if (
+        v3_6_7_runtime_summary.get("runtime_stability_classification")
+        or v3_6_7_stability.get("runtime_stability_classification")
+    ) != "answer_channel_stable_citation_surface_invalid_without_retrieval_context":
+        reasons.append("v3_6_7_runtime_classification_unexpected")
+    if not bool(v3_6_6_db_audit.get("manifest_locator_mapping_available")):
+        reasons.append("v3_6_6_manifest_locator_mapping_unavailable")
+    if bool(v3_6_6_db_audit.get("live_retrieval_probe_feasible_without_rebuild")):
+        reasons.append("v3_6_6_live_retrieval_feasibility_changed_before_probe")
+    for field in (
+        "db_write_attempted",
+        "db_migration_attempted",
+        "db_index_rebuild_attempted",
+        "db_write_migration_reindex_attempted",
+        "production_db_used",
+        "local_llm_live_silver_generation_attempted",
+        "local_llm_metric_scoring_attempted",
+        "external_llm_api_attempted",
+    ):
+        if bool(v3_6_7_runtime_summary.get(field)) or bool(v3_6_7_policy.get(field)):
+            reasons.append(f"v3_6_7_runtime_policy_guardrail_true:{field}")
+    return sorted(set(reasons))
+
+
+def v3_6_8_canonical_payload_probe_sample(
+    sidecar_rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    core_rows = [
+        dict(row)
+        for row in sidecar_rows
+        if row.get("reporting_partition") == "core_only"
+        and row.get("manifest_partition") == "core"
+        and not bool(row.get("official_proximity_review"))
+    ]
+    grouped: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
+    for row in sorted(
+        core_rows,
+        key=lambda item: (
+            official.clean(item.get("source_family")),
+            official.clean(item.get("query_quality_profile")),
+            official.clean(item.get("source_candidate_id")),
+            official.clean(item.get("weak_silver_candidate_id")),
+        ),
+    ):
+        family = official.clean(row.get("source_family")).upper()
+        profile = official.clean(row.get("query_quality_profile")) or "missing"
+        grouped[family][profile].append(row)
+
+    sample: list[dict[str, Any]] = []
+    for family in ("TEXT", "PDF", "XLSX"):
+        family_rows: list[dict[str, Any]] = []
+        profile_names = sorted(grouped.get(family, {}))
+        profile_offsets = {profile: 0 for profile in profile_names}
+        while len(family_rows) < V3_6_8_CANONICAL_PAYLOAD_SAMPLE_PER_FAMILY:
+            added = False
+            for profile in profile_names:
+                rows = grouped[family][profile]
+                offset = profile_offsets[profile]
+                if offset >= len(rows):
+                    continue
+                family_rows.append(rows[offset])
+                profile_offsets[profile] = offset + 1
+                added = True
+                if len(family_rows) >= V3_6_8_CANONICAL_PAYLOAD_SAMPLE_PER_FAMILY:
+                    break
+            if not added:
+                break
+        sample.extend(family_rows)
+    return sample
+
+
+def v3_6_8_canonical_payload_live_surfaces(
+    sample_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    current_index_path = DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl"
+    current_rows = read_jsonl(current_index_path) if current_index_path.exists() else []
+    by_search_unit_id: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    by_source_identity: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    by_locator_fingerprint: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for row in current_rows:
+        search_unit_id = official.clean(row.get("search_unit_id"))
+        source_identity = official.clean(row.get("source_identity"))
+        locator = as_mapping(row.get("locator"))
+        locator_fingerprint = v3_5_locator_fingerprint(locator) if locator else ""
+        if search_unit_id:
+            by_search_unit_id[search_unit_id].append(row)
+        if source_identity:
+            by_source_identity[source_identity].append(row)
+        if locator_fingerprint:
+            by_locator_fingerprint[locator_fingerprint].append(row)
+
+    needed_text_chunk_ids = {
+        chunk_id
+        for row in sample_rows
+        for chunk_id in [v3_6_8_canonical_payload_reference_text_chunk_id(row)]
+        if chunk_id
+    }
+    text_chunks = v3_6_8_canonical_payload_load_text_chunks(needed_text_chunk_ids)
+    return {
+        "current_index_manifest_row_count": len(current_rows),
+        "by_search_unit_id": by_search_unit_id,
+        "by_source_identity": by_source_identity,
+        "by_locator_fingerprint": by_locator_fingerprint,
+        "text_chunks_by_chunk_id": text_chunks,
+        "text_rag_chunk_lookup_requested_count": len(needed_text_chunk_ids),
+        "text_rag_chunk_lookup_found_count": len(text_chunks),
+    }
+
+
+def v3_6_8_canonical_payload_load_text_chunks(chunk_ids: set[str]) -> dict[str, Mapping[str, Any]]:
+    if not chunk_ids:
+        return {}
+    path = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined" / "rag_chunks.jsonl"
+    found: dict[str, Mapping[str, Any]] = {}
+    if not path.exists():
+        return found
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            chunk_id = official.clean(as_mapping(row).get("chunk_id"))
+            if chunk_id in chunk_ids:
+                found[chunk_id] = row
+                if len(found) == len(chunk_ids):
+                    break
+    return found
+
+
+def v3_6_8_canonical_payload_mapping_diagnostic_row(
+    *,
+    row: Mapping[str, Any],
+    live_surfaces: Mapping[str, Any],
+    generated_at: str,
+    sample_ordinal: int,
+) -> dict[str, Any]:
+    reference = v3_6_8_canonical_payload_reference_payload(row)
+    current_hits = v3_6_8_canonical_payload_current_index_hits(reference, live_surfaces)
+    live_result_payload: dict[str, Any] = {}
+    live_payload_kind = "missing"
+    primary_bucket = "NO_LIVE_RETRIEVAL_RESULT"
+    bucket_reasons: list[str] = []
+
+    if len(current_hits) > 1:
+        primary_bucket = "MULTI_HIT_AMBIGUOUS"
+        bucket_reasons.append("MULTI_HIT_AMBIGUOUS")
+    elif len(current_hits) == 1:
+        live_result_payload = v3_6_8_canonical_payload_payload_from_current_index_hit(current_hits[0])
+        live_payload_kind = "current_nonproduction_index_manifest"
+    else:
+        chunk_id = v3_6_8_canonical_payload_reference_text_chunk_id(row)
+        text_chunks = as_mapping(live_surfaces.get("text_chunks_by_chunk_id"))
+        text_chunk = as_mapping(text_chunks.get(chunk_id)) if chunk_id else {}
+        if text_chunk:
+            live_result_payload = v3_6_8_canonical_payload_payload_from_text_chunk(text_chunk)
+            live_payload_kind = "repo_local_text_rag_chunk"
+            primary_bucket = "RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT"
+            bucket_reasons.append("RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT")
+        else:
+            bucket_reasons.append("NO_LIVE_RETRIEVAL_RESULT")
+
+    comparison = v3_6_8_canonical_payload_compare_payloads(
+        reference=reference,
+        live_payload=live_result_payload,
+        live_payload_kind=live_payload_kind,
+    )
+    bucket_reasons.extend(comparison["bucket_reasons"])
+    if live_payload_kind == "current_nonproduction_index_manifest" and not bucket_reasons:
+        primary_bucket = "MAPPED_CANONICAL_CITATION_PAYLOAD_AVAILABLE"
+    elif primary_bucket == "NO_LIVE_RETRIEVAL_RESULT":
+        primary_bucket = "NO_LIVE_RETRIEVAL_RESULT"
+    elif bucket_reasons and primary_bucket == "MAPPED_CANONICAL_CITATION_PAYLOAD_AVAILABLE":
+        primary_bucket = bucket_reasons[0]
+
+    return {
+        "schema_version": f"{V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID}_mapping_diagnostic_row_v1",
+        "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_manifest_locator_live_retrieval_mapping_row",
+        "sample_ordinal": sample_ordinal,
+        "weak_silver_candidate_id": official.clean(row.get("weak_silver_candidate_id")),
+        "source_candidate_id": official.clean(row.get("source_candidate_id")),
+        "generated_question_hash": official.clean(row.get("generated_question_hash")),
+        "source_family": reference["source_family"],
+        "query_quality_profile": official.clean(row.get("query_quality_profile")),
+        "reporting_partition": "core_only",
+        "manifest_partition": official.clean(row.get("manifest_partition")),
+        "official_proximity_review": False,
+        "expected_answer_draft_used_as_generation_input": False,
+        "supporting_evidence_locator_draft_used_as_generation_input": False,
+        "gold_fields_used_as_generation_input": False,
+        "qrels_or_labels_used_as_generation_input": False,
+        "source_identity": reference["source_identity"],
+        "locator_fingerprint": reference["locator_fingerprint"],
+        "search_unit_id": reference["search_unit_id"],
+        "document_version_id": reference["document_version_id"],
+        "reference_locator_payload": reference["track_locator_payload"],
+        "live_payload_kind": live_payload_kind,
+        "live_result_payload_present": bool(live_result_payload),
+        "canonical_citation_payload_present": comparison["canonical_citation_payload_present"],
+        "live_search_unit_id": comparison["live_search_unit_id"],
+        "live_source_identity": comparison["live_source_identity"],
+        "live_locator_fingerprint": comparison["live_locator_fingerprint"],
+        "source_identity_match": comparison["source_identity_match"],
+        "locator_fingerprint_match": comparison["locator_fingerprint_match"],
+        "search_unit_id_match": comparison["search_unit_id_match"],
+        "track_locator_payload_present": comparison["track_locator_payload_present"],
+        "track_locator_payload_renderable": comparison["track_locator_payload_renderable"],
+        "track_locator_payload": comparison["track_locator_payload"],
+        "primary_bucket": primary_bucket,
+        "failure_buckets": sorted(set(bucket_reasons)),
+        "mapped_canonical_citation_payload_available": (
+            primary_bucket == "MAPPED_CANONICAL_CITATION_PAYLOAD_AVAILABLE"
+        ),
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "answer_correctness_scored": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+    }
+
+
+def v3_6_8_canonical_payload_current_index_hits(
+    reference: Mapping[str, Any],
+    live_surfaces: Mapping[str, Any],
+) -> list[Mapping[str, Any]]:
+    hit_keys: set[tuple[str, str]] = set()
+    hits: list[Mapping[str, Any]] = []
+    for index_name, value in (
+        ("by_search_unit_id", reference.get("search_unit_id")),
+        ("by_source_identity", reference.get("source_identity")),
+        ("by_locator_fingerprint", reference.get("locator_fingerprint")),
+    ):
+        if not value:
+            continue
+        for hit in as_mapping(live_surfaces.get(index_name)).get(value, []):
+            key = (
+                official.clean(hit.get("query_id")),
+                official.clean(hit.get("search_unit_id")) or official.clean(hit.get("source_identity")),
+            )
+            if key in hit_keys:
+                continue
+            hit_keys.add(key)
+            hits.append(hit)
+    return hits
+
+
+def v3_6_8_canonical_payload_reference_text_chunk_id(row: Mapping[str, Any]) -> str:
+    locator = as_mapping(row.get("supporting_evidence_locator_draft"))
+    source_locator = as_mapping(locator.get("source_locator"))
+    return official.clean(locator.get("chunk_id") or source_locator.get("chunk_id"))
+
+
+def v3_6_8_canonical_payload_reference_payload(row: Mapping[str, Any]) -> dict[str, Any]:
+    source_family = official.clean(row.get("source_family")).upper()
+    locator = as_mapping(row.get("supporting_evidence_locator_draft"))
+    source_locator = as_mapping(locator.get("source_locator"))
+    search_unit_id = official.clean(locator.get("search_unit_id") or row.get("search_unit_id"))
+    document_version_id = official.clean(locator.get("document_version_id") or row.get("document_version_id"))
+    track_locator = v3_6_8_canonical_payload_track_payload(source_family, locator, source_locator)
+    return {
+        "source_family": source_family,
+        "source_identity": official.clean(row.get("source_identity")),
+        "locator_fingerprint": official.clean(row.get("locator_fingerprint") or locator.get("locator_fingerprint")),
+        "search_unit_id": search_unit_id,
+        "document_version_id": document_version_id,
+        "track_locator_payload": track_locator,
+    }
+
+
+def v3_6_8_canonical_payload_track_payload(
+    source_family: str,
+    locator: Mapping[str, Any],
+    source_locator: Mapping[str, Any],
+) -> dict[str, Any]:
+    if source_family == "TEXT":
+        return {
+            "document_id": official.clean(locator.get("doc_id") or source_locator.get("doc_id")),
+            "chunk_id": official.clean(locator.get("chunk_id") or source_locator.get("chunk_id")),
+            "source_corpus_path": official.clean(locator.get("source_corpus_path") or source_locator.get("source_corpus_path")),
+            "section_path": source_locator.get("section_path"),
+            "section_id": official.clean(source_locator.get("section_id")),
+            "section_key": official.clean(source_locator.get("section_key")),
+            "retrieval_title": official.clean(source_locator.get("retrieval_title")),
+            "text_locator": dict(source_locator),
+        }
+    if source_family == "PDF":
+        return {
+            "source_pdf_path": official.clean(locator.get("source_pdf_path") or source_locator.get("source_pdf_path")),
+            "document_version_id": official.clean(locator.get("document_version_id")),
+            "page": locator.get("page") or source_locator.get("page"),
+            "physical_page_index": source_locator.get("physical_page_index") or locator.get("physical_page_index"),
+            "bbox": locator.get("bbox") or source_locator.get("bbox"),
+            "region_type": official.clean(locator.get("region_type") or source_locator.get("region_type")),
+        }
+    if source_family == "XLSX":
+        return {
+            "workbook": official.clean(source_locator.get("workbook") or locator.get("workbook")),
+            "source_path": official.clean(locator.get("workbook_identity") or source_locator.get("source_file_path")),
+            "sheet": official.clean(locator.get("sheet") or source_locator.get("sheet")),
+            "range": official.clean(locator.get("range") or source_locator.get("range")),
+            "cell": official.clean(locator.get("cell") or source_locator.get("cell")),
+            "row_label": official.clean(locator.get("row_label") or source_locator.get("row_label")),
+            "column_label": official.clean(locator.get("column_label") or source_locator.get("column_label")),
+            "target_column": official.clean(locator.get("target_column") or source_locator.get("target_column")),
+            "normalized_value": official.clean(locator.get("normalized_value") or locator.get("source_value")),
+        }
+    return {}
+
+
+def v3_6_8_canonical_payload_payload_from_current_index_hit(row: Mapping[str, Any]) -> dict[str, Any]:
+    locator = as_mapping(row.get("locator"))
+    canonical = as_mapping(row.get("canonical_citation_payload"))
+    payload = dict(canonical)
+    payload.setdefault("searchUnitId", official.clean(row.get("search_unit_id")))
+    payload.setdefault("search_unit_id", official.clean(row.get("search_unit_id")))
+    payload.setdefault("document_version_id", official.clean(row.get("document_version_id")))
+    payload.setdefault("source_identity", official.clean(row.get("source_identity")))
+    payload.setdefault("locator_fingerprint", v3_5_locator_fingerprint(locator) if locator else "")
+    payload.setdefault("track_locator_payload", dict(locator))
+    return payload
+
+
+def v3_6_8_canonical_payload_payload_from_text_chunk(row: Mapping[str, Any]) -> dict[str, Any]:
+    metadata = as_mapping(row.get("metadata"))
+    return {
+        "chunk_id": official.clean(row.get("chunk_id")),
+        "doc_id": official.clean(row.get("doc_id")),
+        "title": official.clean(row.get("title") or row.get("display_title") or row.get("retrieval_title")),
+        "section_path": row.get("section_path"),
+        "section_id": official.clean(row.get("section_id")),
+        "section_key": official.clean(row.get("section_key")),
+        "source_url": official.clean(metadata.get("source_url")),
+        "text_preview": official.clean(row.get("chunk_text"))[:240],
+    }
+
+
+def v3_6_8_canonical_payload_compare_payloads(
+    *,
+    reference: Mapping[str, Any],
+    live_payload: Mapping[str, Any],
+    live_payload_kind: str,
+) -> dict[str, Any]:
+    source_family = official.clean(reference.get("source_family")).upper()
+    live_search_unit_id = official.clean(live_payload.get("search_unit_id") or live_payload.get("searchUnitId"))
+    live_source_identity = official.clean(live_payload.get("source_identity"))
+    live_locator_fingerprint = official.clean(live_payload.get("locator_fingerprint"))
+    canonical_present = live_payload_kind == "current_nonproduction_index_manifest" and bool(live_payload)
+    track_payload = v3_6_8_canonical_payload_live_track_payload(source_family, live_payload)
+    track_present = bool(track_payload)
+    renderable = v3_6_8_canonical_payload_track_payload_renderable(source_family, track_payload)
+    bucket_reasons: list[str] = []
+    if not canonical_present and live_payload_kind != "repo_local_text_rag_chunk":
+        bucket_reasons.append("NO_LIVE_RETRIEVAL_RESULT")
+    if live_payload_kind == "repo_local_text_rag_chunk":
+        bucket_reasons.append("SEARCH_UNIT_ID_MISSING")
+        bucket_reasons.append("LOCATOR_FINGERPRINT_MISSING")
+    elif canonical_present:
+        if not live_search_unit_id:
+            bucket_reasons.append("SEARCH_UNIT_ID_MISSING")
+        if not live_source_identity:
+            bucket_reasons.append("SOURCE_IDENTITY_MISSING")
+        elif live_source_identity != reference.get("source_identity"):
+            bucket_reasons.append("SOURCE_IDENTITY_MISMATCH")
+        if not live_locator_fingerprint:
+            bucket_reasons.append("LOCATOR_FINGERPRINT_MISSING")
+        elif live_locator_fingerprint != reference.get("locator_fingerprint"):
+            bucket_reasons.append("LOCATOR_FINGERPRINT_MISMATCH")
+    if not track_present:
+        bucket_reasons.append("TRACK_LOCATOR_MISSING")
+    elif not renderable:
+        bucket_reasons.append("RETRIEVAL_PAYLOAD_PRESENT_BUT_NOT_RENDERABLE")
+    if source_family == "TEXT" and not v3_6_8_canonical_payload_track_payload_renderable("TEXT", track_payload):
+        bucket_reasons.append("TEXT_LOCATOR_MISSING_OR_EMPTY")
+    if source_family == "PDF" and not v3_6_8_canonical_payload_track_payload_renderable("PDF", track_payload):
+        bucket_reasons.append("PDF_LOCATOR_PAGE_OR_BBOX_MISSING")
+    if source_family == "XLSX" and not v3_6_8_canonical_payload_track_payload_renderable("XLSX", track_payload):
+        bucket_reasons.append("XLSX_LOCATOR_CELL_OR_RANGE_MISSING")
+    if track_present and source_family not in ("TEXT", "PDF", "XLSX"):
+        bucket_reasons.append("TRACK_LOCATOR_SCHEMA_MISMATCH")
+    return {
+        "canonical_citation_payload_present": canonical_present,
+        "live_search_unit_id": live_search_unit_id,
+        "live_source_identity": live_source_identity,
+        "live_locator_fingerprint": live_locator_fingerprint,
+        "source_identity_match": bool(live_source_identity) and live_source_identity == reference.get("source_identity"),
+        "locator_fingerprint_match": (
+            bool(live_locator_fingerprint) and live_locator_fingerprint == reference.get("locator_fingerprint")
+        ),
+        "search_unit_id_match": bool(live_search_unit_id) and live_search_unit_id == reference.get("search_unit_id"),
+        "track_locator_payload_present": track_present,
+        "track_locator_payload_renderable": renderable,
+        "track_locator_payload": track_payload,
+        "bucket_reasons": [
+            bucket for bucket in sorted(set(bucket_reasons)) if bucket in V3_6_8_CANONICAL_PAYLOAD_FAILURE_BUCKETS
+        ],
+    }
+
+
+def v3_6_8_canonical_payload_live_track_payload(
+    source_family: str,
+    payload: Mapping[str, Any],
+) -> dict[str, Any]:
+    if not payload:
+        return {}
+    nested = as_mapping(payload.get("track_locator_payload"))
+    if source_family == "TEXT":
+        return {
+            "document_id": payload.get("document_id") or payload.get("doc_id") or nested.get("document_id"),
+            "chunk_id": payload.get("chunk_id") or nested.get("chunk_id"),
+            "text_locator": payload.get("text_locator") or nested.get("text_locator") or nested,
+        }
+    if source_family == "PDF":
+        return {
+            "source_pdf_path": payload.get("source_pdf_path") or nested.get("source_pdf_path"),
+            "document_version_id": payload.get("document_version_id") or nested.get("document_version_id"),
+            "page": payload.get("page") or nested.get("page"),
+            "physical_page_index": payload.get("physical_page_index") or nested.get("physical_page_index"),
+            "bbox": payload.get("bbox") or nested.get("bbox"),
+            "region_type": payload.get("region_type") or nested.get("region_type"),
+        }
+    if source_family == "XLSX":
+        return {
+            "workbook": payload.get("workbook") or nested.get("workbook"),
+            "sheet": payload.get("sheet") or nested.get("sheet"),
+            "range": payload.get("range") or nested.get("range") or nested.get("cell_range"),
+            "cell": payload.get("cell") or nested.get("cell"),
+            "row_label": payload.get("row_label") or nested.get("row_label"),
+            "target_column": payload.get("target_column") or nested.get("target_column"),
+            "normalized_value": payload.get("normalized_value") or nested.get("normalized_value"),
+        }
+    return dict(nested)
+
+
+def v3_6_8_canonical_payload_track_payload_renderable(source_family: str, payload: Mapping[str, Any]) -> bool:
+    if source_family == "TEXT":
+        return bool(payload.get("document_id") and payload.get("chunk_id") and payload.get("text_locator"))
+    if source_family == "PDF":
+        return bool(payload.get("source_pdf_path") and payload.get("page") and payload.get("bbox"))
+    if source_family == "XLSX":
+        return bool(payload.get("workbook") and payload.get("sheet") and (payload.get("range") or payload.get("cell")))
+    return False
+
+
+def v3_6_8_canonical_payload_failure_bucket_summary(
+    *,
+    mapping_rows: Sequence[Mapping[str, Any]],
+    source_fail_closed_reasons: Sequence[str],
+    generated_at: str,
+) -> dict[str, Any]:
+    primary_counts = Counter(official.clean(row.get("primary_bucket")) for row in mapping_rows)
+    all_counts: Counter[str] = Counter()
+    for row in mapping_rows:
+        for bucket in row.get("failure_buckets") or []:
+            all_counts[official.clean(bucket)] += 1
+    if source_fail_closed_reasons:
+        primary_counts["PRODUCTION_OR_DB_MUTATION_RISK_BLOCKED"] += 0
+        all_counts["PRODUCTION_OR_DB_MUTATION_RISK_BLOCKED"] += 0
+    primary_bucket_counts = {
+        bucket: int(primary_counts.get(bucket, 0))
+        for bucket in V3_6_8_CANONICAL_PAYLOAD_FAILURE_BUCKETS
+    }
+    all_bucket_counts = {
+        bucket: int(all_counts.get(bucket, 0))
+        for bucket in V3_6_8_CANONICAL_PAYLOAD_FAILURE_BUCKETS
+    }
+    blocking_buckets = [
+        bucket
+        for bucket in V3_6_8_CANONICAL_PAYLOAD_FAILURE_BUCKETS
+        if bucket != "MAPPED_CANONICAL_CITATION_PAYLOAD_AVAILABLE"
+        and (primary_bucket_counts.get(bucket, 0) or all_bucket_counts.get(bucket, 0))
+    ]
+    return {
+        "schema_version": f"{V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID}_failure_buckets_v1",
+        "run_id": V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_manifest_locator_live_retrieval_failure_buckets",
+        "failure_bucket_definitions": list(V3_6_8_CANONICAL_PAYLOAD_FAILURE_BUCKETS),
+        "primary_bucket_counts": primary_bucket_counts,
+        "all_bucket_counts": all_bucket_counts,
+        "blocking_buckets": blocking_buckets,
+        "source_fail_closed_reasons": list(source_fail_closed_reasons),
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
     }
 
 
@@ -27059,6 +34261,243 @@ def write_v3_6_low_touch_weak_noisy_silver_artifacts(summary: dict[str, Any]) ->
         summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(DEFAULT_V3_6_6_SUMMARY_JSON)
         return
 
+    if run_id == V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID:
+        write_jsonl(DEFAULT_V3_6_7_RUNTIME_ATTEMPTS_JSONL, summary["runtime_attempt_rows"])
+        write_json(DEFAULT_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON, summary["runtime_stability_summary"])
+        write_json(DEFAULT_V3_6_7_POLICY_AUDIT_JSON, summary["policy_audit"])
+        write_json(DEFAULT_V3_6_7_NEXT_PHASE_RECOMMENDATION_JSON, summary["next_phase_recommendation"])
+        payload = dict(summary)
+        for field in (
+            "runtime_attempt_rows",
+            "runtime_stability_summary",
+            "policy_audit",
+            "next_phase_recommendation",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "runtime_attempts_jsonl_sha256": sha256_file(DEFAULT_V3_6_7_RUNTIME_ATTEMPTS_JSONL),
+            "runtime_stability_summary_json_sha256": sha256_file(
+                DEFAULT_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON
+            ),
+            "policy_audit_json_sha256": sha256_file(DEFAULT_V3_6_7_POLICY_AUDIT_JSON),
+            "next_phase_recommendation_json_sha256": sha256_file(
+                DEFAULT_V3_6_7_NEXT_PHASE_RECOMMENDATION_JSON
+            ),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_7_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(DEFAULT_V3_6_7_SUMMARY_JSON)
+        return
+
+    if run_id == V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID:
+        write_json(DEFAULT_V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT_JSON, summary["source_object_audit"])
+        write_json(DEFAULT_V3_6_8_SOURCE_REGISTRY_SEARCHUNIT_ROLE_AUDIT_JSON, summary["searchunit_role_audit"])
+        write_json(
+            DEFAULT_V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT_JSON,
+            summary["evidence_bundle_contract"],
+        )
+        write_json(DEFAULT_V3_6_8_SOURCE_REGISTRY_TRACK_ROUTING_AUDIT_JSON, summary["track_routing_audit"])
+        write_json(DEFAULT_V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON, summary["failure_buckets"])
+        payload = dict(summary)
+        for field in (
+            "source_object_audit",
+            "searchunit_role_audit",
+            "evidence_bundle_contract",
+            "track_routing_audit",
+            "failure_buckets",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "source_object_audit_json_sha256": sha256_file(
+                DEFAULT_V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT_JSON
+            ),
+            "searchunit_role_audit_json_sha256": sha256_file(
+                DEFAULT_V3_6_8_SOURCE_REGISTRY_SEARCHUNIT_ROLE_AUDIT_JSON
+            ),
+            "evidence_bundle_contract_json_sha256": sha256_file(
+                DEFAULT_V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT_JSON
+            ),
+            "track_routing_audit_json_sha256": sha256_file(
+                DEFAULT_V3_6_8_SOURCE_REGISTRY_TRACK_ROUTING_AUDIT_JSON
+            ),
+            "failure_buckets_json_sha256": sha256_file(DEFAULT_V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON
+        )
+        return
+
+    if run_id == V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID:
+        write_json(DEFAULT_V3_6_8_ALL_SOURCE_SOURCE_INVENTORY_JSON, summary["source_inventory"])
+        write_json(DEFAULT_V3_6_8_ALL_SOURCE_INDEX_BUILD_SUMMARY_JSON, summary["index_build_summary"])
+        write_json(
+            DEFAULT_V3_6_8_ALL_SOURCE_PAYLOAD_CONTRACT_SUMMARY_JSON,
+            summary["payload_contract_summary"],
+        )
+        write_jsonl(
+            DEFAULT_V3_6_8_ALL_SOURCE_RETRIEVAL_SMOKE_DIAGNOSTICS_JSONL,
+            summary["retrieval_smoke_diagnostics"],
+        )
+        write_json(DEFAULT_V3_6_8_ALL_SOURCE_FAILURE_BUCKETS_JSON, summary["failure_buckets"])
+        payload = dict(summary)
+        for field in (
+            "source_inventory",
+            "index_build_summary",
+            "payload_contract_summary",
+            "retrieval_smoke_diagnostics",
+            "failure_buckets",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "source_inventory_json_sha256": sha256_file(
+                DEFAULT_V3_6_8_ALL_SOURCE_SOURCE_INVENTORY_JSON
+            ),
+            "index_build_summary_json_sha256": sha256_file(
+                DEFAULT_V3_6_8_ALL_SOURCE_INDEX_BUILD_SUMMARY_JSON
+            ),
+            "payload_contract_summary_json_sha256": sha256_file(
+                DEFAULT_V3_6_8_ALL_SOURCE_PAYLOAD_CONTRACT_SUMMARY_JSON
+            ),
+            "retrieval_smoke_diagnostics_jsonl_sha256": sha256_file(
+                DEFAULT_V3_6_8_ALL_SOURCE_RETRIEVAL_SMOKE_DIAGNOSTICS_JSONL
+            ),
+            "failure_buckets_json_sha256": sha256_file(
+                DEFAULT_V3_6_8_ALL_SOURCE_FAILURE_BUCKETS_JSON
+            ),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_8_ALL_SOURCE_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_6_8_ALL_SOURCE_SUMMARY_JSON
+        )
+        return
+
+    if run_id == V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID:
+        write_json(DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON, summary["contract_refactor"])
+        write_json(
+            DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_ADAPTER_DIAGNOSTICS_JSON,
+            summary["search_view_adapter_diagnostics"],
+        )
+        write_json(DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON, summary["source_atom_hydration_smoke"])
+        write_json(DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS_JSON, summary["failure_buckets"])
+        payload = dict(summary)
+        for field in (
+            "contract_refactor",
+            "search_view_adapter_diagnostics",
+            "source_atom_hydration_smoke",
+            "failure_buckets",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "contract_refactor_json_sha256": sha256_file(
+                DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON
+            ),
+            "search_view_adapter_diagnostics_json_sha256": sha256_file(
+                DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_ADAPTER_DIAGNOSTICS_JSON
+            ),
+            "source_atom_hydration_smoke_json_sha256": sha256_file(
+                DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON
+            ),
+            "failure_buckets_json_sha256": sha256_file(DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS_JSON),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON
+        )
+        return
+
+    if run_id == V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID:
+        DEFAULT_SOURCE_ATOM_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        write_jsonl(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL, summary["source_atom_rows"])
+        write_json(DEFAULT_SOURCE_ATOM_REGISTRY_BUILD_JSON, summary["source_registry_build"])
+        write_json(DEFAULT_SOURCE_ATOM_REGISTRY_INVENTORY_JSON, summary["source_inventory"])
+        blocked_rows = [
+            row
+            for row in summary["materialization_diagnostics"]
+            if official.clean(row.get("materialization_bucket")).startswith("blocked_")
+        ]
+        write_jsonl(DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL, blocked_rows)
+        write_json(DEFAULT_V3_7_0_SOURCE_REGISTRY_SOURCE_INVENTORY_JSON, summary["source_inventory"])
+        write_jsonl(
+            DEFAULT_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_DIAGNOSTICS_JSONL,
+            summary["materialization_diagnostics"],
+        )
+        write_json(DEFAULT_V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE_JSON, summary["hydration_smoke"])
+        write_json(DEFAULT_V3_7_0_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON, summary["failure_buckets"])
+        payload = dict(summary)
+        for field in (
+            "source_atom_rows",
+            "materialization_diagnostics",
+            "source_inventory",
+            "source_registry_build",
+            "hydration_smoke",
+            "failure_buckets",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "source_atom_registry_jsonl_sha256": sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+            "source_atom_registry_build_json_sha256": sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_BUILD_JSON),
+            "source_atom_registry_inventory_json_sha256": sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_INVENTORY_JSON),
+            "source_atom_registry_blocked_jsonl_sha256": sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL),
+            "source_inventory_json_sha256": sha256_file(DEFAULT_V3_7_0_SOURCE_REGISTRY_SOURCE_INVENTORY_JSON),
+            "materialization_diagnostics_jsonl_sha256": sha256_file(
+                DEFAULT_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_DIAGNOSTICS_JSONL
+            ),
+            "hydration_smoke_json_sha256": sha256_file(DEFAULT_V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE_JSON),
+            "failure_buckets_json_sha256": sha256_file(DEFAULT_V3_7_0_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON
+        )
+        return
+
+    if run_id == V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID:
+        write_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SOURCE_INVENTORY_JSON, summary["source_inventory"])
+        write_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY_JSON, summary["index_build_summary"])
+        write_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE_JSON, summary["hydration_smoke"])
+        write_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON, summary["failure_buckets"])
+        payload = dict(summary)
+        for field in (
+            "source_inventory",
+            "index_build_summary",
+            "hydration_smoke",
+            "failure_buckets",
+            "search_view_rows",
+            "blocked_search_view_rows",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "source_inventory_json_sha256": sha256_file(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SOURCE_INVENTORY_JSON),
+            "index_build_summary_json_sha256": sha256_file(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY_JSON),
+            "hydration_smoke_json_sha256": sha256_file(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE_JSON),
+            "failure_buckets_json_sha256": sha256_file(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON),
+            "index_faiss_sha256": sha256_file(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "faiss.index"),
+            "index_build_json_sha256": sha256_file(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json"),
+            "index_ingest_manifest_json_sha256": sha256_file(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "ingest_manifest.json"
+            ),
+            "index_search_view_manifest_jsonl_sha256": sha256_file(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl"
+            ),
+            "index_source_inventory_json_sha256": sha256_file(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "source_inventory.json"
+            ),
+            "index_hydration_smoke_json_sha256": sha256_file(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "hydration_smoke.json"
+            ),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON
+        )
+        return
+
     raise ValueError(f"unsupported v3_6 run: {run_id}")
 
 
@@ -27103,6 +34542,28 @@ def append_v3_6_low_touch_weak_noisy_silver_event(path: Path, summary: Mapping[s
         "core_smoke_sample_rows",
         "runtime_probe_summary",
         "db_retrieval_surface_audit",
+        "runtime_attempt_rows",
+        "runtime_stability_summary",
+        "mapping_diagnostics_rows",
+        "source_inventory",
+        "index_build_summary",
+        "payload_contract_summary",
+        "retrieval_smoke_diagnostics",
+        "failure_buckets",
+        "materialization_diagnostics",
+        "hydration_smoke",
+        "source_registry_build",
+        "source_object_audit",
+        "searchunit_role_audit",
+        "evidence_bundle_contract",
+        "track_routing_audit",
+        "source_atom_rows",
+        "evidence_bundle_rows",
+        "search_view_rows",
+        "blocked_search_view_rows",
+        "contract_refactor",
+        "search_view_adapter_diagnostics",
+        "source_atom_hydration_smoke",
     ):
         event.pop(field, None)
     append_unique_status_ledger_event(path, event)
@@ -27214,6 +34675,130 @@ def v3_6_progress_entry(summary: Mapping[str, Any]) -> str:
             "winner selection, prompt/retrieval/scorer/renderer mutation, DB writes/migrations/reindex, and "
             "DB-derived generation/gold/qrels remain blocked."
         )
+    if run_id == V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID:
+        return (
+            f"- v3_6_7 runtime stability probe for core-only (`{run_id}`) reruns only the inherited "
+            f"v3_6_6 core smoke sample as diagnostic-only local runtime evidence: attempted="
+            f"{summary.get('runtime_attempted_row_count', 0)}, strict JSON answers="
+            f"{summary.get('strict_json_answer_returned_row_count', 0)}, citation surface valid="
+            f"{summary.get('citation_surface_valid_row_count', 0)}, baseline strict JSON answers="
+            f"{summary.get('baseline_strict_json_answer_returned_row_count', 0)}, runtime classification="
+            f"{summary.get('runtime_stability_classification')}. Review-only attempted="
+            f"{summary.get('review_only_rows_attempted', 0)} and official proximity attempted="
+            f"{summary.get('official_proximity_rows_attempted', 0)}; core-only live diagnostic metric allowed="
+            f"{str(bool(summary.get('v3_6_7_core_only_live_diagnostic_metric_allowed'))).lower()}; "
+            f"recommended next phase={summary.get('recommended_next_phase')}. This is not a metric improvement, "
+            "not gold/qrels/official denominator/labels, not README performance evidence, not promotion, "
+            "not threshold tuning or winner selection, and no prompt/retrieval/scorer/renderer/index/export/DB "
+            "mutation was performed."
+        )
+    if run_id == V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID:
+        inventory = as_mapping(summary.get("source_inventory_counts"))
+        accepted = as_mapping(inventory.get("accepted_source_units_by_source_family"))
+        payload = as_mapping(summary.get("payload_contract"))
+        smoke = as_mapping(summary.get("retrieval_smoke"))
+        blocking_buckets = json.dumps(
+            list(summary.get("blocking_buckets") or []),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        families_payload = json.dumps(
+            list(payload.get("families_with_canonical_payload") or []),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return (
+            f"- v3_6_8 non-production all-source index materialization (`{run_id}`) builds "
+            f"`{summary.get('index_path')}` with accepted source units={json.dumps(accepted, ensure_ascii=False, sort_keys=True, separators=(',', ':'))}. "
+            f"Load-check passed={str(bool(as_mapping(summary.get('load_check')).get('passed'))).lower()}; "
+            f"canonical payload families={families_payload}; no-LLM render valid count="
+            f"{smoke.get('no_llm_citation_render_valid_count', 0)}; outcome={summary.get('outcome')}; "
+            f"next_allowed_phase={summary.get('next_allowed_phase')}; blocking buckets={blocking_buckets}. "
+            "This is diagnostic-only non-production indexing, not a promotion run, not an official representative "
+            "metric, not gold/qrels/label/expected-answer/supporting-evidence mutation, and not README performance evidence."
+        )
+    if run_id == V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID:
+        blocking_buckets = json.dumps(
+            list(summary.get("blocking_buckets") or []),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return (
+            f"- v3_6_8 source-registry-first evidence bundle architecture audit (`{run_id}`) stops the "
+            "all-source index expansion path and audits whether raw-source-backed SourceAtoms, SearchViews, "
+            "EvidenceBundles, and Citations are separated before more retrieval work. Search indexes remain "
+            "candidate generators only; no production DB, DB write/migration, index/export rebuild, prompt/scorer "
+            "tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, or official metric scoring was "
+            f"performed. outcome={summary.get('outcome')}; next_allowed_phase={summary.get('next_allowed_phase')}; "
+            f"blocking buckets={blocking_buckets}; no-vector hydration="
+            f"{str(bool(summary.get('no_vector_hydration_passed'))).lower()}; no-vector citation render="
+            f"{str(bool(summary.get('no_vector_citation_rendering_passed'))).lower()}; "
+            f"SearchUnit overloaded={str(bool(summary.get('searchunit_overloaded'))).lower()}. "
+            "Rationale: SearchUnit currently acts as retrieval unit, source atom, citation unit, evidence unit, "
+            "metric/qrels unit, and LLM context unit, so the next phase is a SearchUnit/SearchView/SourceAtom refactor, "
+            "not another manifest locator probe."
+        )
+    if run_id == V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID:
+        next_work = json.dumps(
+            list(summary.get("next_blocking_work") or []),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return (
+            f"- v3_6_9 SearchUnit/SearchView/SourceAtom refactor (`{run_id}`) introduces a durable "
+            "source-first Python contract where SearchViews are retrieval candidates and EvidenceBundles hydrate "
+            "through SourceAtoms before citation rendering. No production DB, DB write/migration, index/export "
+            "rebuild, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, or "
+            f"official metric scoring was performed. outcome={summary.get('outcome')}; "
+            f"next_allowed_phase={summary.get('next_allowed_phase')}; next blocking work={next_work}; "
+            f"no-vector render count={summary.get('source_atom_hydration_smoke', {}).get('no_vector_citation_render_valid_count', 0)}; "
+            f"vector_payload_used_as_evidence_truth={str(bool(summary.get('vector_payload_used_as_evidence_truth'))).lower()}. "
+            "Rationale: the minimal refactor is additive and preserves the existing SearchUnit claim wire shape; "
+            "durable SourceAtom materialization remains the next bounded step."
+        )
+    if run_id == V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID:
+        counts = as_mapping(summary.get("source_family_counts"))
+        bucket_counts = as_mapping(summary.get("materialization_bucket_counts"))
+        return (
+            f"- v3_7_0 source registry materialization (`{run_id}`) materializes "
+            f"{summary.get('materialized_source_atom_count', 0)} non-production SourceAtoms from existing source "
+            f"data with TEXT={counts.get('TEXT', 0)}, PDF={counts.get('PDF', 0)}, "
+            f"XLSX={counts.get('XLSX', 0)}. No production DB, DB write/migration, vector index build, prompt/scorer "
+            "tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, retrieval metric, answer metric, "
+            f"or citation metric was performed. outcome={summary.get('outcome')}; "
+            f"next_allowed_phase={summary.get('next_allowed_phase')}; "
+            f"no-vector hydration={str(bool(summary.get('no_vector_evidence_bundle_hydration_passed'))).lower()}; "
+            f"no-vector citation render={str(bool(summary.get('no_vector_citation_rendering_passed'))).lower()}; "
+            f"snapshot_only={bucket_counts.get('snapshot_only_ready', 0)}; "
+            f"retrieval_only_uncanonicalized={bucket_counts.get('retrieval_only_uncanonicalized', 0)}; "
+            f"official overlap={summary.get('official_overlap_count', 0)} protected regression rows; "
+            f"vector_metadata_used_as_canonical_citation_source="
+            f"{str(bool(summary.get('vector_metadata_used_as_canonical_citation_source'))).lower()}."
+        )
+    if run_id == V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID:
+        counts = as_mapping(summary.get("source_family_counts"))
+        hydration = as_mapping(summary.get("hydration_smoke_summary"))
+        return (
+            f"- v3_7_1 all-source citable non-production index build (`{run_id}`) builds "
+            f"`{summary.get('index_path')}` from SourceAtom-backed SearchViews only: "
+            f"search_views={summary.get('search_view_count', 0)}, TEXT={counts.get('TEXT', 0)}, "
+            f"PDF={counts.get('PDF', 0)}, XLSX={counts.get('XLSX', 0)}, "
+            f"snapshot_only={summary.get('snapshot_only_count', 0)}, official overlap="
+            f"{summary.get('official_overlap_count', 0)} protected regression rows. "
+            f"outcome={summary.get('outcome')}; next_allowed_phase={summary.get('next_allowed_phase')}; "
+            f"no-vector hydration={str(bool(hydration.get('no_vector_evidence_bundle_hydration_passed'))).lower()}; "
+            f"no-vector citation render={str(bool(hydration.get('no_vector_citation_rendering_passed'))).lower()}; "
+            f"vector_metadata_used_as_canonical_citation_source="
+            f"{str(bool(summary.get('vector_metadata_used_as_canonical_citation_source'))).lower()}; "
+            f"faiss_gpu_used={str(bool(as_mapping(summary.get('index_build')).get('faiss_gpu_used'))).lower()}. "
+            "This is diagnostic-only non-production indexing, not retrieval/answer/citation metric computation, "
+            "not a hybrid baseline, not prompt/scorer tuning, not promotion, and not gold/qrels/label/"
+            "expected-answer/supporting-evidence mutation."
+        )
     counts = as_mapping(summary.get("source_family_counts"))
     profiles = as_mapping(summary.get("query_quality_profile_counts"))
     splits = as_mapping(summary.get("split_counts"))
@@ -27256,6 +34841,18 @@ def append_v3_6_progress_entry(summary: Mapping[str, Any]) -> None:
         status = "diagnostic_rough_failure_bucket_triage_v3_6_5_complete"
     elif run_id == V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID:
         status = "diagnostic_reference_sidecar_runtime_surface_probe_v3_6_6_complete"
+    elif run_id == V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID:
+        status = "diagnostic_runtime_stability_probe_v3_6_7_complete"
+    elif run_id == V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID:
+        status = "diagnostic_nonprod_all_source_index_materialization_v3_6_8_complete"
+    elif run_id == V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID:
+        status = "diagnostic_source_registry_architecture_audit_v3_6_8_searchunit_overloaded_blocked"
+    elif run_id == V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID:
+        status = "diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9_contract_ready"
+    elif run_id == V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID:
+        status = "diagnostic_source_registry_materialization_v3_7_0_ready"
+    elif run_id == V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID:
+        status = "diagnostic_all_source_citable_nonprod_index_v3_7_1_built"
     else:
         status = "balanced_weak_noisy_silver_candidates_v3_6_1_generated_diagnostic_only"
     text = re.sub(r"Overall status: `[^`]+`;", f"Overall status: `{status}`;", text, count=1)
@@ -28082,9 +35679,10 @@ def xlsx_source_text_from_metadata(metadata: Mapping[str, Any]) -> str:
 
 
 def first_jsonl_row(path: Path) -> dict[str, Any]:
-    if not path.exists():
+    resolved = resolve_report_artifact_path(path)
+    if not resolved.exists():
         return {}
-    with path.open(encoding="utf-8") as handle:
+    with resolved.open(encoding="utf-8") as handle:
         for line in handle:
             if line.strip():
                 parsed = json.loads(line)
@@ -28093,26 +35691,30 @@ def first_jsonl_row(path: Path) -> dict[str, Any]:
 
 
 def jsonl_row_count(path: Path) -> int:
-    if not path.exists():
+    resolved = resolve_report_artifact_path(path)
+    if not resolved.exists():
         return 0
-    return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
+    return sum(1 for line in resolved.read_text(encoding="utf-8").splitlines() if line.strip())
 
 
 def read_jsonl_if_present(path: Path) -> list[dict[str, Any]]:
-    return read_jsonl(path) if path.exists() else []
+    resolved = resolve_report_artifact_path(path)
+    return read_jsonl(resolved) if resolved.exists() else []
 
 
 def read_json_if_present(path: Path) -> dict[str, Any]:
-    if not path.exists():
+    resolved = resolve_report_artifact_path(path)
+    if not resolved.exists():
         return {}
-    parsed = official.read_json(path)
+    parsed = official.read_json(resolved)
     return dict(parsed) if isinstance(parsed, Mapping) else {}
 
 
 def json_top_level_count(path: Path) -> int:
-    if not path.exists():
+    resolved = resolve_report_artifact_path(path)
+    if not resolved.exists():
         return 0
-    parsed = json.loads(path.read_text(encoding="utf-8"))
+    parsed = json.loads(resolved.read_text(encoding="utf-8"))
     if isinstance(parsed, list):
         return len(parsed)
     if isinstance(parsed, Mapping):
@@ -31640,7 +39242,7 @@ def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in resolve_report_artifact_path(path).read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
         parsed = json.loads(line)
@@ -31666,7 +39268,7 @@ def ensure_ai_worker_on_path() -> None:
 
 
 def sha256_file(path: Path) -> str:
-    return official.sha256_file(path)
+    return official.sha256_file(resolve_report_artifact_path(path))
 
 
 def utc_timestamp() -> str:

@@ -471,11 +471,30 @@ def index_metadata(
     vector_id: Optional[str] = None,
 ) -> dict[str, Any]:
     metadata = dict(doc.index_metadata)
+    source_metadata = _combined_metadata(doc)
+    source_atom_id = _extra(source_metadata, "sourceAtomId", "source_atom_id")
+    source_atom_ids = _extra(source_metadata, "sourceAtomIds", "source_atom_ids")
+    search_view_id = _extra(source_metadata, "searchViewId", "search_view_id") or doc.index_id
+    search_view_kind = _extra(source_metadata, "searchViewKind", "search_view_kind") or "search_unit_embedding_view"
+    source_registry_version = _extra(source_metadata, "sourceRegistryVersion", "source_registry_version")
+    canonical_payload_source = _extra(source_metadata, "canonicalPayloadSource", "canonical_payload_source")
     metadata.update({
         "index_id": doc.index_id,
         "indexId": doc.index_id,
         "stable_index_id": doc.index_id,
         "stableIndexId": doc.index_id,
+        "search_view_id": search_view_id,
+        "searchViewId": search_view_id,
+        "search_view_kind": search_view_kind,
+        "searchViewKind": search_view_kind,
+        "source_atom_id": source_atom_id,
+        "sourceAtomId": source_atom_id,
+        "source_atom_ids": source_atom_ids,
+        "sourceAtomIds": source_atom_ids,
+        "source_registry_version": source_registry_version,
+        "sourceRegistryVersion": source_registry_version,
+        "canonical_payload_source": canonical_payload_source,
+        "canonicalPayloadSource": canonical_payload_source,
         "search_unit_id": doc.search_unit_id,
         "searchUnitId": doc.search_unit_id,
         "source_file_id": doc.source_file_id,
@@ -502,7 +521,6 @@ def index_metadata(
         "content_sha256": doc.content_sha256,
         "contentSha256": doc.content_sha256,
     })
-    source_metadata = _combined_metadata(doc)
     for key in (
         "fileType",
         "sheetName",

@@ -1310,6 +1310,613 @@ def test_progress_status_and_triage_gate_record_v3_6_6_without_metric_measuremen
     assert "strict JSON answers returned=" in current_flat
     assert "Review-only remains stress-only" in current_flat
     assert "DB-derived generation/gold/qrels remain blocked" in current_flat
-    assert "Overall status: `diagnostic_reference_sidecar_runtime_surface_probe_v3_6_6_complete`;" in progress
+    assert (
+        "Overall status: `diagnostic_reference_sidecar_runtime_surface_probe_v3_6_6_complete`;" in progress
+        or "Overall status: `diagnostic_runtime_stability_probe_v3_6_7_complete`;" in progress
+        or "Overall status: `diagnostic_nonprod_all_source_index_materialization_v3_6_8_complete`;" in progress
+        or "Overall status: `diagnostic_source_registry_architecture_audit_v3_6_8_searchunit_overloaded_blocked`;" in progress
+        or "Overall status: `diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9_contract_ready`;" in progress
+        or "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
+        or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+    )
+    assert run_id not in measurements
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_6_7_runtime_stability_probe_without_metric_measurements_or_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_7_runtime_stability_probe_for_core_only"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_runtime_stability_probe_for_core_only_v3_6_7"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "diagnostic_only_runtime_stability_probe_for_core_only"
+    assert event["source_v3_6_6_run_id"] == (
+        "official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe"
+    )
+    assert event["sidecar_row_counts"] == {
+        "all_diagnostic": 1000,
+        "core_only": 665,
+        "quarantine": 0,
+        "review_only_challenge": 335,
+    }
+    assert event["runtime_probe_row_count"] == 30
+    assert event["runtime_probe_core_only"] is True
+    assert event["review_only_rows_attempted"] == 0
+    assert event["official_proximity_rows_attempted"] == 0
+    assert event["runtime_attempted_row_count"] <= 30
+    assert event["strict_json_answer_returned_row_count"] <= event["runtime_attempted_row_count"]
+    assert event["citation_surface_valid_row_count"] <= event["runtime_attempted_row_count"]
+    assert event["local_llm_usage_scope"] == "diagnostic_only_core_runtime_stability_probe_only"
+    assert event["local_llm_live_silver_generation_allowed"] is False
+    assert event["local_llm_live_silver_generation_attempted"] is False
+    assert event["local_llm_metric_scoring_allowed"] is False
+    assert event["local_llm_metric_scoring_attempted"] is False
+    assert event["external_llm_api_allowed"] is False
+    assert event["external_llm_api_attempted"] is False
+    assert event["db_usage_scope"] == "read_only_inherited_surface_status_only"
+    assert event["db_read_only_probe_attempted"] is False
+    assert event["db_write_attempted"] is False
+    assert event["db_migration_attempted"] is False
+    assert event["db_index_rebuild_attempted"] is False
+    assert event["db_write_migration_reindex_attempted"] is False
+    assert event["production_db_used"] is False
+    assert event["db_results_as_generation_source_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["measurements_doc_updated"] is False
+    assert event["triage_doc_updated"] is False
+    assert event["recommended_next_phase"] in {
+        "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric",
+        "v3_6_7_manifest_locator_live_retrieval_probe",
+        "v3_6_7_runtime_stability_probe_for_core_only",
+        "v3_6_7_reference_sidecar_recovery_or_compaction_fix",
+    }
+    for artifact_key in (
+        "summary_json",
+        "runtime_attempts_jsonl",
+        "runtime_stability_summary_json",
+        "policy_audit_json",
+        "next_phase_recommendation_json",
+        "source_v3_6_6_summary_json",
+        "source_v3_6_6_core_smoke_sample_jsonl",
+        "source_v3_6_6_reference_sidecar_jsonl",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "runtime_attempt_rows",
+        "runtime_stability_summary",
+        "policy_audit",
+        "next_phase_recommendation",
+        "reference_sidecar_rows",
+        "core_smoke_sample_rows",
+        "per_row_triage_rows",
+        "per_row_metric_rows",
+    ):
+        assert large_field not in event
+
+    assert "v3_6_7 runtime stability probe for core-only" in current_text
+    assert run_id in current_text
+    assert "attempted=" in current_flat
+    assert "strict JSON answers=" in current_flat
+    assert "citation surface valid=" in current_flat
+    assert "not gold/qrels/official denominator/labels" in current_flat
+    assert "no prompt/retrieval/scorer/renderer/index/export/DB mutation was performed" in current_flat
+    assert (
+        "Overall status: `diagnostic_runtime_stability_probe_v3_6_7_complete`;" in progress
+        or "Overall status: `diagnostic_nonprod_all_source_index_materialization_v3_6_8_complete`;" in progress
+        or "Overall status: `diagnostic_source_registry_architecture_audit_v3_6_8_searchunit_overloaded_blocked`;" in progress
+        or "Overall status: `diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9_contract_ready`;" in progress
+        or "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
+        or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+    )
+    assert run_id not in measurements
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_6_8_nonprod_all_source_without_metric_measurements_or_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = (
+        "official_answer_citation_agentic_loop_run_v3_6_8_"
+        "nonprod_all_source_index_materialization_and_canonical_payload_wiring"
+    )
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_nonprod_all_source_index_materialization_v3_6_8"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "diagnostic_only_nonprod_all_source_index_materialization"
+    assert event["outcome"] == "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED"
+    assert set(event["outcome_choices"]) == {
+        "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED",
+        "ALL_SOURCE_INDEX_BUILT_PAYLOAD_PARTIAL",
+        "INDEX_MATERIALIZATION_BLOCKED",
+        "PAYLOAD_WIRED_BUT_LLM_CITATION_COPY_BLOCKED",
+    }
+    assert event["next_allowed_phase"] == "v3_6_9_core_only_live_diagnostic_metric"
+    assert event["recommended_next_phase"] == event["next_allowed_phase"]
+    assert event["no_generic_probe_recommended"] is True
+    assert "manifest_locator" not in event["recommended_next_phase"]
+    assert event["index_namespace"] == "rag-data-all-source-nonprod-v1"
+    assert event["index_or_export_mutation"] is True
+    assert event["index_or_export_mutation_scope"] == "non_production_only"
+    assert event["load_check"]["passed"] is True
+    assert event["load_check"]["official_29_rows_remain_protected_and_identifiable"] is True
+    assert event["load_check"]["v3_5_4_source_rows_represented"] + event["load_check"][
+        "v3_5_4_source_rows_blocked"
+    ] == 1000
+    assert event["payload_contract"]["families_with_canonical_payload"] == ["PDF", "TEXT", "XLSX"]
+    assert event["payload_contract"]["families_with_valid_no_llm_render"] == ["PDF", "TEXT", "XLSX"]
+    assert event["retrieval_smoke"]["canonical_payload_available_count"] == 50
+    assert event["retrieval_smoke"]["no_llm_citation_render_valid_count"] == 50
+    assert event["core_only_live_diagnostic_metric_allowed"] is True
+    assert event["measurements_doc_updated"] is False
+    assert event["triage_doc_updated"] is False
+    assert event["production_db_used"] is False
+    assert event["db_write_attempted"] is False
+    assert event["db_migration_attempted"] is False
+    assert event["db_index_rebuild_attempted"] is False
+    assert event["production_mutation"] is False
+    assert event["gold_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["official_gold_labels_created"] is False
+    assert event["answer_metric_computed"] is False
+    assert event["citation_metric_computed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["readme_performance_claim_mutation"] is False
+    for artifact_key in (
+        "summary_json",
+        "source_inventory_json",
+        "index_build_summary_json",
+        "payload_contract_summary_json",
+        "retrieval_smoke_diagnostics_jsonl",
+        "failure_buckets_json",
+        "index_faiss",
+        "index_build_json",
+        "index_ingest_manifest_json",
+        "index_search_unit_manifest_jsonl",
+        "index_source_inventory_json",
+        "index_payload_contract_summary_json",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "source_inventory",
+        "index_build_summary",
+        "payload_contract_summary",
+        "retrieval_smoke_diagnostics",
+        "failure_buckets",
+        "search_unit_manifest_rows",
+        "raw_source_units",
+    ):
+        assert large_field not in event
+
+    assert "v3_6_8 non-production all-source index materialization" in current_text
+    assert run_id in current_text
+    assert "outcome=ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED" in current_flat
+    assert "next_allowed_phase=v3_6_9_core_only_live_diagnostic_metric" in current_flat
+    assert "diagnostic-only non-production indexing" in current_flat
+    assert "not a promotion run" in current_flat
+    assert "not an official representative metric" in current_flat
+    assert (
+        "Overall status: `diagnostic_nonprod_all_source_index_materialization_v3_6_8_complete`;" in progress
+        or "Overall status: `diagnostic_source_registry_architecture_audit_v3_6_8_searchunit_overloaded_blocked`;"
+        in progress
+        or "Overall status: `diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9_contract_ready`;"
+        in progress
+        or "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
+        or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+    )
+    assert run_id not in measurements
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_6_8_source_registry_architecture_audit_without_metric_measurements_or_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = (
+        "official_answer_citation_agentic_loop_run_v3_6_8_"
+        "source_registry_first_evidence_bundle_architecture_audit"
+    )
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_source_registry_architecture_audit_v3_6_8"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "diagnostic_only_source_registry_first_architecture_audit"
+    assert event["outcome"] == "SEARCHUNIT_OVERLOADED_BLOCKER"
+    assert set(event["outcome_choices"]) == {
+        "SOURCE_REGISTRY_EVIDENCE_ARCHITECTURE_READY",
+        "SEARCHUNIT_OVERLOADED_BLOCKER",
+        "SOURCE_REGISTRY_MISSING_BLOCKER",
+        "VECTOR_DB_COUPLING_BLOCKER",
+        "TRACK_ROUTING_OVERFIT_BLOCKER",
+    }
+    assert event["next_allowed_phase"] == "SearchUnit/SearchView/SourceAtom refactor"
+    assert event["recommended_next_phase"] == event["next_allowed_phase"]
+    assert event["no_generic_probe_recommended"] is True
+    assert "manifest_locator" not in event["recommended_next_phase"]
+    assert event["source_registry_first_policy"] is True
+    assert event["vector_db_role"] == "candidate_generator_only"
+    assert event["index_or_export_mutation"] is False
+    assert event["source_atom_search_view_evidence_bundle_separation_validated"] is False
+    assert event["searchunit_overloaded"] is True
+    assert event["blocking_buckets"] == ["SEARCHUNIT_OVERLOADED_BLOCKER"]
+    assert event["measurements_doc_updated"] is False
+    assert event["triage_doc_updated"] is False
+    assert event["production_db_used"] is False
+    assert event["db_write_attempted"] is False
+    assert event["db_migration_attempted"] is False
+    assert event["db_index_rebuild_attempted"] is False
+    assert event["production_mutation"] is False
+    assert event["gold_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["official_gold_labels_created"] is False
+    assert event["answer_metric_computed"] is False
+    assert event["citation_metric_computed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["readme_performance_claim_mutation"] is False
+    for artifact_key in (
+        "summary_json",
+        "source_object_audit_json",
+        "searchunit_role_audit_json",
+        "evidence_bundle_contract_json",
+        "track_routing_audit_json",
+        "failure_buckets_json",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "source_object_audit",
+        "searchunit_role_audit",
+        "evidence_bundle_contract",
+        "track_routing_audit",
+        "failure_buckets",
+        "source_atom_rows",
+        "evidence_bundle_rows",
+    ):
+        assert large_field not in event
+
+    assert "v3_6_8 source-registry-first evidence bundle architecture audit" in current_text
+    assert run_id in current_text
+    assert "outcome=SEARCHUNIT_OVERLOADED_BLOCKER" in current_flat
+    assert "next_allowed_phase=SearchUnit/SearchView/SourceAtom refactor" in current_flat
+    assert "Search indexes remain candidate generators only" in current_flat
+    assert (
+        "Overall status: `diagnostic_source_registry_architecture_audit_v3_6_8_searchunit_overloaded_blocked`;"
+        in progress
+        or "Overall status: `diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9_contract_ready`;"
+        in progress
+        or "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
+        or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+    )
+    assert run_id not in measurements
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_6_9_searchunit_searchview_sourceatom_refactor_without_metric_measurements_or_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = (
+        "official_answer_citation_agentic_loop_run_v3_6_9_"
+        "searchunit_searchview_sourceatom_refactor"
+    )
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "diagnostic_only_source_first_contract_refactor"
+    assert event["outcome"] == "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY"
+    assert set(event["outcome_choices"]) == {
+        "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY",
+        "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_BLOCKED",
+        "SOURCE_REGISTRY_MATERIALIZATION_REQUIRED",
+        "VECTOR_METADATA_DECOUPLING_REQUIRED",
+    }
+    assert event["next_allowed_phase"] == "source registry materialization"
+    assert event["recommended_next_phase"] == event["next_allowed_phase"]
+    assert event["no_generic_probe_recommended"] is True
+    assert "manifest_locator" not in event["recommended_next_phase"]
+    assert event["source_registry_first_policy"] is True
+    assert event["vector_db_role"] == "candidate_generator_only"
+    assert event["source_atom_search_view_contract_validated"] is True
+    assert event["source_atom_search_view_evidence_bundle_separation_validated"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["source_registry_materialization_required"] is True
+    assert event["db_migration_required_for_minimal_python_refactor"] is False
+    assert event["index_or_export_mutation"] is False
+    assert event["measurements_doc_updated"] is False
+    assert event["triage_doc_updated"] is False
+    assert event["production_db_used"] is False
+    assert event["db_write_attempted"] is False
+    assert event["db_migration_attempted"] is False
+    assert event["db_index_rebuild_attempted"] is False
+    assert event["production_mutation"] is False
+    assert event["gold_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["official_gold_labels_created"] is False
+    assert event["answer_metric_computed"] is False
+    assert event["citation_metric_computed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["readme_performance_claim_mutation"] is False
+    for artifact_key in (
+        "summary_json",
+        "contract_refactor_json",
+        "search_view_adapter_diagnostics_json",
+        "source_atom_hydration_smoke_json",
+        "failure_buckets_json",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "contract_refactor",
+        "search_view_adapter_diagnostics",
+        "source_atom_hydration_smoke",
+        "failure_buckets",
+        "source_atom_rows",
+        "evidence_bundle_rows",
+    ):
+        assert large_field not in event
+
+    assert "v3_6_9 SearchUnit/SearchView/SourceAtom refactor" in current_text
+    assert run_id in current_text
+    assert "outcome=SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY" in current_flat
+    assert "next_allowed_phase=source registry materialization" in current_flat
+    assert "SearchViews are retrieval candidates" in current_flat
+    assert "vector_payload_used_as_evidence_truth=false" in current_flat
+    assert (
+        "Overall status: `diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9_contract_ready`;" in progress
+        or "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
+        or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+    )
+    assert run_id not in measurements
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_7_0_source_registry_materialization_without_metrics_or_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = (
+        "official_answer_citation_agentic_loop_run_v3_7_0_"
+        "source_registry_materialization"
+    )
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_source_registry_materialization_v3_7_0"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "diagnostic_only_source_registry_materialization"
+    assert event["outcome"] == "SOURCE_REGISTRY_MATERIALIZED_READY"
+    assert set(event["outcome_choices"]) == {
+        "SOURCE_REGISTRY_MATERIALIZED_READY",
+        "SOURCE_REGISTRY_MATERIALIZED_PARTIAL",
+        "SOURCE_REGISTRY_MATERIALIZATION_BLOCKED",
+        "RAW_SOURCE_LINEAGE_BLOCKED",
+        "SNAPSHOT_ONLY_POLICY_BLOCKED",
+    }
+    assert event["next_allowed_phase"] == "v3_7_1_all_source_citable_nonprod_index_build"
+    assert event["v3_7_1_all_source_citable_nonprod_index_build_allowed"] is True
+    assert event["source_registry_first_policy"] is True
+    assert event["vector_db_role"] == "candidate_generator_only"
+    assert event["source_registry_materialized"] is True
+    assert event["source_atom_registry_version"] == "source-registry-v1"
+    assert event["no_vector_evidence_bundle_hydration_passed"] is True
+    assert event["no_vector_citation_rendering_passed"] is True
+    assert event["vector_metadata_used_as_canonical_citation_source"] is False
+    assert event["official_denominator_source_atoms_protected_regression_scope"] is True
+    assert event["measurements_doc_updated"] is False
+    assert event["triage_doc_updated"] is False
+    assert event["production_db_used"] is False
+    assert event["db_write_attempted"] is False
+    assert event["db_migration_attempted"] is False
+    assert event["db_index_rebuild_attempted"] is False
+    assert event["production_mutation"] is False
+    assert event["gold_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["official_gold_labels_created"] is False
+    assert event["retrieval_metric_computed"] is False
+    assert event["answer_metric_computed"] is False
+    assert event["citation_metric_computed"] is False
+    assert event["hybrid_retrieval_baseline_computed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["readme_performance_claim_mutation"] is False
+    for artifact_key in (
+        "summary_json",
+        "source_inventory_json",
+        "materialization_diagnostics_jsonl",
+        "hydration_smoke_json",
+        "failure_buckets_json",
+        "source_atom_registry_jsonl",
+        "source_atom_registry_build_json",
+        "source_atom_registry_inventory_json",
+        "source_atom_registry_blocked_jsonl",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "source_atom_rows",
+        "materialization_diagnostics",
+        "source_inventory",
+        "failure_buckets",
+        "hydration_smoke",
+    ):
+        assert large_field not in event
+
+    assert "v3_7_0 source registry materialization" in current_text
+    assert run_id in current_text
+    assert "outcome=SOURCE_REGISTRY_MATERIALIZED_READY" in current_flat
+    assert "next_allowed_phase=v3_7_1_all_source_citable_nonprod_index_build" in current_flat
+    assert "no-vector hydration=true" in current_flat
+    assert "vector_metadata_used_as_canonical_citation_source=false" in current_flat
+    assert (
+        "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
+        or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+    )
+    assert run_id not in measurements
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_7_1_all_source_citable_nonprod_index_without_metrics_or_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = (
+        "official_answer_citation_agentic_loop_run_v3_7_1_"
+        "all_source_citable_nonprod_index_build"
+    )
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_all_source_citable_nonprod_index_build_v3_7_1"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "diagnostic_only_all_source_citable_nonprod_index_build"
+    assert event["outcome"] == "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT"
+    assert set(event["outcome_choices"]) == {
+        "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT",
+        "ALL_SOURCE_CITABLE_INDEX_PARTIAL",
+        "ALL_SOURCE_CITABLE_INDEX_BLOCKED",
+        "SOURCE_REGISTRY_NOT_READY",
+    }
+    assert event["next_allowed_phase"] == "v3_7_2_source_registry_backed_retrieval_smoke"
+    assert event["source_registry_outcome"] == "SOURCE_REGISTRY_MATERIALIZED_READY"
+    assert event["source_atom_registry_canonical_truth"] is True
+    assert event["search_view_source_atom_contract"] is True
+    assert event["vector_db_role"] == "candidate_generator_only"
+    assert event["canonical_citation_payload_stored_in_vector_metadata"] is False
+    assert event["vector_metadata_used_as_canonical_citation_source"] is False
+    assert event["vector_metadata_used_as_evidence_truth"] is False
+    assert event["search_view_count"] == 136280
+    assert event["official_overlap_count"] == 29
+    assert event["snapshot_only_count"] == 327
+    assert event["load_check"]["passed"] is True
+    assert event["hydration_smoke_summary"]["families_passed"] == ["PDF", "TEXT", "XLSX"]
+    assert event["hydration_smoke_summary"]["no_vector_evidence_bundle_hydration_passed"] is True
+    assert event["hydration_smoke_summary"]["no_vector_citation_rendering_passed"] is True
+    assert event["measurements_doc_updated"] is False
+    assert event["triage_doc_updated"] is False
+    assert event["production_db_used"] is False
+    assert event["db_write_attempted"] is False
+    assert event["db_migration_attempted"] is False
+    assert event["db_index_rebuild_attempted"] is False
+    assert event["production_mutation"] is False
+    assert event["gold_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["retrieval_metric_computed"] is False
+    assert event["answer_metric_computed"] is False
+    assert event["citation_metric_computed"] is False
+    assert event["hybrid_retrieval_baseline_computed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["readme_performance_claim_mutation"] is False
+    for artifact_key in (
+        "summary_json",
+        "source_inventory_json",
+        "index_build_summary_json",
+        "hydration_smoke_json",
+        "failure_buckets_json",
+        "index_faiss",
+        "index_build_json",
+        "index_ingest_manifest_json",
+        "index_search_view_manifest_jsonl",
+        "index_source_inventory_json",
+        "index_hydration_smoke_json",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "source_inventory",
+        "index_build_summary",
+        "hydration_smoke",
+        "failure_buckets",
+        "search_view_rows",
+        "blocked_search_view_rows",
+    ):
+        assert large_field not in event
+
+    assert "v3_7_1 all-source citable non-production index build" in current_text
+    assert run_id in current_text
+    assert "outcome=ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT" in current_flat
+    assert "next_allowed_phase=v3_7_2_source_registry_backed_retrieval_smoke" in current_flat
+    assert "no-vector hydration=true" in current_flat
+    assert "vector_metadata_used_as_canonical_citation_source=false" in current_flat
+    assert "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
     assert run_id not in measurements
     assert run_id not in triage

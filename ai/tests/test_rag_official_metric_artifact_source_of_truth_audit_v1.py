@@ -15,11 +15,32 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def windows_long_path(path: Path) -> Path:
+    if sys.platform != "win32":
+        return path
+    path_text = str(path)
+    if path_text.startswith("\\\\?\\"):
+        return path
+    if path.is_absolute():
+        return Path("\\\\?\\" + path_text)
+    return path
+
+
 REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
-EXTERNAL_REPORT_ARCHIVE_DIR = Path(
+EXTERNAL_REPORT_ARCHIVE_DIR = windows_long_path(Path(
     "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
     "rag-ingestion/repo-wide-cleanup-20260519/reports/rag-ingestion-legacy"
+))
+PRIMARY_EXTERNAL_REPORT_ARCHIVE_DIR = windows_long_path(Path(
+    "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+    "rag-ingestion/repo-wide-cleanup-20260521/reports/rag-ingestion-legacy"
+))
+EXTERNAL_REPORT_ARCHIVE_DIRS = (
+    PRIMARY_EXTERNAL_REPORT_ARCHIVE_DIR,
+    EXTERNAL_REPORT_ARCHIVE_DIR,
 )
 README = ROOT / "README.md"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
@@ -163,6 +184,29 @@ AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID = (
 AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe"
 )
+AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_7_runtime_stability_probe_for_core_only"
+)
+AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_8_"
+    "nonprod_all_source_index_materialization_and_canonical_payload_wiring"
+)
+AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_8_"
+    "source_registry_first_evidence_bundle_architecture_audit"
+)
+AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_9_"
+    "searchunit_searchview_sourceatom_refactor"
+)
+AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_7_0_"
+    "source_registry_materialization"
+)
+AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_7_1_"
+    "all_source_citable_nonprod_index_build"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -264,6 +308,24 @@ REPORT_ARTIFACT_SLUGS = {
     AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID: (
         AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID
     ),
+    AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID: (
+        AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID
+    ),
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID: (
+        AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID
+    ),
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID: (
+        AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID
+    ),
+    AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID: (
+        AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID
+    ),
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID: (
+        AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID
+    ),
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID: (
+        AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID,
@@ -299,17 +361,28 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
     AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
     AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+}
+PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
+    AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
 }
 
 
 def report_artifact_dir(run_id: str) -> Path:
-    if run_id not in ARCHIVED_REPORT_RUN_IDS:
+    if run_id not in PHYSICALLY_ARCHIVED_REPORT_RUN_IDS:
         return REPORT_DIR
-    return REPORT_ARCHIVE_DIR if REPORT_ARCHIVE_DIR.exists() else EXTERNAL_REPORT_ARCHIVE_DIR
+    return REPORT_ARCHIVE_DIR if REPORT_ARCHIVE_DIR.exists() else PRIMARY_EXTERNAL_REPORT_ARCHIVE_DIR
 
 
 def archived_report_dir() -> Path:
-    return REPORT_ARCHIVE_DIR if REPORT_ARCHIVE_DIR.exists() else EXTERNAL_REPORT_ARCHIVE_DIR
+    return REPORT_ARCHIVE_DIR if REPORT_ARCHIVE_DIR.exists() else PRIMARY_EXTERNAL_REPORT_ARCHIVE_DIR
 
 
 def report_artifact_path(run_id: str, suffix: str) -> Path:
@@ -947,10 +1020,136 @@ AGENTIC_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
     AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
     "next_phase_recommendation.json",
 )
+AGENTIC_V3_6_7_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_6_7_RUNTIME_ATTEMPTS_JSONL = report_artifact_path(
+    AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    "runtime_attempts.jsonl",
+)
+AGENTIC_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    "runtime_stability_summary.json",
+)
+AGENTIC_V3_6_7_POLICY_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    "policy_audit.json",
+)
+AGENTIC_V3_6_7_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID,
+    "next_phase_recommendation.json",
+)
+AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SOURCE_INVENTORY_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "source_inventory.json",
+)
+AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_BUILD_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "index_build_summary.json",
+)
+AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_PAYLOAD_CONTRACT_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "payload_contract_summary.json",
+)
+AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_RETRIEVAL_SMOKE_DIAGNOSTICS_JSONL = report_artifact_path(
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "retrieval_smoke_diagnostics.jsonl",
+)
+AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_FAILURE_BUCKETS_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID,
+    "failure_buckets.json",
+)
+AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "source_object_audit.json",
+)
+AGENTIC_V3_6_8_SOURCE_REGISTRY_SEARCHUNIT_ROLE_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "searchunit_role_audit.json",
+)
+AGENTIC_V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "evidence_bundle_contract.json",
+)
+AGENTIC_V3_6_8_SOURCE_REGISTRY_TRACK_ROUTING_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "track_routing_audit.json",
+)
+AGENTIC_V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON = report_artifact_path(
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID,
+    "failure_buckets.json",
+)
+AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON = report_artifact_path(
+    AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    "contract_refactor.json",
+)
+AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_ADAPTER_DIAGNOSTICS_JSON = report_artifact_path(
+    AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    "search_view_adapter_diagnostics.json",
+)
+AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON = report_artifact_path(
+    AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    "source_atom_hydration_smoke.json",
+)
+AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS_JSON = report_artifact_path(
+    AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
+    "failure_buckets.json",
+)
+AGENTIC_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_7_0_SOURCE_REGISTRY_SOURCE_INVENTORY_JSON = report_artifact_path(
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    "source_inventory.json",
+)
+AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_DIAGNOSTICS_JSONL = report_artifact_path(
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    "materialization_diagnostics.jsonl",
+)
+AGENTIC_V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE_JSON = report_artifact_path(
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    "hydration_smoke.json",
+)
+AGENTIC_V3_7_0_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON = report_artifact_path(
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
+    "failure_buckets.json",
+)
+AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_SOURCE_INVENTORY_JSON = report_artifact_path(
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    "source_inventory.json",
+)
+AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    "index_build_summary.json",
+)
+AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE_JSON = report_artifact_path(
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    "hydration_smoke.json",
+)
+AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON = report_artifact_path(
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    "failure_buckets.json",
+)
 AGENTIC_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data"
-EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES: set[str] = {
-    AGENTIC_V3_4_4_README_SECTION_MD.name,
-}
+EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES: set[str] = set()
 CURRENT_REPORT_PATHS = {
     REPORT_DIR / "baseline_v1.json",
     REPORT_DIR / "scorer_v1.jsonl",
@@ -1109,7 +1308,40 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT_JSON,
     AGENTIC_V3_6_6_POLICY_AUDIT_JSON,
     AGENTIC_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON,
+    AGENTIC_V3_6_7_SUMMARY_JSON,
+    AGENTIC_V3_6_7_RUNTIME_ATTEMPTS_JSONL,
+    AGENTIC_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON,
+    AGENTIC_V3_6_7_POLICY_AUDIT_JSON,
+    AGENTIC_V3_6_7_NEXT_PHASE_RECOMMENDATION_JSON,
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON,
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SOURCE_INVENTORY_JSON,
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_BUILD_SUMMARY_JSON,
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_PAYLOAD_CONTRACT_SUMMARY_JSON,
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_RETRIEVAL_SMOKE_DIAGNOSTICS_JSONL,
+    AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_FAILURE_BUCKETS_JSON,
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON,
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT_JSON,
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_SEARCHUNIT_ROLE_AUDIT_JSON,
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT_JSON,
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_TRACK_ROUTING_AUDIT_JSON,
+    AGENTIC_V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON,
+    AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON,
+    AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON,
+    AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_ADAPTER_DIAGNOSTICS_JSON,
+    AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON,
+    AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS_JSON,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_SOURCE_INVENTORY_JSON,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_DIAGNOSTICS_JSONL,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE_JSON,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_SOURCE_INVENTORY_JSON,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY_JSON,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE_JSON,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON,
 }
+PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS = CURRENT_REPORT_PATHS
 ARCHIVED_REPORT_PATHS = {
     AGENTIC_RESULTS,
     AGENTIC_SUMMARY_JSON,
@@ -1171,6 +1403,28 @@ ARCHIVED_REPORT_PATHS = {
     AGENTIC_V3_1_5_SOURCE_BOUND_COVERAGE_DIAGNOSTICS_JSONL,
     AGENTIC_V3_1_5_SOURCE_BOUND_COVERAGE_REMAINING_TRIAGE_JSON,
 }
+CURRENT_REPORT_PATHS = {
+    REPORT_DIR / "status.jsonl",
+    AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON,
+    AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON,
+    AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_ADAPTER_DIAGNOSTICS_JSON,
+    AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON,
+    AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS_JSON,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_SOURCE_INVENTORY_JSON,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_DIAGNOSTICS_JSONL,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE_JSON,
+    AGENTIC_V3_7_0_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_SOURCE_INVENTORY_JSON,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY_JSON,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE_JSON,
+    AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON,
+}
+ARCHIVED_REPORT_PATHS = (
+    ARCHIVED_REPORT_PATHS | (PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS - CURRENT_REPORT_PATHS)
+) - CURRENT_REPORT_PATHS
+REGISTERED_REPORT_PATHS = CURRENT_REPORT_PATHS | ARCHIVED_REPORT_PATHS
 CURRENT_REPORT_FILENAMES = {path.name for path in CURRENT_REPORT_PATHS}
 ARCHIVED_REPORT_FILENAMES = {path.name for path in ARCHIVED_REPORT_PATHS}
 ALL_REPORT_FILENAMES = CURRENT_REPORT_FILENAMES | ARCHIVED_REPORT_FILENAMES
@@ -1304,9 +1558,9 @@ def test_v3_6_2_sanity_hash_contract_is_registered_and_matches_artifacts() -> No
         "next_phase_recommendation_json_sha256": AGENTIC_V3_6_2_NEXT_PHASE_RECOMMENDATION_JSON,
     }
 
-    assert AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON in REGISTERED_REPORT_PATHS
     assert AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON.exists()
-    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
         assert path.exists(), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
@@ -1330,9 +1584,9 @@ def test_v3_6_3_manifest_freeze_artifacts_are_registered_and_hash_locked() -> No
         "next_phase_recommendation_json_sha256": AGENTIC_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON,
     }
 
-    assert AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON in REGISTERED_REPORT_PATHS
     assert AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON.exists()
-    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
         assert path.exists(), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
@@ -1362,9 +1616,9 @@ def test_v3_6_4_diagnostic_metric_artifacts_are_registered_and_hash_locked() -> 
         "next_phase_recommendation_json_sha256": AGENTIC_V3_6_4_NEXT_PHASE_RECOMMENDATION_JSON,
     }
 
-    assert AGENTIC_V3_6_4_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_4_SUMMARY_JSON in REGISTERED_REPORT_PATHS
     assert AGENTIC_V3_6_4_SUMMARY_JSON.exists()
-    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
         assert path.exists(), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
@@ -1421,9 +1675,9 @@ def test_v3_6_5_runtime_audit_artifacts_are_registered_hash_locked_and_compact()
         "next_phase_recommendation_json_sha256": AGENTIC_V3_6_5_NEXT_PHASE_RECOMMENDATION_JSON,
     }
 
-    assert AGENTIC_V3_6_5_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_5_SUMMARY_JSON in REGISTERED_REPORT_PATHS
     assert AGENTIC_V3_6_5_SUMMARY_JSON.exists()
-    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
         assert path.exists(), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
@@ -1471,9 +1725,9 @@ def test_v3_6_6_sidecar_runtime_probe_artifacts_are_registered_hash_locked_and_c
         "next_phase_recommendation_json_sha256": AGENTIC_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON,
     }
 
-    assert AGENTIC_V3_6_6_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_6_SUMMARY_JSON in REGISTERED_REPORT_PATHS
     assert AGENTIC_V3_6_6_SUMMARY_JSON.exists()
-    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
         assert path.exists(), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
@@ -1524,6 +1778,296 @@ def test_v3_6_6_sidecar_runtime_probe_artifacts_are_registered_hash_locked_and_c
     assert AGENTIC_V3_6_6_SUMMARY_JSON.stat().st_size < 250_000
 
 
+def test_v3_6_7_runtime_stability_probe_artifacts_are_registered_hash_locked_and_compact() -> None:
+    summary = read_json(AGENTIC_V3_6_7_SUMMARY_JSON)
+    expected_artifacts = {
+        "runtime_attempts_jsonl_sha256": AGENTIC_V3_6_7_RUNTIME_ATTEMPTS_JSONL,
+        "runtime_stability_summary_json_sha256": AGENTIC_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON,
+        "policy_audit_json_sha256": AGENTIC_V3_6_7_POLICY_AUDIT_JSON,
+        "next_phase_recommendation_json_sha256": AGENTIC_V3_6_7_NEXT_PHASE_RECOMMENDATION_JSON,
+    }
+
+    assert AGENTIC_V3_6_7_SUMMARY_JSON in REGISTERED_REPORT_PATHS
+    assert AGENTIC_V3_6_7_SUMMARY_JSON.exists()
+    assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID
+    assert summary["source_v3_6_6_run_id"] == (
+        AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID
+    )
+    assert summary["artifact_kind"] == "diagnostic_runtime_stability_probe_for_core_only"
+    assert summary["sidecar_row_counts"] == {
+        "all_diagnostic": 1000,
+        "core_only": 665,
+        "quarantine": 0,
+        "review_only_challenge": 335,
+    }
+    assert summary["runtime_probe_row_count"] == 30
+    assert summary["runtime_probe_core_only"] is True
+    assert summary["review_only_rows_attempted"] == 0
+    assert summary["official_proximity_rows_attempted"] == 0
+    assert summary["local_llm_live_silver_generation_allowed"] is False
+    assert summary["local_llm_metric_scoring_allowed"] is False
+    assert summary["external_llm_api_allowed"] is False
+    assert summary["db_write_allowed"] is False
+    assert summary["db_migration_allowed"] is False
+    assert summary["db_index_rebuild_allowed"] is False
+    assert summary["db_write_migration_reindex_attempted"] is False
+    assert summary["production_db_usage_allowed"] is False
+    assert summary["readme_performance_claim_mutation"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["lane_a_b_c_collapsed_scoring"] is False
+    for heavy_key in (
+        "runtime_attempt_rows",
+        "runtime_stability_summary",
+        "policy_audit",
+        "next_phase_recommendation",
+        "reference_sidecar_rows",
+        "core_smoke_sample_rows",
+        "per_row_metric_rows",
+        "per_row_triage_rows",
+        "raw_llm_response",
+        "prompt_payloads",
+        "db_snapshot_rows",
+    ):
+        assert heavy_key not in summary
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
+    assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
+    assert AGENTIC_V3_6_7_RUNTIME_ATTEMPTS_JSONL.stat().st_size < 250_000
+    assert AGENTIC_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_6_7_SUMMARY_JSON.stat().st_size < 250_000
+
+
+def test_v3_6_8_nonprod_index_and_payload_artifacts_are_registered_hash_locked_and_compact() -> None:
+    summary = read_json(AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON)
+    expected_artifacts = {
+        "source_inventory_json_sha256": AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SOURCE_INVENTORY_JSON,
+        "index_build_summary_json_sha256": AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_BUILD_SUMMARY_JSON,
+        "payload_contract_summary_json_sha256": AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_PAYLOAD_CONTRACT_SUMMARY_JSON,
+        "retrieval_smoke_diagnostics_jsonl_sha256": AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_RETRIEVAL_SMOKE_DIAGNOSTICS_JSONL,
+        "failure_buckets_json_sha256": AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_FAILURE_BUCKETS_JSON,
+    }
+
+    assert AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON in REGISTERED_REPORT_PATHS
+    assert AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON.exists()
+    assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == (
+        AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_INDEX_MATERIALIZATION_AND_CANONICAL_PAYLOAD_WIRING_RUN_ID
+    )
+    assert summary["artifact_kind"] == "diagnostic_nonprod_all_source_index_materialization_and_canonical_payload_wiring"
+    assert summary["outcome"] == "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED"
+    assert set(summary["outcome_choices"]) == {
+        "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED",
+        "ALL_SOURCE_INDEX_BUILT_PAYLOAD_PARTIAL",
+        "INDEX_MATERIALIZATION_BLOCKED",
+        "PAYLOAD_WIRED_BUT_LLM_CITATION_COPY_BLOCKED",
+    }
+    assert summary["next_allowed_phase"] == "v3_6_9_core_only_live_diagnostic_metric"
+    assert summary["no_generic_probe_recommended"] is True
+    assert "manifest_locator" not in summary["recommended_next_phase"]
+    assert summary["index_namespace"] == "rag-data-all-source-nonprod-v1"
+    assert summary["index_or_export_mutation"] is True
+    assert summary["index_or_export_mutation_scope"] == "non_production_only"
+    assert summary["production_db_usage_allowed"] is False
+    assert summary["production_db_used"] is False
+    assert summary["official_metric"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["citation_metric_computed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["readme_performance_claim_mutation"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["official_gold_labels_created"] is False
+    assert summary["official_denominator_index_sha256_unchanged"] is True
+    assert summary["source_inventory_counts"]["accepted_source_units_by_source_family"]["total"] == 136280
+    assert summary["source_inventory_counts"]["retrieval_only_uncanonicalized_count"] == 0
+    assert summary["load_check"]["passed"] is True
+    assert summary["payload_contract"]["families_with_canonical_payload"] == ["PDF", "TEXT", "XLSX"]
+    assert summary["payload_contract"]["families_with_valid_no_llm_render"] == ["PDF", "TEXT", "XLSX"]
+    assert summary["retrieval_smoke"]["canonical_payload_available_count"] == 50
+    assert summary["retrieval_smoke"]["no_llm_citation_render_valid_count"] == 50
+    assert summary["blocking_buckets"] == []
+
+    for heavy_key in (
+        "source_inventory",
+        "index_build_summary",
+        "payload_contract_summary",
+        "retrieval_smoke_diagnostics",
+        "failure_buckets",
+        "search_unit_manifest_rows",
+        "raw_source_units",
+        "generated_answers",
+        "prompt_payloads",
+        "db_snapshot_rows",
+    ):
+        assert heavy_key not in summary
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
+    assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
+    assert AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SOURCE_INVENTORY_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_RETRIEVAL_SMOKE_DIAGNOSTICS_JSONL.stat().st_size < 250_000
+
+
+def test_v3_6_8_source_registry_architecture_audit_artifacts_are_registered_hash_locked_and_compact() -> None:
+    summary = read_json(AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON)
+    expected_artifacts = {
+        "source_object_audit_json_sha256": AGENTIC_V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT_JSON,
+        "searchunit_role_audit_json_sha256": AGENTIC_V3_6_8_SOURCE_REGISTRY_SEARCHUNIT_ROLE_AUDIT_JSON,
+        "evidence_bundle_contract_json_sha256": AGENTIC_V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT_JSON,
+        "track_routing_audit_json_sha256": AGENTIC_V3_6_8_SOURCE_REGISTRY_TRACK_ROUTING_AUDIT_JSON,
+        "failure_buckets_json_sha256": AGENTIC_V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS_JSON,
+    }
+
+    assert AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON in REGISTERED_REPORT_PATHS
+    assert AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON.exists()
+    assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_source_registry_first_evidence_bundle_architecture_audit"
+    assert summary["outcome"] == "SEARCHUNIT_OVERLOADED_BLOCKER"
+    assert set(summary["outcome_choices"]) == {
+        "SOURCE_REGISTRY_EVIDENCE_ARCHITECTURE_READY",
+        "SEARCHUNIT_OVERLOADED_BLOCKER",
+        "SOURCE_REGISTRY_MISSING_BLOCKER",
+        "VECTOR_DB_COUPLING_BLOCKER",
+        "TRACK_ROUTING_OVERFIT_BLOCKER",
+    }
+    assert summary["next_allowed_phase"] == "SearchUnit/SearchView/SourceAtom refactor"
+    assert summary["no_generic_probe_recommended"] is True
+    assert "manifest_locator" not in summary["recommended_next_phase"]
+    assert summary["source_registry_first_policy"] is True
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["source_atom_search_view_evidence_bundle_separation_validated"] is False
+    assert summary["searchunit_overloaded"] is True
+    assert summary["no_vector_hydration_passed"] is True
+    assert summary["no_vector_citation_rendering_passed"] is True
+    assert summary["track_specific_evidence_bundle_assembly_passed_by_family"] == {
+        "PDF": True,
+        "TEXT": True,
+        "XLSX": True,
+    }
+    assert summary["blocking_buckets"] == ["SEARCHUNIT_OVERLOADED_BLOCKER"]
+
+    for heavy_key in (
+        "raw_source_units",
+        "source_atom_rows",
+        "evidence_bundle_rows",
+        "full_evidence_bundles",
+        "retrieval_smoke_diagnostics",
+        "generated_answers",
+        "prompt_payloads",
+        "db_snapshot_rows",
+        "search_unit_manifest_rows",
+    ):
+        assert heavy_key not in summary
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
+    assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
+    assert AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT_JSON.stat().st_size < 250_000
+
+
+def test_v3_6_9_searchunit_searchview_sourceatom_refactor_artifacts_are_registered_hash_locked_and_compact() -> None:
+    summary = read_json(AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON)
+    expected_artifacts = {
+        "contract_refactor_json_sha256": AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON,
+        "search_view_adapter_diagnostics_json_sha256": AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_ADAPTER_DIAGNOSTICS_JSON,
+        "source_atom_hydration_smoke_json_sha256": AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON,
+        "failure_buckets_json_sha256": AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS_JSON,
+    }
+
+    assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON.exists()
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_searchunit_searchview_sourceatom_refactor"
+    assert summary["outcome"] == "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY"
+    assert set(summary["outcome_choices"]) == {
+        "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY",
+        "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_BLOCKED",
+        "SOURCE_REGISTRY_MATERIALIZATION_REQUIRED",
+        "VECTOR_METADATA_DECOUPLING_REQUIRED",
+    }
+    assert summary["next_allowed_phase"] == "source registry materialization"
+    assert summary["no_generic_probe_recommended"] is True
+    assert "manifest_locator" not in summary["recommended_next_phase"]
+    assert summary["source_atom_search_view_contract_validated"] is True
+    assert summary["source_atom_search_view_evidence_bundle_separation_validated"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["db_migration_required_for_minimal_python_refactor"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["production_db_used"] is False
+    assert summary["official_metric"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["citation_metric_computed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["official_gold_labels_created"] is False
+    assert summary["blocking_buckets"] == []
+    assert summary["next_blocking_work"] == ["SOURCE_REGISTRY_MATERIALIZATION_REQUIRED"]
+
+    for heavy_key in (
+        "contract_refactor",
+        "search_view_adapter_diagnostics",
+        "source_atom_hydration_smoke",
+        "failure_buckets",
+        "raw_source_units",
+        "source_atom_rows",
+        "evidence_bundle_rows",
+        "generated_answers",
+        "prompt_payloads",
+        "db_snapshot_rows",
+    ):
+        assert heavy_key not in summary
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
+    assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
+    assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON.stat().st_size < 250_000
+
+
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:
     first_run = read_json(REPORT_DIR / "baseline_v1.json")
     input_config = read_json(REPORT_DIR / "metric_input_v1.json")
@@ -1533,7 +2077,7 @@ def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_onl
     smoke = read_json(REPORT_DIR / "smoke_v1.json")
 
     assert {path.name for path in REPORT_DIR.iterdir() if path.is_file()} == CURRENT_REPORT_FILENAMES
-    assert {path.name for path in archived_report_dir().iterdir() if path.is_file()} == ARCHIVED_REPORT_FILENAMES
+    assert {path.name for path in archived_report_dir().iterdir()} == ARCHIVED_REPORT_FILENAMES
     assert CURRENT_REPORT_FILENAMES | ARCHIVED_REPORT_FILENAMES == ALL_REPORT_FILENAMES
     assert not (REPORT_DIR / "status.md").exists()
     assert {path.name for path in REPORT_DIR.glob("*.md")} == EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES
@@ -1633,26 +2177,34 @@ def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_onl
 def test_readme_baseline_section_matches_immutable_first_run_and_separates_candidates() -> None:
     first_run = read_json(REPORT_DIR / "baseline_v1.json")
     readme = README.read_text(encoding="utf-8")
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_progress = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_progress.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
 
-    assert "## RAG Answer/Citation Metric Baseline" in readme
-    assert "official_answer_citation_metric_first_run_v1" in readme
-    assert "`SCORED_BASELINE_PARTIAL`" in readme
-    assert f"`scored_count={first_run['scored_count']}`" in readme
-    assert "`PASS=8`" in readme
-    assert "`CITATION_UNSUPPORTED=11`" in readme
-    assert "`PARTIAL_OR_UNSUPPORTED=10`" in readme
-    assert "immutable baseline" in readme
-    assert "XLSX runtime candidate" in readme
-    assert "PASS=26/29" in readme
-    assert "XLSX=19/19" in readme
-    assert "PDF table/value candidate" in readme
-    assert "PASS=29/29" in readme
-    assert "must not be presented as the official first-run baseline" in readme
-    assert "expected answers/supporting evidence are for scoring/audit only" in readme
-    assert AGENTIC_RUN_ID in readme
+    assert "docs/rag-ingestion-progress.md" in readme
+    assert "docs/rag-ingestion-measurements.md" in readme
+    assert "docs/rag-ingestion-triage.md" in readme
+    assert "production promotion" in readme
+
+    assert "official_answer_citation_metric_first_run_v1" in measurements
+    assert f"`{first_run['scored_count']}`" in measurements or f"scored_count={first_run['scored_count']}" in current_progress
+    assert "PASS `8/29`" in measurements or "PASS=8" in current_progress
+    assert "`CITATION_UNSUPPORTED=11`" in measurements or "CITATION_UNSUPPORTED=11" in current_progress
+    assert "`PARTIAL_OR_UNSUPPORTED=10`" in measurements or "PARTIAL_OR_UNSUPPORTED=10" in current_progress
+    assert "SCORED_BASELINE_PARTIAL" in current_progress
+    assert "XLSX runtime candidate" in current_progress
+    assert "PASS=26/29" in current_progress
+    assert "XLSX=19/19" in current_progress
+    assert "PDF table/value candidate" in current_progress
+    assert "PASS=29/29" in current_progress
+    assert "does not overwrite the official first-run baseline" in current_flat
+    assert "expected answers/supporting evidence" in current_flat
+    assert AGENTIC_RUN_ID in current_progress
     assert (
-        report_artifact_repo_relative(AGENTIC_RUN_ID, "results.jsonl") in readme
-        or "D:\\_external_runtime_artifacts\\async-ocr-rag-multimodal-pipeline\\rag-ingestion\\" in readme
+        report_artifact_repo_relative(AGENTIC_RUN_ID, "results.jsonl") in current_progress
+        or "D:\\_external_runtime_artifacts\\async-ocr-rag-multimodal-pipeline\\rag-ingestion\\"
+        in current_progress
     )
 
 
@@ -4586,7 +5138,14 @@ def test_v3_2_1_text_residual_triage_and_scorer_policy_are_guarded() -> None:
     assert by_id["text_namu_v2_0014"]["primary_category"] == "prompt"
     assert by_id["text_namu_v2_0017"]["secondary_category"] == "scorer"
     assert by_id["text_namu_v2_0084"]["primary_category"] == "prompt"
-    assert all(row["evidence_artifact"] == AGENTIC_V3_2_0_RESULTS.relative_to(ROOT).as_posix() for row in rows)
+    assert all(
+        row["evidence_artifact"]
+        == report_artifact_repo_relative(
+            AGENTIC_V3_2_0_CURRENT_SYSTEM_LIVE_BASELINE_RUN_ID,
+            "results.jsonl",
+        )
+        for row in rows
+    )
     assert summary["implementation_change_made"] is True
     assert summary["v3_2_2_required"] is True
     assert summary["gold_mutation"] is False
@@ -7021,12 +7580,16 @@ def resolve_report_artifact_path(path: Path) -> Path:
     if path.exists():
         return path
     if path.parent == REPORT_ARCHIVE_DIR:
-        archived_external = EXTERNAL_REPORT_ARCHIVE_DIR / path.name
-        return archived_external if archived_external.exists() else path
+        for archive_dir in EXTERNAL_REPORT_ARCHIVE_DIRS:
+            archived_external = archive_dir / path.name
+            if archived_external.exists():
+                return archived_external
+        return path
     if path.parent == REPORT_DIR:
-        archived_external = EXTERNAL_REPORT_ARCHIVE_DIR / path.name
-        if archived_external.exists():
-            return archived_external
+        for archive_dir in EXTERNAL_REPORT_ARCHIVE_DIRS:
+            archived_external = archive_dir / path.name
+            if archived_external.exists():
+                return archived_external
         archived = REPORT_ARCHIVE_DIR / path.name
         if archived.exists():
             return archived
@@ -7046,12 +7609,12 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
-    with path.open("r", encoding="utf-8", newline="") as handle:
+    with resolve_report_artifact_path(path).open("r", encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
 
 
 def sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return hashlib.sha256(resolve_report_artifact_path(path).read_bytes()).hexdigest()
 
 
 def sha256_text(value: str) -> str:
@@ -7117,7 +7680,10 @@ def official_file_identity(path: Path) -> dict[str, Any]:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_official_answer_citation_metric_first_run_v1 as official
 
-    return official.file_identity(resolve_report_artifact_path(path))
+    identity = official.file_identity(resolve_report_artifact_path(path))
+    if path.is_relative_to(ROOT):
+        identity["path"] = path.relative_to(ROOT).as_posix()
+    return identity
 
 
 def numeric_bbox(value: Any) -> bool:

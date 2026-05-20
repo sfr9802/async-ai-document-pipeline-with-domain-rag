@@ -717,6 +717,25 @@ def test_canonical_search_unit_citation_payload_preserves_track_locator_fields()
             unit_type="CHUNK",
             unit_key="sheet:0:chunk:1:A2:D5",
             metadata_json={
+                "source_identity": "XLSX:docv-xlsx:su-xlsx:fp-xlsx",
+                "locator_fingerprint": "fp-xlsx",
+                "canonical_payload_status": "canonicalizable",
+                "canonical_payload_renderable": True,
+                "generation_source_allowed": True,
+                "official_denominator_overlap": False,
+                "not_official_denominator": True,
+                "track_locator_payload": {
+                    "workbook": "sample.xlsx",
+                    "sheet": "Sheet1",
+                    "range": "A2:D5",
+                    "cell": "D2",
+                },
+                "canonical_citation_payload": {
+                    "source_family": "XLSX",
+                    "source_identity": "XLSX:docv-xlsx:su-xlsx:fp-xlsx",
+                    "locator_fingerprint": "fp-xlsx",
+                    "search_unit_id": "su-xlsx",
+                },
                 "document_version_id": "docv-xlsx",
                 "workbook": "sample.xlsx",
                 "sheet": "Sheet1",
@@ -743,6 +762,21 @@ def test_canonical_search_unit_citation_payload_preserves_track_locator_fields()
             page_start=65,
             page_end=65,
             metadata_json={
+                "source_identity": "PDF:docv-pdf:su-pdf:fp-pdf",
+                "locator_fingerprint": "fp-pdf",
+                "canonical_payload_status": "canonicalizable",
+                "canonical_payload_renderable": True,
+                "generation_source_allowed": False,
+                "official_denominator_overlap": True,
+                "not_official_denominator": False,
+                "track_locator_payload": {
+                    "source_pdf_path": "reports/report.pdf",
+                    "document_version_id": "docv-pdf",
+                    "page": 65,
+                    "physical_page_index": 64,
+                    "bbox": [73.6, 76.45, 239.27, 88.44],
+                    "region_type": "table_body",
+                },
                 "document_version_id": "docv-pdf",
                 "source_pdf_path": "reports/report.pdf",
                 "page": 65,
@@ -756,6 +790,21 @@ def test_canonical_search_unit_citation_payload_preserves_track_locator_fields()
     )
 
     assert xlsx["searchUnitId"] == "su-xlsx"
+    assert xlsx["source_identity"] == "XLSX:docv-xlsx:su-xlsx:fp-xlsx"
+    assert xlsx["sourceIdentity"] == "XLSX:docv-xlsx:su-xlsx:fp-xlsx"
+    assert xlsx["locator_fingerprint"] == "fp-xlsx"
+    assert xlsx["locatorFingerprint"] == "fp-xlsx"
+    assert xlsx["canonical_payload_status"] == "canonicalizable"
+    assert xlsx["canonicalPayloadStatus"] == "canonicalizable"
+    assert xlsx["canonical_payload_renderable"] is True
+    assert xlsx["canonicalPayloadRenderable"] is True
+    assert xlsx["generation_source_allowed"] is True
+    assert xlsx["generationSourceAllowed"] is True
+    assert xlsx["official_denominator_overlap"] is False
+    assert xlsx["not_official_denominator"] is True
+    assert xlsx["track_locator_payload"]["cell"] == "D2"
+    assert xlsx["trackLocatorPayload"]["range"] == "A2:D5"
+    assert xlsx["canonical_citation_payload"]["search_unit_id"] == "su-xlsx"
     assert xlsx["document_version_id"] == "docv-xlsx"
     assert xlsx["workbook"] == "sample.xlsx"
     assert xlsx["sheet"] == "Sheet1"
@@ -764,6 +813,14 @@ def test_canonical_search_unit_citation_payload_preserves_track_locator_fields()
     assert xlsx["row_label"] == "2019-02 5호선"
     assert xlsx["target_column"] == "승차총승객수"
     assert xlsx["normalized_value"] == "15446522"
+    assert pdf["source_identity"] == "PDF:docv-pdf:su-pdf:fp-pdf"
+    assert pdf["locator_fingerprint"] == "fp-pdf"
+    assert pdf["canonical_payload_status"] == "canonicalizable"
+    assert pdf["canonical_payload_renderable"] is True
+    assert pdf["generation_source_allowed"] is False
+    assert pdf["official_denominator_overlap"] is True
+    assert pdf["not_official_denominator"] is False
+    assert pdf["track_locator_payload"]["region_type"] == "table_body"
     assert pdf["source_pdf_path"] == "reports/report.pdf"
     assert pdf["page"] == 65
     assert pdf["physical_page_index"] == 64

@@ -10,6 +10,45 @@ from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = ROOT / "ai" / "scripts" / "rag_official_answer_citation_metric_first_run_v1.py"
+REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
+
+
+def windows_long_path(path: Path) -> Path:
+    if sys.platform != "win32":
+        return path
+    path_text = str(path)
+    if path_text.startswith("\\\\?\\"):
+        return path
+    if path.is_absolute():
+        return Path("\\\\?\\" + path_text)
+    return path
+
+
+EXTERNAL_REPORT_ARCHIVE_DIRS = (
+    windows_long_path(Path(
+        "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+        "rag-ingestion/repo-wide-cleanup-20260521/reports/rag-ingestion-legacy"
+    )),
+    windows_long_path(Path(
+        "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+        "rag-ingestion/repo-wide-cleanup-20260519/reports/rag-ingestion-legacy"
+    )),
+)
+
+
+def resolve_report_artifact_path(path: Path) -> Path:
+    if path.exists():
+        return path
+    if path.parent == REPORT_DIR:
+        for archive_dir in EXTERNAL_REPORT_ARCHIVE_DIRS:
+            archived = archive_dir / path.name
+            if archived.exists():
+                return archived
+        legacy = REPORT_ARCHIVE_DIR / path.name
+        if legacy.exists():
+            return legacy
+    return path
 
 
 def load_module():
@@ -442,7 +481,7 @@ def test_scorer_guardrail_true_flag_fails_closed_before_scoring(tmp_path: Path) 
 
 
 def test_latest_first_run_artifacts_are_scored_baseline_not_backend_unavailable() -> None:
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "baseline_v1.json"
+    report_path = REPORT_DIR / "baseline_v1.json"
     report = read_json(report_path)
     measurements_text = (ROOT / "docs" / "rag-ingestion-measurements.md").read_text(encoding="utf-8")
 
@@ -733,7 +772,7 @@ def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
 
 
 def read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(resolve_report_artifact_path(path).read_text(encoding="utf-8"))
 
 
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:

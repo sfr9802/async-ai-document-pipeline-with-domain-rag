@@ -8,11 +8,32 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def windows_long_path(path: Path) -> Path:
+    if sys.platform != "win32":
+        return path
+    path_text = str(path)
+    if path_text.startswith("\\\\?\\"):
+        return path
+    if path.is_absolute():
+        return Path("\\\\?\\" + path_text)
+    return path
+
+
 REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
-EXTERNAL_REPORT_ARCHIVE_DIR = Path(
+EXTERNAL_REPORT_ARCHIVE_DIR = windows_long_path(Path(
     "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
     "rag-ingestion/repo-wide-cleanup-20260519/reports/rag-ingestion-legacy"
+))
+PRIMARY_EXTERNAL_REPORT_ARCHIVE_DIR = windows_long_path(Path(
+    "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
+    "rag-ingestion/repo-wide-cleanup-20260521/reports/rag-ingestion-legacy"
+))
+EXTERNAL_REPORT_ARCHIVE_DIRS = (
+    PRIMARY_EXTERNAL_REPORT_ARCHIVE_DIR,
+    EXTERNAL_REPORT_ARCHIVE_DIR,
 )
 SILVER_DIR = ROOT / "ai" / "eval" / "silver"
 MANIFEST = SILVER_DIR / "answer_citation_silver_manifest_v1.json"
@@ -128,6 +149,145 @@ V3_6_6_RUNTIME_PROBE_SUMMARY = REPORT_DIR / f"{V3_6_6_RUN_ID}_runtime_probe_summ
 V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT = REPORT_DIR / f"{V3_6_6_RUN_ID}_db_retrieval_surface_audit.json"
 V3_6_6_POLICY_AUDIT = REPORT_DIR / f"{V3_6_6_RUN_ID}_policy_audit.json"
 V3_6_6_NEXT_PHASE_RECOMMENDATION = REPORT_DIR / f"{V3_6_6_RUN_ID}_next_phase_recommendation.json"
+V3_6_7_RUN_ID = "official_answer_citation_agentic_loop_run_v3_6_7_runtime_stability_probe_for_core_only"
+V3_6_7_SUMMARY = REPORT_DIR / f"{V3_6_7_RUN_ID}_summary.json"
+V3_6_7_RUNTIME_ATTEMPTS = REPORT_DIR / f"{V3_6_7_RUN_ID}_runtime_attempts.jsonl"
+V3_6_7_RUNTIME_STABILITY_SUMMARY = REPORT_DIR / f"{V3_6_7_RUN_ID}_runtime_stability_summary.json"
+V3_6_7_POLICY_AUDIT = REPORT_DIR / f"{V3_6_7_RUN_ID}_policy_audit.json"
+V3_6_7_NEXT_PHASE_RECOMMENDATION = REPORT_DIR / f"{V3_6_7_RUN_ID}_next_phase_recommendation.json"
+V3_6_7_RECOMMENDATION_CHOICES = {
+    "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric",
+    "v3_6_7_manifest_locator_live_retrieval_probe",
+    "v3_6_7_runtime_stability_probe_for_core_only",
+    "v3_6_7_reference_sidecar_recovery_or_compaction_fix",
+}
+V3_6_8_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_8_"
+    "nonprod_all_source_index_materialization_and_canonical_payload_wiring"
+)
+V3_6_8_SUMMARY = REPORT_DIR / f"{V3_6_8_RUN_ID}_summary.json"
+V3_6_8_SOURCE_INVENTORY = REPORT_DIR / f"{V3_6_8_RUN_ID}_source_inventory.json"
+V3_6_8_INDEX_BUILD_SUMMARY = REPORT_DIR / f"{V3_6_8_RUN_ID}_index_build_summary.json"
+V3_6_8_PAYLOAD_CONTRACT_SUMMARY = REPORT_DIR / f"{V3_6_8_RUN_ID}_payload_contract_summary.json"
+V3_6_8_RETRIEVAL_SMOKE_DIAGNOSTICS = REPORT_DIR / f"{V3_6_8_RUN_ID}_retrieval_smoke_diagnostics.jsonl"
+V3_6_8_FAILURE_BUCKETS = REPORT_DIR / f"{V3_6_8_RUN_ID}_failure_buckets.json"
+V3_6_8_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data-all-source-nonprod-v1"
+V3_6_8_INDEX_BUILD = V3_6_8_INDEX_DIR / "build.json"
+V3_6_8_INDEX_INGEST_MANIFEST = V3_6_8_INDEX_DIR / "ingest_manifest.json"
+V3_6_8_INDEX_SEARCH_UNIT_MANIFEST = V3_6_8_INDEX_DIR / "search_unit_manifest.jsonl"
+V3_6_8_INDEX_SOURCE_INVENTORY = V3_6_8_INDEX_DIR / "source_inventory.json"
+V3_6_8_INDEX_PAYLOAD_CONTRACT = V3_6_8_INDEX_DIR / "payload_contract_summary.json"
+V3_6_8_OUTCOMES = {
+    "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED",
+    "ALL_SOURCE_INDEX_BUILT_PAYLOAD_PARTIAL",
+    "INDEX_MATERIALIZATION_BLOCKED",
+    "PAYLOAD_WIRED_BUT_LLM_CITATION_COPY_BLOCKED",
+}
+V3_6_8_SOURCE_REGISTRY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_8_"
+    "source_registry_first_evidence_bundle_architecture_audit"
+)
+V3_6_8_SOURCE_REGISTRY_SUMMARY = REPORT_DIR / f"{V3_6_8_SOURCE_REGISTRY_RUN_ID}_summary.json"
+V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT = (
+    REPORT_DIR / f"{V3_6_8_SOURCE_REGISTRY_RUN_ID}_source_object_audit.json"
+)
+V3_6_8_SOURCE_REGISTRY_SEARCHUNIT_ROLE_AUDIT = (
+    REPORT_DIR / f"{V3_6_8_SOURCE_REGISTRY_RUN_ID}_searchunit_role_audit.json"
+)
+V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT = (
+    REPORT_DIR / f"{V3_6_8_SOURCE_REGISTRY_RUN_ID}_evidence_bundle_contract.json"
+)
+V3_6_8_SOURCE_REGISTRY_TRACK_ROUTING_AUDIT = (
+    REPORT_DIR / f"{V3_6_8_SOURCE_REGISTRY_RUN_ID}_track_routing_audit.json"
+)
+V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS = (
+    REPORT_DIR / f"{V3_6_8_SOURCE_REGISTRY_RUN_ID}_failure_buckets.json"
+)
+V3_6_8_SOURCE_REGISTRY_OUTCOMES = {
+    "SOURCE_REGISTRY_EVIDENCE_ARCHITECTURE_READY",
+    "SEARCHUNIT_OVERLOADED_BLOCKER",
+    "SOURCE_REGISTRY_MISSING_BLOCKER",
+    "VECTOR_DB_COUPLING_BLOCKER",
+    "TRACK_ROUTING_OVERFIT_BLOCKER",
+}
+V3_6_9_SEARCHUNIT_SOURCEATOM_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_9_"
+    "searchunit_searchview_sourceatom_refactor"
+)
+V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY = REPORT_DIR / f"{V3_6_9_SEARCHUNIT_SOURCEATOM_RUN_ID}_summary.json"
+V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT = (
+    REPORT_DIR / f"{V3_6_9_SEARCHUNIT_SOURCEATOM_RUN_ID}_contract_refactor.json"
+)
+V3_6_9_SEARCHUNIT_SOURCEATOM_ADAPTER = (
+    REPORT_DIR / f"{V3_6_9_SEARCHUNIT_SOURCEATOM_RUN_ID}_search_view_adapter_diagnostics.json"
+)
+V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION = (
+    REPORT_DIR / f"{V3_6_9_SEARCHUNIT_SOURCEATOM_RUN_ID}_source_atom_hydration_smoke.json"
+)
+V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS = (
+    REPORT_DIR / f"{V3_6_9_SEARCHUNIT_SOURCEATOM_RUN_ID}_failure_buckets.json"
+)
+V3_6_9_SEARCHUNIT_SOURCEATOM_OUTCOMES = {
+    "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY",
+    "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_BLOCKED",
+    "SOURCE_REGISTRY_MATERIALIZATION_REQUIRED",
+    "VECTOR_METADATA_DECOUPLING_REQUIRED",
+}
+V3_7_0_SOURCE_REGISTRY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_7_0_"
+    "source_registry_materialization"
+)
+V3_7_0_SOURCE_REGISTRY_SUMMARY = REPORT_DIR / f"{V3_7_0_SOURCE_REGISTRY_RUN_ID}_summary.json"
+V3_7_0_SOURCE_REGISTRY_SOURCE_INVENTORY = (
+    REPORT_DIR / f"{V3_7_0_SOURCE_REGISTRY_RUN_ID}_source_inventory.json"
+)
+V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_DIAGNOSTICS = (
+    REPORT_DIR / f"{V3_7_0_SOURCE_REGISTRY_RUN_ID}_materialization_diagnostics.jsonl"
+)
+V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE = (
+    REPORT_DIR / f"{V3_7_0_SOURCE_REGISTRY_RUN_ID}_hydration_smoke.json"
+)
+V3_7_0_SOURCE_REGISTRY_FAILURE_BUCKETS = (
+    REPORT_DIR / f"{V3_7_0_SOURCE_REGISTRY_RUN_ID}_failure_buckets.json"
+)
+SOURCE_ATOM_REGISTRY_DIR = ROOT / "ai" / "eval" / "source_registry"
+SOURCE_ATOM_REGISTRY_JSONL = SOURCE_ATOM_REGISTRY_DIR / "source_atom_registry_v1.jsonl"
+SOURCE_ATOM_REGISTRY_BUILD_JSON = SOURCE_ATOM_REGISTRY_DIR / "source_atom_registry_build.json"
+SOURCE_ATOM_REGISTRY_INVENTORY_JSON = SOURCE_ATOM_REGISTRY_DIR / "source_atom_registry_inventory.json"
+SOURCE_ATOM_REGISTRY_BLOCKED_JSONL = SOURCE_ATOM_REGISTRY_DIR / "source_atom_registry_blocked.jsonl"
+V3_7_0_SOURCE_REGISTRY_OUTCOMES = {
+    "SOURCE_REGISTRY_MATERIALIZED_READY",
+    "SOURCE_REGISTRY_MATERIALIZED_PARTIAL",
+    "SOURCE_REGISTRY_MATERIALIZATION_BLOCKED",
+    "RAW_SOURCE_LINEAGE_BLOCKED",
+    "SNAPSHOT_ONLY_POLICY_BLOCKED",
+}
+V3_7_1_ALL_SOURCE_CITABLE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_7_1_"
+    "all_source_citable_nonprod_index_build"
+)
+V3_7_1_ALL_SOURCE_CITABLE_SUMMARY = REPORT_DIR / f"{V3_7_1_ALL_SOURCE_CITABLE_RUN_ID}_summary.json"
+V3_7_1_ALL_SOURCE_CITABLE_SOURCE_INVENTORY = (
+    REPORT_DIR / f"{V3_7_1_ALL_SOURCE_CITABLE_RUN_ID}_source_inventory.json"
+)
+V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY = (
+    REPORT_DIR / f"{V3_7_1_ALL_SOURCE_CITABLE_RUN_ID}_index_build_summary.json"
+)
+V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE = (
+    REPORT_DIR / f"{V3_7_1_ALL_SOURCE_CITABLE_RUN_ID}_hydration_smoke.json"
+)
+V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS = (
+    REPORT_DIR / f"{V3_7_1_ALL_SOURCE_CITABLE_RUN_ID}_failure_buckets.json"
+)
+V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR = (
+    ROOT / "ai" / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-v1"
+)
+V3_7_1_ALL_SOURCE_CITABLE_OUTCOMES = {
+    "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT",
+    "ALL_SOURCE_CITABLE_INDEX_PARTIAL",
+    "ALL_SOURCE_CITABLE_INDEX_BLOCKED",
+    "SOURCE_REGISTRY_NOT_READY",
+}
 SOURCE_BOUND_SEARCH_UNIT_MANIFEST = (
     ROOT / "ai" / "eval" / "indexes" / "rag-data-official-denominator-v1" / "search_unit_manifest.jsonl"
 )
@@ -386,17 +546,21 @@ def test_docs_record_answer_citation_silver_strategy_without_promotion_claims() 
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_progress = progress.split("## Short History", 1)[0]
 
-    for text in (readme, current_progress):
-        normalized = " ".join(text.split())
-        assert "answer_citation_silver_manifest_v1.json" in text
-        assert "answer_citation_silver_readiness_v1.json" in text
-        assert "anti-overfit" in normalized
-        assert "silver is not gold" in normalized
-        assert "not official denominator" in normalized
-        assert "not promotion evidence" in normalized
-        assert "expected values are audit-only" in normalized
-        assert "official 29 query_ids are excluded from dev/holdout tuning silver" in normalized
-        assert "TEXT=0, XLSX=0, PDF=0" in normalized
+    assert "docs/rag-ingestion-progress.md" in readme
+    assert "docs/rag-ingestion-measurements.md" in readme
+    assert "docs/rag-ingestion-triage.md" in readme
+    assert "production promotion" in readme
+
+    normalized = " ".join(current_progress.split())
+    assert "answer_citation_silver_manifest_v1.json" in current_progress
+    assert "answer_citation_silver_readiness_v1.json" in current_progress
+    assert "anti-overfit" in normalized
+    assert "silver is not gold" in normalized
+    assert "not official denominator" in normalized
+    assert "not promotion evidence" in normalized
+    assert "expected values are audit-only" in normalized
+    assert "official 29 query_ids are excluded from dev/holdout tuning silver" in normalized
+    assert "TEXT=0, XLSX=0, PDF=0" in normalized
 
     current_normalized = " ".join(current_progress.split())
     assert "official-denominator source-bound index, build/load check, and canonical SearchUnit citation payload wiring are already available" in current_normalized
@@ -2270,6 +2434,1349 @@ def test_v3_6_6_source_policy_validation_fails_closed_on_inherited_llm_or_db_mut
     assert "v3_6_5_db_guardrail_true:db_index_rebuild_attempted" in reasons
 
 
+def test_v3_6_7_runtime_stability_probe_is_core_only_diagnostic_and_non_promoting() -> None:
+    summary = read_json(V3_6_7_SUMMARY)
+    attempts = read_jsonl(V3_6_7_RUNTIME_ATTEMPTS)
+    runtime_summary = read_json(V3_6_7_RUNTIME_STABILITY_SUMMARY)
+    policy_audit = read_json(V3_6_7_POLICY_AUDIT)
+    next_phase = read_json(V3_6_7_NEXT_PHASE_RECOMMENDATION)
+
+    assert summary["run_id"] == V3_6_7_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_runtime_stability_probe_for_core_only"
+    assert summary["source_v3_6_6_run_id"] == V3_6_6_RUN_ID
+    assert summary["v3_6_6_recommended_this_phase"] is True
+    assert summary["sidecar_row_counts"] == {
+        "all_diagnostic": 1000,
+        "core_only": 665,
+        "quarantine": 0,
+        "review_only_challenge": 335,
+    }
+    assert len(attempts) == 30
+    assert summary["runtime_probe_row_count"] == len(attempts)
+    assert runtime_summary["runtime_probe_row_count"] == len(attempts)
+    assert summary["runtime_probe_core_only"] is True
+    assert runtime_summary["runtime_probe_core_only"] is True
+    assert summary["review_only_rows_attempted"] == 0
+    assert runtime_summary["review_only_rows_attempted"] == 0
+    assert summary["official_proximity_rows_attempted"] == 0
+    assert runtime_summary["official_proximity_rows_attempted"] == 0
+
+    assert sum(1 for row in attempts if row["local_llm_invoked"]) == summary["runtime_attempted_row_count"]
+    assert summary["strict_json_answer_returned_row_count"] <= summary["runtime_attempted_row_count"]
+    assert summary["citation_surface_valid_row_count"] <= summary["runtime_attempted_row_count"]
+    assert summary["baseline_strict_json_answer_returned_row_count"] <= len(attempts)
+    assert summary["baseline_citation_surface_valid_row_count"] <= len(attempts)
+    assert runtime_summary["runtime_stability_classification"] == summary["runtime_stability_classification"]
+    assert runtime_summary["local_llm_surface_classification"] == summary["local_llm_surface_classification"]
+    assert runtime_summary["generation_input_policy"] == {
+        "uses_generated_question_draft": True,
+        "uses_source_family": True,
+        "uses_source_identity": False,
+        "uses_locator_fingerprint": False,
+        "uses_expected_answer_draft": False,
+        "uses_supporting_evidence_locator_draft": False,
+        "uses_gold_fields": False,
+        "uses_official_fields": False,
+        "uses_db_query_results_as_generation_source": False,
+        "posthoc_validation_uses_source_identity": True,
+        "posthoc_validation_uses_locator_fingerprint": True,
+    }
+    assert policy_audit["generation_input_policy"] == runtime_summary["generation_input_policy"]
+    for row in attempts:
+        assert row["reporting_partition"] == "core_only"
+        assert row["official_proximity_review"] is False
+        assert row["generation_input_field_names"] == [
+            "generated_question_draft",
+            "source_family",
+        ]
+        assert "expected_answer_draft" not in row
+        assert "supporting_evidence_locator_draft" not in row
+        assert row["generation_input_used_expected_answer_draft"] is False
+        assert row["generation_input_used_supporting_evidence_locator_draft"] is False
+        assert row["generation_input_used_gold_fields"] is False
+        assert row["generation_input_used_official_fields"] is False
+        assert row["generation_input_used_db_query_results"] is False
+        assert row["generated_expected_answers_are_gold"] is False
+        assert row["not_gold"] is True
+        assert row["not_official_qrels"] is True
+        assert row["not_official_denominator"] is True
+        assert row["promotion_evidence"] is False
+        assert row["references_used_for_generation"] is False
+        assert row["references_used_for_official_metric"] is False
+
+    for payload in (summary, runtime_summary, policy_audit, next_phase):
+        assert payload["generated_expected_answers_are_gold"] is False
+        assert payload["not_gold"] is True
+        assert payload["not_official_qrels"] is True
+        assert payload["not_official_denominator"] is True
+        assert payload["promotion_evidence"] is False
+
+    for payload in (summary, policy_audit):
+        assert payload["official_metric"] is False
+        assert payload["official_metric_denominator_usage_allowed"] is False
+        assert payload["local_llm_live_silver_generation_allowed"] is False
+        assert payload["local_llm_live_silver_generation_attempted"] is False
+        assert payload["local_llm_metric_scoring_allowed"] is False
+        assert payload["local_llm_metric_scoring_attempted"] is False
+        assert payload["external_llm_api_allowed"] is False
+        assert payload["external_llm_api_attempted"] is False
+        assert payload["db_write_allowed"] is False
+        assert payload["db_write_attempted"] is False
+        assert payload["db_migration_allowed"] is False
+        assert payload["db_migration_attempted"] is False
+        assert payload["db_index_rebuild_allowed"] is False
+        assert payload["db_index_rebuild_attempted"] is False
+        assert payload["db_write_migration_reindex_attempted"] is False
+        assert payload["production_db_usage_allowed"] is False
+        assert payload["production_db_used"] is False
+        assert payload["db_results_as_gold_allowed"] is False
+        assert payload["db_results_as_official_qrels_allowed"] is False
+        assert payload["db_results_as_generation_source_allowed"] is False
+        assert payload["official_qrels_created"] is False
+        assert payload["official_relevance_labels_created"] is False
+        assert payload["official_answerability_labels_created"] is False
+        assert payload["official_gold_labels_created"] is False
+        assert payload["readme_performance_claim_mutation"] is False
+        assert payload["threshold_tuning"] is False
+        assert payload["winner_selection"] is False
+        assert payload["prompt_mutation"] is False
+        assert payload["retrieval_mutation"] is False
+        assert payload["scorer_mutation"] is False
+        assert payload["renderer_mutation"] is False
+        assert payload["index_or_export_mutation"] is False
+        assert payload["production_mutation"] is False
+
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["protected_v3_6_3_input_sha256_before"] == summary["protected_v3_6_3_input_sha256_after"]
+    assert summary["protected_v3_6_3_input_sha256_unchanged"] is True
+    assert next_phase["recommended_next_phase"] in V3_6_7_RECOMMENDATION_CHOICES
+    assert next_phase["choose_exactly_one_policy_satisfied"] is True
+    assert summary["recommended_next_phase"] == next_phase["recommended_next_phase"]
+    assert summary["v3_6_7_core_only_live_diagnostic_metric_allowed"] == next_phase[
+        "v3_6_7_core_only_live_diagnostic_metric_allowed"
+    ]
+
+
+def test_v3_6_7_source_policy_validation_fails_closed_on_smoke_generation_input_leakage() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    smoke_rows = read_jsonl(V3_6_6_CORE_SMOKE_SAMPLE)
+    leaked_field_rows = [dict(row) for row in smoke_rows]
+    leaked_field_rows[0]["generation_input_field_names"] = [
+        "generated_question_draft",
+        "source_family",
+        "expected_answer_draft",
+    ]
+    leaked_field_reasons = runner.v3_6_7_source_fail_closed_reasons(
+        source_load_errors=[],
+        v3_6_6_summary=read_json(V3_6_6_SUMMARY),
+        v3_6_6_runtime_summary=read_json(V3_6_6_RUNTIME_PROBE_SUMMARY),
+        v3_6_6_db_audit=read_json(V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT),
+        v3_6_6_policy=read_json(V3_6_6_POLICY_AUDIT),
+        v3_6_6_next_phase=read_json(V3_6_6_NEXT_PHASE_RECOMMENDATION),
+        sidecar_rows=read_jsonl(V3_6_6_REFERENCE_SIDECAR),
+        baseline_smoke_rows=leaked_field_rows,
+    )
+    leaked_flag_rows = [dict(row) for row in smoke_rows]
+    leaked_flag_rows[0]["generation_input_used_supporting_evidence_locator_draft"] = True
+    leaked_flag_reasons = runner.v3_6_7_source_fail_closed_reasons(
+        source_load_errors=[],
+        v3_6_6_summary=read_json(V3_6_6_SUMMARY),
+        v3_6_6_runtime_summary=read_json(V3_6_6_RUNTIME_PROBE_SUMMARY),
+        v3_6_6_db_audit=read_json(V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT),
+        v3_6_6_policy=read_json(V3_6_6_POLICY_AUDIT),
+        v3_6_6_next_phase=read_json(V3_6_6_NEXT_PHASE_RECOMMENDATION),
+        sidecar_rows=read_jsonl(V3_6_6_REFERENCE_SIDECAR),
+        baseline_smoke_rows=leaked_flag_rows,
+    )
+
+    assert "v3_6_6_core_smoke_generation_input_field_leakage" in leaked_field_reasons
+    assert "v3_6_6_core_smoke_generation_input_policy_violation" in leaked_flag_reasons
+
+
+def test_v3_6_8_nonprod_all_source_summary_locks_outcome_and_guardrails() -> None:
+    summary = read_json(V3_6_8_SUMMARY)
+    payload_contract = read_json(V3_6_8_PAYLOAD_CONTRACT_SUMMARY)
+    failure_buckets = read_json(V3_6_8_FAILURE_BUCKETS)
+
+    assert summary["run_id"] == V3_6_8_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_nonprod_all_source_index_materialization_and_canonical_payload_wiring"
+    assert summary["run_class"] == "diagnostic_only_nonprod_all_source_index_materialization"
+    assert set(summary["outcome_choices"]) == V3_6_8_OUTCOMES
+    assert summary["outcome"] == "ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED"
+    assert summary["next_allowed_phase"] == "v3_6_9_core_only_live_diagnostic_metric"
+    assert summary["recommended_next_phase"] == summary["next_allowed_phase"]
+    assert "manifest_locator" not in summary["recommended_next_phase"]
+    assert summary["no_generic_probe_recommended"] is True
+    assert summary["decision_output"]["generic_manifest_locator_probe_recommended"] is False
+    assert summary["core_only_live_diagnostic_metric_allowed"] is True
+
+    assert summary["diagnostic_only"] is True
+    assert summary["implementation_allowed"] is True
+    assert summary["implementation_scope"] == [
+        "non_production_index_export_build",
+        "non_production_searchunit_materialization",
+        "canonical_citation_payload_serialization",
+        "source_bound_locator_canonicalization",
+        "retrieval_context_envelope_wiring",
+        "load_check_and_retrieval_smoke",
+    ]
+    assert summary["index_or_export_mutation"] is True
+    assert summary["index_or_export_mutation_scope"] == "non_production_only"
+    assert summary["index_namespace"] == "rag-data-all-source-nonprod-v1"
+    assert summary["production_db_usage_allowed"] is False
+    assert summary["production_db_used"] is False
+
+    for key in (
+        "official_metric",
+        "official_metric_denominator_usage_allowed",
+        "answer_metric_computed",
+        "citation_metric_computed",
+        "answer_correctness_scored",
+        "generated_expected_answers_are_gold",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "official_qrels_created",
+        "official_relevance_labels_created",
+        "official_answerability_labels_created",
+        "official_gold_labels_created",
+        "prompt_mutation",
+        "retrieval_mutation",
+        "scorer_mutation",
+        "renderer_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "readme_representative_product_performance_claim",
+        "lane_a_b_c_collapsed_scoring",
+        "expected_answer_draft_used_as_retrieval_source",
+        "expected_answer_draft_used_as_generation_input",
+        "supporting_evidence_used_as_answer_text_source",
+        "generated_silver_answers_used_as_source_material",
+        "gold_fields_used_as_generation_input",
+        "qrels_or_labels_used_as_generation_input",
+    ):
+        assert summary[key] is False, key
+
+    assert summary["load_check"]["passed"] is True
+    assert summary["load_check"]["canonical_payload_available_by_family"] == {
+        "PDF": True,
+        "TEXT": True,
+        "XLSX": True,
+    }
+    assert summary["load_check"]["no_llm_citation_render_valid_by_family"] == {
+        "PDF": True,
+        "TEXT": True,
+        "XLSX": True,
+    }
+    assert summary["payload_contract"]["canonicalizable_count"] == 136280
+    assert summary["payload_contract"]["retrieval_only_uncanonicalized_count"] == 0
+    assert sorted(summary["payload_contract"]["families_with_canonical_payload"]) == ["PDF", "TEXT", "XLSX"]
+    assert sorted(summary["payload_contract"]["families_with_valid_no_llm_render"]) == ["PDF", "TEXT", "XLSX"]
+    assert payload_contract["retrieval_only_uncanonicalized_generation_source_allowed_count"] == 0
+
+    assert summary["retrieval_smoke"]["retrieval_result_count"] == 50
+    assert summary["retrieval_smoke"]["canonical_payload_available_count"] == 50
+    assert summary["retrieval_smoke"]["no_llm_citation_render_valid_count"] == 50
+    assert summary["retrieval_smoke"]["payload_missing_bucket_counts"] == {}
+    assert failure_buckets["blocking_buckets"] == []
+    assert failure_buckets["failure_bucket_counts"]["ALL_SOURCE_NONPROD_INDEX_BUILT_AND_PAYLOAD_WIRED"] == 1
+
+
+def test_v3_6_8_source_inventory_and_index_files_preserve_scope_and_exclusions() -> None:
+    summary = read_json(V3_6_8_SUMMARY)
+    source_inventory = read_json(V3_6_8_SOURCE_INVENTORY)
+    index_source_inventory = read_json(V3_6_8_INDEX_SOURCE_INVENTORY)
+    build_summary = read_json(V3_6_8_INDEX_BUILD_SUMMARY)
+    build_json = read_json(V3_6_8_INDEX_BUILD)
+    ingest_manifest = read_json(V3_6_8_INDEX_INGEST_MANIFEST)
+
+    for path in (
+        V3_6_8_INDEX_DIR / "faiss.index",
+        V3_6_8_INDEX_BUILD,
+        V3_6_8_INDEX_INGEST_MANIFEST,
+        V3_6_8_INDEX_SEARCH_UNIT_MANIFEST,
+        V3_6_8_INDEX_SOURCE_INVENTORY,
+        V3_6_8_INDEX_PAYLOAD_CONTRACT,
+    ):
+        assert path.exists(), path
+
+    line_count = sum(1 for line in V3_6_8_INDEX_SEARCH_UNIT_MANIFEST.read_text(encoding="utf-8").splitlines() if line)
+    assert line_count == build_summary["search_unit_manifest_row_count"]
+    assert line_count == summary["index_build"]["row_count"] == 136280
+    assert build_summary["faiss_index_vector_count"] == line_count
+    assert build_json["chunk_count"] == line_count
+    assert build_json["index_namespace"] == "rag-data-all-source-nonprod-v1"
+    assert build_json["dataset_scope"] == "all_eligible_existing_source_datasets_nonprod"
+    assert build_json["non_production_only"] is True
+    assert ingest_manifest["non_production_only"] is True
+    assert ingest_manifest["source_unit_count"] == line_count
+
+    assert source_inventory == index_source_inventory
+    counts = source_inventory["counts"]
+    assert counts["total_eligible_source_units_by_source_family"] == {
+        "PDF": 329,
+        "TEXT": 135958,
+        "XLSX": 344,
+        "total": 136631,
+    }
+    assert counts["accepted_source_units_by_source_family"] == {
+        "PDF": 329,
+        "TEXT": 135608,
+        "XLSX": 343,
+        "total": 136280,
+    }
+    assert counts["canonicalizable_count"] == line_count
+    assert counts["retrieval_only_uncanonicalized_count"] == 0
+    assert counts["official_overlap_count"] == 29
+    assert counts["silver_source_overlap_count"] == 999
+    assert counts["raw_corpus_count"] > 100000
+    assert counts["v3_5_4_source_rows_represented"] + counts["v3_5_4_source_rows_blocked"] == 1000
+    assert source_inventory["rejected_counts"]["by_reason"] == {"duplicate_search_unit_id": 351}
+
+    exclusion_policy = source_inventory["exclusion_policy"]
+    for key, value in exclusion_policy.items():
+        assert value is False, key
+    assert build_summary["non_production_only"] is True
+    assert all(item["exists"] for item in build_summary["required_files"].values())
+
+
+def test_v3_6_8_search_unit_manifest_has_namespace_split_and_canonical_payloads() -> None:
+    required_fields = {
+        "index_namespace",
+        "dataset_scope",
+        "source_family",
+        "split_scope",
+        "official_denominator_overlap",
+        "silver_source_overlap",
+        "review_only",
+        "quarantine",
+        "source_identity",
+        "locator_fingerprint",
+        "search_unit_id",
+        "canonical_payload_status",
+        "generation_source_allowed",
+        "gold_or_label_source",
+        "expected_answer_source",
+        "canonical_citation_payload",
+        "track_locator_payload",
+    }
+    family_examples: dict[str, dict[str, Any]] = {}
+    family_counts = defaultdict(int)
+    official_overlap_count = 0
+    official_overlap_search_unit_ids: set[str] = set()
+    retrieval_only_count = 0
+    dataset_scopes = set()
+    split_scopes = set()
+    manifest_partitions = set()
+    reporting_partitions = set()
+
+    with V3_6_8_INDEX_SEARCH_UNIT_MANIFEST.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            assert required_fields <= set(row), row.get("search_unit_id")
+            assert row["index_namespace"] == "rag-data-all-source-nonprod-v1"
+            assert row["canonical_payload_status"] in {"canonicalizable", "retrieval_only_uncanonicalized"}
+            assert row["gold_or_label_source"] is False
+            assert row["expected_answer_source"] is False
+            assert row["qrels_source"] is False
+            assert row["generated_silver_answer_source"] is False
+            assert row["metric_result_source"] is False
+            assert row["report_artifact_source"] is False
+            assert row["non_production_only"] is True
+            assert row["promotion_evidence"] is False
+            assert row["not_gold"] is True
+            assert row["not_official_qrels"] is True
+            assert row["source_identity"]
+            assert row["locator_fingerprint"]
+            assert row["search_unit_id"]
+
+            family = row["source_family"]
+            family_counts[family] += 1
+            dataset_scopes.add(row["dataset_scope"])
+            split_scopes.add(row["split_scope"])
+            manifest_partitions.add(row["manifest_partition"])
+            reporting_partitions.add(row["reporting_partition"])
+            if row["official_denominator_overlap"]:
+                official_overlap_count += 1
+                official_overlap_search_unit_ids.add(row["search_unit_id"])
+            generation_policy_allowed = (
+                row["canonical_payload_status"] == "canonicalizable"
+                and row["dataset_scope"] == "v3_5_4_balanced_source_only_manifest"
+                and row["review_only"] is False
+                and row["quarantine"] is False
+                and row["official_denominator_overlap"] is False
+                and row["raw_corpus_source"] is False
+            )
+            if row["canonical_payload_status"] == "retrieval_only_uncanonicalized":
+                retrieval_only_count += 1
+                assert row["generation_source_allowed"] is False
+            else:
+                assert row["canonical_payload_renderable"] is True
+                assert row["generation_source_allowed"] is generation_policy_allowed
+                family_examples.setdefault(family, row)
+
+    assert dict(family_counts) == {"TEXT": 135608, "PDF": 329, "XLSX": 343}
+    assert official_overlap_count == 29
+    official_search_unit_ids = {row["search_unit_id"] for row in read_jsonl(SOURCE_BOUND_SEARCH_UNIT_MANIFEST)}
+    assert official_overlap_search_unit_ids == official_search_unit_ids
+    assert retrieval_only_count == 0
+    assert set(family_examples) == {"TEXT", "PDF", "XLSX"}
+    assert dataset_scopes == {
+        "official_denominator_regression_smoke",
+        "raw_text_corpus_namu_v4",
+        "v3_5_4_balanced_source_only_manifest",
+    }
+    assert {
+        "core_only",
+        "review_only",
+        "source_only",
+        "weak_silver_exploration",
+        "weak_silver_holdout",
+        "weak_silver_stress_smoke_candidate",
+        "official_denominator_regression_smoke",
+        "raw_corpus_unlabeled",
+    } >= split_scopes
+    assert {"core", "review_only", "source_only", "official_denominator", "raw_corpus"} >= manifest_partitions
+    assert {
+        "core_only",
+        "review_only_challenge",
+        "official_denominator_regression_smoke",
+        "raw_corpus_recall_smoke_only",
+    } >= reporting_partitions
+
+    text_locator = family_examples["TEXT"]["track_locator_payload"]
+    assert text_locator["document_id"]
+    assert text_locator["chunk_id"]
+    assert text_locator["text_locator"]
+    assert family_examples["TEXT"]["canonical_citation_payload"]["source_identity"]
+
+    pdf_locator = family_examples["PDF"]["track_locator_payload"]
+    assert pdf_locator["source_pdf_path"]
+    assert pdf_locator["document_version_id"]
+    assert pdf_locator["page"] is not None
+    assert pdf_locator["physical_page_index"] is not None
+    assert pdf_locator["bbox"]
+    assert pdf_locator["region_type"]
+
+    xlsx_locator = family_examples["XLSX"]["track_locator_payload"]
+    assert xlsx_locator["workbook"]
+    assert xlsx_locator["sheet"]
+    assert xlsx_locator["range"] or xlsx_locator["cell"]
+
+
+def test_v3_6_8_retrieval_smoke_exposes_compact_canonical_envelopes_only() -> None:
+    summary = read_json(V3_6_8_SUMMARY)
+    rows = read_jsonl(V3_6_8_RETRIEVAL_SMOKE_DIAGNOSTICS)
+
+    assert len(rows) == summary["retrieval_smoke"]["row_count"] == 10
+    assert {row["source_family"] for row in rows} >= {"TEXT", "PDF", "XLSX"}
+    for row in rows:
+        assert row["run_id"] == V3_6_8_RUN_ID
+        assert row["retrieval_result_count"] == len(row["top_result_envelopes"]) == 5
+        assert row["canonical_payload_available_count"] == 5
+        assert row["no_llm_citation_render_valid_count"] == 5
+        assert row["primary_failure_bucket"] == ""
+        assert row["expected_answer_draft_used_as_retrieval_source"] is False
+        assert row["expected_answer_draft_used_as_generation_input"] is False
+        assert row["answer_metric_computed"] is False
+        assert row["citation_metric_computed"] is False
+        assert row["promotion_evidence"] is False
+        for envelope in row["top_result_envelopes"]:
+            assert envelope["search_unit_id"]
+            assert envelope["source_identity"]
+            assert envelope["locator_fingerprint"]
+            assert envelope["canonical_payload_status"] == "canonicalizable"
+            assert envelope["canonical_citation_payload_present"] is True
+            assert envelope["track_locator_payload_present"] is True
+            assert isinstance(envelope["generation_source_allowed"], bool)
+            assert "display_text" not in envelope
+            assert "embedding_text" not in envelope
+            assert "canonical_citation_payload" not in envelope
+
+
+def test_v3_6_8_no_llm_render_helper_and_retrieval_only_guardrail() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    examples: dict[str, dict[str, Any]] = {}
+    with V3_6_8_INDEX_SEARCH_UNIT_MANIFEST.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if len(examples) == 3:
+                break
+            row = json.loads(line)
+            if row.get("canonical_payload_status") == "canonicalizable":
+                examples.setdefault(row["source_family"], row["canonical_citation_payload"])
+
+    assert set(examples) == {"TEXT", "PDF", "XLSX"}
+    for family, payload in examples.items():
+        rendered = runner.v3_6_8_all_source_render_citation(payload)
+        assert rendered["valid"] is True, family
+        assert rendered["citation"]["source_family"] == family
+        assert rendered["citation"]["source_identity"]
+        assert rendered["citation"]["locator_fingerprint"]
+        assert rendered["citation"]["search_unit_id"]
+
+    retrieval_only = runner.v3_6_8_all_source_finalize_unit(
+        generated_at="2026-05-20T00:00:00+00:00",
+        dataset_scope="unit_test",
+        source_class="unit_test",
+        source_unit_id="unit_test_missing_payload",
+        source_family="PDF",
+        source_identity="",
+        locator_fingerprint="fp",
+        search_unit_id="su",
+        document_version_id="docv",
+        source_locator={},
+        track_locator={},
+        canonical_payload={"source_family": "PDF", "search_unit_id": "su"},
+        source_text="source text",
+        split_scope="unit_test",
+        manifest_partition="unit_test",
+        reporting_partition="unit_test",
+        review_only=False,
+        quarantine=False,
+        official_denominator_overlap=False,
+        silver_source_overlap=False,
+        raw_corpus_source=False,
+        external_archive_source=False,
+        upstream_artifact="unit_test",
+    )
+    assert retrieval_only["canonical_payload_status"] == "retrieval_only_uncanonicalized"
+    assert retrieval_only["generation_source_allowed"] is False
+    assert "source_identity" in retrieval_only["canonical_payload_missing_fields"]
+    assert "track_locator_payload" in retrieval_only["canonical_payload_missing_fields"]
+    payload_contract = runner.v3_6_8_all_source_payload_contract_summary(
+        generated_at="2026-05-20T00:00:00+00:00",
+        manifest_rows=[retrieval_only],
+        retrieval_smoke_rows=[],
+    )
+    failure_buckets = runner.v3_6_8_all_source_failure_buckets(
+        generated_at="2026-05-20T00:00:00+00:00",
+        source_inventory={
+            "rejected_counts": {
+                "by_reason": {"forbidden_generation_or_label_field_present": 1},
+                "total": 1,
+            }
+        },
+        build_summary={"index_path": "unit_test"},
+        load_check={
+            "index_can_be_loaded": True,
+            "required_files_present": True,
+            "missing_required_files": [],
+            "no_expected_answer_gold_qrels_report_artifact_indexed": True,
+            "official_29_rows_remain_protected_and_identifiable": True,
+            "v3_5_4_source_rows_unaccounted": 0,
+            "passed": True,
+        },
+        payload_contract_summary=payload_contract,
+        retrieval_smoke_rows=[],
+        fail_closed_reasons=[],
+    )
+    decision = runner.v3_6_8_all_source_exit_decision(
+        load_check={
+            "index_can_be_loaded": True,
+            "required_files_present": True,
+            "passed": True,
+        },
+        payload_contract_summary=payload_contract,
+        failure_buckets=failure_buckets,
+        fail_closed_reasons=[],
+    )
+    assert payload_contract["retrieval_only_uncanonicalized_count"] == 1
+    assert payload_contract["retrieval_only_uncanonicalized_generation_source_allowed_count"] == 0
+    assert failure_buckets["failure_bucket_counts"]["RETRIEVAL_ONLY_UNCANONICALIZED"] == 1
+    assert failure_buckets["failure_bucket_counts"]["SOURCE_UNIT_REJECTED_FOR_FORBIDDEN_FIELD"] == 1
+    assert decision["outcome"] == "ALL_SOURCE_INDEX_BUILT_PAYLOAD_PARTIAL"
+    assert decision["next_allowed_phase"] == "targeted_canonicalization_repair"
+
+
+def test_v3_6_8_rejects_v3_5_4_rows_with_forbidden_generation_or_label_fields() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    row = {
+        "candidate_id": "forbidden-text-row",
+        "source_family": "TEXT",
+        "source_identity": "TEXT:docv:su:fp",
+        "locator_fingerprint": "fp",
+        "search_unit_id": "su",
+        "document_version_id": "docv",
+        "source_bound_locator": {
+            "doc_id": "doc",
+            "chunk_id": "chunk",
+            "source_corpus_path": "corpus.jsonl",
+        },
+        "canonical_citation_payload": {
+            "source_family": "TEXT",
+            "document_id": "doc",
+            "document_version_id": "docv",
+            "search_unit_id": "su",
+            "text_locator": {
+                "doc_id": "doc",
+                "chunk_id": "chunk",
+                "source_corpus_path": "corpus.jsonl",
+            },
+        },
+        "source_text": "source text",
+        "expected_answers_created": True,
+        "promotion_evidence": False,
+    }
+
+    assert runner.v3_6_8_all_source_forbidden_source_fields(row) == ["expected_answers_created"]
+    unit = runner.v3_6_8_all_source_unit_from_v3_5_4_row(
+        row,
+        manifest_row={"split_role": "core_only", "manifest_partition": "core"},
+        sidecar_row={"reporting_partition": "core_only"},
+        generated_at="2026-05-20T00:00:00+00:00",
+    )
+    assert "forbidden_generation_or_label_field_present" in unit["source_rejection_reasons"]
+    assert unit["gold_or_label_source"] is False
+    assert unit["expected_answer_source"] is False
+
+
+def test_v3_6_8_source_registry_audit_summary_locks_source_first_policy_and_exit() -> None:
+    summary = read_json(V3_6_8_SOURCE_REGISTRY_SUMMARY)
+    source_object_audit = read_json(V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT)
+    searchunit_role_audit = read_json(V3_6_8_SOURCE_REGISTRY_SEARCHUNIT_ROLE_AUDIT)
+    evidence_contract = read_json(V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT)
+    routing_audit = read_json(V3_6_8_SOURCE_REGISTRY_TRACK_ROUTING_AUDIT)
+    failure_buckets = read_json(V3_6_8_SOURCE_REGISTRY_FAILURE_BUCKETS)
+
+    assert summary["run_id"] == V3_6_8_SOURCE_REGISTRY_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_source_registry_first_evidence_bundle_architecture_audit"
+    assert summary["run_class"] == "diagnostic_only_source_registry_first_architecture_audit"
+    assert summary["diagnostic_only"] is True
+    assert summary["implementation_allowed"] is True
+    assert summary["index_or_export_mutation"] is False
+    assert summary["vector_db_source_of_truth_allowed"] is False
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert set(summary["outcome_choices"]) == V3_6_8_SOURCE_REGISTRY_OUTCOMES
+    assert summary["outcome"] == "SEARCHUNIT_OVERLOADED_BLOCKER"
+    assert summary["next_allowed_phase"] == "SearchUnit/SearchView/SourceAtom refactor"
+    assert summary["recommended_next_phase"] == summary["next_allowed_phase"]
+    assert summary["no_generic_probe_recommended"] is True
+    assert "manifest_locator" not in summary["recommended_next_phase"]
+
+    for key in (
+        "official_metric",
+        "answer_metric_computed",
+        "citation_metric_computed",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "official_qrels_created",
+        "official_relevance_labels_created",
+        "official_answerability_labels_created",
+        "official_gold_labels_created",
+        "expected_answer_draft_used_as_generation_input",
+        "silver_expected_answer_used_as_generation_input",
+        "silver_evidence_locator_used_as_retrieval_shortcut",
+        "query_id_specific_evidence_patch",
+        "file_name_specific_evidence_patch",
+        "prompt_mutation",
+        "retrieval_ranking_mutation",
+        "scorer_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "readme_representative_product_performance_claim",
+        "lane_a_b_c_collapsed_scoring",
+        "production_db_used",
+        "db_write_attempted",
+        "db_migration_attempted",
+        "production_mutation",
+    ):
+        assert summary[key] is False, key
+
+    assert searchunit_role_audit["searchunit_overloaded"] is True
+    assert searchunit_role_audit["roles_observed"] == {
+        "retrieval_unit": True,
+        "source_atom": True,
+        "citation_unit": True,
+        "answer_evidence_unit": True,
+        "metric_qrels_unit": True,
+        "llm_context_unit": True,
+    }
+    assert searchunit_role_audit["primary_blocker"] == "SEARCHUNIT_OVERLOADED_BLOCKER"
+    assert searchunit_role_audit["next_phase"] == summary["next_allowed_phase"]
+
+    assert source_object_audit["classification_counts"]["raw_source_derived"] > 0
+    assert source_object_audit["classification_counts"]["extraction_snapshot_derived"] > 0
+    assert source_object_audit["classification_counts"]["retrieval_hit_derived"] > 0
+    assert source_object_audit["classification_counts"]["query_manifest_derived"] > 0
+    assert source_object_audit["classification_counts"]["eval_artifact_derived"] > 0
+    assert source_object_audit["classification_counts"]["silver_or_gold_derived"] > 0
+    assert source_object_audit["anti_overfit_audit"]["query_id_specific_evidence_patch_count"] == 0
+    assert source_object_audit["anti_overfit_audit"]["file_name_specific_evidence_patch_count"] == 0
+    assert source_object_audit["anti_overfit_audit"]["silver_expected_answer_used_as_generation_input"] is False
+    assert source_object_audit["anti_overfit_audit"]["silver_evidence_locator_used_as_retrieval_shortcut"] is False
+
+    assert evidence_contract["source_atom_schema"]["required_fields"] == [
+        "source_atom_id",
+        "source_family",
+        "source_identity",
+        "document_id_or_workbook_id",
+        "document_version_id_or_workbook_version_id",
+        "content_hash",
+        "extraction_version",
+        "raw_locator",
+        "normalized_text_or_value_snapshot",
+        "parent_pointers",
+        "canonical_citation_payload",
+    ]
+    assert evidence_contract["search_view_contract"]["must_point_to_source_atoms"] is True
+    assert evidence_contract["vector_db_contract"]["candidate_generator_only"] is True
+    assert evidence_contract["policy_modes"] == ["official_evidence", "runtime_evidence", "diagnostic_evidence"]
+    assert evidence_contract["no_vector_checks"]["hydrate_canonical_payload_from_source_atom_id"] is True
+    assert evidence_contract["no_vector_checks"]["render_citation_from_source_atom_id"] is True
+    assert evidence_contract["no_vector_checks"]["assemble_evidence_bundle_from_source_atom_id"] is True
+    assert evidence_contract["no_vector_checks"]["check_source"] == "executed_no_vector_source_atom_matrix"
+    assert summary["no_vector_check_results"]["executed"] is True
+    assert summary["no_vector_check_results"]["families_passed"] == ["PDF", "TEXT", "XLSX"]
+
+    assert routing_audit["track_routing_overfit_blocker"] is False
+    assert routing_audit["source_family_generic_evidence_assembly"] is True
+    assert routing_audit["final_comparison_by_evidence_completeness_required"] is True
+    assert routing_audit["undifferentiated_score_pool_risk"] is True
+    assert failure_buckets["blocking_buckets"] == ["SEARCHUNIT_OVERLOADED_BLOCKER"]
+    assert failure_buckets["secondary_blocking_buckets"] == ["SOURCE_REGISTRY_MISSING_BLOCKER"]
+    assert failure_buckets["blocking_bucket_rationale"] == (
+        "SOURCE_REGISTRY_MISSING_BLOCKER is recorded as a secondary blocker because "
+        "SEARCHUNIT_OVERLOADED_BLOCKER must be repaired first; materializing SourceAtom rows before "
+        "SearchUnit/SearchView separation would preserve the overload."
+    )
+    assert failure_buckets["failure_bucket_counts"]["SEARCHUNIT_OVERLOADED_BLOCKER"] == 1
+
+
+def test_v3_6_8_source_atom_no_vector_hydration_render_and_evidence_bundle_helpers() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    atoms = {
+        "TEXT": {
+            "source_atom_id": "atom-text",
+            "source_family": "TEXT",
+            "source_identity": "TEXT:doc-text:v1:span-1",
+            "document_id": "doc-text",
+            "document_version_id": "doc-text-v1",
+            "content_hash": "hash-text",
+            "extraction_version": "unit-test",
+            "raw_locator": {"document_id": "doc-text", "chunk_id": "chunk-1", "text_span": "0:12"},
+            "normalized_text_or_value_snapshot": "text snapshot",
+            "parent_pointers": {"search_view_ids": ["view-text"]},
+            "canonical_citation_payload": {
+                "source_family": "TEXT",
+                "source_identity": "TEXT:doc-text:v1:span-1",
+                "locator_fingerprint": "fp-text",
+                "search_unit_id": "su-text",
+                "document_id": "doc-text",
+                "document_version_id": "doc-text-v1",
+                "text_locator": {"document_id": "doc-text", "chunk_id": "chunk-1", "text_span": "0:12"},
+            },
+        },
+        "PDF": {
+            "source_atom_id": "atom-pdf",
+            "source_family": "PDF",
+            "source_identity": "PDF:doc-pdf:v1:p1:b1",
+            "document_id": "doc-pdf",
+            "document_version_id": "doc-pdf-v1",
+            "content_hash": "hash-pdf",
+            "extraction_version": "unit-test",
+            "raw_locator": {
+                "source_pdf_path": "docs/source.pdf",
+                "page": 1,
+                "physical_page_index": 0,
+                "bbox": [1.0, 2.0, 3.0, 4.0],
+                "region_type": "paragraph",
+            },
+            "normalized_text_or_value_snapshot": "pdf snapshot",
+            "parent_pointers": {"search_view_ids": ["view-pdf"]},
+            "canonical_citation_payload": {
+                "source_family": "PDF",
+                "source_identity": "PDF:doc-pdf:v1:p1:b1",
+                "locator_fingerprint": "fp-pdf",
+                "search_unit_id": "su-pdf",
+                "document_version_id": "doc-pdf-v1",
+                "source_pdf_path": "docs/source.pdf",
+                "page": 1,
+                "physical_page_index": 0,
+                "bbox": [1.0, 2.0, 3.0, 4.0],
+                "region_type": "paragraph",
+            },
+        },
+        "XLSX": {
+            "source_atom_id": "atom-xlsx",
+            "source_family": "XLSX",
+            "source_identity": "XLSX:book:v1:Sheet1!A1",
+            "workbook_id": "book",
+            "workbook_version_id": "book-v1",
+            "content_hash": "hash-xlsx",
+            "extraction_version": "unit-test",
+            "raw_locator": {"workbook": "book.xlsx", "sheet": "Sheet1", "cell": "A1", "row_label": "row"},
+            "normalized_text_or_value_snapshot": "xlsx snapshot",
+            "parent_pointers": {"search_view_ids": ["view-xlsx"]},
+            "canonical_citation_payload": {
+                "source_family": "XLSX",
+                "source_identity": "XLSX:book:v1:Sheet1!A1",
+                "locator_fingerprint": "fp-xlsx",
+                "search_unit_id": "su-xlsx",
+                "workbook": "book.xlsx",
+                "sheet": "Sheet1",
+                "cell": "A1",
+                "row_label": "row",
+                "target_column": "value",
+            },
+        },
+    }
+
+    registry = {}
+    for family, atom in atoms.items():
+        validation = runner.v3_6_8_source_registry_validate_source_atom(atom)
+        assert validation["valid"] is True, family
+        registry[atom["source_atom_id"]] = atom
+        payload = runner.v3_6_8_source_registry_hydrate_canonical_payload(
+            atom["source_atom_id"],
+            source_registry=registry,
+        )
+        rendered = runner.v3_6_8_source_registry_render_citation(
+            atom["source_atom_id"],
+            source_registry=registry,
+        )
+        bundle = runner.v3_6_8_source_registry_assemble_evidence_bundle(
+            atom["source_atom_id"],
+            source_registry=registry,
+            mode="runtime_evidence",
+        )
+        assert payload["valid"] is True
+        assert payload["payload"]["source_family"] == family
+        assert rendered["valid"] is True
+        assert rendered["citation"]["source_family"] == family
+        assert bundle["valid"] is True
+        assert bundle["evidence_bundle"]["source_atom_id"] == atom["source_atom_id"]
+        assert bundle["evidence_bundle"]["source_family"] == family
+        assert bundle["evidence_bundle"]["canonical_payload_source"] == "source_registry"
+        if family == "TEXT":
+            assert {
+                "source_document_id_or_path",
+                "section_chunk_span_identity",
+                "text_span",
+                "parent_paragraph_or_section",
+                "nearby_context",
+            } <= set(bundle["evidence_bundle"]["text_evidence"])
+        if family == "PDF":
+            assert {
+                "source_pdf_path",
+                "document_version_id",
+                "page",
+                "physical_page_index",
+                "bbox",
+                "region_type",
+                "matched_text",
+                "nearby_paragraph_or_window",
+                "section_heading",
+                "ocr_confidence",
+            } <= set(bundle["evidence_bundle"]["pdf_evidence"])
+        if family == "XLSX":
+            assert {
+                "workbook_or_source_path",
+                "sheet",
+                "table_or_range",
+                "matched_cells",
+                "row_or_column_labels",
+                "nearby_row_or_range_context",
+                "value_locator",
+            } <= set(bundle["evidence_bundle"]["xlsx_evidence"])
+
+    official_missing_raw = runner.v3_6_8_source_registry_assemble_evidence_bundle(
+        "atom-text",
+        source_registry=registry,
+        mode="official_evidence",
+    )
+    assert official_missing_raw["valid"] is True
+    assert official_missing_raw["evidence_bundle"]["official_evidence_allowed"] is False
+    assert official_missing_raw["evidence_bundle"]["runtime_answer_allowed"] is True
+    assert official_missing_raw["evidence_bundle"]["diagnostic_only_reason"] == (
+        "raw_file_missing_extraction_snapshot_present"
+    )
+
+    official_ready_atom = dict(atoms["TEXT"])
+    official_ready_atom["source_atom_id"] = "atom-text-official"
+    official_ready_atom["raw_file_exists"] = True
+    official_ready_atom["extraction_snapshot_present"] = True
+    official_ready_registry = {"atom-text-official": official_ready_atom}
+    official_ready = runner.v3_6_8_source_registry_assemble_evidence_bundle(
+        "atom-text-official",
+        source_registry=official_ready_registry,
+        mode="official_evidence",
+    )
+    assert official_ready["valid"] is True
+    assert official_ready["evidence_bundle"]["official_evidence_allowed"] is True
+
+    snapshot_only = runner.v3_6_8_source_registry_hydration_policy(
+        raw_file_exists=False,
+        extraction_snapshot_present=True,
+    )
+    assert snapshot_only["hydration_allowed"] is True
+    assert snapshot_only["official_evidence_allowed"] is False
+    assert snapshot_only["runtime_answer_allowed"] is True
+    assert snapshot_only["diagnostic_only_reason"] == "raw_file_missing_extraction_snapshot_present"
+
+    missing_all = runner.v3_6_8_source_registry_hydration_policy(
+        raw_file_exists=False,
+        extraction_snapshot_present=False,
+    )
+    assert missing_all["hydration_allowed"] is False
+    assert missing_all["fail_closed"] is True
+    assert missing_all["failure_bucket"] == "SOURCE_REGISTRY_MISSING_BLOCKER"
+
+    hit = {
+        "search_view_id": "view-text",
+        "source_atom_ids": ["atom-text"],
+        "canonical_citation_payload": {"source_family": "TEXT", "source_identity": "vector-owned"},
+    }
+    from_hit = runner.v3_6_8_source_registry_evidence_bundle_from_vector_hit(hit, source_registry=registry)
+    assert from_hit["valid"] is True
+    assert from_hit["evidence_bundle"]["source_atom_id"] == "atom-text"
+    assert from_hit["evidence_bundle"]["canonical_payload_source"] == "source_registry"
+    assert from_hit["vector_payload_used_as_evidence_truth"] is False
+
+    chunk_only = runner.v3_6_8_source_registry_evidence_bundle_from_vector_hit(
+        {"chunk_id": "chunk-only", "display_text": "not enough"},
+        source_registry=registry,
+    )
+    assert chunk_only["valid"] is False
+    assert chunk_only["failure_bucket"] == "RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT"
+
+
+def test_v3_6_9_source_atom_search_view_contract_hydrates_evidence_without_vector_truth() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from app.capabilities.rag.source_registry import (
+        assemble_evidence_bundle,
+        evidence_bundle_from_search_view,
+        hydrate_canonical_citation_payload,
+        render_citation,
+        validate_search_view,
+        validate_source_atom,
+    )
+
+    registry = {
+        "atom-text": {
+            "source_atom_id": "atom-text",
+            "source_family": "TEXT",
+            "source_identity": "TEXT:doc-text:v1:span-1",
+            "document_id": "doc-text",
+            "document_version_id": "doc-text-v1",
+            "content_hash": "hash-text",
+            "extraction_version": "unit-test",
+            "raw_file_exists": True,
+            "extraction_snapshot_present": True,
+            "raw_locator": {"document_id": "doc-text", "chunk_id": "chunk-1", "text_span": "0:12"},
+            "normalized_text_or_value_snapshot": "text snapshot",
+            "parent_pointers": {"search_view_ids": ["view-text"]},
+            "canonical_citation_payload": {
+                "source_family": "TEXT",
+                "source_identity": "TEXT:doc-text:v1:span-1",
+                "locator_fingerprint": "fp-text",
+                "search_unit_id": "su-text",
+                "document_id": "doc-text",
+                "document_version_id": "doc-text-v1",
+                "text_locator": {"document_id": "doc-text", "chunk_id": "chunk-1", "text_span": "0:12"},
+            },
+        }
+    }
+    vector_owned_payload = {
+        "source_family": "TEXT",
+        "source_identity": "TEXT:vector-owned",
+        "locator_fingerprint": "fp-vector-owned",
+        "search_unit_id": "su-vector-owned",
+    }
+    search_view = {
+        "search_view_id": "view-text",
+        "search_view_kind": "dense_embedding_chunk",
+        "source_atom_ids": ["atom-text"],
+        "embedding_text": "retrieval-only candidate text",
+        "canonical_citation_payload": vector_owned_payload,
+    }
+
+    assert validate_source_atom(registry["atom-text"])["valid"] is True
+    assert validate_search_view(search_view)["valid"] is True
+    payload = hydrate_canonical_citation_payload("atom-text", source_registry=registry)
+    rendered = render_citation("atom-text", source_registry=registry)
+    bundle = assemble_evidence_bundle("atom-text", source_registry=registry, mode="runtime_evidence")
+    from_view = evidence_bundle_from_search_view(search_view, source_registry=registry)
+
+    assert payload["valid"] is True
+    assert payload["payload"]["source_identity"] == "TEXT:doc-text:v1:span-1"
+    assert rendered["valid"] is True
+    assert bundle["valid"] is True
+    assert from_view["valid"] is True
+    assert from_view["source_atom_hydrated_from_registry"] is True
+    assert from_view["vector_payload_used_as_evidence_truth"] is False
+    assert from_view["ignored_vector_canonical_payload"] is True
+    assert from_view["evidence_bundle"]["search_view_id"] == "view-text"
+    assert from_view["evidence_bundle"]["source_atom_id"] == "atom-text"
+    assert from_view["evidence_bundle"]["canonical_payload_source"] == "source_registry"
+    assert from_view["evidence_bundle"]["citation"]["source_identity"] == "TEXT:doc-text:v1:span-1"
+    assert from_view["evidence_bundle"]["citation"]["source_identity"] != "TEXT:vector-owned"
+
+    chunk_only = evidence_bundle_from_search_view(
+        {"search_view_id": "chunk-view", "chunk_id": "chunk-only", "embedding_text": "no source atom"},
+        source_registry=registry,
+    )
+    assert chunk_only["valid"] is False
+    assert chunk_only["failure_bucket"] == "RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT"
+
+    missing_atom = evidence_bundle_from_search_view(
+        {"search_view_id": "view-missing", "source_atom_ids": ["atom-missing"]},
+        source_registry=registry,
+    )
+    assert missing_atom["valid"] is False
+    assert missing_atom["failure_bucket"] == "VECTOR_HIT_SOURCE_ATOM_MISSING"
+
+
+def test_v3_6_9_retrieval_context_payload_exposes_search_view_and_source_atom_refs() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from app.capabilities.rag.generation import RetrievedChunk
+    from app.capabilities.rag.retrieval_contract import citation_payload
+
+    citation = citation_payload(
+        RetrievedChunk(
+            chunk_id="chunk-text",
+            doc_id="source-file-text",
+            section="section",
+            text="text",
+            score=0.9,
+            search_unit_id="su-text",
+            metadata_json={
+                "search_view_id": "view-text",
+                "search_view_kind": "dense_embedding_chunk",
+                "source_atom_id": "atom-text",
+                "source_atom_ids": ["atom-text"],
+                "source_registry_version": "source-registry-v1",
+                "canonical_payload_source": "source_registry",
+                "source_identity": "TEXT:doc-text:v1:span-1",
+                "locator_fingerprint": "fp-text",
+                "canonical_citation_payload": {
+                    "source_family": "TEXT",
+                    "source_identity": "TEXT:doc-text:v1:span-1",
+                    "locator_fingerprint": "fp-text",
+                    "search_unit_id": "su-text",
+                },
+            },
+        )
+    )
+
+    assert citation["searchViewId"] == "view-text"
+    assert citation["search_view_id"] == "view-text"
+    assert citation["searchViewKind"] == "dense_embedding_chunk"
+    assert citation["sourceAtomId"] == "atom-text"
+    assert citation["source_atom_id"] == "atom-text"
+    assert citation["sourceAtomIds"] == ["atom-text"]
+    assert citation["source_atom_ids"] == ["atom-text"]
+    assert citation["sourceRegistryVersion"] == "source-registry-v1"
+    assert citation["sourceRegistryHydrationRequired"] is True
+    assert citation["sourceAtomHydratedFromRegistry"] is False
+    assert citation["vectorPayloadUsedAsEvidenceTruth"] is False
+    assert citation["canonicalPayloadSource"] == "source_registry_hydration_required"
+    assert citation["source_identity"] is None
+    assert citation["locator_fingerprint"] is None
+    assert citation["canonical_citation_payload"] is None
+    assert citation["candidateSourceIdentity"] == "TEXT:doc-text:v1:span-1"
+    assert citation["candidateLocatorFingerprint"] == "fp-text"
+    assert citation["candidateCanonicalCitationPayload"]["search_unit_id"] == "su-text"
+
+
+def test_v3_6_9_searchunit_searchview_sourceatom_refactor_summary_locks_exit_and_guardrails() -> None:
+    summary = read_json(V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY)
+    contract = read_json(V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT)
+    adapter = read_json(V3_6_9_SEARCHUNIT_SOURCEATOM_ADAPTER)
+    hydration = read_json(V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION)
+    failure_buckets = read_json(V3_6_9_SEARCHUNIT_SOURCEATOM_FAILURE_BUCKETS)
+
+    assert summary["run_id"] == V3_6_9_SEARCHUNIT_SOURCEATOM_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_searchunit_searchview_sourceatom_refactor"
+    assert summary["run_class"] == "diagnostic_only_source_first_contract_refactor"
+    assert summary["diagnostic_only"] is True
+    assert summary["implementation_allowed"] is True
+    assert set(summary["outcome_choices"]) == V3_6_9_SEARCHUNIT_SOURCEATOM_OUTCOMES
+    assert summary["outcome"] == "SEARCHUNIT_SEARCHVIEW_SOURCEATOM_CONTRACT_READY"
+    assert summary["next_allowed_phase"] == "source registry materialization"
+    assert summary["recommended_next_phase"] == summary["next_allowed_phase"]
+    assert summary["no_generic_probe_recommended"] is True
+    assert "manifest_locator" not in summary["recommended_next_phase"]
+    assert summary["source_atom_search_view_contract_validated"] is True
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["db_migration_required_for_minimal_python_refactor"] is False
+    assert summary["db_migration_deferred_until_source_registry_materialization"] is True
+    assert summary["source_registry_materialization_required"] is True
+
+    for key in (
+        "official_metric",
+        "answer_metric_computed",
+        "citation_metric_computed",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "official_qrels_created",
+        "official_relevance_labels_created",
+        "official_answerability_labels_created",
+        "official_gold_labels_created",
+        "expected_answer_draft_used_as_generation_input",
+        "silver_expected_answer_used_as_generation_input",
+        "silver_evidence_locator_used_as_retrieval_shortcut",
+        "query_id_specific_evidence_patch",
+        "file_name_specific_evidence_patch",
+        "prompt_mutation",
+        "retrieval_ranking_mutation",
+        "scorer_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "readme_representative_product_performance_claim",
+        "lane_a_b_c_collapsed_scoring",
+        "production_db_used",
+        "db_write_attempted",
+        "db_migration_attempted",
+        "production_mutation",
+    ):
+        assert summary[key] is False, key
+
+    assert contract["search_view_contract"]["must_point_to_source_atoms"] is True
+    assert contract["search_view_contract"]["canonical_citation_source_allowed"] == "only_validated_source_atom"
+    assert contract["source_atom_contract"]["source_registry_version"] == "source-registry-v1"
+    assert contract["vector_metadata_contract"]["candidate_generator_only"] is True
+    assert contract["vector_metadata_contract"]["must_not_own_canonical_citation_payload"] is True
+    assert adapter["chunk_only_failure_bucket"] == "RETRIEVAL_RESULT_CHUNK_ONLY_NOT_SEARCHUNIT"
+    assert adapter["vector_payload_used_as_evidence_truth"] is False
+    assert adapter["ignored_vector_canonical_payload"] is True
+    assert hydration["families_passed"] == ["PDF", "TEXT", "XLSX"]
+    assert hydration["no_vector_citation_render_valid_count"] == 3
+    assert failure_buckets["blocking_buckets"] == []
+    assert failure_buckets["next_blocking_work"] == ["SOURCE_REGISTRY_MATERIALIZATION_REQUIRED"]
+
+
+def test_v3_7_0_source_registry_materialization_artifacts_lock_source_first_contract() -> None:
+    summary = read_json(V3_7_0_SOURCE_REGISTRY_SUMMARY)
+    inventory = read_json(V3_7_0_SOURCE_REGISTRY_SOURCE_INVENTORY)
+    registry_inventory = read_json(SOURCE_ATOM_REGISTRY_INVENTORY_JSON)
+    build = read_json(SOURCE_ATOM_REGISTRY_BUILD_JSON)
+    hydration = read_json(V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE)
+    failure_buckets = read_json(V3_7_0_SOURCE_REGISTRY_FAILURE_BUCKETS)
+    diagnostics = read_jsonl(V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_DIAGNOSTICS)
+    blocked_rows = read_jsonl(SOURCE_ATOM_REGISTRY_BLOCKED_JSONL)
+
+    assert summary["run_id"] == V3_7_0_SOURCE_REGISTRY_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_source_registry_materialization"
+    assert summary["run_class"] == "diagnostic_only_source_registry_materialization"
+    assert summary["diagnostic_only"] is True
+    assert set(summary["outcome_choices"]) == V3_7_0_SOURCE_REGISTRY_OUTCOMES
+    assert summary["outcome"] == "SOURCE_REGISTRY_MATERIALIZED_READY"
+    assert summary["next_allowed_phase"] == "v3_7_1_all_source_citable_nonprod_index_build"
+    assert summary["v3_7_1_all_source_citable_nonprod_index_build_allowed"] is True
+    assert summary["source_registry_materialized"] is True
+    assert summary["source_registry_path"] == "ai/eval/source_registry/source_atom_registry_v1.jsonl"
+    assert summary["materialized_source_atom_count"] == build["materialized_source_atom_count"]
+    assert summary["materialized_source_atom_count"] == registry_inventory["materialized_source_atom_count"]
+    assert summary["total_inspected_source_candidates"] == registry_inventory["total_inspected_source_candidates"]
+    assert summary["v3_5_4_source_only_manifest_counts"] == {"TEXT": 350, "PDF": 325, "XLSX": 325}
+    assert summary["official_overlap_count"] == 29
+    assert summary["official_denominator_source_atoms_protected_regression_scope"] is True
+    assert summary["protected_official_denominator_not_dev_or_holdout_tuning_source"] is True
+
+    for key in (
+        "official_metric",
+        "answer_metric_computed",
+        "citation_metric_computed",
+        "retrieval_metric_computed",
+        "hybrid_retrieval_baseline_computed",
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "official_qrels_created",
+        "official_relevance_labels_created",
+        "official_answerability_labels_created",
+        "official_gold_labels_created",
+        "expected_answer_draft_used_as_source_content",
+        "supporting_evidence_used_as_answer_text_source",
+        "generated_silver_answers_used_as_source_material",
+        "generated_silver_questions_used_as_source_material",
+        "silver_evidence_locator_used_as_retrieval_shortcut",
+        "query_id_specific_evidence_patch",
+        "file_name_specific_evidence_patch",
+        "threshold_tuning",
+        "winner_selection",
+        "promotion_gate",
+        "readme_representative_product_performance_claim",
+        "lane_a_b_c_collapsed_scoring",
+        "production_db_used",
+        "db_write_attempted",
+        "db_migration_attempted",
+        "db_index_rebuild_attempted",
+        "vector_index_build_performed",
+        "vector_metadata_used_as_canonical_citation_source",
+    ):
+        assert summary[key] is False, key
+
+    assert inventory["source_material_inputs"]["v3_5_4_source_only_manifest"]["row_count"] == 1000
+    assert inventory["source_material_inputs"]["official_source_bound_units"]["row_count"] == 29
+    assert inventory["source_material_inputs"]["raw_text_chunks"]["row_count"] > 100000
+    assert inventory["excluded_source_content_policy"]["expected_answers_indexed"] is False
+    assert inventory["excluded_source_content_policy"]["gold_labels_indexed"] is False
+    assert inventory["excluded_source_content_policy"]["qrels_indexed"] is False
+    assert inventory["excluded_source_content_policy"]["metric_result_files_indexed"] is False
+    assert inventory["excluded_source_content_policy"]["generated_silver_answers_indexed"] is False
+    assert set(registry_inventory["source_family_counts"]) == {"TEXT", "PDF", "XLSX"}
+    assert all(registry_inventory["source_family_counts"][family] > 0 for family in ("TEXT", "PDF", "XLSX"))
+    assert registry_inventory["materialization_bucket_counts"]["source_atom_ready"] > 0
+    assert registry_inventory["materialization_bucket_counts"]["snapshot_only_ready"] > 0
+    assert registry_inventory["materialization_bucket_counts"]["retrieval_only_uncanonicalized"] == 0
+    assert registry_inventory["snapshot_only_count"] == registry_inventory["materialization_bucket_counts"]["snapshot_only_ready"]
+    assert failure_buckets["failure_bucket_counts"]["blocked_expected_answer_or_label_artifact"] > 0
+    assert failure_buckets["failure_bucket_counts"]["blocked_eval_artifact"] > 0
+    assert not failure_buckets["blocking_buckets"]
+    assert blocked_rows
+    assert {row["materialization_bucket"] for row in blocked_rows} >= {
+        "blocked_eval_artifact",
+        "blocked_expected_answer_or_label_artifact",
+    }
+    assert all(row.get("materialization_bucket") for row in diagnostics[:25])
+
+
+def test_v3_7_0_source_registry_no_vector_hydration_and_citation_smoke() -> None:
+    hydration = read_json(V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE)
+    registry_rows = read_jsonl(SOURCE_ATOM_REGISTRY_JSONL)
+    examples = {row["source_family"]: row for row in registry_rows if row["source_family"] not in {}}
+
+    assert hydration["families_passed"] == ["PDF", "TEXT", "XLSX"]
+    assert hydration["no_vector_evidence_bundle_hydration_passed"] is True
+    assert hydration["no_vector_citation_rendering_passed"] is True
+    assert hydration["vector_db_used"] is False
+    assert hydration["llm_used"] is False
+    assert hydration["vector_metadata_used_as_canonical_citation_source"] is False
+    assert hydration["runtime_evidence_allowed_count"] == 3
+    assert hydration["official_evidence_allowed_only_with_strict_locator_fields"] is True
+
+    for family in ("TEXT", "PDF", "XLSX"):
+        atom = examples[family]
+        assert atom["source_atom_id"]
+        assert atom["content_hash"]
+        assert atom["extraction_version"]
+        assert atom["raw_locator"]
+        assert atom["normalized_text_or_value_snapshot"]
+        assert atom["canonical_citation_payload"]["source_identity"] == atom["source_identity"]
+        assert atom["canonical_citation_payload"]["canonical_payload_source"] == "source_registry"
+        assert atom["gold_or_label_source"] is False
+        assert atom["expected_answer_source"] is False
+        assert atom["generation_source_allowed"] is False or atom["source_family"] != "TEXT"
+
+    assert examples["TEXT"]["raw_locator"]["chunk_id"]
+    assert examples["TEXT"]["raw_locator"]["stable_locator_fingerprint"]
+    assert examples["PDF"]["raw_locator"]["source_pdf_path"]
+    assert examples["PDF"]["raw_locator"]["page"] is not None
+    assert examples["PDF"]["raw_locator"]["physical_page_index"] is not None
+    assert examples["PDF"]["raw_locator"]["bbox"]
+    assert examples["PDF"]["raw_locator"]["region_type"]
+    assert examples["XLSX"]["raw_locator"]["workbook"]
+    assert examples["XLSX"]["raw_locator"]["sheet"]
+    assert examples["XLSX"]["raw_locator"]["value_locator"]
+
+
+def test_v3_7_1_all_source_citable_nonprod_index_is_source_atom_backed_without_vector_truth() -> None:
+    summary = read_json(V3_7_1_ALL_SOURCE_CITABLE_SUMMARY)
+    inventory = read_json(V3_7_1_ALL_SOURCE_CITABLE_SOURCE_INVENTORY)
+    build_summary = read_json(V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY)
+    hydration = read_json(V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE)
+    failure_buckets = read_json(V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS)
+    build = read_json(V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json")
+    ingest = read_json(V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "ingest_manifest.json")
+    index_inventory = read_json(V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "source_inventory.json")
+
+    assert summary["run_id"] == V3_7_1_ALL_SOURCE_CITABLE_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_all_source_citable_nonprod_index_build"
+    assert summary["run_class"] == "diagnostic_only_all_source_citable_nonprod_index_build"
+    assert set(summary["outcome_choices"]) == V3_7_1_ALL_SOURCE_CITABLE_OUTCOMES
+    assert summary["outcome"] == "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT"
+    assert summary["next_allowed_phase"] == "v3_7_2_source_registry_backed_retrieval_smoke"
+    assert summary["source_registry_outcome"] == "SOURCE_REGISTRY_MATERIALIZED_READY"
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["search_view_source_atom_contract"] is True
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["canonical_citation_payload_stored_in_vector_metadata"] is False
+    assert summary["vector_metadata_used_as_canonical_citation_source"] is False
+    assert summary["vector_metadata_used_as_evidence_truth"] is False
+    assert summary["retrieval_metric_computed"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["citation_metric_computed"] is False
+    assert summary["hybrid_retrieval_baseline_computed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["production_db_used"] is False
+    assert summary["db_write_attempted"] is False
+    assert summary["db_migration_attempted"] is False
+
+    assert summary["index_path"] == "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1"
+    assert summary["search_view_count"] == build_summary["search_view_manifest_row_count"]
+    assert summary["search_view_count"] == inventory["counts"]["search_views_indexed"]
+    assert summary["search_view_count"] == index_inventory["counts"]["search_views_indexed"]
+    assert summary["source_family_counts"] == {"TEXT": 135608, "PDF": 329, "XLSX": 343}
+    assert summary["official_overlap_count"] == 29
+    assert summary["snapshot_only_count"] == 327
+    assert summary["blocking_buckets"] == []
+    assert summary["fail_closed_reasons"] == []
+    assert summary["source_registry_sha256_unchanged"] is True
+    assert summary["official_denominator_index_sha256_unchanged"] is True
+    assert summary["load_check"]["passed"] is True
+    assert summary["load_check"]["canonical_payload_absent_from_vector_metadata"] is True
+    assert summary["load_check"]["search_view_source_atom_pointer_valid"] is True
+    assert summary["load_check"]["official_29_rows_remain_protected_and_identifiable"] is True
+
+    assert hydration["families_passed"] == ["PDF", "TEXT", "XLSX"]
+    assert hydration["no_vector_evidence_bundle_hydration_passed"] is True
+    assert hydration["no_vector_citation_rendering_passed"] is True
+    assert hydration["search_view_hit_hydrates_from_source_registry"] is True
+    assert hydration["vector_metadata_used_as_canonical_citation_source"] is False
+    assert hydration["vector_payload_used_as_evidence_truth"] is False
+    assert hydration["poisoned_vector_metadata_ignored_count"] == 3
+    assert hydration["snapshot_only_policy_explicit"] is True
+    assert failure_buckets["blocking_buckets"] == []
+    assert failure_buckets["failure_bucket_counts"]["ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT"] == 1
+
+    assert build["index_namespace"] == "rag-data-all-source-citable-nonprod-v1"
+    assert build["canonical_citation_payload_stored_in_vector_metadata"] is False
+    assert ingest["search_view_source_atom_pointer_required"] is True
+    assert ingest["canonical_citation_payload_stored_in_vector_metadata"] is False
+    assert (V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "faiss.index").exists()
+    assert (V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl").exists()
+
+    samples: list[dict[str, Any]] = []
+    with (V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl").open(encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                samples.append(json.loads(line))
+            if len(samples) >= 20:
+                break
+    assert samples
+    assert all(row["source_atom_id"] and row["source_atom_ids"] == [row["source_atom_id"]] for row in samples)
+    assert all("canonical_citation_payload" not in row for row in samples)
+    assert all(row["canonical_citation_payload_present"] is False for row in samples)
+    assert all(row["canonical_payload_stored_in_vector_metadata"] is False for row in samples)
+
+
 def assert_text_locator(row: dict[str, Any]) -> None:
     required = ("document_id", "document_version_id", "search_unit_id", "text_locator")
     assert_required(row, required)
@@ -2456,12 +3963,16 @@ def resolve_report_artifact_path(path: Path) -> Path:
     if path.exists():
         return path
     if path.parent == REPORT_ARCHIVE_DIR:
-        archived_external = EXTERNAL_REPORT_ARCHIVE_DIR / path.name
-        return archived_external if archived_external.exists() else path
+        for archive_dir in EXTERNAL_REPORT_ARCHIVE_DIRS:
+            archived_external = archive_dir / path.name
+            if archived_external.exists():
+                return archived_external
+        return path
     if path.parent == REPORT_DIR:
-        archived_external = EXTERNAL_REPORT_ARCHIVE_DIR / path.name
-        if archived_external.exists():
-            return archived_external
+        for archive_dir in EXTERNAL_REPORT_ARCHIVE_DIRS:
+            archived_external = archive_dir / path.name
+            if archived_external.exists():
+                return archived_external
         archived = REPORT_ARCHIVE_DIR / path.name
         if archived.exists():
             return archived
@@ -2482,9 +3993,10 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def read_jsonl_if_exists(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
+    resolved = resolve_report_artifact_path(path)
+    if not resolved.exists():
         return []
-    return read_jsonl(path)
+    return read_jsonl(resolved)
 
 
 def has_value(value: Any) -> bool:
