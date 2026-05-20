@@ -1,6 +1,6 @@
 # RAG Ingestion Measurements
 
-Last updated: 2026-05-19 KST.
+Last updated: 2026-05-20 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new
@@ -48,9 +48,53 @@ runtime archive under
 | v3_3_2 retrieval label-design packet | `official_answer_citation_agentic_loop_run_v3_3_2_retrieval_relevance_answerability_label_design_packet` | Human decision packet for future retrieval qrels design | Current denominator is answer/citation-only: 29 rows, PDF=4, TEXT=6, XLSX=19; proposed relevance/answerability schemas require user decision | No label/denominator/runtime/metric mutation |
 | v3_4_0 official retrieval metric contract | `official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract` | Contract JSON plus qrels-schema JSON for future Hit@1/3/5, MRR@5, nDCG@5 | Defines qrels denominator options A/B/C, relevance/answerability 0-3 schemas, positive/gain rules, micro/macro boundaries | No qrels, labels, denominator, runtime, or metric mutation |
 
+| v3_6_4 weak/noisy silver diagnostic metric | `official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric` | Frozen v3_6_3 weak/noisy manifests | core_only `665` rows, review_only_challenge `335` rows, all_diagnostic `1000` rows; generation coverage `0/1000` fail-closed | Diagnostic-only; not gold/qrels/promotion |
 The official first-run baseline is a scored partial baseline and is not a
 scorer backend blocker. It remains the immutable reference point; later rows in
 this ladder are diagnostic deltas, not promotion evidence.
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric:measurements-entry:start -->
+## 2026-05-20 - v3_6_4 Diagnostic-Only Weak/Noisy Silver Metric
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric`
+
+Scope:
+
+- Measured the frozen v3_6_3 weak/noisy silver manifests only: core_only `665`, review_only_challenge `335`, all_diagnostic `1000`.
+- This is weak/noisy silver diagnostic measurement only: not gold, not official qrels, not official denominator, not promotion evidence, not threshold tuning, not winner selection, and not README representative product-performance evidence.
+- Live generation was unavailable for this 1000-row pass, so answer/citation proxy metrics are fail-closed; deterministic source identity and locator feasibility metrics were still computed from the frozen manifest.
+
+Compact diagnostic metrics:
+
+| Partition | Rows | Source identity @1 | Locator fingerprint @1 | Context present | Citation source match | Answer non-empty | Runtime generation |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| core_only | 665 | 1.0 | 1.0 | 1.0 | 1.0 | 0.0 | 0/665 |
+| review_only_challenge | 335 | 1.0 | 1.0 | 1.0 | 1.0 | 0.0 | 0/335 |
+| all_diagnostic | 1000 | 1.0 | 1.0 | 1.0 | 1.0 | 0.0 | 0/1000 |
+
+Failure taxonomy:
+
+- runtime_fail_closed: `665`
+- weak_silver_expected_answer_ambiguous: `334`
+- review_only_source_quality_risk: `1`
+
+Interpretation:
+
+- core_only is the main interpretable diagnostic bucket.
+- review_only_challenge is stress/noise and must not be merged into a headline result without that label.
+- all_diagnostic is only a rough overall stress number.
+- The split holdout remains non-source-isolated because v3_6_2/v3_6_3 recorded source identity crossing; official proximity rows remain review-only and core count is `0`.
+
+Primary machine artifacts:
+
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_aggregate_by_bucket.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_failure_taxonomy.json`
+- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_policy_audit.json`
+<!-- official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric:measurements-entry:end -->
 
 ## 2026-05-19 - v3_4_0 Official Retrieval Metric Contract
 

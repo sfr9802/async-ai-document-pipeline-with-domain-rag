@@ -23,7 +23,7 @@ requirements.
 
 ## Current Status
 
-Overall status: `balanced_source_manifest_quality_audit_v3_5_5_source_only_review_ready`;
+Overall status: `diagnostic_reference_sidecar_runtime_surface_probe_v3_6_6_complete`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied.
 Previous closure status `official_answer_citation_v3_2_7_post_fix_sequence_closed`
@@ -109,6 +109,48 @@ remains valid as the source-capacity inventory checkpoint.
 <!-- official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit:progress-entry:start -->
 - v3_5_5 balanced source-manifest quality audit (`official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit`) validates TEXT=350, PDF=325, XLSX=325, total=1000 frozen v3_5_4 source-only rows without mutating the freeze. Audit sample counts are TEXT=58, PDF=172, XLSX=74; duplicate hash repetitions are 17 groups/57 rows. Targeted review counts: PDF short=173, PDF numeric/table=70, XLSX hidden-boundary=4, TEXT short=31. critical_repair_required_count=0, recommended_repair_queue_count=0, silver_generation_allowed=false; recommended_next_phase=`v3_6_0_silver_generation_policy_packet`.
 <!-- official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit:progress-entry:end -->
+
+
+
+
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation:progress-entry:start -->
+- v3_6_1 balanced weak/noisy silver candidate generation (`official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation`) creates 1000 diagnostic weak/noisy candidate rows from frozen v3_5_4 source rows: TEXT=350, PDF=325, XLSX=325, total=1000. Query profiles are clean=450, short=150, ambiguous=200, noisy=100, numeric/table=100. Splits are exploration=700, holdout=200, stress=100; blocked rows=0. This is not gold, not official denominator/qrels, not promotion evidence, and not README representative product-performance evidence.
+<!-- official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation:progress-entry:end -->
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval:progress-entry:start -->
+- v3_6_2 weak/noisy silver candidate sanity eval (`official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval`) validates 1000 diagnostic candidate rows with candidate_sanity_passed=true. bucket counts are core=665, review-only=335, quarantine=0, blocked=0. Split crossing remains a diagnostic holdout warning (74 groups), not official leakage; hash contract=normalized question sha256. v3_6_3 diagnostic weak/noisy silver manifest freeze is allowed=true. Official labels/qrels/gold, promotion evidence, threshold tuning, winner selection, and README performance claims remain blocked.
+<!-- official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval:progress-entry:end -->
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_6_0_low_touch_noisy_silver_policy_application:progress-entry:start -->
+- v3_6_0 low-touch weak/noisy silver policy application (`official_answer_citation_agentic_loop_run_v3_6_0_low_touch_noisy_silver_policy_application`) records the user-approved decision to allow draft question/expected-answer/evidence-locator generation from the frozen v3_5_4 source-only manifest. Source counts are TEXT=350, PDF=325, XLSX=325, total=1000; user_policy_decision_applied=true, low_touch_human_review_required=false, generated silver rows=0, official labels/qrels/gold/promotion evidence remain false; next phase is v3_6_1.
+<!-- official_answer_citation_agentic_loop_run_v3_6_0_low_touch_noisy_silver_policy_application:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze:progress-entry:start -->
+- v3_6_3 diagnostic weak/noisy silver manifest freeze (`official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze`) freezes 1000 diagnostic rows from the v3_6_2-passed candidates: core=665, review-only=335, quarantine=0. official proximity rows remain review-only=3; split crossing remains a diagnostic warning (74 groups), hash contract=normalized_question_sha256_lowercase_whitespace_collapsed. v3_6_4 diagnostic-only weak/noisy silver metric is allowed=true. Official denominator/qrels/labels/gold, README performance claims, promotion, threshold tuning, winner selection, and Lane A/B/C collapsed scoring remain blocked.
+<!-- official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze:progress-entry:end -->
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric:progress-entry:start -->
+- v3_6_4 diagnostic-only weak/noisy silver metric (`official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric`) measures 1000 frozen v3_6_3 manifest rows with separate partitions: core_only=665, review_only_challenge=335, all_diagnostic=1000. Deterministic source identity/locator feasibility is core=1.0, review=1.0, all=1.0; live generation coverage=0/1000 and answer/citation proxy metrics fail closed. Primary failures are runtime_fail_closed=665, weak_silver_expected_answer_ambiguous=334, review_only_source_quality_risk=1. core_only is the main interpretable diagnostic bucket; review_only_challenge is stress/noise; all_diagnostic is only a rough stress number. Official denominator/qrels/labels/gold, README performance claims, promotion, threshold tuning, winner selection, and Lane A/B/C collapsed scoring remain blocked.
+<!-- official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric:progress-entry:end -->
+
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage:progress-entry:start -->
+- v3_6_5 rough failure-bucket triage (`official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage`) keeps the v3_6_4 frozen weak/noisy silver metric diagnostic-only and performs no live silver generation, no answer/citation scoring from local LLM output, no DB writes, and no index/export rebuild. Multi-label blockers include runtime_generation_surface_unavailable=1000, answer_proxy_reference_missing_from_v3_6_3_manifest=1000, weak_silver_expected_answer_ambiguous=334, review_only_source_quality_noise=334. Local LLM surface classification=reusable_with_diagnostic_adapter_only; DB/reference classification=repo_artifact_read_only_reference_surface_available_live_retrieval_adapter_needed; diagnostic reference sidecar recommended=true; recommended next phase=v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe. Official denominator/qrels/labels/gold, README performance claims, promotion, threshold tuning, winner selection, prompt/retrieval/scorer/renderer mutation, production DB usage, and DB-derived generation/gold/qrels remain blocked.
+<!-- official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage:progress-entry:end -->
+
+
+
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe:progress-entry:start -->
+- v3_6_6 diagnostic reference sidecar and runtime surface probe (`official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe`) builds a diagnostic-only reference sidecar from v3_6_1 candidate drafts joined to the frozen v3_6_3 manifest: all=1000, core=665, review-only=335, quarantine=0. Local LLM classification=reusable_with_diagnostic_adapter_only; core smoke generation attempted=30 and strict JSON answers returned=30 and succeeded=0 over 30 core sample rows. DB/retrieval surface classification=manifest_locator_mapping_available_live_retrieval_adapter_needed; live retrieval probe feasible=false; core-only live diagnostic metric allowed=false; recommended next phase=v3_6_7_runtime_stability_probe_for_core_only. Review-only remains stress-only; official denominator/qrels/labels/gold, README performance claims, promotion, threshold tuning, winner selection, prompt/retrieval/scorer/renderer mutation, DB writes/migrations/reindex, and DB-derived generation/gold/qrels remain blocked.
+<!-- official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe:progress-entry:end -->
 
 - Official first-run baseline is `status=BLOCKED_OR_PARTIAL` with
   `status_detail=SCORED_BASELINE_PARTIAL`,

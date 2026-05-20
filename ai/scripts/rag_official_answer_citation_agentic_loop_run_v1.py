@@ -20,12 +20,13 @@ import os
 import re
 import sys
 import unicodedata
-from collections import Counter
+from collections import Counter, defaultdict
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Mapping, Sequence
+from urllib.parse import urlsplit, urlunsplit
 
 
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
@@ -154,6 +155,27 @@ V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID = (
 V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit"
 )
+V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_0_low_touch_noisy_silver_policy_application"
+)
+V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation"
+)
+V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval"
+)
+V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze"
+)
+V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric"
+)
+V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage"
+)
+V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe"
+)
 REPORT_ARTIFACT_SLUGS = {
     RUN_ID: "agentic_v1",
     V2_RUN_ID: "v2_source_bound",
@@ -213,6 +235,27 @@ REPORT_ARTIFACT_SLUGS = {
     V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID: (
         V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID
     ),
+    V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID: (
+        V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID
+    ),
+    V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID: (
+        V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID
+    ),
+    V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID: (
+        V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID
+    ),
+    V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID: (
+        V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID
+    ),
+    V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID: (
+        V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID
+    ),
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID: (
+        V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID
+    ),
+    V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID: (
+        V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
@@ -240,6 +283,13 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
     V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
     V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+    V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+    V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
 }
 V3_1_PRIORITY_1_5_QUERY_IDS = (
     "gq_pdf_section_question_001",
@@ -767,6 +817,198 @@ DEFAULT_V3_5_5_NEXT_PHASE_POLICY_BOUNDARY_JSON = report_artifact_path(
     V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
     "next_phase_policy_boundary.json",
 )
+DEFAULT_V3_6_0_POLICY_APPROVAL_SUMMARY_JSON = report_artifact_path(
+    V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+    "policy_approval_summary.json",
+)
+DEFAULT_V3_6_0_GENERATION_CONTRACT_JSON = report_artifact_path(
+    V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+    "generation_contract.json",
+)
+DEFAULT_V3_6_0_USER_DECISION_MATRIX_JSONL = report_artifact_path(
+    V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+    "user_decision_matrix.jsonl",
+)
+DEFAULT_V3_6_0_GUARDRAIL_SUMMARY_JSON = report_artifact_path(
+    V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+    "guardrail_summary.json",
+)
+DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL = report_artifact_path(
+    V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "weak_silver_candidates.jsonl",
+)
+DEFAULT_V3_6_1_GENERATION_SUMMARY_JSON = report_artifact_path(
+    V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "generation_summary.json",
+)
+DEFAULT_V3_6_1_SPLIT_MANIFEST_JSON = report_artifact_path(
+    V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "split_manifest.json",
+)
+DEFAULT_V3_6_1_QUALITY_DISTRIBUTION_JSON = report_artifact_path(
+    V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "generation_quality_distribution.json",
+)
+DEFAULT_V3_6_1_BLOCKED_ROWS_JSONL = report_artifact_path(
+    V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "generation_blocked_rows.jsonl",
+)
+DEFAULT_V3_6_1_POLICY_COMPLIANCE_AUDIT_JSON = report_artifact_path(
+    V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "policy_compliance_audit.json",
+)
+DEFAULT_V3_6_1_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "next_phase_recommendation.json",
+)
+DEFAULT_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON = report_artifact_path(
+    V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "candidate_sanity_summary.json",
+)
+DEFAULT_V3_6_2_CANDIDATE_SANITY_PER_ROW_JSONL = report_artifact_path(
+    V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "candidate_sanity_per_row.jsonl",
+)
+DEFAULT_V3_6_2_CANDIDATE_QUARANTINE_ROWS_JSONL = report_artifact_path(
+    V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "candidate_quarantine_rows.jsonl",
+)
+DEFAULT_V3_6_2_CANDIDATE_METRIC_FEASIBILITY_JSON = report_artifact_path(
+    V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "candidate_metric_feasibility.json",
+)
+DEFAULT_V3_6_2_SPLIT_INDEPENDENCE_AUDIT_JSON = report_artifact_path(
+    V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "split_independence_audit.json",
+)
+DEFAULT_V3_6_2_HASH_CONTRACT_AUDIT_JSON = report_artifact_path(
+    V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "hash_contract_audit.json",
+)
+DEFAULT_V3_6_2_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "next_phase_recommendation.json",
+)
+DEFAULT_V3_6_3_MANIFEST_SUMMARY_JSON = report_artifact_path(
+    V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_summary.json",
+)
+DEFAULT_V3_6_3_MANIFEST_ALL_JSONL = report_artifact_path(
+    V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_all.jsonl",
+)
+DEFAULT_V3_6_3_MANIFEST_CORE_JSONL = report_artifact_path(
+    V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_core.jsonl",
+)
+DEFAULT_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL = report_artifact_path(
+    V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
+)
+DEFAULT_V3_6_3_MANIFEST_QUARANTINE_JSONL = report_artifact_path(
+    V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
+)
+DEFAULT_V3_6_3_MANIFEST_POLICY_AUDIT_JSON = report_artifact_path(
+    V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_policy_audit.json",
+)
+DEFAULT_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_next_phase_recommendation.json",
+)
+DEFAULT_V3_6_4_METRIC_SUMMARY_JSON = report_artifact_path(
+    V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "summary.json",
+)
+DEFAULT_V3_6_4_METRIC_PER_ROW_JSONL = report_artifact_path(
+    V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "per_row.jsonl",
+)
+DEFAULT_V3_6_4_METRIC_AGGREGATE_BY_BUCKET_JSON = report_artifact_path(
+    V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "aggregate_by_bucket.json",
+)
+DEFAULT_V3_6_4_METRIC_FAILURE_TAXONOMY_JSON = report_artifact_path(
+    V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "failure_taxonomy.json",
+)
+DEFAULT_V3_6_4_METRIC_SAMPLE_REVIEW_JSONL = report_artifact_path(
+    V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "sample_review.jsonl",
+)
+DEFAULT_V3_6_4_METRIC_POLICY_AUDIT_JSON = report_artifact_path(
+    V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "policy_audit.json",
+)
+DEFAULT_V3_6_4_METRIC_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "next_phase_recommendation.json",
+)
+DEFAULT_V3_6_5_SUMMARY_JSON = report_artifact_path(
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "summary.json",
+)
+DEFAULT_V3_6_5_PER_ROW_JSONL = report_artifact_path(
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "per_row.jsonl",
+)
+DEFAULT_V3_6_5_BLOCKER_MATRIX_JSON = report_artifact_path(
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "blocker_matrix.json",
+)
+DEFAULT_V3_6_5_RUNTIME_SURFACE_AUDIT_JSON = report_artifact_path(
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "runtime_surface_audit.json",
+)
+DEFAULT_V3_6_5_REFERENCE_SURFACE_AUDIT_JSON = report_artifact_path(
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "reference_surface_audit.json",
+)
+DEFAULT_V3_6_5_DB_SURFACE_AUDIT_JSON = report_artifact_path(
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "db_surface_audit.json",
+)
+DEFAULT_V3_6_5_LOCAL_LLM_SURFACE_AUDIT_JSON = report_artifact_path(
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "local_llm_surface_audit.json",
+)
+DEFAULT_V3_6_5_POLICY_AUDIT_JSON = report_artifact_path(
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "policy_audit.json",
+)
+DEFAULT_V3_6_5_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "next_phase_recommendation.json",
+)
+DEFAULT_V3_6_6_SUMMARY_JSON = report_artifact_path(
+    V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "summary.json",
+)
+DEFAULT_V3_6_6_REFERENCE_SIDECAR_JSONL = report_artifact_path(
+    V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "reference_sidecar.jsonl",
+)
+DEFAULT_V3_6_6_CORE_SMOKE_SAMPLE_JSONL = report_artifact_path(
+    V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "core_smoke_sample.jsonl",
+)
+DEFAULT_V3_6_6_RUNTIME_PROBE_SUMMARY_JSON = report_artifact_path(
+    V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "runtime_probe_summary.json",
+)
+DEFAULT_V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT_JSON = report_artifact_path(
+    V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "db_retrieval_surface_audit.json",
+)
+DEFAULT_V3_6_6_POLICY_AUDIT_JSON = report_artifact_path(
+    V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "policy_audit.json",
+)
+DEFAULT_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "next_phase_recommendation.json",
+)
 DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "scorer_v1.jsonl"
 DEFAULT_TEXT_NAMU_GOLD_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v2_1_question_gold_v2.csv"
 DEFAULT_TEXT_NAMU_HUMAN_AUDIT_V2_DECISIONS_JSON = (
@@ -1191,6 +1433,40 @@ def main(argv: list[str] | None = None) -> int:
         }
         print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
+    if summary["run_id"] in {
+        V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+        V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    }:
+        write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
+        append_v3_6_low_touch_weak_noisy_silver_event(Path(args.status_jsonl), summary)
+        append_v3_6_progress_entry(summary)
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "run_class": summary["run_class"],
+            "artifact_kind": summary["artifact_kind"],
+            "user_policy_decision_applied": summary["user_policy_decision_applied"],
+            "low_touch_human_review_required": summary["low_touch_human_review_required"],
+            "weak_silver_candidate_count": summary.get(
+                "weak_silver_candidate_count",
+                summary.get("candidate_row_count", 0),
+            ),
+            "source_family_counts": summary.get("source_family_counts")
+            or summary.get("source_manifest_counts"),
+            "query_quality_profile_counts": summary.get("query_quality_profile_counts", {}),
+            "blocked_generation_row_count": summary.get("blocked_generation_row_count", 0),
+            "candidate_sanity_passed": summary.get("candidate_sanity_passed"),
+            "diagnostic_row_count": summary.get("diagnostic_row_count"),
+            "runtime_generation_coverage_rate": summary.get("runtime_generation_coverage_rate"),
+            "artifact_paths": summary["artifact_paths"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
     if summary["run_id"] == V3_1_5_GQ_AUTO_010_SOURCE_BOUND_COVERAGE_DIAGNOSTIC_RUN_ID:
         write_v3_1_5_source_bound_coverage_side_artifacts(summary, rows)
         write_json(Path(args.summary_json), summary)
@@ -1459,6 +1735,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
         V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
         V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+        V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
     }
     if args.run_id not in supported_run_ids:
         raise SystemExit(
@@ -1555,6 +1838,27 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
 
     if args.run_id == V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID:
         return run_v3_5_5_balanced_source_manifest_quality_audit(args=args), []
+
+    if args.run_id == V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID:
+        return run_v3_6_0_low_touch_noisy_silver_policy_application(args=args), []
+
+    if args.run_id == V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID:
+        return run_v3_6_1_balanced_weak_noisy_silver_candidate_generation(args=args), []
+
+    if args.run_id == V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID:
+        return run_v3_6_2_weak_noisy_silver_candidate_sanity_eval(args=args), []
+
+    if args.run_id == V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID:
+        return run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze(args=args), []
+
+    if args.run_id == V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID:
+        return run_v3_6_4_diagnostic_only_weak_noisy_silver_metric(args=args), []
+
+    if args.run_id == V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID:
+        return run_v3_6_5_rough_failure_bucket_triage(args=args), []
+
+    if args.run_id == V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID:
+        return run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe(args=args), []
 
     if args.run_id == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
         return run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement(
@@ -21183,6 +21487,5864 @@ def append_v3_5_5_triage_repair_queue_entry(summary: Mapping[str, Any]) -> None:
         flags=re.DOTALL,
     )
     path.write_text(text.rstrip() + "\n\n" + entry, encoding="utf-8")
+
+
+V3_6_0_POLICY_DECISION_SUMMARY = (
+    "User approved low-touch weak/noisy silver generation because manual review of 1000 silver rows is too costly "
+    "and the goal is to test ambiguous/lower-quality query handling."
+)
+V3_6_GENERATION_POLICY_VERSION = "low_touch_weak_noisy_silver_v1"
+V3_6_1_QUERY_PROFILE_TARGETS = {
+    "clean_source_grounded": 450,
+    "short_keyword_or_fragment": 150,
+    "ambiguous_but_source_answerable": 200,
+    "noisy_user_like": 100,
+    "numeric_table_or_locator_hard": 100,
+}
+V3_6_1_SPLIT_TARGETS_BY_SOURCE_FAMILY = {
+    "TEXT": {
+        "weak_silver_exploration": 244,
+        "weak_silver_holdout": 70,
+        "weak_silver_stress_smoke_candidate": 36,
+    },
+    "PDF": {
+        "weak_silver_exploration": 228,
+        "weak_silver_holdout": 65,
+        "weak_silver_stress_smoke_candidate": 32,
+    },
+    "XLSX": {
+        "weak_silver_exploration": 228,
+        "weak_silver_holdout": 65,
+        "weak_silver_stress_smoke_candidate": 32,
+    },
+}
+V3_6_BLOCKED_REASON_VOCABULARY = (
+    "blocked_missing_source_text_or_value",
+    "blocked_locator_unresolvable",
+    "blocked_official_denominator_overlap",
+    "blocked_candidate_artifact_source_leak",
+    "blocked_generation_failed_json",
+    "blocked_expected_answer_not_source_grounded",
+    "blocked_supporting_evidence_locator_missing",
+    "blocked_duplicate_generated_question",
+    "blocked_policy_violation",
+    "blocked_other",
+)
+
+
+def v3_6_low_touch_guardrails(*, weak_candidate_rows_created: bool) -> dict[str, bool]:
+    guardrails = dict(v3_5_source_material_guardrails())
+    guardrails.update(
+        {
+            "canonical_silver_manifest_mutation": False,
+            "weak_noisy_silver_candidate_rows_created": weak_candidate_rows_created,
+            "official_qrels_created": False,
+            "official_relevance_labels_created": False,
+            "official_answerability_labels_created": False,
+            "official_expected_answer_mutation": False,
+            "official_supporting_evidence_mutation": False,
+            "readme_performance_claim_mutation": False,
+        }
+    )
+    return guardrails
+
+
+def v3_6_source_manifest_counts() -> dict[str, int]:
+    return {"TEXT": 350, "PDF": 325, "XLSX": 325, "total": 1000}
+
+
+def run_v3_6_0_low_touch_noisy_silver_policy_application(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    v3_5_4_summary = official.read_json(DEFAULT_V3_5_4_FREEZE_SUMMARY_JSON)
+    v3_5_5_summary = official.read_json(DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON)
+    source_counts = v3_6_source_manifest_counts()
+    source_quality_counts = {
+        "pass_source_quality_count": int(v3_5_5_summary.get("pass_source_quality_count") or 0),
+        "review_only_count": int(v3_5_5_summary.get("review_only_count") or 0),
+        "critical_repair_required_count": int(v3_5_5_summary.get("critical_repair_required_count") or 0),
+    }
+    generation_contract = v3_6_0_generation_contract(generated_at=generated_at)
+    decision_rows = v3_6_0_user_decision_matrix_rows(generated_at=generated_at)
+    guardrail_summary = {
+        "schema_version": f"{V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID}_guardrail_summary_v1",
+        "run_id": V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "low_touch_noisy_silver_policy_guardrail_summary",
+        "source_manifest_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_quality_audit_run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        "guardrails": v3_6_low_touch_guardrails(weak_candidate_rows_created=False),
+        "official_gold_labels_created": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "weak_silver_rows_created": False,
+        "policy_only_no_generated_rows": True,
+        "triage_doc_updated": False,
+    }
+    summary = {
+        "schema_version": f"{V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID}_policy_approval_summary_v1",
+        "run_id": V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "low_touch_noisy_silver_policy_application",
+        "event_type": "low_touch_noisy_silver_policy_application_v3_6_0",
+        "status": "LOW_TOUCH_WEAK_NOISY_SILVER_POLICY_APPLIED_NO_ROWS_CREATED",
+        "run_class": "policy_application_only_no_generated_silver_rows",
+        "source_policy_run_id": V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+        "source_manifest_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_quality_audit_run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        "user_policy_decision_applied": True,
+        "user_policy_decision_summary": V3_6_0_POLICY_DECISION_SUMMARY,
+        "source_manifest_counts": source_counts,
+        "source_quality_counts": source_quality_counts,
+        "low_touch_human_review_required": False,
+        "allow_review_only_source_rows": True,
+        "allow_ambiguous_query_profiles": True,
+        "allow_noisy_query_profiles": True,
+        "allow_generated_question_draft": True,
+        "allow_expected_answer_draft": True,
+        "allow_supporting_evidence_locator_draft": True,
+        "allow_weak_relevance_status_draft": True,
+        "allow_weak_answerability_status_draft": True,
+        "official_gold_labels_created": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_metric_denominator_usage_allowed": False,
+        "promotion_evidence": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "weak_silver_candidates_created": False,
+        "weak_silver_candidate_count": 0,
+        "silver_jsonl_rows_created": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "candidate_artifacts_used_as_generation_source_count": 0,
+        "official_denominator_overlap_detected_count": 0,
+        "triage_doc_updated": False,
+        "recommended_next_phase": "v3_6_1_balanced_weak_noisy_silver_candidate_generation",
+        "artifact_paths": {
+            "policy_approval_summary_json": official.repo_relative(DEFAULT_V3_6_0_POLICY_APPROVAL_SUMMARY_JSON),
+            "generation_contract_json": official.repo_relative(DEFAULT_V3_6_0_GENERATION_CONTRACT_JSON),
+            "user_decision_matrix_jsonl": official.repo_relative(DEFAULT_V3_6_0_USER_DECISION_MATRIX_JSONL),
+            "guardrail_summary_json": official.repo_relative(DEFAULT_V3_6_0_GUARDRAIL_SUMMARY_JSON),
+            "source_manifest_jsonl": official.repo_relative(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+            "source_quality_summary_json": official.repo_relative(DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+        "guardrails": v3_6_low_touch_guardrails(weak_candidate_rows_created=False),
+        "generation_contract": generation_contract,
+        "user_decision_matrix_rows": decision_rows,
+        "guardrail_summary": guardrail_summary,
+        "input_artifact_sha256": {
+            "v3_5_4_balanced_source_manifest_jsonl_sha256": sha256_file(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+            "v3_5_4_freeze_summary_json_sha256": sha256_file(DEFAULT_V3_5_4_FREEZE_SUMMARY_JSON),
+            "v3_5_5_quality_summary_json_sha256": sha256_file(DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON),
+            "v3_5_5_manifest_validation_jsonl_sha256": sha256_file(DEFAULT_V3_5_5_MANIFEST_VALIDATION_JSONL),
+        },
+        "source_manifest_summary_status": v3_5_4_summary.get("status"),
+        "source_quality_audit_status": v3_5_5_summary.get("status"),
+    }
+    return summary
+
+
+def v3_6_0_generation_contract(*, generated_at: str) -> dict[str, Any]:
+    proposed_row_fields = [
+        "weak_silver_candidate_id",
+        "source_candidate_id",
+        "source_family",
+        "source_document_identity",
+        "source_locator",
+        "source_text_or_value_hash",
+        "source_quality_status",
+        "query_quality_profile",
+        "generated_question_draft",
+        "expected_answer_draft",
+        "expected_answer_status",
+        "supporting_evidence_locator_draft",
+        "supporting_evidence_excerpt_hash",
+        "supporting_evidence_status",
+        "weak_relevance_status",
+        "weak_answerability_status",
+        "human_review_status",
+        "split_role",
+        "official_denominator_overlap",
+        "not_gold",
+        "not_official_denominator",
+        "not_official_qrels",
+        "promotion_evidence",
+        "generation_policy_version",
+        "guardrail_flags",
+    ]
+    return {
+        "schema_version": f"{V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID}_generation_contract_v1",
+        "run_id": V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "low_touch_noisy_silver_generation_contract",
+        "contract_scope": "v3_6_1_row_schema_only",
+        "contains_generated_rows": False,
+        "row_schema": {
+            "proposed_row_fields": proposed_row_fields,
+            "required_false_fields": [
+                "official_denominator_overlap",
+                "official_qrels_created",
+                "official_relevance_label_created",
+                "official_answerability_label_created",
+                "promotion_evidence",
+            ],
+            "required_true_fields": [
+                "not_gold",
+                "not_official_denominator",
+                "not_official_qrels",
+            ],
+            "draft_only_fields": [
+                "generated_question_draft",
+                "expected_answer_draft",
+                "supporting_evidence_locator_draft",
+                "weak_relevance_status",
+                "weak_answerability_status",
+            ],
+        },
+        "allowed_query_quality_profiles": list(V3_6_1_QUERY_PROFILE_TARGETS),
+        "blocked_reason_vocabulary": list(V3_6_BLOCKED_REASON_VOCABULARY),
+        "source_boundaries": {
+            "source_text_or_value_must_come_from_v3_5_4_frozen_manifest": True,
+            "candidate_artifacts_used_as_generation_source": False,
+            "official_expected_answers_used_as_generation_source": False,
+            "official_supporting_evidence_used_as_generation_source": False,
+            "official_gold_or_qrels_used_as_generation_source": False,
+        },
+        "not_gold_not_official_not_promotion": True,
+    }
+
+
+def v3_6_0_user_decision_matrix_rows(*, generated_at: str) -> list[dict[str, Any]]:
+    decisions = [
+        ("manual_review_all_1000_rows", False, "per-row human review is not required for initial weak/noisy silver"),
+        ("generated_question_draft_allowed", True, "questions may be generated as weak silver drafts"),
+        ("expected_answer_draft_allowed", True, "expected answers may be generated only as unreviewed weak drafts"),
+        (
+            "supporting_evidence_locator_draft_allowed",
+            True,
+            "supporting evidence locators may be copied only from frozen source locators",
+        ),
+        ("review_only_source_rows_allowed", True, "review-only rows are deliberately included for stress diagnostics"),
+        ("official_gold_labels_created", False, "no gold labels are created"),
+        ("official_qrels_created", False, "no official qrels are created"),
+        ("promotion_evidence", False, "weak/noisy silver is not promotion evidence"),
+        (
+            "readme_representative_product_performance_claim",
+            False,
+            "weak/noisy silver is not README representative product-performance evidence",
+        ),
+    ]
+    rows = []
+    for ordinal, (decision_key, applied_value, rationale) in enumerate(decisions, start=1):
+        rows.append(
+            {
+                "run_id": V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+                "generated_at": generated_at,
+                "decision_ordinal": ordinal,
+                "decision_key": decision_key,
+                "applied_value": applied_value,
+                "decision_source": "user_approved_low_touch_weak_noisy_silver_policy",
+                "rationale": rationale,
+                "not_gold": True,
+                "not_official_denominator": True,
+                "not_official_qrels": True,
+                "promotion_evidence": False,
+            }
+        )
+    return rows
+
+
+def run_v3_6_1_balanced_weak_noisy_silver_candidate_generation(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    policy_summary = official.read_json(DEFAULT_V3_6_0_POLICY_APPROVAL_SUMMARY_JSON)
+    source_rows = read_jsonl(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL)
+    quality_summary = official.read_json(DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON)
+    validation_rows = read_jsonl(DEFAULT_V3_5_5_MANIFEST_VALIDATION_JSONL)
+    validation_by_candidate_id = {official.clean(row.get("candidate_id")): row for row in validation_rows}
+    official_index = v3_5_4_official_denominator_overlap_index()
+    input_sha_before = {
+        "v3_5_4_balanced_source_manifest_jsonl_sha256": sha256_file(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+        "v3_5_4_freeze_summary_json_sha256": sha256_file(DEFAULT_V3_5_4_FREEZE_SUMMARY_JSON),
+        "v3_5_5_quality_summary_json_sha256": sha256_file(DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON),
+        "v3_5_5_manifest_validation_jsonl_sha256": sha256_file(DEFAULT_V3_5_5_MANIFEST_VALIDATION_JSONL),
+        "v3_5_5_audit_sample_review_packet_jsonl_sha256": sha256_file(DEFAULT_V3_5_5_AUDIT_SAMPLE_REVIEW_PACKET_JSONL),
+        "v3_5_5_duplicate_hash_audit_jsonl_sha256": sha256_file(DEFAULT_V3_5_5_DUPLICATE_HASH_AUDIT_JSONL),
+        "official_denominator_registry_json_sha256": sha256_file(official.DEFAULT_DENOMINATOR_REGISTRY),
+        "official_search_unit_manifest_jsonl_sha256": sha256_file(DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl"),
+        "canonical_silver_manifest_json_sha256": sha256_file(AI_WORKER_ROOT / "eval" / "silver" / "answer_citation_silver_manifest_v1.json"),
+        "canonical_silver_readiness_json_sha256": sha256_file(AI_WORKER_ROOT / "eval" / "silver" / "answer_citation_silver_readiness_v1.json"),
+    }
+    source_hash_counts = Counter(v3_5_4_source_hash(row) for row in source_rows if v3_5_4_source_hash(row))
+    repeated_source_hashes = {source_hash for source_hash, count in source_hash_counts.items() if count > 1}
+    profile_by_candidate_id = v3_6_1_assign_query_quality_profiles(
+        source_rows,
+        validation_by_candidate_id=validation_by_candidate_id,
+    )
+    split_by_candidate_id = v3_6_1_assign_split_roles(
+        source_rows,
+        validation_by_candidate_id=validation_by_candidate_id,
+    )
+    generated_question_hashes_seen: set[str] = set()
+    duplicate_question_hash_counter: Counter[str] = Counter()
+    weak_candidate_rows: list[dict[str, Any]] = []
+    blocked_rows: list[dict[str, Any]] = []
+    seen_weak_candidate_ids: set[str] = set()
+    seen_source_locator_keys: set[tuple[str, str, str]] = set()
+
+    for ordinal, row in enumerate(source_rows, start=1):
+        candidate_id = official.clean(row.get("candidate_id"))
+        validation = validation_by_candidate_id.get(candidate_id, {})
+        blocked_reason = v3_6_1_generation_blocked_reason(
+            row,
+            validation=validation,
+            official_index=official_index,
+        )
+        if blocked_reason:
+            blocked_rows.append(v3_6_1_blocked_row(row, ordinal=ordinal, reason=blocked_reason, validation=validation))
+            continue
+
+        family = official.clean(row.get("source_family")).upper()
+        locator = dict(as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator")))
+        source_document_identity = v3_5_4_source_path_or_identity(row, locator)
+        locator_fingerprint = official.clean(row.get("locator_fingerprint"))
+        source_locator_key = (family, source_document_identity, locator_fingerprint)
+        weak_silver_candidate_id = f"v3_6_1_weak_noisy_silver_{candidate_id}"
+        if weak_silver_candidate_id in seen_weak_candidate_ids:
+            blocked_rows.append(
+                v3_6_1_blocked_row(
+                    row,
+                    ordinal=ordinal,
+                    reason="blocked_policy_violation",
+                    validation=validation,
+                    detail="duplicate weak_silver_candidate_id",
+                )
+            )
+            continue
+        if source_locator_key in seen_source_locator_keys:
+            blocked_rows.append(
+                v3_6_1_blocked_row(
+                    row,
+                    ordinal=ordinal,
+                    reason="blocked_policy_violation",
+                    validation=validation,
+                    detail="duplicate source family/document/locator key",
+                )
+            )
+            continue
+
+        profile = profile_by_candidate_id[candidate_id]
+        expected_answer_draft = v3_6_1_expected_answer_draft(row)
+        generated_question_draft = v3_6_1_generated_question_draft(
+            row,
+            profile=profile,
+            expected_answer_draft=expected_answer_draft,
+        )
+        question_hash = v3_6_1_generated_question_hash(generated_question_draft)
+        if question_hash in generated_question_hashes_seen:
+            generated_question_draft = (
+                f"{generated_question_draft} 위치 {locator_fingerprint[:8] or v3_6_1_short_hash(candidate_id)}"
+            )
+            question_hash = v3_6_1_generated_question_hash(generated_question_draft)
+        if question_hash in generated_question_hashes_seen:
+            duplicate_question_hash_counter[question_hash] += 1
+            blocked_rows.append(
+                v3_6_1_blocked_row(
+                    row,
+                    ordinal=ordinal,
+                    reason="blocked_duplicate_generated_question",
+                    validation=validation,
+                    detail="generated question hash remained duplicate after locator disambiguation",
+                )
+            )
+            continue
+
+        weak_answerability_status = (
+            "auto_weak_silver_uncertain_answerability"
+            if profile in {"ambiguous_but_source_answerable", "noisy_user_like"}
+            or official.clean(validation.get("source_quality_status")).startswith("review_")
+            else "auto_weak_silver_likely_answerable"
+        )
+        official_proximity_review = bool(validation.get("document_version_id_overlap_only"))
+        weak_candidate_rows.append(
+            {
+                "schema_version": (
+                    f"{V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID}_"
+                    "weak_silver_candidate_row_v1"
+                ),
+                "run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+                "row_ordinal": ordinal,
+                "artifact_kind": "weak_noisy_silver_candidate_row",
+                "weak_silver_candidate_id": weak_silver_candidate_id,
+                "source_candidate_id": candidate_id,
+                "source_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+                "source_quality_audit_run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+                "source_family": family,
+                "source_document_identity": source_document_identity,
+                "document_version_id": official.clean(row.get("document_version_id")),
+                "search_unit_id": official.clean(row.get("search_unit_id")),
+                "source_identity": official.clean(row.get("source_identity")),
+                "source_locator": locator,
+                "locator_fingerprint": locator_fingerprint,
+                "source_text_or_value_hash": v3_5_4_source_hash(row),
+                "source_quality_status": official.clean(validation.get("source_quality_status")) or "pass_source_quality",
+                "source_quality_issue_flags": list(validation.get("issue_flags") or []),
+                "query_quality_profile": profile,
+                "generated_question_draft": generated_question_draft,
+                "generated_question_hash": question_hash,
+                "expected_answer_draft": expected_answer_draft,
+                "expected_answer_status": "weak_silver_unreviewed_draft",
+                "supporting_evidence_locator_draft": v3_6_1_supporting_evidence_locator_draft(row, locator=locator),
+                "supporting_evidence_excerpt_hash": v3_5_4_source_hash(row),
+                "supporting_evidence_status": "weak_silver_unreviewed_draft",
+                "weak_relevance_status": "auto_weak_silver_source_grounded",
+                "weak_answerability_status": weak_answerability_status,
+                "human_review_status": "weak_silver_unreviewed",
+                "split_role": split_by_candidate_id[candidate_id],
+                "official_denominator_overlap": False,
+                "official_denominator_overlap_detected": False,
+                "official_proximity_review": official_proximity_review,
+                "not_gold": True,
+                "not_official_denominator": True,
+                "not_official_qrels": True,
+                "promotion_evidence": False,
+                "representative_product_performance_claim": False,
+                "readme_product_performance_evidence": False,
+                "weak_silver_candidate": True,
+                "weak_noisy_silver": True,
+                "low_touch_policy_applied": True,
+                "generation_policy_version": V3_6_GENERATION_POLICY_VERSION,
+                "candidate_artifacts_used_as_generation_source": False,
+                "candidate_artifacts_used_as_generation_source_count": 0,
+                "official_relevance_label_created": False,
+                "official_answerability_label_created": False,
+                "official_qrels_created": False,
+                "official_gold_label_created": False,
+                "gold_mutation": False,
+                "expected_answer_mutation": False,
+                "supporting_evidence_mutation": False,
+                "official_denominator_mutation": False,
+                "prompt_mutation": False,
+                "retrieval_mutation": False,
+                "scorer_mutation": False,
+                "renderer_mutation": False,
+                "index_or_export_mutation": False,
+                "production_mutation": False,
+                "threshold_tuning": False,
+                "winner_selection": False,
+                "duplicate_hash_group_review": v3_5_4_source_hash(row) in repeated_source_hashes,
+                "guardrail_flags": {
+                    "not_gold": True,
+                    "not_official_denominator": True,
+                    "not_official_qrels": True,
+                    "promotion_evidence": False,
+                    "official_labels_created": False,
+                    "candidate_artifacts_used_as_generation_source": False,
+                    "source_bound_to_frozen_manifest": True,
+                },
+            }
+        )
+        seen_weak_candidate_ids.add(weak_silver_candidate_id)
+        seen_source_locator_keys.add(source_locator_key)
+        generated_question_hashes_seen.add(question_hash)
+
+    source_family_counts = v3_5_count_by_family(weak_candidate_rows)
+    query_profile_counts = dict(sorted(Counter(row["query_quality_profile"] for row in weak_candidate_rows).items()))
+    source_quality_status_counts = dict(sorted(Counter(row["source_quality_status"] for row in weak_candidate_rows).items()))
+    split_counts = dict(sorted(Counter(row["split_role"] for row in weak_candidate_rows).items()))
+    blocked_counts_by_reason = dict(sorted(Counter(row["blocked_reason"] for row in blocked_rows).items()))
+    official_proximity_count = sum(1 for row in weak_candidate_rows if row["official_proximity_review"])
+    repeated_hash_rows_used = sum(1 for row in weak_candidate_rows if row["duplicate_hash_group_review"])
+    duplicate_generated_question_hash_count = sum(
+        count for count in Counter(row["generated_question_hash"] for row in weak_candidate_rows).values() if count > 1
+    )
+    split_manifest = v3_6_1_split_manifest(
+        weak_candidate_rows,
+        generated_at=generated_at,
+    )
+    quality_distribution = v3_6_1_quality_distribution(
+        weak_candidate_rows,
+        blocked_rows=blocked_rows,
+        generated_at=generated_at,
+    )
+    next_phase = (
+        "v3_6_2_weak_noisy_silver_candidate_sanity_eval"
+        if len(weak_candidate_rows) >= 950 and len(blocked_rows) <= 50
+        else "v3_6_2_generation_repair"
+    )
+    next_phase_recommendation = {
+        "schema_version": f"{V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID}_next_phase_recommendation_v1",
+        "run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "weak_noisy_silver_next_phase_recommendation",
+        "recommended_next_phase": next_phase,
+        "weak_silver_candidate_count": len(weak_candidate_rows),
+        "blocked_generation_row_count": len(blocked_rows),
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "official_metric_denominator_ready": False,
+        "next_phase_scope": "sanity-evaluate candidate quality as diagnostic weak/noisy silver only",
+    }
+    input_sha_after = {
+        "v3_5_4_balanced_source_manifest_jsonl_sha256": sha256_file(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+        "v3_5_4_freeze_summary_json_sha256": sha256_file(DEFAULT_V3_5_4_FREEZE_SUMMARY_JSON),
+        "v3_5_5_quality_summary_json_sha256": sha256_file(DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON),
+        "v3_5_5_manifest_validation_jsonl_sha256": sha256_file(DEFAULT_V3_5_5_MANIFEST_VALIDATION_JSONL),
+        "v3_5_5_audit_sample_review_packet_jsonl_sha256": sha256_file(DEFAULT_V3_5_5_AUDIT_SAMPLE_REVIEW_PACKET_JSONL),
+        "v3_5_5_duplicate_hash_audit_jsonl_sha256": sha256_file(DEFAULT_V3_5_5_DUPLICATE_HASH_AUDIT_JSONL),
+        "official_denominator_registry_json_sha256": sha256_file(official.DEFAULT_DENOMINATOR_REGISTRY),
+        "official_search_unit_manifest_jsonl_sha256": sha256_file(DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl"),
+        "canonical_silver_manifest_json_sha256": sha256_file(AI_WORKER_ROOT / "eval" / "silver" / "answer_citation_silver_manifest_v1.json"),
+        "canonical_silver_readiness_json_sha256": sha256_file(AI_WORKER_ROOT / "eval" / "silver" / "answer_citation_silver_readiness_v1.json"),
+    }
+    policy_compliance_audit = {
+        "schema_version": f"{V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID}_policy_compliance_audit_v1",
+        "run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "weak_noisy_silver_policy_compliance_audit",
+        "source_policy_run_id": V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+        "source_manifest_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_quality_audit_run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        "candidate_artifacts_used_as_generation_source": False,
+        "candidate_artifact_source_leak_detected_count": 0,
+        "official_denominator_overlap_detected_count": 0,
+        "official_gold_labels_created": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "promotion_evidence": False,
+        "representative_product_performance_claim": False,
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": input_sha_before == input_sha_after,
+        "weak_silver_candidate_count": len(weak_candidate_rows),
+        "blocked_generation_row_count": len(blocked_rows),
+        "guardrails": v3_6_low_touch_guardrails(weak_candidate_rows_created=True),
+    }
+    summary = {
+        "schema_version": f"{V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID}_generation_summary_v1",
+        "run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "balanced_weak_noisy_silver_candidate_generation",
+        "event_type": "balanced_weak_noisy_silver_candidate_generation_v3_6_1",
+        "status": (
+            "WEAK_NOISY_SILVER_CANDIDATES_GENERATED_DIAGNOSTIC_ONLY"
+            if next_phase == "v3_6_2_weak_noisy_silver_candidate_sanity_eval"
+            else "WEAK_NOISY_SILVER_CANDIDATES_GENERATED_WITH_BLOCKED_ROWS"
+        ),
+        "run_class": "weak_noisy_silver_candidate_generation_diagnostic_only",
+        "source_policy_run_id": V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+        "source_manifest_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_quality_audit_run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        "user_policy_decision_applied": bool(policy_summary.get("user_policy_decision_applied")) is True,
+        "low_touch_human_review_required": False,
+        "weak_silver_candidates_created": bool(weak_candidate_rows),
+        "weak_silver_candidate_count": len(weak_candidate_rows),
+        "source_family_counts": source_family_counts,
+        "query_quality_profile_counts": query_profile_counts,
+        "source_quality_status_counts_used": source_quality_status_counts,
+        "pass_source_quality_rows_used": source_quality_status_counts.get("pass_source_quality", 0),
+        "review_only_rows_used": sum(
+            count for status, count in source_quality_status_counts.items() if status.startswith("review_")
+        ),
+        "blocked_generation_row_count": len(blocked_rows),
+        "blocked_generation_counts_by_reason": blocked_counts_by_reason,
+        "official_denominator_overlap_detected_count": 0,
+        "candidate_artifact_source_leak_detected_count": 0,
+        "candidate_artifacts_used_as_generation_source": False,
+        "official_proximity_review_row_count": official_proximity_count,
+        "normalized_source_hash_repetition_rows_used": repeated_hash_rows_used,
+        "duplicate_generated_question_hash_count": duplicate_generated_question_hash_count,
+        "split_counts": split_counts,
+        "official_gold_labels_created": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "readme_performance_claim_mutation": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "representative_product_performance_claim": False,
+        "triage_doc_updated": False,
+        "recommended_next_phase": next_phase,
+        "source_manifest_counts": v3_6_source_manifest_counts(),
+        "source_quality_audit_counts": {
+            "pass_source_quality_count": quality_summary.get("pass_source_quality_count"),
+            "review_only_count": quality_summary.get("review_only_count"),
+            "critical_repair_required_count": quality_summary.get("critical_repair_required_count"),
+            "recommended_repair_queue_count": quality_summary.get("recommended_repair_queue_count"),
+        },
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "artifact_paths": {
+            "weak_silver_candidates_jsonl": official.repo_relative(DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL),
+            "generation_summary_json": official.repo_relative(DEFAULT_V3_6_1_GENERATION_SUMMARY_JSON),
+            "split_manifest_json": official.repo_relative(DEFAULT_V3_6_1_SPLIT_MANIFEST_JSON),
+            "generation_quality_distribution_json": official.repo_relative(DEFAULT_V3_6_1_QUALITY_DISTRIBUTION_JSON),
+            "generation_blocked_rows_jsonl": official.repo_relative(DEFAULT_V3_6_1_BLOCKED_ROWS_JSONL),
+            "policy_compliance_audit_json": official.repo_relative(DEFAULT_V3_6_1_POLICY_COMPLIANCE_AUDIT_JSON),
+            "next_phase_recommendation_json": official.repo_relative(DEFAULT_V3_6_1_NEXT_PHASE_RECOMMENDATION_JSON),
+            "source_manifest_jsonl": official.repo_relative(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+            "source_quality_summary_json": official.repo_relative(DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+        "guardrails": v3_6_low_touch_guardrails(weak_candidate_rows_created=True),
+        "weak_silver_candidate_rows": weak_candidate_rows,
+        "generation_blocked_rows": blocked_rows,
+        "split_manifest": split_manifest,
+        "generation_quality_distribution": quality_distribution,
+        "policy_compliance_audit": policy_compliance_audit,
+        "next_phase_recommendation": next_phase_recommendation,
+    }
+    return summary
+
+
+def v3_6_1_generation_blocked_reason(
+    row: Mapping[str, Any],
+    *,
+    validation: Mapping[str, Any],
+    official_index: Mapping[str, set[str]],
+) -> str:
+    locator = dict(as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator")))
+    if not v3_5_4_source_excerpt_or_value(row):
+        return "blocked_missing_source_text_or_value"
+    if not locator:
+        return "blocked_locator_unresolvable"
+    official_checks = v3_5_4_official_overlap_checks(row, official_index=official_index, locator=locator)
+    if official_checks.get("official_denominator_overlap_detected"):
+        return "blocked_official_denominator_overlap"
+    if row.get("candidate_artifacts_used_as_generation_source") is not False or v3_5_5_forbidden_generation_fields(row):
+        return "blocked_candidate_artifact_source_leak"
+    if official.clean(validation.get("source_quality_status")).startswith("repair_required_"):
+        return "blocked_policy_violation"
+    return ""
+
+
+def v3_6_1_blocked_row(
+    row: Mapping[str, Any],
+    *,
+    ordinal: int,
+    reason: str,
+    validation: Mapping[str, Any],
+    detail: str = "",
+) -> dict[str, Any]:
+    return {
+        "run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "row_ordinal": ordinal,
+        "source_candidate_id": official.clean(row.get("candidate_id")),
+        "source_family": official.clean(row.get("source_family")).upper(),
+        "source_quality_status": official.clean(validation.get("source_quality_status")),
+        "blocked_reason": reason if reason in V3_6_BLOCKED_REASON_VOCABULARY else "blocked_other",
+        "blocked_detail": detail,
+        "not_gold": True,
+        "not_official_denominator": True,
+        "not_official_qrels": True,
+        "promotion_evidence": False,
+    }
+
+
+def v3_6_1_assign_query_quality_profiles(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    validation_by_candidate_id: Mapping[str, Mapping[str, Any]],
+) -> dict[str, str]:
+    remaining = [dict(row) for row in rows]
+    profile_by_candidate_id: dict[str, str] = {}
+
+    def row_key(row: Mapping[str, Any]) -> str:
+        return v3_6_1_short_hash(
+            f"{official.clean(row.get('candidate_id'))}:{official.clean(row.get('locator_fingerprint'))}"
+        )
+
+    def take(profile: str, count: int, predicate: Any) -> None:
+        nonlocal remaining
+        candidates = [row for row in remaining if predicate(row)]
+        candidates = sorted(candidates, key=row_key)
+        if len(candidates) < count:
+            candidate_ids = {official.clean(row.get("candidate_id")) for row in candidates}
+            fillers = [
+                row
+                for row in sorted(remaining, key=row_key)
+                if official.clean(row.get("candidate_id")) not in candidate_ids
+            ]
+            candidates.extend(fillers[: count - len(candidates)])
+        selected = candidates[:count]
+        selected_ids = {official.clean(row.get("candidate_id")) for row in selected}
+        for row in selected:
+            profile_by_candidate_id[official.clean(row.get("candidate_id"))] = profile
+        remaining = [row for row in remaining if official.clean(row.get("candidate_id")) not in selected_ids]
+
+    def validation(row: Mapping[str, Any]) -> Mapping[str, Any]:
+        return validation_by_candidate_id.get(official.clean(row.get("candidate_id")), {})
+
+    def is_numeric_or_table(row: Mapping[str, Any]) -> bool:
+        family = official.clean(row.get("source_family")).upper()
+        issue_flags = set(validation(row).get("issue_flags") or [])
+        return (
+            family == "XLSX"
+            or "pdf_numeric_or_table_context" in issue_flags
+            or v3_5_5_digit_ratio(v3_5_5_source_text(row)) >= 0.25
+        )
+
+    def is_review_or_ambiguous(row: Mapping[str, Any]) -> bool:
+        status = official.clean(validation(row).get("source_quality_status"))
+        return status.startswith("review_")
+
+    def is_short(row: Mapping[str, Any]) -> bool:
+        return len(v3_5_5_source_text(row)) <= 80
+
+    take("numeric_table_or_locator_hard", V3_6_1_QUERY_PROFILE_TARGETS["numeric_table_or_locator_hard"], is_numeric_or_table)
+    take(
+        "ambiguous_but_source_answerable",
+        V3_6_1_QUERY_PROFILE_TARGETS["ambiguous_but_source_answerable"],
+        is_review_or_ambiguous,
+    )
+    take("noisy_user_like", V3_6_1_QUERY_PROFILE_TARGETS["noisy_user_like"], is_review_or_ambiguous)
+    take("short_keyword_or_fragment", V3_6_1_QUERY_PROFILE_TARGETS["short_keyword_or_fragment"], is_short)
+    take("clean_source_grounded", V3_6_1_QUERY_PROFILE_TARGETS["clean_source_grounded"], lambda _: True)
+    return profile_by_candidate_id
+
+
+def v3_6_1_assign_split_roles(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    validation_by_candidate_id: Mapping[str, Mapping[str, Any]],
+) -> dict[str, str]:
+    split_by_candidate_id: dict[str, str] = {}
+    for family in ("TEXT", "PDF", "XLSX"):
+        family_rows = [
+            row
+            for row in rows
+            if official.clean(row.get("source_family")).upper() == family
+        ]
+        family_rows = sorted(
+            family_rows,
+            key=lambda row: v3_6_1_short_hash(
+                f"{official.clean(row.get('document_version_id'))}:"
+                f"{official.clean(row.get('candidate_id'))}:"
+                f"{official.clean(row.get('locator_fingerprint'))}"
+            ),
+        )
+        targets = V3_6_1_SPLIT_TARGETS_BY_SOURCE_FAMILY[family]
+        boundaries = (
+            targets["weak_silver_exploration"],
+            targets["weak_silver_exploration"] + targets["weak_silver_holdout"],
+        )
+        for index, row in enumerate(family_rows):
+            if index < boundaries[0]:
+                role = "weak_silver_exploration"
+            elif index < boundaries[1]:
+                role = "weak_silver_holdout"
+            else:
+                role = "weak_silver_stress_smoke_candidate"
+            split_by_candidate_id[official.clean(row.get("candidate_id"))] = role
+
+        proximity_ids = {
+            official.clean(row.get("candidate_id"))
+            for row in family_rows
+            if validation_by_candidate_id.get(official.clean(row.get("candidate_id")), {}).get(
+                "document_version_id_overlap_only"
+            )
+        }
+        for proximity_id in sorted(proximity_ids):
+            if split_by_candidate_id.get(proximity_id) != "weak_silver_stress_smoke_candidate":
+                continue
+            replacement_id = next(
+                (
+                    official.clean(row.get("candidate_id"))
+                    for row in reversed(family_rows)
+                    if split_by_candidate_id.get(official.clean(row.get("candidate_id"))) == "weak_silver_exploration"
+                    and official.clean(row.get("candidate_id")) not in proximity_ids
+                ),
+                "",
+            )
+            if replacement_id:
+                split_by_candidate_id[replacement_id] = "weak_silver_stress_smoke_candidate"
+                split_by_candidate_id[proximity_id] = "weak_silver_exploration"
+    return split_by_candidate_id
+
+
+def v3_6_1_expected_answer_draft(row: Mapping[str, Any]) -> str:
+    text = re.sub(r"\s+", " ", v3_5_5_source_text(row)).strip()
+    if len(text) <= 240:
+        return text
+    return text[:237].rstrip() + "..."
+
+
+def v3_6_1_source_keyword(answer: str) -> str:
+    compact = re.sub(r"\s+", " ", answer).strip()
+    if len(compact) <= 22:
+        return compact or "해당 내용"
+    return compact[:22].rstrip()
+
+
+def v3_6_1_locator_hint(row: Mapping[str, Any]) -> str:
+    family = official.clean(row.get("source_family")).upper()
+    locator = as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator"))
+    if family == "PDF":
+        page = official.clean(row.get("page") or locator.get("page"))
+        region = official.clean(row.get("region_type") or locator.get("region_type")) or "영역"
+        return f"PDF {page}쪽 {region}".strip()
+    if family == "XLSX":
+        sheet = official.clean(row.get("sheet_name") or row.get("sheet") or locator.get("sheet")) or "시트"
+        cell = official.clean(row.get("cell") or locator.get("cell") or row.get("range") or locator.get("range"))
+        return f"{sheet} {cell or '해당 셀'}".strip()
+    chunk_id = official.clean(locator.get("chunk_id") or row.get("search_unit_id"))
+    return f"텍스트 조각 {chunk_id[-8:]}" if chunk_id else "텍스트 조각"
+
+
+def v3_6_1_generated_question_draft(
+    row: Mapping[str, Any],
+    *,
+    profile: str,
+    expected_answer_draft: str,
+) -> str:
+    keyword = v3_6_1_source_keyword(expected_answer_draft)
+    hint = v3_6_1_locator_hint(row)
+    if profile == "clean_source_grounded":
+        return f"{hint}에서 확인되는 내용은 무엇인가요?"
+    if profile == "short_keyword_or_fragment":
+        return f"{keyword} {hint}"
+    if profile == "ambiguous_but_source_answerable":
+        return f"이 자료에서 해당 항목은 뭐라고 되어 있나요? {hint}"
+    if profile == "noisy_user_like":
+        return f"{keyword} 이거 자료에선 뭐였죠? {hint}"
+    return f"{hint}의 값이나 표기 내용을 그대로 알려주세요."
+
+
+def v3_6_1_supporting_evidence_locator_draft(
+    row: Mapping[str, Any],
+    *,
+    locator: Mapping[str, Any],
+) -> dict[str, Any]:
+    family = official.clean(row.get("source_family")).upper()
+    draft = {
+        "source_family": family,
+        "document_version_id": official.clean(row.get("document_version_id")),
+        "search_unit_id": official.clean(row.get("search_unit_id")),
+        "source_locator": dict(locator),
+        "locator_fingerprint": official.clean(row.get("locator_fingerprint")),
+    }
+    if family == "TEXT":
+        draft.update(
+            {
+                "source_corpus_path": locator.get("source_corpus_path"),
+                "chunk_id": locator.get("chunk_id"),
+                "doc_id": locator.get("doc_id"),
+                "source_excerpt_hash": row.get("source_excerpt_hash") or row.get("excerpt_hash") or v3_5_4_source_hash(row),
+            }
+        )
+    elif family == "PDF":
+        draft.update(
+            {
+                "source_pdf_identity": row.get("stable_pdf_identity") or row.get("source_pdf_path") or locator.get("source_pdf_path"),
+                "source_pdf_path": row.get("source_pdf_path") or locator.get("source_pdf_path"),
+                "page": row.get("page") or locator.get("page"),
+                "page_index": row.get("page_index") or locator.get("page_index"),
+                "bbox": row.get("bbox") or locator.get("bbox"),
+                "region_type": row.get("region_type") or locator.get("region_type"),
+                "extraction_method": row.get("extraction_method"),
+                "source_text_hash": row.get("source_text_hash") or v3_5_4_source_hash(row),
+            }
+        )
+    elif family == "XLSX":
+        draft.update(
+            {
+                "workbook_identity": row.get("workbook_path") or row.get("source_workbook") or row.get("workbook_id"),
+                "sheet": row.get("sheet_name") or row.get("sheet") or locator.get("sheet"),
+                "cell": row.get("cell") or locator.get("cell"),
+                "range": row.get("range") or locator.get("range"),
+                "row_label": row.get("row_label") or locator.get("row_label"),
+                "column_label": row.get("column_label") or locator.get("column_label"),
+                "source_value_hash": row.get("source_value_hash") or v3_5_4_source_hash(row),
+            }
+        )
+    return draft
+
+
+def v3_6_1_generated_question_hash(question: str) -> str:
+    normalized = re.sub(r"\s+", " ", question).strip().lower()
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
+def v3_6_1_short_hash(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+
+
+def v3_6_1_split_manifest(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    generated_at: str,
+) -> dict[str, Any]:
+    group_roles: dict[str, set[str]] = {}
+    for row in rows:
+        group = official.clean(row.get("document_version_id")) or official.clean(row.get("source_document_identity"))
+        group_roles.setdefault(group, set()).add(official.clean(row.get("split_role")))
+    cross_role_groups = {group: sorted(roles) for group, roles in group_roles.items() if len(roles) > 1}
+    counts_by_split_family: dict[str, dict[str, int]] = {}
+    for split_role in (
+        "weak_silver_exploration",
+        "weak_silver_holdout",
+        "weak_silver_stress_smoke_candidate",
+    ):
+        counts_by_split_family[split_role] = v3_5_count_by_family(
+            [dict(row) for row in rows if row.get("split_role") == split_role]
+        )
+    return {
+        "schema_version": f"{V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID}_split_manifest_v1",
+        "run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "weak_noisy_silver_split_manifest",
+        "split_policy": "source-family-stratified_low_touch_source_identity_grouping_where_feasible",
+        "split_counts": dict(sorted(Counter(row["split_role"] for row in rows).items())),
+        "split_counts_by_source_family": counts_by_split_family,
+        "source_identity_group_count": len(group_roles),
+        "source_identity_groups_crossing_split_roles_count": len(cross_role_groups),
+        "source_identity_grouping_note": (
+            "Large TEXT/XLSX document groups exceed the rough holdout/stress targets, so exact source-family split "
+            "balance takes precedence and crossing groups are audited rather than treated as official split leakage."
+        ),
+        "official_proximity_rows_in_stress_smoke_count": sum(
+            1
+            for row in rows
+            if row.get("official_proximity_review")
+            and row.get("split_role") == "weak_silver_stress_smoke_candidate"
+        ),
+        "not_official_dev_holdout_contract": True,
+    }
+
+
+def v3_6_1_quality_distribution(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    blocked_rows: Sequence[Mapping[str, Any]],
+    generated_at: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID}_quality_distribution_v1",
+        "run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "weak_noisy_silver_generation_quality_distribution",
+        "query_quality_profile_counts": dict(sorted(Counter(row["query_quality_profile"] for row in rows).items())),
+        "source_family_counts": v3_5_count_by_family([dict(row) for row in rows]),
+        "source_quality_status_counts": dict(sorted(Counter(row["source_quality_status"] for row in rows).items())),
+        "weak_answerability_status_counts": dict(
+            sorted(Counter(row["weak_answerability_status"] for row in rows).items())
+        ),
+        "duplicate_hash_group_review_rows": sum(1 for row in rows if row.get("duplicate_hash_group_review")),
+        "official_proximity_review_rows": sum(1 for row in rows if row.get("official_proximity_review")),
+        "blocked_generation_counts_by_reason": dict(sorted(Counter(row["blocked_reason"] for row in blocked_rows).items())),
+        "target_query_quality_profile_counts": dict(V3_6_1_QUERY_PROFILE_TARGETS),
+        "low_touch_human_review_required": False,
+        "human_review_status": "weak_silver_unreviewed",
+    }
+
+
+V3_6_2_DIAGNOSTIC_BUCKETS = (
+    "core_pass_quality_candidate",
+    "review_only_challenge_candidate",
+    "quarantine_candidate",
+    "blocked_candidate",
+)
+
+
+def run_v3_6_2_weak_noisy_silver_candidate_sanity_eval(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    candidate_rows = read_jsonl(DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL)
+    generation_summary = official.read_json(DEFAULT_V3_6_1_GENERATION_SUMMARY_JSON)
+    quality_distribution = official.read_json(DEFAULT_V3_6_1_QUALITY_DISTRIBUTION_JSON)
+    split_manifest = official.read_json(DEFAULT_V3_6_1_SPLIT_MANIFEST_JSON)
+    policy_compliance_audit = official.read_json(DEFAULT_V3_6_1_POLICY_COMPLIANCE_AUDIT_JSON)
+    v3_6_1_next_phase = official.read_json(DEFAULT_V3_6_1_NEXT_PHASE_RECOMMENDATION_JSON)
+    input_sha_before = v3_6_2_protected_input_sha256()
+
+    weak_id_counts = Counter(official.clean(row.get("weak_silver_candidate_id")) for row in candidate_rows)
+    source_identity_counts = Counter(official.clean(row.get("source_identity")) for row in candidate_rows)
+    locator_fingerprint_counts = Counter(official.clean(row.get("locator_fingerprint")) for row in candidate_rows)
+    source_identity_locator_counts = Counter(
+        (
+            official.clean(row.get("source_identity")),
+            official.clean(row.get("locator_fingerprint")),
+        )
+        for row in candidate_rows
+    )
+    question_hash_counts = Counter(official.clean(row.get("generated_question_hash")) for row in candidate_rows)
+    source_hash_counts = Counter(official.clean(row.get("source_text_or_value_hash")) for row in candidate_rows)
+    hash_contract_audit = v3_6_2_hash_contract_audit(candidate_rows, generated_at=generated_at)
+
+    per_row: list[dict[str, Any]] = []
+    quarantine_rows: list[dict[str, Any]] = []
+    for ordinal, row in enumerate(candidate_rows, start=1):
+        diagnostic = v3_6_2_candidate_row_diagnostic(
+            row,
+            ordinal=ordinal,
+            weak_id_counts=weak_id_counts,
+            source_identity_counts=source_identity_counts,
+            locator_fingerprint_counts=locator_fingerprint_counts,
+            source_identity_locator_counts=source_identity_locator_counts,
+            question_hash_counts=question_hash_counts,
+        )
+        per_row.append(diagnostic)
+        if diagnostic["diagnostic_bucket"] in {"quarantine_candidate", "blocked_candidate"}:
+            quarantine_rows.append(v3_6_2_quarantine_row(diagnostic))
+
+    bucket_counts = {bucket: 0 for bucket in V3_6_2_DIAGNOSTIC_BUCKETS}
+    bucket_counts.update(Counter(row["diagnostic_bucket"] for row in per_row))
+    source_family_counts = v3_5_count_by_family([dict(row) for row in candidate_rows])
+    query_quality_profile_counts = dict(sorted(Counter(row["query_quality_profile"] for row in candidate_rows).items()))
+    source_quality_status_counts = dict(sorted(Counter(row["source_quality_status"] for row in candidate_rows).items()))
+    weak_answerability_status_counts = dict(
+        sorted(Counter(row["weak_answerability_status"] for row in candidate_rows).items())
+    )
+    split_role_counts = dict(sorted(Counter(row["split_role"] for row in candidate_rows).items()))
+    duplicate_source_hash_group_count = sum(1 for count in source_hash_counts.values() if count > 1)
+    duplicate_source_hash_row_count = sum(count for count in source_hash_counts.values() if count > 1)
+    official_proximity_split_counts = dict(
+        sorted(Counter(row["split_role"] for row in candidate_rows if row.get("official_proximity_review")).items())
+    )
+    split_independence_audit = v3_6_2_split_independence_audit(
+        split_manifest,
+        rows=candidate_rows,
+        generated_at=generated_at,
+    )
+    metric_feasibility = v3_6_2_candidate_metric_feasibility(
+        candidate_sanity_passed=(
+            len(candidate_rows) == 1000
+            and bucket_counts["quarantine_candidate"] == 0
+            and bucket_counts["blocked_candidate"] == 0
+            and hash_contract_audit["normalized_question_hash_match_count"] == len(candidate_rows)
+        ),
+        generated_at=generated_at,
+    )
+    input_sha_after = v3_6_2_protected_input_sha256()
+    candidate_sanity_passed = (
+        len(candidate_rows) == 1000
+        and len(weak_id_counts) == len(candidate_rows)
+        and len(source_identity_counts) == len(candidate_rows)
+        and len(locator_fingerprint_counts) == len(candidate_rows)
+        and len(source_identity_locator_counts) == len(candidate_rows)
+        and bucket_counts["quarantine_candidate"] == 0
+        and bucket_counts["blocked_candidate"] == 0
+        and hash_contract_audit["normalized_question_hash_match_count"] == len(candidate_rows)
+        and input_sha_before == input_sha_after
+        and not bool(policy_compliance_audit.get("promotion_evidence"))
+        and not bool(policy_compliance_audit.get("official_qrels_created"))
+    )
+    next_phase_recommendation = v3_6_2_next_phase_recommendation(
+        candidate_sanity_passed=candidate_sanity_passed,
+        generated_at=generated_at,
+    )
+    common_guardrails = v3_6_low_touch_guardrails(weak_candidate_rows_created=True)
+    common_guardrails.update(
+        {
+            "candidate_sanity_eval_only": True,
+            "official_metric_denominator_usage_allowed": False,
+            "lane_a_b_c_collapsed_scoring": False,
+        }
+    )
+    summary = {
+        "schema_version": f"{V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID}_candidate_sanity_summary_v1",
+        "run_id": V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "weak_noisy_silver_candidate_sanity_eval",
+        "event_type": "weak_noisy_silver_candidate_sanity_eval_v3_6_2",
+        "status": "WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_PASS"
+        if candidate_sanity_passed
+        else "WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_REPAIR_REQUIRED",
+        "run_class": "weak_noisy_silver_candidate_sanity_eval_diagnostic_only",
+        "source_policy_run_id": V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+        "source_candidate_generation_run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "source_manifest_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_quality_audit_run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "candidate_row_count": len(candidate_rows),
+        "weak_silver_candidate_count": len(candidate_rows),
+        "unique_weak_silver_candidate_id_count": len(weak_id_counts),
+        "duplicate_weak_silver_candidate_id_count": v3_6_2_duplicate_count(weak_id_counts),
+        "unique_source_identity_count": len(source_identity_counts),
+        "duplicate_source_identity_count": v3_6_2_duplicate_count(source_identity_counts),
+        "unique_locator_fingerprint_count": len(locator_fingerprint_counts),
+        "duplicate_locator_fingerprint_count": v3_6_2_duplicate_count(locator_fingerprint_counts),
+        "duplicate_source_identity_locator_count": v3_6_2_duplicate_count(source_identity_locator_counts),
+        "duplicate_generated_question_hash_count": v3_6_2_duplicate_count(question_hash_counts),
+        "duplicate_source_text_or_value_hash_group_count": duplicate_source_hash_group_count,
+        "duplicate_source_text_or_value_hash_row_count": duplicate_source_hash_row_count,
+        "official_proximity_review_row_count": sum(1 for row in candidate_rows if row.get("official_proximity_review")),
+        "official_proximity_review_split_role_counts": official_proximity_split_counts,
+        "source_identity_groups_crossing_split_roles_count": split_independence_audit[
+            "source_identity_groups_crossing_split_roles_count"
+        ],
+        "split_independence_warning": split_independence_audit["split_independence_warning"],
+        "split_independence_official_leakage": split_independence_audit["official_leakage_detected"],
+        "candidate_sanity_passed": candidate_sanity_passed,
+        "bucket_counts": bucket_counts,
+        "quarantine_candidate_count": bucket_counts["quarantine_candidate"],
+        "blocked_candidate_count": bucket_counts["blocked_candidate"],
+        "quarantine_reason_counts": dict(
+            sorted(
+                Counter(
+                    reason
+                    for row in per_row
+                    for reason in row["quarantine_reasons"] + row["blocked_reasons"]
+                ).items()
+            )
+        ),
+        "source_family_counts": source_family_counts,
+        "query_quality_profile_counts": query_quality_profile_counts,
+        "source_quality_status_counts": source_quality_status_counts,
+        "weak_answerability_status_counts": weak_answerability_status_counts,
+        "split_role_counts": split_role_counts,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "official_metric_denominator_usage_allowed": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "readme_performance_claim_mutation": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "official_denominator_overlap_detected_count": 0,
+        "triage_doc_updated": False,
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": input_sha_before == input_sha_after,
+        "source_generation_summary_counts": {
+            "weak_silver_candidate_count": generation_summary.get("weak_silver_candidate_count"),
+            "blocked_generation_row_count": generation_summary.get("blocked_generation_row_count"),
+            "recommended_next_phase": generation_summary.get("recommended_next_phase"),
+            "v3_6_1_next_phase_recommendation": v3_6_1_next_phase.get("recommended_next_phase"),
+        },
+        "source_quality_distribution_counts": {
+            "query_quality_profile_counts": quality_distribution.get("query_quality_profile_counts"),
+            "weak_answerability_status_counts": quality_distribution.get("weak_answerability_status_counts"),
+        },
+        "metric_feasibility": metric_feasibility,
+        "hash_contract": {
+            "generated_question_hash_contract": hash_contract_audit["generated_question_hash_contract"],
+            "raw_question_hash_contract": hash_contract_audit["raw_question_hash_contract"],
+            "normalized_question_hash_match_count": hash_contract_audit["normalized_question_hash_match_count"],
+            "salted_hash_detected": hash_contract_audit["salted_hash_detected"],
+            "source_identity_bound_hash_detected": hash_contract_audit["source_identity_bound_hash_detected"],
+        },
+        "recommended_next_phase": next_phase_recommendation["recommended_next_phase"],
+        "v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_allowed": next_phase_recommendation[
+            "v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_allowed"
+        ],
+        "artifact_paths": {
+            "candidate_sanity_summary_json": official.repo_relative(DEFAULT_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON),
+            "candidate_sanity_per_row_jsonl": official.repo_relative(DEFAULT_V3_6_2_CANDIDATE_SANITY_PER_ROW_JSONL),
+            "candidate_quarantine_rows_jsonl": official.repo_relative(DEFAULT_V3_6_2_CANDIDATE_QUARANTINE_ROWS_JSONL),
+            "candidate_metric_feasibility_json": official.repo_relative(DEFAULT_V3_6_2_CANDIDATE_METRIC_FEASIBILITY_JSON),
+            "split_independence_audit_json": official.repo_relative(DEFAULT_V3_6_2_SPLIT_INDEPENDENCE_AUDIT_JSON),
+            "hash_contract_audit_json": official.repo_relative(DEFAULT_V3_6_2_HASH_CONTRACT_AUDIT_JSON),
+            "next_phase_recommendation_json": official.repo_relative(DEFAULT_V3_6_2_NEXT_PHASE_RECOMMENDATION_JSON),
+            "source_candidates_jsonl": official.repo_relative(DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL),
+            "source_generation_summary_json": official.repo_relative(DEFAULT_V3_6_1_GENERATION_SUMMARY_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+        "guardrails": common_guardrails,
+        "candidate_sanity_per_row": per_row,
+        "candidate_quarantine_rows": quarantine_rows,
+        "candidate_metric_feasibility": metric_feasibility,
+        "split_independence_audit": split_independence_audit,
+        "hash_contract_audit": hash_contract_audit,
+        "next_phase_recommendation": next_phase_recommendation,
+    }
+    return summary
+
+
+def v3_6_2_protected_input_sha256() -> dict[str, str]:
+    return {
+        "v3_6_1_weak_silver_candidates_jsonl_sha256": sha256_file(DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL),
+        "v3_6_1_generation_summary_json_sha256": sha256_file(DEFAULT_V3_6_1_GENERATION_SUMMARY_JSON),
+        "v3_6_1_generation_quality_distribution_json_sha256": sha256_file(DEFAULT_V3_6_1_QUALITY_DISTRIBUTION_JSON),
+        "v3_6_1_split_manifest_json_sha256": sha256_file(DEFAULT_V3_6_1_SPLIT_MANIFEST_JSON),
+        "v3_6_1_policy_compliance_audit_json_sha256": sha256_file(DEFAULT_V3_6_1_POLICY_COMPLIANCE_AUDIT_JSON),
+        "v3_6_1_next_phase_recommendation_json_sha256": sha256_file(DEFAULT_V3_6_1_NEXT_PHASE_RECOMMENDATION_JSON),
+        "v3_5_4_balanced_source_manifest_jsonl_sha256": sha256_file(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+        "v3_5_4_freeze_summary_json_sha256": sha256_file(DEFAULT_V3_5_4_FREEZE_SUMMARY_JSON),
+        "v3_5_5_quality_summary_json_sha256": sha256_file(DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON),
+        "v3_5_5_manifest_validation_jsonl_sha256": sha256_file(DEFAULT_V3_5_5_MANIFEST_VALIDATION_JSONL),
+        "v3_5_5_audit_sample_review_packet_jsonl_sha256": sha256_file(DEFAULT_V3_5_5_AUDIT_SAMPLE_REVIEW_PACKET_JSONL),
+        "v3_5_5_duplicate_hash_audit_jsonl_sha256": sha256_file(DEFAULT_V3_5_5_DUPLICATE_HASH_AUDIT_JSONL),
+        "official_denominator_registry_json_sha256": sha256_file(official.DEFAULT_DENOMINATOR_REGISTRY),
+        "official_search_unit_manifest_jsonl_sha256": sha256_file(DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl"),
+        "canonical_silver_manifest_json_sha256": sha256_file(
+            AI_WORKER_ROOT / "eval" / "silver" / "answer_citation_silver_manifest_v1.json"
+        ),
+        "canonical_silver_readiness_json_sha256": sha256_file(
+            AI_WORKER_ROOT / "eval" / "silver" / "answer_citation_silver_readiness_v1.json"
+        ),
+    }
+
+
+def v3_6_2_duplicate_count(counter: Counter[Any]) -> int:
+    return sum(count - 1 for key, count in counter.items() if key and count > 1)
+
+
+def v3_6_2_candidate_row_diagnostic(
+    row: Mapping[str, Any],
+    *,
+    ordinal: int,
+    weak_id_counts: Counter[str],
+    source_identity_counts: Counter[str],
+    locator_fingerprint_counts: Counter[str],
+    source_identity_locator_counts: Counter[tuple[str, str]],
+    question_hash_counts: Counter[str],
+) -> dict[str, Any]:
+    blocked_reasons: list[str] = []
+    quarantine_reasons: list[str] = []
+    family = official.clean(row.get("source_family")).upper()
+    weak_id = official.clean(row.get("weak_silver_candidate_id"))
+    source_candidate_id = official.clean(row.get("source_candidate_id"))
+    source_identity = official.clean(row.get("source_identity"))
+    locator_fingerprint = official.clean(row.get("locator_fingerprint"))
+    source_hash = official.clean(row.get("source_text_or_value_hash"))
+    question_hash = official.clean(row.get("generated_question_hash"))
+    locator_draft = as_mapping(row.get("supporting_evidence_locator_draft"))
+
+    required_text_fields = {
+        "weak_silver_candidate_id": weak_id,
+        "source_candidate_id": source_candidate_id,
+        "source_family": family,
+        "source_identity": source_identity,
+        "locator_fingerprint": locator_fingerprint,
+        "source_text_or_value_hash": source_hash,
+        "generated_question_draft": official.clean(row.get("generated_question_draft")),
+        "generated_question_hash": question_hash,
+        "expected_answer_draft": official.clean(row.get("expected_answer_draft")),
+        "query_quality_profile": official.clean(row.get("query_quality_profile")),
+        "split_role": official.clean(row.get("split_role")),
+    }
+    for field, value in required_text_fields.items():
+        if not value:
+            quarantine_reasons.append(f"missing_{field}")
+    if not as_mapping(row.get("source_locator")):
+        quarantine_reasons.append("missing_source_locator")
+    if not locator_draft:
+        quarantine_reasons.append("missing_supporting_evidence_locator_draft")
+    if row.get("supporting_evidence_excerpt_hash") != row.get("source_text_or_value_hash"):
+        quarantine_reasons.append("supporting_evidence_excerpt_hash_mismatch")
+    if not v3_6_2_supporting_evidence_locator_is_family_shaped(family, locator_draft):
+        quarantine_reasons.append("supporting_evidence_locator_family_shape_invalid")
+    if weak_id and weak_id_counts[weak_id] > 1:
+        quarantine_reasons.append("duplicate_weak_silver_candidate_id")
+    if source_identity and source_identity_counts[source_identity] > 1:
+        quarantine_reasons.append("duplicate_source_identity")
+    if locator_fingerprint and locator_fingerprint_counts[locator_fingerprint] > 1:
+        quarantine_reasons.append("duplicate_locator_fingerprint")
+    if source_identity and locator_fingerprint and source_identity_locator_counts[(source_identity, locator_fingerprint)] > 1:
+        quarantine_reasons.append("duplicate_source_identity_locator")
+    if question_hash and question_hash_counts[question_hash] > 1:
+        quarantine_reasons.append("duplicate_generated_question_hash")
+
+    if row.get("not_gold") is not True:
+        blocked_reasons.append("not_gold_flag_not_true")
+    if row.get("not_official_denominator") is not True:
+        blocked_reasons.append("not_official_denominator_flag_not_true")
+    if row.get("not_official_qrels") is not True:
+        blocked_reasons.append("not_official_qrels_flag_not_true")
+    if row.get("promotion_evidence") is not False:
+        blocked_reasons.append("promotion_evidence_not_false")
+    if row.get("official_denominator_overlap") is not False or row.get("official_denominator_overlap_detected") is not False:
+        blocked_reasons.append("official_denominator_overlap_detected")
+    if row.get("candidate_artifacts_used_as_generation_source") is not False:
+        blocked_reasons.append("candidate_artifacts_used_as_generation_source")
+    for field in (
+        "official_qrels_created",
+        "official_relevance_label_created",
+        "official_answerability_label_created",
+        "official_gold_label_created",
+    ):
+        if row.get(field) is not False:
+            blocked_reasons.append(f"{field}_not_false")
+
+    review_challenge = (
+        official.clean(row.get("source_quality_status")).startswith("review_")
+        or bool(row.get("official_proximity_review"))
+        or bool(row.get("duplicate_hash_group_review"))
+        or row.get("weak_answerability_status") == "auto_weak_silver_uncertain_answerability"
+    )
+    if blocked_reasons:
+        bucket = "blocked_candidate"
+    elif quarantine_reasons:
+        bucket = "quarantine_candidate"
+    elif review_challenge:
+        bucket = "review_only_challenge_candidate"
+    else:
+        bucket = "core_pass_quality_candidate"
+
+    return {
+        "schema_version": f"{V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID}_candidate_sanity_per_row_v1",
+        "run_id": V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        "row_ordinal": ordinal,
+        "source_candidate_generation_run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "weak_silver_candidate_id": weak_id,
+        "source_candidate_id": source_candidate_id,
+        "source_family": family,
+        "source_identity": source_identity,
+        "locator_fingerprint": locator_fingerprint,
+        "source_text_or_value_hash": source_hash,
+        "generated_question_hash": question_hash,
+        "query_quality_profile": official.clean(row.get("query_quality_profile")),
+        "source_quality_status": official.clean(row.get("source_quality_status")),
+        "weak_answerability_status": official.clean(row.get("weak_answerability_status")),
+        "split_role": official.clean(row.get("split_role")),
+        "diagnostic_bucket": bucket,
+        "row_sanity_passed": bucket in {"core_pass_quality_candidate", "review_only_challenge_candidate"},
+        "review_only_challenge_candidate": bucket == "review_only_challenge_candidate",
+        "official_proximity_review": bool(row.get("official_proximity_review")),
+        "duplicate_hash_group_review": bool(row.get("duplicate_hash_group_review")),
+        "blocked_reasons": blocked_reasons,
+        "quarantine_reasons": quarantine_reasons,
+        "supporting_evidence_locator_family_shaped": v3_6_2_supporting_evidence_locator_is_family_shaped(
+            family,
+            locator_draft,
+        ),
+        "supporting_evidence_excerpt_hash_matches_source_hash": row.get("supporting_evidence_excerpt_hash")
+        == row.get("source_text_or_value_hash"),
+        "not_gold": row.get("not_gold") is True,
+        "not_official_denominator": row.get("not_official_denominator") is True,
+        "not_official_qrels": row.get("not_official_qrels") is True,
+        "promotion_evidence": bool(row.get("promotion_evidence")),
+        "official_qrels_created": bool(row.get("official_qrels_created")),
+        "official_relevance_label_created": bool(row.get("official_relevance_label_created")),
+        "official_answerability_label_created": bool(row.get("official_answerability_label_created")),
+        "official_gold_label_created": bool(row.get("official_gold_label_created")),
+        "official_metric_denominator_usage_allowed": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+    }
+
+
+def v3_6_2_supporting_evidence_locator_is_family_shaped(
+    family: str,
+    locator_draft: Mapping[str, Any],
+) -> bool:
+    if not locator_draft or official.clean(locator_draft.get("source_family")).upper() != family:
+        return False
+    if not as_mapping(locator_draft.get("source_locator")):
+        return False
+    if family == "TEXT":
+        return bool(
+            official.clean(locator_draft.get("source_excerpt_hash"))
+            and (
+                official.clean(locator_draft.get("chunk_id"))
+                or official.clean(locator_draft.get("doc_id"))
+                or official.clean(locator_draft.get("search_unit_id"))
+            )
+        )
+    if family == "PDF":
+        return bool(
+            official.clean(locator_draft.get("source_text_hash"))
+            and (locator_draft.get("page") is not None or locator_draft.get("page_index") is not None)
+            and official.clean(locator_draft.get("extraction_method"))
+            and (
+                official.clean(locator_draft.get("source_pdf_identity"))
+                or official.clean(locator_draft.get("source_pdf_path"))
+            )
+        )
+    if family == "XLSX":
+        return bool(
+            official.clean(locator_draft.get("source_value_hash"))
+            and official.clean(locator_draft.get("workbook_identity"))
+            and official.clean(locator_draft.get("sheet"))
+            and (
+                official.clean(locator_draft.get("cell"))
+                or official.clean(locator_draft.get("range"))
+                or official.clean(locator_draft.get("row_label"))
+                or official.clean(locator_draft.get("column_label"))
+            )
+        )
+    return False
+
+
+def v3_6_2_quarantine_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "run_id": V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        "weak_silver_candidate_id": row.get("weak_silver_candidate_id"),
+        "source_candidate_id": row.get("source_candidate_id"),
+        "source_family": row.get("source_family"),
+        "diagnostic_bucket": row.get("diagnostic_bucket"),
+        "blocked_reasons": list(row.get("blocked_reasons") or []),
+        "quarantine_reasons": list(row.get("quarantine_reasons") or []),
+        "not_gold": True,
+        "not_official_denominator": True,
+        "not_official_qrels": True,
+        "promotion_evidence": False,
+    }
+
+
+def v3_6_2_hash_contract_audit(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    generated_at: str,
+) -> dict[str, Any]:
+    raw_match_count = 0
+    normalized_match_count = 0
+    source_identity_bound_match_count = 0
+    for row in rows:
+        question = str(row.get("generated_question_draft") or "")
+        recorded = official.clean(row.get("generated_question_hash"))
+        raw_hash = hashlib.sha256(question.encode("utf-8")).hexdigest()
+        normalized_question = re.sub(r"\s+", " ", question).strip().lower()
+        normalized_hash = hashlib.sha256(normalized_question.encode("utf-8")).hexdigest()
+        source_identity_bound_hash = hashlib.sha256(
+            f"{normalized_question}:{official.clean(row.get('source_identity'))}".encode("utf-8")
+        ).hexdigest()
+        raw_match_count += int(raw_hash == recorded)
+        normalized_match_count += int(normalized_hash == recorded)
+        source_identity_bound_match_count += int(source_identity_bound_hash == recorded)
+    return {
+        "schema_version": f"{V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID}_hash_contract_audit_v1",
+        "run_id": V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "weak_noisy_silver_candidate_hash_contract_audit",
+        "candidate_row_count": len(rows),
+        "generated_question_hash_contract": "normalized_question_sha256_lowercase_whitespace_collapsed",
+        "raw_question_hash_contract": False,
+        "raw_question_hash_match_count": raw_match_count,
+        "normalized_question_hash_match_count": normalized_match_count,
+        "salted_hash_detected": False,
+        "source_identity_bound_hash_detected": source_identity_bound_match_count == len(rows) and bool(rows),
+        "source_identity_bound_hash_match_count": source_identity_bound_match_count,
+        "regression_contract_assertion": (
+            "generated_question_hash equals sha256(lowercase whitespace-collapsed generated_question_draft); "
+            "it is not a raw, salted, or source-identity-bound hash."
+        ),
+    }
+
+
+def v3_6_2_split_independence_audit(
+    split_manifest: Mapping[str, Any],
+    *,
+    rows: Sequence[Mapping[str, Any]],
+    generated_at: str,
+) -> dict[str, Any]:
+    crossing_count = int(split_manifest.get("source_identity_groups_crossing_split_roles_count") or 0)
+    official_proximity_split_counts = dict(
+        sorted(Counter(row["split_role"] for row in rows if row.get("official_proximity_review")).items())
+    )
+    return {
+        "schema_version": f"{V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID}_split_independence_audit_v1",
+        "run_id": V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "weak_noisy_silver_candidate_split_independence_audit",
+        "source_split_manifest_run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "split_counts": dict(as_mapping(split_manifest.get("split_counts"))),
+        "source_identity_group_count": int(split_manifest.get("source_identity_group_count") or 0),
+        "source_identity_groups_crossing_split_roles_count": crossing_count,
+        "split_independence_warning": "source_identity_groups_cross_split_roles_diagnostic_holdout_warning"
+        if crossing_count
+        else "",
+        "warning_interpretation": (
+            "Split crossing is a diagnostic holdout-independence warning for weak/noisy silver only; "
+            "it is not official leakage because these split roles are not official dev/holdout/contract sets."
+        ),
+        "official_leakage_detected": False,
+        "official_metric_denominator_usage_allowed": False,
+        "not_official_dev_holdout_contract": bool(split_manifest.get("not_official_dev_holdout_contract")) is True,
+        "official_proximity_review_split_role_counts": official_proximity_split_counts,
+        "official_proximity_rows_in_stress_smoke_count": int(
+            split_manifest.get("official_proximity_rows_in_stress_smoke_count") or 0
+        ),
+    }
+
+
+def v3_6_2_candidate_metric_feasibility(
+    *,
+    candidate_sanity_passed: bool,
+    generated_at: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID}_candidate_metric_feasibility_v1",
+        "run_id": V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "weak_noisy_silver_candidate_metric_feasibility",
+        "candidate_quality_metrics_allowed_immediately": True,
+        "diagnostic_weak_noisy_silver_metrics_allowed_after_v3_6_2_passes": candidate_sanity_passed,
+        "official_metric_denominator_usage_allowed": False,
+        "promotion_evidence_allowed": False,
+        "readme_representative_product_performance_claim_allowed": False,
+        "threshold_tuning_allowed": False,
+        "winner_selection_allowed": False,
+        "lane_a_b_c_collapsed_scoring_allowed": False,
+        "official_qrels_required_for_official_metrics": True,
+        "generated_expected_answers_are_gold": False,
+        "decision_basis": (
+            "v3_6_2 is diagnostic-only sanity evaluation of weak/noisy silver candidates; "
+            "candidate quality metrics may be used now, while official metric denominator usage, promotion, README "
+            "performance claims, threshold tuning, and winner selection remain blocked."
+        ),
+    }
+
+
+def v3_6_2_next_phase_recommendation(
+    *,
+    candidate_sanity_passed: bool,
+    generated_at: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID}_next_phase_recommendation_v1",
+        "run_id": V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "weak_noisy_silver_candidate_sanity_next_phase_recommendation",
+        "v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_allowed": candidate_sanity_passed,
+        "recommended_next_phase": "v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze"
+        if candidate_sanity_passed
+        else "v3_6_3_candidate_sanity_repair_before_manifest_freeze",
+        "recommended_next_phase_scope": (
+            "Freeze diagnostic weak/noisy silver candidate manifest only; do not promote to gold, official qrels, "
+            "official denominator, official labels, threshold tuning input, winner selection input, or README evidence."
+        ),
+        "official_metric_denominator_usage_allowed": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+    }
+
+
+def run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    candidate_rows = read_jsonl(DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL)
+    sanity_summary = official.read_json(DEFAULT_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON)
+    sanity_rows = read_jsonl(DEFAULT_V3_6_2_CANDIDATE_SANITY_PER_ROW_JSONL)
+    metric_feasibility = official.read_json(DEFAULT_V3_6_2_CANDIDATE_METRIC_FEASIBILITY_JSON)
+    split_audit = official.read_json(DEFAULT_V3_6_2_SPLIT_INDEPENDENCE_AUDIT_JSON)
+    hash_audit = official.read_json(DEFAULT_V3_6_2_HASH_CONTRACT_AUDIT_JSON)
+    v3_6_2_next_phase = official.read_json(DEFAULT_V3_6_2_NEXT_PHASE_RECOMMENDATION_JSON)
+    input_sha_before = v3_6_3_protected_input_sha256()
+
+    sanity_by_id = v3_6_3_unique_by_id(sanity_rows, "weak_silver_candidate_id", "sanity")
+    candidate_by_id = v3_6_3_unique_by_id(candidate_rows, "weak_silver_candidate_id", "candidate")
+    fail_closed_reasons: list[str] = []
+    if set(candidate_by_id) != set(sanity_by_id):
+        fail_closed_reasons.append("candidate_and_sanity_id_sets_mismatch")
+    if not bool(sanity_summary.get("candidate_sanity_passed")):
+        fail_closed_reasons.append("v3_6_2_candidate_sanity_not_passed")
+    if not bool(v3_6_2_next_phase.get("v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_allowed")):
+        fail_closed_reasons.append("v3_6_2_next_phase_does_not_allow_freeze")
+    if not bool(metric_feasibility.get("diagnostic_weak_noisy_silver_metrics_allowed_after_v3_6_2_passes")):
+        fail_closed_reasons.append("v3_6_2_metric_feasibility_not_passed")
+
+    manifest_rows: list[dict[str, Any]] = []
+    join_mismatch_rows: list[dict[str, Any]] = []
+    for ordinal, candidate in enumerate(candidate_rows, start=1):
+        weak_id = official.clean(candidate.get("weak_silver_candidate_id"))
+        sanity = sanity_by_id.get(weak_id)
+        if sanity is None:
+            continue
+        mismatches = v3_6_3_join_mismatches(candidate, sanity)
+        if mismatches:
+            join_mismatch_rows.append(
+                {
+                    "weak_silver_candidate_id": weak_id,
+                    "source_candidate_id": candidate.get("source_candidate_id"),
+                    "join_mismatches": mismatches,
+                }
+            )
+            continue
+        manifest_rows.append(
+            v3_6_3_manifest_row(
+                candidate,
+                sanity,
+                ordinal=ordinal,
+                generated_at=generated_at,
+            )
+        )
+    if join_mismatch_rows:
+        fail_closed_reasons.append("candidate_sanity_join_mismatch")
+    if len(manifest_rows) != len(candidate_rows):
+        fail_closed_reasons.append("manifest_row_count_does_not_match_candidate_count")
+
+    core_rows = [row for row in manifest_rows if row["diagnostic_bucket"] == "core_pass_quality_candidate"]
+    review_rows = [row for row in manifest_rows if row["diagnostic_bucket"] == "review_only_challenge_candidate"]
+    quarantine_rows = [
+        row
+        for row in manifest_rows
+        if row["diagnostic_bucket"] in {"quarantine_candidate", "blocked_candidate"}
+    ]
+    bucket_counts = {bucket: 0 for bucket in V3_6_2_DIAGNOSTIC_BUCKETS}
+    bucket_counts.update(Counter(row["diagnostic_bucket"] for row in manifest_rows))
+    input_sha_after = v3_6_3_protected_input_sha256()
+    source_hash_counts = Counter(row["source_text_or_value_hash"] for row in manifest_rows)
+    official_proximity_split_counts = dict(
+        sorted(Counter(row["split_role"] for row in manifest_rows if row["official_proximity_review"]).items())
+    )
+    manifest_freeze_passed = (
+        not fail_closed_reasons
+        and len(manifest_rows) == 1000
+        and len(core_rows) == 665
+        and len(review_rows) == 335
+        and len(quarantine_rows) == 0
+        and bucket_counts == sanity_summary.get("bucket_counts")
+        and input_sha_before == input_sha_after
+    )
+    next_phase_recommendation = v3_6_3_next_phase_recommendation(
+        manifest_freeze_passed=manifest_freeze_passed,
+        generated_at=generated_at,
+    )
+    policy_audit = v3_6_3_policy_audit(
+        manifest_freeze_passed=manifest_freeze_passed,
+        generated_at=generated_at,
+        input_sha_before=input_sha_before,
+        input_sha_after=input_sha_after,
+    )
+    guardrails = v3_6_low_touch_guardrails(weak_candidate_rows_created=True)
+    guardrails.update(
+        {
+            "diagnostic_manifest_freeze_only": True,
+            "official_metric_denominator_usage_allowed": False,
+            "lane_a_b_c_collapsed_scoring": False,
+        }
+    )
+    summary = {
+        "schema_version": f"{V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID}_summary_v1",
+        "run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_weak_noisy_silver_manifest_freeze",
+        "event_type": "diagnostic_weak_noisy_silver_manifest_freeze_v3_6_3",
+        "status": "DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_PASS"
+        if manifest_freeze_passed
+        else "DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_FAIL_CLOSED",
+        "run_class": "diagnostic_weak_noisy_silver_manifest_freeze_only",
+        "source_policy_run_id": V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+        "source_candidate_generation_run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "source_sanity_eval_run_id": V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        "source_manifest_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_quality_audit_run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "manifest_freeze_passed": manifest_freeze_passed,
+        "fail_closed_reasons": fail_closed_reasons,
+        "join_mismatch_count": len(join_mismatch_rows),
+        "manifest_row_count": len(manifest_rows),
+        "weak_silver_candidate_count": len(manifest_rows),
+        "core_manifest_row_count": len(core_rows),
+        "review_only_manifest_row_count": len(review_rows),
+        "quarantine_manifest_row_count": len(quarantine_rows),
+        "bucket_counts": bucket_counts,
+        "source_family_counts": v3_5_count_by_family(manifest_rows),
+        "split_role_counts": dict(sorted(Counter(row["split_role"] for row in manifest_rows).items())),
+        "query_quality_profile_counts": dict(sorted(Counter(row["query_quality_profile"] for row in manifest_rows).items())),
+        "source_quality_status_counts": dict(sorted(Counter(row["source_quality_status"] for row in manifest_rows).items())),
+        "weak_answerability_status_counts": dict(
+            sorted(Counter(row["weak_answerability_status"] for row in manifest_rows).items())
+        ),
+        "official_proximity_review_row_count": sum(1 for row in manifest_rows if row["official_proximity_review"]),
+        "official_proximity_review_split_role_counts": official_proximity_split_counts,
+        "duplicate_source_text_or_value_hash_group_count": sum(1 for count in source_hash_counts.values() if count > 1),
+        "duplicate_source_text_or_value_hash_row_count": sum(
+            count for count in source_hash_counts.values() if count > 1
+        ),
+        "source_identity_groups_crossing_split_roles_count": int(
+            split_audit.get("source_identity_groups_crossing_split_roles_count") or 0
+        ),
+        "split_independence_warning": official.clean(split_audit.get("split_independence_warning")),
+        "split_independence_official_leakage": bool(split_audit.get("official_leakage_detected")),
+        "hash_contract": official.clean(hash_audit.get("generated_question_hash_contract")),
+        "hash_contract_normalized_match_count": int(hash_audit.get("normalized_question_hash_match_count") or 0),
+        "core_manifest_policy": v3_6_3_core_manifest_policy(),
+        "metric_policy": v3_6_3_metric_policy(),
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "official_metric_denominator_usage_allowed": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "readme_performance_claim_mutation": False,
+        "readme_representative_product_performance_claim": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "triage_doc_updated": False,
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": input_sha_before == input_sha_after,
+        "recommended_next_phase": next_phase_recommendation["recommended_next_phase"],
+        "v3_6_4_diagnostic_only_weak_noisy_silver_metric_allowed": next_phase_recommendation[
+            "v3_6_4_diagnostic_only_weak_noisy_silver_metric_allowed"
+        ],
+        "artifact_paths": {
+            "manifest_summary_json": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_SUMMARY_JSON),
+            "manifest_all_jsonl": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_ALL_JSONL),
+            "manifest_core_jsonl": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_CORE_JSONL),
+            "manifest_review_only_jsonl": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL),
+            "manifest_quarantine_jsonl": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_QUARANTINE_JSONL),
+            "manifest_policy_audit_json": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_POLICY_AUDIT_JSON),
+            "next_phase_recommendation_json": official.repo_relative(DEFAULT_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON),
+            "source_candidates_jsonl": official.repo_relative(DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL),
+            "source_sanity_summary_json": official.repo_relative(DEFAULT_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+        "guardrails": guardrails,
+        "manifest_rows_all": manifest_rows,
+        "manifest_rows_core": core_rows,
+        "manifest_rows_review_only": review_rows,
+        "manifest_rows_quarantine": quarantine_rows,
+        "manifest_policy_audit": policy_audit,
+        "next_phase_recommendation": next_phase_recommendation,
+        "join_mismatch_rows": join_mismatch_rows,
+    }
+    return summary
+
+
+def v3_6_3_unique_by_id(
+    rows: Sequence[Mapping[str, Any]],
+    id_field: str,
+    label: str,
+) -> dict[str, Mapping[str, Any]]:
+    seen: dict[str, Mapping[str, Any]] = {}
+    duplicates: list[str] = []
+    for row in rows:
+        key = official.clean(row.get(id_field))
+        if not key:
+            raise ValueError(f"{label} row missing {id_field}")
+        if key in seen:
+            duplicates.append(key)
+        seen[key] = row
+    if duplicates:
+        raise ValueError(f"{label} duplicate {id_field}: {duplicates[:5]}")
+    return seen
+
+
+def v3_6_3_join_mismatches(
+    candidate: Mapping[str, Any],
+    sanity: Mapping[str, Any],
+) -> list[str]:
+    fields = (
+        "weak_silver_candidate_id",
+        "source_candidate_id",
+        "source_identity",
+        "locator_fingerprint",
+        "generated_question_hash",
+        "source_text_or_value_hash",
+        "source_family",
+        "split_role",
+        "source_quality_status",
+        "weak_answerability_status",
+        "query_quality_profile",
+    )
+    mismatches = []
+    for field in fields:
+        if official.clean(candidate.get(field)) != official.clean(sanity.get(field)):
+            mismatches.append(field)
+    return mismatches
+
+
+def v3_6_3_manifest_row(
+    candidate: Mapping[str, Any],
+    sanity: Mapping[str, Any],
+    *,
+    ordinal: int,
+    generated_at: str,
+) -> dict[str, Any]:
+    bucket = official.clean(sanity.get("diagnostic_bucket"))
+    return {
+        "schema_version": f"{V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID}_row_v1",
+        "manifest_run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "generated_at": generated_at,
+        "row_ordinal": ordinal,
+        "artifact_kind": "diagnostic_weak_noisy_silver_manifest_row",
+        "source_candidate_generation_run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "source_sanity_eval_run_id": V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        "weak_silver_candidate_id": official.clean(candidate.get("weak_silver_candidate_id")),
+        "source_candidate_id": official.clean(candidate.get("source_candidate_id")),
+        "source_family": official.clean(candidate.get("source_family")).upper(),
+        "source_document_identity": official.clean(candidate.get("source_document_identity")),
+        "source_identity": official.clean(candidate.get("source_identity")),
+        "document_version_id": official.clean(candidate.get("document_version_id")),
+        "search_unit_id": official.clean(candidate.get("search_unit_id")),
+        "locator_fingerprint": official.clean(candidate.get("locator_fingerprint")),
+        "source_text_or_value_hash": official.clean(candidate.get("source_text_or_value_hash")),
+        "generated_question_hash": official.clean(candidate.get("generated_question_hash")),
+        "supporting_evidence_excerpt_hash": official.clean(candidate.get("supporting_evidence_excerpt_hash")),
+        "query_quality_profile": official.clean(candidate.get("query_quality_profile")),
+        "source_quality_status": official.clean(candidate.get("source_quality_status")),
+        "weak_answerability_status": official.clean(candidate.get("weak_answerability_status")),
+        "weak_relevance_status": official.clean(candidate.get("weak_relevance_status")),
+        "split_role": official.clean(candidate.get("split_role")),
+        "diagnostic_bucket": bucket,
+        "manifest_partition": v3_6_3_manifest_partition(bucket),
+        "row_sanity_passed": bool(sanity.get("row_sanity_passed")),
+        "review_only_challenge_candidate": bool(sanity.get("review_only_challenge_candidate")),
+        "official_proximity_review": bool(candidate.get("official_proximity_review")),
+        "duplicate_hash_group_review": bool(candidate.get("duplicate_hash_group_review")),
+        "source_quality_issue_flags": list(candidate.get("source_quality_issue_flags") or []),
+        "blocked_reasons": list(sanity.get("blocked_reasons") or []),
+        "quarantine_reasons": list(sanity.get("quarantine_reasons") or []),
+        "diagnostic_only": True,
+        "weak_noisy_silver": True,
+        "not_gold": True,
+        "not_official_denominator": True,
+        "not_official_qrels": True,
+        "promotion_evidence": False,
+        "representative_product_performance_claim": False,
+        "readme_product_performance_evidence": False,
+        "official_metric_denominator_usage_allowed": False,
+        "official_qrels_created": False,
+        "official_relevance_label_created": False,
+        "official_answerability_label_created": False,
+        "official_gold_label_created": False,
+        "official_denominator_overlap": False,
+        "official_denominator_overlap_detected": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "generated_expected_answer_is_gold": False,
+        "generated_supporting_evidence_is_official": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "lane_a_b_c_collapsed_scoring": False,
+    }
+
+
+def v3_6_3_manifest_partition(bucket: str) -> str:
+    if bucket == "core_pass_quality_candidate":
+        return "core"
+    if bucket == "review_only_challenge_candidate":
+        return "review_only"
+    return "quarantine"
+
+
+def v3_6_3_core_manifest_policy() -> dict[str, Any]:
+    return {
+        "pass_source_quality_and_likely_answerable_are_necessary_but_not_sufficient": True,
+        "core_requires_pass_source_quality": True,
+        "core_requires_likely_answerable": True,
+        "official_proximity_review_rows_remain_review_only": True,
+        "excluded_from_core_reasons": [
+            "review_duplicate_or_near_duplicate",
+            "review_short_source_text_or_value",
+            "review_pdf_extraction_order",
+            "review_pdf_numeric_or_table_context",
+            "review_pdf_header_footer_or_boilerplate",
+            "review_xlsx_hidden_policy_boundary",
+            "auto_weak_silver_uncertain_answerability",
+            "official_proximity_review",
+        ],
+        "rationale": (
+            "Core keeps only pass_source_quality, likely-answerable, non-proximity diagnostic rows. Review-only, "
+            "uncertain, duplicate, short, extraction-order, table/numeric, header/footer, and hidden-boundary rows "
+            "remain in the review-only challenge partition."
+        ),
+    }
+
+
+def v3_6_3_metric_policy() -> dict[str, Any]:
+    return {
+        "v3_6_4_diagnostic_only_metric_allowed_after_freeze": True,
+        "requires_separate_reporting_for": [
+            "core_only",
+            "review_only_challenge",
+            "all_diagnostic",
+        ],
+        "official_metric_denominator_usage_allowed": False,
+        "readme_representative_product_performance_claim_allowed": False,
+        "promotion_evidence_allowed": False,
+        "threshold_tuning_allowed": False,
+        "winner_selection_allowed": False,
+        "lane_a_b_c_collapsed_scoring_allowed": False,
+    }
+
+
+def v3_6_3_policy_audit(
+    *,
+    manifest_freeze_passed: bool,
+    generated_at: str,
+    input_sha_before: Mapping[str, str],
+    input_sha_after: Mapping[str, str],
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID}_policy_audit_v1",
+        "run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_weak_noisy_silver_manifest_policy_audit",
+        "manifest_freeze_passed": manifest_freeze_passed,
+        "not_gold": True,
+        "not_official_denominator": True,
+        "not_official_qrels": True,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "official_denominator_mutation": False,
+        "official_expected_answer_mutation": False,
+        "official_supporting_evidence_mutation": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "protected_input_sha256_before": dict(input_sha_before),
+        "protected_input_sha256_after": dict(input_sha_after),
+        "protected_input_sha256_unchanged": dict(input_sha_before) == dict(input_sha_after),
+    }
+
+
+def v3_6_3_next_phase_recommendation(
+    *,
+    manifest_freeze_passed: bool,
+    generated_at: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID}_next_phase_recommendation_v1",
+        "run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_weak_noisy_silver_manifest_next_phase_recommendation",
+        "v3_6_4_diagnostic_only_weak_noisy_silver_metric_allowed": manifest_freeze_passed,
+        "recommended_next_phase": "v3_6_4_diagnostic_only_weak_noisy_silver_metric"
+        if manifest_freeze_passed
+        else "v3_6_4_blocked_until_manifest_freeze_repair",
+        "requires_separate_reporting_for": [
+            "core_only",
+            "review_only_challenge",
+            "all_diagnostic",
+        ],
+        "official_metric_denominator_usage_allowed": False,
+        "readme_representative_product_performance_claim_allowed": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "lane_a_b_c_collapsed_scoring": False,
+    }
+
+
+def v3_6_3_protected_input_sha256() -> dict[str, str]:
+    values = v3_6_2_protected_input_sha256()
+    values.update(
+        {
+            "v3_6_2_candidate_sanity_summary_json_sha256": sha256_file(DEFAULT_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON),
+            "v3_6_2_candidate_sanity_per_row_jsonl_sha256": sha256_file(DEFAULT_V3_6_2_CANDIDATE_SANITY_PER_ROW_JSONL),
+            "v3_6_2_candidate_quarantine_rows_jsonl_sha256": sha256_file(DEFAULT_V3_6_2_CANDIDATE_QUARANTINE_ROWS_JSONL),
+            "v3_6_2_candidate_metric_feasibility_json_sha256": sha256_file(DEFAULT_V3_6_2_CANDIDATE_METRIC_FEASIBILITY_JSON),
+            "v3_6_2_split_independence_audit_json_sha256": sha256_file(DEFAULT_V3_6_2_SPLIT_INDEPENDENCE_AUDIT_JSON),
+            "v3_6_2_hash_contract_audit_json_sha256": sha256_file(DEFAULT_V3_6_2_HASH_CONTRACT_AUDIT_JSON),
+            "v3_6_2_next_phase_recommendation_json_sha256": sha256_file(DEFAULT_V3_6_2_NEXT_PHASE_RECOMMENDATION_JSON),
+        }
+    )
+    return values
+
+
+V3_6_4_FAILURE_TYPES = (
+    "pass_diagnostic_proxy",
+    "retrieval_miss",
+    "locator_mismatch",
+    "source_family_mismatch",
+    "answer_span_mismatch",
+    "numeric_or_date_mismatch",
+    "citation_missing",
+    "citation_parse_failure",
+    "citation_source_mismatch",
+    "weak_silver_expected_answer_ambiguous",
+    "review_only_source_quality_risk",
+    "runtime_fail_closed",
+    "unsupported_metric_surface",
+)
+V3_6_4_REQUIRED_ROW_GUARDRAILS = {
+    "diagnostic_only": True,
+    "not_gold": True,
+    "not_official_denominator": True,
+    "not_official_qrels": True,
+    "official_metric_denominator_usage_allowed": False,
+    "promotion_evidence": False,
+    "threshold_tuning": False,
+    "winner_selection": False,
+    "lane_a_b_c_collapsed_scoring": False,
+    "candidate_artifacts_used_as_generation_source": False,
+    "generated_expected_answer_is_gold": False,
+    "official_qrels_created": False,
+    "official_relevance_label_created": False,
+    "official_answerability_label_created": False,
+    "official_gold_label_created": False,
+}
+V3_6_4_REQUIRED_POLICY_AUDIT_GUARDRAILS = {
+    "not_gold": True,
+    "not_official_denominator": True,
+    "not_official_qrels": True,
+    "official_qrels_created": False,
+    "official_relevance_labels_created": False,
+    "official_answerability_labels_created": False,
+    "official_gold_labels_created": False,
+    "official_denominator_mutation": False,
+    "official_expected_answer_mutation": False,
+    "official_supporting_evidence_mutation": False,
+    "promotion_evidence": False,
+    "threshold_tuning": False,
+    "winner_selection": False,
+    "readme_representative_product_performance_claim": False,
+    "prompt_mutation": False,
+    "retrieval_mutation": False,
+    "scorer_mutation": False,
+    "renderer_mutation": False,
+    "index_or_export_mutation": False,
+    "production_mutation": False,
+    "candidate_artifacts_used_as_generation_source": False,
+}
+V3_6_4_MANIFEST_SHA_KEYS = {
+    "manifest_all_jsonl_sha256": DEFAULT_V3_6_3_MANIFEST_ALL_JSONL,
+    "manifest_core_jsonl_sha256": DEFAULT_V3_6_3_MANIFEST_CORE_JSONL,
+    "manifest_review_only_jsonl_sha256": DEFAULT_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL,
+    "manifest_quarantine_jsonl_sha256": DEFAULT_V3_6_3_MANIFEST_QUARANTINE_JSONL,
+    "manifest_policy_audit_json_sha256": DEFAULT_V3_6_3_MANIFEST_POLICY_AUDIT_JSON,
+    "next_phase_recommendation_json_sha256": DEFAULT_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON,
+}
+
+
+def run_v3_6_4_diagnostic_only_weak_noisy_silver_metric(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    source_paths = v3_6_4_source_manifest_paths()
+    missing_source_files = [
+        name for name, path in source_paths.items() if not path.exists()
+    ]
+    manifest_summary = v3_6_4_read_json_if_present(DEFAULT_V3_6_3_MANIFEST_SUMMARY_JSON)
+    manifest_policy_audit = v3_6_4_read_json_if_present(DEFAULT_V3_6_3_MANIFEST_POLICY_AUDIT_JSON)
+    manifest_next_phase = v3_6_4_read_json_if_present(DEFAULT_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON)
+    all_rows = v3_6_4_read_jsonl_if_present(DEFAULT_V3_6_3_MANIFEST_ALL_JSONL)
+    core_rows = v3_6_4_read_jsonl_if_present(DEFAULT_V3_6_3_MANIFEST_CORE_JSONL)
+    review_rows = v3_6_4_read_jsonl_if_present(DEFAULT_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL)
+    quarantine_rows = v3_6_4_read_jsonl_if_present(DEFAULT_V3_6_3_MANIFEST_QUARANTINE_JSONL)
+    input_sha_before = v3_6_4_manifest_input_sha256()
+
+    fail_closed_reasons = v3_6_4_manifest_fail_closed_reasons(
+        missing_source_files=missing_source_files,
+        manifest_summary=manifest_summary,
+        manifest_policy_audit=manifest_policy_audit,
+        manifest_next_phase=manifest_next_phase,
+        all_rows=all_rows,
+        core_rows=core_rows,
+        review_rows=review_rows,
+        quarantine_rows=quarantine_rows,
+    )
+    per_row_metric_rows = [
+        v3_6_4_per_row_metric(row, generated_at=generated_at)
+        for row in all_rows
+    ]
+    aggregate_by_bucket = v3_6_4_aggregate_by_bucket(per_row_metric_rows)
+    failure_taxonomy = v3_6_4_failure_taxonomy(per_row_metric_rows, generated_at=generated_at)
+    sample_review_rows = v3_6_4_sample_review_rows(per_row_metric_rows)
+    input_sha_after = v3_6_4_manifest_input_sha256()
+    protected_input_sha256_unchanged = input_sha_before == input_sha_after
+    if not protected_input_sha256_unchanged:
+        fail_closed_reasons.append("v3_6_3_manifest_input_sha256_changed_during_metric_run")
+
+    policy_audit = v3_6_4_policy_audit(
+        generated_at=generated_at,
+        fail_closed_reasons=fail_closed_reasons,
+        input_sha_before=input_sha_before,
+        input_sha_after=input_sha_after,
+    )
+    next_phase_recommendation = v3_6_4_next_phase_recommendation(
+        generated_at=generated_at,
+        fail_closed_reasons=fail_closed_reasons,
+        aggregate_by_bucket=aggregate_by_bucket,
+    )
+    all_diagnostic = as_mapping(aggregate_by_bucket.get("reporting_partitions")).get("all_diagnostic", {})
+    core_only = as_mapping(aggregate_by_bucket.get("reporting_partitions")).get("core_only", {})
+    review_only = as_mapping(aggregate_by_bucket.get("reporting_partitions")).get("review_only_challenge", {})
+    manifest_counts = {
+        "all_diagnostic": len(all_rows),
+        "core_only": len(core_rows),
+        "review_only_challenge": len(review_rows),
+        "quarantine": len(quarantine_rows),
+    }
+    official_proximity_core_count = sum(1 for row in core_rows if row.get("official_proximity_review"))
+    generation_fail_closed_reasons = [
+        "live_generation_runtime_unavailable_for_1000_row_weak_noisy_silver_pass",
+        "v3_6_3_manifest_omits_expected_answer_draft_text_by_compact_freeze_contract",
+    ]
+    status = (
+        "DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_FAIL_CLOSED"
+        if fail_closed_reasons
+        else "DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_PASS_GENERATION_FAIL_CLOSED"
+    )
+    return {
+        "schema_version": f"{V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID}_summary_v1",
+        "run_id": V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_weak_noisy_silver_metric",
+        "event_type": "diagnostic_only_weak_noisy_silver_metric_v3_6_4",
+        "status": status,
+        "run_class": "weak_noisy_silver_metric_diagnostic_only",
+        "source_manifest_run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "source_candidate_generation_run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "source_sanity_eval_run_id": V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "official_metric_denominator_usage_allowed": False,
+        "generated_expected_answers_are_gold": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "readme_performance_claim_mutation": False,
+        "triage_doc_updated": False,
+        "measurements_doc_updated": True,
+        "manifest_metric_passed": not fail_closed_reasons,
+        "fail_closed_reasons": list(fail_closed_reasons),
+        "generation_fail_closed_reasons": generation_fail_closed_reasons,
+        "runtime_generation_available": False,
+        "runtime_generation_attempted_row_count": 0,
+        "runtime_generation_succeeded_row_count": 0,
+        "runtime_generation_fail_closed_row_count": len(all_rows),
+        "runtime_generation_coverage_rate": 0.0,
+        "deterministic_manifest_locator_metric_row_count": len(all_rows),
+        "diagnostic_row_count": len(all_rows),
+        "manifest_counts": manifest_counts,
+        "manifest_row_count": len(all_rows),
+        "core_manifest_row_count": len(core_rows),
+        "review_only_manifest_row_count": len(review_rows),
+        "quarantine_manifest_row_count": len(quarantine_rows),
+        "source_family_counts": v3_6_4_count_field(all_rows, "source_family"),
+        "split_role_counts": v3_6_4_count_field(all_rows, "split_role"),
+        "query_quality_profile_counts": v3_6_4_count_field(all_rows, "query_quality_profile"),
+        "source_quality_status_counts": v3_6_4_count_field(all_rows, "source_quality_status"),
+        "weak_answerability_status_counts": v3_6_4_count_field(all_rows, "weak_answerability_status"),
+        "official_proximity_review_row_count": int(manifest_summary.get("official_proximity_review_row_count") or 0),
+        "official_proximity_core_row_count": official_proximity_core_count,
+        "source_identity_groups_crossing_split_roles_count": int(
+            manifest_summary.get("source_identity_groups_crossing_split_roles_count") or 0
+        ),
+        "split_independence_warning": manifest_summary.get("split_independence_warning"),
+        "split_independence_official_leakage": bool(
+            manifest_summary.get("split_independence_official_leakage")
+        ),
+        "holdout_independence_warning": (
+            "split holdout is not source-isolated because v3_6_2/v3_6_3 recorded source identity crossing; "
+            "use holdout split only as diagnostic weak/noisy stress signal."
+        ),
+        "interpretation_policy": v3_6_4_interpretation_policy(),
+        "metric_surface_policy": {
+            "deterministic_manifest_locator_metrics_computed": True,
+            "live_retrieval_metrics_computed": False,
+            "live_generation_metrics_computed": False,
+            "generation_metrics_fail_closed": True,
+            "answer_proxy_reference_missing_from_v3_6_3_manifest": True,
+            "diagnostic_names_only": True,
+        },
+        "all_diagnostic_metrics": as_mapping(all_diagnostic.get("metrics")),
+        "core_only_metrics": as_mapping(core_only.get("metrics")),
+        "review_only_challenge_metrics": as_mapping(review_only.get("metrics")),
+        "primary_failure_taxonomy": as_mapping(failure_taxonomy.get("primary_failure_counts")),
+        "aggregate_by_bucket": aggregate_by_bucket,
+        "failure_taxonomy": failure_taxonomy,
+        "sample_review_rows": sample_review_rows,
+        "policy_audit": policy_audit,
+        "next_phase_recommendation": next_phase_recommendation,
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": protected_input_sha256_unchanged,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_6_4_METRIC_SUMMARY_JSON),
+            "per_row_jsonl": official.repo_relative(DEFAULT_V3_6_4_METRIC_PER_ROW_JSONL),
+            "aggregate_by_bucket_json": official.repo_relative(DEFAULT_V3_6_4_METRIC_AGGREGATE_BY_BUCKET_JSON),
+            "failure_taxonomy_json": official.repo_relative(DEFAULT_V3_6_4_METRIC_FAILURE_TAXONOMY_JSON),
+            "sample_review_jsonl": official.repo_relative(DEFAULT_V3_6_4_METRIC_SAMPLE_REVIEW_JSONL),
+            "policy_audit_json": official.repo_relative(DEFAULT_V3_6_4_METRIC_POLICY_AUDIT_JSON),
+            "next_phase_recommendation_json": official.repo_relative(
+                DEFAULT_V3_6_4_METRIC_NEXT_PHASE_RECOMMENDATION_JSON
+            ),
+            "source_manifest_summary_json": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_SUMMARY_JSON),
+            "source_manifest_all_jsonl": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_ALL_JSONL),
+            "source_manifest_core_jsonl": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_CORE_JSONL),
+            "source_manifest_review_only_jsonl": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL),
+            "source_manifest_quarantine_jsonl": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_QUARANTINE_JSONL),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+            "measurements_doc": "docs/rag-ingestion-measurements.md",
+        },
+        "per_row_metric_rows": per_row_metric_rows,
+    }
+
+
+def v3_6_4_source_manifest_paths() -> dict[str, Path]:
+    return {
+        "manifest_summary_json": DEFAULT_V3_6_3_MANIFEST_SUMMARY_JSON,
+        "manifest_all_jsonl": DEFAULT_V3_6_3_MANIFEST_ALL_JSONL,
+        "manifest_core_jsonl": DEFAULT_V3_6_3_MANIFEST_CORE_JSONL,
+        "manifest_review_only_jsonl": DEFAULT_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL,
+        "manifest_quarantine_jsonl": DEFAULT_V3_6_3_MANIFEST_QUARANTINE_JSONL,
+        "manifest_policy_audit_json": DEFAULT_V3_6_3_MANIFEST_POLICY_AUDIT_JSON,
+        "next_phase_recommendation_json": DEFAULT_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON,
+    }
+
+
+def v3_6_4_read_json_if_present(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return official.read_json(path)
+
+
+def v3_6_4_read_jsonl_if_present(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    return read_jsonl(path)
+
+
+def v3_6_4_manifest_input_sha256() -> dict[str, str]:
+    values: dict[str, str] = {}
+    for name, path in v3_6_4_source_manifest_paths().items():
+        values[f"{name}_sha256"] = sha256_file(path) if path.exists() else "MISSING"
+    return values
+
+
+def v3_6_4_manifest_fail_closed_reasons(
+    *,
+    missing_source_files: Sequence[str],
+    manifest_summary: Mapping[str, Any],
+    manifest_policy_audit: Mapping[str, Any],
+    manifest_next_phase: Mapping[str, Any],
+    all_rows: Sequence[Mapping[str, Any]],
+    core_rows: Sequence[Mapping[str, Any]],
+    review_rows: Sequence[Mapping[str, Any]],
+    quarantine_rows: Sequence[Mapping[str, Any]],
+) -> list[str]:
+    reasons: list[str] = []
+    for missing in missing_source_files:
+        reasons.append(f"missing_v3_6_3_source_artifact:{missing}")
+    artifact_sha = as_mapping(manifest_summary.get("artifact_sha256"))
+    for key, path in V3_6_4_MANIFEST_SHA_KEYS.items():
+        expected = official.clean(artifact_sha.get(key))
+        actual = sha256_file(path) if path.exists() else "MISSING"
+        if not expected:
+            reasons.append(f"missing_v3_6_3_summary_sha:{key}")
+        elif expected != actual:
+            reasons.append(f"mismatched_v3_6_3_summary_sha:{key}")
+    weak_ids = [official.clean(row.get("weak_silver_candidate_id")) for row in all_rows]
+    if len(weak_ids) != len(set(weak_ids)):
+        reasons.append("duplicate_weak_silver_candidate_id")
+    expected_all_count = int(manifest_summary.get("manifest_row_count") or 0)
+    expected_core_count = int(manifest_summary.get("core_manifest_row_count") or 0)
+    expected_review_count = int(manifest_summary.get("review_only_manifest_row_count") or 0)
+    expected_quarantine_count = int(manifest_summary.get("quarantine_manifest_row_count") or 0)
+    if len(all_rows) != expected_all_count:
+        reasons.append("manifest_all_row_count_mismatch")
+    if len(core_rows) != expected_core_count:
+        reasons.append("manifest_core_row_count_mismatch")
+    if len(review_rows) != expected_review_count:
+        reasons.append("manifest_review_only_row_count_mismatch")
+    if len(quarantine_rows) != expected_quarantine_count:
+        reasons.append("manifest_quarantine_row_count_mismatch")
+    if len(all_rows) != len(core_rows) + len(review_rows) + len(quarantine_rows):
+        reasons.append("manifest_partition_row_count_mismatch")
+    bucket_counts = {
+        "core_pass_quality_candidate": sum(
+            1 for row in all_rows if row.get("diagnostic_bucket") == "core_pass_quality_candidate"
+        ),
+        "review_only_challenge_candidate": sum(
+            1 for row in all_rows if row.get("diagnostic_bucket") == "review_only_challenge_candidate"
+        ),
+        "quarantine_candidate": sum(
+            1 for row in all_rows if row.get("diagnostic_bucket") == "quarantine_candidate"
+        ),
+        "blocked_candidate": sum(
+            1 for row in all_rows if row.get("diagnostic_bucket") == "blocked_candidate"
+        ),
+    }
+    if bucket_counts != as_mapping(manifest_summary.get("bucket_counts")):
+        reasons.append("manifest_bucket_count_mismatch")
+    all_ids = {official.clean(row.get("weak_silver_candidate_id")) for row in all_rows}
+    partition_ids = {
+        official.clean(row.get("weak_silver_candidate_id"))
+        for row in [*core_rows, *review_rows, *quarantine_rows]
+    }
+    if all_ids != partition_ids:
+        reasons.append("manifest_partition_id_set_mismatch")
+    if quarantine_rows:
+        reasons.append("manifest_quarantine_rows_unexpectedly_non_empty")
+    if any(row.get("official_proximity_review") for row in core_rows):
+        reasons.append("official_proximity_rows_in_core")
+    if any(
+        official.clean(row.get("source_quality_status")).startswith("review_")
+        for row in core_rows
+    ):
+        reasons.append("review_source_quality_rows_in_core")
+    if any(row.get("manifest_partition") != "core" for row in core_rows):
+        reasons.append("manifest_core_partition_mismatch")
+    if any(row.get("diagnostic_bucket") != "core_pass_quality_candidate" for row in core_rows):
+        reasons.append("manifest_core_bucket_mismatch")
+    if any(row.get("manifest_partition") != "review_only" for row in review_rows):
+        reasons.append("manifest_review_only_partition_mismatch")
+    if any(row.get("diagnostic_bucket") != "review_only_challenge_candidate" for row in review_rows):
+        reasons.append("manifest_review_only_bucket_mismatch")
+    if not bool(manifest_summary.get("manifest_freeze_passed")):
+        reasons.append("v3_6_3_manifest_freeze_not_passed")
+    if not bool(manifest_next_phase.get("v3_6_4_diagnostic_only_weak_noisy_silver_metric_allowed")):
+        reasons.append("v3_6_3_next_phase_does_not_allow_v3_6_4")
+    reasons.extend(v3_6_4_missing_row_guardrail_reasons(all_rows))
+    for key, expected in V3_6_4_REQUIRED_POLICY_AUDIT_GUARDRAILS.items():
+        if manifest_policy_audit.get(key) != expected:
+            reasons.append(f"v3_6_3_policy_guardrail_mismatch:{key}")
+    return sorted(set(reasons))
+
+
+def v3_6_4_missing_row_guardrail_reasons(rows: Sequence[Mapping[str, Any]]) -> list[str]:
+    reasons: list[str] = []
+    for row in rows:
+        row_id = official.clean(row.get("weak_silver_candidate_id")) or "UNKNOWN"
+        for key, expected in V3_6_4_REQUIRED_ROW_GUARDRAILS.items():
+            if row.get(key) != expected:
+                reasons.append(f"row_guardrail_mismatch:{key}:{row_id}")
+    return reasons
+
+
+def v3_6_4_per_row_metric(row: Mapping[str, Any], *, generated_at: str) -> dict[str, Any]:
+    source_family = official.clean(row.get("source_family")).upper()
+    source_family_match = source_family in {"TEXT", "PDF", "XLSX"}
+    source_identity_hit = bool(
+        official.clean(row.get("source_identity"))
+        and official.clean(row.get("source_document_identity"))
+        and official.clean(row.get("search_unit_id"))
+    )
+    source_hash = official.clean(row.get("source_text_or_value_hash"))
+    evidence_hash = official.clean(row.get("supporting_evidence_excerpt_hash"))
+    locator_fingerprint = official.clean(row.get("locator_fingerprint"))
+    locator_hit = bool(locator_fingerprint and source_hash and evidence_hash and source_hash == evidence_hash)
+    retrieved_context_present = bool(source_hash and evidence_hash)
+    citation_locator_parse_success = bool(locator_fingerprint)
+    citation_source_identity_match = source_family_match and source_identity_hit
+    partition = "core_only" if row.get("manifest_partition") == "core" else "review_only_challenge"
+    split_role = v3_6_4_report_split_role(row.get("split_role"))
+    primary_failure = v3_6_4_primary_failure(
+        row,
+        source_family_match=source_family_match,
+        source_identity_hit=source_identity_hit,
+        locator_hit=locator_hit,
+        citation_locator_parse_success=citation_locator_parse_success,
+        citation_source_identity_match=citation_source_identity_match,
+    )
+    return {
+        "schema_version": f"{V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID}_per_row_v1",
+        "run_id": V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        "generated_at": generated_at,
+        "weak_silver_candidate_id": official.clean(row.get("weak_silver_candidate_id")),
+        "row_ordinal": int(row.get("row_ordinal") or 0),
+        "manifest_partition": row.get("manifest_partition"),
+        "reporting_partition": partition,
+        "diagnostic_bucket": row.get("diagnostic_bucket"),
+        "source_family": source_family,
+        "split_role": split_role,
+        "source_quality_status": row.get("source_quality_status"),
+        "query_quality_profile": row.get("query_quality_profile"),
+        "weak_answerability_status": row.get("weak_answerability_status"),
+        "official_proximity_review": bool(row.get("official_proximity_review")),
+        "diagnostic_source_identity_hit_at_1": source_identity_hit,
+        "diagnostic_source_identity_hit_at_3": source_identity_hit,
+        "diagnostic_source_identity_hit_at_5": source_identity_hit,
+        "diagnostic_locator_fingerprint_hit_at_1": locator_hit,
+        "diagnostic_locator_fingerprint_hit_at_3": locator_hit,
+        "diagnostic_locator_fingerprint_hit_at_5": locator_hit,
+        "diagnostic_source_family_match_at_5": source_family_match,
+        "diagnostic_retrieved_context_present": retrieved_context_present,
+        "diagnostic_citation_locator_parse_success": citation_locator_parse_success,
+        "diagnostic_citation_source_identity_match": citation_source_identity_match,
+        "runtime_generation_attempted": False,
+        "runtime_generation_fail_closed": True,
+        "runtime_generation_fail_closed_reason": "live_generation_runtime_unavailable",
+        "diagnostic_answer_non_empty": False,
+        "diagnostic_answer_normalized_exact_match": False,
+        "diagnostic_answer_contains_expected_draft": False,
+        "diagnostic_numeric_or_date_value_match": False,
+        "diagnostic_answer_token_f1": 0.0,
+        "diagnostic_citation_emitted": False,
+        "diagnostic_citation_locator_match": False,
+        "diagnostic_answer_citation_consistency_proxy": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "official_metric_denominator_usage_allowed": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "primary_failure": primary_failure,
+    }
+
+
+def v3_6_4_primary_failure(
+    row: Mapping[str, Any],
+    *,
+    source_family_match: bool,
+    source_identity_hit: bool,
+    locator_hit: bool,
+    citation_locator_parse_success: bool,
+    citation_source_identity_match: bool,
+) -> str:
+    if not source_family_match:
+        return "source_family_mismatch"
+    if not source_identity_hit:
+        return "retrieval_miss"
+    if not locator_hit:
+        return "locator_mismatch"
+    if not citation_locator_parse_success:
+        return "citation_parse_failure"
+    if not citation_source_identity_match:
+        return "citation_source_mismatch"
+    if row.get("weak_answerability_status") != "auto_weak_silver_likely_answerable":
+        return "weak_silver_expected_answer_ambiguous"
+    if row.get("manifest_partition") == "review_only":
+        return "review_only_source_quality_risk"
+    return "runtime_fail_closed"
+
+
+def v3_6_4_report_split_role(value: Any) -> str:
+    raw = official.clean(value)
+    return {
+        "weak_silver_exploration": "exploration",
+        "weak_silver_holdout": "holdout",
+        "weak_silver_stress_smoke_candidate": "stress_smoke_candidate",
+    }.get(raw, raw)
+
+
+def v3_6_4_count_field(rows: Sequence[Mapping[str, Any]], field: str) -> dict[str, int]:
+    counts = dict(sorted(Counter(official.clean(row.get(field)) for row in rows).items()))
+    if "" in counts:
+        counts["missing"] = counts.pop("")
+    return counts
+
+
+def v3_6_4_aggregate_by_bucket(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID}_aggregate_by_bucket_v1",
+        "run_id": V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        "artifact_kind": "diagnostic_only_weak_noisy_silver_metric_aggregate_by_bucket",
+        "generated_expected_answers_are_gold": False,
+        "official_metric": False,
+        "reporting_partitions": {
+            "core_only": v3_6_4_metric_bundle(
+                [row for row in rows if row.get("reporting_partition") == "core_only"]
+            ),
+            "review_only_challenge": v3_6_4_metric_bundle(
+                [row for row in rows if row.get("reporting_partition") == "review_only_challenge"]
+            ),
+            "all_diagnostic": v3_6_4_metric_bundle(rows),
+        },
+        "source_family": v3_6_4_grouped_metric_bundles(rows, "source_family"),
+        "split_role": v3_6_4_grouped_metric_bundles(rows, "split_role"),
+        "query_quality_profile": v3_6_4_grouped_metric_bundles(rows, "query_quality_profile"),
+        "source_quality_status": v3_6_4_grouped_metric_bundles(rows, "source_quality_status"),
+        "weak_answerability_status": v3_6_4_grouped_metric_bundles(rows, "weak_answerability_status"),
+    }
+
+
+def v3_6_4_grouped_metric_bundles(
+    rows: Sequence[Mapping[str, Any]],
+    field: str,
+) -> dict[str, dict[str, Any]]:
+    groups: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for row in rows:
+        key = official.clean(row.get(field)) or "missing"
+        groups[key].append(row)
+    return {key: v3_6_4_metric_bundle(groups[key]) for key in sorted(groups)}
+
+
+def v3_6_4_metric_bundle(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    denominator = len(rows)
+    numeric_denominator = sum(
+        1 for row in rows if row.get("query_quality_profile") == "numeric_table_or_locator_hard"
+    )
+    metrics = {
+        "diagnostic_source_identity_hit_at_1": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_source_identity_hit_at_1"),
+            denominator,
+        ),
+        "diagnostic_source_identity_hit_at_3": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_source_identity_hit_at_3"),
+            denominator,
+        ),
+        "diagnostic_source_identity_hit_at_5": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_source_identity_hit_at_5"),
+            denominator,
+        ),
+        "diagnostic_locator_fingerprint_hit_at_1": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_locator_fingerprint_hit_at_1"),
+            denominator,
+        ),
+        "diagnostic_locator_fingerprint_hit_at_3": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_locator_fingerprint_hit_at_3"),
+            denominator,
+        ),
+        "diagnostic_locator_fingerprint_hit_at_5": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_locator_fingerprint_hit_at_5"),
+            denominator,
+        ),
+        "diagnostic_source_family_match_at_5": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_source_family_match_at_5"),
+            denominator,
+        ),
+        "diagnostic_retrieved_context_present_rate": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_retrieved_context_present"),
+            denominator,
+        ),
+        "diagnostic_citation_locator_parse_success_rate": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_citation_locator_parse_success"),
+            denominator,
+        ),
+        "diagnostic_citation_source_identity_match_rate": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_citation_source_identity_match"),
+            denominator,
+        ),
+        "diagnostic_answer_non_empty_rate": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_answer_non_empty"),
+            denominator,
+        ),
+        "diagnostic_answer_normalized_exact_match_rate": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_answer_normalized_exact_match"),
+            denominator,
+        ),
+        "diagnostic_answer_contains_expected_draft_rate": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_answer_contains_expected_draft"),
+            denominator,
+        ),
+        "diagnostic_numeric_or_date_value_match_rate": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_numeric_or_date_value_match"),
+            numeric_denominator,
+        ),
+        "diagnostic_answer_token_f1_mean": v3_6_4_mean(
+            [float(row.get("diagnostic_answer_token_f1") or 0.0) for row in rows]
+        ),
+        "diagnostic_citation_emitted_rate": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_citation_emitted"),
+            denominator,
+        ),
+        "diagnostic_citation_locator_match_rate": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_citation_locator_match"),
+            denominator,
+        ),
+        "diagnostic_answer_citation_consistency_proxy_rate": v3_6_4_rate(
+            v3_6_4_count_true(rows, "diagnostic_answer_citation_consistency_proxy"),
+            denominator,
+        ),
+    }
+    return {
+        "row_count": denominator,
+        "runtime_generation_attempted_row_count": v3_6_4_count_true(rows, "runtime_generation_attempted"),
+        "runtime_generation_fail_closed_row_count": v3_6_4_count_true(rows, "runtime_generation_fail_closed"),
+        "numeric_or_date_candidate_row_count": numeric_denominator,
+        "official_proximity_review_row_count": sum(1 for row in rows if row.get("official_proximity_review")),
+        "generated_expected_answers_are_gold": False,
+        "official_metric": False,
+        "metrics": metrics,
+        "primary_failure_counts": v3_6_4_failure_counts(rows),
+    }
+
+
+def v3_6_4_count_true(rows: Sequence[Mapping[str, Any]], field: str) -> int:
+    return sum(1 for row in rows if bool(row.get(field)))
+
+
+def v3_6_4_rate(numerator: int, denominator: int) -> float | None:
+    if denominator <= 0:
+        return None
+    return round(numerator / denominator, 6)
+
+
+def v3_6_4_mean(values: Sequence[float]) -> float | None:
+    if not values:
+        return None
+    return round(sum(values) / len(values), 6)
+
+
+def v3_6_4_failure_counts(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    counter = Counter(official.clean(row.get("primary_failure")) for row in rows)
+    return {failure_type: counter.get(failure_type, 0) for failure_type in V3_6_4_FAILURE_TYPES}
+
+
+def v3_6_4_failure_taxonomy(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    generated_at: str,
+) -> dict[str, Any]:
+    by_partition: dict[str, dict[str, int]] = {}
+    for partition in ("core_only", "review_only_challenge"):
+        by_partition[partition] = v3_6_4_failure_counts(
+            [row for row in rows if row.get("reporting_partition") == partition]
+        )
+    return {
+        "schema_version": f"{V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID}_failure_taxonomy_v1",
+        "run_id": V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_weak_noisy_silver_metric_failure_taxonomy",
+        "failure_type_vocabulary": list(V3_6_4_FAILURE_TYPES),
+        "primary_failure_counts": v3_6_4_failure_counts(rows),
+        "primary_failure_counts_by_reporting_partition": by_partition,
+        "classification_policy": (
+            "Primary failure is conservative. Deterministic source/locator mismatches outrank generation failures; "
+            "weak answerability ambiguity and review-only source risk outrank runtime fail-closed for review rows; "
+            "otherwise generation-unavailable rows are runtime_fail_closed."
+        ),
+        "generated_expected_answers_are_gold": False,
+        "official_metric": False,
+    }
+
+
+def v3_6_4_sample_review_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    selected: dict[str, dict[str, Any]] = {}
+
+    def add(row: Mapping[str, Any], reason: str) -> None:
+        row_id = official.clean(row.get("weak_silver_candidate_id"))
+        if not row_id or row_id in selected:
+            return
+        selected[row_id] = {
+            "run_id": V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+            "sample_reason": reason,
+            "weak_silver_candidate_id": row_id,
+            "row_ordinal": row.get("row_ordinal"),
+            "reporting_partition": row.get("reporting_partition"),
+            "source_family": row.get("source_family"),
+            "split_role": row.get("split_role"),
+            "query_quality_profile": row.get("query_quality_profile"),
+            "source_quality_status": row.get("source_quality_status"),
+            "weak_answerability_status": row.get("weak_answerability_status"),
+            "official_proximity_review": row.get("official_proximity_review"),
+            "primary_failure": row.get("primary_failure"),
+            "runtime_generation_fail_closed": row.get("runtime_generation_fail_closed"),
+            "generated_expected_answers_are_gold": False,
+            "promotion_evidence": False,
+        }
+
+    for failure_type, count in v3_6_4_failure_counts(rows).items():
+        if count <= 0:
+            continue
+        for row in rows:
+            if row.get("primary_failure") == failure_type:
+                add(row, f"primary_failure:{failure_type}")
+                break
+    for partition in ("core_only", "review_only_challenge"):
+        for row in rows:
+            if row.get("reporting_partition") == partition:
+                add(row, f"reporting_partition:{partition}")
+                break
+    for family in ("TEXT", "PDF", "XLSX"):
+        for row in rows:
+            if row.get("source_family") == family:
+                add(row, f"source_family:{family}")
+                break
+    return list(selected.values())
+
+
+def v3_6_4_policy_audit(
+    *,
+    generated_at: str,
+    fail_closed_reasons: Sequence[str],
+    input_sha_before: Mapping[str, str],
+    input_sha_after: Mapping[str, str],
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID}_policy_audit_v1",
+        "run_id": V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_weak_noisy_silver_metric_policy_audit",
+        "diagnostic_only": True,
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "official_denominator_mutation": False,
+        "official_expected_answer_mutation": False,
+        "official_supporting_evidence_mutation": False,
+        "readme_performance_claim_mutation": False,
+        "fail_closed_reasons": list(fail_closed_reasons),
+        "protected_input_sha256_before": dict(input_sha_before),
+        "protected_input_sha256_after": dict(input_sha_after),
+        "protected_input_sha256_unchanged": dict(input_sha_before) == dict(input_sha_after),
+    }
+
+
+def v3_6_4_next_phase_recommendation(
+    *,
+    generated_at: str,
+    fail_closed_reasons: Sequence[str],
+    aggregate_by_bucket: Mapping[str, Any],
+) -> dict[str, Any]:
+    all_diagnostic = as_mapping(as_mapping(aggregate_by_bucket.get("reporting_partitions")).get("all_diagnostic"))
+    return {
+        "schema_version": f"{V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID}_next_phase_recommendation_v1",
+        "run_id": V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_weak_noisy_silver_metric_next_phase_recommendation",
+        "v3_6_5_should_proceed_to": "rough_failure_bucket_triage",
+        "targeted_diagnostic_repair_planning_now": False,
+        "targeted_diagnostic_repair_planning_after_triage": True,
+        "rationale": (
+            "The frozen manifest and deterministic locator/source feasibility checks are reproducible, but live "
+            "generation and answer/citation proxy scoring are fail-closed. v3_6_5 should first bucket failures and "
+            "decide whether to wire a diagnostic runtime surface before targeted repairs."
+        ),
+        "fail_closed_reasons": list(fail_closed_reasons),
+        "all_diagnostic_row_count": all_diagnostic.get("row_count", 0),
+        "runtime_generation_fail_closed_row_count": all_diagnostic.get(
+            "runtime_generation_fail_closed_row_count",
+            0,
+        ),
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+    }
+
+
+def v3_6_4_interpretation_policy() -> dict[str, Any]:
+    return {
+        "core_only_main_interpretable_diagnostic_bucket": True,
+        "review_only_challenge_is_stress_noise_bucket": True,
+        "review_only_challenge_must_not_merge_into_headline_without_clear_label": True,
+        "all_diagnostic_allowed_only_as_rough_overall_stress_number": True,
+        "split_holdout_not_source_isolated": True,
+        "holdout_independence_warning": (
+            "v3_6_2/v3_6_3 recorded source identity crossing; split holdout is diagnostic-only, not source-isolated."
+        ),
+        "official_proximity_rows_remain_review_only": True,
+        "official_proximity_rows_enter_core": False,
+        "official_metric_denominator_usage_allowed": False,
+    }
+
+
+V3_6_5_REQUIRED_POLICY = {
+    "local_llm_usage_allowed": True,
+    "local_llm_usage_scope": "capability_probe_and_runtime_surface_audit_only",
+    "local_llm_live_silver_generation_allowed": False,
+    "local_llm_metric_scoring_allowed": False,
+    "external_llm_api_allowed": False,
+    "db_usage_allowed": True,
+    "db_usage_scope": "read_only_reference_and_runtime_surface_audit_only",
+    "db_write_allowed": False,
+    "db_migration_allowed": False,
+    "db_index_rebuild_allowed": False,
+    "production_db_usage_allowed": False,
+    "db_results_as_gold_allowed": False,
+    "db_results_as_official_qrels_allowed": False,
+    "db_results_as_generation_source_allowed": False,
+}
+
+
+V3_6_5_SOURCE_GUARDRAIL_EXPECTED = {
+    "generated_expected_answers_are_gold": False,
+    "official_metric": False,
+    "official_metric_denominator_usage_allowed": False,
+    "promotion_evidence": False,
+    "threshold_tuning": False,
+    "winner_selection": False,
+    "readme_representative_product_performance_claim": False,
+    "prompt_mutation": False,
+    "retrieval_mutation": False,
+    "scorer_mutation": False,
+    "renderer_mutation": False,
+    "index_or_export_mutation": False,
+    "production_mutation": False,
+    "candidate_artifacts_used_as_generation_source": False,
+}
+V3_6_5_REQUIRED_MULTI_LABEL_BUCKETS = (
+    "runtime_generation_surface_unavailable",
+    "answer_proxy_reference_missing_from_v3_6_3_manifest",
+    "live_retrieval_metric_not_computed",
+    "deterministic_manifest_locator_self_match_only",
+    "weak_silver_expected_answer_ambiguous",
+    "review_only_source_quality_noise",
+    "official_proximity_review_excluded_from_core",
+    "split_holdout_not_source_isolated",
+    "core_metric_not_interpretable_until_runtime_available",
+    "review_only_metric_stress_only",
+    "local_llm_surface_unavailable",
+    "local_llm_surface_available_but_not_used_for_silver_generation",
+    "local_llm_blocked_by_policy_for_v3_6_5_live_generation",
+    "db_reference_surface_available_read_only",
+    "db_reference_surface_unavailable",
+    "db_probe_blocked_or_skipped",
+    "diagnostic_reference_sidecar_possible",
+    "diagnostic_reference_sidecar_not_possible_without_recovery",
+    "live_retrieval_probe_possible_next_phase",
+    "live_retrieval_probe_not_possible_without_adapter",
+    "targeted_repair_not_allowed_until_triage_complete",
+)
+V3_6_5_RECOMMENDED_NEXT_PHASE = "v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe"
+V3_6_6_ALLOWED_LLM_CLASSIFICATIONS = {
+    "reusable_without_behavior_change",
+    "reusable_with_diagnostic_adapter_only",
+}
+V3_6_6_RECOMMENDATION_CHOICES = (
+    "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric",
+    "v3_6_7_runtime_stability_probe_for_core_only",
+    "v3_6_7_manifest_locator_live_retrieval_probe",
+    "v3_6_7_reference_sidecar_recovery_or_compaction_fix",
+)
+V3_6_6_POLICY_FALSE_FIELDS = (
+    "official_metric",
+    "official_metric_denominator_usage_allowed",
+    "generated_expected_answers_are_gold",
+    "promotion_evidence",
+    "threshold_tuning",
+    "winner_selection",
+    "readme_representative_product_performance_claim",
+    "readme_performance_claim_mutation",
+    "lane_a_b_c_collapsed_scoring",
+    "prompt_mutation",
+    "retrieval_mutation",
+    "scorer_mutation",
+    "renderer_mutation",
+    "index_or_export_mutation",
+    "production_mutation",
+    "candidate_artifacts_used_as_generation_source",
+    "official_qrels_created",
+    "official_relevance_labels_created",
+    "official_answerability_labels_created",
+    "official_gold_labels_created",
+    "official_denominator_mutation",
+    "gold_mutation",
+    "expected_answer_mutation",
+    "supporting_evidence_mutation",
+    "readme_performance_claim_mutation",
+)
+V3_6_6_REQUIRED_V3_6_5_LOCAL_LLM_FIELDS = (
+    "local_llm_usage_allowed",
+    "local_llm_usage_scope",
+    "local_llm_surface_classification",
+    "local_llm_live_silver_generation_attempted",
+    "local_llm_metric_scoring_attempted",
+    "external_llm_api_attempted",
+)
+V3_6_6_REQUIRED_V3_6_5_DB_FIELDS = (
+    "db_usage_allowed",
+    "db_usage_scope",
+    "db_surface_classification",
+    "db_read_only_probe_attempted",
+    "db_write_attempted",
+    "db_migration_attempted",
+    "db_index_rebuild_attempted",
+    "production_db_used",
+)
+
+
+def run_v3_6_5_rough_failure_bucket_triage(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    source_paths = v3_6_5_source_paths()
+    input_sha_before = v3_6_5_input_sha256(source_paths)
+    source_json, source_jsonl, source_load_errors = v3_6_5_load_source_artifacts(source_paths)
+    metric_summary = source_json.get("v3_6_4_summary_json", {})
+    metric_aggregate = source_json.get("v3_6_4_aggregate_by_bucket_json", {})
+    metric_failure_taxonomy = source_json.get("v3_6_4_failure_taxonomy_json", {})
+    metric_policy_audit = source_json.get("v3_6_4_policy_audit_json", {})
+    metric_next_phase = source_json.get("v3_6_4_next_phase_recommendation_json", {})
+    manifest_summary = source_json.get("v3_6_3_manifest_summary_json", {})
+    manifest_policy_audit = source_json.get("v3_6_3_manifest_policy_audit_json", {})
+    split_independence_audit = source_json.get("v3_6_2_split_independence_audit_json", {})
+    metric_rows = source_jsonl.get("v3_6_4_per_row_jsonl", [])
+    candidate_rows = source_jsonl.get("v3_6_1_weak_silver_candidates_jsonl", [])
+    manifest_all_rows = source_jsonl.get("v3_6_3_manifest_all_jsonl", [])
+    manifest_core_rows = source_jsonl.get("v3_6_3_manifest_core_jsonl", [])
+    manifest_review_rows = source_jsonl.get("v3_6_3_manifest_review_only_jsonl", [])
+    manifest_quarantine_rows = source_jsonl.get("v3_6_3_manifest_quarantine_jsonl", [])
+
+    fail_closed_reasons = v3_6_5_fail_closed_reasons(
+        source_load_errors=source_load_errors,
+        metric_summary=metric_summary,
+        metric_aggregate=metric_aggregate,
+        metric_failure_taxonomy=metric_failure_taxonomy,
+        metric_policy_audit=metric_policy_audit,
+        metric_next_phase=metric_next_phase,
+        manifest_summary=manifest_summary,
+        manifest_policy_audit=manifest_policy_audit,
+        metric_rows=metric_rows,
+        manifest_all_rows=manifest_all_rows,
+        manifest_core_rows=manifest_core_rows,
+        manifest_review_rows=manifest_review_rows,
+        manifest_quarantine_rows=manifest_quarantine_rows,
+        candidate_rows=candidate_rows,
+    )
+    reference_surface_audit = v3_6_5_reference_surface_audit(
+        candidate_rows=candidate_rows,
+        metric_rows=metric_rows,
+        generated_at=generated_at,
+    )
+    db_surface_audit = v3_6_5_db_surface_audit(
+        candidate_rows=candidate_rows,
+        reference_surface_audit=reference_surface_audit,
+        generated_at=generated_at,
+    )
+    local_llm_surface_audit = v3_6_5_local_llm_surface_audit(args=args, generated_at=generated_at)
+    runtime_surface_audit = v3_6_5_runtime_surface_audit(
+        local_llm_surface_audit=local_llm_surface_audit,
+        db_surface_audit=db_surface_audit,
+        generated_at=generated_at,
+    )
+    candidate_by_id = {
+        official.clean(row.get("weak_silver_candidate_id")): row
+        for row in candidate_rows
+        if official.clean(row.get("weak_silver_candidate_id"))
+    }
+    per_row_triage_rows = v3_6_5_per_row_triage_rows(
+        metric_rows=metric_rows,
+        candidate_by_id=candidate_by_id,
+        reference_surface_audit=reference_surface_audit,
+        db_surface_audit=db_surface_audit,
+        local_llm_surface_audit=local_llm_surface_audit,
+    )
+    multi_label_counts = v3_6_5_multi_label_bucket_counts(per_row_triage_rows)
+    blocker_matrix = v3_6_5_blocker_matrix(
+        per_row_triage_rows=per_row_triage_rows,
+        multi_label_counts=multi_label_counts,
+        generated_at=generated_at,
+    )
+    input_sha_after = v3_6_5_input_sha256(source_paths)
+    protected_v3_6_3_sha_before = v3_6_5_v3_6_3_manifest_sha256()
+    protected_v3_6_3_sha_after = v3_6_5_v3_6_3_manifest_sha256()
+    protected_input_sha256_unchanged = input_sha_before == input_sha_after
+    if not protected_input_sha256_unchanged:
+        fail_closed_reasons.append("v3_6_5_input_sha256_changed_during_audit")
+
+    policy_audit = v3_6_5_policy_audit(
+        generated_at=generated_at,
+        fail_closed_reasons=fail_closed_reasons,
+        input_sha_before=input_sha_before,
+        input_sha_after=input_sha_after,
+        protected_v3_6_3_sha_before=protected_v3_6_3_sha_before,
+        protected_v3_6_3_sha_after=protected_v3_6_3_sha_after,
+        protected_input_sha256_matches_v3_6_4_summary=v3_6_5_v3_6_3_sha_matches_metric_summary(
+            metric_summary
+        ),
+    )
+    next_phase_recommendation = v3_6_5_next_phase_recommendation(
+        generated_at=generated_at,
+        fail_closed_reasons=fail_closed_reasons,
+        reference_surface_audit=reference_surface_audit,
+        db_surface_audit=db_surface_audit,
+        local_llm_surface_audit=local_llm_surface_audit,
+        runtime_surface_audit=runtime_surface_audit,
+    )
+    primary_counts = v3_6_5_primary_failure_counts(metric_failure_taxonomy)
+    source_manifest_counts = {
+        "all_diagnostic": int(metric_summary.get("manifest_row_count") or len(metric_rows)),
+        "core_only": int(metric_summary.get("core_manifest_row_count") or 0),
+        "review_only_challenge": int(metric_summary.get("review_only_manifest_row_count") or 0),
+        "quarantine": int(metric_summary.get("quarantine_manifest_row_count") or len(manifest_quarantine_rows)),
+    }
+    status = (
+        "DIAGNOSTIC_ONLY_ROUGH_FAILURE_BUCKET_TRIAGE_FAIL_CLOSED"
+        if fail_closed_reasons
+        else "DIAGNOSTIC_ONLY_ROUGH_FAILURE_BUCKET_TRIAGE_COMPLETE"
+    )
+    summary: dict[str, Any] = {
+        "schema_version": (
+            f"{V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID}_summary_v1"
+        ),
+        "run_id": V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_rough_failure_bucket_triage",
+        "event_type": "diagnostic_rough_failure_bucket_triage_v3_6_5",
+        "status": status,
+        "run_class": "diagnostic_only_rough_failure_bucket_triage",
+        "v3_6_4_source_run_id": V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        "source_metric_run_id": V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        "source_manifest_run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "source_candidate_generation_run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "readme_performance_claim_mutation": False,
+        "triage_doc_updated": False,
+        "measurements_doc_updated": False,
+        **V3_6_5_REQUIRED_POLICY,
+        "local_llm_live_generation_allowed_in_v3_6_5": False,
+        "local_llm_live_generation_recommended_for_v3_6_6": False,
+        "local_llm_live_silver_generation_attempted": False,
+        "local_llm_metric_scoring_attempted": False,
+        "external_llm_api_attempted": False,
+        "read_only_db_probe_attempted": bool(db_surface_audit.get("db_read_only_probe_attempted")),
+        "db_read_only_probe_attempted": bool(db_surface_audit.get("db_read_only_probe_attempted")),
+        "db_write_attempted": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "production_db_used": False,
+        "manifest_triage_passed": not fail_closed_reasons,
+        "fail_closed_reasons": sorted(set(fail_closed_reasons)),
+        "source_manifest_counts": source_manifest_counts,
+        "diagnostic_row_count": source_manifest_counts["all_diagnostic"],
+        "manifest_row_count": source_manifest_counts["all_diagnostic"],
+        "core_manifest_row_count": source_manifest_counts["core_only"],
+        "review_only_manifest_row_count": source_manifest_counts["review_only_challenge"],
+        "quarantine_manifest_row_count": source_manifest_counts["quarantine"],
+        "runtime_generation_fail_closed_row_count": int(
+            metric_summary.get("runtime_generation_fail_closed_row_count") or 0
+        ),
+        "runtime_generation_attempted_row_count": int(metric_summary.get("runtime_generation_attempted_row_count") or 0),
+        "runtime_generation_succeeded_row_count": 0,
+        "runtime_generation_coverage_rate": 0.0,
+        "source_family_counts": as_mapping(metric_summary.get("source_family_counts")),
+        "split_role_counts": as_mapping(metric_summary.get("split_role_counts")),
+        "query_quality_profile_counts": as_mapping(metric_summary.get("query_quality_profile_counts")),
+        "v3_6_4_primary_failure_counts": primary_counts,
+        "primary_failure_taxonomy": primary_counts,
+        "primary_failure_reconciliation": {
+            "core_rows_failed_closed_because_runtime_generation_unavailable": primary_counts.get("runtime_fail_closed", 0),
+            "review_only_rows_carry_ambiguity_or_source_quality_risk": (
+                primary_counts.get("weak_silver_expected_answer_ambiguous", 0)
+                + primary_counts.get("review_only_source_quality_risk", 0)
+            ),
+            "primary_labels_are_lossy": True,
+            "multi_label_triage_required_before_repair_planning": True,
+        },
+        "multi_label_blocker_bucket_counts": multi_label_counts,
+        "local_llm_surface_classification": local_llm_surface_audit["local_llm_surface_classification"],
+        "local_llm_runtime_classification": local_llm_surface_audit["local_llm_surface_classification"],
+        "local_llm_runtime_probe_feasible": bool(local_llm_surface_audit.get("local_llm_detected")),
+        "db_reference_surface_classification": db_surface_audit["db_surface_classification"],
+        "db_surface_classification": db_surface_audit["db_surface_classification"],
+        "candidate_expected_answer_draft_available": reference_surface_audit[
+            "candidate_expected_answer_draft_available"
+        ],
+        "expected_answer_draft_available_in_v3_6_1_candidate_rows": reference_surface_audit[
+            "candidate_expected_answer_draft_available"
+        ],
+        "candidate_supporting_evidence_locator_draft_available": reference_surface_audit[
+            "candidate_supporting_evidence_locator_draft_available"
+        ],
+        "supporting_evidence_locator_draft_available_in_v3_6_1_candidate_rows": reference_surface_audit[
+            "candidate_supporting_evidence_locator_draft_available"
+        ],
+        "diagnostic_reference_sidecar_recommended": reference_surface_audit["reference_sidecar_recommended"],
+        "live_retrieval_probe_feasible_for_v3_6_6": bool(
+            db_surface_audit.get("live_retrieval_probe_possible_without_adapter")
+        ),
+        "live_retrieval_probe_requires_adapter_for_v3_6_6": not bool(
+            db_surface_audit.get("live_retrieval_probe_possible_without_adapter")
+        ),
+        "split_holdout_independence_warning_carried_forward": True,
+        "split_holdout_not_source_isolated": True,
+        "holdout_independence_warning": (
+            "v3_6_2/v3_6_3 recorded source identity crossing; split holdout is diagnostic-only, not source-isolated."
+        ),
+        "source_identity_groups_crossing_split_roles_count": int(
+            metric_summary.get("source_identity_groups_crossing_split_roles_count")
+            or split_independence_audit.get("source_identity_groups_crossing_split_roles_count")
+            or 0
+        ),
+        "official_proximity_review_row_count": int(metric_summary.get("official_proximity_review_row_count") or 0),
+        "official_proximity_core_row_count": int(metric_summary.get("official_proximity_core_row_count") or 0),
+        "official_proximity_rows_remain_out_of_core": True,
+        "official_proximity_rows_enter_core": False,
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": protected_input_sha256_unchanged,
+        "protected_v3_6_3_input_sha256_before": protected_v3_6_3_sha_before,
+        "protected_v3_6_3_input_sha256_after": protected_v3_6_3_sha_after,
+        "protected_v3_6_3_input_sha256_unchanged": protected_v3_6_3_sha_before == protected_v3_6_3_sha_after,
+        "protected_input_sha256_matches_v3_6_4_summary": v3_6_5_v3_6_3_sha_matches_metric_summary(
+            metric_summary
+        ),
+        "recommended_next_phase": next_phase_recommendation["recommended_next_phase"],
+        "per_row_triage_rows": per_row_triage_rows,
+        "blocker_matrix": blocker_matrix,
+        "runtime_surface_audit": runtime_surface_audit,
+        "reference_surface_audit": reference_surface_audit,
+        "db_surface_audit": db_surface_audit,
+        "local_llm_surface_audit": local_llm_surface_audit,
+        "policy_audit": policy_audit,
+        "next_phase_recommendation": next_phase_recommendation,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_6_5_SUMMARY_JSON),
+            "per_row_jsonl": official.repo_relative(DEFAULT_V3_6_5_PER_ROW_JSONL),
+            "blocker_matrix_json": official.repo_relative(DEFAULT_V3_6_5_BLOCKER_MATRIX_JSON),
+            "runtime_surface_audit_json": official.repo_relative(DEFAULT_V3_6_5_RUNTIME_SURFACE_AUDIT_JSON),
+            "reference_surface_audit_json": official.repo_relative(DEFAULT_V3_6_5_REFERENCE_SURFACE_AUDIT_JSON),
+            "db_surface_audit_json": official.repo_relative(DEFAULT_V3_6_5_DB_SURFACE_AUDIT_JSON),
+            "local_llm_surface_audit_json": official.repo_relative(DEFAULT_V3_6_5_LOCAL_LLM_SURFACE_AUDIT_JSON),
+            "policy_audit_json": official.repo_relative(DEFAULT_V3_6_5_POLICY_AUDIT_JSON),
+            "next_phase_recommendation_json": official.repo_relative(
+                DEFAULT_V3_6_5_NEXT_PHASE_RECOMMENDATION_JSON
+            ),
+            "source_metric_summary_json": official.repo_relative(DEFAULT_V3_6_4_METRIC_SUMMARY_JSON),
+            "source_metric_per_row_jsonl": official.repo_relative(DEFAULT_V3_6_4_METRIC_PER_ROW_JSONL),
+            "source_candidate_rows_jsonl": official.repo_relative(DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+    return summary
+
+
+def v3_6_5_source_paths() -> dict[str, Path]:
+    return {
+        "v3_6_4_summary_json": DEFAULT_V3_6_4_METRIC_SUMMARY_JSON,
+        "v3_6_4_aggregate_by_bucket_json": DEFAULT_V3_6_4_METRIC_AGGREGATE_BY_BUCKET_JSON,
+        "v3_6_4_per_row_jsonl": DEFAULT_V3_6_4_METRIC_PER_ROW_JSONL,
+        "v3_6_4_failure_taxonomy_json": DEFAULT_V3_6_4_METRIC_FAILURE_TAXONOMY_JSON,
+        "v3_6_4_sample_review_jsonl": DEFAULT_V3_6_4_METRIC_SAMPLE_REVIEW_JSONL,
+        "v3_6_4_policy_audit_json": DEFAULT_V3_6_4_METRIC_POLICY_AUDIT_JSON,
+        "v3_6_4_next_phase_recommendation_json": DEFAULT_V3_6_4_METRIC_NEXT_PHASE_RECOMMENDATION_JSON,
+        "v3_6_3_manifest_summary_json": DEFAULT_V3_6_3_MANIFEST_SUMMARY_JSON,
+        "v3_6_3_manifest_all_jsonl": DEFAULT_V3_6_3_MANIFEST_ALL_JSONL,
+        "v3_6_3_manifest_core_jsonl": DEFAULT_V3_6_3_MANIFEST_CORE_JSONL,
+        "v3_6_3_manifest_review_only_jsonl": DEFAULT_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL,
+        "v3_6_3_manifest_quarantine_jsonl": DEFAULT_V3_6_3_MANIFEST_QUARANTINE_JSONL,
+        "v3_6_3_manifest_policy_audit_json": DEFAULT_V3_6_3_MANIFEST_POLICY_AUDIT_JSON,
+        "v3_6_3_manifest_next_phase_recommendation_json": DEFAULT_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON,
+        "v3_6_2_candidate_sanity_summary_json": DEFAULT_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON,
+        "v3_6_2_candidate_sanity_per_row_jsonl": DEFAULT_V3_6_2_CANDIDATE_SANITY_PER_ROW_JSONL,
+        "v3_6_2_candidate_metric_feasibility_json": DEFAULT_V3_6_2_CANDIDATE_METRIC_FEASIBILITY_JSON,
+        "v3_6_2_split_independence_audit_json": DEFAULT_V3_6_2_SPLIT_INDEPENDENCE_AUDIT_JSON,
+        "v3_6_2_hash_contract_audit_json": DEFAULT_V3_6_2_HASH_CONTRACT_AUDIT_JSON,
+        "v3_6_1_weak_silver_candidates_jsonl": DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL,
+        "v3_6_1_generation_summary_json": DEFAULT_V3_6_1_GENERATION_SUMMARY_JSON,
+        "v3_6_1_generation_quality_distribution_json": DEFAULT_V3_6_1_QUALITY_DISTRIBUTION_JSON,
+        "v3_6_1_split_manifest_json": DEFAULT_V3_6_1_SPLIT_MANIFEST_JSON,
+    }
+
+
+def v3_6_5_input_sha256(source_paths: Mapping[str, Path]) -> dict[str, str]:
+    return {
+        f"{name}_sha256": sha256_file(path) if path.exists() else "MISSING"
+        for name, path in source_paths.items()
+    }
+
+
+def v3_6_5_load_source_artifacts(
+    source_paths: Mapping[str, Path],
+) -> tuple[dict[str, dict[str, Any]], dict[str, list[dict[str, Any]]], list[str]]:
+    source_json: dict[str, dict[str, Any]] = {}
+    source_jsonl: dict[str, list[dict[str, Any]]] = {}
+    errors: list[str] = []
+    for name, path in source_paths.items():
+        if not path.exists():
+            errors.append(f"missing_source_artifact:{name}")
+            if path.suffix == ".jsonl":
+                source_jsonl[name] = []
+            else:
+                source_json[name] = {}
+            continue
+        try:
+            if path.suffix == ".jsonl":
+                source_jsonl[name] = read_jsonl(path)
+            else:
+                parsed = official.read_json(path)
+                source_json[name] = dict(parsed) if isinstance(parsed, Mapping) else {}
+                if not isinstance(parsed, Mapping):
+                    errors.append(f"malformed_source_artifact:{name}:top_level_not_object")
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"malformed_source_artifact:{name}:{type(exc).__name__}")
+            if path.suffix == ".jsonl":
+                source_jsonl[name] = []
+            else:
+                source_json[name] = {}
+    return source_json, source_jsonl, sorted(set(errors))
+
+
+def v3_6_5_v3_6_3_manifest_sha256() -> dict[str, str]:
+    paths = {
+        "manifest_summary_json_sha256": DEFAULT_V3_6_3_MANIFEST_SUMMARY_JSON,
+        "manifest_all_jsonl_sha256": DEFAULT_V3_6_3_MANIFEST_ALL_JSONL,
+        "manifest_core_jsonl_sha256": DEFAULT_V3_6_3_MANIFEST_CORE_JSONL,
+        "manifest_review_only_jsonl_sha256": DEFAULT_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL,
+        "manifest_quarantine_jsonl_sha256": DEFAULT_V3_6_3_MANIFEST_QUARANTINE_JSONL,
+        "manifest_policy_audit_json_sha256": DEFAULT_V3_6_3_MANIFEST_POLICY_AUDIT_JSON,
+        "next_phase_recommendation_json_sha256": DEFAULT_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON,
+    }
+    return {name: sha256_file(path) if path.exists() else "MISSING" for name, path in paths.items()}
+
+
+def v3_6_5_v3_6_3_sha_matches_metric_summary(metric_summary: Mapping[str, Any]) -> bool:
+    current = v3_6_5_v3_6_3_manifest_sha256()
+    before = as_mapping(metric_summary.get("protected_input_sha256_before"))
+    after = as_mapping(metric_summary.get("protected_input_sha256_after"))
+    return all(before.get(key) == value and after.get(key) == value for key, value in current.items())
+
+
+def v3_6_5_primary_failure_counts(metric_failure_taxonomy: Mapping[str, Any]) -> dict[str, int]:
+    raw_counts = as_mapping(metric_failure_taxonomy.get("primary_failure_counts"))
+    return {failure_type: int(raw_counts.get(failure_type) or 0) for failure_type in V3_6_4_FAILURE_TYPES}
+
+
+def v3_6_5_fail_closed_reasons(
+    *,
+    source_load_errors: Sequence[str],
+    metric_summary: Mapping[str, Any],
+    metric_aggregate: Mapping[str, Any],
+    metric_failure_taxonomy: Mapping[str, Any],
+    metric_policy_audit: Mapping[str, Any],
+    metric_next_phase: Mapping[str, Any],
+    manifest_summary: Mapping[str, Any],
+    manifest_policy_audit: Mapping[str, Any],
+    metric_rows: Sequence[Mapping[str, Any]],
+    manifest_all_rows: Sequence[Mapping[str, Any]],
+    manifest_core_rows: Sequence[Mapping[str, Any]],
+    manifest_review_rows: Sequence[Mapping[str, Any]],
+    manifest_quarantine_rows: Sequence[Mapping[str, Any]],
+    candidate_rows: Sequence[Mapping[str, Any]],
+) -> list[str]:
+    reasons = list(source_load_errors)
+    if metric_summary.get("run_id") != V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID:
+        reasons.append("v3_6_4_metric_summary_run_id_mismatch")
+    if not bool(metric_summary.get("manifest_metric_passed")):
+        reasons.append("v3_6_4_metric_not_passed")
+    if metric_next_phase.get("v3_6_5_should_proceed_to") != "rough_failure_bucket_triage":
+        reasons.append("v3_6_4_next_phase_not_rough_failure_bucket_triage")
+    diagnostic_row_count = int(metric_summary.get("diagnostic_row_count") or 0)
+    if len(metric_rows) != diagnostic_row_count:
+        reasons.append("v3_6_4_per_row_count_mismatch")
+    if diagnostic_row_count != 1000:
+        reasons.append("v3_6_4_diagnostic_row_count_unexpected")
+    if int(metric_summary.get("manifest_row_count") or 0) != 1000:
+        reasons.append("v3_6_4_all_diagnostic_count_unexpected")
+    if int(metric_summary.get("core_manifest_row_count") or 0) != 665:
+        reasons.append("v3_6_4_core_count_unexpected")
+    if int(metric_summary.get("review_only_manifest_row_count") or 0) != 335:
+        reasons.append("v3_6_4_review_only_count_unexpected")
+    if int(metric_summary.get("quarantine_manifest_row_count") or 0) != 0:
+        reasons.append("v3_6_4_quarantine_count_unexpected")
+    partition_counts = Counter(official.clean(row.get("reporting_partition")) for row in metric_rows)
+    if partition_counts.get("core_only", 0) != 665 or partition_counts.get("review_only_challenge", 0) != 335:
+        reasons.append("v3_6_4_per_row_partition_count_mismatch")
+    if len(manifest_all_rows) != 1000:
+        reasons.append("v3_6_3_manifest_all_count_mismatch")
+    if len(manifest_core_rows) != 665:
+        reasons.append("v3_6_3_manifest_core_count_mismatch")
+    if len(manifest_review_rows) != 335:
+        reasons.append("v3_6_3_manifest_review_only_count_mismatch")
+    if len(manifest_quarantine_rows) != 0:
+        reasons.append("v3_6_3_quarantine_rows_unexpectedly_non_empty")
+    if int(manifest_summary.get("manifest_row_count") or 0) != 1000:
+        reasons.append("v3_6_3_manifest_summary_all_count_mismatch")
+    if int(manifest_summary.get("core_manifest_row_count") or 0) != 665:
+        reasons.append("v3_6_3_manifest_summary_core_count_mismatch")
+    if int(manifest_summary.get("review_only_manifest_row_count") or 0) != 335:
+        reasons.append("v3_6_3_manifest_summary_review_count_mismatch")
+    if int(manifest_summary.get("quarantine_manifest_row_count") or 0) != 0:
+        reasons.append("v3_6_3_manifest_summary_quarantine_count_mismatch")
+    if len(candidate_rows) != 1000:
+        reasons.append("v3_6_1_candidate_row_count_mismatch")
+    metric_candidate_ids = [official.clean(row.get("weak_silver_candidate_id")) for row in metric_rows]
+    if len([item for item in metric_candidate_ids if item]) != len(set(item for item in metric_candidate_ids if item)):
+        reasons.append("v3_6_4_duplicate_weak_silver_candidate_id")
+    candidate_ids = [official.clean(row.get("weak_silver_candidate_id")) for row in candidate_rows]
+    if len([item for item in candidate_ids if item]) != len(set(item for item in candidate_ids if item)):
+        reasons.append("v3_6_1_duplicate_weak_silver_candidate_id")
+    if set(item for item in metric_candidate_ids if item) - set(item for item in candidate_ids if item):
+        reasons.append("v3_6_4_candidate_ids_missing_from_v3_6_1")
+    if any(bool(row.get("official_proximity_review")) for row in manifest_core_rows):
+        reasons.append("official_proximity_rows_entered_v3_6_3_core")
+    if any(
+        bool(row.get("official_proximity_review")) and official.clean(row.get("reporting_partition")) == "core_only"
+        for row in metric_rows
+    ):
+        reasons.append("official_proximity_rows_entered_v3_6_4_core")
+    if int(metric_summary.get("official_proximity_core_row_count") or 0) != 0:
+        reasons.append("official_proximity_core_count_nonzero")
+    current_v3_6_3_sha = v3_6_5_v3_6_3_manifest_sha256()
+    protected_before = as_mapping(metric_summary.get("protected_input_sha256_before"))
+    protected_after = as_mapping(metric_summary.get("protected_input_sha256_after"))
+    for key, value in current_v3_6_3_sha.items():
+        if protected_before.get(key) != value:
+            reasons.append(f"v3_6_4_protected_v3_6_3_sha_before_mismatch:{key}")
+        if protected_after.get(key) != value:
+            reasons.append(f"v3_6_4_protected_v3_6_3_sha_after_mismatch:{key}")
+    if protected_before != protected_after:
+        reasons.append("v3_6_4_protected_v3_6_3_sha_before_after_mismatch")
+    source_primary_counts = as_mapping(metric_failure_taxonomy.get("primary_failure_counts"))
+    if sum(int(value or 0) for value in source_primary_counts.values()) != diagnostic_row_count:
+        reasons.append("v3_6_4_failure_taxonomy_count_mismatch")
+    if metric_aggregate.get("run_id") != V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID:
+        reasons.append("v3_6_4_aggregate_run_id_mismatch")
+    for payload_name, payload in (
+        ("v3_6_4_metric_summary", metric_summary),
+        ("v3_6_4_policy_audit", metric_policy_audit),
+    ):
+        for key, expected in V3_6_5_SOURCE_GUARDRAIL_EXPECTED.items():
+            if key not in payload:
+                reasons.append(f"{payload_name}_missing_guardrail:{key}")
+            elif bool(payload.get(key)) != expected:
+                reasons.append(f"{payload_name}_guardrail_mismatch:{key}")
+    for key, expected in V3_6_5_SOURCE_GUARDRAIL_EXPECTED.items():
+        if key in manifest_policy_audit and bool(manifest_policy_audit.get(key)) != expected:
+            reasons.append(f"v3_6_3_manifest_policy_audit_guardrail_mismatch:{key}")
+    return sorted(set(reasons))
+
+
+def v3_6_5_per_row_triage_rows(
+    *,
+    metric_rows: Sequence[Mapping[str, Any]],
+    candidate_by_id: Mapping[str, Mapping[str, Any]],
+    reference_surface_audit: Mapping[str, Any],
+    db_surface_audit: Mapping[str, Any],
+    local_llm_surface_audit: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    local_available = bool(local_llm_surface_audit.get("local_llm_detected"))
+    db_reference_available = bool(db_surface_audit.get("db_candidate_reference_mapping_available"))
+    sidecar_possible = bool(reference_surface_audit.get("reference_sidecar_possible"))
+    live_retrieval_possible = bool(db_surface_audit.get("live_retrieval_probe_possible_without_adapter"))
+    rows: list[dict[str, Any]] = []
+    for source_row in metric_rows:
+        candidate_id = official.clean(source_row.get("weak_silver_candidate_id"))
+        candidate = candidate_by_id.get(candidate_id, {})
+        reporting_partition = official.clean(source_row.get("reporting_partition"))
+        source_quality_status = official.clean(source_row.get("source_quality_status"))
+        weak_answerability_status = official.clean(source_row.get("weak_answerability_status"))
+        primary_failure = official.clean(source_row.get("primary_failure"))
+        official_proximity_review = bool(source_row.get("official_proximity_review"))
+        answer_ref_available = bool(official.clean(candidate.get("expected_answer_draft")))
+        evidence_ref_available = bool(candidate.get("supporting_evidence_locator_draft"))
+        labels = [
+            "runtime_generation_surface_unavailable",
+            "answer_proxy_reference_missing_from_v3_6_3_manifest",
+            "live_retrieval_metric_not_computed",
+            "deterministic_manifest_locator_self_match_only",
+            "split_holdout_not_source_isolated",
+            "local_llm_blocked_by_policy_for_v3_6_5_live_generation",
+            "targeted_repair_not_allowed_until_triage_complete",
+        ]
+        if primary_failure == "weak_silver_expected_answer_ambiguous" or weak_answerability_status.endswith(
+            "uncertain_answerability"
+        ):
+            labels.append("weak_silver_expected_answer_ambiguous")
+        if source_quality_status.startswith("review_"):
+            labels.append("review_only_source_quality_noise")
+        if official_proximity_review:
+            labels.append("official_proximity_review_excluded_from_core")
+        if reporting_partition == "core_only":
+            labels.append("core_metric_not_interpretable_until_runtime_available")
+        if reporting_partition == "review_only_challenge":
+            labels.append("review_only_metric_stress_only")
+        if local_available:
+            labels.append("local_llm_surface_available_but_not_used_for_silver_generation")
+        else:
+            labels.append("local_llm_surface_unavailable")
+        if db_reference_available:
+            labels.append("db_reference_surface_available_read_only")
+        else:
+            labels.append("db_reference_surface_unavailable")
+        if not bool(db_surface_audit.get("db_read_only_probe_attempted")):
+            labels.append("db_probe_blocked_or_skipped")
+        if sidecar_possible:
+            labels.append("diagnostic_reference_sidecar_possible")
+        else:
+            labels.append("diagnostic_reference_sidecar_not_possible_without_recovery")
+        if live_retrieval_possible:
+            labels.append("live_retrieval_probe_possible_next_phase")
+        else:
+            labels.append("live_retrieval_probe_not_possible_without_adapter")
+        rows.append(
+            {
+                "weak_silver_candidate_id": candidate_id,
+                "reporting_partition": reporting_partition,
+                "source_family": official.clean(source_row.get("source_family")),
+                "split_role": official.clean(source_row.get("split_role")),
+                "query_quality_profile": official.clean(source_row.get("query_quality_profile")),
+                "source_quality_status": source_quality_status,
+                "weak_answerability_status": weak_answerability_status,
+                "official_proximity_review": official_proximity_review,
+                "v3_6_4_primary_failure": primary_failure,
+                "v3_6_5_multi_label_buckets": sorted(dict.fromkeys(labels)),
+                "runtime_generation_surface_available": False,
+                "answer_proxy_reference_available": answer_ref_available,
+                "supporting_evidence_reference_available": evidence_ref_available,
+                "live_retrieval_probe_candidate": live_retrieval_possible,
+                "local_llm_generation_attempted": False,
+                "db_write_attempted": False,
+                "generated_expected_answers_are_gold": False,
+                "not_gold": True,
+                "not_official_qrels": True,
+                "not_official_denominator": True,
+                "promotion_evidence": False,
+            }
+        )
+    return rows
+
+
+def v3_6_5_multi_label_bucket_counts(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    counts = {bucket: 0 for bucket in V3_6_5_REQUIRED_MULTI_LABEL_BUCKETS}
+    for row in rows:
+        for bucket in row.get("v3_6_5_multi_label_buckets") or []:
+            counts[official.clean(bucket)] = counts.get(official.clean(bucket), 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def v3_6_5_blocker_matrix(
+    *,
+    per_row_triage_rows: Sequence[Mapping[str, Any]],
+    multi_label_counts: Mapping[str, int],
+    generated_at: str,
+) -> dict[str, Any]:
+    severity = {
+        "runtime_generation_surface_unavailable": "high",
+        "answer_proxy_reference_missing_from_v3_6_3_manifest": "high",
+        "live_retrieval_metric_not_computed": "medium_high",
+        "deterministic_manifest_locator_self_match_only": "medium",
+        "weak_silver_expected_answer_ambiguous": "medium",
+        "review_only_source_quality_noise": "medium",
+        "official_proximity_review_excluded_from_core": "low",
+        "split_holdout_not_source_isolated": "medium",
+        "core_metric_not_interpretable_until_runtime_available": "high",
+        "review_only_metric_stress_only": "medium",
+        "local_llm_surface_unavailable": "high",
+        "local_llm_surface_available_but_not_used_for_silver_generation": "medium",
+        "local_llm_blocked_by_policy_for_v3_6_5_live_generation": "controlled",
+        "db_reference_surface_available_read_only": "low",
+        "db_reference_surface_unavailable": "high",
+        "db_probe_blocked_or_skipped": "medium",
+        "diagnostic_reference_sidecar_possible": "low",
+        "diagnostic_reference_sidecar_not_possible_without_recovery": "high",
+        "live_retrieval_probe_possible_next_phase": "medium",
+        "live_retrieval_probe_not_possible_without_adapter": "medium_high",
+        "targeted_repair_not_allowed_until_triage_complete": "controlled",
+    }
+    next_action = {
+        "runtime_generation_surface_unavailable": "runtime_surface_probe",
+        "answer_proxy_reference_missing_from_v3_6_3_manifest": "diagnostic_reference_sidecar",
+        "live_retrieval_metric_not_computed": "diagnostic_retrieval_surface_probe",
+        "deterministic_manifest_locator_self_match_only": "interpretation_warning",
+        "weak_silver_expected_answer_ambiguous": "keep_review_only_stress_label",
+        "review_only_source_quality_noise": "keep_review_only_stress_label",
+        "official_proximity_review_excluded_from_core": "policy_success_no_action",
+        "split_holdout_not_source_isolated": "interpretation_warning",
+        "core_metric_not_interpretable_until_runtime_available": "runtime_surface_probe",
+        "review_only_metric_stress_only": "interpretation_warning",
+        "local_llm_surface_unavailable": "runtime_surface_probe",
+        "local_llm_surface_available_but_not_used_for_silver_generation": "runtime_surface_probe",
+        "local_llm_blocked_by_policy_for_v3_6_5_live_generation": "policy_guardrail",
+        "db_reference_surface_available_read_only": "diagnostic_reference_sidecar",
+        "db_reference_surface_unavailable": "reference_recovery_plan",
+        "db_probe_blocked_or_skipped": "read_only_probe_plan",
+        "diagnostic_reference_sidecar_possible": "diagnostic_reference_sidecar",
+        "diagnostic_reference_sidecar_not_possible_without_recovery": "reference_recovery_plan",
+        "live_retrieval_probe_possible_next_phase": "diagnostic_retrieval_surface_probe",
+        "live_retrieval_probe_not_possible_without_adapter": "diagnostic_retrieval_adapter_plan",
+        "targeted_repair_not_allowed_until_triage_complete": "policy_guardrail",
+    }
+    rationale = {
+        "runtime_generation_surface_unavailable": "v3_6_4 recorded 0/1000 live generation coverage, so answer/citation scoring remains fail-closed.",
+        "answer_proxy_reference_missing_from_v3_6_3_manifest": "The frozen compact v3_6_3 manifest omits expected_answer_draft by contract.",
+        "live_retrieval_metric_not_computed": "v3_6_4 computed deterministic manifest feasibility only, not live retrieval metrics.",
+        "deterministic_manifest_locator_self_match_only": "The locator/source matches are manifest self-checks and not live retrieval evidence.",
+        "weak_silver_expected_answer_ambiguous": "Rows with uncertain weak answerability remain noisy diagnostic review-only surface.",
+        "review_only_source_quality_noise": "Rows with review source-quality status are stress/noise, not core evidence.",
+        "official_proximity_review_excluded_from_core": "Official proximity rows remain review-only; exclusion from core is the intended policy outcome.",
+        "split_holdout_not_source_isolated": "v3_6_2/v3_6_3 recorded source identity crossing, so holdout independence is a warning only.",
+        "core_metric_not_interpretable_until_runtime_available": "Core answer/citation proxy scores need runtime generation and references before interpretation.",
+        "review_only_metric_stress_only": "Review-only rows are challenge/noise rows and must not be merged into headline diagnostics.",
+        "local_llm_surface_unavailable": "No reusable local runtime surface was detected by static configuration audit.",
+        "local_llm_surface_available_but_not_used_for_silver_generation": "A local surface may be configured, but v3_6_5 policy forbids silver generation.",
+        "local_llm_blocked_by_policy_for_v3_6_5_live_generation": "The phase allows only capability audit, not live generation or metric scoring.",
+        "db_reference_surface_available_read_only": "Repo-local candidate/reference artifacts are inspectable without DB writes or promotion use.",
+        "db_reference_surface_unavailable": "No safe read-only reference mapping is available.",
+        "db_probe_blocked_or_skipped": "Read-only probe could not run or was intentionally skipped.",
+        "diagnostic_reference_sidecar_possible": "v3_6_1 candidate rows include non-gold expected-answer and evidence-locator drafts.",
+        "diagnostic_reference_sidecar_not_possible_without_recovery": "A later recovery phase is needed before diagnostic reference scoring.",
+        "live_retrieval_probe_possible_next_phase": "A later phase can run live retrieval without generation or mutation.",
+        "live_retrieval_probe_not_possible_without_adapter": "Current index metadata is inspectable, but row-resolved manifest locator probing needs an adapter.",
+        "targeted_repair_not_allowed_until_triage_complete": "Prompt/retrieval/scorer/renderer repairs stay blocked until runtime/reference surfaces are measured.",
+    }
+    matrix_rows = []
+    for blocker in V3_6_5_REQUIRED_MULTI_LABEL_BUCKETS:
+        affected = [
+            row for row in per_row_triage_rows if blocker in (row.get("v3_6_5_multi_label_buckets") or [])
+        ]
+        partitions = sorted({official.clean(row.get("reporting_partition")) for row in affected if row.get("reporting_partition")})
+        matrix_rows.append(
+            {
+                "blocker_name": blocker,
+                "affected_row_count": int(multi_label_counts.get(blocker) or 0),
+                "affected_partitions": partitions,
+                "severity": severity[blocker],
+                "next_action_class": next_action[blocker],
+                "v3_6_6_candidate_phase": V3_6_5_RECOMMENDED_NEXT_PHASE,
+                "user_intervention_required": False,
+                "rationale": rationale[blocker],
+            }
+        )
+    return {
+        "schema_version": f"{V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID}_blocker_matrix_v1",
+        "run_id": V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_blocker_matrix",
+        "diagnostic_only": True,
+        "official_metric": False,
+        "blockers": matrix_rows,
+    }
+
+
+def v3_6_5_local_llm_surface_audit(*, args: argparse.Namespace, generated_at: str) -> dict[str, Any]:
+    backend = official.clean(getattr(args, "llm_backend", "")) or "llamacpp"
+    model = official.clean(getattr(args, "llm_model", "")) or "gemma4-e2b-local"
+    timeout = int(getattr(args, "llm_timeout_seconds", 120) or 120)
+    base_url = official.clean(getattr(args, "llm_base_url", ""))
+    blockers: list[str] = []
+    resolved_base_url = base_url
+    try:
+        from rag_text_namu_local_llm_rewrite_v2 import (  # noqa: WPS433
+            local_llm_entry_blockers,
+            resolve_base_url,
+        )
+
+        resolved_base_url = resolve_base_url(backend, base_url)
+        blockers.extend(
+            local_llm_entry_blockers(
+                backend=backend,
+                base_url=resolved_base_url,
+                model=model,
+                check_endpoint=False,
+                timeout_seconds=min(timeout, 5),
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        blockers.append(f"local LLM static preflight unavailable: {type(exc).__name__}: {exc}")
+    if backend == "noop":
+        blockers.append("noop backend is not a reusable local LLM runtime")
+    if blockers:
+        classification = "blocked_by_policy" if any("external/cloud" in item for item in blockers) else (
+            "unavailable_requires_new_diagnostic_runtime_surface"
+        )
+        capability_status = "blocked_or_unavailable"
+    else:
+        classification = "reusable_with_diagnostic_adapter_only"
+        capability_status = "configured_local_endpoint_not_reachability_checked"
+    local_detected = classification in {"reusable_without_behavior_change", "reusable_with_diagnostic_adapter_only"}
+    return {
+        "schema_version": f"{V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID}_local_llm_surface_audit_v1",
+        "run_id": V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_local_llm_surface_audit",
+        "local_llm_usage_allowed": True,
+        "local_llm_usage_scope": "capability_probe_and_runtime_surface_audit_only",
+        "local_llm_detected": local_detected,
+        "local_llm_backend_sanitized": backend,
+        "local_llm_model_id_sanitized": model,
+        "local_llm_endpoint_type_sanitized": "ollama" if backend == "ollama" else "openai_compatible_local_http",
+        "local_llm_gpu_available": False,
+        "local_llm_cpu_available": bool(os.cpu_count()),
+        "local_llm_timeout_config_detected": timeout > 0,
+        "local_llm_health_check_attempted": False,
+        "local_llm_health_check_succeeded": False,
+        "local_llm_health_check_used_silver_rows": False,
+        "local_llm_health_check_used_source_text": False,
+        "local_llm_health_check_used_expected_answers": False,
+        "local_llm_health_check_used_supporting_evidence": False,
+        "local_llm_health_check_used_gold_fields": False,
+        "local_llm_live_silver_generation_attempted": False,
+        "local_llm_live_silver_generation_allowed": False,
+        "local_llm_metric_scoring_attempted": False,
+        "local_llm_metric_scoring_allowed": False,
+        "external_llm_api_allowed": False,
+        "external_llm_api_attempted": False,
+        "local_llm_surface_classification": classification,
+        "local_llm_blocker_reasons": blockers,
+        "local_llm_capability_status": capability_status,
+        "base_url_sanitized": v3_6_5_sanitize_url(resolved_base_url),
+        "timeout_seconds": timeout,
+        "reusable_without_behavior_change": classification == "reusable_without_behavior_change",
+        "reusable_with_diagnostic_adapter_only": classification == "reusable_with_diagnostic_adapter_only",
+        "unavailable_requires_new_diagnostic_runtime_surface": (
+            classification == "unavailable_requires_new_diagnostic_runtime_surface"
+        ),
+        "blocked_by_policy": classification == "blocked_by_policy",
+        "runtime_surface_next_step": "probe_runtime_adapter_without_silver_generation",
+    }
+
+
+def v3_6_5_runtime_surface_audit(
+    *,
+    local_llm_surface_audit: Mapping[str, Any],
+    db_surface_audit: Mapping[str, Any],
+    generated_at: str,
+) -> dict[str, Any]:
+    classification = official.clean(local_llm_surface_audit.get("local_llm_surface_classification"))
+    return {
+        "schema_version": f"{V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID}_runtime_surface_audit_v1",
+        "run_id": V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_runtime_surface_audit",
+        "local_llm_usage_allowed": True,
+        "local_llm_usage_scope": "capability_probe_and_runtime_surface_audit_only",
+        "local_llm_detected": bool(local_llm_surface_audit.get("local_llm_detected")),
+        "local_llm_backend_sanitized": local_llm_surface_audit.get("local_llm_backend_sanitized"),
+        "local_llm_model_id_sanitized": local_llm_surface_audit.get("local_llm_model_id_sanitized"),
+        "local_llm_endpoint_type_sanitized": local_llm_surface_audit.get("local_llm_endpoint_type_sanitized"),
+        "local_llm_gpu_available": bool(local_llm_surface_audit.get("local_llm_gpu_available")),
+        "local_llm_cpu_available": bool(local_llm_surface_audit.get("local_llm_cpu_available")),
+        "local_llm_timeout_config_detected": bool(local_llm_surface_audit.get("local_llm_timeout_config_detected")),
+        "local_llm_health_check_attempted": False,
+        "local_llm_health_check_succeeded": False,
+        "local_llm_health_check_used_silver_rows": False,
+        "local_llm_health_check_used_source_text": False,
+        "local_llm_health_check_used_expected_answers": False,
+        "local_llm_health_check_used_supporting_evidence": False,
+        "local_llm_health_check_used_gold_fields": False,
+        "local_llm_live_silver_generation_attempted": False,
+        "local_llm_live_silver_generation_allowed": False,
+        "local_llm_metric_scoring_attempted": False,
+        "local_llm_metric_scoring_allowed": False,
+        "external_llm_api_allowed": False,
+        "external_llm_api_attempted": False,
+        "local_llm_surface_classification": classification,
+        "local_llm_blocker_reasons": list(local_llm_surface_audit.get("local_llm_blocker_reasons") or []),
+        "reusable_without_behavior_change": classification == "reusable_without_behavior_change",
+        "reusable_with_diagnostic_adapter_only": classification == "reusable_with_diagnostic_adapter_only",
+        "unavailable_requires_new_diagnostic_runtime_surface": (
+            classification == "unavailable_requires_new_diagnostic_runtime_surface"
+        ),
+        "blocked_by_policy": classification == "blocked_by_policy",
+        "runtime_surface_next_step": "build_diagnostic_runtime_surface_probe_before_any_live_generation",
+        "db_usage_allowed": True,
+        "db_usage_scope": "read_only_reference_and_runtime_surface_audit_only",
+        "db_read_only_probe_attempted": bool(db_surface_audit.get("db_read_only_probe_attempted")),
+        "db_surface_detected": bool(db_surface_audit.get("db_surface_detected")),
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+    }
+
+
+def v3_6_5_sanitize_url(value: str) -> str:
+    cleaned = official.clean(value)
+    if not cleaned:
+        return ""
+    try:
+        parts = urlsplit(cleaned)
+    except ValueError:
+        return "UNPARSEABLE_URL_REDACTED"
+    host = parts.hostname or ""
+    if not host:
+        return "UNPARSEABLE_URL_REDACTED"
+    netloc = host
+    if parts.port:
+        netloc = f"{netloc}:{parts.port}"
+    return urlunsplit((parts.scheme, netloc, parts.path.rstrip("/"), "", ""))
+
+
+def v3_6_5_reference_surface_audit(
+    *,
+    candidate_rows: Sequence[Mapping[str, Any]],
+    metric_rows: Sequence[Mapping[str, Any]],
+    generated_at: str,
+) -> dict[str, Any]:
+    candidate_count = len(candidate_rows)
+    expected_answer_count = sum(1 for row in candidate_rows if official.clean(row.get("expected_answer_draft")))
+    locator_draft_count = sum(1 for row in candidate_rows if row.get("supporting_evidence_locator_draft"))
+    excerpt_hash_count = sum(1 for row in candidate_rows if official.clean(row.get("supporting_evidence_excerpt_hash")))
+    source_hash_count = sum(1 for row in candidate_rows if official.clean(row.get("source_text_or_value_hash")))
+    generated_question_count = sum(1 for row in candidate_rows if official.clean(row.get("generated_question_draft")))
+    source_identity_count = sum(1 for row in candidate_rows if official.clean(row.get("source_identity")))
+    locator_fingerprint_count = sum(1 for row in candidate_rows if official.clean(row.get("locator_fingerprint")))
+    candidate_ids = {official.clean(row.get("weak_silver_candidate_id")) for row in candidate_rows}
+    metric_ids = {official.clean(row.get("weak_silver_candidate_id")) for row in metric_rows}
+    sidecar_possible = (
+        candidate_count > 0
+        and expected_answer_count == candidate_count
+        and locator_draft_count == candidate_count
+        and metric_ids.issubset(candidate_ids)
+    )
+    return {
+        "schema_version": f"{V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID}_reference_surface_audit_v1",
+        "run_id": V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_reference_surface_audit",
+        "candidate_row_count": candidate_count,
+        "candidate_expected_answer_draft_available": expected_answer_count == candidate_count == 1000,
+        "candidate_expected_answer_draft_present_count": expected_answer_count,
+        "candidate_supporting_evidence_locator_draft_available": locator_draft_count == candidate_count == 1000,
+        "candidate_supporting_evidence_locator_draft_present_count": locator_draft_count,
+        "candidate_supporting_evidence_excerpt_hash_available": excerpt_hash_count == candidate_count == 1000,
+        "candidate_supporting_evidence_excerpt_hash_present_count": excerpt_hash_count,
+        "candidate_source_text_or_value_hash_available": source_hash_count == candidate_count == 1000,
+        "candidate_source_text_or_value_hash_present_count": source_hash_count,
+        "candidate_generated_question_draft_available": generated_question_count == candidate_count == 1000,
+        "candidate_source_identity_available": source_identity_count == candidate_count == 1000,
+        "candidate_locator_fingerprint_available": locator_fingerprint_count == candidate_count == 1000,
+        "metric_candidate_ids_all_present_in_v3_6_1": metric_ids.issubset(candidate_ids),
+        "reference_sidecar_possible": sidecar_possible,
+        "reference_sidecar_recommended": sidecar_possible,
+        "diagnostic_reference_sidecar_recommended": sidecar_possible,
+        "generated_expected_answers_are_gold": False,
+        "references_used_for_generation": False,
+        "references_used_for_official_metric": False,
+        "promotion_evidence": False,
+        "references_used_for_promotion": False,
+        "recommended_sidecar_scope": ["core_only", "review_only_challenge", "all_diagnostic"],
+        "recommended_sidecar_policy": {
+            "diagnostic_only": True,
+            "not_gold": True,
+            "not_official_qrels": True,
+            "not_official_denominator": True,
+            "promotion_evidence": False,
+        },
+    }
+
+
+def v3_6_5_db_surface_audit(
+    *,
+    candidate_rows: Sequence[Mapping[str, Any]],
+    reference_surface_audit: Mapping[str, Any],
+    generated_at: str,
+) -> dict[str, Any]:
+    search_manifest = DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl"
+    build_json = DEFAULT_RAG_INDEX_DIR / "build.json"
+    ingest_manifest = DEFAULT_RAG_INDEX_DIR / "ingest_manifest.json"
+    faiss_index = DEFAULT_RAG_INDEX_DIR / "faiss.index"
+    rag_chunks = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined" / "rag_chunks.jsonl"
+    migration_paths = sorted((REPO_ROOT / "core-api").glob("**/db/migration/*.sql"))
+    search_unit_rows = read_jsonl(search_manifest) if search_manifest.exists() else []
+    search_unit_ids = {official.clean(row.get("search_unit_id")) for row in search_unit_rows}
+    candidate_search_unit_ids = {
+        official.clean(row.get("search_unit_id"))
+        for row in candidate_rows
+        if official.clean(row.get("search_unit_id"))
+    }
+    overlap_count = len(search_unit_ids.intersection(candidate_search_unit_ids))
+    db_surface_detected = any(path.exists() for path in (search_manifest, build_json, ingest_manifest, faiss_index, rag_chunks))
+    source_identity_available = any(official.clean(row.get("source_identity")) for row in search_unit_rows) or any(
+        official.clean(row.get("source_identity")) for row in candidate_rows
+    )
+    locator_available = any(official.clean(row.get("locator_fingerprint")) for row in candidate_rows)
+    candidate_reference_mapping_available = bool(
+        reference_surface_audit.get("candidate_expected_answer_draft_available")
+        and reference_surface_audit.get("candidate_supporting_evidence_locator_draft_available")
+    )
+    live_probe_without_adapter = False
+    classification = (
+        "repo_artifact_read_only_reference_surface_available_live_retrieval_adapter_needed"
+        if db_surface_detected
+        else "db_reference_surface_unavailable"
+    )
+    return {
+        "schema_version": f"{V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID}_db_surface_audit_v1",
+        "run_id": V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_db_surface_audit",
+        "db_usage_allowed": True,
+        "db_usage_scope": "read_only_reference_and_runtime_surface_audit_only",
+        "db_read_only_probe_attempted": True,
+        "db_surface_detected": db_surface_detected,
+        "db_kind_sanitized": "repo_local_artifacts_and_nonproduction_index_metadata",
+        "db_path_or_dsn_sanitized": [
+            official.repo_relative(DEFAULT_RAG_INDEX_DIR),
+            official.repo_relative(rag_chunks),
+        ],
+        "db_schema_inspection_attempted": True,
+        "db_row_count_inspection_attempted": True,
+        "db_source_identity_mapping_available": source_identity_available,
+        "db_locator_fingerprint_mapping_available": locator_available,
+        "db_searchunit_metadata_available": bool(search_unit_rows),
+        "db_rag_chunks_metadata_available": rag_chunks.exists(),
+        "db_candidate_reference_mapping_available": candidate_reference_mapping_available,
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_results_as_gold_allowed": False,
+        "db_results_as_official_qrels_allowed": False,
+        "db_results_as_generation_source_allowed": False,
+        "credentials_or_secret_leak_detected": False,
+        "candidate_expected_answer_draft_available": bool(
+            reference_surface_audit.get("candidate_expected_answer_draft_available")
+        ),
+        "candidate_supporting_evidence_locator_draft_available": bool(
+            reference_surface_audit.get("candidate_supporting_evidence_locator_draft_available")
+        ),
+        "diagnostic_reference_sidecar_recommended": bool(
+            reference_surface_audit.get("reference_sidecar_recommended")
+        ),
+        "db_surface_classification": classification,
+        "db_surface_next_step": "create_read_only_diagnostic_reference_sidecar_and_retrieval_adapter_probe_plan",
+        "official_denominator_search_unit_manifest_row_count": len(search_unit_rows),
+        "candidate_search_unit_id_count": len(candidate_search_unit_ids),
+        "candidate_search_unit_overlap_with_current_index_count": overlap_count,
+        "live_retrieval_probe_possible_without_adapter": live_probe_without_adapter,
+        "live_retrieval_probe_requires_diagnostic_adapter": True,
+        "migration_file_count_detected": len(migration_paths),
+    }
+
+
+def v3_6_5_policy_audit(
+    *,
+    generated_at: str,
+    fail_closed_reasons: Sequence[str],
+    input_sha_before: Mapping[str, str],
+    input_sha_after: Mapping[str, str],
+    protected_v3_6_3_sha_before: Mapping[str, str],
+    protected_v3_6_3_sha_after: Mapping[str, str],
+    protected_input_sha256_matches_v3_6_4_summary: bool,
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID}_policy_audit_v1",
+        "run_id": V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_rough_failure_bucket_triage_policy_audit",
+        "diagnostic_only": True,
+        "rough_failure_bucket_triage_only": True,
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "official_denominator_mutation": False,
+        **V3_6_5_REQUIRED_POLICY,
+        "local_llm_live_silver_generation_attempted": False,
+        "local_llm_metric_scoring_attempted": False,
+        "external_llm_api_attempted": False,
+        "db_read_only_probe_attempted": True,
+        "db_write_attempted": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_attempted": False,
+        "production_db_used": False,
+        "official_proximity_rows_enter_core": False,
+        "official_proximity_rows_remain_review_only": True,
+        "split_holdout_not_source_isolated": True,
+        "fail_closed_reasons": list(fail_closed_reasons),
+        "protected_input_sha256_before": dict(input_sha_before),
+        "protected_input_sha256_after": dict(input_sha_after),
+        "protected_input_sha256_unchanged": dict(input_sha_before) == dict(input_sha_after),
+        "protected_v3_6_3_input_sha256_before": dict(protected_v3_6_3_sha_before),
+        "protected_v3_6_3_input_sha256_after": dict(protected_v3_6_3_sha_after),
+        "protected_input_sha256_matches_v3_6_4_summary": protected_input_sha256_matches_v3_6_4_summary,
+    }
+
+
+def v3_6_5_next_phase_recommendation(
+    *,
+    generated_at: str,
+    fail_closed_reasons: Sequence[str],
+    reference_surface_audit: Mapping[str, Any],
+    db_surface_audit: Mapping[str, Any],
+    local_llm_surface_audit: Mapping[str, Any],
+    runtime_surface_audit: Mapping[str, Any],
+) -> dict[str, Any]:
+    reference_sidecar_allowed = bool(reference_surface_audit.get("reference_sidecar_recommended"))
+    local_probe_allowed = bool(local_llm_surface_audit.get("local_llm_detected"))
+    live_retrieval_allowed = bool(db_surface_audit.get("live_retrieval_probe_possible_without_adapter"))
+    return {
+        "schema_version": (
+            f"{V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID}_next_phase_recommendation_v1"
+        ),
+        "run_id": V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_rough_failure_bucket_triage_next_phase_recommendation",
+        "recommended_next_phase": V3_6_5_RECOMMENDED_NEXT_PHASE,
+        "recommended_next_phase_scope": [
+            "diagnostic_reference_sidecar_from_v3_6_1_non_gold_fields",
+            "runtime_surface_probe_without_silver_generation",
+            "retrieval_adapter_feasibility_check_without_index_rebuild",
+        ],
+        "targeted_diagnostic_repair_planning_now": False,
+        "targeted_diagnostic_repair_planning_after_runtime_reference_probe": True,
+        "local_llm_probe_allowed_next_phase": local_probe_allowed,
+        "local_llm_live_core_generation_allowed_next_phase": False,
+        "db_read_only_reference_sidecar_allowed_next_phase": reference_sidecar_allowed,
+        "live_retrieval_probe_allowed_next_phase": live_retrieval_allowed,
+        "official_metric_denominator_usage_allowed": False,
+        "promotion_evidence": False,
+        "readme_representative_product_performance_claim": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "user_intervention_required": False,
+        "runtime_surface_classification": runtime_surface_audit.get("local_llm_surface_classification"),
+        "db_surface_classification": db_surface_audit.get("db_surface_classification"),
+        "diagnostic_reference_sidecar_recommended": reference_sidecar_allowed,
+        "readme_representative_product_performance_claim": False,
+        "fail_closed_reasons": list(fail_closed_reasons),
+        "rationale": (
+            "v3_6_1 contains non-gold expected-answer and supporting-evidence draft fields, while v3_6_5 found "
+            "inspectable local runtime and read-only reference surfaces. v3_6_6 should first build a diagnostic-only "
+            "reference sidecar and runtime surface probe. Prompt/retrieval/scorer/renderer repair remains blocked "
+            "until those surfaces are connected and measured."
+        ),
+    }
+
+
+def run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    source_paths = v3_6_6_source_paths()
+    input_sha_before = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_before = v3_6_5_v3_6_3_manifest_sha256()
+    source_json, source_jsonl, source_load_errors = v3_6_5_load_source_artifacts(source_paths)
+
+    v3_6_5_summary = source_json.get("v3_6_5_summary_json", {})
+    v3_6_5_policy = source_json.get("v3_6_5_policy_audit_json", {})
+    v3_6_5_local_llm = source_json.get("v3_6_5_local_llm_surface_audit_json", {})
+    v3_6_5_db = source_json.get("v3_6_5_db_surface_audit_json", {})
+    v3_6_5_next_phase = source_json.get("v3_6_5_next_phase_recommendation_json", {})
+    v3_6_4_summary = source_json.get("v3_6_4_summary_json", {})
+    v3_6_3_summary = source_json.get("v3_6_3_manifest_summary_json", {})
+    v3_6_2_split_audit = source_json.get("v3_6_2_split_independence_audit_json", {})
+    candidate_rows = source_jsonl.get("v3_6_1_weak_silver_candidates_jsonl", [])
+    manifest_all_rows = source_jsonl.get("v3_6_3_manifest_all_jsonl", [])
+    manifest_core_rows = source_jsonl.get("v3_6_3_manifest_core_jsonl", [])
+    manifest_review_rows = source_jsonl.get("v3_6_3_manifest_review_only_jsonl", [])
+    manifest_quarantine_rows = source_jsonl.get("v3_6_3_manifest_quarantine_jsonl", [])
+    v3_6_4_rows = source_jsonl.get("v3_6_4_per_row_jsonl", [])
+    v3_6_5_rows = source_jsonl.get("v3_6_5_per_row_jsonl", [])
+
+    fail_closed_reasons = v3_6_6_source_fail_closed_reasons(
+        source_load_errors=source_load_errors,
+        v3_6_5_summary=v3_6_5_summary,
+        v3_6_5_policy=v3_6_5_policy,
+        v3_6_5_local_llm=v3_6_5_local_llm,
+        v3_6_5_db=v3_6_5_db,
+        v3_6_5_next_phase=v3_6_5_next_phase,
+        v3_6_4_summary=v3_6_4_summary,
+        v3_6_3_summary=v3_6_3_summary,
+        candidate_rows=candidate_rows,
+        manifest_all_rows=manifest_all_rows,
+        manifest_core_rows=manifest_core_rows,
+        manifest_review_rows=manifest_review_rows,
+        manifest_quarantine_rows=manifest_quarantine_rows,
+        v3_6_4_rows=v3_6_4_rows,
+        v3_6_5_rows=v3_6_5_rows,
+    )
+
+    sidecar_rows, sidecar_validation = v3_6_6_build_reference_sidecar(
+        candidate_rows=candidate_rows,
+        manifest_all_rows=manifest_all_rows,
+        manifest_core_rows=manifest_core_rows,
+        manifest_review_rows=manifest_review_rows,
+        manifest_quarantine_rows=manifest_quarantine_rows,
+        v3_6_4_rows=v3_6_4_rows,
+        v3_6_5_rows=v3_6_5_rows,
+        generated_at=generated_at,
+    )
+    fail_closed_reasons.extend(sidecar_validation["fail_closed_reasons"])
+
+    db_retrieval_surface_audit = v3_6_6_db_retrieval_surface_audit(
+        candidate_rows=candidate_rows,
+        sidecar_rows=sidecar_rows,
+        v3_6_5_db=v3_6_5_db,
+        generated_at=generated_at,
+    )
+    core_smoke_sample_rows, runtime_probe_summary = v3_6_6_runtime_probe(
+        args=args,
+        sidecar_rows=sidecar_rows,
+        v3_6_5_local_llm=v3_6_5_local_llm,
+        generated_at=generated_at,
+    )
+
+    input_sha_after = v3_6_6_input_sha256(source_paths)
+    protected_v3_6_3_sha_after = v3_6_5_v3_6_3_manifest_sha256()
+    protected_input_sha256_unchanged = input_sha_before == input_sha_after
+    protected_v3_6_3_input_sha256_unchanged = protected_v3_6_3_sha_before == protected_v3_6_3_sha_after
+    if not protected_input_sha256_unchanged:
+        fail_closed_reasons.append("v3_6_6_protected_input_sha256_changed_during_probe")
+    if not protected_v3_6_3_input_sha256_unchanged:
+        fail_closed_reasons.append("v3_6_6_protected_v3_6_3_sha_changed_during_probe")
+
+    fail_closed_reasons = sorted(set(fail_closed_reasons))
+    sidecar_complete = bool(sidecar_validation["diagnostic_reference_sidecar_complete"]) and not any(
+        reason.startswith("v3_6_6_sidecar_") or reason.startswith("v3_6_6_reference_sidecar_")
+        for reason in fail_closed_reasons
+    )
+    next_phase_recommendation = v3_6_6_next_phase_recommendation(
+        generated_at=generated_at,
+        sidecar_complete=sidecar_complete,
+        runtime_probe_summary=runtime_probe_summary,
+        db_retrieval_surface_audit=db_retrieval_surface_audit,
+        fail_closed_reasons=fail_closed_reasons,
+    )
+    policy_audit = v3_6_6_policy_audit(
+        generated_at=generated_at,
+        fail_closed_reasons=fail_closed_reasons,
+        input_sha_before=input_sha_before,
+        input_sha_after=input_sha_after,
+        protected_v3_6_3_sha_before=protected_v3_6_3_sha_before,
+        protected_v3_6_3_sha_after=protected_v3_6_3_sha_after,
+        runtime_probe_summary=runtime_probe_summary,
+        db_retrieval_surface_audit=db_retrieval_surface_audit,
+    )
+
+    sidecar_counts = v3_6_6_sidecar_counts(sidecar_rows)
+    expected_answer_availability = v3_6_6_field_availability(sidecar_rows, "expected_answer_draft")
+    evidence_locator_availability = v3_6_6_field_availability(sidecar_rows, "supporting_evidence_locator_draft")
+    local_llm_classification = official.clean(v3_6_5_local_llm.get("local_llm_surface_classification"))
+    db_classification = official.clean(db_retrieval_surface_audit.get("db_retrieval_surface_classification"))
+    status = (
+        "DIAGNOSTIC_REFERENCE_SIDECAR_RUNTIME_SURFACE_PROBE_FAIL_CLOSED"
+        if fail_closed_reasons
+        else "DIAGNOSTIC_REFERENCE_SIDECAR_RUNTIME_SURFACE_PROBE_COMPLETE"
+    )
+    summary: dict[str, Any] = {
+        "schema_version": (
+            f"{V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID}_summary_v1"
+        ),
+        "run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_reference_sidecar_and_runtime_surface_probe",
+        "event_type": "diagnostic_reference_sidecar_and_runtime_surface_probe_v3_6_6",
+        "status": status,
+        "run_class": "diagnostic_only_reference_sidecar_and_runtime_surface_probe",
+        "source_triage_run_id": V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+        "source_metric_run_id": V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+        "source_manifest_run_id": V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+        "source_candidate_generation_run_id": V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "local_llm_usage_allowed": True,
+        "local_llm_usage_scope": "diagnostic_only_core_smoke_runtime_probe_only",
+        "local_llm_core_smoke_generation_allowed": local_llm_classification in V3_6_6_ALLOWED_LLM_CLASSIFICATIONS,
+        "local_llm_live_silver_generation_allowed": False,
+        "local_llm_metric_scoring_allowed": False,
+        "external_llm_api_allowed": False,
+        "local_llm_live_silver_generation_attempted": False,
+        "local_llm_metric_scoring_attempted": False,
+        "external_llm_api_attempted": False,
+        "db_usage_allowed": True,
+        "db_usage_scope": "read_only_reference_and_runtime_surface_probe_only",
+        "db_read_only_probe_attempted": bool(db_retrieval_surface_audit.get("db_read_only_probe_attempted")),
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_results_as_gold_allowed": False,
+        "db_results_as_official_qrels_allowed": False,
+        "db_results_as_generation_source_allowed": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "diagnostic_reference_sidecar_complete": sidecar_complete,
+        "diagnostic_reference_sidecar_row_count": len(sidecar_rows),
+        "sidecar_row_counts": sidecar_counts,
+        "manifest_row_count": sidecar_counts["all_diagnostic"],
+        "diagnostic_row_count": sidecar_counts["all_diagnostic"],
+        "core_manifest_row_count": sidecar_counts["core_only"],
+        "review_only_manifest_row_count": sidecar_counts["review_only_challenge"],
+        "quarantine_manifest_row_count": sidecar_counts["quarantine"],
+        "source_family_counts": v3_6_6_count_field(sidecar_rows, "source_family"),
+        "split_role_counts": v3_6_6_count_field(sidecar_rows, "split_role"),
+        "query_quality_profile_counts": v3_6_6_count_field(sidecar_rows, "query_quality_profile"),
+        "expected_answer_draft_availability": expected_answer_availability,
+        "expected_answer_draft_available": expected_answer_availability["all_present"],
+        "supporting_evidence_locator_draft_availability": evidence_locator_availability,
+        "supporting_evidence_locator_draft_available": evidence_locator_availability["all_present"],
+        "core_smoke_sample_target_row_count": runtime_probe_summary["core_smoke_sample_target_row_count"],
+        "core_smoke_generation_attempted_row_count": runtime_probe_summary[
+            "core_smoke_generation_attempted_row_count"
+        ],
+        "core_smoke_strict_json_answer_returned_row_count": runtime_probe_summary[
+            "core_smoke_strict_json_answer_returned_row_count"
+        ],
+        "core_smoke_generation_succeeded_row_count": runtime_probe_summary[
+            "core_smoke_generation_succeeded_row_count"
+        ],
+        "runtime_generation_coverage_rate": (
+            runtime_probe_summary["core_smoke_generation_succeeded_row_count"]
+            / runtime_probe_summary["core_smoke_sample_target_row_count"]
+            if runtime_probe_summary["core_smoke_sample_target_row_count"]
+            else 0.0
+        ),
+        "local_llm_surface_classification": local_llm_classification,
+        "local_llm_runtime_classification": runtime_probe_summary["local_llm_runtime_classification"],
+        "db_retrieval_surface_classification": db_classification,
+        "db_surface_classification": db_classification,
+        "live_retrieval_probe_feasible": bool(db_retrieval_surface_audit.get("live_retrieval_probe_feasible")),
+        "live_retrieval_probe_feasible_without_rebuild": bool(
+            db_retrieval_surface_audit.get("live_retrieval_probe_feasible_without_rebuild")
+        ),
+        "v3_6_7_core_only_live_diagnostic_metric_allowed": next_phase_recommendation[
+            "v3_6_7_core_only_live_diagnostic_metric_allowed"
+        ],
+        "review_only_remains_stress_only": True,
+        "official_proximity_review_row_count": sidecar_validation["official_proximity_review_row_count"],
+        "official_proximity_core_row_count": sidecar_validation["official_proximity_core_row_count"],
+        "official_proximity_rows_remain_out_of_core": sidecar_validation[
+            "official_proximity_rows_remain_out_of_core"
+        ],
+        "split_holdout_independence_warning_carried_forward": True,
+        "split_holdout_not_source_isolated": True,
+        "holdout_independence_warning": (
+            "v3_6_2/v3_6_3 recorded source identity crossing; split holdout is diagnostic-only, not source-isolated."
+        ),
+        "source_identity_groups_crossing_split_roles_count": int(
+            v3_6_4_summary.get("source_identity_groups_crossing_split_roles_count")
+            or v3_6_2_split_audit.get("source_identity_groups_crossing_split_roles_count")
+            or 0
+        ),
+        "protected_input_sha256_before": input_sha_before,
+        "protected_input_sha256_after": input_sha_after,
+        "protected_input_sha256_unchanged": protected_input_sha256_unchanged,
+        "protected_v3_6_3_input_sha256_before": protected_v3_6_3_sha_before,
+        "protected_v3_6_3_input_sha256_after": protected_v3_6_3_sha_after,
+        "protected_v3_6_3_input_sha256_unchanged": protected_v3_6_3_input_sha256_unchanged,
+        "protected_input_sha256_matches_v3_6_5_summary": v3_6_6_v3_6_5_protected_sha_matches(
+            v3_6_5_summary
+        ),
+        "protected_sha_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "guardrail_status": "PASS" if not fail_closed_reasons else "FAIL_CLOSED",
+        "fail_closed_reasons": fail_closed_reasons,
+        "runtime_fail_closed_reasons": runtime_probe_summary.get("runtime_fail_closed_reasons", []),
+        "recommended_next_phase": next_phase_recommendation["recommended_next_phase"],
+        "reference_sidecar_rows": sidecar_rows,
+        "core_smoke_sample_rows": core_smoke_sample_rows,
+        "runtime_probe_summary": runtime_probe_summary,
+        "db_retrieval_surface_audit": db_retrieval_surface_audit,
+        "policy_audit": policy_audit,
+        "next_phase_recommendation": next_phase_recommendation,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_6_6_SUMMARY_JSON),
+            "reference_sidecar_jsonl": official.repo_relative(DEFAULT_V3_6_6_REFERENCE_SIDECAR_JSONL),
+            "core_smoke_sample_jsonl": official.repo_relative(DEFAULT_V3_6_6_CORE_SMOKE_SAMPLE_JSONL),
+            "runtime_probe_summary_json": official.repo_relative(DEFAULT_V3_6_6_RUNTIME_PROBE_SUMMARY_JSON),
+            "db_retrieval_surface_audit_json": official.repo_relative(
+                DEFAULT_V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT_JSON
+            ),
+            "policy_audit_json": official.repo_relative(DEFAULT_V3_6_6_POLICY_AUDIT_JSON),
+            "next_phase_recommendation_json": official.repo_relative(
+                DEFAULT_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON
+            ),
+            "source_triage_summary_json": official.repo_relative(DEFAULT_V3_6_5_SUMMARY_JSON),
+            "source_candidate_rows_jsonl": official.repo_relative(DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL),
+            "source_manifest_all_jsonl": official.repo_relative(DEFAULT_V3_6_3_MANIFEST_ALL_JSONL),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+    return summary
+
+
+def v3_6_6_source_paths() -> dict[str, Path]:
+    paths = dict(v3_6_5_source_paths())
+    paths.update(
+        {
+            "v3_6_5_summary_json": DEFAULT_V3_6_5_SUMMARY_JSON,
+            "v3_6_5_per_row_jsonl": DEFAULT_V3_6_5_PER_ROW_JSONL,
+            "v3_6_5_blocker_matrix_json": DEFAULT_V3_6_5_BLOCKER_MATRIX_JSON,
+            "v3_6_5_runtime_surface_audit_json": DEFAULT_V3_6_5_RUNTIME_SURFACE_AUDIT_JSON,
+            "v3_6_5_reference_surface_audit_json": DEFAULT_V3_6_5_REFERENCE_SURFACE_AUDIT_JSON,
+            "v3_6_5_db_surface_audit_json": DEFAULT_V3_6_5_DB_SURFACE_AUDIT_JSON,
+            "v3_6_5_local_llm_surface_audit_json": DEFAULT_V3_6_5_LOCAL_LLM_SURFACE_AUDIT_JSON,
+            "v3_6_5_policy_audit_json": DEFAULT_V3_6_5_POLICY_AUDIT_JSON,
+            "v3_6_5_next_phase_recommendation_json": DEFAULT_V3_6_5_NEXT_PHASE_RECOMMENDATION_JSON,
+        }
+    )
+    return paths
+
+
+def v3_6_6_input_sha256(source_paths: Mapping[str, Path]) -> dict[str, str]:
+    return {
+        f"{name}_sha256": sha256_file(path) if path.exists() else "MISSING"
+        for name, path in source_paths.items()
+    }
+
+
+def v3_6_6_v3_6_5_protected_sha_matches(v3_6_5_summary: Mapping[str, Any]) -> bool:
+    current = v3_6_5_input_sha256(v3_6_5_source_paths())
+    before = as_mapping(v3_6_5_summary.get("protected_input_sha256_before"))
+    after = as_mapping(v3_6_5_summary.get("protected_input_sha256_after"))
+    return all(before.get(key) == value and after.get(key) == value for key, value in current.items())
+
+
+def v3_6_6_source_fail_closed_reasons(
+    *,
+    source_load_errors: Sequence[str],
+    v3_6_5_summary: Mapping[str, Any],
+    v3_6_5_policy: Mapping[str, Any],
+    v3_6_5_local_llm: Mapping[str, Any],
+    v3_6_5_db: Mapping[str, Any],
+    v3_6_5_next_phase: Mapping[str, Any],
+    v3_6_4_summary: Mapping[str, Any],
+    v3_6_3_summary: Mapping[str, Any],
+    candidate_rows: Sequence[Mapping[str, Any]],
+    manifest_all_rows: Sequence[Mapping[str, Any]],
+    manifest_core_rows: Sequence[Mapping[str, Any]],
+    manifest_review_rows: Sequence[Mapping[str, Any]],
+    manifest_quarantine_rows: Sequence[Mapping[str, Any]],
+    v3_6_4_rows: Sequence[Mapping[str, Any]],
+    v3_6_5_rows: Sequence[Mapping[str, Any]],
+) -> list[str]:
+    reasons = list(source_load_errors)
+    if v3_6_5_summary.get("run_id") != V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID:
+        reasons.append("v3_6_5_summary_run_id_mismatch")
+    if v3_6_5_summary.get("recommended_next_phase") != V3_6_5_RECOMMENDED_NEXT_PHASE:
+        reasons.append("v3_6_5_summary_did_not_recommend_v3_6_6")
+    if v3_6_5_next_phase.get("recommended_next_phase") != V3_6_5_RECOMMENDED_NEXT_PHASE:
+        reasons.append("v3_6_5_next_phase_did_not_recommend_v3_6_6")
+    if not bool(v3_6_5_summary.get("diagnostic_reference_sidecar_recommended")):
+        reasons.append("v3_6_5_summary_reference_sidecar_not_recommended")
+    if not bool(v3_6_5_next_phase.get("diagnostic_reference_sidecar_recommended")):
+        reasons.append("v3_6_5_next_phase_reference_sidecar_not_recommended")
+    for field in V3_6_6_POLICY_FALSE_FIELDS:
+        if bool(v3_6_5_policy.get(field)):
+            reasons.append(f"v3_6_5_policy_guardrail_true:{field}")
+    for field in V3_6_6_REQUIRED_V3_6_5_LOCAL_LLM_FIELDS:
+        if field not in v3_6_5_local_llm:
+            reasons.append(f"v3_6_5_local_llm_policy_field_missing:{field}")
+    for field in (
+        "local_llm_live_silver_generation_attempted",
+        "local_llm_metric_scoring_attempted",
+        "external_llm_api_attempted",
+    ):
+        if bool(v3_6_5_local_llm.get(field)):
+            reasons.append(f"v3_6_5_local_llm_guardrail_true:{field}")
+    for field in (
+        "local_llm_live_silver_generation_allowed",
+        "local_llm_metric_scoring_allowed",
+        "external_llm_api_allowed",
+    ):
+        if bool(v3_6_5_local_llm.get(field)):
+            reasons.append(f"v3_6_5_local_llm_policy_allowed_true:{field}")
+    for field in V3_6_6_REQUIRED_V3_6_5_DB_FIELDS:
+        if field not in v3_6_5_db:
+            reasons.append(f"v3_6_5_db_policy_field_missing:{field}")
+    for field in (
+        "db_write_attempted",
+        "db_migration_attempted",
+        "db_index_rebuild_attempted",
+        "production_db_used",
+    ):
+        if bool(v3_6_5_db.get(field)):
+            reasons.append(f"v3_6_5_db_guardrail_true:{field}")
+    for field in (
+        "db_write_allowed",
+        "db_migration_allowed",
+        "db_index_rebuild_allowed",
+        "production_db_usage_allowed",
+        "db_results_as_gold_allowed",
+        "db_results_as_official_qrels_allowed",
+        "db_results_as_generation_source_allowed",
+    ):
+        if bool(v3_6_5_db.get(field)):
+            reasons.append(f"v3_6_5_db_policy_allowed_true:{field}")
+    if len(candidate_rows) != 1000:
+        reasons.append("v3_6_1_candidate_row_count_mismatch")
+    if len(manifest_all_rows) != 1000:
+        reasons.append("v3_6_3_manifest_all_count_mismatch")
+    if len(manifest_core_rows) != 665:
+        reasons.append("v3_6_3_manifest_core_count_mismatch")
+    if len(manifest_review_rows) != 335:
+        reasons.append("v3_6_3_manifest_review_only_count_mismatch")
+    if len(manifest_quarantine_rows) != 0:
+        reasons.append("v3_6_3_manifest_quarantine_count_mismatch")
+    if len(v3_6_4_rows) != 1000:
+        reasons.append("v3_6_4_per_row_count_mismatch")
+    if len(v3_6_5_rows) != 1000:
+        reasons.append("v3_6_5_per_row_count_mismatch")
+    if int(v3_6_4_summary.get("core_manifest_row_count") or 0) != 665:
+        reasons.append("v3_6_4_core_count_unexpected")
+    if int(v3_6_3_summary.get("core_manifest_row_count") or 0) != 665:
+        reasons.append("v3_6_3_core_count_unexpected")
+    if not v3_6_6_v3_6_5_protected_sha_matches(v3_6_5_summary):
+        reasons.append("v3_6_5_protected_input_sha256_mismatch")
+    if not bool(v3_6_5_summary.get("protected_input_sha256_unchanged")):
+        reasons.append("v3_6_5_protected_input_sha256_not_unchanged")
+    if not bool(v3_6_5_summary.get("protected_v3_6_3_input_sha256_unchanged")):
+        reasons.append("v3_6_5_protected_v3_6_3_sha_not_unchanged")
+    if not bool(v3_6_5_summary.get("protected_input_sha256_matches_v3_6_4_summary")):
+        reasons.append("v3_6_5_protected_input_sha256_not_matching_v3_6_4")
+    return sorted(set(reasons))
+
+
+def v3_6_6_build_reference_sidecar(
+    *,
+    candidate_rows: Sequence[Mapping[str, Any]],
+    manifest_all_rows: Sequence[Mapping[str, Any]],
+    manifest_core_rows: Sequence[Mapping[str, Any]],
+    manifest_review_rows: Sequence[Mapping[str, Any]],
+    manifest_quarantine_rows: Sequence[Mapping[str, Any]],
+    v3_6_4_rows: Sequence[Mapping[str, Any]],
+    v3_6_5_rows: Sequence[Mapping[str, Any]],
+    generated_at: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    reasons: list[str] = []
+    candidate_by_id, candidate_duplicates = v3_6_6_unique_by_candidate_id(candidate_rows)
+    manifest_by_id, manifest_duplicates = v3_6_6_unique_by_candidate_id(manifest_all_rows)
+    v3_6_4_by_id, v3_6_4_duplicates = v3_6_6_unique_by_candidate_id(v3_6_4_rows)
+    v3_6_5_by_id, v3_6_5_duplicates = v3_6_6_unique_by_candidate_id(v3_6_5_rows)
+    if candidate_duplicates:
+        reasons.append("v3_6_6_sidecar_duplicate_v3_6_1_candidate_ids")
+    if manifest_duplicates:
+        reasons.append("v3_6_6_sidecar_duplicate_v3_6_3_manifest_ids")
+    if v3_6_4_duplicates:
+        reasons.append("v3_6_6_sidecar_duplicate_v3_6_4_metric_ids")
+    if v3_6_5_duplicates:
+        reasons.append("v3_6_6_sidecar_duplicate_v3_6_5_triage_ids")
+    for label, rows in (
+        ("v3_6_1_candidate", candidate_by_id),
+        ("v3_6_3_manifest", manifest_by_id),
+        ("v3_6_4_metric", v3_6_4_by_id),
+        ("v3_6_5_triage", v3_6_5_by_id),
+    ):
+        if len(rows) != 1000:
+            reasons.append(f"v3_6_6_sidecar_{label}_unique_id_count_mismatch")
+
+    manifest_ids = set(manifest_by_id)
+    for label, ids in (
+        ("v3_6_1_candidate", set(candidate_by_id)),
+        ("v3_6_4_metric", set(v3_6_4_by_id)),
+        ("v3_6_5_triage", set(v3_6_5_by_id)),
+    ):
+        if ids != manifest_ids:
+            reasons.append(f"v3_6_6_sidecar_id_set_mismatch:{label}")
+
+    partition_by_id: dict[str, str] = {}
+    for row in manifest_core_rows:
+        candidate_id = official.clean(row.get("weak_silver_candidate_id"))
+        if candidate_id:
+            partition_by_id[candidate_id] = "core_only"
+    for row in manifest_review_rows:
+        candidate_id = official.clean(row.get("weak_silver_candidate_id"))
+        if candidate_id:
+            partition_by_id[candidate_id] = "review_only_challenge"
+    for row in manifest_quarantine_rows:
+        candidate_id = official.clean(row.get("weak_silver_candidate_id"))
+        if candidate_id:
+            partition_by_id[candidate_id] = "quarantine"
+
+    sidecar_rows: list[dict[str, Any]] = []
+    for manifest_row in manifest_all_rows:
+        candidate_id = official.clean(manifest_row.get("weak_silver_candidate_id"))
+        candidate = candidate_by_id.get(candidate_id)
+        if not candidate:
+            continue
+        reporting_partition = partition_by_id.get(candidate_id) or v3_6_6_reporting_partition(manifest_row)
+        row_reasons = v3_6_6_sidecar_row_reasons(candidate=candidate, manifest=manifest_row)
+        reasons.extend(row_reasons)
+        sidecar_rows.append(
+            {
+                "schema_version": (
+                    f"{V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID}_"
+                    "reference_sidecar_row_v1"
+                ),
+                "run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+                "generated_at": generated_at,
+                "artifact_kind": "diagnostic_reference_sidecar_row",
+                "weak_silver_candidate_id": candidate_id,
+                "source_candidate_id": official.clean(candidate.get("source_candidate_id")),
+                "generated_question_draft": official.clean(candidate.get("generated_question_draft")),
+                "expected_answer_draft": official.clean(candidate.get("expected_answer_draft")),
+                "supporting_evidence_locator_draft": candidate.get("supporting_evidence_locator_draft"),
+                "supporting_evidence_excerpt_hash": official.clean(candidate.get("supporting_evidence_excerpt_hash")),
+                "source_text_or_value_hash": official.clean(candidate.get("source_text_or_value_hash")),
+                "source_identity": official.clean(candidate.get("source_identity")),
+                "locator_fingerprint": official.clean(candidate.get("locator_fingerprint")),
+                "source_family": official.clean(candidate.get("source_family")),
+                "split_role": official.clean(candidate.get("split_role")),
+                "query_quality_profile": official.clean(candidate.get("query_quality_profile")),
+                "source_quality_status": official.clean(candidate.get("source_quality_status")),
+                "weak_answerability_status": official.clean(candidate.get("weak_answerability_status")),
+                "official_proximity_review": bool(candidate.get("official_proximity_review")),
+                "reporting_partition": reporting_partition,
+                "reporting_partitions": ["all_diagnostic", reporting_partition],
+                "generated_question_hash": official.clean(candidate.get("generated_question_hash")),
+                "manifest_partition": official.clean(manifest_row.get("manifest_partition")),
+                "generated_expected_answers_are_gold": False,
+                "not_gold": True,
+                "not_official_qrels": True,
+                "not_official_denominator": True,
+                "promotion_evidence": False,
+                "references_used_for_generation": False,
+                "references_used_for_official_metric": False,
+            }
+        )
+
+    partition_counts = v3_6_6_sidecar_counts(sidecar_rows)
+    official_proximity_core = sum(
+        1 for row in sidecar_rows if row.get("official_proximity_review") and row.get("reporting_partition") == "core_only"
+    )
+    if partition_counts["core_only"] != 665:
+        reasons.append("v3_6_6_sidecar_core_count_mismatch")
+    if partition_counts["review_only_challenge"] != 335:
+        reasons.append("v3_6_6_sidecar_review_only_count_mismatch")
+    if partition_counts["all_diagnostic"] != 1000:
+        reasons.append("v3_6_6_sidecar_all_diagnostic_count_mismatch")
+    if partition_counts["quarantine"] != 0:
+        reasons.append("v3_6_6_sidecar_quarantine_count_mismatch")
+    if official_proximity_core:
+        reasons.append("v3_6_6_sidecar_official_proximity_rows_entered_core")
+    if any(row.get("generated_expected_answers_are_gold") is not False for row in sidecar_rows):
+        reasons.append("v3_6_6_sidecar_generated_expected_answers_marked_gold")
+
+    validation = {
+        "diagnostic_reference_sidecar_complete": not reasons,
+        "sidecar_row_counts": partition_counts,
+        "official_proximity_review_row_count": sum(1 for row in sidecar_rows if row.get("official_proximity_review")),
+        "official_proximity_core_row_count": official_proximity_core,
+        "official_proximity_rows_remain_out_of_core": official_proximity_core == 0,
+        "candidate_id_join_count": len(set(candidate_by_id).intersection(manifest_by_id)),
+        "source_metric_id_join_count": len(set(v3_6_4_by_id).intersection(manifest_by_id)),
+        "source_triage_id_join_count": len(set(v3_6_5_by_id).intersection(manifest_by_id)),
+        "fail_closed_reasons": sorted(set(reasons)),
+    }
+    return sidecar_rows, validation
+
+
+def v3_6_6_unique_by_candidate_id(
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[dict[str, Mapping[str, Any]], list[str]]:
+    by_id: dict[str, Mapping[str, Any]] = {}
+    duplicates: list[str] = []
+    for row in rows:
+        candidate_id = official.clean(row.get("weak_silver_candidate_id"))
+        if not candidate_id:
+            continue
+        if candidate_id in by_id:
+            duplicates.append(candidate_id)
+            continue
+        by_id[candidate_id] = row
+    return by_id, sorted(set(duplicates))
+
+
+def v3_6_6_reporting_partition(row: Mapping[str, Any]) -> str:
+    manifest_partition = official.clean(row.get("manifest_partition"))
+    if manifest_partition == "core":
+        return "core_only"
+    if manifest_partition == "review_only":
+        return "review_only_challenge"
+    if manifest_partition == "quarantine":
+        return "quarantine"
+    return manifest_partition or "missing"
+
+
+def v3_6_6_sidecar_row_reasons(
+    *,
+    candidate: Mapping[str, Any],
+    manifest: Mapping[str, Any],
+) -> list[str]:
+    candidate_id = official.clean(candidate.get("weak_silver_candidate_id"))
+    reasons: list[str] = []
+    for field in (
+        "generated_question_draft",
+        "expected_answer_draft",
+        "supporting_evidence_locator_draft",
+        "supporting_evidence_excerpt_hash",
+        "source_text_or_value_hash",
+        "source_identity",
+        "locator_fingerprint",
+        "source_family",
+        "split_role",
+        "query_quality_profile",
+        "source_quality_status",
+        "weak_answerability_status",
+        "source_candidate_id",
+    ):
+        if not v3_6_6_has_value(candidate.get(field)):
+            reasons.append(f"v3_6_6_sidecar_missing_candidate_field:{field}:{candidate_id}")
+    for field in (
+        "supporting_evidence_excerpt_hash",
+        "source_text_or_value_hash",
+        "source_identity",
+        "locator_fingerprint",
+        "source_family",
+        "split_role",
+        "query_quality_profile",
+        "source_quality_status",
+        "weak_answerability_status",
+        "source_candidate_id",
+    ):
+        candidate_value = candidate.get(field)
+        manifest_value = manifest.get(field)
+        if official.clean(candidate_value) != official.clean(manifest_value):
+            reasons.append(f"v3_6_6_sidecar_candidate_manifest_mismatch:{field}:{candidate_id}")
+    if bool(candidate.get("official_proximity_review")) != bool(manifest.get("official_proximity_review")):
+        reasons.append(f"v3_6_6_sidecar_candidate_manifest_mismatch:official_proximity_review:{candidate_id}")
+    return reasons
+
+
+def v3_6_6_has_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, Mapping):
+        return bool(value)
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        return bool(value)
+    return bool(official.clean(value))
+
+
+def v3_6_6_sidecar_counts(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    counts = Counter(official.clean(row.get("reporting_partition")) for row in rows)
+    return {
+        "all_diagnostic": len(rows),
+        "core_only": counts.get("core_only", 0),
+        "review_only_challenge": counts.get("review_only_challenge", 0),
+        "quarantine": counts.get("quarantine", 0),
+    }
+
+
+def v3_6_6_field_availability(rows: Sequence[Mapping[str, Any]], field: str) -> dict[str, Any]:
+    present = sum(1 for row in rows if v3_6_6_has_value(row.get(field)))
+    return {
+        "field": field,
+        "present_count": present,
+        "missing_count": len(rows) - present,
+        "row_count": len(rows),
+        "all_present": bool(rows) and present == len(rows),
+    }
+
+
+def v3_6_6_count_field(rows: Sequence[Mapping[str, Any]], field: str) -> dict[str, int]:
+    counts = dict(sorted(Counter(official.clean(row.get(field)) for row in rows).items()))
+    if "" in counts:
+        counts["missing"] = counts.pop("")
+    return counts
+
+
+def v3_6_6_runtime_probe(
+    *,
+    args: argparse.Namespace,
+    sidecar_rows: Sequence[Mapping[str, Any]],
+    v3_6_5_local_llm: Mapping[str, Any],
+    generated_at: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    sample_rows = v3_6_6_core_smoke_sample(sidecar_rows)
+    local_llm_classification = official.clean(v3_6_5_local_llm.get("local_llm_surface_classification"))
+    allowed_by_v3_6_5 = local_llm_classification in V3_6_6_ALLOWED_LLM_CLASSIFICATIONS
+    runtime_fail_closed_reasons: list[str] = []
+    backend_preflight: Mapping[str, Any] = {
+        "ok": False,
+        "blockers": ["v3_6_5 local LLM classification did not allow diagnostic probe"],
+        "llm_backend": official.clean(getattr(args, "llm_backend", "")) or "llamacpp",
+        "model": official.clean(getattr(args, "llm_model", "")) or "gemma4-e2b-local",
+        "base_url": "",
+        "timeout_seconds": min(int(getattr(args, "llm_timeout_seconds", 120) or 120), 30),
+        "max_tokens": min(int(getattr(args, "llm_max_tokens", 4096) or 4096), 512),
+        "strict_json_retries": 1,
+    }
+    if allowed_by_v3_6_5:
+        try:
+            backend_preflight = llm_backend_preflight_for_v2_2(args, check_endpoint=True)
+            backend_preflight = {
+                **dict(backend_preflight),
+                "timeout_seconds": min(int(backend_preflight.get("timeout_seconds") or 120), 30),
+                "max_tokens": min(int(backend_preflight.get("max_tokens") or 4096), 512),
+                "strict_json_retries": min(int(backend_preflight.get("strict_json_retries") or 3), 1),
+            }
+        except Exception as exc:  # noqa: BLE001
+            backend_preflight = {
+                **dict(backend_preflight),
+                "ok": False,
+                "blockers": [f"local LLM preflight raised {type(exc).__name__}: {exc}"],
+            }
+    else:
+        runtime_fail_closed_reasons.append("v3_6_5_local_llm_classification_not_reusable")
+
+    preflight_ok = bool(backend_preflight.get("ok"))
+    if allowed_by_v3_6_5 and not preflight_ok:
+        runtime_fail_closed_reasons.append("local_llm_endpoint_preflight_blocked")
+    core_smoke_rows: list[dict[str, Any]] = []
+    for row in sample_rows:
+        if not allowed_by_v3_6_5:
+            core_smoke_rows.append(
+                v3_6_6_core_smoke_not_attempted_row(
+                    row,
+                    generated_at=generated_at,
+                    runtime_status="LOCAL_LLM_SKIPPED_BY_V3_6_5_CLASSIFICATION",
+                    fail_closed_reason="v3_6_5_local_llm_classification_not_reusable",
+                    backend_preflight=backend_preflight,
+                )
+            )
+            continue
+        if not preflight_ok:
+            core_smoke_rows.append(
+                v3_6_6_core_smoke_not_attempted_row(
+                    row,
+                    generated_at=generated_at,
+                    runtime_status="LOCAL_LLM_PREFLIGHT_BLOCKED",
+                    fail_closed_reason="; ".join(official.clean(item) for item in backend_preflight.get("blockers") or []),
+                    backend_preflight=backend_preflight,
+                )
+            )
+            continue
+        core_smoke_rows.append(
+            v3_6_6_core_smoke_attempt_row(
+                row,
+                generated_at=generated_at,
+                backend_preflight=backend_preflight,
+            )
+        )
+
+    attempted_count = sum(1 for row in core_smoke_rows if bool(row.get("local_llm_invoked")))
+    answer_returned_count = sum(1 for row in core_smoke_rows if bool(row.get("strict_json_answer_returned")))
+    succeeded_count = sum(
+        1
+        for row in core_smoke_rows
+        if row.get("runtime_status") == "LOCAL_LLM_STRICT_JSON_ANSWER_AND_CITATION_SUCCESS"
+    )
+    generation_blocked = attempted_count == 0
+    generation_unstable = attempted_count > 0 and succeeded_count < attempted_count
+    generation_succeeded = attempted_count == len(sample_rows) and attempted_count > 0 and succeeded_count == attempted_count
+    if generation_unstable:
+        runtime_fail_closed_reasons.append("local_llm_core_smoke_generation_unstable")
+    summary = {
+        "schema_version": (
+            f"{V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID}_runtime_probe_summary_v1"
+        ),
+        "run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_runtime_probe_summary",
+        "local_llm_usage_allowed": True,
+        "local_llm_usage_scope": "diagnostic_only_core_smoke_runtime_probe_only",
+        "local_llm_surface_classification": local_llm_classification,
+        "local_llm_runtime_classification": (
+            "core_smoke_generation_succeeded"
+            if generation_succeeded
+            else "core_smoke_generation_unstable"
+            if generation_unstable
+            else "core_smoke_generation_blocked"
+        ),
+        "local_llm_core_smoke_generation_allowed": allowed_by_v3_6_5,
+        "local_llm_live_silver_generation_allowed": False,
+        "local_llm_live_silver_generation_attempted": False,
+        "local_llm_metric_scoring_allowed": False,
+        "local_llm_metric_scoring_attempted": False,
+        "external_llm_api_allowed": False,
+        "external_llm_api_attempted": False,
+        "local_llm_backend_sanitized": official.clean(backend_preflight.get("llm_backend")),
+        "local_llm_model_id_sanitized": official.clean(backend_preflight.get("model")),
+        "base_url_sanitized": v3_6_5_sanitize_url(official.clean(backend_preflight.get("base_url"))),
+        "timeout_seconds": int(backend_preflight.get("timeout_seconds") or 0),
+        "core_smoke_sample_target_by_source_family": v3_6_6_count_field(sample_rows, "source_family"),
+        "core_smoke_sample_target_row_count": len(sample_rows),
+        "core_smoke_generation_attempted_row_count": attempted_count,
+        "core_smoke_strict_json_answer_returned_row_count": answer_returned_count,
+        "core_smoke_generation_succeeded_row_count": succeeded_count,
+        "core_smoke_generation_failed_row_count": attempted_count - succeeded_count,
+        "core_smoke_generation_blocked_row_count": len(sample_rows) - attempted_count,
+        "local_generation_blocked": generation_blocked,
+        "local_generation_unstable": generation_unstable,
+        "local_generation_succeeded": generation_succeeded,
+        "runtime_fail_closed_reasons": sorted(set(runtime_fail_closed_reasons)),
+        "generation_input_policy": {
+            "uses_generated_question_draft": True,
+            "uses_source_family": True,
+            "uses_source_identity": False,
+            "uses_locator_fingerprint": False,
+            "uses_expected_answer_draft": False,
+            "uses_supporting_evidence_locator_draft": False,
+            "uses_gold_fields": False,
+            "uses_official_fields": False,
+            "uses_db_query_results_as_generation_source": False,
+            "posthoc_validation_uses_source_identity": True,
+            "posthoc_validation_uses_locator_fingerprint": True,
+        },
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+    }
+    return core_smoke_rows, summary
+
+
+def v3_6_6_core_smoke_sample(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    selected: list[dict[str, Any]] = []
+    selected_ids: set[str] = set()
+    core_rows = [dict(row) for row in rows if row.get("reporting_partition") == "core_only"]
+    for family in ("TEXT", "PDF", "XLSX"):
+        family_rows = sorted(
+            [row for row in core_rows if row.get("source_family") == family],
+            key=lambda row: official.clean(row.get("weak_silver_candidate_id")),
+        )
+        for row in family_rows[:10]:
+            selected.append(row)
+            selected_ids.add(official.clean(row.get("weak_silver_candidate_id")))
+    if len(selected) < 30:
+        for row in sorted(core_rows, key=lambda item: official.clean(item.get("weak_silver_candidate_id"))):
+            candidate_id = official.clean(row.get("weak_silver_candidate_id"))
+            if candidate_id in selected_ids:
+                continue
+            selected.append(row)
+            selected_ids.add(candidate_id)
+            if len(selected) >= 30:
+                break
+    return selected
+
+
+def v3_6_6_core_smoke_not_attempted_row(
+    row: Mapping[str, Any],
+    *,
+    generated_at: str,
+    runtime_status: str,
+    fail_closed_reason: str,
+    backend_preflight: Mapping[str, Any],
+) -> dict[str, Any]:
+    base = v3_6_6_core_smoke_base_row(row, generated_at=generated_at, backend_preflight=backend_preflight)
+    base.update(
+        {
+            "runtime_status": runtime_status,
+            "local_llm_invoked": False,
+            "answer_text": "",
+            "citation_locator_parse_result": {
+                "parse_success": False,
+                "locator_fingerprint_match": False,
+                "source_identity_match": False,
+            },
+            "strict_json_answer_returned": False,
+            "citation_surface_valid": False,
+            "timeout_seconds": int(backend_preflight.get("timeout_seconds") or 0),
+            "fail_closed_reason": official.clean(fail_closed_reason),
+        }
+    )
+    return base
+
+
+def v3_6_6_core_smoke_attempt_row(
+    row: Mapping[str, Any],
+    *,
+    generated_at: str,
+    backend_preflight: Mapping[str, Any],
+) -> dict[str, Any]:
+    base = v3_6_6_core_smoke_base_row(row, generated_at=generated_at, backend_preflight=backend_preflight)
+    prompt = v3_6_6_core_smoke_prompt(row)
+    base["prompt_sha256"] = sha256_text(prompt)
+    base["local_llm_invoked"] = True
+    base["timeout_seconds"] = int(backend_preflight.get("timeout_seconds") or 0)
+    try:
+        parsed, strict_meta = call_v3_local_llm_strict_json_with_diagnostics(
+            backend_preflight=backend_preflight,
+            prompt=prompt,
+            required_schema_keys=("answer", "citation_locator"),
+            prompt_context_mode="v3_6_6_diagnostic_question_locator_smoke",
+            cited_search_unit_ids_before_parse=[],
+        )
+        answer_text = official.clean(parsed.get("answer"))
+        citation_locator = parsed.get("citation_locator") if isinstance(parsed.get("citation_locator"), Mapping) else {}
+        citation_parse = v3_6_6_citation_locator_parse_result(row, citation_locator)
+        citation_surface_valid = (
+            bool(citation_parse.get("parse_success"))
+            and bool(citation_parse.get("locator_fingerprint_match"))
+            and bool(citation_parse.get("source_identity_match"))
+        )
+        base.update(
+            {
+                "runtime_status": (
+                    "LOCAL_LLM_STRICT_JSON_ANSWER_AND_CITATION_SUCCESS"
+                    if answer_text and citation_surface_valid
+                    else "LOCAL_LLM_CITATION_SURFACE_FAIL_CLOSED"
+                    if answer_text
+                    else "LOCAL_LLM_EMPTY_ANSWER_FAIL_CLOSED"
+                ),
+                "answer_text": answer_text[:700],
+                "citation_locator_parse_result": citation_parse,
+                "strict_json_parse_ok": bool(strict_meta.get("parse_ok")),
+                "strict_json_answer_returned": bool(answer_text),
+                "citation_surface_valid": citation_surface_valid,
+                "strict_json_response_sha256": strict_meta.get("raw_response_sha256", ""),
+                "fail_closed_reason": (
+                    ""
+                    if answer_text and citation_surface_valid
+                    else "local_llm_returned_answer_without_valid_citation_surface"
+                    if answer_text
+                    else "local_llm_returned_empty_answer"
+                ),
+            }
+        )
+    except Exception as exc:  # noqa: BLE001
+        diagnostics = getattr(exc, "diagnostics", {})
+        base.update(
+            {
+                "runtime_status": "LOCAL_LLM_STRICT_JSON_FAIL_CLOSED",
+                "answer_text": "",
+                "citation_locator_parse_result": {
+                    "parse_success": False,
+                    "locator_fingerprint_match": False,
+                    "source_identity_match": False,
+                },
+                "strict_json_parse_ok": False,
+                "strict_json_answer_returned": False,
+                "citation_surface_valid": False,
+                "strict_json_response_sha256": as_mapping(diagnostics).get("raw_response_sha256", ""),
+                "fail_closed_reason": f"{type(exc).__name__}: {exc}",
+            }
+        )
+    return base
+
+
+def v3_6_6_core_smoke_base_row(
+    row: Mapping[str, Any],
+    *,
+    generated_at: str,
+    backend_preflight: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "schema_version": (
+            f"{V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID}_core_smoke_sample_row_v1"
+        ),
+        "run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_core_smoke_sample_row",
+        "weak_silver_candidate_id": official.clean(row.get("weak_silver_candidate_id")),
+        "generated_question_draft": official.clean(row.get("generated_question_draft")),
+        "source_family": official.clean(row.get("source_family")),
+        "source_identity": official.clean(row.get("source_identity")),
+        "locator_fingerprint": official.clean(row.get("locator_fingerprint")),
+        "reporting_partition": official.clean(row.get("reporting_partition")),
+        "generation_input_field_names": [
+            "generated_question_draft",
+            "source_family",
+        ],
+        "generation_input_used_expected_answer_draft": False,
+        "generation_input_used_supporting_evidence_locator_draft": False,
+        "generation_input_used_gold_fields": False,
+        "generation_input_used_official_fields": False,
+        "generation_input_used_db_query_results": False,
+        "local_llm_backend_sanitized": official.clean(backend_preflight.get("llm_backend")),
+        "local_llm_model_id_sanitized": official.clean(backend_preflight.get("model")),
+        "base_url_sanitized": v3_6_5_sanitize_url(official.clean(backend_preflight.get("base_url"))),
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "references_used_for_generation": False,
+        "references_used_for_official_metric": False,
+    }
+
+
+def v3_6_6_core_smoke_prompt(row: Mapping[str, Any]) -> str:
+    schema = {
+        "answer": "INSUFFICIENT_CONTEXT_FOR_DIAGNOSTIC_SMOKE",
+        "citation_locator": {},
+    }
+    lines = [
+        "You are running a diagnostic-only local runtime smoke probe.",
+        "This is not a metric, not a gold label, and not promotion evidence.",
+        "Use only the question and source family below.",
+        "No reference answer, evidence draft, official label, gold label, or hidden citation target is supplied.",
+        "If the provided diagnostic context is insufficient, say so briefly in the answer.",
+        "Return exactly one minified JSON object and nothing else.",
+        f"JSON schema: {json.dumps(schema, ensure_ascii=False, sort_keys=True, separators=(',', ':'))}",
+        f"question: {official.clean(row.get('generated_question_draft'))}",
+        f"source_family: {official.clean(row.get('source_family'))}",
+    ]
+    return "\n".join(lines)
+
+
+def v3_6_6_citation_locator_parse_result(
+    row: Mapping[str, Any],
+    citation_locator: Mapping[str, Any],
+) -> dict[str, Any]:
+    locator_fingerprint = official.clean(citation_locator.get("locator_fingerprint"))
+    source_identity = official.clean(citation_locator.get("source_identity"))
+    return {
+        "parse_success": bool(citation_locator),
+        "locator_fingerprint": locator_fingerprint,
+        "source_identity": source_identity,
+        "locator_fingerprint_match": locator_fingerprint == official.clean(row.get("locator_fingerprint")),
+        "source_identity_match": source_identity == official.clean(row.get("source_identity")),
+    }
+
+
+def v3_6_6_db_retrieval_surface_audit(
+    *,
+    candidate_rows: Sequence[Mapping[str, Any]],
+    sidecar_rows: Sequence[Mapping[str, Any]],
+    v3_6_5_db: Mapping[str, Any],
+    generated_at: str,
+) -> dict[str, Any]:
+    search_manifest = DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl"
+    build_json = DEFAULT_RAG_INDEX_DIR / "build.json"
+    ingest_manifest = DEFAULT_RAG_INDEX_DIR / "ingest_manifest.json"
+    faiss_index = DEFAULT_RAG_INDEX_DIR / "faiss.index"
+    rag_chunks = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined" / "rag_chunks.jsonl"
+    search_unit_rows = read_jsonl(search_manifest) if search_manifest.exists() else []
+    official_search_unit_ids = {
+        official.clean(row.get("search_unit_id"))
+        for row in search_unit_rows
+        if official.clean(row.get("search_unit_id"))
+    }
+    official_source_identities = {
+        official.clean(row.get("source_identity"))
+        for row in search_unit_rows
+        if official.clean(row.get("source_identity"))
+    }
+    official_locator_fingerprints = {
+        v3_5_locator_fingerprint(as_mapping(row.get("locator")))
+        for row in search_unit_rows
+        if isinstance(row.get("locator"), Mapping)
+    }
+    candidate_search_unit_ids = {
+        official.clean(row.get("search_unit_id"))
+        for row in candidate_rows
+        if official.clean(row.get("search_unit_id"))
+    }
+    sidecar_source_identities = {
+        official.clean(row.get("source_identity"))
+        for row in sidecar_rows
+        if official.clean(row.get("source_identity"))
+    }
+    sidecar_locator_fingerprints = {
+        official.clean(row.get("locator_fingerprint"))
+        for row in sidecar_rows
+        if official.clean(row.get("locator_fingerprint"))
+    }
+    text_chunk_ids = {
+        official.clean(as_mapping(row.get("source_locator")).get("chunk_id"))
+        for row in candidate_rows
+        if row.get("source_family") == "TEXT" and official.clean(as_mapping(row.get("source_locator")).get("chunk_id"))
+    }
+    rag_chunks_found_count = v3_6_6_count_rag_chunks_found(rag_chunks, text_chunk_ids) if rag_chunks.exists() else 0
+    db_surface_detected = any(path.exists() for path in (search_manifest, build_json, ingest_manifest, faiss_index, rag_chunks))
+    source_identity_locator_complete = (
+        len(sidecar_rows) == 1000
+        and len(sidecar_source_identities) == 1000
+        and len(sidecar_locator_fingerprints) == 1000
+    )
+    candidate_index_overlap = len(candidate_search_unit_ids.intersection(official_search_unit_ids))
+    source_identity_overlap = len(sidecar_source_identities.intersection(official_source_identities))
+    locator_overlap = len(sidecar_locator_fingerprints.intersection(official_locator_fingerprints))
+    text_rag_chunks_mapping_available = bool(text_chunk_ids) and rag_chunks_found_count == len(text_chunk_ids)
+    live_without_rebuild = (
+        candidate_index_overlap == len(candidate_search_unit_ids)
+        and len(candidate_search_unit_ids) == len(sidecar_rows)
+        and source_identity_locator_complete
+    )
+    manifest_locator_mapping_available = source_identity_locator_complete and bool(sidecar_rows)
+    classification = (
+        "live_retrieval_probe_feasible_without_rebuild"
+        if live_without_rebuild
+        else "manifest_locator_mapping_available_live_retrieval_adapter_needed"
+        if manifest_locator_mapping_available
+        else "manifest_locator_mapping_unstable"
+    )
+    return {
+        "schema_version": (
+            f"{V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID}_"
+            "db_retrieval_surface_audit_v1"
+        ),
+        "run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_only_db_retrieval_surface_audit",
+        "db_usage_allowed": True,
+        "db_usage_scope": "read_only_reference_and_runtime_surface_probe_only",
+        "db_read_only_probe_attempted": True,
+        "db_surface_detected": db_surface_detected,
+        "db_kind_sanitized": "repo_local_artifacts_and_nonproduction_index_metadata",
+        "db_path_or_dsn_sanitized": [
+            official.repo_relative(DEFAULT_RAG_INDEX_DIR),
+            official.repo_relative(rag_chunks),
+        ],
+        "db_schema_inspection_attempted": True,
+        "db_row_count_inspection_attempted": True,
+        "db_source_identity_mapping_available": bool(sidecar_source_identities),
+        "db_locator_fingerprint_mapping_available": bool(sidecar_locator_fingerprints),
+        "db_searchunit_metadata_available": bool(search_unit_rows),
+        "db_rag_chunks_metadata_available": rag_chunks.exists(),
+        "db_candidate_reference_mapping_available": bool(sidecar_rows),
+        "manifest_locator_mapping_available": manifest_locator_mapping_available,
+        "source_identity_locator_mapping_complete": source_identity_locator_complete,
+        "text_rag_chunks_mapping_available": text_rag_chunks_mapping_available,
+        "text_candidate_chunk_id_count": len(text_chunk_ids),
+        "text_candidate_chunk_id_found_in_rag_chunks_count": rag_chunks_found_count,
+        "official_denominator_search_unit_manifest_row_count": len(search_unit_rows),
+        "candidate_search_unit_id_count": len(candidate_search_unit_ids),
+        "candidate_search_unit_overlap_with_current_index_count": candidate_index_overlap,
+        "candidate_source_identity_overlap_with_current_index_count": source_identity_overlap,
+        "candidate_locator_fingerprint_overlap_with_current_index_count": locator_overlap,
+        "live_retrieval_probe_feasible": live_without_rebuild,
+        "live_retrieval_probe_feasible_without_rebuild": live_without_rebuild,
+        "live_retrieval_probe_requires_diagnostic_adapter": not live_without_rebuild,
+        "db_retrieval_surface_classification": classification,
+        "db_surface_classification": classification,
+        "source_v3_6_5_db_surface_classification": v3_6_5_db.get("db_surface_classification"),
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_results_as_gold_allowed": False,
+        "db_results_as_official_qrels_allowed": False,
+        "db_results_as_generation_source_allowed": False,
+        "credentials_or_secret_leak_detected": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+    }
+
+
+def v3_6_6_count_rag_chunks_found(path: Path, chunk_ids: set[str]) -> int:
+    if not chunk_ids:
+        return 0
+    found: set[str] = set()
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            chunk_id = official.clean(as_mapping(row).get("chunk_id"))
+            if chunk_id in chunk_ids:
+                found.add(chunk_id)
+                if len(found) == len(chunk_ids):
+                    break
+    return len(found)
+
+
+def v3_6_6_next_phase_recommendation(
+    *,
+    generated_at: str,
+    sidecar_complete: bool,
+    runtime_probe_summary: Mapping[str, Any],
+    db_retrieval_surface_audit: Mapping[str, Any],
+    fail_closed_reasons: Sequence[str],
+) -> dict[str, Any]:
+    local_generation_succeeded = bool(runtime_probe_summary.get("local_generation_succeeded"))
+    local_generation_unstable = bool(runtime_probe_summary.get("local_generation_unstable"))
+    local_generation_blocked = bool(runtime_probe_summary.get("local_generation_blocked"))
+    live_retrieval_feasible = bool(db_retrieval_surface_audit.get("live_retrieval_probe_feasible_without_rebuild"))
+    retrieval_mapping_available = bool(db_retrieval_surface_audit.get("manifest_locator_mapping_available"))
+    if not sidecar_complete:
+        recommended = "v3_6_7_reference_sidecar_recovery_or_compaction_fix"
+        rationale = "The v3_6_1 to v3_6_3 diagnostic reference sidecar is incomplete or mismatched."
+    elif local_generation_succeeded and live_retrieval_feasible:
+        recommended = "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric"
+        rationale = "The sidecar is complete, local core smoke generation succeeded, and live retrieval is feasible without rebuild."
+    elif local_generation_unstable:
+        recommended = "v3_6_7_runtime_stability_probe_for_core_only"
+        rationale = "The sidecar is complete, but local core smoke generation was attempted and unstable."
+    elif local_generation_blocked and retrieval_mapping_available:
+        recommended = "v3_6_7_manifest_locator_live_retrieval_probe"
+        rationale = "The sidecar is complete and manifest locator mapping is available, but generation was blocked."
+    elif not live_retrieval_feasible:
+        recommended = "v3_6_7_manifest_locator_live_retrieval_probe"
+        rationale = "The sidecar is complete, but live retrieval still requires a manifest locator adapter probe."
+    else:
+        recommended = "v3_6_7_runtime_stability_probe_for_core_only"
+        rationale = "The sidecar is complete, but local runtime stability is not sufficient for a core-only live metric."
+    return {
+        "schema_version": (
+            f"{V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID}_"
+            "next_phase_recommendation_v1"
+        ),
+        "run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_reference_sidecar_runtime_probe_next_phase_recommendation",
+        "recommended_next_phase": recommended,
+        "recommendation_choices": list(V3_6_6_RECOMMENDATION_CHOICES),
+        "choose_exactly_one_policy_satisfied": recommended in V3_6_6_RECOMMENDATION_CHOICES,
+        "v3_6_7_core_only_live_diagnostic_metric_allowed": (
+            recommended == "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric"
+        ),
+        "review_only_remains_stress_only": True,
+        "sidecar_complete": sidecar_complete,
+        "local_generation_succeeded": local_generation_succeeded,
+        "local_generation_unstable": local_generation_unstable,
+        "local_generation_blocked": local_generation_blocked,
+        "retrieval_mapping_available": retrieval_mapping_available,
+        "live_retrieval_probe_feasible_without_rebuild": live_retrieval_feasible,
+        "targeted_diagnostic_repair_planning_now": False,
+        "targeted_diagnostic_repair_planning_after_core_metric": recommended.endswith("weak_noisy_silver_metric"),
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "official_metric_denominator_usage_allowed": False,
+        "promotion_evidence": False,
+        "readme_representative_product_performance_claim": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "fail_closed_reasons": list(fail_closed_reasons),
+        "rationale": rationale,
+    }
+
+
+def v3_6_6_policy_audit(
+    *,
+    generated_at: str,
+    fail_closed_reasons: Sequence[str],
+    input_sha_before: Mapping[str, str],
+    input_sha_after: Mapping[str, str],
+    protected_v3_6_3_sha_before: Mapping[str, str],
+    protected_v3_6_3_sha_after: Mapping[str, str],
+    runtime_probe_summary: Mapping[str, Any],
+    db_retrieval_surface_audit: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "schema_version": (
+            f"{V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID}_policy_audit_v1"
+        ),
+        "run_id": V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "diagnostic_reference_sidecar_runtime_surface_probe_policy_audit",
+        "diagnostic_only": True,
+        "official_metric": False,
+        "official_metric_denominator_usage_allowed": False,
+        "generated_expected_answers_are_gold": False,
+        "not_gold": True,
+        "not_official_qrels": True,
+        "not_official_denominator": True,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "lane_a_b_c_collapsed_scoring": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "official_denominator_mutation": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "local_llm_usage_allowed": True,
+        "local_llm_usage_scope": "diagnostic_only_core_smoke_runtime_probe_only",
+        "local_llm_core_smoke_generation_allowed": bool(
+            runtime_probe_summary.get("local_llm_core_smoke_generation_allowed")
+        ),
+        "local_llm_live_silver_generation_allowed": False,
+        "local_llm_live_silver_generation_attempted": False,
+        "local_llm_metric_scoring_allowed": False,
+        "local_llm_metric_scoring_attempted": False,
+        "external_llm_api_allowed": False,
+        "external_llm_api_attempted": False,
+        "generation_input_used_expected_answer_draft": False,
+        "generation_input_used_supporting_evidence_locator_draft": False,
+        "generation_input_used_gold_fields": False,
+        "generation_input_used_official_fields": False,
+        "generation_input_used_db_query_results": False,
+        "db_usage_allowed": True,
+        "db_usage_scope": "read_only_reference_and_runtime_surface_probe_only",
+        "db_read_only_probe_attempted": bool(db_retrieval_surface_audit.get("db_read_only_probe_attempted")),
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_results_as_gold_allowed": False,
+        "db_results_as_official_qrels_allowed": False,
+        "db_results_as_generation_source_allowed": False,
+        "sidecar_mutates_v3_6_3_compact_manifest": False,
+        "diagnostic_reference_sidecar_used_for_official_metric": False,
+        "diagnostic_reference_sidecar_used_for_generation": False,
+        "fail_closed_reasons": list(fail_closed_reasons),
+        "protected_input_sha256_before": dict(input_sha_before),
+        "protected_input_sha256_after": dict(input_sha_after),
+        "protected_input_sha256_unchanged": dict(input_sha_before) == dict(input_sha_after),
+        "protected_v3_6_3_input_sha256_before": dict(protected_v3_6_3_sha_before),
+        "protected_v3_6_3_input_sha256_after": dict(protected_v3_6_3_sha_after),
+        "protected_v3_6_3_input_sha256_unchanged": dict(protected_v3_6_3_sha_before)
+        == dict(protected_v3_6_3_sha_after),
+    }
+
+
+def write_v3_6_low_touch_weak_noisy_silver_artifacts(summary: dict[str, Any]) -> None:
+    run_id = summary["run_id"]
+    if run_id == V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID:
+        write_json(DEFAULT_V3_6_0_GENERATION_CONTRACT_JSON, summary["generation_contract"])
+        write_jsonl(DEFAULT_V3_6_0_USER_DECISION_MATRIX_JSONL, summary["user_decision_matrix_rows"])
+        write_json(DEFAULT_V3_6_0_GUARDRAIL_SUMMARY_JSON, summary["guardrail_summary"])
+        payload = dict(summary)
+        for field in ("generation_contract", "user_decision_matrix_rows", "guardrail_summary"):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "generation_contract_json_sha256": sha256_file(DEFAULT_V3_6_0_GENERATION_CONTRACT_JSON),
+            "user_decision_matrix_jsonl_sha256": sha256_file(DEFAULT_V3_6_0_USER_DECISION_MATRIX_JSONL),
+            "guardrail_summary_json_sha256": sha256_file(DEFAULT_V3_6_0_GUARDRAIL_SUMMARY_JSON),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_0_POLICY_APPROVAL_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["policy_approval_summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_6_0_POLICY_APPROVAL_SUMMARY_JSON
+        )
+        return
+
+    if run_id == V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID:
+        write_jsonl(DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL, summary["weak_silver_candidate_rows"])
+        write_jsonl(DEFAULT_V3_6_1_BLOCKED_ROWS_JSONL, summary["generation_blocked_rows"])
+        write_json(DEFAULT_V3_6_1_SPLIT_MANIFEST_JSON, summary["split_manifest"])
+        write_json(DEFAULT_V3_6_1_QUALITY_DISTRIBUTION_JSON, summary["generation_quality_distribution"])
+        write_json(DEFAULT_V3_6_1_POLICY_COMPLIANCE_AUDIT_JSON, summary["policy_compliance_audit"])
+        write_json(DEFAULT_V3_6_1_NEXT_PHASE_RECOMMENDATION_JSON, summary["next_phase_recommendation"])
+        payload = dict(summary)
+        for field in (
+            "weak_silver_candidate_rows",
+            "generation_blocked_rows",
+            "split_manifest",
+            "generation_quality_distribution",
+            "policy_compliance_audit",
+            "next_phase_recommendation",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "weak_silver_candidates_jsonl_sha256": sha256_file(DEFAULT_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL),
+            "generation_blocked_rows_jsonl_sha256": sha256_file(DEFAULT_V3_6_1_BLOCKED_ROWS_JSONL),
+            "split_manifest_json_sha256": sha256_file(DEFAULT_V3_6_1_SPLIT_MANIFEST_JSON),
+            "generation_quality_distribution_json_sha256": sha256_file(DEFAULT_V3_6_1_QUALITY_DISTRIBUTION_JSON),
+            "policy_compliance_audit_json_sha256": sha256_file(DEFAULT_V3_6_1_POLICY_COMPLIANCE_AUDIT_JSON),
+            "next_phase_recommendation_json_sha256": sha256_file(DEFAULT_V3_6_1_NEXT_PHASE_RECOMMENDATION_JSON),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_1_GENERATION_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["generation_summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_6_1_GENERATION_SUMMARY_JSON
+        )
+        return
+
+    if run_id == V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID:
+        write_jsonl(DEFAULT_V3_6_2_CANDIDATE_SANITY_PER_ROW_JSONL, summary["candidate_sanity_per_row"])
+        write_jsonl(DEFAULT_V3_6_2_CANDIDATE_QUARANTINE_ROWS_JSONL, summary["candidate_quarantine_rows"])
+        write_json(DEFAULT_V3_6_2_CANDIDATE_METRIC_FEASIBILITY_JSON, summary["candidate_metric_feasibility"])
+        write_json(DEFAULT_V3_6_2_SPLIT_INDEPENDENCE_AUDIT_JSON, summary["split_independence_audit"])
+        write_json(DEFAULT_V3_6_2_HASH_CONTRACT_AUDIT_JSON, summary["hash_contract_audit"])
+        write_json(DEFAULT_V3_6_2_NEXT_PHASE_RECOMMENDATION_JSON, summary["next_phase_recommendation"])
+        payload = dict(summary)
+        for field in (
+            "candidate_sanity_per_row",
+            "candidate_quarantine_rows",
+            "candidate_metric_feasibility",
+            "split_independence_audit",
+            "hash_contract_audit",
+            "next_phase_recommendation",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "candidate_sanity_per_row_jsonl_sha256": sha256_file(DEFAULT_V3_6_2_CANDIDATE_SANITY_PER_ROW_JSONL),
+            "candidate_quarantine_rows_jsonl_sha256": sha256_file(DEFAULT_V3_6_2_CANDIDATE_QUARANTINE_ROWS_JSONL),
+            "candidate_metric_feasibility_json_sha256": sha256_file(DEFAULT_V3_6_2_CANDIDATE_METRIC_FEASIBILITY_JSON),
+            "split_independence_audit_json_sha256": sha256_file(DEFAULT_V3_6_2_SPLIT_INDEPENDENCE_AUDIT_JSON),
+            "hash_contract_audit_json_sha256": sha256_file(DEFAULT_V3_6_2_HASH_CONTRACT_AUDIT_JSON),
+            "next_phase_recommendation_json_sha256": sha256_file(DEFAULT_V3_6_2_NEXT_PHASE_RECOMMENDATION_JSON),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["candidate_sanity_summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON
+        )
+        return
+
+    if run_id == V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID:
+        write_jsonl(DEFAULT_V3_6_3_MANIFEST_ALL_JSONL, summary["manifest_rows_all"])
+        write_jsonl(DEFAULT_V3_6_3_MANIFEST_CORE_JSONL, summary["manifest_rows_core"])
+        write_jsonl(DEFAULT_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL, summary["manifest_rows_review_only"])
+        write_jsonl(DEFAULT_V3_6_3_MANIFEST_QUARANTINE_JSONL, summary["manifest_rows_quarantine"])
+        write_json(DEFAULT_V3_6_3_MANIFEST_POLICY_AUDIT_JSON, summary["manifest_policy_audit"])
+        write_json(DEFAULT_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON, summary["next_phase_recommendation"])
+        payload = dict(summary)
+        for field in (
+            "manifest_rows_all",
+            "manifest_rows_core",
+            "manifest_rows_review_only",
+            "manifest_rows_quarantine",
+            "manifest_policy_audit",
+            "next_phase_recommendation",
+            "join_mismatch_rows",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "manifest_all_jsonl_sha256": sha256_file(DEFAULT_V3_6_3_MANIFEST_ALL_JSONL),
+            "manifest_core_jsonl_sha256": sha256_file(DEFAULT_V3_6_3_MANIFEST_CORE_JSONL),
+            "manifest_review_only_jsonl_sha256": sha256_file(DEFAULT_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL),
+            "manifest_quarantine_jsonl_sha256": sha256_file(DEFAULT_V3_6_3_MANIFEST_QUARANTINE_JSONL),
+            "manifest_policy_audit_json_sha256": sha256_file(DEFAULT_V3_6_3_MANIFEST_POLICY_AUDIT_JSON),
+            "next_phase_recommendation_json_sha256": sha256_file(DEFAULT_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_3_MANIFEST_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["manifest_summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_6_3_MANIFEST_SUMMARY_JSON
+        )
+        return
+
+    if run_id == V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID:
+        write_jsonl(DEFAULT_V3_6_4_METRIC_PER_ROW_JSONL, summary["per_row_metric_rows"])
+        write_json(DEFAULT_V3_6_4_METRIC_AGGREGATE_BY_BUCKET_JSON, summary["aggregate_by_bucket"])
+        write_json(DEFAULT_V3_6_4_METRIC_FAILURE_TAXONOMY_JSON, summary["failure_taxonomy"])
+        write_jsonl(DEFAULT_V3_6_4_METRIC_SAMPLE_REVIEW_JSONL, summary["sample_review_rows"])
+        write_json(DEFAULT_V3_6_4_METRIC_POLICY_AUDIT_JSON, summary["policy_audit"])
+        write_json(DEFAULT_V3_6_4_METRIC_NEXT_PHASE_RECOMMENDATION_JSON, summary["next_phase_recommendation"])
+        payload = dict(summary)
+        for field in (
+            "per_row_metric_rows",
+            "aggregate_by_bucket",
+            "failure_taxonomy",
+            "sample_review_rows",
+            "policy_audit",
+            "next_phase_recommendation",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "per_row_jsonl_sha256": sha256_file(DEFAULT_V3_6_4_METRIC_PER_ROW_JSONL),
+            "aggregate_by_bucket_json_sha256": sha256_file(DEFAULT_V3_6_4_METRIC_AGGREGATE_BY_BUCKET_JSON),
+            "failure_taxonomy_json_sha256": sha256_file(DEFAULT_V3_6_4_METRIC_FAILURE_TAXONOMY_JSON),
+            "sample_review_jsonl_sha256": sha256_file(DEFAULT_V3_6_4_METRIC_SAMPLE_REVIEW_JSONL),
+            "policy_audit_json_sha256": sha256_file(DEFAULT_V3_6_4_METRIC_POLICY_AUDIT_JSON),
+            "next_phase_recommendation_json_sha256": sha256_file(
+                DEFAULT_V3_6_4_METRIC_NEXT_PHASE_RECOMMENDATION_JSON
+            ),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_4_METRIC_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(DEFAULT_V3_6_4_METRIC_SUMMARY_JSON)
+        append_v3_6_4_measurements_entry(summary)
+        return
+
+    if run_id == V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID:
+        write_jsonl(DEFAULT_V3_6_5_PER_ROW_JSONL, summary["per_row_triage_rows"])
+        write_json(DEFAULT_V3_6_5_BLOCKER_MATRIX_JSON, summary["blocker_matrix"])
+        write_json(DEFAULT_V3_6_5_RUNTIME_SURFACE_AUDIT_JSON, summary["runtime_surface_audit"])
+        write_json(DEFAULT_V3_6_5_REFERENCE_SURFACE_AUDIT_JSON, summary["reference_surface_audit"])
+        write_json(DEFAULT_V3_6_5_DB_SURFACE_AUDIT_JSON, summary["db_surface_audit"])
+        write_json(DEFAULT_V3_6_5_LOCAL_LLM_SURFACE_AUDIT_JSON, summary["local_llm_surface_audit"])
+        write_json(DEFAULT_V3_6_5_POLICY_AUDIT_JSON, summary["policy_audit"])
+        write_json(DEFAULT_V3_6_5_NEXT_PHASE_RECOMMENDATION_JSON, summary["next_phase_recommendation"])
+        payload = dict(summary)
+        for field in (
+            "per_row_triage_rows",
+            "blocker_matrix",
+            "runtime_surface_audit",
+            "reference_surface_audit",
+            "db_surface_audit",
+            "local_llm_surface_audit",
+            "policy_audit",
+            "next_phase_recommendation",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "per_row_jsonl_sha256": sha256_file(DEFAULT_V3_6_5_PER_ROW_JSONL),
+            "blocker_matrix_json_sha256": sha256_file(DEFAULT_V3_6_5_BLOCKER_MATRIX_JSON),
+            "runtime_surface_audit_json_sha256": sha256_file(DEFAULT_V3_6_5_RUNTIME_SURFACE_AUDIT_JSON),
+            "reference_surface_audit_json_sha256": sha256_file(DEFAULT_V3_6_5_REFERENCE_SURFACE_AUDIT_JSON),
+            "db_surface_audit_json_sha256": sha256_file(DEFAULT_V3_6_5_DB_SURFACE_AUDIT_JSON),
+            "local_llm_surface_audit_json_sha256": sha256_file(DEFAULT_V3_6_5_LOCAL_LLM_SURFACE_AUDIT_JSON),
+            "policy_audit_json_sha256": sha256_file(DEFAULT_V3_6_5_POLICY_AUDIT_JSON),
+            "next_phase_recommendation_json_sha256": sha256_file(
+                DEFAULT_V3_6_5_NEXT_PHASE_RECOMMENDATION_JSON
+            ),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_5_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(DEFAULT_V3_6_5_SUMMARY_JSON)
+        return
+
+    if run_id == V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID:
+        write_jsonl(DEFAULT_V3_6_6_REFERENCE_SIDECAR_JSONL, summary["reference_sidecar_rows"])
+        write_jsonl(DEFAULT_V3_6_6_CORE_SMOKE_SAMPLE_JSONL, summary["core_smoke_sample_rows"])
+        write_json(DEFAULT_V3_6_6_RUNTIME_PROBE_SUMMARY_JSON, summary["runtime_probe_summary"])
+        write_json(DEFAULT_V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT_JSON, summary["db_retrieval_surface_audit"])
+        write_json(DEFAULT_V3_6_6_POLICY_AUDIT_JSON, summary["policy_audit"])
+        write_json(DEFAULT_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON, summary["next_phase_recommendation"])
+        payload = dict(summary)
+        for field in (
+            "reference_sidecar_rows",
+            "core_smoke_sample_rows",
+            "runtime_probe_summary",
+            "db_retrieval_surface_audit",
+            "policy_audit",
+            "next_phase_recommendation",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "reference_sidecar_jsonl_sha256": sha256_file(DEFAULT_V3_6_6_REFERENCE_SIDECAR_JSONL),
+            "core_smoke_sample_jsonl_sha256": sha256_file(DEFAULT_V3_6_6_CORE_SMOKE_SAMPLE_JSONL),
+            "runtime_probe_summary_json_sha256": sha256_file(DEFAULT_V3_6_6_RUNTIME_PROBE_SUMMARY_JSON),
+            "db_retrieval_surface_audit_json_sha256": sha256_file(
+                DEFAULT_V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT_JSON
+            ),
+            "policy_audit_json_sha256": sha256_file(DEFAULT_V3_6_6_POLICY_AUDIT_JSON),
+            "next_phase_recommendation_json_sha256": sha256_file(
+                DEFAULT_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON
+            ),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_6_6_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(DEFAULT_V3_6_6_SUMMARY_JSON)
+        return
+
+    raise ValueError(f"unsupported v3_6 run: {run_id}")
+
+
+def append_v3_6_low_touch_weak_noisy_silver_event(path: Path, summary: Mapping[str, Any]) -> None:
+    event = dict(summary)
+    for field in (
+        "generation_contract",
+        "user_decision_matrix_rows",
+        "guardrail_summary",
+        "weak_silver_candidate_rows",
+        "generation_blocked_rows",
+        "split_manifest",
+        "generation_quality_distribution",
+        "policy_compliance_audit",
+        "next_phase_recommendation",
+        "candidate_sanity_per_row",
+        "candidate_quarantine_rows",
+        "candidate_metric_feasibility",
+        "split_independence_audit",
+        "hash_contract_audit",
+        "manifest_rows_all",
+        "manifest_rows_core",
+        "manifest_rows_review_only",
+        "manifest_rows_quarantine",
+        "manifest_policy_audit",
+        "join_mismatch_rows",
+        "source_candidate_rows",
+        "sanity_rows",
+        "per_row_metric_rows",
+        "aggregate_by_bucket",
+        "failure_taxonomy",
+        "sample_review_rows",
+        "policy_audit",
+        "next_phase_recommendation",
+        "per_row_triage_rows",
+        "blocker_matrix",
+        "runtime_surface_audit",
+        "reference_surface_audit",
+        "db_surface_audit",
+        "local_llm_surface_audit",
+        "reference_sidecar_rows",
+        "core_smoke_sample_rows",
+        "runtime_probe_summary",
+        "db_retrieval_surface_audit",
+    ):
+        event.pop(field, None)
+    append_unique_status_ledger_event(path, event)
+
+
+def v3_6_progress_entry(summary: Mapping[str, Any]) -> str:
+    run_id = official.clean(summary.get("run_id"))
+    if run_id == V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID:
+        counts = as_mapping(summary.get("source_manifest_counts"))
+        return (
+            f"- v3_6_0 low-touch weak/noisy silver policy application (`{run_id}`) records the user-approved "
+            f"decision to allow draft question/expected-answer/evidence-locator generation from the frozen v3_5_4 "
+            f"source-only manifest. Source counts are TEXT={counts.get('TEXT', 0)}, PDF={counts.get('PDF', 0)}, "
+            f"XLSX={counts.get('XLSX', 0)}, total={counts.get('total', 0)}; "
+            "user_policy_decision_applied=true, low_touch_human_review_required=false, generated silver rows=0, "
+            "official labels/qrels/gold/promotion evidence remain false; next phase is v3_6_1."
+        )
+    if run_id == V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID:
+        buckets = as_mapping(summary.get("bucket_counts"))
+        return (
+            f"- v3_6_2 weak/noisy silver candidate sanity eval (`{run_id}`) validates "
+            f"{summary.get('candidate_row_count', 0)} diagnostic candidate rows with "
+            f"candidate_sanity_passed={str(bool(summary.get('candidate_sanity_passed'))).lower()}. "
+            f"bucket counts are core={buckets.get('core_pass_quality_candidate', 0)}, "
+            f"review-only={buckets.get('review_only_challenge_candidate', 0)}, "
+            f"quarantine={buckets.get('quarantine_candidate', 0)}, "
+            f"blocked={buckets.get('blocked_candidate', 0)}. Split crossing remains a diagnostic holdout warning "
+            f"({summary.get('source_identity_groups_crossing_split_roles_count', 0)} groups), not official leakage; "
+            f"hash contract=normalized question sha256. v3_6_3 diagnostic weak/noisy silver manifest freeze is "
+            f"allowed={str(bool(summary.get('v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_allowed'))).lower()}. "
+            "Official labels/qrels/gold, promotion evidence, threshold tuning, winner selection, and README "
+            "performance claims remain blocked."
+        )
+    if run_id == V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID:
+        return (
+            f"- v3_6_3 diagnostic weak/noisy silver manifest freeze (`{run_id}`) freezes "
+            f"{summary.get('manifest_row_count', 0)} diagnostic rows from the v3_6_2-passed candidates: "
+            f"core={summary.get('core_manifest_row_count', 0)}, "
+            f"review-only={summary.get('review_only_manifest_row_count', 0)}, "
+            f"quarantine={summary.get('quarantine_manifest_row_count', 0)}. "
+            f"official proximity rows remain review-only={summary.get('official_proximity_review_row_count', 0)}; "
+            f"split crossing remains a diagnostic warning ({summary.get('source_identity_groups_crossing_split_roles_count', 0)} groups), "
+            f"hash contract={summary.get('hash_contract')}. v3_6_4 diagnostic-only weak/noisy silver metric is "
+            f"allowed={str(bool(summary.get('v3_6_4_diagnostic_only_weak_noisy_silver_metric_allowed'))).lower()}. "
+            "Official denominator/qrels/labels/gold, README performance claims, promotion, threshold tuning, "
+            "winner selection, and Lane A/B/C collapsed scoring remain blocked."
+        )
+    if run_id == V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID:
+        all_metrics = as_mapping(summary.get("all_diagnostic_metrics"))
+        core_metrics = as_mapping(summary.get("core_only_metrics"))
+        review_metrics = as_mapping(summary.get("review_only_challenge_metrics"))
+        failures = as_mapping(summary.get("primary_failure_taxonomy"))
+        return (
+            f"- v3_6_4 diagnostic-only weak/noisy silver metric (`{run_id}`) measures "
+            f"{summary.get('diagnostic_row_count', 0)} frozen v3_6_3 manifest rows with separate partitions: "
+            f"core_only={summary.get('core_manifest_row_count', 0)}, "
+            f"review_only_challenge={summary.get('review_only_manifest_row_count', 0)}, "
+            f"all_diagnostic={summary.get('manifest_row_count', 0)}. Deterministic source identity/locator feasibility "
+            f"is core={core_metrics.get('diagnostic_locator_fingerprint_hit_at_1')}, "
+            f"review={review_metrics.get('diagnostic_locator_fingerprint_hit_at_1')}, "
+            f"all={all_metrics.get('diagnostic_locator_fingerprint_hit_at_1')}; live generation coverage="
+            f"{summary.get('runtime_generation_succeeded_row_count', 0)}/{summary.get('diagnostic_row_count', 0)} "
+            "and answer/citation proxy metrics fail closed. "
+            f"Primary failures are runtime_fail_closed={failures.get('runtime_fail_closed', 0)}, "
+            f"weak_silver_expected_answer_ambiguous={failures.get('weak_silver_expected_answer_ambiguous', 0)}, "
+            f"review_only_source_quality_risk={failures.get('review_only_source_quality_risk', 0)}. "
+            "core_only is the main interpretable diagnostic bucket; review_only_challenge is stress/noise; "
+            "all_diagnostic is only a rough stress number. Official denominator/qrels/labels/gold, README performance "
+            "claims, promotion, threshold tuning, winner selection, and Lane A/B/C collapsed scoring remain blocked."
+        )
+    if run_id == V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID:
+        buckets = as_mapping(summary.get("multi_label_blocker_bucket_counts"))
+        return (
+            f"- v3_6_5 rough failure-bucket triage (`{run_id}`) keeps the "
+            "v3_6_4 frozen weak/noisy silver metric diagnostic-only and performs no live silver generation, "
+            "no answer/citation scoring from local LLM output, no DB writes, and no index/export rebuild. "
+            f"Multi-label blockers include runtime_generation_surface_unavailable="
+            f"{buckets.get('runtime_generation_surface_unavailable', 0)}, "
+            f"answer_proxy_reference_missing_from_v3_6_3_manifest="
+            f"{buckets.get('answer_proxy_reference_missing_from_v3_6_3_manifest', 0)}, "
+            f"weak_silver_expected_answer_ambiguous={buckets.get('weak_silver_expected_answer_ambiguous', 0)}, "
+            f"review_only_source_quality_noise={buckets.get('review_only_source_quality_noise', 0)}. "
+            f"Local LLM surface classification={summary.get('local_llm_surface_classification')}; "
+            f"DB/reference classification={summary.get('db_reference_surface_classification')}; "
+            f"diagnostic reference sidecar recommended={str(bool(summary.get('diagnostic_reference_sidecar_recommended'))).lower()}; "
+            f"recommended next phase={summary.get('recommended_next_phase')}. "
+            "Official denominator/qrels/labels/gold, README performance claims, promotion, threshold tuning, "
+            "winner selection, prompt/retrieval/scorer/renderer mutation, production DB usage, and DB-derived "
+            "generation/gold/qrels remain blocked."
+        )
+    if run_id == V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID:
+        counts = as_mapping(summary.get("sidecar_row_counts"))
+        return (
+            f"- v3_6_6 diagnostic reference sidecar and runtime surface probe (`{run_id}`) builds a "
+            f"diagnostic-only reference sidecar from v3_6_1 candidate drafts joined to the frozen v3_6_3 "
+            f"manifest: all={counts.get('all_diagnostic', 0)}, core={counts.get('core_only', 0)}, "
+            f"review-only={counts.get('review_only_challenge', 0)}, quarantine={counts.get('quarantine', 0)}. "
+            f"Local LLM classification={summary.get('local_llm_surface_classification')}; core smoke "
+            f"generation attempted={summary.get('core_smoke_generation_attempted_row_count', 0)} and "
+            f"strict JSON answers returned={summary.get('core_smoke_strict_json_answer_returned_row_count', 0)} and "
+            f"succeeded={summary.get('core_smoke_generation_succeeded_row_count', 0)} over "
+            f"{summary.get('core_smoke_sample_target_row_count', 0)} core sample rows. "
+            f"DB/retrieval surface classification={summary.get('db_retrieval_surface_classification')}; "
+            f"live retrieval probe feasible={str(bool(summary.get('live_retrieval_probe_feasible'))).lower()}; "
+            f"core-only live diagnostic metric allowed="
+            f"{str(bool(summary.get('v3_6_7_core_only_live_diagnostic_metric_allowed'))).lower()}; "
+            f"recommended next phase={summary.get('recommended_next_phase')}. Review-only remains stress-only; "
+            "official denominator/qrels/labels/gold, README performance claims, promotion, threshold tuning, "
+            "winner selection, prompt/retrieval/scorer/renderer mutation, DB writes/migrations/reindex, and "
+            "DB-derived generation/gold/qrels remain blocked."
+        )
+    counts = as_mapping(summary.get("source_family_counts"))
+    profiles = as_mapping(summary.get("query_quality_profile_counts"))
+    splits = as_mapping(summary.get("split_counts"))
+    return (
+        f"- v3_6_1 balanced weak/noisy silver candidate generation (`{run_id}`) creates "
+        f"{summary.get('weak_silver_candidate_count', 0)} diagnostic weak/noisy candidate rows from frozen v3_5_4 "
+        f"source rows: TEXT={counts.get('TEXT', 0)}, PDF={counts.get('PDF', 0)}, XLSX={counts.get('XLSX', 0)}, "
+        f"total={counts.get('total', 0)}. Query profiles are clean={profiles.get('clean_source_grounded', 0)}, "
+        f"short={profiles.get('short_keyword_or_fragment', 0)}, ambiguous={profiles.get('ambiguous_but_source_answerable', 0)}, "
+        f"noisy={profiles.get('noisy_user_like', 0)}, numeric/table={profiles.get('numeric_table_or_locator_hard', 0)}. "
+        f"Splits are exploration={splits.get('weak_silver_exploration', 0)}, holdout={splits.get('weak_silver_holdout', 0)}, "
+        f"stress={splits.get('weak_silver_stress_smoke_candidate', 0)}; blocked rows="
+        f"{summary.get('blocked_generation_row_count', 0)}. This is not gold, not official denominator/qrels, "
+        "not promotion evidence, and not README representative product-performance evidence."
+    )
+
+
+def append_v3_6_progress_entry(summary: Mapping[str, Any]) -> None:
+    path = REPO_ROOT / "docs" / "rag-ingestion-progress.md"
+    run_id = official.clean(summary.get("run_id"))
+    marker_start = f"<!-- {run_id}:progress-entry:start -->"
+    marker_end = f"<!-- {run_id}:progress-entry:end -->"
+    entry = f"{marker_start}\n{v3_6_progress_entry(summary)}\n{marker_end}\n"
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(
+        rf"\n?{re.escape(marker_start)}.*?{re.escape(marker_end)}\n?",
+        "\n",
+        text,
+        flags=re.DOTALL,
+    )
+    if run_id == V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID:
+        status = "low_touch_weak_noisy_silver_policy_v3_6_0_applied"
+    elif run_id == V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID:
+        status = "weak_noisy_silver_candidate_sanity_v3_6_2_passed_diagnostic_only"
+    elif run_id == V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID:
+        status = "diagnostic_weak_noisy_silver_manifest_v3_6_3_frozen"
+    elif run_id == V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID:
+        status = "diagnostic_weak_noisy_silver_metric_v3_6_4_generation_fail_closed"
+    elif run_id == V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID:
+        status = "diagnostic_rough_failure_bucket_triage_v3_6_5_complete"
+    elif run_id == V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID:
+        status = "diagnostic_reference_sidecar_runtime_surface_probe_v3_6_6_complete"
+    else:
+        status = "balanced_weak_noisy_silver_candidates_v3_6_1_generated_diagnostic_only"
+    text = re.sub(r"Overall status: `[^`]+`;", f"Overall status: `{status}`;", text, count=1)
+    insertion_marker = "\n- Official first-run baseline"
+    if insertion_marker in text:
+        text = text.replace(insertion_marker, f"\n{entry}{insertion_marker}", 1)
+    else:
+        text = text.rstrip() + "\n\n" + entry
+    path.write_text(text, encoding="utf-8")
+
+
+def append_v3_6_4_measurements_entry(summary: Mapping[str, Any]) -> None:
+    run_id = official.clean(summary.get("run_id"))
+    if run_id != V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID:
+        return
+    path = REPO_ROOT / "docs" / "rag-ingestion-measurements.md"
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(r"Last updated: [^.]+\.", "Last updated: 2026-05-20 KST.", text, count=1)
+    ladder_row = (
+        f"| v3_6_4 weak/noisy silver diagnostic metric | `{run_id}` | Frozen v3_6_3 weak/noisy manifests | "
+        f"core_only `{summary.get('core_manifest_row_count', 0)}` rows, review_only_challenge "
+        f"`{summary.get('review_only_manifest_row_count', 0)}` rows, all_diagnostic "
+        f"`{summary.get('manifest_row_count', 0)}` rows; generation coverage "
+        f"`{summary.get('runtime_generation_succeeded_row_count', 0)}/{summary.get('diagnostic_row_count', 0)}` fail-closed | "
+        "Diagnostic-only; not gold/qrels/promotion |"
+    )
+    if ladder_row not in text and "| v3_6_4 weak/noisy silver diagnostic metric |" not in text:
+        marker = "\nThe official first-run baseline is a scored partial baseline"
+        text = text.replace(marker, f"\n{ladder_row}{marker}", 1)
+    marker_start = f"<!-- {run_id}:measurements-entry:start -->"
+    marker_end = f"<!-- {run_id}:measurements-entry:end -->"
+    all_metrics = as_mapping(summary.get("all_diagnostic_metrics"))
+    core_metrics = as_mapping(summary.get("core_only_metrics"))
+    review_metrics = as_mapping(summary.get("review_only_challenge_metrics"))
+    failures = as_mapping(summary.get("primary_failure_taxonomy"))
+    entry = f"""{marker_start}
+## 2026-05-20 - v3_6_4 Diagnostic-Only Weak/Noisy Silver Metric
+
+Run family:
+`{run_id}`
+
+Scope:
+
+- Measured the frozen v3_6_3 weak/noisy silver manifests only: core_only `{summary.get('core_manifest_row_count', 0)}`, review_only_challenge `{summary.get('review_only_manifest_row_count', 0)}`, all_diagnostic `{summary.get('manifest_row_count', 0)}`.
+- This is weak/noisy silver diagnostic measurement only: not gold, not official qrels, not official denominator, not promotion evidence, not threshold tuning, not winner selection, and not README representative product-performance evidence.
+- Live generation was unavailable for this 1000-row pass, so answer/citation proxy metrics are fail-closed; deterministic source identity and locator feasibility metrics were still computed from the frozen manifest.
+
+Compact diagnostic metrics:
+
+| Partition | Rows | Source identity @1 | Locator fingerprint @1 | Context present | Citation source match | Answer non-empty | Runtime generation |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| core_only | {summary.get('core_manifest_row_count', 0)} | {core_metrics.get('diagnostic_source_identity_hit_at_1')} | {core_metrics.get('diagnostic_locator_fingerprint_hit_at_1')} | {core_metrics.get('diagnostic_retrieved_context_present_rate')} | {core_metrics.get('diagnostic_citation_source_identity_match_rate')} | {core_metrics.get('diagnostic_answer_non_empty_rate')} | {summary.get('runtime_generation_succeeded_row_count', 0)}/{summary.get('core_manifest_row_count', 0)} |
+| review_only_challenge | {summary.get('review_only_manifest_row_count', 0)} | {review_metrics.get('diagnostic_source_identity_hit_at_1')} | {review_metrics.get('diagnostic_locator_fingerprint_hit_at_1')} | {review_metrics.get('diagnostic_retrieved_context_present_rate')} | {review_metrics.get('diagnostic_citation_source_identity_match_rate')} | {review_metrics.get('diagnostic_answer_non_empty_rate')} | 0/{summary.get('review_only_manifest_row_count', 0)} |
+| all_diagnostic | {summary.get('manifest_row_count', 0)} | {all_metrics.get('diagnostic_source_identity_hit_at_1')} | {all_metrics.get('diagnostic_locator_fingerprint_hit_at_1')} | {all_metrics.get('diagnostic_retrieved_context_present_rate')} | {all_metrics.get('diagnostic_citation_source_identity_match_rate')} | {all_metrics.get('diagnostic_answer_non_empty_rate')} | {summary.get('runtime_generation_succeeded_row_count', 0)}/{summary.get('manifest_row_count', 0)} |
+
+Failure taxonomy:
+
+- runtime_fail_closed: `{failures.get('runtime_fail_closed', 0)}`
+- weak_silver_expected_answer_ambiguous: `{failures.get('weak_silver_expected_answer_ambiguous', 0)}`
+- review_only_source_quality_risk: `{failures.get('review_only_source_quality_risk', 0)}`
+
+Interpretation:
+
+- core_only is the main interpretable diagnostic bucket.
+- review_only_challenge is stress/noise and must not be merged into a headline result without that label.
+- all_diagnostic is only a rough overall stress number.
+- The split holdout remains non-source-isolated because v3_6_2/v3_6_3 recorded source identity crossing; official proximity rows remain review-only and core count is `{summary.get('official_proximity_core_row_count', 0)}`.
+
+Primary machine artifacts:
+
+- `ai/eval/reports/rag-ingestion/{DEFAULT_V3_6_4_METRIC_SUMMARY_JSON.name}`
+- `ai/eval/reports/rag-ingestion/{DEFAULT_V3_6_4_METRIC_PER_ROW_JSONL.name}`
+- `ai/eval/reports/rag-ingestion/{DEFAULT_V3_6_4_METRIC_AGGREGATE_BY_BUCKET_JSON.name}`
+- `ai/eval/reports/rag-ingestion/{DEFAULT_V3_6_4_METRIC_FAILURE_TAXONOMY_JSON.name}`
+- `ai/eval/reports/rag-ingestion/{DEFAULT_V3_6_4_METRIC_POLICY_AUDIT_JSON.name}`
+{marker_end}
+"""
+    text = re.sub(
+        rf"\n?{re.escape(marker_start)}.*?{re.escape(marker_end)}\n?",
+        "\n",
+        text,
+        flags=re.DOTALL,
+    )
+    first_section = "\n## 2026-"
+    if first_section in text:
+        text = text.replace(first_section, f"\n{entry}\n## 2026-", 1)
+    else:
+        text = text.rstrip() + "\n\n" + entry
+    path.write_text(text, encoding="utf-8")
 
 
 V3_4_1_QRELS_CANDIDATE_CSV_FIELDNAMES = [

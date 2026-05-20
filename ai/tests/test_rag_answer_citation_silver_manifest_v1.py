@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -70,6 +71,63 @@ V3_5_5_AUDIT_SAMPLE_REVIEW_PACKET = REPORT_DIR / f"{V3_5_5_RUN_ID}_audit_sample_
 V3_5_5_DUPLICATE_HASH_AUDIT = REPORT_DIR / f"{V3_5_5_RUN_ID}_duplicate_hash_audit.jsonl"
 V3_5_5_RECOMMENDED_REPAIR_QUEUE = REPORT_DIR / f"{V3_5_5_RUN_ID}_recommended_repair_queue.jsonl"
 V3_5_5_NEXT_PHASE_POLICY_BOUNDARY = REPORT_DIR / f"{V3_5_5_RUN_ID}_next_phase_policy_boundary.json"
+V3_6_0_RUN_ID = "official_answer_citation_agentic_loop_run_v3_6_0_low_touch_noisy_silver_policy_application"
+V3_6_0_POLICY_APPROVAL_SUMMARY = REPORT_DIR / f"{V3_6_0_RUN_ID}_policy_approval_summary.json"
+V3_6_0_GENERATION_CONTRACT = REPORT_DIR / f"{V3_6_0_RUN_ID}_generation_contract.json"
+V3_6_0_USER_DECISION_MATRIX = REPORT_DIR / f"{V3_6_0_RUN_ID}_user_decision_matrix.jsonl"
+V3_6_0_GUARDRAIL_SUMMARY = REPORT_DIR / f"{V3_6_0_RUN_ID}_guardrail_summary.json"
+V3_6_1_RUN_ID = "official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation"
+V3_6_1_WEAK_SILVER_CANDIDATES = REPORT_DIR / f"{V3_6_1_RUN_ID}_weak_silver_candidates.jsonl"
+V3_6_1_GENERATION_SUMMARY = REPORT_DIR / f"{V3_6_1_RUN_ID}_generation_summary.json"
+V3_6_1_SPLIT_MANIFEST = REPORT_DIR / f"{V3_6_1_RUN_ID}_split_manifest.json"
+V3_6_1_QUALITY_DISTRIBUTION = REPORT_DIR / f"{V3_6_1_RUN_ID}_generation_quality_distribution.json"
+V3_6_1_BLOCKED_ROWS = REPORT_DIR / f"{V3_6_1_RUN_ID}_generation_blocked_rows.jsonl"
+V3_6_1_POLICY_COMPLIANCE_AUDIT = REPORT_DIR / f"{V3_6_1_RUN_ID}_policy_compliance_audit.json"
+V3_6_1_NEXT_PHASE_RECOMMENDATION = REPORT_DIR / f"{V3_6_1_RUN_ID}_next_phase_recommendation.json"
+V3_6_2_RUN_ID = "official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval"
+V3_6_2_CANDIDATE_SANITY_SUMMARY = REPORT_DIR / f"{V3_6_2_RUN_ID}_candidate_sanity_summary.json"
+V3_6_2_CANDIDATE_SANITY_PER_ROW = REPORT_DIR / f"{V3_6_2_RUN_ID}_candidate_sanity_per_row.jsonl"
+V3_6_2_CANDIDATE_QUARANTINE_ROWS = REPORT_DIR / f"{V3_6_2_RUN_ID}_candidate_quarantine_rows.jsonl"
+V3_6_2_CANDIDATE_METRIC_FEASIBILITY = REPORT_DIR / f"{V3_6_2_RUN_ID}_candidate_metric_feasibility.json"
+V3_6_2_SPLIT_INDEPENDENCE_AUDIT = REPORT_DIR / f"{V3_6_2_RUN_ID}_split_independence_audit.json"
+V3_6_2_HASH_CONTRACT_AUDIT = REPORT_DIR / f"{V3_6_2_RUN_ID}_hash_contract_audit.json"
+V3_6_2_NEXT_PHASE_RECOMMENDATION = REPORT_DIR / f"{V3_6_2_RUN_ID}_next_phase_recommendation.json"
+V3_6_3_RUN_ID = "official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze"
+V3_6_3_MANIFEST_SUMMARY = REPORT_DIR / f"{V3_6_3_RUN_ID}_diagnostic_weak_noisy_silver_manifest_summary.json"
+V3_6_3_MANIFEST_ALL = REPORT_DIR / f"{V3_6_3_RUN_ID}_diagnostic_weak_noisy_silver_manifest_all.jsonl"
+V3_6_3_MANIFEST_CORE = REPORT_DIR / f"{V3_6_3_RUN_ID}_diagnostic_weak_noisy_silver_manifest_core.jsonl"
+V3_6_3_MANIFEST_REVIEW_ONLY = REPORT_DIR / f"{V3_6_3_RUN_ID}_diagnostic_weak_noisy_silver_manifest_review_only.jsonl"
+V3_6_3_MANIFEST_QUARANTINE = REPORT_DIR / f"{V3_6_3_RUN_ID}_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl"
+V3_6_3_MANIFEST_POLICY_AUDIT = REPORT_DIR / f"{V3_6_3_RUN_ID}_diagnostic_weak_noisy_silver_manifest_policy_audit.json"
+V3_6_3_NEXT_PHASE_RECOMMENDATION = (
+    REPORT_DIR / f"{V3_6_3_RUN_ID}_diagnostic_weak_noisy_silver_manifest_next_phase_recommendation.json"
+)
+V3_6_4_RUN_ID = "official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric"
+V3_6_4_SUMMARY = REPORT_DIR / f"{V3_6_4_RUN_ID}_summary.json"
+V3_6_4_PER_ROW = REPORT_DIR / f"{V3_6_4_RUN_ID}_per_row.jsonl"
+V3_6_4_AGGREGATE_BY_BUCKET = REPORT_DIR / f"{V3_6_4_RUN_ID}_aggregate_by_bucket.json"
+V3_6_4_FAILURE_TAXONOMY = REPORT_DIR / f"{V3_6_4_RUN_ID}_failure_taxonomy.json"
+V3_6_4_SAMPLE_REVIEW = REPORT_DIR / f"{V3_6_4_RUN_ID}_sample_review.jsonl"
+V3_6_4_POLICY_AUDIT = REPORT_DIR / f"{V3_6_4_RUN_ID}_policy_audit.json"
+V3_6_4_NEXT_PHASE_RECOMMENDATION = REPORT_DIR / f"{V3_6_4_RUN_ID}_next_phase_recommendation.json"
+V3_6_5_RUN_ID = "official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage"
+V3_6_5_SUMMARY = REPORT_DIR / f"{V3_6_5_RUN_ID}_summary.json"
+V3_6_5_PER_ROW = REPORT_DIR / f"{V3_6_5_RUN_ID}_per_row.jsonl"
+V3_6_5_BLOCKER_MATRIX = REPORT_DIR / f"{V3_6_5_RUN_ID}_blocker_matrix.json"
+V3_6_5_RUNTIME_SURFACE_AUDIT = REPORT_DIR / f"{V3_6_5_RUN_ID}_runtime_surface_audit.json"
+V3_6_5_REFERENCE_SURFACE_AUDIT = REPORT_DIR / f"{V3_6_5_RUN_ID}_reference_surface_audit.json"
+V3_6_5_DB_SURFACE_AUDIT = REPORT_DIR / f"{V3_6_5_RUN_ID}_db_surface_audit.json"
+V3_6_5_LOCAL_LLM_SURFACE_AUDIT = REPORT_DIR / f"{V3_6_5_RUN_ID}_local_llm_surface_audit.json"
+V3_6_5_POLICY_AUDIT = REPORT_DIR / f"{V3_6_5_RUN_ID}_policy_audit.json"
+V3_6_5_NEXT_PHASE_RECOMMENDATION = REPORT_DIR / f"{V3_6_5_RUN_ID}_next_phase_recommendation.json"
+V3_6_6_RUN_ID = "official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe"
+V3_6_6_SUMMARY = REPORT_DIR / f"{V3_6_6_RUN_ID}_summary.json"
+V3_6_6_REFERENCE_SIDECAR = REPORT_DIR / f"{V3_6_6_RUN_ID}_reference_sidecar.jsonl"
+V3_6_6_CORE_SMOKE_SAMPLE = REPORT_DIR / f"{V3_6_6_RUN_ID}_core_smoke_sample.jsonl"
+V3_6_6_RUNTIME_PROBE_SUMMARY = REPORT_DIR / f"{V3_6_6_RUN_ID}_runtime_probe_summary.json"
+V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT = REPORT_DIR / f"{V3_6_6_RUN_ID}_db_retrieval_surface_audit.json"
+V3_6_6_POLICY_AUDIT = REPORT_DIR / f"{V3_6_6_RUN_ID}_policy_audit.json"
+V3_6_6_NEXT_PHASE_RECOMMENDATION = REPORT_DIR / f"{V3_6_6_RUN_ID}_next_phase_recommendation.json"
 SOURCE_BOUND_SEARCH_UNIT_MANIFEST = (
     ROOT / "ai" / "eval" / "indexes" / "rag-data-official-denominator-v1" / "search_unit_manifest.jsonl"
 )
@@ -1141,6 +1199,1077 @@ def test_v3_5_source_material_phases_create_no_silver_rows_or_label_payloads() -
         assert clean(row.get("provenance_query_id")) not in official_query_ids
 
 
+def test_v3_6_0_low_touch_noisy_policy_application_records_user_decision_without_rows() -> None:
+    summary = read_json(V3_6_0_POLICY_APPROVAL_SUMMARY)
+    contract = read_json(V3_6_0_GENERATION_CONTRACT)
+    matrix_rows = read_jsonl(V3_6_0_USER_DECISION_MATRIX)
+    guardrail = read_json(V3_6_0_GUARDRAIL_SUMMARY)
+
+    assert summary["run_id"] == V3_6_0_RUN_ID
+    assert summary["artifact_kind"] == "low_touch_noisy_silver_policy_application"
+    assert summary["user_policy_decision_applied"] is True
+    assert summary["low_touch_human_review_required"] is False
+    assert summary["source_manifest_counts"] == {"TEXT": 350, "PDF": 325, "XLSX": 325, "total": 1000}
+    assert summary["source_quality_counts"] == {
+        "pass_source_quality_count": 666,
+        "review_only_count": 334,
+        "critical_repair_required_count": 0,
+    }
+    assert summary["allow_generated_question_draft"] is True
+    assert summary["allow_expected_answer_draft"] is True
+    assert summary["allow_supporting_evidence_locator_draft"] is True
+    assert summary["allow_weak_relevance_status_draft"] is True
+    assert summary["allow_weak_answerability_status_draft"] is True
+    assert summary["weak_silver_candidate_count"] == 0
+    assert summary["weak_silver_candidates_created"] is False
+    assert summary["silver_jsonl_rows_created"] is False
+    assert summary["official_gold_labels_created"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["readme_representative_product_performance_claim"] is False
+    assert summary["recommended_next_phase"] == "v3_6_1_balanced_weak_noisy_silver_candidate_generation"
+
+    assert contract["contains_generated_rows"] is False
+    assert contract["contract_scope"] == "v3_6_1_row_schema_only"
+    assert "generated_question_draft" in contract["row_schema"]["draft_only_fields"]
+    assert "expected_answer_draft" in contract["row_schema"]["draft_only_fields"]
+    assert "supporting_evidence_locator_draft" in contract["row_schema"]["draft_only_fields"]
+    assert len(matrix_rows) >= 8
+    assert {row["decision_key"] for row in matrix_rows} >= {
+        "manual_review_all_1000_rows",
+        "generated_question_draft_allowed",
+        "expected_answer_draft_allowed",
+        "supporting_evidence_locator_draft_allowed",
+        "review_only_source_rows_allowed",
+        "official_qrels_created",
+        "promotion_evidence",
+    }
+    assert guardrail["policy_only_no_generated_rows"] is True
+    assert guardrail["guardrails"]["weak_noisy_silver_candidate_rows_created"] is False
+    assert_no_generation_payload_keys(summary)
+    assert_no_generation_payload_keys(guardrail)
+
+
+def test_v3_6_1_weak_noisy_candidate_rows_are_source_bound_non_gold_and_mixed() -> None:
+    summary = read_json(V3_6_1_GENERATION_SUMMARY)
+    rows = read_jsonl(V3_6_1_WEAK_SILVER_CANDIDATES)
+    blocked_rows = read_jsonl(V3_6_1_BLOCKED_ROWS)
+    distribution = read_json(V3_6_1_QUALITY_DISTRIBUTION)
+    source_manifest_rows = read_jsonl(V3_5_4_BALANCED_SOURCE_MANIFEST)
+    official_rows = read_jsonl(SOURCE_BOUND_SEARCH_UNIT_MANIFEST)
+    official_search_unit_ids = {clean(row.get("search_unit_id")) for row in official_rows}
+    official_locator_fingerprints = {
+        source_locator_fingerprint(row.get("locator")) for row in official_rows if has_value(row.get("locator"))
+    }
+    source_candidate_ids = {row["candidate_id"] for row in source_manifest_rows}
+
+    assert summary["run_id"] == V3_6_1_RUN_ID
+    assert summary["artifact_kind"] == "balanced_weak_noisy_silver_candidate_generation"
+    assert summary["source_policy_run_id"] == V3_6_0_RUN_ID
+    assert summary["source_manifest_run_id"] == V3_5_4_RUN_ID
+    assert summary["source_quality_audit_run_id"] == V3_5_5_RUN_ID
+    assert summary["user_policy_decision_applied"] is True
+    assert summary["low_touch_human_review_required"] is False
+    assert summary["weak_silver_candidate_count"] == len(rows) == 1000
+    assert summary["source_family_counts"] == {"TEXT": 350, "PDF": 325, "XLSX": 325, "total": 1000}
+    assert count_by_source_family(rows) == summary["source_family_counts"]
+    assert summary["query_quality_profile_counts"] == {
+        "ambiguous_but_source_answerable": 200,
+        "clean_source_grounded": 450,
+        "noisy_user_like": 100,
+        "numeric_table_or_locator_hard": 100,
+        "short_keyword_or_fragment": 150,
+    }
+    assert distribution["query_quality_profile_counts"] == summary["query_quality_profile_counts"]
+    assert summary["pass_source_quality_rows_used"] == 666
+    assert summary["review_only_rows_used"] == 334
+    assert blocked_rows == []
+    assert summary["blocked_generation_row_count"] == 0
+    assert summary["official_denominator_overlap_detected_count"] == 0
+    assert summary["candidate_artifact_source_leak_detected_count"] == 0
+    assert summary["duplicate_generated_question_hash_count"] == 0
+    assert summary["official_proximity_review_row_count"] == 3
+    assert summary["normalized_source_hash_repetition_rows_used"] == 57
+
+    weak_ids = [row["weak_silver_candidate_id"] for row in rows]
+    question_hashes = [row["generated_question_hash"] for row in rows]
+    source_locator_keys = [
+        (row["source_family"], row["source_document_identity"], row["locator_fingerprint"])
+        for row in rows
+    ]
+    assert len(weak_ids) == len(set(weak_ids))
+    assert len(question_hashes) == len(set(question_hashes))
+    assert len(source_locator_keys) == len(set(source_locator_keys))
+    assert {row["source_candidate_id"] for row in rows} == source_candidate_ids
+
+    seen_profiles = {row["query_quality_profile"] for row in rows}
+    assert seen_profiles == {
+        "clean_source_grounded",
+        "short_keyword_or_fragment",
+        "ambiguous_but_source_answerable",
+        "noisy_user_like",
+        "numeric_table_or_locator_hard",
+    }
+    for row in rows:
+        assert_required(
+            row,
+            (
+                "weak_silver_candidate_id",
+                "source_candidate_id",
+                "source_family",
+                "source_document_identity",
+                "source_locator",
+                "source_text_or_value_hash",
+                "source_quality_status",
+                "query_quality_profile",
+                "generated_question_draft",
+                "expected_answer_draft",
+                "supporting_evidence_locator_draft",
+                "supporting_evidence_excerpt_hash",
+                "weak_relevance_status",
+                "weak_answerability_status",
+                "human_review_status",
+                "split_role",
+                "generation_policy_version",
+            ),
+        )
+        assert row["source_candidate_id"] in source_candidate_ids
+        assert clean(row.get("search_unit_id")) not in official_search_unit_ids
+        assert clean(row.get("locator_fingerprint")) not in official_locator_fingerprints
+        assert row["official_denominator_overlap"] is False
+        assert row["official_denominator_overlap_detected"] is False
+        assert row["candidate_artifacts_used_as_generation_source"] is False
+        assert row["not_gold"] is True
+        assert row["not_official_denominator"] is True
+        assert row["not_official_qrels"] is True
+        assert row["promotion_evidence"] is False
+        assert row["weak_silver_candidate"] is True
+        assert row["weak_noisy_silver"] is True
+        assert row["human_review_status"] == "weak_silver_unreviewed"
+        assert row["expected_answer_status"] == "weak_silver_unreviewed_draft"
+        assert row["supporting_evidence_status"] == "weak_silver_unreviewed_draft"
+        assert row["weak_relevance_status"] == "auto_weak_silver_source_grounded"
+        assert row["official_relevance_label_created"] is False
+        assert row["official_answerability_label_created"] is False
+        assert row["official_qrels_created"] is False
+        assert row["official_gold_label_created"] is False
+        assert_forbid_final_label_or_qrels_payload(row)
+        locator_draft = row["supporting_evidence_locator_draft"]
+        assert locator_draft["source_family"] == row["source_family"]
+        assert locator_draft["locator_fingerprint"] == row["locator_fingerprint"]
+        assert has_value(locator_draft.get("source_locator"))
+
+
+def test_v3_6_1_policy_compliance_audit_locks_inputs_splits_and_canonical_silver() -> None:
+    summary = read_json(V3_6_1_GENERATION_SUMMARY)
+    audit = read_json(V3_6_1_POLICY_COMPLIANCE_AUDIT)
+    split = read_json(V3_6_1_SPLIT_MANIFEST)
+    next_phase = read_json(V3_6_1_NEXT_PHASE_RECOMMENDATION)
+
+    assert audit["source_policy_run_id"] == V3_6_0_RUN_ID
+    assert audit["candidate_artifacts_used_as_generation_source"] is False
+    assert audit["candidate_artifact_source_leak_detected_count"] == 0
+    assert audit["official_denominator_overlap_detected_count"] == 0
+    assert audit["official_gold_labels_created"] is False
+    assert audit["official_qrels_created"] is False
+    assert audit["official_relevance_labels_created"] is False
+    assert audit["official_answerability_labels_created"] is False
+    assert audit["promotion_evidence"] is False
+    assert audit["representative_product_performance_claim"] is False
+    assert audit["protected_input_sha256_before"] == audit["protected_input_sha256_after"]
+    assert audit["protected_input_sha256_unchanged"] is True
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["retrieval_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["readme_performance_claim_mutation"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+
+    assert split["split_counts"] == {
+        "weak_silver_exploration": 700,
+        "weak_silver_holdout": 200,
+        "weak_silver_stress_smoke_candidate": 100,
+    }
+    assert split["split_counts_by_source_family"]["weak_silver_exploration"] == {
+        "TEXT": 244,
+        "PDF": 228,
+        "XLSX": 228,
+        "total": 700,
+    }
+    assert split["split_counts_by_source_family"]["weak_silver_holdout"] == {
+        "TEXT": 70,
+        "PDF": 65,
+        "XLSX": 65,
+        "total": 200,
+    }
+    assert split["split_counts_by_source_family"]["weak_silver_stress_smoke_candidate"] == {
+        "TEXT": 36,
+        "PDF": 32,
+        "XLSX": 32,
+        "total": 100,
+    }
+    assert split["official_proximity_rows_in_stress_smoke_count"] == 0
+    assert split["not_official_dev_holdout_contract"] is True
+    assert next_phase["recommended_next_phase"] == "v3_6_2_weak_noisy_silver_candidate_sanity_eval"
+    assert next_phase["promotion_evidence"] is False
+    assert next_phase["threshold_tuning"] is False
+    assert next_phase["winner_selection"] is False
+
+    for split_name in ("contract", "dev", "holdout"):
+        assert SILVER_JSONL_BY_SPLIT[split_name].exists() is False
+
+
+def test_v3_6_2_candidate_sanity_eval_artifacts_are_compact_guarded_and_feasible() -> None:
+    summary = read_json(V3_6_2_CANDIDATE_SANITY_SUMMARY)
+    per_row = read_jsonl(V3_6_2_CANDIDATE_SANITY_PER_ROW)
+    quarantine_rows = read_jsonl(V3_6_2_CANDIDATE_QUARANTINE_ROWS)
+    metric_feasibility = read_json(V3_6_2_CANDIDATE_METRIC_FEASIBILITY)
+    split_audit = read_json(V3_6_2_SPLIT_INDEPENDENCE_AUDIT)
+    hash_audit = read_json(V3_6_2_HASH_CONTRACT_AUDIT)
+    next_phase = read_json(V3_6_2_NEXT_PHASE_RECOMMENDATION)
+
+    assert summary["run_id"] == V3_6_2_RUN_ID
+    assert summary["artifact_kind"] == "weak_noisy_silver_candidate_sanity_eval"
+    assert summary["source_candidate_generation_run_id"] == V3_6_1_RUN_ID
+    assert summary["candidate_row_count"] == 1000
+    assert summary["unique_weak_silver_candidate_id_count"] == 1000
+    assert summary["duplicate_weak_silver_candidate_id_count"] == 0
+    assert summary["duplicate_source_identity_locator_count"] == 0
+    assert summary["duplicate_generated_question_hash_count"] == 0
+    assert summary["duplicate_source_text_or_value_hash_group_count"] == 17
+    assert summary["duplicate_source_text_or_value_hash_row_count"] == 57
+    assert summary["official_proximity_review_row_count"] == 3
+    assert summary["official_proximity_review_split_role_counts"] == {"weak_silver_exploration": 3}
+    assert summary["source_identity_groups_crossing_split_roles_count"] == 74
+    assert summary["split_independence_warning"] == "source_identity_groups_cross_split_roles_diagnostic_holdout_warning"
+    assert summary["split_independence_official_leakage"] is False
+    assert summary["candidate_sanity_passed"] is True
+    assert summary["bucket_counts"] == {
+        "blocked_candidate": 0,
+        "core_pass_quality_candidate": 665,
+        "quarantine_candidate": 0,
+        "review_only_challenge_candidate": 335,
+    }
+    assert summary["source_family_counts"] == {"TEXT": 350, "PDF": 325, "XLSX": 325, "total": 1000}
+    assert summary["query_quality_profile_counts"] == {
+        "ambiguous_but_source_answerable": 200,
+        "clean_source_grounded": 450,
+        "noisy_user_like": 100,
+        "numeric_table_or_locator_hard": 100,
+        "short_keyword_or_fragment": 150,
+    }
+    assert summary["source_quality_status_counts"] == {
+        "pass_source_quality": 666,
+        "review_duplicate_or_near_duplicate": 57,
+        "review_pdf_extraction_order": 29,
+        "review_pdf_header_footer_or_boilerplate": 2,
+        "review_pdf_numeric_or_table_context": 39,
+        "review_short_source_text_or_value": 203,
+        "review_xlsx_hidden_policy_boundary": 4,
+    }
+    assert summary["weak_answerability_status_counts"] == {
+        "auto_weak_silver_likely_answerable": 666,
+        "auto_weak_silver_uncertain_answerability": 334,
+    }
+    assert summary["split_role_counts"] == {
+        "weak_silver_exploration": 700,
+        "weak_silver_holdout": 200,
+        "weak_silver_stress_smoke_candidate": 100,
+    }
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["official_gold_labels_created"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["lane_a_b_c_collapsed_scoring"] is False
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert "candidate_sanity_per_row" not in summary
+    assert "source_candidate_rows" not in summary
+
+    assert len(per_row) == 1000
+    assert quarantine_rows == []
+    assert {row["diagnostic_bucket"] for row in per_row} == {
+        "core_pass_quality_candidate",
+        "review_only_challenge_candidate",
+    }
+    assert all(row["not_gold"] is True for row in per_row)
+    assert all(row["not_official_denominator"] is True for row in per_row)
+    assert all(row["not_official_qrels"] is True for row in per_row)
+    assert all(row["promotion_evidence"] is False for row in per_row)
+    assert all(row["official_metric_denominator_usage_allowed"] is False for row in per_row)
+    assert all(row["supporting_evidence_excerpt_hash_matches_source_hash"] is True for row in per_row)
+    assert sum(1 for row in per_row if row["official_proximity_review"]) == 3
+    assert all(
+        row["diagnostic_bucket"] == "review_only_challenge_candidate"
+        for row in per_row
+        if row["official_proximity_review"]
+    )
+    assert all(
+        row["diagnostic_bucket"] == "review_only_challenge_candidate"
+        for row in per_row
+        if row["source_quality_status"].startswith("review_")
+    )
+
+    assert metric_feasibility["candidate_quality_metrics_allowed_immediately"] is True
+    assert metric_feasibility["diagnostic_weak_noisy_silver_metrics_allowed_after_v3_6_2_passes"] is True
+    assert metric_feasibility["official_metric_denominator_usage_allowed"] is False
+    assert metric_feasibility["promotion_evidence_allowed"] is False
+    assert metric_feasibility["readme_representative_product_performance_claim_allowed"] is False
+    assert metric_feasibility["threshold_tuning_allowed"] is False
+    assert metric_feasibility["winner_selection_allowed"] is False
+
+    assert split_audit["source_identity_groups_crossing_split_roles_count"] == 74
+    assert split_audit["split_independence_warning"] == "source_identity_groups_cross_split_roles_diagnostic_holdout_warning"
+    assert split_audit["official_leakage_detected"] is False
+    assert split_audit["not_official_dev_holdout_contract"] is True
+
+    assert hash_audit["generated_question_hash_contract"] == "normalized_question_sha256_lowercase_whitespace_collapsed"
+    assert hash_audit["raw_question_hash_contract"] is False
+    assert hash_audit["normalized_question_hash_match_count"] == 1000
+    assert hash_audit["salted_hash_detected"] is False
+    assert hash_audit["source_identity_bound_hash_detected"] is False
+
+    assert next_phase["v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_allowed"] is True
+    assert next_phase["recommended_next_phase"] == "v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze"
+    assert next_phase["promotion_evidence"] is False
+    assert next_phase["official_metric_denominator_usage_allowed"] is False
+
+
+def test_v3_6_3_diagnostic_manifest_freeze_counts_policy_and_flags() -> None:
+    summary = read_json(V3_6_3_MANIFEST_SUMMARY)
+    all_rows = read_jsonl(V3_6_3_MANIFEST_ALL)
+    core_rows = read_jsonl(V3_6_3_MANIFEST_CORE)
+    review_rows = read_jsonl(V3_6_3_MANIFEST_REVIEW_ONLY)
+    quarantine_rows = read_jsonl(V3_6_3_MANIFEST_QUARANTINE)
+    policy_audit = read_json(V3_6_3_MANIFEST_POLICY_AUDIT)
+    next_phase = read_json(V3_6_3_NEXT_PHASE_RECOMMENDATION)
+    sanity_summary = read_json(V3_6_2_CANDIDATE_SANITY_SUMMARY)
+    sanity_rows = read_jsonl(V3_6_2_CANDIDATE_SANITY_PER_ROW)
+
+    assert summary["run_id"] == V3_6_3_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_weak_noisy_silver_manifest_freeze"
+    assert summary["source_candidate_generation_run_id"] == V3_6_1_RUN_ID
+    assert summary["source_sanity_eval_run_id"] == V3_6_2_RUN_ID
+    assert summary["manifest_freeze_passed"] is True
+    assert summary["manifest_row_count"] == len(all_rows) == 1000
+    assert summary["core_manifest_row_count"] == len(core_rows) == 665
+    assert summary["review_only_manifest_row_count"] == len(review_rows) == 335
+    assert summary["quarantine_manifest_row_count"] == len(quarantine_rows) == 0
+    assert summary["bucket_counts"] == sanity_summary["bucket_counts"] == {
+        "blocked_candidate": 0,
+        "core_pass_quality_candidate": 665,
+        "quarantine_candidate": 0,
+        "review_only_challenge_candidate": 335,
+    }
+    assert summary["source_family_counts"] == {"TEXT": 350, "PDF": 325, "XLSX": 325, "total": 1000}
+    assert summary["split_role_counts"] == {
+        "weak_silver_exploration": 700,
+        "weak_silver_holdout": 200,
+        "weak_silver_stress_smoke_candidate": 100,
+    }
+    assert summary["query_quality_profile_counts"] == sanity_summary["query_quality_profile_counts"]
+    assert summary["source_quality_status_counts"] == sanity_summary["source_quality_status_counts"]
+    assert summary["weak_answerability_status_counts"] == sanity_summary["weak_answerability_status_counts"]
+    assert summary["official_proximity_review_row_count"] == 3
+    assert summary["official_proximity_review_split_role_counts"] == {"weak_silver_exploration": 3}
+    assert summary["duplicate_source_text_or_value_hash_group_count"] == 17
+    assert summary["duplicate_source_text_or_value_hash_row_count"] == 57
+    assert summary["split_independence_warning"] == "source_identity_groups_cross_split_roles_diagnostic_holdout_warning"
+    assert summary["hash_contract"] == "normalized_question_sha256_lowercase_whitespace_collapsed"
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert "manifest_rows_all" not in summary
+    assert "source_candidate_rows" not in summary
+    assert "sanity_rows" not in summary
+
+    all_ids = {row["weak_silver_candidate_id"] for row in all_rows}
+    core_ids = {row["weak_silver_candidate_id"] for row in core_rows}
+    review_ids = {row["weak_silver_candidate_id"] for row in review_rows}
+    quarantine_ids = {row["weak_silver_candidate_id"] for row in quarantine_rows}
+    sanity_ids = {row["weak_silver_candidate_id"] for row in sanity_rows}
+    sanity_proximity_ids = {
+        row["weak_silver_candidate_id"]
+        for row in sanity_rows
+        if row["official_proximity_review"]
+    }
+    assert all_ids == sanity_ids
+    assert core_ids | review_ids | quarantine_ids == all_ids
+    assert core_ids.isdisjoint(review_ids)
+    assert core_ids.isdisjoint(quarantine_ids)
+    assert review_ids.isdisjoint(quarantine_ids)
+    assert sanity_proximity_ids
+    assert sanity_proximity_ids <= review_ids
+    assert sanity_proximity_ids.isdisjoint(core_ids)
+
+    core_policy = summary["core_manifest_policy"]
+    assert core_policy["pass_source_quality_and_likely_answerable_are_necessary_but_not_sufficient"] is True
+    assert core_policy["official_proximity_review_rows_remain_review_only"] is True
+    assert set(core_policy["excluded_from_core_reasons"]) >= {
+        "review_duplicate_or_near_duplicate",
+        "review_short_source_text_or_value",
+        "review_pdf_extraction_order",
+        "review_pdf_numeric_or_table_context",
+        "review_pdf_header_footer_or_boilerplate",
+        "review_xlsx_hidden_policy_boundary",
+        "auto_weak_silver_uncertain_answerability",
+        "official_proximity_review",
+    }
+
+    for row in all_rows:
+        assert row["manifest_run_id"] == V3_6_3_RUN_ID
+        assert row["source_candidate_generation_run_id"] == V3_6_1_RUN_ID
+        assert row["source_sanity_eval_run_id"] == V3_6_2_RUN_ID
+        assert row["diagnostic_only"] is True
+        assert row["not_gold"] is True
+        assert row["not_official_denominator"] is True
+        assert row["not_official_qrels"] is True
+        assert row["promotion_evidence"] is False
+        assert row["official_qrels_created"] is False
+        assert row["official_relevance_label_created"] is False
+        assert row["official_answerability_label_created"] is False
+        assert row["official_gold_label_created"] is False
+        assert row["official_metric_denominator_usage_allowed"] is False
+        assert_forbid_final_label_or_qrels_payload(row)
+        assert "source_candidate_rows" not in row
+        assert "sanity_rows" not in row
+
+    assert {row["diagnostic_bucket"] for row in core_rows} == {"core_pass_quality_candidate"}
+    assert {row["diagnostic_bucket"] for row in review_rows} == {"review_only_challenge_candidate"}
+    assert all(row["source_quality_status"] == "pass_source_quality" for row in core_rows)
+    assert all(row["weak_answerability_status"] == "auto_weak_silver_likely_answerable" for row in core_rows)
+    assert not any(row["official_proximity_review"] for row in core_rows)
+    assert all(
+        row["diagnostic_bucket"] == "review_only_challenge_candidate"
+        for row in review_rows
+        if row["official_proximity_review"]
+    )
+    assert sum(1 for row in review_rows if row["official_proximity_review"]) == 3
+
+    assert policy_audit["official_qrels_created"] is False
+    assert policy_audit["official_relevance_labels_created"] is False
+    assert policy_audit["official_answerability_labels_created"] is False
+    assert policy_audit["official_denominator_mutation"] is False
+    assert policy_audit["promotion_evidence"] is False
+    assert policy_audit["threshold_tuning"] is False
+    assert policy_audit["winner_selection"] is False
+    assert policy_audit["readme_representative_product_performance_claim"] is False
+    assert policy_audit["protected_input_sha256_before"] == policy_audit["protected_input_sha256_after"]
+
+    assert next_phase["v3_6_4_diagnostic_only_weak_noisy_silver_metric_allowed"] is True
+    assert next_phase["recommended_next_phase"] == "v3_6_4_diagnostic_only_weak_noisy_silver_metric"
+    assert next_phase["requires_separate_reporting_for"] == [
+        "core_only",
+        "review_only_challenge",
+        "all_diagnostic",
+    ]
+    assert next_phase["official_metric_denominator_usage_allowed"] is False
+    assert next_phase["promotion_evidence"] is False
+    assert next_phase["threshold_tuning"] is False
+    assert next_phase["winner_selection"] is False
+
+
+def test_v3_6_4_diagnostic_metric_preserves_manifest_partitions_and_guardrails() -> None:
+    summary = read_json(V3_6_4_SUMMARY)
+    per_row = read_jsonl(V3_6_4_PER_ROW)
+    aggregate = read_json(V3_6_4_AGGREGATE_BY_BUCKET)
+    failure_taxonomy = read_json(V3_6_4_FAILURE_TAXONOMY)
+    sample_review = read_jsonl(V3_6_4_SAMPLE_REVIEW)
+    policy_audit = read_json(V3_6_4_POLICY_AUDIT)
+    next_phase = read_json(V3_6_4_NEXT_PHASE_RECOMMENDATION)
+    v3_6_3_summary = read_json(V3_6_3_MANIFEST_SUMMARY)
+
+    assert summary["run_id"] == V3_6_4_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_only_weak_noisy_silver_metric"
+    assert summary["source_manifest_run_id"] == V3_6_3_RUN_ID
+    assert summary["manifest_metric_passed"] is True
+    assert summary["fail_closed_reasons"] == []
+    assert summary["generated_expected_answers_are_gold"] is False
+    assert summary["official_metric"] is False
+    assert summary["official_metric_denominator_usage_allowed"] is False
+    assert summary["not_gold"] is True
+    assert summary["not_official_qrels"] is True
+    assert summary["not_official_denominator"] is True
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["readme_representative_product_performance_claim"] is False
+    assert summary["lane_a_b_c_collapsed_scoring"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["retrieval_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["candidate_artifacts_used_as_generation_source"] is False
+
+    assert summary["manifest_counts"] == {
+        "all_diagnostic": 1000,
+        "core_only": 665,
+        "review_only_challenge": 335,
+        "quarantine": 0,
+    }
+    assert summary["manifest_row_count"] == len(per_row) == v3_6_3_summary["manifest_row_count"] == 1000
+    assert summary["core_manifest_row_count"] == 665
+    assert summary["review_only_manifest_row_count"] == 335
+    assert summary["quarantine_manifest_row_count"] == 0
+    assert summary["source_family_counts"] == {"PDF": 325, "TEXT": 350, "XLSX": 325}
+    assert summary["split_role_counts"] == {
+        "weak_silver_exploration": 700,
+        "weak_silver_holdout": 200,
+        "weak_silver_stress_smoke_candidate": 100,
+    }
+    assert summary["query_quality_profile_counts"] == v3_6_3_summary["query_quality_profile_counts"]
+    assert summary["source_quality_status_counts"] == v3_6_3_summary["source_quality_status_counts"]
+    assert summary["weak_answerability_status_counts"] == v3_6_3_summary["weak_answerability_status_counts"]
+    assert summary["source_identity_groups_crossing_split_roles_count"] == 74
+    assert summary["split_independence_warning"] == "source_identity_groups_cross_split_roles_diagnostic_holdout_warning"
+    assert summary["split_independence_official_leakage"] is False
+    assert summary["official_proximity_review_row_count"] == 3
+    assert summary["official_proximity_core_row_count"] == 0
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+
+    reporting = aggregate["reporting_partitions"]
+    assert set(reporting) == {"core_only", "review_only_challenge", "all_diagnostic"}
+    assert reporting["core_only"]["row_count"] == 665
+    assert reporting["review_only_challenge"]["row_count"] == 335
+    assert reporting["all_diagnostic"]["row_count"] == 1000
+    assert reporting["core_only"]["official_proximity_review_row_count"] == 0
+    assert reporting["review_only_challenge"]["official_proximity_review_row_count"] == 3
+    for partition in reporting.values():
+        assert partition["generated_expected_answers_are_gold"] is False
+        assert partition["official_metric"] is False
+        metrics = partition["metrics"]
+        assert metrics["diagnostic_source_identity_hit_at_1"] == 1.0
+        assert metrics["diagnostic_source_identity_hit_at_3"] == 1.0
+        assert metrics["diagnostic_source_identity_hit_at_5"] == 1.0
+        assert metrics["diagnostic_locator_fingerprint_hit_at_1"] == 1.0
+        assert metrics["diagnostic_locator_fingerprint_hit_at_3"] == 1.0
+        assert metrics["diagnostic_locator_fingerprint_hit_at_5"] == 1.0
+        assert metrics["diagnostic_source_family_match_at_5"] == 1.0
+        assert metrics["diagnostic_retrieved_context_present_rate"] == 1.0
+        assert metrics["diagnostic_citation_locator_parse_success_rate"] == 1.0
+        assert metrics["diagnostic_citation_source_identity_match_rate"] == 1.0
+        assert metrics["diagnostic_answer_non_empty_rate"] == 0.0
+        assert metrics["diagnostic_answer_normalized_exact_match_rate"] == 0.0
+        assert metrics["diagnostic_answer_contains_expected_draft_rate"] == 0.0
+        assert metrics["diagnostic_answer_token_f1_mean"] == 0.0
+        assert metrics["diagnostic_citation_emitted_rate"] == 0.0
+        assert metrics["diagnostic_citation_locator_match_rate"] == 0.0
+        assert metrics["diagnostic_answer_citation_consistency_proxy_rate"] == 0.0
+
+    assert reporting["all_diagnostic"]["metrics"]["diagnostic_numeric_or_date_value_match_rate"] == 0.0
+    assert aggregate["source_family"]["TEXT"]["row_count"] == 350
+    assert aggregate["source_family"]["PDF"]["row_count"] == 325
+    assert aggregate["source_family"]["XLSX"]["row_count"] == 325
+    assert aggregate["split_role"]["exploration"]["row_count"] == 700
+    assert aggregate["split_role"]["holdout"]["row_count"] == 200
+    assert aggregate["split_role"]["stress_smoke_candidate"]["row_count"] == 100
+    assert aggregate["query_quality_profile"]["clean_source_grounded"]["row_count"] == 450
+    assert aggregate["source_quality_status"]["pass_source_quality"]["row_count"] == 666
+    assert aggregate["weak_answerability_status"]["auto_weak_silver_likely_answerable"]["row_count"] == 666
+
+    assert failure_taxonomy["primary_failure_counts"]["runtime_fail_closed"] == 665
+    assert failure_taxonomy["primary_failure_counts"]["weak_silver_expected_answer_ambiguous"] == 334
+    assert failure_taxonomy["primary_failure_counts"]["review_only_source_quality_risk"] == 1
+    assert failure_taxonomy["primary_failure_counts"]["pass_diagnostic_proxy"] == 0
+    assert summary["primary_failure_taxonomy"] == failure_taxonomy["primary_failure_counts"]
+    assert {row["primary_failure"] for row in sample_review} >= {
+        "runtime_fail_closed",
+        "weak_silver_expected_answer_ambiguous",
+        "review_only_source_quality_risk",
+    }
+
+    assert {row["reporting_partition"] for row in per_row} == {"core_only", "review_only_challenge"}
+    assert sum(1 for row in per_row if row["reporting_partition"] == "core_only") == 665
+    assert sum(1 for row in per_row if row["reporting_partition"] == "review_only_challenge") == 335
+    assert all(row["generated_expected_answers_are_gold"] is False for row in per_row)
+    assert all(row["official_metric_denominator_usage_allowed"] is False for row in per_row)
+    assert all(row["promotion_evidence"] is False for row in per_row)
+    assert all(row["runtime_generation_fail_closed"] is True for row in per_row)
+    assert all(row["diagnostic_answer_non_empty"] is False for row in per_row)
+
+    for key in (
+        "diagnostic_only",
+        "not_gold",
+        "not_official_qrels",
+        "not_official_denominator",
+    ):
+        assert policy_audit[key] is True
+    for key in (
+        "official_metric",
+        "official_metric_denominator_usage_allowed",
+        "generated_expected_answers_are_gold",
+        "promotion_evidence",
+        "threshold_tuning",
+        "winner_selection",
+        "readme_representative_product_performance_claim",
+        "lane_a_b_c_collapsed_scoring",
+        "prompt_mutation",
+        "retrieval_mutation",
+        "scorer_mutation",
+        "renderer_mutation",
+        "index_or_export_mutation",
+        "production_mutation",
+        "candidate_artifacts_used_as_generation_source",
+    ):
+        assert policy_audit[key] is False
+
+    assert next_phase["v3_6_5_should_proceed_to"] == "rough_failure_bucket_triage"
+    assert next_phase["targeted_diagnostic_repair_planning_now"] is False
+    assert next_phase["targeted_diagnostic_repair_planning_after_triage"] is True
+
+
+def test_v3_6_4_diagnostic_metric_fails_closed_if_review_flags_enter_core() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    manifest_summary = read_json(V3_6_3_MANIFEST_SUMMARY)
+    manifest_policy_audit = read_json(V3_6_3_MANIFEST_POLICY_AUDIT)
+    manifest_next_phase = read_json(V3_6_3_NEXT_PHASE_RECOMMENDATION)
+    all_rows = read_jsonl(V3_6_3_MANIFEST_ALL)
+    core_rows = read_jsonl(V3_6_3_MANIFEST_CORE)
+    review_rows = read_jsonl(V3_6_3_MANIFEST_REVIEW_ONLY)
+    quarantine_rows = read_jsonl(V3_6_3_MANIFEST_QUARANTINE)
+
+    clean_reasons = runner.v3_6_4_manifest_fail_closed_reasons(
+        missing_source_files=[],
+        manifest_summary=manifest_summary,
+        manifest_policy_audit=manifest_policy_audit,
+        manifest_next_phase=manifest_next_phase,
+        all_rows=all_rows,
+        core_rows=core_rows,
+        review_rows=review_rows,
+        quarantine_rows=quarantine_rows,
+    )
+    assert clean_reasons == []
+
+    proximity_core_rows = [dict(row) for row in core_rows]
+    proximity_core_rows[0]["official_proximity_review"] = True
+    proximity_reasons = runner.v3_6_4_manifest_fail_closed_reasons(
+        missing_source_files=[],
+        manifest_summary=manifest_summary,
+        manifest_policy_audit=manifest_policy_audit,
+        manifest_next_phase=manifest_next_phase,
+        all_rows=all_rows,
+        core_rows=proximity_core_rows,
+        review_rows=review_rows,
+        quarantine_rows=quarantine_rows,
+    )
+    assert "official_proximity_rows_in_core" in proximity_reasons
+
+    source_quality_core_rows = [dict(row) for row in core_rows]
+    source_quality_core_rows[0]["source_quality_status"] = "review_xlsx_hidden_policy_boundary"
+    source_quality_reasons = runner.v3_6_4_manifest_fail_closed_reasons(
+        missing_source_files=[],
+        manifest_summary=manifest_summary,
+        manifest_policy_audit=manifest_policy_audit,
+        manifest_next_phase=manifest_next_phase,
+        all_rows=all_rows,
+        core_rows=source_quality_core_rows,
+        review_rows=review_rows,
+        quarantine_rows=quarantine_rows,
+    )
+    assert "review_source_quality_rows_in_core" in source_quality_reasons
+
+
+def test_v3_6_5_rough_failure_bucket_triage_policy_and_surface_audits() -> None:
+    summary = read_json(V3_6_5_SUMMARY)
+    per_row = read_jsonl(V3_6_5_PER_ROW)
+    blocker_matrix = read_json(V3_6_5_BLOCKER_MATRIX)
+    runtime_audit = read_json(V3_6_5_RUNTIME_SURFACE_AUDIT)
+    reference_audit = read_json(V3_6_5_REFERENCE_SURFACE_AUDIT)
+    db_audit = read_json(V3_6_5_DB_SURFACE_AUDIT)
+    local_llm_audit = read_json(V3_6_5_LOCAL_LLM_SURFACE_AUDIT)
+    policy_audit = read_json(V3_6_5_POLICY_AUDIT)
+    next_phase = read_json(V3_6_5_NEXT_PHASE_RECOMMENDATION)
+
+    assert summary["run_id"] == V3_6_5_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_only_rough_failure_bucket_triage"
+    assert summary["v3_6_4_source_run_id"] == V3_6_4_RUN_ID
+    assert summary["source_manifest_counts"] == {
+        "all_diagnostic": 1000,
+        "core_only": 665,
+        "quarantine": 0,
+        "review_only_challenge": 335,
+    }
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["readme_representative_product_performance_claim"] is False
+    assert summary["generated_expected_answers_are_gold"] is False
+    assert summary["local_llm_usage_allowed"] is True
+    assert summary["local_llm_usage_scope"] == "capability_probe_and_runtime_surface_audit_only"
+    assert summary["local_llm_live_silver_generation_allowed"] is False
+    assert summary["local_llm_metric_scoring_allowed"] is False
+    assert summary["external_llm_api_allowed"] is False
+    assert summary["db_usage_allowed"] is True
+    assert summary["db_usage_scope"] == "read_only_reference_and_runtime_surface_audit_only"
+    assert summary["db_write_allowed"] is False
+    assert summary["db_migration_allowed"] is False
+    assert summary["db_index_rebuild_allowed"] is False
+    assert summary["production_db_usage_allowed"] is False
+    assert summary["db_results_as_gold_allowed"] is False
+    assert summary["db_results_as_official_qrels_allowed"] is False
+    assert summary["db_results_as_generation_source_allowed"] is False
+
+    assert summary["local_llm_live_silver_generation_attempted"] is False
+    assert summary["local_llm_metric_scoring_attempted"] is False
+    assert summary["external_llm_api_attempted"] is False
+    assert summary["db_write_attempted"] is False
+    assert summary["db_index_rebuild_attempted"] is False
+    assert summary["production_db_used"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["retrieval_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["fail_closed_reasons"] == []
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["protected_input_sha256_matches_v3_6_4_summary"] is True
+    assert summary["protected_v3_6_3_input_sha256_before"] == summary["protected_v3_6_3_input_sha256_after"]
+    assert summary["protected_v3_6_3_input_sha256_unchanged"] is True
+
+    assert summary["v3_6_4_primary_failure_counts"] == {
+        "answer_span_mismatch": 0,
+        "citation_missing": 0,
+        "citation_parse_failure": 0,
+        "citation_source_mismatch": 0,
+        "locator_mismatch": 0,
+        "numeric_or_date_mismatch": 0,
+        "pass_diagnostic_proxy": 0,
+        "retrieval_miss": 0,
+        "review_only_source_quality_risk": 1,
+        "runtime_fail_closed": 665,
+        "source_family_mismatch": 0,
+        "unsupported_metric_surface": 0,
+        "weak_silver_expected_answer_ambiguous": 334,
+    }
+    bucket_counts = summary["multi_label_blocker_bucket_counts"]
+    assert bucket_counts["runtime_generation_surface_unavailable"] == 1000
+    assert bucket_counts["answer_proxy_reference_missing_from_v3_6_3_manifest"] == 1000
+    assert bucket_counts["live_retrieval_metric_not_computed"] == 1000
+    assert bucket_counts["deterministic_manifest_locator_self_match_only"] == 1000
+    assert bucket_counts["weak_silver_expected_answer_ambiguous"] == 334
+    assert bucket_counts["review_only_source_quality_noise"] == 334
+    assert bucket_counts["official_proximity_review_excluded_from_core"] == 3
+    assert bucket_counts["core_metric_not_interpretable_until_runtime_available"] == 665
+    assert bucket_counts["review_only_metric_stress_only"] == 335
+    assert bucket_counts["diagnostic_reference_sidecar_possible"] == 1000
+    assert bucket_counts["targeted_repair_not_allowed_until_triage_complete"] == 1000
+
+    assert len(per_row) == 1000
+    first_row = per_row[0]
+    assert first_row["local_llm_generation_attempted"] is False
+    assert first_row["db_write_attempted"] is False
+    assert first_row["generated_expected_answers_are_gold"] is False
+    assert first_row["not_gold"] is True
+    assert first_row["not_official_qrels"] is True
+    assert first_row["not_official_denominator"] is True
+    assert first_row["promotion_evidence"] is False
+    assert {row["blocker_name"] for row in blocker_matrix["blockers"]} >= set(bucket_counts)
+
+    assert runtime_audit["local_llm_surface_classification"] in {
+        "reusable_without_behavior_change",
+        "reusable_with_diagnostic_adapter_only",
+        "unavailable_requires_new_diagnostic_runtime_surface",
+        "blocked_by_policy",
+    }
+    assert runtime_audit["local_llm_health_check_used_silver_rows"] is False
+    assert runtime_audit["local_llm_health_check_used_source_text"] is False
+    assert runtime_audit["local_llm_health_check_used_expected_answers"] is False
+    assert runtime_audit["local_llm_health_check_used_supporting_evidence"] is False
+    assert runtime_audit["local_llm_health_check_used_gold_fields"] is False
+    assert runtime_audit["local_llm_live_silver_generation_attempted"] is False
+    assert runtime_audit["local_llm_live_silver_generation_allowed"] is False
+    assert runtime_audit["local_llm_metric_scoring_attempted"] is False
+    assert runtime_audit["local_llm_metric_scoring_allowed"] is False
+    assert runtime_audit["external_llm_api_allowed"] is False
+    assert runtime_audit["external_llm_api_attempted"] is False
+    assert runtime_audit["db_write_allowed"] is False
+    assert runtime_audit["db_write_attempted"] is False
+    assert runtime_audit["db_index_rebuild_allowed"] is False
+    assert runtime_audit["db_index_rebuild_attempted"] is False
+
+    assert local_llm_audit["local_llm_usage_allowed"] is True
+    assert local_llm_audit["local_llm_live_silver_generation_attempted"] is False
+    assert local_llm_audit["external_llm_api_attempted"] is False
+
+    assert reference_audit["candidate_row_count"] == 1000
+    assert reference_audit["candidate_expected_answer_draft_available"] is True
+    assert reference_audit["candidate_expected_answer_draft_present_count"] == 1000
+    assert reference_audit["candidate_supporting_evidence_locator_draft_available"] is True
+    assert reference_audit["candidate_supporting_evidence_locator_draft_present_count"] == 1000
+    assert reference_audit["reference_sidecar_possible"] is True
+    assert reference_audit["reference_sidecar_recommended"] is True
+    assert reference_audit["generated_expected_answers_are_gold"] is False
+    assert reference_audit["references_used_for_generation"] is False
+    assert reference_audit["references_used_for_official_metric"] is False
+    assert reference_audit["references_used_for_promotion"] is False
+
+    assert db_audit["db_usage_allowed"] is True
+    assert db_audit["db_read_only_probe_attempted"] is True
+    assert db_audit["db_surface_detected"] is True
+    assert db_audit["db_write_attempted"] is False
+    assert db_audit["db_migration_attempted"] is False
+    assert db_audit["db_index_rebuild_attempted"] is False
+    assert db_audit["production_db_used"] is False
+    assert db_audit["db_results_as_gold_allowed"] is False
+    assert db_audit["db_results_as_official_qrels_allowed"] is False
+    assert db_audit["db_results_as_generation_source_allowed"] is False
+    assert db_audit["candidate_expected_answer_draft_available"] is True
+    assert db_audit["candidate_supporting_evidence_locator_draft_available"] is True
+    assert db_audit["diagnostic_reference_sidecar_recommended"] is True
+    assert db_audit["live_retrieval_probe_requires_diagnostic_adapter"] is True
+
+    for key in (
+        "local_llm_usage_allowed",
+        "db_usage_allowed",
+        "diagnostic_only",
+        "not_gold",
+        "not_official_qrels",
+        "not_official_denominator",
+    ):
+        assert policy_audit[key] is True
+    for key in (
+        "local_llm_live_silver_generation_allowed",
+        "local_llm_metric_scoring_allowed",
+        "external_llm_api_allowed",
+        "db_write_allowed",
+        "db_migration_allowed",
+        "db_index_rebuild_allowed",
+        "production_db_usage_allowed",
+        "db_results_as_gold_allowed",
+        "db_results_as_official_qrels_allowed",
+        "db_results_as_generation_source_allowed",
+        "promotion_evidence",
+        "threshold_tuning",
+        "winner_selection",
+        "local_llm_live_silver_generation_attempted",
+        "local_llm_metric_scoring_attempted",
+        "external_llm_api_attempted",
+        "db_write_attempted",
+        "db_migration_attempted",
+        "db_index_rebuild_attempted",
+        "production_db_used",
+    ):
+        assert policy_audit[key] is False
+
+    assert policy_audit["official_proximity_rows_enter_core"] is False
+    assert policy_audit["official_proximity_rows_remain_review_only"] is True
+    assert policy_audit["split_holdout_not_source_isolated"] is True
+    assert next_phase["recommended_next_phase"] == "v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe"
+    assert next_phase["targeted_diagnostic_repair_planning_now"] is False
+    assert next_phase["targeted_diagnostic_repair_planning_after_runtime_reference_probe"] is True
+    assert next_phase["db_read_only_reference_sidecar_allowed_next_phase"] is True
+    assert next_phase["local_llm_live_core_generation_allowed_next_phase"] is False
+
+
+def test_v3_6_6_reference_sidecar_runtime_and_retrieval_probe_are_diagnostic_only() -> None:
+    summary = read_json(V3_6_6_SUMMARY)
+    sidecar = read_jsonl(V3_6_6_REFERENCE_SIDECAR)
+    smoke_rows = read_jsonl(V3_6_6_CORE_SMOKE_SAMPLE)
+    runtime_summary = read_json(V3_6_6_RUNTIME_PROBE_SUMMARY)
+    db_audit = read_json(V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT)
+    policy_audit = read_json(V3_6_6_POLICY_AUDIT)
+    next_phase = read_json(V3_6_6_NEXT_PHASE_RECOMMENDATION)
+
+    assert summary["run_id"] == V3_6_6_RUN_ID
+    assert summary["artifact_kind"] == "diagnostic_reference_sidecar_and_runtime_surface_probe"
+    assert summary["source_triage_run_id"] == V3_6_5_RUN_ID
+    assert summary["sidecar_row_counts"] == {
+        "all_diagnostic": 1000,
+        "core_only": 665,
+        "quarantine": 0,
+        "review_only_challenge": 335,
+    }
+    assert len(sidecar) == 1000
+    assert summary["diagnostic_reference_sidecar_complete"] is True
+    assert summary["expected_answer_draft_availability"]["present_count"] == 1000
+    assert summary["supporting_evidence_locator_draft_availability"]["present_count"] == 1000
+    assert summary["official_proximity_rows_remain_out_of_core"] is True
+    assert summary["official_proximity_core_row_count"] == 0
+    assert summary["review_only_remains_stress_only"] is True
+    assert summary["split_holdout_independence_warning_carried_forward"] is True
+
+    assert {row["reporting_partition"] for row in sidecar} == {
+        "core_only",
+        "review_only_challenge",
+    }
+    assert sum(1 for row in sidecar if row["reporting_partition"] == "core_only") == 665
+    assert sum(1 for row in sidecar if row["reporting_partition"] == "review_only_challenge") == 335
+    assert not [
+        row["weak_silver_candidate_id"]
+        for row in sidecar
+        if row["official_proximity_review"] and row["reporting_partition"] == "core_only"
+    ]
+    for row in sidecar:
+        assert row["generated_question_draft"]
+        assert row["expected_answer_draft"]
+        assert row["supporting_evidence_locator_draft"]
+        assert row["generated_expected_answers_are_gold"] is False
+        assert row["not_gold"] is True
+        assert row["not_official_qrels"] is True
+        assert row["not_official_denominator"] is True
+        assert row["promotion_evidence"] is False
+        assert row["references_used_for_generation"] is False
+        assert row["references_used_for_official_metric"] is False
+
+    assert len(smoke_rows) == 30
+    assert summary["core_smoke_sample_target_row_count"] == 30
+    assert runtime_summary["core_smoke_sample_target_by_source_family"] == {"PDF": 10, "TEXT": 10, "XLSX": 10}
+    assert runtime_summary["core_smoke_generation_attempted_row_count"] <= 30
+    assert runtime_summary["core_smoke_generation_succeeded_row_count"] <= runtime_summary[
+        "core_smoke_generation_attempted_row_count"
+    ]
+    assert summary["core_smoke_generation_attempted_row_count"] == runtime_summary[
+        "core_smoke_generation_attempted_row_count"
+    ]
+    assert summary["core_smoke_generation_succeeded_row_count"] == runtime_summary[
+        "core_smoke_generation_succeeded_row_count"
+    ]
+    assert runtime_summary["generation_input_policy"]["uses_generated_question_draft"] is True
+    assert runtime_summary["generation_input_policy"]["uses_source_family"] is True
+    assert runtime_summary["generation_input_policy"]["uses_source_identity"] is False
+    assert runtime_summary["generation_input_policy"]["uses_locator_fingerprint"] is False
+    assert runtime_summary["generation_input_policy"]["uses_expected_answer_draft"] is False
+    assert runtime_summary["generation_input_policy"]["uses_supporting_evidence_locator_draft"] is False
+    assert runtime_summary["generation_input_policy"]["uses_gold_fields"] is False
+    assert runtime_summary["generation_input_policy"]["uses_official_fields"] is False
+    assert runtime_summary["generation_input_policy"]["uses_db_query_results_as_generation_source"] is False
+    assert runtime_summary["generation_input_policy"]["posthoc_validation_uses_source_identity"] is True
+    assert runtime_summary["generation_input_policy"]["posthoc_validation_uses_locator_fingerprint"] is True
+    for row in smoke_rows:
+        assert row["reporting_partition"] == "core_only"
+        assert row["generation_input_field_names"] == [
+            "generated_question_draft",
+            "source_family",
+        ]
+        assert "source_identity" not in row["generation_input_field_names"]
+        assert "locator_fingerprint" not in row["generation_input_field_names"]
+        assert "expected_answer_draft" not in row
+        assert "supporting_evidence_locator_draft" not in row
+        assert row["generation_input_used_expected_answer_draft"] is False
+        assert row["generation_input_used_supporting_evidence_locator_draft"] is False
+        assert row["generation_input_used_gold_fields"] is False
+        assert row["generation_input_used_official_fields"] is False
+        assert row["generation_input_used_db_query_results"] is False
+        assert row["generated_expected_answers_are_gold"] is False
+        assert row["not_gold"] is True
+        assert row["not_official_qrels"] is True
+        assert row["not_official_denominator"] is True
+        assert row["promotion_evidence"] is False
+
+    assert db_audit["db_read_only_probe_attempted"] is True
+    assert db_audit["manifest_locator_mapping_available"] is True
+    assert db_audit["db_write_attempted"] is False
+    assert db_audit["db_migration_attempted"] is False
+    assert db_audit["db_index_rebuild_attempted"] is False
+    assert db_audit["production_db_used"] is False
+    assert db_audit["db_results_as_generation_source_allowed"] is False
+    assert "@" not in " ".join(db_audit["db_path_or_dsn_sanitized"])
+
+    for payload in (summary, runtime_summary, db_audit, policy_audit, next_phase):
+        assert payload["generated_expected_answers_are_gold"] is False
+        assert payload["not_gold"] is True
+        assert payload["not_official_qrels"] is True
+        assert payload["not_official_denominator"] is True
+        assert payload["promotion_evidence"] is False
+    for key in (
+        "official_metric_denominator_usage_allowed",
+        "threshold_tuning",
+        "winner_selection",
+        "readme_representative_product_performance_claim",
+        "lane_a_b_c_collapsed_scoring",
+        "prompt_mutation",
+        "retrieval_mutation",
+        "scorer_mutation",
+        "renderer_mutation",
+        "index_or_export_mutation",
+        "production_mutation",
+        "official_qrels_created",
+        "official_relevance_labels_created",
+        "official_answerability_labels_created",
+        "official_gold_labels_created",
+    ):
+        assert summary[key] is False
+        assert policy_audit[key] is False
+
+    expected_recommendations = {
+        "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric",
+        "v3_6_7_runtime_stability_probe_for_core_only",
+        "v3_6_7_manifest_locator_live_retrieval_probe",
+        "v3_6_7_reference_sidecar_recovery_or_compaction_fix",
+    }
+    assert next_phase["recommended_next_phase"] in expected_recommendations
+    assert next_phase["choose_exactly_one_policy_satisfied"] is True
+    assert summary["recommended_next_phase"] == next_phase["recommended_next_phase"]
+    assert summary["v3_6_7_core_only_live_diagnostic_metric_allowed"] == next_phase[
+        "v3_6_7_core_only_live_diagnostic_metric_allowed"
+    ]
+    if runtime_summary["local_generation_unstable"]:
+        assert next_phase["recommended_next_phase"] == "v3_6_7_runtime_stability_probe_for_core_only"
+    elif runtime_summary["local_generation_blocked"]:
+        assert next_phase["recommended_next_phase"] == "v3_6_7_manifest_locator_live_retrieval_probe"
+    elif runtime_summary["local_generation_succeeded"] and db_audit["live_retrieval_probe_feasible_without_rebuild"]:
+        assert next_phase["recommended_next_phase"] == "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric"
+
+
+def test_v3_6_6_source_policy_validation_fails_closed_on_inherited_llm_or_db_mutation_flags() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    local_llm_audit = read_json(V3_6_5_LOCAL_LLM_SURFACE_AUDIT)
+    db_audit = read_json(V3_6_5_DB_SURFACE_AUDIT)
+    local_llm_audit["external_llm_api_attempted"] = True
+    db_audit["db_write_attempted"] = True
+    db_audit["db_migration_attempted"] = True
+    db_audit["db_index_rebuild_attempted"] = True
+    reasons = runner.v3_6_6_source_fail_closed_reasons(
+        source_load_errors=[],
+        v3_6_5_summary=read_json(V3_6_5_SUMMARY),
+        v3_6_5_policy=read_json(V3_6_5_POLICY_AUDIT),
+        v3_6_5_local_llm=local_llm_audit,
+        v3_6_5_db=db_audit,
+        v3_6_5_next_phase=read_json(V3_6_5_NEXT_PHASE_RECOMMENDATION),
+        v3_6_4_summary=read_json(V3_6_4_SUMMARY),
+        v3_6_3_summary=read_json(V3_6_3_MANIFEST_SUMMARY),
+        candidate_rows=read_jsonl(V3_6_1_WEAK_SILVER_CANDIDATES),
+        manifest_all_rows=read_jsonl(V3_6_3_MANIFEST_ALL),
+        manifest_core_rows=read_jsonl(V3_6_3_MANIFEST_CORE),
+        manifest_review_rows=read_jsonl(V3_6_3_MANIFEST_REVIEW_ONLY),
+        manifest_quarantine_rows=read_jsonl(V3_6_3_MANIFEST_QUARANTINE),
+        v3_6_4_rows=read_jsonl(V3_6_4_PER_ROW),
+        v3_6_5_rows=read_jsonl(V3_6_5_PER_ROW),
+    )
+
+    assert "v3_6_5_local_llm_guardrail_true:external_llm_api_attempted" in reasons
+    assert "v3_6_5_db_guardrail_true:db_write_attempted" in reasons
+    assert "v3_6_5_db_guardrail_true:db_migration_attempted" in reasons
+    assert "v3_6_5_db_guardrail_true:db_index_rebuild_attempted" in reasons
+
+
 def assert_text_locator(row: dict[str, Any]) -> None:
     required = ("document_id", "document_version_id", "search_unit_id", "text_locator")
     assert_required(row, required)
@@ -1249,6 +2378,34 @@ def assert_no_generation_payload_keys(value: Any) -> None:
     elif isinstance(value, list):
         for nested in value:
             assert_no_generation_payload_keys(nested)
+
+
+def assert_forbid_final_label_or_qrels_payload(value: Any) -> None:
+    forbidden_keys = {
+        "expected_answer",
+        "expected_answer_text",
+        "expected_answer_final",
+        "supporting_evidence",
+        "supporting_evidence_final",
+        "relevance_label",
+        "answerability_label",
+        "label_status",
+        "qrel",
+        "qrels",
+        "qrels_candidate_id",
+        "gold_label",
+        "human_label",
+        "generated_answer",
+        "answer_claims",
+    }
+    if isinstance(value, dict):
+        overlap = forbidden_keys & set(value)
+        assert overlap == set()
+        for nested in value.values():
+            assert_forbid_final_label_or_qrels_payload(nested)
+    elif isinstance(value, list):
+        for nested in value:
+            assert_forbid_final_label_or_qrels_payload(nested)
 
 
 def count_by_source_family(rows: list[dict[str, Any]]) -> dict[str, int]:

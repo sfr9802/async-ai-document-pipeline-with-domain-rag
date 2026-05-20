@@ -142,6 +142,27 @@ AGENTIC_V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID = (
 AGENTIC_V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit"
 )
+AGENTIC_V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_0_low_touch_noisy_silver_policy_application"
+)
+AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation"
+)
+AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval"
+)
+AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze"
+)
+AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric"
+)
+AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage"
+)
+AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -222,6 +243,27 @@ REPORT_ARTIFACT_SLUGS = {
     AGENTIC_V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID: (
         AGENTIC_V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID
     ),
+    AGENTIC_V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID: (
+        AGENTIC_V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID
+    ),
+    AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID: (
+        AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID
+    ),
+    AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID: (
+        AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID
+    ),
+    AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID: (
+        AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID
+    ),
+    AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID: (
+        AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID
+    ),
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID: (
+        AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID
+    ),
+    AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID: (
+        AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID,
@@ -250,6 +292,13 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
     AGENTIC_V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
     AGENTIC_V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+    AGENTIC_V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+    AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
 }
 
 
@@ -706,6 +755,198 @@ AGENTIC_V3_5_5_NEXT_PHASE_POLICY_BOUNDARY_JSON = report_artifact_path(
     AGENTIC_V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
     "next_phase_policy_boundary.json",
 )
+AGENTIC_V3_6_0_POLICY_APPROVAL_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+    "policy_approval_summary.json",
+)
+AGENTIC_V3_6_0_GENERATION_CONTRACT_JSON = report_artifact_path(
+    AGENTIC_V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+    "generation_contract.json",
+)
+AGENTIC_V3_6_0_USER_DECISION_MATRIX_JSONL = report_artifact_path(
+    AGENTIC_V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+    "user_decision_matrix.jsonl",
+)
+AGENTIC_V3_6_0_GUARDRAIL_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_0_LOW_TOUCH_NOISY_SILVER_POLICY_APPLICATION_RUN_ID,
+    "guardrail_summary.json",
+)
+AGENTIC_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL = report_artifact_path(
+    AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "weak_silver_candidates.jsonl",
+)
+AGENTIC_V3_6_1_GENERATION_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "generation_summary.json",
+)
+AGENTIC_V3_6_1_SPLIT_MANIFEST_JSON = report_artifact_path(
+    AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "split_manifest.json",
+)
+AGENTIC_V3_6_1_QUALITY_DISTRIBUTION_JSON = report_artifact_path(
+    AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "generation_quality_distribution.json",
+)
+AGENTIC_V3_6_1_BLOCKED_ROWS_JSONL = report_artifact_path(
+    AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "generation_blocked_rows.jsonl",
+)
+AGENTIC_V3_6_1_POLICY_COMPLIANCE_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "policy_compliance_audit.json",
+)
+AGENTIC_V3_6_1_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    AGENTIC_V3_6_1_BALANCED_WEAK_NOISY_SILVER_CANDIDATE_GENERATION_RUN_ID,
+    "next_phase_recommendation.json",
+)
+AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "candidate_sanity_summary.json",
+)
+AGENTIC_V3_6_2_CANDIDATE_SANITY_PER_ROW_JSONL = report_artifact_path(
+    AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "candidate_sanity_per_row.jsonl",
+)
+AGENTIC_V3_6_2_CANDIDATE_QUARANTINE_ROWS_JSONL = report_artifact_path(
+    AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "candidate_quarantine_rows.jsonl",
+)
+AGENTIC_V3_6_2_CANDIDATE_METRIC_FEASIBILITY_JSON = report_artifact_path(
+    AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "candidate_metric_feasibility.json",
+)
+AGENTIC_V3_6_2_SPLIT_INDEPENDENCE_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "split_independence_audit.json",
+)
+AGENTIC_V3_6_2_HASH_CONTRACT_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "hash_contract_audit.json",
+)
+AGENTIC_V3_6_2_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    AGENTIC_V3_6_2_WEAK_NOISY_SILVER_CANDIDATE_SANITY_EVAL_RUN_ID,
+    "next_phase_recommendation.json",
+)
+AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_summary.json",
+)
+AGENTIC_V3_6_3_MANIFEST_ALL_JSONL = report_artifact_path(
+    AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_all.jsonl",
+)
+AGENTIC_V3_6_3_MANIFEST_CORE_JSONL = report_artifact_path(
+    AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_core.jsonl",
+)
+AGENTIC_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL = report_artifact_path(
+    AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
+)
+AGENTIC_V3_6_3_MANIFEST_QUARANTINE_JSONL = report_artifact_path(
+    AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
+)
+AGENTIC_V3_6_3_MANIFEST_POLICY_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_policy_audit.json",
+)
+AGENTIC_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    AGENTIC_V3_6_3_DIAGNOSTIC_WEAK_NOISY_SILVER_MANIFEST_FREEZE_RUN_ID,
+    "diagnostic_weak_noisy_silver_manifest_next_phase_recommendation.json",
+)
+AGENTIC_V3_6_4_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_6_4_PER_ROW_JSONL = report_artifact_path(
+    AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "per_row.jsonl",
+)
+AGENTIC_V3_6_4_AGGREGATE_BY_BUCKET_JSON = report_artifact_path(
+    AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "aggregate_by_bucket.json",
+)
+AGENTIC_V3_6_4_FAILURE_TAXONOMY_JSON = report_artifact_path(
+    AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "failure_taxonomy.json",
+)
+AGENTIC_V3_6_4_SAMPLE_REVIEW_JSONL = report_artifact_path(
+    AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "sample_review.jsonl",
+)
+AGENTIC_V3_6_4_POLICY_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "policy_audit.json",
+)
+AGENTIC_V3_6_4_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID,
+    "next_phase_recommendation.json",
+)
+AGENTIC_V3_6_5_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_6_5_PER_ROW_JSONL = report_artifact_path(
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "per_row.jsonl",
+)
+AGENTIC_V3_6_5_BLOCKER_MATRIX_JSON = report_artifact_path(
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "blocker_matrix.json",
+)
+AGENTIC_V3_6_5_RUNTIME_SURFACE_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "runtime_surface_audit.json",
+)
+AGENTIC_V3_6_5_REFERENCE_SURFACE_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "reference_surface_audit.json",
+)
+AGENTIC_V3_6_5_DB_SURFACE_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "db_surface_audit.json",
+)
+AGENTIC_V3_6_5_LOCAL_LLM_SURFACE_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "local_llm_surface_audit.json",
+)
+AGENTIC_V3_6_5_POLICY_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "policy_audit.json",
+)
+AGENTIC_V3_6_5_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID,
+    "next_phase_recommendation.json",
+)
+AGENTIC_V3_6_6_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_6_6_REFERENCE_SIDECAR_JSONL = report_artifact_path(
+    AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "reference_sidecar.jsonl",
+)
+AGENTIC_V3_6_6_CORE_SMOKE_SAMPLE_JSONL = report_artifact_path(
+    AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "core_smoke_sample.jsonl",
+)
+AGENTIC_V3_6_6_RUNTIME_PROBE_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "runtime_probe_summary.json",
+)
+AGENTIC_V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "db_retrieval_surface_audit.json",
+)
+AGENTIC_V3_6_6_POLICY_AUDIT_JSON = report_artifact_path(
+    AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "policy_audit.json",
+)
+AGENTIC_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON = report_artifact_path(
+    AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID,
+    "next_phase_recommendation.json",
+)
 AGENTIC_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data"
 EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES: set[str] = {
     AGENTIC_V3_4_4_README_SECTION_MD.name,
@@ -820,6 +1061,54 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_5_5_DUPLICATE_HASH_AUDIT_JSONL,
     AGENTIC_V3_5_5_RECOMMENDED_REPAIR_QUEUE_JSONL,
     AGENTIC_V3_5_5_NEXT_PHASE_POLICY_BOUNDARY_JSON,
+    AGENTIC_V3_6_0_POLICY_APPROVAL_SUMMARY_JSON,
+    AGENTIC_V3_6_0_GENERATION_CONTRACT_JSON,
+    AGENTIC_V3_6_0_USER_DECISION_MATRIX_JSONL,
+    AGENTIC_V3_6_0_GUARDRAIL_SUMMARY_JSON,
+    AGENTIC_V3_6_1_WEAK_SILVER_CANDIDATES_JSONL,
+    AGENTIC_V3_6_1_GENERATION_SUMMARY_JSON,
+    AGENTIC_V3_6_1_SPLIT_MANIFEST_JSON,
+    AGENTIC_V3_6_1_QUALITY_DISTRIBUTION_JSON,
+    AGENTIC_V3_6_1_BLOCKED_ROWS_JSONL,
+    AGENTIC_V3_6_1_POLICY_COMPLIANCE_AUDIT_JSON,
+    AGENTIC_V3_6_1_NEXT_PHASE_RECOMMENDATION_JSON,
+    AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON,
+    AGENTIC_V3_6_2_CANDIDATE_SANITY_PER_ROW_JSONL,
+    AGENTIC_V3_6_2_CANDIDATE_QUARANTINE_ROWS_JSONL,
+    AGENTIC_V3_6_2_CANDIDATE_METRIC_FEASIBILITY_JSON,
+    AGENTIC_V3_6_2_SPLIT_INDEPENDENCE_AUDIT_JSON,
+    AGENTIC_V3_6_2_HASH_CONTRACT_AUDIT_JSON,
+    AGENTIC_V3_6_2_NEXT_PHASE_RECOMMENDATION_JSON,
+    AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON,
+    AGENTIC_V3_6_3_MANIFEST_ALL_JSONL,
+    AGENTIC_V3_6_3_MANIFEST_CORE_JSONL,
+    AGENTIC_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL,
+    AGENTIC_V3_6_3_MANIFEST_QUARANTINE_JSONL,
+    AGENTIC_V3_6_3_MANIFEST_POLICY_AUDIT_JSON,
+    AGENTIC_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON,
+    AGENTIC_V3_6_4_SUMMARY_JSON,
+    AGENTIC_V3_6_4_PER_ROW_JSONL,
+    AGENTIC_V3_6_4_AGGREGATE_BY_BUCKET_JSON,
+    AGENTIC_V3_6_4_FAILURE_TAXONOMY_JSON,
+    AGENTIC_V3_6_4_SAMPLE_REVIEW_JSONL,
+    AGENTIC_V3_6_4_POLICY_AUDIT_JSON,
+    AGENTIC_V3_6_4_NEXT_PHASE_RECOMMENDATION_JSON,
+    AGENTIC_V3_6_5_SUMMARY_JSON,
+    AGENTIC_V3_6_5_PER_ROW_JSONL,
+    AGENTIC_V3_6_5_BLOCKER_MATRIX_JSON,
+    AGENTIC_V3_6_5_RUNTIME_SURFACE_AUDIT_JSON,
+    AGENTIC_V3_6_5_REFERENCE_SURFACE_AUDIT_JSON,
+    AGENTIC_V3_6_5_DB_SURFACE_AUDIT_JSON,
+    AGENTIC_V3_6_5_LOCAL_LLM_SURFACE_AUDIT_JSON,
+    AGENTIC_V3_6_5_POLICY_AUDIT_JSON,
+    AGENTIC_V3_6_5_NEXT_PHASE_RECOMMENDATION_JSON,
+    AGENTIC_V3_6_6_SUMMARY_JSON,
+    AGENTIC_V3_6_6_REFERENCE_SIDECAR_JSONL,
+    AGENTIC_V3_6_6_CORE_SMOKE_SAMPLE_JSONL,
+    AGENTIC_V3_6_6_RUNTIME_PROBE_SUMMARY_JSON,
+    AGENTIC_V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT_JSON,
+    AGENTIC_V3_6_6_POLICY_AUDIT_JSON,
+    AGENTIC_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON,
 }
 ARCHIVED_REPORT_PATHS = {
     AGENTIC_RESULTS,
@@ -1001,6 +1290,238 @@ def test_source_of_truth_audit_reports_current_scored_baseline() -> None:
     assert "Per-run Markdown" in current_progress
     assert "BUILD_READY_LOAD_CHECK_PASSED" in current_progress
     assert "rerun_allowed=true" in current_progress
+
+
+def test_v3_6_2_sanity_hash_contract_is_registered_and_matches_artifacts() -> None:
+    summary = read_json(AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON)
+    hash_audit = read_json(AGENTIC_V3_6_2_HASH_CONTRACT_AUDIT_JSON)
+    expected_artifacts = {
+        "candidate_sanity_per_row_jsonl_sha256": AGENTIC_V3_6_2_CANDIDATE_SANITY_PER_ROW_JSONL,
+        "candidate_quarantine_rows_jsonl_sha256": AGENTIC_V3_6_2_CANDIDATE_QUARANTINE_ROWS_JSONL,
+        "candidate_metric_feasibility_json_sha256": AGENTIC_V3_6_2_CANDIDATE_METRIC_FEASIBILITY_JSON,
+        "split_independence_audit_json_sha256": AGENTIC_V3_6_2_SPLIT_INDEPENDENCE_AUDIT_JSON,
+        "hash_contract_audit_json_sha256": AGENTIC_V3_6_2_HASH_CONTRACT_AUDIT_JSON,
+        "next_phase_recommendation_json_sha256": AGENTIC_V3_6_2_NEXT_PHASE_RECOMMENDATION_JSON,
+    }
+
+    assert AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON.exists()
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert hash_audit["generated_question_hash_contract"] == "normalized_question_sha256_lowercase_whitespace_collapsed"
+    assert hash_audit["raw_question_hash_contract"] is False
+    assert hash_audit["normalized_question_hash_match_count"] == 1000
+    assert hash_audit["candidate_row_count"] == 1000
+    assert "source_candidate_rows_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+
+
+def test_v3_6_3_manifest_freeze_artifacts_are_registered_and_hash_locked() -> None:
+    summary = read_json(AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON)
+    expected_artifacts = {
+        "manifest_all_jsonl_sha256": AGENTIC_V3_6_3_MANIFEST_ALL_JSONL,
+        "manifest_core_jsonl_sha256": AGENTIC_V3_6_3_MANIFEST_CORE_JSONL,
+        "manifest_review_only_jsonl_sha256": AGENTIC_V3_6_3_MANIFEST_REVIEW_ONLY_JSONL,
+        "manifest_quarantine_jsonl_sha256": AGENTIC_V3_6_3_MANIFEST_QUARANTINE_JSONL,
+        "manifest_policy_audit_json_sha256": AGENTIC_V3_6_3_MANIFEST_POLICY_AUDIT_JSON,
+        "next_phase_recommendation_json_sha256": AGENTIC_V3_6_3_NEXT_PHASE_RECOMMENDATION_JSON,
+    }
+
+    assert AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON.exists()
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["manifest_freeze_passed"] is True
+    assert summary["manifest_row_count"] == 1000
+    assert summary["core_manifest_row_count"] == 665
+    assert summary["review_only_manifest_row_count"] == 335
+    assert summary["quarantine_manifest_row_count"] == 0
+    assert "manifest_summary_json_sha256" not in summary["artifact_sha256"]
+    assert "source_candidate_rows_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
+
+
+def test_v3_6_4_diagnostic_metric_artifacts_are_registered_and_hash_locked() -> None:
+    summary = read_json(AGENTIC_V3_6_4_SUMMARY_JSON)
+    aggregate = read_json(AGENTIC_V3_6_4_AGGREGATE_BY_BUCKET_JSON)
+    policy_audit = read_json(AGENTIC_V3_6_4_POLICY_AUDIT_JSON)
+    expected_artifacts = {
+        "per_row_jsonl_sha256": AGENTIC_V3_6_4_PER_ROW_JSONL,
+        "aggregate_by_bucket_json_sha256": AGENTIC_V3_6_4_AGGREGATE_BY_BUCKET_JSON,
+        "failure_taxonomy_json_sha256": AGENTIC_V3_6_4_FAILURE_TAXONOMY_JSON,
+        "sample_review_jsonl_sha256": AGENTIC_V3_6_4_SAMPLE_REVIEW_JSONL,
+        "policy_audit_json_sha256": AGENTIC_V3_6_4_POLICY_AUDIT_JSON,
+        "next_phase_recommendation_json_sha256": AGENTIC_V3_6_4_NEXT_PHASE_RECOMMENDATION_JSON,
+    }
+
+    assert AGENTIC_V3_6_4_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_4_SUMMARY_JSON.exists()
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID
+    assert summary["manifest_row_count"] == 1000
+    assert summary["core_manifest_row_count"] == 665
+    assert summary["review_only_manifest_row_count"] == 335
+    assert summary["quarantine_manifest_row_count"] == 0
+    assert summary["runtime_generation_succeeded_row_count"] == 0
+    assert summary["runtime_generation_fail_closed_row_count"] == 1000
+    assert aggregate["reporting_partitions"]["core_only"]["row_count"] == 665
+    assert aggregate["reporting_partitions"]["review_only_challenge"]["row_count"] == 335
+    assert aggregate["reporting_partitions"]["all_diagnostic"]["row_count"] == 1000
+    assert policy_audit["diagnostic_only"] is True
+    assert policy_audit["official_metric"] is False
+    assert policy_audit["official_metric_denominator_usage_allowed"] is False
+    assert policy_audit["generated_expected_answers_are_gold"] is False
+    assert policy_audit["promotion_evidence"] is False
+    assert policy_audit["threshold_tuning"] is False
+    assert policy_audit["winner_selection"] is False
+    assert policy_audit["readme_representative_product_performance_claim"] is False
+
+    for heavy_key in (
+        "manifest_rows_all",
+        "manifest_rows_core",
+        "source_candidate_rows",
+        "sanity_rows",
+        "per_row_metric_rows",
+        "aggregate_by_bucket",
+        "failure_taxonomy",
+        "sample_review_rows",
+        "policy_audit",
+        "next_phase_recommendation",
+    ):
+        assert heavy_key not in summary
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
+    assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
+
+
+def test_v3_6_5_runtime_audit_artifacts_are_registered_hash_locked_and_compact() -> None:
+    summary = read_json(AGENTIC_V3_6_5_SUMMARY_JSON)
+    expected_artifacts = {
+        "per_row_jsonl_sha256": AGENTIC_V3_6_5_PER_ROW_JSONL,
+        "blocker_matrix_json_sha256": AGENTIC_V3_6_5_BLOCKER_MATRIX_JSON,
+        "runtime_surface_audit_json_sha256": AGENTIC_V3_6_5_RUNTIME_SURFACE_AUDIT_JSON,
+        "reference_surface_audit_json_sha256": AGENTIC_V3_6_5_REFERENCE_SURFACE_AUDIT_JSON,
+        "db_surface_audit_json_sha256": AGENTIC_V3_6_5_DB_SURFACE_AUDIT_JSON,
+        "local_llm_surface_audit_json_sha256": AGENTIC_V3_6_5_LOCAL_LLM_SURFACE_AUDIT_JSON,
+        "policy_audit_json_sha256": AGENTIC_V3_6_5_POLICY_AUDIT_JSON,
+        "next_phase_recommendation_json_sha256": AGENTIC_V3_6_5_NEXT_PHASE_RECOMMENDATION_JSON,
+    }
+
+    assert AGENTIC_V3_6_5_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_5_SUMMARY_JSON.exists()
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID
+    assert summary["source_metric_run_id"] == AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID
+    assert summary["local_llm_live_silver_generation_allowed"] is False
+    assert summary["local_llm_metric_scoring_allowed"] is False
+    assert summary["external_llm_api_allowed"] is False
+    assert summary["db_write_allowed"] is False
+    assert summary["db_index_rebuild_allowed"] is False
+    assert summary["production_db_usage_allowed"] is False
+    for heavy_key in (
+        "per_row_metric_rows",
+        "source_candidate_rows",
+        "candidate_sanity_per_row",
+        "per_row_triage_rows",
+        "blocker_matrix",
+        "runtime_surface_audit",
+        "reference_surface_audit",
+        "db_surface_audit",
+        "local_llm_surface_audit",
+        "policy_audit",
+        "next_phase_recommendation",
+        "raw_llm_response",
+        "db_snapshot_rows",
+        "prompt_payloads",
+    ):
+        assert heavy_key not in summary
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
+    assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
+
+
+def test_v3_6_6_sidecar_runtime_probe_artifacts_are_registered_hash_locked_and_compact() -> None:
+    summary = read_json(AGENTIC_V3_6_6_SUMMARY_JSON)
+    expected_artifacts = {
+        "reference_sidecar_jsonl_sha256": AGENTIC_V3_6_6_REFERENCE_SIDECAR_JSONL,
+        "core_smoke_sample_jsonl_sha256": AGENTIC_V3_6_6_CORE_SMOKE_SAMPLE_JSONL,
+        "runtime_probe_summary_json_sha256": AGENTIC_V3_6_6_RUNTIME_PROBE_SUMMARY_JSON,
+        "db_retrieval_surface_audit_json_sha256": AGENTIC_V3_6_6_DB_RETRIEVAL_SURFACE_AUDIT_JSON,
+        "policy_audit_json_sha256": AGENTIC_V3_6_6_POLICY_AUDIT_JSON,
+        "next_phase_recommendation_json_sha256": AGENTIC_V3_6_6_NEXT_PHASE_RECOMMENDATION_JSON,
+    }
+
+    assert AGENTIC_V3_6_6_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_6_6_SUMMARY_JSON.exists()
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID
+    assert summary["source_triage_run_id"] == AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID
+    assert summary["diagnostic_reference_sidecar_complete"] is True
+    assert summary["sidecar_row_counts"] == {
+        "all_diagnostic": 1000,
+        "core_only": 665,
+        "quarantine": 0,
+        "review_only_challenge": 335,
+    }
+    assert summary["local_llm_live_silver_generation_allowed"] is False
+    assert summary["local_llm_metric_scoring_allowed"] is False
+    assert summary["external_llm_api_allowed"] is False
+    assert summary["db_write_allowed"] is False
+    assert summary["db_migration_allowed"] is False
+    assert summary["db_index_rebuild_allowed"] is False
+    assert summary["db_write_migration_reindex_attempted"] is False
+    assert summary["production_db_usage_allowed"] is False
+    assert summary["readme_performance_claim_mutation"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["lane_a_b_c_collapsed_scoring"] is False
+    for heavy_key in (
+        "reference_sidecar_rows",
+        "core_smoke_sample_rows",
+        "runtime_probe_summary",
+        "db_retrieval_surface_audit",
+        "policy_audit",
+        "next_phase_recommendation",
+        "per_row_metric_rows",
+        "per_row_triage_rows",
+        "raw_llm_response",
+        "prompt_payloads",
+        "db_snapshot_rows",
+    ):
+        assert heavy_key not in summary
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
+    assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
+    assert AGENTIC_V3_6_6_REFERENCE_SIDECAR_JSONL.stat().st_size < 5_000_000
+    assert AGENTIC_V3_6_6_CORE_SMOKE_SAMPLE_JSONL.stat().st_size < 250_000
+    assert AGENTIC_V3_6_6_SUMMARY_JSON.stat().st_size < 250_000
 
 
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:

@@ -855,3 +855,461 @@ def test_progress_status_and_triage_gate_record_v3_5_5_quality_audit():
     else:
         assert run_id in triage
         assert "Source-Quality Repair Queue" in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_6_0_policy_application_without_generation():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_0_low_touch_noisy_silver_policy_application"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "low_touch_noisy_silver_policy_application_v3_6_0"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "policy_application_only_no_generated_silver_rows"
+    assert event["user_policy_decision_applied"] is True
+    assert event["low_touch_human_review_required"] is False
+    assert event["weak_silver_candidate_count"] == 0
+    assert event["weak_silver_candidates_created"] is False
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["official_gold_labels_created"] is False
+    assert event["official_metric_denominator_usage_allowed"] is False
+    assert event["readme_representative_product_performance_claim"] is False
+    assert event["promotion_evidence"] is False
+    assert "generation_contract_json" in event["artifact_paths"]
+    assert "user_decision_matrix_jsonl" in event["artifact_paths"]
+    assert "guardrail_summary_json" in event["artifact_paths"]
+    assert "generation_contract" not in event
+    assert "user_decision_matrix_rows" not in event
+    assert "guardrail_summary" not in event
+
+    assert "v3_6_0 low-touch weak/noisy silver policy application" in current_text
+    assert run_id in current_text
+    assert "user_policy_decision_applied=true" in current_flat
+    assert "low_touch_human_review_required=false" in current_flat
+    assert "generated silver rows=0" in current_flat
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_6_1_candidate_generation_without_official_labels():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "balanced_weak_noisy_silver_candidate_generation_v3_6_1"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "weak_noisy_silver_candidate_generation_diagnostic_only"
+    assert event["weak_silver_candidate_count"] == 1000
+    assert event["source_family_counts"] == {"TEXT": 350, "PDF": 325, "XLSX": 325, "total": 1000}
+    assert event["query_quality_profile_counts"] == {
+        "ambiguous_but_source_answerable": 200,
+        "clean_source_grounded": 450,
+        "noisy_user_like": 100,
+        "numeric_table_or_locator_hard": 100,
+        "short_keyword_or_fragment": 150,
+    }
+    assert event["blocked_generation_row_count"] == 0
+    assert event["split_counts"] == {
+        "weak_silver_exploration": 700,
+        "weak_silver_holdout": 200,
+        "weak_silver_stress_smoke_candidate": 100,
+    }
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["promotion_evidence"] is False
+    assert event["triage_doc_updated"] is False
+    assert "weak_silver_candidates_jsonl" in event["artifact_paths"]
+    assert "policy_compliance_audit_json" in event["artifact_paths"]
+    assert "weak_silver_candidate_rows" not in event
+    assert "generation_blocked_rows" not in event
+    assert "policy_compliance_audit" not in event
+
+    assert "v3_6_1 balanced weak/noisy silver candidate generation" in current_text
+    assert run_id in current_text
+    assert "1000 diagnostic weak/noisy candidate rows" in current_flat
+    assert "TEXT=350, PDF=325, XLSX=325, total=1000" in current_flat
+    assert "blocked rows=0" in current_flat
+    assert "not gold, not official denominator/qrels, not promotion evidence" in current_flat
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_6_2_sanity_eval_without_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "weak_noisy_silver_candidate_sanity_eval_v3_6_2"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "weak_noisy_silver_candidate_sanity_eval_diagnostic_only"
+    assert event["candidate_row_count"] == 1000
+    assert event["candidate_sanity_passed"] is True
+    assert event["bucket_counts"] == {
+        "blocked_candidate": 0,
+        "core_pass_quality_candidate": 665,
+        "quarantine_candidate": 0,
+        "review_only_challenge_candidate": 335,
+    }
+    assert event["quarantine_candidate_count"] == 0
+    assert event["blocked_candidate_count"] == 0
+    assert event["source_identity_groups_crossing_split_roles_count"] == 74
+    assert event["split_independence_warning"] == "source_identity_groups_cross_split_roles_diagnostic_holdout_warning"
+    assert event["hash_contract"]["generated_question_hash_contract"] == (
+        "normalized_question_sha256_lowercase_whitespace_collapsed"
+    )
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["triage_doc_updated"] is False
+    assert "candidate_sanity_summary_json" in event["artifact_paths"]
+    assert "candidate_sanity_per_row_jsonl" in event["artifact_paths"]
+    assert "candidate_quarantine_rows_jsonl" in event["artifact_paths"]
+    assert "candidate_sanity_per_row" not in event
+    assert "source_candidate_rows" not in event
+
+    assert "v3_6_2 weak/noisy silver candidate sanity eval" in current_text
+    assert run_id in current_text
+    assert "candidate_sanity_passed=true" in current_flat
+    assert "bucket counts are core=665, review-only=335, quarantine=0, blocked=0" in current_flat
+    assert "hash contract=normalized question sha256" in current_flat
+    assert "v3_6_3 diagnostic weak/noisy silver manifest freeze is allowed=true" in current_flat
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_6_3_manifest_freeze_without_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_weak_noisy_silver_manifest_freeze_v3_6_3"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "diagnostic_weak_noisy_silver_manifest_freeze_only"
+    assert event["manifest_row_count"] == 1000
+    assert event["core_manifest_row_count"] == 665
+    assert event["review_only_manifest_row_count"] == 335
+    assert event["quarantine_manifest_row_count"] == 0
+    assert event["manifest_freeze_passed"] is True
+    assert event["bucket_counts"] == {
+        "blocked_candidate": 0,
+        "core_pass_quality_candidate": 665,
+        "quarantine_candidate": 0,
+        "review_only_challenge_candidate": 335,
+    }
+    assert event["official_proximity_review_row_count"] == 3
+    assert event["source_identity_groups_crossing_split_roles_count"] == 74
+    assert event["hash_contract"] == "normalized_question_sha256_lowercase_whitespace_collapsed"
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["triage_doc_updated"] is False
+    assert "manifest_summary_json" in event["artifact_paths"]
+    assert "manifest_all_jsonl" in event["artifact_paths"]
+    assert "manifest_core_jsonl" in event["artifact_paths"]
+    assert "manifest_review_only_jsonl" in event["artifact_paths"]
+    assert "manifest_rows_all" not in event
+    assert "source_candidate_rows" not in event
+    assert "sanity_rows" not in event
+
+    assert "v3_6_3 diagnostic weak/noisy silver manifest freeze" in current_text
+    assert run_id in current_text
+    assert "freezes 1000 diagnostic rows" in current_flat
+    assert "core=665, review-only=335, quarantine=0" in current_flat
+    assert "official proximity rows remain review-only=3" in current_flat
+    assert "v3_6_4 diagnostic-only weak/noisy silver metric is allowed=true" in current_flat
+    assert run_id not in triage
+
+
+def test_progress_status_measurements_and_triage_gate_record_v3_6_4_metric_without_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_flat = " ".join(measurements.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_only_weak_noisy_silver_metric_v3_6_4"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "weak_noisy_silver_metric_diagnostic_only"
+    assert event["diagnostic_row_count"] == 1000
+    assert event["manifest_counts"] == {
+        "all_diagnostic": 1000,
+        "core_only": 665,
+        "review_only_challenge": 335,
+        "quarantine": 0,
+    }
+    assert event["runtime_generation_succeeded_row_count"] == 0
+    assert event["runtime_generation_fail_closed_row_count"] == 1000
+    assert event["runtime_generation_coverage_rate"] == 0.0
+    assert event["fail_closed_reasons"] == []
+    assert event["generation_fail_closed_reasons"]
+    assert event["source_identity_groups_crossing_split_roles_count"] == 74
+    assert event["split_independence_warning"] == "source_identity_groups_cross_split_roles_diagnostic_holdout_warning"
+    assert event["official_proximity_review_row_count"] == 3
+    assert event["official_proximity_core_row_count"] == 0
+    assert event["generated_expected_answers_are_gold"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_denominator_usage_allowed"] is False
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["triage_doc_updated"] is False
+    for artifact_key in (
+        "summary_json",
+        "per_row_jsonl",
+        "aggregate_by_bucket_json",
+        "failure_taxonomy_json",
+        "sample_review_jsonl",
+        "policy_audit_json",
+        "next_phase_recommendation_json",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "per_row_metric_rows",
+        "aggregate_by_bucket",
+        "failure_taxonomy",
+        "sample_review_rows",
+        "policy_audit",
+        "next_phase_recommendation",
+        "manifest_rows_all",
+    ):
+        assert large_field not in event
+
+    assert "v3_6_4 diagnostic-only weak/noisy silver metric" in current_text
+    assert run_id in current_text
+    assert "core_only=665, review_only_challenge=335, all_diagnostic=1000" in current_flat
+    assert "live generation coverage=0/1000" in current_flat
+    assert "answer/citation proxy metrics fail closed" in current_flat
+    assert "core_only is the main interpretable diagnostic bucket" in current_flat
+    assert run_id in measurements
+    assert "v3_6_4 Diagnostic-Only Weak/Noisy Silver Metric" in measurements
+    assert "core_only `665`, review_only_challenge `335`, all_diagnostic `1000`" in measurements_flat
+    assert "Live generation was unavailable" in measurements
+    assert "not gold, not official qrels, not official denominator" in measurements
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_6_5_without_metric_measurements_or_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_flat = " ".join(measurements.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_rough_failure_bucket_triage_v3_6_5"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "diagnostic_only_rough_failure_bucket_triage"
+    assert event["diagnostic_row_count"] == 1000
+    assert event["multi_label_blocker_bucket_counts"]["runtime_generation_surface_unavailable"] == 1000
+    assert event["multi_label_blocker_bucket_counts"]["answer_proxy_reference_missing_from_v3_6_3_manifest"] == 1000
+    assert event["multi_label_blocker_bucket_counts"]["weak_silver_expected_answer_ambiguous"] == 334
+    assert event["multi_label_blocker_bucket_counts"]["review_only_source_quality_noise"] == 334
+    assert event["local_llm_usage_allowed"] is True
+    assert event["local_llm_usage_scope"] == "capability_probe_and_runtime_surface_audit_only"
+    assert event["local_llm_live_silver_generation_attempted"] is False
+    assert event["local_llm_live_silver_generation_allowed"] is False
+    assert event["local_llm_metric_scoring_attempted"] is False
+    assert event["local_llm_metric_scoring_allowed"] is False
+    assert event["external_llm_api_allowed"] is False
+    assert event["external_llm_api_attempted"] is False
+    assert event["db_usage_allowed"] is True
+    assert event["db_usage_scope"] == "read_only_reference_and_runtime_surface_audit_only"
+    assert event["db_write_allowed"] is False
+    assert event["db_migration_allowed"] is False
+    assert event["db_index_rebuild_allowed"] is False
+    assert event["production_db_usage_allowed"] is False
+    assert event["db_results_as_gold_allowed"] is False
+    assert event["db_results_as_official_qrels_allowed"] is False
+    assert event["db_results_as_generation_source_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["measurements_doc_updated"] is False
+    assert event["triage_doc_updated"] is False
+    for artifact_key in (
+        "summary_json",
+        "per_row_jsonl",
+        "blocker_matrix_json",
+        "runtime_surface_audit_json",
+        "reference_surface_audit_json",
+        "db_surface_audit_json",
+        "local_llm_surface_audit_json",
+        "policy_audit_json",
+        "next_phase_recommendation_json",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "per_row_triage_rows",
+        "blocker_matrix",
+        "runtime_surface_audit",
+        "reference_surface_audit",
+        "db_surface_audit",
+        "local_llm_surface_audit",
+        "policy_audit",
+        "next_phase_recommendation",
+        "per_row_metric_rows",
+        "source_candidate_rows",
+    ):
+        assert large_field not in event
+
+    assert "v3_6_5 rough failure-bucket triage" in current_text
+    assert run_id in current_text
+    assert "no live silver generation" in current_flat
+    assert "no DB writes" in current_flat
+    assert "DB-derived generation/gold/qrels remain blocked" in current_flat
+    assert run_id not in measurements
+    assert "v3_6_5 Runtime Surface Audit And Rough Failure Buckets" not in measurements
+    assert "LLM generation/scoring `0/0`, DB writes `0`" not in measurements_flat
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_6_6_without_metric_measurements_or_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_reference_sidecar_and_runtime_surface_probe_v3_6_6"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "diagnostic_only_reference_sidecar_and_runtime_surface_probe"
+    assert event["diagnostic_reference_sidecar_complete"] is True
+    assert event["sidecar_row_counts"] == {
+        "all_diagnostic": 1000,
+        "core_only": 665,
+        "quarantine": 0,
+        "review_only_challenge": 335,
+    }
+    assert event["diagnostic_row_count"] == 1000
+    assert event["core_smoke_sample_target_row_count"] == 30
+    assert event["core_smoke_generation_attempted_row_count"] <= 30
+    assert event["core_smoke_strict_json_answer_returned_row_count"] <= event[
+        "core_smoke_generation_attempted_row_count"
+    ]
+    assert event["core_smoke_generation_succeeded_row_count"] <= event["core_smoke_generation_attempted_row_count"]
+    assert event["local_llm_usage_scope"] == "diagnostic_only_core_smoke_runtime_probe_only"
+    assert event["local_llm_live_silver_generation_allowed"] is False
+    assert event["local_llm_metric_scoring_allowed"] is False
+    assert event["external_llm_api_allowed"] is False
+    assert event["external_llm_api_attempted"] is False
+    assert event["db_usage_scope"] == "read_only_reference_and_runtime_surface_probe_only"
+    assert event["db_read_only_probe_attempted"] is True
+    assert event["db_write_attempted"] is False
+    assert event["db_migration_attempted"] is False
+    assert event["db_index_rebuild_attempted"] is False
+    assert event["db_write_migration_reindex_attempted"] is False
+    assert event["production_db_used"] is False
+    assert event["db_results_as_generation_source_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["measurements_doc_updated"] is False
+    assert event["triage_doc_updated"] is False
+    assert event["review_only_remains_stress_only"] is True
+    assert event["official_proximity_rows_remain_out_of_core"] is True
+    assert event["recommended_next_phase"] in {
+        "v3_6_7_core_only_live_diagnostic_weak_noisy_silver_metric",
+        "v3_6_7_runtime_stability_probe_for_core_only",
+        "v3_6_7_manifest_locator_live_retrieval_probe",
+        "v3_6_7_reference_sidecar_recovery_or_compaction_fix",
+    }
+    for artifact_key in (
+        "summary_json",
+        "reference_sidecar_jsonl",
+        "core_smoke_sample_jsonl",
+        "runtime_probe_summary_json",
+        "db_retrieval_surface_audit_json",
+        "policy_audit_json",
+        "next_phase_recommendation_json",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "reference_sidecar_rows",
+        "core_smoke_sample_rows",
+        "runtime_probe_summary",
+        "db_retrieval_surface_audit",
+        "policy_audit",
+        "next_phase_recommendation",
+        "per_row_triage_rows",
+        "per_row_metric_rows",
+    ):
+        assert large_field not in event
+
+    assert "v3_6_6 diagnostic reference sidecar and runtime surface probe" in current_text
+    assert run_id in current_text
+    assert "all=1000, core=665, review-only=335, quarantine=0" in current_flat
+    assert "strict JSON answers returned=" in current_flat
+    assert "Review-only remains stress-only" in current_flat
+    assert "DB-derived generation/gold/qrels remain blocked" in current_flat
+    assert "Overall status: `diagnostic_reference_sidecar_runtime_surface_probe_v3_6_6_complete`;" in progress
+    assert run_id not in measurements
+    assert run_id not in triage

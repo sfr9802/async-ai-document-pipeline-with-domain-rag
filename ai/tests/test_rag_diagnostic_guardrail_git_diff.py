@@ -799,3 +799,492 @@ def test_v3_5_5_quality_audit_does_not_mutate_v3_5_4_protected_surfaces_or_silve
         "readme_headline_product_performance_claim",
     ):
         assert event["guardrails"][key] is False, key
+
+
+def test_v3_6_1_weak_noisy_candidate_generation_does_not_mutate_protected_surfaces_or_promote_silver():
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation"
+    summary_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / f"{run_id}_generation_summary.json"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "README.md",
+        "docs/rag-ingestion-triage.md",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_audit.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_audit_sample_packet.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_next_phase_policy_boundary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_quality_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_manifest_validation.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_audit_sample_review_packet.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_duplicate_hash_audit.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_next_phase_policy_boundary.json",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["weak_silver_candidate_count"] == 1000
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["retrieval_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["readme_performance_claim_mutation"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+
+def test_v3_6_2_sanity_eval_does_not_mutate_protected_surfaces_or_promote_silver():
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval"
+    summary_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / f"{run_id}_candidate_sanity_summary.json"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "README.md",
+        "docs/rag-ingestion-triage.md",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_quality_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_manifest_validation.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_audit_sample_review_packet.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_duplicate_hash_audit.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_next_phase_policy_boundary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_quality_distribution.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_split_manifest.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_policy_compliance_audit.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_next_phase_recommendation.json",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["candidate_row_count"] == 1000
+    assert summary["candidate_sanity_passed"] is True
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["official_gold_labels_created"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["retrieval_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["readme_performance_claim_mutation"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["official_metric_denominator_usage_allowed"] is False
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+
+def test_v3_6_3_manifest_freeze_does_not_mutate_protected_surfaces_or_promote_silver():
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze"
+    summary_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / f"{run_id}_diagnostic_weak_noisy_silver_manifest_summary.json"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "README.md",
+        "docs/rag-ingestion-triage.md",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_quality_distribution.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_split_manifest.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_policy_compliance_audit.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_sanity_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_sanity_per_row.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_quarantine_rows.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_metric_feasibility.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_split_independence_audit.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_hash_contract_audit.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_next_phase_recommendation.json",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["manifest_freeze_passed"] is True
+    assert summary["manifest_row_count"] == 1000
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["official_gold_labels_created"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["retrieval_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["readme_performance_claim_mutation"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["official_metric_denominator_usage_allowed"] is False
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+
+def test_v3_6_4_metric_does_not_mutate_protected_surfaces_or_promote_silver():
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric"
+    summary_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / f"{run_id}_summary.json"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "README.md",
+        "docs/rag-ingestion-triage.md",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_policy_audit.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_next_phase_recommendation.json",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["diagnostic_row_count"] == 1000
+    assert summary["core_manifest_row_count"] == 665
+    assert summary["review_only_manifest_row_count"] == 335
+    assert summary["quarantine_manifest_row_count"] == 0
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["generated_expected_answers_are_gold"] is False
+    assert summary["official_metric"] is False
+    assert summary["official_metric_denominator_usage_allowed"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["official_gold_labels_created"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["retrieval_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["readme_performance_claim_mutation"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+
+def test_v3_6_5_triage_does_not_mutate_protected_surfaces_or_promote_silver():
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage"
+    summary_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / f"{run_id}_summary.json"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "README.md",
+        "docs/rag-ingestion-triage.md",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_policy_audit.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_next_phase_recommendation.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_aggregate_by_bucket.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_failure_taxonomy.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_sample_review.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_policy_audit.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_next_phase_recommendation.json",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["protected_input_sha256_matches_v3_6_4_summary"] is True
+    assert summary["protected_v3_6_3_input_sha256_before"] == summary["protected_v3_6_3_input_sha256_after"]
+    assert summary["protected_v3_6_3_input_sha256_unchanged"] is True
+    assert summary["local_llm_live_silver_generation_allowed"] is False
+    assert summary["local_llm_live_silver_generation_attempted"] is False
+    assert summary["local_llm_metric_scoring_allowed"] is False
+    assert summary["local_llm_metric_scoring_attempted"] is False
+    assert summary["external_llm_api_allowed"] is False
+    assert summary["external_llm_api_attempted"] is False
+    assert summary["db_write_allowed"] is False
+    assert summary["db_write_attempted"] is False
+    assert summary["db_migration_allowed"] is False
+    assert summary["db_migration_attempted"] is False
+    assert summary["db_index_rebuild_allowed"] is False
+    assert summary["db_index_rebuild_attempted"] is False
+    assert summary["production_db_usage_allowed"] is False
+    assert summary["production_db_used"] is False
+    assert summary["db_results_as_gold_allowed"] is False
+    assert summary["db_results_as_official_qrels_allowed"] is False
+    assert summary["db_results_as_generation_source_allowed"] is False
+    assert summary["official_metric"] is False
+    assert summary["official_metric_denominator_usage_allowed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["retrieval_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["production_mutation"] is False
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+
+def test_v3_6_6_sidecar_probe_does_not_mutate_protected_surfaces_or_promote_silver():
+    run_id = "official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe"
+    summary_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / f"{run_id}_summary.json"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "README.md",
+        "docs/rag-ingestion-triage.md",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_per_row.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_policy_audit.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_next_phase_recommendation.json",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["protected_v3_6_3_input_sha256_before"] == summary["protected_v3_6_3_input_sha256_after"]
+    assert summary["protected_v3_6_3_input_sha256_unchanged"] is True
+    assert summary["diagnostic_reference_sidecar_complete"] is True
+    if "sidecar_mutates_v3_6_3_compact_manifest" in summary:
+        assert summary["sidecar_mutates_v3_6_3_compact_manifest"] is False
+    assert summary["generated_expected_answers_are_gold"] is False
+    assert summary["local_llm_live_silver_generation_allowed"] is False
+    assert summary["local_llm_live_silver_generation_attempted"] is False
+    assert summary["local_llm_metric_scoring_allowed"] is False
+    assert summary["local_llm_metric_scoring_attempted"] is False
+    assert summary["external_llm_api_allowed"] is False
+    assert summary["external_llm_api_attempted"] is False
+    assert summary["db_write_allowed"] is False
+    assert summary["db_write_attempted"] is False
+    assert summary["db_migration_allowed"] is False
+    assert summary["db_migration_attempted"] is False
+    assert summary["db_index_rebuild_allowed"] is False
+    assert summary["db_index_rebuild_attempted"] is False
+    assert summary["db_write_migration_reindex_attempted"] is False
+    assert summary["production_db_usage_allowed"] is False
+    assert summary["production_db_used"] is False
+    assert summary["db_results_as_gold_allowed"] is False
+    assert summary["db_results_as_official_qrels_allowed"] is False
+    assert summary["db_results_as_generation_source_allowed"] is False
+    assert summary["official_metric"] is False
+    assert summary["official_metric_denominator_usage_allowed"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["official_gold_labels_created"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["retrieval_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["renderer_mutation"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["readme_performance_claim_mutation"] is False
+    assert summary["measurements_doc_updated"] is False
+    assert summary["triage_doc_updated"] is False
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
