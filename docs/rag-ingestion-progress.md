@@ -1,6 +1,6 @@
 # RAG Ingestion Progress
 
-Last updated: 2026-05-19 KST.
+Last updated: 2026-05-20 KST.
 
 This is the compact status index for the current RAG ingestion and official
 answer/citation metric work. Do not append turn transcripts or create new
@@ -23,7 +23,7 @@ requirements.
 
 ## Current Status
 
-Overall status: `readme_retrieval_smoke_card_v3_4_4_ready_silver_generation_blocked`;
+Overall status: `balanced_source_manifest_quality_audit_v3_5_5_source_only_review_ready`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied.
 Previous closure status `official_answer_citation_v3_2_7_post_fix_sequence_closed`
@@ -68,6 +68,47 @@ retrieval ranking. The v3_4_3 marker
 remains valid as the retrieval-smoke metric source. No answer/citation denominator rows, prompt, retrieval,
 renderer, scorer, index/export, silver generation, production, threshold,
 winner selection, or Lane A/B/C collapsed score changed.
+v3_4_4 then keeps the compact README metric card and silver-readiness boundary
+locked; the prior marker
+`readme_retrieval_smoke_card_v3_4_4_ready_silver_generation_blocked` remains
+valid as the source for README-facing smoke-card and silver-blocker state.
+v3_5_0 then starts strict non-official source-bound capacity expansion for
+future answer/citation silver source material only. The previous strict
+inventory remains TEXT=0, PDF=3, XLSX=4, total=7, while new manifest-ready
+source candidates are TEXT=350, PDF=3, XLSX=4, total=357. The pilot threshold
+is met, the 1000-row target is not met, and silver generation remains blocked
+because this phase creates no silver rows. The recommended next phase is
+`v3_5_1_pilot_silver_source_manifest_freeze`. The v3_5_0 marker
+`strict_non_official_source_bound_capacity_expansion_v3_5_0_pilot_ready`
+remains valid as the source-capacity inventory checkpoint.
+
+<!-- official_answer_citation_agentic_loop_run_v3_5_1_pilot_silver_source_manifest_freeze:progress-entry:start -->
+- v3_5_1 pilot source manifest freeze (`official_answer_citation_agentic_loop_run_v3_5_1_pilot_silver_source_manifest_freeze`) freezes TEXT=350, PDF=3, XLSX=4, total=357 source-only rows. Audit exclusions={}. The pilot threshold is met, balanced pilot threshold is not met, target_threshold_met=false, and silver generation remains blocked.
+<!-- official_answer_citation_agentic_loop_run_v3_5_1_pilot_silver_source_manifest_freeze:progress-entry:end -->
+
+
+
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_5_2_xlsx_source_value_manifest_repair_and_acquisition:progress-entry:start -->
+- v3_5_2 XLSX source-value manifest repair (`official_answer_citation_agentic_loop_run_v3_5_2_xlsx_source_value_manifest_repair_and_acquisition`) reconstructs 535 locator-complete XLSX rows from actual workbooks and freezes 321 manifest-ready overlay rows toward the XLSX target; newly collected workbook/source count=0, acquisition_performed=false, acquisition_reason=`existing_xlsx_candidate_workbooks_sufficient_for_preferred_gap`. Combined source counts are TEXT=350, PDF=3, XLSX=325, total=678; remaining PDF gap=322 and XLSX gap=0. No query or expected_answer_text was used as source material, and silver generation remains blocked.
+<!-- official_answer_citation_agentic_loop_run_v3_5_2_xlsx_source_value_manifest_repair_and_acquisition:progress-entry:end -->
+
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_5_3_pdf_page_bbox_source_text_manifest_repair_and_acquisition:progress-entry:start -->
+- v3_5_3 PDF page/bbox source-text manifest repair (`official_answer_citation_agentic_loop_run_v3_5_3_pdf_page_bbox_source_text_manifest_repair_and_acquisition`) extracts 322 PDF source rows from approved existing PDF source documents; newly collected source count=0, acquisition_performed=false, acquisition_reason=`existing_148_pdf_source_collection_sufficient_for_preferred_gap`. Final source counts are TEXT=350, PDF=325, XLSX=325, total=1000; remaining PDF gap=0 and XLSX gap=0. balanced_pilot_threshold_met=true, target_threshold_met=true, silver_generation_allowed=false.
+<!-- official_answer_citation_agentic_loop_run_v3_5_3_pdf_page_bbox_source_text_manifest_repair_and_acquisition:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze:progress-entry:start -->
+- v3_5_4 balanced source-only manifest freeze (`official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze`) freezes TEXT=350, PDF=325, XLSX=325, total=1000 source-only rows from v3_5_1/v3_5_2/v3_5_3. Audit exclusions={}, backfill_performed=false, sample packet counts are TEXT=25, PDF=25, XLSX=25. preferred_mix_met=true, target_threshold_met=true, silver_generation_allowed=false; next phase is v3_5_5_balanced_source_manifest_quality_audit.
+<!-- official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze:progress-entry:end -->
+
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit:progress-entry:start -->
+- v3_5_5 balanced source-manifest quality audit (`official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit`) validates TEXT=350, PDF=325, XLSX=325, total=1000 frozen v3_5_4 source-only rows without mutating the freeze. Audit sample counts are TEXT=58, PDF=172, XLSX=74; duplicate hash repetitions are 17 groups/57 rows. Targeted review counts: PDF short=173, PDF numeric/table=70, XLSX hidden-boundary=4, TEXT short=31. critical_repair_required_count=0, recommended_repair_queue_count=0, silver_generation_allowed=false; recommended_next_phase=`v3_6_0_silver_generation_policy_packet`.
+<!-- official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit:progress-entry:end -->
 
 - Official first-run baseline is `status=BLOCKED_OR_PARTIAL` with
   `status_detail=SCORED_BASELINE_PARTIAL`,
@@ -215,6 +256,21 @@ winner selection, or Lane A/B/C collapsed score changed.
   strict non-official source-bound inventory is TEXT=0, PDF=3, XLSX=4, total=7,
   below the 100-row pilot and 1000-row target; official-denominator SearchUnits
   remain excluded from dev/holdout silver and no silver rows were generated.
+- v3_5_0 strict non-official source-bound capacity expansion
+  `official_answer_citation_agentic_loop_run_v3_5_0_strict_non_official_source_bound_capacity_expansion`
+  wrote compact machine artifacts only:
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_0_strict_non_official_source_bound_capacity_expansion_capacity_summary.json`,
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_0_strict_non_official_source_bound_capacity_expansion_manifest_ready_candidates.jsonl`,
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_0_strict_non_official_source_bound_capacity_expansion_blocked_or_convertible_candidates.jsonl`,
+  and
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_0_strict_non_official_source_bound_capacity_expansion_acquisition_plan.json`.
+  The run deterministically reconstructs source-only TEXT locator identities
+  from existing `rag_chunks` and carries forward the 3 PDF plus 4 XLSX strict
+  non-official rows. No questions, expected answers, supporting evidence,
+  labels, qrels, silver JSONL rows, prompt, retrieval, renderer, scorer,
+  index/export, production, threshold tuning, winner selection, promotion
+  evidence, README representative performance claim, or Lane A/B/C collapsed
+  score changed.
 - SearchUnit citation payload wiring is implemented in the live runner, and
   XLSX/PDF deterministic adapter opt-in wiring is implemented for retrieved
   source-bound SearchUnits. These are wiring changes only: the historical v1 run

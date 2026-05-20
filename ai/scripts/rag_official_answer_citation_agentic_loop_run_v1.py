@@ -136,6 +136,24 @@ V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID = (
 V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts"
 )
+V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_5_0_strict_non_official_source_bound_capacity_expansion"
+)
+V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_5_1_pilot_silver_source_manifest_freeze"
+)
+V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_5_2_xlsx_source_value_manifest_repair_and_acquisition"
+)
+V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_5_3_pdf_page_bbox_source_text_manifest_repair_and_acquisition"
+)
+V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze"
+)
+V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit"
+)
 REPORT_ARTIFACT_SLUGS = {
     RUN_ID: "agentic_v1",
     V2_RUN_ID: "v2_source_bound",
@@ -180,6 +198,21 @@ REPORT_ARTIFACT_SLUGS = {
     V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID: (
         V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID
     ),
+    V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID: (
+        V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID
+    ),
+    V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID: (
+        V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID
+    ),
+    V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID: (
+        V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID
+    ),
+    V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID: (
+        V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID
+    ),
+    V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID: (
+        V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
@@ -202,6 +235,11 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
     V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
     V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+    V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
 }
 V3_1_PRIORITY_1_5_QUERY_IDS = (
     "gq_pdf_section_question_001",
@@ -619,6 +657,116 @@ DEFAULT_V3_4_4_SILVER_READINESS_SUMMARY_JSON = report_artifact_path(
     V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
     "silver_readiness_summary.json",
 )
+DEFAULT_V3_5_0_CAPACITY_SUMMARY_JSON = (
+    REPORT_DIR / f"{V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID}_capacity_summary.json"
+)
+DEFAULT_V3_5_0_MANIFEST_READY_CANDIDATES_JSONL = (
+    REPORT_DIR
+    / f"{V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID}_manifest_ready_candidates.jsonl"
+)
+DEFAULT_V3_5_0_BLOCKED_OR_CONVERTIBLE_CANDIDATES_JSONL = (
+    REPORT_DIR
+    / f"{V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID}_blocked_or_convertible_candidates.jsonl"
+)
+DEFAULT_V3_5_0_ACQUISITION_PLAN_JSON = (
+    REPORT_DIR / f"{V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID}_acquisition_plan.json"
+)
+DEFAULT_V3_5_1_PILOT_SOURCE_MANIFEST_JSONL = report_artifact_path(
+    V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    "pilot_source_manifest.jsonl",
+)
+DEFAULT_V3_5_1_FREEZE_SUMMARY_JSON = report_artifact_path(
+    V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    "freeze_summary.json",
+)
+DEFAULT_V3_5_1_FREEZE_AUDIT_JSONL = report_artifact_path(
+    V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    "freeze_audit.jsonl",
+)
+DEFAULT_V3_5_1_SELECTION_RATIONALE_JSON = report_artifact_path(
+    V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    "selection_rationale.json",
+)
+DEFAULT_V3_5_2_XLSX_MANIFEST_READY_CANDIDATES_JSONL = report_artifact_path(
+    V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    "xlsx_manifest_ready_candidates.jsonl",
+)
+DEFAULT_V3_5_2_XLSX_BLOCKED_OR_CONVERTIBLE_CANDIDATES_JSONL = report_artifact_path(
+    V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    "xlsx_blocked_or_convertible_candidates.jsonl",
+)
+DEFAULT_V3_5_2_XLSX_SOURCE_COLLECTION_MANIFEST_JSON = report_artifact_path(
+    V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    "xlsx_source_collection_manifest.json",
+)
+DEFAULT_V3_5_2_POST_XLSX_CAPACITY_SUMMARY_JSON = report_artifact_path(
+    V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    "post_xlsx_capacity_summary.json",
+)
+DEFAULT_V3_5_3_PDF_MANIFEST_READY_CANDIDATES_JSONL = report_artifact_path(
+    V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    "pdf_manifest_ready_candidates.jsonl",
+)
+DEFAULT_V3_5_3_PDF_BLOCKED_OR_CONVERTIBLE_CANDIDATES_JSONL = report_artifact_path(
+    V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    "pdf_blocked_or_convertible_candidates.jsonl",
+)
+DEFAULT_V3_5_3_PDF_SOURCE_COLLECTION_MANIFEST_JSON = report_artifact_path(
+    V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    "pdf_source_collection_manifest.json",
+)
+DEFAULT_V3_5_3_POST_PDF_CAPACITY_SUMMARY_JSON = report_artifact_path(
+    V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    "post_pdf_capacity_summary.json",
+)
+DEFAULT_V3_5_3_BALANCED_CAPACITY_SUMMARY_JSON = report_artifact_path(
+    V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+    "balanced_capacity_summary.json",
+)
+DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL = report_artifact_path(
+    V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    "balanced_source_manifest.jsonl",
+)
+DEFAULT_V3_5_4_FREEZE_SUMMARY_JSON = report_artifact_path(
+    V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    "freeze_summary.json",
+)
+DEFAULT_V3_5_4_FREEZE_AUDIT_JSONL = report_artifact_path(
+    V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    "freeze_audit.jsonl",
+)
+DEFAULT_V3_5_4_AUDIT_SAMPLE_PACKET_JSONL = report_artifact_path(
+    V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    "audit_sample_packet.jsonl",
+)
+DEFAULT_V3_5_4_NEXT_PHASE_POLICY_BOUNDARY_JSON = report_artifact_path(
+    V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+    "next_phase_policy_boundary.json",
+)
+DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON = report_artifact_path(
+    V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+    "quality_summary.json",
+)
+DEFAULT_V3_5_5_MANIFEST_VALIDATION_JSONL = report_artifact_path(
+    V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+    "manifest_validation.jsonl",
+)
+DEFAULT_V3_5_5_AUDIT_SAMPLE_REVIEW_PACKET_JSONL = report_artifact_path(
+    V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+    "audit_sample_review_packet.jsonl",
+)
+DEFAULT_V3_5_5_DUPLICATE_HASH_AUDIT_JSONL = report_artifact_path(
+    V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+    "duplicate_hash_audit.jsonl",
+)
+DEFAULT_V3_5_5_RECOMMENDED_REPAIR_QUEUE_JSONL = report_artifact_path(
+    V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+    "recommended_repair_queue.jsonl",
+)
+DEFAULT_V3_5_5_NEXT_PHASE_POLICY_BOUNDARY_JSON = report_artifact_path(
+    V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+    "next_phase_policy_boundary.json",
+)
 DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "scorer_v1.jsonl"
 DEFAULT_TEXT_NAMU_GOLD_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v2_1_question_gold_v2.csv"
 DEFAULT_TEXT_NAMU_HUMAN_AUDIT_V2_DECISIONS_JSON = (
@@ -1014,6 +1162,35 @@ def main(argv: list[str] | None = None) -> int:
         }
         print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
+    if summary["run_id"] in {
+        V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+    }:
+        write_v3_5_source_material_phase_artifacts(summary)
+        append_v3_5_source_material_phase_event(Path(args.status_jsonl), summary)
+        append_v3_5_progress_entry(summary)
+        console_payload = {
+            "run_id": summary["run_id"],
+            "status": summary["status"],
+            "run_class": summary["run_class"],
+            "artifact_kind": summary["artifact_kind"],
+            "manifest_ready_count": summary.get("manifest_ready_count")
+            or summary.get("frozen_manifest_row_count"),
+            "counts_by_source_family": summary.get("counts_by_source_family")
+            or summary.get("frozen_counts_by_source_family"),
+            "target_threshold_met": summary["target_threshold_met"],
+            "silver_generation_allowed": summary["silver_generation_allowed"],
+            "silver_jsonl_rows_created": summary["silver_jsonl_rows_created"],
+            "candidate_artifacts_used_as_generation_source": summary[
+                "candidate_artifacts_used_as_generation_source"
+            ],
+            "artifact_paths": summary["artifact_paths"],
+        }
+        print(json.dumps(console_payload, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
     if summary["run_id"] == V3_1_5_GQ_AUTO_010_SOURCE_BOUND_COVERAGE_DIAGNOSTIC_RUN_ID:
         write_v3_1_5_source_bound_coverage_side_artifacts(summary, rows)
         write_json(Path(args.summary_json), summary)
@@ -1277,6 +1454,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         V3_4_2_APPLY_USER_OFFICIAL_RETRIEVAL_QRELS_LABELS_RUN_ID,
         V3_4_3_OFFICIAL_EXACT_EVIDENCE_RETRIEVAL_SMOKE_METRIC_RUN_ID,
         V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID,
+        V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
     }
     if args.run_id not in supported_run_ids:
         raise SystemExit(
@@ -1358,6 +1540,21 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
 
     if args.run_id == V3_4_4_README_RETRIEVAL_SMOKE_AND_SILVER_READINESS_ARTIFACTS_RUN_ID:
         return run_v3_4_4_readme_retrieval_smoke_and_silver_readiness_artifacts(args=args), []
+
+    if args.run_id == V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID:
+        return run_v3_5_1_pilot_silver_source_manifest_freeze(args=args), []
+
+    if args.run_id == V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID:
+        return run_v3_5_2_xlsx_source_value_manifest_repair_and_acquisition(args=args), []
+
+    if args.run_id == V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID:
+        return run_v3_5_3_pdf_page_bbox_source_text_manifest_repair_and_acquisition(args=args), []
+
+    if args.run_id == V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID:
+        return run_v3_5_4_balanced_silver_source_manifest_freeze(args=args), []
+
+    if args.run_id == V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID:
+        return run_v3_5_5_balanced_source_manifest_quality_audit(args=args), []
 
     if args.run_id == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
         return run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement(
@@ -17785,6 +17982,3207 @@ On the source-bound exact-evidence smoke guard, Lane B retrieval placed an exact
 
 Caveats: small_sample_warning=true, readme_headline_allowed=false, regression_guard_allowed=true, representative_product_performance_claim_allowed=false. One query changes the score by about 3.57 percentage points. Lane C is reference-only and is not used for micro or macro retrieval ranking. No graded nDCG or collapsed Lane A/B/C score is reported.
 """
+
+
+V3_5_FORBIDDEN_SOURCE_MANIFEST_FIELDS = (
+    "query",
+    "question",
+    "expected_answer",
+    "expected_answer_text",
+    "supporting_evidence",
+    "relevance_label",
+    "answerability_label",
+    "qrel",
+    "qrels",
+    "gold_label",
+    "human_label",
+    "generated_answer",
+    "answer_claims",
+)
+V3_5_PREVIOUS_MANIFEST_READY_INVENTORY = {"TEXT": 350, "PDF": 3, "XLSX": 4, "total": 357}
+V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY = {"TEXT": 350, "PDF": 325, "XLSX": 325}
+V3_5_PILOT_THRESHOLD_ROWS = 100
+V3_5_TARGET_ROWS = 1000
+V3_5_XLSX_TARGET_REPAIRED_ROWS = 321
+V3_5_PDF_TARGET_REPAIRED_ROWS = 322
+V3_5_SOURCE_COLLECTION_ROOT = Path(
+    "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/source_collection_20260510"
+)
+V3_5_SOURCE_COLLECTION_MANIFEST_JSON = V3_5_SOURCE_COLLECTION_ROOT / "manifest.json"
+V3_5_XLSX_SOURCE_ROOTS = (
+    Path("D:/_external_workspace_archive/async-ocr-rag-multimodal-pipeline/20260507_210945/.tmp/full72_reimport"),
+    Path(
+        "D:/_external_workspace_archive/async-ocr-rag-multimodal-pipeline/"
+        "20260511-eval-report-cleanup/directory-moves/ai-worker_eval_datasets_remaining/xlsx"
+    ),
+    V3_5_SOURCE_COLLECTION_ROOT / "xlsx",
+    REPO_ROOT / "local-storage",
+)
+
+
+def v3_5_source_material_guardrails() -> dict[str, bool]:
+    return {
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "relevance_label_mutation": False,
+        "answerability_label_mutation": False,
+        "answer_citation_denominator_mutation": False,
+        "official_denominator_query_id_set_mutation": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "silver_mutation": False,
+        "silver_generation_from_official_denominator_rows": False,
+        "candidate_artifacts_as_generation_source": False,
+        "promotion_evidence": False,
+        "readme_headline_product_performance_claim": False,
+        "representative_product_performance_claim": False,
+        "lane_a_b_c_collapsed_score": False,
+        "graded_ndcg": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+    }
+
+
+def v3_5_canonical_json(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def v3_5_hash_json(value: Any) -> str:
+    return hashlib.sha256(v3_5_canonical_json(value).encode("utf-8")).hexdigest()
+
+
+def v3_5_locator_fingerprint(locator: Mapping[str, Any]) -> str:
+    return v3_5_hash_json(locator)
+
+
+def v3_5_source_identity(row: Mapping[str, Any], locator: Mapping[str, Any]) -> str:
+    family = official.clean(row.get("source_family")).upper()
+    document_version_id = official.clean(row.get("document_version_id"))
+    search_unit_id = official.clean(row.get("search_unit_id"))
+    return f"{family}:{document_version_id}:{search_unit_id}:{v3_5_locator_fingerprint(locator)}"
+
+
+def v3_5_official_denominator_index() -> dict[str, set[str]]:
+    official_rows = read_jsonl(REPO_ROOT / "ai" / "eval" / "indexes" / "rag-data-official-denominator-v1" / "search_unit_manifest.jsonl")
+    query_ids = {official.clean(row.get("query_id")) for row in official_rows if official.clean(row.get("query_id"))}
+    search_unit_ids = {
+        official.clean(row.get("search_unit_id")) for row in official_rows if official.clean(row.get("search_unit_id"))
+    }
+    document_version_ids = {
+        official.clean(row.get("document_version_id"))
+        for row in official_rows
+        if official.clean(row.get("document_version_id"))
+    }
+    locator_fingerprints = {
+        v3_5_locator_fingerprint(as_mapping(row.get("locator")))
+        for row in official_rows
+        if as_mapping(row.get("locator"))
+    }
+    return {
+        "query_ids": query_ids,
+        "search_unit_ids": search_unit_ids,
+        "document_version_ids": document_version_ids,
+        "locator_fingerprints": locator_fingerprints,
+    }
+
+
+def v3_5_count_by_family(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    counts = {family: 0 for family in ("TEXT", "PDF", "XLSX")}
+    for row in rows:
+        family = official.clean(row.get("source_family")).upper()
+        if family in counts:
+            counts[family] += 1
+    counts["total"] = sum(counts.values())
+    return counts
+
+
+def v3_5_missing_source_material_fields(row: Mapping[str, Any]) -> list[str]:
+    missing = []
+    if official.clean(row.get("candidate_id")) == "":
+        missing.append("candidate_id")
+    if official.clean(row.get("source_family")).upper() not in {"TEXT", "PDF", "XLSX"}:
+        missing.append("source_family")
+    if official.clean(row.get("document_version_id")) == "":
+        missing.append("document_version_id")
+    if official.clean(row.get("search_unit_id")) == "":
+        missing.append("search_unit_id")
+    if not as_mapping(row.get("source_locator")):
+        missing.append("source_locator")
+    if not (official.clean(row.get("source_hash")) or official.clean(row.get("excerpt_hash"))):
+        missing.append("source_hash_or_excerpt_hash")
+    if row.get("source_text_available") is not True and row.get("source_value_available") is not True:
+        missing.append("source_text_or_value_availability")
+    return missing
+
+
+def run_v3_5_1_pilot_silver_source_manifest_freeze(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    source_summary = official.read_json(DEFAULT_V3_5_0_CAPACITY_SUMMARY_JSON)
+    source_rows = read_jsonl(DEFAULT_V3_5_0_MANIFEST_READY_CANDIDATES_JSONL)
+    official_index = v3_5_official_denominator_index()
+    generated_at = utc_timestamp()
+    frozen_rows: list[dict[str, Any]] = []
+    audit_rows: list[dict[str, Any]] = []
+    excluded_counts: Counter[str] = Counter()
+    seen_candidate_ids: set[str] = set()
+    seen_locator_keys: set[tuple[str, str, str]] = set()
+    seen_document_hash_keys: set[tuple[str, str, str]] = set()
+    repeated_hash_counts: Counter[str] = Counter()
+    normalized_hashes = [
+        official.clean(row.get("source_hash")) or official.clean(row.get("excerpt_hash"))
+        for row in source_rows
+    ]
+    normalized_hash_counter = Counter(item for item in normalized_hashes if item)
+
+    for row in source_rows:
+        candidate_id = official.clean(row.get("candidate_id"))
+        family = official.clean(row.get("source_family")).upper()
+        locator = dict(as_mapping(row.get("source_locator")))
+        source_hash = official.clean(row.get("source_hash")) or official.clean(row.get("excerpt_hash"))
+        locator_fingerprint = v3_5_locator_fingerprint(locator)
+        source_identity = v3_5_source_identity(row, locator)
+        missing = v3_5_missing_source_material_fields(row)
+        forbidden_present = [field for field in V3_5_FORBIDDEN_SOURCE_MANIFEST_FIELDS if field in row]
+        official_overlap = (
+            row.get("official_denominator_overlap") is not False
+            or official.clean(row.get("search_unit_id")) in official_index["search_unit_ids"]
+            or official.clean(row.get("provenance_query_id")) in official_index["query_ids"]
+            or locator_fingerprint in official_index["locator_fingerprints"]
+        )
+        locator_key = (family, official.clean(row.get("document_version_id")), locator_fingerprint)
+        document_hash_key = (family, official.clean(row.get("document_version_id")), source_hash)
+        reason = ""
+        if candidate_id in seen_candidate_ids:
+            reason = "duplicate_candidate_id"
+        elif locator_key in seen_locator_keys:
+            reason = "duplicate_source_family_document_locator"
+        elif document_hash_key in seen_document_hash_keys:
+            reason = "duplicate_source_family_document_hash"
+        elif missing:
+            reason = "missing_source_manifest_required_fields"
+        elif forbidden_present:
+            reason = "forbidden_generation_or_label_fields_present"
+        elif official_overlap:
+            reason = "official_denominator_overlap_detected"
+
+        if reason:
+            excluded_counts[reason] += 1
+            audit_rows.append(
+                {
+                    "run_id": V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+                    "source_run_id": V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID,
+                    "candidate_id": candidate_id,
+                    "source_family": family,
+                    "audit_status": "excluded",
+                    "exclusion_reason": reason,
+                    "missing_fields": missing,
+                    "forbidden_fields_present": forbidden_present,
+                    "official_denominator_overlap": bool(official_overlap),
+                    "locator_fingerprint": locator_fingerprint,
+                    "source_hash": source_hash,
+                }
+            )
+            continue
+
+        seen_candidate_ids.add(candidate_id)
+        seen_locator_keys.add(locator_key)
+        seen_document_hash_keys.add(document_hash_key)
+        repeated_hash_counts[source_hash] = normalized_hash_counter[source_hash]
+        frozen = dict(row)
+        frozen["run_id"] = V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID
+        frozen["source_run_id"] = V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID
+        frozen["schema_version"] = (
+            f"{V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID}_pilot_source_manifest_row_v1"
+        )
+        frozen["artifact_kind"] = "pilot_source_manifest_row"
+        frozen["classification"] = "pilot_source_manifest_frozen"
+        frozen["source_bound_locator"] = locator
+        frozen["source_identity"] = source_identity
+        frozen["source_content_sha256"] = source_hash
+        frozen["locator_fingerprint"] = locator_fingerprint
+        frozen["canonical_citation_payload"] = v3_5_canonical_payload_for_source_row(frozen)
+        frozen["silver_generation_allowed"] = False
+        frozen["silver_jsonl_row"] = False
+        frozen["questions_created"] = False
+        frozen["expected_answers_created"] = False
+        frozen["supporting_evidence_created"] = False
+        frozen["relevance_labels_created"] = False
+        frozen["answerability_labels_created"] = False
+        frozen["qrels_created"] = False
+        frozen["candidate_artifacts_used_as_generation_source"] = False
+        frozen["official_denominator_overlap"] = False
+        frozen_rows.append(frozen)
+        audit_rows.append(
+            {
+                "run_id": V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+                "source_run_id": V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID,
+                "candidate_id": candidate_id,
+                "source_family": family,
+                "audit_status": "included",
+                "exclusion_reason": "",
+                "official_denominator_overlap": False,
+                "locator_fingerprint": locator_fingerprint,
+                "source_hash": source_hash,
+                "normalized_source_hash_duplicate_count": normalized_hash_counter[source_hash],
+                "duplicate_hash_retained_reason": (
+                    "distinct_document_or_locator"
+                    if normalized_hash_counter[source_hash] > 1
+                    else ""
+                ),
+            }
+        )
+
+    frozen_counts = v3_5_count_by_family(frozen_rows)
+    selection_rationale = {
+        "schema_version": f"{V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID}_selection_rationale_v1",
+        "run_id": V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_run_id": V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "pilot_source_manifest_freeze_selection_rationale",
+        "selection_policy": "freeze_safe_non_official_source_only_rows_from_v3_5_0",
+        "dedupe_policy": {
+            "candidate_id": "exclude exact duplicate candidate_id",
+            "source_family_document_locator": "exclude exact duplicate source_family + document_version_id + locator_fingerprint",
+            "normalized_source_excerpt_or_value_hash": (
+                "audit repeated hashes; retain when document_version_id or locator differs to avoid "
+                "collapsing repeated boilerplate across distinct source documents"
+            ),
+        },
+        "official_overlap_policy": "exclude query_id/search_unit_id/locator overlaps with official 29 SearchUnits",
+        "source_family_imbalance_warning": True,
+        "source_family_imbalance_note": (
+            "The pilot freeze is TEXT-heavy and suitable only as a source-manifest freeze; "
+            "balanced answer/citation silver generation remains blocked."
+        ),
+        "candidate_artifacts_used_as_generation_source": False,
+        "silver_generation_allowed": False,
+        "forbidden_fields": list(V3_5_FORBIDDEN_SOURCE_MANIFEST_FIELDS),
+    }
+    summary = {
+        "schema_version": f"{V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID}_freeze_summary_v1",
+        "run_id": V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_run_id": V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "pilot_source_manifest_freeze",
+        "event_type": "pilot_silver_source_manifest_freeze_v3_5_1",
+        "status": "PILOT_SOURCE_MANIFEST_FROZEN_TEXT_HEAVY_SILVER_GENERATION_BLOCKED",
+        "run_class": "source_manifest_freeze_only_no_silver_generation",
+        "frozen_manifest_row_count": frozen_counts["total"],
+        "frozen_counts_by_source_family": frozen_counts,
+        "excluded_during_freeze_counts_by_reason": dict(sorted(excluded_counts.items())),
+        "duplicate_source_hash_audit": {
+            "repeated_hash_group_count": sum(1 for count in normalized_hash_counter.values() if count > 1),
+            "rows_with_repeated_hash": sum(count for count in normalized_hash_counter.values() if count > 1),
+            "repeated_hashes_retained_when_distinct_document_or_locator": True,
+        },
+        "previous_manifest_ready_inventory": dict(V3_5_PREVIOUS_MANIFEST_READY_INVENTORY),
+        "source_capacity_summary_inventory": source_summary.get("new_manifest_ready_inventory"),
+        "pilot_threshold_rows": V3_5_PILOT_THRESHOLD_ROWS,
+        "pilot_threshold_met": frozen_counts["total"] >= V3_5_PILOT_THRESHOLD_ROWS,
+        "balanced_pilot_threshold_met": False,
+        "balanced_pilot_threshold_reason": "PDF and XLSX frozen counts remain below 100 each.",
+        "target_rows": V3_5_TARGET_ROWS,
+        "preferred_target_by_source_family": dict(V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY),
+        "target_threshold_met": False,
+        "source_family_imbalance_warning": True,
+        "source_family_imbalance_note": (
+            "This freeze is TEXT-heavy (v3_5_0 inventory TEXT=350, PDF=3, XLSX=4); "
+            "it is suitable for a source-manifest pilot freeze, not balanced silver generation."
+        ),
+        "silver_generation_allowed": False,
+        "silver_jsonl_rows_created": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+        "official_denominator_rows_reused": False,
+        "official_29_query_ids_copied_or_relabelled": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "recommended_next_phase": "v3_5_2_xlsx_source_value_manifest_repair_and_acquisition",
+        "triage_doc_updated": False,
+        "artifact_paths": {
+            "pilot_source_manifest_jsonl": official.repo_relative(DEFAULT_V3_5_1_PILOT_SOURCE_MANIFEST_JSONL),
+            "freeze_summary_json": official.repo_relative(DEFAULT_V3_5_1_FREEZE_SUMMARY_JSON),
+            "freeze_audit_jsonl": official.repo_relative(DEFAULT_V3_5_1_FREEZE_AUDIT_JSONL),
+            "selection_rationale_json": official.repo_relative(DEFAULT_V3_5_1_SELECTION_RATIONALE_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+        "guardrails": v3_5_source_material_guardrails(),
+        "pilot_source_manifest_rows": frozen_rows,
+        "freeze_audit_rows": audit_rows,
+        "selection_rationale": selection_rationale,
+    }
+    return summary
+
+
+def v3_5_canonical_payload_for_source_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    locator = dict(as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator")))
+    payload = {
+        "source_family": official.clean(row.get("source_family")).upper(),
+        "document_version_id": official.clean(row.get("document_version_id")),
+        "search_unit_id": official.clean(row.get("search_unit_id")),
+        "source_bound_official_denominator": False,
+        "official_denominator_overlap": False,
+        "generation_source": False,
+        "promotion_evidence": False,
+    }
+    payload.update(locator)
+    return payload
+
+
+def v3_5_sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def v3_5_clean_source_text(value: Any) -> str:
+    if value is None:
+        return ""
+    text = str(value)
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = "\n".join(" ".join(line.split()) for line in text.splitlines())
+    return "\n".join(line for line in text.splitlines() if line).strip()
+
+
+def v3_5_parse_json_mapping(value: Any) -> dict[str, Any]:
+    if isinstance(value, Mapping):
+        return dict(value)
+    text = official.clean(value)
+    if not text:
+        return {}
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        return {}
+    return dict(parsed) if isinstance(parsed, Mapping) else {}
+
+
+def v3_5_resolve_source_files_by_name(names: set[str]) -> dict[str, Path]:
+    resolved: dict[str, Path] = {}
+    wanted = {name for name in names if name}
+    for root in V3_5_XLSX_SOURCE_ROOTS:
+        if not root.exists():
+            continue
+        for name in sorted(wanted - set(resolved)):
+            direct = root / name
+            if direct.exists():
+                resolved[name] = direct
+        if wanted.issubset(resolved):
+            break
+        for path in root.rglob("*"):
+            if len(resolved) == len(wanted):
+                break
+            if path.is_file() and path.name in wanted and path.name not in resolved:
+                resolved[path.name] = path
+    return resolved
+
+
+def v3_5_cell_range_boundaries(range_text: str) -> tuple[int, int, int, int]:
+    from openpyxl.utils.cell import range_boundaries
+
+    return tuple(int(part) for part in range_boundaries(range_text))  # type: ignore[return-value]
+
+
+def v3_5_xlsx_source_value_type(value: Any) -> str:
+    from datetime import date, datetime
+
+    if value is None:
+        return "blank"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, (int, float)):
+        return "number"
+    if isinstance(value, (datetime, date)):
+        return "date_or_datetime"
+    return "text"
+
+
+def v3_5_extract_xlsx_source_value(
+    *,
+    workbook_path: Path,
+    sheet_name: str,
+    range_text: str,
+    cell: str,
+) -> tuple[str, dict[str, Any]]:
+    suffix = workbook_path.suffix.lower()
+    if suffix == ".xls":
+        raise ValueError("legacy_xls_not_supported_for_source_value_reconstruction")
+    cache = getattr(v3_5_extract_xlsx_source_value, "_cache", {})
+    cache_key = str(workbook_path.resolve())
+    cached = cache.get(cache_key)
+    if cached is None:
+        raw = workbook_path.read_bytes()
+        source_format = (
+            "xlsx_openxml"
+            if raw.startswith(b"PK") and suffix in {".xlsx", ".xlsm"}
+            else "delimited_text"
+        )
+        if source_format == "xlsx_openxml":
+            from openpyxl import load_workbook
+
+            cached = {
+                "source_format": source_format,
+                "workbook": load_workbook(workbook_path, read_only=False, data_only=True),
+            }
+        else:
+            decoded = None
+            used_encoding = ""
+            for encoding in ("utf-8-sig", "cp949", "euc-kr", "utf-8"):
+                try:
+                    decoded = raw.decode(encoding)
+                    used_encoding = encoding
+                    break
+                except UnicodeDecodeError:
+                    continue
+            if decoded is None:
+                raise ValueError("delimited_source_decode_failed")
+            rows = list(csv.reader(decoded.splitlines()))
+            if not rows:
+                raise ValueError("delimited_source_empty")
+            cached = {
+                "source_format": source_format,
+                "encoding": used_encoding,
+                "rows": rows,
+            }
+        cache[cache_key] = cached
+        setattr(v3_5_extract_xlsx_source_value, "_cache", cache)
+    source_format = cached["source_format"]
+
+    if source_format == "xlsx_openxml":
+        from openpyxl.utils.cell import get_column_letter
+
+        workbook = cached["workbook"]
+        if sheet_name not in workbook.sheetnames:
+            raise ValueError(f"sheet_not_found:{sheet_name}")
+        sheet = workbook[sheet_name]
+        if sheet.sheet_state != "visible":
+            raise ValueError("blocked_hidden_policy:hidden_sheet")
+
+        def hidden_metadata_for(locator_text: str) -> tuple[dict[str, Any], tuple[int, int, int, int]]:
+            min_col, min_row, max_col, max_row = v3_5_cell_range_boundaries(locator_text)
+            hidden_rows = [
+                row_index
+                for row_index in range(min_row, max_row + 1)
+                if bool(sheet.row_dimensions[row_index].hidden)
+            ]
+            hidden_columns = [
+                get_column_letter(col_index)
+                for col_index in range(min_col, max_col + 1)
+                if bool(sheet.column_dimensions[get_column_letter(col_index)].hidden)
+            ]
+            if hidden_rows or hidden_columns:
+                raise ValueError("blocked_hidden_policy:hidden_row_or_column")
+            return (
+                {
+                    "hidden_policy": "exclude_hidden",
+                    "hidden_status_detected": True,
+                    "sheet_hidden": False,
+                    "hidden_rows": hidden_rows,
+                    "hidden_columns": hidden_columns,
+                },
+                (min_col, min_row, max_col, max_row),
+            )
+
+        if cell:
+            hidden_metadata, _ = hidden_metadata_for(cell)
+            selected_cell = sheet[cell]
+            value = selected_cell.value
+            text = v3_5_clean_source_text(value)
+            if text:
+                return text, {
+                    "source_format": source_format,
+                    "source_value_type": v3_5_xlsx_source_value_type(value),
+                    "display_value": text,
+                    "normalized_value": text,
+                    "number_format": official.clean(selected_cell.number_format),
+                    "formula_present": False,
+                    "formula_text": "",
+                    "formula_cached_value_available": False,
+                    "extraction_locator": {"cell": cell},
+                    **hidden_metadata,
+                }
+            if not range_text:
+                return "", {
+                    "source_format": source_format,
+                    "source_value_type": "blank",
+                    "display_value": "",
+                    "normalized_value": "",
+                    "number_format": official.clean(selected_cell.number_format),
+                    "formula_present": False,
+                    "formula_text": "",
+                    "formula_cached_value_available": False,
+                    "extraction_locator": {"cell": cell},
+                    **hidden_metadata,
+                }
+
+        hidden_metadata, boundaries = hidden_metadata_for(range_text)
+        min_col, min_row, max_col, max_row = boundaries
+        lines = []
+        for values in sheet.iter_rows(
+            min_row=min_row,
+            max_row=max_row,
+            min_col=min_col,
+            max_col=max_col,
+            values_only=True,
+        ):
+            cells = [v3_5_clean_source_text(value) for value in values]
+            cells = [value for value in cells if value]
+            if cells:
+                lines.append(" | ".join(cells))
+        range_text_value = "\n".join(lines).strip()
+        return range_text_value, {
+            "source_format": source_format,
+            "source_value_type": "range_text",
+            "display_value": range_text_value,
+            "normalized_value": range_text_value,
+            "number_format": "",
+            "formula_present": False,
+            "formula_text": "",
+            "formula_cached_value_available": False,
+            "extraction_locator": {
+                "range": range_text,
+                "min_row": min_row,
+                "max_row": max_row,
+                "min_col": min_col,
+                "max_col": max_col,
+                "cell_value_empty_range_fallback": bool(cell),
+            },
+            **hidden_metadata,
+        }
+
+    rows = cached["rows"]
+    used_encoding = cached["encoding"]
+    if cell:
+        min_col, min_row, max_col, max_row = v3_5_cell_range_boundaries(cell)
+        selected_rows = rows[min_row - 1 : max_row]
+        selected_values = []
+        for row in selected_rows:
+            selected_values.extend(row[min_col - 1 : max_col])
+        text = " | ".join(v3_5_clean_source_text(value) for value in selected_values if v3_5_clean_source_text(value))
+        if text:
+            return text, {
+                "source_format": source_format,
+                "encoding": used_encoding,
+                "source_value_type": "text",
+                "display_value": text,
+                "normalized_value": text,
+                "number_format": "",
+                "formula_present": False,
+                "formula_text": "",
+                "formula_cached_value_available": False,
+                "hidden_policy": "exclude_hidden",
+                "hidden_status_detected": False,
+                "sheet_hidden": False,
+                "hidden_rows": [],
+                "hidden_columns": [],
+                "extraction_locator": {"cell": cell},
+            }
+        if not range_text:
+            return "", {
+                "source_format": source_format,
+                "encoding": used_encoding,
+                "source_value_type": "blank",
+                "display_value": "",
+                "normalized_value": "",
+                "number_format": "",
+                "formula_present": False,
+                "formula_text": "",
+                "formula_cached_value_available": False,
+                "hidden_policy": "exclude_hidden",
+                "hidden_status_detected": False,
+                "sheet_hidden": False,
+                "hidden_rows": [],
+                "hidden_columns": [],
+                "extraction_locator": {"cell": cell},
+            }
+
+    min_col, min_row, max_col, max_row = v3_5_cell_range_boundaries(range_text)
+    lines = []
+    for row in rows[min_row - 1 : max_row]:
+        cells = [v3_5_clean_source_text(value) for value in row[min_col - 1 : max_col]]
+        cells = [value for value in cells if value]
+        if cells:
+            lines.append(" | ".join(cells))
+    range_text_value = "\n".join(lines).strip()
+    return range_text_value, {
+        "source_format": source_format,
+        "encoding": used_encoding,
+        "source_value_type": "range_text",
+        "display_value": range_text_value,
+        "normalized_value": range_text_value,
+        "number_format": "",
+        "formula_present": False,
+        "formula_text": "",
+        "formula_cached_value_available": False,
+        "hidden_policy": "exclude_hidden",
+        "hidden_status_detected": False,
+        "sheet_hidden": False,
+        "hidden_rows": [],
+        "hidden_columns": [],
+        "extraction_locator": {
+            "range": range_text,
+            "min_row": min_row,
+            "max_row": max_row,
+            "min_col": min_col,
+            "max_col": max_col,
+            "cell_value_empty_range_fallback": bool(cell),
+        },
+    }
+
+
+def v3_5_previous_frozen_counts() -> dict[str, int]:
+    if DEFAULT_V3_5_1_FREEZE_SUMMARY_JSON.exists():
+        summary = official.read_json(DEFAULT_V3_5_1_FREEZE_SUMMARY_JSON)
+        counts = as_mapping(summary.get("frozen_counts_by_source_family"))
+        return {family: int(counts.get(family, 0)) for family in ("TEXT", "PDF", "XLSX")} | {
+            "total": int(counts.get("total", 0))
+        }
+    return dict(V3_5_PREVIOUS_MANIFEST_READY_INVENTORY)
+
+
+V3_5_XLSX_BLOCKED_REASON_KEYS = (
+    "blocked_candidate_artifact_only",
+    "blocked_source_unavailable",
+    "blocked_missing_locator",
+    "blocked_missing_source_value",
+    "blocked_formula_without_cached_value",
+    "blocked_hidden_policy",
+    "blocked_duplicate_or_near_duplicate",
+    "blocked_official_denominator_overlap",
+    "blocked_license_or_provenance_unclear",
+    "blocked_other",
+)
+V3_5_PDF_BLOCKED_REASON_KEYS = (
+    "blocked_missing_locator",
+    "blocked_missing_source_text",
+    "blocked_unstable_extraction",
+    "blocked_candidate_artifact_only",
+    "blocked_duplicate_or_near_duplicate",
+    "blocked_official_denominator_overlap",
+    "blocked_source_unavailable",
+    "blocked_license_or_provenance_unclear",
+    "blocked_other",
+)
+V3_5_PDF_PER_DOCUMENT_CAP = 4
+V3_5_PDF_PER_PAGE_CAP = 1
+
+
+def v3_5_empty_xlsx_blocked_counts() -> dict[str, int]:
+    return {key: 0 for key in V3_5_XLSX_BLOCKED_REASON_KEYS}
+
+
+def v3_5_empty_pdf_blocked_counts() -> dict[str, int]:
+    return {key: 0 for key in V3_5_PDF_BLOCKED_REASON_KEYS}
+
+
+def run_v3_5_2_xlsx_source_value_manifest_repair_and_acquisition(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    official_index = v3_5_official_denominator_index()
+    source_candidates_path = REPO_ROOT / "ai" / "eval" / "eval_queries" / "xlsx_silver_retrieval_evidence_candidates_v0.jsonl"
+    source_candidates = read_jsonl(source_candidates_path)
+    previous_counts = v3_5_previous_frozen_counts()
+    workbook_names = {
+        official.clean(
+            v3_5_parse_json_mapping(row.get("citation_locator")).get("source_workbook")
+            or row.get("source_workbook")
+        )
+        for row in source_candidates
+    }
+    workbook_names.discard("")
+    workbook_paths = v3_5_resolve_source_files_by_name(workbook_names)
+    source_collection_entries = v3_5_source_collection_entries()
+    source_collection_workbook_entries = [
+        entry
+        for entry in source_collection_entries
+        if official.clean(entry.get("relative_path")).lower().endswith((".xlsx", ".xls"))
+    ]
+    manifest_rows: list[dict[str, Any]] = []
+    blocked_or_convertible_rows: list[dict[str, Any]] = []
+    workbook_sha_cache: dict[Path, str] = {}
+    blocked_counts = v3_5_empty_xlsx_blocked_counts()
+    deferred_after_target_met_count = 0
+    repaired_from_locator_complete_candidates_count = 0
+    seen_locator_keys: set[tuple[str, str, str]] = set()
+    seen_value_locator_keys: set[tuple[str, str]] = set()
+
+    for ordinal, source_candidate in enumerate(source_candidates, start=1):
+        locator_hint = v3_5_parse_json_mapping(source_candidate.get("citation_locator"))
+        location_hint = v3_5_parse_json_mapping(source_candidate.get("location_json"))
+        workbook_name = official.clean(
+            locator_hint.get("source_workbook") or source_candidate.get("source_workbook")
+        )
+        sheet_name = official.clean(
+            locator_hint.get("sheet") or location_hint.get("sheet_name") or source_candidate.get("sheet")
+        )
+        range_text = official.clean(locator_hint.get("range") or location_hint.get("range") or source_candidate.get("range"))
+        cell = official.clean(locator_hint.get("cell") or source_candidate.get("cell"))
+        document_version_id = official.clean(
+            locator_hint.get("document_version_id")
+            or location_hint.get("document_version_id")
+            or source_candidate.get("source_document_version_id")
+        )
+        search_unit_id = official.clean(
+            locator_hint.get("search_unit_id")
+            or location_hint.get("search_unit_id")
+            or source_candidate.get("source_search_unit_id")
+        )
+        source_file_id = official.clean(
+            locator_hint.get("source_file_id")
+            or location_hint.get("source_file_id")
+            or source_candidate.get("source_file_id")
+        )
+        locator = {
+            "workbook": workbook_name,
+            "sheet": sheet_name,
+            "range": range_text,
+            "cell": cell,
+            "source_file_id": source_file_id,
+            "locator_type": official.clean(source_candidate.get("locator_type")) or ("cell" if cell else "range"),
+            "parser_version": official.clean(
+                locator_hint.get("parser_version") or source_candidate.get("parser_version")
+            ),
+        }
+        locator_fingerprint = v3_5_locator_fingerprint(locator)
+        audit_base = {
+            "run_id": V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+            "source_inventory_row_number": ordinal,
+            "source_inventory_candidate_id": official.clean(source_candidate.get("query_id")),
+            "source_family": "XLSX",
+            "document_version_id": document_version_id,
+            "search_unit_id": search_unit_id,
+            "workbook": workbook_name,
+            "sheet": sheet_name,
+            "range": range_text,
+            "cell": cell,
+            "locator_fingerprint": locator_fingerprint,
+        }
+        workbook_path = workbook_paths.get(workbook_name)
+        reason = ""
+        if not workbook_name or not sheet_name or not range_text or not document_version_id or not search_unit_id:
+            reason = "blocked_missing_locator"
+        elif workbook_path is None:
+            reason = "blocked_source_unavailable"
+        elif workbook_path.suffix.lower() == ".xls":
+            reason = "blocked_other"
+        elif search_unit_id in official_index["search_unit_ids"] or locator_fingerprint in official_index["locator_fingerprints"]:
+            reason = "blocked_official_denominator_overlap"
+        elif ("XLSX", document_version_id, locator_fingerprint) in seen_locator_keys:
+            reason = "blocked_duplicate_or_near_duplicate"
+
+        if reason:
+            blocked_counts[reason] += 1
+            blocked_or_convertible_rows.append(
+                {
+                    **audit_base,
+                    "classification": reason,
+                    "audit_status": "blocked",
+                    "reason": reason,
+                    "candidate_artifacts_used_as_generation_source": False,
+                    "query_or_expected_answer_used_as_generation_source": False,
+                }
+            )
+            continue
+
+        assert workbook_path is not None
+        try:
+            source_value, extraction = v3_5_extract_xlsx_source_value(
+                workbook_path=workbook_path,
+                sheet_name=sheet_name,
+                range_text=range_text,
+                cell=cell,
+            )
+        except Exception as exc:  # pragma: no cover - exercised by artifact-level audits.
+            error_text = str(exc)
+            if "blocked_hidden_policy" in error_text:
+                reason = "blocked_hidden_policy"
+            elif "formula_without_cached_value" in error_text:
+                reason = "blocked_formula_without_cached_value"
+            else:
+                reason = "blocked_other"
+            blocked_counts[reason] += 1
+            blocked_or_convertible_rows.append(
+                {
+                    **audit_base,
+                    "classification": reason,
+                    "audit_status": "blocked",
+                    "reason": reason,
+                    "error": error_text,
+                    "candidate_artifacts_used_as_generation_source": False,
+                    "query_or_expected_answer_used_as_generation_source": False,
+                }
+            )
+            continue
+
+        if not source_value:
+            reason = "blocked_missing_source_value"
+            blocked_counts[reason] += 1
+            blocked_or_convertible_rows.append(
+                {
+                    **audit_base,
+                    "classification": reason,
+                    "audit_status": "blocked",
+                    "reason": reason,
+                    "candidate_artifacts_used_as_generation_source": False,
+                    "query_or_expected_answer_used_as_generation_source": False,
+                }
+            )
+            continue
+
+        workbook_sha = workbook_sha_cache.get(workbook_path)
+        if workbook_sha is None:
+            workbook_sha = sha256_file(workbook_path)
+            workbook_sha_cache[workbook_path] = workbook_sha
+        source_value_hash = v3_5_sha256_text(source_value)
+        candidate_id_seed = {
+            "phase": "v3_5_2",
+            "document_version_id": document_version_id,
+            "search_unit_id": search_unit_id,
+            "locator_fingerprint": locator_fingerprint,
+            "source_value_hash": source_value_hash,
+        }
+        candidate_id = f"v3_5_2_xlsx_{v3_5_hash_json(candidate_id_seed)[:16]}"
+        value_locator_key = (source_value_hash, locator_fingerprint)
+        if value_locator_key in seen_value_locator_keys:
+            reason = "blocked_duplicate_or_near_duplicate"
+            blocked_counts[reason] += 1
+            blocked_or_convertible_rows.append(
+                {
+                    **audit_base,
+                    "classification": reason,
+                    "audit_status": "blocked",
+                    "reason": reason,
+                    "candidate_id": candidate_id,
+                    "source_value_hash": source_value_hash,
+                    "candidate_artifacts_used_as_generation_source": False,
+                    "query_or_expected_answer_used_as_generation_source": False,
+                }
+            )
+            continue
+        repaired_from_locator_complete_candidates_count += 1
+        seen_locator_keys.add(("XLSX", document_version_id, locator_fingerprint))
+        seen_value_locator_keys.add(value_locator_key)
+        row = {
+            "schema_version": (
+                f"{V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID}"
+                "_xlsx_source_value_manifest_row_v1"
+            ),
+            "run_id": V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+            "artifact_kind": "xlsx_source_value_manifest_row",
+            "classification": "xlsx_source_value_manifest_ready",
+            "candidate_id": candidate_id,
+            "source_family": "XLSX",
+            "document_version_id": document_version_id,
+            "workbook_id": source_file_id or document_version_id,
+            "search_unit_id": search_unit_id,
+            "source_workbook": workbook_name,
+            "workbook_path": workbook_path.as_posix(),
+            "workbook_sha256": workbook_sha,
+            "sheet_name": sheet_name,
+            "cell": cell,
+            "range": range_text,
+            "row_label": official.clean(source_candidate.get("row_label")),
+            "column_label": official.clean(source_candidate.get("column_label")),
+            "source_locator": locator,
+            "source_bound_locator": locator,
+            "locator_fingerprint": locator_fingerprint,
+            "source_identity": f"XLSX:{document_version_id}:{search_unit_id}:{locator_fingerprint}",
+            "source_value": source_value[:4000],
+            "source_value_type": official.clean(extraction.get("source_value_type")) or "text",
+            "display_value": official.clean(extraction.get("display_value")),
+            "normalized_value": official.clean(extraction.get("normalized_value")),
+            "number_format": official.clean(extraction.get("number_format")),
+            "formula_present": bool(extraction.get("formula_present")),
+            "formula_text": official.clean(extraction.get("formula_text")),
+            "formula_cached_value_available": bool(extraction.get("formula_cached_value_available")),
+            "hidden_policy": official.clean(source_candidate.get("hidden_policy")) or official.clean(extraction.get("hidden_policy")),
+            "hidden_policy_version": official.clean(source_candidate.get("hidden_policy_version")),
+            "hidden_status_detected": bool(extraction.get("hidden_status_detected")),
+            "sheet_hidden": bool(extraction.get("sheet_hidden")),
+            "hidden_rows": list(extraction.get("hidden_rows") or []),
+            "hidden_columns": list(extraction.get("hidden_columns") or []),
+            "source_value_hash": source_value_hash,
+            "source_value_available": True,
+            "source_value_full_length": len(source_value),
+            "source_value_truncated": len(source_value) > 4000,
+            "source_content_sha256": source_value_hash,
+            "source_basis": "source_value_reconstructed_from_actual_workbook",
+            "extract_provenance": {
+                "source_manifest_kind": "xlsx_silver_retrieval_evidence_candidates_v0_inventory_hint",
+                "source_manifest_path": official.repo_relative(source_candidates_path),
+                "candidate_artifacts_used_as_generation_source": False,
+                "query_or_expected_answer_used_as_generation_source": False,
+                "workbook_path": workbook_path.as_posix(),
+                "workbook_sha256": workbook_sha,
+                "extraction_method": "openpyxl_or_csv_visible_source_value_reconstruction_v1",
+                **extraction,
+            },
+            "official_denominator_overlap": False,
+            "not_gold": True,
+            "not_official_denominator": True,
+            "generation_source": False,
+            "promotion_evidence": False,
+            "silver_generation_allowed": False,
+            "silver_jsonl_row": False,
+            "questions_created": False,
+            "expected_answers_created": False,
+            "supporting_evidence_created": False,
+            "relevance_labels_created": False,
+            "answerability_labels_created": False,
+            "qrels_created": False,
+            "candidate_artifacts_used_as_generation_source": False,
+            "query_or_expected_answer_used_as_generation_source": False,
+        }
+        if len(manifest_rows) < V3_5_XLSX_TARGET_REPAIRED_ROWS:
+            manifest_rows.append(row)
+            blocked_or_convertible_rows.append(
+                {
+                    **audit_base,
+                    "classification": "manifest_ready",
+                    "audit_status": "included",
+                    "reason": "",
+                    "candidate_id": candidate_id,
+                    "source_value_hash": source_value_hash,
+                    "candidate_artifacts_used_as_generation_source": False,
+                    "query_or_expected_answer_used_as_generation_source": False,
+                    "source_only_guard_passed": True,
+                    "hidden_policy": row["hidden_policy"],
+                    "formula_present": row["formula_present"],
+                }
+            )
+        else:
+            deferred_after_target_met_count += 1
+            blocked_or_convertible_rows.append(
+                {
+                    **audit_base,
+                    "classification": "convertible_after_target_met",
+                    "audit_status": "convertible_not_selected",
+                    "reason": "target_xlsx_rows_already_met",
+                    "candidate_id": candidate_id,
+                    "source_value_hash": source_value_hash,
+                    "candidate_artifacts_used_as_generation_source": False,
+                    "query_or_expected_answer_used_as_generation_source": False,
+                    "source_only_guard_passed": True,
+                    "hidden_policy": row["hidden_policy"],
+                    "formula_present": row["formula_present"],
+                }
+            )
+
+    counts_by_family = v3_5_count_by_family(manifest_rows)
+    combined_counts = {
+        "TEXT": int(previous_counts.get("TEXT", 0)),
+        "PDF": int(previous_counts.get("PDF", 0)),
+        "XLSX": int(previous_counts.get("XLSX", 0)) + counts_by_family["XLSX"],
+    }
+    combined_counts["total"] = sum(combined_counts.values())
+    xlsx_final_count = combined_counts["XLSX"]
+    remaining_xlsx_gap = max(0, V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY["XLSX"] - xlsx_final_count)
+    acquisition_performed = counts_by_family["XLSX"] < V3_5_XLSX_TARGET_REPAIRED_ROWS
+    acquisition_reason = (
+        "existing_xlsx_candidate_workbooks_sufficient_for_preferred_gap"
+        if not acquisition_performed
+        else "existing_xlsx_candidate_workbooks_insufficient_or_blocked_before_preferred_gap"
+    )
+    blocked_candidate_artifact_only = 0
+    source_collection_manifest = {
+        "schema_version": f"{V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID}_source_collection_manifest_v1",
+        "run_id": V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        "artifact_kind": "xlsx_source_collection_manifest",
+        "acquisition_performed": acquisition_performed,
+        "acquisition_reason": acquisition_reason,
+        "newly_collected_workbook_count": 0,
+        "newly_collected_manifest_ready_count": 0,
+        "existing_source_collection_workbook_count": len(source_collection_workbook_entries),
+        "acquisition_source_roots": [path.as_posix() for path in V3_5_XLSX_SOURCE_ROOTS],
+        "resolved_existing_workbooks": [
+            {
+                "workbook": name,
+                "path": workbook_paths[name].as_posix(),
+                "sha256": sha256_file(workbook_paths[name]),
+            }
+            for name in sorted(workbook_paths)
+        ],
+        "candidate_artifacts_used_as_generation_source": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+    }
+    summary = {
+        "schema_version": f"{V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID}_summary_v1",
+        "run_id": V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        "source_run_id": V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "source_run_ids": [
+            V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID,
+            V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        ],
+        "generated_at": generated_at,
+        "artifact_kind": "xlsx_source_value_manifest_repair_and_acquisition",
+        "event_type": "xlsx_source_value_manifest_repair_and_acquisition_v3_5_2",
+        "status": "XLSX_SOURCE_VALUE_MANIFEST_REPAIRED_SOURCE_ONLY_SILVER_GENERATION_BLOCKED",
+        "run_class": "source_value_manifest_repair_only_no_silver_generation",
+        "manifest_ready_count": counts_by_family["XLSX"],
+        "counts_by_source_family": counts_by_family,
+        "starting_xlsx_manifest_ready_count": V3_5_PREVIOUS_MANIFEST_READY_INVENTORY["XLSX"],
+        "target_xlsx_rows": V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY["XLSX"],
+        "xlsx_gap_before": V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY["XLSX"]
+        - V3_5_PREVIOUS_MANIFEST_READY_INVENTORY["XLSX"],
+        "xlsx_repaired_count": counts_by_family["XLSX"],
+        "repaired_from_locator_complete_candidates_count": repaired_from_locator_complete_candidates_count,
+        "repaired_from_source_collection_workbooks_count": 0,
+        "newly_collected_workbook_count": 0,
+        "newly_collected_manifest_ready_count": 0,
+        "xlsx_newly_collected_workbook_count": 0,
+        "xlsx_newly_collected_source_count": 0,
+        "xlsx_final_count": xlsx_final_count,
+        "xlsx_manifest_ready_count_after": xlsx_final_count,
+        "xlsx_gap_after": remaining_xlsx_gap,
+        "target_xlsx_met": xlsx_final_count >= V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY["XLSX"],
+        "remaining_preferred_gap_by_source_family": {
+            "TEXT": 0,
+            "PDF": max(0, V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY["PDF"] - combined_counts["PDF"]),
+            "XLSX": remaining_xlsx_gap,
+        },
+        "previous_frozen_counts_by_source_family": previous_counts,
+        "combined_source_family_counts_after_phase": combined_counts,
+        "pilot_threshold_rows": V3_5_PILOT_THRESHOLD_ROWS,
+        "pilot_threshold_met": combined_counts["total"] >= V3_5_PILOT_THRESHOLD_ROWS,
+        "balanced_pilot_threshold_met": min(combined_counts["TEXT"], combined_counts["PDF"], combined_counts["XLSX"]) >= V3_5_PILOT_THRESHOLD_ROWS,
+        "target_rows": V3_5_TARGET_ROWS,
+        "preferred_target_by_source_family": dict(V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY),
+        "target_threshold_met": combined_counts["total"] >= V3_5_TARGET_ROWS,
+        "source_family_imbalance_warning": True,
+        "source_family_imbalance_note": "XLSX is repaired to the preferred count, but PDF remains below the balanced target.",
+        "acquisition_performed": acquisition_performed,
+        "acquisition_reason": acquisition_reason,
+        "new_source_collection_performed": False,
+        "existing_candidate_inventory_rows": len(source_candidates),
+        "candidate_artifact_only_inventory_hint_rows": len(source_candidates),
+        "blocked_candidate_artifact_only_inventory_hint_rows": blocked_candidate_artifact_only,
+        "locator_complete_candidate_rows": len(source_candidates) - blocked_counts["blocked_source_unavailable"],
+        "deferred_after_target_met_count": deferred_after_target_met_count,
+        "existing_candidate_workbook_count": len(workbook_names),
+        "resolved_existing_workbook_count": len(workbook_paths),
+        "blocked_counts_by_reason": dict(blocked_counts),
+        "blocked_or_deferred_counts_by_reason": {
+            **dict(blocked_counts),
+            "deferred_after_target_met": deferred_after_target_met_count,
+        },
+        "silver_generation_allowed": False,
+        "silver_jsonl_rows_created": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+        "official_denominator_rows_reused": False,
+        "official_29_query_ids_copied_or_relabelled": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "no_candidate_artifact_as_generation_source": True,
+        "query_or_expected_answer_used_as_generation_source": False,
+        "recommended_next_phase": "v3_5_3_pdf_page_bbox_source_text_manifest_repair_and_acquisition",
+        "triage_doc_updated": False,
+        "artifact_paths": {
+            "xlsx_manifest_ready_candidates_jsonl": official.repo_relative(DEFAULT_V3_5_2_XLSX_MANIFEST_READY_CANDIDATES_JSONL),
+            "xlsx_blocked_or_convertible_candidates_jsonl": official.repo_relative(DEFAULT_V3_5_2_XLSX_BLOCKED_OR_CONVERTIBLE_CANDIDATES_JSONL),
+            "xlsx_source_collection_manifest_json": official.repo_relative(DEFAULT_V3_5_2_XLSX_SOURCE_COLLECTION_MANIFEST_JSON),
+            "post_xlsx_capacity_summary_json": official.repo_relative(DEFAULT_V3_5_2_POST_XLSX_CAPACITY_SUMMARY_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+        "guardrails": v3_5_source_material_guardrails(),
+        "xlsx_manifest_ready_candidate_rows": manifest_rows,
+        "xlsx_blocked_or_convertible_candidate_rows": blocked_or_convertible_rows,
+        "xlsx_source_collection_manifest": source_collection_manifest,
+    }
+    return summary
+
+
+def v3_5_source_collection_entries() -> list[dict[str, Any]]:
+    payload = json.loads(V3_5_SOURCE_COLLECTION_MANIFEST_JSON.read_text(encoding="utf-8"))
+    if isinstance(payload, list):
+        return [dict(item) for item in payload if isinstance(item, Mapping)]
+    entries = payload.get("entries") if isinstance(payload, Mapping) else []
+    if isinstance(entries, Sequence):
+        return [dict(item) for item in entries if isinstance(item, Mapping)]
+    return []
+
+
+def v3_5_pdf_v3_5_0_blocker_hint_counts() -> dict[str, int]:
+    counts = v3_5_empty_pdf_blocked_counts()
+    if not DEFAULT_V3_5_0_BLOCKED_OR_CONVERTIBLE_CANDIDATES_JSONL.exists():
+        return counts
+    for row in read_jsonl(DEFAULT_V3_5_0_BLOCKED_OR_CONVERTIBLE_CANDIDATES_JSONL):
+        if official.clean(row.get("source_family")).upper() != "PDF":
+            continue
+        classification = official.clean(row.get("classification"))
+        candidate_count = int(row.get("candidate_count") or 0)
+        if classification in counts:
+            counts[classification] += candidate_count
+    return counts
+
+
+def run_v3_5_3_pdf_page_bbox_source_text_manifest_repair_and_acquisition(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    official_index = v3_5_official_denominator_index()
+    previous_counts = v3_5_previous_frozen_counts()
+    if DEFAULT_V3_5_2_POST_XLSX_CAPACITY_SUMMARY_JSON.exists():
+        xlsx_summary = official.read_json(DEFAULT_V3_5_2_POST_XLSX_CAPACITY_SUMMARY_JSON)
+        previous_counts = dict(as_mapping(xlsx_summary.get("combined_source_family_counts_after_phase")))
+    entries = [
+        entry
+        for entry in v3_5_source_collection_entries()
+        if official.clean(entry.get("relative_path")).lower().endswith(".pdf")
+    ]
+    manifest_rows: list[dict[str, Any]] = []
+    blocked_or_convertible_rows: list[dict[str, Any]] = []
+    blocked_counts = v3_5_pdf_v3_5_0_blocker_hint_counts()
+    extraction_blocked_counts = v3_5_empty_pdf_blocked_counts()
+    file_sha_cache: dict[Path, str] = {}
+    extraction_method_counts: Counter[str] = Counter()
+    deferred_after_target_met_count = 0
+    inspected_pdf_count = 0
+    source_pdf_documents_with_manifest_ready_rows: set[str] = set()
+    seen_pdf_locator_keys: set[tuple[str, int, str]] = set()
+    seen_pdf_source_text_hashes: set[str] = set()
+
+    try:
+        import fitz  # type: ignore
+    except ImportError as exc:  # pragma: no cover - environment guard.
+        return {
+            "schema_version": f"{V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID}_summary_v1",
+            "run_id": V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+            "generated_at": generated_at,
+            "artifact_kind": "pdf_page_bbox_source_text_manifest_repair_and_acquisition",
+            "event_type": "pdf_page_bbox_source_text_manifest_repair_and_acquisition_v3_5_3",
+            "status": "PDF_SOURCE_TEXT_EXTRACTION_BLOCKED_PYMUPDF_UNAVAILABLE",
+            "run_class": "source_text_manifest_repair_only_no_silver_generation",
+            "manifest_ready_count": 0,
+            "counts_by_source_family": {"TEXT": 0, "PDF": 0, "XLSX": 0, "total": 0},
+            "target_threshold_met": False,
+            "silver_generation_allowed": False,
+            "silver_jsonl_rows_created": False,
+            "candidate_artifacts_used_as_generation_source": False,
+            "questions_created": False,
+            "expected_answers_created": False,
+            "supporting_evidence_created": False,
+            "relevance_labels_created": False,
+            "answerability_labels_created": False,
+            "qrels_created": False,
+            "acquisition_performed": False,
+            "acquisition_reason": "blocked_pdf_extraction_dependency_missing",
+            "triage_doc_updated": False,
+            "error": str(exc),
+            "guardrails": v3_5_source_material_guardrails(),
+            "artifact_paths": {
+                "pdf_manifest_ready_candidates_jsonl": official.repo_relative(DEFAULT_V3_5_3_PDF_MANIFEST_READY_CANDIDATES_JSONL),
+                "pdf_blocked_or_convertible_candidates_jsonl": official.repo_relative(DEFAULT_V3_5_3_PDF_BLOCKED_OR_CONVERTIBLE_CANDIDATES_JSONL),
+                "pdf_source_collection_manifest_json": official.repo_relative(DEFAULT_V3_5_3_PDF_SOURCE_COLLECTION_MANIFEST_JSON),
+                "post_pdf_capacity_summary_json": official.repo_relative(DEFAULT_V3_5_3_POST_PDF_CAPACITY_SUMMARY_JSON),
+                "balanced_capacity_summary_json": official.repo_relative(DEFAULT_V3_5_3_BALANCED_CAPACITY_SUMMARY_JSON),
+                "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+                "progress_doc": "docs/rag-ingestion-progress.md",
+            },
+            "pdf_manifest_ready_candidate_rows": [],
+            "pdf_blocked_or_convertible_candidate_rows": [],
+            "pdf_source_collection_manifest": {},
+            "balanced_capacity_summary": {},
+        }
+
+    for entry_number, entry in enumerate(entries, start=1):
+        if len(manifest_rows) >= V3_5_PDF_TARGET_REPAIRED_ROWS:
+            deferred_after_target_met_count += 1
+            blocked_or_convertible_rows.append(
+                {
+                    "run_id": V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+                    "source_collection_entry_number": entry_number,
+                    "source_family": "PDF",
+                    "classification": "convertible_after_target_met",
+                    "audit_status": "convertible_not_selected",
+                    "reason": "target_pdf_rows_already_met",
+                    "relative_path": official.clean(entry.get("relative_path")),
+                    "candidate_artifacts_used_as_generation_source": False,
+                }
+            )
+            continue
+        relative_path = official.clean(entry.get("relative_path"))
+        pdf_path = V3_5_SOURCE_COLLECTION_ROOT / relative_path
+        manifest_sha = official.clean(entry.get("sha256"))
+        audit_base = {
+            "run_id": V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+            "source_collection_entry_number": entry_number,
+            "source_family": "PDF",
+            "relative_path": relative_path,
+            "source_page": official.clean(entry.get("source_page")),
+            "download_url": official.clean(entry.get("download_url")),
+            "manifest_sha256": manifest_sha,
+        }
+        if not pdf_path.exists():
+            extraction_blocked_counts["blocked_source_unavailable"] += 1
+            blocked_or_convertible_rows.append({**audit_base, "classification": "blocked_source_unavailable", "audit_status": "blocked", "reason": "blocked_source_unavailable", "candidate_artifacts_used_as_generation_source": False})
+            continue
+        file_sha = file_sha_cache.get(pdf_path)
+        if file_sha is None:
+            file_sha = sha256_file(pdf_path)
+            file_sha_cache[pdf_path] = file_sha
+        if manifest_sha and file_sha.lower() != manifest_sha.lower():
+            extraction_blocked_counts["blocked_unstable_extraction"] += 1
+            blocked_or_convertible_rows.append({**audit_base, "classification": "blocked_unstable_extraction", "audit_status": "blocked", "reason": "blocked_source_pdf_sha256_mismatch", "file_sha256": file_sha, "candidate_artifacts_used_as_generation_source": False})
+            continue
+
+        try:
+            document = fitz.open(pdf_path)
+        except Exception as exc:  # pragma: no cover - depends on external corpus shape.
+            extraction_blocked_counts["blocked_unstable_extraction"] += 1
+            blocked_or_convertible_rows.append({**audit_base, "classification": "blocked_unstable_extraction", "audit_status": "blocked", "reason": "blocked_source_pdf_open_failed", "error": str(exc), "candidate_artifacts_used_as_generation_source": False})
+            continue
+
+        try:
+            inspected_pdf_count += 1
+            document_version_id = f"docv_pdf_sha256_{file_sha[:16]}"
+            document_manifest_ready_count = 0
+            for page_index in range(document.page_count):
+                if (
+                    len(manifest_rows) >= V3_5_PDF_TARGET_REPAIRED_ROWS
+                    or document_manifest_ready_count >= V3_5_PDF_PER_DOCUMENT_CAP
+                ):
+                    break
+                page = document.load_page(page_index)
+                blocks = page.get_text("blocks", sort=True)
+                page_manifest_ready_count = 0
+                for block_index, block in enumerate(blocks):
+                    if (
+                        len(manifest_rows) >= V3_5_PDF_TARGET_REPAIRED_ROWS
+                        or document_manifest_ready_count >= V3_5_PDF_PER_DOCUMENT_CAP
+                        or page_manifest_ready_count >= V3_5_PDF_PER_PAGE_CAP
+                    ):
+                        break
+                    if len(block) < 5:
+                        continue
+                    source_text = v3_5_clean_source_text(block[4])
+                    if len(source_text) < 20:
+                        continue
+                    bbox = [round(float(value), 2) for value in block[:4]]
+                    locator = {
+                        "source_pdf_path": pdf_path.as_posix(),
+                        "source_pdf_relative_path": relative_path,
+                        "page": page_index + 1,
+                        "page_index": page_index,
+                        "physical_page_index": page_index,
+                        "bbox": bbox,
+                        "region_type": "text_block",
+                        "block_index": block_index,
+                    }
+                    locator_fingerprint = v3_5_locator_fingerprint(locator)
+                    locator_key = (document_version_id, page_index, locator_fingerprint)
+                    if locator_key in seen_pdf_locator_keys:
+                        extraction_blocked_counts["blocked_duplicate_or_near_duplicate"] += 1
+                        blocked_or_convertible_rows.append({**audit_base, "classification": "blocked_duplicate_or_near_duplicate", "audit_status": "blocked", "reason": "duplicate_document_page_region_locator", "locator_fingerprint": locator_fingerprint, "candidate_artifacts_used_as_generation_source": False})
+                        continue
+                    if locator_fingerprint in official_index["locator_fingerprints"]:
+                        extraction_blocked_counts["blocked_official_denominator_overlap"] += 1
+                        blocked_or_convertible_rows.append({**audit_base, "classification": "blocked_official_denominator_overlap", "audit_status": "blocked", "reason": "blocked_official_denominator_overlap", "locator_fingerprint": locator_fingerprint, "candidate_artifacts_used_as_generation_source": False})
+                        continue
+                    source_text_hash = v3_5_sha256_text(source_text)
+                    if source_text_hash in seen_pdf_source_text_hashes:
+                        extraction_blocked_counts["blocked_duplicate_or_near_duplicate"] += 1
+                        blocked_or_convertible_rows.append({**audit_base, "classification": "blocked_duplicate_or_near_duplicate", "audit_status": "blocked", "reason": "duplicate_normalized_source_text_hash", "source_text_hash": source_text_hash, "locator_fingerprint": locator_fingerprint, "candidate_artifacts_used_as_generation_source": False})
+                        continue
+                    search_unit_seed = {
+                        "document_version_id": document_version_id,
+                        "locator_fingerprint": locator_fingerprint,
+                        "source_text_hash": source_text_hash,
+                    }
+                    search_unit_id = f"su_v3_5_3_pdf_{v3_5_hash_json(search_unit_seed)[:16]}"
+                    if search_unit_id in official_index["search_unit_ids"] or document_version_id in official_index["document_version_ids"]:
+                        extraction_blocked_counts["blocked_official_denominator_overlap"] += 1
+                        blocked_or_convertible_rows.append({**audit_base, "classification": "blocked_official_denominator_overlap", "audit_status": "blocked", "reason": "blocked_official_denominator_overlap", "search_unit_id": search_unit_id, "candidate_artifacts_used_as_generation_source": False})
+                        continue
+                    candidate_id = f"v3_5_3_pdf_{v3_5_hash_json(search_unit_seed)[:16]}"
+                    extraction_provenance = {
+                        "source_manifest_kind": "source_collection_20260510_manifest",
+                        "source_manifest_path": V3_5_SOURCE_COLLECTION_MANIFEST_JSON.as_posix(),
+                        "source_collection_root": V3_5_SOURCE_COLLECTION_ROOT.as_posix(),
+                        "source_collection_lane": official.clean(entry.get("lane")),
+                        "source_collection_role": official.clean(entry.get("role")),
+                        "source_collection_subtype": official.clean(entry.get("subtype")),
+                        "source_title": official.clean(entry.get("title")),
+                        "source_page": official.clean(entry.get("source_page")),
+                        "download_url": official.clean(entry.get("download_url")),
+                        "collected_at": official.clean(entry.get("collected_at")),
+                        "notes": official.clean(entry.get("notes")),
+                        "license_status": (
+                            "existing_project_approved_source_collection_manifest_provenance_recorded_"
+                            "no_new_acquisition_license_not_revalidated"
+                        ),
+                        "candidate_artifacts_used_as_generation_source": False,
+                        "extraction_method": "pymupdf_native_text_block_v1",
+                        "extraction_tool": "PyMuPDF",
+                        "page_count": document.page_count,
+                        "per_document_cap": V3_5_PDF_PER_DOCUMENT_CAP,
+                        "per_page_cap": V3_5_PDF_PER_PAGE_CAP,
+                    }
+                    row = {
+                        "schema_version": (
+                            f"{V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID}"
+                            "_pdf_source_text_manifest_row_v1"
+                        ),
+                        "run_id": V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+                        "artifact_kind": "pdf_page_bbox_source_text_manifest_row",
+                        "classification": "pdf_source_text_manifest_ready",
+                        "candidate_id": candidate_id,
+                        "source_family": "PDF",
+                        "document_version_id": document_version_id,
+                        "search_unit_id": search_unit_id,
+                        "source_pdf_path": pdf_path.as_posix(),
+                        "stable_pdf_identity": f"pdf_sha256:{file_sha}",
+                        "source_pdf_sha256": file_sha,
+                        "page": page_index + 1,
+                        "page_index": page_index,
+                        "physical_page_index": page_index,
+                        "bbox": bbox,
+                        "region_type": "text_block",
+                        "source_locator": locator,
+                        "source_bound_locator": locator,
+                        "locator_fingerprint": locator_fingerprint,
+                        "source_identity": f"PDF:{document_version_id}:{search_unit_id}:{locator_fingerprint}",
+                        "source_text": source_text[:4000],
+                        "source_text_hash": source_text_hash,
+                        "source_text_available": True,
+                        "source_text_full_length": len(source_text),
+                        "source_text_truncated": len(source_text) > 4000,
+                        "source_content_sha256": source_text_hash,
+                        "extraction_method": "pymupdf_native_text_block_v1",
+                        "extraction_provenance": extraction_provenance,
+                        "extract_provenance": extraction_provenance,
+                        "official_denominator_overlap": False,
+                        "not_gold": True,
+                        "not_official_denominator": True,
+                        "generation_source": False,
+                        "promotion_evidence": False,
+                        "silver_generation_allowed": False,
+                        "silver_jsonl_row": False,
+                        "questions_created": False,
+                        "expected_answers_created": False,
+                        "supporting_evidence_created": False,
+                        "relevance_labels_created": False,
+                        "answerability_labels_created": False,
+                        "qrels_created": False,
+                        "candidate_artifacts_used_as_generation_source": False,
+                    }
+                    manifest_rows.append(row)
+                    source_pdf_documents_with_manifest_ready_rows.add(relative_path)
+                    document_manifest_ready_count += 1
+                    page_manifest_ready_count += 1
+                    seen_pdf_locator_keys.add(locator_key)
+                    seen_pdf_source_text_hashes.add(source_text_hash)
+                    extraction_method_counts[row["extraction_method"]] += 1
+                    blocked_or_convertible_rows.append({**audit_base, "classification": "manifest_ready", "audit_status": "included", "reason": "", "candidate_id": candidate_id, "page": page_index + 1, "page_index": page_index, "block_index": block_index, "locator_fingerprint": locator_fingerprint, "source_text_hash": source_text_hash, "candidate_artifacts_used_as_generation_source": False, "source_only_guard_passed": True})
+            if document_manifest_ready_count == 0:
+                extraction_blocked_counts["blocked_missing_source_text"] += 1
+                blocked_or_convertible_rows.append({**audit_base, "classification": "blocked_missing_source_text", "audit_status": "blocked", "reason": "no_native_text_block_met_minimum_length", "candidate_artifacts_used_as_generation_source": False})
+        finally:
+            document.close()
+
+    counts_by_family = v3_5_count_by_family(manifest_rows)
+    combined_counts = {
+        "TEXT": int(previous_counts.get("TEXT", 0)),
+        "PDF": int(previous_counts.get("PDF", 0)) + counts_by_family["PDF"],
+        "XLSX": int(previous_counts.get("XLSX", 0)),
+    }
+    combined_counts["total"] = sum(combined_counts.values())
+    pdf_final_count = combined_counts["PDF"]
+    remaining_pdf_gap = max(0, V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY["PDF"] - pdf_final_count)
+    acquisition_performed = counts_by_family["PDF"] < V3_5_PDF_TARGET_REPAIRED_ROWS
+    acquisition_reason = (
+        "existing_148_pdf_source_collection_sufficient_for_preferred_gap"
+        if not acquisition_performed
+        else "existing_pdf_source_collection_insufficient_or_blocked_before_preferred_gap"
+    )
+    blocked_counts_by_reason = {
+        key: int(blocked_counts.get(key, 0)) + int(extraction_blocked_counts.get(key, 0))
+        for key in V3_5_PDF_BLOCKED_REASON_KEYS
+    }
+    gaps_by_source_family = {
+        family: max(0, V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY[family] - combined_counts[family])
+        for family in ("TEXT", "PDF", "XLSX")
+    }
+    gaps_by_source_family["total"] = max(0, V3_5_TARGET_ROWS - combined_counts["total"])
+    preferred_target_with_total = dict(V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY)
+    preferred_target_with_total["total"] = V3_5_TARGET_ROWS
+    extraction_methods_used = dict(sorted(extraction_method_counts.items()))
+    pdf_source_collection_manifest = {
+        "schema_version": f"{V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID}_source_collection_manifest_v1",
+        "run_id": V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        "artifact_kind": "pdf_source_collection_manifest",
+        "source_collection_root": V3_5_SOURCE_COLLECTION_ROOT.as_posix(),
+        "source_collection_manifest_path": V3_5_SOURCE_COLLECTION_MANIFEST_JSON.as_posix(),
+        "existing_pdf_source_document_count": len(entries),
+        "inspected_pdf_source_document_count": inspected_pdf_count,
+        "source_pdf_documents_with_manifest_ready_rows": len(source_pdf_documents_with_manifest_ready_rows),
+        "newly_collected_pdf_count": 0,
+        "newly_collected_manifest_ready_count": 0,
+        "acquisition_performed": acquisition_performed,
+        "acquisition_reason": acquisition_reason,
+        "acquisition_source_roots": [V3_5_SOURCE_COLLECTION_ROOT.as_posix()],
+        "candidate_artifacts_used_as_generation_source": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+    }
+    balanced_capacity_summary = {
+        "schema_version": f"{V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID}_balanced_capacity_summary_v1",
+        "run_id": V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        "artifact_kind": "post_v3_5_3_balanced_source_capacity_summary",
+        "generated_at": generated_at,
+        "source_manifest_components": {
+            "v3_5_1_frozen_text_pdf_xlsx_manifest": {
+                "run_id": V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+                "artifact_path": official.repo_relative(DEFAULT_V3_5_1_PILOT_SOURCE_MANIFEST_JSONL),
+                "counts": v3_5_previous_frozen_counts(),
+            },
+            "v3_5_2_xlsx_overlay": {
+                "run_id": V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+                "artifact_path": official.repo_relative(DEFAULT_V3_5_2_XLSX_MANIFEST_READY_CANDIDATES_JSONL),
+                "manifest_ready_overlay_count": int(previous_counts.get("XLSX", 0)) - V3_5_PREVIOUS_MANIFEST_READY_INVENTORY["XLSX"],
+            },
+            "v3_5_3_pdf_overlay": {
+                "run_id": V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+                "artifact_path": official.repo_relative(DEFAULT_V3_5_3_PDF_MANIFEST_READY_CANDIDATES_JSONL),
+                "manifest_ready_overlay_count": counts_by_family["PDF"],
+            },
+        },
+        "final_manifest_ready_counts_by_source_family": combined_counts,
+        "preferred_target_by_source_family": preferred_target_with_total,
+        "gaps_by_source_family": gaps_by_source_family,
+        "pilot_threshold_rows": V3_5_PILOT_THRESHOLD_ROWS,
+        "pilot_threshold_met": combined_counts["total"] >= V3_5_PILOT_THRESHOLD_ROWS,
+        "balanced_pilot_possible": min(combined_counts["TEXT"], combined_counts["PDF"], combined_counts["XLSX"]) >= V3_5_PILOT_THRESHOLD_ROWS,
+        "target_rows": V3_5_TARGET_ROWS,
+        "target_threshold_met": combined_counts["total"] >= V3_5_TARGET_ROWS,
+        "preferred_mix_met": all(gaps_by_source_family[family] == 0 for family in ("TEXT", "PDF", "XLSX")),
+        "source_family_imbalance_warning": not all(gaps_by_source_family[family] == 0 for family in ("TEXT", "PDF", "XLSX")),
+        "acquisition_performed_by_source_family": {"TEXT": False, "PDF": acquisition_performed, "XLSX": False},
+        "remaining_blockers_by_source_family": {
+            "TEXT": {},
+            "PDF": blocked_counts_by_reason,
+            "XLSX": as_mapping(official.read_json(DEFAULT_V3_5_2_POST_XLSX_CAPACITY_SUMMARY_JSON)).get("blocked_counts_by_reason", {}),
+        },
+        "silver_generation_allowed": False,
+        "silver_jsonl_rows_created": False,
+        "recommended_next_phase": (
+            "v3_5_4_balanced_silver_source_manifest_freeze"
+            if all(gaps_by_source_family[family] == 0 for family in ("TEXT", "PDF", "XLSX"))
+            else "v3_5_4_remaining_source_manifest_repair_or_acquisition"
+        ),
+    }
+    summary = {
+        "schema_version": f"{V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID}_summary_v1",
+        "run_id": V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        "source_run_id": V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        "source_run_ids": [
+            V3_5_0_STRICT_NON_OFFICIAL_SOURCE_BOUND_CAPACITY_EXPANSION_RUN_ID,
+            V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+            V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        ],
+        "generated_at": generated_at,
+        "artifact_kind": "pdf_page_bbox_source_text_manifest_repair_and_acquisition",
+        "event_type": "pdf_page_bbox_source_text_manifest_repair_and_acquisition_v3_5_3",
+        "status": "PDF_SOURCE_TEXT_MANIFEST_REPAIRED_SOURCE_ONLY_TARGET_READY_SILVER_GENERATION_BLOCKED",
+        "run_class": "source_text_manifest_repair_only_no_silver_generation",
+        "manifest_ready_count": counts_by_family["PDF"],
+        "counts_by_source_family": counts_by_family,
+        "pdf_repaired_count": counts_by_family["PDF"],
+        "starting_pdf_manifest_ready_count": V3_5_PREVIOUS_MANIFEST_READY_INVENTORY["PDF"],
+        "target_pdf_rows": V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY["PDF"],
+        "pdf_gap_before": V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY["PDF"] - V3_5_PREVIOUS_MANIFEST_READY_INVENTORY["PDF"],
+        "repaired_from_existing_source_pdfs_count": counts_by_family["PDF"],
+        "newly_collected_pdf_count": 0,
+        "newly_collected_manifest_ready_count": 0,
+        "pdf_newly_collected_source_count": 0,
+        "newly_collected_source_count": 0,
+        "pdf_final_count": pdf_final_count,
+        "pdf_manifest_ready_count_after": pdf_final_count,
+        "pdf_gap_after": remaining_pdf_gap,
+        "target_pdf_met": pdf_final_count >= V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY["PDF"],
+        "remaining_preferred_gap_by_source_family": {
+            "TEXT": 0,
+            "PDF": remaining_pdf_gap,
+            "XLSX": max(0, V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY["XLSX"] - combined_counts["XLSX"]),
+        },
+        "previous_phase_counts_by_source_family": previous_counts,
+        "combined_source_family_counts_after_phase": combined_counts,
+        "pilot_threshold_rows": V3_5_PILOT_THRESHOLD_ROWS,
+        "pilot_threshold_met": combined_counts["total"] >= V3_5_PILOT_THRESHOLD_ROWS,
+        "balanced_pilot_threshold_met": min(combined_counts["TEXT"], combined_counts["PDF"], combined_counts["XLSX"]) >= V3_5_PILOT_THRESHOLD_ROWS,
+        "target_rows": V3_5_TARGET_ROWS,
+        "preferred_target_by_source_family": dict(V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY),
+        "target_threshold_met": combined_counts["total"] >= V3_5_TARGET_ROWS,
+        "source_family_imbalance_warning": False,
+        "source_family_imbalance_note": "Preferred source-family capacity is balanced at TEXT=350, PDF=325, XLSX=325 after source-only repairs.",
+        "acquisition_performed": acquisition_performed,
+        "acquisition_reason": acquisition_reason,
+        "acquisition_source_roots": [V3_5_SOURCE_COLLECTION_ROOT.as_posix()],
+        "new_source_collection_performed": False,
+        "existing_pdf_source_document_count": len(entries),
+        "inspected_pdf_source_document_count": inspected_pdf_count,
+        "source_pdf_documents_with_manifest_ready_rows": len(source_pdf_documents_with_manifest_ready_rows),
+        "extraction_methods_used": extraction_methods_used,
+        "extraction_method_counts": extraction_methods_used,
+        "per_document_cap": V3_5_PDF_PER_DOCUMENT_CAP,
+        "per_page_cap": V3_5_PDF_PER_PAGE_CAP,
+        "blocked_counts_by_reason": blocked_counts_by_reason,
+        "blocked_or_deferred_counts_by_reason": {
+            **blocked_counts_by_reason,
+            "deferred_after_target_met": deferred_after_target_met_count,
+        },
+        "deferred_after_target_met_count": deferred_after_target_met_count,
+        "silver_generation_allowed": False,
+        "silver_jsonl_rows_created": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+        "official_denominator_rows_reused": False,
+        "official_29_query_ids_copied_or_relabelled": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "no_candidate_artifact_as_generation_source": True,
+        "recommended_next_phase": balanced_capacity_summary["recommended_next_phase"],
+        "triage_doc_updated": False,
+        "artifact_paths": {
+            "pdf_manifest_ready_candidates_jsonl": official.repo_relative(DEFAULT_V3_5_3_PDF_MANIFEST_READY_CANDIDATES_JSONL),
+            "pdf_blocked_or_convertible_candidates_jsonl": official.repo_relative(DEFAULT_V3_5_3_PDF_BLOCKED_OR_CONVERTIBLE_CANDIDATES_JSONL),
+            "pdf_source_collection_manifest_json": official.repo_relative(DEFAULT_V3_5_3_PDF_SOURCE_COLLECTION_MANIFEST_JSON),
+            "post_pdf_capacity_summary_json": official.repo_relative(DEFAULT_V3_5_3_POST_PDF_CAPACITY_SUMMARY_JSON),
+            "balanced_capacity_summary_json": official.repo_relative(DEFAULT_V3_5_3_BALANCED_CAPACITY_SUMMARY_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+        "guardrails": v3_5_source_material_guardrails(),
+        "pdf_manifest_ready_candidate_rows": manifest_rows,
+        "pdf_blocked_or_convertible_candidate_rows": blocked_or_convertible_rows,
+        "pdf_source_collection_manifest": pdf_source_collection_manifest,
+        "balanced_capacity_summary": balanced_capacity_summary,
+    }
+    return summary
+
+
+def v3_5_4_source_hash(row: Mapping[str, Any]) -> str:
+    for field in (
+        "source_text_hash",
+        "source_value_hash",
+        "source_hash",
+        "excerpt_hash",
+        "source_content_sha256",
+    ):
+        value = official.clean(row.get(field))
+        if value:
+            return value
+    return ""
+
+
+def v3_5_4_source_excerpt_or_value(row: Mapping[str, Any]) -> str:
+    for field in ("source_text", "source_value", "source_text_preview", "source_excerpt"):
+        value = official.clean(row.get(field))
+        if value:
+            return value
+    return ""
+
+
+def v3_5_4_source_path_or_identity(row: Mapping[str, Any], locator: Mapping[str, Any]) -> str:
+    for field in (
+        "source_pdf_path",
+        "stable_pdf_identity",
+        "workbook_path",
+        "source_workbook",
+        "workbook_id",
+        "source_corpus_path",
+        "source_identity",
+    ):
+        value = official.clean(row.get(field)) or official.clean(locator.get(field))
+        if value:
+            return value
+    return official.clean(row.get("document_version_id"))
+
+
+def v3_5_4_official_denominator_overlap_index() -> dict[str, set[str]]:
+    official_rows = read_jsonl(DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl")
+    query_ids: set[str] = set()
+    search_unit_ids: set[str] = set()
+    document_version_ids: set[str] = set()
+    locator_fingerprints: set[str] = set()
+    source_identity_ids: set[str] = set()
+    source_content_hashes: set[str] = set()
+    source_path_locator_keys: set[str] = set()
+    for row in official_rows:
+        locator = dict(as_mapping(row.get("locator")))
+        query_id = official.clean(row.get("query_id"))
+        search_unit_id = official.clean(row.get("search_unit_id"))
+        document_version_id = official.clean(row.get("document_version_id"))
+        locator_fingerprint = v3_5_locator_fingerprint(locator) if locator else ""
+        source_path = v3_5_4_source_path_or_identity(row, locator)
+        if query_id:
+            query_ids.add(query_id)
+        if search_unit_id:
+            search_unit_ids.add(search_unit_id)
+        if document_version_id:
+            document_version_ids.add(document_version_id)
+        if locator_fingerprint:
+            locator_fingerprints.add(locator_fingerprint)
+        if official.clean(row.get("source_identity")):
+            source_identity_ids.add(official.clean(row.get("source_identity")))
+        if official.clean(row.get("source_content_sha256")):
+            source_content_hashes.add(official.clean(row.get("source_content_sha256")))
+        if source_path and locator_fingerprint:
+            source_path_locator_keys.add(f"{source_path}:{locator_fingerprint}")
+    return {
+        "query_ids": query_ids,
+        "search_unit_ids": search_unit_ids,
+        "document_version_ids": document_version_ids,
+        "locator_fingerprints": locator_fingerprints,
+        "source_identity_ids": source_identity_ids,
+        "source_content_hashes": source_content_hashes,
+        "source_path_locator_keys": source_path_locator_keys,
+    }
+
+
+def v3_5_4_official_overlap_checks(
+    row: Mapping[str, Any],
+    *,
+    official_index: Mapping[str, set[str]],
+    locator: Mapping[str, Any],
+) -> dict[str, bool]:
+    query_id = official.clean(row.get("query_id")) or official.clean(row.get("provenance_query_id"))
+    search_unit_id = official.clean(row.get("search_unit_id"))
+    document_version_id = official.clean(row.get("document_version_id"))
+    locator_fingerprint = official.clean(row.get("locator_fingerprint"))
+    source_identity = official.clean(row.get("source_identity"))
+    source_hash = v3_5_4_source_hash(row)
+    source_path = v3_5_4_source_path_or_identity(row, locator)
+    source_path_locator_key = f"{source_path}:{locator_fingerprint}" if source_path and locator_fingerprint else ""
+    checks = {
+        "query_id_overlap": bool(query_id and query_id in official_index["query_ids"]),
+        "search_unit_id_overlap": bool(search_unit_id and search_unit_id in official_index["search_unit_ids"]),
+        "document_version_id_overlap": bool(
+            document_version_id and document_version_id in official_index["document_version_ids"]
+        ),
+        "locator_fingerprint_overlap": bool(
+            locator_fingerprint and locator_fingerprint in official_index["locator_fingerprints"]
+        ),
+        "source_identity_overlap": bool(source_identity and source_identity in official_index["source_identity_ids"]),
+        "source_hash_overlap": bool(source_hash and source_hash in official_index["source_content_hashes"]),
+        "source_path_locator_overlap": bool(
+            source_path_locator_key and source_path_locator_key in official_index["source_path_locator_keys"]
+        ),
+    }
+    checks["document_version_id_overlap_only"] = bool(
+        checks["document_version_id_overlap"]
+        and not any(
+            checks[key]
+            for key in (
+                "query_id_overlap",
+                "search_unit_id_overlap",
+                "locator_fingerprint_overlap",
+                "source_identity_overlap",
+                "source_hash_overlap",
+                "source_path_locator_overlap",
+            )
+        )
+    )
+    checks["official_denominator_overlap_detected"] = any(
+        checks[key]
+        for key in (
+            "query_id_overlap",
+            "search_unit_id_overlap",
+            "locator_fingerprint_overlap",
+            "source_identity_overlap",
+            "source_hash_overlap",
+            "source_path_locator_overlap",
+        )
+    )
+    return checks
+
+
+def v3_5_4_required_missing_fields(row: Mapping[str, Any]) -> list[str]:
+    family = official.clean(row.get("source_family")).upper()
+    locator = as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator"))
+    missing = []
+    for field in ("candidate_id", "source_family", "locator_fingerprint"):
+        if not official.clean(row.get(field)):
+            missing.append(field)
+    if official.clean(row.get("official_denominator_overlap")).lower() != "false" and row.get(
+        "official_denominator_overlap"
+    ) is not False:
+        missing.append("official_denominator_overlap_false")
+    for field in (
+        "not_official_denominator",
+        "not_gold",
+    ):
+        if row.get(field) is not True:
+            missing.append(f"{field}_true")
+    for field in (
+        "generation_source",
+        "promotion_evidence",
+        "candidate_artifacts_used_as_generation_source",
+    ):
+        if row.get(field) is not False:
+            missing.append(f"{field}_false")
+    if not official.clean(row.get("document_version_id")) and not official.clean(row.get("source_identity")):
+        missing.append("document_version_id_or_stable_source_identity")
+    if not locator:
+        missing.append("source_locator")
+    if not v3_5_4_source_hash(row):
+        missing.append("source_hash_or_excerpt_value_hash")
+    if row.get("source_text_available") is not True and row.get("source_value_available") is not True:
+        missing.append("source_text_or_value_availability")
+
+    if family == "TEXT":
+        text_locator = as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator"))
+        for field in ("document_version_id", "search_unit_id"):
+            if not official.clean(row.get(field)):
+                missing.append(f"TEXT:{field}")
+        for field in ("source_corpus_path", "chunk_id", "doc_id"):
+            if not official.clean(text_locator.get(field)):
+                missing.append(f"TEXT:locator:{field}")
+        if not v3_5_4_source_excerpt_or_value(row):
+            missing.append("TEXT:source_excerpt")
+        if not (official.clean(row.get("excerpt_hash")) or official.clean(row.get("source_hash"))):
+            missing.append("TEXT:excerpt_hash")
+    elif family == "PDF":
+        for field in ("source_pdf_path", "page", "page_index", "bbox", "extraction_method"):
+            if not official.clean(row.get(field)) and not official.clean(locator.get(field)):
+                missing.append(f"PDF:{field}")
+        if not (official.clean(row.get("source_pdf_sha256")) or official.clean(row.get("source_hash"))):
+            missing.append("PDF:source_pdf_sha256_or_source_hash")
+        if not official.clean(row.get("extraction_provenance")) and not official.clean(row.get("extract_provenance")):
+            missing.append("PDF:extraction_provenance")
+        if not official.clean(row.get("source_text")):
+            missing.append("PDF:source_text")
+        if not official.clean(row.get("source_text_hash")):
+            missing.append("PDF:source_text_hash")
+    elif family == "XLSX":
+        workbook_identity = official.clean(row.get("workbook_path") or row.get("source_workbook") or row.get("workbook_id"))
+        if not workbook_identity:
+            missing.append("XLSX:workbook_identity")
+        if not official.clean(row.get("workbook_sha256") or row.get("source_hash")):
+            missing.append("XLSX:workbook_hash_or_source_hash")
+        if not official.clean(row.get("sheet_name") or row.get("sheet") or locator.get("sheet")):
+            missing.append("XLSX:sheet")
+        if not (
+            official.clean(row.get("cell") or locator.get("cell"))
+            or official.clean(row.get("range") or locator.get("range"))
+            or official.clean(row.get("row_label") or locator.get("row_label"))
+            or official.clean(row.get("column_label") or locator.get("column_label"))
+        ):
+            missing.append("XLSX:cell_range_or_row_column_locator")
+        if not official.clean(row.get("source_value")):
+            missing.append("XLSX:source_value")
+        if not official.clean(row.get("source_value_hash")):
+            missing.append("XLSX:source_value_hash")
+        for field in ("hidden_policy", "formula_present", "formula_cached_value_available"):
+            if field not in row:
+                missing.append(f"XLSX:{field}")
+    else:
+        missing.append("supported_source_family")
+    return missing
+
+
+def v3_5_4_enriched_source_row(
+    row: Mapping[str, Any],
+    *,
+    component_name: str,
+    component_run_id: str,
+    component_artifact_path: Path,
+) -> dict[str, Any]:
+    frozen = dict(row)
+    locator = dict(as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator")))
+    source_hash = v3_5_4_source_hash(row)
+    locator_fingerprint = official.clean(row.get("locator_fingerprint")) or v3_5_locator_fingerprint(locator)
+    family = official.clean(row.get("source_family")).upper()
+    original_run_id = official.clean(row.get("run_id"))
+
+    frozen["run_id"] = V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID
+    frozen["schema_version"] = f"{V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID}_balanced_source_manifest_row_v1"
+    frozen["artifact_kind"] = "balanced_source_manifest_row"
+    frozen["classification"] = "balanced_source_manifest_frozen"
+    frozen["component_name"] = component_name
+    frozen["component_run_id"] = component_run_id
+    frozen["component_artifact_path"] = official.repo_relative(component_artifact_path)
+    frozen["original_run_id"] = original_run_id
+    frozen["upstream_source_run_id"] = official.clean(row.get("source_run_id"))
+    frozen["source_run_id"] = component_run_id
+    frozen["source_bound_locator"] = locator
+    frozen["source_locator"] = locator
+    frozen["locator_fingerprint"] = locator_fingerprint
+    frozen["source_hash"] = official.clean(frozen.get("source_hash")) or source_hash
+    frozen["source_content_sha256"] = official.clean(frozen.get("source_content_sha256")) or source_hash
+    frozen["source_identity"] = (
+        f"{family}:{official.clean(frozen.get('document_version_id'))}:"
+        f"{official.clean(frozen.get('search_unit_id'))}:{locator_fingerprint}"
+    )
+
+    if family == "TEXT":
+        source_excerpt = v3_5_4_source_excerpt_or_value(frozen)
+        frozen["source_excerpt"] = source_excerpt
+        frozen["source_excerpt_hash"] = official.clean(frozen.get("excerpt_hash")) or source_hash
+        frozen["source_text_available"] = True
+    elif family == "PDF":
+        source_text = official.clean(frozen.get("source_text")) or official.clean(frozen.get("source_text_preview"))
+        frozen["source_text"] = source_text
+        frozen["source_text_hash"] = official.clean(frozen.get("source_text_hash")) or source_hash
+        frozen["source_text_available"] = True
+        for field in ("page", "page_index", "physical_page_index", "bbox", "region_type", "source_pdf_path"):
+            if field not in frozen and field in locator:
+                frozen[field] = locator[field]
+        frozen["extraction_method"] = official.clean(frozen.get("extraction_method")) or (
+            "carried_forward_v3_5_1_source_bound_pdf_locator_v1"
+        )
+        extraction_provenance = as_mapping(frozen.get("extraction_provenance")) or as_mapping(
+            frozen.get("extract_provenance")
+        )
+        frozen["extraction_provenance"] = dict(extraction_provenance)
+        frozen["extract_provenance"] = dict(extraction_provenance)
+        frozen["stable_pdf_identity"] = official.clean(frozen.get("stable_pdf_identity")) or (
+            f"pdf_source:{official.clean(frozen.get('source_pdf_path'))}:{source_hash}"
+        )
+    elif family == "XLSX":
+        source_value = official.clean(frozen.get("source_value")) or official.clean(frozen.get("source_text_preview"))
+        frozen["source_value"] = source_value
+        frozen["source_value_hash"] = official.clean(frozen.get("source_value_hash")) or source_hash
+        frozen["source_value_available"] = True
+        frozen["source_workbook"] = official.clean(frozen.get("source_workbook")) or official.clean(
+            locator.get("workbook")
+        )
+        frozen["sheet_name"] = official.clean(frozen.get("sheet_name")) or official.clean(
+            frozen.get("sheet") or locator.get("sheet")
+        )
+        frozen["range"] = official.clean(frozen.get("range")) or official.clean(locator.get("range"))
+        frozen["cell"] = official.clean(frozen.get("cell")) or official.clean(locator.get("cell"))
+        frozen["workbook_id"] = official.clean(frozen.get("workbook_id")) or official.clean(
+            frozen.get("document_version_id")
+        )
+        frozen["hidden_policy"] = official.clean(frozen.get("hidden_policy")) or (
+            "not_detected_in_v3_5_1_carry_forward_manifest"
+        )
+        frozen["hidden_status_detected"] = bool(frozen.get("hidden_status_detected"))
+        frozen["sheet_hidden"] = bool(frozen.get("sheet_hidden"))
+        frozen["hidden_rows"] = list(frozen.get("hidden_rows") or [])
+        frozen["hidden_columns"] = list(frozen.get("hidden_columns") or [])
+        frozen["formula_present"] = bool(frozen.get("formula_present"))
+        frozen["formula_text"] = official.clean(frozen.get("formula_text"))
+        frozen["formula_cached_value_available"] = bool(frozen.get("formula_cached_value_available"))
+        frozen["source_content_sha256"] = frozen["source_value_hash"]
+
+    frozen["canonical_citation_payload"] = v3_5_canonical_payload_for_source_row(frozen)
+    frozen["official_denominator_overlap"] = False
+    frozen["not_gold"] = True
+    frozen["not_official_denominator"] = True
+    frozen["generation_source"] = False
+    frozen["promotion_evidence"] = False
+    frozen["silver_generation_allowed"] = False
+    frozen["silver_jsonl_row"] = False
+    frozen["questions_created"] = False
+    frozen["expected_answers_created"] = False
+    frozen["supporting_evidence_created"] = False
+    frozen["relevance_labels_created"] = False
+    frozen["answerability_labels_created"] = False
+    frozen["qrels_created"] = False
+    frozen["candidate_artifacts_used_as_generation_source"] = False
+    frozen["balanced_source_manifest_freeze_only"] = True
+    return frozen
+
+
+def v3_5_4_audit_sample_row(row: Mapping[str, Any], ordinal: int) -> dict[str, Any]:
+    family = official.clean(row.get("source_family")).upper()
+    source_hash = v3_5_4_source_hash(row)
+    sample = {
+        "run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "sample_ordinal": ordinal,
+        "candidate_id": official.clean(row.get("candidate_id")),
+        "source_family": family,
+        "component_run_id": official.clean(row.get("component_run_id")),
+        "source_locator": row.get("source_bound_locator") or row.get("source_locator"),
+        "source_excerpt_or_value": v3_5_4_source_excerpt_or_value(row)[:800],
+        "source_hash": source_hash,
+        "locator_fingerprint": official.clean(row.get("locator_fingerprint")),
+        "official_denominator_overlap": False,
+        "not_official_denominator": True,
+        "not_gold": True,
+        "generation_source": False,
+        "promotion_evidence": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "silver_generation_allowed": False,
+        "silver_jsonl_row": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+    }
+    if family == "PDF":
+        sample["page"] = row.get("page")
+        sample["page_index"] = row.get("page_index")
+        sample["source_pdf_path"] = row.get("source_pdf_path")
+        sample["extraction_method"] = row.get("extraction_method")
+    elif family == "XLSX":
+        sample["source_workbook"] = row.get("source_workbook") or row.get("workbook_path")
+        sample["sheet_name"] = row.get("sheet_name")
+        sample["range"] = row.get("range")
+        sample["cell"] = row.get("cell")
+        sample["hidden_policy"] = row.get("hidden_policy")
+        sample["formula_present"] = row.get("formula_present")
+    elif family == "TEXT":
+        locator = as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator"))
+        sample["source_corpus_path"] = locator.get("source_corpus_path")
+        sample["chunk_id"] = locator.get("chunk_id")
+        sample["doc_id"] = locator.get("doc_id")
+    return sample
+
+
+def v3_5_4_next_phase_policy_boundary(generated_at: str) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID}_next_phase_policy_boundary_v1",
+        "run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "balanced_source_manifest_freeze_next_phase_policy_boundary",
+        "v3_5_4_is_silver_generation": False,
+        "v3_5_4_boundary": "source-only manifest freeze; no question, answer, evidence, label, qrel, or silver JSONL generation",
+        "v3_6_0_policy_boundary": (
+            "v3_6_0 cannot create questions, expected answers, supporting evidence, "
+            "relevance labels, answerability labels, qrels, or answer/citation silver rows "
+            "unless the user approves an explicit silver generation policy."
+        ),
+        "user_owned_decisions_needed_before_silver_generation": [
+            "question_generation_policy",
+            "expected_answer_policy",
+            "supporting_evidence_policy",
+            "answerability_relevance_label_policy",
+            "dev_holdout_contract_split_policy",
+            "silver_as_anti_overfit_guard_only_versus_regression_guard",
+        ],
+        "codex_may_continue_implementation_only_work_without_asking_user": True,
+        "codex_must_not_decide_gold_expected_evidence_or_label_policy": True,
+        "silver_generation_allowed": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "official_denominator_rows_reused": False,
+        "gold_mutation": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "production_mutation": False,
+    }
+
+
+def run_v3_5_4_balanced_silver_source_manifest_freeze(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    components = [
+        (
+            "v3_5_1_frozen_text_pdf_xlsx_manifest",
+            V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+            DEFAULT_V3_5_1_PILOT_SOURCE_MANIFEST_JSONL,
+        ),
+        (
+            "v3_5_2_xlsx_overlay",
+            V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+            DEFAULT_V3_5_2_XLSX_MANIFEST_READY_CANDIDATES_JSONL,
+        ),
+        (
+            "v3_5_3_pdf_overlay",
+            V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+            DEFAULT_V3_5_3_PDF_MANIFEST_READY_CANDIDATES_JSONL,
+        ),
+    ]
+    official_index = v3_5_4_official_denominator_overlap_index()
+    balanced_summary = official.read_json(DEFAULT_V3_5_3_BALANCED_CAPACITY_SUMMARY_JSON)
+    input_counts_by_component: dict[str, dict[str, Any]] = {}
+    frozen_rows: list[dict[str, Any]] = []
+    audit_rows: list[dict[str, Any]] = []
+    excluded_counts: Counter[str] = Counter()
+    seen_candidate_ids: set[str] = set()
+    seen_locator_keys: set[tuple[str, str, str]] = set()
+    normalized_hash_counter: Counter[str] = Counter()
+
+    source_rows_by_component: list[tuple[str, str, Path, list[dict[str, Any]]]] = []
+    for component_name, component_run_id, component_path in components:
+        rows = read_jsonl(component_path)
+        source_rows_by_component.append((component_name, component_run_id, component_path, rows))
+        input_counts_by_component[component_name] = {
+            "run_id": component_run_id,
+            "artifact_path": official.repo_relative(component_path),
+            "row_count": len(rows),
+            "counts_by_source_family": v3_5_count_by_family(rows),
+            "sha256": sha256_file(component_path),
+        }
+
+    for _, _, _, rows in source_rows_by_component:
+        for row in rows:
+            source_hash = v3_5_4_source_hash(row)
+            if source_hash:
+                normalized_hash_counter[source_hash] += 1
+
+    for component_name, component_run_id, component_path, rows in source_rows_by_component:
+        for row in rows:
+            candidate_id = official.clean(row.get("candidate_id"))
+            enriched = v3_5_4_enriched_source_row(
+                row,
+                component_name=component_name,
+                component_run_id=component_run_id,
+                component_artifact_path=component_path,
+            )
+            family = official.clean(enriched.get("source_family")).upper()
+            locator = dict(as_mapping(enriched.get("source_bound_locator")) or as_mapping(enriched.get("source_locator")))
+            locator_fingerprint = official.clean(enriched.get("locator_fingerprint"))
+            source_hash = v3_5_4_source_hash(enriched)
+            stable_source_identity = v3_5_4_source_path_or_identity(enriched, locator)
+            locator_key = (family, stable_source_identity, locator_fingerprint)
+            missing = v3_5_4_required_missing_fields(enriched)
+            forbidden_present = [field for field in V3_5_FORBIDDEN_SOURCE_MANIFEST_FIELDS if field in enriched]
+            official_checks = v3_5_4_official_overlap_checks(
+                enriched,
+                official_index=official_index,
+                locator=locator,
+            )
+            reason = ""
+            if candidate_id in seen_candidate_ids:
+                reason = "duplicate_candidate_id"
+            elif locator_key in seen_locator_keys:
+                reason = "duplicate_source_family_source_identity_locator"
+            elif missing:
+                reason = "missing_source_manifest_required_fields"
+            elif forbidden_present:
+                reason = "forbidden_generation_or_label_fields_present"
+            elif official_checks["official_denominator_overlap_detected"]:
+                reason = "official_denominator_overlap_detected"
+
+            audit_base = {
+                "run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+                "component_name": component_name,
+                "component_run_id": component_run_id,
+                "candidate_id": candidate_id,
+                "source_family": family,
+                "document_version_id": official.clean(enriched.get("document_version_id")),
+                "search_unit_id": official.clean(enriched.get("search_unit_id")),
+                "source_path_or_identity": stable_source_identity,
+                "locator_fingerprint": locator_fingerprint,
+                "source_hash": source_hash,
+                "normalized_source_hash_duplicate_count": normalized_hash_counter[source_hash],
+                "duplicate_hash_retained_reason": (
+                    "distinct_source_identity_or_locator"
+                    if normalized_hash_counter[source_hash] > 1
+                    else ""
+                ),
+                "missing_fields": missing,
+                "forbidden_fields_present": forbidden_present,
+                "official_overlap_checks": official_checks,
+                "official_denominator_overlap": bool(official_checks["official_denominator_overlap_detected"]),
+                "candidate_artifacts_used_as_generation_source": False,
+                "silver_generation_allowed": False,
+                "source_only_guard_passed": not reason,
+            }
+            if reason:
+                excluded_counts[reason] += 1
+                audit_rows.append(
+                    {
+                        **audit_base,
+                        "audit_status": "excluded",
+                        "exclusion_reason": reason,
+                    }
+                )
+                continue
+
+            seen_candidate_ids.add(candidate_id)
+            seen_locator_keys.add(locator_key)
+            frozen_rows.append(enriched)
+            audit_rows.append(
+                {
+                    **audit_base,
+                    "audit_status": "included",
+                    "exclusion_reason": "",
+                    "official_denominator_overlap": False,
+                }
+            )
+
+    frozen_counts = v3_5_count_by_family(frozen_rows)
+    preferred_target = dict(V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY)
+    preferred_target["total"] = V3_5_TARGET_ROWS
+    sample_rows: list[dict[str, Any]] = []
+    for family in ("TEXT", "PDF", "XLSX"):
+        family_rows = [row for row in frozen_rows if official.clean(row.get("source_family")).upper() == family]
+        for row in family_rows[:25]:
+            sample_rows.append(v3_5_4_audit_sample_row(row, len(sample_rows) + 1))
+    sample_counts = v3_5_count_by_family(sample_rows)
+    target_threshold_met = frozen_counts["total"] >= V3_5_TARGET_ROWS
+    preferred_mix_met = all(
+        frozen_counts[family] == V3_5_PREFERRED_TARGET_BY_SOURCE_FAMILY[family]
+        for family in ("TEXT", "PDF", "XLSX")
+    )
+    target_met = target_threshold_met and preferred_mix_met
+    remaining_blockers = as_mapping(balanced_summary.get("remaining_blockers_by_source_family"))
+    next_phase_policy_boundary = v3_5_4_next_phase_policy_boundary(generated_at)
+    summary = {
+        "schema_version": f"{V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID}_freeze_summary_v1",
+        "run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "balanced_silver_source_manifest_freeze_source_only",
+        "event_type": "balanced_silver_source_manifest_freeze_v3_5_4",
+        "status": (
+            "BALANCED_SOURCE_MANIFEST_FROZEN_SOURCE_ONLY_TARGET_READY_SILVER_GENERATION_BLOCKED"
+            if target_met
+            else "BALANCED_SOURCE_MANIFEST_FREEZE_NEEDS_REPAIR_SILVER_GENERATION_BLOCKED"
+        ),
+        "run_class": "balanced_source_manifest_freeze_only_no_silver_generation",
+        "source_run_ids": [
+            V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+            V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+            V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID,
+        ],
+        "input_counts_by_component": input_counts_by_component,
+        "frozen_manifest_row_count": frozen_counts["total"],
+        "manifest_ready_count": frozen_counts["total"],
+        "frozen_counts_by_source_family": frozen_counts,
+        "counts_by_source_family": frozen_counts,
+        "preferred_target_by_source_family": preferred_target,
+        "target_rows": V3_5_TARGET_ROWS,
+        "target_threshold_met": target_threshold_met,
+        "preferred_mix_met": preferred_mix_met,
+        "balanced_pilot_possible": min(frozen_counts["TEXT"], frozen_counts["PDF"], frozen_counts["XLSX"])
+        >= V3_5_PILOT_THRESHOLD_ROWS,
+        "excluded_during_freeze_counts_by_reason": dict(sorted(excluded_counts.items())),
+        "dedupe_policy": {
+            "candidate_id": "exclude duplicate candidate_id",
+            "source_family_source_identity_locator": (
+                "exclude duplicate source_family + stable source identity + locator_fingerprint"
+            ),
+            "normalized_source_text_or_value_hash": (
+                "audit repeated hashes; retain when source identity or locator differs because no already "
+                "manifest-ready backfill row is available in the source-of-truth artifacts"
+            ),
+        },
+        "duplicate_source_hash_audit": {
+            "repeated_hash_group_count": sum(1 for count in normalized_hash_counter.values() if count > 1),
+            "rows_with_repeated_hash": sum(count for count in normalized_hash_counter.values() if count > 1),
+            "repeated_hashes_retained_when_distinct_source_identity_or_locator": True,
+        },
+        "backfill_performed": False,
+        "backfill_source_artifacts": [],
+        "official_denominator_rows_reused": False,
+        "official_29_query_ids_copied_or_relabelled": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "silver_generation_allowed": False,
+        "silver_jsonl_row": False,
+        "silver_jsonl_rows_created": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+        "gold_mutation": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "readme_headline_product_performance_claim": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "promotion_evidence": False,
+        "recommended_next_phase": (
+            "v3_5_5_balanced_source_manifest_quality_audit"
+            if target_met and sample_counts["TEXT"] >= 25 and sample_counts["PDF"] >= 25 and sample_counts["XLSX"] >= 25
+            else "v3_5_5_source_manifest_repair"
+        ),
+        "audit_sample_packet_counts_by_source_family": sample_counts,
+        "remaining_blockers_by_source_family": remaining_blockers,
+        "remaining_blockers_recorded_from_v3_5_3_balanced_summary": {
+            "PDF": {
+                "blocked_missing_locator": int(as_mapping(remaining_blockers.get("PDF")).get("blocked_missing_locator", 0)),
+                "blocked_missing_source_text": int(
+                    as_mapping(remaining_blockers.get("PDF")).get("blocked_missing_source_text", 0)
+                ),
+                "blocked_duplicate_or_near_duplicate": int(
+                    as_mapping(remaining_blockers.get("PDF")).get("blocked_duplicate_or_near_duplicate", 0)
+                ),
+            },
+            "XLSX": {
+                "blocked_hidden_policy": int(as_mapping(remaining_blockers.get("XLSX")).get("blocked_hidden_policy", 0)),
+                "blocked_source_unavailable": int(
+                    as_mapping(remaining_blockers.get("XLSX")).get("blocked_source_unavailable", 0)
+                ),
+                "blocked_duplicate_or_near_duplicate": int(
+                    as_mapping(remaining_blockers.get("XLSX")).get("blocked_duplicate_or_near_duplicate", 0)
+                ),
+            },
+        },
+        "triage_doc_updated": False,
+        "artifact_paths": {
+            "balanced_source_manifest_jsonl": official.repo_relative(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+            "freeze_summary_json": official.repo_relative(DEFAULT_V3_5_4_FREEZE_SUMMARY_JSON),
+            "freeze_audit_jsonl": official.repo_relative(DEFAULT_V3_5_4_FREEZE_AUDIT_JSONL),
+            "audit_sample_packet_jsonl": official.repo_relative(DEFAULT_V3_5_4_AUDIT_SAMPLE_PACKET_JSONL),
+            "next_phase_policy_boundary_json": official.repo_relative(
+                DEFAULT_V3_5_4_NEXT_PHASE_POLICY_BOUNDARY_JSON
+            ),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+        "guardrails": v3_5_source_material_guardrails(),
+        "next_phase_policy_boundary": next_phase_policy_boundary,
+        "balanced_source_manifest_rows": frozen_rows,
+        "freeze_audit_rows": audit_rows,
+        "audit_sample_packet_rows": sample_rows,
+    }
+    return summary
+
+
+V3_5_5_SOURCE_QUALITY_STATUSES = (
+    "pass_source_quality",
+    "review_duplicate_or_near_duplicate",
+    "review_short_source_text_or_value",
+    "review_pdf_extraction_order",
+    "review_pdf_header_footer_or_boilerplate",
+    "review_pdf_numeric_or_table_context",
+    "review_xlsx_hidden_policy_boundary",
+    "review_xlsx_formula_or_cached_value",
+    "review_xlsx_value_context",
+    "repair_required_missing_document_identity",
+    "repair_required_locator_unresolvable",
+    "repair_required_source_text_or_value_missing",
+    "repair_required_source_hash_missing",
+    "repair_required_official_denominator_overlap",
+    "repair_required_candidate_artifact_source_leak",
+    "repair_required_provenance_or_license_unclear",
+    "blocked_other",
+)
+
+
+def v3_5_5_text_is_content_like(text: str) -> bool:
+    return bool(re.search(r"[0-9A-Za-z가-힣]", text or ""))
+
+
+def v3_5_5_source_text(row: Mapping[str, Any]) -> str:
+    return v3_5_clean_source_text(v3_5_4_source_excerpt_or_value(row))
+
+
+def v3_5_5_digit_ratio(text: str) -> float:
+    normalized = "".join(ch for ch in text if not ch.isspace())
+    if not normalized:
+        return 0.0
+    return sum(1 for ch in normalized if ch.isdigit()) / len(normalized)
+
+
+def v3_5_5_pdf_is_table_like(text: str) -> bool:
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if len(lines) >= 5 and sum(1 for line in lines if len(line) <= 25) >= 4:
+        return True
+    if text.count("|") >= 3 or text.count("\t") >= 3:
+        return True
+    return bool(re.search(r"\d[\d,.\s%]+\d", text)) and len(lines) >= 3
+
+
+def v3_5_5_pdf_is_header_footer_or_boilerplate(text: str) -> bool:
+    lowered = text.lower()
+    boilerplate_tokens = (
+        "statistics in charts",
+        "list of charts",
+        "발간등록번호",
+        "도표 목차",
+        "비교 문서/문장이 존재하지 않습니다",
+        "uri :",
+    )
+    if any(token in lowered for token in boilerplate_tokens):
+        return True
+    stripped = re.sub(r"[\W_]+", "", text, flags=re.UNICODE)
+    return bool(stripped and stripped.isdigit())
+
+
+def v3_5_5_xlsx_value_needs_context(row: Mapping[str, Any], text: str) -> bool:
+    generic_values = {"남자", "여자", "서명", "구분", "계", "합계", "번호", "성명", "일자", "날짜"}
+    if text.strip() in generic_values:
+        return True
+    if len(text.strip()) <= 2 and official.clean(row.get("source_value_type")) in {"", "text", "number"}:
+        return True
+    has_context = any(
+        official.clean(row.get(field))
+        for field in ("row_label", "column_label", "display_value", "normalized_value")
+    )
+    return len(text.strip()) <= 4 and not has_context
+
+
+def v3_5_5_forbidden_generation_fields(row: Mapping[str, Any]) -> list[str]:
+    forbidden = set(V3_5_FORBIDDEN_SOURCE_MANIFEST_FIELDS) | {
+        "generated_question",
+        "question_text",
+        "answer_text",
+        "expected_answer_final",
+        "supporting_evidence_final",
+        "label_status",
+        "qrels_candidate_id",
+        "answer_citation_silver_row",
+    }
+    found: set[str] = set()
+
+    def visit(value: Any) -> None:
+        if isinstance(value, Mapping):
+            found.update(str(key) for key in value if str(key) in forbidden)
+            for nested in value.values():
+                visit(nested)
+        elif isinstance(value, list):
+            for nested in value:
+                visit(nested)
+
+    visit(row)
+    return sorted(found)
+
+
+def v3_5_5_family_issue_flags(
+    row: Mapping[str, Any],
+    *,
+    repeated_hash: bool,
+) -> list[str]:
+    family = official.clean(row.get("source_family")).upper()
+    text = v3_5_5_source_text(row)
+    flags: list[str] = []
+    if repeated_hash:
+        flags.append("duplicate_or_near_duplicate_review")
+    if family == "TEXT":
+        if len(text) < 80:
+            flags.append("short_text_excerpt")
+        if not v3_5_5_text_is_content_like(text):
+            flags.append("non_content_text_excerpt")
+        if len([line for line in text.splitlines() if line.strip()]) >= 6 and len(text) < 180:
+            flags.append("list_fragment_or_metadata_like_text")
+    elif family == "PDF":
+        if len(text) < 40:
+            flags.append("short_pdf_source_text")
+        if v3_5_5_pdf_is_header_footer_or_boilerplate(text):
+            flags.append("pdf_header_footer_or_boilerplate")
+        if v3_5_5_digit_ratio(text) >= 0.35 or v3_5_5_pdf_is_table_like(text):
+            flags.append("pdf_numeric_or_table_context")
+        if official.clean(row.get("extraction_method")) == "pymupdf_native_text_block_v1" and "\n" in text and len(text) < 160:
+            flags.append("pdf_extraction_order_review")
+    elif family == "XLSX":
+        if len(text) < 3:
+            flags.append("short_xlsx_source_value")
+        if v3_5_5_xlsx_value_needs_context(row, text):
+            flags.append("xlsx_value_context_review")
+        if official.clean(row.get("hidden_policy")) != "exclude_hidden" or row.get("sheet_hidden") is True:
+            flags.append("xlsx_hidden_policy_boundary")
+        if row.get("hidden_rows") or row.get("hidden_columns"):
+            flags.append("xlsx_hidden_policy_boundary")
+        if row.get("formula_present") is True or row.get("formula_cached_value_available") is True:
+            flags.append("xlsx_formula_or_cached_value_review")
+    return flags
+
+
+def v3_5_5_source_quality_status(
+    *,
+    row: Mapping[str, Any],
+    missing_fields: Sequence[str],
+    official_checks: Mapping[str, bool],
+    forbidden_fields: Sequence[str],
+    issue_flags: Sequence[str],
+) -> str:
+    if "document_version_id_or_stable_source_identity" in missing_fields:
+        return "repair_required_missing_document_identity"
+    if "source_locator" in missing_fields or any("locator" in item for item in missing_fields):
+        return "repair_required_locator_unresolvable"
+    if "source_text_or_value_availability" in missing_fields or any(
+        item.endswith("source_text") or item.endswith("source_value") or item.endswith("source_excerpt")
+        for item in missing_fields
+    ):
+        return "repair_required_source_text_or_value_missing"
+    if "source_hash_or_excerpt_value_hash" in missing_fields or any("hash" in item for item in missing_fields):
+        return "repair_required_source_hash_missing"
+    if official_checks.get("official_denominator_overlap_detected") is True:
+        return "repair_required_official_denominator_overlap"
+    if row.get("candidate_artifacts_used_as_generation_source") is not False or forbidden_fields:
+        return "repair_required_candidate_artifact_source_leak"
+    family = official.clean(row.get("source_family")).upper()
+    if family == "PDF" and not (as_mapping(row.get("extraction_provenance")) or as_mapping(row.get("extract_provenance"))):
+        return "repair_required_provenance_or_license_unclear"
+    if "duplicate_or_near_duplicate_review" in issue_flags:
+        return "review_duplicate_or_near_duplicate"
+    if "short_pdf_source_text" in issue_flags or "short_text_excerpt" in issue_flags or "short_xlsx_source_value" in issue_flags:
+        return "review_short_source_text_or_value"
+    if "pdf_header_footer_or_boilerplate" in issue_flags:
+        return "review_pdf_header_footer_or_boilerplate"
+    if "pdf_numeric_or_table_context" in issue_flags:
+        return "review_pdf_numeric_or_table_context"
+    if "pdf_extraction_order_review" in issue_flags:
+        return "review_pdf_extraction_order"
+    if "xlsx_hidden_policy_boundary" in issue_flags:
+        return "review_xlsx_hidden_policy_boundary"
+    if "xlsx_formula_or_cached_value_review" in issue_flags:
+        return "review_xlsx_formula_or_cached_value"
+    if "xlsx_value_context_review" in issue_flags:
+        return "review_xlsx_value_context"
+    return "pass_source_quality"
+
+
+def v3_5_5_manifest_validation_row(
+    row: Mapping[str, Any],
+    *,
+    official_index: Mapping[str, set[str]],
+    repeated_hashes: set[str],
+    ordinal: int,
+) -> dict[str, Any]:
+    locator = dict(as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator")))
+    source_hash = v3_5_4_source_hash(row)
+    missing_fields = v3_5_4_required_missing_fields(row)
+    forbidden_fields = v3_5_5_forbidden_generation_fields(row)
+    official_checks = v3_5_4_official_overlap_checks(row, official_index=official_index, locator=locator)
+    issue_flags = v3_5_5_family_issue_flags(row, repeated_hash=source_hash in repeated_hashes)
+    status = v3_5_5_source_quality_status(
+        row=row,
+        missing_fields=missing_fields,
+        official_checks=official_checks,
+        forbidden_fields=forbidden_fields,
+        issue_flags=issue_flags,
+    )
+    text = v3_5_5_source_text(row)
+    return {
+        "run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        "source_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "row_ordinal": ordinal,
+        "candidate_id": official.clean(row.get("candidate_id")),
+        "source_family": official.clean(row.get("source_family")).upper(),
+        "document_version_id": official.clean(row.get("document_version_id")),
+        "search_unit_id": official.clean(row.get("search_unit_id")),
+        "source_identity": official.clean(row.get("source_identity")),
+        "source_path_or_identity": v3_5_4_source_path_or_identity(row, locator),
+        "locator_fingerprint": official.clean(row.get("locator_fingerprint")),
+        "source_hash": source_hash,
+        "source_text_or_value_length": len(text),
+        "source_quality_status": status,
+        "issue_flags": issue_flags,
+        "missing_required_fields": missing_fields,
+        "forbidden_generation_fields_present": forbidden_fields,
+        "official_overlap_checks": official_checks,
+        "official_denominator_overlap_detected": bool(official_checks.get("official_denominator_overlap_detected")),
+        "document_version_id_overlap_only": bool(official_checks.get("document_version_id_overlap_only")),
+        "candidate_artifact_source_leak_detected": row.get("candidate_artifacts_used_as_generation_source") is not False
+        or bool(forbidden_fields),
+        "source_only_boundary_preserved": not forbidden_fields
+        and row.get("generation_source") is False
+        and row.get("promotion_evidence") is False
+        and row.get("silver_generation_allowed") is False
+        and row.get("silver_jsonl_row") is False,
+        "generation_source": False,
+        "promotion_evidence": False,
+        "silver_generation_allowed": False,
+        "silver_jsonl_rows_created": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "repair_required": status.startswith("repair_required_"),
+        "review_only": status.startswith("review_"),
+    }
+
+
+def v3_5_5_sample_packet_row(row: Mapping[str, Any], validation: Mapping[str, Any], reason: str, ordinal: int) -> dict[str, Any]:
+    family = official.clean(row.get("source_family")).upper()
+    packet = {
+        "run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        "source_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "sample_ordinal": ordinal,
+        "sample_reason": reason,
+        "candidate_id": official.clean(row.get("candidate_id")),
+        "source_family": family,
+        "source_locator": row.get("source_bound_locator") or row.get("source_locator"),
+        "source_excerpt_or_value": v3_5_5_source_text(row)[:1000],
+        "source_hash": v3_5_4_source_hash(row),
+        "locator_fingerprint": official.clean(row.get("locator_fingerprint")),
+        "source_quality_status": validation.get("source_quality_status"),
+        "issue_flags": list(validation.get("issue_flags") or []),
+        "official_denominator_overlap": False,
+        "not_official_denominator": True,
+        "not_gold": True,
+        "generation_source": False,
+        "promotion_evidence": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "silver_generation_allowed": False,
+        "silver_jsonl_row": False,
+        "silver_jsonl_rows_created": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+    }
+    if family == "PDF":
+        packet.update(
+            {
+                "source_pdf_path": row.get("source_pdf_path"),
+                "page": row.get("page"),
+                "page_index": row.get("page_index"),
+                "extraction_method": row.get("extraction_method"),
+                "source_text_hash": row.get("source_text_hash"),
+            }
+        )
+    elif family == "XLSX":
+        packet.update(
+            {
+                "source_workbook": row.get("source_workbook") or row.get("workbook_path") or row.get("workbook_id"),
+                "sheet_name": row.get("sheet_name"),
+                "range": row.get("range"),
+                "cell": row.get("cell"),
+                "source_value_hash": row.get("source_value_hash"),
+                "hidden_policy": row.get("hidden_policy"),
+                "formula_present": row.get("formula_present"),
+                "formula_cached_value_available": row.get("formula_cached_value_available"),
+            }
+        )
+    elif family == "TEXT":
+        locator = as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator"))
+        packet.update(
+            {
+                "source_corpus_path": locator.get("source_corpus_path"),
+                "chunk_id": locator.get("chunk_id"),
+                "doc_id": locator.get("doc_id"),
+                "source_excerpt_hash": row.get("source_excerpt_hash") or row.get("excerpt_hash"),
+            }
+        )
+    return packet
+
+
+def v3_5_5_next_phase_policy_boundary(
+    *,
+    generated_at: str,
+    critical_repair_required_count: int,
+    recommended_next_phase: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID}_next_phase_policy_boundary_v1",
+        "run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        "source_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "balanced_source_manifest_quality_audit_next_phase_policy_boundary",
+        "v3_5_5_is_source_quality_audit_only": True,
+        "v3_5_5_authorizes_silver_generation": False,
+        "v3_6_0_policy_boundary": (
+            "v3_6_0 must not create questions, expected answers, supporting evidence, "
+            "relevance labels, answerability labels, qrels, or answer/citation silver rows "
+            "without user-owned silver generation policy approval."
+        ),
+        "user_owned_decisions_needed_before_silver_generation": [
+            "question_generation_policy",
+            "expected_answer_policy",
+            "supporting_evidence_policy",
+            "relevance_label_policy",
+            "answerability_label_policy",
+            "split_policy_dev_holdout_contract",
+            "silver_as_anti_overfit_guard_only_or_regression_guard",
+            "whether_generated_silver_questions_require_human_review_before_use",
+        ],
+        "codex_may_continue_implementation_only_source_repair": critical_repair_required_count > 0,
+        "codex_must_not_decide_gold_expected_evidence_or_label_policy": True,
+        "recommended_next_phase": recommended_next_phase,
+        "silver_generation_allowed": False,
+        "silver_jsonl_rows_created": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+    }
+
+
+def run_v3_5_5_balanced_source_manifest_quality_audit(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    rows = read_jsonl(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL)
+    v3_5_4_summary = official.read_json(DEFAULT_V3_5_4_FREEZE_SUMMARY_JSON)
+    v3_5_4_sample_rows = read_jsonl(DEFAULT_V3_5_4_AUDIT_SAMPLE_PACKET_JSONL)
+    pdf_summary = official.read_json(DEFAULT_V3_5_3_POST_PDF_CAPACITY_SUMMARY_JSON)
+    balanced_summary = official.read_json(DEFAULT_V3_5_3_BALANCED_CAPACITY_SUMMARY_JSON)
+    xlsx_summary = official.read_json(DEFAULT_V3_5_2_POST_XLSX_CAPACITY_SUMMARY_JSON)
+    capacity_summary = official.read_json(DEFAULT_V3_5_0_CAPACITY_SUMMARY_JSON)
+    official_index = v3_5_4_official_denominator_overlap_index()
+
+    source_hash_counter = Counter(v3_5_4_source_hash(row) for row in rows if v3_5_4_source_hash(row))
+    repeated_hashes = {source_hash for source_hash, count in source_hash_counter.items() if count > 1}
+    candidate_id_counter = Counter(official.clean(row.get("candidate_id")) for row in rows)
+    locator_counter = Counter(
+        (
+            official.clean(row.get("source_family")).upper(),
+            v3_5_4_source_path_or_identity(
+                row,
+                as_mapping(row.get("source_bound_locator")) or as_mapping(row.get("source_locator")),
+            ),
+            official.clean(row.get("locator_fingerprint")),
+        )
+        for row in rows
+    )
+
+    validation_rows: list[dict[str, Any]] = []
+    validation_by_candidate_id: dict[str, dict[str, Any]] = {}
+    source_row_by_candidate_id: dict[str, dict[str, Any]] = {}
+    for ordinal, row in enumerate(rows, start=1):
+        validation = v3_5_5_manifest_validation_row(
+            row,
+            official_index=official_index,
+            repeated_hashes=repeated_hashes,
+            ordinal=ordinal,
+        )
+        validation_rows.append(validation)
+        validation_by_candidate_id[validation["candidate_id"]] = validation
+        source_row_by_candidate_id[validation["candidate_id"]] = dict(row)
+
+    duplicate_hash_audit_rows: list[dict[str, Any]] = []
+    for source_hash in sorted(repeated_hashes):
+        group_rows = [row for row in rows if v3_5_4_source_hash(row) == source_hash]
+        family_counts = v3_5_count_by_family(group_rows)
+        duplicate_hash_audit_rows.append(
+            {
+                "run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+                "source_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+                "source_hash": source_hash,
+                "group_size": len(group_rows),
+                "source_family_counts": family_counts,
+                "candidate_ids": [official.clean(row.get("candidate_id")) for row in group_rows],
+                "source_identities": [official.clean(row.get("source_identity")) for row in group_rows],
+                "locator_fingerprints": [official.clean(row.get("locator_fingerprint")) for row in group_rows],
+                "source_quality_status": "review_duplicate_or_near_duplicate",
+                "duplicate_hash_retained_reason": "distinct_source_identity_or_locator",
+                "recommended_action": "review_source_diversity_before_policy_generation",
+                "generation_source": False,
+                "promotion_evidence": False,
+                "silver_generation_allowed": False,
+            }
+        )
+
+    repair_queue_rows = [
+        {
+            "run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+            "source_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+            "candidate_id": row["candidate_id"],
+            "source_family": row["source_family"],
+            "source_quality_status": row["source_quality_status"],
+            "issue_flags": row["issue_flags"],
+            "recommended_action": "repair_or_replace_source_manifest_row_before_silver_policy_phase",
+            "generation_source": False,
+            "promotion_evidence": False,
+            "silver_generation_allowed": False,
+        }
+        for row in validation_rows
+        if row["repair_required"]
+    ]
+
+    sample_candidates: dict[str, tuple[dict[str, Any], str]] = {}
+
+    def add_sample(candidate_id: str, reason: str) -> None:
+        if candidate_id in source_row_by_candidate_id and candidate_id not in sample_candidates:
+            sample_candidates[candidate_id] = (source_row_by_candidate_id[candidate_id], reason)
+
+    for sample in v3_5_4_sample_rows:
+        add_sample(official.clean(sample.get("candidate_id")), "v3_5_4_audit_sample_packet")
+    for validation in validation_rows:
+        if "duplicate_or_near_duplicate_review" in validation["issue_flags"]:
+            add_sample(validation["candidate_id"], "normalized_source_hash_repetition")
+    for family in ("TEXT", "PDF", "XLSX"):
+        family_rows = [row for row in validation_rows if row["source_family"] == family]
+        for validation in sorted(family_rows, key=lambda item: item["source_text_or_value_length"])[:25]:
+            add_sample(validation["candidate_id"], f"{family.lower()}_shortest_source_text_or_value")
+    for validation in validation_rows:
+        flags = set(validation["issue_flags"])
+        if validation["source_family"] == "PDF" and (
+            flags
+            & {
+                "pdf_numeric_or_table_context",
+                "pdf_header_footer_or_boilerplate",
+                "pdf_extraction_order_review",
+            }
+        ):
+            add_sample(validation["candidate_id"], "pdf_warning_or_extraction_risk")
+        if validation["source_family"] == "XLSX" and (
+            flags & {"xlsx_formula_or_cached_value_review", "xlsx_hidden_policy_boundary"}
+        ):
+            add_sample(validation["candidate_id"], "xlsx_formula_or_hidden_policy_boundary")
+
+    sample_rows = [
+        v3_5_5_sample_packet_row(
+            row,
+            validation_by_candidate_id[official.clean(row.get("candidate_id"))],
+            reason,
+            ordinal,
+        )
+        for ordinal, (row, reason) in enumerate(sample_candidates.values(), start=1)
+    ]
+
+    status_counts_by_family: dict[str, dict[str, int]] = {
+        family: {status: 0 for status in V3_5_5_SOURCE_QUALITY_STATUSES}
+        for family in ("TEXT", "PDF", "XLSX")
+    }
+    for row in validation_rows:
+        status_counts_by_family[row["source_family"]][row["source_quality_status"]] += 1
+    status_counts_by_family["total"] = {
+        status: sum(status_counts_by_family[family][status] for family in ("TEXT", "PDF", "XLSX"))
+        for status in V3_5_5_SOURCE_QUALITY_STATUSES
+    }
+
+    input_counts = v3_5_count_by_family(rows)
+    sample_counts = v3_5_count_by_family(sample_rows)
+    critical_repair_required_count = sum(1 for row in validation_rows if row["repair_required"])
+    review_only_count = sum(1 for row in validation_rows if row["review_only"])
+    pass_source_quality_count = sum(1 for row in validation_rows if row["source_quality_status"] == "pass_source_quality")
+    targeted_counts = {
+        "duplicate_hash_repetition_rows": sum(source_hash_counter[source_hash] for source_hash in repeated_hashes),
+        "pdf_warning_or_extraction_risk_rows": sum(
+            1
+            for row in validation_rows
+            if row["source_family"] == "PDF"
+            and set(row["issue_flags"])
+            & {
+                "short_pdf_source_text",
+                "pdf_numeric_or_table_context",
+                "pdf_header_footer_or_boilerplate",
+                "pdf_extraction_order_review",
+            }
+        ),
+        "pdf_short_text_rows": sum(1 for row in validation_rows if "short_pdf_source_text" in row["issue_flags"]),
+        "pdf_numeric_or_table_rows": sum(1 for row in validation_rows if "pdf_numeric_or_table_context" in row["issue_flags"]),
+        "xlsx_formula_or_cached_value_rows": sum(
+            1 for row in validation_rows if "xlsx_formula_or_cached_value_review" in row["issue_flags"]
+        ),
+        "xlsx_hidden_policy_boundary_rows": sum(
+            1 for row in validation_rows if "xlsx_hidden_policy_boundary" in row["issue_flags"]
+        ),
+        "text_short_excerpt_rows": sum(1 for row in validation_rows if "short_text_excerpt" in row["issue_flags"]),
+    }
+    recommended_next_phase = (
+        "v3_6_0_silver_generation_policy_packet"
+        if critical_repair_required_count == 0
+        else "v3_5_6_source_manifest_quality_repair"
+    )
+    next_phase_boundary = v3_5_5_next_phase_policy_boundary(
+        generated_at=generated_at,
+        critical_repair_required_count=critical_repair_required_count,
+        recommended_next_phase=recommended_next_phase,
+    )
+
+    summary = {
+        "schema_version": f"{V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID}_quality_summary_v1",
+        "run_id": V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID,
+        "artifact_kind": "balanced_source_manifest_quality_audit_source_only",
+        "event_type": "balanced_source_manifest_quality_audit_v3_5_5",
+        "status": (
+            "SOURCE_MANIFEST_QUALITY_AUDIT_REVIEW_ONLY_SILVER_GENERATION_BLOCKED"
+            if critical_repair_required_count == 0
+            else "SOURCE_MANIFEST_QUALITY_AUDIT_REPAIR_REQUIRED_SILVER_GENERATION_BLOCKED"
+        ),
+        "run_class": "source_quality_audit_only_no_silver_generation",
+        "generated_at": generated_at,
+        "source_run_id": V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID,
+        "input_manifest_path": official.repo_relative(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+        "input_manifest_sha256_before": sha256_file(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL),
+        "input_manifest_row_count": len(rows),
+        "manifest_ready_count": len(rows),
+        "input_counts_by_source_family": input_counts,
+        "counts_by_source_family": input_counts,
+        "target_threshold_met": input_counts["total"] == V3_5_TARGET_ROWS,
+        "preferred_mix_met": input_counts == {"TEXT": 350, "PDF": 325, "XLSX": 325, "total": 1000},
+        "full_manifest_validation_completed": True,
+        "audit_sample_review_completed": True,
+        "audit_sample_counts_by_source_family": sample_counts,
+        "targeted_audit_counts": targeted_counts,
+        "source_quality_status_counts_by_source_family": status_counts_by_family,
+        "critical_repair_required_count": critical_repair_required_count,
+        "review_only_count": review_only_count,
+        "pass_source_quality_count": pass_source_quality_count,
+        "recommended_repair_queue_count": len(repair_queue_rows),
+        "exact_duplicate_candidate_id_count": sum(1 for count in candidate_id_counter.values() if count > 1),
+        "exact_duplicate_locator_count": sum(1 for count in locator_counter.values() if count > 1),
+        "normalized_source_hash_repetition_group_count": len(repeated_hashes),
+        "normalized_source_hash_repetition_row_count": targeted_counts["duplicate_hash_repetition_rows"],
+        "official_denominator_overlap_detected_count": sum(
+            1 for row in validation_rows if row["official_denominator_overlap_detected"]
+        ),
+        "document_version_id_overlap_only_count": sum(
+            1 for row in validation_rows if row["document_version_id_overlap_only"]
+        ),
+        "candidate_artifact_source_leak_detected_count": sum(
+            1 for row in validation_rows if row["candidate_artifact_source_leak_detected"]
+        ),
+        "provenance_or_license_unclear_count": sum(
+            1
+            for row in validation_rows
+            if row["source_quality_status"] == "repair_required_provenance_or_license_unclear"
+        ),
+        "known_remaining_blocker_context": {
+            "v3_5_4_summary": as_mapping(v3_5_4_summary.get("remaining_blockers_recorded_from_v3_5_3_balanced_summary")),
+            "v3_5_3_pdf_blocked_counts": as_mapping(pdf_summary.get("blocked_counts_by_reason")),
+            "v3_5_3_balanced_remaining_blockers": as_mapping(balanced_summary.get("remaining_blockers_by_source_family")),
+            "v3_5_2_xlsx_blocked_counts": as_mapping(xlsx_summary.get("blocked_counts_by_reason")),
+            "v3_5_0_capacity_counts": as_mapping(capacity_summary.get("new_manifest_ready_inventory")),
+        },
+        "mupdf_warning_metadata_rows_identified": 0,
+        "mupdf_warning_metadata_note": "No MuPDF warning metadata fields were present in v3_5_4 or v3_5_3 source-only artifacts.",
+        "source_only_boundary_preserved": all(row["source_only_boundary_preserved"] for row in validation_rows),
+        "official_denominator_rows_reused": False,
+        "official_29_query_ids_copied_or_relabelled": False,
+        "silver_generation_allowed": False,
+        "silver_jsonl_rows_created": False,
+        "questions_created": False,
+        "expected_answers_created": False,
+        "supporting_evidence_created": False,
+        "relevance_labels_created": False,
+        "answerability_labels_created": False,
+        "qrels_created": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "prompt_mutation": False,
+        "retrieval_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "production_mutation": False,
+        "readme_performance_claim_mutation": False,
+        "readme_headline_product_performance_claim": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "promotion_evidence": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "recommended_next_phase": recommended_next_phase,
+        "next_phase_requires_user_policy_decision": recommended_next_phase == "v3_6_0_silver_generation_policy_packet",
+        "implementation_only_repair_requires_user_policy_decision": False,
+        "triage_doc_updated": bool(repair_queue_rows),
+        "artifact_paths": {
+            "quality_summary_json": official.repo_relative(DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON),
+            "manifest_validation_jsonl": official.repo_relative(DEFAULT_V3_5_5_MANIFEST_VALIDATION_JSONL),
+            "audit_sample_review_packet_jsonl": official.repo_relative(
+                DEFAULT_V3_5_5_AUDIT_SAMPLE_REVIEW_PACKET_JSONL
+            ),
+            "duplicate_hash_audit_jsonl": official.repo_relative(DEFAULT_V3_5_5_DUPLICATE_HASH_AUDIT_JSONL),
+            "recommended_repair_queue_jsonl": official.repo_relative(
+                DEFAULT_V3_5_5_RECOMMENDED_REPAIR_QUEUE_JSONL
+            ),
+            "next_phase_policy_boundary_json": official.repo_relative(DEFAULT_V3_5_5_NEXT_PHASE_POLICY_BOUNDARY_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+            "triage_doc": "docs/rag-ingestion-triage.md",
+        },
+        "guardrails": v3_5_source_material_guardrails(),
+        "manifest_validation_rows": validation_rows,
+        "audit_sample_review_packet_rows": sample_rows,
+        "duplicate_hash_audit_rows": duplicate_hash_audit_rows,
+        "recommended_repair_queue_rows": repair_queue_rows,
+        "next_phase_policy_boundary": next_phase_boundary,
+    }
+    return summary
+
+
+def write_v3_5_source_material_phase_artifacts(summary: dict[str, Any]) -> None:
+    run_id = summary["run_id"]
+    if run_id == V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID:
+        manifest_path = DEFAULT_V3_5_1_PILOT_SOURCE_MANIFEST_JSONL
+        audit_path = DEFAULT_V3_5_1_FREEZE_AUDIT_JSONL
+        rationale_path = DEFAULT_V3_5_1_SELECTION_RATIONALE_JSON
+        summary_path = DEFAULT_V3_5_1_FREEZE_SUMMARY_JSON
+        write_jsonl(manifest_path, summary["pilot_source_manifest_rows"])
+        write_jsonl(audit_path, summary["freeze_audit_rows"])
+        write_json(rationale_path, summary["selection_rationale"])
+        row_fields = ("pilot_source_manifest_rows", "freeze_audit_rows", "selection_rationale")
+    elif run_id == V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID:
+        manifest_path = DEFAULT_V3_5_2_XLSX_MANIFEST_READY_CANDIDATES_JSONL
+        audit_path = DEFAULT_V3_5_2_XLSX_BLOCKED_OR_CONVERTIBLE_CANDIDATES_JSONL
+        rationale_path = DEFAULT_V3_5_2_XLSX_SOURCE_COLLECTION_MANIFEST_JSON
+        summary_path = DEFAULT_V3_5_2_POST_XLSX_CAPACITY_SUMMARY_JSON
+        write_jsonl(manifest_path, summary["xlsx_manifest_ready_candidate_rows"])
+        write_jsonl(audit_path, summary["xlsx_blocked_or_convertible_candidate_rows"])
+        write_json(rationale_path, summary["xlsx_source_collection_manifest"])
+        row_fields = (
+            "xlsx_manifest_ready_candidate_rows",
+            "xlsx_blocked_or_convertible_candidate_rows",
+            "xlsx_source_collection_manifest",
+        )
+    elif run_id == V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID:
+        manifest_path = DEFAULT_V3_5_3_PDF_MANIFEST_READY_CANDIDATES_JSONL
+        audit_path = DEFAULT_V3_5_3_PDF_BLOCKED_OR_CONVERTIBLE_CANDIDATES_JSONL
+        rationale_path = DEFAULT_V3_5_3_PDF_SOURCE_COLLECTION_MANIFEST_JSON
+        summary_path = DEFAULT_V3_5_3_POST_PDF_CAPACITY_SUMMARY_JSON
+        balanced_path = DEFAULT_V3_5_3_BALANCED_CAPACITY_SUMMARY_JSON
+        write_jsonl(manifest_path, summary["pdf_manifest_ready_candidate_rows"])
+        write_jsonl(audit_path, summary["pdf_blocked_or_convertible_candidate_rows"])
+        write_json(rationale_path, summary["pdf_source_collection_manifest"])
+        write_json(balanced_path, summary["balanced_capacity_summary"])
+        row_fields = (
+            "pdf_manifest_ready_candidate_rows",
+            "pdf_blocked_or_convertible_candidate_rows",
+            "pdf_source_collection_manifest",
+            "balanced_capacity_summary",
+        )
+    elif run_id == V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID:
+        manifest_path = DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL
+        audit_path = DEFAULT_V3_5_4_FREEZE_AUDIT_JSONL
+        rationale_path = DEFAULT_V3_5_4_NEXT_PHASE_POLICY_BOUNDARY_JSON
+        summary_path = DEFAULT_V3_5_4_FREEZE_SUMMARY_JSON
+        sample_path = DEFAULT_V3_5_4_AUDIT_SAMPLE_PACKET_JSONL
+        write_jsonl(manifest_path, summary["balanced_source_manifest_rows"])
+        write_jsonl(audit_path, summary["freeze_audit_rows"])
+        write_jsonl(sample_path, summary["audit_sample_packet_rows"])
+        write_json(rationale_path, summary["next_phase_policy_boundary"])
+        row_fields = (
+            "balanced_source_manifest_rows",
+            "freeze_audit_rows",
+            "audit_sample_packet_rows",
+            "next_phase_policy_boundary",
+        )
+    elif run_id == V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID:
+        manifest_path = DEFAULT_V3_5_5_MANIFEST_VALIDATION_JSONL
+        audit_path = DEFAULT_V3_5_5_DUPLICATE_HASH_AUDIT_JSONL
+        rationale_path = DEFAULT_V3_5_5_NEXT_PHASE_POLICY_BOUNDARY_JSON
+        summary_path = DEFAULT_V3_5_5_QUALITY_SUMMARY_JSON
+        sample_path = DEFAULT_V3_5_5_AUDIT_SAMPLE_REVIEW_PACKET_JSONL
+        repair_queue_path = DEFAULT_V3_5_5_RECOMMENDED_REPAIR_QUEUE_JSONL
+        write_jsonl(manifest_path, summary["manifest_validation_rows"])
+        write_jsonl(audit_path, summary["duplicate_hash_audit_rows"])
+        write_jsonl(sample_path, summary["audit_sample_review_packet_rows"])
+        write_jsonl(repair_queue_path, summary["recommended_repair_queue_rows"])
+        write_json(rationale_path, summary["next_phase_policy_boundary"])
+        summary["input_manifest_sha256_after"] = sha256_file(DEFAULT_V3_5_4_BALANCED_SOURCE_MANIFEST_JSONL)
+        row_fields = (
+            "manifest_validation_rows",
+            "audit_sample_review_packet_rows",
+            "duplicate_hash_audit_rows",
+            "recommended_repair_queue_rows",
+            "next_phase_policy_boundary",
+        )
+    else:  # pragma: no cover - guarded by caller.
+        raise ValueError(f"unsupported v3_5 source material run: {run_id}")
+
+    summary["artifact_sha256"] = {
+        "manifest_jsonl_sha256": sha256_file(manifest_path),
+        "audit_jsonl_sha256": sha256_file(audit_path),
+        "plan_or_rationale_json_sha256": sha256_file(rationale_path),
+    }
+    if run_id == V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID:
+        summary["artifact_sha256"]["balanced_capacity_summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_5_3_BALANCED_CAPACITY_SUMMARY_JSON
+        )
+    if run_id == V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID:
+        summary["artifact_sha256"]["audit_sample_packet_jsonl_sha256"] = sha256_file(
+            DEFAULT_V3_5_4_AUDIT_SAMPLE_PACKET_JSONL
+        )
+    if run_id == V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID:
+        summary["artifact_sha256"]["audit_sample_review_packet_jsonl_sha256"] = sha256_file(
+            DEFAULT_V3_5_5_AUDIT_SAMPLE_REVIEW_PACKET_JSONL
+        )
+        summary["artifact_sha256"]["recommended_repair_queue_jsonl_sha256"] = sha256_file(
+            DEFAULT_V3_5_5_RECOMMENDED_REPAIR_QUEUE_JSONL
+        )
+    summary_payload = dict(summary)
+    for field in row_fields:
+        summary_payload.pop(field, None)
+    write_json(summary_path, summary_payload)
+    if run_id == V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID and summary.get("triage_doc_updated"):
+        append_v3_5_5_triage_repair_queue_entry(summary_payload)
+
+
+def append_v3_5_source_material_phase_event(path: Path, summary: Mapping[str, Any]) -> None:
+    event = dict(summary)
+    for field in (
+        "pilot_source_manifest_rows",
+        "freeze_audit_rows",
+        "selection_rationale",
+        "xlsx_source_value_manifest_rows",
+        "xlsx_repair_audit_rows",
+        "xlsx_acquisition_plan",
+        "xlsx_manifest_ready_candidate_rows",
+        "xlsx_blocked_or_convertible_candidate_rows",
+        "xlsx_source_collection_manifest",
+        "pdf_source_text_manifest_rows",
+        "pdf_repair_audit_rows",
+        "pdf_acquisition_plan",
+        "pdf_manifest_ready_candidate_rows",
+        "pdf_blocked_or_convertible_candidate_rows",
+        "pdf_source_collection_manifest",
+        "balanced_capacity_summary",
+        "balanced_source_manifest_rows",
+        "freeze_audit_rows",
+        "audit_sample_packet_rows",
+        "next_phase_policy_boundary",
+        "manifest_validation_rows",
+        "audit_sample_review_packet_rows",
+        "duplicate_hash_audit_rows",
+        "recommended_repair_queue_rows",
+    ):
+        event.pop(field, None)
+    append_unique_status_ledger_event(path, event)
+
+
+def v3_5_progress_entry(summary: Mapping[str, Any]) -> str:
+    run_id = official.clean(summary.get("run_id"))
+    if run_id == V3_5_1_PILOT_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID:
+        counts = as_mapping(summary.get("frozen_counts_by_source_family"))
+        exclusions = as_mapping(summary.get("excluded_during_freeze_counts_by_reason"))
+        return (
+            f"- v3_5_1 pilot source manifest freeze (`{run_id}`) freezes "
+            f"TEXT={counts.get('TEXT', 0)}, PDF={counts.get('PDF', 0)}, "
+            f"XLSX={counts.get('XLSX', 0)}, total={counts.get('total', 0)} source-only rows. "
+            f"Audit exclusions={dict(exclusions) or {}}. The pilot threshold is met, "
+            "balanced pilot threshold is not met, target_threshold_met=false, and silver generation remains blocked."
+        )
+    if run_id == V3_5_2_XLSX_SOURCE_VALUE_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID:
+        combined = as_mapping(summary.get("combined_source_family_counts_after_phase"))
+        gap = as_mapping(summary.get("remaining_preferred_gap_by_source_family"))
+        return (
+            f"- v3_5_2 XLSX source-value manifest repair (`{run_id}`) reconstructs "
+            f"{summary.get('repaired_from_locator_complete_candidates_count', 0)} locator-complete XLSX rows from actual workbooks "
+            f"and freezes {summary.get('xlsx_repaired_count', 0)} manifest-ready overlay rows toward the XLSX target; "
+            f"newly collected workbook/source count=0, acquisition_performed={str(summary.get('acquisition_performed')).lower()}, "
+            f"acquisition_reason=`{summary.get('acquisition_reason')}`. Combined source counts are "
+            f"TEXT={combined.get('TEXT', 0)}, PDF={combined.get('PDF', 0)}, XLSX={combined.get('XLSX', 0)}, "
+            f"total={combined.get('total', 0)}; remaining PDF gap={gap.get('PDF', 0)} and XLSX gap={gap.get('XLSX', 0)}. "
+            "No query or expected_answer_text was used as source material, and silver generation remains blocked."
+        )
+    if run_id == V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID:
+        counts = as_mapping(summary.get("frozen_counts_by_source_family"))
+        sample_counts = as_mapping(summary.get("audit_sample_packet_counts_by_source_family"))
+        exclusions = as_mapping(summary.get("excluded_during_freeze_counts_by_reason"))
+        return (
+            f"- v3_5_4 balanced source-only manifest freeze (`{run_id}`) freezes "
+            f"TEXT={counts.get('TEXT', 0)}, PDF={counts.get('PDF', 0)}, XLSX={counts.get('XLSX', 0)}, "
+            f"total={counts.get('total', 0)} source-only rows from v3_5_1/v3_5_2/v3_5_3. "
+            f"Audit exclusions={dict(exclusions) or {}}, backfill_performed={str(summary.get('backfill_performed')).lower()}, "
+            f"sample packet counts are TEXT={sample_counts.get('TEXT', 0)}, PDF={sample_counts.get('PDF', 0)}, "
+            f"XLSX={sample_counts.get('XLSX', 0)}. preferred_mix_met={str(summary.get('preferred_mix_met')).lower()}, "
+            f"target_threshold_met={str(summary.get('target_threshold_met')).lower()}, silver_generation_allowed=false; "
+            "next phase is v3_5_5_balanced_source_manifest_quality_audit."
+        )
+    if run_id == V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID:
+        counts = as_mapping(summary.get("input_counts_by_source_family"))
+        sample_counts = as_mapping(summary.get("audit_sample_counts_by_source_family"))
+        targeted = as_mapping(summary.get("targeted_audit_counts"))
+        return (
+            f"- v3_5_5 balanced source-manifest quality audit (`{run_id}`) validates "
+            f"TEXT={counts.get('TEXT', 0)}, PDF={counts.get('PDF', 0)}, XLSX={counts.get('XLSX', 0)}, "
+            f"total={counts.get('total', 0)} frozen v3_5_4 source-only rows without mutating the freeze. "
+            f"Audit sample counts are TEXT={sample_counts.get('TEXT', 0)}, PDF={sample_counts.get('PDF', 0)}, "
+            f"XLSX={sample_counts.get('XLSX', 0)}; duplicate hash repetitions are "
+            f"{summary.get('normalized_source_hash_repetition_group_count', 0)} groups/"
+            f"{summary.get('normalized_source_hash_repetition_row_count', 0)} rows. "
+            f"Targeted review counts: PDF short={targeted.get('pdf_short_text_rows', 0)}, "
+            f"PDF numeric/table={targeted.get('pdf_numeric_or_table_rows', 0)}, "
+            f"XLSX hidden-boundary={targeted.get('xlsx_hidden_policy_boundary_rows', 0)}, "
+            f"TEXT short={targeted.get('text_short_excerpt_rows', 0)}. "
+            f"critical_repair_required_count={summary.get('critical_repair_required_count', 0)}, "
+            f"recommended_repair_queue_count={summary.get('recommended_repair_queue_count', 0)}, "
+            f"silver_generation_allowed=false; recommended_next_phase=`{summary.get('recommended_next_phase')}`."
+        )
+    combined = as_mapping(summary.get("combined_source_family_counts_after_phase"))
+    gap = as_mapping(summary.get("remaining_preferred_gap_by_source_family"))
+    return (
+        f"- v3_5_3 PDF page/bbox source-text manifest repair (`{run_id}`) extracts "
+        f"{summary.get('pdf_repaired_count', 0)} PDF source rows from approved existing PDF source documents; "
+        f"newly collected source count=0, acquisition_performed={str(summary.get('acquisition_performed')).lower()}, "
+        f"acquisition_reason=`{summary.get('acquisition_reason')}`. Final source counts are "
+        f"TEXT={combined.get('TEXT', 0)}, PDF={combined.get('PDF', 0)}, XLSX={combined.get('XLSX', 0)}, "
+        f"total={combined.get('total', 0)}; remaining PDF gap={gap.get('PDF', 0)} and XLSX gap={gap.get('XLSX', 0)}. "
+        f"balanced_pilot_threshold_met={str(summary.get('balanced_pilot_threshold_met')).lower()}, "
+        f"target_threshold_met={str(summary.get('target_threshold_met')).lower()}, silver_generation_allowed=false."
+    )
+
+
+def append_v3_5_progress_entry(summary: Mapping[str, Any]) -> None:
+    path = REPO_ROOT / "docs" / "rag-ingestion-progress.md"
+    run_id = official.clean(summary.get("run_id"))
+    marker_start = f"<!-- {run_id}:progress-entry:start -->"
+    marker_end = f"<!-- {run_id}:progress-entry:end -->"
+    entry = f"{marker_start}\n{v3_5_progress_entry(summary)}\n{marker_end}\n"
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(
+        rf"\n?{re.escape(marker_start)}.*?{re.escape(marker_end)}\n?",
+        "\n",
+        text,
+        flags=re.DOTALL,
+    )
+    if run_id == V3_5_3_PDF_PAGE_BBOX_SOURCE_TEXT_MANIFEST_REPAIR_AND_ACQUISITION_RUN_ID:
+        text = re.sub(
+            r"Overall status: `[^`]+`;",
+            "Overall status: `pdf_page_bbox_source_text_manifest_repair_v3_5_3_target_ready_source_only`;",
+            text,
+            count=1,
+        )
+    if run_id == V3_5_4_BALANCED_SILVER_SOURCE_MANIFEST_FREEZE_RUN_ID:
+        text = re.sub(
+            r"Overall status: `[^`]+`;",
+            "Overall status: `balanced_source_manifest_freeze_v3_5_4_source_only_target_ready`;",
+            text,
+            count=1,
+        )
+    if run_id == V3_5_5_BALANCED_SOURCE_MANIFEST_QUALITY_AUDIT_RUN_ID:
+        text = re.sub(
+            r"Overall status: `[^`]+`;",
+            "Overall status: `balanced_source_manifest_quality_audit_v3_5_5_source_only_review_ready`;",
+            text,
+            count=1,
+        )
+    insertion_marker = "\n- Official first-run baseline"
+    if insertion_marker in text:
+        text = text.replace(insertion_marker, f"\n{entry}{insertion_marker}", 1)
+    else:
+        text = text.rstrip() + "\n\n" + entry
+    path.write_text(text, encoding="utf-8")
+
+
+def append_v3_5_5_triage_repair_queue_entry(summary: Mapping[str, Any]) -> None:
+    path = REPO_ROOT / "docs" / "rag-ingestion-triage.md"
+    run_id = official.clean(summary.get("run_id"))
+    marker_start = f"<!-- {run_id}:source-quality-repair-queue:start -->"
+    marker_end = f"<!-- {run_id}:source-quality-repair-queue:end -->"
+    repair_count = int(summary.get("recommended_repair_queue_count") or 0)
+    if repair_count <= 0:
+        return
+    entry = (
+        f"{marker_start}\n"
+        "### v3_5_5 Source-Quality Repair Queue\n\n"
+        f"- run_id: `{run_id}`\n"
+        f"- repair queue rows: {repair_count}\n"
+        f"- queue artifact: `{as_mapping(summary.get('artifact_paths')).get('recommended_repair_queue_jsonl')}`\n"
+        "- Scope: source-quality repair only; this is separate from answer/citation relevance, answerability, gold, expected-answer, evidence, and qrels decisions.\n"
+        f"{marker_end}\n"
+    )
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(
+        rf"\n?{re.escape(marker_start)}.*?{re.escape(marker_end)}\n?",
+        "\n",
+        text,
+        flags=re.DOTALL,
+    )
+    path.write_text(text.rstrip() + "\n\n" + entry, encoding="utf-8")
 
 
 V3_4_1_QRELS_CANDIDATE_CSV_FIELDNAMES = [

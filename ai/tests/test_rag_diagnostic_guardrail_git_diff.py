@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import json
+import hashlib
 from pathlib import Path
 
 
@@ -61,6 +62,10 @@ V3_2_6_SUMMARY = (
     / "official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_summary.json"
 )
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def test_residual_audit_does_not_mutate_protected_artifacts():
@@ -417,3 +422,380 @@ def test_v3_4_4_readme_artifacts_do_not_mutate_protected_surfaces_or_silver_rows
     assert event["guardrails"]["graded_ndcg"] is False
     assert event["guardrails"]["threshold_tuning"] is False
     assert event["guardrails"]["winner_selection"] is False
+
+
+def test_v3_5_0_capacity_expansion_does_not_mutate_protected_surfaces_or_silver_rows():
+    run_id = (
+        "official_answer_citation_agentic_loop_run_v3_5_0_"
+        "strict_non_official_source_bound_capacity_expansion"
+    )
+    summary_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / f"{run_id}_capacity_summary.json"
+    event = next(
+        item
+        for item in reversed([json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines()])
+        if item.get("event_type") == "strict_non_official_source_bound_capacity_expansion_v3_5_0"
+        and item.get("run_id") == run_id
+    )
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "README.md",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+    assert event["run_class"] == "source_capacity_inventory_only_no_silver_generation"
+    assert event["triage_doc_updated"] is False
+    assert event["pilot_threshold_met"] is True
+    assert event["target_threshold_met"] is False
+    assert event["silver_generation_allowed"] is False
+    assert event["silver_jsonl_rows_created"] is False
+    assert event["candidate_artifacts_used_as_generation_source"] is False
+    assert summary["silver_generation_allowed"] is False
+    assert summary["silver_jsonl_rows_created"] is False
+    assert summary["official_denominator_rows_reused"] is False
+    assert summary["official_29_query_ids_copied_or_relabelled"] is False
+    assert summary["candidate_artifacts_used_as_generation_source"] is False
+    for key in (
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "relevance_label_mutation",
+        "answerability_label_mutation",
+        "answer_citation_denominator_mutation",
+        "official_denominator_query_id_set_mutation",
+        "prompt_mutation",
+        "retrieval_mutation",
+        "scorer_mutation",
+        "renderer_mutation",
+        "index_or_export_mutation",
+        "production_mutation",
+        "silver_mutation",
+        "silver_generation_from_official_denominator_rows",
+        "candidate_artifacts_as_generation_source",
+        "lane_a_b_c_collapsed_score",
+        "graded_ndcg",
+        "threshold_tuning",
+        "winner_selection",
+        "promotion_evidence",
+        "readme_headline_product_performance_claim",
+        "representative_product_performance_claim",
+    ):
+        assert event["guardrails"][key] is False, key
+
+
+def test_v3_5_1_to_v3_5_3_source_material_phases_do_not_mutate_protected_surfaces_or_silver_rows():
+    run_ids = {
+        "official_answer_citation_agentic_loop_run_v3_5_1_pilot_silver_source_manifest_freeze": (
+            "pilot_silver_source_manifest_freeze_v3_5_1",
+            ROOT
+            / "ai"
+            / "eval"
+            / "reports"
+            / "rag-ingestion"
+            / "official_answer_citation_agentic_loop_run_v3_5_1_pilot_silver_source_manifest_freeze_freeze_summary.json",
+        ),
+        (
+            "official_answer_citation_agentic_loop_run_v3_5_2_"
+            "xlsx_source_value_manifest_repair_and_acquisition"
+        ): (
+            "xlsx_source_value_manifest_repair_and_acquisition_v3_5_2",
+            ROOT
+            / "ai"
+            / "eval"
+            / "reports"
+            / "rag-ingestion"
+            / (
+                "official_answer_citation_agentic_loop_run_v3_5_2_"
+                "xlsx_source_value_manifest_repair_and_acquisition_post_xlsx_capacity_summary.json"
+            ),
+        ),
+        (
+            "official_answer_citation_agentic_loop_run_v3_5_3_"
+            "pdf_page_bbox_source_text_manifest_repair_and_acquisition"
+        ): (
+            "pdf_page_bbox_source_text_manifest_repair_and_acquisition_v3_5_3",
+            ROOT
+            / "ai"
+            / "eval"
+            / "reports"
+            / "rag-ingestion"
+            / (
+                "official_answer_citation_agentic_loop_run_v3_5_3_"
+                "pdf_page_bbox_source_text_manifest_repair_and_acquisition_post_pdf_capacity_summary.json"
+            ),
+        ),
+    }
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "README.md",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    for run_id, (event_type, summary_path) in run_ids.items():
+        event = next(
+            item
+            for item in reversed(events)
+            if item.get("event_type") == event_type and item.get("run_id") == run_id
+        )
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        assert event["triage_doc_updated"] is False
+        assert event["silver_generation_allowed"] is False
+        assert event["silver_jsonl_rows_created"] is False
+        assert event["candidate_artifacts_used_as_generation_source"] is False
+        assert summary["silver_generation_allowed"] is False
+        assert summary["silver_jsonl_rows_created"] is False
+        assert summary["official_denominator_rows_reused"] is False
+        assert summary["official_29_query_ids_copied_or_relabelled"] is False
+        assert summary["candidate_artifacts_used_as_generation_source"] is False
+        for key in (
+            "gold_mutation",
+            "expected_answer_mutation",
+            "supporting_evidence_mutation",
+            "relevance_label_mutation",
+            "answerability_label_mutation",
+            "answer_citation_denominator_mutation",
+            "official_denominator_query_id_set_mutation",
+            "prompt_mutation",
+            "retrieval_mutation",
+            "scorer_mutation",
+            "renderer_mutation",
+            "index_or_export_mutation",
+            "production_mutation",
+            "silver_mutation",
+            "silver_generation_from_official_denominator_rows",
+            "candidate_artifacts_as_generation_source",
+            "lane_a_b_c_collapsed_score",
+            "graded_ndcg",
+            "threshold_tuning",
+            "winner_selection",
+            "promotion_evidence",
+            "readme_headline_product_performance_claim",
+            "representative_product_performance_claim",
+        ):
+            assert event["guardrails"][key] is False, key
+
+
+def test_v3_5_4_balanced_freeze_does_not_mutate_protected_surfaces_or_silver_rows():
+    run_id = "official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze"
+    summary_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / f"{run_id}_freeze_summary.json"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "README.md",
+        "docs/rag-ingestion-triage.md",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    event = next(
+        item
+        for item in reversed(events)
+        if item.get("event_type") == "balanced_silver_source_manifest_freeze_v3_5_4"
+        and item.get("run_id") == run_id
+    )
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert event["triage_doc_updated"] is False
+    assert event["silver_generation_allowed"] is False
+    assert event["silver_jsonl_rows_created"] is False
+    assert event["candidate_artifacts_used_as_generation_source"] is False
+    assert summary["silver_generation_allowed"] is False
+    assert summary["silver_jsonl_rows_created"] is False
+    assert summary["official_denominator_rows_reused"] is False
+    assert summary["official_29_query_ids_copied_or_relabelled"] is False
+    assert summary["candidate_artifacts_used_as_generation_source"] is False
+    for key in (
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "relevance_label_mutation",
+        "answerability_label_mutation",
+        "answer_citation_denominator_mutation",
+        "official_denominator_query_id_set_mutation",
+        "prompt_mutation",
+        "retrieval_mutation",
+        "scorer_mutation",
+        "renderer_mutation",
+        "index_or_export_mutation",
+        "production_mutation",
+        "silver_mutation",
+        "silver_generation_from_official_denominator_rows",
+        "candidate_artifacts_as_generation_source",
+        "lane_a_b_c_collapsed_score",
+        "graded_ndcg",
+        "threshold_tuning",
+        "winner_selection",
+        "promotion_evidence",
+        "readme_headline_product_performance_claim",
+        "representative_product_performance_claim",
+    ):
+        assert event["guardrails"][key] is False, key
+
+
+def test_v3_5_5_quality_audit_does_not_mutate_v3_5_4_protected_surfaces_or_silver_rows():
+    run_id = "official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit"
+    summary_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / f"{run_id}_quality_summary.json"
+    )
+    v3_5_4_manifest = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / "official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "README.md",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_audit.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_audit_sample_packet.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_next_phase_policy_boundary.json",
+    )
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    if summary["recommended_repair_queue_count"] == 0:
+        protected_paths = (*protected_paths, "docs/rag-ingestion-triage.md")
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    assert summary["input_manifest_sha256_before"] == sha256_file(v3_5_4_manifest)
+    assert summary["input_manifest_sha256_after"] == summary["input_manifest_sha256_before"]
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    event = next(
+        item
+        for item in reversed(events)
+        if item.get("event_type") == "balanced_source_manifest_quality_audit_v3_5_5"
+        and item.get("run_id") == run_id
+    )
+    for payload in (summary, event):
+        assert payload["silver_generation_allowed"] is False
+        assert payload["silver_jsonl_rows_created"] is False
+        assert payload["questions_created"] is False
+        assert payload["expected_answers_created"] is False
+        assert payload["supporting_evidence_created"] is False
+        assert payload["relevance_labels_created"] is False
+        assert payload["answerability_labels_created"] is False
+        assert payload["qrels_created"] is False
+        assert payload["candidate_artifacts_used_as_generation_source"] is False
+    for key in (
+        "gold_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "answerability_label_mutation",
+        "official_denominator_query_id_set_mutation",
+        "prompt_mutation",
+        "retrieval_mutation",
+        "renderer_mutation",
+        "index_or_export_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "promotion_evidence",
+        "readme_headline_product_performance_claim",
+    ):
+        assert event["guardrails"][key] is False, key

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 
@@ -7,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
+STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
 
 
 def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unavailable():
@@ -643,3 +645,213 @@ def test_progress_doc_records_v3_4_4_readme_artifacts_and_silver_boundary_withou
     assert "no silver rows were generated" in current_flat
     assert run_id not in triage
     assert "v3_4_4 README retrieval-smoke/silver-readiness artifacts" not in triage
+
+
+def test_progress_doc_records_v3_5_0_capacity_expansion_without_triage_change():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+
+    run_id = (
+        "official_answer_citation_agentic_loop_run_v3_5_0_"
+        "strict_non_official_source_bound_capacity_expansion"
+    )
+
+    assert "strict_non_official_source_bound_capacity_expansion_v3_5_0_pilot_ready" in current_text
+    assert "v3_5_0 strict non-official source-bound capacity expansion" in current_text
+    assert run_id in current_text
+    assert "previous strict inventory remains TEXT=0, PDF=3, XLSX=4, total=7" in current_flat
+    assert "new manifest-ready source candidates are TEXT=350, PDF=3, XLSX=4, total=357" in current_flat
+    assert "pilot threshold is met" in current_flat
+    assert "1000-row target is not met" in current_flat
+    assert "silver generation remains blocked" in current_flat
+    assert "recommended next phase is `v3_5_1_pilot_silver_source_manifest_freeze`" in current_flat
+    assert "No questions, expected answers, supporting evidence, labels, qrels, silver JSONL rows" in current_flat
+    assert run_id not in triage
+    assert "v3_5_0 strict non-official source-bound capacity expansion" not in triage
+
+
+def test_progress_doc_records_v3_5_1_to_v3_5_3_source_material_phases_without_triage_change():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+
+    run_ids = (
+        "official_answer_citation_agentic_loop_run_v3_5_1_pilot_silver_source_manifest_freeze",
+        (
+            "official_answer_citation_agentic_loop_run_v3_5_2_"
+            "xlsx_source_value_manifest_repair_and_acquisition"
+        ),
+        (
+            "official_answer_citation_agentic_loop_run_v3_5_3_"
+            "pdf_page_bbox_source_text_manifest_repair_and_acquisition"
+        ),
+    )
+
+    assert "v3_5_1 pilot source manifest freeze" in current_text
+    assert "freezes TEXT=350, PDF=3, XLSX=4, total=357 source-only rows" in current_flat
+    assert "balanced pilot threshold is not met" in current_flat
+    assert "target_threshold_met=false" in current_flat
+    assert "v3_5_2 XLSX source-value manifest repair" in current_text
+    assert "locator-complete XLSX rows from actual workbooks" in current_flat
+    assert "freezes 321 manifest-ready overlay rows toward the XLSX target" in current_flat
+    assert "Combined source counts are TEXT=350, PDF=3, XLSX=325, total=678" in current_flat
+    assert "No query or expected_answer_text was used as source material" in current_flat
+    assert "v3_5_3 PDF page/bbox source-text manifest repair" in current_text
+    assert "extracts 322 PDF source rows from approved existing PDF source documents" in current_flat
+    assert "Final source counts are TEXT=350, PDF=325, XLSX=325, total=1000" in current_flat
+    assert "balanced_pilot_threshold_met=true" in current_flat
+    assert "target_threshold_met=true" in current_flat
+    assert "silver_generation_allowed=false" in current_flat
+    for run_id in run_ids:
+        assert run_id in current_text
+        assert run_id not in triage
+
+
+def test_status_jsonl_records_compact_v3_5_1_to_v3_5_3_source_material_events():
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    expected = {
+        "official_answer_citation_agentic_loop_run_v3_5_1_pilot_silver_source_manifest_freeze": (
+            "pilot_silver_source_manifest_freeze_v3_5_1",
+            "source_manifest_freeze_only_no_silver_generation",
+        ),
+        (
+            "official_answer_citation_agentic_loop_run_v3_5_2_"
+            "xlsx_source_value_manifest_repair_and_acquisition"
+        ): (
+            "xlsx_source_value_manifest_repair_and_acquisition_v3_5_2",
+            "source_value_manifest_repair_only_no_silver_generation",
+        ),
+        (
+            "official_answer_citation_agentic_loop_run_v3_5_3_"
+            "pdf_page_bbox_source_text_manifest_repair_and_acquisition"
+        ): (
+            "pdf_page_bbox_source_text_manifest_repair_and_acquisition_v3_5_3",
+            "source_text_manifest_repair_only_no_silver_generation",
+        ),
+    }
+
+    for run_id, (event_type, run_class) in expected.items():
+        matches = [
+            event
+            for event in events
+            if event.get("run_id") == run_id and event.get("event_type") == event_type
+        ]
+        assert len(matches) == 1
+        event = matches[0]
+        assert event["run_class"] == run_class
+        assert event["triage_doc_updated"] is False
+        assert event["silver_generation_allowed"] is False
+        assert event["silver_jsonl_rows_created"] is False
+        assert event["candidate_artifacts_used_as_generation_source"] is False
+        assert "pilot_source_manifest_rows" not in event
+        assert "xlsx_source_value_manifest_rows" not in event
+        assert "pdf_source_text_manifest_rows" not in event
+        assert "xlsx_manifest_ready_candidate_rows" not in event
+        assert "pdf_manifest_ready_candidate_rows" not in event
+        assert "balanced_capacity_summary" not in event
+
+
+def test_progress_doc_records_v3_5_4_balanced_source_manifest_freeze_without_triage_change():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    run_id = "official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze"
+
+    assert "v3_5_4 balanced source-only manifest freeze" in current_text
+    assert run_id in current_text
+    assert "TEXT=350, PDF=325, XLSX=325, total=1000 source-only rows" in current_flat
+    assert "sample packet counts are TEXT=25, PDF=25, XLSX=25" in current_flat
+    assert "preferred_mix_met=true" in current_flat
+    assert "target_threshold_met=true" in current_flat
+    assert "silver_generation_allowed=false" in current_flat
+    assert "v3_5_5_balanced_source_manifest_quality_audit" in current_flat
+    assert run_id not in triage
+
+
+def test_status_jsonl_records_compact_v3_5_4_source_manifest_freeze_event():
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "balanced_silver_source_manifest_freeze_v3_5_4"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "balanced_source_manifest_freeze_only_no_silver_generation"
+    assert event["triage_doc_updated"] is False
+    assert event["frozen_counts_by_source_family"] == {"TEXT": 350, "PDF": 325, "XLSX": 325, "total": 1000}
+    assert event["audit_sample_packet_counts_by_source_family"] == {
+        "TEXT": 25,
+        "PDF": 25,
+        "XLSX": 25,
+        "total": 75,
+    }
+    assert event["silver_generation_allowed"] is False
+    assert event["silver_jsonl_rows_created"] is False
+    assert event["candidate_artifacts_used_as_generation_source"] is False
+    assert "balanced_source_manifest_jsonl" in event["artifact_paths"]
+    assert "freeze_summary_json" in event["artifact_paths"]
+    assert "audit_sample_packet_jsonl" in event["artifact_paths"]
+    assert "balanced_source_manifest_rows" not in event
+    assert "freeze_audit_rows" not in event
+    assert "audit_sample_packet_rows" not in event
+    assert "next_phase_policy_boundary" not in event
+
+
+def test_progress_status_and_triage_gate_record_v3_5_5_quality_audit():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "balanced_source_manifest_quality_audit_v3_5_5"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "source_quality_audit_only_no_silver_generation"
+    assert event["input_counts_by_source_family"] == {"TEXT": 350, "PDF": 325, "XLSX": 325, "total": 1000}
+    assert event["normalized_source_hash_repetition_group_count"] == 17
+    assert event["normalized_source_hash_repetition_row_count"] == 57
+    assert event["recommended_repair_queue_count"] == event["critical_repair_required_count"]
+    assert event["silver_generation_allowed"] is False
+    assert "quality_summary_json" in event["artifact_paths"]
+    assert "manifest_validation_jsonl" in event["artifact_paths"]
+    assert "audit_sample_review_packet_jsonl" in event["artifact_paths"]
+    assert "duplicate_hash_audit_jsonl" in event["artifact_paths"]
+    assert "recommended_repair_queue_jsonl" in event["artifact_paths"]
+    for large_field in (
+        "balanced_source_manifest_rows",
+        "manifest_validation_rows",
+        "duplicate_hash_audit_rows",
+        "audit_sample_review_packet_rows",
+        "recommended_repair_queue_rows",
+        "next_phase_policy_boundary",
+    ):
+        assert large_field not in event
+
+    assert "v3_5_5 balanced source-manifest quality audit" in current_text
+    assert run_id in current_text
+    assert "TEXT=350, PDF=325, XLSX=325, total=1000 frozen v3_5_4 source-only rows" in current_flat
+    assert "duplicate hash repetitions are 17 groups/57 rows" in current_flat
+    assert "critical_repair_required_count=" in current_flat
+    assert "recommended_repair_queue_count=" in current_flat
+    assert "silver_generation_allowed=false" in current_flat
+
+    if event["recommended_repair_queue_count"] == 0:
+        assert run_id not in triage
+    else:
+        assert run_id in triage
+        assert "Source-Quality Repair Queue" in triage
