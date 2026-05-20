@@ -1,164 +1,134 @@
 # Async AI Document Pipeline with Domain RAG
 
-Spring Boot `core-api`와 Python `ai` worker를 분리한 비동기 문서 AI 처리 파이프라인입니다. 현재 이 저장소의 핵심은 하나의 통합 RAG 점수가 아니라, TEXT/XLSX/PDF를 분리한 3트랙 RAG 아키텍처와 diagnostic-only metric gate입니다.
+문서가 들어오면 처리 상태를 잃지 않고, OCR/파싱/검색/RAG 결과를 근거와 함께 돌려주는 비동기 AI 문서 처리 파이프라인입니다.
 
-PostgreSQL은 job, artifact, catalog, SearchUnit 상태의 durable truth입니다. Redis는 worker를 깨우는 dispatch signal로만 사용하며, worker는 실행 전 `core-api` claim을 통해 작업 소유권을 확보합니다.
+이 프로젝트의 핵심은 "답변을 생성했다"에서 끝내지 않는 것입니다. 텍스트, 스프레드시트, PDF마다 근거가 되는 구조가 다르기 때문에, 각 문서 타입에 맞는 검색 단위와 citation evidence를 남기고, 근거가 부족한 결과는 성능 숫자로 포장하지 않도록 설계했습니다.
 
-## 현재 상태
+## 한눈에 보기
 
-기준 시점: 2026-05-17 KST. 전체 상태는 `official_denominator_source_bound_index_build_ready_load_checked`입니다. official answer/citation denominator는 열려 있고 첫 baseline은 29개 row가 채점됐지만, production promotion과 model-quality tuning은 여전히 닫혀 있습니다. 다음 agentic-loop measurement는 별도 run id로 실행됐고, source-bound official-denominator SearchUnit index는 비프로덕션 경로에서 빌드/load-check까지 통과했습니다.
+| 구분 | 내용 |
+|---|---|
+| 목표 | 문서 업로드부터 AI 처리, 검색, 답변, 근거 검증까지 이어지는 end-to-end 파이프라인 |
+| 백엔드 | Spring Boot `core-api`, PostgreSQL, Redis, Flyway/JPA |
+| AI 워커 | Python/FastAPI 기반 OCR, PDF/XLSX 파싱, RAG, evaluation harness |
+| 프론트엔드 | React/Vite 기반 작업 제출 및 결과 확인 UI |
+| 핵심 설계 | 긴 AI 작업은 비동기 job으로 분리하고, DB를 상태의 기준점으로 사용 |
+| 현재 단계 | 포트폴리오/POC 및 진단 평가 단계. production promotion은 열지 않음 |
 
-| Metric surface | 현재 값 | 의미 |
-|---|---:|---|
-| Official metric input rows | TEXT `6`, XLSX `19`, PDF `4` | registry-backed answer/citation denominator 총 `29` |
-| Official first-run baseline | PASS `8/29` | immutable baseline for comparison |
-| Agentic-loop measurement | PASS `1/29`, scored `29/29` | diagnostic only: fixture-all/noop/chunk-only citations, not final comparable model-quality performance |
-| Cross-track averages | `false` | TEXT/XLSX/PDF 평균값을 만들지 않음 |
-| Promotion evidence | `false` | production promotion 증거로 쓰지 않음 |
-| Official denominator registry mutation | `false` | denominator registry 변경 없음 |
-| Production vector/index mutation | `false` | production namespace, vector, index write 없음 |
-| Route/fallback labels | diagnostic-only | route accuracy, fallback success는 아직 official metric 아님 |
+## 이 프로젝트로 보여주는 역량
 
-## RAG Answer/Citation Metric Baseline
+### 1. 비동기 AI 백엔드 설계
 
-The current official first-run baseline is `official_answer_citation_metric_first_run_v1`.
-Its status is `SCORED_BASELINE_PARTIAL`: `scored_count=29`, `PASS=8`,
-`CITATION_UNSUPPORTED=11`, and `PARTIAL_OR_UNSUPPORTED=10`.
-This artifact is the immutable baseline for comparison.
+AI 작업은 오래 걸리고 실패 가능성도 높습니다. 이 저장소는 요청-응답 흐름에 AI 처리를 직접 묶지 않고, `core-api`가 작업과 산출물 상태를 관리하며 Python worker가 claim/callback 방식으로 처리하도록 분리했습니다.
 
-Report-only candidates are not the baseline. The XLSX runtime candidate is
-`PASS=26/29` all-track carry-forward with `XLSX=19/19`, report-only. The PDF table/value candidate is `PASS=29/29`, report-only. Candidate `PASS=29/29`
-must not be presented as the official first-run baseline or promotion evidence.
+- `core-api`: job, artifact, document catalog, SearchUnit/index 상태 관리
+- `ai` worker: OCR, 문서 파싱, RAG 처리, 결과 callback
+- PostgreSQL: durable truth
+- Redis: worker를 깨우는 dispatch signal
+- local storage 또는 MinIO: 산출물 저장소
 
-expected answers/supporting evidence are for scoring/audit only and must not be used for generation, retrieval, citation selection, repair, threshold tuning, or winner selection.
+### 2. 문서 타입별 RAG 구조화
 
-The next phase is a separate actual performance measurement with a new run id,
-`official_answer_citation_agentic_loop_run_v1`, and the implemented agentic loop
-included. The non-production index at `ai/eval/indexes/rag-data` was rebuilt in
-WSL2 with Python 3.12, CUDA PyTorch, and CUDA FAISS: embedding ran on `cuda:0`
-and FAISS build metadata records `faiss_gpu_used=true`. The run scored 29 rows
-with PASS=1, CITATION_UNSUPPORTED=25, and PARTIAL_OR_UNSUPPORTED=3. It remains
-separate from the immutable baseline and is not promotion evidence.
+문서 검색은 단순히 "비슷한 텍스트 chunk"를 찾는 문제가 아닙니다. 이 프로젝트는 TEXT, XLSX, PDF를 하나의 점수로 섞지 않고, 각 타입에 맞는 근거 구조를 따로 둡니다.
 
-Row-level attribution classifies that PASS=1/29 run as
-`diagnostic_live_generation_fixture_all_index_not_official_denominator_representative`.
-It used the fixture-all smoke index, `llm_backend=noop`, extractive snippet
-generation, and chunk-only citation locators, so it is not final comparable
-model-quality performance. `baseline_comparison_is_model_quality_comparable=false`.
+| Track | 다루는 문서 | 근거로 남기는 정보 |
+|---|---|---|
+| TEXT | 텍스트 corpus | chunk, source id, 문맥 |
+| XLSX | 스프레드시트 | workbook, sheet, table/range, row/column, matched cell |
+| PDF | PDF/OCR 문서 | file identity, page, bbox, matched text, nearby paragraph |
 
-The source-bound official-denominator SearchUnit export/build entrypoint is now
-implemented for the non-production target
-`ai/eval/indexes/rag-data-official-denominator-v1`, and the live runner has
-canonical SearchUnit citation payload wiring plus explicit XLSX/PDF
-source-bound adapter opt-in flags. Readiness is now
-`BUILD_READY_LOAD_CHECK_PASSED`: the target index contains 29/29 official rows
-with track counts PDF=4, TEXT=6, XLSX=19, plus `faiss.index`, `build.json`,
-`ingest_manifest.json`, and `search_unit_manifest.jsonl`. TEXT rows come only
-from `namu-v4-structured-combined/rag_chunks.jsonl`, XLSX rows from read-only
-source workbooks, and PDF row/column locators from original PDFs/native text
-with PaddleOCR reserved as the OCR fallback. Report-only XLSX/PDF candidate
-artifacts must not be used as generation source.
+이 구조 덕분에 "답이 맞아 보인다"가 아니라 "어느 셀, 어느 페이지, 어느 문단을 근거로 답했는지"를 추적할 수 있습니다.
 
-Answer/citation silver strategy is now recorded in
-`ai/eval/silver/answer_citation_silver_manifest_v1.json`, with readiness in
-`ai/eval/silver/answer_citation_silver_readiness_v1.json`. Its purpose is an
-anti-overfit generalization guard before later tuning against the small official
-29-row denominator. The boundary is explicit: silver is not gold, not official
-denominator, not promotion evidence, and not used for generation. expected
-values are audit-only, candidate result rows are not silver generation source,
-and official 29 query_ids are excluded from dev/holdout tuning silver. Initial
-source-bound silver JSONL files were blocked rather than fabricated:
-TEXT=0, XLSX=0, PDF=0. The official-denominator source-bound index and
-canonical SearchUnit citation payload wiring are now available, but 29/29
-source-bound SearchUnits overlap the official denominator. Safe non-official
-source-bound source manifests are still missing, so silver generation stays
-closed until coverage is settled.
+### 3. 과장하지 않는 평가 체계
 
-Canonical source-of-truth artifacts:
+현재 평가 결과는 제품 성능을 홍보하기 위한 리더보드가 아니라, 검색/근거/인용 파이프라인이 어디까지 검증됐는지 확인하는 진단 장치입니다.
 
-- `docs/rag-ingestion-progress.md`
-- `docs/rag-ingestion-measurements.md`
-- `docs/rag-ingestion-triage.md`
-- `ai/eval/reports/rag-ingestion/baseline_v1.json`
-- `ai/eval/reports/rag-ingestion/scorer_v1.jsonl`
-- `ai/eval/reports/rag-ingestion/metric_input_v1.json`
-- `ai/eval/reports/rag-ingestion/smoke_v1.json`
-- `ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl`
-- `ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl`
-- `ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json`
-- `ai/eval/reports/rag-ingestion/status.jsonl`
-- `ai/eval/silver/answer_citation_silver_manifest_v1.json`
-- `ai/eval/silver/answer_citation_silver_readiness_v1.json`
-- `ai/eval/eval_queries/official_denominator_registry.json`
+- official answer/citation baseline과 retrieval smoke metric을 분리해 관리합니다.
+- TEXT/XLSX/PDF 평균을 임의로 합치지 않습니다.
+- report-only candidate 결과를 production 성능으로 쓰지 않습니다.
+- gold, silver, diagnostic-only 데이터를 명확히 구분합니다.
+- 외부 데이터 라이선스와 공개 가능 여부를 별도 문서로 관리합니다.
 
-Historical generated report payloads are not kept in the repo root. When needed
-for local forensic review, use the external runtime archive under
-`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+채용 관점에서 봐야 할 포인트는 높은 숫자 하나보다, 작은 검증 세트라도 기준을 정하고 과장 없이 추적하는 태도입니다.
 
-## 3트랙 아키텍처
+## 전체 흐름
 
 ```mermaid
 flowchart LR
-    Client["Client / API caller"] --> Core["core-api<br/>Spring Boot"]
-    Core --> DB[("PostgreSQL<br/>durable truth")]
-    Core --> Redis[("Redis<br/>dispatch signal only")]
-    Redis --> Worker["ai worker<br/>Python runtime"]
-    Worker --> Claim["claim / fetch / callback"]
-    Claim --> Core
-    Worker --> Orchestrator["RAG orchestrator<br/>guarded routing"]
-    Orchestrator --> Text["text_namuwiki_animation<br/>TEXT/Namu"]
-    Orchestrator --> Xlsx["xlsx_business_structured<br/>spreadsheet evidence"]
-    Orchestrator --> Pdf["pdf_business_ocr_mm<br/>PDF OCR/MM evidence"]
+    Client["Client / UI"] --> Core["core-api"]
+    Core --> DB[("PostgreSQL")]
+    Core --> Redis[("Redis")]
+    Redis --> Worker["Python AI worker"]
+    Worker --> OCR["OCR / parsing"]
+    Worker --> RAG["RAG / evidence"]
+    Worker --> Core
+    Core --> Result["Result + artifacts"]
 ```
 
-| Track | 범위 | Retrieval/evidence contract |
-|---|---|---|
-| `text_namuwiki_animation` | Namuwiki animation-domain TEXT RAG | 별도 TEXT denominator, source-bound answer/citation review, NAMU license guard |
-| `xlsx_business_structured` | Business spreadsheet structured RAG | sheet, table, range, row, column, matched cells, citation locator, hidden/excluded-row guard |
-| `pdf_business_ocr_mm` | Business PDF OCR/MM RAG | page, bbox, region, matched text, nearby paragraphs, OCR/native-text trust, FILE vs CONTENT lane separation |
+1. 사용자가 문서 처리 작업을 생성합니다.
+2. `core-api`가 job과 artifact 상태를 PostgreSQL에 기록합니다.
+3. Redis는 worker에게 처리할 작업이 있음을 알립니다.
+4. Python worker가 작업을 claim한 뒤 OCR, PDF/XLSX 파싱, RAG 처리를 수행합니다.
+5. 결과와 근거 artifact가 callback으로 저장됩니다.
+6. 평가 harness는 결과가 어떤 근거를 사용했는지 별도 진단합니다.
 
-이 세 트랙은 하나의 namespace, retrieval contract, denominator, quality average로 합치지 않습니다.
+## 구현 범위
 
-## XLSX/PDF Evidence 검색을 쉽게 보면
+| 영역 | 구현 내용 |
+|---|---|
+| API | job 생성/조회, artifact 조회, document catalog, SearchUnit indexing, index build/eval/promote/rollback endpoint |
+| Worker | FastAPI task endpoint, Redis consumer, callback delivery, capability registry |
+| OCR/PDF/XLSX | Tesseract/PaddleOCR 옵션, PDF text/table 처리, XLSX workbook 기반 구조 추출 |
+| RAG | SearchUnit 기반 indexing, vector retrieval, track별 evidence assembly, citation verification |
+| Eval | answer/citation scorer, retrieval smoke metric, silver/gold boundary guard |
+| UI | 작업 목록, 상태 timeline, 결과 preview 중심의 React 화면 |
 
-이 저장소에서 `Evidence`는 "답이 맞아 보인다"가 아니라 "어느 표, 어느 셀, 어느 페이지, 어느 문단을 근거로 삼았는지 남길 수 있다"에 가깝습니다. 그래서 XLSX와 PDF를 한 검색통에 넣고 점수만 비교하지 않습니다. 먼저 질문과 source metadata로 트랙을 고르고, 그 트랙 안에서만 후보를 찾은 뒤, 답에 붙일 근거 조각을 따로 조립합니다.
+## 현재 상태를 읽는 법
 
-검색 흐름은 단순하게 보면 두 단계입니다.
+이 저장소는 아직 "프로덕션에 올려도 되는 완성품"이라고 주장하지 않습니다. 현재 문서와 평가 결과는 다음을 보여주기 위한 것입니다.
 
-1. 후보를 찾습니다. 이 질문이 어느 표나 페이지 근처에서 풀릴 가능성이 큰지 SearchUnit을 고릅니다.
-2. 근거를 조립합니다. 후보를 찾았다는 사실만으로 끝내지 않고, 사람이 다시 확인할 수 있는 위치와 주변 문맥을 `Evidence`로 묶습니다.
+- 비동기 AI 처리의 기본 골격이 실제 코드로 구현되어 있음
+- 문서 타입별 근거 구조를 분리해서 관리함
+- 검색/답변/인용 결과를 작은 기준 세트로 반복 검증함
+- 외부 데이터, hidden XLSX content, PDF file identity 같은 위험 지점을 성능 숫자보다 먼저 통제함
 
-- XLSX는 workbook을 다시 열어 숨김 셀을 새로 뒤지지 않습니다. 이미 검색된 `Evidence`에 남아 있는 sheet, table/range, matched cells, row/column, nearby row 같은 단서만 사용합니다. 표 구조나 행/열 단서가 부족하면 "아직 답의 근거로 쓰기엔 불완전하다"고 보고 diagnostic-only로 막습니다.
-- PDF는 page, bbox, 영역 유형, matched text, section heading, nearby paragraph, OCR confidence 같은 단서를 봅니다. 페이지 위치나 주변 문맥이 부족하면 PDF도 official 근거로 올리지 않고 diagnostic-only로 남깁니다.
+더 자세한 run별 수치와 경계는 아래 문서에서 확인할 수 있습니다.
 
-현재 POC 검색기는 후보를 조금 넓게 가져온 뒤 후처리로 걸러내는 구조입니다. 그래서 production promotion 전에 tenant/ACL, source type, parser, index, embedding 상태가 검색 랭킹 전이나 랭킹 내부에서 fail-closed로 검증되어야 합니다.
+- [RAG ingestion progress](docs/rag-ingestion-progress.md)
+- [RAG ingestion measurements](docs/rag-ingestion-measurements.md)
+- [RAG ingestion triage](docs/rag-ingestion-triage.md)
+- [Evaluation harness](ai/eval/README.md)
+- [Third-party data license notice](docs/THIRD_PARTY_DATA_LICENSES.md)
 
-## 현재 트랙별 Metric
+## 빠르게 둘러보기
 
-| Track | 현재 상태 | Diagnostic preview | Official state | 남은 blocker |
-|---|---|---:|---|---|
-| TEXT/Namu V2.1 | Official first-run PASS=6/6 | registry-backed answer/citation rows `6`; source-bound readiness resolves 6/6 from corpus chunks | agentic-loop run scored 6/6, PASS=0 | No TEXT blocker remains for source-bound readiness; no tuning or promotion. |
-| XLSX | Official first-run PASS=1/19; runtime candidate report-only PASS=19/19 | registry-backed answer/citation rows `19`; source-bound readiness resolves 19/19 from source workbooks | agentic-loop run scored 19/19, PASS=0 | No XLSX blocker remains for source-bound readiness; candidate artifacts stay report-only, no winner selection. |
-| PDF | Official first-run PASS=1/4; table/value candidate report-only PASS=4/4 | registry-backed answer/citation rows `4`; source-bound manifest rows `4/4` | agentic-loop run scored 4/4, PASS=1 | Source-field blocker cleared; do not treat candidate PASS=29/29 as baseline or promotion evidence. |
+| Path | 역할 |
+|---|---|
+| [`core-api/`](core-api/) | Spring Boot API 서버 |
+| [`ai/app/`](ai/app/) | Python AI worker와 capability 구현 |
+| [`ai/eval/`](ai/eval/) | RAG/OCR evaluation harness와 기준 데이터 |
+| [`frontend/app/`](frontend/app/) | React/Vite UI |
+| [`docker-compose.yml`](docker-compose.yml) | 로컬 PostgreSQL, Redis, 선택형 MinIO/LLM 인프라 |
+| [`.env.example`](.env.example) | 로컬 실행 환경 변수 예시 |
 
-Route/fallback review artifact는 diagnostic analysis에만 사용합니다. routing accuracy, wrong-route rate, fallback success, multi-route success를 official metric으로 열지 않습니다.
+## 로컬 실행 개요
 
-## Metric 해석 경계
+로컬 인프라는 기본적으로 PostgreSQL과 Redis만 띄웁니다.
 
-- Diagnostic PASS or preview counts do not mean production promotion.
-- Silver, local LLM, and report-only results are not human-gold accuracy.
-- TEXT, XLSX, and PDF denominators must remain separate.
-- XLSX hidden/excluded content must stay out of query, candidate, answer, citation, debug-public, and official-denominator surfaces.
-- PDF CONTENT evidence and FILE/document identity are separate lanes.
+```powershell
+docker compose up -d
+```
 
-## 근거 문서
+애플리케이션은 개발 중 디버깅을 쉽게 하기 위해 각각 로컬 프로세스로 실행하는 구조입니다.
 
-- `docs/rag-ingestion-progress.md`
-- `ai/eval/reports/rag-ingestion/baseline_v1.json`
-- `ai/eval/eval_queries/official_denominator_registry.json`
+- `core-api`: Java 21 / Maven / Spring Boot
+- `ai`: Python / FastAPI / FAISS / sentence-transformers
+- `frontend/app`: React / Vite / pnpm
+
+세부 실행 옵션은 각 디렉토리의 설정 파일과 `.env.example`을 기준으로 확인합니다.
 
 ## 라이선스
 
-이 저장소의 직접 작성 코드와 문서는 [`LICENSE`](LICENSE)의 Apache License 2.0을 따릅니다.
+이 저장소의 직접 작성 코드와 문서는 [Apache License 2.0](LICENSE)을 따릅니다.
 
-외부에서 수집한 PDF, XLSX, 이미지, OCR/MM annotation, 폰트, 공공데이터, Hugging Face dataset mirror, NamuWiki metadata 등은 이 저장소의 Apache-2.0 라이선스로 재허가되지 않습니다. 원천별 이용조건과 현재 내부 diagnostic usage gate는 [`docs/THIRD_PARTY_DATA_LICENSES.md`](docs/THIRD_PARTY_DATA_LICENSES.md)를 확인하세요.
+단, 외부에서 수집한 PDF, XLSX, 이미지, OCR/MM annotation, 폰트, 공공데이터, Hugging Face dataset mirror, NamuWiki metadata 등은 이 저장소의 Apache-2.0 라이선스로 재허가되지 않습니다. 원천별 이용조건과 현재 내부 diagnostic usage gate는 [Third-party data license notice](docs/THIRD_PARTY_DATA_LICENSES.md)를 확인하세요.
