@@ -20,6 +20,7 @@ import os
 import re
 import sys
 import unicodedata
+import zipfile
 from collections import Counter, defaultdict
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -18641,6 +18642,15 @@ V3_5_XLSX_SOURCE_ROOTS = (
     V3_5_SOURCE_COLLECTION_ROOT / "xlsx",
     REPO_ROOT / "local-storage",
 )
+V3_5_PDF_DIAGNOSTIC_SOURCE_ROOTS = (
+    Path(
+        "D:/_external_workspace_archive/async-ocr-rag-multimodal-pipeline/"
+        "20260511-eval-report-cleanup/files/ai-worker/eval/datasets/golden/kovidore-economic/hf_snapshot/pdfs"
+    ),
+    V3_5_SOURCE_COLLECTION_ROOT / "pdf",
+    V3_5_SOURCE_COLLECTION_ROOT / "pdfs",
+    REPO_ROOT / "local-storage",
+)
 
 
 def v3_5_source_material_guardrails() -> dict[str, bool]:
@@ -29058,6 +29068,7 @@ def run_v3_7_0_source_registry_materialization(
         "official_overlap_count": inventory["official_overlap_count"],
         "silver_source_overlap_count": inventory["silver_source_overlap_count"],
         "snapshot_only_count": inventory["snapshot_only_count"],
+        "snapshot_only_resolution": inventory["snapshot_only_resolution"],
         "retrieval_only_uncanonicalized_count": inventory["retrieval_only_uncanonicalized_count"],
         "blocked_counts_and_reasons": inventory["blocked_counts_and_reasons"],
         "v3_5_4_source_only_manifest_counts": inventory["v3_5_4_source_only_manifest_counts"],
@@ -29415,9 +29426,41 @@ def v3_7_0_unambiguous_xlsx_source_path_text(workbook: Any) -> str:
     if not workbook_name:
         return ""
     matches = v3_7_0_xlsx_source_file_name_index().get(workbook_name, ())
-    if len(matches) != 1:
+    if len(matches) == 1:
+        return matches[0].as_posix()
+    valid_matches = tuple(path for path in matches if v3_7_0_xlsx_archive_is_readable(path))
+    if len(valid_matches) != 1:
         return ""
-    return matches[0].as_posix()
+    return valid_matches[0].as_posix()
+
+
+def v3_7_0_xlsx_archive_is_readable(path: Path) -> bool:
+    try:
+        return zipfile.is_zipfile(path)
+    except OSError:
+        return False
+
+
+def v3_7_0_pdf_diagnostic_source_file_name_index() -> dict[str, tuple[Path, ...]]:
+    cache = getattr(v3_7_0_pdf_diagnostic_source_file_name_index, "_cache", {})
+    cache_key = tuple(root.as_posix() for root in V3_5_PDF_DIAGNOSTIC_SOURCE_ROOTS)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    by_name: dict[str, set[Path]] = defaultdict(set)
+    for root in V3_5_PDF_DIAGNOSTIC_SOURCE_ROOTS:
+        if not root.exists():
+            continue
+        for path in root.rglob("*.pdf"):
+            if path.is_file():
+                by_name[path.name].add(path.resolve())
+    index = {
+        name: tuple(sorted(paths, key=lambda item: item.as_posix().lower()))
+        for name, paths in by_name.items()
+    }
+    cache[cache_key] = index
+    setattr(v3_7_0_pdf_diagnostic_source_file_name_index, "_cache", cache)
+    return index
 
 
 def v3_7_0_normalized_raw_locator(unit: Mapping[str, Any]) -> dict[str, Any]:
@@ -29718,6 +29761,7 @@ def v3_7_0_source_registry_inventory(
         for family in ("TEXT", "PDF", "XLSX")
     }
     snapshot_counts = v3_7_0_extraction_snapshot_file_counts()
+    snapshot_only_resolution = v3_7_0_snapshot_only_resolution_summary(materialized_atoms)
     blocked_by_reason = Counter()
     for row in blocked_rows:
         for reason in row.get("reasons") or [row.get("materialization_bucket")]:
@@ -29738,6 +29782,7 @@ def v3_7_0_source_registry_inventory(
         "official_overlap_count": sum(1 for atom in materialized_atoms if bool(atom.get("official_denominator_overlap"))),
         "silver_source_overlap_count": sum(1 for atom in materialized_atoms if bool(atom.get("silver_source_overlap"))),
         "snapshot_only_count": int(bucket_counts.get("snapshot_only_ready", 0)),
+        "snapshot_only_resolution": snapshot_only_resolution,
         "retrieval_only_uncanonicalized_count": int(bucket_counts.get("retrieval_only_uncanonicalized", 0)),
         "blocked_counts_and_reasons": {
             "total": len(blocked_rows),
@@ -29786,6 +29831,7 @@ def v3_7_0_source_registry_inventory(
             "official_29_units": "materialize_only_as_protected_regression_scope",
             "raw_text_chunks": "materialize_from_current_namu_v4_rag_chunks_namespace",
             "pdf_xlsx_local_snapshots": "inventory_as_snapshot_sources_but_use_manifest_ready_rows_for_stable_atom_ids",
+            "pdf_basename_archive_matches": "diagnostic_only_not_auto_promoted_without_stable_source_identity",
             "eval_artifacts": "explicitly_block_as_non_source_content",
         },
         "excluded_source_content_policy": {
@@ -29807,6 +29853,108 @@ def v3_7_0_source_registry_inventory(
             "v3_5_4_freeze_summary": as_mapping(source_json.get("v3_5_4_freeze_summary_json")).get("run_id"),
         },
     }
+
+
+def v3_7_0_snapshot_only_resolution_summary(
+    materialized_atoms: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    counts_by_family = Counter()
+    counts_by_bucket = Counter()
+    examples: list[dict[str, Any]] = []
+    snapshot_atoms = [
+        atom
+        for atom in materialized_atoms
+        if official.clean(atom.get("materialization_bucket")) == "snapshot_only_ready"
+    ]
+    for atom in snapshot_atoms:
+        family = official.clean(atom.get("source_family")).upper()
+        bucket = v3_7_0_snapshot_only_resolution_bucket(atom)
+        counts_by_family[family] += 1
+        counts_by_bucket[bucket] += 1
+        if len(examples) < 10:
+            raw_locator = as_mapping(atom.get("raw_locator"))
+            examples.append(
+                {
+                    "source_atom_id": official.clean(atom.get("source_atom_id")),
+                    "source_family": family,
+                    "source_identity": official.clean(atom.get("source_identity")),
+                    "resolution_bucket": bucket,
+                    "source_path": official.clean(
+                        raw_locator.get("source_path")
+                        or raw_locator.get("source_file_path")
+                        or raw_locator.get("source_pdf_path")
+                    ),
+                    "workbook": official.clean(raw_locator.get("workbook")),
+                }
+            )
+    for family in ("TEXT", "PDF", "XLSX"):
+        counts_by_family.setdefault(family, 0)
+    return {
+        "artifact_kind": "v3_7_0_snapshot_only_resolution_decomposition",
+        "interpretation": (
+            "snapshot-only source atoms are separated into raw archive ambiguity/missingness "
+            "versus source-identity insufficiency; diagnostic archive matches are not official "
+            "evidence promotion"
+        ),
+        "total_snapshot_only_count": len(snapshot_atoms),
+        "counts_by_source_family": {family: int(counts_by_family.get(family, 0)) for family in ("TEXT", "PDF", "XLSX")},
+        "counts_by_resolution_bucket": dict(sorted((key, int(value)) for key, value in counts_by_bucket.items())),
+        "examples": examples,
+    }
+
+
+def v3_7_0_snapshot_only_resolution_bucket(atom: Mapping[str, Any]) -> str:
+    family = official.clean(atom.get("source_family")).upper()
+    raw_locator = as_mapping(atom.get("raw_locator"))
+    if family == "XLSX":
+        return v3_7_0_xlsx_snapshot_only_resolution_bucket(raw_locator)
+    if family == "PDF":
+        return v3_7_0_pdf_snapshot_only_resolution_bucket(raw_locator)
+    if family == "TEXT":
+        source_path = official.clean(raw_locator.get("source_corpus_path"))
+        if not source_path:
+            return "source_identity_insufficient_missing_text_source_path"
+        return "raw_source_path_missing"
+    return "unknown_source_family"
+
+
+def v3_7_0_xlsx_snapshot_only_resolution_bucket(raw_locator: Mapping[str, Any]) -> str:
+    source_path = official.clean(raw_locator.get("source_path") or raw_locator.get("source_file_path"))
+    if source_path:
+        if v3_7_0_repo_path_exists(source_path):
+            return "resolved_source_file_exists_but_bucket_snapshot_only"
+        return "raw_source_path_missing"
+    workbook_name = Path(official.clean(raw_locator.get("workbook"))).name
+    if not workbook_name:
+        return "source_identity_insufficient_missing_workbook"
+    matches = v3_7_0_xlsx_source_file_name_index().get(workbook_name, ())
+    if not matches:
+        return "raw_archive_missing"
+    valid_matches = tuple(path for path in matches if v3_7_0_xlsx_archive_is_readable(path))
+    if len(valid_matches) == 1:
+        return "resolved_valid_archive_match_but_bucket_snapshot_only"
+    if len(matches) > 1:
+        return "raw_archive_ambiguous_or_unreadable"
+    return "raw_archive_unreadable"
+
+
+def v3_7_0_pdf_snapshot_only_resolution_bucket(raw_locator: Mapping[str, Any]) -> str:
+    source_pdf_path = official.clean(raw_locator.get("source_pdf_path"))
+    if not source_pdf_path:
+        return "source_identity_insufficient_missing_pdf_path"
+    if v3_7_0_repo_path_exists(source_pdf_path):
+        return "resolved_source_file_exists_but_bucket_snapshot_only"
+    pdf_name = Path(source_pdf_path).name
+    if not pdf_name or Path(pdf_name).suffix.lower() != ".pdf":
+        return "source_identity_insufficient_invalid_pdf_path"
+    matches = v3_7_0_pdf_diagnostic_source_file_name_index().get(pdf_name, ())
+    if len(matches) == 1 and source_pdf_path == pdf_name:
+        return "source_identity_insufficient_basename_only_archive_match"
+    if len(matches) > 1:
+        return "raw_archive_ambiguous"
+    if not matches:
+        return "raw_archive_missing"
+    return "source_identity_insufficient_noncanonical_archive_path"
 
 
 def v3_7_0_extraction_snapshot_file_counts() -> dict[str, int]:
@@ -30416,6 +30564,8 @@ def v3_7_1_search_view_from_source_atom(
     parent = as_mapping(atom.get("parent_pointers"))
     raw_locator = as_mapping(atom.get("raw_locator"))
     embedding_text = v3_7_1_source_atom_embedding_text(atom)
+    bm25_text = v3_7_1_source_atom_bm25_text(atom)
+    display_text = v3_7_1_source_atom_display_text(atom)
     return {
         "schema_version": f"{V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID}_search_view_v1",
         "run_id": V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
@@ -30460,8 +30610,8 @@ def v3_7_1_search_view_from_source_atom(
         "extraction_snapshot_present": bool(atom.get("extraction_snapshot_present")),
         "extraction_snapshot_source": official.clean(atom.get("extraction_snapshot_source")),
         "embedding_text": embedding_text,
-        "bm25_text": official.clean(atom.get("normalized_text_or_value_snapshot"))[:1000],
-        "display_text": official.clean(atom.get("normalized_text_or_value_snapshot"))[:1000],
+        "bm25_text": bm25_text,
+        "display_text": display_text,
         "faiss_row_id": faiss_row_id,
         "parent_search_unit_id": official.clean(parent.get("search_unit_id") or raw_locator.get("search_unit_id")),
         "parent_source_class": official.clean(parent.get("source_class")),
@@ -30485,6 +30635,7 @@ def v3_7_1_search_view_from_source_atom(
 def v3_7_1_source_atom_embedding_text(atom: Mapping[str, Any]) -> str:
     raw_locator = as_mapping(atom.get("raw_locator"))
     family = official.clean(atom.get("source_family")).upper()
+    snapshot = official.clean(atom.get("normalized_text_or_value_snapshot"))
     locator_bits = []
     for key in (
         "source_pdf_path",
@@ -30500,6 +30651,9 @@ def v3_7_1_source_atom_embedding_text(atom: Mapping[str, Any]) -> str:
         "row_label",
         "column_label",
         "target_column",
+        "normalized_value",
+        "formatted_value",
+        "display_value",
         "chunk_id",
         "section_path",
         "text_span",
@@ -30507,7 +30661,8 @@ def v3_7_1_source_atom_embedding_text(atom: Mapping[str, Any]) -> str:
         value = raw_locator.get(key)
         if value not in (None, "", [], {}):
             locator_bits.append(f"{key}={official.clean(value)}")
-    snapshot = official.clean(atom.get("normalized_text_or_value_snapshot"))
+    if family == "XLSX" and snapshot and not any(bit.startswith("normalized_value=") for bit in locator_bits):
+        locator_bits.append(f"normalized_value={snapshot[:500]}")
     return "\n".join(
         item
         for item in (
@@ -30519,6 +30674,62 @@ def v3_7_1_source_atom_embedding_text(atom: Mapping[str, Any]) -> str:
         )
         if item.strip()
     )
+
+
+def v3_7_1_source_atom_bm25_text(atom: Mapping[str, Any]) -> str:
+    family = official.clean(atom.get("source_family")).upper()
+    snapshot = official.clean(atom.get("normalized_text_or_value_snapshot"))
+    if family != "XLSX":
+        return snapshot[:1000]
+    return "\n".join(
+        item
+        for item in (
+            v3_7_1_xlsx_fielded_locator_text(atom),
+            f"value={snapshot[:1000]}" if snapshot else "",
+        )
+        if item.strip()
+    )[:4000]
+
+
+def v3_7_1_source_atom_display_text(atom: Mapping[str, Any]) -> str:
+    family = official.clean(atom.get("source_family")).upper()
+    snapshot = official.clean(atom.get("normalized_text_or_value_snapshot"))
+    if family != "XLSX":
+        return snapshot[:1000]
+    return "\n".join(
+        item
+        for item in (
+            v3_7_1_xlsx_fielded_locator_text(atom),
+            f"snapshot={snapshot[:1000]}" if snapshot else "",
+        )
+        if item.strip()
+    )[:4000]
+
+
+def v3_7_1_xlsx_fielded_locator_text(atom: Mapping[str, Any]) -> str:
+    raw_locator = as_mapping(atom.get("raw_locator"))
+    fields = []
+    for key in (
+        "workbook",
+        "source_path",
+        "sheet",
+        "range",
+        "cell",
+        "row_label",
+        "column_label",
+        "target_column",
+        "normalized_value",
+        "formatted_value",
+        "display_value",
+    ):
+        value = raw_locator.get(key)
+        if value not in (None, "", [], {}):
+            fields.append(f"{key}={official.clean(value)}")
+    if not any(field.startswith("normalized_value=") for field in fields):
+        snapshot = official.clean(atom.get("normalized_text_or_value_snapshot"))
+        if snapshot:
+            fields.append(f"normalized_value={snapshot[:500]}")
+    return " | ".join(fields)
 
 
 def v3_7_1_source_inventory(
@@ -31323,6 +31534,7 @@ def run_v3_7_2_source_registry_backed_retrieval_smoke_report(
         "sealed_gold_no_regression_check": sealed_gold,
         "silver_1000_diagnostic_overlay": silver_overlay["summary"],
         "per_track_breakdown": per_track["tracks"],
+        "row_level_retrieval_bottleneck": v3_7_2_row_level_retrieval_bottleneck(topk_rows),
         "family_routed_retrieval_smoke": family_routed,
         "failure_bucket_definitions": list(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS),
         "failure_bucket_counts": failure_buckets["failure_bucket_counts"],
@@ -31728,9 +31940,12 @@ def v3_7_2_source_registry_retrieval_smoke_row(
         "target_parent_source_unit_id": target_parent_source_unit_id,
         "target_search_unit_id": target_search_unit_id,
         "target_locator_fingerprint": target_locator_fingerprint,
+        "target_search_view_ids": sorted(target_signatures["search_view_ids"]),
+        "target_source_atom_ids": sorted(target_signatures["source_atom_ids"]),
         "official_manifest_target": v3_7_2_search_view_summary(official_target_rows[0]) if official_target_rows else {},
         "question_gold_locator_target": dict(as_mapping(query_spec.get("question_gold_locator_target"))),
         "target_mapping_audit": target_mapping,
+        "target_rank_at_k": min((int(envelope["rank"]) for envelope in target_envelopes), default=0),
         "target_parent_hit_in_topk": bool(target_parent_source_unit_id and target_parent_source_unit_id in hit_parent_ids),
         "locator_or_search_unit_hit_in_topk": locator_or_search_unit_hit,
         "target_hit_at_k": target_hit_at_k,
@@ -32132,6 +32347,86 @@ def v3_7_2_source_registry_retrieval_smoke_failure_buckets(
         "headline_aggregate_success_rate_reported": False,
         "promotion_evidence": False,
     }
+
+
+def v3_7_2_row_level_retrieval_bottleneck(
+    topk_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    by_track: dict[str, dict[str, Any]] = {}
+    by_scope_track: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+    for row in topk_rows:
+        scope = official.clean(row.get("query_scope"))
+        track = official.clean(row.get("source_family")).upper()
+        track_bucket = by_track.setdefault(track, v3_7_2_empty_row_level_bucket())
+        scope_bucket = by_scope_track[scope].setdefault(track, v3_7_2_empty_row_level_bucket())
+        for bucket in (track_bucket, scope_bucket):
+            v3_7_2_add_row_level_bottleneck_row(bucket, row)
+    return {
+        "artifact_kind": "v3_7_2_row_level_retrieval_bottleneck_decomposition",
+        "interpretation": (
+            "query-row level decomposition; envelope-level materialization buckets "
+            "remain separate from target ranking misses"
+        ),
+        "tracks": by_track,
+        "scope_tracks": {scope: dict(tracks) for scope, tracks in sorted(by_scope_track.items())},
+    }
+
+
+def v3_7_2_empty_row_level_bucket() -> dict[str, Any]:
+    return {
+        "query_count": 0,
+        "target_present_in_index_count": 0,
+        "target_hit_at_k_count": 0,
+        "target_not_in_topk_count": 0,
+        "target_missing_from_index_count": 0,
+        "target_contract_gap_count": 0,
+        "same_track_hit_at_k_count": 0,
+        "snapshot_only_row_diagnostic_count": 0,
+        "snapshot_only_target_count": 0,
+        "snapshot_only_non_target_topk_count": 0,
+        "locator_mapping_gap_count": 0,
+        "cross_family_mixed_results_count": 0,
+        "search_miss_count": 0,
+        "target_mapping_bucket_counts": {},
+        "retrieval_diagnostic_bucket_counts": {},
+    }
+
+
+def v3_7_2_add_row_level_bottleneck_row(bucket: dict[str, Any], row: Mapping[str, Any]) -> None:
+    diagnostics = [official.clean(item) for item in row.get("retrieval_diagnostic_buckets", [])]
+    target_mapping = as_mapping(row.get("target_mapping_audit"))
+    mapping_bucket = official.clean(target_mapping.get("target_mapping_bucket")) or "unknown"
+    target_search_view_ids = set(row.get("target_search_view_ids") or [])
+    target_source_atom_ids = set(row.get("target_source_atom_ids") or [])
+    envelopes = list(row.get("top_result_envelopes", []))
+    target_snapshot_only = official.clean(
+        as_mapping(row.get("official_manifest_target")).get("materialization_bucket")
+    ) == "snapshot_only_ready"
+    non_target_snapshot_only = any(
+        official.clean(envelope.get("primary_failure_bucket")) == "snapshot_only"
+        and official.clean(envelope.get("search_view_id")) not in target_search_view_ids
+        and official.clean(envelope.get("source_atom_id")) not in target_source_atom_ids
+        for envelope in envelopes
+    )
+
+    bucket["query_count"] += 1
+    bucket["target_present_in_index_count"] += int(bool(target_mapping.get("target_present_in_index")))
+    bucket["target_hit_at_k_count"] += int(bool(row.get("target_hit_at_k")))
+    bucket["same_track_hit_at_k_count"] += int(bool(row.get("same_track_hit_at_k")))
+    bucket["target_not_in_topk_count"] += int("target_not_in_topk" in diagnostics)
+    bucket["target_missing_from_index_count"] += int("target_missing_from_index" in diagnostics)
+    bucket["target_contract_gap_count"] += int("target_contract_gap" in diagnostics)
+    bucket["snapshot_only_row_diagnostic_count"] += int("snapshot_only" in diagnostics)
+    bucket["snapshot_only_target_count"] += int(target_snapshot_only)
+    bucket["snapshot_only_non_target_topk_count"] += int(non_target_snapshot_only)
+    bucket["locator_mapping_gap_count"] += int(mapping_bucket == "locator_mapping_gap")
+    bucket["cross_family_mixed_results_count"] += int("cross_family_mixed_results" in diagnostics)
+    bucket["search_miss_count"] += int("search_miss" in diagnostics)
+    mapping_counts = bucket["target_mapping_bucket_counts"]
+    mapping_counts[mapping_bucket] = int(mapping_counts.get(mapping_bucket, 0)) + 1
+    diagnostic_counts = bucket["retrieval_diagnostic_bucket_counts"]
+    for diagnostic in diagnostics:
+        diagnostic_counts[diagnostic] = int(diagnostic_counts.get(diagnostic, 0)) + 1
 
 
 def v3_7_2_source_registry_retrieval_smoke_per_track(

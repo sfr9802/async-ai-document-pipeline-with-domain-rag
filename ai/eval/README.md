@@ -30,16 +30,16 @@ Last updated: 2026-05-21 KST.
 
 ## 지표 해석
 
-현재 README에 노출하는 숫자는 서로 다른 표면을 섞지 않습니다. answer/citation score, exact-evidence retrieval smoke, local LLM documentation loop, Phase 7 historical retrieval tuning은 서로 다른 목적의 결과입니다.
+현재 노출하는 숫자는 서로 다른 표면을 섞지 않습니다. answer/citation score, exact-evidence retrieval smoke, local LLM documentation loop, Phase 7 historical retrieval tuning, v3.7 source-registry contract smoke는 서로 다른 목적의 결과입니다.
 
 | Surface | Denominator | Metric | Current reading |
 |---|---:|---|---|
 | Official first-run baseline | 29 official rows | PASS `8/29` | 초기 baseline. `BLOCKED_OR_PARTIAL`; tuning/promotion/gold mutation 없음 |
 | v3_2_7 answer/citation closure | 29 official rows | Lane A/B/C `24/29`, `27/29`, `27/29` | diagnostic-only. Lane A replay, Lane B retrieval top-k, Lane C query-bound oracle를 합산하지 않음 |
-| v3_4_3 exact-evidence retrieval smoke | 28 included rows | Hit@1 `27/28`, Hit@3 `28/28`, Hit@5 `28/28`, MRR@5 `27.5/28`, binary exact-evidence nDCG@5 `0.9868189197704093` | source-bound exact-evidence smoke와 regression guard. 대표 제품 성능 아님 |
-| README local LLM response loop | 100 docs sample rows | p95 `0.464s`, p99 `0.516s`, max `0.528s` | query + SearchView evidence만 넣은 documentation-only loop. official metric 아님 |
+| v3_4_3 exact-evidence retrieval smoke | 28 included rows | Hit@1 `27/28`, Hit@3 `28/28`, Hit@5 `28/28`, MRR@5 `27.5/28`, binary exact-evidence nDCG@5 `0.9868189197704093` | source-bound exact-evidence smoke와 regression guard 전용 |
+| Historical local LLM docs sample | 100 docs sample rows | p95 `0.464s`, p99 `0.516s`, max `0.528s` | query + SearchView evidence만 넣은 historical docs sample. throughput/SLA가 아니라 입력 정책과 재현성 확인용 |
 | v3_7_1 source-first index | 136,280 SearchViews | metric not computed | retrieval/answer/citation 성능 측정 전 단계. vector metadata는 canonical citation source가 아님 |
-| v3_7_2 contract smoke | 1,029 query surfaces | returned/same-track/target/contract survival counts | PDF `same-track@k=329/329`, target@k `112/329`; XLSX `same-track@k=344/344`, target@k `10/344`. `topk_returned_count`는 반환 수일 뿐 정답 hit가 아니며 headline aggregate score 아님 |
+| v3_7_2 contract smoke | 1,029 query surfaces | returned/same-track/target/contract survival counts | TEXT `same-track@k=356/356`, target@k `20/356`; PDF `same-track@k=329/329`, target@k `112/329`; XLSX `same-track@k=344/344`, target@k `17/344`. `topk_returned_count`는 반환 수이고, headline aggregate로 합치지 않음 |
 
 `nDCG`는 현재 full graded relevance nDCG가 아니라 `binary exact-evidence nDCG@5`입니다. future graded nDCG는 별도 relevance/answerability label 정책이 생긴 뒤에만 같은 이름으로 비교해야 합니다.
 
@@ -74,11 +74,13 @@ TEXT, XLSX, PDF는 같은 vector score 하나로만 읽지 않습니다. 검색 
 |---|---:|---:|---:|---:|---|
 | TEXT | 356 | 356 | 20 | 20 | track_mismatch |
 | PDF | 329 | 329 | 112 | 112 | snapshot_only |
-| XLSX | 344 | 344 | 10 | 10 | snapshot_only |
+| XLSX | 344 | 344 | 17 | 17 | none |
 
-Silver query surface quality check: rows `1000`, unique query hashes `1000`, duplicate hashes `0`, XLSX polished rows `325`. The current query set has no Latin/Japanese/Hanja or disallowed punctuation violations; repeated domain starts remain visible in source-heavy XLSX/PDF areas, so this is still diagnostic silver, not human gold.
+`same-track@k`는 family-routed primary path가 같은 source family 후보를 반환했는지 보는 route/candidate-family 확인값입니다. Ranking 품질은 `target@k`, `target_not_in_topk`, `snapshot_only`, `locator_mapping_gap`을 함께 봐야 합니다. XLSX는 query count가 `344`이지만 candidate pool은 `343`이고 audit bucket에 `locator_mapping_gap=1`이 있으므로, target mapping을 깨끗한 `344/344`로 읽지 않습니다.
 
-## 100-row local LLM 응답 샘플
+Silver query surface quality check: rows `1000`, unique query hashes `1000`, duplicate hashes `0`, XLSX polished rows `325`. 현재 query set은 Latin/Japanese/Hanja 또는 disallowed punctuation 위반이 없고, 반복되는 시작 표현은 source-heavy XLSX/PDF 영역의 진단용 흔적으로 남아 있습니다. 따라서 이 표면은 human gold가 아니라 diagnostic silver입니다.
+
+## Historical 100-row local LLM 응답 샘플
 
 아래 표는 v3_7_2 이전 README에 표시할 근거 샘플을 채우기 위해 한 번 실행한 historical documentation-only 루프입니다. gold `25`행과 당시 silver `75`행을 사용했고, 로컬 OpenAI-compatible llama.cpp endpoint `http://localhost:8081/v1`의 `gemma4-e2b-local`에 `temperature=0`, `max_tokens=96`으로 요청했습니다. 이 루프의 wall-clock latency는 p95 `0.464s`, p99 `0.516s`, max `0.528s`였습니다. 현재 silver query 표면은 위 v3_7_2 smoke artifacts를 기준으로 읽습니다.
 

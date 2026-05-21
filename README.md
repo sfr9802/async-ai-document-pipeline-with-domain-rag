@@ -2,7 +2,7 @@
 
 문서가 들어오면 처리 상태를 잃지 않고, OCR/파싱/검색/RAG 결과를 근거와 함께 돌려주는 비동기 AI 문서 처리 파이프라인입니다.
 
-이 프로젝트의 핵심은 "답변을 생성했다"에서 끝내지 않는 것입니다. 텍스트, 스프레드시트, PDF마다 근거가 되는 구조가 다르기 때문에, 각 문서 타입에 맞는 검색 단위와 citation evidence를 남기고, 근거가 부족한 결과는 성능 숫자로 포장하지 않도록 설계했습니다.
+핵심은 RAG 답변을 만드는 데서 멈추지 않고, 답변이 어떤 텍스트 조각, 셀, 페이지, bbox를 근거로 삼았는지 추적하는 것입니다. TEXT, XLSX, PDF마다 다른 evidence 구조를 분리해 두고, 평가 harness에서 검색/근거/인용 경계를 따로 확인합니다.
 
 ## 한눈에 보기
 
@@ -13,7 +13,7 @@
 | AI 워커 | Python/FastAPI 기반 OCR, PDF/XLSX 파싱, RAG, evaluation harness |
 | 프론트엔드 | React/Vite 기반 작업 제출 및 결과 확인 UI |
 | 핵심 설계 | 긴 AI 작업은 비동기 job으로 분리하고, DB를 상태의 기준점으로 사용 |
-| 현재 단계 | 포트폴리오/POC 및 진단 평가 단계. production promotion은 열지 않음 |
+| 현재 단계 | 포트폴리오/POC 단계. `v3_7_2` source-registry-backed retrieval smoke까지 산출했고 production promotion은 아직 열지 않음 |
 
 ## 이 프로젝트로 보여주는 역량
 
@@ -39,29 +39,29 @@ AI 작업은 오래 걸리고 실패 가능성도 높습니다. 이 저장소는
 
 이 구조 덕분에 "답이 맞아 보인다"가 아니라 "어느 셀, 어느 페이지, 어느 문단을 근거로 답했는지"를 추적할 수 있습니다.
 
-### 3. 과장하지 않는 평가 체계
+### 3. 재현 가능한 평가 체계
 
-현재 평가 결과는 제품 성능을 홍보하기 위한 리더보드가 아니라, 검색/근거/인용 파이프라인이 어디까지 검증됐는지 확인하는 진단 장치입니다.
+평가 코드는 production path와 분리되어 있고, 각 run은 denominator와 artifact를 남깁니다. 이 구조 덕분에 "답변이 그럴듯한가"와 "근거 후보가 실제 citation으로 살아남는가"를 따로 볼 수 있습니다.
 
-- official answer/citation baseline과 retrieval smoke metric을 분리해 관리합니다.
-- TEXT/XLSX/PDF 평균을 임의로 합치지 않습니다.
-- report-only candidate 결과를 production 성능으로 쓰지 않습니다.
-- gold, silver, diagnostic-only 데이터를 명확히 구분합니다.
+- official answer/citation baseline, retrieval smoke, local LLM response sample을 분리해 관리합니다.
+- TEXT/XLSX/PDF는 서로 다른 denominator로 읽고 임의 평균으로 합치지 않습니다.
+- gold, silver, diagnostic-only 데이터를 구분하고 gold/qrels/label 변경 여부를 run summary에 남깁니다.
+- vector DB는 후보 생성 장치로만 쓰고, citation truth는 SourceAtom/source registry에서 hydrate합니다.
 - 외부 데이터 라이선스와 공개 가능 여부를 별도 문서로 관리합니다.
 
-채용 관점에서 봐야 할 포인트는 높은 숫자 하나보다, 작은 검증 세트라도 기준을 정하고 과장 없이 추적하는 태도입니다.
+포트폴리오 관점에서 봐야 할 포인트는 높은 숫자 하나보다, 비동기 처리와 RAG evidence contract를 실제 코드와 산출물로 끝까지 추적했다는 점입니다.
 
 ### 4. 현재 진단 지표 스냅샷
 
-아래 수치는 제품 성능 리더보드가 아니라, 현재 RAG 근거 구조가 어디까지 재현 가능하게 측정됐는지 보여주는 checkpoint입니다. `Top@K/Hit@K`는 정답 근거가 상위 K개 후보 안에 들어왔는지, `MRR@5`는 첫 정답 근거의 순위를, `nDCG@5`는 binary exact-evidence 관련도를 봅니다. `p95/p99 latency`는 해당 측정 표면에서 요청 시간이 각각 95%, 99% 지점 안에 들어오는 wall-clock latency입니다.
+아래 수치는 현재 RAG 근거 구조가 어디까지 재현 가능하게 측정됐는지 보여주는 checkpoint입니다. `same-track@k`는 쿼리와 같은 source family의 후보가 top-k에 들어왔는지, `target@k`는 매핑된 target SearchView/SourceAtom이 top-k에 들어왔는지, `contract survival`은 SearchView 후보가 SourceAtom, EvidenceBundle, citation render까지 살아남았는지를 봅니다. `Hit@K/MRR/nDCG`는 과거 exact-evidence smoke의 regression guard로만 읽습니다.
 
 | Surface | Denominator / sample | 현재 값 | 읽는 법 |
 |---|---:|---|---|
-| Official exact-evidence retrieval smoke `v3_4_3` | 28 included queries | Hit@1 `27/28` = `96.4%`, Hit@3 `28/28`, Hit@5 `28/28`, MRR@5 `0.982`, binary nDCG@5 `0.987` | 작은 source-bound smoke입니다. 대표 제품 성능이나 promotion evidence로 쓰지 않습니다. |
-| Answer/citation closure `v3_2_7` | 29 official rows | Lane A `24/29`, Lane B retrieval top-k `27/29`, Lane C query-bound oracle `27/29`; citation support average `1.0` | answer/citation gold 기준의 diagnostic-only closure입니다. Lane A/B/C를 하나의 점수로 합치지 않습니다. |
-| README local LLM response loop | 100 rows, gold 25 / silver 75 | p95 latency `0.464s`, p99 latency `0.516s`, max `0.528s` | `gemma4-e2b-local` llama.cpp endpoint에 `query + SearchView evidence`만 보낸 documentation-only run입니다. throughput/production SLA가 아닙니다. |
-| Phase 7 v4 retrieval recommendation | historical active-v4 retrieval lane | `candidate_k=40`, MMR on, recommended `mmr_lambda=0.70` | metric-best plateau에는 `0.60`도 있었지만 운영 추천은 diversity tie-break로 `0.70`입니다. 현재 `v3.7` source-registry 지표와는 분리합니다. |
-| Source-first citable index `v3_7_1` | 136,280 SearchViews | TEXT `135,608`, PDF `329`, XLSX `343`; retrieval/answer/citation metric not computed | vector DB는 후보 생성 표면이고, citation truth는 SourceAtom/source registry에서 hydrate합니다. 다음 단계는 source-registry-backed retrieval smoke입니다. |
+| Source registry-backed retrieval smoke `v3_7_2` | 1,029 query surfaces: official 29 + diagnostic silver 1,000 | same-track@k: TEXT `356/356`, PDF `329/329`, XLSX `344/344`; target@k: TEXT `20/356`, PDF `112/329`, XLSX `13/344`; contract survival: TEXT `1780/1780`, PDF `1645/1645`, XLSX `1720/1720` | 현재 가장 최신 contract smoke입니다. same-track@k는 family routing 확인값이고, ranking/materialization 품질은 target@k와 failure bucket으로 읽습니다. |
+| Source-first citable index `v3_7_1` | 136,280 SearchViews | TEXT `135,608`, PDF `329`, XLSX `343`; source registry ready, index load check pass | `v3_7_2`의 immutable input index입니다. vector metadata는 canonical citation source가 아니며 SourceAtom에서 hydrate합니다. |
+| Official exact-evidence retrieval smoke `v3_4_3` | 28 included queries | Hit@1 `27/28` = `96.4%`, Hit@3 `28/28`, Hit@5 `28/28`, MRR@5 `0.982`, binary exact-evidence nDCG@5 `0.987` | 작은 source-bound regression smoke입니다. 현재 v3.7 contract smoke와 denominator가 다릅니다. |
+| Answer/citation closure `v3_2_7` | 29 official rows | Lane A `24/29`, Lane B retrieval top-k `27/29`, Lane C query-bound oracle `27/29`; citation support average `1.0` | answer/citation gold 기준의 diagnostic closure입니다. Lane A/B/C를 하나의 점수로 합치지 않습니다. |
+| Historical local LLM docs sample | 100 rows, gold 25 / silver 75 | p95 latency `0.464s`, p99 latency `0.516s`, max `0.528s` | `gemma4-e2b-local`에 `query + SearchView evidence`만 보낸 응답 샘플입니다. throughput/SLA가 아니라 입력 정책과 재현성 확인용입니다. |
 
 숫자의 자세한 출처, denominator 경계, gold/silver 샘플 응답은 [Evaluation harness](ai/eval/README.md)에서 이어서 확인합니다. 루트 README는 요약이고, `ai/eval/README.md`가 현재 평가 상태를 읽는 기준 문서입니다.
 
@@ -99,7 +99,7 @@ flowchart LR
 
 ## 현재 상태를 읽는 법
 
-이 저장소는 아직 "프로덕션에 올려도 되는 완성품"이라고 주장하지 않습니다. 현재 문서와 평가 결과는 다음을 보여주기 위한 것입니다.
+이 저장소는 portfolio/POC 기준으로 다음을 보여주는 데 초점을 둡니다.
 
 - 비동기 AI 처리의 기본 골격이 실제 코드로 구현되어 있음
 - 문서 타입별 근거 구조를 분리해서 관리함

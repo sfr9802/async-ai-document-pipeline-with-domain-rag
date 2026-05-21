@@ -3766,6 +3766,130 @@ def test_v3_7_0_xlsx_raw_locator_does_not_guess_ambiguous_external_archive_workb
     assert runner.v3_7_0_raw_file_exists(source_family="XLSX", raw_locator=locator) is False
 
 
+def test_v3_7_0_xlsx_raw_locator_resolves_single_valid_duplicate_archive_workbook(tmp_path, monkeypatch) -> None:
+    import zipfile
+
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    invalid = tmp_path / "root-a" / "same_name.xlsx"
+    valid = tmp_path / "root-b" / "same_name.xlsx"
+    invalid.parent.mkdir(parents=True)
+    valid.parent.mkdir(parents=True)
+    invalid.write_bytes(b"not an xlsx zip archive")
+    with zipfile.ZipFile(valid, "w"):
+        pass
+    monkeypatch.setattr(runner, "V3_5_XLSX_SOURCE_ROOTS", (tmp_path,))
+
+    unit = {
+        "source_family": "XLSX",
+        "source_locator": {
+            "workbook": "same_name.xlsx",
+            "source_file_path": "",
+            "sheet": "Sheet1",
+            "range": "A1:B2",
+        },
+        "track_locator_payload": {
+            "workbook": "same_name.xlsx",
+            "source_path": "",
+            "sheet": "Sheet1",
+            "range": "A1:B2",
+        },
+    }
+
+    locator = runner.v3_7_0_normalized_raw_locator(unit)
+
+    assert Path(locator["source_path"]).resolve() == valid.resolve()
+    assert runner.v3_7_0_raw_file_exists(source_family="XLSX", raw_locator=locator) is True
+
+
+def test_v3_7_0_pdf_raw_locator_keeps_basename_only_archive_match_snapshot_only(tmp_path, monkeypatch) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    pdf_path = tmp_path / "archive" / "nested" / "report.pdf"
+    pdf_path.parent.mkdir(parents=True)
+    pdf_path.write_bytes(b"%PDF-1.4\n")
+    monkeypatch.setattr(runner, "V3_5_PDF_DIAGNOSTIC_SOURCE_ROOTS", (tmp_path / "archive",))
+
+    unit = {
+        "source_family": "PDF",
+        "source_locator": {
+            "source_pdf_path": "report.pdf",
+            "page": 1,
+            "bbox": [1, 2, 3, 4],
+            "region_type": "text",
+        },
+        "track_locator_payload": {
+            "source_pdf_path": "",
+            "page": 1,
+            "bbox": [1, 2, 3, 4],
+            "region_type": "text",
+        },
+    }
+
+    locator = runner.v3_7_0_normalized_raw_locator(unit)
+
+    assert locator["source_pdf_path"] == "report.pdf"
+    assert runner.v3_7_0_raw_file_exists(source_family="PDF", raw_locator=locator) is False
+    resolution = runner.v3_7_0_snapshot_only_resolution_summary(
+        [
+            {
+                "source_atom_id": "srcatom_v1_pdf_test",
+                "source_family": "PDF",
+                "source_identity": "PDF:report",
+                "materialization_bucket": "snapshot_only_ready",
+                "raw_locator": locator,
+            }
+        ]
+    )
+    assert resolution["counts_by_resolution_bucket"] == {
+        "source_identity_insufficient_basename_only_archive_match": 1
+    }
+    assert resolution["counts_by_source_family"]["PDF"] == 1
+
+
+def test_v3_7_1_xlsx_search_view_ranking_text_keeps_locator_and_value_fields() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    atom = {
+        "source_atom_id": "srcatom_v1_xlsx_test",
+        "source_family": "XLSX",
+        "source_identity": "XLSX:book.xlsx:Sheet1!B2",
+        "raw_locator": {
+            "workbook": "book.xlsx",
+            "source_path": "D:/archive/book.xlsx",
+            "sheet": "Sheet1",
+            "range": "A1:B2",
+            "cell": "B2",
+            "row_label": "매출",
+            "column_label": "2026년",
+            "target_column": "2026년",
+        },
+        "normalized_text_or_value_snapshot": "42",
+        "parent_pointers": {"search_unit_id": "su-xlsx-1"},
+    }
+
+    view = runner.v3_7_1_search_view_from_source_atom(
+        atom,
+        faiss_row_id=7,
+        generated_at="2026-05-21T00:00:00Z",
+    )
+
+    for field in ("embedding_text", "bm25_text", "display_text"):
+        assert "workbook=book.xlsx" in view[field]
+        assert "sheet=Sheet1" in view[field]
+        assert "range=A1:B2" in view[field]
+        assert "cell=B2" in view[field]
+        assert "row_label=매출" in view[field]
+        assert "target_column=2026년" in view[field]
+        assert "normalized_value=42" in view[field]
+
+
 def test_v3_7_0_source_registry_no_vector_hydration_and_citation_smoke() -> None:
     hydration = read_json(V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE)
     registry_rows = read_jsonl(SOURCE_ATOM_REGISTRY_JSONL)
@@ -3847,7 +3971,7 @@ def test_v3_7_1_all_source_citable_nonprod_index_is_source_atom_backed_without_v
     assert summary["search_view_count"] == index_inventory["counts"]["search_views_indexed"]
     assert summary["source_family_counts"] == {"TEXT": 135608, "PDF": 329, "XLSX": 343}
     assert summary["official_overlap_count"] == 29
-    assert summary["snapshot_only_count"] == 122
+    assert summary["snapshot_only_count"] == 3
     assert summary["blocking_buckets"] == []
     assert summary["fail_closed_reasons"] == []
     assert summary["source_registry_sha256_unchanged"] is True
@@ -3935,6 +4059,15 @@ def test_v3_7_2_source_registry_backed_retrieval_smoke_report_tracks_contract_su
 
     assert failure_buckets["failure_bucket_definitions"] == V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_BUCKETS
     assert set(summary["failure_bucket_counts"]) == set(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_BUCKETS)
+    assert summary["row_level_retrieval_bottleneck"]["tracks"]["XLSX"]["target_not_in_topk_count"] == summary[
+        "per_track_breakdown"
+    ]["XLSX"]["retrieval_diagnostic_bucket_counts"]["target_not_in_topk"]
+    assert summary["row_level_retrieval_bottleneck"]["tracks"]["XLSX"]["target_mapping_bucket_counts"][
+        "locator_mapping_gap"
+    ] == 1
+    assert summary["row_level_retrieval_bottleneck"]["scope_tracks"]["silver_1000_diagnostic_overlay"]["XLSX"][
+        "target_not_in_topk_count"
+    ] <= summary["row_level_retrieval_bottleneck"]["tracks"]["XLSX"]["target_not_in_topk_count"]
     assert set(per_track["tracks"]) == {"TEXT", "PDF", "XLSX"}
     assert set(summary["per_track_breakdown"]) == {"TEXT", "PDF", "XLSX"}
     for track, breakdown in summary["per_track_breakdown"].items():
