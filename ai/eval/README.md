@@ -9,24 +9,24 @@ Last updated: 2026-05-21 KST.
 루트 README의 지표 스냅샷에서 여기로 넘어왔다면 아래 순서로 보면 됩니다.
 
 1. 이 파일의 `현재 상태`와 `지표 해석`에서 denominator와 promotion 경계를 확인합니다.
-2. `100-row local LLM 응답 샘플`에서 gold/silver query와 실제 로컬 LLM 응답 예시를 봅니다.
+2. `v3_7_2 source registry-backed retrieval smoke`에서 새 silver query 표면이 실제 retrieval loop에 들어간 결과를 봅니다.
 3. 세부 run ledger는 `../../docs/rag-ingestion-progress.md`, `../../docs/rag-ingestion-measurements.md`, `../../docs/rag-ingestion-triage.md`로 내려갑니다.
 4. machine-readable 최신 상태는 `reports/rag-ingestion/status.jsonl`과 각 run summary JSON을 확인합니다.
 
 ## 현재 상태
 
-현재 primary track은 `v3_7_1` source-first citable non-production index build입니다. 핵심 변화는 vector DB가 citation truth를 들고 있는 구조가 아니라, SearchView는 후보를 만들고 SourceAtom/source registry가 근거와 citation payload를 hydrate하는 구조로 정리했다는 점입니다.
+현재 primary track은 `v3_7_2` source registry-backed retrieval smoke report입니다. 핵심 질문은 점수 개선이 아니라, PDF/XLSX 쿼리가 먼저 자기 문서 family 후보 안으로 들어오고, 검색된 SearchView가 SourceAtom으로 hydrate되어 EvidenceBundle과 citation render까지 끊기지 않고 이어지는지입니다. `v3_7_1` index는 이 smoke의 입력 artifact로 유지됩니다.
 
 | 항목 | 현재 값 | 해석 |
 |---|---|---|
-| 현재 run | `official_answer_citation_agentic_loop_run_v3_7_1_all_source_citable_nonprod_index_build` | all-source citable non-production index build 완료 |
-| 다음 허용 단계 | `v3_7_2_source_registry_backed_retrieval_smoke` | source registry 기반 retrieval smoke가 다음 bounded step |
+| 현재 run | `official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report` | PDF/XLSX는 query source-family routed top-k를 primary로 쓰고, SourceAtom hydration, EvidenceBundle render, citation render survival을 track별로 기록 |
+| 입력 index | `indexes/rag-data-all-source-citable-nonprod-v1` | `v3_7_1` all-source citable non-production SearchView export |
 | SearchViews | `136,280` | TEXT `135,608`, PDF `329`, XLSX `343` |
 | Source registry | `source_registry/source_atom_registry_v1.jsonl` | canonical evidence/citation truth |
-| Current index | `indexes/rag-data-all-source-citable-nonprod-v1` | diagnostic-only FAISS/SearchView export |
-| Official overlap | `29` protected rows | answer/citation official denominator와 겹치는 protected regression rows |
-| Hydration smoke | PDF/TEXT/XLSX pass | vector metadata를 evidence truth로 쓰지 않고 source registry에서 hydrate |
-| v3_7_1 metrics | retrieval/answer/citation metric not computed | index build 검증이지 성능 측정이나 promotion gate가 아님 |
+| v3_7_2 query surfaces | official `29` + silver diagnostic `1000` | official/gold는 sealed no-regression only, silver는 coverage/failure discovery only |
+| Silver query surface | `LOCAL_LLM_NATURAL_SILVER_1000_REGENERATED_AND_POLISHED` | 1000 unique query hashes; XLSX 325 rows polished; plain Korean/digit/punctuation validation pass |
+| Contract path | SearchView -> SourceAtom -> EvidenceBundle -> Citation render | vector metadata를 evidence truth로 쓰지 않고 source registry에서 hydrate |
+| Promotion readiness | explicitly not opened | answer quality, prompt tuning, gold/qrels mutation, comparable live measurement 모두 닫힘 |
 
 ## 지표 해석
 
@@ -39,6 +39,7 @@ Last updated: 2026-05-21 KST.
 | v3_4_3 exact-evidence retrieval smoke | 28 included rows | Hit@1 `27/28`, Hit@3 `28/28`, Hit@5 `28/28`, MRR@5 `27.5/28`, binary exact-evidence nDCG@5 `0.9868189197704093` | source-bound exact-evidence smoke와 regression guard. 대표 제품 성능 아님 |
 | README local LLM response loop | 100 docs sample rows | p95 `0.464s`, p99 `0.516s`, max `0.528s` | query + SearchView evidence만 넣은 documentation-only loop. official metric 아님 |
 | v3_7_1 source-first index | 136,280 SearchViews | metric not computed | retrieval/answer/citation 성능 측정 전 단계. vector metadata는 canonical citation source가 아님 |
+| v3_7_2 contract smoke | 1,029 query surfaces | returned/same-track/target/contract survival counts | PDF `same-track@k=329/329`, target@k `112/329`; XLSX `same-track@k=344/344`, target@k `10/344`. `topk_returned_count`는 반환 수일 뿐 정답 hit가 아니며 headline aggregate score 아님 |
 
 `nDCG`는 현재 full graded relevance nDCG가 아니라 `binary exact-evidence nDCG@5`입니다. future graded nDCG는 별도 relevance/answerability label 정책이 생긴 뒤에만 같은 이름으로 비교해야 합니다.
 
@@ -47,6 +48,9 @@ Last updated: 2026-05-21 KST.
 - Official answer/citation denominator는 `eval_queries/official_denominator_registry.json`에서 시작하며 현재 29 rows입니다.
 - Track mix는 PDF `4`, TEXT `6`, XLSX `19`입니다.
 - Retrieval smoke denominator는 `v3_4_2` exact-evidence qrels에서 나온 28 included rows입니다. `gq_auto_010`은 standalone query missing year 이유로 제외됐고, failure/negative로 세지 않습니다.
+- `v3_7_2` source registry-backed smoke는 official/gold query를 회귀 확인용으로만 읽고, silver 1000은 취약 locator와 adapter gap 발견용으로만 읽습니다.
+- `v3_7_2`의 `topk_returned_count`는 SearchView 후보가 몇 개 반환됐는지입니다. PDF/XLSX primary top-k는 `query_source_family_routed_for_structured_tracks`로 읽고, 기존 all-source mixed 결과는 `mixed_retrieval_baseline`으로만 남겨 TEXT dominance를 진단합니다.
+- 현재 mixed baseline은 PDF same-track@k `9/329`, XLSX same-track@k `30/344`로 여전히 TEXT에 잠기지만, routed primary에서는 PDF/XLSX 모두 same-track@k가 query_count와 같습니다. target@k는 별도 ranking/materialization 문제로 분리해 읽습니다.
 - Silver/weak-noisy rows는 tuning 후보나 documentation sample이 될 수 있지만 official denominator, official qrels, promotion evidence가 아닙니다.
 - Lane A/B/C score는 진단 표면입니다. 하나의 official score로 접지 않습니다.
 
@@ -62,9 +66,21 @@ TEXT, XLSX, PDF는 같은 vector score 하나로만 읽지 않습니다. 검색 
 
 이 경계 때문에 vector metadata에는 canonical citation payload를 저장하지 않습니다. vector DB는 후보 생성 장치이고, 답변 근거는 source registry hydration 결과를 기준으로 확인합니다.
 
+## v3_7_2 source registry-backed retrieval smoke
+
+이 루프는 새로 재생성한 silver 1000개를 포함해 총 1029개 query surface를 실제 SearchView retrieval path에 태운 diagnostic smoke입니다. answer quality나 citation precision을 채점하지 않고, SearchView 후보가 SourceAtom으로 hydrate되고 EvidenceBundle 및 citation render까지 살아남는지만 track별로 분리해 봅니다.
+
+| Track | Query count | Routed same-track@k | Target@k | Contract survival target@k | Top failure |
+|---|---:|---:|---:|---:|---|
+| TEXT | 356 | 356 | 20 | 20 | track_mismatch |
+| PDF | 329 | 329 | 112 | 112 | snapshot_only |
+| XLSX | 344 | 344 | 10 | 10 | snapshot_only |
+
+Silver query surface quality check: rows `1000`, unique query hashes `1000`, duplicate hashes `0`, XLSX polished rows `325`. The current query set has no Latin/Japanese/Hanja or disallowed punctuation violations; repeated domain starts remain visible in source-heavy XLSX/PDF areas, so this is still diagnostic silver, not human gold.
+
 ## 100-row local LLM 응답 샘플
 
-아래 표는 README에 표시할 근거 샘플을 채우기 위해 한 번 실행한 documentation-only 루프입니다. gold `25`행과 silver `75`행을 사용했고, 로컬 OpenAI-compatible llama.cpp endpoint `http://localhost:8081/v1`의 `gemma4-e2b-local`에 `temperature=0`, `max_tokens=96`으로 요청했습니다. 이 루프의 wall-clock latency는 p95 `0.464s`, p99 `0.516s`, max `0.528s`였습니다.
+아래 표는 v3_7_2 이전 README에 표시할 근거 샘플을 채우기 위해 한 번 실행한 historical documentation-only 루프입니다. gold `25`행과 당시 silver `75`행을 사용했고, 로컬 OpenAI-compatible llama.cpp endpoint `http://localhost:8081/v1`의 `gemma4-e2b-local`에 `temperature=0`, `max_tokens=96`으로 요청했습니다. 이 루프의 wall-clock latency는 p95 `0.464s`, p99 `0.516s`, max `0.528s`였습니다. 현재 silver query 표면은 위 v3_7_2 smoke artifacts를 기준으로 읽습니다.
 
 중요한 경계는 다음과 같습니다. 이 표는 official promotion metric 이 아니며, gold/silver/query/label 을 변경하지 않습니다. 모델 입력에는 `query + SearchView evidence`만 넣었고, `expected_answer` 또는 silver `expected_answer_draft`는 보내지 않았습니다. 표의 locator와 응답은 Markdown 표 렌더링을 위해 줄바꿈과 `|` 문자만 정리했습니다.
 
@@ -185,11 +201,12 @@ TEXT, XLSX, PDF는 같은 vector score 하나로만 읽지 않습니다. 검색 
 
 ## Active와 historical 경계
 
-현재 이 파일의 기본 독해 표면은 `v3_7_1` source-first citable index와 그 다음 단계인 `v3_7_2` retrieval smoke입니다. Phase 7 v4, Phase 2A reranker, anime/namespaced legacy corpus 실험은 historical 또는 별도 track으로만 읽습니다.
+현재 이 파일의 기본 독해 표면은 `v3_7_2` source registry-backed retrieval smoke report와 그 입력인 `v3_7_1` source-first citable index입니다. Phase 7 v4, Phase 2A reranker, anime/namespaced legacy corpus 실험은 historical 또는 별도 track으로만 읽습니다.
 
 | 영역 | 현재 판단 |
 |---|---|
-| `v3_7_1` source registry/index | 현재 RAG ingestion source-first track |
+| `v3_7_2` source registry-backed retrieval smoke | 현재 RAG ingestion contract-survival report |
+| `v3_7_1` source registry/index | `v3_7_2`의 immutable input index |
 | Phase 7 v4 retrieval recommendation | historical retrieval tuning context. `candidate_k=40`, MMR on, recommended `mmr_lambda=0.70`은 v3.7 metric이 아님 |
 | Phase 2A reranker latency/accuracy | legacy reranker experiment. 현재 production/default path 아님 |
 | anime/namespaced legacy corpora | historical reproduction/debug context. 현재 source-registry denominator와 섞지 않음 |
@@ -201,9 +218,9 @@ TEXT, XLSX, PDF는 같은 vector score 하나로만 읽지 않습니다. 검색 
 | `eval_queries/` | official denominator, gold/review/silver candidate query files | gold/label/policy를 임의 변경하지 않음 |
 | `source_registry/` | SourceAtom registry와 build inventory | 현재 citation/evidence hydration truth |
 | `indexes/rag-data-official-denominator-v1/` | 29-row official source-bound SearchUnit index | protected regression scope |
-| `indexes/rag-data-all-source-citable-nonprod-v1/` | 136,280 SearchView all-source diagnostic index | non-production only; v3_7_1 metric 미계산 |
+| `indexes/rag-data-all-source-citable-nonprod-v1/` | 136,280 SearchView all-source diagnostic index | non-production only; v3_7_2 smoke input |
 | `reports/rag-ingestion/status.jsonl` | compact machine-readable status ledger | routine status는 여기에 compact event로 남김 |
-| `reports/rag-ingestion/` | current durable JSON/JSONL summaries | full per-run Markdown은 명시적 forensic 필요 때만 |
+| `reports/rag-ingestion/` | current durable JSON/JSONL summaries | `v3_7_2_source_registry_backed_retrieval_smoke_report_*`가 최신 contract smoke 산출물 |
 | `harness/`, `run_eval.py` | legacy and general eval harness code | active RAG ingestion status와 혼동하지 않음 |
 | `corpora/`, `artifacts/`, `legacy/`, `experiments/` | corpora, generated artifacts, retired paths, tuning experiments | active/protected artifact 여부를 확인한 뒤 이동/삭제 |
 
@@ -215,7 +232,10 @@ PowerShell 기준으로 가장 빠른 확인 경로는 아래입니다.
 # compact status ledger tail
 Get-Content ai/eval/reports/rag-ingestion/status.jsonl -Tail 5
 
-# current all-source citable index summary
+# current source-registry-backed retrieval smoke summary
+Get-Content ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report_summary.json
+
+# input all-source citable index summary
 Get-Content ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_7_1_all_source_citable_nonprod_index_build_summary.json
 
 # rolling human docs
@@ -224,8 +244,8 @@ Get-Content docs/rag-ingestion-progress.md -TotalCount 80
 
 ## 아직 열지 않은 것
 
-- `v3_7_2_source_registry_backed_retrieval_smoke`는 아직 실행하지 않았습니다.
 - `v3_7_1`은 retrieval/answer/citation metric computation이 아니라 index build와 hydration contract 검증입니다.
+- `v3_7_2`도 answer quality, promotion, prompt tuning, gold 반복 튜닝, comparable live measurement를 열지 않았습니다.
 - 100-row local LLM 표는 documentation sample입니다. official answer/citation precision, evidence precision, citation precision 또는 promotion gate로 쓰지 않습니다.
 - Full graded nDCG, broad product-quality claims, production SLA latency는 아직 열지 않았습니다.
 - Silver/weak-noisy set은 일반화 튜닝 후보를 만들기 위한 보조 표면이지, human gold나 official qrels가 아닙니다.

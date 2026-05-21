@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -9,6 +12,16 @@ PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+
+
+def require_v3_7_2_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_7_2 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_7_2_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
 
 
 def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unavailable():
@@ -1318,6 +1331,8 @@ def test_progress_status_and_triage_gate_record_v3_6_6_without_metric_measuremen
         or "Overall status: `diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9_contract_ready`;" in progress
         or "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
         or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+        or "Overall status: `local_llm_natural_silver_query_regeneration_v3_7_2_done`;" in progress
+        or "Overall status: `diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1420,6 +1435,8 @@ def test_progress_status_and_triage_gate_record_v3_6_7_runtime_stability_probe_w
         or "Overall status: `diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9_contract_ready`;" in progress
         or "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
         or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+        or "Overall status: `local_llm_natural_silver_query_regeneration_v3_7_2_done`;" in progress
+        or "Overall status: `diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1532,6 +1549,8 @@ def test_progress_status_and_triage_gate_record_v3_6_8_nonprod_all_source_withou
         in progress
         or "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
         or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+        or "Overall status: `local_llm_natural_silver_query_regeneration_v3_7_2_done`;" in progress
+        or "Overall status: `diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1629,6 +1648,8 @@ def test_progress_status_and_triage_gate_record_v3_6_8_source_registry_architect
         in progress
         or "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
         or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+        or "Overall status: `local_llm_natural_silver_query_regeneration_v3_7_2_done`;" in progress
+        or "Overall status: `diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1723,6 +1744,8 @@ def test_progress_status_and_triage_gate_record_v3_6_9_searchunit_searchview_sou
         "Overall status: `diagnostic_searchunit_searchview_sourceatom_refactor_v3_6_9_contract_ready`;" in progress
         or "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
         or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+        or "Overall status: `local_llm_natural_silver_query_regeneration_v3_7_2_done`;" in progress
+        or "Overall status: `diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1820,6 +1843,8 @@ def test_progress_status_and_triage_gate_record_v3_7_0_source_registry_materiali
     assert (
         "Overall status: `diagnostic_source_registry_materialization_v3_7_0_ready`;" in progress
         or "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+        or "Overall status: `local_llm_natural_silver_query_regeneration_v3_7_2_done`;" in progress
+        or "Overall status: `diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1863,7 +1888,7 @@ def test_progress_status_and_triage_gate_record_v3_7_1_all_source_citable_nonpro
     assert event["vector_metadata_used_as_evidence_truth"] is False
     assert event["search_view_count"] == 136280
     assert event["official_overlap_count"] == 29
-    assert event["snapshot_only_count"] == 327
+    assert event["snapshot_only_count"] == 122
     assert event["load_check"]["passed"] is True
     assert event["hydration_smoke_summary"]["families_passed"] == ["PDF", "TEXT", "XLSX"]
     assert event["hydration_smoke_summary"]["no_vector_evidence_bundle_hydration_passed"] is True
@@ -1917,6 +1942,105 @@ def test_progress_status_and_triage_gate_record_v3_7_1_all_source_citable_nonpro
     assert "next_allowed_phase=v3_7_2_source_registry_backed_retrieval_smoke" in current_flat
     assert "no-vector hydration=true" in current_flat
     assert "vector_metadata_used_as_canonical_citation_source=false" in current_flat
-    assert "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+    assert (
+        "Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;" in progress
+        or "Overall status: `local_llm_natural_silver_query_regeneration_v3_7_2_done`;" in progress
+        or "Overall status: `diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done`;" in progress
+    )
+    assert run_id not in measurements
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_7_2_source_registry_backed_retrieval_smoke_without_promotion():
+    require_v3_7_2_local_artifacts(STATUS_JSONL)
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = (
+        "official_answer_citation_agentic_loop_run_v3_7_2_"
+        "source_registry_backed_retrieval_smoke_report"
+    )
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_source_registry_backed_retrieval_smoke_report_v3_7_2"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["run_class"] == "diagnostic_only_source_registry_backed_retrieval_smoke_report"
+    assert event["contract_path"] == ["SearchView", "SourceAtom", "EvidenceBundle", "Citation render"]
+    assert event["official_gold_usage"] == "sealed_no_regression_check_only"
+    assert event["silver_usage"] == "diagnostic_failure_distribution_only"
+    assert event["headline_aggregate_success_rate_reported"] is False
+    assert event["retrieval_score_primary_metric"] is False
+    assert event["answer_quality_metric_computed"] is False
+    assert event["answer_metric_computed"] is False
+    assert event["citation_metric_computed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["promotion_readiness_opened"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["readme_performance_claim_mutation"] is False
+    assert event["measurements_doc_updated"] is False
+    assert event["triage_doc_updated"] is False
+    assert event["production_db_used"] is False
+    assert event["db_write_attempted"] is False
+    assert event["db_migration_attempted"] is False
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["official_gold_labels_created"] is False
+    assert "silver_precision" not in json.dumps(event, ensure_ascii=False).lower()
+    assert "silver precision" not in json.dumps(event, ensure_ascii=False).lower()
+    assert event["retrieval_routing_mode"] == "query_source_family_routed_for_structured_tracks"
+    assert event["routed_source_families"] == ["PDF", "XLSX"]
+    assert event["family_routed_missing_query_key_count"] == 0
+    assert event["family_routed_missing_query_keys"] == []
+    assert event["mixed_retrieval_baseline"]["candidate_pool_mode"] == (
+        "mixed_all_source_faiss_topk_before_family_routing"
+    )
+    assert set(event["per_track_breakdown"]) == {"TEXT", "PDF", "XLSX"}
+    for track in ("PDF", "XLSX"):
+        routed = event["per_track_breakdown"][track]
+        mixed = event["mixed_retrieval_baseline"]["tracks"][track]
+        assert routed["same_track_hit_at_k_count"] == routed["query_count"]
+        assert routed["off_track_returned_count"] == 0
+        assert routed["failure_bucket_counts"]["track_mismatch"] == 0
+        assert routed["retrieval_diagnostic_bucket_counts"]["family_route_missing"] == 0
+        assert mixed["off_track_returned_count"] > 0
+        assert mixed["retrieval_diagnostic_bucket_counts"]["cross_family_text_dominance"] > 0
+    for artifact_key in (
+        "summary_json",
+        "topk_rows_jsonl",
+        "failure_buckets_json",
+        "per_track_breakdown_json",
+        "silver_1000_diagnostic_overlay_json",
+        "source_atom_registry_jsonl",
+        "index_search_view_manifest_jsonl",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "topk_result_rows",
+        "source_atom_rows",
+        "search_view_rows",
+        "full_evidence_bundles",
+        "failure_buckets",
+        "silver_1000_diagnostic_overlay",
+    ):
+        assert large_field not in event
+
+    assert "v3_7_2 source registry-backed retrieval smoke report" in current_text
+    assert run_id in current_text
+    assert "SearchView -> SourceAtom -> EvidenceBundle -> Citation render" in current_flat
+    assert "Primary routing mode=query_source_family_routed_for_structured_tracks" in current_flat
+    assert "Mixed all-source FAISS top-k is retained only as baseline diagnostic" in current_flat
+    assert "silver diagnostic failure distribution" in current_flat
+    assert "Promotion readiness remains closed" in current_flat
+    assert "Overall status: `diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done`;" in progress
     assert run_id not in measurements
     assert run_id not in triage

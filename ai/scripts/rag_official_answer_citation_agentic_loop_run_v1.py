@@ -216,6 +216,9 @@ V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID = (
 V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_7_1_all_source_citable_nonprod_index_build"
 )
+V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report"
+)
 REPORT_ARTIFACT_SLUGS = {
     RUN_ID: "agentic_v1",
     V2_RUN_ID: "v2_source_bound",
@@ -314,6 +317,9 @@ REPORT_ARTIFACT_SLUGS = {
     V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID: (
         V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID
     ),
+    V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID: (
+        V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
@@ -354,11 +360,13 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
     V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
     V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
 }
 PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
     V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
     V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
 }
 V3_1_PRIORITY_1_5_QUERY_IDS = (
     "gq_pdf_section_question_001",
@@ -1226,6 +1234,26 @@ DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON = report_artifact_path(
     V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
     "failure_buckets.json",
 )
+DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON = report_artifact_path(
+    V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+    "summary.json",
+)
+DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL = report_artifact_path(
+    V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+    "topk_rows.jsonl",
+)
+DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON = report_artifact_path(
+    V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+    "failure_buckets.json",
+)
+DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON = report_artifact_path(
+    V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+    "per_track_breakdown.json",
+)
+DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON = report_artifact_path(
+    V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+    "silver_1000_diagnostic_overlay.json",
+)
 DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "scorer_v1.jsonl"
 DEFAULT_TEXT_NAMU_GOLD_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v2_1_question_gold_v2.csv"
 DEFAULT_TEXT_NAMU_HUMAN_AUDIT_V2_DECISIONS_JSON = (
@@ -1245,6 +1273,15 @@ DEFAULT_SOURCE_ATOM_REGISTRY_INVENTORY_JSON = DEFAULT_SOURCE_ATOM_REGISTRY_DIR /
 DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL = DEFAULT_SOURCE_ATOM_REGISTRY_DIR / "source_atom_registry_blocked.jsonl"
 DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR = (
     AI_WORKER_ROOT / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-v1"
+)
+DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL = (
+    REPORT_DIR
+    / "official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration_"
+    "llm_natural_silver_manifest_all.jsonl"
+)
+DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_SUMMARY_JSON = (
+    REPORT_DIR
+    / "official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration_summary.json"
 )
 
 GENERATION_PIPELINE_UNAVAILABLE = "GENERATION_PIPELINE_UNAVAILABLE"
@@ -1675,6 +1712,7 @@ def main(argv: list[str] | None = None) -> int:
         V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
         V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
         V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+        V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
     }:
         write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
         append_v3_6_low_touch_weak_noisy_silver_event(Path(args.status_jsonl), summary)
@@ -1982,6 +2020,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
         V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
         V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+        V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
     }
     if args.run_id not in supported_run_ids:
         raise SystemExit(
@@ -2117,6 +2156,9 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
 
     if args.run_id == V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID:
         return run_v3_7_1_all_source_citable_nonprod_index_build(args=args), []
+
+    if args.run_id == V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID:
+        return run_v3_7_2_source_registry_backed_retrieval_smoke_report(args=args), []
 
     if args.run_id == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
         return run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement(
@@ -24761,6 +24803,34 @@ V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS = (
     "ALL_SOURCE_CITABLE_INDEX_PARTIAL",
     "ALL_SOURCE_CITABLE_INDEX_BLOCKED",
 )
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOP_K = 5
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS = (
+    "search_miss",
+    "source_atom_missing",
+    "source_atom_blocked",
+    "locator_incomplete",
+    "evidence_bundle_render_failed",
+    "citation_render_failed",
+    "snapshot_only",
+    "adapter_missing",
+    "track_mismatch",
+)
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_DIAGNOSTIC_BUCKETS = (
+    "search_miss",
+    "target_missing_from_index",
+    "target_not_in_topk",
+    "cross_family_text_dominance",
+    "cross_family_mixed_results",
+    "family_route_missing",
+    "snapshot_only",
+    "locator_mapping_gap",
+    "target_contract_gap",
+    "contract_survived_same_track",
+)
+V3_7_2_FAMILY_ROUTED_SMOKE_FAMILIES = ("PDF", "XLSX")
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_OUTCOME = (
+    "SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORTED"
+)
 V3_6_8_CANONICAL_PAYLOAD_SOURCE_RECOMMENDED_PHASE = "v3_6_8_canonical_payload_live_retrieval_probe"
 V3_6_8_CANONICAL_PAYLOAD_ACCEPTED_SOURCE_RECOMMENDED_PHASES = {
     "v3_6_7_manifest_locator_live_retrieval_probe",
@@ -29302,6 +29372,54 @@ def v3_7_0_source_atom_from_unit(
     return atom, bucket, []
 
 
+def v3_7_0_existing_raw_path_text(*values: Any) -> str:
+    for value in values:
+        text = official.clean(value)
+        if not text or "://" in text:
+            continue
+        path = Path(text)
+        if path.is_absolute():
+            if path.exists():
+                return path.as_posix()
+            continue
+        repo_path = REPO_ROOT / path
+        if repo_path.exists():
+            return repo_path.as_posix()
+    return ""
+
+
+def v3_7_0_xlsx_source_file_name_index() -> dict[str, tuple[Path, ...]]:
+    cache = getattr(v3_7_0_xlsx_source_file_name_index, "_cache", {})
+    cache_key = tuple(root.as_posix() for root in V3_5_XLSX_SOURCE_ROOTS)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    by_name: dict[str, set[Path]] = defaultdict(set)
+    for root in V3_5_XLSX_SOURCE_ROOTS:
+        if not root.exists():
+            continue
+        for path in root.rglob("*"):
+            if path.is_file() and path.suffix.lower() in {".xlsx", ".xlsm", ".xls"}:
+                by_name[path.name].add(path.resolve())
+    index = {
+        name: tuple(sorted(paths, key=lambda item: item.as_posix().lower()))
+        for name, paths in by_name.items()
+    }
+    cache[cache_key] = index
+    setattr(v3_7_0_xlsx_source_file_name_index, "_cache", cache)
+    return index
+
+
+def v3_7_0_unambiguous_xlsx_source_path_text(workbook: Any) -> str:
+    workbook_name = Path(official.clean(workbook)).name
+    if not workbook_name:
+        return ""
+    matches = v3_7_0_xlsx_source_file_name_index().get(workbook_name, ())
+    if len(matches) != 1:
+        return ""
+    return matches[0].as_posix()
+
+
 def v3_7_0_normalized_raw_locator(unit: Mapping[str, Any]) -> dict[str, Any]:
     source_family = official.clean(unit.get("source_family")).upper()
     locator = dict(as_mapping(unit.get("source_locator")) or as_mapping(unit.get("track_locator_payload")))
@@ -29321,9 +29439,15 @@ def v3_7_0_normalized_raw_locator(unit: Mapping[str, Any]) -> dict[str, Any]:
             "text_span": official.clean(locator.get("text_span") or f"chunk:{track_locator.get('chunk_id') or locator.get('chunk_id')}"),
         }
     elif source_family == "PDF":
+        source_pdf_path = v3_7_0_existing_raw_path_text(
+            track_locator.get("source_pdf_path"),
+            locator.get("source_pdf_path"),
+            unit.get("source_pdf_path"),
+            unit.get("source_document_identity"),
+        ) or official.clean(track_locator.get("source_pdf_path") or locator.get("source_pdf_path"))
         normalized = {
             **locator,
-            "source_pdf_path": official.clean(track_locator.get("source_pdf_path") or locator.get("source_pdf_path")),
+            "source_pdf_path": source_pdf_path,
             "document_version_id": official.clean(
                 track_locator.get("document_version_id")
                 or locator.get("document_version_id")
@@ -29339,10 +29463,22 @@ def v3_7_0_normalized_raw_locator(unit: Mapping[str, Any]) -> dict[str, Any]:
             "region_type": official.clean(track_locator.get("region_type") or locator.get("region_type")),
         }
     elif source_family == "XLSX":
+        workbook = official.clean(track_locator.get("workbook") or locator.get("workbook"))
+        source_path = v3_7_0_existing_raw_path_text(
+            track_locator.get("source_path"),
+            track_locator.get("source_file_path"),
+            locator.get("source_path"),
+            locator.get("source_file_path"),
+            unit.get("source_path"),
+            unit.get("source_file_path"),
+            unit.get("workbook_path"),
+            unit.get("source_workbook"),
+            unit.get("source_document_identity"),
+        ) or v3_7_0_unambiguous_xlsx_source_path_text(workbook)
         normalized = {
             **locator,
-            "workbook": official.clean(track_locator.get("workbook") or locator.get("workbook")),
-            "source_path": official.clean(track_locator.get("source_path") or locator.get("source_file_path")),
+            "workbook": workbook,
+            "source_path": source_path,
             "document_version_id": official.clean(unit.get("document_version_id") or locator.get("document_version_id")),
             "sheet": official.clean(track_locator.get("sheet") or locator.get("sheet")),
             "range": official.clean(track_locator.get("range") or locator.get("range")),
@@ -30876,6 +31012,1616 @@ def v3_7_1_outcome(
     ):
         return "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT"
     return "ALL_SOURCE_CITABLE_INDEX_PARTIAL"
+
+
+def run_v3_7_2_source_registry_backed_retrieval_smoke_report(
+    *,
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    from app.capabilities.rag.faiss_index import FaissIndex  # noqa: WPS433
+    import numpy as np  # noqa: WPS433
+
+    generated_at = utc_timestamp()
+    source_registry_sha_before = v3_7_1_source_registry_sha256()
+    index_artifact_sha_before = v3_7_2_index_artifact_sha256()
+    official_index_sha_before = v3_6_8_all_source_official_index_sha256()
+    preflight = v3_7_2_source_registry_retrieval_smoke_preflight()
+    query_specs = v3_7_2_source_registry_retrieval_smoke_query_specs(generated_at=generated_at)
+    search_results: list[list[tuple[int, float]]] = []
+    index_info: Mapping[str, Any] = {}
+    load_failure = ""
+    try:
+        index = FaissIndex(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR)
+        info = index.load()
+        index_info = {
+            "index_version": info.index_version,
+            "embedding_model": info.embedding_model,
+            "dimension": info.dimension,
+            "chunk_count": info.chunk_count,
+        }
+        vectors = np.vstack(
+            [
+                v3_6_8_all_source_hash_vector(
+                    official.clean(spec.get("query_text")),
+                    dimension=V3_7_1_ALL_SOURCE_CITABLE_VECTOR_DIMENSION,
+                )
+                for spec in query_specs
+            ]
+        )
+        search_results = index.search(vectors, top_k=V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOP_K)
+    except Exception as exc:  # noqa: BLE001
+        load_failure = f"{type(exc).__name__}: {exc}"
+        search_results = [[] for _spec in query_specs]
+
+    hit_faiss_ids = {
+        int(row_id)
+        for hits in search_results
+        for row_id, _score in hits
+        if int(row_id) >= 0
+    }
+    target_parent_source_unit_ids = {
+        official.clean(spec.get("target_parent_source_unit_id"))
+        for spec in query_specs
+        if official.clean(spec.get("target_parent_source_unit_id"))
+    }
+    target_search_unit_ids = {
+        official.clean(spec.get("target_search_unit_id"))
+        for spec in query_specs
+        if official.clean(spec.get("target_search_unit_id"))
+    }
+    target_locator_fingerprints = {
+        official.clean(spec.get("target_locator_fingerprint"))
+        for spec in query_specs
+        if official.clean(spec.get("target_locator_fingerprint"))
+    }
+    search_view_lookup = v3_7_2_collect_search_view_manifest_rows(
+        hit_faiss_ids=hit_faiss_ids,
+        target_parent_source_unit_ids=target_parent_source_unit_ids,
+        target_search_unit_ids=target_search_unit_ids,
+        target_locator_fingerprints=target_locator_fingerprints,
+    )
+    source_atom_ids = set()
+    for row in search_view_lookup["rows_by_faiss_id"].values():
+        source_atom_ids.update(v3_7_2_search_view_source_atom_ids(row))
+    for rows in search_view_lookup["target_rows_by_parent_source_unit_id"].values():
+        for row in rows:
+            source_atom_ids.update(v3_7_2_search_view_source_atom_ids(row))
+    for rows in search_view_lookup["target_rows_by_search_unit_id"].values():
+        for row in rows:
+            source_atom_ids.update(v3_7_2_search_view_source_atom_ids(row))
+    for rows in search_view_lookup["target_rows_by_locator_fingerprint"].values():
+        for row in rows:
+            source_atom_ids.update(v3_7_2_search_view_source_atom_ids(row))
+    source_registry = v3_7_2_collect_source_atoms(source_atom_ids)
+    blocked_source_atom_ids = v3_7_2_blocked_source_atom_ids()
+
+    mixed_topk_rows: list[dict[str, Any]] = []
+    for spec, hits in zip(query_specs, search_results):
+        row = v3_7_2_source_registry_retrieval_smoke_row(
+            generated_at=generated_at,
+            query_spec=spec,
+            hits=hits,
+            search_views_by_faiss_id=search_view_lookup["rows_by_faiss_id"],
+            target_rows_by_parent_source_unit_id=search_view_lookup["target_rows_by_parent_source_unit_id"],
+            target_rows_by_search_unit_id=search_view_lookup["target_rows_by_search_unit_id"],
+            target_rows_by_locator_fingerprint=search_view_lookup["target_rows_by_locator_fingerprint"],
+            source_registry=source_registry,
+            blocked_source_atom_ids=blocked_source_atom_ids,
+        )
+        mixed_topk_rows.append(row)
+
+    mixed_failure_buckets = v3_7_2_source_registry_retrieval_smoke_failure_buckets(
+        generated_at=generated_at,
+        topk_rows=mixed_topk_rows,
+    )
+    mixed_per_track = v3_7_2_source_registry_retrieval_smoke_per_track(
+        generated_at=generated_at,
+        topk_rows=mixed_topk_rows,
+    )
+    family_routed_with_rows = v3_7_2_family_routed_retrieval_smoke(
+        generated_at=generated_at,
+        query_specs=query_specs,
+        include_topk_rows=True,
+    )
+    routed_rows_by_query_key = dict(as_mapping(family_routed_with_rows.get("topk_rows_by_query_key")))
+    family_routed = {
+        key: value
+        for key, value in family_routed_with_rows.items()
+        if key != "topk_rows_by_query_key"
+    }
+    routing_application = v3_7_2_apply_structured_family_routing(
+        mixed_topk_rows=mixed_topk_rows,
+        routed_rows_by_query_key=routed_rows_by_query_key,
+    )
+    topk_rows = list(routing_application["topk_rows"])
+    family_route_missing_query_keys = list(routing_application["missing_query_keys"])
+
+    failure_buckets = v3_7_2_source_registry_retrieval_smoke_failure_buckets(
+        generated_at=generated_at,
+        topk_rows=topk_rows,
+    )
+    per_track = v3_7_2_source_registry_retrieval_smoke_per_track(
+        generated_at=generated_at,
+        topk_rows=topk_rows,
+    )
+    silver_overlay = v3_7_2_source_registry_retrieval_smoke_silver_overlay(
+        generated_at=generated_at,
+        topk_rows=[row for row in topk_rows if row.get("query_scope") == "silver_1000_diagnostic_overlay"],
+    )
+    sealed_gold = v3_7_2_source_registry_retrieval_smoke_sealed_gold_summary(
+        topk_rows=[row for row in topk_rows if row.get("query_scope") == "sealed_gold_no_regression_check"],
+    )
+    mixed_retrieval_baseline = v3_7_2_mixed_retrieval_baseline_summary(
+        generated_at=generated_at,
+        mixed_failure_buckets=mixed_failure_buckets,
+        mixed_per_track=mixed_per_track,
+    )
+    source_registry_sha_after = v3_7_1_source_registry_sha256()
+    index_artifact_sha_after = v3_7_2_index_artifact_sha256()
+    official_index_sha_after = v3_6_8_all_source_official_index_sha256()
+    fail_closed_reasons = sorted(
+        set(
+            list(preflight.get("fail_closed_reasons") or [])
+            + ([f"index_load_failed:{load_failure}"] if load_failure else [])
+            + (
+                [
+                    "family_routed_primary_rows_missing:"
+                    f"{len(family_route_missing_query_keys)}"
+                ]
+                if family_route_missing_query_keys
+                else []
+            )
+            + (
+                ["source_registry_sha256_changed_during_v3_7_2_retrieval_smoke"]
+                if source_registry_sha_before != source_registry_sha_after
+                else []
+            )
+            + (
+                ["index_artifact_sha256_changed_during_v3_7_2_retrieval_smoke"]
+                if index_artifact_sha_before != index_artifact_sha_after
+                else []
+            )
+            + (
+                ["official_denominator_index_sha256_changed_during_v3_7_2_retrieval_smoke"]
+                if official_index_sha_before != official_index_sha_after
+                else []
+            )
+        )
+    )
+    status = (
+        "DIAGNOSTIC_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_FAIL_CLOSED"
+        if fail_closed_reasons
+        else V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_OUTCOME
+    )
+    counts_by_family = {
+        track: int(as_mapping(per_track["tracks"].get(track)).get("query_count") or 0)
+        for track in ("TEXT", "PDF", "XLSX")
+    }
+    return {
+        "schema_version": f"{V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID}_summary_v1",
+        "run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "v3_7_2_source_registry_backed_retrieval_smoke_report",
+        "event_type": "diagnostic_source_registry_backed_retrieval_smoke_report_v3_7_2",
+        "status": status,
+        "run_class": "diagnostic_only_source_registry_backed_retrieval_smoke_report",
+        "contract_path": ["SearchView", "SourceAtom", "EvidenceBundle", "Citation render"],
+        "measurement_contract_fixed": True,
+        "input_artifacts": {
+            "index_namespace": V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE,
+            "index_version": V3_7_1_ALL_SOURCE_CITABLE_INDEX_VERSION,
+            "index_dir": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR),
+            "source_atom_registry_jsonl": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+            "source_atom_registry_build_json": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_BUILD_JSON),
+            "official_gold_csvs": [
+                official.repo_relative(DEFAULT_TEXT_NAMU_GOLD_CSV),
+                "ai/eval/eval_queries/gold_queries_pdf_question_gold_v2.csv",
+                "ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv",
+            ],
+            "silver_1000_manifest_jsonl": official.repo_relative(
+                DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL
+            ),
+        },
+        "top_k": V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOP_K,
+        "diagnostic_only": True,
+        "official_gold_usage": "sealed_no_regression_check_only",
+        "silver_usage": "diagnostic_failure_distribution_only",
+        "source_atom_registry_canonical_truth": True,
+        "vector_db_role": "candidate_generator_only",
+        "retrieval_score_primary_metric": False,
+        "retrieval_routing_mode": "query_source_family_routed_for_structured_tracks",
+        "routed_source_families": list(V3_7_2_FAMILY_ROUTED_SMOKE_FAMILIES),
+        "family_routed_missing_query_key_count": len(family_route_missing_query_keys),
+        "family_routed_missing_query_keys": family_route_missing_query_keys[:50],
+        "mixed_retrieval_baseline": mixed_retrieval_baseline,
+        "retrieval_metric_interpretation": {
+            "topk_returned_count": "number of SearchView candidates returned; not target correctness",
+            "same_track_hit_at_k_count": (
+                "query count with at least one returned candidate from the query source family"
+            ),
+            "target_hit_at_k_count": "query count where the mapped target SearchView/SourceAtom appears in top-k",
+            "contract_survival_at_k_count": (
+                "returned candidate count that survives SourceAtom, EvidenceBundle, and citation render"
+            ),
+            "target_contract_survival_at_k_count": (
+                "target-hit query count whose target also survives the evidence/citation contract"
+            ),
+        },
+        "headline_aggregate_success_rate_reported": False,
+        "official_metric": False,
+        "answer_quality_metric_computed": False,
+        "answer_metric_computed": False,
+        "citation_metric_computed": False,
+        "hybrid_retrieval_baseline_computed": False,
+        "promotion_readiness_opened": False,
+        "promotion_evidence": False,
+        "promotion_gate": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "prompt_mutation": False,
+        "scorer_mutation": False,
+        "renderer_mutation": False,
+        "index_or_export_mutation": False,
+        "retrieval_index_mutation": False,
+        "vector_index_build_performed": False,
+        "production_mutation": False,
+        "production_db_usage_allowed": False,
+        "production_db_used": False,
+        "db_usage_allowed": False,
+        "db_write_allowed": False,
+        "db_write_attempted": False,
+        "db_migration_allowed": False,
+        "db_migration_attempted": False,
+        "db_index_rebuild_allowed": False,
+        "db_index_rebuild_attempted": False,
+        "db_write_migration_reindex_attempted": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "official_gold_labels_created": False,
+        "silver_mutation": False,
+        "readme_representative_product_performance_claim": False,
+        "readme_performance_claim_mutation": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "candidate_artifacts_used_as_generation_source": False,
+        "expected_answer_draft_used_as_retrieval_source": False,
+        "expected_answer_draft_used_as_generation_input": False,
+        "supporting_evidence_used_as_answer_text_source": False,
+        "generated_silver_answers_used_as_source_material": False,
+        "generated_silver_questions_used_as_source_material": False,
+        "gold_fields_used_as_generation_input": False,
+        "qrels_or_labels_used_as_generation_input": False,
+        "canonical_citation_payload_stored_in_vector_metadata": False,
+        "vector_metadata_used_as_canonical_citation_source": any(
+            envelope.get("vector_metadata_used_as_canonical_citation_source")
+            for row in topk_rows
+            for envelope in row.get("top_result_envelopes", [])
+        ),
+        "vector_metadata_used_as_evidence_truth": any(
+            envelope.get("vector_payload_used_as_evidence_truth")
+            for row in topk_rows
+            for envelope in row.get("top_result_envelopes", [])
+        ),
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "source_registry_version": source_registry_contract.SOURCE_REGISTRY_CONTRACT_VERSION,
+        "index_namespace": V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE,
+        "index_path": official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR),
+        "index_load": {
+            "load_succeeded": not load_failure,
+            "failure_reason": load_failure,
+            **dict(index_info),
+        },
+        "query_count": len(topk_rows),
+        "diagnostic_row_count": len(topk_rows),
+        "source_family_counts": counts_by_family,
+        "sealed_gold_no_regression_check": sealed_gold,
+        "silver_1000_diagnostic_overlay": silver_overlay["summary"],
+        "per_track_breakdown": per_track["tracks"],
+        "family_routed_retrieval_smoke": family_routed,
+        "failure_bucket_definitions": list(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS),
+        "failure_bucket_counts": failure_buckets["failure_bucket_counts"],
+        "detail_failure_bucket_counts": failure_buckets["detail_failure_bucket_counts"],
+        "retrieval_diagnostic_bucket_definitions": list(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_DIAGNOSTIC_BUCKETS),
+        "retrieval_diagnostic_bucket_counts": failure_buckets["retrieval_diagnostic_bucket_counts"],
+        "top_failure_bucket": failure_buckets["top_failure_bucket"],
+        "next_fixes_ranked_by_impact": v3_7_2_next_fixes_ranked_by_impact(
+            failure_buckets=failure_buckets,
+            silver_overlay=silver_overlay,
+        ),
+        "promotion_readiness": "explicitly_not_opened",
+        "comparable_live_measurement_deferred_until_contract_pass": True,
+        "outcome": V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_OUTCOME,
+        "preflight": preflight,
+        "fail_closed_reasons": fail_closed_reasons,
+        "source_registry_sha256_before": source_registry_sha_before,
+        "source_registry_sha256_after": source_registry_sha_after,
+        "source_registry_sha256_unchanged": source_registry_sha_before == source_registry_sha_after,
+        "index_artifact_sha256_before": index_artifact_sha_before,
+        "index_artifact_sha256_after": index_artifact_sha_after,
+        "index_artifact_sha256_unchanged": index_artifact_sha_before == index_artifact_sha_after,
+        "official_denominator_index_sha256_before": official_index_sha_before,
+        "official_denominator_index_sha256_after": official_index_sha_after,
+        "official_denominator_index_sha256_unchanged": official_index_sha_before == official_index_sha_after,
+        "artifact_paths": {
+            "summary_json": official.repo_relative(DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON),
+            "topk_rows_jsonl": official.repo_relative(DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL),
+            "failure_buckets_json": official.repo_relative(
+                DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON
+            ),
+            "per_track_breakdown_json": official.repo_relative(
+                DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON
+            ),
+            "silver_1000_diagnostic_overlay_json": official.repo_relative(
+                DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON
+            ),
+            "source_atom_registry_jsonl": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+            "index_search_view_manifest_jsonl": official.repo_relative(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl"
+            ),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+        "topk_result_rows": topk_rows,
+        "failure_buckets": failure_buckets,
+        "per_track_breakdown_artifact": per_track,
+        "silver_1000_diagnostic_overlay_artifact": silver_overlay,
+    }
+
+
+def v3_7_2_index_artifact_sha256() -> dict[str, str]:
+    paths = {
+        "index_faiss_sha256": DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "faiss.index",
+        "index_build_json_sha256": DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json",
+        "index_ingest_manifest_json_sha256": DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "ingest_manifest.json",
+        "index_search_view_manifest_jsonl_sha256": DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR
+        / "search_view_manifest.jsonl",
+        "index_source_inventory_json_sha256": DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "source_inventory.json",
+    }
+    return {key: sha256_file(path) if path.exists() else "" for key, path in paths.items()}
+
+
+def v3_7_2_source_registry_retrieval_smoke_preflight() -> dict[str, Any]:
+    fail_closed_reasons = list(v3_7_1_source_registry_missing_reasons())
+    required_index_files = (
+        "faiss.index",
+        "build.json",
+        "ingest_manifest.json",
+        "search_view_manifest.jsonl",
+        "source_inventory.json",
+    )
+    missing_index_files = [
+        name for name in required_index_files if not (DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / name).exists()
+    ]
+    fail_closed_reasons.extend(f"missing:{official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / name)}" for name in missing_index_files)
+    build_json = (
+        official.read_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json")
+        if (DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json").exists()
+        else {}
+    )
+    v3_7_1_summary = (
+        official.read_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON)
+        if DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON.exists()
+        else {}
+    )
+    if build_json.get("index_namespace") != V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE:
+        fail_closed_reasons.append("index_namespace_mismatch")
+    if build_json.get("index_version") != V3_7_1_ALL_SOURCE_CITABLE_INDEX_VERSION:
+        fail_closed_reasons.append("index_version_mismatch")
+    if v3_7_1_summary.get("outcome") != "ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT":
+        fail_closed_reasons.append("v3_7_1_index_not_built")
+    if v3_7_1_summary and not bool(v3_7_1_summary.get("v3_7_2_source_registry_backed_retrieval_smoke_allowed")):
+        fail_closed_reasons.append("v3_7_2_retrieval_smoke_not_allowed_by_v3_7_1_summary")
+    if not DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL.exists():
+        fail_closed_reasons.append(
+            f"missing:{official.repo_relative(DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL)}"
+        )
+    return {
+        "passed": not fail_closed_reasons,
+        "fail_closed_reasons": sorted(set(fail_closed_reasons)),
+        "required_index_files_present": not missing_index_files,
+        "missing_index_files": missing_index_files,
+        "index_namespace": build_json.get("index_namespace", ""),
+        "index_version": build_json.get("index_version", ""),
+        "source_registry_ready": not v3_7_1_source_registry_missing_reasons(),
+        "v3_7_1_outcome": v3_7_1_summary.get("outcome", ""),
+        "v3_7_2_allowed_by_v3_7_1": bool(
+            v3_7_1_summary.get("v3_7_2_source_registry_backed_retrieval_smoke_allowed")
+        ),
+    }
+
+
+def v3_7_2_source_registry_retrieval_smoke_query_specs(*, generated_at: str) -> list[dict[str, Any]]:
+    specs: list[dict[str, Any]] = []
+    official_sources = (
+        (DEFAULT_TEXT_NAMU_GOLD_CSV, "TEXT"),
+        (AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_pdf_question_gold_v2.csv", "PDF"),
+        (AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_xlsx_question_gold_v2.csv", "XLSX"),
+    )
+    for path, source_family in official_sources:
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            for row in csv.DictReader(handle):
+                if official.clean(row.get("official_metric_input")).upper() != "TRUE":
+                    continue
+                locator = v3_7_2_parse_json_mapping(row.get("citation_locator"))
+                specs.append(
+                    {
+                        "schema_version": f"{V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID}_query_spec_v1",
+                        "generated_at": generated_at,
+                        "query_scope": "sealed_gold_no_regression_check",
+                        "query_id": official.clean(row.get("query_id")),
+                        "query_text": official.clean(row.get("question")),
+                        "source_family": source_family,
+                        "source_track": official.clean(row.get("track")),
+                        "query_text_sha256": sha256_text(official.clean(row.get("question"))),
+                        "target_parent_source_unit_id": official.clean(row.get("query_id")),
+                        "target_search_unit_id": official.clean(locator.get("search_unit_id")),
+                        "target_locator_fingerprint": official.clean(locator.get("locator_fingerprint")),
+                        "question_gold_locator_target": v3_7_2_locator_target_summary(locator, source_family),
+                        "official_metric_input": True,
+                        "tuning_allowed": False,
+                        "metric_promotion_allowed": False,
+                    }
+                )
+    if DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL.exists():
+        for row in read_jsonl(DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL):
+            query_text = official.clean(row.get("generated_question_draft"))
+            source_family = official.clean(row.get("source_family")).upper()
+            if not query_text or source_family not in {"TEXT", "PDF", "XLSX"}:
+                continue
+            query_id = official.clean(row.get("weak_silver_candidate_id")) or f"silver_row_{row.get('row_ordinal')}"
+            specs.append(
+                {
+                    "schema_version": f"{V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID}_query_spec_v1",
+                    "generated_at": generated_at,
+                    "query_scope": "silver_1000_diagnostic_overlay",
+                    "query_id": query_id,
+                    "query_text": query_text,
+                    "source_family": source_family,
+                    "source_track": source_family.lower(),
+                    "query_text_sha256": sha256_text(query_text),
+                    "target_parent_source_unit_id": official.clean(row.get("source_candidate_id")),
+                    "target_search_unit_id": official.clean(row.get("search_unit_id")),
+                    "target_locator_fingerprint": official.clean(row.get("locator_fingerprint")),
+                    "question_gold_locator_target": {},
+                    "silver_source_candidate_id": official.clean(row.get("source_candidate_id")),
+                    "silver_manifest_partition": official.clean(row.get("manifest_partition")),
+                    "silver_query_quality_profile": official.clean(row.get("query_quality_profile")),
+                    "official_metric_input": False,
+                    "tuning_allowed": False,
+                    "metric_promotion_allowed": False,
+                }
+            )
+    return specs
+
+
+def v3_7_2_parse_json_mapping(value: Any) -> dict[str, Any]:
+    if isinstance(value, Mapping):
+        return dict(value)
+    text = official.clean(value)
+    if not text:
+        return {}
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        return {}
+    return dict(parsed) if isinstance(parsed, Mapping) else {}
+
+
+def v3_7_2_locator_target_summary(locator: Mapping[str, Any], source_family: str) -> dict[str, Any]:
+    family = official.clean(source_family).upper()
+    if family == "TEXT":
+        cited_chunks = locator.get("cited_chunk_ids")
+        return {
+            "source_family": family,
+            "cited_chunk_ids": list(cited_chunks) if isinstance(cited_chunks, list) else [],
+        }
+    if family == "PDF":
+        return {
+            "source_family": family,
+            "file": official.clean(locator.get("file")),
+            "page": locator.get("page"),
+            "physical_page_index": locator.get("physical_page_index"),
+            "bbox": locator.get("bbox"),
+            "region_type": official.clean(locator.get("region_type")),
+            "search_unit_id": official.clean(locator.get("search_unit_id")),
+        }
+    if family == "XLSX":
+        cells = locator.get("matched_cells")
+        return {
+            "source_family": family,
+            "file": official.clean(locator.get("file")),
+            "sheet": official.clean(locator.get("sheet")),
+            "range": official.clean(locator.get("range")),
+            "matched_cells": list(cells) if isinstance(cells, list) else [],
+            "search_unit_id": official.clean(locator.get("search_unit_id")),
+        }
+    return {"source_family": family}
+
+
+def v3_7_2_collect_search_view_manifest_rows(
+    *,
+    hit_faiss_ids: set[int],
+    target_parent_source_unit_ids: set[str],
+    target_search_unit_ids: set[str],
+    target_locator_fingerprints: set[str],
+) -> dict[str, Any]:
+    rows_by_faiss_id: dict[int, dict[str, Any]] = {}
+    target_rows_by_parent_source_unit_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    target_rows_by_search_unit_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    target_rows_by_locator_fingerprint: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    path = DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl"
+    if not path.exists():
+        return {
+            "rows_by_faiss_id": {},
+            "target_rows_by_parent_source_unit_id": {},
+            "target_rows_by_search_unit_id": {},
+            "target_rows_by_locator_fingerprint": {},
+        }
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            faiss_row_id = int(row.get("faiss_row_id") or -1)
+            if faiss_row_id in hit_faiss_ids:
+                rows_by_faiss_id[faiss_row_id] = row
+            parent_source_unit_id = official.clean(row.get("parent_source_unit_id"))
+            if parent_source_unit_id in target_parent_source_unit_ids:
+                target_rows_by_parent_source_unit_id[parent_source_unit_id].append(row)
+            search_unit_id = official.clean(row.get("parent_search_unit_id"))
+            if search_unit_id in target_search_unit_ids:
+                target_rows_by_search_unit_id[search_unit_id].append(row)
+            locator_fingerprint = official.clean(row.get("locator_fingerprint"))
+            if locator_fingerprint in target_locator_fingerprints:
+                target_rows_by_locator_fingerprint[locator_fingerprint].append(row)
+    return {
+        "rows_by_faiss_id": rows_by_faiss_id,
+        "target_rows_by_parent_source_unit_id": dict(target_rows_by_parent_source_unit_id),
+        "target_rows_by_search_unit_id": dict(target_rows_by_search_unit_id),
+        "target_rows_by_locator_fingerprint": dict(target_rows_by_locator_fingerprint),
+    }
+
+
+def v3_7_2_search_view_source_atom_ids(search_view: Mapping[str, Any]) -> list[str]:
+    value = (
+        search_view.get("source_atom_ids")
+        or search_view.get("sourceAtomIds")
+        or search_view.get("source_atom_id")
+        or search_view.get("sourceAtomId")
+    )
+    if isinstance(value, str):
+        return [official.clean(value)] if official.clean(value) else []
+    if isinstance(value, Sequence) and not isinstance(value, (bytes, bytearray, str)):
+        return [official.clean(item) for item in value if official.clean(item)]
+    return []
+
+
+def v3_7_2_collect_source_atoms(source_atom_ids: set[str]) -> dict[str, dict[str, Any]]:
+    registry: dict[str, dict[str, Any]] = {}
+    if not source_atom_ids or not DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.exists():
+        return registry
+    with DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            source_atom_id = official.clean(row.get("source_atom_id"))
+            if source_atom_id in source_atom_ids:
+                registry[source_atom_id] = row
+                if len(registry) == len(source_atom_ids):
+                    break
+    return registry
+
+
+def v3_7_2_blocked_source_atom_ids() -> set[str]:
+    if not DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL.exists():
+        return set()
+    ids: set[str] = set()
+    for row in read_jsonl(DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL):
+        source_atom_id = official.clean(row.get("source_atom_id"))
+        if source_atom_id:
+            ids.add(source_atom_id)
+    return ids
+
+
+def v3_7_2_source_registry_retrieval_smoke_row(
+    *,
+    generated_at: str,
+    query_spec: Mapping[str, Any],
+    hits: Sequence[tuple[int, float]],
+    search_views_by_faiss_id: Mapping[int, Mapping[str, Any]],
+    target_rows_by_parent_source_unit_id: Mapping[str, Sequence[Mapping[str, Any]]],
+    target_rows_by_search_unit_id: Mapping[str, Sequence[Mapping[str, Any]]],
+    target_rows_by_locator_fingerprint: Mapping[str, Sequence[Mapping[str, Any]]],
+    source_registry: Mapping[str, Mapping[str, Any]],
+    blocked_source_atom_ids: set[str],
+) -> dict[str, Any]:
+    envelopes = [
+        v3_7_2_hit_envelope(
+            generated_at=generated_at,
+            query_source_family=official.clean(query_spec.get("source_family")).upper(),
+            rank=rank,
+            faiss_row_id=int(row_id),
+            score=float(score),
+            search_view=search_views_by_faiss_id.get(int(row_id)),
+            source_registry=source_registry,
+            blocked_source_atom_ids=blocked_source_atom_ids,
+        )
+        for rank, (row_id, score) in enumerate(hits, start=1)
+    ]
+    target_parent_source_unit_id = official.clean(query_spec.get("target_parent_source_unit_id"))
+    target_search_unit_id = official.clean(query_spec.get("target_search_unit_id"))
+    target_locator_fingerprint = official.clean(query_spec.get("target_locator_fingerprint"))
+    target_rows_by_parent = list(target_rows_by_parent_source_unit_id.get(target_parent_source_unit_id) or [])
+    target_rows_by_search = list(target_rows_by_search_unit_id.get(target_search_unit_id) or [])
+    target_rows_by_locator = list(target_rows_by_locator_fingerprint.get(target_locator_fingerprint) or [])
+    official_target_rows = target_rows_by_parent or target_rows_by_search or target_rows_by_locator
+    hit_parent_ids = {official.clean(envelope.get("parent_source_unit_id")) for envelope in envelopes}
+    hit_search_unit_ids = {official.clean(envelope.get("parent_search_unit_id")) for envelope in envelopes}
+    hit_locator_fingerprints = {official.clean(envelope.get("locator_fingerprint")) for envelope in envelopes}
+    query_family = official.clean(query_spec.get("source_family")).upper()
+    target_mapping = v3_7_2_target_mapping_audit(
+        target_parent_source_unit_id=target_parent_source_unit_id,
+        target_search_unit_id=target_search_unit_id,
+        target_locator_fingerprint=target_locator_fingerprint,
+        target_rows_by_parent=target_rows_by_parent,
+        target_rows_by_search=target_rows_by_search,
+        target_rows_by_locator=target_rows_by_locator,
+        source_registry=source_registry,
+    )
+    target_signatures = v3_7_2_target_signatures(official_target_rows)
+    target_envelopes = [
+        envelope for envelope in envelopes if v3_7_2_envelope_matches_target(envelope, target_signatures)
+    ]
+    same_track_returned_count = sum(
+        1 for envelope in envelopes if official.clean(envelope.get("source_family")).upper() == query_family
+    )
+    contract_survival_count = sum(1 for envelope in envelopes if v3_7_2_envelope_contract_survived(envelope))
+    target_hit_at_k = bool(target_envelopes)
+    target_contract_survival_at_k = any(v3_7_2_envelope_contract_survived(envelope) for envelope in target_envelopes)
+    locator_or_search_unit_hit = bool(
+        (target_search_unit_id and target_search_unit_id in hit_search_unit_ids)
+        or (target_locator_fingerprint and target_locator_fingerprint in hit_locator_fingerprints)
+    )
+    search_miss = not envelopes
+    diagnostic_buckets = v3_7_2_retrieval_diagnostic_buckets(
+        query_source_family=query_family,
+        envelopes=envelopes,
+        same_track_returned_count=same_track_returned_count,
+        target_mapping=target_mapping,
+        target_hit_at_k=target_hit_at_k,
+        target_contract_survival_at_k=target_contract_survival_at_k,
+    )
+    return {
+        "schema_version": f"{V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID}_topk_row_v1",
+        "run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        "generated_at": generated_at,
+        "query_scope": official.clean(query_spec.get("query_scope")),
+        "query_id": official.clean(query_spec.get("query_id")),
+        "query_text": official.clean(query_spec.get("query_text")),
+        "query_text_sha256": official.clean(query_spec.get("query_text_sha256")),
+        "source_family": official.clean(query_spec.get("source_family")).upper(),
+        "source_track": official.clean(query_spec.get("source_track")),
+        "top_k": V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOP_K,
+        "topk_returned_count": len(envelopes),
+        "topk_hydrateable_row_count": sum(1 for envelope in envelopes if envelope.get("source_atom_hydrated_from_registry")),
+        "topk_evidence_bundle_renderable_row_count": sum(
+            1 for envelope in envelopes if envelope.get("evidence_bundle_render_valid")
+        ),
+        "topk_citation_renderable_row_count": sum(1 for envelope in envelopes if envelope.get("citation_render_valid")),
+        "same_track_returned_count": same_track_returned_count,
+        "off_track_returned_count": max(0, len(envelopes) - same_track_returned_count),
+        "same_track_hit_at_k": same_track_returned_count > 0,
+        "contract_survival_at_k_count": contract_survival_count,
+        "retrieval_score_primary_metric": False,
+        "answer_quality_metric_computed": False,
+        "promotion_evidence": False,
+        "primary_failure_bucket": "search_miss" if search_miss else "",
+        "retrieval_diagnostic_buckets": diagnostic_buckets,
+        "primary_retrieval_diagnostic_bucket": diagnostic_buckets[0],
+        "target_parent_source_unit_id": target_parent_source_unit_id,
+        "target_search_unit_id": target_search_unit_id,
+        "target_locator_fingerprint": target_locator_fingerprint,
+        "official_manifest_target": v3_7_2_search_view_summary(official_target_rows[0]) if official_target_rows else {},
+        "question_gold_locator_target": dict(as_mapping(query_spec.get("question_gold_locator_target"))),
+        "target_mapping_audit": target_mapping,
+        "target_parent_hit_in_topk": bool(target_parent_source_unit_id and target_parent_source_unit_id in hit_parent_ids),
+        "locator_or_search_unit_hit_in_topk": locator_or_search_unit_hit,
+        "target_hit_at_k": target_hit_at_k,
+        "target_contract_survival_at_k": target_contract_survival_at_k,
+        "target_hit_in_topk": target_hit_at_k,
+        "question_gold_locator_target_hit_in_topk": locator_or_search_unit_hit,
+        "silver_source_candidate_id": official.clean(query_spec.get("silver_source_candidate_id")),
+        "silver_manifest_partition": official.clean(query_spec.get("silver_manifest_partition")),
+        "silver_query_quality_profile": official.clean(query_spec.get("silver_query_quality_profile")),
+        "top_result_envelopes": envelopes,
+    }
+
+
+def v3_7_2_target_mapping_audit(
+    *,
+    target_parent_source_unit_id: str,
+    target_search_unit_id: str,
+    target_locator_fingerprint: str,
+    target_rows_by_parent: Sequence[Mapping[str, Any]],
+    target_rows_by_search: Sequence[Mapping[str, Any]],
+    target_rows_by_locator: Sequence[Mapping[str, Any]],
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    target_rows = list(target_rows_by_parent or target_rows_by_search or target_rows_by_locator)
+    source_atom_ids = sorted(
+        {
+            source_atom_id
+            for row in target_rows
+            for source_atom_id in v3_7_2_search_view_source_atom_ids(row)
+            if source_atom_id
+        }
+    )
+    missing_source_atoms = [source_atom_id for source_atom_id in source_atom_ids if source_atom_id not in source_registry]
+    has_target_key = bool(target_parent_source_unit_id or target_search_unit_id or target_locator_fingerprint)
+    parent_present = bool(target_rows_by_parent)
+    search_present = bool(target_rows_by_search)
+    locator_present = bool(target_rows_by_locator)
+    target_present = bool(target_rows)
+    if not has_target_key:
+        bucket = "target_no_mapping_fields"
+    elif not target_present:
+        bucket = "target_missing_from_index"
+    elif missing_source_atoms:
+        bucket = "target_source_atom_missing_from_registry"
+    elif not parent_present and (search_present or locator_present):
+        bucket = "locator_mapping_gap"
+    else:
+        bucket = "target_present"
+    return {
+        "target_mapping_bucket": bucket,
+        "target_present_in_index": target_present,
+        "target_present_by_parent_source_unit_id": parent_present,
+        "target_present_by_search_unit_id": search_present,
+        "target_present_by_locator_fingerprint": locator_present,
+        "target_source_atom_present_in_registry": bool(source_atom_ids) and not missing_source_atoms,
+        "target_search_view_count": len(target_rows),
+        "target_source_atom_ids": source_atom_ids,
+        "missing_source_atom_ids": missing_source_atoms,
+    }
+
+
+def v3_7_2_target_signatures(target_rows: Sequence[Mapping[str, Any]]) -> dict[str, set[str]]:
+    return {
+        "search_view_ids": {official.clean(row.get("search_view_id")) for row in target_rows if official.clean(row.get("search_view_id"))},
+        "source_atom_ids": {
+            source_atom_id
+            for row in target_rows
+            for source_atom_id in v3_7_2_search_view_source_atom_ids(row)
+            if source_atom_id
+        },
+        "parent_source_unit_ids": {
+            official.clean(row.get("parent_source_unit_id"))
+            for row in target_rows
+            if official.clean(row.get("parent_source_unit_id"))
+        },
+        "parent_search_unit_ids": {
+            official.clean(row.get("parent_search_unit_id"))
+            for row in target_rows
+            if official.clean(row.get("parent_search_unit_id"))
+        },
+        "locator_fingerprints": {
+            official.clean(row.get("locator_fingerprint"))
+            for row in target_rows
+            if official.clean(row.get("locator_fingerprint"))
+        },
+    }
+
+
+def v3_7_2_envelope_matches_target(envelope: Mapping[str, Any], signatures: Mapping[str, set[str]]) -> bool:
+    return any(
+        (
+            official.clean(envelope.get("search_view_id")) in signatures.get("search_view_ids", set()),
+            official.clean(envelope.get("source_atom_id")) in signatures.get("source_atom_ids", set()),
+        )
+    )
+
+
+def v3_7_2_envelope_contract_survived(envelope: Mapping[str, Any]) -> bool:
+    return bool(
+        envelope.get("source_atom_hydrated_from_registry")
+        and envelope.get("evidence_bundle_render_valid")
+        and envelope.get("citation_render_valid")
+    )
+
+
+def v3_7_2_retrieval_diagnostic_buckets(
+    *,
+    query_source_family: str,
+    envelopes: Sequence[Mapping[str, Any]],
+    same_track_returned_count: int,
+    target_mapping: Mapping[str, Any],
+    target_hit_at_k: bool,
+    target_contract_survival_at_k: bool,
+) -> list[str]:
+    if not envelopes:
+        return ["search_miss"]
+    buckets: list[str] = []
+    mapping_bucket = official.clean(target_mapping.get("target_mapping_bucket"))
+    target_present = bool(target_mapping.get("target_present_in_index"))
+    if mapping_bucket == "target_missing_from_index":
+        buckets.append("target_missing_from_index")
+    elif target_present and not target_hit_at_k:
+        buckets.append("target_not_in_topk")
+
+    text_count = sum(1 for envelope in envelopes if official.clean(envelope.get("source_family")).upper() == "TEXT")
+    off_track_count = max(0, len(envelopes) - same_track_returned_count)
+    if query_source_family != "TEXT" and text_count > same_track_returned_count:
+        buckets.append("cross_family_text_dominance")
+    elif off_track_count:
+        buckets.append("cross_family_mixed_results")
+
+    if any(official.clean(envelope.get("primary_failure_bucket")) == "snapshot_only" for envelope in envelopes):
+        buckets.append("snapshot_only")
+    if mapping_bucket == "locator_mapping_gap":
+        buckets.append("locator_mapping_gap")
+    if target_hit_at_k and not target_contract_survival_at_k:
+        buckets.append("target_contract_gap")
+    if not buckets:
+        buckets.append("contract_survived_same_track")
+    return buckets
+
+
+def v3_7_2_hit_envelope(
+    *,
+    generated_at: str,
+    query_source_family: str,
+    rank: int,
+    faiss_row_id: int,
+    score: float,
+    search_view: Mapping[str, Any] | None,
+    source_registry: Mapping[str, Mapping[str, Any]],
+    blocked_source_atom_ids: set[str],
+) -> dict[str, Any]:
+    if not search_view:
+        return {
+            "generated_at": generated_at,
+            "rank": rank,
+            "faiss_row_id": faiss_row_id,
+            "score": score,
+            "canonical_payload_source": "source_registry",
+            "canonical_citation_payload_present_in_vector_metadata": False,
+            "vector_metadata_used_as_canonical_citation_source": False,
+            "vector_payload_used_as_evidence_truth": False,
+            "source_atom_hydrated_from_registry": False,
+            "evidence_bundle_render_valid": False,
+            "citation_render_valid": False,
+            "primary_failure_bucket": "adapter_missing",
+            "detail_failure_bucket": "search_view_manifest_row_missing",
+        }
+    source_atom_ids = v3_7_2_search_view_source_atom_ids(search_view)
+    source_atom_id = source_atom_ids[0] if source_atom_ids else ""
+    atom = as_mapping(source_registry.get(source_atom_id))
+    atom_valid = bool(atom)
+    citation = (
+        source_registry_contract.render_citation(source_atom_id, source_registry=source_registry)
+        if atom_valid
+        else {"valid": False}
+    )
+    evidence = (
+        source_registry_contract.evidence_bundle_from_search_view(search_view, source_registry=source_registry)
+        if source_atom_ids
+        else {"valid": False, "failure_bucket": "SEARCH_VIEW_SOURCE_ATOM_POINTER_MISSING"}
+    )
+    family = official.clean(search_view.get("source_family")).upper()
+    locator_detail = v3_7_2_locator_detail_failure_bucket(
+        source_family=family,
+        atom=atom,
+        citation=citation,
+        evidence=evidence,
+    )
+    primary_failure = v3_7_2_primary_failure_bucket(
+        query_source_family=query_source_family,
+        hit_source_family=family,
+        source_atom_ids=source_atom_ids,
+        source_atom_id=source_atom_id,
+        atom=atom,
+        blocked_source_atom_ids=blocked_source_atom_ids,
+        citation=citation,
+        evidence=evidence,
+        locator_detail=locator_detail,
+    )
+    return {
+        "generated_at": generated_at,
+        "rank": rank,
+        "faiss_row_id": faiss_row_id,
+        "score": score,
+        "search_view_id": official.clean(search_view.get("search_view_id")),
+        "source_atom_id": source_atom_id,
+        "source_atom_ids": source_atom_ids,
+        "source_family": family,
+        "query_track_source_family": query_source_family,
+        "source_identity": official.clean(search_view.get("source_identity")),
+        "parent_search_unit_id": official.clean(search_view.get("parent_search_unit_id")),
+        "parent_source_unit_id": official.clean(search_view.get("parent_source_unit_id")),
+        "locator_fingerprint": official.clean(search_view.get("locator_fingerprint")),
+        "materialization_bucket": official.clean(search_view.get("materialization_bucket")),
+        "locator_completeness_tier": official.clean(search_view.get("locator_completeness_tier")),
+        "canonical_payload_source": "source_registry",
+        "source_atom_hydrated_from_registry": atom_valid and bool(evidence.get("source_atom_hydrated_from_registry", True)),
+        "evidence_bundle_render_valid": bool(evidence.get("valid")),
+        "citation_render_valid": bool(citation.get("valid")),
+        "canonical_citation_payload_present_in_vector_metadata": bool(
+            search_view.get("canonical_citation_payload") or search_view.get("canonicalCitationPayload")
+        ),
+        "vector_metadata_used_as_canonical_citation_source": bool(
+            search_view.get("vector_metadata_used_as_canonical_citation_source")
+        ),
+        "vector_payload_used_as_evidence_truth": bool(evidence.get("vector_payload_used_as_evidence_truth")),
+        "primary_failure_bucket": primary_failure,
+        "detail_failure_bucket": locator_detail,
+    }
+
+
+def v3_7_2_primary_failure_bucket(
+    *,
+    query_source_family: str,
+    hit_source_family: str,
+    source_atom_ids: Sequence[str],
+    source_atom_id: str,
+    atom: Mapping[str, Any],
+    blocked_source_atom_ids: set[str],
+    citation: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+    locator_detail: str,
+) -> str:
+    if not source_atom_ids:
+        return "source_atom_missing"
+    if source_atom_id in blocked_source_atom_ids:
+        return "source_atom_blocked"
+    if not atom:
+        return "source_atom_missing"
+    if locator_detail:
+        return "locator_incomplete"
+    if not citation.get("valid"):
+        return "citation_render_failed"
+    if not evidence.get("valid"):
+        return "evidence_bundle_render_failed"
+    if hit_source_family and query_source_family and hit_source_family != query_source_family:
+        return "track_mismatch"
+    if official.clean(atom.get("materialization_bucket")) == "snapshot_only_ready":
+        return "snapshot_only"
+    return ""
+
+
+def v3_7_2_locator_detail_failure_bucket(
+    *,
+    source_family: str,
+    atom: Mapping[str, Any],
+    citation: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+) -> str:
+    family = official.clean(source_family).upper()
+    raw_locator = as_mapping(atom.get("raw_locator"))
+    rendered_citation = as_mapping(citation.get("citation"))
+    if family == "TEXT":
+        text_locator = as_mapping(rendered_citation.get("text_locator"))
+        if not (
+            text_locator.get("document_id")
+            and text_locator.get("chunk_id")
+            and (text_locator.get("section_path") is not None)
+        ):
+            return "text_locator_missing"
+    elif family == "PDF":
+        pdf_locator = as_mapping(rendered_citation.get("pdf_locator"))
+        if not pdf_locator.get("bbox") or not raw_locator.get("bbox"):
+            return "pdf_bbox_missing"
+        if (
+            not pdf_locator.get("source_pdf_path")
+            or pdf_locator.get("page") is None
+            or pdf_locator.get("physical_page_index") is None
+            or not pdf_locator.get("region_type")
+        ):
+            return "pdf_locator_missing"
+    elif family == "XLSX":
+        xlsx_locator = as_mapping(rendered_citation.get("xlsx_locator"))
+        if not (xlsx_locator.get("cell") or xlsx_locator.get("range")):
+            return "xlsx_cell_missing"
+        if not xlsx_locator.get("workbook") or not xlsx_locator.get("sheet"):
+            return "xlsx_locator_missing"
+    elif atom:
+        return "adapter_missing"
+    if atom and not evidence.get("valid"):
+        return official.clean(evidence.get("failure_bucket")).lower()
+    return ""
+
+
+def v3_7_2_search_view_summary(row: Mapping[str, Any]) -> dict[str, Any]:
+    if not row:
+        return {}
+    return {
+        "search_view_id": official.clean(row.get("search_view_id")),
+        "source_atom_id": official.clean(row.get("source_atom_id")),
+        "source_family": official.clean(row.get("source_family")).upper(),
+        "source_identity": official.clean(row.get("source_identity")),
+        "parent_source_unit_id": official.clean(row.get("parent_source_unit_id")),
+        "parent_search_unit_id": official.clean(row.get("parent_search_unit_id")),
+        "locator_fingerprint": official.clean(row.get("locator_fingerprint")),
+        "materialization_bucket": official.clean(row.get("materialization_bucket")),
+    }
+
+
+def v3_7_2_source_registry_retrieval_smoke_failure_buckets(
+    *,
+    generated_at: str,
+    topk_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    primary_counts: Counter[str] = Counter()
+    detail_counts: Counter[str] = Counter()
+    retrieval_diagnostic_counts: Counter[str] = Counter()
+    by_track: dict[str, Counter[str]] = {track: Counter() for track in ("TEXT", "PDF", "XLSX")}
+    by_track_retrieval: dict[str, Counter[str]] = {track: Counter() for track in ("TEXT", "PDF", "XLSX")}
+    by_scope: dict[str, Counter[str]] = defaultdict(Counter)
+    by_scope_retrieval: dict[str, Counter[str]] = defaultdict(Counter)
+    for row in topk_rows:
+        track = official.clean(row.get("source_family")).upper()
+        scope = official.clean(row.get("query_scope"))
+        if row.get("primary_failure_bucket") == "search_miss":
+            primary_counts["search_miss"] += 1
+            by_track[track]["search_miss"] += 1
+            by_scope[scope]["search_miss"] += 1
+        for envelope in row.get("top_result_envelopes", []):
+            bucket = official.clean(envelope.get("primary_failure_bucket"))
+            detail = official.clean(envelope.get("detail_failure_bucket"))
+            if bucket:
+                primary_counts[bucket] += 1
+                by_track[track][bucket] += 1
+                by_scope[scope][bucket] += 1
+            if detail:
+                detail_counts[detail] += 1
+        for bucket in row.get("retrieval_diagnostic_buckets", []):
+            bucket = official.clean(bucket)
+            if bucket:
+                retrieval_diagnostic_counts[bucket] += 1
+                by_track_retrieval[track][bucket] += 1
+                by_scope_retrieval[scope][bucket] += 1
+    failure_bucket_counts = {
+        bucket: int(primary_counts.get(bucket, 0))
+        for bucket in V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS
+    }
+    retrieval_diagnostic_bucket_counts = {
+        bucket: int(retrieval_diagnostic_counts.get(bucket, 0))
+        for bucket in V3_7_2_SOURCE_REGISTRY_RETRIEVAL_DIAGNOSTIC_BUCKETS
+    }
+    top_failure_bucket = v3_7_2_top_bucket(failure_bucket_counts)
+    return {
+        "schema_version": f"{V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID}_failure_buckets_v1",
+        "run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "v3_7_2_source_registry_backed_retrieval_smoke_failure_buckets",
+        "failure_bucket_definitions": list(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS),
+        "failure_bucket_counts": failure_bucket_counts,
+        "detail_failure_bucket_counts": {key: int(value) for key, value in sorted(detail_counts.items())},
+        "retrieval_diagnostic_bucket_definitions": list(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_DIAGNOSTIC_BUCKETS),
+        "retrieval_diagnostic_bucket_counts": retrieval_diagnostic_bucket_counts,
+        "per_track_failure_bucket_counts": {
+            track: {bucket: int(counter.get(bucket, 0)) for bucket in V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS}
+            for track, counter in by_track.items()
+        },
+        "per_track_retrieval_diagnostic_bucket_counts": {
+            track: {
+                bucket: int(counter.get(bucket, 0))
+                for bucket in V3_7_2_SOURCE_REGISTRY_RETRIEVAL_DIAGNOSTIC_BUCKETS
+            }
+            for track, counter in by_track_retrieval.items()
+        },
+        "query_scope_failure_bucket_counts": {
+            scope: {bucket: int(counter.get(bucket, 0)) for bucket in V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS}
+            for scope, counter in sorted(by_scope.items())
+        },
+        "query_scope_retrieval_diagnostic_bucket_counts": {
+            scope: {
+                bucket: int(counter.get(bucket, 0))
+                for bucket in V3_7_2_SOURCE_REGISTRY_RETRIEVAL_DIAGNOSTIC_BUCKETS
+            }
+            for scope, counter in sorted(by_scope_retrieval.items())
+        },
+        "top_failure_bucket": top_failure_bucket,
+        "snapshot_only_treated_as_diagnostic_bucket": True,
+        "headline_aggregate_success_rate_reported": False,
+        "promotion_evidence": False,
+    }
+
+
+def v3_7_2_source_registry_retrieval_smoke_per_track(
+    *,
+    generated_at: str,
+    topk_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    tracks: dict[str, dict[str, Any]] = {}
+    for track in ("TEXT", "PDF", "XLSX"):
+        rows = [row for row in topk_rows if official.clean(row.get("source_family")).upper() == track]
+        envelopes = [envelope for row in rows for envelope in row.get("top_result_envelopes", [])]
+        bucket_counts = Counter(
+            official.clean(envelope.get("primary_failure_bucket"))
+            for envelope in envelopes
+            if official.clean(envelope.get("primary_failure_bucket"))
+        )
+        bucket_counts["search_miss"] += sum(1 for row in rows if row.get("primary_failure_bucket") == "search_miss")
+        detail_counts = Counter(
+            official.clean(envelope.get("detail_failure_bucket"))
+            for envelope in envelopes
+            if official.clean(envelope.get("detail_failure_bucket"))
+        )
+        diagnostic_counts = Counter(
+            bucket
+            for row in rows
+            for bucket in row.get("retrieval_diagnostic_buckets", [])
+            if official.clean(bucket)
+        )
+        top_bucket = v3_7_2_top_bucket(
+            {
+                bucket: int(bucket_counts.get(bucket, 0))
+                for bucket in V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS
+            }
+        )
+        tracks[track] = {
+            "query_count": len(rows),
+            "topk_returned_count": sum(int(row.get("topk_returned_count") or 0) for row in rows),
+            "same_track_hit_at_k_count": sum(1 for row in rows if row.get("same_track_hit_at_k")),
+            "same_track_returned_count": sum(int(row.get("same_track_returned_count") or 0) for row in rows),
+            "off_track_returned_count": sum(int(row.get("off_track_returned_count") or 0) for row in rows),
+            "target_hit_at_k_count": sum(1 for row in rows if row.get("target_hit_at_k")),
+            "target_contract_survival_at_k_count": sum(
+                1 for row in rows if row.get("target_contract_survival_at_k")
+            ),
+            "contract_survival_at_k_count": sum(int(row.get("contract_survival_at_k_count") or 0) for row in rows),
+            "source_atom_hydrated_row_count": sum(int(row.get("topk_hydrateable_row_count") or 0) for row in rows),
+            "evidence_bundle_rendered_row_count": sum(
+                int(row.get("topk_evidence_bundle_renderable_row_count") or 0) for row in rows
+            ),
+            "citation_rendered_row_count": sum(int(row.get("topk_citation_renderable_row_count") or 0) for row in rows),
+            "failure_bucket_counts": {
+                bucket: int(bucket_counts.get(bucket, 0))
+                for bucket in V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS
+            },
+            "detail_failure_bucket_counts": {key: int(value) for key, value in sorted(detail_counts.items())},
+            "retrieval_diagnostic_bucket_counts": {
+                bucket: int(diagnostic_counts.get(bucket, 0))
+                for bucket in V3_7_2_SOURCE_REGISTRY_RETRIEVAL_DIAGNOSTIC_BUCKETS
+            },
+            "target_mapping_audit": v3_7_2_target_mapping_audit_summary(rows),
+            "top_failure_bucket": top_bucket,
+            "next_fix": v3_7_2_next_fix_for_bucket(track=track, bucket=top_bucket),
+        }
+    return {
+        "schema_version": f"{V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID}_per_track_breakdown_v1",
+        "run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "v3_7_2_source_registry_backed_retrieval_smoke_per_track_breakdown",
+        "tracks": tracks,
+        "headline_aggregate_success_rate_reported": False,
+        "promotion_evidence": False,
+    }
+
+
+def v3_7_2_source_registry_retrieval_smoke_silver_overlay(
+    *,
+    generated_at: str,
+    topk_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    failure_counts: Counter[str] = Counter()
+    retrieval_diagnostic_counts: Counter[str] = Counter()
+    locator_counts: Counter[str] = Counter()
+    file_counts: Counter[str] = Counter()
+    adapter_gap_counts: Counter[str] = Counter()
+    for row in topk_rows:
+        for diagnostic_bucket in row.get("retrieval_diagnostic_buckets", []):
+            if official.clean(diagnostic_bucket):
+                retrieval_diagnostic_counts[f"{row.get('source_family')}:{official.clean(diagnostic_bucket)}"] += 1
+        for envelope in row.get("top_result_envelopes", []):
+            bucket = official.clean(envelope.get("primary_failure_bucket"))
+            detail = official.clean(envelope.get("detail_failure_bucket"))
+            if bucket:
+                failure_counts[f"{row.get('source_family')}:{bucket}"] += 1
+            if detail:
+                locator_counts[f"{row.get('source_family')}:{detail}"] += 1
+            if bucket or detail:
+                identity = official.clean(envelope.get("source_identity"))
+                if identity:
+                    file_counts[identity.split(":", 2)[-1][:160]] += 1
+            if bucket in {"adapter_missing", "locator_incomplete", "citation_render_failed", "evidence_bundle_render_failed"}:
+                adapter_gap_counts[f"{row.get('source_family')}:{detail or bucket}"] += 1
+    track_rows = Counter(official.clean(row.get("source_family")).upper() for row in topk_rows)
+    summary = {
+        "source": "silver_1000_diagnostic_overlay",
+        "row_count": len(topk_rows),
+        "interpretation": "coverage_and_failure_discovery_only",
+        "track_row_counts": {track: int(track_rows.get(track, 0)) for track in ("TEXT", "PDF", "XLSX")},
+        "tuning_allowed": False,
+        "metric_promotion_allowed": False,
+    }
+    return {
+        "schema_version": f"{V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID}_silver_overlay_v1",
+        "run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "v3_7_2_silver_1000_diagnostic_failure_distribution",
+        "source": "silver_1000_diagnostic_overlay",
+        "row_count": len(topk_rows),
+        "interpretation": "coverage_and_failure_discovery_only",
+        "summary": summary,
+        "failure_distribution": v3_7_2_counter_ranked(failure_counts),
+        "retrieval_diagnostic_distribution": v3_7_2_counter_ranked(retrieval_diagnostic_counts),
+        "vulnerable_locator_type_ranking": v3_7_2_counter_ranked(locator_counts),
+        "vulnerable_file_or_identity_ranking": v3_7_2_counter_ranked(file_counts, limit=20),
+        "adapter_gap_ranking": v3_7_2_counter_ranked(adapter_gap_counts),
+        "promotion_evidence": False,
+    }
+
+
+def v3_7_2_source_registry_retrieval_smoke_sealed_gold_summary(
+    *,
+    topk_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    rows_by_track = Counter(official.clean(row.get("source_family")).upper() for row in topk_rows)
+    target_hit_count = sum(1 for row in topk_rows if row.get("target_hit_at_k"))
+    locator_hit_count = sum(1 for row in topk_rows if row.get("question_gold_locator_target_hit_in_topk"))
+    return {
+        "source": "official_gold_query_surfaces",
+        "usage": "sealed_no_regression_check_only",
+        "row_count": len(topk_rows),
+        "track_row_counts": {track: int(rows_by_track.get(track, 0)) for track in ("TEXT", "PDF", "XLSX")},
+        "same_track_hit_at_k_count": sum(1 for row in topk_rows if row.get("same_track_hit_at_k")),
+        "target_hit_at_k_count": target_hit_count,
+        "target_contract_survival_at_k_count": sum(
+            1 for row in topk_rows if row.get("target_contract_survival_at_k")
+        ),
+        "target_hit_in_topk_count": target_hit_count,
+        "question_gold_locator_target_hit_in_topk_count": locator_hit_count,
+        "target_mapping_audit": v3_7_2_target_mapping_audit_summary(topk_rows),
+        "retrieval_diagnostic_bucket_counts": v3_7_2_retrieval_diagnostic_bucket_counts(topk_rows),
+        "tuning_allowed": False,
+        "metric_promotion_allowed": False,
+    }
+
+
+def v3_7_2_target_mapping_audit_summary(topk_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    bucket_counts: Counter[str] = Counter()
+    present_count = 0
+    source_atom_present_count = 0
+    for row in topk_rows:
+        audit = as_mapping(row.get("target_mapping_audit"))
+        bucket = official.clean(audit.get("target_mapping_bucket")) or "missing_audit"
+        bucket_counts[bucket] += 1
+        if audit.get("target_present_in_index"):
+            present_count += 1
+        if audit.get("target_source_atom_present_in_registry"):
+            source_atom_present_count += 1
+    return {
+        "row_count": len(topk_rows),
+        "target_present_in_index_count": present_count,
+        "target_source_atom_present_in_registry_count": source_atom_present_count,
+        "bucket_counts": {key: int(value) for key, value in sorted(bucket_counts.items())},
+    }
+
+
+def v3_7_2_retrieval_diagnostic_bucket_counts(topk_rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    counts: Counter[str] = Counter(
+        official.clean(bucket)
+        for row in topk_rows
+        for bucket in row.get("retrieval_diagnostic_buckets", [])
+        if official.clean(bucket)
+    )
+    return {
+        bucket: int(counts.get(bucket, 0))
+        for bucket in V3_7_2_SOURCE_REGISTRY_RETRIEVAL_DIAGNOSTIC_BUCKETS
+    }
+
+
+def v3_7_2_query_routing_key(row: Mapping[str, Any]) -> str:
+    return (
+        f"{official.clean(row.get('source_family')).upper()}\x1f"
+        f"{official.clean(row.get('query_scope'))}\x1f"
+        f"{official.clean(row.get('query_id'))}"
+    )
+
+
+def v3_7_2_apply_structured_family_routing(
+    *,
+    mixed_topk_rows: Sequence[Mapping[str, Any]],
+    routed_rows_by_query_key: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    topk_rows: list[dict[str, Any]] = []
+    missing_query_keys: list[str] = []
+    for row in mixed_topk_rows:
+        source_family = official.clean(row.get("source_family")).upper()
+        if source_family not in V3_7_2_FAMILY_ROUTED_SMOKE_FAMILIES:
+            topk_rows.append(dict(row))
+            continue
+        routing_key = v3_7_2_query_routing_key(row)
+        routed_row = routed_rows_by_query_key.get(routing_key)
+        if routed_row is None:
+            missing_query_keys.append(routing_key)
+            topk_rows.append(v3_7_2_family_route_missing_topk_row(row))
+            continue
+        topk_rows.append(dict(routed_row))
+    return {
+        "topk_rows": topk_rows,
+        "missing_query_keys": missing_query_keys,
+    }
+
+
+def v3_7_2_family_route_missing_topk_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    missing = dict(row)
+    missing.update(
+        {
+            "topk_returned_count": 0,
+            "topk_hydrateable_row_count": 0,
+            "topk_evidence_bundle_renderable_row_count": 0,
+            "topk_citation_renderable_row_count": 0,
+            "same_track_returned_count": 0,
+            "off_track_returned_count": 0,
+            "same_track_hit_at_k": False,
+            "contract_survival_at_k_count": 0,
+            "primary_failure_bucket": "search_miss",
+            "retrieval_diagnostic_buckets": ["family_route_missing", "search_miss"],
+            "primary_retrieval_diagnostic_bucket": "family_route_missing",
+            "target_parent_hit_in_topk": False,
+            "locator_or_search_unit_hit_in_topk": False,
+            "target_hit_at_k": False,
+            "target_contract_survival_at_k": False,
+            "target_hit_in_topk": False,
+            "question_gold_locator_target_hit_in_topk": False,
+            "family_routed_primary_row_missing": True,
+            "top_result_envelopes": [],
+        }
+    )
+    return missing
+
+
+def v3_7_2_mixed_retrieval_baseline_summary(
+    *,
+    generated_at: str,
+    mixed_failure_buckets: Mapping[str, Any],
+    mixed_per_track: Mapping[str, Any],
+) -> dict[str, Any]:
+    tracks: dict[str, dict[str, Any]] = {}
+    for track, breakdown_value in as_mapping(mixed_per_track.get("tracks")).items():
+        breakdown = as_mapping(breakdown_value)
+        tracks[track] = {
+            "query_count": int(breakdown.get("query_count") or 0),
+            "topk_returned_count": int(breakdown.get("topk_returned_count") or 0),
+            "same_track_hit_at_k_count": int(breakdown.get("same_track_hit_at_k_count") or 0),
+            "same_track_returned_count": int(breakdown.get("same_track_returned_count") or 0),
+            "off_track_returned_count": int(breakdown.get("off_track_returned_count") or 0),
+            "target_hit_at_k_count": int(breakdown.get("target_hit_at_k_count") or 0),
+            "target_contract_survival_at_k_count": int(
+                breakdown.get("target_contract_survival_at_k_count") or 0
+            ),
+            "contract_survival_at_k_count": int(breakdown.get("contract_survival_at_k_count") or 0),
+            "retrieval_diagnostic_bucket_counts": dict(
+                as_mapping(breakdown.get("retrieval_diagnostic_bucket_counts"))
+            ),
+            "target_mapping_audit": dict(as_mapping(breakdown.get("target_mapping_audit"))),
+            "top_failure_bucket": official.clean(breakdown.get("top_failure_bucket")),
+        }
+    return {
+        "generated_at": generated_at,
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "candidate_pool_mode": "mixed_all_source_faiss_topk_before_family_routing",
+        "interpretation": "pre-routing baseline retained to show PDF/XLSX TEXT-dominance failure mode",
+        "top_failure_bucket": official.clean(mixed_failure_buckets.get("top_failure_bucket")),
+        "retrieval_diagnostic_bucket_counts": dict(
+            as_mapping(mixed_failure_buckets.get("retrieval_diagnostic_bucket_counts"))
+        ),
+        "tracks": tracks,
+    }
+
+
+def v3_7_2_family_routed_retrieval_smoke(
+    *,
+    generated_at: str,
+    query_specs: Sequence[Mapping[str, Any]],
+    include_topk_rows: bool = False,
+) -> dict[str, Any]:
+    import numpy as np  # noqa: WPS433
+
+    candidate_rows_by_family: dict[str, list[dict[str, Any]]] = {
+        family: [] for family in V3_7_2_FAMILY_ROUTED_SMOKE_FAMILIES
+    }
+    manifest_path = DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl"
+    if manifest_path.exists():
+        with manifest_path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                family = official.clean(row.get("source_family")).upper()
+                if family in candidate_rows_by_family:
+                    candidate_rows_by_family[family].append(row)
+
+    source_atom_ids = {
+        source_atom_id
+        for rows in candidate_rows_by_family.values()
+        for row in rows
+        for source_atom_id in v3_7_2_search_view_source_atom_ids(row)
+        if source_atom_id
+    }
+    source_registry = v3_7_2_collect_source_atoms(source_atom_ids)
+    blocked_source_atom_ids = v3_7_2_blocked_source_atom_ids()
+    tracks: dict[str, dict[str, Any]] = {}
+    topk_rows_by_query_key: dict[str, dict[str, Any]] = {}
+    for family, candidate_rows in candidate_rows_by_family.items():
+        family_specs = [
+            spec for spec in query_specs if official.clean(spec.get("source_family")).upper() == family
+        ]
+        rows_by_faiss_id = {int(row.get("faiss_row_id") or -1): row for row in candidate_rows}
+        target_maps = v3_7_2_target_maps_from_search_view_rows(candidate_rows)
+        family_topk_rows: list[dict[str, Any]] = []
+        if candidate_rows:
+            candidate_vectors = np.vstack(
+                [
+                    v3_6_8_all_source_hash_vector(
+                        official.clean(row.get("embedding_text") or row.get("display_text")),
+                        dimension=V3_7_1_ALL_SOURCE_CITABLE_VECTOR_DIMENSION,
+                    )
+                    for row in candidate_rows
+                ]
+            )
+            faiss_row_ids = [int(row.get("faiss_row_id") or -1) for row in candidate_rows]
+            for spec in family_specs:
+                query_vector = v3_6_8_all_source_hash_vector(
+                    official.clean(spec.get("query_text")),
+                    dimension=V3_7_1_ALL_SOURCE_CITABLE_VECTOR_DIMENSION,
+                )
+                scores = candidate_vectors @ query_vector
+                top_k = min(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOP_K, int(scores.shape[0]))
+                if top_k <= 0:
+                    hits: list[tuple[int, float]] = []
+                else:
+                    top_indices = np.argsort(scores)[-top_k:][::-1]
+                    hits = [(faiss_row_ids[int(index)], float(scores[int(index)])) for index in top_indices]
+                row = v3_7_2_source_registry_retrieval_smoke_row(
+                    generated_at=generated_at,
+                    query_spec=spec,
+                    hits=hits,
+                    search_views_by_faiss_id=rows_by_faiss_id,
+                    target_rows_by_parent_source_unit_id=target_maps["target_rows_by_parent_source_unit_id"],
+                    target_rows_by_search_unit_id=target_maps["target_rows_by_search_unit_id"],
+                    target_rows_by_locator_fingerprint=target_maps["target_rows_by_locator_fingerprint"],
+                    source_registry=source_registry,
+                    blocked_source_atom_ids=blocked_source_atom_ids,
+                )
+                family_topk_rows.append(row)
+                if include_topk_rows:
+                    topk_rows_by_query_key[v3_7_2_query_routing_key(spec)] = row
+        tracks[family] = {
+            "candidate_pool_source_family": family,
+            "candidate_pool_count": len(candidate_rows),
+            "query_count": len(family_topk_rows),
+            "top_k": V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOP_K,
+            "topk_returned_count": sum(int(row.get("topk_returned_count") or 0) for row in family_topk_rows),
+            "same_track_hit_at_k_count": sum(1 for row in family_topk_rows if row.get("same_track_hit_at_k")),
+            "target_hit_at_k_count": sum(1 for row in family_topk_rows if row.get("target_hit_at_k")),
+            "contract_survival_at_k_count": sum(
+                int(row.get("contract_survival_at_k_count") or 0) for row in family_topk_rows
+            ),
+            "target_contract_survival_at_k_count": sum(
+                1 for row in family_topk_rows if row.get("target_contract_survival_at_k")
+            ),
+            "retrieval_diagnostic_bucket_counts": v3_7_2_retrieval_diagnostic_bucket_counts(family_topk_rows),
+            "target_mapping_audit": v3_7_2_target_mapping_audit_summary(family_topk_rows),
+        }
+    result = {
+        "generated_at": generated_at,
+        "diagnostic_only": True,
+        "promotion_evidence": False,
+        "candidate_pool_mode": "query_source_family_filter_over_existing_v3_7_1_search_view_manifest",
+        "families": list(V3_7_2_FAMILY_ROUTED_SMOKE_FAMILIES),
+        "tracks": tracks,
+    }
+    if include_topk_rows:
+        result["topk_rows_by_query_key"] = topk_rows_by_query_key
+    return result
+
+
+def v3_7_2_target_maps_from_search_view_rows(
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, dict[str, list[Mapping[str, Any]]]]:
+    by_parent: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    by_search: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    by_locator: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for row in rows:
+        parent_source_unit_id = official.clean(row.get("parent_source_unit_id"))
+        if parent_source_unit_id:
+            by_parent[parent_source_unit_id].append(row)
+        search_unit_id = official.clean(row.get("parent_search_unit_id"))
+        if search_unit_id:
+            by_search[search_unit_id].append(row)
+        locator_fingerprint = official.clean(row.get("locator_fingerprint"))
+        if locator_fingerprint:
+            by_locator[locator_fingerprint].append(row)
+    return {
+        "target_rows_by_parent_source_unit_id": dict(by_parent),
+        "target_rows_by_search_unit_id": dict(by_search),
+        "target_rows_by_locator_fingerprint": dict(by_locator),
+    }
+
+
+def v3_7_2_top_bucket(counts: Mapping[str, Any]) -> str:
+    ranked = sorted(
+        ((bucket, int(count or 0)) for bucket, count in counts.items()),
+        key=lambda item: (-item[1], item[0]),
+    )
+    if not ranked or ranked[0][1] <= 0:
+        return "none"
+    return ranked[0][0]
+
+
+def v3_7_2_next_fix_for_bucket(*, track: str, bucket: str) -> str:
+    if bucket == "none":
+        return f"{track}: keep as contract-pass baseline; no dominant failure bucket in this smoke."
+    fixes = {
+        "search_miss": "inspect SearchView query text and source-family coverage for missed top-k retrieval",
+        "source_atom_missing": "repair SearchView source_atom_id registry pointers before any metric work",
+        "source_atom_blocked": "inspect blocked SourceAtom policy reason and decide whether runtime evidence is allowed",
+        "locator_incomplete": "repair track locator fields in SourceAtom canonical citation payload",
+        "evidence_bundle_render_failed": "patch EvidenceBundle adapter for hydrated SourceAtoms",
+        "citation_render_failed": "patch citation renderer for the hydrated SourceAtom family",
+        "snapshot_only": "rank snapshot-only rows that can be upgraded to runtime evidence",
+        "adapter_missing": "add or reconnect the track adapter for SearchView to SourceAtom hydration",
+        "track_mismatch": "inspect retrieval routing and per-track candidate mix after contract survival is stable",
+    }
+    return f"{track}: {fixes.get(bucket, 'inspect contract failure bucket')}"
+
+
+def v3_7_2_next_fixes_ranked_by_impact(
+    *,
+    failure_buckets: Mapping[str, Any],
+    silver_overlay: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    counts = as_mapping(failure_buckets.get("failure_bucket_counts"))
+    detail_counts = as_mapping(failure_buckets.get("detail_failure_bucket_counts"))
+    ranked = [
+        {
+            "rank_basis": "contract_failure_reduction",
+            "bucket": bucket,
+            "impact_count": int(count),
+            "next_fix": v3_7_2_next_fix_for_bucket(track="ALL", bucket=bucket),
+        }
+        for bucket, count in sorted(counts.items(), key=lambda item: (-int(item[1] or 0), item[0]))
+        if int(count or 0) > 0
+    ]
+    ranked.extend(
+        {
+            "rank_basis": "locator_or_adapter_gap",
+            "bucket": official.clean(bucket),
+            "impact_count": int(count),
+            "next_fix": f"ALL: repair locator/adapter gap `{official.clean(bucket)}` before promotion discussion",
+        }
+        for bucket, count in sorted(detail_counts.items(), key=lambda item: (-int(item[1] or 0), item[0]))[:10]
+        if int(count or 0) > 0
+    )
+    if not ranked:
+        ranked.append(
+            {
+                "rank_basis": "contract_failure_reduction",
+                "bucket": "none",
+                "impact_count": 0,
+                "next_fix": "Keep comparable live measurement closed until this contract smoke is accepted.",
+            }
+        )
+    return ranked[:12]
+
+
+def v3_7_2_counter_ranked(counter: Counter[str], *, limit: int = 12) -> list[dict[str, Any]]:
+    return [
+        {"key": key, "count": int(count)}
+        for key, count in sorted(counter.items(), key=lambda item: (-item[1], item[0]))[:limit]
+        if int(count) > 0
+    ]
 
 
 def v3_6_8_source_registry_validate_source_atom(atom: Mapping[str, Any]) -> dict[str, Any]:
@@ -34498,6 +36244,44 @@ def write_v3_6_low_touch_weak_noisy_silver_artifacts(summary: dict[str, Any]) ->
         )
         return
 
+    if run_id == V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID:
+        write_jsonl(DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL, summary["topk_result_rows"])
+        write_json(DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON, summary["failure_buckets"])
+        write_json(
+            DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON,
+            summary["per_track_breakdown_artifact"],
+        )
+        write_json(
+            DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON,
+            summary["silver_1000_diagnostic_overlay_artifact"],
+        )
+        payload = dict(summary)
+        for field in (
+            "topk_result_rows",
+            "failure_buckets",
+            "per_track_breakdown_artifact",
+            "silver_1000_diagnostic_overlay_artifact",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "topk_rows_jsonl_sha256": sha256_file(DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL),
+            "failure_buckets_json_sha256": sha256_file(
+                DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON
+            ),
+            "per_track_breakdown_json_sha256": sha256_file(
+                DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON
+            ),
+            "silver_1000_diagnostic_overlay_json_sha256": sha256_file(
+                DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON
+            ),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON, payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(
+            DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON
+        )
+        return
+
     raise ValueError(f"unsupported v3_6 run: {run_id}")
 
 
@@ -34564,6 +36348,10 @@ def append_v3_6_low_touch_weak_noisy_silver_event(path: Path, summary: Mapping[s
         "contract_refactor",
         "search_view_adapter_diagnostics",
         "source_atom_hydration_smoke",
+        "topk_result_rows",
+        "per_track_breakdown_artifact",
+        "silver_1000_diagnostic_overlay_artifact",
+        "silver_1000_diagnostic_overlay",
     ):
         event.pop(field, None)
     append_unique_status_ledger_event(path, event)
@@ -34799,6 +36587,44 @@ def v3_6_progress_entry(summary: Mapping[str, Any]) -> str:
             "not a hybrid baseline, not prompt/scorer tuning, not promotion, and not gold/qrels/label/"
             "expected-answer/supporting-evidence mutation."
         )
+    if run_id == V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID:
+        tracks = as_mapping(summary.get("per_track_breakdown"))
+        mixed_tracks = as_mapping(as_mapping(summary.get("mixed_retrieval_baseline")).get("tracks"))
+        track_bits = []
+        for track in ("TEXT", "PDF", "XLSX"):
+            item = as_mapping(tracks.get(track))
+            track_bits.append(
+                f"{track}: queries={item.get('query_count', 0)}, "
+                f"top-k returned={item.get('topk_returned_count', 0)}, "
+                f"same-track@k={item.get('same_track_hit_at_k_count', 0)}, "
+                f"target@k={item.get('target_hit_at_k_count', 0)}, "
+                f"hydration={item.get('source_atom_hydrated_row_count', 0)}, "
+                f"evidence render={item.get('evidence_bundle_rendered_row_count', 0)}, "
+                f"citation render={item.get('citation_rendered_row_count', 0)}, "
+                f"top failure={item.get('top_failure_bucket', 'none')}"
+            )
+        mixed_bits = []
+        for track in ("PDF", "XLSX"):
+            item = as_mapping(mixed_tracks.get(track))
+            diagnostic = as_mapping(item.get("retrieval_diagnostic_bucket_counts"))
+            mixed_bits.append(
+                f"{track} mixed same-track@k={item.get('same_track_hit_at_k_count', 0)}, "
+                f"off-track returned={item.get('off_track_returned_count', 0)}, "
+                f"cross-family TEXT dominance={diagnostic.get('cross_family_text_dominance', 0)}"
+            )
+        return (
+            f"- v3_7_2 source registry-backed retrieval smoke report (`{run_id}`) fixes the measurement "
+            "contract to SearchView -> SourceAtom -> EvidenceBundle -> Citation render and reports contract "
+            f"survival by track without answer-quality scoring. Primary routing mode="
+            f"{summary.get('retrieval_routing_mode', '')}; routed source families="
+            f"{json.dumps(list(summary.get('routed_source_families') or []), ensure_ascii=False, separators=(',', ':'))}; "
+            f"{'; '.join(track_bits)}. Mixed all-source FAISS top-k is retained only as baseline diagnostic: "
+            f"{'; '.join(mixed_bits)}. "
+            "The official/gold query surfaces are sealed no-regression checks only; silver diagnostic failure "
+            "distribution is coverage/failure-discovery only. Promotion readiness remains closed, comparable live "
+            "measurement remains deferred, and no prompt/scorer/renderer/index/source-registry/gold/qrels/label/"
+            "expected-answer/supporting-evidence mutation was performed."
+        )
     counts = as_mapping(summary.get("source_family_counts"))
     profiles = as_mapping(summary.get("query_quality_profile_counts"))
     splits = as_mapping(summary.get("split_counts"))
@@ -34853,6 +36679,8 @@ def append_v3_6_progress_entry(summary: Mapping[str, Any]) -> None:
         status = "diagnostic_source_registry_materialization_v3_7_0_ready"
     elif run_id == V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID:
         status = "diagnostic_all_source_citable_nonprod_index_v3_7_1_built"
+    elif run_id == V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID:
+        status = "diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done"
     else:
         status = "balanced_weak_noisy_silver_candidates_v3_6_1_generated_diagnostic_only"
     text = re.sub(r"Overall status: `[^`]+`;", f"Overall status: `{status}`;", text, count=1)

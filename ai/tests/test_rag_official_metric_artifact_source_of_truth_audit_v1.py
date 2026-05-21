@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import os
 import subprocess
 import sys
 import csv
@@ -207,6 +208,14 @@ AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_7_1_"
     "all_source_citable_nonprod_index_build"
 )
+AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_7_2_"
+    "local_llm_natural_silver_query_regeneration"
+)
+AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_7_2_"
+    "source_registry_backed_retrieval_smoke_report"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -326,6 +335,12 @@ REPORT_ARTIFACT_SLUGS = {
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID: (
         AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID
     ),
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID: (
+        AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID
+    ),
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID: (
+        AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID,
@@ -367,11 +382,15 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
     AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID,
 }
 PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
     AGENTIC_V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID,
 }
 
 
@@ -1148,6 +1167,62 @@ AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON = report_artifact_path(
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
     "failure_buckets.json",
 )
+AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_CANDIDATES_JSONL = report_artifact_path(
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID,
+    "llm_natural_silver_candidates.jsonl",
+)
+AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_ALL_JSONL = report_artifact_path(
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID,
+    "llm_natural_silver_manifest_all.jsonl",
+)
+AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_CORE_JSONL = report_artifact_path(
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID,
+    "llm_natural_silver_manifest_core.jsonl",
+)
+AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_REVIEW_JSONL = report_artifact_path(
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID,
+    "llm_natural_silver_manifest_review_only.jsonl",
+)
+AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_QUARANTINE_JSONL = report_artifact_path(
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID,
+    "llm_natural_silver_manifest_quarantine.jsonl",
+)
+AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL = report_artifact_path(
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID,
+    "topk_rows.jsonl",
+)
+AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON = report_artifact_path(
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID,
+    "failure_buckets.json",
+)
+AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON = report_artifact_path(
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID,
+    "per_track_breakdown.json",
+)
+AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON = report_artifact_path(
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID,
+    "silver_1000_diagnostic_overlay.json",
+)
+
+
+def require_v3_7_2_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_7_2 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_7_2_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
 AGENTIC_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data"
 EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES: set[str] = set()
 CURRENT_REPORT_PATHS = {
@@ -1340,6 +1415,17 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY_JSON,
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE_JSON,
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_SUMMARY_JSON,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_CANDIDATES_JSONL,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_ALL_JSONL,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_CORE_JSONL,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_REVIEW_JSONL,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_QUARANTINE_JSONL,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON,
 }
 PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS = CURRENT_REPORT_PATHS
 ARCHIVED_REPORT_PATHS = {
@@ -1420,6 +1506,17 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_INDEX_BUILD_SUMMARY_JSON,
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_HYDRATION_SMOKE_JSON,
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_FAILURE_BUCKETS_JSON,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_SUMMARY_JSON,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_CANDIDATES_JSONL,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_ALL_JSONL,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_CORE_JSONL,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_REVIEW_JSONL,
+    AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_MANIFEST_QUARANTINE_JSONL,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON,
+    AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON,
 }
 ARCHIVED_REPORT_PATHS = (
     ARCHIVED_REPORT_PATHS | (PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS - CURRENT_REPORT_PATHS)
@@ -2066,6 +2163,73 @@ def test_v3_6_9_searchunit_searchview_sourceatom_refactor_artifacts_are_register
     assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON.stat().st_size < 250_000
     assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON.stat().st_size < 250_000
     assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON.stat().st_size < 250_000
+
+
+def test_v3_7_2_source_registry_backed_retrieval_smoke_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_7_2_local_artifacts(
+        AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON,
+        AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL,
+        AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON,
+        AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON,
+        AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON,
+    )
+    summary = read_json(AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON)
+    expected_artifacts = {
+        "topk_rows_jsonl_sha256": AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL,
+        "failure_buckets_json_sha256": AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON,
+        "per_track_breakdown_json_sha256": AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON,
+        "silver_1000_diagnostic_overlay_json_sha256": (
+            AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON
+        ),
+    }
+
+    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON.exists()
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID
+    assert summary["artifact_kind"] == "v3_7_2_source_registry_backed_retrieval_smoke_report"
+    assert summary["run_class"] == "diagnostic_only_source_registry_backed_retrieval_smoke_report"
+    assert summary["diagnostic_only"] is True
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["retrieval_score_primary_metric"] is False
+    assert summary["headline_aggregate_success_rate_reported"] is False
+    assert summary["official_metric"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["citation_metric_computed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["official_gold_labels_created"] is False
+    assert "silver_precision" not in json.dumps(summary, ensure_ascii=False).lower()
+    assert "silver precision" not in json.dumps(summary, ensure_ascii=False).lower()
+
+    for heavy_key in (
+        "topk_result_rows",
+        "source_atom_rows",
+        "search_view_rows",
+        "generated_answers",
+        "prompt_payloads",
+        "db_snapshot_rows",
+        "full_evidence_bundles",
+    ):
+        assert heavy_key not in summary
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
+    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL.stat().st_size < 12_000_000
+    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON.stat().st_size < 250_000
 
 
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:

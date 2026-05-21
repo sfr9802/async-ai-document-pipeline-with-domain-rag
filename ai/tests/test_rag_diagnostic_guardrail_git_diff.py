@@ -1,15 +1,28 @@
 from __future__ import annotations
 
-import subprocess
-import json
 import hashlib
+import json
+import os
+import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
+
+
+def require_v3_7_2_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_7_2 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_7_2_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
 
 
 def windows_long_path(path: Path) -> Path:
@@ -1896,6 +1909,97 @@ def test_v3_7_1_all_source_citable_nonprod_index_does_not_mutate_source_registry
     assert summary["official_gold_labels_created"] is False
     assert summary["silver_mutation"] is False
     assert summary["official_denominator_query_id_set_mutation"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["readme_performance_claim_mutation"] is False
+    assert summary["measurements_doc_updated"] is False
+    assert summary["triage_doc_updated"] is False
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+
+def test_v3_7_2_source_registry_backed_retrieval_smoke_does_not_mutate_source_registry_or_protected_surfaces():
+    run_id = (
+        "official_answer_citation_agentic_loop_run_v3_7_2_"
+        "source_registry_backed_retrieval_smoke_report"
+    )
+    summary_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / f"{run_id}_summary.json"
+    )
+    require_v3_7_2_local_artifacts(summary_path)
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = read_json(summary_path)
+    assert summary["source_registry_sha256_before"] == summary["source_registry_sha256_after"]
+    assert summary["source_registry_sha256_unchanged"] is True
+    assert summary["index_artifact_sha256_before"] == summary["index_artifact_sha256_after"]
+    assert summary["index_artifact_sha256_unchanged"] is True
+    assert summary["official_denominator_index_sha256_before"] == summary["official_denominator_index_sha256_after"]
+    assert summary["official_denominator_index_sha256_unchanged"] is True
+    assert summary["diagnostic_only"] is True
+    assert summary["index_or_export_mutation"] is False
+    assert summary["retrieval_index_mutation"] is False
+    assert summary["vector_index_build_performed"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["canonical_citation_payload_stored_in_vector_metadata"] is False
+    assert summary["vector_metadata_used_as_canonical_citation_source"] is False
+    assert summary["vector_metadata_used_as_evidence_truth"] is False
+    assert summary["production_db_usage_allowed"] is False
+    assert summary["production_db_used"] is False
+    assert summary["db_write_attempted"] is False
+    assert summary["db_migration_attempted"] is False
+    assert summary["db_index_rebuild_attempted"] is False
+    assert summary["db_write_migration_reindex_attempted"] is False
+    assert summary["official_metric"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["citation_metric_computed"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["official_gold_labels_created"] is False
+    assert summary["silver_mutation"] is False
     assert summary["promotion_evidence"] is False
     assert summary["threshold_tuning"] is False
     assert summary["winner_selection"] is False

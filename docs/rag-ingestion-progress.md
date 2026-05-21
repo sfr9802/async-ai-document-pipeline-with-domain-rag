@@ -22,22 +22,36 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `diagnostic_all_source_citable_nonprod_index_v3_7_1_built`;
+Overall status: `diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied. The v3_2
 post-fix sequence is closed, the official answer/citation implementation queue
-is empty, and current work is source-first contract separation: SearchViews are
-retrieval candidates, SourceAtoms/EvidenceBundles own hydrated evidence, and
-durable source registry materialization is the next bounded step.
+is empty, and current work remains source-first contract separation:
+SearchViews are retrieval candidates, SourceAtoms/EvidenceBundles own hydrated
+evidence, and v3_7_2 has regenerated the inherited diagnostic silver query
+surface with local LLM natural Korean queries, then produced the
+source registry-backed retrieval smoke report without opening promotion or
+comparable live measurement.
+
+
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration:progress-entry:start -->
+- v3_7_2 local LLM natural silver query regeneration (`official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration`) supersedes/discards the inherited v3_6_1 scripted weak/noisy silver query text and regenerates 1000 diagnostic query strings with local `gemma4-e2b-local` through llama.cpp. Source and bucket metadata remain inherited from the frozen v3_5_4/v3_6 diagnostic lane: candidates=1000, unique ids=1000, unique generated question hashes=1000, TEXT=350, PDF=325, XLSX=325; manifests all=1000, core=665, review-only=335, quarantine=0. A second local LLM polish pass rewrote XLSX=325 rows to remove spreadsheet-internal query surfaces; validation found no Latin/Japanese/Hanja script or disallowed punctuation violations, no duplicate generated query hashes, and exact reuse of prior query text is 0. Remaining repeated prefixes are domain-heavy rather than sheet/range templates, so this remains diagnostic silver rather than human gold. No gold/qrels/label/expected-answer/supporting-evidence mutation, retrieval metric, answer metric, citation metric, DB write, production change, prompt/scorer tuning, or promotion was performed.
+<!-- official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration:progress-entry:end -->
 
 
 <!-- official_answer_citation_agentic_loop_run_v3_7_0_source_registry_materialization:progress-entry:start -->
-- v3_7_0 source registry materialization (`official_answer_citation_agentic_loop_run_v3_7_0_source_registry_materialization`) materializes 136280 non-production SourceAtoms from existing source data with TEXT=135608, PDF=329, XLSX=343. No production DB, DB write/migration, vector index build, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, retrieval metric, answer metric, or citation metric was performed. outcome=SOURCE_REGISTRY_MATERIALIZED_READY; next_allowed_phase=v3_7_1_all_source_citable_nonprod_index_build; no-vector hydration=true; no-vector citation render=true; snapshot_only=327; retrieval_only_uncanonicalized=0; official overlap=29 protected regression rows; vector_metadata_used_as_canonical_citation_source=false.
+- v3_7_0 source registry materialization (`official_answer_citation_agentic_loop_run_v3_7_0_source_registry_materialization`) materializes 136280 non-production SourceAtoms from existing source data with TEXT=135608, PDF=329, XLSX=343. No production DB, DB write/migration, vector index build, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, retrieval metric, answer metric, or citation metric was performed. outcome=SOURCE_REGISTRY_MATERIALIZED_READY; next_allowed_phase=v3_7_1_all_source_citable_nonprod_index_build; no-vector hydration=true; no-vector citation render=true; snapshot_only=122; retrieval_only_uncanonicalized=0; official overlap=29 protected regression rows; vector_metadata_used_as_canonical_citation_source=false.
 <!-- official_answer_citation_agentic_loop_run_v3_7_0_source_registry_materialization:progress-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_7_1_all_source_citable_nonprod_index_build:progress-entry:start -->
-- v3_7_1 all-source citable non-production index build (`official_answer_citation_agentic_loop_run_v3_7_1_all_source_citable_nonprod_index_build`) builds `ai/eval/indexes/rag-data-all-source-citable-nonprod-v1` from SourceAtom-backed SearchViews only: search_views=136280, TEXT=135608, PDF=329, XLSX=343, snapshot_only=327, official overlap=29 protected regression rows. outcome=ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT; next_allowed_phase=v3_7_2_source_registry_backed_retrieval_smoke; no-vector hydration=true; no-vector citation render=true; vector_metadata_used_as_canonical_citation_source=false; faiss_gpu_used=false. This is diagnostic-only non-production indexing, not retrieval/answer/citation metric computation, not a hybrid baseline, not prompt/scorer tuning, not promotion, and not gold/qrels/label/expected-answer/supporting-evidence mutation.
+- v3_7_1 all-source citable non-production index build (`official_answer_citation_agentic_loop_run_v3_7_1_all_source_citable_nonprod_index_build`) builds `ai/eval/indexes/rag-data-all-source-citable-nonprod-v1` from SourceAtom-backed SearchViews only: search_views=136280, TEXT=135608, PDF=329, XLSX=343, snapshot_only=122, official overlap=29 protected regression rows. outcome=ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILT; next_allowed_phase=v3_7_2_source_registry_backed_retrieval_smoke; no-vector hydration=true; no-vector citation render=true; vector_metadata_used_as_canonical_citation_source=false; faiss_gpu_used=false. This is diagnostic-only non-production indexing, not retrieval/answer/citation metric computation, not a hybrid baseline, not prompt/scorer tuning, not promotion, and not gold/qrels/label/expected-answer/supporting-evidence mutation.
 <!-- official_answer_citation_agentic_loop_run_v3_7_1_all_source_citable_nonprod_index_build:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report:progress-entry:start -->
+- v3_7_2 source registry-backed retrieval smoke report (`official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report`) fixes the measurement contract to SearchView -> SourceAtom -> EvidenceBundle -> Citation render and reports contract survival by track without answer-quality scoring. Primary routing mode=query_source_family_routed_for_structured_tracks; routed source families=["PDF","XLSX"]; TEXT: queries=356, top-k returned=1780, same-track@k=356, target@k=20, hydration=1780, evidence render=1780, citation render=1780, top failure=track_mismatch; PDF: queries=329, top-k returned=1645, same-track@k=329, target@k=112, hydration=1645, evidence render=1645, citation render=1645, top failure=snapshot_only; XLSX: queries=344, top-k returned=1720, same-track@k=344, target@k=13, hydration=1720, evidence render=1720, citation render=1720, top failure=snapshot_only. Mixed all-source FAISS top-k is retained only as baseline diagnostic: PDF mixed same-track@k=9, off-track returned=1634, cross-family TEXT dominance=328; XLSX mixed same-track@k=31, off-track returned=1689, cross-family TEXT dominance=344. The official/gold query surfaces are sealed no-regression checks only; silver diagnostic failure distribution is coverage/failure-discovery only. Promotion readiness remains closed, comparable live measurement remains deferred, and no prompt/scorer/renderer/index/source-registry/gold/qrels/label/expected-answer/supporting-evidence mutation was performed.
+<!-- official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report:progress-entry:end -->
 
 - Official first-run baseline is `status=BLOCKED_OR_PARTIAL`,
   `status_detail=SCORED_BASELINE_PARTIAL`,
@@ -359,10 +373,10 @@ python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_
 ```
 
 Current verification: local results recorded in this progress log. Latest
-available compact profile evidence in this doc shows 175 passed, 0 skipped,
-0 failed for both `--rag-current` and marker profile runs after the v3_3_2
-retrieval label-design packet; later v3_6_7-v3_6_9 status is represented by
-the current source-of-truth artifact tests and `status.jsonl` events.
+current-profile evidence after the v3_7_2 routing smoke update is
+`python -X utf8 -m pytest ai/tests --rag-current -q` -> 276 passed, 0 skipped,
+0 failed, 1 warning.
+Targeted v3_7_2 source-registry routing/status/hash/guardrail checks also pass.
 
 Current test surface is intentionally compact after legacy test deletion:
 `python -X utf8 -m pytest ai/tests --rag-current -q`; full `ai/tests`
@@ -462,3 +476,5 @@ above.
 | 2026-05-19 | v3_4 created exact-evidence retrieval qrels and a small 28-query smoke metric, explicitly not representative product performance. |
 | 2026-05-20 | v3_5-v3_6 built the balanced source-only manifest and diagnostic weak/noisy silver path, then stopped at source-first architecture separation. |
 | 2026-05-20 | v3_6_8 and v3_6_9 proved all-source non-production indexing and a SearchUnit/SearchView/SourceAtom contract; source registry materialization is next. |
+| 2026-05-21 | v3_7_2 superseded the inherited 1000 weak/noisy silver query surface with local LLM natural Korean queries while preserving diagnostic-only, non-promotion boundaries. |
+| 2026-05-21 | v3_7_2 source registry-backed retrieval smoke separates top-k returned candidates from same-track@k, target@k, and contract survival; promotion readiness remains closed. |

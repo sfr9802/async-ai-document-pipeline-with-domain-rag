@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -288,6 +291,48 @@ V3_7_1_ALL_SOURCE_CITABLE_OUTCOMES = {
     "ALL_SOURCE_CITABLE_INDEX_BLOCKED",
     "SOURCE_REGISTRY_NOT_READY",
 }
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_7_2_"
+    "source_registry_backed_retrieval_smoke_report"
+)
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY = (
+    REPORT_DIR / f"{V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID}_summary.json"
+)
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS = (
+    REPORT_DIR / f"{V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID}_topk_rows.jsonl"
+)
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS = (
+    REPORT_DIR / f"{V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID}_failure_buckets.json"
+)
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK = (
+    REPORT_DIR / f"{V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID}_per_track_breakdown.json"
+)
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY = (
+    REPORT_DIR / f"{V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID}_silver_1000_diagnostic_overlay.json"
+)
+V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_BUCKETS = [
+    "search_miss",
+    "source_atom_missing",
+    "source_atom_blocked",
+    "locator_incomplete",
+    "evidence_bundle_render_failed",
+    "citation_render_failed",
+    "snapshot_only",
+    "adapter_missing",
+    "track_mismatch",
+]
+
+
+def require_v3_7_2_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_7_2 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_7_2_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
 SOURCE_BOUND_SEARCH_UNIT_MANIFEST = (
     ROOT / "ai" / "eval" / "indexes" / "rag-data-official-denominator-v1" / "search_unit_manifest.jsonl"
 )
@@ -3654,6 +3699,73 @@ def test_v3_7_0_source_registry_materialization_artifacts_lock_source_first_cont
     assert all(row.get("materialization_bucket") for row in diagnostics[:25])
 
 
+def test_v3_7_0_xlsx_raw_locator_resolves_unambiguous_external_archive_workbook(tmp_path, monkeypatch) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    workbook_path = tmp_path / "source_collection" / "nested" / "external_book.xlsx"
+    workbook_path.parent.mkdir(parents=True)
+    workbook_path.write_bytes(b"PK\x03\x04")
+    monkeypatch.setattr(runner, "V3_5_XLSX_SOURCE_ROOTS", (tmp_path / "source_collection",))
+
+    unit = {
+        "source_family": "XLSX",
+        "source_locator": {
+            "workbook": workbook_path.name,
+            "source_file_path": "",
+            "sheet": "Sheet1",
+            "range": "A1",
+        },
+        "track_locator_payload": {
+            "workbook": workbook_path.name,
+            "source_path": "",
+            "sheet": "Sheet1",
+            "range": "A1",
+        },
+    }
+
+    locator = runner.v3_7_0_normalized_raw_locator(unit)
+
+    assert Path(locator["source_path"]).resolve() == workbook_path.resolve()
+    assert runner.v3_7_0_raw_file_exists(source_family="XLSX", raw_locator=locator) is True
+
+
+def test_v3_7_0_xlsx_raw_locator_does_not_guess_ambiguous_external_archive_workbook(tmp_path, monkeypatch) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    first = tmp_path / "root-a" / "same_name.xlsx"
+    second = tmp_path / "root-b" / "same_name.xlsx"
+    first.parent.mkdir(parents=True)
+    second.parent.mkdir(parents=True)
+    first.write_bytes(b"PK\x03\x04")
+    second.write_bytes(b"PK\x03\x04")
+    monkeypatch.setattr(runner, "V3_5_XLSX_SOURCE_ROOTS", (tmp_path,))
+
+    unit = {
+        "source_family": "XLSX",
+        "source_locator": {
+            "workbook": "same_name.xlsx",
+            "source_file_path": "",
+            "sheet": "Sheet1",
+            "cell": "B2",
+        },
+        "track_locator_payload": {
+            "workbook": "same_name.xlsx",
+            "source_path": "",
+            "sheet": "Sheet1",
+            "cell": "B2",
+        },
+    }
+
+    locator = runner.v3_7_0_normalized_raw_locator(unit)
+
+    assert locator["source_path"] == ""
+    assert runner.v3_7_0_raw_file_exists(source_family="XLSX", raw_locator=locator) is False
+
+
 def test_v3_7_0_source_registry_no_vector_hydration_and_citation_smoke() -> None:
     hydration = read_json(V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE)
     registry_rows = read_jsonl(SOURCE_ATOM_REGISTRY_JSONL)
@@ -3735,7 +3847,7 @@ def test_v3_7_1_all_source_citable_nonprod_index_is_source_atom_backed_without_v
     assert summary["search_view_count"] == index_inventory["counts"]["search_views_indexed"]
     assert summary["source_family_counts"] == {"TEXT": 135608, "PDF": 329, "XLSX": 343}
     assert summary["official_overlap_count"] == 29
-    assert summary["snapshot_only_count"] == 327
+    assert summary["snapshot_only_count"] == 122
     assert summary["blocking_buckets"] == []
     assert summary["fail_closed_reasons"] == []
     assert summary["source_registry_sha256_unchanged"] is True
@@ -3775,6 +3887,201 @@ def test_v3_7_1_all_source_citable_nonprod_index_is_source_atom_backed_without_v
     assert all("canonical_citation_payload" not in row for row in samples)
     assert all(row["canonical_citation_payload_present"] is False for row in samples)
     assert all(row["canonical_payload_stored_in_vector_metadata"] is False for row in samples)
+
+
+def test_v3_7_2_source_registry_backed_retrieval_smoke_report_tracks_contract_survival_by_track() -> None:
+    require_v3_7_2_local_artifacts(
+        V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY,
+        V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS,
+        V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS,
+        V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK,
+        V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY,
+    )
+    summary = read_json(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY)
+    topk_rows = read_jsonl(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS)
+    failure_buckets = read_json(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS)
+    per_track = read_json(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK)
+    silver_overlay = read_json(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY)
+
+    assert summary["run_id"] == V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID
+    assert summary["artifact_kind"] == "v3_7_2_source_registry_backed_retrieval_smoke_report"
+    assert summary["run_class"] == "diagnostic_only_source_registry_backed_retrieval_smoke_report"
+    assert summary["contract_path"] == ["SearchView", "SourceAtom", "EvidenceBundle", "Citation render"]
+    assert summary["input_artifacts"]["index_namespace"] == "rag-data-all-source-citable-nonprod-v1"
+    assert summary["input_artifacts"]["source_atom_registry_jsonl"] == (
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl"
+    )
+    assert summary["top_k"] == 5
+    assert summary["diagnostic_only"] is True
+    assert summary["official_gold_usage"] == "sealed_no_regression_check_only"
+    assert summary["silver_usage"] == "diagnostic_failure_distribution_only"
+    assert summary["headline_aggregate_success_rate_reported"] is False
+    assert summary["retrieval_score_primary_metric"] is False
+    assert summary["answer_quality_metric_computed"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["citation_metric_computed"] is False
+    assert summary["promotion_readiness_opened"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["vector_metadata_used_as_canonical_citation_source"] is False
+    assert summary["vector_metadata_used_as_evidence_truth"] is False
+    assert summary["canonical_citation_payload_stored_in_vector_metadata"] is False
+
+    assert failure_buckets["failure_bucket_definitions"] == V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_BUCKETS
+    assert set(summary["failure_bucket_counts"]) == set(V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_BUCKETS)
+    assert set(per_track["tracks"]) == {"TEXT", "PDF", "XLSX"}
+    assert set(summary["per_track_breakdown"]) == {"TEXT", "PDF", "XLSX"}
+    for track, breakdown in summary["per_track_breakdown"].items():
+        assert track in {"TEXT", "PDF", "XLSX"}
+        assert breakdown["query_count"] > 0
+        assert "topk_hit_count" not in breakdown
+        assert breakdown["topk_returned_count"] >= breakdown["query_count"]
+        assert breakdown["same_track_hit_at_k_count"] <= breakdown["query_count"]
+        assert breakdown["target_hit_at_k_count"] <= breakdown["query_count"]
+        assert breakdown["contract_survival_at_k_count"] <= breakdown["topk_returned_count"]
+        assert breakdown["target_contract_survival_at_k_count"] <= breakdown["target_hit_at_k_count"]
+        assert breakdown["source_atom_hydrated_row_count"] <= breakdown["topk_returned_count"]
+        assert breakdown["evidence_bundle_rendered_row_count"] <= breakdown["topk_returned_count"]
+        assert breakdown["citation_rendered_row_count"] <= breakdown["topk_returned_count"]
+        assert breakdown["top_failure_bucket"] in ["none", *V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_BUCKETS]
+        assert breakdown["next_fix"]
+
+    assert summary["retrieval_metric_interpretation"]["topk_returned_count"] == (
+        "number of SearchView candidates returned; not target correctness"
+    )
+    assert summary["retrieval_routing_mode"] == "query_source_family_routed_for_structured_tracks"
+    assert summary["routed_source_families"] == ["PDF", "XLSX"]
+    assert summary["family_routed_missing_query_key_count"] == 0
+    assert summary["family_routed_missing_query_keys"] == []
+    assert summary["mixed_retrieval_baseline"]["candidate_pool_mode"] == "mixed_all_source_faiss_topk_before_family_routing"
+    assert summary["sealed_gold_no_regression_check"]["target_hit_at_k_count"] == summary[
+        "sealed_gold_no_regression_check"
+    ]["target_hit_in_topk_count"]
+    assert summary["sealed_gold_no_regression_check"]["target_contract_survival_at_k_count"] <= summary[
+        "sealed_gold_no_regression_check"
+    ]["target_hit_at_k_count"]
+    assert summary["sealed_gold_no_regression_check"]["target_mapping_audit"]["row_count"] == 29
+    assert summary["sealed_gold_no_regression_check"]["target_mapping_audit"]["target_present_in_index_count"] <= 29
+    assert set(summary["family_routed_retrieval_smoke"]["tracks"]) >= {"PDF", "XLSX"}
+    for track in ("PDF", "XLSX"):
+        routed = summary["family_routed_retrieval_smoke"]["tracks"][track]
+        assert routed["candidate_pool_source_family"] == track
+        assert routed["query_count"] == summary["per_track_breakdown"][track]["query_count"]
+        assert routed["topk_returned_count"] >= routed["query_count"]
+        assert routed["same_track_hit_at_k_count"] == routed["query_count"]
+        assert summary["per_track_breakdown"][track]["same_track_hit_at_k_count"] == routed["query_count"]
+        assert summary["per_track_breakdown"][track]["off_track_returned_count"] == 0
+        assert summary["per_track_breakdown"][track]["target_hit_at_k_count"] == routed["target_hit_at_k_count"]
+        assert summary["per_track_breakdown"][track]["failure_bucket_counts"]["track_mismatch"] == 0
+        assert summary["per_track_breakdown"][track]["retrieval_diagnostic_bucket_counts"]["family_route_missing"] == 0
+        assert summary["mixed_retrieval_baseline"]["tracks"][track]["query_count"] == routed["query_count"]
+        assert summary["mixed_retrieval_baseline"]["tracks"][track]["off_track_returned_count"] > 0
+        assert summary["mixed_retrieval_baseline"]["tracks"][track]["retrieval_diagnostic_bucket_counts"][
+            "cross_family_text_dominance"
+        ] > 0
+
+    assert topk_rows
+    assert {row["query_scope"] for row in topk_rows} >= {
+        "sealed_gold_no_regression_check",
+        "silver_1000_diagnostic_overlay",
+    }
+    assert all(row["top_k"] == 5 for row in topk_rows)
+    assert all("topk_hit_count" not in row for row in topk_rows)
+    assert all(row["topk_returned_count"] == len(row.get("top_result_envelopes", [])) for row in topk_rows)
+    assert all(isinstance(row["same_track_hit_at_k"], bool) for row in topk_rows)
+    assert all(row["contract_survival_at_k_count"] <= row["topk_returned_count"] for row in topk_rows)
+    assert all(row["target_contract_survival_at_k"] <= row["target_hit_at_k"] for row in topk_rows)
+    assert all(
+        row["off_track_returned_count"] == 0
+        for row in topk_rows
+        if row["source_family"] in {"PDF", "XLSX"}
+    )
+    assert all(row["target_mapping_audit"]["target_mapping_bucket"] for row in topk_rows)
+    assert all("expected_answer" not in row for row in topk_rows)
+    assert all("supporting_evidence" not in row for row in topk_rows)
+    assert all(row["retrieval_score_primary_metric"] is False for row in topk_rows)
+    assert all(row["answer_quality_metric_computed"] is False for row in topk_rows)
+    assert all(row["promotion_evidence"] is False for row in topk_rows)
+
+    hit_envelopes = [
+        envelope
+        for row in topk_rows
+        for envelope in row.get("top_result_envelopes", [])
+    ]
+    assert hit_envelopes
+    assert all(envelope["canonical_payload_source"] == "source_registry" for envelope in hit_envelopes)
+    assert all(envelope["canonical_citation_payload_present_in_vector_metadata"] is False for envelope in hit_envelopes)
+    assert all(envelope["vector_payload_used_as_evidence_truth"] is False for envelope in hit_envelopes)
+    assert all(envelope["primary_failure_bucket"] in ["", *V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_BUCKETS] for envelope in hit_envelopes)
+
+    assert silver_overlay["source"] == "silver_1000_diagnostic_overlay"
+    assert silver_overlay["row_count"] == 1000
+    assert silver_overlay["interpretation"] == "coverage_and_failure_discovery_only"
+    assert "silver_precision" not in json.dumps(summary, ensure_ascii=False).lower()
+    assert "silver precision" not in json.dumps(summary, ensure_ascii=False).lower()
+    assert summary["sealed_gold_no_regression_check"]["tuning_allowed"] is False
+    assert summary["sealed_gold_no_regression_check"]["metric_promotion_allowed"] is False
+
+
+def test_v3_7_2_structured_family_routing_does_not_fall_back_to_mixed_rows() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    text_row = {
+        "source_family": "TEXT",
+        "query_scope": "scope",
+        "query_id": "same-id",
+        "top_result_envelopes": [{"source_family": "TEXT"}],
+        "topk_returned_count": 1,
+    }
+    pdf_mixed_row = {
+        "source_family": "PDF",
+        "query_scope": "scope",
+        "query_id": "same-id",
+        "top_result_envelopes": [{"source_family": "TEXT"}],
+        "topk_returned_count": 1,
+        "target_mapping_audit": {"target_mapping_bucket": "target_present"},
+    }
+    xlsx_mixed_row = {
+        "source_family": "XLSX",
+        "query_scope": "scope",
+        "query_id": "missing-id",
+        "top_result_envelopes": [{"source_family": "TEXT"}],
+        "topk_returned_count": 1,
+        "target_mapping_audit": {"target_mapping_bucket": "target_present"},
+    }
+    pdf_routed_row = {
+        "source_family": "PDF",
+        "query_scope": "scope",
+        "query_id": "same-id",
+        "top_result_envelopes": [{"source_family": "PDF"}],
+        "topk_returned_count": 1,
+        "same_track_hit_at_k": True,
+    }
+
+    result = runner.v3_7_2_apply_structured_family_routing(
+        mixed_topk_rows=[text_row, pdf_mixed_row, xlsx_mixed_row],
+        routed_rows_by_query_key={
+            runner.v3_7_2_query_routing_key(pdf_routed_row): pdf_routed_row,
+        },
+    )
+
+    routed_rows = result["topk_rows"]
+    assert runner.v3_7_2_query_routing_key(text_row) != runner.v3_7_2_query_routing_key(pdf_mixed_row)
+    assert routed_rows[0]["top_result_envelopes"] == [{"source_family": "TEXT"}]
+    assert routed_rows[1]["top_result_envelopes"] == [{"source_family": "PDF"}]
+    assert routed_rows[2]["family_routed_primary_row_missing"] is True
+    assert routed_rows[2]["top_result_envelopes"] == []
+    assert routed_rows[2]["topk_returned_count"] == 0
+    assert routed_rows[2]["primary_retrieval_diagnostic_bucket"] == "family_route_missing"
+    assert result["missing_query_keys"] == [runner.v3_7_2_query_routing_key(xlsx_mixed_row)]
 
 
 def assert_text_locator(row: dict[str, Any]) -> None:
