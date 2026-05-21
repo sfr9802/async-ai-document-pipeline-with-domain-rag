@@ -1,59 +1,27 @@
-# Evaluation harness samples
-
-`ai/eval` keeps RAG/OCR evaluation work separate from production code. This page
-is the portfolio-facing sample surface; detailed status and metric history live
-in `../../docs/rag-ingestion-progress.md`,
-`../../docs/rag-ingestion-measurements.md`, and
-`../../docs/rag-ingestion-triage.md`.
-
-Current freeze status: `portfolio_ready_freeze_v1_completed`.
-
-## Current Status
-
-| Item | Reading |
-|---|---|
-| Primary status | `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed` |
-| Portfolio freeze | README/progress/status hygiene only; no new performance experiment |
-| Contract path | SearchView -> SourceAtom -> EvidenceBundle -> Citation render |
-| Source families | TEXT, PDF, XLSX |
-| Comparable live diagnostic | PASS `27/29`; PDF `4/4`, XLSX `19/19`, TEXT `4/6` |
-| Retrieval smoke | `v3_4_3` exact-evidence smoke is a 28-query small-sample regression guard only |
-| Promotion | No production promotion has been performed |
-
-## Sample Evidence Shapes
-
-These rows show the citation shape without republishing raw third-party corpus
-content. They are diagnostic samples, not promotion evidence, official qrels, or
-representative product-performance claims.
-
-| Family | Example query id | Response source | Citation truth shape | Public sample policy |
-|---|---|---|---|---|
-| TEXT | `text_namu_v2_0005` | local LLM synthesis | document/version + text locator hydrated through SourceAtom | Raw source text and long generated answer are omitted from this public-facing sample. |
-| PDF | `gq_auto_030` | retained structured adapter output | PDF file identity + page/physical page + bbox/region + matched text locator | Numeric answer details stay in local diagnostic artifacts. |
-| XLSX | `gq_auto_012` | retained structured adapter output | workbook + sheet + range/cell + row label + target column/value | Cell values stay in local diagnostic artifacts. |
-
-## Demo / Verification Path
-
-Use the current RAG pytest profile as the lightweight portfolio demo path. It
-does not require production DB writes, production index mutation, or new
-gold/qrels/labels.
-
-```powershell
-python -X utf8 -m pytest ai/tests --rag-current -q
-python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q
-```
-
-Local generated evidence is stored under `reports/rag-ingestion/`, including
-`status.jsonl`, `v3_7_2` top-k rows, `v3_8*` summary artifacts, and the
-SourceAtom registry. Those JSON/JSONL artifacts are compact machine evidence and
-may be ignored/local in a clean clone; the tracked rolling docs above are the
-portable portfolio explanation.
-
-## Boundaries
-
-- Do not read vector metadata as canonical citation truth.
-- Do not collapse TEXT/PDF/XLSX or Lane A/B/C into one official score.
-- Do not treat `v3_4_3` as representative product performance.
-- Do not mutate gold CSVs, qrels, labels, expected answers, supporting evidence,
-  denominator registries, production namespace, or immutable baseline artifacts
-  during a portfolio freeze.
+| index/track | query | actual LLM response |
+|---|---|---|
+| 1 / PDF | 1월 산업활동에서 생산 지표는 어떻게 움직였나요? | 1월 산업활동에서 광공업 생산, 서비스업 생산, 건설투자는 감소했습니다. |
+| 2 / PDF | 2020년 한국 원달러 기말 환율은 얼마인가요? | 2020년 한국 원달러 기말 환율은 1,088.0입니다. |
+| 3 / PDF | 2024년 수출입차 금액은 얼마인가요? | 2024년 수출입차 금액은 6,836.1입니다. |
+| 4 / TEXT | 자동판매기 미궁 방랑 애니 3기 방영 시기는 문서에 어떻게 적혀 있어 | 자동판매기로 다시 태어난 나는 미궁을 방랑한다를 원작으로 하는 TV 애니메이션 시리즈 중 제3기의 방영 시기는 2026년 4월입니다. |
+| 5 / TEXT | 유우야키의 나이와 생일은 어떻게 적혀 있어 | 유우야키의 나이는 16세이고 생일은 9월 29일입니다. |
+| 6 / TEXT | 엑스맨 구십칠 등장인물 목록에 애드버서리는 어떤 식으로 올라와 | 애드버리는 앨리슨 실리스미스로 등장합니다. |
+| 7 / TEXT | 실바니안 실크 고양이 가족 설명은 어떤 성격과 역할을 말해 | 실바니안 실크 고양이 소년은 상냥하고 배려심이 넘치며, 소녀는 패션 디자이너가 꿈이고, 아기는 반짝이는 것을 좋아합니다. |
+| 8 / TEXT | 미츠하는 타키를 만나려고 어디로 향했어 | 미츠하는 타키를 실제로 만나기 위해 도쿄로 향했습니다. |
+| 9 / TEXT | 소드아트 오디널 스케일은 어떤 극장판을 가리켜 | 소드 아트 온라인 스케일은 2017년에 일본에서 개봉한 소드 아트 온라인의 극장판 애니메이션을 가리킵니다. |
+| 10 / XLSX | 2019년 2월 5호선의 승차총승객수는 몇 명입니까? | 2019년 2월 5호선의 승차총승객수는 15,446,522명입니다. |
+| 11 / XLSX | 2020년 11월에 지정된 하얀민들레노인요양원의 우편번호는 무엇입니까? | 2020년 11월에 지정된 하얀민들레노인요양원의 우편번호는 41786입니다. |
+| 12 / XLSX | 2017년 12월 9호선의 승차총승객수는 몇 명입니까? | 2017년 12월 9호선의 승차총승객수는 8,048,476명입니다. |
+| 13 / XLSX | 2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까? | 해뜨는요양원2의 시도 시군구 법정동명은 대구광역시 북구 복현동입니다. |
+| 14 / XLSX | 2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까? | 해오름요양원의 기관별 상세주소는 대구광역시 수성구 파동로51길 96 (파동)입니다. |
+| 15 / XLSX | 2018년 7월 8호선의 승차총승객수는 몇 명입니까? | 2018년 7월 8호선의 승차총승객수는 5,630,084명입니다. |
+| 16 / XLSX | 2018년 5월 의정부경전철의 승차총승객수는 몇 명입니까? | 2018년 5월 의정부경전철의 승차총승객수는 1,095,397명입니다. |
+| 17 / XLSX | 2018년 11월 3호선의 승차총승객수는 몇 명입니까? | 2018년 11월 3호선의 승차총승객수는 17,956,555명입니다. |
+| 18 / XLSX | 2019년 4월 안산선의 승차총승객수는 몇 명입니까? | 2019년 4월 안산선의 승차총승객수는 4,230,809명입니다. |
+| 19 / XLSX | 2018년 9월 일산선의 승차총승객수는 몇 명입니까? | 2018년 9월 일산선의 승차총승객수는 3,258,215명입니다. |
+| 20 / XLSX | 2019년 3월에 지정된 신논현요양원의 설치신고일자는 언제입니까? | 신논현요양원의 설치신고일자는 2019년 3월 15일입니다. |
+| 21 / XLSX | 2022년 5월에 지정된 인천은빛요양원의 기관별 상세주소는 무엇입니까? | 인천은빛요양원의 기관별 상세주소는 인천광역시 남동구 하촌로 26 7층701 702호 (만수동 거신빌딩)입니다. |
+| 22 / XLSX | 2008년 6월에 지정된 청운노인요양원의 지정일자는 정확히 언제입니까? | 청운노인요양원의 지정일자는 2008년 6월 25일입니다. |
+| 23 / XLSX | 2017년 11월 1호선의 승차총승객수는 몇 명입니까? | 2017년 11월 1호선의 승차총승객수는 8,633,618명입니다. |
+| 24 / XLSX | 2019년 5월 우이신설선의 승차총승객수는 몇 명입니까? | 2019년 5월 우이신설선의 승차총승객수는 1,469,681명입니다. |
+| 25 / XLSX | 2018년 4월 경인선의 승차총승객수는 몇 명입니까? | 2018년 4월 경인선의 승차총승객수는 10,356,250명입니다. |
