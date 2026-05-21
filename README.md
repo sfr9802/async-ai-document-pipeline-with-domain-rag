@@ -2,7 +2,7 @@
 
 문서가 들어오면 처리 상태를 잃지 않고, OCR/파싱/검색/RAG 결과를 근거와 함께 돌려주는 비동기 AI 문서 처리 파이프라인입니다.
 
-핵심은 RAG 답변을 만드는 데서 멈추지 않고, 답변이 어떤 텍스트 조각, 셀, 페이지, bbox를 근거로 삼았는지 추적하는 것입니다. TEXT, XLSX, PDF마다 다른 evidence 구조를 분리해 두고, 평가 harness에서 검색/근거/인용 경계를 따로 확인합니다.
+RAG 답변뿐 아니라 답변이 어떤 텍스트 조각, 셀, 페이지, bbox를 근거로 삼았는지 추적합니다. TEXT, XLSX, PDF마다 다른 evidence 구조를 분리하고, 평가 harness에서 검색/근거/인용 경계를 따로 확인합니다.
 
 ## 한눈에 보기
 
@@ -13,11 +13,11 @@
 | AI 워커 | Python/FastAPI 기반 OCR, PDF/XLSX 파싱, RAG, evaluation harness |
 | 프론트엔드 | React/Vite 기반 작업 제출 및 결과 확인 UI |
 | 핵심 설계 | 긴 AI 작업은 비동기 job으로 분리하고, DB를 상태의 기준점으로 사용 |
-| 현재 단계 | 포트폴리오/POC 단계. `v3_8_3` XLSX scoped cell resolve 진단까지 산출했고 production promotion은 아직 열지 않음 |
+| 현재 단계 | TEXT/PDF/XLSX 근거 구조를 나눠 진단 중이며, production promotion은 아직 열지 않음 |
 
-## 이 프로젝트로 보여주는 역량
+## 주요 구현 내용
 
-### 1. 비동기 AI 백엔드 설계
+### 1. 비동기 AI 처리
 
 AI 작업은 오래 걸리고 실패 가능성도 높습니다. 이 저장소는 요청-응답 흐름에 AI 처리를 직접 묶지 않고, `core-api`가 작업과 산출물 상태를 관리하며 Python worker가 claim/callback 방식으로 처리하도록 분리했습니다.
 
@@ -27,9 +27,9 @@ AI 작업은 오래 걸리고 실패 가능성도 높습니다. 이 저장소는
 - Redis: worker를 깨우는 dispatch signal
 - local storage 또는 MinIO: 산출물 저장소
 
-### 2. 문서 타입별 RAG 구조화
+### 2. 문서 타입별 근거 구조
 
-문서 검색은 단순히 "비슷한 텍스트 chunk"를 찾는 문제가 아닙니다. 이 프로젝트는 TEXT, XLSX, PDF를 하나의 점수로 섞지 않고, 각 타입에 맞는 근거 구조를 따로 둡니다.
+TEXT, XLSX, PDF는 근거 위치와 검증 방식이 서로 다릅니다. 이 프로젝트는 세 문서 타입을 하나의 점수로 섞지 않고, 각 타입에 맞는 근거 구조를 따로 둡니다.
 
 | Track | 다루는 문서 | 근거로 남기는 정보 |
 |---|---|---|
@@ -37,7 +37,7 @@ AI 작업은 오래 걸리고 실패 가능성도 높습니다. 이 저장소는
 | XLSX | 스프레드시트 | workbook, sheet, table/range, row/column, matched cell |
 | PDF | PDF/OCR 문서 | file identity, page, bbox, matched text, nearby paragraph |
 
-이 구조 덕분에 "답이 맞아 보인다"가 아니라 "어느 셀, 어느 페이지, 어느 문단을 근거로 답했는지"를 추적할 수 있습니다.
+답변 결과와 함께 어느 셀, 어느 페이지, 어느 문단을 근거로 사용했는지 확인할 수 있게 하는 것이 목표입니다.
 
 ### 3. 재현 가능한 평가 체계
 
@@ -48,27 +48,6 @@ AI 작업은 오래 걸리고 실패 가능성도 높습니다. 이 저장소는
 - gold, silver, diagnostic-only 데이터를 구분하고 gold/qrels/label 변경 여부를 run summary에 남깁니다.
 - vector DB는 후보 생성 장치로만 쓰고, citation truth는 SourceAtom/source registry에서 hydrate합니다.
 - 외부 데이터 라이선스와 공개 가능 여부를 별도 문서로 관리합니다.
-
-포트폴리오 관점에서 봐야 할 포인트는 높은 숫자 하나보다, 비동기 처리와 RAG evidence contract를 실제 코드와 산출물로 끝까지 추적했다는 점입니다.
-
-### 4. 현재 진단 지표 스냅샷
-
-아래 수치는 현재 RAG 근거 구조가 어디까지 재현 가능하게 측정됐는지 보여주는 checkpoint입니다. `same-track@k`는 쿼리와 같은 source family의 후보가 top-k에 들어왔는지, `target@k`는 매핑된 target SearchView/SourceAtom이 top-k에 들어왔는지, `contract survival`은 SearchView 후보가 SourceAtom, EvidenceBundle, citation render까지 살아남았는지를 봅니다. `Hit@K/MRR/nDCG`는 과거 exact-evidence smoke의 regression guard로만 읽습니다.
-
-| Surface | Denominator / sample | 현재 값 | 읽는 법 |
-|---|---:|---|---|
-| XLSX scoped cell resolve `v3_8_3` | XLSX `344` query surfaces from persisted v3_8_2 workbook/document gates | sheet_resolve@1 `248/344`, sheet_resolve@3 `249/344`; table_or_range_resolve@1 `22/344`, @3 `30/344`; cell_or_value_resolve@1 `19/344`, @3 `23/344`; abstain `44/344`; oracle-free input violations `0` | answer generation 전 workbook gate 이후 sheet/range/cell 후보가 얼마나 좁혀지는지 보는 XLSX-only 진단입니다. PDF와 합산하지 않고 promotion evidence가 아닙니다. |
-| Oracle-free file/document resolve `v3_8_2` | PDF `329`, XLSX `344` query surfaces from v3_8/v3_7_2 top-k | PDF file_resolve@1 `65/329`, file_resolve@3 `129/329`, abstain `182/329`, wrong-file block `57/329`; XLSX file_resolve@1 `136/344`, file_resolve@3 `150/344`, abstain `44/344`, wrong-file block `25/344`; oracle-free input violations `0` | scoped FAISS나 answer generation 전에 source_file/document 후보를 oracle-free로 resolve하는 진단입니다. target SourceAtom/manifest는 metrics-only이고 promotion evidence가 아닙니다. |
-| Evidence selector artifact freeze `v3_8_1` | PDF `329`, XLSX `344` query surfaces from v3_8/v3_7_2 top-k | PDF selector_target_hit@3 `251/329`, selector_file_hit@3 `268/329`, selector_contract_survival@3 `329/329`; XLSX selector_target_hit@3 `29/344`, selector_file_hit@3 `315/344`, selector_contract_survival@3 `344/344` | answer generation 전 deterministic max-3 evidence selector 산출물입니다. selector_file_hit은 target SourceAtom registry identity metric surface로 정리했지만 file resolve는 여전히 diagnostic-only이며 promotion evidence가 아닙니다. |
-| File-grounded retrieval/evidence eval `v3_8` | PDF `329`, XLSX `344` query surfaces from v3_7_2 top-k | PDF file_hit@5 `284/329`, page_hit@5 `266/329`, evidence_select_hit@3 `251/329`; XLSX workbook_hit@5 `317/344`, sheet_hit@5 `275/344`, cell_or_value_hit@5 `34/344` | answer generation 전 단계의 file/document/evidence 선택 진단입니다. PDF/XLSX는 별도 denominator로 읽고 합산 headline score로 만들지 않습니다. |
-| Source registry-backed retrieval smoke `v3_7_2` | 1,029 query surfaces: official 29 + diagnostic silver 1,000 | same-track@k: TEXT `356/356`, PDF `329/329`, XLSX `344/344`; target@k: TEXT `20/356`, PDF `266/329`, XLSX `34/344`; contract survival: TEXT `1780/1780`, PDF `1645/1645`, XLSX `1720/1720` | 현재 가장 최신 source-registry-backed contract smoke이며 v3_8 계열의 upstream top-k input입니다. same-track@k는 family routing 확인값이고, ranking/materialization 품질은 target@k와 failure bucket으로 읽습니다. |
-| Source-first citable index `v3_7_1` | 136,280 SearchViews | TEXT `135,608`, PDF `329`, XLSX `343`; source registry ready, index load check pass | `v3_7_2`의 immutable input index입니다. vector metadata는 canonical citation source가 아니며 SourceAtom에서 hydrate합니다. |
-| Official exact-evidence retrieval smoke `v3_4_3` | 28 included queries | Hit@1 `27/28` = `96.4%`, Hit@3 `28/28`, Hit@5 `28/28`, MRR@5 `0.982`, binary exact-evidence nDCG@5 `0.987` | 작은 source-bound regression smoke입니다. 현재 v3.7 contract smoke와 denominator가 다릅니다. |
-| Comparable live measurement rerun | 29 official rows | PASS `27/29`; PDF `4/4`, XLSX `19/19`, TEXT `4/6`; local LLM used for six TEXT rows | target-hit 개선 뒤 같은 official denominator로 재실행한 diagnostic입니다. answer/citation precision이나 promotion evidence로 승격하지 않습니다. |
-| Answer/citation closure `v3_2_7` | 29 official rows | Lane A `24/29`, Lane B retrieval top-k `27/29`, Lane C query-bound oracle `27/29`; citation support average `1.0` | answer/citation gold 기준의 diagnostic closure입니다. Lane A/B/C를 하나의 점수로 합치지 않습니다. |
-| Historical local LLM docs sample | 100 rows, gold 25 / silver 75 | p95 latency `0.464s`, p99 latency `0.516s`, max `0.528s` | `gemma4-e2b-local`에 `query + SearchView evidence`만 보낸 응답 샘플입니다. throughput/SLA가 아니라 입력 정책과 재현성 확인용입니다. |
-
-숫자의 자세한 출처, denominator 경계, gold/silver 샘플 응답은 [Evaluation harness](ai/eval/README.md)에서 이어서 확인합니다. 루트 README는 요약이고, `ai/eval/README.md`가 현재 평가 상태를 읽는 기준 문서입니다.
 
 ## 전체 흐름
 
@@ -104,7 +83,7 @@ flowchart LR
 
 ## 현재 상태를 읽는 법
 
-이 저장소는 portfolio/POC 기준으로 다음을 보여주는 데 초점을 둡니다.
+이 저장소는 현재 다음 범위를 중심으로 읽으면 됩니다.
 
 - 비동기 AI 처리의 기본 골격이 실제 코드로 구현되어 있음
 - 문서 타입별 근거 구조를 분리해서 관리함
@@ -129,6 +108,24 @@ flowchart LR
 | [`frontend/app/`](frontend/app/) | React/Vite UI |
 | [`docker-compose.yml`](docker-compose.yml) | 로컬 PostgreSQL, Redis, 선택형 MinIO/LLM 인프라 |
 | [`.env.example`](.env.example) | 로컬 실행 환경 변수 예시 |
+
+## 검증 경로
+
+production DB write, production index mutation, new gold/qrels/label 변경 없이 현재 TEXT/PDF/XLSX 근거 응답 경로를 확인하는 최소 명령입니다.
+
+```powershell
+python -X utf8 -m pytest ai/tests --rag-current -q
+python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q
+```
+
+[Evaluation harness samples](ai/eval/README.md)에는 TEXT/PDF/XLSX 샘플 쿼리와 응답만 정리했습니다. 세부 evidence locator와 citation identity는 local generated evidence인 `ai/eval/reports/rag-ingestion/status.jsonl`, `v3_7_2` top-k rows, `v3_8*` summary artifacts, 그리고 `ai/eval/source_registry/source_atom_registry_v1.jsonl`에서 확인합니다.
+
+## 남은 작업
+
+- XLSX range/cell locator 개선
+- PDF file identity resolver 개선
+- PDF bbox/OCR trust policy 정리
+- 사용자 승인 label/qrels/denominator 정책 이후 대표 benchmark 정리
 
 ## 로컬 실행 개요
 

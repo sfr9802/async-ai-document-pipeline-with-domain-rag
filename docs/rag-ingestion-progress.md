@@ -23,6 +23,7 @@ for behavior-changing runs or explicit forensic evidence requirements.
 ## Current Status
 
 Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;
+portfolio freeze status: `portfolio_ready_freeze_v1_completed`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied. The v3_2
 post-fix sequence is closed, the official answer/citation implementation queue
@@ -91,6 +92,10 @@ closed; threshold tuning and winner selection also remain closed.
 <!-- official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic:progress-entry:start -->
 - v3_8_3 XLSX scoped cell resolve (`official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic`) computes sheet/table-range/cell-value diagnostics after the v3_8_2 oracle-free workbook/document gate and before answer generation. XLSX queries=344, sheet_resolve@1=248/344, table_or_range_resolve@1=22/344, cell_or_value_resolve@1=19/344, abstain=44/344. Miss taxonomy counts: workbook_gate_disambiguation=44, sheet_miss_after_workbook_gate=51, sheet_rank_gap_within_top3=1, table_or_range_miss_after_sheet_hit=218, table_or_range_rank_gap_within_top3=8, cell_or_value_miss_after_range_hit=3, cell_or_value_resolved_at_rank_1=19. Resolver version `v2_query_locator_signals` only uses query locator literals plus the v3_8_2 workbook gate/source-registry candidate locators; Target SourceAtom/manifest locator data is metrics-only and remains outside resolver input. PDF rows are excluded instead of collapsed with XLSX. No scoped answer route, answer generation, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion evidence was produced.
 <!-- official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic:progress-entry:end -->
+
+<!-- portfolio_ready_freeze_v1:progress-entry:start -->
+- Portfolio-ready final artifact freeze (`portfolio_ready_freeze_v1`) closes this pass as README/progress/status hygiene only. Root README now carries a concise portfolio card for source-grounded multimodal RAG with citation-truth separation, the SearchView -> SourceAtom -> EvidenceBundle -> Citation render architecture, supported source families TEXT/PDF/XLSX, the v3 comparable live diagnostic result PASS=27/29 with PDF=4/4, XLSX=19/19, TEXT=4/6, and the v3_4_3 exact-evidence retrieval smoke as a 28-query small-sample regression guard only, not representative product performance. Demo path is the current RAG pytest profile plus the `ai/eval/README.md` sample table; it requires no production DB writes, production index mutation, or new gold/qrels/labels. No XLSX/PDF resolver performance work, answer generation, prompt/scorer tuning, production mutation, official denominator mutation, gold/qrels/label/expected-answer/supporting-evidence mutation, promotion, threshold tuning, winner selection, or Lane A/B/C score collapse was performed. Post-freeze backlog remains XLSX bounded range/cell locator improvement, PDF file identity resolver improvement, PDF bbox/OCR trust policy after file identity stabilizes, optional silver live-generation experiment, and an official representative benchmark only after user-approved labels/qrels/denominator policy.
+<!-- portfolio_ready_freeze_v1:progress-entry:end -->
 
 - Official first-run baseline is `status=BLOCKED_OR_PARTIAL`,
   `status_detail=SCORED_BASELINE_PARTIAL`,
