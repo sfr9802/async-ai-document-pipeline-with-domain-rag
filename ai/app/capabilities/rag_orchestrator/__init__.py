@@ -1,7 +1,8 @@
 """Query-time RAG orchestrator POC primitives.
 
-This package intentionally contains only contract and deterministic helper
-code. It does not register a runtime capability or public endpoint.
+This package keeps the orchestration contract and deterministic helper code
+small. The worker registry may expose the POC as an opt-in capability, but it
+does not add a public endpoint.
 """
 
 from app.capabilities.rag_orchestrator.citation_verify import (

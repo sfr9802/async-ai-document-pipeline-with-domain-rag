@@ -1,8 +1,9 @@
 """Optional LangGraph skeleton for query-time RAG orchestration.
 
-The graph is unit-test-only in this POC. It uses fake vector tools, does not
-register a runtime endpoint, and does not call LangChain, Spring APIs, DBs, or
-real vector retrievers.
+The graph is still a feature-flagged POC. By default it uses fake vector tools;
+callers may inject the existing RAG Retriever to exercise the real vector
+adapter path. It does not register a public endpoint, call LangChain, or claim
+production-grade pre-retrieval policy enforcement.
 """
 
 from __future__ import annotations
@@ -32,6 +33,11 @@ from app.capabilities.rag_orchestrator.tools import (
     fake_pdf_vector_search_tool,
     fake_text_vector_search_tool,
     fake_xlsx_vector_search_tool,
+)
+from app.capabilities.rag_orchestrator.vector_tools import (
+    pdf_vector_search_tool,
+    text_vector_search_tool,
+    xlsx_vector_search_tool,
 )
 from app.capabilities.rag_orchestrator.xlsx_tools import (
     xlsx_aggregation_tool,
@@ -534,36 +540,44 @@ def build_route_decision(
 
     candidate_routes = deterministic_routes or llm_routes or score_result["routes"]
     llm_used = llm_only
-    if candidate_routes:
-        guarded_routes = _intersect_routes(candidate_routes, allowed_routes)
-        if guarded_routes:
-            routes = guarded_routes
-            if deterministic_routes and len(routes) == 1:
-                confidence = 0.9
-            elif llm_only and len(routes) == 1:
-                confidence = 0.52
-            elif not deterministic_routes and not llm_routes:
-                confidence = 0.35
-            else:
-                confidence = 0.78
-        else:
-            routes = allowed_routes
-            confidence = 0.45
-            reason_parts.append("guard overrode conflicting route signal")
-    else:
-        routes = allowed_routes
-        confidence = 0.35
-        reason_parts.append("no strong source hint; schedule guarded multi-route retrieval")
-
-    routes = _dedupe_routes(routes)
-    multi_route = len(routes) > 1
-    route = TRACK_MULTI_ROUTE if multi_route else routes[0]
-    if guard["blocked_flags"]:
-        route = guard["primary_route"]
-        routes = _dedupe_routes(routes or allowed_routes)
+    policy_metadata_conflict = "policy_source_metadata_conflict" in guard_reasons
+    if not allowed_routes:
+        routes = ()
+        route = TRACK_POLICY_BLOCKED if policy_metadata_conflict else TRACK_INSUFFICIENT_METADATA
         multi_route = False
         confidence = 0.0
-        reason_parts.append("deterministic hard guard blocked retrieval")
+        reason_parts.append("metadata/source-type guard blocked retrieval")
+    else:
+        if candidate_routes:
+            guarded_routes = _intersect_routes(candidate_routes, allowed_routes)
+            if guarded_routes:
+                routes = guarded_routes
+                if deterministic_routes and len(routes) == 1:
+                    confidence = 0.9
+                elif llm_only and len(routes) == 1:
+                    confidence = 0.52
+                elif not deterministic_routes and not llm_routes:
+                    confidence = 0.35
+                else:
+                    confidence = 0.78
+            else:
+                routes = allowed_routes
+                confidence = 0.45
+                reason_parts.append("guard overrode conflicting route signal")
+        else:
+            routes = allowed_routes
+            confidence = 0.35
+            reason_parts.append("no strong source hint; schedule guarded multi-route retrieval")
+
+        routes = _dedupe_routes(routes)
+        multi_route = len(routes) > 1
+        route = TRACK_MULTI_ROUTE if multi_route else routes[0]
+        if guard["blocked_flags"]:
+            route = guard["primary_route"]
+            routes = _dedupe_routes(routes or allowed_routes)
+            multi_route = False
+            confidence = 0.0
+            reason_parts.append("deterministic hard guard blocked retrieval")
 
     ambiguity_reasons = (
         ()
@@ -653,7 +667,8 @@ def build_route_decision(
         source_metadata=source_metadata,
         extra_policy_flags=guard["policy_flags"],
     )
-    blocked_flags = _dedupe((*guard["blocked_flags"], *llm_blocked_flags))
+    conflict_flags = ("policy_source_metadata_conflict",) if policy_metadata_conflict else ()
+    blocked_flags = _dedupe((*guard["blocked_flags"], *llm_blocked_flags, *conflict_flags))
     reason = "; ".join(reason_parts) or "deterministic source-type route"
     return RouteDecision(
         route=route,
@@ -1156,7 +1171,7 @@ def _allowed_routes_from_policy_and_metadata(
         reasons.append(f"source_metadata.source_file_type={metadata_type}")
 
     if not allowed:
-        return ALL_TRACK_ROUTES, reasons + ["empty_guard_reset_to_all_tracks"]
+        return (), reasons + ["policy_source_metadata_conflict"]
     ordered = tuple(route for route in ALL_TRACK_ROUTES if route in allowed)
     return ordered, reasons
 
@@ -1396,6 +1411,7 @@ def initial_query_orchestrator_state(
     request_id: str | None = None,
     source_metadata: Mapping[str, Any] | None = None,
     route_adjudicator: RouteAdjudicator | None = None,
+    retriever: Any | None = None,
 ) -> QueryOrchestratorState:
     state: QueryOrchestratorState = {
         "request_id": request_id or policy.request_id,
@@ -1408,6 +1424,8 @@ def initial_query_orchestrator_state(
     }
     if route_adjudicator is not None:
         state["route_adjudicator"] = route_adjudicator
+    if retriever is not None:
+        state["vector_retriever"] = retriever
     return state
 
 
@@ -1418,6 +1436,7 @@ def run_query_orchestrator_pure(
     request_id: str | None = None,
     source_metadata: Mapping[str, Any] | None = None,
     route_adjudicator: RouteAdjudicator | None = None,
+    retriever: Any | None = None,
     fixture: FixtureMode = "valid",
 ) -> QueryOrchestratorState:
     """Run the graph flow as pure functions for deterministic unit tests."""
@@ -1428,6 +1447,7 @@ def run_query_orchestrator_pure(
         request_id=request_id,
         source_metadata=source_metadata,
         route_adjudicator=route_adjudicator,
+        retriever=retriever,
     )
     for node in (
         policy_guard,
@@ -1573,10 +1593,12 @@ def run_selected_fake_tools(
     fixture: FixtureMode = "valid",
 ) -> QueryOrchestratorState:
     current = _copy_state(state)
+    retriever = current.get("vector_retriever")
+    trace_node = "run_selected_vector_tools" if retriever is not None else "run_selected_fake_tools"
     if current.get("stop_reason") == "policy_guard_failed":
         current["tool_results"] = []
         current["evidence"] = []
-        return _with_trace(current, "run_selected_fake_tools")
+        return _with_trace(current, trace_node)
 
     route_decision = current.get("route_decision") or {}
     if route_decision.get("route") in NON_RETRIEVAL_PRIMARY_ROUTES:
@@ -1591,7 +1613,7 @@ def run_selected_fake_tools(
         )
         return _with_trace(
             current,
-            "run_selected_fake_tools",
+            trace_node,
             {"retrieval_blocked": route_decision.get("route")},
         )
 
@@ -1600,7 +1622,15 @@ def run_selected_fake_tools(
     tool_results: list[ToolResult] = []
 
     selected_tools = list(current.get("selected_tools", []))
-    tool_results.extend(_run_fake_tool_sequence(selected_tools, query, policy, fixture=fixture))
+    tool_results.extend(
+        _run_tool_sequence(
+            selected_tools,
+            query,
+            policy,
+            fixture=fixture,
+            retriever=retriever,
+        )
+    )
 
     fallback_routes = tuple(route_decision.get("fallback_routes") or ())
     fallback_tools = [
@@ -1620,7 +1650,13 @@ def run_selected_fake_tools(
         fallback_triggered = [fallback_route]
         fallback_attempts = [{"attempt": 1, "route": fallback_route}]
         tool_results.extend(
-            _run_fake_tool_sequence([fallback_tool], query, policy, fixture=fixture)
+            _run_tool_sequence(
+                [fallback_tool],
+                query,
+                policy,
+                fixture=fixture,
+                retriever=retriever,
+            )
         )
 
     current["tool_results"] = tool_results
@@ -1648,29 +1684,40 @@ def run_selected_fake_tools(
     )
     return _with_trace(
         current,
-        "run_selected_fake_tools",
+        trace_node,
         {
             "fallback_routes_triggered": fallback_triggered,
             "fallback_attempts": fallback_attempts,
+            "tool_backend": "vector_retriever_poc" if retriever is not None else "fake_vector",
         },
     )
 
 
-def _run_fake_tool_sequence(
+def _run_tool_sequence(
     tools: Iterable[str],
     query: str,
     policy: QueryPolicy,
     *,
     fixture: FixtureMode,
+    retriever: Any | None = None,
 ) -> list[ToolResult]:
     tool_results: list[ToolResult] = []
     for tool in tools:
         if tool == PDF_TOOL:
-            tool_results.append(fake_pdf_vector_search_tool(query, policy, fixture=fixture))
+            if retriever is None:
+                tool_results.append(fake_pdf_vector_search_tool(query, policy, fixture=fixture))
+            else:
+                tool_results.append(pdf_vector_search_tool(query, policy, retriever=retriever))
         elif tool == XLSX_TOOL:
-            tool_results.append(fake_xlsx_vector_search_tool(query, policy, fixture=fixture))
+            if retriever is None:
+                tool_results.append(fake_xlsx_vector_search_tool(query, policy, fixture=fixture))
+            else:
+                tool_results.append(xlsx_vector_search_tool(query, policy, retriever=retriever))
         elif tool == TEXT_TOOL:
-            tool_results.append(fake_text_vector_search_tool(query, policy, fixture=fixture))
+            if retriever is None:
+                tool_results.append(fake_text_vector_search_tool(query, policy, fixture=fixture))
+            else:
+                tool_results.append(text_vector_search_tool(query, policy, retriever=retriever))
     return tool_results
 
 

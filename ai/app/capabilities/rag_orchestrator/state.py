@@ -42,6 +42,7 @@ class QueryOrchestratorState(TypedDict, total=False):
     route_decision: dict[str, Any]
     route_diagnostics: list[dict[str, Any]]
     route_adjudicator: Any
+    vector_retriever: Any
     loop_states: list[str]
     selected_tools: list[str]
     tool_results: list[ToolResult]

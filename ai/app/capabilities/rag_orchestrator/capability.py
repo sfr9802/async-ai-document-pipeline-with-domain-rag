@@ -39,8 +39,14 @@ class RagQueryOrchestratorCapability(Capability):
 
     name = CAPABILITY_NAME
 
-    def __init__(self, *, config: RagQueryOrchestratorCapabilityConfig) -> None:
+    def __init__(
+        self,
+        *,
+        config: RagQueryOrchestratorCapabilityConfig,
+        retriever: Any | None = None,
+    ) -> None:
         self._config = config
+        self._retriever = retriever
 
     def run(self, input: CapabilityInput) -> CapabilityOutput:
         if not self._config.enabled:
@@ -74,13 +80,19 @@ class RagQueryOrchestratorCapability(Capability):
             query=query,
             policy=policy,
             source_metadata=source_metadata,
+            retriever=self._retriever,
+        )
+        graph_backend = (
+            "pure_vector_retriever_poc"
+            if self._retriever is not None
+            else "pure_fake_graph"
         )
         return _json_output(
             {
                 "status": "ok",
                 "capability": self.name,
                 "mode": mode,
-                "graph_backend": "pure_fake_graph",
+                "graph_backend": graph_backend,
                 "runtime_endpoint": False,
                 "langchain_used": False,
                 "query": query,

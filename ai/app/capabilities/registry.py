@@ -188,13 +188,25 @@ def build_default_registry(settings: WorkerSettings) -> CapabilityRegistry:
             )
 
     if settings.rag_query_orchestrator_enabled:
-        log.info(
-            "RAG_QUERY_ORCHESTRATOR init: mode=%s backend=pure_fake_graph "
-            "feature_flag=true",
-            settings.rag_query_orchestrator_mode,
-        )
         try:
-            registry.register(_build_rag_query_orchestrator_capability(settings))
+            rag_query_orchestrator_retriever = None
+            rag_query_orchestrator_backend = "pure_fake_graph"
+            if rag_registered:
+                rag_query_orchestrator_retriever, _ = _get_shared_retriever_bundle(settings)
+                rag_query_orchestrator_backend = "pure_vector_retriever_poc"
+            log.info(
+                "RAG_QUERY_ORCHESTRATOR init: mode=%s backend=%s "
+                "feature_flag=true rag_registered=%s",
+                settings.rag_query_orchestrator_mode,
+                rag_query_orchestrator_backend,
+                rag_registered,
+            )
+            registry.register(
+                _build_rag_query_orchestrator_capability(
+                    settings,
+                    retriever=rag_query_orchestrator_retriever,
+                )
+            )
             rag_query_orchestrator_registered = True
             log.info("RAG_QUERY_ORCHESTRATOR capability registered.")
         except Exception as ex:
@@ -391,7 +403,11 @@ def _build_pdf_extract_capability(settings: WorkerSettings) -> Capability:
     )
 
 
-def _build_rag_query_orchestrator_capability(settings: WorkerSettings) -> Capability:
+def _build_rag_query_orchestrator_capability(
+    settings: WorkerSettings,
+    *,
+    retriever: Any | None = None,
+) -> Capability:
     from app.capabilities.rag_orchestrator.capability import (
         RagQueryOrchestratorCapability,
         RagQueryOrchestratorCapabilityConfig,
@@ -401,7 +417,8 @@ def _build_rag_query_orchestrator_capability(settings: WorkerSettings) -> Capabi
         config=RagQueryOrchestratorCapabilityConfig(
             enabled=settings.rag_query_orchestrator_enabled,
             mode=settings.rag_query_orchestrator_mode,
-        )
+        ),
+        retriever=retriever,
     )
 
 

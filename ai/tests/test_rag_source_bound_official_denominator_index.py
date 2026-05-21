@@ -832,6 +832,10 @@ def test_canonical_search_unit_citation_payload_preserves_track_locator_fields()
 
 
 def test_structured_source_bound_adapters_preserve_xlsx_and_pdf_fields() -> None:
+    from app.capabilities.rag.citation_contract import (
+        pdf_source_bound_adapter_payload,
+        xlsx_source_bound_adapter_payload,
+    )
     import rag_official_answer_citation_agentic_loop_run_v1 as runner
 
     xlsx_payload = {
@@ -859,6 +863,8 @@ def test_structured_source_bound_adapters_preserve_xlsx_and_pdf_fields() -> None
         "document_version_id": "docv-pdf",
     }
 
+    assert xlsx_source_bound_adapter_payload(xlsx_payload) == runner.xlsx_source_bound_adapter_payload(xlsx_payload)
+    assert pdf_source_bound_adapter_payload(pdf_payload) == runner.pdf_source_bound_adapter_payload(pdf_payload)
     assert runner.xlsx_source_bound_adapter_payload(xlsx_payload) == {
         "adapter": "xlsx_source_bound_deterministic_v1",
         "output_from_source_bound_search_unit": True,

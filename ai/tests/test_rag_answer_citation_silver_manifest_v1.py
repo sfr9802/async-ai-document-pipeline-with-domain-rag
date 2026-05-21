@@ -3541,6 +3541,482 @@ def test_v3_6_9_retrieval_context_payload_exposes_search_view_and_source_atom_re
     assert citation["candidateCanonicalCitationPayload"]["search_unit_id"] == "su-text"
 
 
+def test_rag_query_orchestrator_can_use_injected_retriever_vector_tools() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from types import SimpleNamespace
+
+    from app.capabilities.rag.generation import RetrievedChunk
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.graph import run_query_orchestrator_pure
+
+    class FakeRetriever:
+        _top_k = 1
+        _candidate_k = 1
+
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+            self.top_k_during_call: int | None = None
+            self.candidate_k_during_call: int | None = None
+
+        def retrieve(self, query: str, filters: Any = None) -> Any:
+            self.top_k_during_call = self._top_k
+            self.candidate_k_during_call = self._candidate_k
+            self.calls.append({"query": query, "filters": filters})
+            return SimpleNamespace(
+                query=query,
+                top_k=1,
+                index_version="idx-v1",
+                embedding_model="fake-embedding",
+                results=[
+                    RetrievedChunk(
+                        chunk_id="chunk-xlsx-1",
+                        doc_id="doc-xlsx-1",
+                        section="Sheet1",
+                        text="Sheet1 A2:B2 매출 합계 42",
+                        score=0.91,
+                        search_unit_id="su-xlsx-1",
+                        source_file_id="source-xlsx-1",
+                        source_file_name="book.xlsx",
+                        metadata_json={
+                            "sourceFileType": "SPREADSHEET",
+                            "parserVersion": "xlsx-extract-v2-hidden-safe",
+                            "embeddingStatus": "EMBEDDED",
+                            "indexVersion": "idx-v1",
+                            "citationText": "Sheet1 A2:B2 매출 합계 42",
+                            "sheetName": "Sheet1",
+                            "cellRange": "A2:B2",
+                            "documentVersionId": "docv-xlsx-1",
+                        },
+                    )
+                ],
+            )
+
+    retriever = FakeRetriever()
+    state = run_query_orchestrator_pure(
+        query="xlsx 매출 합계",
+        policy=QueryPolicy(
+            request_id="req-xlsx",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["SPREADSHEET"],
+            allowed_parser_versions=["xlsx-extract-v2-hidden-safe"],
+            top_k=1,
+        ),
+        retriever=retriever,
+    )
+
+    assert retriever.calls == [{"query": "xlsx 매출 합계", "filters": None}]
+    assert retriever.top_k_during_call == 5
+    assert retriever.candidate_k_during_call == 5
+    assert retriever._top_k == 1
+    assert retriever._candidate_k == 1
+    assert state["tool_results"][0].tool == "xlsx_vector_search_tool"
+    backend_identity = state["tool_results"][0].backend_identity
+    assert backend_identity["backend"] == "faiss"
+    assert backend_identity["poc_wrapper"] is True
+    assert backend_identity["post_filter_applied"] is True
+    assert backend_identity["library_search_used"] is False
+    assert backend_identity["production_filter_enforcement"] is False
+    assert state["verified_evidence"][0].search_unit_id == "su-xlsx-1"
+    assert state["answer"]["status"] == "stub"
+    assert any(item["node"] == "run_selected_vector_tools" for item in state["trace"])
+    route_diagnostic = state["route_diagnostics"][0]
+    assert route_diagnostic["diagnostic_only"] is True
+    assert route_diagnostic["production_vector_written"] is False
+    assert route_diagnostic["production_namespace_mutated"] is False
+    assert route_diagnostic["official_denominator_registry_changed"] is False
+
+
+def test_rag_query_orchestrator_capability_marks_injected_retriever_backend() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from types import SimpleNamespace
+
+    from app.capabilities.base import (
+        CapabilityError,
+        CapabilityInput,
+        CapabilityInputArtifact,
+    )
+    from app.capabilities.rag.generation import RetrievedChunk
+    from app.capabilities.rag_orchestrator.capability import (
+        RagQueryOrchestratorCapability,
+        RagQueryOrchestratorCapabilityConfig,
+    )
+
+    class FakeRetriever:
+        _top_k = 1
+        _candidate_k = 1
+
+        def retrieve(self, query: str, filters: Any = None) -> Any:
+            return SimpleNamespace(
+                query=query,
+                top_k=1,
+                index_version="idx-v1",
+                embedding_model="fake-embedding",
+                results=[
+                    RetrievedChunk(
+                        chunk_id="chunk-xlsx-1",
+                        doc_id="doc-xlsx-1",
+                        section="Sheet1",
+                        text="Sheet1 A2:B2 매출 합계 42",
+                        score=0.91,
+                        search_unit_id="su-xlsx-1",
+                        source_file_id="source-xlsx-1",
+                        source_file_name="book.xlsx",
+                        metadata_json={
+                            "sourceFileType": "SPREADSHEET",
+                            "parserVersion": "xlsx-extract-v2-hidden-safe",
+                            "embeddingStatus": "EMBEDDED",
+                            "indexVersion": "idx-v1",
+                            "citationText": "Sheet1 A2:B2 매출 합계 42",
+                            "sheetName": "Sheet1",
+                            "cellRange": "A2:B2",
+                            "documentVersionId": "docv-xlsx-1",
+                        },
+                    )
+                ],
+            )
+
+    capability = RagQueryOrchestratorCapability(
+        config=RagQueryOrchestratorCapabilityConfig(enabled=True),
+        retriever=FakeRetriever(),
+    )
+    request = {
+        "query": "xlsx 매출 합계",
+        "policy": {
+            "requiredIndexVersion": "idx-v1",
+            "allowedSourceFileTypes": ["SPREADSHEET"],
+            "allowedParserVersions": ["xlsx-extract-v2-hidden-safe"],
+            "topK": 1,
+        },
+    }
+
+    output = capability.run(
+        CapabilityInput(
+            job_id="job-xlsx",
+            capability="RAG_QUERY_ORCHESTRATOR",
+            attempt_no=1,
+            inputs=[
+                CapabilityInputArtifact(
+                    artifact_id="input-json",
+                    type="INPUT_JSON",
+                    content=json.dumps(request).encode("utf-8"),
+                )
+            ],
+        )
+    )
+
+    payload = json.loads(output.outputs[0].content.decode("utf-8"))
+    assert payload["graph_backend"] == "pure_vector_retriever_poc"
+    assert payload["runtime_endpoint"] is False
+    assert payload["langchain_used"] is False
+    assert "vector_retriever" not in payload["state"]
+    assert payload["state"]["tool_results"][0]["tool"] == "xlsx_vector_search_tool"
+    backend_identity = payload["state"]["tool_results"][0]["backend_identity"]
+    assert backend_identity["backend"] == "faiss"
+    assert backend_identity["library_search_used"] is False
+    assert backend_identity["production_filter_enforcement"] is False
+
+    production_request = dict(request)
+    production_request["mode"] = "production"
+    with pytest.raises(CapabilityError) as exc:
+        capability.run(
+            CapabilityInput(
+                job_id="job-xlsx-prod",
+                capability="RAG_QUERY_ORCHESTRATOR",
+                attempt_no=1,
+                inputs=[
+                    CapabilityInputArtifact(
+                        artifact_id="input-json",
+                        type="INPUT_JSON",
+                        content=json.dumps(production_request).encode("utf-8"),
+                    )
+                ],
+            )
+        )
+    assert exc.value.code == "RAG_QUERY_ORCHESTRATOR_PRODUCTION_CONTEXT_REQUIRED"
+
+
+def test_rag_query_orchestrator_retriever_path_rejects_off_track_and_policy_mismatch_chunks() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from types import SimpleNamespace
+
+    from app.capabilities.rag.generation import RetrievedChunk
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.graph import run_query_orchestrator_pure
+
+    def chunk(
+        *,
+        chunk_id: str,
+        source_file_type: str,
+        index_version: str = "idx-v1",
+        parser_version: str = "xlsx-extract-v2-hidden-safe",
+    ) -> RetrievedChunk:
+        metadata: dict[str, Any] = {
+            "sourceFileType": source_file_type,
+            "parserVersion": parser_version,
+            "embeddingStatus": "EMBEDDED",
+            "indexVersion": index_version,
+            "citationText": f"{chunk_id} citation",
+            "documentVersionId": f"docv-{chunk_id}",
+        }
+        if source_file_type == "SPREADSHEET":
+            metadata.update({"sheetName": "Sheet1", "cellRange": "A2:B2"})
+        elif source_file_type == "PDF":
+            metadata.update({"page": 2, "bbox": [0, 0, 10, 10]})
+        return RetrievedChunk(
+            chunk_id=chunk_id,
+            doc_id=f"doc-{chunk_id}",
+            section="section",
+            text=f"{chunk_id} text",
+            score=0.9,
+            search_unit_id=f"su-{chunk_id}",
+            source_file_id=f"source-{chunk_id}",
+            source_file_name=f"{chunk_id}.dat",
+            metadata_json=metadata,
+        )
+
+    class FakeRetriever:
+        _top_k = 1
+        _candidate_k = 1
+
+        def retrieve(self, query: str, filters: Any = None) -> Any:
+            return SimpleNamespace(
+                query=query,
+                top_k=4,
+                index_version="idx-v1",
+                embedding_model="fake-embedding",
+                results=[
+                    chunk(chunk_id="valid-xlsx", source_file_type="SPREADSHEET"),
+                    chunk(chunk_id="off-track-pdf", source_file_type="PDF"),
+                    chunk(
+                        chunk_id="wrong-index-xlsx",
+                        source_file_type="SPREADSHEET",
+                        index_version="idx-v2",
+                    ),
+                    chunk(
+                        chunk_id="wrong-parser-xlsx",
+                        source_file_type="SPREADSHEET",
+                        parser_version="other-parser",
+                    ),
+                ],
+            )
+
+    state = run_query_orchestrator_pure(
+        query="xlsx 매출 합계",
+        policy=QueryPolicy(
+            request_id="req-xlsx",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["SPREADSHEET"],
+            allowed_parser_versions=["xlsx-extract-v2-hidden-safe"],
+            top_k=1,
+        ),
+        retriever=FakeRetriever(),
+    )
+
+    assert [item.chunk_id for item in state["verified_evidence"]] == ["valid-xlsx"]
+    rejection_reasons = {
+        reason
+        for item in state["rejected_evidence"]
+        for reason in item["reasons"]
+    }
+    assert "source_file_type_mismatch" in rejection_reasons
+    assert "index_version_mismatch" in rejection_reasons
+    assert "parser_version_not_allowed" in rejection_reasons
+    used_ids = set(state["answer"]["used_evidence_ids"])
+    assert used_ids == {"vector-valid-xlsx"}
+    assert "vector-off-track-pdf" not in used_ids
+    assert "vector-wrong-index-xlsx" not in used_ids
+    assert "score_status" not in state
+    assert all("score_status" not in item for item in state["route_diagnostics"])
+
+
+def test_vector_retriever_overfetch_is_restored_when_retrieve_raises() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.vector_tools import xlsx_vector_search_tool
+
+    class RaisingRetriever:
+        _top_k = 1
+        _candidate_k = 1
+
+        def retrieve(self, query: str, filters: Any = None) -> Any:
+            assert self._top_k == 5
+            assert self._candidate_k == 5
+            raise RuntimeError("boom")
+
+    retriever = RaisingRetriever()
+    with pytest.raises(RuntimeError, match="boom"):
+        xlsx_vector_search_tool(
+            "xlsx 매출 합계",
+            QueryPolicy(
+                request_id="req-xlsx",
+                required_index_version="idx-v1",
+                allowed_source_file_types=["SPREADSHEET"],
+                allowed_parser_versions=["xlsx-extract-v2-hidden-safe"],
+                top_k=1,
+            ),
+            retriever=retriever,
+        )
+
+    assert retriever._top_k == 1
+    assert retriever._candidate_k == 1
+
+
+def test_rag_query_orchestrator_conflicting_policy_metadata_does_not_call_retriever() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.graph import run_query_orchestrator_pure
+
+    class FakeRetriever:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        def retrieve(self, query: str, filters: Any = None) -> Any:
+            self.calls.append({"query": query, "filters": filters})
+            raise AssertionError("conflicting source guards must not retrieve")
+
+    retriever = FakeRetriever()
+    state = run_query_orchestrator_pure(
+        query="xlsx 매출 합계",
+        policy=QueryPolicy(
+            request_id="req-conflict",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["SPREADSHEET"],
+            allowed_parser_versions=["xlsx-extract-v2-hidden-safe"],
+            top_k=1,
+        ),
+        source_metadata={"source_file_type": "PDF"},
+        retriever=retriever,
+    )
+
+    assert retriever.calls == []
+    assert state["route_decision"]["route"] == "policy_blocked"
+    assert state["selected_tools"] == []
+    assert state["verified_evidence"] == []
+    assert state["answer"]["status"] == "blocked"
+    assert "policy_source_metadata_conflict" in state["route_decision"]["metadata_guards"]
+    assert "policy_source_metadata_conflict" in state["route_decision"]["blocked_flags"]
+    assert state["route_diagnostics"][0]["production_vector_written"] is False
+    assert state["route_diagnostics"][0]["official_denominator_registry_changed"] is False
+
+
+def test_registry_wires_query_orchestrator_to_registered_rag_retriever(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from types import SimpleNamespace
+
+    from app.capabilities import registry as registry_module
+    from app.capabilities.base import (
+        Capability,
+        CapabilityInput,
+        CapabilityInputArtifact,
+        CapabilityOutput,
+    )
+    from app.capabilities.rag.generation import RetrievedChunk
+    from app.core.config import WorkerSettings
+
+    class FakeRagCapability(Capability):
+        name = "RAG"
+
+        def run(self, input: CapabilityInput) -> CapabilityOutput:
+            raise AssertionError("registry smoke should not execute RAG")
+
+    class FakeRetriever:
+        _top_k = 1
+        _candidate_k = 1
+
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        def retrieve(self, query: str, filters: Any = None) -> Any:
+            self.calls.append({"query": query, "filters": filters})
+            return SimpleNamespace(
+                query=query,
+                top_k=1,
+                index_version="idx-v1",
+                embedding_model="fake-embedding",
+                results=[
+                    RetrievedChunk(
+                        chunk_id="chunk-xlsx-1",
+                        doc_id="doc-xlsx-1",
+                        section="Sheet1",
+                        text="Sheet1 A2:B2 매출 합계 42",
+                        score=0.91,
+                        search_unit_id="su-xlsx-1",
+                        source_file_id="source-xlsx-1",
+                        source_file_name="book.xlsx",
+                        metadata_json={
+                            "sourceFileType": "SPREADSHEET",
+                            "parserVersion": "xlsx-extract-v2-hidden-safe",
+                            "embeddingStatus": "EMBEDDED",
+                            "indexVersion": "idx-v1",
+                            "citationText": "Sheet1 A2:B2 매출 합계 42",
+                            "sheetName": "Sheet1",
+                            "cellRange": "A2:B2",
+                            "documentVersionId": "docv-xlsx-1",
+                        },
+                    )
+                ],
+            )
+
+    retriever = FakeRetriever()
+
+    monkeypatch.setattr(
+        registry_module,
+        "_build_rag_capability",
+        lambda settings: FakeRagCapability(),
+    )
+    monkeypatch.setattr(
+        registry_module,
+        "_get_shared_retriever_bundle",
+        lambda settings: (retriever, object()),
+    )
+
+    registry = registry_module.build_default_registry(
+        WorkerSettings(
+            rag_enabled=True,
+            ocr_enabled=False,
+            ocr_extract_enabled=False,
+            xlsx_extract_enabled=False,
+            pdf_extract_enabled=False,
+            multimodal_enabled=False,
+            rag_query_orchestrator_enabled=True,
+        )
+    )
+
+    capability = registry.get("RAG_QUERY_ORCHESTRATOR")
+    request = {
+        "query": "xlsx 매출 합계",
+        "policy": {
+            "requiredIndexVersion": "idx-v1",
+            "allowedSourceFileTypes": ["SPREADSHEET"],
+            "allowedParserVersions": ["xlsx-extract-v2-hidden-safe"],
+            "topK": 1,
+        },
+    }
+    output = capability.run(
+        CapabilityInput(
+            job_id="job-xlsx",
+            capability="RAG_QUERY_ORCHESTRATOR",
+            attempt_no=1,
+            inputs=[
+                CapabilityInputArtifact(
+                    artifact_id="input-json",
+                    type="INPUT_JSON",
+                    content=json.dumps(request).encode("utf-8"),
+                )
+            ],
+        )
+    )
+
+    payload = json.loads(output.outputs[0].content.decode("utf-8"))
+    assert payload["graph_backend"] == "pure_vector_retriever_poc"
+    assert payload["state"]["tool_results"][0]["tool"] == "xlsx_vector_search_tool"
+    assert retriever.calls == [{"query": "xlsx 매출 합계", "filters": None}]
+
+
 def test_v3_6_9_searchunit_searchview_sourceatom_refactor_summary_locks_exit_and_guardrails() -> None:
     summary = read_json(V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY)
     contract = read_json(V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT)
