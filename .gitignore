@@ -3,6 +3,7 @@
 Thumbs.db
 .idea/
 .vscode/
+.obsidian/
 *.iml
 *.swp
 
@@ -14,6 +15,11 @@ frontend/app/node_modules/
 frontend/app/dist/
 frontend/app/.parcel-cache/
 frontend/app/bundle.html
+!frontend/app/package.json
+!frontend/app/components.json
+!frontend/app/tsconfig.json
+!frontend/app/tsconfig.app.json
+!frontend/app/tsconfig.node.json
 
 # ---- Claude Code local state ----
 # The whole .claude/ directory is per-user (settings, launch config,
@@ -222,6 +228,11 @@ ai/eval/datasets/samples/
 !README.md
 !**/README.md
 !docs/THIRD_PARTY_DATA_LICENSES.md
+!frontend/app/package.json
+!frontend/app/components.json
+!frontend/app/tsconfig.json
+!frontend/app/tsconfig.app.json
+!frontend/app/tsconfig.node.json
 # Repo-local archives are externalized under D:\_external_workspace_archive
 # and D:\_external_runtime_artifacts; keep future archive bundles out of git.
 archive/
@@ -236,6 +247,7 @@ archive/
 !ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv
 !ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv
 !ai/eval/eval_queries/gold_queries_pdf_question_gold_v2.csv
+!ai/eval/corpora/gold_queries_pdf_v1_reviewed.csv
 !ai/eval/silver/
 !ai/eval/silver/answer_citation_silver_manifest_v1.json
 !ai/eval/silver/answer_citation_silver_readiness_v1.json
@@ -317,6 +329,7 @@ ai/eval/review/*
 # and are too large to commit (e.g. namu_anime_v3 is ~261 MB). The
 # accompanying README.md is committed so contributors know how to
 # re-stage the file from its source path.
+ai/eval/corpora/namu-v4-structured-combined/
 ai/eval/corpora/**/*.jsonl
 !ai/eval/corpora/**/README.md
 # Generated silver query sets are reproducible via

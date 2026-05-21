@@ -94,9 +94,10 @@ flowchart LR
 
 - [RAG ingestion progress](docs/rag-ingestion-progress.md)
 - [RAG ingestion measurements](docs/rag-ingestion-measurements.md)
-- [RAG ingestion triage](docs/rag-ingestion-triage.md)
 - [Evaluation harness](ai/eval/README.md)
 - [Third-party data license notice](docs/THIRD_PARTY_DATA_LICENSES.md)
+
+Row-level triage history is kept separately in [RAG ingestion triage](docs/rag-ingestion-triage.md). It is an internal diagnostic ledger, not the main portfolio surface.
 
 ## 빠르게 둘러보기
 
@@ -119,6 +120,8 @@ python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_
 ```
 
 [Evaluation harness samples](ai/eval/README.md)에는 TEXT/PDF/XLSX 샘플 쿼리와 응답만 정리했습니다. 세부 evidence locator와 citation identity는 local generated evidence인 `ai/eval/reports/rag-ingestion/status.jsonl`, `v3_7_2` top-k rows, `v3_8*` summary artifacts, 그리고 `ai/eval/source_registry/source_atom_registry_v1.jsonl`에서 확인합니다.
+
+대형 local corpus/runtime payload와 legacy root-level report artifacts는 repo 밖의 external runtime archive로 이동했습니다. 현재 pytest profile이 직접 읽는 `ai/eval/reports/rag-ingestion/`, `ai/eval/source_registry/`, `ai/eval/indexes/`의 generated evidence는 검증 경로 보존을 위해 local-only로 유지합니다.
 
 ## 남은 작업
 

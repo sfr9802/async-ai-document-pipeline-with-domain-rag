@@ -1,3 +1,7 @@
+# Evaluation harness samples
+
+이 파일은 포트폴리오에서 빠르게 확인할 수 있는 TEXT/PDF/XLSX 샘플 응답 표입니다. 대표 성능 benchmark나 promotion evidence가 아니며, 세부 locator/citation truth는 generated diagnostic artifacts와 SourceAtom registry에서 확인합니다.
+
 | index/track | query | evidence used | actual LLM response |
 |---|---|---|---|
 | 1 / PDF | 1월 산업활동에서 생산 지표는 어떻게 움직였나요? | 9acfa9e6-36ff-4217-a212-c5688c1e88f2-2021_03_recent_economic_trends.pdf p.5 | 1월 산업활동에서 광공업 생산, 서비스업 생산, 건설투자는 감소했습니다. |

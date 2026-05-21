@@ -1,6 +1,6 @@
 # RAG Ingestion Measurements
 
-Last updated: 2026-05-21 KST.
+Last updated: 2026-05-22 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new
@@ -36,7 +36,7 @@ Current repo-local machine payloads:
 
 Archived payload families:
 
-- `ai/eval/reports/rag-ingestion/*` except the six current files above:
+- `ai/eval/reports/rag-ingestion/*` except the compact current files listed above:
   `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`
 - former `ai/eval/reports/phase7/` and
   `ai/eval/reports/legacy-baseline-final/`:

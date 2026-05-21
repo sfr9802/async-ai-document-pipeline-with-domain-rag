@@ -1,6 +1,6 @@
 # RAG Ingestion Triage
 
-Last updated: 2026-05-21 KST.
+Last updated: 2026-05-22 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of
@@ -14,8 +14,8 @@ Historical `_archive/legacy` artifact paths below are logical provenance names.
 Their physical generated payloads may live in the external runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 As of the 2026-05-21 cleanup, the current repo-local report directory keeps
-only `status.jsonl` plus the latest v3_6_9 SearchUnit/SearchView/SourceAtom
-refactor artifacts; older triage payloads are consolidated under
+`status.jsonl` plus compact v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1,
+v3_8_2, and v3_8_3 machine artifacts; older triage payloads are consolidated under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`.
 The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
@@ -25,7 +25,8 @@ archived under
 
 No queue state changed in this cleanup. The change is evidence layout only:
 keep current status and the latest v3_6_9 contract proof in
-`ai/eval/reports/rag-ingestion/`, and resolve older queue, failure, audit, and
+`ai/eval/reports/rag-ingestion/`, together with later compact v3_7/v3_8
+diagnostic artifacts, and resolve older queue, failure, audit, and
 measurement payloads from the external archive. This file remains the rolling
 row-level triage surface; avoid recreating per-run Markdown reports unless a
 future run genuinely needs a separate forensic artifact.
@@ -40,7 +41,12 @@ future run genuinely needs a separate forensic artifact.
   source.
 - Keep Lane A/B/C separated in interpretation.
 
-## Current Phase
+## Historical Phase Snapshot
+
+For current portfolio and diagnostic status, read
+`docs/rag-ingestion-progress.md` first. The section below is preserved as
+row-level triage history from the v3_4_3 smoke-metric period, not as the active
+portfolio status.
 
 Phase:
 `v3_4_3 official exact-evidence retrieval smoke metrics computed`

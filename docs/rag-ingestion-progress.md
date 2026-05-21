@@ -1,6 +1,6 @@
 # RAG Ingestion Progress
 
-Last updated: 2026-05-21 KST.
+Last updated: 2026-05-22 KST.
 
 This is the compact status index for the current RAG ingestion and official
 answer/citation metric work. Do not append turn transcripts or create new
@@ -12,7 +12,7 @@ are:
 - `docs/rag-ingestion-progress.md`: current status, verification, guardrails.
 - `docs/rag-ingestion-measurements.md`: run-level metrics and before/after
   summaries only when metric detail needs its existing ledger.
-- `docs/rag-ingestion-triage.md`: row-level triage queue and decision boundary.
+- `docs/rag-ingestion-triage.md`: historical row-level triage queue and decision boundary.
 
 Use `ai/eval/reports/rag-ingestion/status.jsonl` only as a compact
 machine-readable status event ledger. For run artifacts, write only the minimal
@@ -94,8 +94,12 @@ closed; threshold tuning and winner selection also remain closed.
 <!-- official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic:progress-entry:end -->
 
 <!-- portfolio_ready_freeze_v1:progress-entry:start -->
-- Portfolio-ready final artifact freeze (`portfolio_ready_freeze_v1`) closes this pass as README/progress/status hygiene only. Root README now carries a concise portfolio card for source-grounded multimodal RAG with citation-truth separation, the SearchView -> SourceAtom -> EvidenceBundle -> Citation render architecture, supported source families TEXT/PDF/XLSX, the v3 comparable live diagnostic result PASS=27/29 with PDF=4/4, XLSX=19/19, TEXT=4/6, and the v3_4_3 exact-evidence retrieval smoke as a 28-query small-sample regression guard only, not representative product performance. Demo path is the current RAG pytest profile plus the `ai/eval/README.md` sample table; it requires no production DB writes, production index mutation, or new gold/qrels/labels. No XLSX/PDF resolver performance work, answer generation, prompt/scorer tuning, production mutation, official denominator mutation, gold/qrels/label/expected-answer/supporting-evidence mutation, promotion, threshold tuning, winner selection, or Lane A/B/C score collapse was performed. Post-freeze backlog remains XLSX bounded range/cell locator improvement, PDF file identity resolver improvement, PDF bbox/OCR trust policy after file identity stabilizes, optional silver live-generation experiment, and an official representative benchmark only after user-approved labels/qrels/denominator policy.
+- Portfolio-ready final artifact freeze (`portfolio_ready_freeze_v1`) closes this pass as README/progress/status hygiene only. Root README now carries the portfolio overview, source-first contract, supported source families, minimal pytest demo path, and links to the compact progress/measurement/eval surfaces. The v3 comparable live diagnostic result remains PASS=27/29 with PDF=4/4, XLSX=19/19, TEXT=4/6, and the v3_4_3 exact-evidence retrieval smoke remains a 28-query small-sample regression guard only, not representative product performance. No XLSX/PDF resolver performance work, answer generation, prompt/scorer tuning, production mutation, official denominator mutation, gold/qrels/label/expected-answer/supporting-evidence mutation, promotion, threshold tuning, winner selection, or Lane A/B/C score collapse was performed. Post-freeze backlog remains XLSX bounded range/cell locator improvement, PDF file identity resolver improvement, PDF bbox/OCR trust policy after file identity stabilizes, optional silver live-generation experiment, and an official representative benchmark only after user-approved labels/qrels/denominator policy.
 <!-- portfolio_ready_freeze_v1:progress-entry:end -->
+
+<!-- portfolio_repo_cleanup_20260522:progress-entry:start -->
+- Portfolio repository cleanup (`portfolio_repo_cleanup_20260522`) externalized local runtime payloads, the Namu v4 structured combined corpus payload, legacy root-level PDF candidate index files, and legacy root-level PDF diagnostic report JSON files to `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\portfolio-cleanup-20260522-005928\`. Python/Maven cache directories were deleted where Windows permissions allowed. The current `ai/eval/reports/rag-ingestion/`, `ai/eval/source_registry/`, and `ai/eval/indexes/` generated evidence remains local-only because the current pytest profiles read those paths directly. This cleanup made no metric, resolver, gold/qrels/label/expected-answer/supporting-evidence, production index, threshold, winner-selection, promotion, or answer-generation changes.
+<!-- portfolio_repo_cleanup_20260522:progress-entry:end -->
 
 - Official first-run baseline is `status=BLOCKED_OR_PARTIAL`,
   `status_detail=SCORED_BASELINE_PARTIAL`,
