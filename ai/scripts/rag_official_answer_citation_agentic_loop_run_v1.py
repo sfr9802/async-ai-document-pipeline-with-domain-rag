@@ -220,6 +220,18 @@ V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID = (
 V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report"
 )
+V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_8_file_grounded_retrieval_eval"
+)
+V3_8_1_EVIDENCE_SELECTOR_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_8_1_evidence_selector_v1"
+)
+V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve"
+)
+RUN_IDS_WITH_DISABLED_SUMMARY_MARKDOWN = {
+    V3_RUN_ID,
+}
 REPORT_ARTIFACT_SLUGS = {
     RUN_ID: "agentic_v1",
     V2_RUN_ID: "v2_source_bound",
@@ -321,6 +333,9 @@ REPORT_ARTIFACT_SLUGS = {
     V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID: (
         V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID
     ),
+    V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID: V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    V3_8_1_EVIDENCE_SELECTOR_RUN_ID: V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID: V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
@@ -362,12 +377,18 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
     V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
     V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+    V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
 }
 PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
     V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
     V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
     V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+    V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
 }
 V3_1_PRIORITY_1_5_QUERY_IDS = (
     "gq_pdf_section_question_001",
@@ -1255,6 +1276,42 @@ DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON = report_arti
     V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
     "silver_1000_diagnostic_overlay.json",
 )
+DEFAULT_V3_8_FILE_GROUNDED_METRICS_JSON = report_artifact_path(
+    V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    "metrics.json",
+)
+DEFAULT_V3_8_FILE_GROUNDED_PER_QUERY_JSONL = report_artifact_path(
+    V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    "per_query.jsonl",
+)
+DEFAULT_V3_8_FILE_GROUNDED_PER_FAMILY_JSON = report_artifact_path(
+    V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    "per_family.json",
+)
+DEFAULT_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON = report_artifact_path(
+    V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    "metrics.json",
+)
+DEFAULT_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL = report_artifact_path(
+    V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    "per_query.jsonl",
+)
+DEFAULT_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON = report_artifact_path(
+    V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    "per_family.json",
+)
+DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON = report_artifact_path(
+    V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+    "metrics.json",
+)
+DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL = report_artifact_path(
+    V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+    "per_query.jsonl",
+)
+DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON = report_artifact_path(
+    V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+    "per_family.json",
+)
 DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "scorer_v1.jsonl"
 DEFAULT_TEXT_NAMU_GOLD_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v2_1_question_gold_v2.csv"
 DEFAULT_TEXT_NAMU_HUMAN_AUDIT_V2_DECISIONS_JSON = (
@@ -1714,6 +1771,9 @@ def main(argv: list[str] | None = None) -> int:
         V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
         V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
         V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+        V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+        V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
     }:
         write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
         append_v3_6_low_touch_weak_noisy_silver_event(Path(args.status_jsonl), summary)
@@ -1868,7 +1928,7 @@ def main(argv: list[str] | None = None) -> int:
     elif summary["run_id"] == V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID:
         write_v3_1_6_safe_pdf_window_expansion_side_artifacts(summary, rows)
     write_json(Path(args.summary_json), summary)
-    if summary.get("write_summary_markdown", True) is not False:
+    if summary.get("write_summary_markdown", True) is not False and args.summary_md:
         Path(args.summary_md).write_text(render_markdown(summary), encoding="utf-8")
     append_status_event(Path(args.status_jsonl), summary)
     append_failure_attribution_event(Path(args.status_jsonl), failure_attribution)
@@ -2022,6 +2082,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         V3_7_0_SOURCE_REGISTRY_MATERIALIZATION_RUN_ID,
         V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
         V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+        V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+        V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
     }
     if args.run_id not in supported_run_ids:
         raise SystemExit(
@@ -2032,7 +2095,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         args.results_jsonl = str(report_artifact_path(args.run_id, "results.jsonl"))
     if args.summary_json is None:
         args.summary_json = str(report_artifact_path(args.run_id, "summary.json"))
-    if args.summary_md is None:
+    if args.run_id in RUN_IDS_WITH_DISABLED_SUMMARY_MARKDOWN:
+        args.summary_md = ""
+    elif args.summary_md is None:
         args.summary_md = str(report_artifact_path(args.run_id, "summary.md"))
     if is_source_bound_manifest_run(args.run_id):
         args.source_bound_index_load_checked = True
@@ -2160,6 +2225,15 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
 
     if args.run_id == V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID:
         return run_v3_7_2_source_registry_backed_retrieval_smoke_report(args=args), []
+
+    if args.run_id == V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID:
+        return run_v3_8_file_grounded_retrieval_eval(args=args), []
+
+    if args.run_id == V3_8_1_EVIDENCE_SELECTOR_RUN_ID:
+        return run_v3_8_1_evidence_selector(args=args), []
+
+    if args.run_id == V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID:
+        return run_v3_8_2_oracle_free_file_resolve(args=args), []
 
     if args.run_id == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
         return run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement(
@@ -5612,6 +5686,7 @@ def build_v3_summary(
         "generation_used_supporting_evidence": False,
         "generation_used_gold_fields": False,
         "promotion_evidence": False,
+        "write_summary_markdown": False,
         "threshold_tuning": False,
         "winner_selection": False,
         "promotion_gate_auto_run": False,
@@ -5679,7 +5754,6 @@ def build_v3_summary(
         "artifact_paths": {
             "results_jsonl": official.repo_relative(Path(args.results_jsonl)),
             "summary_json": official.repo_relative(Path(args.summary_json)),
-            "summary_md": official.repo_relative(Path(args.summary_md)),
             "failure_attribution_json": report_artifact_repo_relative(args.run_id, "failure.json"),
         },
         "artifact_provenance": {
@@ -6870,6 +6944,7 @@ def run_v3_2_1_text_residual_triage(
         "run_class": "implementation_safe_residual_triage",
         "diagnostic_only": True,
         "promotion_evidence": False,
+        "write_summary_markdown": False,
         "threshold_tuning": False,
         "winner_selection": False,
         "promotion_gate_auto_run": False,
@@ -32752,7 +32827,7 @@ def v3_7_2_family_routed_retrieval_smoke(
         family_specs = [
             spec for spec in query_specs if official.clean(spec.get("source_family")).upper() == family
         ]
-        rows_by_faiss_id = {int(row.get("faiss_row_id") or -1): row for row in candidate_rows}
+        rows_by_faiss_id = {v3_7_2_candidate_faiss_row_id(row): row for row in candidate_rows}
         target_maps = v3_7_2_target_maps_from_search_view_rows(candidate_rows)
         family_topk_rows: list[dict[str, Any]] = []
         if candidate_rows:
@@ -32765,7 +32840,6 @@ def v3_7_2_family_routed_retrieval_smoke(
                     for row in candidate_rows
                 ]
             )
-            faiss_row_ids = [int(row.get("faiss_row_id") or -1) for row in candidate_rows]
             for spec in family_specs:
                 query_vector = v3_6_8_all_source_hash_vector(
                     official.clean(spec.get("query_text")),
@@ -32776,8 +32850,12 @@ def v3_7_2_family_routed_retrieval_smoke(
                 if top_k <= 0:
                     hits: list[tuple[int, float]] = []
                 else:
-                    top_indices = np.argsort(scores)[-top_k:][::-1]
-                    hits = [(faiss_row_ids[int(index)], float(scores[int(index)])) for index in top_indices]
+                    hits = v3_7_2_rank_family_candidates(
+                        query_text=official.clean(spec.get("query_text")),
+                        candidate_rows=candidate_rows,
+                        base_scores=scores,
+                        top_k=top_k,
+                    )
                 row = v3_7_2_source_registry_retrieval_smoke_row(
                     generated_at=generated_at,
                     query_spec=spec,
@@ -32820,6 +32898,196 @@ def v3_7_2_family_routed_retrieval_smoke(
     if include_topk_rows:
         result["topk_rows_by_query_key"] = topk_rows_by_query_key
     return result
+
+
+V3_7_2_RERANK_TOKEN_STOPWORDS = {
+    "그리고",
+    "대해",
+    "되는",
+    "몇",
+    "무엇",
+    "무엇입니까",
+    "문서에",
+    "알려줘",
+    "어떻게",
+    "어떤",
+    "언제",
+    "언제입니까",
+    "에서는",
+    "으로",
+    "있나요",
+    "있습니까",
+    "있어",
+    "정확히",
+    "지정된",
+    "해주세요",
+}
+V3_7_2_RERANK_PARTICLE_SUFFIXES = (
+    "으로부터",
+    "으로서",
+    "으로써",
+    "입니다",
+    "입니까",
+    "습니까",
+    "인가요",
+    "에는",
+    "에서",
+    "으로",
+    "부터",
+    "까지",
+    "에게",
+    "보다",
+    "나요",
+    "인가",
+    "의",
+    "은",
+    "는",
+    "이",
+    "가",
+    "을",
+    "를",
+    "에",
+    "로",
+    "와",
+    "과",
+    "도",
+    "만",
+)
+
+
+def v3_7_2_rank_family_candidates(
+    *,
+    query_text: str,
+    candidate_rows: Sequence[Mapping[str, Any]],
+    base_scores: Sequence[Any],
+    top_k: int,
+) -> list[tuple[int, float]]:
+    query_tokens = v3_7_2_rerank_tokens(query_text)
+    scored: list[tuple[int, float, float, int]] = []
+    for index, row in enumerate(candidate_rows):
+        faiss_row_id = v3_7_2_candidate_faiss_row_id(row)
+        base_score = float(base_scores[index])
+        rerank_score = v3_7_2_manifest_lexical_rerank_score(
+            query_tokens=query_tokens,
+            candidate_row=row,
+        )
+        scored.append((faiss_row_id, base_score + rerank_score, rerank_score, index))
+    scored.sort(key=lambda item: (-item[1], -item[2], item[3]))
+    return [(faiss_row_id, score) for faiss_row_id, score, _rerank, _index in scored[:top_k]]
+
+
+def v3_7_2_candidate_faiss_row_id(row: Mapping[str, Any]) -> int:
+    value = row.get("faiss_row_id")
+    if value is None or value == "":
+        return -1
+    return int(value)
+
+
+def v3_7_2_manifest_lexical_rerank_score(
+    *,
+    query_tokens: set[str],
+    candidate_row: Mapping[str, Any],
+) -> float:
+    candidate_text = v3_7_2_manifest_rerank_text(candidate_row)
+    candidate_tokens = v3_7_2_rerank_tokens(candidate_text)
+    overlap = query_tokens & candidate_tokens
+    score = 0.0
+    if overlap:
+        score += sum(v3_7_2_rerank_token_weight(token) for token in overlap) / max(6.0, len(query_tokens) + 4.0)
+    lowered_candidate = candidate_text.lower()
+    lowered_query_tokens = {token.lower() for token in query_tokens}
+    score += v3_7_2_structured_field_match_bonus(lowered_query_tokens, lowered_candidate, candidate_row)
+    return score
+
+
+def v3_7_2_manifest_rerank_text(candidate_row: Mapping[str, Any]) -> str:
+    return "\n".join(
+        official.clean(candidate_row.get(key))
+        for key in ("bm25_text", "display_text", "embedding_text", "source_identity", "workbook_id", "document_id")
+        if official.clean(candidate_row.get(key))
+    )
+
+
+def v3_7_2_rerank_tokens(text: Any) -> set[str]:
+    lowered = official.clean(text).lower()
+    tokens: set[str] = set()
+    for year, month in re.findall(r"(\d{4})\s*년\s*(\d{1,2})\s*월", lowered):
+        tokens.add(f"{year}{int(month):02d}")
+    for year, month in re.findall(r"(\d{4})[.\-/](\d{1,2})", lowered):
+        tokens.add(f"{year}{int(month):02d}")
+    for token in re.findall(r"[0-9a-z가-힣]+", lowered):
+        if len(token) == 1 and not token.isdigit():
+            continue
+        if token in V3_7_2_RERANK_TOKEN_STOPWORDS:
+            continue
+        tokens.add(token)
+        for normalized in v3_7_2_korean_particle_variants(token):
+            if normalized not in V3_7_2_RERANK_TOKEN_STOPWORDS:
+                tokens.add(normalized)
+    return tokens
+
+
+def v3_7_2_korean_particle_variants(token: str) -> set[str]:
+    variants = set()
+    for suffix in V3_7_2_RERANK_PARTICLE_SUFFIXES:
+        if token.endswith(suffix) and len(token) > len(suffix) + 1:
+            variants.add(token[: -len(suffix)])
+    return variants
+
+
+def v3_7_2_rerank_token_weight(token: str) -> float:
+    if re.fullmatch(r"\d{6}", token):
+        return 2.0
+    if token.isdigit():
+        return 1.5
+    if len(token) >= 6:
+        return 3.0
+    if len(token) >= 4:
+        return 2.0
+    return 1.0
+
+
+def v3_7_2_structured_field_match_bonus(
+    query_tokens: set[str],
+    lowered_candidate_text: str,
+    candidate_row: Mapping[str, Any],
+) -> float:
+    family = official.clean(candidate_row.get("source_family")).upper()
+    score = 0.0
+    for token in query_tokens:
+        if len(token) >= 6 and token in lowered_candidate_text:
+            score += 0.35
+    if family == "XLSX":
+        for field_name in ("row_label", "column_label", "target_column", "normalized_value"):
+            score += v3_7_2_field_specific_bonus(query_tokens, lowered_candidate_text, field_name)
+        if "cell=" in lowered_candidate_text and (
+            "row_label=" in lowered_candidate_text or "target_column=" in lowered_candidate_text
+        ):
+            score += 0.20
+        if (
+            "range=" in lowered_candidate_text
+            and "cell=" not in lowered_candidate_text
+            and "target_column=" not in lowered_candidate_text
+        ):
+            score -= 0.25
+    elif family == "PDF":
+        score += v3_7_2_field_specific_bonus(query_tokens, lowered_candidate_text, "matched_text")
+        if "목 차" in lowered_candidate_text or "목차" in lowered_candidate_text:
+            score -= 0.15
+    return score
+
+
+def v3_7_2_field_specific_bonus(
+    query_tokens: set[str],
+    lowered_candidate_text: str,
+    field_name: str,
+) -> float:
+    marker = f"{field_name}="
+    marker_index = lowered_candidate_text.find(marker)
+    if marker_index < 0:
+        return 0.0
+    field_window = lowered_candidate_text[marker_index : marker_index + 400]
+    return sum(0.30 for token in query_tokens if len(token) >= 2 and token in field_window)
 
 
 def v3_7_2_target_maps_from_search_view_rows(
@@ -32917,6 +33185,2110 @@ def v3_7_2_counter_ranked(counter: Counter[str], *, limit: int = 12) -> list[dic
         for key, count in sorted(counter.items(), key=lambda item: (-item[1], item[0]))[:limit]
         if int(count) > 0
     ]
+
+
+V3_8_FILE_GROUNDED_SOURCE_FAMILIES = ("PDF", "XLSX")
+V3_8_FILE_GROUNDED_TOP_K = 5
+V3_8_FILE_GROUNDED_EVIDENCE_SELECT_K = 3
+V3_8_COMMON_QUERY_METRICS = (
+    "file_hit@1",
+    "file_hit@5",
+    "target_source_atom_recall@5",
+    "evidence_select_hit@3",
+    "unsupported_rate",
+)
+V3_8_COMMON_ENVELOPE_METRICS = ("citation_render_rate", "contract_survival_rate")
+V3_8_XLSX_QUERY_METRICS = (
+    "workbook_hit@1",
+    "workbook_hit@5",
+    "sheet_hit@5",
+    "table_or_range_hit@5",
+    "cell_or_value_hit@5",
+)
+V3_8_PDF_QUERY_METRICS = (
+    "file_hit@1",
+    "file_hit@5",
+    "page_hit@5",
+    "block_or_bbox_available@5",
+    "matched_text_present@5",
+)
+V3_8_1_EVIDENCE_SELECTOR_MAX_K = 3
+V3_8_1_QUERY_METRICS = (
+    "selector_contract_survival@3",
+    "selector_target_hit@3",
+    "selector_file_hit@3",
+    "selector_unsupported_rate",
+)
+V3_8_2_QUERY_METRICS = (
+    "file_resolve@1",
+    "file_resolve@3",
+    "abstain_rate",
+    "wrong_file_block_rate",
+)
+V3_8_2_ORACLE_FREE_RESOLVE_TOP_K = 5
+V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES = 3
+V3_8_2_RESOLVE_SCORE_THRESHOLD = 0.75
+V3_8_2_RESOLVE_SCORE_GAP_THRESHOLD = 0.12
+V3_8_2_FORBIDDEN_RESOLVER_INPUT_FIELDS = (
+    "question_gold_locator_target",
+    "official_manifest_target",
+    "target_source_atom_ids",
+    "target_search_view_ids",
+    "target_locator_fingerprint",
+    "target_search_unit_id",
+    "target_parent_source_unit_id",
+    "target_mapping_audit",
+    "expected_answer",
+    "supporting_evidence",
+    "qrels",
+    "relevance_label",
+    "answerability_label",
+)
+
+
+def v3_8_file_grounded_retrieval_eval_metrics(
+    topk_rows: Sequence[Mapping[str, Any]],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]] | None = None,
+    top_k: int = V3_8_FILE_GROUNDED_TOP_K,
+    evidence_select_k: int = V3_8_FILE_GROUNDED_EVIDENCE_SELECT_K,
+) -> dict[str, Any]:
+    registry = source_registry or {}
+    vector_truth_claim_count = sum(
+        1
+        for row in topk_rows
+        for envelope in row.get("top_result_envelopes", [])
+        if envelope.get("vector_metadata_used_as_canonical_citation_source")
+        or envelope.get("vector_payload_used_as_evidence_truth")
+    )
+    per_query_rows = [
+        v3_8_file_grounded_per_query_row(
+            row,
+            source_registry=registry,
+            top_k=top_k,
+            evidence_select_k=evidence_select_k,
+        )
+        for row in topk_rows
+        if official.clean(row.get("source_family")).upper() in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+    ]
+    return {
+        "schema_version": f"{V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID}_metrics_v1",
+        "run_id": V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+        "artifact_kind": "v3_8_file_grounded_retrieval_eval_metrics",
+        "metric_version": "v1",
+        "top_k": top_k,
+        "evidence_select_k": evidence_select_k,
+        "source_families_reported_separately": list(V3_8_FILE_GROUNDED_SOURCE_FAMILIES),
+        "per_source_family": {
+            family: v3_8_file_grounded_family_metrics(
+                family=family,
+                per_query_rows=[row for row in per_query_rows if row["source_family"] == family],
+            )
+            for family in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+        },
+        "per_query_rows": per_query_rows,
+        "metric_definitions": v3_8_file_grounded_metric_definitions(),
+        "denominator_policy": {
+            "row_scope": "PDF/XLSX query rows with an existing target mapping surface",
+            "common_metrics_denominator": "per source family query_count, except render rates use returned top-k envelopes",
+            "xlsx_and_pdf_are_not_collapsed": True,
+            "gold_qrels_labels_expected_answers_supporting_evidence_mutated": False,
+        },
+        "source_atom_registry_canonical_truth": True,
+        "vector_db_role": "candidate_generator_only",
+        "headline_aggregate_score_reported": False,
+        "answer_generation_metric_computed": False,
+        "answer_metric_computed": False,
+        "prompt_or_scorer_tuning": False,
+        "gold_or_label_mutation": False,
+        "qrels_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "promotion_evidence": False,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+        "ignored_vector_truth_claim_count": vector_truth_claim_count,
+        "vector_truth_violation_count": vector_truth_claim_count,
+        "vector_truth_violation_policy": "ignored_for_metric_truth_and_fail_closed_in_run",
+    }
+
+
+def v3_8_file_grounded_per_query_row(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+    top_k: int,
+    evidence_select_k: int,
+) -> dict[str, Any]:
+    family = official.clean(row.get("source_family")).upper()
+    target = v3_8_file_grounded_target_locator(row, source_registry=source_registry)
+    envelopes = v3_8_file_grounded_envelopes(
+        row,
+        source_registry=source_registry,
+        top_k=top_k,
+    )
+    top1 = envelopes[:1]
+    top5 = envelopes[:top_k]
+    top3 = envelopes[:evidence_select_k]
+    target_source_atom_ids = {
+        official.clean(item) for item in row.get("target_source_atom_ids", []) if official.clean(item)
+    }
+    target_search_view_ids = {
+        official.clean(item) for item in row.get("target_search_view_ids", []) if official.clean(item)
+    }
+
+    def target_envelope(envelope: Mapping[str, Any]) -> bool:
+        source_atom_id = official.clean(envelope.get("source_atom_id"))
+        search_view_id = official.clean(envelope.get("search_view_id"))
+        return bool(
+            (source_atom_id and source_atom_id in target_source_atom_ids)
+            or (search_view_id and search_view_id in target_search_view_ids)
+        )
+
+    target_recall_top5 = any(target_envelope(envelope) for envelope in top5)
+    target_contract_top5 = any(
+        target_envelope(envelope) and envelope.get("contract_survived")
+        for envelope in top5
+    )
+    evidence_select_top3 = any(
+        target_envelope(envelope) and envelope.get("contract_survived")
+        for envelope in top3
+    )
+    returned_topk_count = len(top5)
+    citation_render_count = sum(1 for envelope in top5 if envelope.get("citation_render_valid"))
+    contract_survival_count = sum(1 for envelope in top5 if envelope.get("contract_survived"))
+    file_hit_1 = v3_8_any_file_hit(target, top1)
+    file_hit_5 = v3_8_any_file_hit(target, top5)
+    result: dict[str, Any] = {
+        "schema_version": f"{V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID}_per_query_v1",
+        "query_id": official.clean(row.get("query_id")),
+        "query_scope": official.clean(row.get("query_scope")),
+        "source_family": family,
+        "target_file_identity": v3_8_compact_file_evidence(target),
+        "file_hit@1": file_hit_1,
+        "file_hit@5": file_hit_5,
+        "target_source_atom_recall@5": target_recall_top5,
+        "evidence_select_hit@3": evidence_select_top3,
+        "unsupported_rate": not target_contract_top5,
+        "returned_topk_count": returned_topk_count,
+        "citation_render_valid_topk_count": citation_render_count,
+        "contract_survival_topk_count": contract_survival_count,
+        "top_result_file_evidence_k": evidence_select_k,
+        "top_result_file_evidence": [v3_8_compact_file_evidence(envelope) for envelope in top3],
+        "answer_generation_metric_computed": False,
+        "source_atom_registry_canonical_truth": True,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+    }
+    if family == "XLSX":
+        result.update(
+            {
+                "workbook_hit@1": file_hit_1,
+                "workbook_hit@5": file_hit_5,
+                "sheet_hit@5": any(v3_8_xlsx_sheet_hit(target, envelope) for envelope in top5),
+                "table_or_range_hit@5": any(v3_8_xlsx_range_hit(target, envelope) for envelope in top5),
+                "cell_or_value_hit@5": any(v3_8_xlsx_cell_or_value_hit(target, envelope) for envelope in top5),
+            }
+        )
+    elif family == "PDF":
+        result.update(
+            {
+                "page_hit@5": any(v3_8_pdf_page_hit(target, envelope) for envelope in top5),
+                "block_or_bbox_available@5": any(v3_8_pdf_bbox_available(envelope) for envelope in top5),
+                "matched_text_present@5": any(v3_8_pdf_matched_text_present(envelope) for envelope in top5),
+            }
+        )
+    return result
+
+
+def v3_8_compact_file_evidence(evidence: Mapping[str, Any]) -> dict[str, Any]:
+    keep_keys = (
+        "rank",
+        "search_view_id",
+        "source_atom_id",
+        "source_atom_hydrated_from_registry",
+        "source_family",
+        "file_key",
+        "sheet",
+        "range",
+        "cell",
+        "page",
+        "physical_page_index",
+        "bbox",
+        "region_type",
+        "materialization_bucket",
+        "primary_failure_bucket",
+        "citation_render_valid",
+        "contract_survived",
+    )
+    compact = {
+        key: evidence.get(key)
+        for key in keep_keys
+        if evidence.get(key) not in (None, "", [])
+    }
+    matched_text_or_value = official.clean(
+        evidence.get("matched_text_or_value")
+        or evidence.get("matched_text")
+        or evidence.get("normalized_value")
+    )
+    compact["matched_text_or_value_present"] = bool(matched_text_or_value)
+    return compact
+
+
+def v3_8_file_grounded_family_metrics(
+    *,
+    family: str,
+    per_query_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    query_denominator = len(per_query_rows)
+    metrics: dict[str, dict[str, Any]] = {}
+    metric_names = list(V3_8_COMMON_QUERY_METRICS)
+    if family == "XLSX":
+        metric_names.extend(V3_8_XLSX_QUERY_METRICS)
+    elif family == "PDF":
+        metric_names.extend(metric for metric in V3_8_PDF_QUERY_METRICS if metric not in metric_names)
+    for metric in metric_names:
+        metrics[metric] = v3_8_rate(
+            numerator=sum(1 for row in per_query_rows if bool(row.get(metric))),
+            denominator=query_denominator,
+        )
+    returned_topk_count = sum(int(row.get("returned_topk_count") or 0) for row in per_query_rows)
+    metrics["citation_render_rate"] = v3_8_rate(
+        numerator=sum(int(row.get("citation_render_valid_topk_count") or 0) for row in per_query_rows),
+        denominator=returned_topk_count,
+    )
+    metrics["contract_survival_rate"] = v3_8_rate(
+        numerator=sum(int(row.get("contract_survival_topk_count") or 0) for row in per_query_rows),
+        denominator=returned_topk_count,
+    )
+    return {
+        "source_family": family,
+        "query_count": query_denominator,
+        "returned_topk_count": returned_topk_count,
+        "metrics": metrics,
+        "unsupported_query_ids": [
+            official.clean(row.get("query_id"))
+            for row in per_query_rows
+            if bool(row.get("unsupported_rate"))
+        ],
+        "headline_aggregate_score_reported": False,
+    }
+
+
+def v3_8_rate(*, numerator: int, denominator: int) -> dict[str, Any]:
+    return {
+        "numerator": int(numerator),
+        "denominator": int(denominator),
+        "rate": (float(numerator) / float(denominator)) if denominator else None,
+    }
+
+
+def v3_8_file_grounded_envelopes(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+    top_k: int,
+) -> list[dict[str, Any]]:
+    raw_envelopes = list(row.get("top_result_envelopes", []))
+    ranked = sorted(
+        enumerate(raw_envelopes, start=1),
+        key=lambda item: (int(as_mapping(item[1]).get("rank") or item[0]), item[0]),
+    )
+    result: list[dict[str, Any]] = []
+    for index, envelope_value in ranked[:top_k]:
+        envelope = as_mapping(envelope_value)
+        family = official.clean(envelope.get("source_family")).upper()
+        source_atom_id = official.clean(envelope.get("source_atom_id"))
+        atom = as_mapping(source_registry.get(source_atom_id))
+        locator = v3_8_locator_from_atom_or_identity(
+            family=family,
+            atom=atom,
+            source_identity=official.clean(envelope.get("source_identity")),
+        )
+        materialization_bucket = official.clean(envelope.get("materialization_bucket") or atom.get("materialization_bucket"))
+        primary_failure_bucket = official.clean(envelope.get("primary_failure_bucket"))
+        snapshot_only = (
+            materialization_bucket == "snapshot_only_ready"
+            or primary_failure_bucket == "snapshot_only"
+        )
+        contract_survived = bool(
+            source_atom_id
+            and atom
+            and envelope.get("source_atom_hydrated_from_registry")
+            and envelope.get("evidence_bundle_render_valid")
+            and envelope.get("citation_render_valid")
+            and not snapshot_only
+        )
+        result.append(
+            {
+                **locator,
+                "rank": int(envelope.get("rank") or index),
+                "search_view_id": official.clean(envelope.get("search_view_id")),
+                "source_atom_id": source_atom_id,
+                "source_atom_hydrated_from_registry": bool(
+                    envelope.get("source_atom_hydrated_from_registry")
+                ),
+                "source_family": family,
+                "source_identity": official.clean(envelope.get("source_identity")),
+                "materialization_bucket": materialization_bucket,
+                "primary_failure_bucket": primary_failure_bucket,
+                "citation_render_valid": bool(envelope.get("citation_render_valid")),
+                "contract_survived": contract_survived,
+            }
+        )
+    return result
+
+
+def v3_8_file_grounded_target_locator(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    family = official.clean(row.get("source_family")).upper()
+    target_atom_ids = [
+        official.clean(item)
+        for item in row.get("target_source_atom_ids", [])
+        if official.clean(item)
+    ]
+    for source_atom_id in target_atom_ids:
+        atom = as_mapping(source_registry.get(source_atom_id))
+        if atom:
+            locator = v3_8_locator_from_atom_or_identity(
+                family=family,
+                atom=atom,
+                source_identity=official.clean(atom.get("source_identity")),
+            )
+            if locator.get("file_key"):
+                return locator
+    locator_target = as_mapping(row.get("question_gold_locator_target"))
+    locator = v3_8_locator_from_question_gold_target(family=family, locator=locator_target)
+    if locator.get("file_key"):
+        return locator
+    manifest_target = as_mapping(row.get("official_manifest_target"))
+    return v3_8_locator_from_atom_or_identity(
+        family=family,
+        atom={},
+        source_identity=official.clean(manifest_target.get("source_identity")),
+    )
+
+
+def v3_8_locator_from_question_gold_target(*, family: str, locator: Mapping[str, Any]) -> dict[str, Any]:
+    family = official.clean(family).upper()
+    if family == "PDF":
+        file_value = official.clean(locator.get("file") or locator.get("source_pdf_path"))
+        return {
+            "file": file_value,
+            "file_key": v3_8_file_key(file_value),
+            "page": locator.get("page"),
+            "physical_page_index": locator.get("physical_page_index"),
+            "bbox": locator.get("bbox"),
+            "region_type": official.clean(locator.get("region_type")),
+            "matched_text": "",
+        }
+    if family == "XLSX":
+        cells = locator.get("matched_cells")
+        cell = official.clean(cells[0]) if isinstance(cells, list) and cells else official.clean(locator.get("cell"))
+        file_value = official.clean(locator.get("file") or locator.get("workbook"))
+        return {
+            "file": file_value,
+            "file_key": v3_8_file_key(file_value),
+            "workbook": file_value,
+            "sheet": official.clean(locator.get("sheet")),
+            "range": official.clean(locator.get("range")),
+            "cell": cell,
+            "normalized_value": official.clean(locator.get("normalized_value")),
+            "matched_text_or_value": official.clean(locator.get("normalized_value")),
+        }
+    return {}
+
+
+def v3_8_locator_from_atom_or_identity(
+    *,
+    family: str,
+    atom: Mapping[str, Any],
+    source_identity: str,
+) -> dict[str, Any]:
+    family = official.clean(family or atom.get("source_family")).upper()
+    raw_locator = as_mapping(atom.get("raw_locator"))
+    parsed_identity = v3_8_parse_source_identity(family=family, source_identity=source_identity)
+    if family == "PDF":
+        file_value = official.clean(
+            raw_locator.get("source_pdf_path")
+            or raw_locator.get("file")
+            or parsed_identity.get("file")
+        )
+        matched_text = official.clean(
+            raw_locator.get("matched_text")
+            or atom.get("normalized_text_or_value_snapshot")
+            or parsed_identity.get("matched_text")
+        )
+        return {
+            "file": file_value,
+            "file_key": v3_8_file_key(file_value),
+            "page": raw_locator.get("page") if raw_locator.get("page") is not None else parsed_identity.get("page"),
+            "physical_page_index": raw_locator.get("physical_page_index"),
+            "bbox": raw_locator.get("bbox") or parsed_identity.get("bbox"),
+            "region_type": official.clean(raw_locator.get("region_type")),
+            "matched_text": matched_text,
+            "matched_text_or_value": matched_text,
+        }
+    if family == "XLSX":
+        workbook = official.clean(
+            raw_locator.get("workbook")
+            or raw_locator.get("source_workbook")
+            or parsed_identity.get("workbook")
+        )
+        value = official.clean(
+            raw_locator.get("normalized_value")
+            or atom.get("normalized_text_or_value_snapshot")
+            or parsed_identity.get("normalized_value")
+        )
+        return {
+            "file": workbook,
+            "file_key": v3_8_file_key(workbook),
+            "workbook": workbook,
+            "sheet": official.clean(raw_locator.get("sheet") or parsed_identity.get("sheet")),
+            "range": official.clean(raw_locator.get("range") or parsed_identity.get("range")),
+            "cell": official.clean(raw_locator.get("cell") or parsed_identity.get("cell")),
+            "normalized_value": value,
+            "matched_text_or_value": value,
+        }
+    return {"file": "", "file_key": ""}
+
+
+def v3_8_parse_source_identity(*, family: str, source_identity: str) -> dict[str, Any]:
+    text = official.clean(source_identity)
+    if not text:
+        return {}
+    family = official.clean(family).upper()
+    if family == "XLSX":
+        parts = text.split(":")
+        return {
+            "workbook": parts[1] if len(parts) > 1 else "",
+            "sheet": parts[2] if len(parts) > 2 else "",
+            "range": parts[3] if len(parts) > 3 else "",
+            "cell": parts[4] if len(parts) > 4 else "",
+        }
+    if family == "PDF":
+        try:
+            prefix, page, bbox = text.rsplit(":", 2)
+        except ValueError:
+            return {"file": text}
+        file_value = prefix.split(":", 1)[1] if ":" in prefix else prefix
+        return {
+            "file": file_value,
+            "page": v3_8_parse_int(page),
+            "bbox": bbox,
+        }
+    return {"file": text}
+
+
+def v3_8_parse_int(value: Any) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def v3_8_file_key(value: Any) -> str:
+    text = official.clean(value).replace("\\", "/").strip()
+    if not text:
+        return ""
+    return text.rstrip("/").split("/")[-1].lower()
+
+
+def v3_8_any_file_hit(target: Mapping[str, Any], envelopes: Sequence[Mapping[str, Any]]) -> bool:
+    target_file = official.clean(target.get("file_key"))
+    return bool(target_file and any(official.clean(envelope.get("file_key")) == target_file for envelope in envelopes))
+
+
+def v3_8_xlsx_sheet_hit(target: Mapping[str, Any], envelope: Mapping[str, Any]) -> bool:
+    return bool(
+        v3_8_any_file_hit(target, [envelope])
+        and official.clean(target.get("sheet"))
+        and official.clean(target.get("sheet")) == official.clean(envelope.get("sheet"))
+    )
+
+
+def v3_8_xlsx_range_hit(target: Mapping[str, Any], envelope: Mapping[str, Any]) -> bool:
+    return bool(
+        v3_8_xlsx_sheet_hit(target, envelope)
+        and official.clean(target.get("range"))
+        and official.clean(target.get("range")) == official.clean(envelope.get("range"))
+    )
+
+
+def v3_8_xlsx_cell_or_value_hit(target: Mapping[str, Any], envelope: Mapping[str, Any]) -> bool:
+    if not v3_8_xlsx_sheet_hit(target, envelope):
+        return False
+    target_cell = official.clean(target.get("cell"))
+    envelope_cell = official.clean(envelope.get("cell"))
+    if target_cell and target_cell == envelope_cell:
+        return True
+    target_value = official.clean(target.get("normalized_value") or target.get("matched_text_or_value"))
+    envelope_value = official.clean(envelope.get("normalized_value") or envelope.get("matched_text_or_value"))
+    return bool(target_value and target_value == envelope_value)
+
+
+def v3_8_pdf_page_hit(target: Mapping[str, Any], envelope: Mapping[str, Any]) -> bool:
+    return bool(
+        v3_8_any_file_hit(target, [envelope])
+        and target.get("page") is not None
+        and target.get("page") == envelope.get("page")
+    )
+
+
+def v3_8_pdf_bbox_available(envelope: Mapping[str, Any]) -> bool:
+    return bool(envelope.get("bbox"))
+
+
+def v3_8_pdf_matched_text_present(envelope: Mapping[str, Any]) -> bool:
+    return bool(official.clean(envelope.get("matched_text") or envelope.get("matched_text_or_value")))
+
+
+def v3_8_file_grounded_metric_definitions() -> dict[str, str]:
+    return {
+        "file_hit@1": "target file/workbook identity appears at rank 1",
+        "file_hit@5": "target file/workbook identity appears within top 5",
+        "target_source_atom_recall@5": "target SourceAtom/SearchView appears within top 5",
+        "evidence_select_hit@3": "target SourceAtom/SearchView appears within top 3 and survives evidence/citation contract",
+        "citation_render_rate": "top-5 envelope-level citation render valid count over returned top-5 envelopes",
+        "contract_survival_rate": "top-5 envelope-level SourceAtom hydration plus EvidenceBundle plus citation render survival",
+        "unsupported_rate": "query has no target contract-surviving evidence within top 5",
+        "workbook_hit@1": "XLSX workbook identity appears at rank 1",
+        "workbook_hit@5": "XLSX workbook identity appears within top 5",
+        "sheet_hit@5": "XLSX target workbook and sheet appear within top 5",
+        "table_or_range_hit@5": "XLSX target workbook, sheet, and range appear within top 5",
+        "cell_or_value_hit@5": "XLSX target cell or normalized value appears within top 5",
+        "page_hit@5": "PDF target file and page appear within top 5",
+        "block_or_bbox_available@5": "top-5 PDF evidence has a block or bbox locator",
+        "matched_text_present@5": "top-5 PDF evidence has matched text from SourceAtom snapshot",
+    }
+
+
+def v3_8_1_select_evidence_candidates(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]] | None = None,
+    top_k: int = V3_8_FILE_GROUNDED_TOP_K,
+    max_candidates: int = V3_8_1_EVIDENCE_SELECTOR_MAX_K,
+) -> list[dict[str, Any]]:
+    registry = source_registry or {}
+    family = official.clean(row.get("source_family")).upper()
+    target = v3_8_1_selector_resolved_locator(row)
+    envelopes = v3_8_file_grounded_envelopes(
+        row,
+        source_registry=registry,
+        top_k=top_k,
+    )
+    metric_file_target = v3_8_1_selector_metric_file_locator(
+        row,
+        source_registry=registry,
+    )
+    target_source_atom_ids, target_search_view_ids = v3_8_1_target_id_sets(row)
+    selected = sorted(
+        envelopes,
+        key=lambda envelope: v3_8_1_selector_sort_key(
+            family=family,
+            target=target,
+            envelope=envelope,
+            source_registry=registry,
+        ),
+    )[:max_candidates]
+    result: list[dict[str, Any]] = []
+    for selector_rank, envelope in enumerate(selected, start=1):
+        candidate = v3_8_compact_file_evidence(envelope)
+        candidate.update(
+            {
+                "selector_rank": selector_rank,
+                "selector_file_hit": v3_8_any_file_hit(metric_file_target, [envelope]),
+                "selector_target_hit": v3_8_1_envelope_is_target(
+                    envelope,
+                    target_source_atom_ids=target_source_atom_ids,
+                    target_search_view_ids=target_search_view_ids,
+                ),
+                "source_atom_registry_hydrated": v3_8_1_source_atom_hydrated(
+                    envelope,
+                    source_registry=registry,
+                ),
+                "vector_metadata_used_as_canonical_citation_source": False,
+                "vector_metadata_used_as_evidence_truth": False,
+            }
+        )
+        result.append(candidate)
+    return result
+
+
+def v3_8_1_evidence_selector_metrics(
+    topk_rows: Sequence[Mapping[str, Any]],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]] | None = None,
+    top_k: int = V3_8_FILE_GROUNDED_TOP_K,
+    max_candidates: int = V3_8_1_EVIDENCE_SELECTOR_MAX_K,
+) -> dict[str, Any]:
+    registry = source_registry or {}
+    vector_truth_claim_count = sum(
+        1
+        for row in topk_rows
+        for envelope in row.get("top_result_envelopes", [])
+        if as_mapping(envelope).get("vector_metadata_used_as_canonical_citation_source")
+        or as_mapping(envelope).get("vector_payload_used_as_evidence_truth")
+    )
+    per_query_rows = [
+        v3_8_1_evidence_selector_per_query_row(
+            row,
+            source_registry=registry,
+            top_k=top_k,
+            max_candidates=max_candidates,
+        )
+        for row in topk_rows
+        if official.clean(row.get("source_family")).upper() in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+    ]
+    return {
+        "schema_version": f"{V3_8_1_EVIDENCE_SELECTOR_RUN_ID}_metrics_v1",
+        "run_id": V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+        "artifact_kind": "v3_8_1_evidence_selector_metrics",
+        "selector_version": "v1",
+        "top_k_input": top_k,
+        "selector_max_k": max_candidates,
+        "source_families_reported_separately": list(V3_8_FILE_GROUNDED_SOURCE_FAMILIES),
+        "per_source_family": {
+            family: v3_8_1_evidence_selector_family_metrics(
+                family=family,
+                per_query_rows=[row for row in per_query_rows if row["source_family"] == family],
+            )
+            for family in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+        },
+        "per_query_rows": per_query_rows,
+        "metric_definitions": v3_8_1_evidence_selector_metric_definitions(),
+        "selector_policy": {
+            "candidate_order": [
+                "same file/workbook",
+                "SourceAtom registry hydration",
+                "citation-render valid",
+                "contract survival",
+                "family locator completeness",
+                "original retrieval rank",
+            ],
+            "resolved_locator_source_order": [
+                "question_gold_locator_target",
+                "official_manifest_target.source_identity",
+            ],
+            "uses_target_source_atom_ids_for_selection": False,
+            "target_source_atom_ids_used_for_metrics_only": True,
+            "selector_file_hit_uses_target_source_atom_ids_for_metric_only": True,
+            "file_resolve_surface": "selector_order_uses_diagnostic_target_locator_or_manifest_identity",
+            "selector_file_hit_surface": "target SourceAtom registry file/workbook identity when available; diagnostic target locator or manifest identity fallback",
+            "oracle_assisted_file_resolve": True,
+        },
+        "denominator_policy": {
+            "row_scope": "PDF/XLSX query rows from the v3_8/v3_7_2 diagnostic top-k surface",
+            "query_metric_denominator": "per source family query_count",
+            "selector_candidate_count_is_count_not_rate": True,
+            "xlsx_and_pdf_are_not_collapsed": True,
+            "gold_qrels_labels_expected_answers_supporting_evidence_mutated": False,
+        },
+        "source_atom_registry_canonical_truth": True,
+        "vector_db_role": "candidate_generator_only",
+        "headline_aggregate_score_reported": False,
+        "answer_generation_metric_computed": False,
+        "answer_metric_computed": False,
+        "gold_or_label_mutation": False,
+        "qrels_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "promotion_evidence": False,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+        "ignored_vector_truth_claim_count": vector_truth_claim_count,
+        "vector_truth_violation_count": vector_truth_claim_count,
+        "vector_truth_violation_policy": "ignored_for_selector_truth_and_reported_diagnostic_only",
+    }
+
+
+def v3_8_1_evidence_selector_per_query_row(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+    top_k: int,
+    max_candidates: int,
+) -> dict[str, Any]:
+    family = official.clean(row.get("source_family")).upper()
+    selected = v3_8_1_select_evidence_candidates(
+        row,
+        source_registry=source_registry,
+        top_k=top_k,
+        max_candidates=max_candidates,
+    )
+    selector_target_contract_hit = any(
+        bool(candidate.get("selector_target_hit")) and bool(candidate.get("contract_survived"))
+        for candidate in selected
+    )
+    return {
+        "schema_version": f"{V3_8_1_EVIDENCE_SELECTOR_RUN_ID}_per_query_v1",
+        "query_id": official.clean(row.get("query_id")),
+        "query_scope": official.clean(row.get("query_scope")),
+        "source_family": family,
+        "selector_candidate_count": len(selected),
+        "selector_contract_survival@3": any(bool(candidate.get("contract_survived")) for candidate in selected),
+        "selector_target_hit@3": selector_target_contract_hit,
+        "selector_file_hit@3": any(bool(candidate.get("selector_file_hit")) for candidate in selected),
+        "selector_unsupported_rate": not selector_target_contract_hit,
+        "selected_evidence": selected,
+        "answer_generation_metric_computed": False,
+        "source_atom_registry_canonical_truth": True,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+    }
+
+
+def v3_8_1_evidence_selector_family_metrics(
+    *,
+    family: str,
+    per_query_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    query_denominator = len(per_query_rows)
+    metrics = {
+        metric: v3_8_rate(
+            numerator=sum(1 for row in per_query_rows if bool(row.get(metric))),
+            denominator=query_denominator,
+        )
+        for metric in V3_8_1_QUERY_METRICS
+    }
+    return {
+        "source_family": family,
+        "query_count": query_denominator,
+        "selector_candidate_count": sum(int(row.get("selector_candidate_count") or 0) for row in per_query_rows),
+        "metrics": metrics,
+        "unsupported_query_ids": [
+            official.clean(row.get("query_id"))
+            for row in per_query_rows
+            if bool(row.get("selector_unsupported_rate"))
+        ],
+        "headline_aggregate_score_reported": False,
+    }
+
+
+def v3_8_1_selector_sort_key(
+    *,
+    family: str,
+    target: Mapping[str, Any],
+    envelope: Mapping[str, Any],
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> tuple[Any, ...]:
+    family_bits = v3_8_1_family_locator_priority(family=family, target=target, envelope=envelope)
+    return (
+        -int(v3_8_any_file_hit(target, [envelope])),
+        -int(v3_8_1_source_atom_hydrated(envelope, source_registry=source_registry)),
+        -int(bool(envelope.get("citation_render_valid"))),
+        -int(bool(envelope.get("contract_survived"))),
+        *(-int(bit) for bit in family_bits),
+        int(envelope.get("rank") or 0),
+        official.clean(envelope.get("source_atom_id")),
+        official.clean(envelope.get("search_view_id")),
+    )
+
+
+def v3_8_1_family_locator_priority(
+    *,
+    family: str,
+    target: Mapping[str, Any],
+    envelope: Mapping[str, Any],
+) -> tuple[bool, bool, bool]:
+    family = official.clean(family).upper()
+    if family == "XLSX":
+        return (
+            v3_8_xlsx_sheet_hit(target, envelope),
+            v3_8_xlsx_range_hit(target, envelope),
+            v3_8_xlsx_cell_or_value_hit(target, envelope),
+        )
+    if family == "PDF":
+        return (
+            v3_8_pdf_page_hit(target, envelope),
+            v3_8_pdf_bbox_available(envelope),
+            v3_8_pdf_matched_text_present(envelope),
+        )
+    return (False, False, False)
+
+
+def v3_8_1_target_id_sets(row: Mapping[str, Any]) -> tuple[set[str], set[str]]:
+    return (
+        {official.clean(item) for item in row.get("target_source_atom_ids", []) if official.clean(item)},
+        {official.clean(item) for item in row.get("target_search_view_ids", []) if official.clean(item)},
+    )
+
+
+def v3_8_1_envelope_is_target(
+    envelope: Mapping[str, Any],
+    *,
+    target_source_atom_ids: set[str],
+    target_search_view_ids: set[str],
+) -> bool:
+    source_atom_id = official.clean(envelope.get("source_atom_id"))
+    search_view_id = official.clean(envelope.get("search_view_id"))
+    return bool(
+        (source_atom_id and source_atom_id in target_source_atom_ids)
+        or (search_view_id and search_view_id in target_search_view_ids)
+    )
+
+
+def v3_8_1_source_atom_hydrated(
+    envelope: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> bool:
+    source_atom_id = official.clean(envelope.get("source_atom_id"))
+    return bool(
+        source_atom_id
+        and envelope.get("source_atom_hydrated_from_registry")
+        and as_mapping(source_registry.get(source_atom_id))
+    )
+
+
+def v3_8_1_selector_resolved_locator(row: Mapping[str, Any]) -> dict[str, Any]:
+    family = official.clean(row.get("source_family")).upper()
+    locator = v3_8_locator_from_question_gold_target(
+        family=family,
+        locator=as_mapping(row.get("question_gold_locator_target")),
+    )
+    if locator.get("file_key"):
+        return locator
+    manifest_target = as_mapping(row.get("official_manifest_target"))
+    return v3_8_locator_from_atom_or_identity(
+        family=family,
+        atom={},
+        source_identity=official.clean(manifest_target.get("source_identity")),
+    )
+
+
+def v3_8_1_selector_metric_file_locator(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    family = official.clean(row.get("source_family")).upper()
+    for source_atom_id in row.get("target_source_atom_ids", []):
+        atom = as_mapping(source_registry.get(official.clean(source_atom_id)))
+        if not atom:
+            continue
+        locator = v3_8_locator_from_atom_or_identity(
+            family=family,
+            atom=atom,
+            source_identity=official.clean(atom.get("source_identity")),
+        )
+        if locator.get("file_key"):
+            return locator
+    return v3_8_1_selector_resolved_locator(row)
+
+
+def v3_8_1_evidence_selector_metric_definitions() -> dict[str, str]:
+    return {
+        "selector_candidate_count": "selected evidence candidate count after deterministic max-3 filtering",
+        "selector_contract_survival@3": "at least one selected candidate survives SourceAtom, EvidenceBundle, and citation render contract",
+        "selector_target_hit@3": "target SourceAtom/SearchView is selected and survives contract within max 3 candidates",
+        "selector_file_hit@3": "target SourceAtom registry file/workbook identity appears within selected max 3 candidates when available; diagnostic locator or manifest identity fallback",
+        "selector_unsupported_rate": "query has no selected target candidate that survives evidence/citation contract",
+    }
+
+
+class V3_8_2OracleFreeInputGuard(Mapping[str, Any]):
+    def __init__(self, source: Mapping[str, Any]):
+        self._source = source
+        self._forbidden_accesses: list[str] = []
+
+    def _record_forbidden(self, key: Any) -> bool:
+        text = official.clean(key)
+        if text in V3_8_2_FORBIDDEN_RESOLVER_INPUT_FIELDS:
+            if text not in self._forbidden_accesses:
+                self._forbidden_accesses.append(text)
+            return True
+        return False
+
+    def __getitem__(self, key: str) -> Any:
+        if self._record_forbidden(key):
+            raise KeyError(key)
+        return self._source[key]
+
+    def __iter__(self):
+        return iter(self._source)
+
+    def __len__(self) -> int:
+        return len(self._source)
+
+    def __contains__(self, key: object) -> bool:
+        if self._record_forbidden(key):
+            return False
+        return key in self._source
+
+    def get(self, key: str, default: Any = None) -> Any:
+        if self._record_forbidden(key):
+            return default
+        return self._source.get(key, default)
+
+    def forbidden_input_fields_used(self) -> list[str]:
+        return list(self._forbidden_accesses)
+
+
+def v3_8_2_oracle_free_file_resolve(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+    top_k: int = V3_8_2_ORACLE_FREE_RESOLVE_TOP_K,
+    max_candidates: int = V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES,
+) -> dict[str, Any]:
+    guarded_row = V3_8_2OracleFreeInputGuard(row)
+    row = guarded_row
+    family_intent = official.clean(row.get("source_family")).upper()
+    query_text = official.clean(row.get("query_text"))
+    candidates_by_key: dict[str, dict[str, Any]] = {}
+    for index, envelope_value in enumerate(list(row.get("top_result_envelopes", []))[:top_k], start=1):
+        envelope = as_mapping(envelope_value)
+        identity = v3_8_2_file_identity_from_envelope(envelope, source_registry=source_registry)
+        family = official.clean(identity.get("source_family")).upper()
+        if family_intent and family != family_intent:
+            continue
+        key = v3_8_2_file_identity_key(identity)
+        if not key:
+            continue
+        candidate = candidates_by_key.setdefault(
+            key,
+            {
+                "candidate_rank": 0,
+                "source_family": family,
+                "source_identity": official.clean(identity.get("source_identity")),
+                "candidate_source_identity": official.clean(identity.get("source_identity")),
+                "source_file_id": official.clean(identity.get("source_file_id")),
+                "source_file_name": official.clean(identity.get("source_file_name")),
+                "document_version_id": official.clean(identity.get("document_version_id")),
+                "workbook_version_id": official.clean(identity.get("workbook_version_id")),
+                "workbook_id": official.clean(identity.get("workbook_id")),
+                "content_hash": official.clean(identity.get("content_hash")),
+                "source_registry_version": official.clean(identity.get("source_registry_version"))
+                or "source-registry-v1",
+                "materialization_bucket": official.clean(identity.get("materialization_bucket")),
+                "runtime_evidence_allowed": bool(identity.get("runtime_evidence_allowed")),
+                "oracle_free": True,
+                "resolve_score": 0.0,
+                "resolve_reasons": [],
+                "score_components": {
+                    "query_file_mention_match": False,
+                    "source_family_match": bool(family_intent and family == family_intent),
+                    "retrieval_best_rank": None,
+                    "source_registry_metadata": bool(identity.get("source_atom_registry_hydrated")),
+                },
+                "supporting_search_view_ids": [],
+                "supporting_source_atom_ids": [],
+                "vector_db_role": "candidate_generator_only",
+                "vector_metadata_used_as_canonical_citation_source": False,
+                "vector_metadata_used_as_evidence_truth": False,
+            },
+        )
+        rank = int(envelope.get("rank") or index)
+        best_rank = candidate["score_components"].get("retrieval_best_rank")
+        if best_rank is None or rank < int(best_rank):
+            candidate["score_components"]["retrieval_best_rank"] = rank
+        v3_8_2_append_reason(candidate, f"topk_rank_{rank}")
+        if family_intent and family == family_intent:
+            v3_8_2_append_reason(candidate, "source_family_intent_match")
+        if identity.get("source_atom_registry_hydrated"):
+            v3_8_2_append_reason(candidate, "source_registry_identity")
+        if envelope.get("citation_render_valid"):
+            v3_8_2_append_reason(candidate, "citation_render_valid")
+        if envelope.get("evidence_bundle_render_valid"):
+            v3_8_2_append_reason(candidate, "evidence_bundle_render_valid")
+        candidate["supporting_search_view_ids"].append(official.clean(envelope.get("search_view_id")))
+        candidate["supporting_source_atom_ids"].append(official.clean(envelope.get("source_atom_id")))
+        candidate["resolve_score"] += max(0.05, 0.35 - (0.05 * max(rank - 1, 0)))
+        candidate["resolve_score"] += 0.10 if family_intent and family == family_intent else 0.0
+        candidate["resolve_score"] += 0.10 if identity.get("source_atom_registry_hydrated") else 0.0
+        candidate["resolve_score"] += 0.05 if envelope.get("citation_render_valid") else 0.0
+        candidate["resolve_score"] += 0.05 if envelope.get("evidence_bundle_render_valid") else 0.0
+
+    for candidate in candidates_by_key.values():
+        file_name = official.clean(candidate.get("source_file_name"))
+        if v3_8_2_query_mentions_file(query_text, file_name):
+            candidate["resolve_score"] += 0.50
+            candidate["score_components"]["query_file_mention_match"] = True
+            v3_8_2_append_reason(candidate, "query_file_name_mention")
+        candidate["resolve_score"] = round(min(float(candidate.get("resolve_score") or 0.0), 1.0), 6)
+        candidate["supporting_search_view_ids"] = [
+            item for item in dict.fromkeys(candidate["supporting_search_view_ids"]) if item
+        ]
+        candidate["supporting_source_atom_ids"] = [
+            item for item in dict.fromkeys(candidate["supporting_source_atom_ids"]) if item
+        ]
+
+    ranked = sorted(
+        candidates_by_key.values(),
+        key=lambda item: (
+            -float(item.get("resolve_score") or 0.0),
+            int(as_mapping(item.get("score_components")).get("retrieval_best_rank") or 999999),
+            official.clean(item.get("source_family")),
+            official.clean(item.get("document_version_id"))
+            or official.clean(item.get("workbook_version_id"))
+            or official.clean(item.get("source_file_id"))
+            or official.clean(item.get("source_file_name")),
+        ),
+    )
+    for rank, candidate in enumerate(ranked, start=1):
+        candidate["candidate_rank"] = rank
+    resolve_status = "resolved"
+    block_reasons: list[str] = []
+    if not ranked:
+        resolve_status = "abstain"
+        block_reasons.append("no_oracle_free_file_candidates")
+    else:
+        top_score = float(ranked[0].get("resolve_score") or 0.0)
+        second_score = float(ranked[1].get("resolve_score") or 0.0) if len(ranked) > 1 else 0.0
+        if top_score < V3_8_2_RESOLVE_SCORE_THRESHOLD:
+            resolve_status = "abstain"
+            block_reasons.append("low_oracle_free_confidence")
+        elif len(ranked) > 1 and top_score - second_score < V3_8_2_RESOLVE_SCORE_GAP_THRESHOLD:
+            resolve_status = "disambiguation"
+            block_reasons.append("ambiguous_oracle_free_candidates")
+    forbidden_input_fields_used = guarded_row.forbidden_input_fields_used()
+    return {
+        "schema_version": f"{V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID}_candidate_resolution_v1",
+        "query_id": official.clean(row.get("query_id")),
+        "query_text_sha256": official.clean(row.get("query_text_sha256")),
+        "source_family_intent": family_intent,
+        "source_family_intent_source": "query_metadata" if family_intent else "none",
+        "oracle_free": True,
+        "resolve_status": resolve_status,
+        "resolve_block_reasons": block_reasons,
+        "candidates": ranked[:max_candidates],
+        "candidate_count": len(ranked),
+        "forbidden_input_fields_used": forbidden_input_fields_used,
+        "forbidden_input_policy": v3_8_2_forbidden_input_policy(),
+        "oracle_free_input_violation_count": len(forbidden_input_fields_used),
+        "resolver_policy": {
+            "allowed_inputs": [
+                "query_text",
+                "source_family",
+                "source_track",
+                "top_result_envelopes",
+                "source_registry",
+                "search_view/index manifest candidate metadata",
+                "literal file/workbook/pdf name mentions",
+            ],
+            "forbidden_inputs_used_for_selection": forbidden_input_fields_used,
+            "target_source_atom_ids_used_for_metrics_only": True,
+            "oracle_assisted_file_resolve": False,
+            "basename_match_role": "fallback_only_after_stable_document_keys",
+            "abstain_when_confidence_low_or_ambiguous": True,
+        },
+    }
+
+
+def v3_8_2_append_reason(candidate: dict[str, Any], reason: str) -> None:
+    reasons = candidate.setdefault("resolve_reasons", [])
+    if reason not in reasons:
+        reasons.append(reason)
+
+
+def v3_8_2_forbidden_input_policy() -> list[str]:
+    return list(V3_8_2_FORBIDDEN_RESOLVER_INPUT_FIELDS)
+
+
+def v3_8_2_file_identity_from_envelope(
+    envelope: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    source_atom_id = official.clean(envelope.get("source_atom_id"))
+    atom = as_mapping(source_registry.get(source_atom_id))
+    raw_locator = as_mapping(atom.get("raw_locator"))
+    payload = as_mapping(atom.get("canonical_citation_payload"))
+    source_identity = official.clean(atom.get("source_identity") or envelope.get("source_identity"))
+    family = official.clean(atom.get("source_family") or envelope.get("source_family")).upper()
+    parsed = v3_8_2_parse_identity_for_file(family=family, source_identity=source_identity)
+    document_version_id = official.clean(
+        atom.get("document_version_id")
+        or raw_locator.get("document_version_id")
+        or payload.get("document_version_id")
+        or payload.get("documentVersionId")
+        or parsed.get("document_version_id")
+    )
+    workbook_version_id = official.clean(
+        atom.get("workbook_version_id")
+        or raw_locator.get("workbook_version_id")
+        or parsed.get("document_version_id")
+    )
+    source_file_id = official.clean(raw_locator.get("source_file_id") or payload.get("source_file_id"))
+    source_file_name = official.clean(
+        raw_locator.get("source_pdf_filename")
+        or raw_locator.get("workbook")
+        or atom.get("workbook_id")
+        or payload.get("workbook")
+        or parsed.get("source_file_name")
+        or v3_8_2_basename(raw_locator.get("source_pdf_path"))
+        or v3_8_2_basename(raw_locator.get("source_path"))
+        or v3_8_2_basename(raw_locator.get("source_file_path"))
+    )
+    return {
+        "source_atom_id": source_atom_id,
+        "search_view_id": official.clean(envelope.get("search_view_id")),
+        "source_family": family,
+        "source_identity": source_identity,
+        "document_id": official.clean(atom.get("document_id")),
+        "document_version_id": document_version_id,
+        "workbook_id": official.clean(atom.get("workbook_id") or raw_locator.get("workbook") or source_file_name),
+        "workbook_version_id": workbook_version_id if family == "XLSX" else "",
+        "source_file_id": source_file_id,
+        "source_file_name": source_file_name,
+        "content_hash": official.clean(atom.get("content_hash") or envelope.get("content_hash")),
+        "source_registry_version": official.clean(atom.get("source_registry_version")),
+        "materialization_bucket": official.clean(atom.get("materialization_bucket") or envelope.get("materialization_bucket")),
+        "runtime_evidence_allowed": bool(atom.get("runtime_evidence_allowed", True)),
+        "source_atom_registry_hydrated": bool(source_atom_id and atom),
+    }
+
+
+def v3_8_2_parse_identity_for_file(*, family: str, source_identity: str) -> dict[str, str]:
+    text = official.clean(source_identity)
+    if not text:
+        return {}
+    family = official.clean(family).upper()
+    if family == "XLSX":
+        parts = text.split(":")
+        return {
+            "document_version_id": parts[0] if parts else "",
+            "source_file_name": parts[1] if len(parts) > 1 else "",
+        }
+    if family == "PDF":
+        if text.startswith("PDF:"):
+            parts = text.split(":")
+            return {"document_version_id": parts[1] if len(parts) > 1 else ""}
+        try:
+            prefix, _page, _bbox = text.rsplit(":", 2)
+            document_version_id, file_value = prefix.split(":", 1)
+        except ValueError:
+            return {"source_file_name": v3_8_2_basename(text)}
+        return {
+            "document_version_id": document_version_id,
+            "source_file_name": v3_8_2_basename(file_value),
+        }
+    return {"source_file_name": v3_8_2_basename(text)}
+
+
+def v3_8_2_basename(value: Any) -> str:
+    text = official.clean(value).replace("\\", "/").rstrip("/")
+    if not text:
+        return ""
+    return text.split("/")[-1]
+
+
+def v3_8_2_file_identity_key(identity: Mapping[str, Any]) -> str:
+    family = official.clean(identity.get("source_family")).upper()
+    stable = (
+        official.clean(identity.get("document_version_id"))
+        or official.clean(identity.get("workbook_version_id"))
+        or official.clean(identity.get("source_file_id"))
+        or official.clean(identity.get("content_hash"))
+        or official.clean(identity.get("source_file_name")).lower()
+    )
+    return f"{family}:{stable}" if family and stable else ""
+
+
+def v3_8_2_query_mentions_file(query_text: str, file_name: str) -> bool:
+    query = official.clean(query_text).lower()
+    name = official.clean(file_name).lower()
+    if not query or not name:
+        return False
+    if name in query:
+        return True
+    stem = name.rsplit(".", 1)[0] if "." in name else name
+    return bool(len(stem) >= 4 and stem in query)
+
+
+def v3_8_2_metric_target_file_identity(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    for source_atom_id in row.get("target_source_atom_ids", []):
+        atom = as_mapping(source_registry.get(official.clean(source_atom_id)))
+        if atom:
+            return v3_8_2_file_identity_from_atom(atom)
+    manifest_target = as_mapping(row.get("official_manifest_target"))
+    source_identity = official.clean(manifest_target.get("source_identity"))
+    if source_identity:
+        family = official.clean(row.get("source_family")).upper()
+        parsed = v3_8_2_parse_identity_for_file(family=family, source_identity=source_identity)
+        return {
+            "source_family": family,
+            "source_identity": source_identity,
+            "document_version_id": official.clean(parsed.get("document_version_id")),
+            "workbook_version_id": official.clean(parsed.get("document_version_id")) if family == "XLSX" else "",
+            "source_file_id": "",
+            "source_file_name": official.clean(parsed.get("source_file_name")),
+            "content_hash": "",
+        }
+    return {"source_family": official.clean(row.get("source_family")).upper()}
+
+
+def v3_8_2_file_identity_from_atom(atom: Mapping[str, Any]) -> dict[str, Any]:
+    fake_envelope = {
+        "source_atom_id": official.clean(atom.get("source_atom_id")),
+        "source_family": official.clean(atom.get("source_family")),
+        "source_identity": official.clean(atom.get("source_identity")),
+    }
+    source_atom_id = official.clean(atom.get("source_atom_id"))
+    return v3_8_2_file_identity_from_envelope(fake_envelope, source_registry={source_atom_id: atom})
+
+
+def v3_8_2_candidate_matches_target(candidate: Mapping[str, Any], target: Mapping[str, Any]) -> bool:
+    for key in ("document_version_id", "workbook_version_id", "source_file_id", "content_hash"):
+        candidate_value = official.clean(candidate.get(key))
+        target_value = official.clean(target.get(key))
+        if candidate_value and target_value:
+            return candidate_value == target_value
+    candidate_name = official.clean(candidate.get("source_file_name")).lower()
+    target_name = official.clean(target.get("source_file_name")).lower()
+    return bool(candidate_name and target_name and candidate_name == target_name)
+
+
+def v3_8_2_file_resolve_per_query_row(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+    top_k: int,
+) -> dict[str, Any]:
+    resolved = v3_8_2_oracle_free_file_resolve(
+        row,
+        source_registry=source_registry,
+        top_k=top_k,
+        max_candidates=V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES,
+    )
+    target = v3_8_2_metric_target_file_identity(row, source_registry=source_registry)
+    candidates = list(resolved.get("candidates", []))
+    resolved_status = official.clean(resolved.get("resolve_status"))
+    resolved_candidates_for_metrics = candidates if resolved_status == "resolved" else []
+    file_resolve_1 = bool(
+        resolved_candidates_for_metrics
+        and v3_8_2_candidate_matches_target(resolved_candidates_for_metrics[0], target)
+    )
+    file_resolve_3 = any(
+        v3_8_2_candidate_matches_target(candidate, target)
+        for candidate in resolved_candidates_for_metrics[:V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES]
+    )
+    first_candidate_wrong = bool(
+        candidates
+        and target
+        and not v3_8_2_candidate_matches_target(candidates[0], target)
+    )
+    abstained = resolved_status in {"abstain", "disambiguation"}
+    return {
+        "schema_version": f"{V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID}_per_query_v1",
+        "query_id": official.clean(row.get("query_id")),
+        "query_scope": official.clean(row.get("query_scope")),
+        "source_family": official.clean(row.get("source_family")).upper(),
+        "resolve_status": resolved_status,
+        "resolve_block_reasons": list(resolved.get("resolve_block_reasons", [])),
+        "resolved_file_candidates": candidates,
+        "file_resolve@1": file_resolve_1,
+        "file_resolve@3": file_resolve_3,
+        "abstain_rate": abstained,
+        "wrong_file_block_rate": bool(abstained and first_candidate_wrong),
+        "oracle_free_input_violation_count": int(resolved.get("oracle_free_input_violation_count") or 0),
+        "oracle_free": True,
+        "metric_overlay_redacted_from_candidate_artifact": True,
+        "answer_generation_metric_computed": False,
+        "source_atom_registry_canonical_truth": True,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+    }
+
+
+def v3_8_2_oracle_free_file_resolve_metrics(
+    topk_rows: Sequence[Mapping[str, Any]],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]] | None = None,
+    top_k: int = V3_8_2_ORACLE_FREE_RESOLVE_TOP_K,
+) -> dict[str, Any]:
+    registry = source_registry or {}
+    vector_truth_claim_count = sum(
+        1
+        for row in topk_rows
+        for envelope in row.get("top_result_envelopes", [])
+        if as_mapping(envelope).get("vector_metadata_used_as_canonical_citation_source")
+        or as_mapping(envelope).get("vector_payload_used_as_evidence_truth")
+    )
+    per_query_rows = [
+        v3_8_2_file_resolve_per_query_row(row, source_registry=registry, top_k=top_k)
+        for row in topk_rows
+        if official.clean(row.get("source_family")).upper() in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+    ]
+    oracle_free_input_violation_count = sum(
+        int(row.get("oracle_free_input_violation_count") or 0) for row in per_query_rows
+    )
+    return {
+        "schema_version": f"{V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID}_metrics_v1",
+        "run_id": V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+        "artifact_kind": "v3_8_2_oracle_free_file_resolve_metrics",
+        "resolver_version": "v1",
+        "top_k_input": top_k,
+        "resolver_max_candidates": V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES,
+        "source_families_reported_separately": list(V3_8_FILE_GROUNDED_SOURCE_FAMILIES),
+        "per_source_family": {
+            family: v3_8_2_file_resolve_family_metrics(
+                family=family,
+                per_query_rows=[row for row in per_query_rows if row["source_family"] == family],
+            )
+            for family in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+        },
+        "per_query_rows": per_query_rows,
+        "metric_definitions": v3_8_2_file_resolve_metric_definitions(),
+        "resolver_policy": {
+            "oracle_free": True,
+            "allowed_inputs": [
+                "query text",
+                "input/source metadata",
+                "source registry",
+                "SearchView/index manifest candidate metadata",
+                "literal file/workbook/pdf name mentions",
+                "source family intent",
+            ],
+            "forbidden_inputs_used_for_selection": [],
+            "forbidden_inputs": v3_8_2_forbidden_input_policy(),
+            "abstain_when_confidence_low_or_ambiguous": True,
+            "oracle_assisted_file_resolve": False,
+        },
+        "denominator_policy": {
+            "row_scope": "PDF/XLSX query rows from the v3_8/v3_7_2 diagnostic top-k surface",
+            "query_metric_denominator": "per source family query_count",
+            "xlsx_and_pdf_are_not_collapsed": True,
+            "gold_qrels_labels_expected_answers_supporting_evidence_mutated": False,
+        },
+        "source_atom_registry_canonical_truth": True,
+        "vector_db_role": "candidate_generator_only",
+        "headline_aggregate_score_reported": False,
+        "answer_generation_metric_computed": False,
+        "answer_metric_computed": False,
+        "gold_or_label_mutation": False,
+        "qrels_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "promotion_evidence": False,
+        "oracle_free_input_violation_count": oracle_free_input_violation_count,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+        "ignored_vector_truth_claim_count": vector_truth_claim_count,
+        "vector_truth_violation_count": vector_truth_claim_count,
+        "vector_truth_violation_policy": "ignored_for_file_resolve_truth_and_reported_diagnostic_only",
+    }
+
+
+def v3_8_2_file_resolve_family_metrics(
+    *,
+    family: str,
+    per_query_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    query_denominator = len(per_query_rows)
+    metrics = {
+        metric: v3_8_rate(
+            numerator=sum(1 for row in per_query_rows if bool(row.get(metric))),
+            denominator=query_denominator,
+        )
+        for metric in V3_8_2_QUERY_METRICS
+    }
+    return {
+        "source_family": family,
+        "query_count": query_denominator,
+        "resolved_query_count": sum(1 for row in per_query_rows if row.get("resolve_status") == "resolved"),
+        "oracle_free_input_violation_count": sum(
+            int(row.get("oracle_free_input_violation_count") or 0) for row in per_query_rows
+        ),
+        "metrics": metrics,
+        "abstained_query_ids": [
+            official.clean(row.get("query_id"))
+            for row in per_query_rows
+            if row.get("resolve_status") in {"abstain", "disambiguation"}
+        ],
+        "headline_aggregate_score_reported": False,
+    }
+
+
+def v3_8_2_file_resolve_metric_definitions() -> dict[str, str]:
+    return {
+        "file_resolve@1": "oracle-free resolved file/document candidate at rank 1 matches the metric-only target file identity",
+        "file_resolve@3": "oracle-free resolved file/document candidates within rank 3 contain the metric-only target file identity",
+        "abstain_rate": "query returns abstain/disambiguation instead of forcing a low-confidence file resolve",
+        "wrong_file_block_rate": "query abstains or disambiguates when the top oracle-free candidate would be the wrong file",
+        "oracle_free_input_violation_count": "count of resolver selection inputs that used gold/target/qrels/expected-answer/supporting-evidence fields",
+    }
+
+
+def v3_8_file_grounded_protected_input_sha256(input_topk_path: Path) -> dict[str, str]:
+    paths = {
+        "v3_7_2_summary_json": DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON,
+        "v3_7_2_topk_rows_jsonl": input_topk_path,
+        "source_atom_registry_jsonl": DEFAULT_SOURCE_ATOM_REGISTRY_JSONL,
+        "v3_7_1_index_build_json": DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json",
+        "v3_7_1_index_ingest_manifest_json": DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "ingest_manifest.json",
+        "v3_7_1_index_search_view_manifest_jsonl": (
+            DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl"
+        ),
+        "v3_7_1_index_source_inventory_json": DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "source_inventory.json",
+        "official_denominator_registry_json": official.DEFAULT_DENOMINATOR_REGISTRY,
+        "official_gold_text_csv": DEFAULT_TEXT_NAMU_GOLD_CSV,
+        "official_gold_pdf_csv": AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_pdf_question_gold_v2.csv",
+        "official_gold_xlsx_csv": AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_xlsx_question_gold_v2.csv",
+        "v3_7_2_silver_manifest_all_jsonl": DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL,
+    }
+    return {
+        f"{name}_sha256": sha256_file(path) if path.exists() else "MISSING"
+        for name, path in paths.items()
+    }
+
+
+def v3_8_file_grounded_denominator_audit(topk_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    included = [
+        row
+        for row in topk_rows
+        if official.clean(row.get("source_family")).upper() in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+    ]
+    source_family_counts = Counter(official.clean(row.get("source_family")).upper() for row in included)
+    excluded_source_family_counts = Counter(
+        official.clean(row.get("source_family")).upper() or "UNKNOWN"
+        for row in topk_rows
+        if official.clean(row.get("source_family")).upper() not in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+    )
+    query_scope_counts: dict[str, dict[str, int]] = {}
+    for family in V3_8_FILE_GROUNDED_SOURCE_FAMILIES:
+        rows = [row for row in included if official.clean(row.get("source_family")).upper() == family]
+        query_scope_counts[family] = dict(Counter(official.clean(row.get("query_scope")) for row in rows))
+    missing_target_mapping_query_ids = [
+        official.clean(row.get("query_id"))
+        for row in included
+        if not (
+            row.get("target_source_atom_ids")
+            or row.get("target_search_view_ids")
+            or official.clean(row.get("target_locator_fingerprint"))
+        )
+    ]
+    return {
+        "denominator_scope": "diagnostic_v3_7_2_topk_rows_pdf_xlsx_only",
+        "source_run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        "input_topk_row_count": len(topk_rows),
+        "included_query_count": len(included),
+        "source_family_counts": {
+            family: int(source_family_counts.get(family, 0))
+            for family in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+        },
+        "excluded_source_family_counts": dict(excluded_source_family_counts),
+        "query_scope_counts": query_scope_counts,
+        "sealed_gold_no_regression_check_count": sum(
+            1 for row in included if official.clean(row.get("query_scope")) == "sealed_gold_no_regression_check"
+        ),
+        "silver_1000_diagnostic_overlay_count": sum(
+            1 for row in included if official.clean(row.get("query_scope")) == "silver_1000_diagnostic_overlay"
+        ),
+        "missing_target_mapping_surface_count": len(missing_target_mapping_query_ids),
+        "missing_target_mapping_query_ids": missing_target_mapping_query_ids[:20],
+        "official_qrels_or_labels_required": False,
+        "llm_answer_generation_required": False,
+        "xlsx_and_pdf_collapsed": False,
+    }
+
+
+def run_v3_8_file_grounded_retrieval_eval(*, args: argparse.Namespace) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    input_topk_path = DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL
+    fail_closed_reasons: list[str] = []
+    protected_input_sha_before = v3_8_file_grounded_protected_input_sha256(input_topk_path)
+    source_registry_sha_before = (
+        sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL)
+        if DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.exists()
+        else "MISSING"
+    )
+    index_artifact_sha_before = v3_7_2_index_artifact_sha256()
+    official_index_sha_before = v3_6_8_all_source_official_index_sha256()
+    preflight = v3_7_2_source_registry_retrieval_smoke_preflight()
+    if not preflight.get("passed"):
+        fail_closed_reasons.extend(
+            f"v3_7_2_preflight:{reason}"
+            for reason in preflight.get("fail_closed_reasons", [])
+        )
+    if input_topk_path.exists():
+        topk_rows = read_jsonl(input_topk_path)
+    else:
+        topk_rows = []
+        fail_closed_reasons.append(f"missing:{official.repo_relative(input_topk_path)}")
+    input_row_run_ids = sorted(
+        {
+            official.clean(row.get("run_id"))
+            for row in topk_rows
+            if official.clean(row.get("run_id"))
+        }
+    )
+    unexpected_input_run_ids = [
+        run_id
+        for run_id in input_row_run_ids
+        if run_id != V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID
+    ]
+    if unexpected_input_run_ids:
+        fail_closed_reasons.append(
+            "unexpected_input_topk_run_ids:" + ",".join(unexpected_input_run_ids)
+        )
+
+    source_atom_ids = v3_8_file_grounded_source_atom_ids(topk_rows)
+    source_registry = v3_7_2_collect_source_atoms(source_atom_ids)
+    missing_source_atom_count = len(source_atom_ids - set(source_registry))
+    if missing_source_atom_count:
+        fail_closed_reasons.append(f"source_atom_registry_missing_count:{missing_source_atom_count}")
+    denominator_audit = v3_8_file_grounded_denominator_audit(topk_rows)
+    if denominator_audit["missing_target_mapping_surface_count"]:
+        fail_closed_reasons.append(
+            "missing_target_mapping_surface_count:"
+            f"{denominator_audit['missing_target_mapping_surface_count']}"
+        )
+
+    metrics = v3_8_file_grounded_retrieval_eval_metrics(
+        topk_rows,
+        source_registry=source_registry,
+    )
+    if int(metrics.get("vector_truth_violation_count") or 0):
+        fail_closed_reasons.append(
+            f"vector_truth_violation_count:{metrics.get('vector_truth_violation_count')}"
+        )
+    source_family_counts = {
+        family: int(as_mapping(metrics["per_source_family"].get(family)).get("query_count") or 0)
+        for family in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+    }
+    protected_input_sha_after = v3_8_file_grounded_protected_input_sha256(input_topk_path)
+    source_registry_sha_after = (
+        sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL)
+        if DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.exists()
+        else "MISSING"
+    )
+    index_artifact_sha_after = v3_7_2_index_artifact_sha256()
+    official_index_sha_after = v3_6_8_all_source_official_index_sha256()
+    if protected_input_sha_before != protected_input_sha_after:
+        fail_closed_reasons.append("protected_input_sha256_changed_during_v3_8_file_grounded_eval")
+    if source_registry_sha_before != source_registry_sha_after:
+        fail_closed_reasons.append("source_registry_sha256_changed_during_v3_8_file_grounded_eval")
+    if index_artifact_sha_before != index_artifact_sha_after:
+        fail_closed_reasons.append("index_artifact_sha256_changed_during_v3_8_file_grounded_eval")
+    if official_index_sha_before != official_index_sha_after:
+        fail_closed_reasons.append("official_denominator_index_sha256_changed_during_v3_8_file_grounded_eval")
+    status = (
+        "DIAGNOSTIC_FILE_GROUNDED_RETRIEVAL_EVAL_FAIL_CLOSED"
+        if fail_closed_reasons
+        else "DIAGNOSTIC_FILE_GROUNDED_RETRIEVAL_EVAL_COMPUTED"
+    )
+    return {
+        "schema_version": f"{V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID}_summary_v1",
+        "run_id": V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "v3_8_file_grounded_retrieval_eval_summary",
+        "event_type": "diagnostic_file_grounded_retrieval_eval_v3_8",
+        "status": status,
+        "run_class": "diagnostic_only_file_grounded_retrieval_eval",
+        "source_run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        "input_artifacts": {
+            "v3_7_2_topk_rows_jsonl": official.repo_relative(input_topk_path),
+            "source_atom_registry_jsonl": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+            "index_search_view_manifest_jsonl": official.repo_relative(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl"
+            ),
+            "input_topk_row_run_ids": input_row_run_ids,
+        },
+        "v3_7_2_preflight": preflight,
+        "metric_version": "v1",
+        "metrics_computed": list(V3_8_COMMON_QUERY_METRICS)
+        + list(V3_8_COMMON_ENVELOPE_METRICS)
+        + list(V3_8_XLSX_QUERY_METRICS)
+        + list(metric for metric in V3_8_PDF_QUERY_METRICS if metric not in V3_8_COMMON_QUERY_METRICS),
+        "denominator_audit": denominator_audit,
+        "source_family_counts": source_family_counts,
+        "per_source_family": metrics["per_source_family"],
+        "metric_definitions": metrics["metric_definitions"],
+        "denominator_policy": metrics["denominator_policy"],
+        "per_query_rows": metrics["per_query_rows"],
+        "metrics": metrics,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "answer_generation_metric_computed": False,
+        "answer_metric_computed": False,
+        "prompt_mutation": False,
+        "scorer_mutation": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "silver_mutation": False,
+        "promotion_evidence": False,
+        "promotion_gate": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_performance_claim_mutation": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "source_atom_registry_canonical_truth": True,
+        "source_atom_registry_canonical_truth_used_for_metrics": True,
+        "vector_db_role": "candidate_generator_only",
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+        "canonical_citation_payload_stored_in_vector_metadata": False,
+        "headline_aggregate_score_reported": False,
+        "xlsx_pdf_collapsed_score_reported": False,
+        "production_mutation": False,
+        "db_write_attempted": False,
+        "db_migration_attempted": False,
+        "retrieval_index_mutation": False,
+        "index_or_export_mutation": False,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "protected_input_sha256_before": protected_input_sha_before,
+        "protected_input_sha256_after": protected_input_sha_after,
+        "protected_input_sha256_unchanged": protected_input_sha_before == protected_input_sha_after,
+        "source_registry_sha256_before": source_registry_sha_before,
+        "source_registry_sha256_after": source_registry_sha_after,
+        "source_registry_sha256_unchanged": source_registry_sha_before == source_registry_sha_after,
+        "index_artifact_sha256_before": index_artifact_sha_before,
+        "index_artifact_sha256_after": index_artifact_sha_after,
+        "index_artifact_sha256_unchanged": index_artifact_sha_before == index_artifact_sha_after,
+        "official_denominator_index_sha256_before": official_index_sha_before,
+        "official_denominator_index_sha256_after": official_index_sha_after,
+        "official_denominator_index_sha256_unchanged": official_index_sha_before == official_index_sha_after,
+        "fail_closed_reasons": sorted(set(fail_closed_reasons)),
+        "artifact_paths": {
+            "summary_json": official.repo_relative(report_artifact_path(args.run_id, "summary.json")),
+            "metrics_json": official.repo_relative(DEFAULT_V3_8_FILE_GROUNDED_METRICS_JSON),
+            "per_query_jsonl": official.repo_relative(DEFAULT_V3_8_FILE_GROUNDED_PER_QUERY_JSONL),
+            "per_family_json": official.repo_relative(DEFAULT_V3_8_FILE_GROUNDED_PER_FAMILY_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+
+
+def run_v3_8_1_evidence_selector(*, args: argparse.Namespace) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    input_topk_path = DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL
+    fail_closed_reasons: list[str] = []
+    protected_input_sha_before = v3_8_file_grounded_protected_input_sha256(input_topk_path)
+    source_registry_sha_before = (
+        sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL)
+        if DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.exists()
+        else "MISSING"
+    )
+    index_artifact_sha_before = v3_7_2_index_artifact_sha256()
+    official_index_sha_before = v3_6_8_all_source_official_index_sha256()
+    preflight = v3_7_2_source_registry_retrieval_smoke_preflight()
+    if not preflight.get("passed"):
+        fail_closed_reasons.extend(
+            f"v3_7_2_preflight:{reason}"
+            for reason in preflight.get("fail_closed_reasons", [])
+        )
+    v3_8_summary_sha_before = (
+        sha256_file(report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json"))
+        if report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json").exists()
+        else "MISSING"
+    )
+    if v3_8_summary_sha_before == "MISSING":
+        fail_closed_reasons.append(
+            "missing:"
+            + official.repo_relative(report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json"))
+        )
+    if input_topk_path.exists():
+        topk_rows = read_jsonl(input_topk_path)
+    else:
+        topk_rows = []
+        fail_closed_reasons.append(f"missing:{official.repo_relative(input_topk_path)}")
+    input_row_run_ids = sorted(
+        {
+            official.clean(row.get("run_id"))
+            for row in topk_rows
+            if official.clean(row.get("run_id"))
+        }
+    )
+    unexpected_input_run_ids = [
+        run_id
+        for run_id in input_row_run_ids
+        if run_id != V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID
+    ]
+    if unexpected_input_run_ids:
+        fail_closed_reasons.append(
+            "unexpected_input_topk_run_ids:" + ",".join(unexpected_input_run_ids)
+        )
+
+    source_atom_ids = v3_8_file_grounded_source_atom_ids(topk_rows)
+    source_registry = v3_7_2_collect_source_atoms(source_atom_ids)
+    missing_source_atom_count = len(source_atom_ids - set(source_registry))
+    if missing_source_atom_count:
+        fail_closed_reasons.append(f"source_atom_registry_missing_count:{missing_source_atom_count}")
+    denominator_audit = v3_8_file_grounded_denominator_audit(topk_rows)
+    if denominator_audit["missing_target_mapping_surface_count"]:
+        fail_closed_reasons.append(
+            "missing_target_mapping_surface_count:"
+            f"{denominator_audit['missing_target_mapping_surface_count']}"
+        )
+
+    metrics = v3_8_1_evidence_selector_metrics(
+        topk_rows,
+        source_registry=source_registry,
+    )
+    if int(metrics.get("vector_truth_violation_count") or 0):
+        fail_closed_reasons.append(
+            f"vector_truth_violation_count:{metrics.get('vector_truth_violation_count')}"
+        )
+    source_family_counts = {
+        family: int(as_mapping(metrics["per_source_family"].get(family)).get("query_count") or 0)
+        for family in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+    }
+    protected_input_sha_after = v3_8_file_grounded_protected_input_sha256(input_topk_path)
+    source_registry_sha_after = (
+        sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL)
+        if DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.exists()
+        else "MISSING"
+    )
+    index_artifact_sha_after = v3_7_2_index_artifact_sha256()
+    official_index_sha_after = v3_6_8_all_source_official_index_sha256()
+    v3_8_summary_sha_after = (
+        sha256_file(report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json"))
+        if report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json").exists()
+        else "MISSING"
+    )
+    if protected_input_sha_before != protected_input_sha_after:
+        fail_closed_reasons.append("protected_input_sha256_changed_during_v3_8_1_evidence_selector")
+    if source_registry_sha_before != source_registry_sha_after:
+        fail_closed_reasons.append("source_registry_sha256_changed_during_v3_8_1_evidence_selector")
+    if index_artifact_sha_before != index_artifact_sha_after:
+        fail_closed_reasons.append("index_artifact_sha256_changed_during_v3_8_1_evidence_selector")
+    if official_index_sha_before != official_index_sha_after:
+        fail_closed_reasons.append("official_denominator_index_sha256_changed_during_v3_8_1_evidence_selector")
+    if v3_8_summary_sha_before != v3_8_summary_sha_after:
+        fail_closed_reasons.append("v3_8_file_grounded_summary_sha256_changed_during_v3_8_1_evidence_selector")
+    status = (
+        "DIAGNOSTIC_EVIDENCE_SELECTOR_V1_FAIL_CLOSED"
+        if fail_closed_reasons
+        else "DIAGNOSTIC_EVIDENCE_SELECTOR_V1_COMPUTED"
+    )
+    return {
+        "schema_version": f"{V3_8_1_EVIDENCE_SELECTOR_RUN_ID}_summary_v1",
+        "run_id": V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "v3_8_1_evidence_selector_summary",
+        "event_type": "diagnostic_evidence_selector_v3_8_1",
+        "status": status,
+        "run_class": "diagnostic_only_evidence_selector_v1",
+        "source_run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        "parent_file_grounded_eval_run_id": V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+        "input_artifacts": {
+            "v3_7_2_topk_rows_jsonl": official.repo_relative(input_topk_path),
+            "v3_8_summary_json": official.repo_relative(
+                report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json")
+            ),
+            "v3_8_metrics_json": official.repo_relative(DEFAULT_V3_8_FILE_GROUNDED_METRICS_JSON),
+            "source_atom_registry_jsonl": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+            "index_search_view_manifest_jsonl": official.repo_relative(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl"
+            ),
+            "input_topk_row_run_ids": input_row_run_ids,
+        },
+        "v3_7_2_preflight": preflight,
+        "selector_version": "v1",
+        "metrics_computed": ["selector_candidate_count", *V3_8_1_QUERY_METRICS],
+        "denominator_audit": denominator_audit,
+        "source_family_counts": source_family_counts,
+        "per_source_family": metrics["per_source_family"],
+        "metric_definitions": metrics["metric_definitions"],
+        "selector_policy": metrics["selector_policy"],
+        "denominator_policy": metrics["denominator_policy"],
+        "per_query_rows": metrics["per_query_rows"],
+        "metrics": metrics,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "answer_generation_metric_computed": False,
+        "answer_metric_computed": False,
+        "prompt_mutation": False,
+        "scorer_mutation": False,
+        "gold_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "silver_mutation": False,
+        "promotion_evidence": False,
+        "promotion_gate": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_performance_claim_mutation": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "source_atom_registry_canonical_truth": True,
+        "source_atom_registry_canonical_truth_used_for_selection": True,
+        "selector_uses_target_source_atom_ids_for_selection": False,
+        "target_source_atom_ids_used_for_metrics_only": True,
+        "selector_file_resolve_surface": "diagnostic_target_locator_or_manifest_identity",
+        "oracle_assisted_file_resolve": True,
+        "vector_db_role": "candidate_generator_only",
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+        "canonical_citation_payload_stored_in_vector_metadata": False,
+        "headline_aggregate_score_reported": False,
+        "xlsx_pdf_collapsed_score_reported": False,
+        "production_mutation": False,
+        "db_write_attempted": False,
+        "db_migration_attempted": False,
+        "retrieval_index_mutation": False,
+        "index_or_export_mutation": False,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "protected_input_sha256_before": protected_input_sha_before,
+        "protected_input_sha256_after": protected_input_sha_after,
+        "protected_input_sha256_unchanged": protected_input_sha_before == protected_input_sha_after,
+        "source_registry_sha256_before": source_registry_sha_before,
+        "source_registry_sha256_after": source_registry_sha_after,
+        "source_registry_sha256_unchanged": source_registry_sha_before == source_registry_sha_after,
+        "index_artifact_sha256_before": index_artifact_sha_before,
+        "index_artifact_sha256_after": index_artifact_sha_after,
+        "index_artifact_sha256_unchanged": index_artifact_sha_before == index_artifact_sha_after,
+        "official_denominator_index_sha256_before": official_index_sha_before,
+        "official_denominator_index_sha256_after": official_index_sha_after,
+        "official_denominator_index_sha256_unchanged": official_index_sha_before == official_index_sha_after,
+        "v3_8_summary_sha256_before": v3_8_summary_sha_before,
+        "v3_8_summary_sha256_after": v3_8_summary_sha_after,
+        "v3_8_summary_sha256_unchanged": v3_8_summary_sha_before == v3_8_summary_sha_after,
+        "fail_closed_reasons": sorted(set(fail_closed_reasons)),
+        "artifact_paths": {
+            "summary_json": official.repo_relative(report_artifact_path(args.run_id, "summary.json")),
+            "metrics_json": official.repo_relative(DEFAULT_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON),
+            "per_query_jsonl": official.repo_relative(DEFAULT_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL),
+            "per_family_json": official.repo_relative(DEFAULT_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+
+
+def run_v3_8_2_oracle_free_file_resolve(*, args: argparse.Namespace) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    input_topk_path = DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL
+    fail_closed_reasons: list[str] = []
+    protected_input_sha_before = v3_8_file_grounded_protected_input_sha256(input_topk_path)
+    source_registry_sha_before = (
+        sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL)
+        if DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.exists()
+        else "MISSING"
+    )
+    index_artifact_sha_before = v3_7_2_index_artifact_sha256()
+    official_index_sha_before = v3_6_8_all_source_official_index_sha256()
+    v3_8_summary_path = report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json")
+    v3_8_1_summary_path = report_artifact_path(V3_8_1_EVIDENCE_SELECTOR_RUN_ID, "summary.json")
+    v3_8_summary_sha_before = sha256_file(v3_8_summary_path) if v3_8_summary_path.exists() else "MISSING"
+    v3_8_1_summary_sha_before = sha256_file(v3_8_1_summary_path) if v3_8_1_summary_path.exists() else "MISSING"
+    if v3_8_summary_sha_before == "MISSING":
+        fail_closed_reasons.append("missing:" + official.repo_relative(v3_8_summary_path))
+    if v3_8_1_summary_sha_before == "MISSING":
+        fail_closed_reasons.append("missing:" + official.repo_relative(v3_8_1_summary_path))
+    preflight = v3_7_2_source_registry_retrieval_smoke_preflight()
+    if not preflight.get("passed"):
+        fail_closed_reasons.extend(
+            f"v3_7_2_preflight:{reason}"
+            for reason in preflight.get("fail_closed_reasons", [])
+        )
+    if input_topk_path.exists():
+        topk_rows = read_jsonl(input_topk_path)
+    else:
+        topk_rows = []
+        fail_closed_reasons.append(f"missing:{official.repo_relative(input_topk_path)}")
+    input_row_run_ids = sorted(
+        {
+            official.clean(row.get("run_id"))
+            for row in topk_rows
+            if official.clean(row.get("run_id"))
+        }
+    )
+    unexpected_input_run_ids = [
+        run_id
+        for run_id in input_row_run_ids
+        if run_id != V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID
+    ]
+    if unexpected_input_run_ids:
+        fail_closed_reasons.append(
+            "unexpected_input_topk_run_ids:" + ",".join(unexpected_input_run_ids)
+        )
+
+    source_atom_ids = v3_8_file_grounded_source_atom_ids(topk_rows)
+    source_registry = v3_7_2_collect_source_atoms(source_atom_ids)
+    missing_source_atom_count = len(source_atom_ids - set(source_registry))
+    if missing_source_atom_count:
+        fail_closed_reasons.append(f"source_atom_registry_missing_count:{missing_source_atom_count}")
+    denominator_audit = v3_8_file_grounded_denominator_audit(topk_rows)
+    if denominator_audit["missing_target_mapping_surface_count"]:
+        fail_closed_reasons.append(
+            "missing_target_mapping_surface_count:"
+            f"{denominator_audit['missing_target_mapping_surface_count']}"
+        )
+
+    metrics = v3_8_2_oracle_free_file_resolve_metrics(
+        topk_rows,
+        source_registry=source_registry,
+    )
+    if int(metrics.get("vector_truth_violation_count") or 0):
+        fail_closed_reasons.append(
+            f"vector_truth_violation_count:{metrics.get('vector_truth_violation_count')}"
+        )
+    if int(metrics.get("oracle_free_input_violation_count") or 0):
+        fail_closed_reasons.append(
+            "oracle_free_input_violation_count:"
+            f"{metrics.get('oracle_free_input_violation_count')}"
+        )
+    source_family_counts = {
+        family: int(as_mapping(metrics["per_source_family"].get(family)).get("query_count") or 0)
+        for family in V3_8_FILE_GROUNDED_SOURCE_FAMILIES
+    }
+    protected_input_sha_after = v3_8_file_grounded_protected_input_sha256(input_topk_path)
+    source_registry_sha_after = (
+        sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL)
+        if DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.exists()
+        else "MISSING"
+    )
+    index_artifact_sha_after = v3_7_2_index_artifact_sha256()
+    official_index_sha_after = v3_6_8_all_source_official_index_sha256()
+    v3_8_summary_sha_after = sha256_file(v3_8_summary_path) if v3_8_summary_path.exists() else "MISSING"
+    v3_8_1_summary_sha_after = sha256_file(v3_8_1_summary_path) if v3_8_1_summary_path.exists() else "MISSING"
+    if protected_input_sha_before != protected_input_sha_after:
+        fail_closed_reasons.append("protected_input_sha256_changed_during_v3_8_2_file_resolve")
+    if source_registry_sha_before != source_registry_sha_after:
+        fail_closed_reasons.append("source_registry_sha256_changed_during_v3_8_2_file_resolve")
+    if index_artifact_sha_before != index_artifact_sha_after:
+        fail_closed_reasons.append("index_artifact_sha256_changed_during_v3_8_2_file_resolve")
+    if official_index_sha_before != official_index_sha_after:
+        fail_closed_reasons.append("official_denominator_index_sha256_changed_during_v3_8_2_file_resolve")
+    if v3_8_summary_sha_before != v3_8_summary_sha_after:
+        fail_closed_reasons.append("v3_8_summary_sha256_changed_during_v3_8_2_file_resolve")
+    if v3_8_1_summary_sha_before != v3_8_1_summary_sha_after:
+        fail_closed_reasons.append("v3_8_1_summary_sha256_changed_during_v3_8_2_file_resolve")
+    status = (
+        "DIAGNOSTIC_ORACLE_FREE_FILE_RESOLVE_FAIL_CLOSED"
+        if fail_closed_reasons
+        else "DIAGNOSTIC_ORACLE_FREE_FILE_RESOLVE_COMPUTED"
+    )
+    return {
+        "schema_version": f"{V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID}_summary_v1",
+        "run_id": V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "v3_8_2_oracle_free_file_resolve_summary",
+        "event_type": "diagnostic_oracle_free_file_resolve_v3_8_2",
+        "status": status,
+        "run_class": "diagnostic_only_oracle_free_file_resolve_v1",
+        "source_run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        "parent_file_grounded_eval_run_id": V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+        "parent_evidence_selector_run_id": V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+        "input_artifacts": {
+            "v3_7_2_topk_rows_jsonl": official.repo_relative(input_topk_path),
+            "v3_8_summary_json": official.repo_relative(v3_8_summary_path),
+            "v3_8_1_summary_json": official.repo_relative(v3_8_1_summary_path),
+            "source_atom_registry_jsonl": official.repo_relative(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL),
+            "index_search_view_manifest_jsonl": official.repo_relative(
+                DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "search_view_manifest.jsonl"
+            ),
+            "input_topk_row_run_ids": input_row_run_ids,
+        },
+        "v3_7_2_preflight": preflight,
+        "resolver_version": "v1",
+        "metrics_computed": [*V3_8_2_QUERY_METRICS, "oracle_free_input_violation_count"],
+        "denominator_audit": denominator_audit,
+        "source_family_counts": source_family_counts,
+        "per_source_family": metrics["per_source_family"],
+        "metric_definitions": metrics["metric_definitions"],
+        "resolver_policy": metrics["resolver_policy"],
+        "denominator_policy": metrics["denominator_policy"],
+        "per_query_rows": metrics["per_query_rows"],
+        "metrics": metrics,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "answer_generation_metric_computed": False,
+        "answer_metric_computed": False,
+        "prompt_mutation": False,
+        "scorer_mutation": False,
+        "gold_mutation": False,
+        "qrels_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "silver_mutation": False,
+        "promotion_evidence": False,
+        "promotion_gate": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_performance_claim_mutation": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "file_resolve_oracle_free": True,
+        "oracle_assisted_file_resolve": False,
+        "oracle_free_input_violation_count": int(metrics.get("oracle_free_input_violation_count") or 0),
+        "resolver_uses_target_source_atom_ids_for_selection": False,
+        "target_source_atom_ids_used_for_metrics_only": True,
+        "source_atom_registry_canonical_truth": True,
+        "source_atom_registry_canonical_truth_used_for_resolution": True,
+        "selector_file_resolve_surface": "oracle_free_query_metadata_source_registry_search_view_manifest",
+        "vector_db_role": "candidate_generator_only",
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+        "canonical_citation_payload_stored_in_vector_metadata": False,
+        "headline_aggregate_score_reported": False,
+        "xlsx_pdf_collapsed_score_reported": False,
+        "production_mutation": False,
+        "db_write_attempted": False,
+        "db_migration_attempted": False,
+        "retrieval_index_mutation": False,
+        "index_or_export_mutation": False,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "protected_input_sha256_before": protected_input_sha_before,
+        "protected_input_sha256_after": protected_input_sha_after,
+        "protected_input_sha256_unchanged": protected_input_sha_before == protected_input_sha_after,
+        "source_registry_sha256_before": source_registry_sha_before,
+        "source_registry_sha256_after": source_registry_sha_after,
+        "source_registry_sha256_unchanged": source_registry_sha_before == source_registry_sha_after,
+        "index_artifact_sha256_before": index_artifact_sha_before,
+        "index_artifact_sha256_after": index_artifact_sha_after,
+        "index_artifact_sha256_unchanged": index_artifact_sha_before == index_artifact_sha_after,
+        "official_denominator_index_sha256_before": official_index_sha_before,
+        "official_denominator_index_sha256_after": official_index_sha_after,
+        "official_denominator_index_sha256_unchanged": official_index_sha_before == official_index_sha_after,
+        "v3_8_summary_sha256_before": v3_8_summary_sha_before,
+        "v3_8_summary_sha256_after": v3_8_summary_sha_after,
+        "v3_8_summary_sha256_unchanged": v3_8_summary_sha_before == v3_8_summary_sha_after,
+        "v3_8_1_summary_sha256_before": v3_8_1_summary_sha_before,
+        "v3_8_1_summary_sha256_after": v3_8_1_summary_sha_after,
+        "v3_8_1_summary_sha256_unchanged": v3_8_1_summary_sha_before == v3_8_1_summary_sha_after,
+        "fail_closed_reasons": sorted(set(fail_closed_reasons)),
+        "artifact_paths": {
+            "summary_json": official.repo_relative(report_artifact_path(args.run_id, "summary.json")),
+            "metrics_json": official.repo_relative(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON),
+            "per_query_jsonl": official.repo_relative(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL),
+            "per_family_json": official.repo_relative(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+
+
+def v3_8_file_grounded_source_atom_ids(topk_rows: Sequence[Mapping[str, Any]]) -> set[str]:
+    source_atom_ids: set[str] = set()
+    for row in topk_rows:
+        for source_atom_id in row.get("target_source_atom_ids", []):
+            if official.clean(source_atom_id):
+                source_atom_ids.add(official.clean(source_atom_id))
+        for envelope in row.get("top_result_envelopes", []):
+            source_atom_id = official.clean(as_mapping(envelope).get("source_atom_id"))
+            if source_atom_id:
+                source_atom_ids.add(source_atom_id)
+    return source_atom_ids
 
 
 def v3_6_8_source_registry_validate_source_atom(atom: Mapping[str, Any]) -> dict[str, Any]:
@@ -36577,6 +38949,69 @@ def write_v3_6_low_touch_weak_noisy_silver_artifacts(summary: dict[str, Any]) ->
         )
         return
 
+    if run_id == V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID:
+        metrics_payload = dict(summary["metrics"])
+        metrics_payload.pop("per_query_rows", None)
+        write_json(DEFAULT_V3_8_FILE_GROUNDED_METRICS_JSON, metrics_payload)
+        write_jsonl(DEFAULT_V3_8_FILE_GROUNDED_PER_QUERY_JSONL, summary["per_query_rows"])
+        write_json(DEFAULT_V3_8_FILE_GROUNDED_PER_FAMILY_JSON, summary["per_source_family"])
+        payload = dict(summary)
+        for field in ("metrics", "per_query_rows"):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "metrics_json_sha256": sha256_file(DEFAULT_V3_8_FILE_GROUNDED_METRICS_JSON),
+            "per_query_jsonl_sha256": sha256_file(DEFAULT_V3_8_FILE_GROUNDED_PER_QUERY_JSONL),
+            "per_family_json_sha256": sha256_file(DEFAULT_V3_8_FILE_GROUNDED_PER_FAMILY_JSON),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(report_artifact_path(run_id, "summary.json"), payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(
+            report_artifact_path(run_id, "summary.json")
+        )
+        return
+
+    if run_id == V3_8_1_EVIDENCE_SELECTOR_RUN_ID:
+        metrics_payload = dict(summary["metrics"])
+        metrics_payload.pop("per_query_rows", None)
+        write_json(DEFAULT_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON, metrics_payload)
+        write_jsonl(DEFAULT_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL, summary["per_query_rows"])
+        write_json(DEFAULT_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON, summary["per_source_family"])
+        payload = dict(summary)
+        for field in ("metrics", "per_query_rows"):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "metrics_json_sha256": sha256_file(DEFAULT_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON),
+            "per_query_jsonl_sha256": sha256_file(DEFAULT_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL),
+            "per_family_json_sha256": sha256_file(DEFAULT_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(report_artifact_path(run_id, "summary.json"), payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(
+            report_artifact_path(run_id, "summary.json")
+        )
+        return
+
+    if run_id == V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID:
+        metrics_payload = dict(summary["metrics"])
+        metrics_payload.pop("per_query_rows", None)
+        write_json(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON, metrics_payload)
+        write_jsonl(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL, summary["per_query_rows"])
+        write_json(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON, summary["per_source_family"])
+        payload = dict(summary)
+        for field in ("metrics", "per_query_rows"):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "metrics_json_sha256": sha256_file(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON),
+            "per_query_jsonl_sha256": sha256_file(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL),
+            "per_family_json_sha256": sha256_file(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(report_artifact_path(run_id, "summary.json"), payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(
+            report_artifact_path(run_id, "summary.json")
+        )
+        return
+
     raise ValueError(f"unsupported v3_6 run: {run_id}")
 
 
@@ -36647,6 +39082,8 @@ def append_v3_6_low_touch_weak_noisy_silver_event(path: Path, summary: Mapping[s
         "per_track_breakdown_artifact",
         "silver_1000_diagnostic_overlay_artifact",
         "silver_1000_diagnostic_overlay",
+        "metrics",
+        "per_query_rows",
     ):
         event.pop(field, None)
     append_unique_status_ledger_event(path, event)
@@ -36920,6 +39357,70 @@ def v3_6_progress_entry(summary: Mapping[str, Any]) -> str:
             "measurement remains deferred, and no prompt/scorer/renderer/index/source-registry/gold/qrels/label/"
             "expected-answer/supporting-evidence mutation was performed."
         )
+    if run_id == V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID:
+        families = as_mapping(summary.get("per_source_family"))
+        xlsx_metrics = as_mapping(as_mapping(families.get("XLSX")).get("metrics"))
+        pdf_metrics = as_mapping(as_mapping(families.get("PDF")).get("metrics"))
+        xlsx_workbook_hit_5 = as_mapping(xlsx_metrics.get("workbook_hit@5"))
+        pdf_page_hit_5 = as_mapping(pdf_metrics.get("page_hit@5"))
+        return (
+            f"- v3_8 file-grounded retrieval eval (`{run_id}`) computes XLSX/PDF retrieval/evidence metrics "
+            "before answer generation from v3_7_2 SourceAtom-hydrated top-k rows. "
+            f"XLSX queries={as_mapping(families.get('XLSX')).get('query_count', 0)}, "
+            f"workbook_hit@5={xlsx_workbook_hit_5.get('numerator', 0)}/"
+            f"{xlsx_workbook_hit_5.get('denominator', 0)}; "
+            f"PDF queries={as_mapping(families.get('PDF')).get('query_count', 0)}, "
+            f"page_hit@5={pdf_page_hit_5.get('numerator', 0)}/"
+            f"{pdf_page_hit_5.get('denominator', 0)}. "
+            "No XLSX/PDF collapsed headline score, answer metric, prompt/scorer tuning, gold/qrels/label/"
+            "expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion evidence was produced; "
+            "FAISS/vector search remains candidate generation only and citation truth remains SourceAtom/source-registry hydrated."
+        )
+    if run_id == V3_8_1_EVIDENCE_SELECTOR_RUN_ID:
+        families = as_mapping(summary.get("per_source_family"))
+        xlsx_metrics = as_mapping(as_mapping(families.get("XLSX")).get("metrics"))
+        pdf_metrics = as_mapping(as_mapping(families.get("PDF")).get("metrics"))
+        xlsx_target_hit = as_mapping(xlsx_metrics.get("selector_target_hit@3"))
+        pdf_target_hit = as_mapping(pdf_metrics.get("selector_target_hit@3"))
+        return (
+            f"- v3_8_1 evidence selector (`{run_id}`) freezes deterministic max-3 citation-capable evidence "
+            "candidate artifacts over the v3_8/v3_7_2 PDF/XLSX top-k surface before answer generation. "
+            f"XLSX queries={as_mapping(families.get('XLSX')).get('query_count', 0)}, "
+            f"selector_target_hit@3={xlsx_target_hit.get('numerator', 0)}/"
+            f"{xlsx_target_hit.get('denominator', 0)}; "
+            f"PDF queries={as_mapping(families.get('PDF')).get('query_count', 0)}, "
+            f"selector_target_hit@3={pdf_target_hit.get('numerator', 0)}/"
+            f"{pdf_target_hit.get('denominator', 0)}. "
+            "Target SourceAtom ids are used for selector metrics only, not candidate ordering; file resolve remains "
+            "diagnostic target-locator/manifest assisted, not production file-resolution evidence. "
+            "No answer generation, XLSX/PDF collapsed headline score, prompt/scorer tuning, gold/qrels/label/"
+            "expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion evidence was produced."
+        )
+    if run_id == V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID:
+        families = as_mapping(summary.get("per_source_family"))
+        xlsx_metrics = as_mapping(as_mapping(families.get("XLSX")).get("metrics"))
+        pdf_metrics = as_mapping(as_mapping(families.get("PDF")).get("metrics"))
+        xlsx_resolve = as_mapping(xlsx_metrics.get("file_resolve@1"))
+        pdf_resolve = as_mapping(pdf_metrics.get("file_resolve@1"))
+        xlsx_abstain = as_mapping(xlsx_metrics.get("abstain_rate"))
+        pdf_abstain = as_mapping(pdf_metrics.get("abstain_rate"))
+        return (
+            f"- v3_8_2 oracle-free file resolve (`{run_id}`) computes ranked source_file/document "
+            "candidates before scoped retrieval or answer generation, using query/source metadata, "
+            "SourceAtom/source-registry hydration, SearchView/index candidate metadata, literal file mentions, "
+            "and source-family intent only. "
+            f"XLSX queries={as_mapping(families.get('XLSX')).get('query_count', 0)}, "
+            f"file_resolve@1={xlsx_resolve.get('numerator', 0)}/{xlsx_resolve.get('denominator', 0)}, "
+            f"abstain={xlsx_abstain.get('numerator', 0)}/{xlsx_abstain.get('denominator', 0)}; "
+            f"PDF queries={as_mapping(families.get('PDF')).get('query_count', 0)}, "
+            f"file_resolve@1={pdf_resolve.get('numerator', 0)}/{pdf_resolve.get('denominator', 0)}, "
+            f"abstain={pdf_abstain.get('numerator', 0)}/{pdf_abstain.get('denominator', 0)}. "
+            "Gold/target SourceAtom ids and manifest targets are metrics-only, not resolver inputs; "
+            "wrong-file low-confidence cases abstain/disambiguate instead of forcing a file. "
+            "No scoped FAISS answer route, answer generation, XLSX/PDF collapsed headline score, prompt/scorer tuning, "
+            "gold/qrels/label/expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion evidence "
+            "was produced."
+        )
     counts = as_mapping(summary.get("source_family_counts"))
     profiles = as_mapping(summary.get("query_quality_profile_counts"))
     splits = as_mapping(summary.get("split_counts"))
@@ -36976,6 +39477,12 @@ def append_v3_6_progress_entry(summary: Mapping[str, Any]) -> None:
         status = "diagnostic_all_source_citable_nonprod_index_v3_7_1_built"
     elif run_id == V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID:
         status = "diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done"
+    elif run_id == V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID:
+        status = "diagnostic_file_grounded_retrieval_eval_v3_8_computed"
+    elif run_id == V3_8_1_EVIDENCE_SELECTOR_RUN_ID:
+        status = "diagnostic_evidence_selector_v3_8_1_computed"
+    elif run_id == V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID:
+        status = "diagnostic_oracle_free_file_resolve_v3_8_2_computed"
     else:
         status = "balanced_weak_noisy_silver_candidates_v3_6_1_generated_diagnostic_only"
     text = re.sub(r"Overall status: `[^`]+`;", f"Overall status: `{status}`;", text, count=1)
@@ -40294,7 +42801,6 @@ def build_summary(
         "artifact_paths": {
             "results_jsonl": official.repo_relative(Path(args.results_jsonl)),
             "summary_json": official.repo_relative(Path(args.summary_json)),
-            "summary_md": official.repo_relative(Path(args.summary_md)),
             "failure_attribution_json": report_artifact_repo_relative(args.run_id, "failure.json"),
         },
         "artifact_provenance": {

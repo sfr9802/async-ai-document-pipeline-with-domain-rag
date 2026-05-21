@@ -9,24 +9,28 @@ Last updated: 2026-05-21 KST.
 루트 README의 지표 스냅샷에서 여기로 넘어왔다면 아래 순서로 보면 됩니다.
 
 1. 이 파일의 `현재 상태`와 `지표 해석`에서 denominator와 promotion 경계를 확인합니다.
-2. `v3_7_2 source registry-backed retrieval smoke`에서 새 silver query 표면이 실제 retrieval loop에 들어간 결과를 봅니다.
-3. 세부 run ledger는 `../../docs/rag-ingestion-progress.md`, `../../docs/rag-ingestion-measurements.md`, `../../docs/rag-ingestion-triage.md`로 내려갑니다.
-4. machine-readable 최신 상태는 `reports/rag-ingestion/status.jsonl`과 각 run summary JSON을 확인합니다.
+2. `v3_8_2 oracle-free file resolve`에서 scoped retrieval 전에 file/document 후보가 gold-free로 resolve되는지 봅니다.
+3. `v3_8_1 evidence selector`와 `v3_8 file-grounded eval`은 v3_8_2의 upstream diagnostic input으로 읽습니다.
+4. 세부 run ledger는 `../../docs/rag-ingestion-progress.md`, `../../docs/rag-ingestion-measurements.md`, `../../docs/rag-ingestion-triage.md`로 내려갑니다.
+5. machine-readable 최신 상태는 `reports/rag-ingestion/status.jsonl`과 각 run summary JSON을 확인합니다.
 
 ## 현재 상태
 
-현재 primary track은 `v3_7_2` source registry-backed retrieval smoke report입니다. 핵심 질문은 점수 개선이 아니라, PDF/XLSX 쿼리가 먼저 자기 문서 family 후보 안으로 들어오고, 검색된 SearchView가 SourceAtom으로 hydrate되어 EvidenceBundle과 citation render까지 끊기지 않고 이어지는지입니다. `v3_7_1` index는 이 smoke의 입력 artifact로 유지됩니다.
+현재 primary track은 `v3_8_2` oracle-free file/document resolve입니다. 핵심 질문은 scoped FAISS retrieval이나 answer generation으로 넘어가기 전에 PDF/XLSX 쿼리별 source_file/document 후보를 gold target locator, target SourceAtom id, expected answer, qrels/labels 없이 산출할 수 있는지입니다. 입력은 `v3_8`/`v3_7_2` SourceAtom-hydrated top-k rows, source registry, SearchView/index manifest candidate metadata, query/source metadata, literal file/workbook/pdf mentions, source-family intent로 제한합니다.
 
 | 항목 | 현재 값 | 해석 |
 |---|---|---|
-| 현재 run | `official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report` | PDF/XLSX는 query source-family routed top-k를 primary로 쓰고, SourceAtom hydration, EvidenceBundle render, citation render survival을 track별로 기록 |
+| 현재 run | `official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve` | ranked source_file/document candidates를 answer generation 없이 생성하고, target SourceAtom/manifest는 metrics-only로만 사용 |
 | 입력 index | `indexes/rag-data-all-source-citable-nonprod-v1` | `v3_7_1` all-source citable non-production SearchView export |
 | SearchViews | `136,280` | TEXT `135,608`, PDF `329`, XLSX `343` |
 | Source registry | `source_registry/source_atom_registry_v1.jsonl` | canonical evidence/citation truth |
 | v3_7_2 query surfaces | official `29` + silver diagnostic `1000` | official/gold는 sealed no-regression only, silver는 coverage/failure discovery only |
+| v3_8 denominator | PDF `329`, XLSX `344` | PDF/XLSX는 별도 denominator로 보고 collapsed headline score를 만들지 않음 |
+| v3_8_1 selector denominator | PDF `329`, XLSX `344` | selected evidence max 3 per query; target SourceAtom ids는 metrics-only, selector_file_hit은 registry target identity surface, file resolve는 diagnostic-only |
+| v3_8_2 file resolve denominator | PDF `329`, XLSX `344` | file_resolve@1/@3, abstain, wrong-file blocking을 PDF/XLSX로 분리해 보고 collapsed headline score를 만들지 않음 |
 | Silver query surface | `LOCAL_LLM_NATURAL_SILVER_1000_REGENERATED_AND_POLISHED` | 1000 unique query hashes; XLSX 325 rows polished; plain Korean/digit/punctuation validation pass |
 | Contract path | SearchView -> SourceAtom -> EvidenceBundle -> Citation render | vector metadata를 evidence truth로 쓰지 않고 source registry에서 hydrate |
-| Promotion readiness | explicitly not opened | answer quality, prompt tuning, gold/qrels mutation, comparable live measurement 모두 닫힘 |
+| Promotion readiness | explicitly not opened | comparable live measurement는 diagnostic으로 재실행됐지만 answer/citation precision, evidence precision, prompt tuning, gold/qrels mutation, promotion gate는 닫힘 |
 
 ## 지표 해석
 
@@ -39,9 +43,49 @@ Last updated: 2026-05-21 KST.
 | v3_4_3 exact-evidence retrieval smoke | 28 included rows | Hit@1 `27/28`, Hit@3 `28/28`, Hit@5 `28/28`, MRR@5 `27.5/28`, binary exact-evidence nDCG@5 `0.9868189197704093` | source-bound exact-evidence smoke와 regression guard 전용 |
 | Historical local LLM docs sample | 100 docs sample rows | p95 `0.464s`, p99 `0.516s`, max `0.528s` | query + SearchView evidence만 넣은 historical docs sample. throughput/SLA가 아니라 입력 정책과 재현성 확인용 |
 | v3_7_1 source-first index | 136,280 SearchViews | metric not computed | retrieval/answer/citation 성능 측정 전 단계. vector metadata는 canonical citation source가 아님 |
-| v3_7_2 contract smoke | 1,029 query surfaces | returned/same-track/target/contract survival counts | TEXT `same-track@k=356/356`, target@k `20/356`; PDF `same-track@k=329/329`, target@k `112/329`; XLSX `same-track@k=344/344`, target@k `17/344`. `topk_returned_count`는 반환 수이고, headline aggregate로 합치지 않음 |
+| v3_7_2 contract smoke | 1,029 query surfaces | returned/same-track/target/contract survival counts | TEXT `same-track@k=356/356`, target@k `20/356`; PDF `same-track@k=329/329`, target@k `266/329`; XLSX `same-track@k=344/344`, target@k `34/344`. `topk_returned_count`는 반환 수이고, headline aggregate로 합치지 않음 |
+| v3_8_2 oracle-free file resolve | PDF `329`, XLSX `344` | file_resolve@1, file_resolve@3, abstain_rate, wrong_file_block_rate, oracle_free_input_violation_count | PDF file_resolve@1 `65/329`, file_resolve@3 `129/329`, abstain `182/329`, wrong-file block `57/329`; XLSX file_resolve@1 `136/344`, file_resolve@3 `150/344`, abstain `44/344`, wrong-file block `25/344`; oracle-free input violations `0`. Diagnostic-only and not a headline aggregate |
+| v3_8_1 evidence selector | PDF `329`, XLSX `344` | selector_candidate_count, selector_target_hit@3, selector_file_hit@3, selector_contract_survival@3 | PDF selected candidates `987`, target_hit@3 `251/329`, file_hit@3 `268/329`, contract_survival@3 `329/329`; XLSX selected candidates `1032`, target_hit@3 `29/344`, file_hit@3 `315/344`, contract_survival@3 `344/344`. Diagnostic-only and not a headline aggregate |
+| v3_8 file-grounded eval | PDF `329`, XLSX `344` | PDF file_hit@5 `284/329`, page_hit@5 `266/329`, evidence_select_hit@3 `251/329`; XLSX workbook_hit@5 `317/344`, sheet_hit@5 `275/344`, cell_or_value_hit@5 `34/344` | answer generation 전 citation-capable evidence 선택 진단. PDF/XLSX를 합산하지 않음 |
+| v3 comparable live rerun | 29 official rows | PASS `27/29` | PDF `4/4`, XLSX `19/19` retained structured adapters; TEXT `4/6` real local LLM synthesis. Diagnostic-only, not answer/citation precision or promotion evidence |
 
 `nDCG`는 현재 full graded relevance nDCG가 아니라 `binary exact-evidence nDCG@5`입니다. future graded nDCG는 별도 relevance/answerability label 정책이 생긴 뒤에만 같은 이름으로 비교해야 합니다.
+
+## 현재 성능 샘플 쿼리와 응답
+
+아래 표는 현재 `v3_comparable_live_measurement` 29-row official denominator 전체를 약 30개 샘플로 펼친 것입니다. TEXT 6개만 실제 local LLM(`llamacpp`, `gemma4-e2b-local`)을 호출했고, PDF/XLSX 23개는 deterministic structured adapter output을 retain했습니다. 따라서 `Response source=LLM` 행만 실제 LLM 응답이고, `adapter retained` 행은 같은 measurement 결과에 남은 retained output surface입니다. 이 표도 diagnostic-only이며 promotion evidence나 answer/citation precision headline으로 읽지 않습니다.
+
+| # | Track | Query ID | Query | Response source | Actual LLM response / retained output | Bucket |
+|---:|---|---|---|---|---|---|
+| 1 | pdf_business_ocr_mm | `gq_auto_010` | 2월 실업률은 전년 같은 달보다 어떻게 변했나요? | adapter retained | 실업률은 모든 연령계층에서 상승 | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 2 | pdf_business_ocr_mm | `gq_auto_024` | 1월 산업활동에서 생산 지표는 어떻게 움직였나요? | adapter retained | 광공업 생산, 서비스업 생산, 건설투자는 감소 | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 3 | pdf_business_ocr_mm | `gq_auto_030` | 2020년 한국 원달러 기말 환율은 얼마인가요? | adapter retained | 주요국가의 환율변동 비교 표에서 2020년 한국 원/달러 기말 환율 `1,088.0` 확인 | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 4 | pdf_business_ocr_mm | `gq_pdf_section_question_001` | 2024년 수출입차 금액은 얼마인가요? | adapter retained | 수출입차 표에서 2024년 수출입차 `518.4` 확인 | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 5 | text_namu_v2_1 | `text_namu_v2_0005` | 자동판매기 미궁 방랑 애니 3기 방영 시기는 문서에 어떻게 적혀 있어 | LLM | 제3기의 방영 시기는 2026년 4월입니다. | LLM_SYNTHESIS_PASS |
+| 6 | text_namu_v2_1 | `text_namu_v2_0012` | 유우야키의 나이와 생일은 어떻게 적혀 있어 | LLM | 유우야키의 나이는 16세이고 생일은 9월 29일입니다. | LLM_SYNTHESIS_PASS |
+| 7 | text_namu_v2_1 | `text_namu_v2_0014` | 엑스맨 구십칠 등장인물 목록에 애드버서리는 어떤 식으로 올라와 | LLM | 애드버리는 앨리슨 실리스미스(카메오)로 등장합니다. | LLM_SYNTHESIS_PASS |
+| 8 | text_namu_v2_1 | `text_namu_v2_0017` | 실바니안 실크 고양이 가족 설명은 어떤 성격과 역할을 말해 | LLM | 유럽판에서 실크 고양이 소년은 상냥하고 배려심이 넘치며, 소녀는 패션 디자이너를 꿈꾼다. | LLM_SYNTHESIS_REGRESSED |
+| 9 | text_namu_v2_1 | `text_namu_v2_0077` | 미츠하는 타키를 만나려고 어디로 향했어 | LLM | 미츠하는 자신과 몸이 바뀌고 있는 타키를 실제로 만나기 위해 도쿄로 향했다. | LLM_SYNTHESIS_REGRESSED |
+| 10 | text_namu_v2_1 | `text_namu_v2_0084` | 소드아트 오디널 스케일은 어떤 극장판을 가리켜 | LLM | 소드 아트 온라인의 극장판은 2017년 2월 18일에 일본에서 개봉한 극장판 애니메이션이다. | LLM_SYNTHESIS_PASS |
+| 11 | xlsx_business_structured | `gq_auto_012` | 2019년 2월 5호선의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D352: 5호선, 201902, 승차총승객수 `15446522` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 12 | xlsx_business_structured | `gq_auto_018` | 2020년 11월에 지정된 하얀민들레노인요양원의 우편번호는 무엇입니까? | adapter retained | 일반현황 C702: 하얀민들레노인요양원, 우편번호 `41786` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 13 | xlsx_business_structured | `gq_auto_022` | 2017년 12월 9호선의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D452: 9호선, 201712, 승차총승객수 `8048476` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 14 | xlsx_business_structured | `gq_auto_023` | 2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까? | adapter retained | 일반현황 G752: 해뜨는요양원2, 시도 시군구 법정동명 `대구광역시 북구 복현동` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 15 | xlsx_business_structured | `gq_auto_028` | 2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까? | adapter retained | 일반현황 J802: 해오름요양원, 기관별 상세주소 `대구광역시 수성구 파동로51길 96 (파동)` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 16 | xlsx_business_structured | `gq_auto_031` | 2018년 7월 8호선의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D402: 8호선, 201807, 승차총승객수 `5630084` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 17 | xlsx_business_structured | `gq_auto_034` | 2018년 5월 의정부경전철의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D552: 의정부경전철, 201805, 승차총승객수 `1095397` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 18 | xlsx_business_structured | `gq_auto_035` | 2018년 11월 3호선의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D52: 3호선, 201811, 승차총승객수 `17956555` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 19 | xlsx_business_structured | `gq_auto_037` | 2019년 4월 안산선의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D152: 안산선, 201904, 승차총승객수 `4230809` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 20 | xlsx_business_structured | `gq_auto_038` | 2018년 9월 일산선의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D202: 일산선, 201809, 승차총승객수 `3258215` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 21 | xlsx_business_structured | `gq_auto_043` | 2019년 3월에 지정된 신논현요양원의 설치신고일자는 언제입니까? | adapter retained | 일반현황 I1052: 신논현요양원, 설치신고일자 `2019-03-15` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 22 | xlsx_business_structured | `gq_auto_044` | 2022년 5월에 지정된 인천은빛요양원의 기관별 상세주소는 무엇입니까? | adapter retained | 일반현황 J1102: 인천은빛요양원, 기관별 상세주소 `인천광역시 남동구 하촌로 26 7층701 702호 (만수동 거신빌딩)` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 23 | xlsx_business_structured | `gq_xlsx_date_number_format_001` | 2008년 6월에 지정된 청운노인요양원의 지정일자는 정확히 언제입니까? | adapter retained | 일반현황 H2: 청운노인요양원, 지정일자 `2008-06-25` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 24 | xlsx_business_structured | `gq_xlsx_lookup_001` | 2017년 11월 1호선의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D2: 1호선, 201711, 승차총승객수 `8633618` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 25 | xlsx_business_structured | `gq_xlsx_lookup_004` | 2019년 5월 우이신설선의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D602: 우이신설선, 201905, 승차총승객수 `1469681` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 26 | xlsx_business_structured | `gq_xlsx_lookup_005` | 2018년 4월 경인선의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D102: 경인선, 201804, 승차총승객수 `10356250` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 27 | xlsx_business_structured | `gq_xlsx_lookup_006` | 2019년 2월 수인선의 승차총승객수는 몇 명입니까? | adapter retained | 철도 D302: 수인선, 201902, 승차총승객수 `1124736` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 28 | xlsx_business_structured | `gq_xlsx_lookup_007` | 2008년 6월에 지정된 청운노인요양원의 기관별 상세주소는 무엇입니까? | adapter retained | 일반현황 J2: 청운노인요양원, 기관별 상세주소 `서울특별시 종로구 비봉길 76 (구기동)` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
+| 29 | xlsx_business_structured | `gq_xlsx_lookup_008` | 2015년 6월에 지정된 부여효요양원의 기관별 상세주소는 무엇입니까? | adapter retained | 일반현황 J5002: 부여효요양원, 기관별 상세주소 `충청남도 부여군 석성면 왕릉로 773 (석성면)` | PASS_RETAINED_BY_STRUCTURED_ADAPTER |
 
 ## Denominator 정책
 
@@ -50,6 +94,9 @@ Last updated: 2026-05-21 KST.
 - Retrieval smoke denominator는 `v3_4_2` exact-evidence qrels에서 나온 28 included rows입니다. `gq_auto_010`은 standalone query missing year 이유로 제외됐고, failure/negative로 세지 않습니다.
 - `v3_7_2` source registry-backed smoke는 official/gold query를 회귀 확인용으로만 읽고, silver 1000은 취약 locator와 adapter gap 발견용으로만 읽습니다.
 - `v3_7_2`의 `topk_returned_count`는 SearchView 후보가 몇 개 반환됐는지입니다. PDF/XLSX primary top-k는 `query_source_family_routed_for_structured_tracks`로 읽고, 기존 all-source mixed 결과는 `mixed_retrieval_baseline`으로만 남겨 TEXT dominance를 진단합니다.
+- `v3_8`은 `v3_7_2` top-k에서 PDF/XLSX만 읽고 file/page/sheet/range/cell evidence metrics를 계산합니다. official qrels/labels나 answer generation 없이 SourceAtom/source-registry hydration만 canonical truth로 사용합니다.
+- `v3_8_1`은 `v3_8`/`v3_7_2` top-k에서 max 3 selected evidence 후보를 고정합니다. target SourceAtom ids는 selector metrics 전용이고 candidate ordering에는 쓰지 않으며, selector_file_hit은 registry target identity surface로 비교합니다. 이 값은 production file resolve나 promotion evidence가 아닙니다.
+- `v3_8_2`는 `v3_8`/`v3_7_2` top-k와 source registry/index metadata에서 source_file/document 후보를 oracle-free로 resolve합니다. gold target locator, target SourceAtom id, expected answer, qrels/labels/supporting evidence는 selection input이 아니고 metrics-only target overlay로만 읽습니다.
 - 현재 mixed baseline은 PDF same-track@k `9/329`, XLSX same-track@k `30/344`로 여전히 TEXT에 잠기지만, routed primary에서는 PDF/XLSX 모두 same-track@k가 query_count와 같습니다. target@k는 별도 ranking/materialization 문제로 분리해 읽습니다.
 - Silver/weak-noisy rows는 tuning 후보나 documentation sample이 될 수 있지만 official denominator, official qrels, promotion evidence가 아닙니다.
 - Lane A/B/C score는 진단 표면입니다. 하나의 official score로 접지 않습니다.
@@ -73,8 +120,8 @@ TEXT, XLSX, PDF는 같은 vector score 하나로만 읽지 않습니다. 검색 
 | Track | Query count | Routed same-track@k | Target@k | Contract survival target@k | Top failure |
 |---|---:|---:|---:|---:|---|
 | TEXT | 356 | 356 | 20 | 20 | track_mismatch |
-| PDF | 329 | 329 | 112 | 112 | snapshot_only |
-| XLSX | 344 | 344 | 17 | 17 | none |
+| PDF | 329 | 329 | 266 | 266 | snapshot_only |
+| XLSX | 344 | 344 | 34 | 34 | none |
 
 `same-track@k`는 family-routed primary path가 같은 source family 후보를 반환했는지 보는 route/candidate-family 확인값입니다. Ranking 품질은 `target@k`, `target_not_in_topk`, `snapshot_only`, `locator_mapping_gap`을 함께 봐야 합니다. XLSX는 query count가 `344`이지만 candidate pool은 `343`이고 audit bucket에 `locator_mapping_gap=1`이 있으므로, target mapping을 깨끗한 `344/344`로 읽지 않습니다.
 
@@ -203,11 +250,14 @@ Silver query surface quality check: rows `1000`, unique query hashes `1000`, dup
 
 ## Active와 historical 경계
 
-현재 이 파일의 기본 독해 표면은 `v3_7_2` source registry-backed retrieval smoke report와 그 입력인 `v3_7_1` source-first citable index입니다. Phase 7 v4, Phase 2A reranker, anime/namespaced legacy corpus 실험은 historical 또는 별도 track으로만 읽습니다.
+현재 이 파일의 기본 독해 표면은 `v3_8_2` oracle-free file/document resolve, upstream `v3_8` file-grounded retrieval/evidence eval과 `v3_7_2` source registry-backed retrieval smoke report, 그리고 `v3_7_1` source-first citable index입니다. Phase 7 v4, Phase 2A reranker, anime/namespaced legacy corpus 실험은 historical 또는 별도 track으로만 읽습니다.
 
 | 영역 | 현재 판단 |
 |---|---|
-| `v3_7_2` source registry-backed retrieval smoke | 현재 RAG ingestion contract-survival report |
+| `v3_8_2` oracle-free file/document resolve | 현재 PDF/XLSX file/document resolver diagnostic report |
+| `v3_8_1` evidence selector | upstream max-3 citation-capable evidence artifact freeze |
+| `v3_8` file-grounded retrieval/evidence eval | upstream PDF/XLSX file/document/evidence diagnostic report |
+| `v3_7_2` source registry-backed retrieval smoke | v3_8의 SourceAtom-hydrated top-k input report |
 | `v3_7_1` source registry/index | `v3_7_2`의 immutable input index |
 | Phase 7 v4 retrieval recommendation | historical retrieval tuning context. `candidate_k=40`, MMR on, recommended `mmr_lambda=0.70`은 v3.7 metric이 아님 |
 | Phase 2A reranker latency/accuracy | legacy reranker experiment. 현재 production/default path 아님 |
@@ -222,7 +272,7 @@ Silver query surface quality check: rows `1000`, unique query hashes `1000`, dup
 | `indexes/rag-data-official-denominator-v1/` | 29-row official source-bound SearchUnit index | protected regression scope |
 | `indexes/rag-data-all-source-citable-nonprod-v1/` | 136,280 SearchView all-source diagnostic index | non-production only; v3_7_2 smoke input |
 | `reports/rag-ingestion/status.jsonl` | compact machine-readable status ledger | routine status는 여기에 compact event로 남김 |
-| `reports/rag-ingestion/` | current durable JSON/JSONL summaries | `v3_7_2_source_registry_backed_retrieval_smoke_report_*`가 최신 contract smoke 산출물 |
+| `reports/rag-ingestion/` | current durable JSON/JSONL summaries | `v3_8_2_oracle_free_file_resolve_*`가 최신 resolver 산출물이고, `v3_8_1_evidence_selector_v1_*`와 `v3_8_file_grounded_retrieval_eval_*`는 upstream 산출물 |
 | `harness/`, `run_eval.py` | legacy and general eval harness code | active RAG ingestion status와 혼동하지 않음 |
 | `corpora/`, `artifacts/`, `legacy/`, `experiments/` | corpora, generated artifacts, retired paths, tuning experiments | active/protected artifact 여부를 확인한 뒤 이동/삭제 |
 
@@ -234,7 +284,16 @@ PowerShell 기준으로 가장 빠른 확인 경로는 아래입니다.
 # compact status ledger tail
 Get-Content ai/eval/reports/rag-ingestion/status.jsonl -Tail 5
 
-# current source-registry-backed retrieval smoke summary
+# current oracle-free file/document resolve summary
+Get-Content ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve_summary.json
+
+# upstream evidence selector summary
+Get-Content ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_1_evidence_selector_v1_summary.json
+
+# upstream file-grounded retrieval/evidence eval summary
+Get-Content ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_file_grounded_retrieval_eval_summary.json
+
+# upstream source-registry-backed retrieval smoke summary
 Get-Content ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report_summary.json
 
 # input all-source citable index summary
@@ -247,7 +306,10 @@ Get-Content docs/rag-ingestion-progress.md -TotalCount 80
 ## 아직 열지 않은 것
 
 - `v3_7_1`은 retrieval/answer/citation metric computation이 아니라 index build와 hydration contract 검증입니다.
-- `v3_7_2`도 answer quality, promotion, prompt tuning, gold 반복 튜닝, comparable live measurement를 열지 않았습니다.
+- `v3_7_2` 자체는 answer quality, promotion, prompt tuning, gold 반복 튜닝, comparable live measurement를 열지 않았습니다. 이후 comparable live measurement는 별도 diagnostic rerun으로만 수행됐고 promotion gate를 열지 않았습니다.
+- `v3_8_2`는 file/document resolve 진단입니다. scoped FAISS retrieval route, SourceAtom hydrate route, evidence selector 재정렬, answer generation, answer/citation precision, promotion gate는 아직 열지 않았습니다.
+- `v3_8_1`은 deterministic evidence selector artifact만 고정합니다. answer generation, answer/citation precision, promotion gate, production file resolver, gold/qrels/label mutation은 열지 않았습니다.
+- `v3_8`은 upstream file-grounded retrieval/evidence metrics만 계산합니다. answer generation, answer/citation precision, promotion gate, gold/qrels/label mutation은 열지 않았습니다.
 - 100-row local LLM 표는 documentation sample입니다. official answer/citation precision, evidence precision, citation precision 또는 promotion gate로 쓰지 않습니다.
 - Full graded nDCG, broad product-quality claims, production SLA latency는 아직 열지 않았습니다.
 - Silver/weak-noisy set은 일반화 튜닝 후보를 만들기 위한 보조 표면이지, human gold나 official qrels가 아닙니다.

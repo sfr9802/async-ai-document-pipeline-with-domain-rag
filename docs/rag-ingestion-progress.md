@@ -22,19 +22,23 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `diagnostic_source_registry_backed_retrieval_smoke_v3_7_2_report_done`;
+Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied. The v3_2
 post-fix sequence is closed, the official answer/citation implementation queue
 is empty, and current work remains source-first contract separation:
 SearchViews are retrieval candidates, SourceAtoms/EvidenceBundles own hydrated
-evidence, and v3_7_2 has regenerated the inherited diagnostic silver query
-surface with local LLM natural Korean queries, then produced the
-source registry-backed retrieval smoke report without opening promotion or
-comparable live measurement.
-
-
-
+evidence, v3_8 freezes the file-grounded PDF/XLSX retrieval/evidence metric
+path, v3_8_1 freezes deterministic max-3 citation-capable evidence
+candidates and selector artifacts from the v3_8/v3_7_2 SourceAtom-hydrated top-k rows,
+and v3_8_2 computes oracle-free source_file/document candidates without
+target-locator or manifest-assisted selection. v3_7_2 regenerated the inherited
+diagnostic silver query surface with local LLM natural Korean queries, then
+produced the source registry-backed retrieval smoke report. After
+the structured target-hit rerank, the comparable live measurement was rerun
+with the local `gemma4-e2b-local` endpoint: PASS=27/29, PDF=4/4, XLSX=19/19,
+TEXT=4/6, real LLM invoked for six TEXT rows. Promotion readiness remains
+closed; threshold tuning and winner selection also remain closed.
 
 <!-- official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration:progress-entry:start -->
 - v3_7_2 local LLM natural silver query regeneration (`official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration`) supersedes/discards the inherited v3_6_1 scripted weak/noisy silver query text and regenerates 1000 diagnostic query strings with local `gemma4-e2b-local` through llama.cpp. Source and bucket metadata remain inherited from the frozen v3_5_4/v3_6 diagnostic lane: candidates=1000, unique ids=1000, unique generated question hashes=1000, TEXT=350, PDF=325, XLSX=325; manifests all=1000, core=665, review-only=335, quarantine=0. A second local LLM polish pass rewrote XLSX=325 rows to remove spreadsheet-internal query surfaces; validation found no Latin/Japanese/Hanja script or disallowed punctuation violations, no duplicate generated query hashes, and exact reuse of prior query text is 0. Remaining repeated prefixes are domain-heavy rather than sheet/range templates, so this remains diagnostic silver rather than human gold. No gold/qrels/label/expected-answer/supporting-evidence mutation, retrieval metric, answer metric, citation metric, DB write, production change, prompt/scorer tuning, or promotion was performed.
@@ -49,8 +53,35 @@ comparable live measurement.
 <!-- official_answer_citation_agentic_loop_run_v3_7_1_all_source_citable_nonprod_index_build:progress-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report:progress-entry:start -->
-- v3_7_2 source registry-backed retrieval smoke report (`official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report`) fixes the measurement contract to SearchView -> SourceAtom -> EvidenceBundle -> Citation render and reports contract survival by track without answer-quality scoring. Primary routing mode=query_source_family_routed_for_structured_tracks; routed source families=["PDF","XLSX"]; TEXT: queries=356, top-k returned=1780, same-track@k=356, target@k=20, hydration=1780, evidence render=1780, citation render=1780, top failure=track_mismatch; PDF: queries=329, top-k returned=1645, same-track@k=329, target@k=112, hydration=1645, evidence render=1645, citation render=1645, top failure=snapshot_only; XLSX: queries=344, top-k returned=1720, same-track@k=344, target@k=17, hydration=1720, evidence render=1720, citation render=1720, top failure=none. Mixed all-source FAISS top-k is retained only as baseline diagnostic: PDF mixed same-track@k=9, off-track returned=1634, cross-family TEXT dominance=328; XLSX mixed same-track@k=30, off-track returned=1690, cross-family TEXT dominance=344. The official/gold query surfaces are sealed no-regression checks only; silver diagnostic failure distribution is coverage/failure-discovery only. Promotion readiness remains closed, comparable live measurement remains deferred, and no prompt/scorer/renderer/index/source-registry/gold/qrels/label/expected-answer/supporting-evidence mutation was performed.
+- v3_7_2 source registry-backed retrieval smoke report (`official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report`) fixes the measurement contract to SearchView -> SourceAtom -> EvidenceBundle -> Citation render and reports contract survival by track without answer-quality scoring. Primary routing mode=query_source_family_routed_for_structured_tracks; routed source families=["PDF","XLSX"]; TEXT: queries=356, top-k returned=1780, same-track@k=356, target@k=20, hydration=1780, evidence render=1780, citation render=1780, top failure=track_mismatch; PDF: queries=329, top-k returned=1645, same-track@k=329, target@k=266, hydration=1645, evidence render=1645, citation render=1645, top failure=snapshot_only; XLSX: queries=344, top-k returned=1720, same-track@k=344, target@k=34, hydration=1720, evidence render=1720, citation render=1720, top failure=none. Mixed all-source FAISS top-k is retained only as baseline diagnostic: PDF mixed same-track@k=9, off-track returned=1634, cross-family TEXT dominance=328; XLSX mixed same-track@k=30, off-track returned=1690, cross-family TEXT dominance=344. The official/gold query surfaces are sealed no-regression checks only; silver diagnostic failure distribution is coverage/failure-discovery only. At this smoke step, Promotion readiness remains closed, comparable live measurement remained deferred, and no prompt/scorer/renderer/index/source-registry/gold/qrels/label/expected-answer/supporting-evidence mutation was performed.
 <!-- official_answer_citation_agentic_loop_run_v3_7_2_source_registry_backed_retrieval_smoke_report:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_comparable_live_measurement:progress-entry:start -->
+- v3 comparable live measurement rerun (`official_answer_citation_agentic_loop_run_v3_comparable_live_measurement`) was replayed after the v3_7_2 structured target-hit rerank using local `gemma4-e2b-local` through llama.cpp and the same 29-row official denominator. outcome=COMPARABLE_LIVE_MEASUREMENT_V3_COMPLETED; PASS=27/29; PDF=4/4 and XLSX=19/19 were retained by deterministic source-bound structured adapters; TEXT=4/6 used real LLM synthesis, with `text_namu_v2_0017` and `text_namu_v2_0077` remaining PARTIAL_OR_UNSUPPORTED. `baseline_comparison_is_model_quality_comparable=true`, `real_llm_backend_used=true`, `source_bound_index_used=true`; promotion_evidence=false, promotion_gate_auto_run=false, threshold_tuning=false, winner_selection=false, and no prompt/gold/qrels/label/expected-answer/supporting-evidence mutation was performed.
+<!-- official_answer_citation_agentic_loop_run_v3_comparable_live_measurement:progress-entry:end -->
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_8_file_grounded_retrieval_eval:progress-entry:start -->
+- v3_8 file-grounded retrieval eval (`official_answer_citation_agentic_loop_run_v3_8_file_grounded_retrieval_eval`) computes XLSX/PDF retrieval/evidence metrics before answer generation from v3_7_2 SourceAtom-hydrated top-k rows. XLSX queries=344, workbook_hit@5=317/344; PDF queries=329, page_hit@5=266/329. No XLSX/PDF collapsed headline score, answer metric, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion evidence was produced; FAISS/vector search remains candidate generation only and citation truth remains SourceAtom/source-registry hydrated.
+<!-- official_answer_citation_agentic_loop_run_v3_8_file_grounded_retrieval_eval:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_8_1_evidence_selector_v1:progress-entry:start -->
+- v3_8_1 evidence selector (`official_answer_citation_agentic_loop_run_v3_8_1_evidence_selector_v1`) freezes deterministic max-3 citation-capable evidence candidate artifacts over the v3_8/v3_7_2 PDF/XLSX top-k surface before answer generation. XLSX queries=344, selector_target_hit@3=29/344, selector_file_hit@3=315/344; PDF queries=329, selector_target_hit@3=251/329, selector_file_hit@3=268/329. target SourceAtom ids are used for selector metrics only, not candidate ordering; selector_file_hit now compares against the registry target identity surface, but it remains diagnostic-only and not production file-resolution evidence. No answer generation, XLSX/PDF collapsed headline score, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion evidence was produced.
+<!-- official_answer_citation_agentic_loop_run_v3_8_1_evidence_selector_v1:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve:progress-entry:start -->
+- v3_8_2 oracle-free file resolve (`official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve`) computes ranked source_file/document candidates before scoped retrieval or answer generation, using query/source metadata, SourceAtom/source-registry hydration, SearchView/index candidate metadata, literal file mentions, and source-family intent only. XLSX queries=344, file_resolve@1=136/344, abstain=44/344; PDF queries=329, file_resolve@1=65/329, abstain=182/329. Gold/target SourceAtom ids and manifest targets are metrics-only, not resolver inputs; wrong-file low-confidence cases abstain/disambiguate instead of forcing a file. No scoped FAISS answer route, answer generation, XLSX/PDF collapsed headline score, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion evidence was produced.
+<!-- official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve:progress-entry:end -->
 
 - Official first-run baseline is `status=BLOCKED_OR_PARTIAL`,
   `status_detail=SCORED_BASELINE_PARTIAL`,
@@ -356,11 +387,11 @@ comparable live measurement.
 
 | Track | Current state | Current metric/evidence | Next action |
 |---|---|---|---|
-| Source architecture | v3_6_9 SearchUnit/SearchView/SourceAtom contract is ready; legacy SearchUnit entity is still overloaded | SourceAtom hydration smoke passes without vector payload as evidence truth; source registry materialization required | Materialize durable source registry before more retrieval metric work. |
+| Source architecture | v3_8_2 now resolves ranked source_file/document candidates over v3_8/v3_7_2 SourceAtom-hydrated PDF/XLSX top-k rows without oracle target inputs | PDF/XLSX metrics are reported separately; target SourceAtom/manifest data is metrics-only; citation truth remains source-registry hydrated, not vector metadata | Use the resolver output as a gated input to a later scoped retrieval diagnostic; keep answer generation and promotion closed. |
 | `text_namu_v2_1` | v3_2_7 closes the post-fix implementation queue; `text_namu_v2_0017` and `text_namu_v2_0084` remain diagnostic-only | Lane A/B/C: `24/29`, `27/29`, `27/29`; `text_namu_v2_0012` and `text_namu_v2_0077` are frozen Lane A replay residuals | Do not reopen gold policy automatically. |
-| `xlsx_business_structured` | Source-bound answer/scorer compatibility is stable | XLSX target rows PASS in Lane B/C; XLSX `row_label` mismatch=0 | Keep date/number compatibility general; do not tune thresholds. |
-| `pdf_business_ocr_mm` | `gq_auto_010` is closed by reusing the v3_1_6 safe PDF window sidecar | B/C cite `pdfwin_b1c6527f848018640ad5ed231877c662` and PASS; no index/export rebuild | No PDF follow-up unless a regression reopens it. |
-| Report artifacts | Human narrative stays in three rolling docs; machine evidence stays compact | `status.jsonl` plus summary/diagnostic JSON where required by tests | Avoid per-run Markdown and full forensic payloads unless the run contract requires them. |
+| `xlsx_business_structured` | v3_8_2 oracle-free resolver is computed before scoped retrieval | file_resolve@1 `136/344`; file_resolve@3 `150/344`; abstain `44/344`; wrong-file block `25/344`; upstream v3_8 workbook_hit@5 `317/344` | Improve range/cell locator coverage without mutating gold/qrels/labels. |
+| `pdf_business_ocr_mm` | v3_8_2 oracle-free resolver is computed before scoped retrieval | file_resolve@1 `65/329`; file_resolve@3 `129/329`; abstain `182/329`; wrong-file block `57/329`; upstream v3_8 page_hit@5 `266/329` | Improve PDF file identity confidence, then defer exact bbox overlap and OCR trust policy to a later slice. |
+| Report artifacts | Human narrative stays in three rolling docs; machine evidence stays compact | `status.jsonl` plus v3_8, v3_8_1, and v3_8_2 summary/metrics/per-query/per-family JSON/JSONL where required by tests | Avoid per-run Markdown and full forensic payloads unless the run contract requires them. |
 
 ## Current Verification Command
 
@@ -371,11 +402,11 @@ python -X utf8 -m pytest ai/tests --rag-current -q
 python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q
 ```
 
-Current verification: local results recorded in this progress log. Latest
-current-profile evidence after the v3_7_2 routing smoke update is
+Current verification: local results recorded in this progress log. Latest full
+current-profile evidence before the v3_8 artifact-freeze additions was
 `python -X utf8 -m pytest ai/tests --rag-current -q` -> 276 passed, 0 skipped,
-0 failed, 1 warning.
-Targeted v3_7_2 source-registry routing/status/hash/guardrail checks also pass.
+0 failed, 1 warning. The v3_8 slice adds targeted artifact/status/hash/guardrail
+checks; refresh the full current-profile count only after rerunning it.
 
 Current test surface is intentionally compact after legacy test deletion:
 `python -X utf8 -m pytest ai/tests --rag-current -q`; full `ai/tests`
@@ -400,12 +431,22 @@ Machine-readable official/status surfaces:
 - latest v3_6_9 SearchUnit/SearchView/SourceAtom refactor JSON artifacts:
   summary, contract refactor, adapter diagnostics, SourceAtom hydration smoke,
   and failure buckets.
+- v3_7_0 source registry materialization artifacts.
+- v3_7_1 all-source citable non-production index artifacts.
+- v3_7_2 source registry-backed retrieval smoke artifacts.
+- v3_8 file-grounded retrieval/evidence eval artifacts:
+  summary, metrics, per-query rows, and per-family metrics.
+- v3_8_1 evidence selector artifacts:
+  summary, metrics, per-query selected evidence rows, and per-family metrics.
+- v3_8_2 oracle-free file resolve artifacts:
+  summary, metrics, per-query resolved file candidate rows, and per-family metrics.
 - `ai/eval/silver/answer_citation_silver_manifest_v1.json`
 - `ai/eval/silver/answer_citation_silver_readiness_v1.json`
 
 As of the 2026-05-21 report cleanup, `ai/eval/reports/` intentionally keeps
-only `rag-ingestion/`, and that directory keeps only `status.jsonl` plus the
-latest v3_6_9 machine artifacts. Older `rag-ingestion` payloads, including the
+only `rag-ingestion/`, and that directory keeps `status.jsonl` plus the compact
+current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, and v3_8_2 machine artifacts. Older
+`rag-ingestion` payloads, including the
 official baseline/scorer/input/smoke/source-bound files and v3_1-v3_6_8
 diagnostics, are consolidated under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`.
@@ -450,16 +491,18 @@ above.
 
 ## Next Recommended Steps
 
-1. Materialize the source registry behind the v3_6_9 SourceAtom/SearchView
-   contract before opening more retrieval metric work.
-2. Keep the official answer/citation implementation queue closed unless a later
+1. Use `v3_8_2_oracle_free_file_resolve` as the input gate for a later scoped
+   PDF/XLSX retrieval diagnostic, while keeping answer generation closed.
+2. Keep v3_8/v3_8_1/v3_8_2 diagnostic-only while adding bbox/range-overlap and
+   hidden-negative policy only in a later bounded slice.
+3. Keep the official answer/citation implementation queue closed unless a later
    user-owned policy decision reopens TEXT answerability/gold boundaries.
-3. Do not create silver rows or change expected answers, supporting evidence,
+4. Do not create silver rows or change expected answers, supporting evidence,
    relevance labels, answerability labels, or gold policy unless explicitly
    requested.
-4. Keep report output compact: necessary machine artifacts plus this rolling
+5. Keep report output compact: necessary machine artifacts plus this rolling
    status page, not per-run Markdown report families.
-5. Keep the compact `ai/tests` surface current; extend existing files for
+6. Keep the compact `ai/tests` surface current; extend existing files for
    routine coverage and create a new test file only for a durable subsystem.
 
 ## Short History
@@ -477,3 +520,6 @@ above.
 | 2026-05-20 | v3_6_8 and v3_6_9 proved all-source non-production indexing and a SearchUnit/SearchView/SourceAtom contract; source registry materialization is next. |
 | 2026-05-21 | v3_7_2 superseded the inherited 1000 weak/noisy silver query surface with local LLM natural Korean queries while preserving diagnostic-only, non-promotion boundaries. |
 | 2026-05-21 | v3_7_2 source registry-backed retrieval smoke separates top-k returned candidates from same-track@k, target@k, and contract survival; promotion readiness remains closed. |
+| 2026-05-21 | v3_8 freezes PDF/XLSX file-grounded retrieval/evidence metrics before answer generation, with separate denominators and SourceAtom/source-registry citation truth. |
+| 2026-05-21 | v3_8_1 freezes deterministic max-3 evidence selector artifacts before answer generation; selector_file_hit uses registry target identity for metrics only and remains diagnostic-only. |
+| 2026-05-21 | v3_8_2 computes oracle-free source_file/document resolve metrics with separate PDF/XLSX denominators, abstain/wrong-file blocking, and no answer generation or promotion evidence. |

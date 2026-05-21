@@ -216,6 +216,15 @@ AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_7_2_"
     "source_registry_backed_retrieval_smoke_report"
 )
+AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_8_file_grounded_retrieval_eval"
+)
+AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_8_1_evidence_selector_v1"
+)
+AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -341,6 +350,9 @@ REPORT_ARTIFACT_SLUGS = {
     AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID: (
         AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID
     ),
+    AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID: AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID: AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID: AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID,
@@ -384,6 +396,9 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
     AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID,
     AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID,
+    AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
 }
 PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
@@ -391,6 +406,9 @@ PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_7_1_ALL_SOURCE_CITABLE_NONPROD_INDEX_BUILD_RUN_ID,
     AGENTIC_V3_7_2_LOCAL_LLM_NATURAL_SILVER_QUERY_REGEN_RUN_ID,
     AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID,
+    AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
 }
 
 
@@ -1211,6 +1229,54 @@ AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON = report_arti
     AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID,
     "silver_1000_diagnostic_overlay.json",
 )
+AGENTIC_V3_8_FILE_GROUNDED_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_8_FILE_GROUNDED_METRICS_JSON = report_artifact_path(
+    AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    "metrics.json",
+)
+AGENTIC_V3_8_FILE_GROUNDED_PER_QUERY_JSONL = report_artifact_path(
+    AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    "per_query.jsonl",
+)
+AGENTIC_V3_8_FILE_GROUNDED_PER_FAMILY_JSON = report_artifact_path(
+    AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+    "per_family.json",
+)
+AGENTIC_V3_8_1_EVIDENCE_SELECTOR_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON = report_artifact_path(
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    "metrics.json",
+)
+AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL = report_artifact_path(
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    "per_query.jsonl",
+)
+AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON = report_artifact_path(
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+    "per_family.json",
+)
+AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON = report_artifact_path(
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+    "metrics.json",
+)
+AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL = report_artifact_path(
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+    "per_query.jsonl",
+)
+AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON = report_artifact_path(
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+    "per_family.json",
+)
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
@@ -1219,6 +1285,36 @@ def require_v3_7_2_local_artifacts(*paths: Path) -> None:
         return
     message = "missing v3_7_2 local report artifacts: " + ", ".join(str(path) for path in missing)
     if os.environ.get("RAG_V3_7_2_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
+def require_v3_8_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_8 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_8_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
+def require_v3_8_1_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_8_1 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_8_1_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
+def require_v3_8_2_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_8_2 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_8_2_ARTIFACTS_REQUIRED") == "1":
         pytest.fail(message)
     pytest.skip(message)
 
@@ -1426,6 +1522,18 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON,
     AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON,
     AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON,
+    AGENTIC_V3_8_FILE_GROUNDED_SUMMARY_JSON,
+    AGENTIC_V3_8_FILE_GROUNDED_METRICS_JSON,
+    AGENTIC_V3_8_FILE_GROUNDED_PER_QUERY_JSONL,
+    AGENTIC_V3_8_FILE_GROUNDED_PER_FAMILY_JSON,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_SUMMARY_JSON,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_SUMMARY_JSON,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON,
 }
 PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS = CURRENT_REPORT_PATHS
 ARCHIVED_REPORT_PATHS = {
@@ -1517,6 +1625,18 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON,
     AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON,
     AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SILVER_OVERLAY_JSON,
+    AGENTIC_V3_8_FILE_GROUNDED_SUMMARY_JSON,
+    AGENTIC_V3_8_FILE_GROUNDED_METRICS_JSON,
+    AGENTIC_V3_8_FILE_GROUNDED_PER_QUERY_JSONL,
+    AGENTIC_V3_8_FILE_GROUNDED_PER_FAMILY_JSON,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_SUMMARY_JSON,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL,
+    AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_SUMMARY_JSON,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL,
+    AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON,
 }
 ARCHIVED_REPORT_PATHS = (
     ARCHIVED_REPORT_PATHS | (PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS - CURRENT_REPORT_PATHS)
@@ -2232,6 +2352,515 @@ def test_v3_7_2_source_registry_backed_retrieval_smoke_artifacts_are_registered_
     assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON.stat().st_size < 250_000
 
 
+def test_v3_8_file_grounded_retrieval_eval_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_8_local_artifacts(
+        AGENTIC_V3_8_FILE_GROUNDED_SUMMARY_JSON,
+        AGENTIC_V3_8_FILE_GROUNDED_METRICS_JSON,
+        AGENTIC_V3_8_FILE_GROUNDED_PER_QUERY_JSONL,
+        AGENTIC_V3_8_FILE_GROUNDED_PER_FAMILY_JSON,
+    )
+    summary = read_json(AGENTIC_V3_8_FILE_GROUNDED_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_8_FILE_GROUNDED_METRICS_JSON)
+    per_family = read_json(AGENTIC_V3_8_FILE_GROUNDED_PER_FAMILY_JSON)
+    per_query_rows = read_jsonl(AGENTIC_V3_8_FILE_GROUNDED_PER_QUERY_JSONL)
+    expected_artifacts = {
+        "metrics_json_sha256": AGENTIC_V3_8_FILE_GROUNDED_METRICS_JSON,
+        "per_query_jsonl_sha256": AGENTIC_V3_8_FILE_GROUNDED_PER_QUERY_JSONL,
+        "per_family_json_sha256": AGENTIC_V3_8_FILE_GROUNDED_PER_FAMILY_JSON,
+    }
+
+    assert AGENTIC_V3_8_FILE_GROUNDED_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID
+    assert summary["artifact_kind"] == "v3_8_file_grounded_retrieval_eval_summary"
+    assert summary["run_class"] == "diagnostic_only_file_grounded_retrieval_eval"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["answer_generation_metric_computed"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["silver_mutation"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["source_atom_registry_canonical_truth_used_for_metrics"] is True
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["vector_metadata_used_as_canonical_citation_source"] is False
+    assert summary["vector_metadata_used_as_evidence_truth"] is False
+    assert summary["xlsx_pdf_collapsed_score_reported"] is False
+    assert set(summary["per_source_family"]) == {"PDF", "XLSX"}
+    assert set(per_family) == {"PDF", "XLSX"}
+    assert summary["per_source_family"] == per_family
+    assert metrics["per_source_family"] == per_family
+    assert len(per_query_rows) == summary["source_family_counts"]["PDF"] + summary["source_family_counts"]["XLSX"]
+    assert summary["source_family_counts"]["PDF"] > 0
+    assert summary["source_family_counts"]["XLSX"] > 0
+    assert summary["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert summary["denominator_audit"]["denominator_scope"] == "diagnostic_v3_7_2_topk_rows_pdf_xlsx_only"
+    assert summary["denominator_audit"]["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert summary["denominator_audit"]["query_scope_counts"]["PDF"] == {
+        "sealed_gold_no_regression_check": 4,
+        "silver_1000_diagnostic_overlay": 325,
+    }
+    assert summary["denominator_audit"]["query_scope_counts"]["XLSX"] == {
+        "sealed_gold_no_regression_check": 19,
+        "silver_1000_diagnostic_overlay": 325,
+    }
+    assert summary["denominator_audit"]["missing_target_mapping_surface_count"] == 0
+    assert metrics["denominator_policy"]["row_scope"] == "PDF/XLSX query rows with an existing target mapping surface"
+    assert metrics["vector_truth_violation_count"] == 0
+    assert metrics["ignored_vector_truth_claim_count"] >= 0
+    assert "per_query_rows" not in metrics
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["source_registry_sha256_before"] == summary["source_registry_sha256_after"]
+    assert summary["source_registry_sha256_unchanged"] is True
+    assert summary["index_artifact_sha256_before"] == summary["index_artifact_sha256_after"]
+    assert summary["index_artifact_sha256_unchanged"] is True
+    assert summary["official_denominator_index_sha256_before"] == summary["official_denominator_index_sha256_after"]
+    assert summary["official_denominator_index_sha256_unchanged"] is True
+    assert summary["fail_closed_reasons"] == []
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
+
+    for heavy_key in (
+        "metrics",
+        "per_query_rows",
+        "topk_result_rows",
+        "source_atom_rows",
+        "search_view_rows",
+        "generated_answers",
+        "prompt_payloads",
+        "db_snapshot_rows",
+        "full_evidence_bundles",
+    ):
+        assert heavy_key not in summary
+    assert AGENTIC_V3_8_FILE_GROUNDED_SUMMARY_JSON.stat().st_size < 500_000
+    assert AGENTIC_V3_8_FILE_GROUNDED_METRICS_JSON.stat().st_size < 500_000
+    assert AGENTIC_V3_8_FILE_GROUNDED_PER_QUERY_JSONL.stat().st_size < 2_000_000
+    assert AGENTIC_V3_8_FILE_GROUNDED_PER_FAMILY_JSON.stat().st_size < 250_000
+
+
+def test_v3_8_file_grounded_writer_emits_compact_artifacts_and_summary_hashes(tmp_path, monkeypatch) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    summary_path = tmp_path / "v3_8_summary.json"
+    metrics_path = tmp_path / "v3_8_metrics.json"
+    per_query_path = tmp_path / "v3_8_per_query.jsonl"
+    per_family_path = tmp_path / "v3_8_per_family.json"
+
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_FILE_GROUNDED_METRICS_JSON", metrics_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_FILE_GROUNDED_PER_QUERY_JSONL", per_query_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_FILE_GROUNDED_PER_FAMILY_JSON", per_family_path)
+    monkeypatch.setattr(
+        runner,
+        "report_artifact_path",
+        lambda run_id, suffix: summary_path
+        if run_id == runner.V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID and suffix == "summary.json"
+        else tmp_path / f"{run_id}_{suffix}",
+    )
+
+    summary = {
+        "run_id": runner.V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
+        "status": "DIAGNOSTIC_FILE_GROUNDED_RETRIEVAL_EVAL_COMPUTED",
+        "metrics": {
+            "artifact_kind": "v3_8_file_grounded_retrieval_eval_metrics",
+            "per_source_family": {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}},
+        },
+        "per_query_rows": [
+            {"query_id": "pdf_q", "source_family": "PDF"},
+            {"query_id": "xlsx_q", "source_family": "XLSX"},
+        ],
+        "per_source_family": {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}},
+        "artifact_paths": {
+            "summary_json": "tmp/v3_8_summary.json",
+            "metrics_json": "tmp/v3_8_metrics.json",
+            "per_query_jsonl": "tmp/v3_8_per_query.jsonl",
+            "per_family_json": "tmp/v3_8_per_family.json",
+        },
+    }
+
+    runner.write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
+
+    persisted = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert metrics_path.exists()
+    assert per_query_path.exists()
+    assert per_family_path.exists()
+    assert "metrics" not in persisted
+    assert "per_query_rows" not in persisted
+    assert "per_query_rows" not in json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert persisted["per_source_family"] == {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}}
+    assert summary["artifact_sha256"]["metrics_json_sha256"] == sha256_file(metrics_path)
+    assert summary["artifact_sha256"]["per_query_jsonl_sha256"] == sha256_file(per_query_path)
+    assert summary["artifact_sha256"]["per_family_json_sha256"] == sha256_file(per_family_path)
+    assert summary["artifact_sha256"]["summary_json_sha256"] == sha256_file(summary_path)
+    assert "summary_json_sha256" not in persisted["artifact_sha256"]
+
+
+def test_v3_8_1_evidence_selector_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_8_1_local_artifacts(
+        AGENTIC_V3_8_1_EVIDENCE_SELECTOR_SUMMARY_JSON,
+        AGENTIC_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON,
+        AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL,
+        AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON,
+    )
+    summary = read_json(AGENTIC_V3_8_1_EVIDENCE_SELECTOR_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON)
+    per_family = read_json(AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON)
+    per_query_rows = read_jsonl(AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL)
+    expected_artifacts = {
+        "metrics_json_sha256": AGENTIC_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON,
+        "per_query_jsonl_sha256": AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL,
+        "per_family_json_sha256": AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON,
+    }
+
+    assert AGENTIC_V3_8_1_EVIDENCE_SELECTOR_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID
+    assert summary["parent_file_grounded_eval_run_id"] == AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID
+    assert summary["artifact_kind"] == "v3_8_1_evidence_selector_summary"
+    assert summary["run_class"] == "diagnostic_only_evidence_selector_v1"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["answer_generation_metric_computed"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["silver_mutation"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["source_atom_registry_canonical_truth_used_for_selection"] is True
+    assert summary["selector_uses_target_source_atom_ids_for_selection"] is False
+    assert summary["target_source_atom_ids_used_for_metrics_only"] is True
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["vector_metadata_used_as_canonical_citation_source"] is False
+    assert summary["vector_metadata_used_as_evidence_truth"] is False
+    assert summary["xlsx_pdf_collapsed_score_reported"] is False
+    assert set(summary["per_source_family"]) == {"PDF", "XLSX"}
+    assert set(per_family) == {"PDF", "XLSX"}
+    assert summary["per_source_family"] == per_family
+    assert metrics["per_source_family"] == per_family
+    assert len(per_query_rows) == summary["source_family_counts"]["PDF"] + summary["source_family_counts"]["XLSX"]
+    assert all(len(row.get("selected_evidence", [])) <= 3 for row in per_query_rows)
+    assert summary["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert summary["denominator_audit"]["denominator_scope"] == "diagnostic_v3_7_2_topk_rows_pdf_xlsx_only"
+    assert summary["denominator_audit"]["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert metrics["denominator_policy"]["xlsx_and_pdf_are_not_collapsed"] is True
+    assert metrics["selector_policy"]["uses_target_source_atom_ids_for_selection"] is False
+    assert metrics["selector_policy"]["target_source_atom_ids_used_for_metrics_only"] is True
+    assert "per_query_rows" not in metrics
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["source_registry_sha256_before"] == summary["source_registry_sha256_after"]
+    assert summary["source_registry_sha256_unchanged"] is True
+    assert summary["index_artifact_sha256_before"] == summary["index_artifact_sha256_after"]
+    assert summary["index_artifact_sha256_unchanged"] is True
+    assert summary["official_denominator_index_sha256_before"] == summary["official_denominator_index_sha256_after"]
+    assert summary["official_denominator_index_sha256_unchanged"] is True
+    assert summary["fail_closed_reasons"] == []
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+
+    for heavy_key in (
+        "metrics",
+        "per_query_rows",
+        "topk_result_rows",
+        "source_atom_rows",
+        "search_view_rows",
+        "generated_answers",
+        "prompt_payloads",
+        "db_snapshot_rows",
+        "full_evidence_bundles",
+    ):
+        assert heavy_key not in summary
+    assert AGENTIC_V3_8_1_EVIDENCE_SELECTOR_SUMMARY_JSON.stat().st_size < 500_000
+    assert AGENTIC_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON.stat().st_size < 500_000
+    assert AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL.stat().st_size < 2_000_000
+    assert AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON.stat().st_size < 250_000
+
+
+def test_v3_8_1_evidence_selector_writer_emits_compact_artifacts_and_summary_hashes(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    summary_path = tmp_path / "v3_8_1_summary.json"
+    metrics_path = tmp_path / "v3_8_1_metrics.json"
+    per_query_path = tmp_path / "v3_8_1_per_query.jsonl"
+    per_family_path = tmp_path / "v3_8_1_per_family.json"
+
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON", metrics_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL", per_query_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON", per_family_path)
+    monkeypatch.setattr(
+        runner,
+        "report_artifact_path",
+        lambda run_id, suffix: summary_path
+        if run_id == runner.V3_8_1_EVIDENCE_SELECTOR_RUN_ID and suffix == "summary.json"
+        else tmp_path / f"{run_id}_{suffix}",
+    )
+
+    summary = {
+        "run_id": runner.V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
+        "status": "DIAGNOSTIC_EVIDENCE_SELECTOR_V1_COMPUTED",
+        "metrics": {
+            "artifact_kind": "v3_8_1_evidence_selector_metrics",
+            "per_source_family": {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}},
+            "per_query_rows": [{"query_id": "heavy_row"}],
+        },
+        "per_query_rows": [
+            {"query_id": "pdf_q", "source_family": "PDF"},
+            {"query_id": "xlsx_q", "source_family": "XLSX"},
+        ],
+        "per_source_family": {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}},
+        "artifact_paths": {
+            "summary_json": "tmp/v3_8_1_summary.json",
+            "metrics_json": "tmp/v3_8_1_metrics.json",
+            "per_query_jsonl": "tmp/v3_8_1_per_query.jsonl",
+            "per_family_json": "tmp/v3_8_1_per_family.json",
+        },
+    }
+
+    runner.write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
+
+    persisted = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert metrics_path.exists()
+    assert per_query_path.exists()
+    assert per_family_path.exists()
+    assert "metrics" not in persisted
+    assert "per_query_rows" not in persisted
+    assert "per_query_rows" not in json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert persisted["per_source_family"] == {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}}
+    assert summary["artifact_sha256"]["metrics_json_sha256"] == sha256_file(metrics_path)
+    assert summary["artifact_sha256"]["per_query_jsonl_sha256"] == sha256_file(per_query_path)
+    assert summary["artifact_sha256"]["per_family_json_sha256"] == sha256_file(per_family_path)
+    assert summary["artifact_sha256"]["summary_json_sha256"] == sha256_file(summary_path)
+    assert "summary_json_sha256" not in persisted["artifact_sha256"]
+
+
+def test_v3_8_2_oracle_free_file_resolve_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_8_2_local_artifacts(
+        AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_SUMMARY_JSON,
+        AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON,
+        AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL,
+        AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON,
+    )
+    summary = read_json(AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON)
+    per_family = read_json(AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON)
+    per_query_rows = read_jsonl(AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL)
+    expected_artifacts = {
+        "metrics_json_sha256": AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON,
+        "per_query_jsonl_sha256": AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL,
+        "per_family_json_sha256": AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON,
+    }
+
+    assert AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID
+    assert summary["parent_file_grounded_eval_run_id"] == AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID
+    assert summary["parent_evidence_selector_run_id"] == AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID
+    assert summary["artifact_kind"] == "v3_8_2_oracle_free_file_resolve_summary"
+    assert summary["run_class"] == "diagnostic_only_oracle_free_file_resolve_v1"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["answer_generation_metric_computed"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["qrels_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["silver_mutation"] is False
+    assert summary["file_resolve_oracle_free"] is True
+    assert summary["oracle_assisted_file_resolve"] is False
+    assert summary["oracle_free_input_violation_count"] == 0
+    assert summary["resolver_uses_target_source_atom_ids_for_selection"] is False
+    assert summary["target_source_atom_ids_used_for_metrics_only"] is True
+    assert summary["source_atom_registry_canonical_truth_used_for_resolution"] is True
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["vector_metadata_used_as_canonical_citation_source"] is False
+    assert summary["vector_metadata_used_as_evidence_truth"] is False
+    assert summary["xlsx_pdf_collapsed_score_reported"] is False
+    assert set(summary["per_source_family"]) == {"PDF", "XLSX"}
+    assert set(per_family) == {"PDF", "XLSX"}
+    assert summary["per_source_family"] == per_family
+    assert metrics["per_source_family"] == per_family
+    assert len(per_query_rows) == summary["source_family_counts"]["PDF"] + summary["source_family_counts"]["XLSX"]
+    assert all(len(row.get("resolved_file_candidates", [])) <= 3 for row in per_query_rows)
+    assert summary["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert summary["denominator_audit"]["denominator_scope"] == "diagnostic_v3_7_2_topk_rows_pdf_xlsx_only"
+    assert summary["denominator_audit"]["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert metrics["denominator_policy"]["xlsx_and_pdf_are_not_collapsed"] is True
+    assert metrics["resolver_policy"]["oracle_free"] is True
+    assert metrics["resolver_policy"]["oracle_assisted_file_resolve"] is False
+    assert metrics["oracle_free_input_violation_count"] == 0
+    assert "per_query_rows" not in metrics
+    forbidden_candidate_artifact_keys = {
+        "metric_target_file_identity",
+        "question_gold_locator_target",
+        "official_manifest_target",
+        "target_source_atom_ids",
+        "target_search_view_ids",
+        "target_locator_fingerprint",
+        "target_search_unit_id",
+        "target_parent_source_unit_id",
+        "target_mapping_audit",
+        "expected_answer",
+        "supporting_evidence",
+        "qrels",
+        "relevance_label",
+        "answerability_label",
+    }
+
+    def assert_forbidden_candidate_keys_absent(value: object) -> None:
+        if isinstance(value, dict):
+            assert not forbidden_candidate_artifact_keys.intersection(value)
+            for child in value.values():
+                assert_forbidden_candidate_keys_absent(child)
+        elif isinstance(value, list):
+            for child in value:
+                assert_forbidden_candidate_keys_absent(child)
+
+    assert_forbidden_candidate_keys_absent(per_query_rows)
+    assert all(
+        row.get("metric_overlay_redacted_from_candidate_artifact") is True
+        for row in per_query_rows
+    )
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["source_registry_sha256_before"] == summary["source_registry_sha256_after"]
+    assert summary["source_registry_sha256_unchanged"] is True
+    assert summary["index_artifact_sha256_before"] == summary["index_artifact_sha256_after"]
+    assert summary["index_artifact_sha256_unchanged"] is True
+    assert summary["official_denominator_index_sha256_before"] == summary["official_denominator_index_sha256_after"]
+    assert summary["official_denominator_index_sha256_unchanged"] is True
+    assert summary["v3_8_summary_sha256_before"] == summary["v3_8_summary_sha256_after"]
+    assert summary["v3_8_summary_sha256_unchanged"] is True
+    assert summary["v3_8_1_summary_sha256_before"] == summary["v3_8_1_summary_sha256_after"]
+    assert summary["v3_8_1_summary_sha256_unchanged"] is True
+    assert summary["fail_closed_reasons"] == []
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
+    assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
+
+    for heavy_key in (
+        "metrics",
+        "per_query_rows",
+        "topk_result_rows",
+        "source_atom_rows",
+        "search_view_rows",
+        "generated_answers",
+        "prompt_payloads",
+        "db_snapshot_rows",
+        "full_evidence_bundles",
+    ):
+        assert heavy_key not in summary
+    assert AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_SUMMARY_JSON.stat().st_size < 500_000
+    assert AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON.stat().st_size < 500_000
+    assert AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL.stat().st_size < 4_000_000
+    assert AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON.stat().st_size < 250_000
+
+
+def test_v3_8_2_oracle_free_file_resolve_writer_emits_compact_artifacts_and_summary_hashes(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    summary_path = tmp_path / "v3_8_2_summary.json"
+    metrics_path = tmp_path / "v3_8_2_metrics.json"
+    per_query_path = tmp_path / "v3_8_2_per_query.jsonl"
+    per_family_path = tmp_path / "v3_8_2_per_family.json"
+
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON", metrics_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL", per_query_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON", per_family_path)
+    monkeypatch.setattr(
+        runner,
+        "report_artifact_path",
+        lambda run_id, suffix: summary_path
+        if run_id == runner.V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID and suffix == "summary.json"
+        else tmp_path / f"{run_id}_{suffix}",
+    )
+
+    summary = {
+        "run_id": runner.V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+        "status": "DIAGNOSTIC_ORACLE_FREE_FILE_RESOLVE_COMPUTED",
+        "metrics": {
+            "artifact_kind": "v3_8_2_oracle_free_file_resolve_metrics",
+            "per_source_family": {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}},
+            "per_query_rows": [{"query_id": "heavy_row"}],
+        },
+        "per_query_rows": [
+            {"query_id": "pdf_q", "source_family": "PDF"},
+            {"query_id": "xlsx_q", "source_family": "XLSX"},
+        ],
+        "per_source_family": {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}},
+        "artifact_paths": {
+            "summary_json": "tmp/v3_8_2_summary.json",
+            "metrics_json": "tmp/v3_8_2_metrics.json",
+            "per_query_jsonl": "tmp/v3_8_2_per_query.jsonl",
+            "per_family_json": "tmp/v3_8_2_per_family.json",
+        },
+    }
+
+    runner.write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
+
+    persisted = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert metrics_path.exists()
+    assert per_query_path.exists()
+    assert per_family_path.exists()
+    assert "metrics" not in persisted
+    assert "per_query_rows" not in persisted
+    assert "per_query_rows" not in json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert persisted["per_source_family"] == {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}}
+    assert summary["artifact_sha256"]["metrics_json_sha256"] == sha256_file(metrics_path)
+    assert summary["artifact_sha256"]["per_query_jsonl_sha256"] == sha256_file(per_query_path)
+    assert summary["artifact_sha256"]["per_family_json_sha256"] == sha256_file(per_family_path)
+    assert summary["artifact_sha256"]["summary_json_sha256"] == sha256_file(summary_path)
+    assert "summary_json_sha256" not in persisted["artifact_sha256"]
+
+
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:
     first_run = read_json(REPORT_DIR / "baseline_v1.json")
     input_config = read_json(REPORT_DIR / "metric_input_v1.json")
@@ -2241,6 +2870,8 @@ def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_onl
     smoke = read_json(REPORT_DIR / "smoke_v1.json")
 
     assert {path.name for path in REPORT_DIR.iterdir() if path.is_file()} == CURRENT_REPORT_FILENAMES
+    assert "v3_comparable_summary.md" not in ARCHIVED_REPORT_FILENAMES
+    assert not (archived_report_dir() / "v3_comparable_summary.md").exists()
     assert {path.name for path in archived_report_dir().iterdir()} == ARCHIVED_REPORT_FILENAMES
     assert CURRENT_REPORT_FILENAMES | ARCHIVED_REPORT_FILENAMES == ALL_REPORT_FILENAMES
     assert not (REPORT_DIR / "status.md").exists()
@@ -3329,6 +3960,9 @@ def test_v3_comparable_live_measurement_artifacts_are_separate_and_guarded() -> 
     assert summary["diagnostic_only"] is True
     assert summary["comparable_live_measurement"] is True
     assert summary["promotion_evidence"] is False
+    assert summary["write_summary_markdown"] is False
+    assert "summary_md" not in summary["artifact_paths"]
+    assert not report_artifact_path(AGENTIC_V3_RUN_ID, "summary.md").exists()
     assert summary["threshold_tuning"] is False
     assert summary["winner_selection"] is False
     assert summary["promotion_gate_auto_run"] is False

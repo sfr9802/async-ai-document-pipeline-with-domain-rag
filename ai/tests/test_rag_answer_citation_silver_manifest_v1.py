@@ -3890,6 +3890,1022 @@ def test_v3_7_1_xlsx_search_view_ranking_text_keeps_locator_and_value_fields() -
         assert "normalized_value=42" in view[field]
 
 
+def test_v3_7_2_structured_rerank_prefers_xlsx_exact_locator_value_over_broad_range() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    query = "2020년 11월에 지정된 하얀민들레노인요양원의 우편번호는 무엇입니까?"
+    broad_range = {
+        "faiss_row_id": 1,
+        "source_family": "XLSX",
+        "bm25_text": (
+            "workbook=국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx | "
+            "sheet=일반현황 | range=A1:J30761 | normalized_value=202011"
+        ),
+        "display_text": "일반현황 broad sheet range 202011",
+    }
+    exact_value = {
+        "faiss_row_id": 2,
+        "source_family": "XLSX",
+        "bm25_text": (
+            "workbook=국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx | "
+            "sheet=일반현황 | range=A702:J751 | cell=C702 | "
+            "row_label=장기요양기관이름=하얀민들레노인요양원 | "
+            "column_label=우편번호 | target_column=우편번호 | normalized_value=41786"
+        ),
+        "display_text": "하얀민들레노인요양원 우편번호 41786",
+    }
+
+    hits = runner.v3_7_2_rank_family_candidates(
+        query_text=query,
+        candidate_rows=[broad_range, exact_value],
+        base_scores=[0.90, 0.10],
+        top_k=2,
+    )
+
+    assert hits[0][0] == 2
+    assert hits[0][1] > hits[1][1]
+
+
+def test_v3_7_2_structured_rerank_prefers_pdf_content_terms_over_filename_only_match() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    query = "1월 산업활동에서 생산 지표는 어떻게 움직였나요?"
+    filename_only = {
+        "faiss_row_id": 10,
+        "source_family": "PDF",
+        "bm25_text": "source_pdf_path=2025_01_recent_economic_trends.pdf | page=1 | 목 차",
+        "display_text": "2025년 1월 최근경제동향 목차",
+    }
+    content_match = {
+        "faiss_row_id": 11,
+        "source_family": "PDF",
+        "bm25_text": (
+            "source_pdf_path=2025_01_recent_economic_trends.pdf | page=8 | "
+            "region_type=text | matched_text=1월 산업활동은 생산 지표가 조정되며 광공업 생산이 움직였다"
+        ),
+        "display_text": "1월 산업활동 생산 지표 광공업 생산",
+    }
+
+    hits = runner.v3_7_2_rank_family_candidates(
+        query_text=query,
+        candidate_rows=[filename_only, content_match],
+        base_scores=[0.80, 0.20],
+        top_k=2,
+    )
+
+    assert hits[0][0] == 11
+    assert hits[0][1] > hits[1][1]
+
+
+def test_v3_8_file_grounded_metrics_keep_xlsx_and_pdf_denominators_separate() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_xlsx_target": {
+            "source_family": "XLSX",
+            "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "sheet": "Summary",
+                "range": "A1:D10",
+                "cell": "C4",
+                "normalized_value": "41786",
+            },
+            "normalized_text_or_value_snapshot": "41786",
+        },
+        "atom_pdf_target": {
+            "source_family": "PDF",
+            "source_identity": "docv_pdf:report.pdf:3:[1, 2, 3, 4]",
+            "raw_locator": {
+                "source_pdf_path": "D:/repo/report.pdf",
+                "page": 3,
+                "physical_page_index": 2,
+                "bbox": [1, 2, 3, 4],
+                "region_type": "paragraph",
+            },
+            "normalized_text_or_value_snapshot": "matched paragraph text",
+        },
+    }
+    topk_rows = [
+        {
+            "query_id": "xlsx_q1",
+            "source_family": "XLSX",
+            "target_source_atom_ids": ["atom_xlsx_target"],
+            "target_search_view_ids": ["sv_xlsx_target"],
+            "official_manifest_target": {
+                "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+            },
+            "top_result_envelopes": [
+                {
+                    "rank": 1,
+                    "search_view_id": "sv_xlsx_target",
+                    "source_atom_id": "atom_xlsx_target",
+                    "source_family": "XLSX",
+                    "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+                    "source_atom_hydrated_from_registry": True,
+                    "evidence_bundle_render_valid": True,
+                    "citation_render_valid": True,
+                }
+            ],
+        },
+        {
+            "query_id": "pdf_q1",
+            "source_family": "PDF",
+            "target_source_atom_ids": ["atom_pdf_target"],
+            "target_search_view_ids": ["sv_pdf_target"],
+            "question_gold_locator_target": {
+                "file": "report.pdf",
+                "page": 3,
+                "bbox": [1, 2, 3, 4],
+            },
+            "top_result_envelopes": [
+                {
+                    "rank": 1,
+                    "search_view_id": "sv_pdf_target",
+                    "source_atom_id": "atom_pdf_target",
+                    "source_family": "PDF",
+                    "source_identity": "docv_pdf:report.pdf:3:[1, 2, 3, 4]",
+                    "source_atom_hydrated_from_registry": True,
+                    "evidence_bundle_render_valid": True,
+                    "citation_render_valid": True,
+                }
+            ],
+        },
+    ]
+
+    metrics = runner.v3_8_file_grounded_retrieval_eval_metrics(
+        topk_rows,
+        source_registry=source_registry,
+    )
+
+    assert metrics["headline_aggregate_score_reported"] is False
+    assert metrics["answer_generation_metric_computed"] is False
+    assert metrics["gold_or_label_mutation"] is False
+    assert set(metrics["per_source_family"]) == {"PDF", "XLSX"}
+    assert metrics["per_source_family"]["XLSX"]["query_count"] == 1
+    assert metrics["per_source_family"]["PDF"]["query_count"] == 1
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["workbook_hit@1"]["rate"] == 1.0
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["sheet_hit@5"]["rate"] == 1.0
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["table_or_range_hit@5"]["rate"] == 1.0
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["cell_or_value_hit@5"]["rate"] == 1.0
+    assert metrics["per_source_family"]["PDF"]["metrics"]["file_hit@1"]["rate"] == 1.0
+    assert metrics["per_source_family"]["PDF"]["metrics"]["page_hit@5"]["rate"] == 1.0
+    assert metrics["per_source_family"]["PDF"]["metrics"]["block_or_bbox_available@5"]["rate"] == 1.0
+    assert metrics["per_source_family"]["PDF"]["metrics"]["matched_text_present@5"]["rate"] == 1.0
+
+
+def test_v3_8_file_grounded_metrics_count_unsupported_without_vector_truth_or_gold_mutation() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_xlsx_target": {
+            "source_family": "XLSX",
+            "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "sheet": "Summary",
+                "range": "A1:D10",
+                "cell": "C4",
+                "normalized_value": "41786",
+            },
+            "normalized_text_or_value_snapshot": "41786",
+        },
+        "atom_xlsx_wrong": {
+            "source_family": "XLSX",
+            "source_identity": "docv_xlsx:other.xlsx:Summary:A1:D10:C4",
+            "raw_locator": {
+                "workbook": "other.xlsx",
+                "sheet": "Summary",
+                "range": "A1:D10",
+                "cell": "C4",
+                "normalized_value": "00000",
+            },
+            "normalized_text_or_value_snapshot": "00000",
+        },
+    }
+    topk_rows = [
+        {
+            "query_id": "xlsx_q1",
+            "source_family": "XLSX",
+            "target_source_atom_ids": ["atom_xlsx_target"],
+            "target_search_view_ids": ["sv_xlsx_target"],
+            "official_manifest_target": {
+                "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+            },
+            "top_result_envelopes": [
+                {
+                    "rank": 1,
+                    "search_view_id": "sv_xlsx_wrong",
+                    "source_atom_id": "atom_xlsx_wrong",
+                    "source_family": "XLSX",
+                    "source_identity": "docv_xlsx:other.xlsx:Summary:A1:D10:C4",
+                    "source_atom_hydrated_from_registry": True,
+                    "evidence_bundle_render_valid": True,
+                    "citation_render_valid": True,
+                    "vector_metadata_used_as_canonical_citation_source": True,
+                    "vector_payload_used_as_evidence_truth": True,
+                }
+            ],
+        }
+    ]
+
+    metrics = runner.v3_8_file_grounded_retrieval_eval_metrics(
+        topk_rows,
+        source_registry=source_registry,
+    )
+
+    xlsx = metrics["per_source_family"]["XLSX"]["metrics"]
+    assert xlsx["file_hit@1"]["rate"] == 0.0
+    assert xlsx["target_source_atom_recall@5"]["rate"] == 0.0
+    assert xlsx["evidence_select_hit@3"]["rate"] == 0.0
+    assert xlsx["unsupported_rate"]["rate"] == 1.0
+    assert metrics["vector_db_role"] == "candidate_generator_only"
+    assert metrics["source_atom_registry_canonical_truth"] is True
+    assert metrics["vector_metadata_used_as_canonical_citation_source"] is False
+    assert metrics["vector_metadata_used_as_evidence_truth"] is False
+    assert metrics["ignored_vector_truth_claim_count"] == 1
+
+
+def test_v3_8_file_grounded_metrics_require_loaded_source_atom_for_contract_survival() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    topk_rows = [
+        {
+            "query_id": "pdf_q1",
+            "source_family": "PDF",
+            "target_source_atom_ids": ["atom_pdf_target"],
+            "target_search_view_ids": ["sv_pdf_target"],
+            "official_manifest_target": {
+                "source_identity": "docv_pdf:report.pdf:3:[1, 2, 3, 4]",
+            },
+            "top_result_envelopes": [
+                {
+                    "rank": 1,
+                    "search_view_id": "sv_pdf_target",
+                    "source_atom_id": "atom_pdf_target",
+                    "source_family": "PDF",
+                    "source_identity": "docv_pdf:report.pdf:3:[1, 2, 3, 4]",
+                    "source_atom_hydrated_from_registry": True,
+                    "evidence_bundle_render_valid": True,
+                    "citation_render_valid": True,
+                }
+            ],
+        }
+    ]
+
+    metrics = runner.v3_8_file_grounded_retrieval_eval_metrics(
+        topk_rows,
+        source_registry={},
+    )
+
+    pdf = metrics["per_source_family"]["PDF"]["metrics"]
+    assert pdf["file_hit@5"]["rate"] == 1.0
+    assert pdf["target_source_atom_recall@5"]["rate"] == 1.0
+    assert pdf["evidence_select_hit@3"]["rate"] == 0.0
+    assert pdf["contract_survival_rate"]["rate"] == 0.0
+    assert pdf["unsupported_rate"]["rate"] == 1.0
+
+
+def test_v3_8_1_evidence_selector_prefers_citation_capable_same_file_evidence() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_xlsx_target": {
+            "source_family": "XLSX",
+            "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "sheet": "Summary",
+                "range": "A1:D10",
+                "cell": "C4",
+                "normalized_value": "41786",
+            },
+            "normalized_text_or_value_snapshot": "41786",
+        },
+        "atom_xlsx_wrong": {
+            "source_family": "XLSX",
+            "source_identity": "docv_xlsx:other.xlsx:Summary:A1:D10:C4",
+            "raw_locator": {
+                "workbook": "other.xlsx",
+                "sheet": "Summary",
+                "range": "A1:D10",
+                "cell": "C4",
+                "normalized_value": "00000",
+            },
+            "normalized_text_or_value_snapshot": "00000",
+        },
+    }
+    row = {
+        "query_id": "xlsx_selector_q1",
+        "source_family": "XLSX",
+        "target_source_atom_ids": ["atom_xlsx_target"],
+        "target_search_view_ids": ["sv_xlsx_target"],
+        "official_manifest_target": {
+            "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+        },
+        "top_result_envelopes": [
+            {
+                "rank": 1,
+                "search_view_id": "sv_wrong",
+                "source_atom_id": "atom_xlsx_wrong",
+                "source_family": "XLSX",
+                "source_identity": "docv_xlsx:other.xlsx:Summary:A1:D10:C4",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+                "vector_metadata_used_as_canonical_citation_source": True,
+            },
+            {
+                "rank": 2,
+                "search_view_id": "sv_same_file_unhydrated",
+                "source_atom_id": "missing_atom",
+                "source_family": "XLSX",
+                "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:B2",
+                "source_atom_hydrated_from_registry": False,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+            {
+                "rank": 3,
+                "search_view_id": "sv_xlsx_target",
+                "source_atom_id": "atom_xlsx_target",
+                "source_family": "XLSX",
+                "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+            {
+                "rank": 4,
+                "search_view_id": "sv_wrong_late",
+                "source_atom_id": "atom_xlsx_wrong",
+                "source_family": "XLSX",
+                "source_identity": "docv_xlsx:other.xlsx:Summary:A1:D10:C4",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+        ],
+    }
+
+    selected = runner.v3_8_1_select_evidence_candidates(
+        row,
+        source_registry=source_registry,
+    )
+
+    assert len(selected) == 3
+    assert selected[0]["source_atom_id"] == "atom_xlsx_target"
+    assert selected[0]["source_atom_hydrated_from_registry"] is True
+    assert selected[0]["source_atom_registry_hydrated"] is True
+    assert selected[0]["selector_rank"] == 1
+    assert selected[0]["selector_file_hit"] is True
+    assert selected[0]["selector_target_hit"] is True
+    assert selected[0]["contract_survived"] is True
+    assert selected[0]["citation_render_valid"] is True
+    assert selected[0]["vector_metadata_used_as_canonical_citation_source"] is False
+
+
+def test_v3_8_1_pdf_selector_file_hit_uses_registry_target_identity_for_metrics_only() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_pdf_target": {
+            "source_family": "PDF",
+            "source_identity": "docv_pdf:report.pdf:3:[1, 2, 3, 4]",
+            "raw_locator": {
+                "source_pdf_path": "D:/repo/report.pdf",
+                "page": 3,
+                "physical_page_index": 2,
+                "bbox": [1, 2, 3, 4],
+                "region_type": "paragraph",
+                "matched_text": "target paragraph",
+            },
+        },
+    }
+    row = {
+        "query_id": "pdf_selector_identity_q1",
+        "source_family": "PDF",
+        "target_source_atom_ids": ["atom_pdf_target"],
+        "target_search_view_ids": ["sv_pdf_target"],
+        "question_gold_locator_target": {
+            "file": "9a5cbe71-1b11-45ef-a4f5-9fb6f2f70c2b",
+            "page": 3,
+            "bbox": [1, 2, 3, 4],
+        },
+        "top_result_envelopes": [
+            {
+                "rank": 1,
+                "search_view_id": "sv_pdf_target",
+                "source_atom_id": "atom_pdf_target",
+                "source_family": "PDF",
+                "source_identity": "docv_pdf:report.pdf:3:[1, 2, 3, 4]",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            }
+        ],
+    }
+
+    selected = runner.v3_8_1_select_evidence_candidates(
+        row,
+        source_registry=source_registry,
+    )
+
+    assert len(selected) == 1
+    assert selected[0]["selector_target_hit"] is True
+    assert selected[0]["source_atom_registry_hydrated"] is True
+    assert selected[0]["selector_file_hit"] is True
+
+
+def test_v3_8_1_evidence_selector_uses_target_ids_only_for_metrics_not_ordering() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_xlsx_neighbor": {
+            "source_family": "XLSX",
+            "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "sheet": "Summary",
+                "range": "A1:D10",
+            },
+        },
+        "atom_xlsx_target": {
+            "source_family": "XLSX",
+            "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "sheet": "Summary",
+                "range": "A1:D10",
+            },
+        },
+    }
+    row = {
+        "query_id": "xlsx_selector_order_q1",
+        "source_family": "XLSX",
+        "target_source_atom_ids": ["atom_xlsx_target"],
+        "target_search_view_ids": ["sv_xlsx_target"],
+        "official_manifest_target": {
+            "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:",
+        },
+        "top_result_envelopes": [
+            {
+                "rank": 1,
+                "search_view_id": "sv_xlsx_neighbor",
+                "source_atom_id": "atom_xlsx_neighbor",
+                "source_family": "XLSX",
+                "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+            {
+                "rank": 2,
+                "search_view_id": "sv_xlsx_target",
+                "source_atom_id": "atom_xlsx_target",
+                "source_family": "XLSX",
+                "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+        ],
+    }
+
+    selected = runner.v3_8_1_select_evidence_candidates(
+        row,
+        source_registry=source_registry,
+    )
+
+    assert [candidate["source_atom_id"] for candidate in selected[:2]] == [
+        "atom_xlsx_neighbor",
+        "atom_xlsx_target",
+    ]
+    assert selected[0]["selector_target_hit"] is False
+    assert selected[1]["selector_target_hit"] is True
+
+
+def test_v3_8_1_evidence_selector_metrics_are_separate_and_diagnostic_only() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_xlsx_target": {
+            "source_family": "XLSX",
+            "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "sheet": "Summary",
+                "range": "A1:D10",
+                "cell": "C4",
+                "normalized_value": "41786",
+            },
+            "normalized_text_or_value_snapshot": "41786",
+        },
+        "atom_pdf_target": {
+            "source_family": "PDF",
+            "source_identity": "docv_pdf:report.pdf:3:[1, 2, 3, 4]",
+            "raw_locator": {
+                "source_pdf_path": "D:/repo/report.pdf",
+                "page": 3,
+                "physical_page_index": 2,
+                "bbox": [1, 2, 3, 4],
+                "region_type": "paragraph",
+                "matched_text": "matched paragraph text",
+            },
+            "normalized_text_or_value_snapshot": "matched paragraph text",
+        },
+    }
+    topk_rows = [
+        {
+            "query_id": "xlsx_selector_q1",
+            "source_family": "XLSX",
+            "target_source_atom_ids": ["atom_xlsx_target"],
+            "target_search_view_ids": ["sv_xlsx_target"],
+            "official_manifest_target": {
+                "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+            },
+            "top_result_envelopes": [
+                {
+                    "rank": 1,
+                    "search_view_id": "sv_xlsx_target",
+                    "source_atom_id": "atom_xlsx_target",
+                    "source_family": "XLSX",
+                    "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+                    "source_atom_hydrated_from_registry": True,
+                    "evidence_bundle_render_valid": True,
+                    "citation_render_valid": True,
+                    "vector_payload_used_as_evidence_truth": True,
+                }
+            ],
+        },
+        {
+            "query_id": "pdf_selector_q1",
+            "source_family": "PDF",
+            "target_source_atom_ids": ["atom_pdf_target"],
+            "target_search_view_ids": ["sv_pdf_target"],
+            "question_gold_locator_target": {
+                "file": "report.pdf",
+                "page": 3,
+                "bbox": [1, 2, 3, 4],
+            },
+            "top_result_envelopes": [
+                {
+                    "rank": 1,
+                    "search_view_id": "sv_pdf_wrong",
+                    "source_atom_id": "missing_pdf_atom",
+                    "source_family": "PDF",
+                    "source_identity": "docv_pdf:report.pdf:3:[1, 2, 3, 4]",
+                    "source_atom_hydrated_from_registry": False,
+                    "evidence_bundle_render_valid": True,
+                    "citation_render_valid": True,
+                }
+            ],
+        },
+    ]
+
+    metrics = runner.v3_8_1_evidence_selector_metrics(
+        topk_rows,
+        source_registry=source_registry,
+    )
+
+    assert metrics["run_id"] == "official_answer_citation_agentic_loop_run_v3_8_1_evidence_selector_v1"
+    assert metrics["headline_aggregate_score_reported"] is False
+    assert metrics["answer_generation_metric_computed"] is False
+    assert metrics["gold_or_label_mutation"] is False
+    assert metrics["vector_db_role"] == "candidate_generator_only"
+    assert metrics["source_atom_registry_canonical_truth"] is True
+    assert metrics["denominator_policy"]["xlsx_and_pdf_are_not_collapsed"] is True
+    assert metrics["selector_policy"]["uses_target_source_atom_ids_for_selection"] is False
+    assert metrics["selector_policy"]["target_source_atom_ids_used_for_metrics_only"] is True
+    assert metrics["vector_truth_violation_count"] == 1
+    assert set(metrics["per_source_family"]) == {"PDF", "XLSX"}
+    assert metrics["per_source_family"]["XLSX"]["query_count"] == 1
+    assert metrics["per_source_family"]["PDF"]["query_count"] == 1
+    assert metrics["per_source_family"]["XLSX"]["selector_candidate_count"] == 1
+    assert metrics["per_source_family"]["PDF"]["selector_candidate_count"] == 1
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["selector_target_hit@3"]["rate"] == 1.0
+    assert metrics["per_source_family"]["PDF"]["metrics"]["selector_target_hit@3"]["rate"] == 0.0
+    assert metrics["per_source_family"]["PDF"]["metrics"]["selector_unsupported_rate"]["rate"] == 1.0
+
+
+def test_v3_8_1_evidence_selector_run_measurement_wires_artifact_freeze_summary_without_answer_generation() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    args = runner.parse_args(["--run-id", runner.V3_8_1_EVIDENCE_SELECTOR_RUN_ID])
+
+    summary, rows = runner.run_measurement(args)
+
+    assert rows == []
+    assert summary["run_id"] == runner.V3_8_1_EVIDENCE_SELECTOR_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_EVIDENCE_SELECTOR_V1_COMPUTED"
+    assert summary["run_class"] == "diagnostic_only_evidence_selector_v1"
+    assert summary["source_run_id"] == runner.V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID
+    assert summary["parent_file_grounded_eval_run_id"] == runner.V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["answer_generation_metric_computed"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["silver_mutation"] is False
+    assert summary["source_atom_registry_canonical_truth_used_for_selection"] is True
+    assert summary["selector_uses_target_source_atom_ids_for_selection"] is False
+    assert summary["target_source_atom_ids_used_for_metrics_only"] is True
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["xlsx_pdf_collapsed_score_reported"] is False
+    assert set(summary["per_source_family"]) == {"PDF", "XLSX"}
+    assert summary["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert summary["fail_closed_reasons"] == []
+    assert summary["artifact_paths"]["summary_json"].endswith("_v3_8_1_evidence_selector_v1_summary.json")
+    assert summary["artifact_paths"]["metrics_json"].endswith("_v3_8_1_evidence_selector_v1_metrics.json")
+    assert summary["artifact_paths"]["per_query_jsonl"].endswith("_v3_8_1_evidence_selector_v1_per_query.jsonl")
+    assert summary["artifact_paths"]["per_family_json"].endswith("_v3_8_1_evidence_selector_v1_per_family.json")
+
+
+def test_v3_8_2_oracle_free_file_resolver_ignores_gold_target_ids_for_selection() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_allowed_budget": {
+            "source_family": "XLSX",
+            "source_identity": "docv_budget:budget.xlsx:Summary:A1:D10:C4",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "document_version_id": "docv_budget",
+                "sheet": "Summary",
+                "range": "A1:D10",
+                "cell": "C4",
+            },
+            "workbook_id": "budget.xlsx",
+            "workbook_version_id": "docv_budget",
+        },
+        "atom_forbidden_gold": {
+            "source_family": "XLSX",
+            "source_identity": "docv_secret:secret_target.xlsx:Sheet1:A1:B2:B2",
+            "raw_locator": {
+                "workbook": "secret_target.xlsx",
+                "document_version_id": "docv_secret",
+                "sheet": "Sheet1",
+                "range": "A1:B2",
+                "cell": "B2",
+            },
+            "workbook_id": "secret_target.xlsx",
+            "workbook_version_id": "docv_secret",
+        },
+    }
+    row = {
+        "query_id": "oracle_free_ignore_gold",
+        "query_text": "budget.xlsx 파일의 Summary 시트 C4 값을 알려줘",
+        "source_family": "XLSX",
+        "target_source_atom_ids": ["atom_forbidden_gold"],
+        "target_search_view_ids": ["sv_forbidden_gold"],
+        "question_gold_locator_target": {
+            "file": "secret_target.xlsx",
+            "sheet": "Sheet1",
+            "matched_cells": ["B2"],
+        },
+        "official_manifest_target": {
+            "source_identity": "docv_secret:secret_target.xlsx:Sheet1:A1:B2:B2",
+        },
+        "top_result_envelopes": [
+            {
+                "rank": 1,
+                "search_view_id": "sv_allowed_budget",
+                "source_atom_id": "atom_allowed_budget",
+                "source_family": "XLSX",
+                "source_identity": "docv_budget:budget.xlsx:Summary:A1:D10:C4",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+            {
+                "rank": 2,
+                "search_view_id": "sv_forbidden_gold",
+                "source_atom_id": "atom_forbidden_gold",
+                "source_family": "XLSX",
+                "source_identity": "docv_secret:secret_target.xlsx:Sheet1:A1:B2:B2",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+        ],
+    }
+
+    resolved = runner.v3_8_2_oracle_free_file_resolve(row, source_registry=source_registry)
+
+    assert resolved["oracle_free"] is True
+    assert resolved["resolve_status"] == "resolved"
+    assert resolved["oracle_free_input_violation_count"] == 0
+    assert resolved["forbidden_input_fields_used"] == []
+    assert resolved["candidates"][0]["source_file_name"] == "budget.xlsx"
+    assert resolved["candidates"][0]["document_version_id"] == "docv_budget"
+    assert resolved["candidates"][0]["oracle_free"] is True
+    assert "query_file_name_mention" in resolved["candidates"][0]["resolve_reasons"]
+    assert all(
+        "target_source_atom_ids" not in reason
+        and "question_gold_locator_target" not in reason
+        and "official_manifest_target" not in reason
+        for candidate in resolved["candidates"]
+        for reason in candidate["resolve_reasons"]
+    )
+    guarded = runner.V3_8_2OracleFreeInputGuard(row)
+    assert guarded.get("target_source_atom_ids") is None
+    assert guarded.get("question_gold_locator_target") is None
+    with pytest.raises(KeyError):
+        _ = guarded["official_manifest_target"]
+    assert guarded.forbidden_input_fields_used() == [
+        "target_source_atom_ids",
+        "question_gold_locator_target",
+        "official_manifest_target",
+    ]
+
+
+def test_v3_8_2_file_resolve_metrics_keep_pdf_xlsx_denominators_separate() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_xlsx_target": {
+            "source_family": "XLSX",
+            "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "document_version_id": "docv_xlsx",
+                "sheet": "Summary",
+                "range": "A1:D10",
+                "cell": "C4",
+            },
+            "workbook_id": "budget.xlsx",
+            "workbook_version_id": "docv_xlsx",
+        },
+        "atom_pdf_target": {
+            "source_family": "PDF",
+            "source_identity": "docv_pdf:local-storage/input/report.pdf:3:[1, 2, 3, 4]",
+            "document_version_id": "docv_pdf",
+            "raw_locator": {
+                "source_file_id": "pdf-file-1",
+                "source_pdf_filename": "report.pdf",
+                "source_pdf_path": "D:/repo/report.pdf",
+                "document_version_id": "docv_pdf",
+                "page": 3,
+            },
+        },
+    }
+    topk_rows = [
+        {
+            "query_id": "xlsx_resolve_q1",
+            "query_text": "budget.xlsx Summary C4 값",
+            "source_family": "XLSX",
+            "target_source_atom_ids": ["atom_xlsx_target"],
+            "top_result_envelopes": [
+                {
+                    "rank": 1,
+                    "search_view_id": "sv_xlsx_target",
+                    "source_atom_id": "atom_xlsx_target",
+                    "source_family": "XLSX",
+                    "source_identity": "docv_xlsx:budget.xlsx:Summary:A1:D10:C4",
+                    "source_atom_hydrated_from_registry": True,
+                    "evidence_bundle_render_valid": True,
+                    "citation_render_valid": True,
+                }
+            ],
+        },
+        {
+            "query_id": "pdf_resolve_q1",
+            "query_text": "report.pdf 3페이지 내용",
+            "source_family": "PDF",
+            "target_source_atom_ids": ["atom_pdf_target"],
+            "top_result_envelopes": [
+                {
+                    "rank": 1,
+                    "search_view_id": "sv_pdf_target",
+                    "source_atom_id": "atom_pdf_target",
+                    "source_family": "PDF",
+                    "source_identity": "docv_pdf:local-storage/input/report.pdf:3:[1, 2, 3, 4]",
+                    "source_atom_hydrated_from_registry": True,
+                    "evidence_bundle_render_valid": True,
+                    "citation_render_valid": True,
+                }
+            ],
+        },
+    ]
+
+    metrics = runner.v3_8_2_oracle_free_file_resolve_metrics(
+        topk_rows,
+        source_registry=source_registry,
+    )
+
+    assert metrics["run_id"] == runner.V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID
+    assert metrics["headline_aggregate_score_reported"] is False
+    assert metrics["answer_generation_metric_computed"] is False
+    assert metrics["gold_or_label_mutation"] is False
+    assert metrics["denominator_policy"]["xlsx_and_pdf_are_not_collapsed"] is True
+    assert set(metrics["per_source_family"]) == {"PDF", "XLSX"}
+    assert metrics["per_source_family"]["XLSX"]["query_count"] == 1
+    assert metrics["per_source_family"]["PDF"]["query_count"] == 1
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["file_resolve@1"]["rate"] == 1.0
+    assert metrics["per_source_family"]["PDF"]["metrics"]["file_resolve@1"]["rate"] == 1.0
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["file_resolve@3"]["rate"] == 1.0
+    assert metrics["per_source_family"]["PDF"]["metrics"]["file_resolve@3"]["rate"] == 1.0
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["abstain_rate"]["rate"] == 0.0
+    assert metrics["per_source_family"]["PDF"]["metrics"]["abstain_rate"]["rate"] == 0.0
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["wrong_file_block_rate"]["rate"] == 0.0
+    assert metrics["per_source_family"]["PDF"]["metrics"]["wrong_file_block_rate"]["rate"] == 0.0
+    assert metrics["oracle_free_input_violation_count"] == 0
+
+
+def test_v3_8_2_file_resolver_abstains_and_blocks_wrong_file_without_oracle_free_evidence() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_pdf_target": {
+            "source_family": "PDF",
+            "source_identity": "docv_target:local-storage/input/target.pdf:3:[1, 2, 3, 4]",
+            "document_version_id": "docv_target",
+            "raw_locator": {
+                "source_file_id": "target-file-id",
+                "source_pdf_filename": "target.pdf",
+                "source_pdf_path": "D:/repo/target.pdf",
+                "document_version_id": "docv_target",
+                "page": 3,
+            },
+        },
+        "atom_pdf_wrong": {
+            "source_family": "PDF",
+            "source_identity": "docv_wrong:local-storage/input/wrong.pdf:9:[5, 6, 7, 8]",
+            "document_version_id": "docv_wrong",
+            "raw_locator": {
+                "source_file_id": "wrong-file-id",
+                "source_pdf_filename": "wrong.pdf",
+                "source_pdf_path": "D:/repo/wrong.pdf",
+                "document_version_id": "docv_wrong",
+                "page": 9,
+            },
+        },
+    }
+    row = {
+        "query_id": "pdf_wrong_block_q1",
+        "query_text": "2월 실업률은 전년 같은 달보다 어떻게 변했나요?",
+        "source_family": "PDF",
+        "target_source_atom_ids": ["atom_pdf_target"],
+        "top_result_envelopes": [
+            {
+                "rank": 1,
+                "search_view_id": "sv_pdf_wrong",
+                "source_atom_id": "atom_pdf_wrong",
+                "source_family": "PDF",
+                "source_identity": "docv_wrong:local-storage/input/wrong.pdf:9:[5, 6, 7, 8]",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            }
+        ],
+    }
+
+    per_query = runner.v3_8_2_file_resolve_per_query_row(
+        row,
+        source_registry=source_registry,
+        top_k=3,
+    )
+
+    assert per_query["resolve_status"] == "abstain"
+    assert per_query["abstain_rate"] is True
+    assert per_query["file_resolve@1"] is False
+    assert per_query["file_resolve@3"] is False
+    assert per_query["wrong_file_block_rate"] is True
+    assert per_query["resolved_file_candidates"][0]["source_file_name"] == "wrong.pdf"
+    assert per_query["resolved_file_candidates"][0]["oracle_free"] is True
+    assert per_query["metric_overlay_redacted_from_candidate_artifact"] is True
+    assert "metric_target_file_identity" not in per_query
+    assert "target_source_atom_ids" not in per_query
+    assert "official_manifest_target" not in per_query
+    assert "low_oracle_free_confidence" in per_query["resolve_block_reasons"]
+
+
+def test_v3_8_2_run_measurement_wires_oracle_free_summary_without_answer_generation() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    args = runner.parse_args(["--run-id", runner.V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID])
+
+    summary, rows = runner.run_measurement(args)
+
+    assert rows == []
+    assert summary["run_id"] == runner.V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_ORACLE_FREE_FILE_RESOLVE_COMPUTED"
+    assert summary["run_class"] == "diagnostic_only_oracle_free_file_resolve_v1"
+    assert summary["source_run_id"] == runner.V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID
+    assert summary["parent_file_grounded_eval_run_id"] == runner.V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID
+    assert summary["parent_evidence_selector_run_id"] == runner.V3_8_1_EVIDENCE_SELECTOR_RUN_ID
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["answer_generation_metric_computed"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["qrels_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["silver_mutation"] is False
+    assert summary["file_resolve_oracle_free"] is True
+    assert summary["oracle_assisted_file_resolve"] is False
+    assert summary["resolver_uses_target_source_atom_ids_for_selection"] is False
+    assert summary["target_source_atom_ids_used_for_metrics_only"] is True
+    assert summary["source_atom_registry_canonical_truth_used_for_resolution"] is True
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["xlsx_pdf_collapsed_score_reported"] is False
+    assert set(summary["per_source_family"]) == {"PDF", "XLSX"}
+    assert summary["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert summary["oracle_free_input_violation_count"] == 0
+    assert summary["fail_closed_reasons"] == []
+    assert summary["artifact_paths"]["summary_json"].endswith("_v3_8_2_oracle_free_file_resolve_summary.json")
+    assert summary["artifact_paths"]["metrics_json"].endswith("_v3_8_2_oracle_free_file_resolve_metrics.json")
+    assert summary["artifact_paths"]["per_query_jsonl"].endswith("_v3_8_2_oracle_free_file_resolve_per_query.jsonl")
+    assert summary["artifact_paths"]["per_family_json"].endswith("_v3_8_2_oracle_free_file_resolve_per_family.json")
+
+
+def test_v3_8_file_grounded_run_measurement_wires_read_only_summary_without_answer_generation() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    args = runner.parse_args(["--run-id", runner.V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID])
+
+    summary, rows = runner.run_measurement(args)
+
+    assert rows == []
+    assert summary["run_id"] == runner.V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_FILE_GROUNDED_RETRIEVAL_EVAL_COMPUTED"
+    assert summary["source_run_id"] == runner.V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID
+    assert summary["source_family_counts"]["PDF"] == 329
+    assert summary["source_family_counts"]["XLSX"] == 344
+    assert set(summary["per_source_family"]) == {"PDF", "XLSX"}
+    assert summary["denominator_audit"]["denominator_scope"] == "diagnostic_v3_7_2_topk_rows_pdf_xlsx_only"
+    assert summary["denominator_audit"]["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert summary["denominator_audit"]["query_scope_counts"]["PDF"] == {
+        "sealed_gold_no_regression_check": 4,
+        "silver_1000_diagnostic_overlay": 325,
+    }
+    assert summary["denominator_audit"]["query_scope_counts"]["XLSX"] == {
+        "sealed_gold_no_regression_check": 19,
+        "silver_1000_diagnostic_overlay": 325,
+    }
+    assert summary["denominator_audit"]["missing_target_mapping_surface_count"] == 0
+    assert summary["answer_generation_metric_computed"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["source_atom_registry_canonical_truth_used_for_metrics"] is True
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["source_registry_sha256_before"] == summary["source_registry_sha256_after"]
+    assert summary["source_registry_sha256_unchanged"] is True
+    assert summary["index_artifact_sha256_before"] == summary["index_artifact_sha256_after"]
+    assert summary["index_artifact_sha256_unchanged"] is True
+    assert summary["official_denominator_index_sha256_before"] == summary["official_denominator_index_sha256_after"]
+    assert summary["official_denominator_index_sha256_unchanged"] is True
+    assert summary["artifact_paths"]["metrics_json"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_8_file_grounded_retrieval_eval_metrics.json"
+    )
+    assert summary["fail_closed_reasons"] == []
+
+
 def test_v3_7_0_source_registry_no_vector_hydration_and_citation_smoke() -> None:
     hydration = read_json(V3_7_0_SOURCE_REGISTRY_HYDRATION_SMOKE)
     registry_rows = read_jsonl(SOURCE_ATOM_REGISTRY_JSONL)
@@ -4093,9 +5109,18 @@ def test_v3_7_2_source_registry_backed_retrieval_smoke_report_tracks_contract_su
     assert summary["family_routed_missing_query_key_count"] == 0
     assert summary["family_routed_missing_query_keys"] == []
     assert summary["mixed_retrieval_baseline"]["candidate_pool_mode"] == "mixed_all_source_faiss_topk_before_family_routing"
+    assert summary["per_track_breakdown"]["TEXT"]["target_hit_at_k_count"] == 20
+    assert summary["per_track_breakdown"]["PDF"]["target_hit_at_k_count"] == 266
+    assert summary["per_track_breakdown"]["XLSX"]["target_hit_at_k_count"] == 34
+    assert summary["per_track_breakdown"]["PDF"]["retrieval_diagnostic_bucket_counts"]["target_not_in_topk"] == 63
+    assert summary["per_track_breakdown"]["XLSX"]["retrieval_diagnostic_bucket_counts"]["target_not_in_topk"] == 310
     assert summary["sealed_gold_no_regression_check"]["target_hit_at_k_count"] == summary[
         "sealed_gold_no_regression_check"
     ]["target_hit_in_topk_count"]
+    assert summary["sealed_gold_no_regression_check"]["target_hit_at_k_count"] == 20
+    assert summary["row_level_retrieval_bottleneck"]["scope_tracks"]["sealed_gold_no_regression_check"]["XLSX"][
+        "target_hit_at_k_count"
+    ] == 19
     assert summary["sealed_gold_no_regression_check"]["target_contract_survival_at_k_count"] <= summary[
         "sealed_gold_no_regression_check"
     ]["target_hit_at_k_count"]

@@ -1623,7 +1623,8 @@ def test_v3_run_id_is_separate_and_source_bound_defaults_are_locked() -> None:
     assert args.enable_structured_source_bound_adapters is True
     assert args.results_jsonl.endswith("v3_comparable_results.jsonl")
     assert args.summary_json.endswith("v3_comparable_summary.json")
-    assert args.summary_md.endswith("v3_comparable_summary.md")
+    assert runner.V3_RUN_ID in runner.RUN_IDS_WITH_DISABLED_SUMMARY_MARKDOWN
+    assert args.summary_md == ""
     assert "v2_2_llm_backend_validation" not in args.results_jsonl
 
 
