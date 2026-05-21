@@ -9,18 +9,19 @@ Last updated: 2026-05-21 KST.
 루트 README의 지표 스냅샷에서 여기로 넘어왔다면 아래 순서로 보면 됩니다.
 
 1. 이 파일의 `현재 상태`와 `지표 해석`에서 denominator와 promotion 경계를 확인합니다.
-2. `v3_8_2 oracle-free file resolve`에서 scoped retrieval 전에 file/document 후보가 gold-free로 resolve되는지 봅니다.
-3. `v3_8_1 evidence selector`와 `v3_8 file-grounded eval`은 v3_8_2의 upstream diagnostic input으로 읽습니다.
+2. `v3_8_3 XLSX scoped cell resolve`에서 v3_8_2 workbook/document gate 이후 sheet/range/cell 후보가 얼마나 좁혀지는지 봅니다.
+3. `v3_8_2 oracle-free file resolve`에서 scoped retrieval 전에 file/document 후보가 gold-free로 resolve되는지 봅니다.
+4. `v3_8_1 evidence selector`와 `v3_8 file-grounded eval`은 v3_8_2/v3_8_3의 upstream diagnostic input으로 읽습니다.
 4. 세부 run ledger는 `../../docs/rag-ingestion-progress.md`, `../../docs/rag-ingestion-measurements.md`, `../../docs/rag-ingestion-triage.md`로 내려갑니다.
 5. machine-readable 최신 상태는 `reports/rag-ingestion/status.jsonl`과 각 run summary JSON을 확인합니다.
 
 ## 현재 상태
 
-현재 primary track은 `v3_8_2` oracle-free file/document resolve입니다. 핵심 질문은 scoped FAISS retrieval이나 answer generation으로 넘어가기 전에 PDF/XLSX 쿼리별 source_file/document 후보를 gold target locator, target SourceAtom id, expected answer, qrels/labels 없이 산출할 수 있는지입니다. 입력은 `v3_8`/`v3_7_2` SourceAtom-hydrated top-k rows, source registry, SearchView/index manifest candidate metadata, query/source metadata, literal file/workbook/pdf mentions, source-family intent로 제한합니다.
+현재 primary track은 `v3_8_3` XLSX scoped cell resolve입니다. 핵심 질문은 answer generation으로 넘어가기 전에 `v3_8_2`가 oracle-free로 resolve한 workbook/document 후보를 gate로 삼아 XLSX sheet/table-range/cell-value 후보를 얼마나 좁힐 수 있는지입니다. `v3_8_2` 자체는 scoped retrieval 전에 PDF/XLSX 쿼리별 source_file/document 후보를 gold target locator, target SourceAtom id, expected answer, qrels/labels 없이 산출하는 upstream diagnostic gate입니다.
 
 | 항목 | 현재 값 | 해석 |
 |---|---|---|
-| 현재 run | `official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve` | ranked source_file/document candidates를 answer generation 없이 생성하고, target SourceAtom/manifest는 metrics-only로만 사용 |
+| 현재 run | `official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic` | persisted v3_8_2 workbook/document gate 뒤 XLSX sheet/range/cell candidates를 answer generation 없이 진단 |
 | 입력 index | `indexes/rag-data-all-source-citable-nonprod-v1` | `v3_7_1` all-source citable non-production SearchView export |
 | SearchViews | `136,280` | TEXT `135,608`, PDF `329`, XLSX `343` |
 | Source registry | `source_registry/source_atom_registry_v1.jsonl` | canonical evidence/citation truth |
@@ -28,6 +29,7 @@ Last updated: 2026-05-21 KST.
 | v3_8 denominator | PDF `329`, XLSX `344` | PDF/XLSX는 별도 denominator로 보고 collapsed headline score를 만들지 않음 |
 | v3_8_1 selector denominator | PDF `329`, XLSX `344` | selected evidence max 3 per query; target SourceAtom ids는 metrics-only, selector_file_hit은 registry target identity surface, file resolve는 diagnostic-only |
 | v3_8_2 file resolve denominator | PDF `329`, XLSX `344` | file_resolve@1/@3, abstain, wrong-file blocking을 PDF/XLSX로 분리해 보고 collapsed headline score를 만들지 않음 |
+| v3_8_3 scoped cell denominator | XLSX `344` | persisted v3_8_2 workbook/document gate 이후 sheet/range/cell diagnostics만 계산하고 PDF와 collapsed headline score를 만들지 않음 |
 | Silver query surface | `LOCAL_LLM_NATURAL_SILVER_1000_REGENERATED_AND_POLISHED` | 1000 unique query hashes; XLSX 325 rows polished; plain Korean/digit/punctuation validation pass |
 | Contract path | SearchView -> SourceAtom -> EvidenceBundle -> Citation render | vector metadata를 evidence truth로 쓰지 않고 source registry에서 hydrate |
 | Promotion readiness | explicitly not opened | comparable live measurement는 diagnostic으로 재실행됐지만 answer/citation precision, evidence precision, prompt tuning, gold/qrels mutation, promotion gate는 닫힘 |
@@ -44,6 +46,7 @@ Last updated: 2026-05-21 KST.
 | Historical local LLM docs sample | 100 docs sample rows | p95 `0.464s`, p99 `0.516s`, max `0.528s` | query + SearchView evidence만 넣은 historical docs sample. throughput/SLA가 아니라 입력 정책과 재현성 확인용 |
 | v3_7_1 source-first index | 136,280 SearchViews | metric not computed | retrieval/answer/citation 성능 측정 전 단계. vector metadata는 canonical citation source가 아님 |
 | v3_7_2 contract smoke | 1,029 query surfaces | returned/same-track/target/contract survival counts | TEXT `same-track@k=356/356`, target@k `20/356`; PDF `same-track@k=329/329`, target@k `266/329`; XLSX `same-track@k=344/344`, target@k `34/344`. `topk_returned_count`는 반환 수이고, headline aggregate로 합치지 않음 |
+| v3_8_3 XLSX scoped cell resolve | XLSX `344` | sheet_resolve@1/@3, table_or_range_resolve@1/@3, cell_or_value_resolve@1/@3, abstain_rate, wrong_workbook_block_rate, oracle_free_input_violation_count | sheet_resolve@1 `248/344`, sheet_resolve@3 `249/344`; table_or_range_resolve@1 `22/344`, @3 `30/344`; cell_or_value_resolve@1 `19/344`, @3 `23/344`; abstain `44/344`; wrong-workbook block `25/344`; oracle-free input violations `0`. Diagnostic-only and not a headline aggregate |
 | v3_8_2 oracle-free file resolve | PDF `329`, XLSX `344` | file_resolve@1, file_resolve@3, abstain_rate, wrong_file_block_rate, oracle_free_input_violation_count | PDF file_resolve@1 `65/329`, file_resolve@3 `129/329`, abstain `182/329`, wrong-file block `57/329`; XLSX file_resolve@1 `136/344`, file_resolve@3 `150/344`, abstain `44/344`, wrong-file block `25/344`; oracle-free input violations `0`. Diagnostic-only and not a headline aggregate |
 | v3_8_1 evidence selector | PDF `329`, XLSX `344` | selector_candidate_count, selector_target_hit@3, selector_file_hit@3, selector_contract_survival@3 | PDF selected candidates `987`, target_hit@3 `251/329`, file_hit@3 `268/329`, contract_survival@3 `329/329`; XLSX selected candidates `1032`, target_hit@3 `29/344`, file_hit@3 `315/344`, contract_survival@3 `344/344`. Diagnostic-only and not a headline aggregate |
 | v3_8 file-grounded eval | PDF `329`, XLSX `344` | PDF file_hit@5 `284/329`, page_hit@5 `266/329`, evidence_select_hit@3 `251/329`; XLSX workbook_hit@5 `317/344`, sheet_hit@5 `275/344`, cell_or_value_hit@5 `34/344` | answer generation 전 citation-capable evidence 선택 진단. PDF/XLSX를 합산하지 않음 |
@@ -96,6 +99,7 @@ Last updated: 2026-05-21 KST.
 - `v3_7_2`의 `topk_returned_count`는 SearchView 후보가 몇 개 반환됐는지입니다. PDF/XLSX primary top-k는 `query_source_family_routed_for_structured_tracks`로 읽고, 기존 all-source mixed 결과는 `mixed_retrieval_baseline`으로만 남겨 TEXT dominance를 진단합니다.
 - `v3_8`은 `v3_7_2` top-k에서 PDF/XLSX만 읽고 file/page/sheet/range/cell evidence metrics를 계산합니다. official qrels/labels나 answer generation 없이 SourceAtom/source-registry hydration만 canonical truth로 사용합니다.
 - `v3_8_1`은 `v3_8`/`v3_7_2` top-k에서 max 3 selected evidence 후보를 고정합니다. target SourceAtom ids는 selector metrics 전용이고 candidate ordering에는 쓰지 않으며, selector_file_hit은 registry target identity surface로 비교합니다. 이 값은 production file resolve나 promotion evidence가 아닙니다.
+- `v3_8_3`은 persisted `v3_8_2` per-query file gate를 입력으로 삼아 XLSX sheet/range/cell 후보를 좁힙니다. gold target locator, target SourceAtom id, expected answer, qrels/labels/supporting evidence는 selection input이 아니고 metrics-only target overlay로만 읽습니다.
 - `v3_8_2`는 `v3_8`/`v3_7_2` top-k와 source registry/index metadata에서 source_file/document 후보를 oracle-free로 resolve합니다. gold target locator, target SourceAtom id, expected answer, qrels/labels/supporting evidence는 selection input이 아니고 metrics-only target overlay로만 읽습니다.
 - 현재 mixed baseline은 PDF same-track@k `9/329`, XLSX same-track@k `30/344`로 여전히 TEXT에 잠기지만, routed primary에서는 PDF/XLSX 모두 same-track@k가 query_count와 같습니다. target@k는 별도 ranking/materialization 문제로 분리해 읽습니다.
 - Silver/weak-noisy rows는 tuning 후보나 documentation sample이 될 수 있지만 official denominator, official qrels, promotion evidence가 아닙니다.
@@ -250,11 +254,12 @@ Silver query surface quality check: rows `1000`, unique query hashes `1000`, dup
 
 ## Active와 historical 경계
 
-현재 이 파일의 기본 독해 표면은 `v3_8_2` oracle-free file/document resolve, upstream `v3_8` file-grounded retrieval/evidence eval과 `v3_7_2` source registry-backed retrieval smoke report, 그리고 `v3_7_1` source-first citable index입니다. Phase 7 v4, Phase 2A reranker, anime/namespaced legacy corpus 실험은 historical 또는 별도 track으로만 읽습니다.
+현재 이 파일의 기본 독해 표면은 `v3_8_3` XLSX scoped cell resolve, upstream `v3_8_2` oracle-free file/document resolve, `v3_8` file-grounded retrieval/evidence eval과 `v3_7_2` source registry-backed retrieval smoke report, 그리고 `v3_7_1` source-first citable index입니다. Phase 7 v4, Phase 2A reranker, anime/namespaced legacy corpus 실험은 historical 또는 별도 track으로만 읽습니다.
 
 | 영역 | 현재 판단 |
 |---|---|
-| `v3_8_2` oracle-free file/document resolve | 현재 PDF/XLSX file/document resolver diagnostic report |
+| `v3_8_3` XLSX scoped cell resolve | 현재 XLSX sheet/range/cell resolver diagnostic report |
+| `v3_8_2` oracle-free file/document resolve | upstream PDF/XLSX file/document resolver diagnostic report |
 | `v3_8_1` evidence selector | upstream max-3 citation-capable evidence artifact freeze |
 | `v3_8` file-grounded retrieval/evidence eval | upstream PDF/XLSX file/document/evidence diagnostic report |
 | `v3_7_2` source registry-backed retrieval smoke | v3_8의 SourceAtom-hydrated top-k input report |
@@ -272,7 +277,7 @@ Silver query surface quality check: rows `1000`, unique query hashes `1000`, dup
 | `indexes/rag-data-official-denominator-v1/` | 29-row official source-bound SearchUnit index | protected regression scope |
 | `indexes/rag-data-all-source-citable-nonprod-v1/` | 136,280 SearchView all-source diagnostic index | non-production only; v3_7_2 smoke input |
 | `reports/rag-ingestion/status.jsonl` | compact machine-readable status ledger | routine status는 여기에 compact event로 남김 |
-| `reports/rag-ingestion/` | current durable JSON/JSONL summaries | `v3_8_2_oracle_free_file_resolve_*`가 최신 resolver 산출물이고, `v3_8_1_evidence_selector_v1_*`와 `v3_8_file_grounded_retrieval_eval_*`는 upstream 산출물 |
+| `reports/rag-ingestion/` | current durable JSON/JSONL summaries | `v3_8_3_xlsx_scoped_cell_resolve_diagnostic_*`가 최신 scoped diagnostic 산출물이고, `v3_8_2_oracle_free_file_resolve_*`는 workbook/document gate 산출물 |
 | `harness/`, `run_eval.py` | legacy and general eval harness code | active RAG ingestion status와 혼동하지 않음 |
 | `corpora/`, `artifacts/`, `legacy/`, `experiments/` | corpora, generated artifacts, retired paths, tuning experiments | active/protected artifact 여부를 확인한 뒤 이동/삭제 |
 
@@ -284,7 +289,10 @@ PowerShell 기준으로 가장 빠른 확인 경로는 아래입니다.
 # compact status ledger tail
 Get-Content ai/eval/reports/rag-ingestion/status.jsonl -Tail 5
 
-# current oracle-free file/document resolve summary
+# current XLSX scoped cell resolve summary
+Get-Content ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_summary.json
+
+# upstream oracle-free file/document resolve summary
 Get-Content ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve_summary.json
 
 # upstream evidence selector summary
@@ -307,6 +315,7 @@ Get-Content docs/rag-ingestion-progress.md -TotalCount 80
 
 - `v3_7_1`은 retrieval/answer/citation metric computation이 아니라 index build와 hydration contract 검증입니다.
 - `v3_7_2` 자체는 answer quality, promotion, prompt tuning, gold 반복 튜닝, comparable live measurement를 열지 않았습니다. 이후 comparable live measurement는 별도 diagnostic rerun으로만 수행됐고 promotion gate를 열지 않았습니다.
+- `v3_8_3`은 XLSX scoped cell resolve 진단입니다. answer generation, answer/citation precision, promotion gate는 아직 열지 않았고, PDF page/span resolve도 별도 slice로 남겨뒀습니다.
 - `v3_8_2`는 file/document resolve 진단입니다. scoped FAISS retrieval route, SourceAtom hydrate route, evidence selector 재정렬, answer generation, answer/citation precision, promotion gate는 아직 열지 않았습니다.
 - `v3_8_1`은 deterministic evidence selector artifact만 고정합니다. answer generation, answer/citation precision, promotion gate, production file resolver, gold/qrels/label mutation은 열지 않았습니다.
 - `v3_8`은 upstream file-grounded retrieval/evidence metrics만 계산합니다. answer generation, answer/citation precision, promotion gate, gold/qrels/label mutation은 열지 않았습니다.

@@ -9,10 +9,10 @@ not create per-run Markdown reports for routine diagnostic runs.
 
 Machine-readable JSON/JSONL artifacts are evidence payloads, not the primary
 human report surface. As of the 2026-05-21 cleanup, `ai/eval/reports/` keeps
-only `rag-ingestion/`, and that directory keeps only `status.jsonl` plus the
-latest v3_6_9 SearchUnit/SearchView/SourceAtom refactor artifacts. Older
-measurement payloads, including the official baseline/scorer/input/smoke files
-and v3_1-v3_6_8 diagnostics, live in:
+only `rag-ingestion/`, and that directory keeps `status.jsonl` plus compact
+current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, and v3_8_3 machine
+artifacts. Older measurement payloads, including the official
+baseline/scorer/input/smoke files and v3_1-v3_6_8 diagnostics, live in:
 
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`
 
@@ -29,8 +29,10 @@ older evidence reproducible through the external archive resolver.
 Current repo-local machine payloads:
 
 - `ai/eval/reports/rag-ingestion/status.jsonl`
-- v3_6_9 SearchUnit/SearchView/SourceAtom refactor summary, contract refactor,
-  adapter diagnostics, SourceAtom hydration smoke, and failure buckets JSON.
+- Compact current v3_6_9 SearchUnit/SearchView/SourceAtom refactor artifacts,
+  v3_7 source-registry/index/retrieval-smoke artifacts, and v3_8/v3_8_1/v3_8_2/v3_8_3
+  diagnostic retrieval, evidence-selector, oracle-free file-resolve, and XLSX scoped cell-resolve
+  artifacts.
 
 Archived payload families:
 
@@ -51,7 +53,8 @@ Reader contract: use this file for metric ladder context, use
 | Official first-run baseline | `official_answer_citation_metric_first_run_v1` | 29 official rows | PASS `8/29`, `CITATION_UNSUPPORTED=11`, `PARTIAL_OR_UNSUPPORTED=10` | Diagnostic baseline only |
 | v1 diagnostic live-generation | `official_answer_citation_agentic_loop_run_v1` | Fixture-all index, noop/extractive generation | PASS `1/29`; fixture-all/noop/chunk-only limitations | `promotion_evidence=false` |
 | Source-bound index readiness | `official_answer_citation_source_bound_index_build_readiness_v1` | 29 source-bound SearchUnits | `BUILD_READY_LOAD_CHECK_PASSED` | Non-production index only |
-| v3 comparable live measurement | `official_answer_citation_agentic_loop_run_v3_comparable_live_measurement` | 29 rows, structured adapter retained for XLSX/PDF | PASS `24/29` | Not all-track LLM quality |
+| v3 comparable live measurement | `official_answer_citation_agentic_loop_run_v3_comparable_live_measurement` | 29 rows, structured adapter retained for XLSX/PDF | PASS `27/29`; PDF `4/4`, XLSX `19/19`, TEXT `4/6` | Diagnostic-only; not answer/citation promotion evidence |
+| v3_8_3 XLSX scoped miss taxonomy | `official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic` | 344 XLSX rows after persisted v3_8_2 workbook gate | sheet@1 `248/344`, range@1 `22/344`, cell/value@1 `19/344`; top miss bucket `table_or_range_miss_after_sheet_hit=218` | Diagnostic-only; no answer generation, gold/qrels/labels, or promotion evidence |
 | v3_1 all-track foundation | `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement` | Lane A/B/C fixed across PDF/TEXT/XLSX | Lane A `24/29`, Lane B `18/29`, Lane C `20/29` | Diagnostic-only |
 | v3_1 priority 1~5 triage | `official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage` | Five row-level infrastructure/locator cases | strict JSON parse `2 -> 0`; locator field mismatch `3 -> 0`; residual copy failure `1` | Diagnostic-only |
 | v3_1 TEXT locator residual | `official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage` | `text_namu_v2_0012` only | TEXT `text_locator` missing `1 -> 0`; byte/normalized equal true | Diagnostic-only |

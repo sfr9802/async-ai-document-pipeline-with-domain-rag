@@ -54,6 +54,16 @@ def require_v3_8_2_local_artifacts(*paths: Path) -> None:
     pytest.skip(message)
 
 
+def require_v3_8_3_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_8_3 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_8_3_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
 def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unavailable():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = text.split("## Short History", 1)[0]
@@ -108,6 +118,18 @@ def test_progress_doc_does_not_keep_stale_current_profile_test_count():
     assert "0 skipped" in text
     assert "0 failed" in text
     assert "current focused profile is 61 tests" not in text
+
+
+def test_measurements_doc_keeps_current_artifact_layout_and_v3_comparable_counts():
+    text = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    flat_text = " ".join(text.split())
+
+    assert "compact current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, and v3_8_3" in flat_text
+    assert "latest v3_6_9 SearchUnit/SearchView/SourceAtom refactor artifacts" not in text
+    assert "| v3 comparable live measurement |" in text
+    assert "PASS `27/29`; PDF `4/4`, XLSX `19/19`, TEXT `4/6`" in text
+    assert "PASS `24/29` | Not all-track LLM quality" not in text
+    assert "Diagnostic-only; not answer/citation promotion evidence" in text
 
 
 def test_progress_doc_explains_pre_execution_smoke_is_not_latest_metric_status():
@@ -1366,6 +1388,7 @@ def test_progress_status_and_triage_gate_record_v3_6_6_without_metric_measuremen
         or "Overall status: `diagnostic_file_grounded_retrieval_eval_v3_8_computed`;" in progress
         or "Overall status: `diagnostic_evidence_selector_v3_8_1_computed`;" in progress
         or "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1473,6 +1496,7 @@ def test_progress_status_and_triage_gate_record_v3_6_7_runtime_stability_probe_w
         or "Overall status: `diagnostic_file_grounded_retrieval_eval_v3_8_computed`;" in progress
         or "Overall status: `diagnostic_evidence_selector_v3_8_1_computed`;" in progress
         or "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1590,6 +1614,7 @@ def test_progress_status_and_triage_gate_record_v3_6_8_nonprod_all_source_withou
         or "Overall status: `diagnostic_file_grounded_retrieval_eval_v3_8_computed`;" in progress
         or "Overall status: `diagnostic_evidence_selector_v3_8_1_computed`;" in progress
         or "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1692,6 +1717,7 @@ def test_progress_status_and_triage_gate_record_v3_6_8_source_registry_architect
         or "Overall status: `diagnostic_file_grounded_retrieval_eval_v3_8_computed`;" in progress
         or "Overall status: `diagnostic_evidence_selector_v3_8_1_computed`;" in progress
         or "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1791,6 +1817,7 @@ def test_progress_status_and_triage_gate_record_v3_6_9_searchunit_searchview_sou
         or "Overall status: `diagnostic_file_grounded_retrieval_eval_v3_8_computed`;" in progress
         or "Overall status: `diagnostic_evidence_selector_v3_8_1_computed`;" in progress
         or "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1893,6 +1920,7 @@ def test_progress_status_and_triage_gate_record_v3_7_0_source_registry_materiali
         or "Overall status: `diagnostic_file_grounded_retrieval_eval_v3_8_computed`;" in progress
         or "Overall status: `diagnostic_evidence_selector_v3_8_1_computed`;" in progress
         or "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -1997,6 +2025,7 @@ def test_progress_status_and_triage_gate_record_v3_7_1_all_source_citable_nonpro
         or "Overall status: `diagnostic_file_grounded_retrieval_eval_v3_8_computed`;" in progress
         or "Overall status: `diagnostic_evidence_selector_v3_8_1_computed`;" in progress
         or "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -2097,6 +2126,7 @@ def test_progress_status_and_triage_gate_record_v3_7_2_source_registry_backed_re
         or "Overall status: `diagnostic_file_grounded_retrieval_eval_v3_8_computed`;" in progress
         or "Overall status: `diagnostic_evidence_selector_v3_8_1_computed`;" in progress
         or "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -2182,6 +2212,7 @@ def test_progress_status_and_triage_gate_record_v3_8_file_grounded_retrieval_eva
         "Overall status: `diagnostic_file_grounded_retrieval_eval_v3_8_computed`;" in progress
         or "Overall status: `diagnostic_evidence_selector_v3_8_1_computed`;" in progress
         or "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -2269,6 +2300,7 @@ def test_progress_status_and_triage_gate_record_v3_8_1_evidence_selector_without
     assert (
         "Overall status: `diagnostic_evidence_selector_v3_8_1_computed`;" in progress
         or "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     )
     assert run_id not in measurements
     assert run_id not in triage
@@ -2360,6 +2392,110 @@ def test_progress_status_and_triage_gate_record_v3_8_2_oracle_free_file_resolve_
     assert "ranked source_file/document candidates" in current_flat
     assert "Gold/target SourceAtom ids and manifest targets are metrics-only" in current_flat
     assert "No scoped FAISS answer route" in current_flat
-    assert "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+    assert (
+        "Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;" in progress
+        or "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
+    )
     assert run_id not in measurements
+    assert run_id not in triage
+
+
+def test_progress_status_and_triage_gate_record_v3_8_3_xlsx_scoped_cell_resolve_without_promotion():
+    require_v3_8_3_local_artifacts(STATUS_JSONL)
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_xlsx_scoped_cell_resolve_v3_8_3"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_XLSX_SCOPED_CELL_RESOLVE_COMPUTED"
+    assert event["run_class"] == "diagnostic_only_xlsx_scoped_cell_resolve_v1"
+    assert event["source_run_id"] == (
+        "official_answer_citation_agentic_loop_run_v3_7_2_"
+        "source_registry_backed_retrieval_smoke_report"
+    )
+    assert event["parent_file_resolve_run_id"] == (
+        "official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve"
+    )
+    assert event["file_resolve_gate_run_id"] == (
+        "official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve"
+    )
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["answer_generation_metric_computed"] is False
+    assert event["answer_metric_computed"] is False
+    assert event["prompt_mutation"] is False
+    assert event["scorer_mutation"] is False
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["official_qrels_created"] is False
+    assert event["official_relevance_labels_created"] is False
+    assert event["official_answerability_labels_created"] is False
+    assert event["silver_mutation"] is False
+    assert event["promotion_evidence"] is False
+    assert event["promotion_gate"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["xlsx_only"] is True
+    assert event["file_resolve_oracle_free"] is True
+    assert event["oracle_assisted_file_resolve"] is False
+    assert event["oracle_free_input_violation_count"] == 0
+    assert event["resolver_uses_target_source_atom_ids_for_selection"] is False
+    assert event["target_source_atom_ids_used_for_metrics_only"] is True
+    assert event["source_atom_registry_canonical_truth_used_for_resolution"] is True
+    assert event["vector_db_role"] == "candidate_generator_only"
+    assert event["vector_metadata_used_as_canonical_citation_source"] is False
+    assert event["vector_metadata_used_as_evidence_truth"] is False
+    assert event["xlsx_pdf_collapsed_score_reported"] is False
+    assert set(event["per_source_family"]) == {"XLSX"}
+    assert event["source_family_counts"] == {"XLSX": 344}
+    assert event["all_xlsx_query_count"] == 344
+    assert event["v3_8_2_gate_row_found_count"] == 344
+    assert event["v3_8_2_gate_missing_count"] == 0
+    assert event["v3_8_2_gate_duplicate_query_id_count"] == 0
+    assert event["fail_closed_reasons"] == []
+    for artifact_key in (
+        "summary_json",
+        "metrics_json",
+        "per_query_jsonl",
+        "per_family_json",
+        "per_family_jsonl",
+        "status_jsonl",
+        "progress_doc",
+    ):
+        assert artifact_key in event["artifact_paths"]
+    for large_field in (
+        "metrics",
+        "per_query_rows",
+        "per_family_rows",
+        "topk_result_rows",
+        "source_atom_rows",
+        "search_view_rows",
+        "full_evidence_bundles",
+    ):
+        assert large_field not in event
+
+    assert "v3_8_3 XLSX scoped cell resolve" in current_text
+    assert run_id in current_text
+    assert "after the v3_8_2 oracle-free workbook/document gate" in current_flat
+    assert "Target SourceAtom/manifest locator data is metrics-only" in current_flat
+    assert "No scoped answer route" in current_flat
+    assert "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
+    assert run_id in measurements
+    assert "top miss bucket `table_or_range_miss_after_sheet_hit=218`" in measurements
+    measurement_row = measurements.split(run_id, 1)[1].split("| v3_1 all-track foundation |", 1)[0]
+    assert "per-query" not in measurement_row.lower()
     assert run_id not in triage

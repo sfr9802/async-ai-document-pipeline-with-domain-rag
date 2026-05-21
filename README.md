@@ -13,7 +13,7 @@
 | AI 워커 | Python/FastAPI 기반 OCR, PDF/XLSX 파싱, RAG, evaluation harness |
 | 프론트엔드 | React/Vite 기반 작업 제출 및 결과 확인 UI |
 | 핵심 설계 | 긴 AI 작업은 비동기 job으로 분리하고, DB를 상태의 기준점으로 사용 |
-| 현재 단계 | 포트폴리오/POC 단계. `v3_8_2` oracle-free file/document resolve 진단까지 산출했고 production promotion은 아직 열지 않음 |
+| 현재 단계 | 포트폴리오/POC 단계. `v3_8_3` XLSX scoped cell resolve 진단까지 산출했고 production promotion은 아직 열지 않음 |
 
 ## 이 프로젝트로 보여주는 역량
 
@@ -57,10 +57,11 @@ AI 작업은 오래 걸리고 실패 가능성도 높습니다. 이 저장소는
 
 | Surface | Denominator / sample | 현재 값 | 읽는 법 |
 |---|---:|---|---|
+| XLSX scoped cell resolve `v3_8_3` | XLSX `344` query surfaces from persisted v3_8_2 workbook/document gates | sheet_resolve@1 `248/344`, sheet_resolve@3 `249/344`; table_or_range_resolve@1 `22/344`, @3 `30/344`; cell_or_value_resolve@1 `19/344`, @3 `23/344`; abstain `44/344`; oracle-free input violations `0` | answer generation 전 workbook gate 이후 sheet/range/cell 후보가 얼마나 좁혀지는지 보는 XLSX-only 진단입니다. PDF와 합산하지 않고 promotion evidence가 아닙니다. |
 | Oracle-free file/document resolve `v3_8_2` | PDF `329`, XLSX `344` query surfaces from v3_8/v3_7_2 top-k | PDF file_resolve@1 `65/329`, file_resolve@3 `129/329`, abstain `182/329`, wrong-file block `57/329`; XLSX file_resolve@1 `136/344`, file_resolve@3 `150/344`, abstain `44/344`, wrong-file block `25/344`; oracle-free input violations `0` | scoped FAISS나 answer generation 전에 source_file/document 후보를 oracle-free로 resolve하는 진단입니다. target SourceAtom/manifest는 metrics-only이고 promotion evidence가 아닙니다. |
 | Evidence selector artifact freeze `v3_8_1` | PDF `329`, XLSX `344` query surfaces from v3_8/v3_7_2 top-k | PDF selector_target_hit@3 `251/329`, selector_file_hit@3 `268/329`, selector_contract_survival@3 `329/329`; XLSX selector_target_hit@3 `29/344`, selector_file_hit@3 `315/344`, selector_contract_survival@3 `344/344` | answer generation 전 deterministic max-3 evidence selector 산출물입니다. selector_file_hit은 target SourceAtom registry identity metric surface로 정리했지만 file resolve는 여전히 diagnostic-only이며 promotion evidence가 아닙니다. |
 | File-grounded retrieval/evidence eval `v3_8` | PDF `329`, XLSX `344` query surfaces from v3_7_2 top-k | PDF file_hit@5 `284/329`, page_hit@5 `266/329`, evidence_select_hit@3 `251/329`; XLSX workbook_hit@5 `317/344`, sheet_hit@5 `275/344`, cell_or_value_hit@5 `34/344` | answer generation 전 단계의 file/document/evidence 선택 진단입니다. PDF/XLSX는 별도 denominator로 읽고 합산 headline score로 만들지 않습니다. |
-| Source registry-backed retrieval smoke `v3_7_2` | 1,029 query surfaces: official 29 + diagnostic silver 1,000 | same-track@k: TEXT `356/356`, PDF `329/329`, XLSX `344/344`; target@k: TEXT `20/356`, PDF `266/329`, XLSX `34/344`; contract survival: TEXT `1780/1780`, PDF `1645/1645`, XLSX `1720/1720` | 현재 가장 최신 contract smoke입니다. same-track@k는 family routing 확인값이고, ranking/materialization 품질은 target@k와 failure bucket으로 읽습니다. |
+| Source registry-backed retrieval smoke `v3_7_2` | 1,029 query surfaces: official 29 + diagnostic silver 1,000 | same-track@k: TEXT `356/356`, PDF `329/329`, XLSX `344/344`; target@k: TEXT `20/356`, PDF `266/329`, XLSX `34/344`; contract survival: TEXT `1780/1780`, PDF `1645/1645`, XLSX `1720/1720` | 현재 가장 최신 source-registry-backed contract smoke이며 v3_8 계열의 upstream top-k input입니다. same-track@k는 family routing 확인값이고, ranking/materialization 품질은 target@k와 failure bucket으로 읽습니다. |
 | Source-first citable index `v3_7_1` | 136,280 SearchViews | TEXT `135,608`, PDF `329`, XLSX `343`; source registry ready, index load check pass | `v3_7_2`의 immutable input index입니다. vector metadata는 canonical citation source가 아니며 SourceAtom에서 hydrate합니다. |
 | Official exact-evidence retrieval smoke `v3_4_3` | 28 included queries | Hit@1 `27/28` = `96.4%`, Hit@3 `28/28`, Hit@5 `28/28`, MRR@5 `0.982`, binary exact-evidence nDCG@5 `0.987` | 작은 source-bound regression smoke입니다. 현재 v3.7 contract smoke와 denominator가 다릅니다. |
 | Comparable live measurement rerun | 29 official rows | PASS `27/29`; PDF `4/4`, XLSX `19/19`, TEXT `4/6`; local LLM used for six TEXT rows | target-hit 개선 뒤 같은 official denominator로 재실행한 diagnostic입니다. answer/citation precision이나 promotion evidence로 승격하지 않습니다. |

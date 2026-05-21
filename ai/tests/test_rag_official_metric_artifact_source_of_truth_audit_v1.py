@@ -225,6 +225,9 @@ AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID = (
 AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve"
 )
+AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -353,6 +356,7 @@ REPORT_ARTIFACT_SLUGS = {
     AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID: AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
     AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID: AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
     AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID: AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID: AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_1_6_PDF_WINDOW_EXPANSION_RUN_ID,
@@ -399,6 +403,7 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
     AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
     AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
 }
 PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
@@ -409,6 +414,7 @@ PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID,
     AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
     AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
 }
 
 
@@ -1277,6 +1283,26 @@ AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON = report_artifact_path(
     AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
     "per_family.json",
 )
+AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_SUMMARY_JSON = report_artifact_path(
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+    "summary.json",
+)
+AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON = report_artifact_path(
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+    "metrics.json",
+)
+AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL = report_artifact_path(
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+    "per_query.jsonl",
+)
+AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON = report_artifact_path(
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+    "per_family.json",
+)
+AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL = report_artifact_path(
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+    "per_family.jsonl",
+)
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
@@ -1315,6 +1341,16 @@ def require_v3_8_2_local_artifacts(*paths: Path) -> None:
         return
     message = "missing v3_8_2 local report artifacts: " + ", ".join(str(path) for path in missing)
     if os.environ.get("RAG_V3_8_2_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
+def require_v3_8_3_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_8_3 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_8_3_ARTIFACTS_REQUIRED") == "1":
         pytest.fail(message)
     pytest.skip(message)
 
@@ -1534,6 +1570,11 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON,
     AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL,
     AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_SUMMARY_JSON,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL,
 }
 PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS = CURRENT_REPORT_PATHS
 ARCHIVED_REPORT_PATHS = {
@@ -1637,6 +1678,11 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON,
     AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL,
     AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_SUMMARY_JSON,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON,
+    AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL,
 }
 ARCHIVED_REPORT_PATHS = (
     ARCHIVED_REPORT_PATHS | (PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS - CURRENT_REPORT_PATHS)
@@ -2743,6 +2789,7 @@ def test_v3_8_2_oracle_free_file_resolve_artifacts_are_registered_hash_locked_an
         "target_search_unit_id",
         "target_parent_source_unit_id",
         "target_mapping_audit",
+        "matched_text_or_value",
         "expected_answer",
         "supporting_evidence",
         "qrels",
@@ -2857,6 +2904,245 @@ def test_v3_8_2_oracle_free_file_resolve_writer_emits_compact_artifacts_and_summ
     assert summary["artifact_sha256"]["metrics_json_sha256"] == sha256_file(metrics_path)
     assert summary["artifact_sha256"]["per_query_jsonl_sha256"] == sha256_file(per_query_path)
     assert summary["artifact_sha256"]["per_family_json_sha256"] == sha256_file(per_family_path)
+    assert summary["artifact_sha256"]["summary_json_sha256"] == sha256_file(summary_path)
+    assert "summary_json_sha256" not in persisted["artifact_sha256"]
+
+
+def test_v3_8_3_xlsx_scoped_cell_resolve_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_8_3_local_artifacts(
+        AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_SUMMARY_JSON,
+        AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON,
+        AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL,
+        AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON,
+        AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL,
+    )
+    summary = read_json(AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON)
+    per_family = read_json(AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON)
+    per_family_rows = read_jsonl(AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL)
+    per_query_rows = read_jsonl(AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL)
+    expected_artifacts = {
+        "metrics_json_sha256": AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON,
+        "per_query_jsonl_sha256": AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL,
+        "per_family_json_sha256": AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON,
+        "per_family_jsonl_sha256": AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL,
+    }
+
+    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID
+    assert summary["source_run_id"] == AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID
+    assert summary["parent_file_resolve_run_id"] == AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID
+    assert summary["file_resolve_gate_run_id"] == AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID
+    assert summary["artifact_kind"] == "v3_8_3_xlsx_scoped_cell_resolve_summary"
+    assert summary["run_class"] == "diagnostic_only_xlsx_scoped_cell_resolve_v1"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["answer_generation_metric_computed"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["qrels_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["silver_mutation"] is False
+    assert summary["xlsx_only"] is True
+    assert summary["file_resolve_oracle_free"] is True
+    assert summary["oracle_assisted_file_resolve"] is False
+    assert summary["oracle_free_input_violation_count"] == 0
+    assert summary["resolver_uses_target_source_atom_ids_for_selection"] is False
+    assert summary["target_source_atom_ids_used_for_metrics_only"] is True
+    assert summary["source_atom_registry_canonical_truth_used_for_resolution"] is True
+    assert summary["vector_db_role"] == "candidate_generator_only"
+    assert summary["xlsx_pdf_collapsed_score_reported"] is False
+    assert summary["source_family_counts"] == {"XLSX": 344}
+    assert summary["all_xlsx_query_count"] == 344
+    assert summary["v3_8_2_gate_row_found_count"] == 344
+    assert summary["v3_8_2_gate_missing_count"] == 0
+    assert summary["v3_8_2_gate_duplicate_query_id_count"] == 0
+    assert set(summary["per_source_family"]) == {"XLSX"}
+    assert per_family == summary["per_source_family"]
+    assert len(per_family_rows) == 1
+    assert per_family_rows[0] == metrics["per_family_rows"][0]
+    assert per_family_rows[0]["source_family"] == "XLSX"
+    assert metrics["per_source_family"] == per_family
+    assert per_family_rows[0]["miss_taxonomy"] == per_family["XLSX"]["miss_taxonomy"]
+    assert summary["miss_taxonomy"] == per_family["XLSX"]["miss_taxonomy"]
+    assert metrics["denominator_policy"]["xlsx_only_denominator"] is True
+    assert metrics["denominator_policy"]["pdf_rows_excluded"] is True
+    assert metrics["denominator_policy"]["xlsx_and_pdf_are_not_collapsed"] is True
+    assert metrics["resolver_policy"]["input_gate"] == "persisted_v3_8_2_oracle_free_file_resolve_per_query_row"
+    assert metrics["resolver_policy"]["forbidden_inputs_used_for_selection"] == []
+    assert metrics["oracle_free_input_violation_count"] == 0
+    assert len(per_query_rows) == 344
+    assert len({row["query_id"] for row in per_query_rows}) == 344
+    assert all(row["source_family"] == "XLSX" for row in per_query_rows)
+    assert all(row["resolve_status"] in {"resolved", "abstain", "disambiguation"} for row in per_query_rows)
+    for row in per_query_rows:
+        assert set(row["xlsx_miss_taxonomy"]) >= {
+            "is_miss",
+            "miss_stage",
+            "primary_category",
+            "reasons",
+            "resolver_improvement_hint",
+        }
+    for metric_name in (
+        "sheet_resolve@1",
+        "sheet_resolve@3",
+        "table_or_range_resolve@1",
+        "table_or_range_resolve@3",
+        "cell_or_value_resolve@1",
+        "cell_or_value_resolve@3",
+        "abstain_rate",
+        "wrong_workbook_block_rate",
+    ):
+        expected_numerator = sum(1 for row in per_query_rows if row[metric_name] is True)
+        assert per_family["XLSX"]["metrics"][metric_name]["numerator"] == expected_numerator
+        assert per_family["XLSX"]["metrics"][metric_name]["denominator"] == len(per_query_rows)
+    expected_taxonomy_counts = dict(
+        Counter(row["xlsx_miss_taxonomy"]["primary_category"] for row in per_query_rows)
+    )
+    assert per_family["XLSX"]["miss_taxonomy"]["primary_category_counts"] == expected_taxonomy_counts
+    assert all(row.get("v3_8_2_gate_row_found") is True for row in per_query_rows)
+    assert all(len(row.get("scoped_cell_candidates", [])) <= 3 for row in per_query_rows)
+    assert "per_query_rows" not in metrics
+
+    forbidden_candidate_artifact_keys = {
+        "metric_target_file_identity",
+        "question_gold_locator_target",
+        "official_manifest_target",
+        "target_source_atom_ids",
+        "target_search_view_ids",
+        "target_locator_fingerprint",
+        "target_search_unit_id",
+        "target_parent_source_unit_id",
+        "target_mapping_audit",
+        "matched_text_or_value",
+        "expected_answer",
+        "supporting_evidence",
+        "qrels",
+        "relevance_label",
+        "answerability_label",
+    }
+
+    def assert_forbidden_candidate_keys_absent(value: object) -> None:
+        if isinstance(value, dict):
+            assert not forbidden_candidate_artifact_keys.intersection(value)
+            for child in value.values():
+                assert_forbidden_candidate_keys_absent(child)
+        elif isinstance(value, list):
+            for child in value:
+                assert_forbidden_candidate_keys_absent(child)
+
+    assert_forbidden_candidate_keys_absent(per_query_rows)
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["source_registry_sha256_before"] == summary["source_registry_sha256_after"]
+    assert summary["source_registry_sha256_unchanged"] is True
+    assert summary["index_artifact_sha256_before"] == summary["index_artifact_sha256_after"]
+    assert summary["index_artifact_sha256_unchanged"] is True
+    assert summary["official_denominator_index_sha256_before"] == summary["official_denominator_index_sha256_after"]
+    assert summary["official_denominator_index_sha256_unchanged"] is True
+    assert summary["v3_8_2_summary_sha256_before"] == summary["v3_8_2_summary_sha256_after"]
+    assert summary["v3_8_2_summary_sha256_unchanged"] is True
+    assert summary["v3_8_2_per_query_sha256_before"] == summary["v3_8_2_per_query_sha256_after"]
+    assert summary["v3_8_2_per_query_sha256_unchanged"] is True
+    assert summary["fail_closed_reasons"] == []
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+
+    for heavy_key in (
+        "metrics",
+        "per_query_rows",
+        "topk_result_rows",
+        "source_atom_rows",
+        "search_view_rows",
+        "generated_answers",
+        "prompt_payloads",
+        "db_snapshot_rows",
+        "full_evidence_bundles",
+        "per_family_rows",
+    ):
+        assert heavy_key not in summary
+    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_SUMMARY_JSON.stat().st_size < 500_000
+    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON.stat().st_size < 500_000
+    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL.stat().st_size < 4_000_000
+    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL.stat().st_size < 250_000
+
+
+def test_v3_8_3_xlsx_scoped_cell_resolve_writer_emits_compact_artifacts_and_summary_hashes(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    summary_path = tmp_path / "v3_8_3_summary.json"
+    metrics_path = tmp_path / "v3_8_3_metrics.json"
+    per_query_path = tmp_path / "v3_8_3_per_query.jsonl"
+    per_family_path = tmp_path / "v3_8_3_per_family.json"
+    per_family_jsonl_path = tmp_path / "v3_8_3_per_family.jsonl"
+
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON", metrics_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL", per_query_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON", per_family_path)
+    monkeypatch.setattr(
+        runner,
+        "DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL",
+        per_family_jsonl_path,
+    )
+    monkeypatch.setattr(
+        runner,
+        "report_artifact_path",
+        lambda run_id, suffix: summary_path
+        if run_id == runner.V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID and suffix == "summary.json"
+        else tmp_path / f"{run_id}_{suffix}",
+    )
+
+    summary = {
+        "run_id": runner.V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+        "status": "DIAGNOSTIC_XLSX_SCOPED_CELL_RESOLVE_COMPUTED",
+        "metrics": {
+            "artifact_kind": "v3_8_3_xlsx_scoped_cell_resolve_metrics",
+            "per_source_family": {"XLSX": {"query_count": 1}},
+            "per_query_rows": [{"query_id": "heavy_row"}],
+            "per_family_rows": [{"source_family": "XLSX", "query_count": 1}],
+        },
+        "per_query_rows": [{"query_id": "xlsx_q", "source_family": "XLSX"}],
+        "per_source_family": {"XLSX": {"query_count": 1}},
+        "per_family_rows": [{"source_family": "XLSX", "query_count": 1}],
+        "artifact_paths": {
+            "summary_json": "tmp/v3_8_3_summary.json",
+            "metrics_json": "tmp/v3_8_3_metrics.json",
+            "per_query_jsonl": "tmp/v3_8_3_per_query.jsonl",
+            "per_family_json": "tmp/v3_8_3_per_family.json",
+            "per_family_jsonl": "tmp/v3_8_3_per_family.jsonl",
+        },
+    }
+
+    runner.write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
+
+    persisted = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert metrics_path.exists()
+    assert per_query_path.exists()
+    assert per_family_path.exists()
+    assert per_family_jsonl_path.exists()
+    assert "metrics" not in persisted
+    assert "per_query_rows" not in persisted
+    assert "per_family_rows" not in persisted
+    assert "per_query_rows" not in json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert read_jsonl(per_family_jsonl_path) == [{"source_family": "XLSX", "query_count": 1}]
+    assert persisted["per_source_family"] == {"XLSX": {"query_count": 1}}
+    assert summary["artifact_sha256"]["metrics_json_sha256"] == sha256_file(metrics_path)
+    assert summary["artifact_sha256"]["per_query_jsonl_sha256"] == sha256_file(per_query_path)
+    assert summary["artifact_sha256"]["per_family_json_sha256"] == sha256_file(per_family_path)
+    assert summary["artifact_sha256"]["per_family_jsonl_sha256"] == sha256_file(per_family_jsonl_path)
     assert summary["artifact_sha256"]["summary_json_sha256"] == sha256_file(summary_path)
     assert "summary_json_sha256" not in persisted["artifact_sha256"]
 

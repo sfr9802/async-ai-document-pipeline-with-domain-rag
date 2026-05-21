@@ -22,7 +22,7 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `diagnostic_oracle_free_file_resolve_v3_8_2_computed`;
+Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied. The v3_2
 post-fix sequence is closed, the official answer/citation implementation queue
@@ -32,7 +32,10 @@ evidence, v3_8 freezes the file-grounded PDF/XLSX retrieval/evidence metric
 path, v3_8_1 freezes deterministic max-3 citation-capable evidence
 candidates and selector artifacts from the v3_8/v3_7_2 SourceAtom-hydrated top-k rows,
 and v3_8_2 computes oracle-free source_file/document candidates without
-target-locator or manifest-assisted selection. v3_7_2 regenerated the inherited
+target-locator or manifest-assisted selection. v3_8_3 uses that persisted
+v3_8_2 gate for XLSX sheet/range/cell diagnostics and miss taxonomy without
+answer generation.
+v3_7_2 regenerated the inherited
 diagnostic silver query surface with local LLM natural Korean queries, then
 produced the source registry-backed retrieval smoke report. After
 the structured target-hit rerank, the comparable live measurement was rerun
@@ -82,6 +85,12 @@ closed; threshold tuning and winner selection also remain closed.
 <!-- official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve:progress-entry:start -->
 - v3_8_2 oracle-free file resolve (`official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve`) computes ranked source_file/document candidates before scoped retrieval or answer generation, using query/source metadata, SourceAtom/source-registry hydration, SearchView/index candidate metadata, literal file mentions, and source-family intent only. XLSX queries=344, file_resolve@1=136/344, abstain=44/344; PDF queries=329, file_resolve@1=65/329, abstain=182/329. Gold/target SourceAtom ids and manifest targets are metrics-only, not resolver inputs; wrong-file low-confidence cases abstain/disambiguate instead of forcing a file. No scoped FAISS answer route, answer generation, XLSX/PDF collapsed headline score, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion evidence was produced.
 <!-- official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve:progress-entry:end -->
+
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic:progress-entry:start -->
+- v3_8_3 XLSX scoped cell resolve (`official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic`) computes sheet/table-range/cell-value diagnostics after the v3_8_2 oracle-free workbook/document gate and before answer generation. XLSX queries=344, sheet_resolve@1=248/344, table_or_range_resolve@1=22/344, cell_or_value_resolve@1=19/344, abstain=44/344. Miss taxonomy counts: workbook_gate_disambiguation=44, sheet_miss_after_workbook_gate=51, sheet_rank_gap_within_top3=1, table_or_range_miss_after_sheet_hit=218, table_or_range_rank_gap_within_top3=8, cell_or_value_miss_after_range_hit=3, cell_or_value_resolved_at_rank_1=19. Resolver version `v2_query_locator_signals` only uses query locator literals plus the v3_8_2 workbook gate/source-registry candidate locators; Target SourceAtom/manifest locator data is metrics-only and remains outside resolver input. PDF rows are excluded instead of collapsed with XLSX. No scoped answer route, answer generation, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion evidence was produced.
+<!-- official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic:progress-entry:end -->
 
 - Official first-run baseline is `status=BLOCKED_OR_PARTIAL`,
   `status_detail=SCORED_BASELINE_PARTIAL`,
@@ -387,11 +396,11 @@ closed; threshold tuning and winner selection also remain closed.
 
 | Track | Current state | Current metric/evidence | Next action |
 |---|---|---|---|
-| Source architecture | v3_8_2 now resolves ranked source_file/document candidates over v3_8/v3_7_2 SourceAtom-hydrated PDF/XLSX top-k rows without oracle target inputs | PDF/XLSX metrics are reported separately; target SourceAtom/manifest data is metrics-only; citation truth remains source-registry hydrated, not vector metadata | Use the resolver output as a gated input to a later scoped retrieval diagnostic; keep answer generation and promotion closed. |
+| Source architecture | v3_8_3 now uses persisted v3_8_2 workbook/document gates for XLSX scoped sheet/range/cell diagnostics plus miss taxonomy | XLSX-only metrics are reported separately; target SourceAtom/manifest data is metrics-only; citation truth remains source-registry hydrated, not vector metadata | Use the taxonomy to improve scoped evidence/cell resolution, then open PDF page/span resolve only after the gate contract is stable. |
 | `text_namu_v2_1` | v3_2_7 closes the post-fix implementation queue; `text_namu_v2_0017` and `text_namu_v2_0084` remain diagnostic-only | Lane A/B/C: `24/29`, `27/29`, `27/29`; `text_namu_v2_0012` and `text_namu_v2_0077` are frozen Lane A replay residuals | Do not reopen gold policy automatically. |
-| `xlsx_business_structured` | v3_8_2 oracle-free resolver is computed before scoped retrieval | file_resolve@1 `136/344`; file_resolve@3 `150/344`; abstain `44/344`; wrong-file block `25/344`; upstream v3_8 workbook_hit@5 `317/344` | Improve range/cell locator coverage without mutating gold/qrels/labels. |
+| `xlsx_business_structured` | v3_8_3 scoped cell diagnostic is computed after the v3_8_2 workbook/document gate | sheet_resolve@1 `248/344`; table_or_range_resolve@1 `22/344`; cell_or_value_resolve@1 `19/344`; abstain `44/344`; top miss bucket table_or_range_miss_after_sheet_hit `218`; oracle-free input violations `0` | Improve range/cell locator coverage without mutating gold/qrels/labels. |
 | `pdf_business_ocr_mm` | v3_8_2 oracle-free resolver is computed before scoped retrieval | file_resolve@1 `65/329`; file_resolve@3 `129/329`; abstain `182/329`; wrong-file block `57/329`; upstream v3_8 page_hit@5 `266/329` | Improve PDF file identity confidence, then defer exact bbox overlap and OCR trust policy to a later slice. |
-| Report artifacts | Human narrative stays in three rolling docs; machine evidence stays compact | `status.jsonl` plus v3_8, v3_8_1, and v3_8_2 summary/metrics/per-query/per-family JSON/JSONL where required by tests | Avoid per-run Markdown and full forensic payloads unless the run contract requires them. |
+| Report artifacts | Human narrative stays in three rolling docs; machine evidence stays compact | `status.jsonl` plus v3_8, v3_8_1, v3_8_2, and v3_8_3 summary/metrics/per-query/per-family JSON/JSONL where required by tests | Avoid per-run Markdown and full forensic payloads unless the run contract requires them. |
 
 ## Current Verification Command
 
@@ -440,12 +449,15 @@ Machine-readable official/status surfaces:
   summary, metrics, per-query selected evidence rows, and per-family metrics.
 - v3_8_2 oracle-free file resolve artifacts:
   summary, metrics, per-query resolved file candidate rows, and per-family metrics.
+- v3_8_3 XLSX scoped cell resolve artifacts:
+  summary, metrics, per-query scoped cell candidate rows, per-query miss
+  taxonomy, per-family metrics JSON, and per-family diagnostic JSONL.
 - `ai/eval/silver/answer_citation_silver_manifest_v1.json`
 - `ai/eval/silver/answer_citation_silver_readiness_v1.json`
 
 As of the 2026-05-21 report cleanup, `ai/eval/reports/` intentionally keeps
 only `rag-ingestion/`, and that directory keeps `status.jsonl` plus the compact
-current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, and v3_8_2 machine artifacts. Older
+current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, and v3_8_3 machine artifacts. Older
 `rag-ingestion` payloads, including the
 official baseline/scorer/input/smoke/source-bound files and v3_1-v3_6_8
 diagnostics, are consolidated under
@@ -491,9 +503,9 @@ above.
 
 ## Next Recommended Steps
 
-1. Use `v3_8_2_oracle_free_file_resolve` as the input gate for a later scoped
-   PDF/XLSX retrieval diagnostic, while keeping answer generation closed.
-2. Keep v3_8/v3_8_1/v3_8_2 diagnostic-only while adding bbox/range-overlap and
+1. Use `v3_8_3_xlsx_scoped_cell_resolve_diagnostic` miss taxonomy to analyze
+   XLSX range/cell misses without opening answer generation.
+2. Keep v3_8/v3_8_1/v3_8_2/v3_8_3 diagnostic-only while adding bbox/range-overlap and
    hidden-negative policy only in a later bounded slice.
 3. Keep the official answer/citation implementation queue closed unless a later
    user-owned policy decision reopens TEXT answerability/gold boundaries.
@@ -523,3 +535,4 @@ above.
 | 2026-05-21 | v3_8 freezes PDF/XLSX file-grounded retrieval/evidence metrics before answer generation, with separate denominators and SourceAtom/source-registry citation truth. |
 | 2026-05-21 | v3_8_1 freezes deterministic max-3 evidence selector artifacts before answer generation; selector_file_hit uses registry target identity for metrics only and remains diagnostic-only. |
 | 2026-05-21 | v3_8_2 computes oracle-free source_file/document resolve metrics with separate PDF/XLSX denominators, abstain/wrong-file blocking, and no answer generation or promotion evidence. |
+| 2026-05-21 | v3_8_3 computes XLSX scoped sheet/range/cell diagnostics and miss taxonomy from persisted v3_8_2 workbook gates without answer generation or promotion evidence. |
