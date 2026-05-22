@@ -30,6 +30,9 @@ DEFAULT_INPUTS = (
 SCHEMA_VERSION = "rag_pdf_xlsx_answer_evidence_objects_v1"
 POLICY_SHAPE = "NOT_ANSWERABLE_OR_POLICY_PENDING"
 DEFAULT_MAX_SUMMARY_CHARS = 700
+PDF_CONTENT_WINDOW_TOO_THIN = "PDF_CONTENT_WINDOW_TOO_THIN"
+PDF_MIN_INFORMATIVE_CHARS = 14
+PDF_MIN_INFORMATIVE_TOKENS = 2
 XLSX_ALLOWED_SHAPES = {
     "TABLE_ROW_VALUE",
     "TABLE_COLUMN_OR_RANGE_WITH_CONTEXT",
@@ -150,7 +153,12 @@ def serialize_input_row(
         evidence = {"evidence_type": clean(track).lower() or "unknown"}
         malformed_input = True
     content_summary = clean(evidence.get("content_summary"))
-    content_available = content_evidence_available(evidence)
+    pdf_window_analysis = pdf_content_window_analysis(evidence) if track == "PDF" else {}
+    content_available = (
+        parse_bool(pdf_window_analysis.get("usable"))
+        if track == "PDF"
+        else content_evidence_available(evidence)
+    )
     keyword_only = content_is_keyword_only(content_summary, row)
     locator_only = evidence_has_locator(evidence) and not content_available
     evidence_quality = evidence_quality_flags(
@@ -160,6 +168,7 @@ def serialize_input_row(
         keyword_only=keyword_only,
         locator_only=locator_only,
         malformed_input=malformed_input,
+        pdf_window_analysis=pdf_window_analysis,
     )
     blocker = fail_closed_reason_for(
         track=track,
@@ -406,7 +415,19 @@ def pdf_evidence_object(
     table_context = string_list(context.get("table_or_value_context"))
     sentence_context = string_list(context.get("sentence_context"))
     matched_keyword = matched_keyword_for(row, context)
-    text_source = first_nonempty([*table_context, *paragraph_context, *sentence_context])
+    raw_text_source = first_nonempty([*table_context, *paragraph_context, *sentence_context])
+    paragraph_window = first_nonempty(
+        [
+            joined_text(context.get("paragraph_window")),
+            joined_text(context.get("adjacent_text_window")),
+        ]
+    )
+    raw_content_source = "table_or_value_context" if table_context else "paragraph_context" if paragraph_context else "sentence_context" if sentence_context else ""
+    text_source = raw_text_source
+    content_source = raw_content_source
+    if paragraph_window and (not raw_text_source or not pdf_text_window_analysis(raw_text_source).get("usable")):
+        text_source = paragraph_window
+        content_source = "paragraph_window"
     summary = summarize_pdf_content(text_source, max_summary_chars=max_summary_chars)
     row_label, column_label, value, unit = infer_pdf_table_parts(text_source, row)
     nearby_text_window = nearby_pdf_text_window(table_context, paragraph_context, sentence_context, max_summary_chars)
@@ -423,8 +444,9 @@ def pdf_evidence_object(
             "bbox": context.get("bbox") if context.get("bbox") not in (None, "") else locator.get("bbox"),
             "section": section,
             "section_path": [section] if section else [],
-            "paragraph_block_text": truncate(clean_whitespace(text_source), max_summary_chars),
-            "paragraph_or_table_text": truncate(clean_whitespace(text_source), max_summary_chars),
+            "paragraph_block_text": truncate(clean_whitespace(raw_text_source), max_summary_chars),
+            "paragraph_or_table_text": truncate(clean_whitespace(raw_text_source), max_summary_chars),
+            "paragraph_window": truncate(clean_whitespace(paragraph_window), max_summary_chars),
             "row_label": row_label,
             "column_label": column_label,
             "column_labels": [column_label] if column_label else [],
@@ -433,13 +455,8 @@ def pdf_evidence_object(
             "nearby_text_window": nearby_text_window,
             "content_summary": summary,
             "locator": compact_dict(dict(locator)),
-            "content_source": "table_or_value_context"
-            if table_context
-            else "paragraph_context"
-            if paragraph_context
-            else "sentence_context"
-            if sentence_context
-            else "",
+            "content_source": content_source,
+            "content_source_fields": [f"context.{content_source}"] if content_source else [],
         }
     )
 
@@ -1012,7 +1029,11 @@ def summarize_pdf_content(text: str, *, max_summary_chars: int) -> str:
     if not cleaned:
         return ""
     sentences = [clean(item) for item in re.split(r"(?<=[.!?。！？])\s+|\n+", cleaned) if clean(item)]
-    selected = first_nonempty(sentences) or cleaned
+    selected = first_nonempty(sentence for sentence in sentences if pdf_text_window_analysis(sentence).get("usable"))
+    if not selected and pdf_text_window_analysis(cleaned).get("usable"):
+        selected = cleaned
+    if not selected:
+        selected = first_nonempty(sentences) or cleaned
     return truncate(selected, max_summary_chars)
 
 
@@ -1286,6 +1307,8 @@ def fail_closed_reason_for(
         ):
             if code in string_list(evidence_quality.get("failure_codes")):
                 return code
+    if track == "PDF" and parse_bool(evidence_quality.get("pdf_content_window_too_thin")):
+        return PDF_CONTENT_WINDOW_TOO_THIN
     if locator_only and track != "XLSX":
         return f"{track}_LOCATOR_ONLY"
     if content_available and (track != "XLSX" or xlsx_shape_content_available(expected_shape, evidence)):
@@ -1311,6 +1334,8 @@ def fail_closed_reason_for(
             return "XLSX_NO_TABLE_CONTEXT"
         return "XLSX_NO_CONTENT_WINDOW"
     if track == "PDF":
+        if parse_bool(evidence_quality.get("pdf_content_window_too_thin")):
+            return PDF_CONTENT_WINDOW_TOO_THIN
         if parse_bool(evidence_quality.get("has_locator")):
             return "PDF_LOCATOR_ONLY"
         return "PDF_NO_CONTENT_WINDOW"
@@ -1325,8 +1350,10 @@ def evidence_quality_flags(
     keyword_only: bool,
     locator_only: bool,
     malformed_input: bool,
+    pdf_window_analysis: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     guard = evidence.get("xlsx_answer_guard") if isinstance(evidence.get("xlsx_answer_guard"), Mapping) else {}
+    pdf_analysis = pdf_window_analysis if isinstance(pdf_window_analysis, Mapping) else {}
     row_values = mapping_list(evidence.get("row_values"))
     column_values = mapping_list(evidence.get("column_values"))
     cell_values = mapping_list(evidence.get("cell_values"))
@@ -1368,6 +1395,12 @@ def evidence_quality_flags(
         "candidate_content_field_count": candidate_count,
         "unsupported_content_field_count": unsupported_count,
         "content_present_but_unsupported_shape": candidate_count > 0 and not has_concrete_content,
+        "pdf_content_window_usable": parse_bool(pdf_analysis.get("usable")),
+        "pdf_content_window_too_thin": parse_bool(pdf_analysis.get("too_thin")),
+        "pdf_content_window_reason": clean(pdf_analysis.get("reason")),
+        "pdf_content_window_basis_field": clean(pdf_analysis.get("basis_field")),
+        "pdf_content_window_informative_char_count": int_or_zero(pdf_analysis.get("informative_char_count")),
+        "pdf_content_window_informative_token_count": int_or_zero(pdf_analysis.get("informative_token_count")),
         "locator_only": locator_only,
         "keyword_only": keyword_only,
         "policy_pending": policy_pending,
@@ -1718,7 +1751,10 @@ def nearby_pdf_text_window(
     max_summary_chars: int,
 ) -> str:
     window = " ".join([*table_context[:2], *paragraph_context[:2], *sentence_context[:3]])
-    return truncate(clean_whitespace(window), max_summary_chars)
+    cleaned = clean_whitespace(window)
+    if not pdf_text_window_analysis(cleaned).get("usable"):
+        return ""
+    return truncate(cleaned, max_summary_chars)
 
 
 def content_evidence_available(evidence: Mapping[str, Any]) -> bool:
@@ -1738,6 +1774,19 @@ def content_evidence_available(evidence: Mapping[str, Any]) -> bool:
 
 
 def content_window_basis(evidence: Mapping[str, Any]) -> list[str]:
+    if clean(evidence.get("evidence_type")).lower() == "pdf":
+        basis = []
+        for key in (
+            "content_summary",
+            "paragraph_window",
+            "paragraph_block_text",
+            "paragraph_or_table_text",
+            "nearby_text_window",
+        ):
+            value = clean(evidence.get(key))
+            if value and pdf_text_window_analysis(value).get("usable"):
+                basis.append(key)
+        return basis
     basis = []
     for key in (
         "content_summary",
@@ -1755,6 +1804,107 @@ def content_window_basis(evidence: Mapping[str, Any]) -> list[str]:
         if value not in (None, "", [], {}):
             basis.append(key)
     return basis
+
+
+def pdf_content_window_analysis(evidence: Mapping[str, Any]) -> dict[str, Any]:
+    candidates = [
+        ("content_summary", clean(evidence.get("content_summary"))),
+        ("paragraph_window", clean(evidence.get("paragraph_window"))),
+        ("paragraph_block_text", clean(evidence.get("paragraph_block_text"))),
+        ("paragraph_or_table_text", clean(evidence.get("paragraph_or_table_text"))),
+        ("nearby_text_window", clean(evidence.get("nearby_text_window"))),
+    ]
+    present = [(field, text) for field, text in candidates if text]
+    if not present:
+        return {"usable": False, "too_thin": False, "reason": "missing_content_window"}
+
+    first_analysis: dict[str, Any] = {}
+    for field, text in present:
+        analysis = pdf_text_window_analysis(text)
+        if not first_analysis:
+            first_analysis = dict(analysis)
+            first_analysis["basis_field"] = field
+        if parse_bool(analysis.get("usable")):
+            return {**analysis, "basis_field": field}
+    return {**first_analysis, "usable": False, "too_thin": True}
+
+
+def pdf_text_window_analysis(text: str) -> dict[str, Any]:
+    cleaned = clean_whitespace(text)
+    if not cleaned:
+        return {"usable": False, "too_thin": False, "reason": "missing_content_window"}
+    normalized = strip_pdf_page_suffix(cleaned)
+    if pdf_page_number_only(normalized):
+        return pdf_text_window_failure("page_number_only", normalized)
+    if pdf_outline_marker_only(normalized):
+        return pdf_text_window_failure("outline_marker_only", normalized)
+    if pdf_toc_dot_leader(normalized):
+        return pdf_text_window_failure("toc_dot_leader", normalized)
+
+    tokens = re.findall(r"[가-힣A-Za-z0-9ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ]+", normalized)
+    informative_tokens = [
+        token
+        for token in tokens
+        if not re.fullmatch(r"\d+|[IVXLCDM]+|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ]+", token, flags=re.IGNORECASE)
+    ]
+    informative_chars = sum(len(token) for token in informative_tokens)
+    if informative_chars < PDF_MIN_INFORMATIVE_CHARS:
+        return pdf_text_window_failure(
+            "too_few_informative_characters",
+            normalized,
+            informative_chars=informative_chars,
+            informative_token_count=len(informative_tokens),
+        )
+    if len(informative_tokens) < PDF_MIN_INFORMATIVE_TOKENS and len(normalized) < 30:
+        return pdf_text_window_failure(
+            "too_few_informative_tokens",
+            normalized,
+            informative_chars=informative_chars,
+            informative_token_count=len(informative_tokens),
+        )
+    return {
+        "usable": True,
+        "too_thin": False,
+        "reason": "",
+        "informative_char_count": informative_chars,
+        "informative_token_count": len(informative_tokens),
+    }
+
+
+def pdf_text_window_failure(
+    reason: str,
+    text: str,
+    *,
+    informative_chars: int = 0,
+    informative_token_count: int = 0,
+) -> dict[str, Any]:
+    return {
+        "usable": False,
+        "too_thin": True,
+        "reason": reason,
+        "informative_char_count": informative_chars,
+        "informative_token_count": informative_token_count,
+        "sample": truncate(text, 80),
+    }
+
+
+def strip_pdf_page_suffix(text: str) -> str:
+    stripped = re.sub(r"\bPage\s+\d+\s*\.?$", "", text, flags=re.IGNORECASE).strip()
+    stripped = re.sub(r"\b페이지\s*\d+\s*\.?$", "", stripped, flags=re.IGNORECASE).strip()
+    return stripped or text
+
+
+def pdf_page_number_only(text: str) -> bool:
+    return bool(re.fullmatch(r"(?:p(?:age)?\.?|페이지)?\s*\d{1,4}\.?", text, flags=re.IGNORECASE))
+
+
+def pdf_outline_marker_only(text: str) -> bool:
+    stripped = text.strip().strip(".。):：-–— \t")
+    return bool(re.fullmatch(r"(?:\d{1,3}|[IVXLCDM]+|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ]+)", stripped, flags=re.IGNORECASE))
+
+
+def pdf_toc_dot_leader(text: str) -> bool:
+    return bool(re.search(r"(?:\.{4,}|·{4,}|…{2,})", text) and re.search(r"\d+\s*$", text))
 
 
 def policy_pending_state(row: Mapping[str, Any], policy: Mapping[str, Any]) -> tuple[bool, str]:
@@ -1859,6 +2009,12 @@ def clean(value: object) -> str:
 
 def clean_whitespace(value: object) -> str:
     return re.sub(r"\s+", " ", clean(value)).strip()
+
+
+def joined_text(value: object) -> str:
+    if isinstance(value, list):
+        return clean_whitespace(" ".join(clean(item) for item in value if clean(item)))
+    return clean_whitespace(value)
 
 
 def normalize(value: object) -> str:

@@ -18,6 +18,7 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 SCHEMA_VERSION = "rag_pdf_xlsx_deterministic_compiled_answers_v1"
 POLICY_SHAPE = "NOT_ANSWERABLE_OR_POLICY_PENDING"
 KEYWORD_FORBIDDEN_SHAPE = "KEYWORD_ECHO_FORBIDDEN"
+PDF_CONTENT_WINDOW_TOO_THIN = "PDF_CONTENT_WINDOW_TOO_THIN"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -86,6 +87,13 @@ def compile_evidence_row(row: Mapping[str, Any], *, run_id: str) -> dict[str, An
             failure_mode=blocker or "KEYWORD_ECHO_FORBIDDEN",
         )
         status = "KEYWORD_ECHO_FORBIDDEN"
+    elif blocker == PDF_CONTENT_WINDOW_TOO_THIN:
+        compiled_answer = abstain_answer(
+            shape=POLICY_SHAPE,
+            reason=PDF_CONTENT_WINDOW_TOO_THIN,
+            failure_mode=PDF_CONTENT_WINDOW_TOO_THIN,
+        )
+        status = "CONTENT_WINDOW_TOO_THIN_ABSTAIN"
     elif locator_only or blocker in {"LOCATOR_ONLY_WITHOUT_CONTENT", "XLSX_LOCATOR_ONLY", "PDF_LOCATOR_ONLY"}:
         compiled_answer = abstain_answer(
             shape=POLICY_SHAPE,
@@ -173,6 +181,12 @@ def compile_allowed_answer(
         )
     if track == "XLSX":
         answer = preserve_xlsx_bound_entity_anchor(evidence, answer)
+    if track == "PDF" and pdf_compiled_answer_too_thin(answer):
+        return abstain_answer(
+            shape=POLICY_SHAPE,
+            reason=PDF_CONTENT_WINDOW_TOO_THIN,
+            failure_mode=PDF_CONTENT_WINDOW_TOO_THIN,
+        )
     citation = citation_for(evidence, answer)
     if track == "XLSX":
         preservation_failures = xlsx_compiled_answer_preservation_failures(evidence, answer, citation)
@@ -281,6 +295,31 @@ def compile_yes_no_with_evidence(evidence: Mapping[str, Any]) -> str:
     if not summary:
         return ""
     return f"Yes. {summary}"
+
+
+def pdf_compiled_answer_too_thin(answer: str) -> bool:
+    text = clean(answer)
+    if not text:
+        return False
+    text = re.sub(r"\bPage\s+\d+\s*\.?$", "", text, flags=re.IGNORECASE).strip()
+    text = re.sub(r"\bon page\s+\d+\s*\.?$", "", text, flags=re.IGNORECASE).strip()
+    text = re.sub(r"\b페이지\s*\d+\s*\.?$", "", text, flags=re.IGNORECASE).strip()
+    if not text:
+        return True
+    if re.fullmatch(r"(?:p(?:age)?\.?|페이지)?\s*\d{1,4}\.?", text, flags=re.IGNORECASE):
+        return True
+    stripped = text.strip().strip(".。):：-–— \t")
+    if re.fullmatch(r"(?:\d{1,3}|[IVXLCDM]+|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ]+)", stripped, flags=re.IGNORECASE):
+        return True
+    if re.search(r"(?:\.{4,}|·{4,}|…{2,})", text) and re.search(r"\d+\s*$", text):
+        return True
+    tokens = re.findall(r"[가-힣A-Za-z0-9ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ]+", text)
+    informative_tokens = [
+        token
+        for token in tokens
+        if not re.fullmatch(r"\d+|[IVXLCDM]+|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫ]+", token, flags=re.IGNORECASE)
+    ]
+    return sum(len(token) for token in informative_tokens) < 14
 
 
 def query_bound_values(evidence: Mapping[str, Any]) -> list[dict[str, Any]]:

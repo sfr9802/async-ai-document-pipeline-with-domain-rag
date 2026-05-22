@@ -604,9 +604,15 @@ def extract_pdf_context(
     page_text = clean_whitespace(page.get_text("text"))
     bbox_text = ""
     bbox_values = bbox_list(bbox)
+    paragraph_window = ""
     if bbox_values:
         rect = fitz.Rect(*bbox_values)
         bbox_text = clean_whitespace(page.get_text("text", clip=rect))
+        paragraph_window = pdf_adjacent_block_window_from_blocks(
+            page.get_text("blocks"),
+            bbox=bbox_values,
+            max_chars=1200,
+        )
 
     term_sentences = select_sentences(page_text, expected_terms)
     table_or_value_context = []
@@ -618,11 +624,82 @@ def extract_pdf_context(
     return {
         "sentence_context": term_sentences[:5],
         "paragraph_context": ([bbox_text] if bbox_text else term_sentences[:2]),
+        "paragraph_window": paragraph_window,
         "table_or_value_context": table_or_value_context[:3],
         "page_text_excerpt": page_text[:2000],
         "pdf_extraction_policy": "pymupdf_page_text_and_bbox_clip",
         "context_errors": [],
     }
+
+
+def pdf_adjacent_block_window_from_blocks(
+    blocks: Iterable[object],
+    *,
+    bbox: object,
+    max_chars: int,
+    sibling_window: int = 1,
+) -> str:
+    bbox_values = bbox_list(bbox)
+    if not bbox_values:
+        return ""
+    text_blocks = normalized_pdf_text_blocks(blocks)
+    if not text_blocks:
+        return ""
+    target_index = pdf_target_block_index(text_blocks, bbox_values)
+    if target_index is None:
+        return ""
+    width = max(0, sibling_window)
+    start = max(0, target_index - width)
+    end = min(len(text_blocks), target_index + width + 1)
+    window = " ".join(block["text"] for block in text_blocks[start:end])
+    return truncate(clean_whitespace(window), max_chars)
+
+
+def normalized_pdf_text_blocks(blocks: Iterable[object]) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    for order, block in enumerate(blocks):
+        if not isinstance(block, (list, tuple)) or len(block) < 5:
+            continue
+        block_type = int_or_none(block[6]) if len(block) > 6 else 0
+        if block_type not in (None, 0):
+            continue
+        text = clean_whitespace(block[4])
+        if not text:
+            continue
+        try:
+            rect = [float(block[0]), float(block[1]), float(block[2]), float(block[3])]
+        except (TypeError, ValueError):
+            continue
+        normalized.append({"order": order, "rect": rect, "text": text})
+    return sorted(normalized, key=lambda item: (item["rect"][1], item["rect"][0], item["order"]))
+
+
+def pdf_target_block_index(blocks: list[dict[str, Any]], bbox: list[float]) -> int | None:
+    scored = [
+        (pdf_rect_overlap_area(block["rect"], bbox), index)
+        for index, block in enumerate(blocks)
+    ]
+    scored = [(score, index) for score, index in scored if score > 0]
+    if scored:
+        return max(scored, key=lambda item: item[0])[1]
+
+    center_x = (bbox[0] + bbox[2]) / 2
+    center_y = (bbox[1] + bbox[3]) / 2
+    for index, block in enumerate(blocks):
+        left, top, right, bottom = block["rect"]
+        if left <= center_x <= right and top <= center_y <= bottom:
+            return index
+    return None
+
+
+def pdf_rect_overlap_area(left: list[float], right: list[float]) -> float:
+    x0 = max(left[0], right[0])
+    y0 = max(left[1], right[1])
+    x1 = min(left[2], right[2])
+    y1 = min(left[3], right[3])
+    if x1 <= x0 or y1 <= y0:
+        return 0.0
+    return (x1 - x0) * (y1 - y0)
 
 
 def build_prompt_context(

@@ -6009,6 +6009,140 @@ def test_v3_8_3_run_measurement_wires_xlsx_scoped_cell_summary_without_answer_ge
     assert summary["artifact_paths"]["per_family_json"].endswith("_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_per_family.json")
 
 
+def test_pdf_content_window_sufficiency_gate_blocks_tiny_locator_fragments() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from eval.harness import pdf_xlsx_answer_evidence_serializer as serializer
+    from eval.harness import pdf_xlsx_deterministic_answer_compiler as compiler
+
+    for raw_fragment in (
+        "XI.",
+        "1.",
+        "Ⅰ.",
+        "Page 2",
+        "내부회계관리제도운영보고서....................................................................1",
+    ):
+        evidence_row = serializer.serialize_input_row(
+            {
+                "run_id": "unit_source",
+                "row_index": 57,
+                "track": "PDF",
+                "query_id": "pdf_raw_locator_57",
+                "query": "투자자 보호를 위하여 필요한 사항은 무엇인지 자세히 알려주세요.",
+                "expected_answer_shape": "PDF_SECTION_WITH_SUMMARY",
+                "context": {
+                    "file_name": "dart_dongsung_business_report_2025_20250321.pdf",
+                    "page_no": "2",
+                    "bbox": [10, 20, 30, 40],
+                    "locator": {
+                        "file": "dart_dongsung_business_report_2025_20250321.pdf",
+                        "page": "2",
+                        "bbox": [10, 20, 30, 40],
+                    },
+                    "paragraph_context": [raw_fragment],
+                    "sentence_context": [raw_fragment],
+                },
+            },
+            run_id="unit_evidence",
+        )
+
+        assert evidence_row["answer_generation_allowed"] is False
+        assert evidence_row["content_window_available"] is False
+        assert evidence_row["fail_closed_reason"] == "PDF_CONTENT_WINDOW_TOO_THIN"
+        assert evidence_row["evidence_quality"]["pdf_content_window_usable"] is False
+
+        compiled = compiler.compile_evidence_row(evidence_row, run_id="unit_compiled")
+
+        assert compiled["compiled_answer"]["answer"] == ""
+        assert compiled["compiled_answer"]["abstain_reason"] == "PDF_CONTENT_WINDOW_TOO_THIN"
+        assert compiled["compiled_answer"]["citations"] == []
+
+    legacy_compiled = compiler.compile_evidence_row(
+        {
+            "run_id": "legacy_unit_source",
+            "track": "PDF",
+            "query_id": "legacy_pdf_raw_locator",
+            "query": "사업보고서 내용을 확인하고 싶은데 어떤 정보가 포함되어 있나요?",
+            "expected_answer_shape": "PDF_SECTION_WITH_SUMMARY",
+            "answer_allowed": True,
+            "answer_generation_allowed": True,
+            "evidence_object": {
+                "evidence_type": "pdf",
+                "content_summary": "1.",
+                "paragraph_block_text": "1.",
+                "page": "3",
+                "locator": {"file": "dart_dongsung_business_report_2026_20260407_correction.pdf", "page": "3"},
+            },
+        },
+        run_id="unit_compiled",
+    )
+
+    assert legacy_compiled["compiled_answer"]["answer"] == ""
+    assert legacy_compiled["compiled_answer"]["abstain_reason"] == "PDF_CONTENT_WINDOW_TOO_THIN"
+
+
+def test_pdf_adjacent_block_window_can_replace_tiny_bbox_fragment_as_diagnostic_input() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    from eval.harness import pdf_xlsx_answer_evidence_serializer as serializer
+    from eval.harness import pdf_xlsx_deterministic_answer_compiler as compiler
+    import rag_pdf_xlsx_answer_generation_input_builder as builder
+
+    paragraph_window = builder.pdf_adjacent_block_window_from_blocks(
+        [
+            (10.0, 10.0, 40.0, 20.0, "XI.", 0, 0),
+            (
+                10.0,
+                24.0,
+                300.0,
+                70.0,
+                "투자자 보호를 위하여 필요한 사항은 투자위험, 감사의견, 내부통제 "
+                "관련 정보를 함께 확인해야 한다는 내용입니다.",
+                1,
+                0,
+            ),
+        ],
+        bbox=[10.0, 10.0, 40.0, 20.0],
+        max_chars=240,
+    )
+
+    evidence_row = serializer.serialize_input_row(
+        {
+            "run_id": "unit_source",
+            "row_index": 57,
+            "track": "PDF",
+            "query_id": "pdf_raw_locator_57",
+            "query": "투자자 보호를 위하여 필요한 사항은 무엇인지 자세히 알려주세요.",
+            "expected_answer_shape": "PDF_SECTION_WITH_SUMMARY",
+            "context": {
+                "file_name": "dart_dongsung_business_report_2025_20250321.pdf",
+                "page_no": "2",
+                "bbox": [10, 20, 30, 40],
+                "locator": {
+                    "file": "dart_dongsung_business_report_2025_20250321.pdf",
+                    "page": "2",
+                    "bbox": [10, 20, 30, 40],
+                },
+                "paragraph_context": ["XI."],
+                "paragraph_window": paragraph_window,
+                "sentence_context": ["XI."],
+            },
+        },
+        run_id="unit_evidence",
+    )
+
+    assert paragraph_window.startswith("XI. 투자자 보호를 위하여")
+    assert evidence_row["answer_generation_allowed"] is True
+    assert evidence_row["content_window_available"] is True
+    assert evidence_row["content_window_basis"] == ["content_summary", "paragraph_window"]
+    assert evidence_row["evidence_object"]["content_source"] == "paragraph_window"
+    assert evidence_row["evidence_object"]["content_summary"].startswith("투자자 보호를 위하여")
+
+    compiled = compiler.compile_evidence_row(evidence_row, run_id="unit_compiled")
+
+    assert compiled["compiled_answer"]["answer"].startswith("투자자 보호를 위하여")
+    assert compiled["compiled_answer"]["citations"][0]["locator"]["page"] == "2"
+
+
 def test_v3_8_file_grounded_run_measurement_wires_read_only_summary_without_answer_generation() -> None:
     sys.path.insert(0, str(ROOT / "ai"))
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
