@@ -11,7 +11,7 @@
 - TEXT/PDF/XLSX를 하나의 RAG evidence로 뭉개지 않고 source family별 contract를 분리합니다.
 - `SearchView -> SourceAtom -> EvidenceBundle -> Citation render` 흐름으로 retrieval candidate와 citation truth를 분리합니다.
 - 실제 사용자 쿼리, retrieval/evidence surface, LLM response 샘플을 함께 제공합니다.
-- metric/eval harness를 production path와 분리하고, diagnostic-only 결과와 promotion evidence를 구분합니다.
+- metric/eval harness를 production path와 분리하고, diagnostic-only 결과와 promotion evidence / production promotion을 구분합니다.
 
 ## Source-First Evidence Contract
 
