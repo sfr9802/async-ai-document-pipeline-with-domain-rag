@@ -19,7 +19,12 @@ from app.capabilities.pdf.artifact_builder import (
     PDF_PIPELINE_VERSION,
     build_output_artifacts,
 )
-from app.capabilities.pdf.table_parser import extract_pdf_table_records
+from app.capabilities.pdf.table_parser import (
+    currency_like,
+    export_import_like,
+    extract_pdf_table_records,
+    normalize as normalize_table_probe,
+)
 
 log = logging.getLogger(__name__)
 
@@ -198,83 +203,96 @@ class PdfExtractService:
             })
             return
 
-        for page in pages:
-            if not self._page_needs_ocr(page):
-                continue
-            page_no = int(page.get("page_no") or page.get("pageNo") or 0)
-            try:
-                image_bytes = _render_pdf_page_png(
-                    content,
-                    page_index=int(page.get("physical_page_index") or max(page_no - 1, 0)),
-                    dpi=self._ocr_pdf_dpi,
-                )
-                ocr_document = provider.extract(
-                    image_bytes,
-                    source_record_id=source_record_id,
-                    pipeline_version=self._ocr_pipeline_version,
-                    content_type="image/png",
-                    filename=f"{filename}.page-{page_no}.png",
-                )
-            except Exception as ex:  # pragma: no cover - depends on local Paddle install
-                warnings.append({
-                    "code": "OCR_FALLBACK_UNAVAILABLE",
-                    "message": f"PaddleOCR fallback unavailable: {type(ex).__name__}: {ex}",
-                    "physical_page_index": page.get("physical_page_index"),
-                    "page_no": page_no,
-                    "page_label": page.get("page_label"),
-                    "ocr_engine": "paddleocr",
-                })
-                continue
+        try:
+            render_document = _open_pdf_for_ocr_render(content)
+        except Exception as ex:  # pragma: no cover - depends on local PDF/rendering state
+            warnings.append({
+                "code": "OCR_FALLBACK_UNAVAILABLE",
+                "message": f"PaddleOCR fallback unavailable: {type(ex).__name__}: {ex}",
+                "ocr_engine": "paddleocr",
+            })
+            return
 
-            ocr_page = ocr_document.pages[0] if ocr_document.pages else None
-            if ocr_page is None:
-                warnings.append({
-                    "code": "OCR_PAGE_MISSING",
-                    "message": "PaddleOCR did not return OCR output for a required page.",
-                    "physical_page_index": page.get("physical_page_index"),
-                    "page_no": page_no,
-                    "page_label": page.get("page_label"),
-                    "ocr_engine": "paddleocr",
-                })
-                continue
-            ocr_blocks: list[dict[str, Any]] = []
-            for index, block in enumerate(ocr_page.blocks):
-                if not block.text:
+        try:
+            for page in pages:
+                if not self._page_needs_ocr(page):
                     continue
-                ocr_blocks.append({
-                    "block_id": f"p{page.get('physical_page_index', page_no - 1)}_ocr_{index}",
-                    "block_type": "ocr_line_group",
-                    "text": _clean_text(block.text),
-                    "bbox": [float(value) for value in block.bbox],
-                    "reading_order": len(page.get("blocks") or []) + index,
-                    "section_path": [],
-                    "ocr_used": True,
-                    "ocr_engine": "paddleocr",
-                    "ocr_model": "PaddleOCR",
-                    "ocr_language": self._ocr_lang,
-                    "ocr_confidence": float(block.confidence),
-                    "confidence": float(block.confidence),
-                    "quality_score": round(float(block.confidence) * 0.8, 4),
-                })
-            if not ocr_blocks:
-                warnings.append({
-                    "code": "OCR_EMPTY_TEXT",
-                    "message": "PaddleOCR returned no usable text for a required page.",
-                    "physical_page_index": page.get("physical_page_index"),
-                    "page_no": page_no,
-                    "page_label": page.get("page_label"),
-                    "ocr_engine": "paddleocr",
-                })
-                continue
-            page["blocks"] = list(page.get("blocks") or []) + ocr_blocks
-            confidences = [float(block["ocr_confidence"]) for block in ocr_blocks]
-            page["ocr_used"] = True
-            page["ocr_engine"] = "paddleocr"
-            page["ocr_model"] = "PaddleOCR"
-            page["ocr_language"] = self._ocr_lang
-            page["ocr_confidence_avg"] = round(sum(confidences) / len(confidences), 4)
-            page["quality_score"] = round(page["ocr_confidence_avg"] * 0.8, 4)
-            page["char_count"] = len(_page_plain_text(page))
+                page_no = int(page.get("page_no") or page.get("pageNo") or 0)
+                try:
+                    image_bytes = _render_pdf_page_png_from_document(
+                        render_document,
+                        page_index=int(page.get("physical_page_index") or max(page_no - 1, 0)),
+                        dpi=self._ocr_pdf_dpi,
+                    )
+                    ocr_document = provider.extract(
+                        image_bytes,
+                        source_record_id=source_record_id,
+                        pipeline_version=self._ocr_pipeline_version,
+                        content_type="image/png",
+                        filename=f"{filename}.page-{page_no}.png",
+                    )
+                except Exception as ex:  # pragma: no cover - depends on local Paddle install
+                    warnings.append({
+                        "code": "OCR_FALLBACK_UNAVAILABLE",
+                        "message": f"PaddleOCR fallback unavailable: {type(ex).__name__}: {ex}",
+                        "physical_page_index": page.get("physical_page_index"),
+                        "page_no": page_no,
+                        "page_label": page.get("page_label"),
+                        "ocr_engine": "paddleocr",
+                    })
+                    continue
+
+                ocr_page = ocr_document.pages[0] if ocr_document.pages else None
+                if ocr_page is None:
+                    warnings.append({
+                        "code": "OCR_PAGE_MISSING",
+                        "message": "PaddleOCR did not return OCR output for a required page.",
+                        "physical_page_index": page.get("physical_page_index"),
+                        "page_no": page_no,
+                        "page_label": page.get("page_label"),
+                        "ocr_engine": "paddleocr",
+                    })
+                    continue
+                ocr_blocks: list[dict[str, Any]] = []
+                for index, block in enumerate(ocr_page.blocks):
+                    if not block.text:
+                        continue
+                    ocr_blocks.append({
+                        "block_id": f"p{page.get('physical_page_index', page_no - 1)}_ocr_{index}",
+                        "block_type": "ocr_line_group",
+                        "text": _clean_text(block.text),
+                        "bbox": [float(value) for value in block.bbox],
+                        "reading_order": len(page.get("blocks") or []) + index,
+                        "section_path": [],
+                        "ocr_used": True,
+                        "ocr_engine": "paddleocr",
+                        "ocr_model": "PaddleOCR",
+                        "ocr_language": self._ocr_lang,
+                        "ocr_confidence": float(block.confidence),
+                        "confidence": float(block.confidence),
+                        "quality_score": round(float(block.confidence) * 0.8, 4),
+                    })
+                if not ocr_blocks:
+                    warnings.append({
+                        "code": "OCR_EMPTY_TEXT",
+                        "message": "PaddleOCR returned no usable text for a required page.",
+                        "physical_page_index": page.get("physical_page_index"),
+                        "page_no": page_no,
+                        "page_label": page.get("page_label"),
+                        "ocr_engine": "paddleocr",
+                    })
+                    continue
+                page["blocks"] = list(page.get("blocks") or []) + ocr_blocks
+                confidences = [float(block["ocr_confidence"]) for block in ocr_blocks]
+                page["ocr_used"] = True
+                page["ocr_engine"] = "paddleocr"
+                page["ocr_model"] = "PaddleOCR"
+                page["ocr_language"] = self._ocr_lang
+                page["ocr_confidence_avg"] = round(sum(confidences) / len(confidences), 4)
+                page["quality_score"] = round(page["ocr_confidence_avg"] * 0.8, 4)
+                page["char_count"] = len(_page_plain_text(page))
+        finally:
+            render_document.close()
 
     def _get_ocr_provider(self) -> Any:
         if self._ocr_provider is not None:
@@ -345,11 +363,15 @@ class PdfExtractService:
             "ocr_used": False,
             "char_count": len(page_text),
             "blocks": blocks,
-            "tables": extract_pdf_table_records(
-                blocks,
-                page_no=page_no,
-                physical_page_index=page_index,
-                page_label=page_label,
+            "tables": (
+                extract_pdf_table_records(
+                    blocks,
+                    page_no=page_no,
+                    physical_page_index=page_index,
+                    page_label=page_label,
+                )
+                if _should_extract_pdf_tables(blocks)
+                else []
             ),
         }
 
@@ -397,7 +419,32 @@ def _page_plain_text(page: dict[str, Any]) -> str:
     ).strip()
 
 
+def _should_extract_pdf_tables(blocks: list[dict[str, Any]]) -> bool:
+    native_texts: list[str] = []
+    for block in blocks:
+        if block.get("ocr_used") is True:
+            continue
+        block_type = _clean_text(str(block.get("block_type") or ""))
+        if block_type.startswith("ocr"):
+            continue
+        text = _clean_text(str(block.get("text") or ""))
+        if text:
+            native_texts.append(text)
+    if not native_texts:
+        return False
+    text = normalize_table_probe("\n".join(native_texts))
+    return export_import_like(text) or currency_like(text)
+
+
 def _render_pdf_page_png(content: bytes, *, page_index: int, dpi: int) -> bytes:
+    document = _open_pdf_for_ocr_render(content)
+    try:
+        return _render_pdf_page_png_from_document(document, page_index=page_index, dpi=dpi)
+    finally:
+        document.close()
+
+
+def _open_pdf_for_ocr_render(content: bytes) -> Any:
     try:
         import fitz
     except ImportError as ex:  # pragma: no cover - environment dependent
@@ -406,12 +453,12 @@ def _render_pdf_page_png(content: bytes, *, page_index: int, dpi: int) -> bytes:
             "PyMuPDF is required to rasterize a PDF page for OCR fallback.",
         ) from ex
 
-    document = fitz.open(stream=BytesIO(content), filetype="pdf")
-    try:
-        page = document.load_page(page_index)
-        return page.get_pixmap(dpi=dpi).tobytes("png")
-    finally:
-        document.close()
+    return fitz.open(stream=BytesIO(content), filetype="pdf")
+
+
+def _render_pdf_page_png_from_document(document: Any, *, page_index: int, dpi: int) -> bytes:
+    page = document.load_page(page_index)
+    return page.get_pixmap(dpi=dpi).tobytes("png")
 
 
 def _quality_score(pages: list[dict[str, Any]]) -> float:

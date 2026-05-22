@@ -11,6 +11,13 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "ai"))
 sys.path.insert(0, str(ROOT / "ai" / "scripts"))
 
+from app.capabilities.rag.search_unit_indexing import (
+    SearchUnitIndexDocument,
+    _is_duplicate_indexed,
+    build_search_unit_embedding_text,
+    to_chunk_row,
+)
+
 
 def _synthetic_ready_source_bound_report() -> dict:
     locators: dict[str, dict] = {}
@@ -136,6 +143,55 @@ def _synthetic_ready_source_bound_report() -> dict:
         "denominator_mutation": False,
         "human_label_mutation": False,
     }
+
+
+def test_search_unit_duplicate_lookup_preserves_namespace_and_diagnostic_metadata() -> None:
+    doc = SearchUnitIndexDocument(
+        search_unit_id="su-xlsx-duplicate",
+        claim_token="claim-xlsx-duplicate",
+        index_id="source_file:source-xlsx:unit:ROW_GROUP:A2:D2",
+        source_file_id="source-xlsx",
+        source_file_name="sample.xlsx",
+        extracted_artifact_id="artifact-xlsx",
+        artifact_type="XLSX_WORKBOOK_JSON",
+        unit_type="ROW_GROUP",
+        unit_key="A2:D2",
+        title="Sample row",
+        section_path="Sheet1",
+        page_start=None,
+        page_end=None,
+        text_content="대중교통구분: 지하철 | 노선명: 5호선 | 년월: 201902 | 승차총승객수: 15446522",
+        content_sha256="content-sha",
+        metadata_json={
+            "fileType": "xlsx",
+            "sheetName": "Sheet1",
+            "cellRange": "A2:D2",
+            "sourceAtomId": "source-atom-xlsx",
+            "sourceRegistryVersion": "source-registry-v1",
+        },
+        index_metadata={
+            "namespace": "diagnostic-nonprod",
+            "diagnostic_only": True,
+        },
+    )
+    embedding_text = build_search_unit_embedding_text(doc)
+    chunk = to_chunk_row(
+        doc,
+        faiss_row_id=0,
+        index_version="search-unit-live-v1",
+        embedding_model="synthetic-embedding-v1",
+        embedding_text=embedding_text,
+    )
+
+    assert chunk.extra["namespace"] == "diagnostic-nonprod"
+    assert chunk.extra["diagnostic_only"] is True
+    assert chunk.extra["sourceAtomId"] == "source-atom-xlsx"
+    assert _is_duplicate_indexed(
+        by_index_id={chunk.chunk_id: chunk},
+        doc=doc,
+        embedding_text=embedding_text,
+        embedding_model="synthetic-embedding-v1",
+    ) is True
 
 
 def test_official_denominator_readiness_fails_closed_on_missing_locator_fields(tmp_path: Path) -> None:
@@ -2279,3 +2335,452 @@ def test_runner_fail_closes_when_only_off_track_citations_are_retrieved() -> Non
     assert row["scored_citations"] == []
     assert row["discarded_off_track_citations"][0]["citation_payload_validation"]["manifest_query_id"] == "xlsx-row"
     assert "#xlsx_business_structured" not in row["generated_answer"]
+
+
+def test_claude_user_message_carries_pdf_xlsx_locators_without_gold_metadata() -> None:
+    from app.capabilities.rag.claude_generation import _build_user_message
+    from app.capabilities.rag.generation import RetrievedChunk
+
+    pdf_chunk = RetrievedChunk(
+        chunk_id="chunk-pdf",
+        doc_id="docv-pdf",
+        section="page-8",
+        text="실업률은 모든 연령계층에서 상승했다.",
+        score=0.91,
+        search_unit_id="su-pdf",
+        metadata_json={
+            "source_atom_hydrated_from_registry": True,
+            "source_family": "PDF",
+            "track": "pdf_business_ocr_mm",
+            "source_pdf_path": "local-storage/report.pdf",
+            "page": 8,
+            "physical_page_index": 7,
+            "bbox": [63.65, 121.56, 227.84, 131.77],
+            "region_type": "paragraph",
+            "expected_answer": "DO_NOT_LEAK_EXPECTED",
+            "supporting_evidence": "DO_NOT_LEAK_EVIDENCE",
+            "gold_label": "DO_NOT_LEAK_GOLD",
+        },
+    )
+    xlsx_chunk = RetrievedChunk(
+        chunk_id="chunk-xlsx",
+        doc_id="docv-xlsx",
+        section="철도",
+        text="5호선 201902 승차총승객수는 15446522이다.",
+        score=0.88,
+        search_unit_id="su-xlsx",
+        metadata_json={
+            "source_atom_hydrated_from_registry": True,
+            "source_family": "XLSX",
+            "track": "xlsx_business_structured",
+            "workbook": "서울시 대중교통 수단별 이용 현황.xlsx",
+            "sheet": "철도",
+            "range": "A352:D401",
+            "cell": "D352",
+            "row_label": "대중교통구분=지하철 | 노선명=5호선 | 년월=201902",
+            "target_column": "승차총승객수",
+            "normalized_value": "15446522",
+            "answerability_label": "DO_NOT_LEAK_LABEL",
+        },
+    )
+
+    message = _build_user_message("5호선 201902 승차총승객수?", [pdf_chunk, xlsx_chunk])
+
+    assert "Citation ID: [S1]" in message
+    assert "Citation ID: [S2]" in message
+    assert "PDF locator:" in message
+    assert "source_pdf_path=local-storage/report.pdf" in message
+    assert "page=8" in message
+    assert "bbox=[63.65, 121.56, 227.84, 131.77]" in message
+    assert "XLSX locator:" in message
+    assert "workbook=서울시 대중교통 수단별 이용 현황.xlsx" in message
+    assert "sheet=철도" in message
+    assert "range=A352:D401" in message
+    assert "cell=D352" in message
+    assert "target_column=승차총승객수" in message
+    assert "normalized_value=15446522" in message
+    assert "DO_NOT_LEAK" not in message
+
+
+def test_claude_user_message_omits_candidate_locator_when_source_registry_hydration_required() -> None:
+    from app.capabilities.rag.claude_generation import _build_user_message
+    from app.capabilities.rag.generation import RetrievedChunk
+
+    chunk = RetrievedChunk(
+        chunk_id="candidate-xlsx",
+        doc_id="docv-xlsx",
+        section="Sheet1",
+        text="검증 전 후보 표 조각입니다.",
+        score=0.74,
+        search_unit_id="su-candidate",
+        page_start=9,
+        page_end=9,
+        metadata_json={
+            "source_atom_hydrated_from_registry": False,
+            "source_family": "XLSX",
+            "source_atom_id": "srcatom-candidate",
+            "canonical_citation_payload": {
+                "sheet": "HiddenCandidate",
+                "cell": "Z99",
+                "range": "Z99:Z100",
+                "normalized_value": "DO_NOT_PROMOTE",
+            },
+            "workbook": "candidate.xlsx",
+            "sheet": "HiddenCandidate",
+            "cell": "Z99",
+            "range": "Z99:Z100",
+            "source_pdf_path": "local-storage/candidate.pdf",
+            "bbox": [1, 2, 3, 4],
+        },
+    )
+
+    message = _build_user_message("후보 locator는 쓰지 말 것", [chunk])
+
+    assert "Citation ID: [S1]" in message
+    assert "source_registry_hydration_required" not in message
+    assert "XLSX locator:" not in message
+    assert "PDF locator:" not in message
+    assert "HiddenCandidate" not in message
+    assert "Z99" not in message
+    assert "candidate.xlsx" not in message
+    assert "candidate.pdf" not in message
+    assert "DO_NOT_PROMOTE" not in message
+
+
+def test_pdf_xlsx_llm_quality_benchmark_dry_run_records_silver_seed_and_policy(tmp_path: Path) -> None:
+    import rag_pdf_xlsx_llm_quality_benchmark as benchmark
+
+    manifest = tmp_path / "manifest.jsonl"
+    silver = tmp_path / "silver.jsonl"
+    source_identity = "PDF:docv-pdf:su-pdf:lf-pdf"
+    manifest.write_text(
+        json.dumps(
+            {
+                "search_view_id": "searchview-pdf",
+                "source_family": "PDF",
+                "source_atom_id": "srcatom-pdf",
+                "source_identity": source_identity,
+                "locator_fingerprint": "lf-pdf",
+                "parent_search_unit_id": "su-pdf",
+                "generation_source_allowed": True,
+                "runtime_evidence_allowed": True,
+                "official_denominator_overlap": False,
+                "display_text": "산림청 정책연구용역 관리규정 별지 제1호서식",
+                "embedding_text": "Locator: page=1 | region_type=text_block",
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    silver.write_text(
+        json.dumps(
+            {
+                "source_family": "PDF",
+                "source_identity": source_identity,
+                "locator_fingerprint": "lf-pdf",
+                "generated_question_draft": "산림청 별지 서식?",
+                "query_quality_profile": "short_keyword_or_fragment",
+                "manifest_partition": "core",
+                "row_ordinal": 1,
+                "diagnostic_only": True,
+                "not_gold": True,
+                "not_official_denominator": True,
+                "not_official_qrels": True,
+                "official_metric_denominator_usage_allowed": False,
+                "promotion_evidence": False,
+                "threshold_tuning": False,
+                "winner_selection": False,
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    summary = benchmark.run_benchmark(
+        manifest_path=manifest,
+        silver_manifest_path=silver,
+        output_dir=tmp_path,
+        run_label="unit",
+        model="fake",
+        base_url="http://127.0.0.1:9/v1",
+        cases_per_family=1,
+        max_tokens=32,
+        query_max_tokens=32,
+        timeout_seconds=1,
+        dry_run=True,
+    )
+
+    assert summary["status"] == "PASS_DRY_RUN"
+    assert summary["case_count"] == 1
+    assert summary["silver_seed_match_count"] == 1
+    assert summary["silver_join_summary"]["locator_only_fallback_enabled"] is False
+    assert summary["query_rewrite_summary"]["query_source_counts"] == {"dry_run_challenge_fallback": 1}
+    response_rows = [
+        json.loads(line)
+        for line in (tmp_path / "pdf_xlsx_llm_quality_unit_responses.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert {row["seed_query_source"] for row in response_rows} == {"silver_seed"}
+    assert {row["query_source"] for row in response_rows} == {"dry_run_challenge_fallback"}
+
+
+def test_pdf_xlsx_llm_quality_benchmark_joins_silver_without_locator_only_cross_join(tmp_path: Path) -> None:
+    import rag_pdf_xlsx_llm_quality_benchmark as benchmark
+
+    source_identity = "XLSX:docv-xlsx:su-xlsx:lf-shared"
+    silver = tmp_path / "silver.jsonl"
+    silver.write_text(
+        "\n".join(
+            json.dumps(row, ensure_ascii=False)
+            for row in [
+            {
+                "source_family": "XLSX",
+                "source_identity": "XLSX:other-doc:su-other:lf-shared",
+                "locator_fingerprint": "lf-shared",
+                "generated_question_draft": "잘못된 locator-only seed",
+                "diagnostic_only": True,
+                "not_gold": True,
+                "not_official_denominator": True,
+                "not_official_qrels": True,
+                "official_metric_denominator_usage_allowed": False,
+                "promotion_evidence": False,
+                "threshold_tuning": False,
+                "winner_selection": False,
+            },
+            {
+                "source_family": "XLSX",
+                "source_identity": source_identity,
+                "locator_fingerprint": "lf-shared",
+                "generated_question_draft": "정확한 source identity seed",
+                "query_quality_profile": "messy_user_like",
+                "row_ordinal": 7,
+                "diagnostic_only": True,
+                "not_gold": True,
+                "not_official_denominator": True,
+                "not_official_qrels": True,
+                "official_metric_denominator_usage_allowed": False,
+                "promotion_evidence": False,
+                "threshold_tuning": False,
+                "winner_selection": False,
+            },
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    index = benchmark.load_silver_seed_index(silver)
+    matched = benchmark.find_silver_seed(
+        {"source_family": "XLSX", "source_identity": source_identity, "locator_fingerprint": "lf-shared"},
+        index,
+    )
+    mismatched = benchmark.find_silver_seed(
+        {"source_family": "XLSX", "source_identity": "XLSX:nope:su-nope:lf-shared", "locator_fingerprint": "lf-shared"},
+        index,
+    )
+
+    assert matched["generated_question_draft"] == "정확한 source identity seed"
+    assert matched["_join_key_used"] == "source_family+source_identity+locator_fingerprint"
+    assert mismatched == {}
+
+
+def test_pdf_xlsx_llm_quality_benchmark_builds_diverse_non_friendly_queries() -> None:
+    import rag_pdf_xlsx_llm_quality_benchmark as benchmark
+
+    cases = [
+        benchmark.EvidenceCase(
+            case_id="pdf-1",
+            family="PDF",
+            source_atom_id="srcatom-pdf-1",
+            doc_id="docv-pdf",
+            section="page-1",
+            evidence_text="산림청 정책연구용역 관리규정 별지 제1호서식",
+            locator={"source_pdf_path": "report.pdf", "page": 1, "bbox": [1, 2, 3, 4], "region_type": "text_block"},
+        ),
+        benchmark.EvidenceCase(
+            case_id="pdf-2",
+            family="PDF",
+            source_atom_id="srcatom-pdf-2",
+            doc_id="docv-pdf",
+            section="page-2",
+            evidence_text="경쟁입찰 협상에 의한 계약 추진",
+            locator={"source_pdf_path": "report.pdf", "page": 2, "bbox": [2, 3, 4, 5], "region_type": "paragraph"},
+        ),
+        benchmark.EvidenceCase(
+            case_id="xlsx-1",
+            family="XLSX",
+            source_atom_id="srcatom-xlsx-1",
+            doc_id="docv-xlsx",
+            section="철도",
+            evidence_text="5호선 201902 승차총승객수 15446522",
+            locator={
+                "workbook": "transport.xlsx",
+                "sheet": "철도",
+                "range": "A352:D401",
+                "cell": "D352",
+                "row_label": "노선명=5호선 | 년월=201902",
+                "target_column": "승차총승객수",
+                "normalized_value": "15446522",
+            },
+        ),
+        benchmark.EvidenceCase(
+            case_id="xlsx-2",
+            family="XLSX",
+            source_atom_id="srcatom-xlsx-2",
+            doc_id="docv-xlsx",
+            section="일반현황",
+            evidence_text="해오름요양원 우편번호 41786",
+            locator={
+                "workbook": "care.xlsx",
+                "sheet": "일반현황",
+                "range": "A702:J751",
+                "cell": "C702",
+                "row_label": "장기요양기관이름=해오름요양원",
+                "target_column": "우편번호",
+                "normalized_value": "41786",
+            },
+        ),
+    ]
+
+    friendly = [benchmark.build_friendly_query(case) for case in cases]
+    challenge = [benchmark.build_challenge_query(case, ordinal=index) for index, case in enumerate(cases, start=1)]
+    metrics = benchmark.query_quality_metrics(challenge)
+
+    assert len(set(challenge)) == len(challenge)
+    assert metrics["query_style_count"] >= 4
+    assert metrics["friendly_suffix_ratio"] < 0.5
+    assert metrics["max_same_six_char_prefix_count"] <= 1
+    assert any(len(query.split()) <= 3 for query in challenge)
+    assert all(query not in friendly for query in challenge)
+    joined = " ".join(challenge)
+    assert "report.pdf" not in joined
+    assert "transport" not in joined
+    assert "care.xlsx" not in joined
+    value_fallback = benchmark.build_challenge_query(cases[2], ordinal=6)
+    assert "15446522" not in value_fallback
+    assert "D352" not in value_fallback
+
+    silver_case = benchmark.EvidenceCase(
+        case_id="silver-xlsx",
+        family="XLSX",
+        source_atom_id="srcatom-xlsx-silver",
+        doc_id="docv-xlsx",
+        section="철도",
+        evidence_text="5호선 201902 승차총승객수 15446522",
+        locator={"sheet": "철도", "cell": "D352", "normalized_value": "15446522"},
+        silver_query="5호선 201902 승차총승객수?",
+        silver_query_profile="short_keyword_or_fragment",
+    )
+    friendly_silver_case = benchmark.EvidenceCase(
+        case_id="friendly-pdf",
+        family="PDF",
+        source_atom_id="srcatom-pdf-friendly",
+        doc_id="docv-pdf",
+        section="page-1",
+        evidence_text="경쟁입찰 협상에 의한 계약 추진",
+        locator={"page": 1, "bbox": [1, 2, 3, 4]},
+        silver_query="경쟁입찰 협상에 의한 계약 추진 현황을 확인해 주세요.",
+        silver_query_profile="clean_source_grounded",
+    )
+
+    rewrite = benchmark.rewrite_query_with_client(
+        silver_case,
+        ordinal=1,
+        seed_query=silver_case.silver_query,
+        llm_client=lambda _system, _user: (
+            '{"query":"5호선 201902 승객수?","style":"terse_lookup",'
+            '"rationale":"silver seed shortened without internal locators"}'
+        ),
+    )
+    assert rewrite["query_source"] == "llm_rewrite"
+    assert rewrite["seed_query_source"] == "silver_seed"
+    assert rewrite["query"] == "5호선 201902 승객수?"
+
+    fallback = benchmark.rewrite_query_with_client(
+        friendly_silver_case,
+        ordinal=2,
+        seed_query=friendly_silver_case.silver_query,
+        llm_client=lambda _system, _user: (
+            '{"query":"report.pdf 경쟁입찰 확인해 주세요.","style":"friendly",'
+            '"rationale":"intentionally invalid for fallback coverage"}'
+        ),
+    )
+    assert fallback["query_source"] == "challenge_fallback_after_llm_rewrite"
+    assert fallback["query"] != friendly_silver_case.silver_query
+
+
+def test_pdf_xlsx_llm_quality_benchmark_scores_locator_and_value_grounding() -> None:
+    import rag_pdf_xlsx_llm_quality_benchmark as benchmark
+
+    case = benchmark.EvidenceCase(
+        case_id="xlsx-1",
+        family="XLSX",
+        source_atom_id="srcatom-xlsx-1",
+        doc_id="docv-xlsx",
+        section="철도",
+        evidence_text="5호선 201902 승차총승객수 15446522",
+        locator={
+            "workbook": "transport.xlsx",
+            "sheet": "철도",
+            "range": "A352:D401",
+            "cell": "D352",
+            "target_column": "승차총승객수",
+            "normalized_value": "15446522",
+        },
+    )
+
+    supported = benchmark.score_response(
+        case,
+        '{"answer":"5호선 201902 승차총승객수는 15446522입니다.",'
+        '"citations":[{"citation_id":"S1","locator":"철도 D352"}]}',
+    )
+    locator_only = benchmark.score_response(
+        case,
+        '{"answer":"철도 D352입니다.","citations":[{"citation_id":"S1","locator":"철도 D352"}]}',
+    )
+    comma_numeric = benchmark.score_response(
+        case,
+        '{"answer":"5호선 201902 승차총승객수는 15,446,522입니다.",'
+        '"citations":[{"citation_id":"S1","locator":"철도 D352"}]}',
+    )
+
+    assert supported["quality_pass"] is True
+    assert supported["value_supported"] is True
+    assert supported["citation_valid"] is True
+    assert comma_numeric["quality_pass"] is True
+    assert locator_only["quality_pass"] is False
+    assert locator_only["failure_types"] == ["locator_only_answer", "missing_expected_value"]
+
+    pdf_case = benchmark.EvidenceCase(
+        case_id="pdf-1",
+        family="PDF",
+        source_atom_id="srcatom-pdf-1",
+        doc_id="docv-pdf",
+        section="page-1",
+        evidence_text="산림청 정책연구용역 관리규정 별지 제1호서식",
+        locator={"page": 1, "bbox": [59.37, 60.71, 327.24, 68.74]},
+    )
+    pdf_page_only = benchmark.score_response(
+        pdf_case,
+        '{"answer":"산림청 정책연구용역 관리규정 별지 제1호서식입니다.",'
+        '"citations":[{"citation_id":"S1","locator":"page=1"}]}',
+    )
+    pdf_bbox = benchmark.score_response(
+        pdf_case,
+        '{"answer":"산림청 정책연구용역 관리규정 별지 제1호서식입니다.",'
+        '"citations":[{"citation_id":"S1","locator":"page=1; bbox=[59.37, 60.71, 327.24, 68.74]"}]}',
+    )
+    assert "pdf_locator_missing" in pdf_page_only["failure_types"]
+    assert "pdf_locator_missing" not in pdf_bbox["failure_types"]
+
+    summary = benchmark.answer_quality_summary(
+        [
+            {"prompt_mode": "baseline_legacy_context", "family": "PDF", "score": supported},
+            {"prompt_mode": "final_locator_context", "family": "PDF", "score": supported},
+            {"prompt_mode": "baseline_legacy_context", "family": "XLSX", "score": locator_only},
+            {"prompt_mode": "final_locator_context", "family": "XLSX", "score": supported},
+        ]
+    )
+    assert summary["delta_by_family_final_minus_baseline"]["PDF"]["quality_pass"] == 0
+    assert summary["delta_by_family_final_minus_baseline"]["XLSX"]["quality_pass"] == 1
+    assert summary["delta_final_minus_baseline"]["diagnostic_aggregate_only"] is True

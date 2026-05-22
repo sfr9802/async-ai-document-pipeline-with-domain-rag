@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import logging
+import posixpath
 import re
+import zipfile
 from dataclasses import dataclass, field
 from datetime import date, datetime, time
 from io import BytesIO
 from typing import Any, Optional
+import xml.etree.ElementTree as _stdlib_et
 
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter, range_boundaries
@@ -38,6 +41,7 @@ _XLSX_EXTENSIONS = (".xlsx", ".xlsm")
 
 _SECOND_PASS_MAX_BYTES = 5 * 1024 * 1024
 _SECOND_PASS_MAX_CELLS = 50_000
+_SECOND_PASS_MAX_MERGED_CELLS = 50_000
 _MAX_COLUMNS = 80
 _MAX_ROWS_TO_READ = 10_000
 _MAX_CELLS_TO_EXPORT = 500
@@ -49,10 +53,11 @@ _SMALL_TABLE_MAX_CELLS = 2_000
 _VOLATILE_FUNCTIONS = ("NOW(", "TODAY(", "RAND(", "RANDBETWEEN(", "OFFSET(", "INDIRECT(")
 
 try:  # openpyxl uses defusedxml automatically when it is installed.
-    import defusedxml.ElementTree as _defused_et  # noqa: F401
+    import defusedxml.ElementTree as _xml_et
 
     _DEFUSEDXML_AVAILABLE = True
 except Exception:  # pragma: no cover - depends on environment packaging
+    _xml_et = _stdlib_et
     _DEFUSEDXML_AVAILABLE = False
 
 
@@ -227,6 +232,16 @@ class XlsxExtractService:
         if len(content) > _SECOND_PASS_MAX_BYTES:
             warnings.append("Workbook skipped metadata second pass because file size exceeds safety limit.")
             return {}
+        ooxml_metadata = _collect_ooxml_metadata(
+            content,
+            include_hidden=self._include_hidden,
+            warnings=warnings,
+        )
+        if ooxml_metadata is not None and _has_expensive_merged_ranges(ooxml_metadata):
+            warnings.append(
+                "Workbook metadata collected with bounded OOXML scan because merged ranges exceed full workbook safety limit."
+            )
+            return ooxml_metadata
         try:
             workbook = load_workbook(
                 BytesIO(content),
@@ -454,15 +469,330 @@ class XlsxExtractCapability(Capability):
         return self._service.run(input)
 
 
+_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+
+
+def _collect_ooxml_metadata(
+    content: bytes,
+    *,
+    include_hidden: bool,
+    warnings: list[str],
+) -> dict[str, SheetMetadata] | None:
+    del warnings
+    try:
+        with zipfile.ZipFile(BytesIO(content)) as archive:
+            sheets = _workbook_sheet_entries(archive)
+            if not sheets:
+                return None
+            hidden_style_ids = _hidden_style_ids(archive)
+            result: dict[str, SheetMetadata] = {}
+            for index, sheet in enumerate(sheets):
+                meta = _ooxml_sheet_metadata(
+                    archive,
+                    sheet,
+                    index=index,
+                    hidden_style_ids=hidden_style_ids,
+                    include_hidden=include_hidden,
+                )
+                result[meta.name] = meta
+            return result
+    except (KeyError, OSError, ValueError, zipfile.BadZipFile, _stdlib_et.ParseError):
+        return None
+
+
+def _workbook_sheet_entries(archive: zipfile.ZipFile) -> list[dict[str, str]]:
+    workbook_part = "xl/workbook.xml"
+    relationships = _relationships(
+        archive,
+        "xl/_rels/workbook.xml.rels",
+        base_part=workbook_part,
+    )
+    workbook = _xml_root(archive, workbook_part)
+    sheets: list[dict[str, str]] = []
+    for element in workbook.iter():
+        if _local_name(element.tag) != "sheet":
+            continue
+        name = element.attrib.get("name")
+        rel_id = element.attrib.get(f"{{{_REL_NS}}}id")
+        target = relationships.get(rel_id or "")
+        if not name or not target:
+            continue
+        sheets.append({
+            "name": name,
+            "state": element.attrib.get("state", "visible"),
+            "path": target,
+        })
+    return sheets
+
+
+def _ooxml_sheet_metadata(
+    archive: zipfile.ZipFile,
+    sheet: dict[str, str],
+    *,
+    index: int,
+    hidden_style_ids: set[int],
+    include_hidden: bool,
+) -> SheetMetadata:
+    sheet_part = sheet["path"]
+    root = _xml_root(archive, sheet_part)
+    max_row, max_column = _dimension_from_sheet(root)
+    meta = SheetMetadata(
+        name=sheet["name"],
+        index=index,
+        hidden=sheet.get("state") != "visible",
+        max_row=max_row,
+        max_column=max_column,
+        used_range=_used_range(max_row, max_column),
+    )
+    table_rel_ids: list[str] = []
+    sheet_protected = False
+
+    for element in root.iter():
+        tag = _local_name(element.tag)
+        if tag == "sheetProtection":
+            sheet_protected = _xml_bool(element.attrib.get("sheet"))
+        elif tag == "row":
+            row_index = _int_or_none(element.attrib.get("r"))
+            if row_index and _xml_bool(element.attrib.get("hidden")):
+                meta.hidden_rows.add(row_index)
+        elif tag == "col" and _xml_bool(element.attrib.get("hidden")):
+            min_col = _int_or_none(element.attrib.get("min")) or 0
+            max_col = _int_or_none(element.attrib.get("max")) or min_col
+            for column in range(min_col, max_col + 1):
+                if column > 0:
+                    meta.hidden_columns.add(column)
+        elif tag == "mergeCell":
+            ref = element.attrib.get("ref")
+            if ref:
+                meta.merged_cells.append(ref)
+        elif tag == "tablePart":
+            rel_id = element.attrib.get(f"{{{_REL_NS}}}id")
+            if rel_id:
+                table_rel_ids.append(rel_id)
+
+    meta.tables = _ooxml_table_metadata(archive, sheet_part, table_rel_ids)
+    cell_count = meta.max_row * meta.max_column
+    if meta.hidden and not include_hidden:
+        meta.warnings.append("Formula scan skipped because hidden sheet is excluded.")
+        return meta
+    if cell_count > _SECOND_PASS_MAX_CELLS:
+        meta.warnings.append("Formula scan skipped because sheet exceeds second-pass cell limit.")
+        if sheet_protected:
+            meta.metadata_trusted = False
+            meta.warnings.append(
+                "Sheet skipped because protected hidden cells cannot be verified at this size."
+            )
+        return meta
+
+    for cell in (element for element in root.iter() if _local_name(element.tag) == "c"):
+        cell_ref = cell.attrib.get("r")
+        row_index, col_index = _cell_ref_parts(cell_ref or "")
+        if not cell_ref or row_index in meta.hidden_rows or col_index in meta.hidden_columns:
+            continue
+        style_id = _int_or_none(cell.attrib.get("s"))
+        if sheet_protected and style_id in hidden_style_ids:
+            meta.hidden_cells.add(cell_ref)
+            continue
+        formula_element = next(
+            (child for child in list(cell) if _local_name(child.tag) == "f"),
+            None,
+        )
+        if formula_element is None:
+            continue
+        formula = str(formula_element.text or "")
+        if formula and not formula.startswith("="):
+            formula = "=" + formula
+        item: dict[str, Any] = {
+            "cell": cell_ref,
+            "formula": formula,
+            "cachedValue": None,
+        }
+        if _is_volatile_formula(formula):
+            item["warning"] = "volatile formula; cached value is not recalculated by XLSX_EXTRACT"
+        meta.formulas.append(item)
+    return meta
+
+
+def _ooxml_table_metadata(
+    archive: zipfile.ZipFile,
+    sheet_part: str,
+    table_rel_ids: list[str],
+) -> list[dict[str, Any]]:
+    if not table_rel_ids:
+        return []
+    rels_path = _relationships_part_for(sheet_part)
+    relationships = _relationships(archive, rels_path, base_part=sheet_part)
+    result: list[dict[str, Any]] = []
+    for index, rel_id in enumerate(table_rel_ids):
+        table_part = relationships.get(rel_id)
+        if not table_part:
+            continue
+        try:
+            table = _xml_root(archive, table_part)
+        except (KeyError, OSError, ValueError, _stdlib_et.ParseError):
+            continue
+        ref = table.attrib.get("ref")
+        if not ref:
+            continue
+        min_col, min_row, max_col, max_row = range_boundaries(ref)
+        table_name = table.attrib.get("displayName") or table.attrib.get("name")
+        result.append({
+            "role": "table",
+            "tableIndex": index,
+            "name": table_name,
+            "tableId": table_name or f"Table{index + 1}",
+            "range": ref,
+            "cellRange": ref,
+            "rowStart": min_row,
+            "rowEnd": max_row,
+            "columnStart": min_col,
+            "columnEnd": max_col,
+            "rowCount": max_row - min_row + 1,
+            "columnCount": max_col - min_col + 1,
+        })
+    return result
+
+
+def _hidden_style_ids(archive: zipfile.ZipFile) -> set[int]:
+    try:
+        root = _xml_root(archive, "xl/styles.xml")
+    except (KeyError, OSError, ValueError, _stdlib_et.ParseError):
+        return set()
+    for element in root.iter():
+        if _local_name(element.tag) != "cellXfs":
+            continue
+        result: set[int] = set()
+        xfs = [child for child in list(element) if _local_name(child.tag) == "xf"]
+        for index, xf in enumerate(xfs):
+            protection = next(
+                (child for child in list(xf) if _local_name(child.tag) == "protection"),
+                None,
+            )
+            if protection is not None and _xml_bool(protection.attrib.get("hidden")):
+                result.add(index)
+        return result
+    return set()
+
+
+def _dimension_from_sheet(root: Any) -> tuple[int, int]:
+    for element in root.iter():
+        if _local_name(element.tag) == "dimension":
+            ref = element.attrib.get("ref")
+            if ref:
+                return _max_row_column_from_range(ref)
+    max_row = 0
+    max_column = 0
+    for cell in (element for element in root.iter() if _local_name(element.tag) == "c"):
+        row_index, col_index = _cell_ref_parts(cell.attrib.get("r") or "")
+        max_row = max(max_row, row_index or 0)
+        max_column = max(max_column, col_index or 0)
+    return max_row, max_column
+
+
+def _has_expensive_merged_ranges(metadata: dict[str, SheetMetadata]) -> bool:
+    total_area = 0
+    for meta in metadata.values():
+        for cell_range in meta.merged_cells:
+            area = _range_area(cell_range)
+            if area > _SECOND_PASS_MAX_MERGED_CELLS:
+                return True
+            total_area += area
+            if total_area > _SECOND_PASS_MAX_MERGED_CELLS:
+                return True
+    return False
+
+
+def _xml_root(archive: zipfile.ZipFile, part: str) -> Any:
+    return _xml_et.fromstring(archive.read(part))
+
+
+def _relationships(
+    archive: zipfile.ZipFile,
+    rels_part: str,
+    *,
+    base_part: str,
+) -> dict[str, str]:
+    try:
+        root = _xml_root(archive, rels_part)
+    except (KeyError, OSError, ValueError, _stdlib_et.ParseError):
+        return {}
+    result: dict[str, str] = {}
+    for element in root.iter():
+        if _local_name(element.tag) != "Relationship":
+            continue
+        rel_id = element.attrib.get("Id")
+        target = element.attrib.get("Target")
+        if rel_id and target:
+            result[rel_id] = _resolve_related_part(base_part, target)
+    return result
+
+
+def _relationships_part_for(part: str) -> str:
+    directory = posixpath.dirname(part)
+    filename = posixpath.basename(part)
+    return posixpath.join(directory, "_rels", f"{filename}.rels")
+
+
+def _resolve_related_part(base_part: str, target: str) -> str:
+    normalized = target.replace("\\", "/")
+    if normalized.startswith("/"):
+        return posixpath.normpath(normalized.lstrip("/"))
+    return posixpath.normpath(posixpath.join(posixpath.dirname(base_part), normalized))
+
+
+def _local_name(tag: Any) -> str:
+    text = str(tag)
+    return text.rsplit("}", 1)[-1] if "}" in text else text
+
+
+def _xml_bool(value: Any) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "on"}
+
+
+def _int_or_none(value: Any) -> Optional[int]:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _cell_ref_parts(cell_ref: str) -> tuple[Optional[int], Optional[int]]:
+    if not cell_ref:
+        return None, None
+    try:
+        min_col, min_row, _max_col, _max_row = range_boundaries(cell_ref)
+    except ValueError:
+        return None, None
+    return min_row, min_col
+
+
+def _max_row_column_from_range(cell_range: str) -> tuple[int, int]:
+    try:
+        min_col, min_row, max_col, max_row = range_boundaries(cell_range)
+    except ValueError:
+        return (0, 0)
+    del min_col, min_row
+    return max_row, max_col
+
+
+def _range_area(cell_range: str) -> int:
+    try:
+        min_col, min_row, max_col, max_row = range_boundaries(cell_range)
+    except ValueError:
+        return 0
+    return max(max_row - min_row + 1, 0) * max(max_col - min_col + 1, 0)
+
+
 def _read_sheet(worksheet: Any, meta: SheetMetadata) -> SheetReadResult:
     rows: list[list[str]] = []
     row_numbers: list[int] = []
     cells: list[dict[str, Any]] = []
     cells_truncated = False
     max_col = min(meta.max_column or _MAX_COLUMNS, _MAX_COLUMNS)
+    max_row = min(meta.max_row or _MAX_ROWS_TO_READ, _MAX_ROWS_TO_READ)
     formulas_by_cell = {item["cell"]: item for item in meta.formulas if item.get("cell")}
-    merged_by_cell = _merged_ranges_by_cell(meta.merged_cells)
-    for row in worksheet.iter_rows(max_col=max_col):
+    merged_by_cell = _merged_ranges_by_cell(meta.merged_cells, max_row=max_row, max_col=max_col)
+    for row in worksheet.iter_rows(max_row=max_row, max_col=max_col):
         row_index = getattr(row[0], "row", len(rows) + 1) if row else len(rows) + 1
         if row_index in meta.hidden_rows:
             continue
@@ -750,15 +1080,17 @@ def _decimal_places(number_format: str) -> int:
     return min(count, 6)
 
 
-def _merged_ranges_by_cell(ranges: list[str]) -> dict[str, str]:
+def _merged_ranges_by_cell(ranges: list[str], *, max_row: int, max_col: int) -> dict[str, str]:
     result: dict[str, str] = {}
     for cell_range in ranges:
         try:
-            min_col, min_row, max_col, max_row = range_boundaries(cell_range)
+            min_col, min_row, range_max_col, range_max_row = range_boundaries(cell_range)
         except ValueError:
             continue
-        for row in range(min_row, max_row + 1):
-            for col in range(min_col, max_col + 1):
+        bounded_max_row = min(range_max_row, max_row)
+        bounded_max_col = min(range_max_col, max_col)
+        for row in range(min_row, bounded_max_row + 1):
+            for col in range(min_col, bounded_max_col + 1):
                 result[f"{get_column_letter(col)}{row}"] = cell_range
     return result
 

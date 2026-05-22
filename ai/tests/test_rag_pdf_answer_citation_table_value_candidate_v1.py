@@ -8,6 +8,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "ai"))
+
+from app.capabilities.pdf import service as pdf_service
+
 SCRIPT_PATH = ROOT / "ai" / "scripts" / "rag_pdf_answer_citation_table_value_candidate_v1.py"
 REPAIRED_PDF_QUERY_IDS = ("gq_auto_010", "gq_auto_030", "gq_pdf_section_question_001")
 REPORT_ONLY_GUARDRAILS = {
@@ -32,6 +36,56 @@ def load_module():
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+class _FakePdfPage:
+    def __init__(self, text: str) -> None:
+        self._text = text
+        self.rect = type("Rect", (), {"width": 595.0, "height": 842.0})()
+
+    def get_text(self, mode: str, *, sort: bool = False) -> list[tuple[float, float, float, float, str, int, int]]:
+        assert mode == "blocks"
+        assert sort is True
+        return [(10.0, 10.0, 200.0, 30.0, self._text, 0, 0)]
+
+
+def test_pdf_extract_page_skips_narrow_table_parser_without_supported_markers(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fail_if_called(*args, **kwargs):
+        calls.append({"args": args, "kwargs": kwargs})
+        return []
+
+    monkeypatch.setattr(pdf_service, "extract_pdf_table_records", fail_if_called)
+
+    payload = pdf_service.PdfExtractService()._extract_page(
+        _FakePdfPage("일반 문단입니다. 수치와 설명은 있지만 지원되는 표 제목은 없습니다."),
+        0,
+        [],
+    )
+
+    assert calls == []
+    assert payload["tables"] == []
+    assert payload["text_layer_present"] is True
+
+
+def test_pdf_extract_page_keeps_narrow_table_parser_for_supported_markers(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def record_call(*args, **kwargs):
+        calls.append({"args": args, "kwargs": kwargs})
+        return [{"table_type": "currency_comparison"}]
+
+    monkeypatch.setattr(pdf_service, "extract_pdf_table_records", record_call)
+
+    payload = pdf_service.PdfExtractService()._extract_page(
+        _FakePdfPage("주요국가의 환율변동 비교 한국 유로 절상률"),
+        0,
+        [],
+    )
+
+    assert len(calls) == 1
+    assert payload["tables"] == [{"table_type": "currency_comparison"}]
 
 
 def test_pdf_candidate_generates_table_value_answers_without_gold_generation_inputs() -> None:

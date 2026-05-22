@@ -21,6 +21,185 @@ provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 
+## 2026-05-22 - PDF/XLSX LLM Query And Answer-Quality Benchmark
+
+Purpose: measure whether locator-rich PDF/XLSX context and stricter answer
+contracts improve local-LLM answer grounding without changing gold, qrels,
+labels, expected answers, supporting evidence, denominators, namespaces, DB
+state, or diagnostic-only policy. The benchmark is diagnostic-only and uses
+generation-allowed non-official SearchView rows joined to the v3_7_2 weak
+silver natural-query manifest as rewrite seeds. Silver rows are seeds only, not
+gold or official labels.
+
+Environment assumptions:
+
+- Windows/PowerShell workspace:
+  `D:\async-ocr-rag-multimodal-pipeline`
+- Local OpenAI-compatible llama.cpp endpoint:
+  `http://localhost:8081/v1`
+- Model label: `gemma4-e2b-local`
+- Benchmark script:
+  `ai/scripts/rag_pdf_xlsx_llm_quality_benchmark.py`
+
+Commands:
+
+```powershell
+python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label final_llm_rewrite_all_llm_15pf_v3 --cases-per-family 15 --max-tokens 220 --query-max-tokens 180 --timeout-seconds 90
+python -X utf8 -m pytest ai/tests/test_rag_source_bound_official_denominator_index.py -q
+python -X utf8 -m pytest ai/tests --rag-current -q
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label quality_goal_perf_smoke_final --warmups 1 --iterations 1 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_quality_goal_smoke_final.json
+```
+
+Inputs and policy:
+
+| Item | Value |
+|---|---|
+| SearchView manifest | `ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl` |
+| Silver seed manifest | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration_llm_natural_silver_manifest_all.jsonl` |
+| Join key | `source_family+source_identity+locator_fingerprint` |
+| Cases | PDF=15, XLSX=15 |
+| Silver seed rows | 30/30 |
+| LLM rewrite rows | 30/30 |
+| Fallback rows | 0 |
+| Manifest partition | `core=30` |
+| Promotion / tuning | false / false |
+
+Query quality:
+
+| Metric | Friendly baseline | LLM-rewritten final |
+|---|---:|---:|
+| Query count | 30 | 30 |
+| Style count | 1 | 4 |
+| Style distribution | `source_grounded=30` | `source_grounded=11`, `messy_user_like=10`, `terse_question=8`, `short_fragment=1` |
+| Friendly suffix ratio | 1.0000 | 0.0000 |
+| Max same six-character prefix | 15 | 1 |
+| Average characters | 157.000 | 30.267 |
+
+Answer quality:
+
+| Family | Baseline legacy context | Final locator context | Delta |
+|---|---:|---:|---:|
+| PDF | 0/15 | 6/15 | +6 |
+| XLSX | 0/15 | 15/15 | +15 |
+| Aggregate diagnostic-only | 0/30 | 21/30 | +21 |
+
+Failure taxonomy:
+
+| Mode | Residuals |
+|---|---|
+| Baseline legacy context | `pdf_locator_missing=15`, `xlsx_locator_missing=15`, `low_evidence_overlap=10` |
+| Final locator context | `low_evidence_overlap=9`, `locator_only_answer=1`, `pdf_locator_missing=1` |
+
+Primary artifacts:
+
+- Summary with 30 balanced sampled query/actual-response rows:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_summary.json`
+- Full response JSONL:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_responses.jsonl`
+
+Non-gold decisions and rationale:
+
+- Existing v3_7_2 weak silver was used only as a query rewrite seed because it
+  is diagnostic-only, not gold, not qrels, not official denominator, and not
+  promotion evidence.
+- Locator-only silver matching was disabled; seed joins require source family,
+  source identity, and locator fingerprint to avoid cross-document leakage.
+- Query source-overlap misses are recorded as warnings, not fallback triggers,
+  because Korean spacing, translation, and English/Korean paraphrase can make
+  exact lexical validation too brittle; hard failures remain copy-seed,
+  friendly-template ending, internal surface leak, parse failure, and length
+  bounds.
+- PDF scoring now requires bbox when bbox is available, and XLSX scoring
+  requires cell/range when available; this measures citation/evidence
+  usability rather than accepting doc/page or workbook-only locators.
+- Long XLSX normalized text values accept meaningful token overlap while
+  numeric values still require numeric equivalence; this avoids requiring a
+  whole long cell string to be repeated verbatim.
+
+Remaining diagnostic risks:
+
+- PDF residuals are mostly low-evidence-overlap/answer-renderer behavior on
+  very terse source snippets; improving those may require row-level answer
+  policy or gold review before changing expected answer semantics.
+- Query style is improved but still skewed toward source-grounded and terse
+  question forms; broader style distribution can be tuned diagnostically, but
+  should not be used as a promotion gate.
+
+## 2026-05-22 - PDF/XLSX Ingestion Performance Benchmark
+
+Purpose: establish a measured, reproducible performance baseline for PDF and
+XLSX ingestion paths before and after bounded hot-path fixes. Inputs are
+synthetic and generated in memory to avoid gold, qrels, labels, official
+denominator rows, production namespaces, and production indexes.
+
+Environment assumptions:
+
+- Windows/PowerShell workspace:
+  `D:\async-ocr-rag-multimodal-pipeline`
+- Python: `python -X utf8` (`Python 3.13.0` in this run)
+- Benchmark script:
+  `ai/scripts/rag_pdf_xlsx_perf_benchmark.py`
+- Memory observation: `tracemalloc` peak KiB, not process RSS.
+
+Commands:
+
+```powershell
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label baseline_before_optimization --warmups 1 --iterations 3 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_baseline_before_optimization.json
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label final_after_pdf_probe_optimization_comparable_3x --warmups 1 --iterations 3 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_final_after_pdf_probe_optimization_comparable_3x.json
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label final_after_optimization --warmups 1 --iterations 5 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_final_after_optimization.json
+```
+
+Input sizes:
+
+| Input | Shape |
+|---|---|
+| PDF native text | 8 pages, 72 text blocks/page, no supported deterministic table markers |
+| PDF OCR fallback | 6 blank pages, fake OCR provider, 110 DPI render path |
+| XLSX large merged range | 1 sheet, merged range `A1:ALL1000`, 40 visible rows after merge |
+| SearchUnit duplicate skip | 1,800 synthetic docs/chunks, non-production diagnostic namespace |
+
+Median latency:
+
+| Case | Baseline 3x | Final comparable 3x | Delta |
+|---|---:|---:|---:|
+| PDF native text, no supported tables | 27.698 ms | 22.932 ms | -17.2% |
+| PDF OCR fallback blank pages | 61.102 ms | 62.064 ms | +1.6% |
+| XLSX large merged range | 20,191.989 ms | 165.670 ms | -99.2% |
+| SearchUnit duplicate skip | 114.690 ms | 79.897 ms | -30.3% |
+
+Median peak `tracemalloc`:
+
+| Case | Baseline 3x | Final comparable 3x | Delta |
+|---|---:|---:|---:|
+| PDF native text, no supported tables | 408.5 KiB | 408.0 KiB | -0.1% |
+| PDF OCR fallback blank pages | 43.1 KiB | 42.5 KiB | -1.4% |
+| XLSX large merged range | 348,611.6 KiB | 6,430.8 KiB | -98.2% |
+| SearchUnit duplicate skip | 2,227.0 KiB | 2,277.7 KiB | +2.3% |
+
+5x final stability check:
+
+| Case | Final 5x median |
+|---|---:|
+| PDF native text, no supported tables | 23.273 ms |
+| PDF OCR fallback blank pages | 59.504 ms |
+| XLSX large merged range | 159.260 ms |
+| SearchUnit duplicate skip | 79.277 ms |
+
+Profile ranking before code changes:
+
+1. XLSX dangerous merged range: `openpyxl.load_workbook(read_only=False)`
+   spent almost the entire 20.7 seconds in merged-cell/style binding.
+2. PDF OCR fallback: `_render_pdf_page_png` was called once per OCR-needed
+   page; rendering/PNG encoding dominated the synthetic blank-page case.
+3. SearchUnit duplicate skip: `_is_duplicate_indexed` performed a repeated
+   scan over existing chunks for every incoming document.
+4. PDF native table extraction: deterministic table parsing was narrow enough
+   to prefilter safely by the same supported marker families.
+
+Policy: this is performance evidence only. It is not official retrieval
+quality, not answer/citation promotion evidence, and not a representative
+product-performance claim. No user-owned gold decision was needed.
+
 ## 2026-05-21 - Report Artifact Layout Rollup
 
 Purpose: make the repo-local report surface small enough to scan while keeping

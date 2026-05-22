@@ -3,10 +3,18 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+from io import BytesIO
 from pathlib import Path
 
+from openpyxl import Workbook
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "ai"))
+
+from app.capabilities.base import CapabilityInput, CapabilityInputArtifact
+from app.capabilities.xlsx import artifact_builder as xlsx_artifacts
+from app.capabilities.xlsx import service as xlsx_service
+
 SCRIPT_PATH = ROOT / "ai" / "scripts" / "rag_xlsx_answer_citation_runtime_precision_candidate_v1.py"
 REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
@@ -57,6 +65,60 @@ def load_module():
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def test_xlsx_extract_uses_ooxml_metadata_for_large_merged_ranges(monkeypatch) -> None:
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "MergedRange"
+    sheet.cell(row=1, column=1, value="merged heading")
+    sheet.merge_cells(start_row=1, start_column=1, end_row=1000, end_column=1000)
+    sheet.cell(row=1001, column=1, value="visible row")
+    sheet.cell(row=1001, column=2, value=42)
+    stream = BytesIO()
+    workbook.save(stream)
+    workbook.close()
+
+    original_load_workbook = xlsx_service.load_workbook
+
+    def guarded_load_workbook(*args, **kwargs):
+        if kwargs.get("read_only") is False:
+            raise AssertionError("full metadata workbook load should be skipped")
+        return original_load_workbook(*args, **kwargs)
+
+    monkeypatch.setattr(xlsx_service, "load_workbook", guarded_load_workbook)
+
+    output = xlsx_service.XlsxExtractService().run(
+        CapabilityInput(
+            job_id="xlsx-large-merged-range",
+            capability="XLSX_EXTRACT",
+            attempt_no=1,
+            inputs=[
+                CapabilityInputArtifact(
+                    artifact_id="xlsx-large-merged-range",
+                    type="INPUT_FILE",
+                    content=stream.getvalue(),
+                    content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    filename="large-merged.xlsx",
+                    source_file_id="source-large-merged",
+                )
+            ],
+        )
+    )
+
+    workbook_json = next(
+        artifact
+        for artifact in output.outputs
+        if artifact.type == xlsx_artifacts.XLSX_WORKBOOK_JSON
+    )
+    payload = json.loads(workbook_json.content.decode("utf-8"))
+    sheet_payload = payload["workbook"]["sheets"][0]
+
+    assert sheet_payload["indexable"] is True
+    assert "A1:ALL1000" in sheet_payload["mergedCells"]
+    assert sheet_payload["rowCount"] == 2
+    assert sheet_payload["cells"][0]["mergedCell"] is True
+    assert not any("hidden row/column/cell metadata" in warning for warning in sheet_payload["warnings"])
 
 
 def test_runtime_candidate_generates_single_row_locator_and_target_answer_from_question_conditions():

@@ -44,6 +44,28 @@ with the local `gemma4-e2b-local` endpoint: PASS=27/29, PDF=4/4, XLSX=19/19,
 TEXT=4/6, real LLM invoked for six TEXT rows. Promotion readiness remains
 closed; threshold tuning and winner selection also remain closed.
 
+<!-- pdf_xlsx_perf_and_llm_quality_20260522:progress-entry:start -->
+- 2026-05-22 PDF/XLSX performance and LLM answer-quality slice completed with
+  diagnostic-only artifacts. Performance hot-path fixes are bounded to PDF
+  deterministic table probing/OCR fallback reuse, XLSX OOXML merged-range
+  metadata bounds, and SearchUnit duplicate lookup. Final perf smoke
+  (`quality_goal_perf_smoke_final`) retained the measured improvements:
+  PDF native 25.045 ms, PDF OCR fallback 59.860 ms, XLSX large merged range
+  163.216 ms, SearchUnit duplicate skip 81.353 ms. The answer-quality harness
+  `pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3` uses 30
+  diagnostic-only cases (PDF=15, XLSX=15), all seeded from v3_7_2 weak silver
+  and rewritten by local `gemma4-e2b-local` (`llm_rewrite_rows=30`,
+  `fallback_rows=0`). Query quality improved from one friendly/source-grounded
+  style to four measured styles, friendly suffix ratio 1.0 -> 0.0, max same
+  six-character prefix 15 -> 1. Answer-quality delta is recorded separately by
+  family: PDF 0/15 -> 6/15, XLSX 0/15 -> 15/15. The aggregate 0/30 -> 21/30 is
+  diagnostic-only and explicitly non-promotional. The summary artifact includes
+  30 balanced sampled query/actual-response rows:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_summary.json`.
+  No gold/qrels/labels/expected answers/supporting evidence, denominator,
+  production namespace, DB, or promotion policy was mutated.
+<!-- pdf_xlsx_perf_and_llm_quality_20260522:progress-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration:progress-entry:start -->
 - v3_7_2 local LLM natural silver query regeneration (`official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration`) supersedes/discards the inherited v3_6_1 scripted weak/noisy silver query text and regenerates 1000 diagnostic query strings with local `gemma4-e2b-local` through llama.cpp. Source and bucket metadata remain inherited from the frozen v3_5_4/v3_6 diagnostic lane: candidates=1000, unique ids=1000, unique generated question hashes=1000, TEXT=350, PDF=325, XLSX=325; manifests all=1000, core=665, review-only=335, quarantine=0. A second local LLM polish pass rewrote XLSX=325 rows to remove spreadsheet-internal query surfaces; validation found no Latin/Japanese/Hanja script or disallowed punctuation violations, no duplicate generated query hashes, and exact reuse of prior query text is 0. Remaining repeated prefixes are domain-heavy rather than sheet/range templates, so this remains diagnostic silver rather than human gold. No gold/qrels/label/expected-answer/supporting-evidence mutation, retrieval metric, answer metric, citation metric, DB write, production change, prompt/scorer tuning, or promotion was performed.
 <!-- official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration:progress-entry:end -->
@@ -414,6 +436,40 @@ closed; threshold tuning and winner selection also remain closed.
 | `xlsx_business_structured` | v3_8_3 scoped cell diagnostic is computed after the v3_8_2 workbook/document gate | sheet_resolve@1 `248/344`; table_or_range_resolve@1 `22/344`; cell_or_value_resolve@1 `19/344`; abstain `44/344`; top miss bucket table_or_range_miss_after_sheet_hit `218`; oracle-free input violations `0` | Improve range/cell locator coverage without mutating gold/qrels/labels. |
 | `pdf_business_ocr_mm` | v3_8_2 oracle-free resolver is computed before scoped retrieval | file_resolve@1 `65/329`; file_resolve@3 `129/329`; abstain `182/329`; wrong-file block `57/329`; upstream v3_8 page_hit@5 `266/329` | Improve PDF file identity confidence, then defer exact bbox overlap and OCR trust policy to a later slice. |
 | Report artifacts | Human narrative stays in three rolling docs; machine evidence stays compact | `status.jsonl` plus v3_8, v3_8_1, v3_8_2, and v3_8_3 summary/metrics/per-query/per-family JSON/JSONL where required by tests | Avoid per-run Markdown and full forensic payloads unless the run contract requires them. |
+
+## 2026-05-22 - PDF/XLSX Performance Checkpoint
+
+Scope: non-gold, synthetic ingestion/indexing benchmark plus bounded hot-path
+fixes. No local LLM, DB, GPU, production index, official denominator, gold,
+qrels, label, expected-answer, or supporting-evidence surface was used or
+mutated.
+
+Commands and artifacts:
+
+- Baseline:
+  `python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label baseline_before_optimization --warmups 1 --iterations 3 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_baseline_before_optimization.json`
+- Final comparable:
+  `python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label final_after_pdf_probe_optimization_comparable_3x --warmups 1 --iterations 3 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_final_after_pdf_probe_optimization_comparable_3x.json`
+- Final stability check:
+  `python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label final_after_optimization --warmups 1 --iterations 5 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_final_after_optimization.json`
+
+Measured median latency:
+
+| Case | Baseline | Final comparable | Delta | Note |
+|---|---:|---:|---:|---|
+| PDF native text, no supported tables | 27.698 ms | 22.932 ms | -17.2% | Page-level table marker prefilter avoids the narrow table parser on ordinary pages. |
+| PDF OCR fallback blank pages | 61.102 ms | 62.064 ms | +1.6% | Comparable run was noise/slightly slower; 5x stability run was 59.504 ms (-2.6%). Rendering/PNG encoding dominates this synthetic case. |
+| XLSX large merged range | 20,191.989 ms | 165.670 ms | -99.2% | Dangerous merged-range metadata uses bounded OOXML scan instead of full openpyxl style binding. |
+| SearchUnit duplicate skip | 114.690 ms | 79.897 ms | -30.3% | Existing chunks are keyed by stable index id before duplicate checks. |
+
+Checkpoint log:
+
+| Checkpoint | Files changed | Hypothesis | Validation | Result | Remaining risk |
+|---|---|---|---|---|---|
+| Benchmark harness | `ai/scripts/rag_pdf_xlsx_perf_benchmark.py` | Existing repo had no focused PDF/XLSX parse/index performance benchmark. | Baseline command above. | Reproducible synthetic JSON artifacts recorded under local ignored `ai/eval/reports/rag-ingestion/perf/`. | Synthetic results are regression evidence, not representative production performance. |
+| PDF parser/OCR path | `ai/app/capabilities/pdf/service.py`, `ai/tests/test_rag_pdf_answer_citation_table_value_candidate_v1.py` | The deterministic PDF table parser is narrow and can be skipped when page text lacks its supported markers; OCR fallback should not reopen the PDF per page. | Targeted PDF tests; benchmark final comparable. | PDF native synthetic path improved -17.2%; OCR handle reuse preserved behavior but measured benefit is small/noisy. | Real PaddleOCR scanned-PDF smoke still needs restored scanned PDFs/provider setup. |
+| XLSX metadata/read bounds | `ai/app/capabilities/xlsx/service.py`, `ai/tests/test_rag_xlsx_answer_citation_runtime_precision_candidate_v1.py` | Full openpyxl metadata load explodes on large merged ranges; read and merged-cell maps should respect existing row/column safety bounds. | Targeted XLSX test; benchmark final comparable. | XLSX merged-range synthetic path improved -99.2%; peak tracemalloc fell from 348,611.6 KiB to 6,430.8 KiB. | OOXML fast path is only used for expensive merged ranges; non-dangerous workbooks keep the existing second pass. |
+| Shared duplicate lookup | `ai/app/capabilities/rag/search_unit_indexing.py`, `ai/tests/test_rag_source_bound_official_denominator_index.py` | Duplicate skip was O(incoming docs x existing chunks). | Shared namespace/diagnostic metadata regression test; benchmark final comparable. | Synthetic duplicate skip improved -30.3% without dropping namespace, diagnostic-only, SourceAtom, or registry metadata. | FAISS full staged rewrite remains the next shared-indexing bottleneck when chunks actually change. |
 
 ## Current Verification Command
 

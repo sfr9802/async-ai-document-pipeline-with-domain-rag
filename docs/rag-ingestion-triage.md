@@ -21,6 +21,42 @@ The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
 
+## 2026-05-22 - PDF/XLSX Performance And LLM Quality Triage Note
+
+This slice opened no user-owned gold decision. All decisions stayed
+diagnostic-only and non-promotional:
+
+- Performance benchmarks use synthetic in-memory PDF/XLSX/SearchUnit fixtures,
+  not official denominator rows or gold evidence.
+- The LLM quality benchmark uses existing v3_7_2 weak silver only as query
+  rewrite seeds; final queries are local-LLM rewrites, with exact silver reuse
+  avoided and `fallback_rows=0` in the final 30-case run.
+- Source joins are strict on `source_family+source_identity+locator_fingerprint`;
+  locator-only fallback was intentionally disabled.
+- Candidate SearchView/vector metadata remains candidate-only. Prompt locator
+  packing omits candidate locator fields when SourceRegistry hydration is
+  required.
+- The final residuals (`low_evidence_overlap=9`, `locator_only_answer=1`,
+  `pdf_locator_missing=1`) remain diagnostic answer-renderer/scoring residuals,
+  not a request to change expected answers, supporting evidence, relevance,
+  answerability, qrels, or gold policy.
+
+## 2026-05-22 - Performance Optimization Triage Note
+
+The PDF/XLSX performance slice did not open an answer/citation row triage queue
+and did not require user-owned gold decisions. All ambiguous non-gold choices
+were resolved conservatively:
+
+- Use synthetic, in-memory PDF/XLSX/SearchUnit fixtures because no focused
+  PDF/XLSX performance benchmark existed and no local source PDFs were
+  available for a live ingestion smoke.
+- Keep official denominator, gold CSVs, qrels, labels, expected answers,
+  supporting evidence, and promotion policy unchanged.
+- Treat benchmark output as diagnostic performance evidence only, not
+  representative retrieval quality or product-performance evidence.
+- Keep real scanned-PDF OCR/provider validation as a residual operational risk,
+  not a gold-policy question.
+
 ## 2026-05-21 - Report Layout Triage Note
 
 No queue state changed in this cleanup. The change is evidence layout only:

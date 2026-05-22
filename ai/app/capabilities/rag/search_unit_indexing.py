@@ -7,7 +7,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Mapping, Optional
 
 import numpy as np
 
@@ -136,11 +136,12 @@ class SearchUnitVectorIndexer:
             )
             for doc in docs
         ]
+        existing_by_index_id = {chunk.chunk_id: chunk for chunk in existing_chunks}
         to_embed = [
             (doc, embedding_text)
             for doc, embedding_text in prepared
             if not _is_duplicate_indexed(
-                by_index_id=existing_chunks,
+                by_index_id=existing_by_index_id,
                 doc=doc,
                 embedding_text=embedding_text,
                 embedding_model=self._embedder.model_name,
@@ -631,20 +632,20 @@ def _unique_document_rows(docs: list[SearchUnitIndexDocument]) -> list[DocumentR
 
 def _is_duplicate_indexed(
     *,
-    by_index_id: list[ChunkRow],
+    by_index_id: Mapping[str, ChunkRow],
     doc: SearchUnitIndexDocument,
     embedding_text: SearchUnitEmbeddingText,
     embedding_model: str,
 ) -> bool:
-    for chunk in by_index_id:
-        if chunk.chunk_id == doc.index_id:
-            return _chunk_matches_embedding(
-                chunk,
-                doc=doc,
-                embedding_text=embedding_text,
-                embedding_model=embedding_model,
-            )
-    return False
+    chunk = by_index_id.get(doc.index_id)
+    if chunk is None:
+        return False
+    return _chunk_matches_embedding(
+        chunk,
+        doc=doc,
+        embedding_text=embedding_text,
+        embedding_model=embedding_model,
+    )
 
 
 def _chunk_matches_embedding(
