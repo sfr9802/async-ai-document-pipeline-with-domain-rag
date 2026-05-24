@@ -6786,6 +6786,138 @@ def test_v3_9_2_fresh_holdout_query_fidelity_keeps_user_fields_blank_and_shortcu
     )
 
 
+def test_v3_10_fresh_holdout_and_xlsx_nonprod_materialization_stays_diagnostic_only() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization as run
+
+    artifacts = run.build_artifacts()
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    holdout = artifacts["fresh_holdout_manifest"]
+    seen = artifacts["seen_surface_manifest"]
+    sourceatoms = artifacts["xlsx_sourceatom_rows"]
+    searchunits = artifacts["xlsx_searchunit_rows"]
+    index_summary = artifacts["xlsx_index_build_summary"]
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["fine_tuning_executed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["seen_validation_locked_to_seen_validation_only"] is True
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["answer_value_in_query_success_evidence_used"] is False
+    assert summary["index_to_content_success_evidence_used"] is False
+    assert summary["file_or_source_title_leak_success_evidence_used"] is False
+
+    assert seen["seen_policy"].startswith("v3_8_3/v3_9/v3_9_1")
+    assert seen["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert holdout["real_holdout_sufficient"] is False
+    assert holdout["minimum_targets"] == {
+        "xlsx_unseen_workbooks": 8,
+        "pdf_unseen_source_documents": 20,
+        "query_fidelity_included_rows_per_family": 100,
+    }
+    assert holdout["real_query_fidelity_included_counts"]["XLSX"] == 0
+    assert holdout["real_query_fidelity_included_counts"]["PDF"] == 0
+    assert holdout["synthetic_ood_guard"]["product_success_evidence_allowed"] is False
+    assert holdout["synthetic_ood_guard"]["candidate_count"] > 14
+
+    assert sourceatoms
+    assert len(sourceatoms) == len(searchunits)
+    assert index_summary["index_namespace"] == run.ALLOWED_NAMESPACE
+    assert index_summary["materialization_scope"] == "nonprod_manifest_materialized"
+    assert index_summary["overlay_only"] is False
+    assert index_summary["protected_namespaces_touched"] == []
+    assert index_summary["sourceatom_manifest_rows"] == len(sourceatoms)
+    assert index_summary["searchunit_manifest_rows"] == len(searchunits)
+    for row in sourceatoms[:10]:
+        assert row["index_namespace"] == run.ALLOWED_NAMESPACE
+        assert row["materialized_in_nonprod_sourceatom"] is True
+        assert row["overlay_only"] is False
+        for field in run.REQUIRED_SOURCEATOM_TABLE_AXIS_FIELDS:
+            assert field in row
+        for field in run.FORBIDDEN_TABLE_AXIS_FIELDS:
+            assert field not in row
+        assert row["raw_answer_value_for_query_scoring_used"] is False
+    for row in searchunits[:10]:
+        assert row["index_namespace"] == run.ALLOWED_NAMESPACE
+        assert row["materialized_in_nonprod_searchunit"] is True
+        for field in run.REQUIRED_SEARCHUNIT_TABLE_AXIS_FIELDS:
+            assert field in row
+        for field in run.FORBIDDEN_TABLE_AXIS_FIELDS:
+            assert field not in row
+
+    xlsx_eval = metrics["xlsx_table_axis_eval"]
+    assert xlsx_eval["fresh_real_holdout"]["success_claim_allowed"] is False
+    assert xlsx_eval["old_seen_reference"]["success_claim_allowed"] is False
+    assert (
+        xlsx_eval["nonprod_seen_materialization_smoke"]["signal_empty_rank1_rate"]["numerator"]
+        < xlsx_eval["old_seen_reference"]["signal_empty_rank1_rate"]["numerator"]
+    )
+    assert xlsx_eval["nonprod_seen_materialization_smoke"]["table_or_range@3"] == xlsx_eval[
+        "old_seen_reference"
+    ]["table_or_range@3"]
+
+
+def test_v3_10_query_fidelity_and_leakage_guards_keep_holdout_rows_user_owned_blank() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization as run
+
+    artifacts = run.build_artifacts()
+    candidates = artifacts["fresh_holdout_manifest"]["query_candidates"]
+    fidelity_rows = artifacts["query_fidelity_rows"]
+    leakage_rows = artifacts["leakage_audit_rows"]
+
+    assert candidates
+    assert {row["query_style"] for row in candidates} >= {
+        "terse_question",
+        "messy_user_like",
+        "short_fragment",
+        "implicit_context",
+        "no_source_title",
+        "colloquial_korean",
+    }
+    assert all(row["official_metric_input_rows"] == 0 for row in candidates)
+    assert all(row["product_success_evidence_allowed"] is False for row in candidates)
+    assert all(row["direct_normalized_value_query_matching_used"] is False for row in candidates)
+    assert all(
+        row[field] == ""
+        for row in candidates
+        for field in (
+            "query_approval",
+            "relevance",
+            "answerability",
+            "expected_answer",
+            "supporting_evidence",
+            "pass_fail",
+            "denominator_eligibility",
+        )
+    )
+
+    assert len(fidelity_rows) == len(candidates)
+    assert all(row["official_metric_input_rows"] == 0 for row in fidelity_rows)
+    assert all(row["query_fidelity_headline_included"] is True for row in fidelity_rows)
+    for shortcut in (
+        "answer_value_in_query",
+        "index_to_content",
+        "source_title_leak",
+        "file_title_leak",
+        "exact_query_hack",
+        "major_topic_drift",
+        "unnatural_sheet_or_cell_reference",
+    ):
+        assert all(row[shortcut] is False for row in fidelity_rows)
+        assert any(row["bucket"] == shortcut for row in leakage_rows)
+    assert all(row["success_evidence_allowed"] is False for row in leakage_rows)
+
+
 def test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank(tmp_path) -> None:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_pdf_xlsx_answer_quality_review_packet as packet

@@ -21,6 +21,24 @@ provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 
+<!-- official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization:measurements-entry:start -->
+## 2026-05-24 - v3_10 Fresh Real Holdout and XLSX Table-Axis Non-Prod Rematerialization
+
+- Run: `official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization`
+- Policy: diagnostic-only; official_metric_input_rows=0; future scored adapter remains DISABLED_PENDING_USER_APPROVAL; no fine-tuning, no threshold tuning, no winner selection.
+- Fresh real holdout: insufficient. PDF source-document-disjoint=0/20 target, XLSX workbook-disjoint=0/8 target, real query-fidelity included rows PDF=0 and XLSX=0 against the 100/family target.
+- Synthetic OOD guard: 200 query candidates, anti-overfit guard only, product success evidence disallowed.
+- XLSX table-axis materialization: `rag-data-xlsx-table-axis-ood-nonprod-v1`, SourceAtom rows=343, SearchUnit rows=343, overlay_only=false.
+
+| XLSX lane | old seen reference | v3_10 non-prod seen smoke | fresh real holdout |
+| --- | --- | --- | --- |
+| signal-empty rank1 | 257/300 | 0/300 | 0/0 |
+| table_or_range@3 | 29/344 | 29/344 | 0/0 |
+| cell_or_value@3 | 26/344 | 26/344 | 0/0 |
+
+PDF file identity baseline is kept separate from answer-ready evidence windows: v3_9_1 seen reference file_resolve@1=66/329; fresh real PDF baseline is blocked by missing source-document-disjoint holdout.
+<!-- official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization:measurements-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset:measurements-entry:start -->
 ## 2026-05-24 - v3_9_2 Overfit Risk Audit and Blind/OOD Holdout Reset
 

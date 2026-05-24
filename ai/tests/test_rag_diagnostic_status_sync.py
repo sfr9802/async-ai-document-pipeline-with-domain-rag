@@ -3071,6 +3071,8 @@ def test_progress_measurements_triage_and_status_record_v3_9_1_xlsx_table_axis_p
     assert (
         "diagnostic_v3_9_1_xlsx_table_axis_pdf_file_identity_computed" in current_text
         or "diagnostic_v3_9_2_overfit_risk_audit_holdout_reset_ready" in current_text
+        or "diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized"
+        in current_text
     )
     assert run_id in current_text
     assert "keeps PDF and XLSX metrics separate" in current_flat
@@ -3154,7 +3156,11 @@ def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audi
         assert event["artifact_sha256"][hash_key] == sha256_file(path)
 
     assert run_id in current_text
-    assert "Overall status: `diagnostic_v3_9_2_overfit_risk_audit_holdout_reset_ready`;" in progress
+    assert (
+        "Overall status: `diagnostic_v3_9_2_overfit_risk_audit_holdout_reset_ready`;" in progress
+        or "Overall status: `diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized`;"
+        in progress
+    )
     assert "seen-validation-only" in current_flat
     assert "PDF document-disjoint=0, XLSX workbook-disjoint=0" in current_flat
     assert "synthetic OOD anti-overfit guard only" in current_flat
@@ -3167,3 +3173,83 @@ def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audi
     assert "`likely_general` future-success evidence count is `0`" in triage
     assert "Leakage-adjacent" in triage
     assert "Pause performance success claims" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_10_fresh_holdout_xlsx_table_axis_nonprod():
+    run_id = "official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization"
+    artifact_paths = {
+        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
+        "fresh_real_holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_fresh_real_holdout_manifest.json",
+        "seen_surface_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_seen_surface_manifest.json",
+        "query_fidelity_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
+        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "xlsx_nonprod_sourceatom_manifest_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_sourceatom_manifest.jsonl",
+        "xlsx_nonprod_searchunit_manifest_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_searchunit_manifest.jsonl",
+        "xlsx_nonprod_index_build_summary_json": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_index_build_summary.json",
+        "xlsx_table_axis_eval_per_query_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_table_axis_eval_per_query.jsonl",
+        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type")
+        == "diagnostic_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_10_FRESH_REAL_HOLDOUT_INSUFFICIENT_XLSX_TABLE_AXIS_NONPROD_MATERIALIZED"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["fresh_real_holdout_acquired"] is False
+    assert event["fresh_real_holdout_sufficient"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["xlsx_nonprod_table_axis_materialized"] is True
+    assert event["xlsx_nonprod_overlay_only"] is False
+    assert event["xlsx_nonprod_namespace"] == "rag-data-xlsx-table-axis-ood-nonprod-v1"
+    assert event["pdf_file_identity_baseline_only"] is True
+    assert event["pdf_answer_ready_evidence_window_metric_computed"] is False
+    assert event["ocr_touched"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = (
+            "summary_json_sha256"
+            if path_key == "summary_json"
+            else path_key.replace("_jsonl", "").replace("_json", "") + "_sha256"
+        )
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert (
+        "Overall status: `diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized`;"
+        in progress
+    )
+    assert "seen-validation-only" in current_flat
+    assert "Fresh real holdout is still insufficient" in current_flat
+    assert "PDF source-document-disjoint=0, XLSX workbook-disjoint=0" in current_flat
+    assert "not overlay-only" in current_flat
+    assert "answer-ready evidence-window and OCR closed" in current_flat
+    assert run_id in measurements
+    assert "Synthetic OOD guard: 200 query candidates" in measurements
+    assert "| signal-empty rank1 | 257/300 | 0/300 | 0/0 |" in measurements
+    assert "v3_9_1 seen reference file_resolve@1=66/329" in measurements
+    assert run_id in triage
+    assert "There is no performance success claim in v3_10" in triage
+    assert "PDF work is limited to file identity baseline accounting" in triage

@@ -237,6 +237,10 @@ AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID = (
 AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset"
 )
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_10_"
+    "fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -1399,6 +1403,39 @@ AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEARCHUNIT_PROPOSAL_JSON = (
 AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_REMAT_PLAN_JSON = (
     REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_proposed_nonprod_rematerialization_plan.json"
 )
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SUMMARY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_summary.json"
+)
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_METRICS_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_metrics.json"
+)
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_HOLDOUT_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_fresh_real_holdout_manifest.json"
+)
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEEN_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_seen_surface_manifest.json"
+)
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_QUERY_FIDELITY_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_query_fidelity_audit.jsonl"
+)
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_LEAKAGE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_leakage_audit.jsonl"
+)
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SOURCEATOM_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_xlsx_nonprod_sourceatom_manifest.jsonl"
+)
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEARCHUNIT_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_xlsx_nonprod_searchunit_manifest.jsonl"
+)
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_INDEX_SUMMARY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_xlsx_nonprod_index_build_summary.json"
+)
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_EVAL_PER_QUERY_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_xlsx_table_axis_eval_per_query.jsonl"
+)
+AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_FAILURE_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_failure_taxonomy.json"
+)
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
@@ -1710,6 +1747,17 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SOURCEATOM_PROPOSAL_JSON,
     AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEARCHUNIT_PROPOSAL_JSON,
     AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_REMAT_PLAN_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SUMMARY_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_METRICS_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_HOLDOUT_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEEN_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_QUERY_FIDELITY_JSONL,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_LEAKAGE_JSONL,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SOURCEATOM_JSONL,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEARCHUNIT_JSONL,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_INDEX_SUMMARY_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_EVAL_PER_QUERY_JSONL,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_FAILURE_JSON,
 }
 PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS = CURRENT_REPORT_PATHS
 ARCHIVED_REPORT_PATHS = {
@@ -1847,6 +1895,17 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SOURCEATOM_PROPOSAL_JSON,
     AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEARCHUNIT_PROPOSAL_JSON,
     AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_REMAT_PLAN_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SUMMARY_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_METRICS_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_HOLDOUT_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEEN_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_QUERY_FIDELITY_JSONL,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_LEAKAGE_JSONL,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SOURCEATOM_JSONL,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEARCHUNIT_JSONL,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_INDEX_SUMMARY_JSON,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_EVAL_PER_QUERY_JSONL,
+    AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_FAILURE_JSON,
 }
 ARCHIVED_REPORT_PATHS = (
     ARCHIVED_REPORT_PATHS | (PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS - CURRENT_REPORT_PATHS)
@@ -3680,6 +3739,143 @@ def test_v3_9_2_overfit_risk_audit_and_holdout_reset_artifacts_are_registered_ha
     assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_METRICS_JSON.stat().st_size < 100_000
     assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_OVERFIT_JSONL.stat().st_size < 500_000
     assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_CANDIDATE_JSON.stat().st_size < 200_000
+
+
+def test_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_9_local_artifacts(
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SUMMARY_JSON,
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_METRICS_JSON,
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_HOLDOUT_JSON,
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEEN_JSON,
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_QUERY_FIDELITY_JSONL,
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_LEAKAGE_JSONL,
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SOURCEATOM_JSONL,
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEARCHUNIT_JSONL,
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_INDEX_SUMMARY_JSON,
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_EVAL_PER_QUERY_JSONL,
+        AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_FAILURE_JSON,
+    )
+    summary = read_json(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_METRICS_JSON)
+    holdout = read_json(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_HOLDOUT_JSON)
+    seen = read_json(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEEN_JSON)
+    query_fidelity = read_jsonl(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_QUERY_FIDELITY_JSONL)
+    leakage = read_jsonl(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_LEAKAGE_JSONL)
+    sourceatoms = read_jsonl(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SOURCEATOM_JSONL)
+    searchunits = read_jsonl(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEARCHUNIT_JSONL)
+    index_summary = read_json(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_INDEX_SUMMARY_JSON)
+    eval_rows = read_jsonl(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_EVAL_PER_QUERY_JSONL)
+    failure = read_json(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_FAILURE_JSON)
+
+    expected_artifacts = {
+        "metrics_sha256": AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_METRICS_JSON,
+        "fresh_real_holdout_manifest_sha256": AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_HOLDOUT_JSON,
+        "seen_surface_manifest_sha256": AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEEN_JSON,
+        "query_fidelity_audit_sha256": AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_QUERY_FIDELITY_JSONL,
+        "leakage_audit_sha256": AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_LEAKAGE_JSONL,
+        "xlsx_nonprod_sourceatom_manifest_sha256": AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SOURCEATOM_JSONL,
+        "xlsx_nonprod_searchunit_manifest_sha256": AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEARCHUNIT_JSONL,
+        "xlsx_nonprod_index_build_summary_sha256": AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_INDEX_SUMMARY_JSON,
+        "xlsx_table_axis_eval_per_query_sha256": AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_EVAL_PER_QUERY_JSONL,
+        "failure_taxonomy_sha256": AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_FAILURE_JSON,
+    }
+    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+
+    assert summary["run_id"] == AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_10_FRESH_REAL_HOLDOUT_INSUFFICIENT_XLSX_TABLE_AXIS_NONPROD_MATERIALIZED"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["seen_validation_locked_to_seen_validation_only"] is True
+    assert summary["xlsx_nonprod_table_axis_materialized"] is True
+    assert summary["xlsx_nonprod_overlay_only"] is False
+    assert summary["xlsx_nonprod_namespace"] == "rag-data-xlsx-table-axis-ood-nonprod-v1"
+    assert summary["protected_namespaces_touched"] == []
+    assert summary["pdf_file_identity_baseline_only"] is True
+    assert summary["pdf_answer_ready_evidence_window_metric_computed"] is False
+    assert summary["ocr_touched"] is False
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "direct_normalized_value_query_matching_used",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+    ):
+        assert summary[flag] is False, flag
+
+    assert seen["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert holdout["real_holdout_sufficient"] is False
+    assert holdout["real_query_fidelity_included_counts"] == {"PDF": 0, "XLSX": 0}
+    assert holdout["synthetic_ood_guard"]["candidate_count"] == 200
+    assert holdout["synthetic_ood_guard"]["product_success_evidence_allowed"] is False
+    assert len(query_fidelity) == holdout["query_candidate_count"]
+    assert all(row["official_metric_input_rows"] == 0 for row in query_fidelity)
+    assert all(row["query_fidelity_headline_included"] is True for row in query_fidelity)
+    assert all(row["expected_answer"] == "" and row["supporting_evidence"] == "" for row in query_fidelity)
+    assert {row["bucket"] for row in leakage} >= {
+        "answer_value_in_query",
+        "index_to_content",
+        "source_title_leak",
+        "file_title_leak",
+        "exact_query_hack",
+        "major_topic_drift",
+        "unnatural_sheet_or_cell_reference",
+    }
+    assert all(row["success_evidence_allowed"] is False for row in leakage)
+
+    assert sourceatoms
+    assert len(sourceatoms) == len(searchunits) == index_summary["sourceatom_manifest_rows"]
+    assert index_summary["searchunit_manifest_rows"] == len(searchunits)
+    assert index_summary["index_namespace"] == "rag-data-xlsx-table-axis-ood-nonprod-v1"
+    assert index_summary["overlay_only"] is False
+    assert index_summary["protected_namespaces_touched"] == []
+    assert all(row["index_namespace"] == index_summary["index_namespace"] for row in sourceatoms)
+    assert all(row["index_namespace"] == index_summary["index_namespace"] for row in searchunits)
+    assert all(row["materialized_in_nonprod_sourceatom"] is True for row in sourceatoms)
+    assert all(row["materialized_in_nonprod_searchunit"] is True for row in searchunits)
+    assert all(row["overlay_only"] is False for row in sourceatoms)
+    assert all("raw_answer_value_for_query_scoring" not in row for row in sourceatoms)
+    assert all("raw_answer_value_for_query_scoring" not in row for row in searchunits)
+
+    xlsx_eval = metrics["xlsx_table_axis_eval"]
+    assert xlsx_eval["fresh_real_holdout"]["success_claim_allowed"] is False
+    assert xlsx_eval["old_seen_reference"]["success_claim_allowed"] is False
+    assert xlsx_eval["nonprod_seen_materialization_smoke"]["signal_empty_rank1_rate"]["numerator"] < xlsx_eval[
+        "old_seen_reference"
+    ]["signal_empty_rank1_rate"]["numerator"]
+    assert xlsx_eval["nonprod_seen_materialization_smoke"]["table_or_range@3"] == xlsx_eval[
+        "old_seen_reference"
+    ]["table_or_range@3"]
+    assert len(eval_rows) == xlsx_eval["old_seen_reference"]["row_count"]
+    assert metrics["pdf_file_identity_baseline"]["metric_scope"] == "file_identity_only"
+    assert metrics["pdf_file_identity_baseline"]["answer_ready_evidence_window_metric_computed"] is False
+    assert metrics["pdf_file_identity_baseline"]["fresh_real_holdout"]["baseline_remeasured"] is False
+    assert failure["performance_success_claim_allowed"] is False
+
+    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SUMMARY_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_METRICS_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_HOLDOUT_JSON.stat().st_size < 300_000
+    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SOURCEATOM_JSONL.stat().st_size < 2_000_000
+    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEARCHUNIT_JSONL.stat().st_size < 2_000_000
 
 
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:

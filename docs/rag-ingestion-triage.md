@@ -21,6 +21,16 @@ The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
 
+<!-- official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization:triage-entry:start -->
+## v3_10 Fresh Holdout and XLSX Rematerialization Triage
+
+- Fresh real holdout remains the blocker. There is no performance success claim in v3_10.
+- XLSX table-axis is now materialized into non-prod SourceAtom/SearchUnit manifests under `rag-data-xlsx-table-axis-ood-nonprod-v1`. This proves the phase is no longer overlay-only, but old seen metrics remain reference/no-regression only.
+- Signal-empty rank1 moved from 257/300 to 0/300 in the seen materialization smoke. Table/range/cell rates are not claimed as improved until a real fresh holdout exists.
+- PDF work is limited to file identity baseline accounting. Answer-ready evidence-window improvements and OCR remain closed.
+- Leakage/shortcut buckets are excluded from headline and retained in audit: answer_value_in_query, index_to_content, source_title_leak, file_title_leak, exact_query_hack, major_topic_drift, unnatural_sheet_or_cell_reference.
+<!-- official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization:triage-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset:triage-entry:start -->
 ## v3_9_2 Overfit Risk and Holdout Reset Triage
 

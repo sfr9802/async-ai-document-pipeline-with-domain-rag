@@ -20,13 +20,17 @@ durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
+<!-- official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization:progress-entry:start -->
+- v3_10 fresh real holdout and XLSX table-axis non-prod rematerialization (`official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization`) keeps v3_8_3/v3_9/v3_9_1 validation fixed as seen-validation-only. Fresh real holdout is still insufficient (PDF source-document-disjoint=0, XLSX workbook-disjoint=0), so product success claims stay blocked. XLSX SourceAtom/SearchUnit table-axis fields are materialized in `rag-data-xlsx-table-axis-ood-nonprod-v1` as non-prod manifests, not overlay-only; protected official/source registry/all-source/prod namespaces were not touched. PDF is baseline-only for file identity, with answer-ready evidence-window and OCR closed.
+<!-- official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization:progress-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset:progress-entry:start -->
 - v3_9_2 overfit-risk audit and blind/OOD holdout reset (`official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset`) downgrades the repeated v3_8_3/v3_9/v3_9_1 validation surface to seen-validation-only. Real unseen PDF/XLSX source coverage is insufficient (PDF document-disjoint=0, XLSX workbook-disjoint=0), so the new holdout manifest is synthetic OOD anti-overfit guard only, not product success evidence. XLSX remains overlay/rerank-only and needs a non-prod SourceAtom/SearchUnit table-axis rematerialization before the next performance-success claim; PDF file identity is kept separate from answer-ready evidence windows. official_metric_input_rows=0, future scored adapter disabled, no fine-tuning, no gold/qrels/labels/expected/supporting/denominator/prod mutation.
 <!-- official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset:progress-entry:end -->
 
 ## Current Status
 
-Overall status: `diagnostic_v3_9_2_overfit_risk_audit_holdout_reset_ready`;
+Overall status: `diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized`;
 current diagnostic answer-quality loop:
 `official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement`;
 retained prior PDF/XLSX bottleneck status:
