@@ -1,6 +1,6 @@
 # RAG Ingestion Measurements
 
-Last updated: 2026-05-22 KST.
+Last updated: 2026-05-24 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new
@@ -20,6 +20,186 @@ Historical `_archive/legacy` artifact paths in older entries are logical
 provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+
+## 2026-05-22 - PDF Answer-Ready Evidence Readiness Audit
+
+Purpose: improve diagnostic PDF answer quality by shaping retrieved PDF
+evidence into answer-ready snippets, without changing gold labels, qrels,
+expected answers, supporting evidence, denominator policy, namespace isolation,
+or diagnostic-only semantics. XLSX stays in the run only as a no-regression
+control.
+
+Commands:
+
+```powershell
+python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label answer_ready_pdf_v1_llm_15pf --cases-per-family 15 --max-tokens 220 --query-max-tokens 180 --timeout-seconds 90
+python -X utf8 ai\scripts\rag_pdf_xlsx_answer_quality_review_packet.py --run-label answer_ready_pdf_v1_llm_15pf
+```
+
+Answer quality:
+
+| Family | Raw final locator context | Normalized/expanded answer-ready context | Delta |
+|---|---:|---:|---:|
+| PDF | 5/15 | 8/15 | +3 |
+| XLSX | 14/15 | 15/15 | +1 |
+| Aggregate diagnostic-only | 19/30 | 23/30 | +4 |
+
+Query fidelity addendum, 2026-05-24:
+
+| Scope | Rows | Raw final pass | Answer-ready pass | Delta |
+|---|---:|---:|---:|---:|
+| All rows, query-fidelity-unverified | 30 | 19/30 | 23/30 | +4 |
+| Headline-included fidelity subset | 16 | 9/16 | 11/16 | +2 |
+| PDF headline-included subset | 12 | 5/12 | 7/12 | +2 |
+| XLSX headline-included subset | 4 | 4/4 | 4/4 | +0 |
+
+Query drift classification:
+
+| Family | Headline included | Excluded | Severity counts |
+|---|---:|---:|---|
+| PDF | 12 | 3 | index_to_content_query=1, major_topic_drift=2, minor_specificity_change=7, style_only=5 |
+| XLSX | 4 | 11 | index_to_content_query=11, minor_specificity_change=2, style_only=2 |
+
+Rows excluded from the headline subset are not deleted. They remain in the
+review packet with blank user decision fields and require user query approval
+before any future official-adjacent adapter could consider them.
+
+PDF Evidence Readiness:
+
+| Metric | Value |
+|---|---:|
+| PDF audit cases | 15 |
+| Bounded expansion applied | 11 |
+| Weak snippets | 11 |
+| Dot-heavy snippets | 11 |
+| Locator-only flags | 4 |
+| OCR-ish flags | 11 |
+| Table/form-like flags | 0 |
+| Average raw answer-ready score | 0.1152 |
+| Average expanded answer-ready score | 0.3938 |
+| Average answer-ready score delta | +0.2786 |
+| XLSX context changed | false |
+
+Primary artifacts:
+
+- Run id:
+  `pdf_xlsx_answer_quality_evidence_readiness_packet_answer_ready_pdf_v1_llm_15pf`
+- Summary:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_summary.json`
+- Full responses:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_responses.jsonl`
+- PDF evidence-readiness audit:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_pdf_evidence_readiness_audit.jsonl`
+- Review packet:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/`
+- PDF delta audit:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/pdf_delta_audit.jsonl`
+- Query fidelity audit:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/query_fidelity_audit.jsonl`
+- PDF residual review:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/pdf_residual_review.md`
+
+The audit records raw snippets, normalized snippets, original locator/page/bbox
+metadata, character length, query overlap, repeated punctuation ratio,
+text-density, locator-only/table-form/OCR-ish flags, answer-ready score, and
+whether bounded expansion was applied. Example expansion keeps the original
+page/bbox/source locator and expands a same-page PDF `text_block` heading
+"산림청 정책연구용역 관리규정..." into nearby same-page form text including
+"정책연구용역과제심의신청서" and "정책연구과제명". Expansion is capped by
+same-page lines/chars and uses PDF block windows only as diagnostic context; it
+does not mutate source PDFs or official gold surfaces.
+
+Non-gold decisions and rationale:
+
+- Dot leaders/repeated punctuation and excessive whitespace are normalized only
+  in diagnostic evidence text; page numbers, decimals, legal/article numbers,
+  citations, and original source metadata are preserved.
+- Weak PDF snippets are expanded with same-page manifest neighbors first and
+  same-page PDF block windows second when a local PDF path is available. Full
+  pages are not dumped.
+- Answer-ready score uses structural evidence-quality signals only: density,
+  query overlap, repeated-punctuation ratio, and weak locator/table/OCR flags.
+  It is not tuned against gold answers.
+- Retrieval miss is reported as
+  `not_recomputed_preselected_sourceatom_evidence_only`; this run measures
+  answer-ready shaping on existing diagnostic PDF cases, not retrieval recall.
+
+Remaining user-owned gold/policy decisions:
+
+- answerable
+- relevance
+- expected answer
+- supporting evidence
+- pass/fail
+- denominator eligibility
+- policy note
+- review approval
+- query intent preserved
+- query approval
+- query policy note
+
+PDF residual review after query-fidelity audit:
+
+| Bucket | Count |
+|---|---:|
+| answer-ready failing PDF cases | 7 |
+| residual-review rows, including query-drift pass rows | 8 |
+| weak evidence | 7 |
+| dot/OCR artifact | 8 |
+| broad context | 3 |
+| locator-only | 5 |
+| table/form | 0 |
+| query drift | 3 |
+| evaluator limitation | 7 |
+| true answer failure | 0 |
+
+OCR decision: skipped for this slice. The diagnostic evidence points to query
+drift, weak/locator-like evidence windows, and evaluator overlap limits before
+OCR extraction failure. OCR-ish text remains measured but is not predictive
+enough here to justify provider/source changes.
+
+Guardrail status: `official_metric_input_rows=0`,
+`future_scored_adapter=DISABLED_PENDING_USER_APPROVAL`, no promotion evidence,
+no threshold tuning, no winner selection, and no gold/qrels/label/expected
+answer/supporting evidence/denominator/namespace mutation.
+
+Changed files for this slice:
+
+- `ai/scripts/rag_pdf_xlsx_llm_quality_benchmark.py`
+- `ai/scripts/rag_pdf_xlsx_answer_quality_review_packet.py`
+- `ai/tests/test_rag_answer_citation_silver_manifest_v1.py`
+- `ai/tests/test_rag_diagnostic_status_sync.py`
+- `docs/rag-ingestion-progress.md`
+- `docs/rag-ingestion-measurements.md`
+- `docs/rag-ingestion-triage.md`
+- `ai/eval/reports/rag-ingestion/status.jsonl`
+
+Verification commands run:
+
+```powershell
+python -X utf8 -m py_compile ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py ai\scripts\rag_pdf_xlsx_answer_quality_review_packet.py
+python -X utf8 -m pytest ai/tests/test_rag_answer_citation_silver_manifest_v1.py::test_pdf_answer_ready_normalization_collapses_dot_leaders_without_touching_numbers ai/tests/test_rag_answer_citation_silver_manifest_v1.py::test_pdf_answer_ready_expansion_uses_bounded_same_page_neighbors_and_preserves_locator ai/tests/test_rag_answer_citation_silver_manifest_v1.py::test_pdf_answer_ready_score_demotes_locator_only_dot_heavy_evidence ai/tests/test_rag_answer_citation_silver_manifest_v1.py::test_pdf_answer_ready_dry_run_audit_is_diagnostic_only_and_keeps_xlsx_unchanged -q
+python -X utf8 -m pytest ai/tests/test_rag_answer_citation_silver_manifest_v1.py::test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank ai/tests/test_rag_answer_citation_silver_manifest_v1.py::test_pdf_xlsx_answer_quality_review_packet_future_adapter_stays_disabled_until_user_approval -q
+python -m pytest ai/tests/test_rag_answer_citation_silver_manifest_v1.py -q -k "pdf_xlsx_answer_quality_review_packet or pdf_answer_ready"
+python -X utf8 -m pytest ai/tests/test_rag_source_bound_official_denominator_index.py::test_pdf_xlsx_llm_quality_benchmark_dry_run_records_silver_seed_and_policy ai/tests/test_rag_source_bound_official_denominator_index.py::test_pdf_xlsx_llm_quality_benchmark_joins_silver_without_locator_only_cross_join ai/tests/test_rag_source_bound_official_denominator_index.py::test_pdf_xlsx_llm_quality_benchmark_scores_locator_and_value_grounding -q
+python -X utf8 -m pytest ai/tests/test_rag_diagnostic_status_sync.py::test_progress_measurements_triage_and_status_record_pdf_xlsx_quality_review_packet_without_promotion ai/tests/test_rag_diagnostic_status_sync.py::test_progress_measurements_triage_and_status_record_pdf_answer_ready_evidence_without_promotion -q
+python -X utf8 -m pytest ai/tests --rag-current -q
+python -X utf8 -m pytest ai/tests/test_rag_anti_shortcut_guardrail_audit_v1.py -q
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label answer_ready_pdf_v1_perf_smoke --warmups 1 --iterations 1 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_answer_ready_pdf_v1_smoke.json
+git diff --check
+```
+
+Latest verification output after the 2026-05-24 quality rerun:
+`python -m pytest ai/tests --rag-current -q` -> 351 passed, 8 warnings;
+targeted packet/answer-ready tests -> 10 passed; status sync addendum tests ->
+2 passed; source-bound benchmark tests -> 4 passed; anti-shortcut guardrail
+tests -> 9 passed; py_compile PASS; protected gold/denominator diff empty;
+`git diff --check` PASS with line-ending warnings only.
+
+Performance smoke result: PDF native 27.804 ms, PDF OCR fallback 69.389 ms,
+XLSX large merged range 239.061 ms, SearchUnit duplicate skip 121.446 ms. This
+is a no-regression smoke for the existing performance path, not a new
+representative product-performance claim.
 
 ## 2026-05-22 - PDF/XLSX LLM Query And Answer-Quality Benchmark
 
@@ -45,6 +225,7 @@ Commands:
 
 ```powershell
 python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label final_llm_rewrite_all_llm_15pf_v3 --cases-per-family 15 --max-tokens 220 --query-max-tokens 180 --timeout-seconds 90
+python -X utf8 ai\scripts\rag_pdf_xlsx_answer_quality_review_packet.py --run-label final_llm_rewrite_all_llm_15pf_v3
 python -X utf8 -m pytest ai/tests/test_rag_source_bound_official_denominator_index.py -q
 python -X utf8 -m pytest ai/tests --rag-current -q
 python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label quality_goal_perf_smoke_final --warmups 1 --iterations 1 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_quality_goal_smoke_final.json
@@ -97,11 +278,60 @@ Primary artifacts:
 - Full response JSONL:
   `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_responses.jsonl`
 
+Gold-review packet:
+
+- Run id:
+  `pdf_xlsx_answer_quality_gold_review_packet_final_llm_rewrite_all_llm_15pf_v3`
+- Artifact directory:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/`
+- Review CSV:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/review_packet.csv`
+- Review JSONL:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/review_packet.jsonl`
+- Markdown summary:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/summary.md`
+- Manifest / schema validation:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/manifest.json`
+
+Review packet rows=30. The packet pairs the 60 response rows into one row per
+case, rehydrates SourceAtom evidence/locator data from the benchmark manifest,
+keeps user-owned columns blank, sets `official_metric_candidate=FALSE`, and
+records `official_metric_input_rows=0`. The future scored adapter is disabled
+with status `DISABLED_PENDING_USER_APPROVAL`; it is documentation and schema
+surface only until the user fills and approves review decisions and a separate
+scored-eval integration change is made.
+
+PDF residual review taxonomy:
+
+| Likely cause | Count |
+|---|---:|
+| retrieval_miss | 0 |
+| weak_snippet | 9 |
+| ocr_ish_text | 1 |
+| locator_only_evidence | 8 |
+| table_form_formatting | 8 |
+| semantic_answer_mismatch | 9 |
+| evaluator_overlap_limitation | 9 |
+
+User-owned decisions needed next:
+
+- answerable
+- relevance
+- expected answer
+- supporting evidence
+- pass/fail
+- denominator eligibility
+- policy note
+- review approval
+
 Non-gold decisions and rationale:
 
 - Existing v3_7_2 weak silver was used only as a query rewrite seed because it
   is diagnostic-only, not gold, not qrels, not official denominator, and not
   promotion evidence.
+- The review packet generator pairs existing diagnostic response rows and
+  SourceAtom evidence only; it does not use expected answers or supporting
+  evidence and does not create official metric inputs.
 - Locator-only silver matching was disabled; seed joins require source family,
   source identity, and locator fingerprint to avoid cross-document leakage.
 - Query source-overlap misses are recorded as warnings, not fallback triggers,
@@ -124,6 +354,8 @@ Remaining diagnostic risks:
 - Query style is improved but still skewed toward source-grounded and terse
   question forms; broader style distribution can be tuned diagnostically, but
   should not be used as a promotion gate.
+- The review packet is ready for human adjudication, but all blank user-owned
+  fields must remain non-scoring until the user supplies explicit decisions.
 
 ## 2026-05-22 - PDF/XLSX Ingestion Performance Benchmark
 

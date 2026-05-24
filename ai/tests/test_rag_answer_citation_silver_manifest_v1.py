@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import csv
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -329,6 +330,16 @@ def require_v3_7_2_local_artifacts(*paths: Path) -> None:
         return
     message = "missing v3_7_2 local report artifacts: " + ", ".join(str(path) for path in missing)
     if os.environ.get("RAG_V3_7_2_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
+def require_pdf_xlsx_answer_quality_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing PDF/XLSX answer-quality local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_PDF_XLSX_ANSWER_QUALITY_ARTIFACTS_REQUIRED") == "1":
         pytest.fail(message)
     pytest.skip(message)
 
@@ -6009,6 +6020,501 @@ def test_v3_8_3_run_measurement_wires_xlsx_scoped_cell_summary_without_answer_ge
     assert summary["artifact_paths"]["per_family_json"].endswith("_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_per_family.json")
 
 
+def test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    summary_path = (
+        REPORT_DIR
+        / "quality"
+        / "pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_summary.json"
+    )
+    require_pdf_xlsx_answer_quality_local_artifacts(summary_path)
+    report = packet.run_packet(summary_path=summary_path, output_dir=tmp_path)
+
+    assert report["status"] == "PASS"
+    assert report["schema_version"] == "rag_pdf_xlsx_answer_quality_review_packet_v1"
+    assert report["source_run_label"] == "final_llm_rewrite_all_llm_15pf_v3"
+    assert report["diagnostic_only"] is True
+    assert report["official_metric"] is False
+    assert report["promotion_evidence"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["review_packet_row_count"] == 30
+    assert report["case_counts_by_source_type"] == {"PDF": 15, "XLSX": 15}
+    assert report["baseline_quality_pass_counts"] == {"PDF": 0, "XLSX": 0}
+    assert report["final_quality_pass_counts"] == {"PDF": 6, "XLSX": 15}
+    assert report["aggregate_diagnostic_only_scope"] == "legacy_raw_final_alias"
+    assert report["aggregate_raw_final_diagnostic_only"] == "21/30"
+    assert report["aggregate_answer_ready_diagnostic_only"] == "21/30"
+    assert report["generated_artifacts"]["review_csv"]["path"].endswith("review_packet.csv")
+    assert report["generated_artifacts"]["pdf_delta_audit_jsonl"]["path"].endswith("pdf_delta_audit.jsonl")
+    assert report["generated_artifacts"]["query_fidelity_audit_jsonl"]["path"].endswith("query_fidelity_audit.jsonl")
+    assert report["generated_artifacts"]["pdf_residual_review_md"]["path"].endswith("pdf_residual_review.md")
+    assert report["generated_artifacts"]["summary_md"]["path"].endswith("summary.md")
+    assert report["query_fidelity_summary"]["rows"] == 30
+    assert report["headline_quality_counts"]["all_rows_query_fidelity_unverified"]["rows"] == 30
+    assert report["future_scored_adapter"]["official_metric_input_rows"] == 0
+
+    with (tmp_path / "review_packet.csv").open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+
+    assert len(rows) == 30
+    assert packet.USER_DECISION_COLUMNS == [
+        "user_answerable",
+        "user_relevance",
+        "user_expected_answer",
+        "user_supporting_evidence",
+        "user_pass_fail",
+        "user_denominator_eligibility",
+        "user_policy_note",
+        "user_review_approved",
+        "user_query_intent_preserved",
+        "user_query_approval",
+        "user_query_policy_note",
+    ]
+    for row in rows:
+        assert row["diagnostic_only"] == "TRUE"
+        assert row["not_gold"] == "TRUE"
+        assert row["not_official_denominator"] == "TRUE"
+        assert row["official_metric_candidate"] == "FALSE"
+        assert row["promotion_evidence"] == "FALSE"
+        assert all(row[column] == "" for column in packet.USER_DECISION_COLUMNS)
+        assert row["baseline_result"].startswith("FAIL")
+        assert row["final_result"]
+        assert row["retrieved_evidence_text"]
+        assert row["locator_json"]
+
+    pdf_residuals = report["pdf_residuals"]
+    assert pdf_residuals["total_residuals"] == 9
+    assert pdf_residuals["final_failure_type_counts"] == {
+        "locator_only_answer": 1,
+        "low_evidence_overlap": 9,
+        "pdf_locator_missing": 1,
+    }
+    assert set(pdf_residuals["likely_cause_counts"]) == {
+        "retrieval_miss",
+        "weak_snippet",
+        "ocr_ish_text",
+        "locator_only_evidence",
+        "table_form_formatting",
+        "semantic_answer_mismatch",
+        "evaluator_overlap_limitation",
+    }
+    assert pdf_residuals["likely_cause_counts"]["retrieval_miss"] == 0
+    assert pdf_residuals["likely_cause_counts"]["weak_snippet"] > 0
+    assert pdf_residuals["likely_cause_counts"]["evaluator_overlap_limitation"] > 0
+
+
+def test_pdf_xlsx_answer_quality_review_packet_future_adapter_stays_disabled_until_user_approval(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    summary_path = (
+        REPORT_DIR
+        / "quality"
+        / "pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_summary.json"
+    )
+    require_pdf_xlsx_answer_quality_local_artifacts(summary_path)
+    report = packet.run_packet(summary_path=summary_path, output_dir=tmp_path)
+    review_rows = packet.read_csv_rows(tmp_path / "review_packet.csv")
+
+    assert report["validation"]["ok"] is True
+    assert report["validation"]["user_decision_columns_blank"] is True
+    assert report["future_scored_adapter"]["status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert report["future_scored_adapter"]["official_metric_input_rows"] == 0
+    assert "user_decision_fields_blank" in report["future_scored_adapter"]["blocked_reasons"]
+    assert "user_query_decision_fields_blank" in report["future_scored_adapter"]["blocked_reasons"]
+    assert "user_review_approved_not_true" in report["future_scored_adapter"]["blocked_reasons"]
+    assert "user_query_approval_not_true" in report["future_scored_adapter"]["blocked_reasons"]
+    assert "diagnostic_only_packet_not_scored_eval_input" in report["future_scored_adapter"]["blocked_reasons"]
+
+    adapter_preview = packet.build_future_scored_adapter_preview(review_rows)
+    assert adapter_preview == report["future_scored_adapter"]
+    assert packet.validate_review_rows(review_rows)["official_metric_input_rows"] == 0
+
+    approved_included = dict(next(row for row in review_rows if row["query_fidelity_headline_included"] == "TRUE"))
+    for column in packet.ANSWER_USER_DECISION_COLUMNS:
+        approved_included[column] = "approved"
+    approved_included["user_query_intent_preserved"] = "true"
+    approved_included["user_query_approval"] = "approved"
+    approved_included["user_query_policy_note"] = "user-approved query intent"
+    approved_preview = packet.build_future_scored_adapter_preview([approved_included])
+    assert approved_preview["adapter_enabled"] is False
+    assert approved_preview["official_metric_input_rows"] == 0
+    assert approved_preview["approved_only_official_adjacent_rows_seen"] == 1
+    assert approved_preview["blocked_reasons"] == ["diagnostic_only_packet_not_scored_eval_input"]
+
+    excluded = dict(next(row for row in review_rows if row["query_fidelity_headline_included"] == "FALSE"))
+    for column in packet.ANSWER_USER_DECISION_COLUMNS:
+        excluded[column] = "approved"
+    excluded["user_query_intent_preserved"] = "true"
+    excluded["user_query_approval"] = "approved"
+    excluded_preview = packet.build_future_scored_adapter_preview([excluded])
+    assert excluded_preview["official_metric_input_rows"] == 0
+    assert excluded_preview["approved_only_official_adjacent_rows_seen"] == 0
+    assert "query_fidelity_exclusions_present" in excluded_preview["blocked_reasons"]
+    assert "user_review_approved_not_true" not in excluded_preview["blocked_reasons"]
+
+
+def test_pdf_xlsx_answer_quality_review_packet_pdf_residual_classifiers_match_structural_signals() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    assert packet.ocr_ish_text("정 책 연 구 과 제 명")
+    assert packet.locator_like_evidence("Page 12")
+    assert packet.locator_like_evidence("p.65")
+    assert packet.table_or_form_formatting("A12 value")
+    assert packet.table_or_form_formatting("항목 | 금액 | 비고")
+
+
+def test_pdf_xlsx_answer_quality_review_packet_answer_ready_delta_and_query_fidelity_artifacts(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    summary_path = REPORT_DIR / "quality" / "pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_summary.json"
+    require_pdf_xlsx_answer_quality_local_artifacts(summary_path)
+    report = packet.run_packet(summary_path=summary_path, output_dir=tmp_path)
+
+    assert report["status"] == "PASS"
+    assert report["aggregate_raw_final_diagnostic_only"] == "19/30"
+    assert report["aggregate_answer_ready_diagnostic_only"] == "23/30"
+    assert report["official_metric_input_rows"] == 0
+    assert report["pdf_delta_audit_summary"]["pdf_case_count"] == 15
+    assert report["pdf_delta_audit_summary"]["delta_bucket_counts"]["raw_fail_to_ready_pass"] == 4
+    assert report["pdf_residuals"]["residual_scope"] == "answer_ready_context"
+    assert report["pdf_residuals"]["total_residuals"] == 7
+    assert report["query_fidelity_summary"]["excluded"] > 0
+    assert report["headline_quality_counts"]["query_fidelity_subset"]["rows"] < report[
+        "headline_quality_counts"
+    ]["all_rows_query_fidelity_unverified"]["rows"]
+    assert report["ocr_rationale"]["decision"] == "skipped"
+
+    pdf_delta_rows = read_jsonl(tmp_path / "pdf_delta_audit.jsonl")
+    query_rows = read_jsonl(tmp_path / "query_fidelity_audit.jsonl")
+    residual_rows = list(csv.DictReader((tmp_path / "pdf_residual_review.csv").open(encoding="utf-8-sig", newline="")))
+
+    assert len(pdf_delta_rows) == 15
+    assert len(query_rows) == 30
+    assert all(row["diagnostic_only"] is True for row in pdf_delta_rows)
+    assert all(row["official_metric_candidate"] is False for row in query_rows)
+    assert any(row["delta_bucket"] == "raw_fail_to_ready_pass" for row in pdf_delta_rows)
+    assert any(row["query_fidelity_headline_included"] is False for row in query_rows)
+    assert residual_rows
+    assert (tmp_path / "pdf_residual_review.md").read_text(encoding="utf-8").startswith("# PDF Residual Review")
+
+
+def test_pdf_xlsx_answer_quality_review_packet_query_fidelity_classifies_exclusions() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    case = quality.EvidenceCase(
+        case_id="pdf-unit",
+        family="PDF",
+        source_atom_id="src",
+        doc_id="doc",
+        section="section",
+        evidence_text="서울의 역사적 스케치와 도시 변천 과정을 설명한다.",
+        locator={"page": 1},
+    )
+
+    major = packet.query_fidelity_audit(
+        case=case,
+        seed_query="영업보고서의 주요 내용은 무엇입니까?",
+        query="서울의 역사적 스케치에 대해 알려줘",
+        evidence_text=case.evidence_text,
+    )
+    assert major["query_drift_severity"] == "major_topic_drift"
+    assert major["query_generation_mode"] == "invalid_drift"
+    assert major["headline_included"] is False
+
+    index_to_content = packet.query_fidelity_audit(
+        case=case,
+        seed_query="다른 경로 데이터 검색",
+        query="서울의 역사적 스케치와 도시 변천 과정",
+        evidence_text=case.evidence_text,
+    )
+    assert index_to_content["query_drift_severity"] == "index_to_content_query"
+    assert index_to_content["query_generation_mode"] == "source_grounded_synthetic_query"
+    assert index_to_content["headline_included"] is False
+
+    preserving = packet.query_fidelity_audit(
+        case=case,
+        seed_query="서울의 역사적 스케치에 대해 알려주세요.",
+        query="서울의 역사적 스케치는 무엇을 다루나요?",
+        evidence_text=case.evidence_text,
+    )
+    assert preserving["query_generation_mode"] == "seed_preserving_rewrite"
+    assert preserving["headline_included"] is True
+
+
+def test_pdf_xlsx_answer_quality_review_packet_duplicate_rows_fail_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import pytest
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    duplicate = {"case_id": "pdf-001", "prompt_mode": "final_locator_context"}
+    with pytest.raises(ValueError, match="duplicate response row"):
+        packet.build_review_rows(
+            summary={},
+            response_rows=[duplicate, duplicate],
+            previous_response_rows=[],
+            cases={},
+            max_evidence_chars=100,
+        )
+
+
+def test_pdf_xlsx_answer_quality_summary_keeps_two_mode_compatibility() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    rows = [
+        {
+            "prompt_mode": "baseline_legacy_context",
+            "family": "PDF",
+            "score": {"quality_pass": False, "parse_ok": True, "citation_valid": True},
+        },
+        {
+            "prompt_mode": "final_locator_context",
+            "family": "PDF",
+            "score": {"quality_pass": True, "parse_ok": True, "citation_valid": True},
+        },
+    ]
+
+    summary = quality.answer_quality_summary(rows)
+
+    assert summary["delta_final_minus_baseline"]["quality_pass"] == 1
+    assert summary["delta_answer_ready_minus_raw_final"]["quality_pass"] == 0
+    assert summary["delta_by_family_answer_ready_minus_raw_final"]["PDF"]["quality_pass"] == 0
+
+
+def test_pdf_answer_ready_normalization_collapses_dot_leaders_without_touching_numbers() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    text = (
+        "제1.2조 적용 2020년 1,088.0 Page 12 "
+        "사 업 보 고 서............................................................................1 "
+        "총액;;;;; 3.14 p.65"
+    )
+
+    normalized = quality.normalize_pdf_evidence_snippet(text)
+
+    assert "................................................................" not in normalized
+    assert ";;;;;" not in normalized
+    assert "사 업 보 고 서 ... 1" in normalized
+    assert "제1.2조" in normalized
+    assert "1,088.0" in normalized
+    assert "3.14" in normalized
+    assert "Page 12" in normalized
+    assert "p.65" in normalized
+
+
+def test_pdf_answer_ready_expansion_uses_bounded_same_page_neighbors_and_preserves_locator() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    target_row = pdf_manifest_row(
+        source_atom_id="src-target",
+        search_view_id="search-target",
+        document_version_id="docv-pdf",
+        search_unit_id="su-page",
+        page=3,
+        bbox=[50.0, 100.0, 540.0, 112.0],
+        text="사 업 보 고 서............................................................................1",
+    )
+    same_page_rows = [
+        pdf_manifest_row(
+            source_atom_id="src-heading",
+            search_view_id="search-heading",
+            document_version_id="docv-pdf",
+            search_unit_id="su-page",
+            page=3,
+            bbox=[50.0, 72.0, 300.0, 86.0],
+            text="제68기 사업보고서",
+        ),
+        target_row,
+        pdf_manifest_row(
+            source_atom_id="src-content",
+            search_view_id="search-content",
+            document_version_id="docv-pdf",
+            search_unit_id="su-page",
+            page=3,
+            bbox=[50.0, 122.0, 540.0, 138.0],
+            text="동성제약 주식회사의 사업의 내용과 재무에 관한 사항을 다음과 같이 보고합니다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-next",
+            search_view_id="search-next",
+            document_version_id="docv-pdf",
+            search_unit_id="su-page",
+            page=3,
+            bbox=[50.0, 146.0, 540.0, 160.0],
+            text="회사의 개요 및 주요 영업 현황을 포함합니다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-other-page",
+            search_view_id="search-other-page",
+            document_version_id="docv-pdf",
+            search_unit_id="su-page",
+            page=4,
+            bbox=[50.0, 80.0, 540.0, 96.0],
+            text="다른 페이지 문장은 섞이면 안 됩니다.",
+        ),
+    ]
+    context_index = quality.build_pdf_context_index(same_page_rows)
+    locator = quality.extract_locator({**target_row, **quality.parse_locator_text(target_row["embedding_text"])})
+
+    audit = quality.pdf_evidence_readiness_audit(
+        raw_snippet=target_row["display_text"],
+        normalized_snippet=quality.normalize_pdf_evidence_snippet(target_row["display_text"]),
+        query="사업보고서 주요 내용",
+        locator=locator,
+        bounded_expansion_applied=False,
+    )
+    ready = quality.answer_ready_pdf_evidence(
+        row=target_row,
+        locator=locator,
+        query="사업보고서 주요 내용",
+        context_index=context_index,
+        audit=audit,
+        max_chars=180,
+    )
+
+    assert ready["bounded_expansion_applied"] is True
+    assert ready["locator"]["page"] == 3
+    assert ready["locator"]["bbox"] == [50.0, 100.0, 540.0, 112.0]
+    assert "제68기 사업보고서" in ready["answer_ready_snippet"]
+    assert "사업의 내용과 재무" in ready["answer_ready_snippet"]
+    assert "회사의 개요" in ready["answer_ready_snippet"]
+    assert "다른 페이지" not in ready["answer_ready_snippet"]
+    assert len(ready["answer_ready_snippet"]) <= 180
+    assert ready["raw_snippet"] == target_row["display_text"]
+    assert ready["normalized_snippet"].startswith("사 업 보 고 서 ... 1")
+    assert ready["answer_ready_score"] > audit["answer_ready_score"]
+
+
+def test_pdf_answer_ready_score_demotes_locator_only_dot_heavy_evidence() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    locator = {"source_pdf_path": "report.pdf", "page": 2, "bbox": [1, 2, 3, 4], "region_type": "text_block"}
+    weak = quality.pdf_evidence_readiness_audit(
+        raw_snippet="전자공시시스템 dart.fss.or.kr Page 2 ........................................ 3",
+        normalized_snippet=quality.normalize_pdf_evidence_snippet(
+            "전자공시시스템 dart.fss.or.kr Page 2 ........................................ 3"
+        ),
+        query="감사보고서 핵심 사항",
+        locator=locator,
+        bounded_expansion_applied=False,
+    )
+    dense = quality.pdf_evidence_readiness_audit(
+        raw_snippet="감사의견 우리는 동성제약 주식회사의 재무제표를 감사하였으며 핵심 감사사항을 검토하였습니다.",
+        normalized_snippet=quality.normalize_pdf_evidence_snippet(
+            "감사의견 우리는 동성제약 주식회사의 재무제표를 감사하였으며 핵심 감사사항을 검토하였습니다."
+        ),
+        query="감사보고서 핵심 사항",
+        locator=locator,
+        bounded_expansion_applied=False,
+    )
+
+    assert weak["dot_leader_or_repeated_punctuation_ratio"] > 0
+    assert weak["locator_only_flag"] is True
+    assert dense["locator_only_flag"] is False
+    assert dense["answer_ready_score"] > weak["answer_ready_score"]
+
+
+def test_pdf_answer_ready_dry_run_audit_is_diagnostic_only_and_keeps_xlsx_unchanged(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    manifest = tmp_path / "manifest.jsonl"
+    silver = tmp_path / "silver.jsonl"
+    pdf_row = pdf_manifest_row(
+        source_atom_id="src-pdf",
+        search_view_id="search-pdf",
+        document_version_id="docv-pdf",
+        search_unit_id="su-page",
+        page=1,
+        bbox=[60.0, 90.0, 540.0, 105.0],
+        text="목 차............................................................................1",
+    )
+    pdf_neighbor = pdf_manifest_row(
+        source_atom_id="src-pdf-neighbor",
+        search_view_id="search-pdf-neighbor",
+        document_version_id="docv-pdf",
+        search_unit_id="su-page",
+        page=1,
+        bbox=[60.0, 114.0, 540.0, 130.0],
+        text="보고서의 주요 내용은 재무상태와 영업 현황을 포함합니다.",
+    )
+    xlsx_row = xlsx_manifest_row()
+    manifest.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in [pdf_row, pdf_neighbor, xlsx_row]) + "\n",
+        encoding="utf-8",
+    )
+    silver.write_text("", encoding="utf-8")
+
+    summary = quality.run_benchmark(
+        manifest_path=manifest,
+        silver_manifest_path=silver,
+        output_dir=tmp_path / "quality",
+        run_label="pdf_answer_ready_unit",
+        model="unused",
+        base_url="http://localhost:9/v1",
+        cases_per_family=1,
+        max_tokens=10,
+        query_max_tokens=10,
+        timeout_seconds=1,
+        dry_run=True,
+    )
+    rows = read_jsonl(tmp_path / "quality" / "pdf_xlsx_llm_quality_pdf_answer_ready_unit_responses.jsonl")
+    pdf_rows = [row for row in rows if row["family"] == "PDF"]
+    xlsx_rows = [row for row in rows if row["family"] == "XLSX"]
+    audit_rows = read_jsonl(ROOT / summary["pdf_evidence_readiness_audit_path"])
+
+    assert summary["status"] == "PASS_DRY_RUN"
+    assert summary["policy"]["official_metric_input_rows"] == 0
+    assert summary["policy"]["expected_answer_or_supporting_evidence_used"] is False
+    assert summary["pdf_evidence_readiness_summary"]["pdf_case_count"] == 1
+    assert summary["pdf_evidence_readiness_summary"]["bounded_expansion_applied_count"] == 1
+    assert summary["pdf_evidence_readiness_summary"]["avg_raw_answer_ready_score"] < summary[
+        "pdf_evidence_readiness_summary"
+    ]["avg_expanded_answer_ready_score"]
+    assert summary["pdf_evidence_readiness_summary"]["avg_answer_ready_score_delta"] > 0
+    assert len(audit_rows) == 1
+    assert audit_rows[0]["raw_snippet"] == "목 차............................................................................1"
+    assert audit_rows[0]["normalized_snippet"] == "목 차 ... 1"
+    assert "재무상태와 영업 현황" in audit_rows[0]["answer_ready_snippet"]
+    assert audit_rows[0]["raw_answer_ready_score"] < audit_rows[0]["answer_ready_score"]
+    assert audit_rows[0]["locator"]["page"] == 1
+    assert audit_rows[0]["locator"]["bbox"] == [60.0, 90.0, 540.0, 105.0]
+
+    assert {row["prompt_mode"] for row in pdf_rows} == {
+        "baseline_legacy_context",
+        "final_locator_context",
+        "answer_ready_context",
+    }
+    assert {row["evidence_variant"] for row in pdf_rows} == {"raw", "answer_ready"}
+    raw_final = next(row for row in pdf_rows if row["prompt_mode"] == "final_locator_context")
+    ready_final = next(row for row in pdf_rows if row["prompt_mode"] == "answer_ready_context")
+    assert raw_final["effective_evidence_text"] == "목 차............................................................................1"
+    assert ready_final["effective_evidence_text"] == audit_rows[0]["answer_ready_snippet"]
+    assert ready_final["citation_locator"] == raw_final["citation_locator"]
+    assert ready_final["policy"]["diagnostic_only"] is True
+    assert ready_final["policy"]["official_metric_input_rows"] == 0
+
+    assert {row["prompt_mode"] for row in xlsx_rows} == {
+        "baseline_legacy_context",
+        "final_locator_context",
+        "answer_ready_context",
+    }
+    xlsx_final = next(row for row in xlsx_rows if row["prompt_mode"] == "final_locator_context")
+    xlsx_ready = next(row for row in xlsx_rows if row["prompt_mode"] == "answer_ready_context")
+    assert xlsx_ready["effective_evidence_text"] == xlsx_final["effective_evidence_text"]
+    assert xlsx_ready["evidence_variant"] == "raw"
+
+
 def test_pdf_content_window_sufficiency_gate_blocks_tiny_locator_fragments() -> None:
     sys.path.insert(0, str(ROOT / "ai"))
     from eval.harness import pdf_xlsx_answer_evidence_serializer as serializer
@@ -6682,6 +7188,85 @@ def json_hash(value: Any) -> str:
 
     payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def pdf_manifest_row(
+    *,
+    source_atom_id: str,
+    search_view_id: str,
+    document_version_id: str,
+    search_unit_id: str,
+    page: int,
+    bbox: list[float],
+    text: str,
+) -> dict[str, Any]:
+    locator_fingerprint = json_hash(
+        {
+            "document_version_id": document_version_id,
+            "search_unit_id": search_unit_id,
+            "page": page,
+            "bbox": bbox,
+            "text": text,
+        }
+    )
+    source_pdf_path = "D:/diagnostic/source/report.pdf"
+    embedding_text = "\n".join(
+        [
+            f"SourceAtom: {source_atom_id}",
+            "Family: PDF",
+            f"Identity: PDF:{document_version_id}:{search_unit_id}:{locator_fingerprint}",
+            (
+                "Locator: "
+                f"source_pdf_path={source_pdf_path} | page={page} | physical_page_index={page - 1} | "
+                f"bbox={json.dumps(bbox, ensure_ascii=False)} | region_type=text_block"
+            ),
+            f"Snapshot: {text}",
+        ]
+    )
+    return {
+        "source_family": "PDF",
+        "source_atom_id": source_atom_id,
+        "search_view_id": search_view_id,
+        "document_version_id": document_version_id,
+        "parent_search_unit_id": search_unit_id,
+        "source_identity": f"PDF:{document_version_id}:{search_unit_id}:{locator_fingerprint}",
+        "locator_fingerprint": locator_fingerprint,
+        "display_text": text,
+        "bm25_text": text,
+        "embedding_text": embedding_text,
+        "generation_source_allowed": True,
+        "runtime_evidence_allowed": True,
+        "official_denominator_overlap": False,
+    }
+
+
+def xlsx_manifest_row() -> dict[str, Any]:
+    locator_fingerprint = json_hash(
+        {
+            "workbook": "book.xlsx",
+            "sheet": "Sheet1",
+            "cell": "B2",
+            "value": "2019년 2월 5호선 승차총승객수 15,446,522명",
+        }
+    )
+    return {
+        "source_family": "XLSX",
+        "source_atom_id": "src-xlsx",
+        "search_view_id": "search-xlsx",
+        "document_version_id": "docv-xlsx",
+        "parent_search_unit_id": "su-xlsx",
+        "source_identity": f"XLSX:docv-xlsx:su-xlsx:{locator_fingerprint}",
+        "locator_fingerprint": locator_fingerprint,
+        "display_text": "row_label=2019년 2월 5호선 | target_column=승차총승객수 | normalized_value=2019년 2월 5호선 승차총승객수 15,446,522명",
+        "bm25_text": "row_label=2019년 2월 5호선 | target_column=승차총승객수 | normalized_value=2019년 2월 5호선 승차총승객수 15,446,522명",
+        "embedding_text": (
+            "Locator: workbook=book.xlsx | sheet=Sheet1 | range=A2:D2 | cell=B2 | "
+            "row_label=2019년 2월 5호선 | target_column=승차총승객수 | normalized_value=2019년 2월 5호선 승차총승객수 15,446,522명"
+        ),
+        "generation_source_allowed": True,
+        "runtime_evidence_allowed": True,
+        "official_denominator_overlap": False,
+    }
 
 
 def sha256_file(path: Path) -> str:

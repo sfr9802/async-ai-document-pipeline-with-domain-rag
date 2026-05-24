@@ -52,8 +52,13 @@ DEFAULT_BASE_URL = "http://localhost:8081/v1"
 DEFAULT_MODEL = "gemma4-e2b-local"
 SCHEMA_VERSION = "rag_pdf_xlsx_llm_quality_benchmark_v1"
 RUN_PREFIX = "pdf_xlsx_llm_quality"
+PROMPT_MODES = ("baseline_legacy_context", "final_locator_context", "answer_ready_context")
 FRIENDLY_SUFFIXES = ("주세요", "주세요.", "답하세요", "답하세요.", "무엇인가요?", "확인해 주세요.")
 QUERY_REWRITE_MAX_ATTEMPTS = 2
+PDF_EXPANSION_MAX_CHARS = 900
+PDF_EXPANSION_MAX_LINES = 6
+PDF_WEAK_CHAR_THRESHOLD = 90
+PDF_WEAK_TOKEN_THRESHOLD = 6
 QUERY_REWRITE_STYLE_CYCLE = (
     "fragment_no_verb: 2-6 words, no question mark, like a clipped search note",
     "messy_note: casual note with words like 이거/뭐였지/맞나 when natural",
@@ -83,6 +88,10 @@ class EvidenceCase:
     weak_silver_candidate_id: str = ""
     source_candidate_id: str = ""
     join_key_used: str = ""
+    raw_evidence_text: str = ""
+    normalized_evidence_text: str = ""
+    answer_ready_evidence_text: str = ""
+    evidence_readiness_audit: Mapping[str, Any] | None = None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -143,10 +152,18 @@ def run_benchmark(
     output_dir.mkdir(parents=True, exist_ok=True)
     summary_path = output_dir / f"{RUN_PREFIX}_{label}_summary.json"
     rows_path = output_dir / f"{RUN_PREFIX}_{label}_responses.jsonl"
+    pdf_audit_path = output_dir / f"{RUN_PREFIX}_{label}_pdf_evidence_readiness_audit.jsonl"
 
     silver_index = load_silver_seed_index(silver_manifest_path)
-    cases = load_evidence_cases(
-        manifest_path,
+    manifest_rows = read_jsonl(manifest_path)
+    pdf_context_index = build_pdf_context_index(manifest_rows)
+    manifest_rows_by_source_atom = {
+        clean(row.get("source_atom_id") or row.get("sourceAtomId")): row
+        for row in manifest_rows
+        if clean(row.get("source_atom_id") or row.get("sourceAtomId"))
+    }
+    cases = load_evidence_cases_from_rows(
+        manifest_rows,
         cases_per_family=cases_per_family,
         silver_index=silver_index,
     )
@@ -179,6 +196,21 @@ def run_benchmark(
             )
         )
     challenge_queries = [clean(row.get("query")) for row in query_rows]
+    evidence_profiles = {
+        case.case_id: build_case_evidence_profile(
+            case=case,
+            query=query,
+            source_row=manifest_rows_by_source_atom.get(case.source_atom_id, {}),
+            pdf_context_index=pdf_context_index,
+        )
+        for case, query in zip(cases, challenge_queries)
+    }
+    pdf_audit_rows = [
+        profile
+        for profile in evidence_profiles.values()
+        if clean(profile.get("family")) == "PDF"
+    ]
+    write_jsonl(pdf_audit_path, pdf_audit_rows)
 
     output_rows: list[dict[str, Any]] = []
     rows_path.parent.mkdir(parents=True, exist_ok=True)
@@ -187,8 +219,19 @@ def run_benchmark(
             zip(cases, challenge_queries, query_rows),
             start=1,
         ):
-            for prompt_mode in ("baseline_legacy_context", "final_locator_context"):
-                system_prompt, user_prompt = build_prompt(case, query, prompt_mode=prompt_mode)
+            evidence_profile = evidence_profiles[case.case_id]
+            for prompt_mode in PROMPT_MODES:
+                effective_evidence = evidence_text_for_prompt_mode(
+                    case=case,
+                    prompt_mode=prompt_mode,
+                    evidence_profile=evidence_profile,
+                )
+                system_prompt, user_prompt = build_prompt(
+                    case,
+                    query,
+                    prompt_mode=prompt_mode,
+                    evidence_text=effective_evidence,
+                )
                 started = time.perf_counter()
                 if dry_run:
                     raw_response = ""
@@ -213,7 +256,7 @@ def run_benchmark(
                         llm_error = f"{type(exc).__name__}: {exc}"
                     llm_elapsed_ms = round((time.perf_counter() - started) * 1000.0, 3)
 
-                score = score_response(case, raw_response)
+                score = score_response(case, raw_response, evidence_text=effective_evidence)
                 row = {
                     "schema_version": f"{SCHEMA_VERSION}_row",
                     "run_label": label,
@@ -245,6 +288,16 @@ def run_benchmark(
                     "query_validation_failures": query_row.get("query_validation_failures"),
                     "query_validation_warnings": query_row.get("query_validation_warnings"),
                     "friendly_baseline_query": friendly_queries[index - 1],
+                    "evidence_variant": evidence_variant_for_prompt_mode(
+                        case=case,
+                        prompt_mode=prompt_mode,
+                    ),
+                    "effective_evidence_text": effective_evidence,
+                    "raw_evidence_text": evidence_profile.get("raw_snippet"),
+                    "normalized_evidence_text": evidence_profile.get("normalized_snippet"),
+                    "answer_ready_evidence_text": evidence_profile.get("answer_ready_snippet"),
+                    "citation_locator": evidence_profile.get("locator"),
+                    "evidence_readiness": evidence_profile,
                     "raw_response": raw_response,
                     "llm_elapsed_ms": llm_elapsed_ms,
                     "llm_error": llm_error,
@@ -273,6 +326,15 @@ def run_benchmark(
         "cases_by_family": dict(sorted(Counter(case.family for case in cases).items())),
         "silver_seed_match_count": sum(1 for case in cases if case.silver_query),
         "silver_join_summary": silver_join_summary(cases),
+        "case_selection_policy": {
+            "source": "non_official_generation_allowed_sourceatom_searchview_manifest",
+            "official_denominator_overlap_excluded": True,
+            "gold_expected_or_supporting_evidence_used": False,
+            "pdf_answer_ready_scoring_scope": "diagnostic_pdf_evidence_readiness_not_official_metric",
+        },
+        "pdf_evidence_readiness_audit_path": repo_relative(pdf_audit_path),
+        "pdf_evidence_readiness_audit_sha256": sha256_file(pdf_audit_path) if pdf_audit_path.exists() else "",
+        "pdf_evidence_readiness_summary": pdf_evidence_readiness_summary(pdf_audit_rows),
         "query_quality": {
             "friendly_baseline": query_quality_metrics(friendly_queries),
             "llm_rewrite_final": query_quality_metrics(challenge_queries),
@@ -296,8 +358,21 @@ def load_evidence_cases(
     cases_per_family: int,
     silver_index: Mapping[str, Mapping[str, dict[str, Any]]] | None = None,
 ) -> list[EvidenceCase]:
+    return load_evidence_cases_from_rows(
+        read_jsonl(manifest_path),
+        cases_per_family=cases_per_family,
+        silver_index=silver_index,
+    )
+
+
+def load_evidence_cases_from_rows(
+    manifest_rows: Iterable[Mapping[str, Any]],
+    *,
+    cases_per_family: int,
+    silver_index: Mapping[str, Mapping[str, dict[str, Any]]] | None = None,
+) -> list[EvidenceCase]:
     by_family: dict[str, list[EvidenceCase]] = {"PDF": [], "XLSX": []}
-    for row in read_jsonl(manifest_path):
+    for row in manifest_rows:
         family = clean(row.get("source_family") or row.get("sourceFamily")).upper()
         if family not in by_family:
             continue
@@ -317,6 +392,11 @@ def load_evidence_cases(
         evidence_text = safe_evidence_text(row, locator)
         if len(evidence_text) < 20:
             continue
+        normalized_evidence_text = (
+            normalize_pdf_evidence_snippet(evidence_text)
+            if family == "PDF"
+            else evidence_text
+        )
         silver_seed = find_silver_seed(row, silver_index or {})
         case = EvidenceCase(
             case_id=f"{family.lower()}-{len(by_family[family]) + 1:03d}",
@@ -336,6 +416,9 @@ def load_evidence_cases(
             weak_silver_candidate_id=clean(silver_seed.get("weak_silver_candidate_id")),
             source_candidate_id=clean(silver_seed.get("source_candidate_id")),
             join_key_used=clean(silver_seed.get("_join_key_used")),
+            raw_evidence_text=evidence_text,
+            normalized_evidence_text=normalized_evidence_text,
+            answer_ready_evidence_text=normalized_evidence_text,
         )
         by_family[family].append(case)
     selected: list[EvidenceCase] = []
@@ -452,6 +535,684 @@ def safe_evidence_text(row: Mapping[str, Any], locator: Mapping[str, Any]) -> st
     raw = clean(row.get("display_text") or row.get("bm25_text") or row.get("embedding_text"))
     raw = strip_leading_locator_metadata(raw)
     return strip_forbidden_prompt_text(raw)
+
+
+def normalize_pdf_evidence_snippet(text: str) -> str:
+    normalized = clean(text)
+    normalized = re.sub(r"[\.\u00b7\u2027]{4,}", " ... ", normalized)
+    normalized = re.sub(r"[;:]{4,}", " ... ", normalized)
+    normalized = re.sub(r"[,]{4,}", " ... ", normalized)
+    normalized = re.sub(r"[-_=]{5,}", " ... ", normalized)
+    normalized = re.sub(r"\s+", " ", normalized)
+    normalized = re.sub(r"\s+([.,;:])", r"\1", normalized)
+    normalized = re.sub(r"\s*\.\.\.\s*", " ... ", normalized)
+    return normalized.strip()
+
+
+def build_pdf_context_index(rows: Iterable[Mapping[str, Any]]) -> dict[tuple[str, str, str], list[dict[str, Any]]]:
+    indexed: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    for row in rows:
+        family = clean(row.get("source_family") or row.get("sourceFamily")).upper()
+        if family != "PDF":
+            continue
+        if official_denominator_overlap(row):
+            continue
+        if row_has_forbidden_policy_surface(row):
+            continue
+        if not bool(row.get("generation_source_allowed") or row.get("generationSourceAllowed")):
+            continue
+        if not bool(row.get("runtime_evidence_allowed") or row.get("runtimeEvidenceAllowed")):
+            continue
+        raw_text = clean(row.get("display_text") or row.get("bm25_text") or row.get("embedding_text"))
+        if not raw_text:
+            continue
+        locator = extract_locator({**row, **parse_locator_text(clean(row.get("embedding_text")))})
+        key = pdf_context_key(row, locator)
+        if not all(key):
+            continue
+        bbox = parse_bbox_value(locator.get("bbox"))
+        indexed.setdefault(key, []).append(
+            {
+                "source_atom_id": clean(row.get("source_atom_id") or row.get("sourceAtomId")),
+                "search_view_id": clean(row.get("search_view_id") or row.get("searchViewId")),
+                "locator_fingerprint": clean(row.get("locator_fingerprint")),
+                "raw_snippet": safe_evidence_text(row, locator),
+                "normalized_snippet": normalize_pdf_evidence_snippet(safe_evidence_text(row, locator)),
+                "locator": dict(locator),
+                "bbox": bbox,
+                "y0": bbox[1] if len(bbox) == 4 else 0.0,
+                "y1": bbox[3] if len(bbox) == 4 else 0.0,
+            }
+        )
+    for items in indexed.values():
+        items.sort(key=lambda item: (float(item.get("y0") or 0.0), clean(item.get("source_atom_id"))))
+    return indexed
+
+
+def build_case_evidence_profile(
+    *,
+    case: EvidenceCase,
+    query: str,
+    source_row: Mapping[str, Any],
+    pdf_context_index: Mapping[tuple[str, str, str], list[dict[str, Any]]],
+) -> dict[str, Any]:
+    raw_snippet = case.raw_evidence_text or case.evidence_text
+    normalized_snippet = (
+        normalize_pdf_evidence_snippet(raw_snippet)
+        if case.family == "PDF"
+        else raw_snippet
+    )
+    if case.family != "PDF":
+        return {
+            "family": case.family,
+            "case_id": case.case_id,
+            "source_atom_id": case.source_atom_id,
+            "search_view_id": case.search_view_id,
+            "locator_fingerprint": case.locator_fingerprint,
+            "raw_snippet": raw_snippet,
+            "normalized_snippet": normalized_snippet,
+            "answer_ready_snippet": raw_snippet,
+            "bounded_expansion_applied": False,
+            "answer_ready_score": 1.0 if raw_snippet else 0.0,
+            "answer_ready_score_delta": 0.0,
+            "locator": dict(case.locator),
+            "scoring_scope": "non_pdf_unchanged",
+            "official_metric_candidate": False,
+            "promotion_evidence": False,
+        }
+
+    row = source_row or source_row_from_case(case)
+    audit = pdf_evidence_readiness_audit(
+        raw_snippet=raw_snippet,
+        normalized_snippet=normalized_snippet,
+        query=query,
+        locator=case.locator,
+        bounded_expansion_applied=False,
+    )
+    ready = answer_ready_pdf_evidence(
+        row=row,
+        locator=case.locator,
+        query=query,
+        context_index=pdf_context_index,
+        audit=audit,
+        max_chars=PDF_EXPANSION_MAX_CHARS,
+    )
+    ready["case_id"] = case.case_id
+    ready["family"] = case.family
+    ready["source_atom_id"] = case.source_atom_id
+    ready["search_view_id"] = case.search_view_id
+    ready["locator_fingerprint"] = case.locator_fingerprint
+    ready["source_content_sha256"] = sha256_text(raw_snippet)
+    ready["raw_evidence_sha256"] = sha256_text(raw_snippet)
+    ready["normalized_evidence_sha256"] = sha256_text(normalized_snippet)
+    ready["expanded_evidence_sha256"] = sha256_text(clean(ready.get("answer_ready_snippet")))
+    ready["scoring_scope"] = "diagnostic_pdf_evidence_readiness_not_official_metric"
+    ready["official_metric_candidate"] = False
+    ready["scored_eval_entry_allowed"] = False
+    ready["promotion_evidence"] = False
+    ready["gold_or_label_mutation"] = False
+    ready["denominator_mutation"] = False
+    return ready
+
+
+def source_row_from_case(case: EvidenceCase) -> dict[str, Any]:
+    row = {
+        "source_family": case.family,
+        "source_atom_id": case.source_atom_id,
+        "search_view_id": case.search_view_id,
+        "document_version_id": case.doc_id,
+        "parent_search_unit_id": clean(case.locator.get("search_unit_id")),
+        "locator_fingerprint": case.locator_fingerprint,
+        "display_text": case.evidence_text,
+        "bm25_text": case.evidence_text,
+        "generation_source_allowed": True,
+        "runtime_evidence_allowed": True,
+        "official_denominator_overlap": False,
+    }
+    return row
+
+
+def answer_ready_pdf_evidence(
+    *,
+    row: Mapping[str, Any],
+    locator: Mapping[str, Any],
+    query: str,
+    context_index: Mapping[tuple[str, str, str], list[dict[str, Any]]],
+    audit: Mapping[str, Any],
+    max_chars: int = PDF_EXPANSION_MAX_CHARS,
+) -> dict[str, Any]:
+    raw_snippet = clean(row.get("display_text") or row.get("bm25_text") or audit.get("raw_snippet"))
+    if not raw_snippet:
+        raw_snippet = clean(audit.get("raw_snippet"))
+    normalized_snippet = normalize_pdf_evidence_snippet(raw_snippet)
+    needs_expansion = bool(
+        audit.get("weak_snippet_flag")
+        or audit.get("locator_only_flag")
+        or audit.get("table_form_like_flag")
+        or float(audit.get("dot_leader_or_repeated_punctuation_ratio") or 0.0) >= 0.08
+    )
+    answer_ready_snippet = normalized_snippet
+    expansion_sources: list[dict[str, Any]] = []
+    if needs_expansion:
+        key = pdf_context_key(row, locator)
+        candidates = list(context_index.get(key, []))
+        target = find_pdf_context_target(row, locator, candidates)
+        selected = select_pdf_expansion_candidates(
+            candidates=candidates,
+            target=target,
+            query=query,
+            max_chars=max_chars,
+        )
+        if selected:
+            expansion_sources = [
+                {
+                    "source_atom_id": item.get("source_atom_id"),
+                    "search_view_id": item.get("search_view_id"),
+                    "locator_fingerprint": item.get("locator_fingerprint"),
+                    "page": as_mapping(item.get("locator")).get("page"),
+                    "bbox": as_mapping(item.get("locator")).get("bbox"),
+                }
+                for item in selected
+            ]
+            answer_ready_snippet = shorten(
+                " ".join(unique_texts(clean(item.get("normalized_snippet")) for item in selected)),
+                max_chars,
+            )
+        if len(expansion_sources) <= 1:
+            page_window = extract_pdf_same_page_window(locator=locator, query=query, max_chars=max_chars)
+            if page_window:
+                answer_ready_snippet = page_window["text"]
+                expansion_sources = page_window["sources"]
+    bounded = answer_ready_snippet != normalized_snippet
+    ready_audit = pdf_evidence_readiness_audit(
+        raw_snippet=raw_snippet,
+        normalized_snippet=answer_ready_snippet,
+        query=query,
+        locator=locator,
+        bounded_expansion_applied=bounded,
+    )
+    normalized_locator = normalized_pdf_locator(locator)
+    return {
+        **ready_audit,
+        "raw_snippet": raw_snippet,
+        "normalized_snippet": normalized_snippet,
+        "answer_ready_snippet": answer_ready_snippet,
+        "bounded_expansion_applied": bounded,
+        "bounded_expansion_scope": "same_page_neighbor_lines",
+        "bounded_expansion_max_chars": max_chars,
+        "bounded_expansion_max_lines": PDF_EXPANSION_MAX_LINES,
+        "bounded_expansion_source_count": len(expansion_sources),
+        "bounded_expansion_sources": expansion_sources,
+        "raw_answer_ready_score": float(audit["answer_ready_score"]),
+        "answer_ready_score_delta": round(float(ready_audit["answer_ready_score"]) - float(audit["answer_ready_score"]), 4),
+        "locator": normalized_locator,
+    }
+
+
+def select_pdf_expansion_candidates(
+    *,
+    candidates: list[dict[str, Any]],
+    target: Mapping[str, Any],
+    query: str,
+    max_chars: int,
+) -> list[dict[str, Any]]:
+    if not candidates:
+        return []
+    target_y = float(target.get("y0") or 0.0)
+    selected: list[dict[str, Any]] = []
+    for item in sorted(candidates, key=lambda entry: abs(float(entry.get("y0") or 0.0) - target_y)):
+        text = clean(item.get("normalized_snippet"))
+        if not text:
+            continue
+        if item is not target and not expansion_candidate_useful(text, query=query):
+            continue
+        selected.append(item)
+        ordered = sorted(selected, key=lambda entry: float(entry.get("y0") or 0.0))
+        if len(ordered) >= PDF_EXPANSION_MAX_LINES:
+            selected = ordered
+            break
+        if len(" ".join(unique_texts(clean(entry.get("normalized_snippet")) for entry in ordered))) >= max_chars:
+            selected = ordered
+            break
+    return sorted(selected, key=lambda entry: float(entry.get("y0") or 0.0))
+
+
+def expansion_candidate_useful(text: str, *, query: str) -> bool:
+    audit = pdf_evidence_readiness_audit(
+        raw_snippet=text,
+        normalized_snippet=text,
+        query=query,
+        locator={},
+        bounded_expansion_applied=False,
+    )
+    if audit["locator_only_flag"]:
+        return False
+    if audit["dot_leader_or_repeated_punctuation_ratio"] >= 0.25:
+        return False
+    if len(meaningful_tokens_ordered(text)) >= 3:
+        return True
+    return 6 <= len(clean(text)) <= 40 and not audit["table_form_like_flag"]
+
+
+def extract_pdf_same_page_window(
+    *,
+    locator: Mapping[str, Any],
+    query: str,
+    max_chars: int,
+) -> dict[str, Any]:
+    source_path = clean(locator.get("source_pdf_path") or locator.get("source_path"))
+    if not source_path:
+        return {}
+    pdf_path = Path(source_path)
+    if not pdf_path.exists():
+        return {}
+    page_index = int_or_none(locator.get("physical_page_index"))
+    if page_index is None:
+        page_number = int_or_none(locator.get("page"))
+        page_index = page_number - 1 if page_number and page_number > 0 else 0
+    target_bbox = parse_bbox_value(locator.get("bbox"))
+    try:
+        import fitz  # type: ignore
+
+        document = fitz.open(str(pdf_path))
+        try:
+            if page_index < 0 or page_index >= len(document):
+                return {}
+            page = document[page_index]
+            blocks = page.get_text("blocks", sort=True)
+        finally:
+            document.close()
+    except Exception:
+        return {}
+    candidates: list[dict[str, Any]] = []
+    for block_index, block in enumerate(blocks):
+        if len(block) < 5:
+            continue
+        text = normalize_pdf_evidence_snippet(clean(block[4]))
+        if not text:
+            continue
+        bbox = [float(block[0]), float(block[1]), float(block[2]), float(block[3])]
+        candidates.append(
+            {
+                "source_atom_id": "",
+                "search_view_id": "",
+                "locator_fingerprint": "",
+                "normalized_snippet": text,
+                "locator": {
+                    "source_pdf_path": source_path,
+                    "page": int_or_none(locator.get("page")),
+                    "physical_page_index": page_index,
+                    "bbox": bbox,
+                    "region_type": clean(locator.get("region_type")) or "text_block",
+                },
+                "bbox": bbox,
+                "y0": bbox[1],
+                "y1": bbox[3],
+                "block_index": block_index,
+            }
+        )
+    if not candidates:
+        return {}
+    target = nearest_block_by_bbox(candidates, target_bbox)
+    selected = select_pdf_expansion_candidates(
+        candidates=candidates,
+        target=target,
+        query=query,
+        max_chars=max_chars,
+    )
+    if not selected:
+        return {}
+    text = shorten(" ".join(unique_texts(clean(item.get("normalized_snippet")) for item in selected)), max_chars)
+    if not text:
+        return {}
+    return {
+        "text": text,
+        "sources": [
+            {
+                "source": "same_page_pdf_block_window",
+                "page": as_mapping(item.get("locator")).get("page"),
+                "physical_page_index": as_mapping(item.get("locator")).get("physical_page_index"),
+                "bbox": as_mapping(item.get("locator")).get("bbox"),
+                "block_index": item.get("block_index"),
+            }
+            for item in selected
+        ],
+    }
+
+
+def nearest_block_by_bbox(candidates: list[dict[str, Any]], target_bbox: list[float]) -> Mapping[str, Any]:
+    if not candidates:
+        return {}
+    if len(target_bbox) != 4:
+        return candidates[0]
+    target_y = (target_bbox[1] + target_bbox[3]) / 2.0
+    return min(
+        candidates,
+        key=lambda item: (
+            abs(((parse_bbox_value(item.get("bbox"))[1] + parse_bbox_value(item.get("bbox"))[3]) / 2.0) - target_y)
+            if parse_bbox_value(item.get("bbox"))
+            else 999999.0
+        ),
+    )
+
+
+def find_pdf_context_target(
+    row: Mapping[str, Any],
+    locator: Mapping[str, Any],
+    candidates: list[dict[str, Any]],
+) -> Mapping[str, Any]:
+    source_atom = clean(row.get("source_atom_id") or row.get("sourceAtomId"))
+    search_view = clean(row.get("search_view_id") or row.get("searchViewId"))
+    fingerprint = clean(row.get("locator_fingerprint"))
+    for item in candidates:
+        if source_atom and clean(item.get("source_atom_id")) == source_atom:
+            return item
+        if search_view and clean(item.get("search_view_id")) == search_view:
+            return item
+        if fingerprint and clean(item.get("locator_fingerprint")) == fingerprint:
+            return item
+    target_bbox = parse_bbox_value(locator.get("bbox"))
+    if target_bbox:
+        for item in candidates:
+            if parse_bbox_value(as_mapping(item.get("locator")).get("bbox")) == target_bbox:
+                return item
+    return candidates[0] if candidates else {}
+
+
+def pdf_evidence_readiness_audit(
+    *,
+    raw_snippet: str,
+    normalized_snippet: str,
+    query: str,
+    locator: Mapping[str, Any],
+    bounded_expansion_applied: bool,
+) -> dict[str, Any]:
+    raw = clean(raw_snippet)
+    normalized = clean(normalized_snippet)
+    tokens = meaningful_tokens_ordered(normalized)
+    dot_ratio = repeated_punctuation_ratio(raw)
+    density = text_density(normalized)
+    query_overlap = query_overlap_ratio(query, normalized)
+    normalized_locator = normalized_pdf_locator(locator)
+    page = first_present(normalized_locator, "page")
+    bbox = parse_bbox_value(normalized_locator.get("bbox"))
+    locator_only = locator_only_pdf_evidence(normalized, locator=normalized_locator) or (
+        dot_ratio >= 0.18 and bool(re.search(r"\b(page|p\.)\s*\d+|쪽\s*\d+|dart\.fss\.or\.kr", raw, flags=re.I))
+    )
+    table_form = table_or_form_like_pdf_evidence(normalized)
+    ocrish = ocr_ish_pdf_evidence(normalized)
+    weak = len(tokens) <= PDF_WEAK_TOKEN_THRESHOLD or len(normalized) <= PDF_WEAK_CHAR_THRESHOLD or dot_ratio >= 0.08
+    score = answer_ready_evidence_score(
+        char_length=len(normalized),
+        token_count=len(tokens),
+        query_overlap=query_overlap,
+        dot_ratio=dot_ratio,
+        text_density_value=density,
+        locator_only=locator_only,
+        table_form_like=table_form,
+        ocr_ish=ocrish,
+        page_present=page not in (None, ""),
+        bbox_present=bool(bbox),
+        bounded_expansion_applied=bounded_expansion_applied,
+    )
+    return {
+        "raw_snippet": raw,
+        "normalized_snippet": normalized,
+        "locator": normalized_locator,
+        "page": page,
+        "bbox": bbox,
+        "char_length": len(normalized),
+        "raw_char_length": len(raw),
+        "content_window_chars": len(normalized),
+        "content_window_tokens": len(tokens),
+        "query_overlap": query_overlap,
+        "dot_leader_or_repeated_punctuation_ratio": dot_ratio,
+        "text_density": density,
+        "locator_only_flag": locator_only,
+        "table_form_like_flag": table_form,
+        "ocr_ish_flag": ocrish,
+        "weak_snippet_flag": weak,
+        "bounded_expansion_applied": bool(bounded_expansion_applied),
+        "answer_ready_score": score,
+        "normalization_status": "changed" if raw != normalized else "unchanged",
+        "normalization_source": "structural_pdf_text_cleanup",
+        "pdf_evidence_readiness_status": "ready" if score >= 0.55 else "weak",
+    }
+
+
+def answer_ready_evidence_score(
+    *,
+    char_length: int,
+    token_count: int,
+    query_overlap: float,
+    dot_ratio: float,
+    text_density_value: float,
+    locator_only: bool,
+    table_form_like: bool,
+    ocr_ish: bool,
+    page_present: bool,
+    bbox_present: bool,
+    bounded_expansion_applied: bool,
+) -> float:
+    score = 0.15
+    score += min(0.22, token_count / 20.0 * 0.22)
+    score += min(0.2, char_length / 240.0 * 0.2)
+    score += min(0.2, query_overlap * 0.2)
+    score += min(0.12, text_density_value * 0.12)
+    if page_present:
+        score += 0.04
+    if bbox_present:
+        score += 0.04
+    if bounded_expansion_applied:
+        score += 0.08
+    score -= min(0.28, dot_ratio * 0.9)
+    if char_length <= PDF_WEAK_CHAR_THRESHOLD:
+        score -= 0.08
+    if token_count <= PDF_WEAK_TOKEN_THRESHOLD:
+        score -= 0.08
+    if locator_only:
+        score -= 0.22
+    if table_form_like:
+        score -= 0.08
+    if ocr_ish:
+        score -= 0.06
+    return round(max(0.0, min(1.0, score)), 4)
+
+
+def pdf_evidence_readiness_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
+    if not rows:
+        return {
+            "pdf_case_count": 0,
+            "bounded_expansion_applied_count": 0,
+            "avg_raw_answer_ready_score": 0.0,
+            "avg_expanded_answer_ready_score": 0.0,
+            "avg_answer_ready_score_delta": 0.0,
+        }
+    return {
+        "pdf_case_count": len(rows),
+        "bounded_expansion_applied_count": sum(bool(row.get("bounded_expansion_applied")) for row in rows),
+        "weak_snippet_count": sum(bool(row.get("weak_snippet_flag")) for row in rows),
+        "locator_only_count": sum(bool(row.get("locator_only_flag")) for row in rows),
+        "table_form_like_count": sum(bool(row.get("table_form_like_flag")) for row in rows),
+        "ocr_ish_count": sum(bool(row.get("ocr_ish_flag")) for row in rows),
+        "dot_heavy_count": sum(float(row.get("dot_leader_or_repeated_punctuation_ratio") or 0.0) >= 0.08 for row in rows),
+        "avg_raw_answer_ready_score": round(
+            sum(float(row.get("raw_answer_ready_score") or 0.0) for row in rows) / len(rows),
+            4,
+        ),
+        "avg_expanded_answer_ready_score": round(
+            sum(float(row.get("answer_ready_score") or 0.0) for row in rows) / len(rows),
+            4,
+        ),
+        "avg_answer_ready_score_delta": round(
+            sum(float(row.get("answer_ready_score_delta") or 0.0) for row in rows) / len(rows),
+            4,
+        ),
+        "raw_vs_normalized_expanded_split": {
+            "raw_final_prompt_mode": "final_locator_context",
+            "normalized_expanded_prompt_mode": "answer_ready_context",
+            "xlsx_context_changed": False,
+        },
+        "retrieval_miss_assessment": "not_recomputed_preselected_sourceatom_evidence_only",
+    }
+
+
+def evidence_text_for_prompt_mode(
+    *,
+    case: EvidenceCase,
+    prompt_mode: str,
+    evidence_profile: Mapping[str, Any],
+) -> str:
+    if prompt_mode == "answer_ready_context" and case.family == "PDF":
+        return clean(evidence_profile.get("answer_ready_snippet")) or case.evidence_text
+    return case.evidence_text
+
+
+def evidence_variant_for_prompt_mode(*, case: EvidenceCase, prompt_mode: str) -> str:
+    if prompt_mode == "answer_ready_context" and case.family == "PDF":
+        return "answer_ready"
+    return "raw"
+
+
+def pdf_context_key(row: Mapping[str, Any], locator: Mapping[str, Any]) -> tuple[str, str, str]:
+    doc = clean(
+        row.get("document_version_id")
+        or row.get("documentVersionId")
+        or locator.get("document_version_id")
+        or locator.get("source_pdf_path")
+        or locator.get("source_path")
+    )
+    page = clean(locator.get("page"))
+    source_path = clean(locator.get("source_pdf_path") or locator.get("source_path"))
+    return (doc, page, source_path)
+
+
+def parse_bbox_value(value: object) -> list[float]:
+    if isinstance(value, list):
+        parsed = value
+    elif isinstance(value, str) and value.strip().startswith("["):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return []
+    else:
+        return []
+    if len(parsed) != 4:
+        return []
+    try:
+        return [float(item) for item in parsed]
+    except (TypeError, ValueError):
+        return []
+
+
+def normalized_pdf_locator(locator: Mapping[str, Any]) -> dict[str, Any]:
+    normalized = dict(locator)
+    for key in ("page", "physical_page_index"):
+        if key in normalized:
+            parsed = int_or_none(normalized.get(key))
+            if parsed is not None:
+                normalized[key] = parsed
+    if "bbox" in normalized:
+        bbox = parse_bbox_value(normalized.get("bbox"))
+        if bbox:
+            normalized["bbox"] = bbox
+    return normalized
+
+
+def int_or_none(value: object) -> int | None:
+    try:
+        if value in (None, ""):
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def repeated_punctuation_ratio(text: str) -> float:
+    raw = clean(text)
+    if not raw:
+        return 0.0
+    repeated = 0
+    for match in re.finditer(r"[\.\u00b7\u2027;:,_=\-]{4,}", raw):
+        repeated += len(match.group(0))
+    return round(repeated / len(raw), 4)
+
+
+def text_density(text: str) -> float:
+    value = clean(text)
+    if not value:
+        return 0.0
+    content_chars = len(re.findall(r"[0-9A-Za-z가-힣一-龥ぁ-ゟァ-ヿ]", value))
+    return round(content_chars / len(value), 4)
+
+
+def query_overlap_ratio(query: str, text: str) -> float:
+    query_tokens = set(meaningful_tokens_ordered(query))
+    if not query_tokens:
+        return 0.0
+    text_tokens = set(meaningful_tokens_ordered(text))
+    return round(len(query_tokens & text_tokens) / len(query_tokens), 4)
+
+
+def locator_only_pdf_evidence(text: str, *, locator: Mapping[str, Any]) -> bool:
+    value = clean(text)
+    tokens = meaningful_tokens_ordered(value)
+    if not value:
+        return True
+    locator_markers = bool(re.search(r"\b(page|p\.)\s*\d+|쪽\s*\d+|dart\.fss\.or\.kr", value, flags=re.I))
+    if repeated_punctuation_ratio(value) >= 0.18 and locator_markers:
+        return True
+    if locator_markers and len(tokens) <= 5:
+        return True
+    locator_values = [
+        clean(locator.get(key))
+        for key in ("source_pdf_path", "source_path", "page", "physical_page_index")
+    ]
+    locator_values = [item for item in locator_values if item]
+    if locator_values and any(item in value for item in locator_values) and len(tokens) <= 5:
+        return True
+    return False
+
+
+def table_or_form_like_pdf_evidence(text: str) -> bool:
+    value = clean(text)
+    return (
+        repeated_punctuation_ratio(value) >= 0.08
+        or value.count("|") >= 2
+        or bool(re.search(r"\b[A-Z]{1,3}\d+\b", value))
+        or len(re.findall(r"[□■○●▶▷▣]", value)) >= 2
+        or len(re.findall(r"\s{2,}", text)) >= 3
+    )
+
+
+def ocr_ish_pdf_evidence(text: str) -> bool:
+    value = clean(text)
+    spaced_hangul_pairs = len(re.findall(r"[가-힣]\s+[가-힣]", value))
+    compact_hangul_runs = re.findall(r"[가-힣]{24,}", value)
+    broken_ascii_runs = len(re.findall(r"[A-Za-z]\s+[A-Za-z]\s+[A-Za-z]", value))
+    return spaced_hangul_pairs >= 3 or bool(compact_hangul_runs) or broken_ascii_runs >= 1
+
+
+def first_present(payload: Mapping[str, Any], *keys: str) -> Any:
+    for key in keys:
+        value = payload.get(key)
+        if value not in (None, "", [], {}):
+            return value
+    return None
+
+
+def unique_texts(values: Iterable[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        text = clean(value)
+        if not text:
+            continue
+        if text in seen:
+            continue
+        seen.add(text)
+        result.append(text)
+    return result
 
 
 def strip_leading_locator_metadata(text: str) -> str:
@@ -796,6 +1557,7 @@ def build_prompt(
     query: str,
     *,
     prompt_mode: str,
+    evidence_text: str | None = None,
 ) -> tuple[str, str]:
     system = (
         _SYSTEM_PROMPT
@@ -806,8 +1568,8 @@ def build_prompt(
         "string. Use compact locators such as `page=1; bbox=[...]` or "
         "`sheet=Sheet1; cell=A1`; do not copy full absolute paths into the JSON."
     )
-    chunk = case_to_chunk(case)
-    if prompt_mode == "final_locator_context":
+    chunk = case_to_chunk(case, evidence_text=evidence_text)
+    if prompt_mode in {"final_locator_context", "answer_ready_context"}:
         user = _build_user_message(query, [chunk])
     elif prompt_mode == "baseline_legacy_context":
         user = build_legacy_user_message(query, [chunk])
@@ -831,7 +1593,7 @@ def build_legacy_user_message(query: str, chunks: list[RetrievedChunk]) -> str:
     return "\n".join(lines)
 
 
-def score_response(case: EvidenceCase, raw_response: str) -> dict[str, Any]:
+def score_response(case: EvidenceCase, raw_response: str, *, evidence_text: str | None = None) -> dict[str, Any]:
     parsed, parse_ok = parse_json_response(raw_response)
     answer = clean(parsed.get("answer")) if parse_ok else clean(raw_response)
     citations = parsed.get("citations") if parse_ok else []
@@ -839,8 +1601,9 @@ def score_response(case: EvidenceCase, raw_response: str) -> dict[str, Any]:
     locator_text = citation_locator_text(citations)
     expected_value = clean(case.locator.get("normalized_value"))
     value_supported = normalized_value_supported(expected_value, answer)
-    text_supported = evidence_token_overlap(answer, case.evidence_text) >= 2
-    locator_only = is_locator_only_answer(case, answer)
+    scoring_evidence = clean(evidence_text) or case.evidence_text
+    text_supported = evidence_token_overlap(answer, scoring_evidence) >= 2
+    locator_only = is_locator_only_answer(case, answer, evidence_text=scoring_evidence)
     answer_present = bool(answer) and not clean(parsed.get("abstain_reason"))
 
     failure_types: list[str] = []
@@ -898,10 +1661,13 @@ def answer_quality_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
         }
     baseline = summary.get("baseline_legacy_context", {})
     final = summary.get("final_locator_context", {})
+    answer_ready = summary.get("answer_ready_context", final)
     delta_by_family = {}
+    answer_ready_delta_by_family = {}
     for family in ("PDF", "XLSX"):
         family_baseline = summary.get(f"baseline_legacy_context::{family}", {})
         family_final = summary.get(f"final_locator_context::{family}", {})
+        family_answer_ready = summary.get(f"answer_ready_context::{family}", family_final)
         delta_by_family[family] = {
             "quality_pass": int(family_final.get("quality_pass") or 0)
             - int(family_baseline.get("quality_pass") or 0),
@@ -913,7 +1679,19 @@ def answer_quality_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
             "citation_valid": int(family_final.get("citation_valid") or 0)
             - int(family_baseline.get("citation_valid") or 0),
         }
+        answer_ready_delta_by_family[family] = {
+            "quality_pass": int(family_answer_ready.get("quality_pass") or 0)
+            - int(family_final.get("quality_pass") or 0),
+            "quality_pass_rate": round(
+                float(family_answer_ready.get("quality_pass_rate") or 0.0)
+                - float(family_final.get("quality_pass_rate") or 0.0),
+                4,
+            ),
+            "citation_valid": int(family_answer_ready.get("citation_valid") or 0)
+            - int(family_final.get("citation_valid") or 0),
+        }
     summary["delta_by_family_final_minus_baseline"] = delta_by_family
+    summary["delta_by_family_answer_ready_minus_raw_final"] = answer_ready_delta_by_family
     summary["delta_final_minus_baseline"] = {
         "diagnostic_aggregate_only": True,
         "quality_pass": int(final.get("quality_pass") or 0) - int(baseline.get("quality_pass") or 0),
@@ -923,6 +1701,16 @@ def answer_quality_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
             4,
         ),
         "citation_valid": int(final.get("citation_valid") or 0) - int(baseline.get("citation_valid") or 0),
+    }
+    summary["delta_answer_ready_minus_raw_final"] = {
+        "diagnostic_aggregate_only": True,
+        "quality_pass": int(answer_ready.get("quality_pass") or 0) - int(final.get("quality_pass") or 0),
+        "quality_pass_rate": round(
+            float(answer_ready.get("quality_pass_rate") or 0.0)
+            - float(final.get("quality_pass_rate") or 0.0),
+            4,
+        ),
+        "citation_valid": int(answer_ready.get("citation_valid") or 0) - int(final.get("citation_valid") or 0),
     }
     return summary
 
@@ -986,8 +1774,10 @@ def sample_rows(rows: list[Mapping[str, Any]], *, limit: int) -> list[dict[str, 
     keys = [
         ("PDF", "baseline_legacy_context"),
         ("PDF", "final_locator_context"),
+        ("PDF", "answer_ready_context"),
         ("XLSX", "baseline_legacy_context"),
         ("XLSX", "final_locator_context"),
+        ("XLSX", "answer_ready_context"),
     ]
     for offset in range(max((len(items) for items in grouped.values()), default=0)):
         for key in keys:
@@ -1016,7 +1806,7 @@ def sample_rows(rows: list[Mapping[str, Any]], *, limit: int) -> list[dict[str, 
     return samples
 
 
-def case_to_chunk(case: EvidenceCase) -> RetrievedChunk:
+def case_to_chunk(case: EvidenceCase, *, evidence_text: str | None = None) -> RetrievedChunk:
     metadata = {
         "source_atom_hydrated_from_registry": True,
         "source_family": case.family,
@@ -1028,7 +1818,7 @@ def case_to_chunk(case: EvidenceCase) -> RetrievedChunk:
         chunk_id=case.source_atom_id or case.case_id,
         doc_id=case.doc_id,
         section=case.section,
-        text=case.evidence_text,
+        text=clean(evidence_text) or case.evidence_text,
         score=0.9,
         search_unit_id=clean(case.locator.get("search_unit_id")),
         metadata_json=metadata,
@@ -1111,7 +1901,7 @@ def citation_locator_text(citations: object) -> str:
     return " ".join(parts)
 
 
-def is_locator_only_answer(case: EvidenceCase, answer: str) -> bool:
+def is_locator_only_answer(case: EvidenceCase, answer: str, *, evidence_text: str | None = None) -> bool:
     normalized = clean(answer)
     if not normalized:
         return False
@@ -1123,7 +1913,8 @@ def is_locator_only_answer(case: EvidenceCase, answer: str) -> bool:
         for key in ("sheet", "cell", "range", "page", "source_pdf_path", "workbook")
     ]
     locator_values = [value for value in locator_values if value]
-    return any(value in normalized for value in locator_values) and evidence_token_overlap(normalized, case.evidence_text) < 2
+    scoring_evidence = clean(evidence_text) or case.evidence_text
+    return any(value in normalized for value in locator_values) and evidence_token_overlap(normalized, scoring_evidence) < 2
 
 
 def locator_mentions(locator_text: str, locator: Mapping[str, Any], keys: tuple[str, ...]) -> bool:
@@ -1433,6 +2224,13 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        for row in rows:
+            handle.write(json.dumps(dict(row), ensure_ascii=False, sort_keys=True) + "\n")
+
+
 def policy_flags() -> dict[str, Any]:
     return {
         "diagnostic_only": True,
@@ -1447,6 +2245,7 @@ def policy_flags() -> dict[str, Any]:
         "denominator_mutation": False,
         "gold_or_label_mutation": False,
         "expected_answer_or_supporting_evidence_used": False,
+        "official_metric_input_rows": 0,
     }
 
 

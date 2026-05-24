@@ -1,6 +1,6 @@
 # RAG Ingestion Progress
 
-Last updated: 2026-05-22 KST.
+Last updated: 2026-05-24 KST.
 
 This is the compact status index for the current RAG ingestion and official
 answer/citation metric work. Do not append turn transcripts or create new
@@ -23,6 +23,8 @@ for behavior-changing runs or explicit forensic evidence requirements.
 ## Current Status
 
 Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;
+supplemental PDF/XLSX answer-quality review status: `pdf_xlsx_answer_quality_evidence_readiness_packet_ready`;
+query fidelity packet status: `pdf_xlsx_answer_quality_query_fidelity_packet_ready`;
 portfolio freeze status: `portfolio_ready_freeze_v1_completed`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied. The v3_2
@@ -44,6 +46,66 @@ with the local `gemma4-e2b-local` endpoint: PASS=27/29, PDF=4/4, XLSX=19/19,
 TEXT=4/6, real LLM invoked for six TEXT rows. Promotion readiness remains
 closed; threshold tuning and winner selection also remain closed.
 
+<!-- pdf_xlsx_query_fidelity_packet_20260524:progress-entry:start -->
+- 2026-05-24 PDF/XLSX answer-quality query fidelity packet completed as a
+  diagnostic-only addendum over `answer_ready_pdf_v1_llm_15pf`. It keeps the
+  raw diagnostic counts visible (`raw_final=19/30`, `answer_ready=23/30`,
+  PDF 5/15 -> 8/15, XLSX 14/15 -> 15/15) but marks those prior aggregates
+  query-fidelity-unverified until the packet's seed/query classification is
+  reviewed. Structural query audit rows=30: headline-included 16, excluded 14
+  (PDF major topic drift 2 plus unapproved index-to-content 1; XLSX
+  unapproved index-to-content 11). In the headline-included subset, raw final
+  is 9/16 and answer-ready is 11/16; PDF is 5/12 -> 7/12 and XLSX is 4/4 ->
+  4/4. The PDF delta audit records 15 cases: raw_fail_to_ready_pass=4,
+  raw_fail_to_ready_fail_same_failure=5, raw_fail_to_ready_fail_changed_failure=1,
+  raw_pass_to_ready_pass=4, and raw_pass_to_ready_fail_regression=1. Cross-run
+  prior-final comparison is mostly non-comparable because 14/15 PDF queries
+  changed across runs. The PDF residual review is now answer-ready scoped:
+  seven failing PDF cases plus one
+  query-drift review-only pass row, with weak evidence=7, dot/OCR artifact=8,
+  locator-only=5, broad context=3, evaluator limitation=7, query drift=3, and
+  true answer failure=0. OCR was not touched: the current evidence says the
+  next review bottlenecks are query drift, weak/locator-like windows, and
+  evaluator overlap limits, not OCR extraction failure. New artifacts are
+  `pdf_delta_audit.jsonl`, `query_fidelity_audit.jsonl`,
+  `pdf_residual_review.csv`, and `pdf_residual_review.md` under
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/`.
+  `official_metric_input_rows=0`; user decision columns, including query
+  approval fields, remain blank; no gold/qrels/labels/expected
+  answers/supporting evidence, denominator policy, namespace, DB, production,
+  promotion, threshold, or winner surface was mutated.
+<!-- pdf_xlsx_query_fidelity_packet_20260524:progress-entry:end -->
+
+<!-- pdf_xlsx_answer_ready_evidence_20260522:progress-entry:start -->
+- 2026-05-22 PDF answer-ready evidence shaping completed as a diagnostic-only
+  supplement over the existing PDF/XLSX quality slice. The new quality run
+  `pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf` adds a PDF evidence
+  readiness audit and a third prompt mode, `answer_ready_context`, while
+  preserving raw `final_locator_context` rows for raw-vs-shaped comparison.
+  PDF raw final answer quality improved from 5/15 to answer-ready 8/15; XLSX
+  moved from 14/15 to 15/15 while the evidence text stayed unchanged because
+  the answer-ready path does not rewrite XLSX evidence. Aggregate
+  diagnostic-only quality moved 19/30 -> 23/30 (+4). The audit covers 15 PDF
+  diagnostic cases: bounded expansion applied 11/15, weak snippets 11/15,
+  dot-heavy snippets 11/15, locator-only flags 4/15, OCR-ish flags 11/15,
+  table/form-like flags 0/15, average raw score 0.1152, average expanded score
+  0.3938, average answer-ready score delta +0.2786.
+  Retrieval miss was not recomputed for this packet; the recorded value is
+  `not_recomputed_preselected_sourceatom_evidence_only`, so this remains an
+  answer-ready evidence shaping result, not a retrieval/gold review result.
+  Example shaped evidence keeps the original page/bbox/source locator and
+  expands a same-page `text_block` from the raw heading
+  "산림청 정책연구용역 관리규정..." into nearby same-page form text including
+  "정책연구용역과제심의신청서" and "정책연구과제명". The review packet is
+  `pdf_xlsx_answer_quality_evidence_readiness_packet_answer_ready_pdf_v1_llm_15pf`
+  with artifacts under
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/`.
+  `official_metric_input_rows=0`; gold, qrels, labels, expected answers,
+  supporting evidence, official denominator policy, namespaces, DB state,
+  production surfaces, promotion policy, threshold tuning, and winner selection
+  were not mutated.
+<!-- pdf_xlsx_answer_ready_evidence_20260522:progress-entry:end -->
+
 <!-- pdf_xlsx_perf_and_llm_quality_20260522:progress-entry:start -->
 - 2026-05-22 PDF/XLSX performance and LLM answer-quality slice completed with
   diagnostic-only artifacts. Performance hot-path fixes are bounded to PDF
@@ -62,6 +124,16 @@ closed; threshold tuning and winner selection also remain closed.
   diagnostic-only and explicitly non-promotional. The summary artifact includes
   30 balanced sampled query/actual-response rows:
   `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_summary.json`.
+  Gold-review preparation is now packaged separately under
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/`
+  with `review_packet.csv`, `review_packet.jsonl`, `summary.md`, and
+  `manifest.json`. Review packet rows=30 (PDF=15, XLSX=15); all user decision
+  columns are blank, `official_metric_input_rows=0`, and the future scored
+  adapter disabled status is `DISABLED_PENDING_USER_APPROVAL`. PDF residuals
+  remain 9 cases with diagnostic routing counts:
+  retrieval_miss=0, weak_snippet=9, ocr_ish_text=1,
+  locator_only_evidence=8, table_form_formatting=8,
+  semantic_answer_mismatch=9, evaluator_overlap_limitation=9.
   No gold/qrels/labels/expected answers/supporting evidence, denominator,
   production namespace, DB, or promotion policy was mutated.
 <!-- pdf_xlsx_perf_and_llm_quality_20260522:progress-entry:end -->
@@ -481,10 +553,9 @@ python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_
 ```
 
 Current verification: local results recorded in this progress log. Latest full
-current-profile evidence before the v3_8 artifact-freeze additions was
-`python -X utf8 -m pytest ai/tests --rag-current -q` -> 276 passed, 0 skipped,
-0 failed, 1 warning. The v3_8 slice adds targeted artifact/status/hash/guardrail
-checks; refresh the full current-profile count only after rerunning it.
+current-profile evidence after the PDF query-fidelity packet refresh was
+`python -m pytest ai/tests --rag-current -q` -> 351 passed, 0 skipped, 0 failed,
+8 warnings. Targeted packet/status/source-bound/anti-shortcut checks also pass.
 
 Current test surface is intentionally compact after legacy test deletion:
 `python -X utf8 -m pytest ai/tests --rag-current -q`; full `ai/tests`

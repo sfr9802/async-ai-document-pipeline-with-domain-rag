@@ -1,6 +1,6 @@
 # RAG Ingestion Triage
 
-Last updated: 2026-05-22 KST.
+Last updated: 2026-05-24 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of
@@ -21,6 +21,75 @@ The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
 
+## 2026-05-24 - PDF Query Fidelity And Residual Review Note
+
+This addendum keeps the PDF answer-ready evidence work diagnostic-only while
+separating query drift from evidence-window quality. It creates no gold,
+qrels, expected-answer, supporting-evidence, denominator, namespace, DB,
+production, promotion, threshold, or winner mutation. The status event is
+`pdf_xlsx_answer_quality_query_fidelity_packet_answer_ready_pdf_v1_llm_15pf`.
+
+- The prior all-row diagnostic counts remain visible but are marked
+  query-fidelity-unverified: raw final 19/30, answer-ready 23/30, PDF 5/15 ->
+  8/15, XLSX 14/15 -> 15/15.
+- Structural query audit rows=30. Headline-included rows=16; excluded rows=14.
+  PDF has 12 included and 3 excluded rows (two major-topic-drift, one
+  unapproved index-to-content). XLSX has 4 included and 11 excluded unapproved
+  index-to-content rows.
+- Headline-included subset: raw final 9/16 -> answer-ready 11/16. PDF subset
+  is 5/12 -> 7/12; XLSX subset remains 4/4 -> 4/4.
+- PDF delta audit rows=15: raw_fail_to_ready_pass=4,
+  raw_fail_to_ready_fail_same_failure=5,
+  raw_fail_to_ready_fail_changed_failure=1, raw_pass_to_ready_pass=4, and
+  raw_pass_to_ready_fail_regression=1. Prior-run comparison records 14/15 PDF
+  rows as non-comparable because the query changed across runs.
+- Answer-ready PDF residual review rows=8: the seven current answer-ready PDF
+  failures (`pdf-005`, `pdf-007`, `pdf-008`, `pdf-010`, `pdf-011`, `pdf-012`,
+  `pdf-015`) plus `pdf-013` as a
+  query-drift review-only pass row. Bucket counts: weak_evidence=7,
+  dot_or_ocr_artifact=8, broad_context=3, locator_only=5, table_form=0,
+  query_drift=3, evaluator_limitation=7, true_answer_failure=0.
+- OCR remains skipped. OCR-ish text is still measured, but the residual pattern
+  points first to query drift, weak/locator-like evidence windows, and evaluator
+  overlap limits. Revisit OCR only after scanned/image-only PDFs prove native
+  text is absent or unusable and OCR would materially change evidence.
+- Remaining user-owned decisions are answerable, relevance, expected answer,
+  supporting evidence, pass/fail, denominator eligibility, policy note, review
+  approval, query intent preservation, query approval, and query policy note.
+- The future official-adjacent adapter is still disabled. Even user-approved
+  rows cannot create scored inputs in this packet; unapproved drift rows are
+  blocked from the approved-only preview.
+
+## 2026-05-22 - PDF Answer-Ready Evidence Readiness Triage Note
+
+This slice treats poor PDF answer quality as evidence shaping, not as gold
+review. It creates no user-owned gold decision and no official metric input.
+The status event is
+`pdf_xlsx_answer_quality_evidence_readiness_packet_answer_ready_pdf_v1_llm_15pf`.
+
+- PDF raw final answer quality improved 5/15 -> 8/15 after diagnostic
+  normalization and bounded same-page expansion; XLSX moved 14/15 -> 15/15
+  while its evidence text stayed unchanged by the answer-ready path. Aggregate
+  diagnostic-only quality moved 19/30 -> 23/30 (+4).
+- PDF evidence-readiness audit counts: bounded expansion 11/15, weak snippets
+  11/15, dot-heavy snippets 11/15, locator-only flags 4/15, OCR-ish flags
+  11/15, table/form-like flags 0/15, average raw score 0.1152, average
+  expanded score 0.3938, average answer-ready score delta +0.2786.
+- Retrieval miss was not recomputed here. The packet summary/status records
+  `not_recomputed_preselected_sourceatom_evidence_only`, so `retrieval_miss=0`
+  in the review taxonomy remains a routing note over preselected evidence, not
+  a new retrieval recall claim.
+- Bounded expansion keeps original page/bbox/source locator metadata and
+  exposes raw, normalized, and answer-ready evidence in artifacts. It is capped
+  by same-page lines/chars and avoids full-page dumping.
+- Remaining user-owned gold/policy decisions are answerable, relevance,
+  expected answer, supporting evidence, pass/fail, denominator eligibility,
+  policy note, and review approval.
+- No official metric input rows are created; gold/qrels/labels/expected
+  answers/supporting evidence, official denominator policy, namespace
+  isolation, production state, promotion policy, threshold tuning, and winner
+  selection remain unchanged.
+
 ## 2026-05-22 - PDF/XLSX Performance And LLM Quality Triage Note
 
 This slice opened no user-owned gold decision. All decisions stayed
@@ -40,6 +109,16 @@ diagnostic-only and non-promotional:
   `pdf_locator_missing=1`) remain diagnostic answer-renderer/scoring residuals,
   not a request to change expected answers, supporting evidence, relevance,
   answerability, qrels, or gold policy.
+- Gold-review packet preparation
+  (`pdf_xlsx_answer_quality_gold_review_packet_final_llm_rewrite_all_llm_15pf_v3`)
+  packages the 30 cases in
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/review_packet.csv`.
+  No official metric input rows are created; all user-owned fields remain
+  blank. The remaining human-owned decisions are answerable, relevance, expected answer, supporting evidence, pass/fail, denominator eligibility, and policy note.
+- PDF residual routing is review-only: retrieval_miss=0, weak_snippet=9,
+  ocr_ish_text=1, locator_only_evidence=8, table_form_formatting=8,
+  semantic_answer_mismatch=9, evaluator_overlap_limitation=9. These buckets
+  organize review and do not decide gold pass/fail.
 
 ## 2026-05-22 - Performance Optimization Triage Note
 

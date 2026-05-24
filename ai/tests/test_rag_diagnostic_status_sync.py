@@ -64,6 +64,16 @@ def require_v3_8_3_local_artifacts(*paths: Path) -> None:
     pytest.skip(message)
 
 
+def require_pdf_xlsx_answer_quality_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing PDF/XLSX answer-quality local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_PDF_XLSX_ANSWER_QUALITY_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
 def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unavailable():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = text.split("## Short History", 1)[0]
@@ -2499,3 +2509,202 @@ def test_progress_status_and_triage_gate_record_v3_8_3_xlsx_scoped_cell_resolve_
     measurement_row = measurements.split(run_id, 1)[1].split("| v3_1 all-track foundation |", 1)[0]
     assert "per-query" not in measurement_row.lower()
     assert run_id not in triage
+
+
+def test_progress_measurements_triage_and_status_record_pdf_xlsx_quality_review_packet_without_promotion():
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "pdf_xlsx_answer_quality_gold_review_packet_final_llm_rewrite_all_llm_15pf_v3"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "pdf_xlsx_answer_quality_gold_review_packet"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "PDF_XLSX_ANSWER_QUALITY_GOLD_REVIEW_PACKET_READY"
+    assert event["source_run_label"] == "final_llm_rewrite_all_llm_15pf_v3"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["namespace_mutation"] is False
+    assert event["review_packet_row_count"] == 30
+    assert event["source_family_counts"] == {"PDF": 15, "XLSX": 15}
+    assert event["baseline_quality_pass_counts"] == {"PDF": 0, "XLSX": 0}
+    assert event["final_quality_pass_counts"] == {"PDF": 6, "XLSX": 15}
+    assert event["aggregate_diagnostic_only"] == "21/30"
+    assert event["pdf_residual_count"] == 9
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["user_decision_columns_blank"] is True
+    for artifact_key in ("manifest_json", "review_csv", "review_jsonl", "summary_md"):
+        assert artifact_key in event["artifact_paths"]
+
+    packet_dir = "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3"
+    assert packet_dir in current_text
+    assert "Review packet rows=30" in current_flat
+    assert "future scored adapter disabled" in current_flat
+    assert run_id in measurements
+    assert "PDF residual review taxonomy" in measurements
+    assert "User-owned decisions needed next" in measurements
+    assert run_id in triage
+    assert "answerable, relevance, expected answer, supporting evidence, pass/fail, denominator eligibility, and policy note" in triage
+    assert "No official metric input rows are created" in triage
+
+
+def test_progress_measurements_triage_and_status_record_pdf_answer_ready_evidence_without_promotion():
+    require_pdf_xlsx_answer_quality_local_artifacts(STATUS_JSONL)
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "pdf_xlsx_answer_quality_evidence_readiness_packet_answer_ready_pdf_v1_llm_15pf"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "pdf_xlsx_answer_quality_evidence_readiness_packet"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "PDF_XLSX_ANSWER_QUALITY_EVIDENCE_READINESS_PACKET_READY"
+    assert event["source_run_label"] == "answer_ready_pdf_v1_llm_15pf"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["namespace_mutation"] is False
+    assert event["review_packet_row_count"] == 30
+    assert event["source_family_counts"] == {"PDF": 15, "XLSX": 15}
+    assert event["final_quality_pass_counts"] == {"PDF": 5, "XLSX": 14}
+    assert event["answer_ready_quality_pass_counts"] == {"PDF": 8, "XLSX": 15}
+    assert event["aggregate_raw_final_diagnostic_only"] == "19/30"
+    assert event["aggregate_answer_ready_diagnostic_only"] == "23/30"
+    assert event["pdf_quality_delta_answer_ready_minus_raw_final"] == 3
+    assert event["aggregate_quality_delta_answer_ready_minus_raw_final"] == 4
+    readiness = event["pdf_evidence_readiness_summary"]
+    assert readiness["avg_raw_answer_ready_score"] == 0.1152
+    assert readiness["avg_expanded_answer_ready_score"] == 0.3938
+    assert readiness["avg_answer_ready_score_delta"] == 0.2786
+    assert readiness["bounded_expansion_applied_count"] == 11
+    assert readiness["weak_snippet_count"] == 11
+    assert readiness["dot_heavy_count"] == 11
+    assert readiness["locator_only_count"] == 4
+    assert readiness["ocr_ish_count"] == 11
+    assert readiness["table_form_like_count"] == 0
+    assert readiness["xlsx_context_changed"] is False
+    assert readiness["retrieval_miss_assessment"] == "not_recomputed_preselected_sourceatom_evidence_only"
+    for artifact_key in (
+        "manifest_json",
+        "review_csv",
+        "review_jsonl",
+        "summary_md",
+        "source_summary_json",
+        "source_responses_jsonl",
+        "pdf_evidence_readiness_audit_jsonl",
+    ):
+        assert artifact_key in event["artifact_paths"]
+
+    packet_dir = "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf"
+    assert "pdf_xlsx_answer_quality_evidence_readiness_packet_ready" in current_text
+    assert packet_dir in current_text
+    assert "PDF raw final answer quality improved from 5/15 to answer-ready 8/15" in current_flat
+    assert "Aggregate diagnostic-only quality moved 19/30 -> 23/30 (+4)" in current_flat
+    assert "bounded expansion applied 11/15" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert run_id in measurements
+    assert "PDF Evidence Readiness" in measurements
+    assert "| XLSX | 14/15 | 15/15 | +1 |" in measurements
+    assert "`not_recomputed_preselected_sourceatom_evidence_only`" in measurements
+    assert run_id in triage
+    assert "packet summary/status records" in triage
+    assert "Remaining user-owned gold/policy decisions" in triage
+    assert "No official metric input rows are created" in triage
+
+
+def test_progress_measurements_triage_and_status_record_pdf_query_fidelity_packet_without_promotion():
+    require_pdf_xlsx_answer_quality_local_artifacts(STATUS_JSONL)
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "pdf_xlsx_answer_quality_query_fidelity_packet_answer_ready_pdf_v1_llm_15pf"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "pdf_xlsx_answer_quality_query_fidelity_packet"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "PDF_XLSX_ANSWER_QUALITY_QUERY_FIDELITY_PACKET_READY"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["namespace_mutation"] is False
+    assert event["aggregate_raw_final_diagnostic_only"] == "19/30"
+    assert event["aggregate_answer_ready_diagnostic_only"] == "23/30"
+    assert event["query_fidelity_summary"]["rows"] == 30
+    assert event["query_fidelity_summary"]["headline_included"] == 16
+    assert event["query_fidelity_summary"]["excluded"] == 14
+    assert event["query_fidelity_summary"]["by_family"]["PDF"]["excluded"] == 3
+    assert event["query_fidelity_summary"]["by_family"]["XLSX"]["excluded"] == 11
+    assert event["headline_quality_counts"]["query_fidelity_subset"]["rows"] == 16
+    assert event["headline_quality_counts"]["query_fidelity_subset"]["answer_ready_pass"] == 11
+    assert event["headline_quality_counts"]["query_fidelity_subset"]["by_family"]["PDF"]["answer_ready_pass"] == 7
+    assert event["headline_quality_counts"]["query_fidelity_subset"]["by_family"]["XLSX"]["answer_ready_pass"] == 4
+    assert event["pdf_delta_audit_summary"]["pdf_case_count"] == 15
+    assert event["pdf_delta_audit_summary"]["delta_bucket_counts"]["raw_fail_to_ready_pass"] == 4
+    assert event["pdf_residual_review_summary"]["rows"] == 8
+    assert event["pdf_residual_review_summary"]["bucket_counts"]["true_answer_failure"] == 0
+    assert event["ocr_rationale"]["decision"] == "skipped"
+    assert event["user_decision_columns_blank"] is True
+    assert "query_approval" in event["user_owned_decisions_needed"]
+    for artifact_key in (
+        "manifest_json",
+        "review_csv",
+        "review_jsonl",
+        "summary_md",
+        "pdf_delta_audit_jsonl",
+        "query_fidelity_audit_jsonl",
+        "pdf_residual_review_csv",
+        "pdf_residual_review_md",
+    ):
+        assert artifact_key in event["artifact_paths"]
+
+    assert "pdf_xlsx_answer_quality_query_fidelity_packet_ready" in current_text
+    assert run_id in triage
+    assert "query-fidelity-unverified" in current_flat
+    assert "headline-included 16" in current_flat
+    assert "| Headline-included fidelity subset | 16 | 9/16 | 11/16 | +2 |" in measurements
+    assert "Rows excluded from the headline subset are not deleted" in measurements
+    assert "OCR decision: skipped" in measurements
+    assert "future official-adjacent adapter is still disabled" in triage
