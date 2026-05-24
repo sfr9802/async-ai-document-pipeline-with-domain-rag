@@ -61,6 +61,7 @@ REVIEW_COLUMNS = [
     "query_style",
     "query_drift_severity",
     "query_generation_mode",
+    "query_fidelity_bucket",
     "query_fidelity_headline_included",
     "query_fidelity_exclusion_reason",
     "query_seed_overlap",
@@ -121,6 +122,7 @@ REVIEW_COLUMNS = [
     "not_official_denominator",
     "not_official_qrels",
     "official_metric_candidate",
+    "official_metric_input_rows",
     "promotion_evidence",
     *USER_DECISION_COLUMNS,
 ]
@@ -229,12 +231,14 @@ def run_packet(
             if previous_responses_path.exists():
                 previous_response_rows = read_jsonl(previous_responses_path)
     cases = load_cases_for_summary(summary, response_rows=response_rows)
+    metric_query_fidelity_by_case = load_metric_query_fidelity_by_case(summary)
     review_rows = build_review_rows(
         summary=summary,
         response_rows=response_rows,
         previous_response_rows=previous_response_rows,
         cases=cases,
         max_evidence_chars=max_evidence_chars,
+        metric_query_fidelity_by_case=metric_query_fidelity_by_case,
     )
     validation = validate_review_rows(review_rows)
     future_adapter = build_future_scored_adapter_preview(review_rows)
@@ -532,6 +536,7 @@ def build_review_rows(
     previous_response_rows: list[Mapping[str, Any]],
     cases: Mapping[str, quality_benchmark.EvidenceCase],
     max_evidence_chars: int,
+    metric_query_fidelity_by_case: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> list[dict[str, str]]:
     answer_ready_required = requires_answer_ready_context(summary)
     by_case: dict[str, dict[str, Mapping[str, Any]]] = defaultdict(dict)
@@ -585,12 +590,18 @@ def build_review_rows(
         previous_failure_types = failure_types(previous_final) if previous_final else []
         evidence_profile = as_mapping(answer_ready.get("evidence_readiness")) or as_mapping(final.get("evidence_readiness"))
         pdf_causes = classify_pdf_residual_causes(case=case, final_row=answer_ready, final_answer=answer_ready_answer)
-        query_audit = query_fidelity_audit(
+        query_audit = query_fidelity_audit_for_summary(
+            summary=summary,
             case=case,
             query=clean(final.get("query")),
             seed_query=clean(final.get("seed_query")),
             evidence_text=case.evidence_text,
         )
+        metric_query_fidelity = (
+            metric_query_fidelity_by_case.get(case_id, {}) if metric_query_fidelity_by_case else {}
+        )
+        if metric_query_fidelity:
+            query_audit = apply_metric_query_fidelity_override(query_audit, metric_query_fidelity)
         evidence_text, evidence_truncated = truncate_text(case.evidence_text, max_evidence_chars)
         normalized_evidence = clean(evidence_profile.get("normalized_snippet")) or (
             quality_benchmark.normalize_pdf_evidence_snippet(case.evidence_text) if case.family == "PDF" else case.evidence_text
@@ -605,6 +616,7 @@ def build_review_rows(
             "query_style": clean(final.get("query_style")),
             "query_drift_severity": query_audit["query_drift_severity"],
             "query_generation_mode": query_audit["query_generation_mode"],
+            "query_fidelity_bucket": clean(query_audit.get("query_fidelity_bucket")),
             "query_fidelity_headline_included": bool_cell(bool(query_audit["headline_included"])),
             "query_fidelity_exclusion_reason": query_audit["exclusion_reason"],
             "query_seed_overlap": metric_cell(query_audit["seed_query_overlap"]),
@@ -666,6 +678,7 @@ def build_review_rows(
             "not_official_denominator": "TRUE",
             "not_official_qrels": "TRUE",
             "official_metric_candidate": "FALSE",
+            "official_metric_input_rows": "0",
             "promotion_evidence": "FALSE",
         }
         row.update(
@@ -712,6 +725,7 @@ def validate_review_rows(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
             ("not_official_denominator", "TRUE"),
             ("not_official_qrels", "TRUE"),
             ("official_metric_candidate", "FALSE"),
+            ("official_metric_input_rows", "0"),
             ("promotion_evidence", "FALSE"),
         ):
             if clean(row.get(key)).upper() != expected:
@@ -840,6 +854,151 @@ def query_fidelity_audit(
     }
 
 
+def query_fidelity_audit_for_summary(
+    *,
+    summary: Mapping[str, Any],
+    case: quality_benchmark.EvidenceCase,
+    query: str,
+    seed_query: str,
+    evidence_text: str,
+) -> dict[str, Any]:
+    if uses_v3_9_query_fidelity(summary):
+        return query_fidelity_audit_v3_9(
+            case=case,
+            query=query,
+            seed_query=seed_query,
+            evidence_text=evidence_text,
+        )
+    result = query_fidelity_audit(
+        case=case,
+        query=query,
+        seed_query=seed_query,
+        evidence_text=evidence_text,
+    )
+    return {**result, "query_fidelity_bucket": clean(result.get("query_drift_severity"))}
+
+
+def load_metric_query_fidelity_by_case(summary: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
+    artifact_paths = as_mapping(summary.get("artifact_paths"))
+    per_query_path = clean(artifact_paths.get("per_query_jsonl"))
+    if not per_query_path:
+        return {}
+    resolved = resolve_repo_path(per_query_path)
+    if not resolved.exists():
+        return {}
+    rows = read_jsonl(resolved)
+    result: dict[str, Mapping[str, Any]] = {}
+    for row in rows:
+        case_id = clean(row.get("case_id"))
+        if not case_id:
+            continue
+        result[case_id] = row
+    return result
+
+
+def apply_metric_query_fidelity_override(
+    query_audit: Mapping[str, Any],
+    metric_row: Mapping[str, Any],
+) -> dict[str, Any]:
+    bucket = clean(metric_row.get("query_fidelity_bucket")) or clean(query_audit.get("query_fidelity_bucket"))
+    exclusion_reason = clean(metric_row.get("query_fidelity_exclusion_reason"))
+    if "query_fidelity_headline_included" in metric_row:
+        headline_included = boolish(metric_row.get("query_fidelity_headline_included"))
+    else:
+        headline_included = not bool(exclusion_reason)
+    if not headline_included and not exclusion_reason:
+        exclusion_reason = bucket
+    generation_mode = clean(metric_row.get("query_generation_mode")) or clean(query_audit.get("query_generation_mode"))
+
+    return {
+        **query_audit,
+        "query_drift_severity": bucket,
+        "query_generation_mode": generation_mode,
+        "v3_9_bucket": bucket,
+        "query_fidelity_bucket": bucket,
+        "headline_included": headline_included,
+        "exclusion_reason": exclusion_reason,
+        "query_fidelity_exclusion_reason": exclusion_reason,
+        "source_title_leak": bucket == "source_title_leak",
+        "exact_query_hack": bucket == "exact_query_hack",
+        "answer_value_in_query": bucket == "answer_value_in_query",
+        "index_to_content_query": bucket == "index_to_content",
+        "major_topic_drift": bucket == "major_topic_drift",
+        "official_metric_input_rows": 0,
+    }
+
+
+def uses_v3_9_query_fidelity(summary: Mapping[str, Any]) -> bool:
+    run_id = clean(summary.get("run_id"))
+    run_label = clean(summary.get("run_label"))
+    source_families = {clean(value).upper() for value in as_sequence(summary.get("source_families_requested"))}
+    return (
+        run_id == "official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic"
+        or run_label.startswith("v3_9_")
+        or "TEXT" in source_families
+    )
+
+
+def query_fidelity_audit_v3_9(
+    *,
+    case: quality_benchmark.EvidenceCase,
+    query: str,
+    seed_query: str,
+    evidence_text: str,
+) -> dict[str, Any]:
+    base = query_fidelity_audit(
+        case=case,
+        query=query,
+        seed_query=seed_query,
+        evidence_text=evidence_text,
+    )
+    v3_9 = quality_benchmark.v3_9_query_fidelity(
+        case=case,
+        query=query,
+        seed_query=seed_query,
+        evidence_text=evidence_text,
+    )
+    bucket = clean(v3_9.get("query_fidelity_bucket"))
+    exclusion_reason = clean(v3_9.get("exclusion_reason"))
+
+    return {
+        **base,
+        "query_drift_severity": bucket,
+        "query_generation_mode": clean(v3_9.get("query_generation_mode")),
+        "v3_9_bucket": bucket,
+        "query_fidelity_bucket": bucket,
+        "headline_included": not bool(exclusion_reason),
+        "exclusion_reason": exclusion_reason,
+        "query_fidelity_exclusion_reason": exclusion_reason,
+        "source_title_leak": bucket == "source_title_leak",
+        "exact_query_hack": bucket == "exact_query_hack",
+        "answer_value_in_query": bucket == "answer_value_in_query",
+        "index_to_content_query": bucket == "index_to_content",
+        "major_topic_drift": bucket == "major_topic_drift",
+        "diagnostic_only": True,
+        "official_metric_candidate": False,
+        "official_metric_input_rows": 0,
+    }
+
+
+def contains_source_title_leak(query: str, *, case: quality_benchmark.EvidenceCase) -> bool:
+    value = clean(query).casefold()
+    if re.search(r"\.(pdf|xlsx|xls|csv|txt)\b", value):
+        return True
+    locator = case.locator
+    for key in ("source_pdf_path", "source_path", "workbook"):
+        raw = clean(locator.get(key))
+        if not raw:
+            continue
+        stem = Path(raw).stem.casefold()
+        stem_tokens = [token for token in re.split(r"[\W_]+", stem) if len(token) >= 4]
+        if stem and stem in value:
+            return True
+        if stem_tokens and sum(token in value for token in stem_tokens) >= 2:
+            return True
+    return False
+
+
 def build_pdf_delta_audit_rows(rows: list[Mapping[str, str]]) -> list[dict[str, Any]]:
     audit_rows: list[dict[str, Any]] = []
     for row in rows:
@@ -877,6 +1036,7 @@ def build_pdf_delta_audit_rows(rows: list[Mapping[str, str]]) -> list[dict[str, 
                 "prior_delta_bucket": row["prior_delta_bucket"],
                 "diagnostic_only": True,
                 "official_metric_candidate": False,
+                "official_metric_input_rows": 0,
             }
         )
     return audit_rows
@@ -892,12 +1052,14 @@ def build_query_fidelity_audit_rows(rows: list[Mapping[str, str]]) -> list[dict[
             "query_style": row["query_style"],
             "query_drift_severity": row["query_drift_severity"],
             "query_generation_mode": row["query_generation_mode"],
+            "query_fidelity_bucket": row.get("query_fidelity_bucket", row["query_drift_severity"]),
             "query_fidelity_headline_included": row["query_fidelity_headline_included"] == "TRUE",
             "query_fidelity_exclusion_reason": row["query_fidelity_exclusion_reason"],
             "query_seed_overlap": float_value(row["query_seed_overlap"]),
             "query_evidence_overlap": float_value(row["query_evidence_overlap"]),
             "diagnostic_only": True,
             "official_metric_candidate": False,
+            "official_metric_input_rows": 0,
         }
         for row in rows
     ]
@@ -997,7 +1159,7 @@ def summarize_pdf_delta_rows(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
 
 def summarize_query_fidelity_rows(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
     by_family: dict[str, dict[str, Any]] = {}
-    for family in ("PDF", "XLSX"):
+    for family in review_families(rows):
         family_rows = [row for row in rows if clean(row.get("family")) == family]
         by_family[family] = {
             "rows": len(family_rows),
@@ -1006,6 +1168,13 @@ def summarize_query_fidelity_rows(rows: list[Mapping[str, Any]]) -> dict[str, An
             "severity_counts": dict(sorted(Counter(clean(row.get("query_drift_severity")) for row in family_rows).items())),
             "mode_counts": dict(sorted(Counter(clean(row.get("query_generation_mode")) for row in family_rows).items())),
         }
+    excluded_policy = sorted(
+        {
+            clean(row.get("query_fidelity_exclusion_reason")) or clean(row.get("query_fidelity_bucket"))
+            for row in rows
+            if not bool(row.get("query_fidelity_headline_included"))
+        }
+    )
     return {
         "rows": len(rows),
         "headline_included": sum(bool(row.get("query_fidelity_headline_included")) for row in rows),
@@ -1013,10 +1182,7 @@ def summarize_query_fidelity_rows(rows: list[Mapping[str, Any]]) -> dict[str, An
         "severity_counts": dict(sorted(Counter(clean(row.get("query_drift_severity")) for row in rows).items())),
         "mode_counts": dict(sorted(Counter(clean(row.get("query_generation_mode")) for row in rows).items())),
         "by_family": by_family,
-        "excluded_from_headline_policy": [
-            "major_topic_drift",
-            "index_to_content_query_without_user_query_approval",
-        ],
+        "excluded_from_headline_policy": excluded_policy,
         "prior_metrics_marked_query_fidelity_unverified": ["21/30", "24/30", "PDF 9/15", "XLSX 15/15"],
     }
 
@@ -1028,8 +1194,11 @@ def evaluation_split_summary(summary: Mapping[str, Any], rows: list[Mapping[str,
     if not role:
         role = "dev_current_pdf_headline" if run_label == "answer_ready_pdf_v1_llm_15pf" else "diagnostic_unspecified"
     dev_only = bool(source.get("dev_only")) or role == "dev_current_pdf_headline"
-    source_document_disjoint = bool(source.get("source_document_disjoint_from_dev")) if source else False
+    raw_source_document_disjoint = source.get("source_document_disjoint_from_dev") if source else False
     success_allowed = bool(source.get("success_evidence_allowed")) and not dev_only
+    source_document_disjoint: bool | str = (
+        "not_applicable_dev_split" if dev_only else bool(raw_source_document_disjoint)
+    )
     pdf_headline_rows = [
         row
         for row in rows
@@ -1099,7 +1268,7 @@ def quality_count_block(
     evaluation_split: Mapping[str, Any],
 ) -> dict[str, Any]:
     by_family: dict[str, Any] = {}
-    for family in ("PDF", "XLSX"):
+    for family in review_families(rows, source_key="source_type"):
         family_rows = [row for row in rows if row["source_type"] == family]
         by_family[family] = quality_count_values(family_rows)
     values = quality_count_values(rows)
@@ -1446,7 +1615,9 @@ def generic_query(tokens: set[str]) -> bool:
 def index_like_query(text: str) -> bool:
     value = clean(text)
     markers = ("검색", "자료", "정보", "항목", "번호", "데이터", "수치", "도서정보", "전자공시시스템", "경로")
-    return any(marker in value for marker in markers)
+    return any(marker in value for marker in markers) or bool(
+        re.fullmatch(r"(?:page|p\.?|쪽)\s*\d+", value, flags=re.I)
+    )
 
 
 def answer_from_response(row: Mapping[str, Any]) -> str:
@@ -1492,14 +1663,14 @@ def render_markdown(report: Mapping[str, Any], review_rows: list[Mapping[str, st
         f"- PDF delta audit: `{report['generated_artifacts']['pdf_delta_audit_jsonl']['path']}`",
         f"- Query fidelity audit: `{report['generated_artifacts']['query_fidelity_audit_jsonl']['path']}`",
         f"- PDF residual review: `{report['generated_artifacts']['pdf_residual_review_md']['path']}`",
-        f"- Rows: `{report['review_packet_row_count']}` (`PDF={report['case_counts_by_source_type']['PDF']}`, `XLSX={report['case_counts_by_source_type']['XLSX']}`)",
+        f"- Rows: `{report['review_packet_row_count']}` ({family_count_summary(report['case_counts_by_source_type'])})",
         "",
         "## Diagnostic Summary",
         "",
         "| Family | Baseline pass | Raw final pass | Answer-ready pass |",
         "|---|---:|---:|---:|",
     ]
-    for family in ("PDF", "XLSX"):
+    for family in review_families_from_counts(report["case_counts_by_source_type"]):
         total = report["case_counts_by_source_type"][family]
         baseline = report["baseline_quality_pass_counts"][family]
         final = report["final_quality_pass_counts"][family]
@@ -1527,7 +1698,7 @@ def render_markdown(report: Mapping[str, Any], review_rows: list[Mapping[str, st
     )
     fidelity_by_family = as_mapping(report["query_fidelity_summary"].get("by_family"))
     headline_by_family = as_mapping(report["headline_quality_counts"]["query_fidelity_subset"].get("by_family"))
-    for family in ("PDF", "XLSX"):
+    for family in review_families_from_counts(report["case_counts_by_source_type"]):
         family_fidelity = as_mapping(fidelity_by_family.get(family))
         family_headline = as_mapping(headline_by_family.get(family))
         lines.append(
@@ -1632,7 +1803,24 @@ def shorten(value: object, max_chars: int) -> str:
 
 
 def counts_for_families(counter: Mapping[str, int]) -> dict[str, int]:
-    return {family: int(counter.get(family, 0)) for family in ("PDF", "XLSX")}
+    return {family: int(counter.get(family, 0)) for family in review_families_from_counts(counter)}
+
+
+def review_families(rows: Iterable[Mapping[str, Any]], *, source_key: str = "family") -> list[str]:
+    present = {clean(row.get(source_key)) for row in rows if clean(row.get(source_key))}
+    return review_families_from_counts({family: 1 for family in present})
+
+
+def review_families_from_counts(counter: Mapping[str, Any]) -> list[str]:
+    ordered = ["PDF", "XLSX"]
+    for family in sorted(clean(key) for key in counter if clean(key)):
+        if family not in ordered:
+            ordered.append(family)
+    return ordered
+
+
+def family_count_summary(counts: Mapping[str, Any]) -> str:
+    return ", ".join(f"`{family}={int(counts.get(family, 0))}`" for family in review_families_from_counts(counts))
 
 
 def split_pipe(value: object) -> list[str]:
@@ -1641,6 +1829,12 @@ def split_pipe(value: object) -> list[str]:
 
 def bool_cell(value: bool) -> str:
     return "TRUE" if value else "FALSE"
+
+
+def boolish(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    return clean(value).casefold() in {"1", "true", "yes", "y", "t"}
 
 
 def metric_cell(value: object) -> str:
@@ -1728,6 +1922,16 @@ def compact_json(value: object) -> str:
 
 def as_mapping(value: object) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
+
+
+def as_sequence(value: object) -> list[Any]:
+    if isinstance(value, list):
+        return value
+    if isinstance(value, tuple):
+        return list(value)
+    if isinstance(value, set):
+        return sorted(value)
+    return []
 
 
 def int_value(value: object) -> int:

@@ -15,11 +15,156 @@ Their physical generated payloads may live in the external runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 As of the 2026-05-21 cleanup, the current repo-local report directory keeps
 `status.jsonl` plus compact v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1,
-v3_8_2, and v3_8_3 machine artifacts; older triage payloads are consolidated under
+v3_8_2, v3_8_3 machine artifacts, and current v3_9 quality artifacts; older triage payloads are consolidated under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`.
 The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
+
+<!-- official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset:triage-entry:start -->
+## v3_9_2 Overfit Risk and Holdout Reset Triage
+
+Run ID: `official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset`.
+
+Triage result:
+
+- `likely_general` future-success evidence count is `0`.
+- `weak_general` rows are retained as diagnostic direction only and are also marked insufficient-blind-evidence.
+- Leakage-adjacent, query-fidelity-excluded, source/file-title, answer-value-in-query, and index-to-content rows are excluded from success evidence.
+- The new synthetic OOD holdout is an anti-overfit guard only; it must not be used for representative product performance.
+
+Next boundary:
+
+- Pause performance success claims until real fresh blind/OOD PDF/XLSX sources are available.
+- Continue only diagnostic-only proposal work for a new non-prod XLSX table-axis SourceAtom/SearchUnit rematerialization.
+- Keep PDF file identity and PDF answer-ready evidence-window metrics separate.
+<!-- official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic:triage-entry:start -->
+
+
+## v3_9_1 XLSX Table-Axis and PDF File Identity Triage
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic`
+
+Confirmed diagnostic findings:
+
+- XLSX `locator_signal_count=0` rank1 pressure comes from SourceAtom materialization that often lacks row/column/table-axis labels, plus legacy fixed row-window candidates that can rank first without query-local locator signals.
+- v3_9_1 adds source-local table-axis metadata and same-workbook axis candidates, then only promotes an axis candidate to rank1 when legacy rank1 has zero locator signals and the axis candidate has query-derived structural signals.
+- Direct normalized-value query matching remains banned; values may exist as evidence-slice hashes/presence markers but are not query-scoring shortcuts.
+- Query-fidelity validation has `118` included rows, with approval/relevance/answerability/expected/supporting/pass-fail fields left blank for user-owned decisions.
+
+Residual taxonomy:
+
+| Area | Current residual |
+|---|---|
+| XLSX signal-empty rank1 | 257/300 |
+| XLSX validation table_or_range_miss_after_sheet_hit | 105 |
+| PDF rank1 file hit | 66/329 |
+| PDF accepted wrong rank1, target in top3 | 63/329 |
+| PDF accepted wrong rank1, target not top3 | 18/329 |
+| PDF blocked wrong rank1 by abstain/disambiguation | 60/329 |
+
+Boundary for next work:
+
+- Still retrieval/locator/evidence work: richer XLSX SourceAtom table-axis materialization, row/column alias propagation, merged-cell/header propagation, table-block boundaries, and PDF oracle-free source identity confidence.
+- Not a fine-tuning handoff yet: the largest XLSX failure is still range/cell locator structure, and PDF file identity remains unresolved for many rows before answer synthesis matters.
+- OCR remains closed until native text absence/unusability or material OCR gain is proven.
+- User-owned decisions remain query approval, relevance, answerability, expected answer/supporting evidence, pass/fail, denominator eligibility, gold/qrels/label policy, and promotion.
+<!-- official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic:triage-entry:end -->
+
+## 2026-05-24 - v3_9 PDF/XLSX Bottleneck Quality Triage Note
+
+This triage note covers
+`official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement`.
+It keeps the work diagnostic-only: no fine-tuning, no gold/qrels/labels/
+expected-answer/supporting-evidence/official-denominator/namespace/DB/
+production/promotion/threshold/winner mutation, and
+`official_metric_input_rows=0`. The future scored adapter remains
+`DISABLED_PENDING_USER_APPROVAL`.
+
+- PDF generalized validation signal exists: query-fidelity included validation
+  improved from raw final `2/4` to answer-ready `3/4`. The larger all-row PDF
+  movement (`2/6 -> 5/6`) includes query-fidelity-excluded rows and is kept as
+  diagnostic context only.
+- XLSX generalized answer-quality signal does not exist in this phase:
+  validation included rows stayed `1/1 -> 1/1`, dev included rows are `0/6`,
+  and the 344-row locator surface did not move after the accepted
+  structural-specificity rule.
+- XLSX priority remains locator/evidence, not fine-tuning:
+  `table_or_range_miss_after_sheet_hit=219`,
+  `table_or_range_rank_gap_within_top3=8`,
+  `cell_or_value_miss_after_range_hit=3`, plus workbook gate
+  disambiguation=44 and sheet miss=51.
+- Direct normalized-value query matching remains rejected because it is an
+  answer-value shortcut risk and previously regressed validation cell/value
+  behavior. Current artifacts record it as disabled.
+- PDF file identity remains a separate resolver bottleneck: v3_8_2 reference
+  file_resolve@1 is `65/329`, file_resolve@3 is `129/329`, abstain is
+  `182/329`, and wrong-file block is `57/329`. This phase's answer-quality
+  harness used preselected SourceAtom evidence, so it does not claim file
+  resolver improvement.
+- PDF evidence window improved on validation through native same-page/bbox
+  bounded expansion. Remaining PDF residuals are weak evidence, dot/OCR-like
+  artifacts, broad context, and evaluator overlap; true answer failure is not
+  the observed bottleneck in this small holdout.
+- OCR remains skipped. Native text was usable and no scanned/image-only or
+  native-unusable candidate showed material OCR gain.
+- Fine-tuning remains deferred. The remaining problems are still locator,
+  evidence-window, and query-policy issues; they should not be handed to
+  fine-tuning until locator/evidence inputs are reliable.
+- Codex-owned diagnostic decisions: source-document/workbook-disjoint split,
+  query-fidelity exclusion buckets, PDF/XLSX family-separated reporting,
+  dev-only gain exclusion from success evidence, OCR skip, and direct value
+  shortcut rejection. User-owned decisions remain only relevance,
+  answerability, expected answer/supporting evidence, pass/fail, denominator
+  eligibility, query approval, policy note, and any future official adapter
+  approval.
+
+## 2026-05-24 - v3_9 Natural Answer-Quality Diagnostic Triage Note
+
+This triage note covers
+`official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic`.
+It keeps the work diagnostic-only and creates no gold, qrels, expected-answer,
+supporting-evidence, official-denominator, namespace, DB, production,
+promotion, threshold, or winner mutation. The future scored adapter remains
+`DISABLED_PENDING_USER_APPROVAL` and `official_metric_input_rows=0`.
+
+- Generalized validation signal exists only for PDF query-fidelity included
+  rows: raw final `2/4` -> answer-ready `3/4`. The all-row PDF validation
+  movement (`2/6 -> 5/6`) includes query-fidelity-excluded rows and is not
+  counted alone as generalized success.
+- Dev rows remain dev-only: PDF all rows `2/6 -> 3/6`, but the PDF
+  query-fidelity included subset is flat (`2/3 -> 2/3`). XLSX dev included
+  rows are `0/6`; TEXT dev is flat (`2/6 -> 2/6`).
+- XLSX answer-quality in this small preselected evidence loop is flat:
+  validation raw final `6/6` -> answer-ready `6/6`, included subset `1/1 ->
+  1/1`. The actual XLSX priority remains locator structure, especially
+  `table_or_range_miss_after_sheet_hit=219` from v3_8_3, not answer-ready
+  sampling.
+- TEXT answer-quality is also flat or worse versus the legacy prompt:
+  validation baseline `6/6`, final/answer-ready `5/6`, with `invalid_json=1`.
+  The remaining TEXT work is strict JSON / narrow factual span / coreference
+  prompting, not PDF/XLSX deterministic adapter scoring.
+- Raw-pass-to-ready-fail regression is zero after neutralization. Non-PDF
+  answer-ready rows reuse final locator responses because no non-PDF
+  answer-ready evidence transform is being validated in this loop.
+- Query-fidelity buckets are retained, not deleted. Validation has
+  included=`11`, excluded=`7`; excluded rows are mostly XLSX index-to-content
+  and PDF drift/synthetic rows requiring user query approval before any
+  headline interpretation.
+- OCR remains skipped. Native PDF text was available and validation PDF gain
+  came from same-page/bbox native text windows; no scanned/image-only or
+  native-unusable evidence proved OCR material benefit.
+- Codex-owned diagnostic decisions: source-document-disjoint validation split,
+  non-PDF answer-ready raw reuse, query-fidelity exclusion buckets, OCR skip,
+  dev split disjointness marked not-applicable, all-family aggregate metrics
+  marked diagnostic-only/non-headline, and family-separated reporting.
+  User-owned decisions remain only relevance,
+  answerability, expected answer/supporting evidence, pass/fail, denominator
+  eligibility, query approval, policy note, and any future official adapter
+  approval.
 
 ## 2026-05-24 - XLSX v3_8_3 Scoped Locator Anti-Overfit Triage Note
 
@@ -43,7 +188,7 @@ DB, production, promotion, threshold, or winner mutation. The status event is
   overfit-prone answer-like scoring shortcut.
 - Remaining residual buckets after the accepted rule: workbook gate
   disambiguation=44, sheet_miss_after_workbook_gate=51,
-  table_or_range_miss_after_sheet_hit=218,
+  table_or_range_miss_after_sheet_hit=219,
   table_or_range_rank_gap_within_top3=8,
   cell_or_value_miss_after_range_hit=3, hit=19. The largest remaining safe
   surface is still table/range locator recall after a sheet hit.

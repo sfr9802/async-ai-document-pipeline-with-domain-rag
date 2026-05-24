@@ -65,6 +65,16 @@ def require_v3_8_3_local_artifacts(*paths: Path) -> None:
     pytest.skip(message)
 
 
+def require_v3_9_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_9 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_9_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
 def windows_long_path(path: Path) -> Path:
     if sys.platform != "win32":
         return path
@@ -2380,3 +2390,315 @@ def test_v3_8_3_xlsx_scoped_cell_resolve_does_not_mutate_source_registry_or_prot
     assert summary["v3_8_2_gate_duplicate_query_id_count"] == 0
     for split in ("contract", "dev", "holdout"):
         assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+
+def test_v3_9_natural_answer_quality_does_not_mutate_protected_surfaces():
+    label = "v3_9_natural_answer_quality_validation_6pf"
+    summary_path = REPORT_DIR / "quality" / f"pdf_xlsx_llm_quality_{label}_summary.json"
+    metrics_path = REPORT_DIR / "quality" / f"pdf_xlsx_llm_quality_{label}_metrics.json"
+    require_v3_9_local_artifacts(summary_path, metrics_path)
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = read_json(summary_path)
+    metrics = read_json(metrics_path)
+    assert summary["run_id"] == "official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic"
+    assert summary["policy"]["diagnostic_only"] is True
+    assert summary["policy"]["official_metric_input_rows"] == 0
+    assert summary["policy"]["gold_or_label_mutation"] is False
+    assert summary["policy"]["expected_answer_or_supporting_evidence_used"] is False
+    assert summary["policy"]["denominator_mutation"] is False
+    assert summary["policy"]["production_mutation"] is False
+    assert summary["policy"]["promotion_evidence"] is False
+    assert summary["policy"]["threshold_tuning"] is False
+    assert summary["policy"]["winner_selection"] is False
+    assert summary["future_scored_adapter"]["adapter_enabled"] is False
+    assert summary["future_scored_adapter"]["status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["future_scored_adapter"]["official_metric_input_rows"] == 0
+    assert summary["case_selection"]["source_document_disjoint_from_dev"] is True
+    assert summary["case_selection"]["official_metric_input_rows"] == 0
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["adapter_enabled"] is False
+    assert metrics["promotion_evidence"] is False
+    assert metrics["threshold_tuning"] is False
+    assert metrics["winner_selection"] is False
+    assert metrics["protected_official_rows_role"] == "sealed_no_regression_reference_only"
+
+
+def test_v3_9_pdf_xlsx_bottleneck_quality_does_not_mutate_protected_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement"
+    summary_path = REPORT_DIR / f"{run_id}_summary.json"
+    metrics_path = REPORT_DIR / f"{run_id}_metrics.json"
+    require_v3_9_local_artifacts(summary_path, metrics_path)
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = read_json(summary_path)
+    metrics = read_json(metrics_path)
+    assert summary["run_id"] == run_id
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["fine_tuning_executed"] is False
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["policy"]["gold_or_label_mutation"] is False
+    assert summary["policy"]["qrels_mutation"] is False
+    assert summary["policy"]["expected_answer_or_supporting_evidence_used"] is False
+    assert summary["policy"]["official_denominator_mutation"] is False
+    assert summary["policy"]["namespace_mutation"] is False
+    assert summary["policy"]["production_mutation"] is False
+    assert summary["policy"]["promotion_evidence"] is False
+    assert summary["policy"]["threshold_tuning"] is False
+    assert summary["policy"]["winner_selection"] is False
+    assert summary["policy"]["target_locator_used_for_selection"] is False
+    assert summary["policy"]["target_locator_metrics_only"] is True
+    assert summary["candidate_rule_freeze"]["direct_normalized_value_query_matching"] is False
+    assert summary["candidate_rule_freeze"]["exact_query_hacks"] is False
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["adapter_enabled"] is False
+    assert metrics["promotion_evidence"] is False
+    assert metrics["threshold_tuning"] is False
+    assert metrics["winner_selection"] is False
+    assert metrics["gold_mutation"] is False
+    assert metrics["label_mutation"] is False
+    assert metrics["qrels_mutation"] is False
+    assert metrics["expected_answer_mutation"] is False
+    assert metrics["supporting_evidence_mutation"] is False
+    assert metrics["official_denominator_mutation"] is False
+    assert metrics["namespace_mutation"] is False
+    assert metrics["production_mutation"] is False
+
+
+def test_v3_9_1_xlsx_table_axis_pdf_file_identity_does_not_mutate_source_registry_or_protected_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic"
+    summary_path = REPORT_DIR / f"{run_id}_summary.json"
+    metrics_path = REPORT_DIR / f"{run_id}_metrics.json"
+    require_v3_9_local_artifacts(summary_path, metrics_path)
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = read_json(summary_path)
+    metrics = read_json(metrics_path)
+    assert summary["run_id"] == run_id
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["fine_tuning_started"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["answer_value_in_query_success_evidence_used"] is False
+    assert summary["index_to_content_success_evidence_used"] is False
+    assert summary["file_or_source_title_leak_success_evidence_used"] is False
+    assert summary["protected_input_sha256_before"] == summary["protected_input_sha256_after"]
+    assert summary["protected_input_sha256_unchanged"] is True
+    assert summary["source_registry_sha256_before"] == summary["source_registry_sha256_after"]
+    assert summary["source_registry_sha256_unchanged"] is True
+    assert summary["index_artifact_sha256_before"] == summary["index_artifact_sha256_after"]
+    assert summary["index_artifact_sha256_unchanged"] is True
+    assert summary["official_denominator_index_sha256_before"] == summary["official_denominator_index_sha256_after"]
+    assert summary["official_denominator_index_sha256_unchanged"] is True
+    assert summary["source_registry_mutation"] is False
+    assert summary["index_or_export_mutation"] is False
+    assert summary["retrieval_index_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["db_write_attempted"] is False
+    assert summary["db_migration_attempted"] is False
+    assert summary["prompt_mutation"] is False
+    assert summary["scorer_mutation"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["qrels_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["official_qrels_created"] is False
+    assert summary["official_relevance_labels_created"] is False
+    assert summary["official_answerability_labels_created"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["promotion_gate"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["promotion_evidence"] is False
+    assert metrics["threshold_tuning"] is False
+    assert metrics["winner_selection"] is False
+    assert metrics["direct_normalized_value_query_matching_used"] is False
+    assert metrics["answer_value_in_query_success_evidence_used"] is False
+    assert metrics["index_to_content_success_evidence_used"] is False
+    assert metrics["file_or_source_title_leak_success_evidence_used"] is False
+    assert metrics["per_source_family"]["PDF_CONTENT"]["computed_in_this_run"] is False
+    assert metrics["per_source_family"]["TEXT"]["comparison_only"] is True
+    for split in ("contract", "dev", "holdout"):
+        assert not (ROOT / "ai" / "eval" / "silver" / f"answer_citation_silver_{split}_v1.jsonl").exists()
+
+
+def test_v3_9_2_overfit_risk_audit_and_holdout_reset_does_not_mutate_protected_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset"
+    summary_path = REPORT_DIR / f"{run_id}_summary.json"
+    metrics_path = REPORT_DIR / f"{run_id}_metrics.json"
+    architecture_path = REPORT_DIR / f"{run_id}_architecture_scope_assessment.json"
+    require_v3_9_local_artifacts(summary_path, metrics_path, architecture_path)
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = read_json(summary_path)
+    metrics = read_json(metrics_path)
+    architecture = read_json(architecture_path)
+    assert summary["run_id"] == run_id
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["fine_tuning_executed"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["qrels_mutation"] is False
+    assert summary["label_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["staging_or_commit_performed"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["answer_value_in_query_success_evidence_used"] is False
+    assert summary["index_to_content_success_evidence_used"] is False
+    assert summary["file_or_source_title_leak_success_evidence_used"] is False
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["fine_tuning_executed"] is False
+    assert metrics["direct_normalized_value_query_matching_used"] is False
+    assert metrics["answer_value_in_query_success_evidence_used"] is False
+    assert metrics["index_to_content_success_evidence_used"] is False
+    assert metrics["file_or_source_title_leak_success_evidence_used"] is False
+    assert architecture["protected_surface_check"]["gold_qrels_labels_expected_supporting_denominator_changed"] is False
+    assert architecture["protected_surface_check"]["db_or_production_namespace_changed"] is False
+    assert architecture["xlsx_sourceatom_searchunit_table_axis_materialization"]["materialized_in_v3_9_1"] is False
+    assert architecture["xlsx_sourceatom_searchunit_table_axis_materialization"]["scope"] == "overlay_rerank_only"
+    assert architecture["pdf_file_identity_scope"]["file_identity_gain_mixed_with_answer_ready_gain"] is False

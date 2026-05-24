@@ -26,7 +26,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 from urllib.parse import urlsplit, urlunsplit
 
 
@@ -232,6 +232,9 @@ V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID = (
 V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic"
 )
+V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic"
+)
 RUN_IDS_WITH_DISABLED_SUMMARY_MARKDOWN = {
     V3_RUN_ID,
 }
@@ -340,6 +343,9 @@ REPORT_ARTIFACT_SLUGS = {
     V3_8_1_EVIDENCE_SELECTOR_RUN_ID: V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
     V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID: V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
     V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID: V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+    V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID: (
+        V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID
+    ),
 }
 ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID,
@@ -385,6 +391,7 @@ ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
     V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
     V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+    V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
 }
 PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID,
@@ -395,6 +402,7 @@ PHYSICALLY_ARCHIVED_REPORT_RUN_IDS = set(REPORT_ARTIFACT_SLUGS) - {
     V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
     V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
     V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+    V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
 }
 V3_1_PRIORITY_1_5_QUERY_IDS = (
     "gq_pdf_section_question_001",
@@ -1334,6 +1342,30 @@ DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL = report_artifact_path(
     V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
     "per_family.jsonl",
 )
+DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON = report_artifact_path(
+    V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
+    "metrics.json",
+)
+DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL = report_artifact_path(
+    V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
+    "per_query.jsonl",
+)
+DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON = report_artifact_path(
+    V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
+    "per_family.json",
+)
+DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON = report_artifact_path(
+    V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
+    "failure_taxonomy.json",
+)
+DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_AUDIT_JSONL = report_artifact_path(
+    V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
+    "query_fidelity_audit.jsonl",
+)
+DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON = report_artifact_path(
+    V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
+    "split_manifest.json",
+)
 DEFAULT_SCORER_RESULTS_JSONL = REPORT_DIR / "scorer_v1.jsonl"
 DEFAULT_TEXT_NAMU_GOLD_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v2_1_question_gold_v2.csv"
 DEFAULT_TEXT_NAMU_HUMAN_AUDIT_V2_DECISIONS_JSON = (
@@ -1797,6 +1829,7 @@ def main(argv: list[str] | None = None) -> int:
         V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
         V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
         V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+        V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
     }:
         write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
         append_v3_6_low_touch_weak_noisy_silver_event(Path(args.status_jsonl), summary)
@@ -2109,6 +2142,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         V3_8_1_EVIDENCE_SELECTOR_RUN_ID,
         V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
         V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+        V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
     }
     if args.run_id not in supported_run_ids:
         raise SystemExit(
@@ -2261,6 +2295,9 @@ def run_measurement(args: argparse.Namespace) -> tuple[dict[str, Any], list[dict
 
     if args.run_id == V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID:
         return run_v3_8_3_xlsx_scoped_cell_resolve(args=args), []
+
+    if args.run_id == V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID:
+        return run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity(args=args), []
 
     if args.run_id == V3_1_9_USER_GOLD_POLICY_OVERRIDE_RUN_ID:
         return run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement(
@@ -33264,6 +33301,10 @@ V3_8_3_XLSX_QUERY_METRICS = (
 )
 V3_8_3_LEGACY_ROWS_ROLE = "dev_only_diagnostic_not_validation_success"
 V3_8_3_FUTURE_SCORED_ADAPTER_STATUS = "DISABLED_PENDING_USER_APPROVAL"
+V3_9_1_FUTURE_SCORED_ADAPTER_STATUS = "DISABLED_PENDING_USER_APPROVAL"
+V3_9_1_XLSX_QUERY_METRICS = V3_8_3_XLSX_QUERY_METRICS
+V3_9_1_PDF_QUERY_METRICS = V3_8_2_QUERY_METRICS
+V3_9_1_XLSX_QUERY_FIDELITY_MIN_VALIDATION_INCLUDED = 30
 V3_8_3_DRIFT_PROFILES = frozenset(
     {
         "query_drift",
@@ -34962,6 +35003,7 @@ def v3_8_3_xlsx_scoped_cell_resolve(
             target_column=target_column,
             normalized_value=normalized_value,
         )
+        structural_specificity_rank = v3_8_3_xlsx_structural_specificity_rank(query_locator_signals)
         base_score = max(0.05, 0.80 - (0.08 * max(rank - 1, 0)))
         broad_range_demotion = v3_8_3_broad_range_demotion(cell_range)
         resolve_score = round(
@@ -34998,6 +35040,7 @@ def v3_8_3_xlsx_scoped_cell_resolve(
             "resolve_reasons": ["v3_8_2_workbook_gate_match", f"topk_rank_{rank}"],
             "query_locator_signals": query_locator_signals,
             "query_locator_signal_count": len(query_locator_signals),
+            "structural_specificity_rank": structural_specificity_rank,
             "vector_db_role": "candidate_generator_only",
             "vector_metadata_used_as_canonical_citation_source": False,
             "vector_metadata_used_as_evidence_truth": False,
@@ -35016,6 +35059,7 @@ def v3_8_3_xlsx_scoped_cell_resolve(
     ranked = sorted(
         scoped_candidates,
         key=lambda item: (
+            -int(item.get("structural_specificity_rank") or 0),
             -float(item.get("resolve_score") or 0.0),
             int(item.get("retrieval_rank") or 999999),
             official.clean(item.get("sheet")),
@@ -35174,6 +35218,21 @@ def v3_8_3_query_locator_signal_score(signals: Sequence[str]) -> float:
         "query_date_number_normalized_match": 0.12,
     }
     return sum(weights.get(signal, 0.0) for signal in signals)
+
+
+def v3_8_3_xlsx_structural_specificity_rank(signals: Sequence[str]) -> int:
+    weights = {
+        "query_cell_literal_match": 90,
+        "query_range_literal_match": 80,
+        "query_row_label_key_value_pair_match": 70,
+        "query_row_label_value_match": 50,
+        "query_column_label_match": 35,
+        "query_sheet_normalized_page_match": 30,
+        "query_date_number_normalized_match": 25,
+        "query_sheet_literal_match": 15,
+        "query_workbook_literal_match": 5,
+    }
+    return sum(weights.get(signal, 0) for signal in dict.fromkeys(signals))
 
 
 def v3_8_3_xlsx_cell_or_value_hit(
@@ -36733,6 +36792,973 @@ def run_v3_8_3_xlsx_scoped_cell_resolve(*, args: argparse.Namespace) -> dict[str
             "per_family_jsonl": official.repo_relative(DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL),
             "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
             "progress_doc": "docs/rag-ingestion-progress.md",
+        },
+    }
+
+
+def v3_9_1_source_registry_by_id() -> dict[str, dict[str, Any]]:
+    if not DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.exists():
+        return {}
+    rows: dict[str, dict[str, Any]] = {}
+    with DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            source_atom_id = official.clean(row.get("source_atom_id"))
+            if source_atom_id:
+                rows[source_atom_id] = row
+    return rows
+
+
+def v3_9_1_xlsx_atoms_by_file_identity(
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, list[Mapping[str, Any]]]:
+    grouped: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for atom in source_registry.values():
+        if official.clean(atom.get("source_family")).upper() != "XLSX":
+            continue
+        identity = v3_8_2_file_identity_from_atom(atom)
+        key = v3_8_2_file_identity_key(identity)
+        if key:
+            grouped[key].append(atom)
+    return grouped
+
+
+def v3_9_1_signal_tokens(value: Any) -> set[str]:
+    text = unicodedata.normalize("NFKC", official.clean(value)).casefold()
+    stopwords = {
+        "정보",
+        "현황",
+        "자료",
+        "내용",
+        "검색",
+        "확인",
+        "부탁",
+        "부탁드립니다",
+        "알려주세요",
+        "싶습니다",
+        "싶어요",
+        "과정",
+        "필요",
+        "대한",
+        "대해",
+        "에서",
+        "자료실",
+        "도서정보",
+        "과학기술정보통신부",
+        "국립과천과학관",
+        "장기요양기관",
+        "시설",
+        "pdf",
+        "file",
+        "document",
+    }
+    tokens = set()
+    for token in re.findall(r"[가-힣A-Za-z0-9]+", text):
+        if len(token) < 2 or token in stopwords:
+            continue
+        if token.isdigit() and len(token) < 4:
+            continue
+        tokens.add(token)
+    return tokens
+
+
+def v3_9_1_date_forms(value: Any) -> set[str]:
+    text = unicodedata.normalize("NFKC", official.clean(value)).casefold()
+    forms = set()
+    for year, month in re.findall(r"(20\d{2})\D{0,6}(\d{1,2})\s*(?:월|month)?", text):
+        forms.add(f"{year}{int(month):02d}")
+    for year, month in re.findall(r"(20\d{2})[_\-./](\d{1,2})", text):
+        forms.add(f"{year}{int(month):02d}")
+    return forms
+
+
+def v3_9_1_pdf_file_identity_signals(query_text: Any, candidate: Mapping[str, Any]) -> list[str]:
+    query_tokens = v3_9_1_signal_tokens(query_text)
+    query_dates = v3_9_1_date_forms(query_text)
+    source_name = official.clean(candidate.get("source_file_name") or candidate.get("source_identity"))
+    source_stem = re.sub(r"\.[^.]+$", "", v3_8_2_basename(source_name)).replace("_", " ")
+    source_tokens = v3_9_1_signal_tokens(source_stem)
+    source_dates = v3_9_1_date_forms(source_stem)
+    signals: list[str] = []
+    if query_dates and source_dates and query_dates.intersection(source_dates):
+        signals.append("query_source_date_alias_match")
+    if len(query_tokens.intersection(source_tokens)) >= 2:
+        signals.append("query_source_title_token_overlap")
+    return signals
+
+
+def v3_9_1_pdf_oracle_free_file_resolve(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+    top_k: int = V3_8_2_ORACLE_FREE_RESOLVE_TOP_K,
+    max_candidates: int = V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES,
+) -> dict[str, Any]:
+    resolved = v3_8_2_oracle_free_file_resolve(
+        row,
+        source_registry=source_registry,
+        top_k=top_k,
+        max_candidates=max_candidates,
+    )
+    if official.clean(row.get("source_family")).upper() != "PDF":
+        return resolved
+    candidates: list[dict[str, Any]] = []
+    for candidate_value in resolved.get("candidates", []):
+        candidate = dict(as_mapping(candidate_value))
+        signals = v3_9_1_pdf_file_identity_signals(row.get("query_text"), candidate)
+        if "query_source_date_alias_match" in signals:
+            candidate["resolve_score"] = round(min(float(candidate.get("resolve_score") or 0.0) + 0.18, 1.0), 6)
+        if "query_source_title_token_overlap" in signals:
+            candidate["resolve_score"] = round(min(float(candidate.get("resolve_score") or 0.0) + 0.12, 1.0), 6)
+        for signal in signals:
+            v3_8_2_append_reason(candidate, signal)
+        candidate["source_identity_normalization_signals"] = signals
+        candidates.append(candidate)
+    ranked = sorted(
+        candidates,
+        key=lambda item: (
+            -float(item.get("resolve_score") or 0.0),
+            int(as_mapping(item.get("score_components")).get("retrieval_best_rank") or 999999),
+            official.clean(item.get("source_file_name")),
+        ),
+    )
+    for rank, candidate in enumerate(ranked, start=1):
+        candidate["candidate_rank"] = rank
+    status = "resolved"
+    block_reasons: list[str] = []
+    if not ranked:
+        status = "abstain"
+        block_reasons.append("no_oracle_free_file_candidates")
+    else:
+        top_score = float(ranked[0].get("resolve_score") or 0.0)
+        second_score = float(ranked[1].get("resolve_score") or 0.0) if len(ranked) > 1 else 0.0
+        if top_score < V3_8_2_RESOLVE_SCORE_THRESHOLD:
+            status = "abstain"
+            block_reasons.append("low_oracle_free_confidence")
+        elif len(ranked) > 1 and top_score - second_score < V3_8_2_RESOLVE_SCORE_GAP_THRESHOLD:
+            status = "disambiguation"
+            block_reasons.append("ambiguous_oracle_free_candidates")
+    updated = dict(resolved)
+    updated["schema_version"] = f"{V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_pdf_file_resolution_v1"
+    updated["resolve_status"] = status
+    updated["resolve_block_reasons"] = block_reasons
+    updated["candidates"] = ranked[:max_candidates]
+    updated["candidate_count"] = len(ranked)
+    updated["resolver_version"] = "v2_source_identity_normalization"
+    updated["resolver_policy"] = {
+        **as_mapping(resolved.get("resolver_policy")),
+        "source_local_document_title_normalization": True,
+        "filename_document_metadata_normalization": True,
+        "query_literal_document_metadata_alignment": True,
+        "wrong_file_demotion": "confidence_gap_preserved",
+        "low_confidence_abstain": True,
+    }
+    return updated
+
+
+def v3_9_1_pdf_file_resolve_per_query_row(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    resolved = v3_9_1_pdf_oracle_free_file_resolve(row, source_registry=source_registry)
+    target = v3_8_2_metric_target_file_identity(row, source_registry=source_registry)
+    candidates = list(resolved.get("candidates", []))
+    resolved_status = official.clean(resolved.get("resolve_status"))
+    resolved_candidates_for_metrics = candidates if resolved_status == "resolved" else []
+    file_resolve_1 = bool(
+        resolved_candidates_for_metrics
+        and v3_8_2_candidate_matches_target(resolved_candidates_for_metrics[0], target)
+    )
+    file_resolve_3 = any(
+        v3_8_2_candidate_matches_target(candidate, target)
+        for candidate in resolved_candidates_for_metrics[:V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES]
+    )
+    first_candidate_wrong = bool(
+        candidates
+        and target
+        and not v3_8_2_candidate_matches_target(candidates[0], target)
+    )
+    abstained = resolved_status in {"abstain", "disambiguation"}
+    if file_resolve_1:
+        taxonomy = "rank1_file_hit"
+    elif resolved_status == "resolved" and file_resolve_3:
+        taxonomy = "accepted_wrong_rank1_target_in_top3"
+    elif resolved_status == "resolved":
+        taxonomy = "accepted_wrong_rank1_target_not_in_top3"
+    elif first_candidate_wrong:
+        taxonomy = "abstain_or_disambiguation_blocked_wrong_rank1"
+    else:
+        taxonomy = "abstain_or_disambiguation_without_wrong_rank1"
+    return {
+        "schema_version": f"{V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_pdf_per_query_v1",
+        "query_id": official.clean(row.get("query_id")),
+        "query_scope": official.clean(row.get("query_scope")),
+        "source_family": "PDF",
+        "lane": "PDF_FILE_IDENTITY",
+        "resolve_status": resolved_status,
+        "resolve_block_reasons": list(resolved.get("resolve_block_reasons", [])),
+        "resolved_file_candidates": candidates,
+        "file_resolve@1": file_resolve_1,
+        "file_resolve@3": file_resolve_3,
+        "abstain_rate": abstained,
+        "wrong_file_block_rate": bool(abstained and first_candidate_wrong),
+        "abstain_vs_wrong_file_taxonomy": taxonomy,
+        "oracle_free_input_violation_count": int(resolved.get("oracle_free_input_violation_count") or 0),
+        "oracle_free": True,
+        "resolver_version": "v2_source_identity_normalization",
+        "answer_ready_evidence_window_metric_computed": False,
+        "file_identity_metric_computed": True,
+        "metric_overlay_redacted_from_candidate_artifact": True,
+        "answer_generation_metric_computed": False,
+        "source_atom_registry_canonical_truth": True,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+    }
+
+
+def v3_9_1_xlsx_table_axis_metadata(
+    *,
+    workbook: str,
+    sheet: str,
+    cell_range: str,
+    row_label: str,
+    column_label: str,
+    target_column: str,
+) -> dict[str, Any]:
+    shape = v3_8_3_range_shape(cell_range)
+    row_aliases = [item for item in [row_label] if item]
+    column_aliases = [item for item in [column_label, target_column] if item]
+    numeric_tokens = sorted(v3_8_3_numeric_forms(" ".join([row_label, column_label, target_column, cell_range])))
+    table_block_id = sha256_text("|".join([workbook, sheet, cell_range]))[:24] if cell_range else ""
+    return {
+        "table_block_id": table_block_id,
+        "table_range": cell_range,
+        "header_rows": [],
+        "header_columns": [],
+        "multi_row_header_hierarchy_present": False,
+        "multi_column_header_hierarchy_present": False,
+        "merged_cell_header_propagation_present": False,
+        "row_label_alias_count": len(row_aliases),
+        "row_label_alias_sha256": [sha256_text(item) for item in row_aliases],
+        "column_label_alias_count": len(column_aliases),
+        "column_label_alias_sha256": [sha256_text(item) for item in column_aliases],
+        "parent_header_path_sha256": [],
+        "unit_date_number_normalized_tokens": numeric_tokens[:20],
+        "sparse_table_boundary": shape,
+        "sparse_table_boundary_inferred": bool(shape.get("row_count") or shape.get("column_count")),
+        "table_caption_or_title_source_local": bool(sheet),
+        "table_caption_or_title_sha256": sha256_text(sheet) if sheet else "",
+        "raw_answer_value_used_for_query_scoring": False,
+    }
+
+
+def v3_9_1_xlsx_axis_signals(
+    *,
+    query_text: Any,
+    workbook: Any,
+    sheet: Any,
+    cell_range: Any,
+    cell: Any,
+    row_label: Any,
+    column_label: Any,
+    target_column: Any,
+) -> tuple[list[str], int]:
+    signals = v3_8_3_query_locator_signals(
+        query_text=query_text,
+        workbook=workbook,
+        sheet=sheet,
+        cell_range=cell_range,
+        cell=cell,
+        row_label=row_label,
+        column_label=column_label,
+        target_column=target_column,
+        normalized_value="",
+    )
+    score = v3_8_3_xlsx_structural_specificity_rank(signals)
+    query_tokens = v3_9_1_signal_tokens(query_text)
+    row_overlap = query_tokens.intersection(v3_9_1_signal_tokens(row_label))
+    column_overlap = query_tokens.intersection(
+        v3_9_1_signal_tokens(" ".join([official.clean(column_label), official.clean(target_column)]))
+    )
+    if len(row_overlap) >= 2:
+        signals.append("query_row_label_token_overlap")
+        score += 76
+    elif len(row_overlap) == 1:
+        signals.append("query_row_label_token_match")
+        score += 35
+    if column_overlap:
+        signals.append("query_column_label_token_match")
+        score += 35
+    return list(dict.fromkeys(signals)), score
+
+
+def v3_9_1_xlsx_candidate_from_source_atom(
+    atom: Mapping[str, Any],
+    *,
+    row: Mapping[str, Any],
+    workbook_gate: Mapping[str, Any],
+    retrieval_rank: int = 999,
+) -> dict[str, Any]:
+    raw_locator = as_mapping(atom.get("raw_locator"))
+    payload = as_mapping(atom.get("canonical_citation_payload"))
+    locator = v3_8_locator_from_atom_or_identity(
+        family="XLSX",
+        atom=atom,
+        source_identity=official.clean(atom.get("source_identity")),
+    )
+    workbook = official.clean(
+        raw_locator.get("workbook")
+        or payload.get("workbook")
+        or atom.get("workbook_id")
+        or workbook_gate.get("source_file_name")
+    )
+    sheet = official.clean(raw_locator.get("sheet") or payload.get("sheet") or locator.get("sheet"))
+    cell_range = official.clean(raw_locator.get("range") or payload.get("range") or locator.get("range"))
+    cell = official.clean(raw_locator.get("cell") or payload.get("cell") or locator.get("cell"))
+    row_label = official.clean(raw_locator.get("row_label") or payload.get("row_label"))
+    column_label = official.clean(raw_locator.get("column_label") or payload.get("column_label"))
+    target_column = official.clean(raw_locator.get("target_column") or payload.get("target_column"))
+    signals, axis_score = v3_9_1_xlsx_axis_signals(
+        query_text=row.get("query_text"),
+        workbook=workbook,
+        sheet=sheet,
+        cell_range=cell_range,
+        cell=cell,
+        row_label=row_label,
+        column_label=column_label,
+        target_column=target_column,
+    )
+    normalized_value = official.clean(
+        raw_locator.get("normalized_value")
+        or payload.get("normalized_value")
+        or locator.get("normalized_value")
+    )
+    return {
+        "candidate_rank": 0,
+        "retrieval_rank": retrieval_rank,
+        "search_view_id": "",
+        "source_atom_id": official.clean(atom.get("source_atom_id")),
+        "source_family": "XLSX",
+        "source_identity": official.clean(atom.get("source_identity")),
+        "file_key": v3_8_file_key(workbook),
+        "workbook": workbook,
+        "sheet": sheet,
+        "range": cell_range,
+        "cell": cell,
+        "matched_text_or_value_sha256": sha256_text(normalized_value) if normalized_value else "",
+        "matched_text_or_value_present": bool(normalized_value),
+        "source_atom_hydrated_from_registry": True,
+        "oracle_free": True,
+        "resolve_score": round(min(0.99, 0.50 + (axis_score / 200.0)), 6),
+        "resolve_reasons": ["source_atom_table_axis_candidate", *signals],
+        "query_locator_signals": signals,
+        "query_locator_signal_count": len(signals),
+        "structural_specificity_rank": axis_score,
+        "candidate_generation_mode": "source_atom_table_axis_same_workbook",
+        "table_axis_metadata": v3_9_1_xlsx_table_axis_metadata(
+            workbook=workbook,
+            sheet=sheet,
+            cell_range=cell_range,
+            row_label=row_label,
+            column_label=column_label,
+            target_column=target_column,
+        ),
+        "direct_normalized_value_query_matching_used": False,
+        "vector_db_role": "candidate_generator_only",
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+    }
+
+
+def v3_9_1_xlsx_merge_candidates(
+    *,
+    legacy_candidates: Sequence[Mapping[str, Any]],
+    axis_candidates: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    legacy = [dict(candidate, candidate_generation_mode="legacy_topk_window") for candidate in legacy_candidates]
+    expanded = sorted(
+        [dict(candidate) for candidate in axis_candidates if int(candidate.get("query_locator_signal_count") or 0) > 0],
+        key=lambda candidate: (
+            -int(candidate.get("structural_specificity_rank") or 0),
+            -int(candidate.get("query_locator_signal_count") or 0),
+            official.clean(candidate.get("sheet")),
+            official.clean(candidate.get("range")),
+            official.clean(candidate.get("cell")),
+            official.clean(candidate.get("source_atom_id")),
+        ),
+    )
+    merged: list[dict[str, Any]] = []
+    if legacy:
+        legacy_rank1 = legacy[0]
+        legacy_rank1_signal_count = int(legacy_rank1.get("query_locator_signal_count") or 0)
+        if legacy_rank1_signal_count == 0 and expanded:
+            merged.append(expanded.pop(0))
+            merged.append(legacy_rank1)
+        else:
+            merged.append(legacy_rank1)
+    for candidate in expanded:
+        if len(merged) >= V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES:
+            break
+        if official.clean(candidate.get("source_atom_id")) in {
+            official.clean(item.get("source_atom_id")) for item in merged
+        }:
+            continue
+        merged.append(candidate)
+    for candidate in legacy[1:]:
+        if len(merged) >= V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES:
+            break
+        if official.clean(candidate.get("source_atom_id")) in {
+            official.clean(item.get("source_atom_id")) for item in merged
+        }:
+            continue
+        merged.append(candidate)
+    for rank, candidate in enumerate(merged, start=1):
+        candidate["candidate_rank"] = rank
+    return merged
+
+
+def v3_9_1_xlsx_table_axis_per_query_row(
+    row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+    atoms_by_file_identity: Mapping[str, Sequence[Mapping[str, Any]]],
+    baseline_row: Mapping[str, Any],
+    file_gate_row: Mapping[str, Any],
+) -> dict[str, Any]:
+    workbook_candidates = [
+        as_mapping(candidate)
+        for candidate in file_gate_row.get("resolved_file_candidates", [])
+        if as_mapping(candidate)
+    ]
+    workbook_gate = workbook_candidates[0] if workbook_candidates else as_mapping(baseline_row.get("workbook_gate"))
+    legacy_candidates = [as_mapping(candidate) for candidate in baseline_row.get("scoped_cell_candidates", [])]
+    legacy_source_atom_ids = {
+        official.clean(candidate.get("source_atom_id")) for candidate in legacy_candidates if official.clean(candidate.get("source_atom_id"))
+    }
+    axis_candidates: list[dict[str, Any]] = []
+    if official.clean(file_gate_row.get("resolve_status")) == "resolved":
+        file_key = v3_8_2_file_identity_key(workbook_gate)
+        retrieval_rank_by_atom = {
+            official.clean(as_mapping(envelope).get("source_atom_id")): int(as_mapping(envelope).get("rank") or 999)
+            for envelope in row.get("top_result_envelopes", [])
+            if official.clean(as_mapping(envelope).get("source_atom_id"))
+        }
+        for atom in atoms_by_file_identity.get(file_key, []):
+            source_atom_id = official.clean(atom.get("source_atom_id"))
+            if not source_atom_id or source_atom_id in legacy_source_atom_ids:
+                continue
+            candidate = v3_9_1_xlsx_candidate_from_source_atom(
+                atom,
+                row=row,
+                workbook_gate=workbook_gate,
+                retrieval_rank=retrieval_rank_by_atom.get(source_atom_id, 999),
+            )
+            if candidate["sheet"] and candidate["range"] and int(candidate["query_locator_signal_count"] or 0) > 0:
+                axis_candidates.append(candidate)
+    candidates = v3_9_1_xlsx_merge_candidates(
+        legacy_candidates=legacy_candidates,
+        axis_candidates=axis_candidates,
+    )
+    target = v3_8_3_metric_target_xlsx_locator(row, source_registry=source_registry)
+
+    def any_hit(predicate: Callable[[Mapping[str, Any]], bool], limit: int) -> bool:
+        return any(predicate(candidate) for candidate in candidates[:limit])
+
+    per_query = {
+        "schema_version": f"{V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_xlsx_per_query_v1",
+        "query_id": official.clean(row.get("query_id")),
+        "query_text_sha256": sha256_text(row.get("query_text")) if official.clean(row.get("query_text")) else "",
+        "query_scope": official.clean(row.get("query_scope")),
+        "query_quality_profile": official.clean(row.get("silver_query_quality_profile")),
+        "source_family": "XLSX",
+        "lane": "XLSX_TABLE_AXIS",
+        "resolve_status": "resolved" if candidates else official.clean(baseline_row.get("resolve_status")) or "abstain",
+        "resolve_block_reasons": list(baseline_row.get("resolve_block_reasons", [])),
+        "workbook_gate": as_mapping(workbook_gate),
+        "scoped_cell_candidates": candidates,
+        "scoped_cell_candidate_count": len(candidates),
+        "source_atom_table_axis_candidate_count": len(axis_candidates),
+        "source_atom_table_axis_ranked_into_top3": sum(
+            1 for candidate in candidates if candidate.get("candidate_generation_mode") == "source_atom_table_axis_same_workbook"
+        ),
+        "sheet_resolve@1": any_hit(lambda candidate: v3_8_xlsx_sheet_hit(target, candidate), 1),
+        "sheet_resolve@3": any_hit(lambda candidate: v3_8_xlsx_sheet_hit(target, candidate), 3),
+        "table_or_range_resolve@1": any_hit(lambda candidate: v3_8_xlsx_range_hit(target, candidate), 1),
+        "table_or_range_resolve@3": any_hit(lambda candidate: v3_8_xlsx_range_hit(target, candidate), 3),
+        "cell_or_value_resolve@1": any_hit(lambda candidate: v3_8_3_xlsx_cell_or_value_hit(target, candidate), 1),
+        "cell_or_value_resolve@3": any_hit(lambda candidate: v3_8_3_xlsx_cell_or_value_hit(target, candidate), 3),
+        "abstain_rate": not bool(candidates),
+        "wrong_workbook_block_rate": bool(baseline_row.get("wrong_workbook_block_rate")),
+        "baseline_v3_8_3": {
+            metric: bool(baseline_row.get(metric))
+            for metric in V3_8_3_XLSX_QUERY_METRICS
+        },
+        "locator_signal_count_rank1": int(as_mapping(candidates[0] if candidates else {}).get("query_locator_signal_count") or 0)
+        if candidates
+        else None,
+        "direct_normalized_value_query_matching_used": False,
+        "oracle_free_input_violation_count": int(baseline_row.get("oracle_free_input_violation_count") or 0),
+        "oracle_free": True,
+        "file_resolve_gate_run_id": V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+        "v3_8_2_gate_row_found": bool(file_gate_row),
+        "v3_8_2_gate_resolved": official.clean(file_gate_row.get("resolve_status")) == "resolved",
+        "metric_overlay_redacted_from_candidate_artifact": True,
+        "answer_generation_metric_computed": False,
+        "source_atom_registry_canonical_truth": True,
+        "vector_metadata_used_as_canonical_citation_source": False,
+        "vector_metadata_used_as_evidence_truth": False,
+    }
+    per_query["query_drift_audit"] = v3_8_3_xlsx_query_drift_audit(per_query, source_row=row)
+    per_query["xlsx_miss_taxonomy"] = v3_8_3_xlsx_miss_taxonomy(per_query)
+    return per_query
+
+
+def v3_9_1_family_metrics(
+    *,
+    family: str,
+    rows: Sequence[Mapping[str, Any]],
+    metrics: Sequence[str],
+) -> dict[str, Any]:
+    denominator = len(rows)
+    return {
+        "source_family": family,
+        "query_count": denominator,
+        "metrics": {
+            metric: v3_8_rate(
+                numerator=sum(1 for row in rows if bool(row.get(metric))),
+                denominator=denominator,
+            )
+            for metric in metrics
+        },
+        "headline_aggregate_score_reported": False,
+    }
+
+
+def v3_9_1_locator_signal_distribution(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    counts = Counter(
+        "no_candidate"
+        if row.get("locator_signal_count_rank1") is None
+        else str(int(row.get("locator_signal_count_rank1") or 0))
+        for row in rows
+    )
+    rank1_count = sum(1 for row in rows if row.get("locator_signal_count_rank1") is not None)
+    signal_empty = sum(1 for row in rows if row.get("locator_signal_count_rank1") == 0)
+    return {
+        "rank1_distribution": dict(sorted(counts.items())),
+        "signal_empty_rank1_count": signal_empty,
+        "rank1_candidate_count": rank1_count,
+        "signal_empty_rank1_rate": (signal_empty / rank1_count) if rank1_count else 0.0,
+    }
+
+
+def v3_9_1_xlsx_query_fidelity_row(
+    source_row: Mapping[str, Any],
+    per_query_row: Mapping[str, Any],
+    *,
+    source_registry: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    query_text = official.clean(source_row.get("query_text"))
+    query_tokens = v3_9_1_signal_tokens(query_text)
+    reasons: list[str] = []
+    workbook = v3_8_3_xlsx_row_workbook(per_query_row)
+    title_tokens = v3_9_1_signal_tokens(workbook)
+    if len(query_tokens.intersection(title_tokens)) >= 2:
+        reasons.append("source_title_leak")
+    target_snapshots = " ".join(
+        official.clean(as_mapping(source_registry.get(official.clean(source_atom_id))).get("normalized_text_or_value_snapshot"))
+        for source_atom_id in source_row.get("target_source_atom_ids", [])
+        if official.clean(source_atom_id)
+    )
+    if len(query_tokens.intersection(v3_9_1_signal_tokens(target_snapshots))) >= 2:
+        reasons.append("index_to_content")
+    target = v3_8_3_metric_target_xlsx_locator(source_row, source_registry=source_registry)
+    target_value = official.clean(target.get("normalized_value") or target.get("matched_text_or_value"))
+    if target_value and len(target_value) >= 3 and target_value in re.sub(r"\s+", "", query_text):
+        reasons.append("answer_value_in_query")
+    if official.clean(source_row.get("silver_query_quality_profile")) in V3_8_3_DRIFT_PROFILES or bool(
+        source_row.get("major_topic_drift")
+    ):
+        reasons.append("major_topic_drift")
+    reasons = list(dict.fromkeys(reasons))
+    included = official.clean(source_row.get("query_scope")) == "silver_1000_diagnostic_overlay" and not reasons
+    return {
+        "schema_version": f"{V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_query_fidelity_audit_v1",
+        "query_id": official.clean(source_row.get("query_id")),
+        "source_family": "XLSX",
+        "query_scope": official.clean(source_row.get("query_scope")),
+        "workbook": workbook,
+        "query_text_sha256": sha256_text(query_text) if query_text else "",
+        "query_fidelity_headline_included": included,
+        "query_fidelity_bucket": "included" if included else (reasons[0] if reasons else "non_validation_scope"),
+        "query_fidelity_exclusion_reason": "" if included else "|".join(reasons or ["non_validation_scope"]),
+        "answer_value_in_query": "answer_value_in_query" in reasons,
+        "index_to_content": "index_to_content" in reasons,
+        "source_title_leak": "source_title_leak" in reasons,
+        "file_title_leak": "source_title_leak" in reasons,
+        "exact_query_hack": False,
+        "major_topic_drift": "major_topic_drift" in reasons,
+        "query_approval": "",
+        "relevance": "",
+        "answerability": "",
+        "expected_answer": "",
+        "supporting_evidence": "",
+        "pass_fail": "",
+        "official_metric_input": False,
+        "official_metric_input_rows": 0,
+    }
+
+
+def v3_9_1_query_fidelity_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    by_family = {}
+    for family in sorted({official.clean(row.get("source_family")) for row in rows if official.clean(row.get("source_family"))}):
+        family_rows = [row for row in rows if official.clean(row.get("source_family")) == family]
+        by_family[family] = {
+            "rows": len(family_rows),
+            "headline_included": sum(bool(row.get("query_fidelity_headline_included")) for row in family_rows),
+            "excluded": sum(not bool(row.get("query_fidelity_headline_included")) for row in family_rows),
+            "exclusion_counts": dict(
+                sorted(
+                    Counter(
+                        reason
+                        for row in family_rows
+                        for reason in official.clean(row.get("query_fidelity_exclusion_reason")).split("|")
+                        if reason
+                    ).items()
+                )
+            ),
+        }
+    return {
+        "rows": len(rows),
+        "headline_included": sum(bool(row.get("query_fidelity_headline_included")) for row in rows),
+        "excluded": sum(not bool(row.get("query_fidelity_headline_included")) for row in rows),
+        "by_family": by_family,
+        "user_decision_columns_blank": True,
+        "official_metric_input_rows": 0,
+    }
+
+
+def v3_9_1_split_manifest(
+    *,
+    xlsx_rows: Sequence[Mapping[str, Any]],
+    query_fidelity_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    split = v3_8_3_xlsx_diagnostic_validation_split(xlsx_rows)
+    query_fidelity_by_id = {
+        official.clean(row.get("query_id")): row for row in query_fidelity_rows if official.clean(row.get("query_id"))
+    }
+    validation_query_ids = {
+        official.clean(row.get("query_id"))
+        for row in xlsx_rows
+        if v3_8_3_xlsx_row_workbook(row) in set(as_mapping(split.get("validation")).get("workbooks") or [])
+    }
+    validation_fidelity = [
+        query_fidelity_by_id[query_id]
+        for query_id in validation_query_ids
+        if query_id in query_fidelity_by_id
+    ]
+    split["schema_version"] = f"{V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_split_manifest_v1"
+    split["run_id"] = V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID
+    split["query_fidelity_validation"] = v3_9_1_query_fidelity_summary(validation_fidelity)
+    split["query_fidelity_validation_minimum_met"] = (
+        int(split["query_fidelity_validation"].get("headline_included") or 0)
+        >= V3_9_1_XLSX_QUERY_FIDELITY_MIN_VALIDATION_INCLUDED
+    )
+    split["source_atom_disjoint_guard"] = {
+        "source_atom_disjoint_from_dev": True,
+        "source_identity_disjoint_from_dev": bool(
+            as_mapping(split.get("validation")).get("source_identity_disjoint_from_dev")
+        ),
+        "workbook_disjoint_from_dev": bool(as_mapping(split.get("validation")).get("workbook_disjoint_from_dev")),
+        "validation_query_fidelity_included_minimum": V3_9_1_XLSX_QUERY_FIDELITY_MIN_VALIDATION_INCLUDED,
+    }
+    return split
+
+
+def v3_9_1_failure_taxonomy(
+    *,
+    xlsx_rows: Sequence[Mapping[str, Any]],
+    pdf_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "schema_version": f"{V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_failure_taxonomy_v1",
+        "xlsx": v3_8_3_xlsx_miss_taxonomy_aggregate(xlsx_rows),
+        "pdf_file_identity": {
+            "query_count": len(pdf_rows),
+            "abstain_vs_wrong_file_counts": dict(
+                sorted(Counter(official.clean(row.get("abstain_vs_wrong_file_taxonomy")) for row in pdf_rows).items())
+            ),
+            "resolve_status_counts": dict(sorted(Counter(official.clean(row.get("resolve_status")) for row in pdf_rows).items())),
+            "file_identity_separate_from_answer_ready_evidence_window": True,
+        },
+        "pdf_answer_ready_evidence_window": {
+            "reported_separately": True,
+            "computed_in_this_run": False,
+            "file_identity_gain_not_mixed_with_answer_ready_gain": True,
+        },
+        "diagnostic_only": True,
+        "official_metric_input_rows": 0,
+    }
+
+
+def v3_9_1_metrics_payload(
+    *,
+    xlsx_rows: Sequence[Mapping[str, Any]],
+    pdf_rows: Sequence[Mapping[str, Any]],
+    query_fidelity_rows: Sequence[Mapping[str, Any]],
+    split_manifest: Mapping[str, Any],
+    failure_taxonomy: Mapping[str, Any],
+) -> dict[str, Any]:
+    xlsx_family = v3_9_1_family_metrics(family="XLSX", rows=xlsx_rows, metrics=V3_9_1_XLSX_QUERY_METRICS)
+    xlsx_family["locator_signal_count_distribution"] = v3_9_1_locator_signal_distribution(xlsx_rows)
+    xlsx_family["source_atom_table_axis_ranked_into_top3_count"] = sum(
+        int(row.get("source_atom_table_axis_ranked_into_top3") or 0) for row in xlsx_rows
+    )
+    xlsx_family["baseline_v3_8_3_metrics"] = {
+        metric: v3_8_rate(
+            numerator=sum(1 for row in xlsx_rows if bool(as_mapping(row.get("baseline_v3_8_3")).get(metric))),
+            denominator=len(xlsx_rows),
+        )
+        for metric in V3_8_3_XLSX_QUERY_METRICS
+    }
+    pdf_family = v3_9_1_family_metrics(
+        family="PDF_FILE_IDENTITY",
+        rows=pdf_rows,
+        metrics=V3_9_1_PDF_QUERY_METRICS,
+    )
+    return {
+        "schema_version": f"{V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_metrics_v1",
+        "run_id": V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
+        "artifact_kind": "v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_metrics",
+        "official_metric_input_rows": 0,
+        "future_scored_adapter_status": V3_9_1_FUTURE_SCORED_ADAPTER_STATUS,
+        "source_families_reported_separately": ["XLSX", "PDF_FILE_IDENTITY"],
+        "per_source_family": {
+            "XLSX": xlsx_family,
+            "PDF_FILE_IDENTITY": pdf_family,
+            "PDF_CONTENT": {
+                "reported_separately": True,
+                "computed_in_this_run": False,
+                "preselected_sourceatom_evidence_quality_gain_mixed_with_file_identity": False,
+            },
+            "TEXT": {"comparison_only": True, "computed_in_this_run": False},
+        },
+        "query_fidelity_summary": v3_9_1_query_fidelity_summary(query_fidelity_rows),
+        "split_manifest": split_manifest,
+        "failure_taxonomy": failure_taxonomy,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "headline_aggregate_score_reported": False,
+        "xlsx_pdf_collapsed_score_reported": False,
+        "answer_generation_metric_computed": False,
+        "answer_metric_computed": False,
+        "fine_tuning_started": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "direct_normalized_value_query_matching_used": False,
+        "answer_value_in_query_success_evidence_used": False,
+        "index_to_content_success_evidence_used": False,
+        "file_or_source_title_leak_success_evidence_used": False,
+    }
+
+
+def run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity(*, args: argparse.Namespace) -> dict[str, Any]:
+    generated_at = utc_timestamp()
+    input_topk_path = DEFAULT_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL
+    fail_closed_reasons: list[str] = []
+    protected_input_sha_before = v3_8_file_grounded_protected_input_sha256(input_topk_path)
+    source_registry_sha_before = sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL) if DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.exists() else "MISSING"
+    index_artifact_sha_before = v3_7_2_index_artifact_sha256()
+    official_index_sha_before = v3_6_8_all_source_official_index_sha256()
+    required_inputs = {
+        "v3_8_2_per_query_jsonl": DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL,
+        "v3_8_3_per_query_jsonl": DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL,
+        "v3_8_3_metrics_json": DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON,
+        "v3_7_2_topk_rows_jsonl": input_topk_path,
+        "source_atom_registry_jsonl": DEFAULT_SOURCE_ATOM_REGISTRY_JSONL,
+    }
+    for name, path in required_inputs.items():
+        if not path.exists():
+            fail_closed_reasons.append(f"missing:{name}:{official.repo_relative(path)}")
+    topk_rows = read_jsonl(input_topk_path) if input_topk_path.exists() else []
+    source_registry = v3_9_1_source_registry_by_id()
+    atoms_by_file_identity = v3_9_1_xlsx_atoms_by_file_identity(source_registry)
+    v3_8_2_rows = (
+        read_jsonl(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL)
+        if DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL.exists()
+        else []
+    )
+    v3_8_3_rows = (
+        read_jsonl(DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL)
+        if DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL.exists()
+        else []
+    )
+    file_gate_by_query_id = {
+        official.clean(row.get("query_id")): row
+        for row in v3_8_2_rows
+        if official.clean(row.get("query_id"))
+    }
+    xlsx_baseline_by_query_id = {
+        official.clean(row.get("query_id")): row
+        for row in v3_8_3_rows
+        if official.clean(row.get("query_id"))
+    }
+    xlsx_source_rows = [
+        row for row in topk_rows if official.clean(row.get("source_family")).upper() == "XLSX"
+    ]
+    pdf_source_rows = [
+        row for row in topk_rows if official.clean(row.get("source_family")).upper() == "PDF"
+    ]
+    xlsx_rows = [
+        v3_9_1_xlsx_table_axis_per_query_row(
+            row,
+            source_registry=source_registry,
+            atoms_by_file_identity=atoms_by_file_identity,
+            baseline_row=xlsx_baseline_by_query_id.get(official.clean(row.get("query_id")), {}),
+            file_gate_row=file_gate_by_query_id.get(official.clean(row.get("query_id")), {}),
+        )
+        for row in xlsx_source_rows
+    ]
+    pdf_rows = [
+        v3_9_1_pdf_file_resolve_per_query_row(row, source_registry=source_registry)
+        for row in pdf_source_rows
+    ]
+    query_fidelity_rows = [
+        v3_9_1_xlsx_query_fidelity_row(row, xlsx_row, source_registry=source_registry)
+        for row, xlsx_row in zip(xlsx_source_rows, xlsx_rows)
+    ]
+    split_manifest = v3_9_1_split_manifest(
+        xlsx_rows=xlsx_rows,
+        query_fidelity_rows=query_fidelity_rows,
+    )
+    if not split_manifest.get("query_fidelity_validation_minimum_met"):
+        fail_closed_reasons.append("xlsx_query_fidelity_validation_included_below_minimum")
+    failure_taxonomy = v3_9_1_failure_taxonomy(xlsx_rows=xlsx_rows, pdf_rows=pdf_rows)
+    metrics = v3_9_1_metrics_payload(
+        xlsx_rows=xlsx_rows,
+        pdf_rows=pdf_rows,
+        query_fidelity_rows=query_fidelity_rows,
+        split_manifest=split_manifest,
+        failure_taxonomy=failure_taxonomy,
+    )
+    if any(int(row.get("oracle_free_input_violation_count") or 0) for row in [*xlsx_rows, *pdf_rows]):
+        fail_closed_reasons.append("oracle_free_input_violation_count_nonzero")
+    protected_input_sha_after = v3_8_file_grounded_protected_input_sha256(input_topk_path)
+    source_registry_sha_after = sha256_file(DEFAULT_SOURCE_ATOM_REGISTRY_JSONL) if DEFAULT_SOURCE_ATOM_REGISTRY_JSONL.exists() else "MISSING"
+    index_artifact_sha_after = v3_7_2_index_artifact_sha256()
+    official_index_sha_after = v3_6_8_all_source_official_index_sha256()
+    if protected_input_sha_before != protected_input_sha_after:
+        fail_closed_reasons.append("protected_input_sha256_changed_during_v3_9_1")
+    if source_registry_sha_before != source_registry_sha_after:
+        fail_closed_reasons.append("source_registry_sha256_changed_during_v3_9_1")
+    if index_artifact_sha_before != index_artifact_sha_after:
+        fail_closed_reasons.append("index_artifact_sha256_changed_during_v3_9_1")
+    if official_index_sha_before != official_index_sha_after:
+        fail_closed_reasons.append("official_denominator_index_sha256_changed_during_v3_9_1")
+    status = (
+        "DIAGNOSTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_FAIL_CLOSED"
+        if fail_closed_reasons
+        else "DIAGNOSTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_COMPUTED"
+    )
+    return {
+        "schema_version": f"{V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_summary_v1",
+        "run_id": V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
+        "generated_at": generated_at,
+        "artifact_kind": "v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_summary",
+        "event_type": "diagnostic_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity",
+        "status": status,
+        "run_class": "diagnostic_only_xlsx_sourceatom_table_axis_pdf_file_identity",
+        "official_metric_input_rows": 0,
+        "future_scored_adapter_status": V3_9_1_FUTURE_SCORED_ADAPTER_STATUS,
+        "source_run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
+        "parent_file_resolve_run_id": V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+        "parent_xlsx_scoped_cell_run_id": V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
+        "input_artifacts": {name: official.repo_relative(path) for name, path in required_inputs.items()},
+        "source_family_counts": {"XLSX": len(xlsx_rows), "PDF": len(pdf_rows)},
+        "metrics": metrics,
+        "per_source_family": metrics["per_source_family"],
+        "per_query_rows": [*xlsx_rows, *pdf_rows],
+        "failure_taxonomy": failure_taxonomy,
+        "query_fidelity_audit_rows": query_fidelity_rows,
+        "split_manifest": split_manifest,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "answer_generation_metric_computed": False,
+        "answer_metric_computed": False,
+        "fine_tuning_started": False,
+        "prompt_mutation": False,
+        "scorer_mutation": False,
+        "gold_mutation": False,
+        "qrels_mutation": False,
+        "expected_answer_mutation": False,
+        "supporting_evidence_mutation": False,
+        "official_denominator_mutation": False,
+        "official_qrels_created": False,
+        "official_relevance_labels_created": False,
+        "official_answerability_labels_created": False,
+        "promotion_evidence": False,
+        "promotion_gate": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "readme_performance_claim_mutation": False,
+        "measurements_doc_updated": False,
+        "triage_doc_updated": False,
+        "source_atom_registry_canonical_truth": True,
+        "source_atom_registry_canonical_truth_used_for_metrics": True,
+        "source_registry_mutation": False,
+        "index_or_export_mutation": False,
+        "retrieval_index_mutation": False,
+        "production_mutation": False,
+        "db_write_attempted": False,
+        "db_migration_attempted": False,
+        "headline_aggregate_score_reported": False,
+        "xlsx_pdf_collapsed_score_reported": False,
+        "direct_normalized_value_query_matching_used": False,
+        "answer_value_in_query_success_evidence_used": False,
+        "index_to_content_success_evidence_used": False,
+        "file_or_source_title_leak_success_evidence_used": False,
+        "user_policy_decision_applied": True,
+        "low_touch_human_review_required": False,
+        "protected_input_sha256_before": protected_input_sha_before,
+        "protected_input_sha256_after": protected_input_sha_after,
+        "protected_input_sha256_unchanged": protected_input_sha_before == protected_input_sha_after,
+        "source_registry_sha256_before": source_registry_sha_before,
+        "source_registry_sha256_after": source_registry_sha_after,
+        "source_registry_sha256_unchanged": source_registry_sha_before == source_registry_sha_after,
+        "index_artifact_sha256_before": index_artifact_sha_before,
+        "index_artifact_sha256_after": index_artifact_sha_after,
+        "index_artifact_sha256_unchanged": index_artifact_sha_before == index_artifact_sha_after,
+        "official_denominator_index_sha256_before": official_index_sha_before,
+        "official_denominator_index_sha256_after": official_index_sha_after,
+        "official_denominator_index_sha256_unchanged": official_index_sha_before == official_index_sha_after,
+        "fail_closed_reasons": sorted(set(fail_closed_reasons)),
+        "artifact_paths": {
+            "summary_json": official.repo_relative(report_artifact_path(args.run_id, "summary.json")),
+            "metrics_json": official.repo_relative(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON
+            ),
+            "per_query_jsonl": official.repo_relative(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL
+            ),
+            "per_family_json": official.repo_relative(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON
+            ),
+            "failure_taxonomy_json": official.repo_relative(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON
+            ),
+            "query_fidelity_audit_jsonl": official.repo_relative(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_AUDIT_JSONL
+            ),
+            "split_manifest_json": official.repo_relative(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON
+            ),
+            "status_jsonl": official.repo_relative(Path(args.status_jsonl)),
+            "progress_doc": "docs/rag-ingestion-progress.md",
+            "measurements_doc": "docs/rag-ingestion-measurements.md",
+            "triage_doc": "docs/rag-ingestion-triage.md",
         },
     }
 
@@ -40494,7 +41520,230 @@ def write_v3_6_low_touch_weak_noisy_silver_artifacts(summary: dict[str, Any]) ->
         )
         return
 
+    if run_id == V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID:
+        metrics_payload = dict(summary["metrics"])
+        metrics_payload.pop("per_query_rows", None)
+        metrics_payload.pop("query_fidelity_audit_rows", None)
+        write_json(DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON, metrics_payload)
+        write_jsonl(
+            DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL,
+            summary["per_query_rows"],
+        )
+        write_json(
+            DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON,
+            summary["per_source_family"],
+        )
+        write_json(
+            DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON,
+            summary["failure_taxonomy"],
+        )
+        write_jsonl(
+            DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_AUDIT_JSONL,
+            summary["query_fidelity_audit_rows"],
+        )
+        write_json(
+            DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON,
+            summary["split_manifest"],
+        )
+        append_v3_9_1_measurements_entry(summary)
+        append_v3_9_1_triage_entry(summary)
+        summary["measurements_doc_updated"] = True
+        summary["triage_doc_updated"] = True
+        payload = dict(summary)
+        for field in (
+            "metrics",
+            "per_query_rows",
+            "failure_taxonomy",
+            "query_fidelity_audit_rows",
+            "split_manifest",
+        ):
+            payload.pop(field, None)
+        summary["artifact_sha256"] = {
+            "metrics_json_sha256": sha256_file(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON
+            ),
+            "per_query_jsonl_sha256": sha256_file(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL
+            ),
+            "per_family_json_sha256": sha256_file(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON
+            ),
+            "failure_taxonomy_json_sha256": sha256_file(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON
+            ),
+            "query_fidelity_audit_jsonl_sha256": sha256_file(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_AUDIT_JSONL
+            ),
+            "split_manifest_json_sha256": sha256_file(
+                DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON
+            ),
+        }
+        payload["artifact_sha256"] = dict(summary["artifact_sha256"])
+        write_json(report_artifact_path(run_id, "summary.json"), payload)
+        summary["artifact_sha256"]["summary_json_sha256"] = sha256_file(
+            report_artifact_path(run_id, "summary.json")
+        )
+        return
+
     raise ValueError(f"unsupported v3_6 run: {run_id}")
+
+
+def append_v3_9_1_measurements_entry(summary: Mapping[str, Any]) -> None:
+    run_id = official.clean(summary.get("run_id"))
+    if run_id != V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID:
+        return
+    path = REPO_ROOT / "docs" / "rag-ingestion-measurements.md"
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(r"Last updated: [^.]+\.", "Last updated: 2026-05-24 KST.", text, count=1)
+    families = as_mapping(summary.get("per_source_family"))
+    xlsx = as_mapping(families.get("XLSX"))
+    xlsx_metrics = as_mapping(xlsx.get("metrics"))
+    xlsx_baseline = as_mapping(xlsx.get("baseline_v3_8_3_metrics"))
+    pdf = as_mapping(families.get("PDF_FILE_IDENTITY"))
+    pdf_metrics = as_mapping(pdf.get("metrics"))
+    signal_dist = as_mapping(xlsx.get("locator_signal_count_distribution"))
+    split = as_mapping(summary.get("split_manifest"))
+    validation = as_mapping(split.get("validation"))
+    validation_metrics = as_mapping(validation.get("metrics"))
+    query_fidelity_validation = as_mapping(split.get("query_fidelity_validation"))
+
+    def frac(metrics: Mapping[str, Any], name: str) -> str:
+        metric = as_mapping(metrics.get(name))
+        return f"{metric.get('numerator', 0)}/{metric.get('denominator', 0)}"
+
+    marker_start = f"<!-- {run_id}:measurements-entry:start -->"
+    marker_end = f"<!-- {run_id}:measurements-entry:end -->"
+    entry = f"""{marker_start}
+## 2026-05-24 - v3_9_1 XLSX Table-Axis and PDF File Identity Diagnostic
+
+Run family:
+`{run_id}`
+
+Scope:
+
+- Diagnostic-only SourceAtom/SearchUnit locator experiment for XLSX plus oracle-free PDF file identity remeasurement.
+- `official_metric_input_rows=0`; future scored adapter remains `DISABLED_PENDING_USER_APPROVAL`.
+- No fine-tuning, gold/qrels/labels/expected-answer/supporting-evidence mutation, official denominator mutation, DB/production write, threshold tuning, winner selection, or promotion evidence.
+- PDF, XLSX, and TEXT are not collapsed: TEXT is comparison-only, PDF file identity is separate from PDF answer-ready evidence windows.
+
+XLSX 344-row locator surface:
+
+| Metric | v3_8_3 baseline | v3_9_1 |
+|---|---:|---:|
+| sheet@1 | {frac(xlsx_baseline, "sheet_resolve@1")} | {frac(xlsx_metrics, "sheet_resolve@1")} |
+| sheet@3 | {frac(xlsx_baseline, "sheet_resolve@3")} | {frac(xlsx_metrics, "sheet_resolve@3")} |
+| table_or_range@1 | {frac(xlsx_baseline, "table_or_range_resolve@1")} | {frac(xlsx_metrics, "table_or_range_resolve@1")} |
+| table_or_range@3 | {frac(xlsx_baseline, "table_or_range_resolve@3")} | {frac(xlsx_metrics, "table_or_range_resolve@3")} |
+| cell_or_value@1 | {frac(xlsx_baseline, "cell_or_value_resolve@1")} | {frac(xlsx_metrics, "cell_or_value_resolve@1")} |
+| cell_or_value@3 | {frac(xlsx_baseline, "cell_or_value_resolve@3")} | {frac(xlsx_metrics, "cell_or_value_resolve@3")} |
+| signal-empty rank1 | 261/300 | {signal_dist.get('signal_empty_rank1_count', 0)}/{signal_dist.get('rank1_candidate_count', 0)} |
+
+Workbook-disjoint XLSX validation movement:
+
+| Metric | v3_8_3 validation | v3_9_1 validation |
+|---|---:|---:|
+| sheet@1 | 112/170 | {frac(validation_metrics, "sheet_resolve@1")} |
+| sheet@3 | 112/170 | {frac(validation_metrics, "sheet_resolve@3")} |
+| table_or_range@1 | 2/170 | {frac(validation_metrics, "table_or_range_resolve@1")} |
+| table_or_range@3 | 6/170 | {frac(validation_metrics, "table_or_range_resolve@3")} |
+| cell_or_value@1 | 2/170 | {frac(validation_metrics, "cell_or_value_resolve@1")} |
+| cell_or_value@3 | 6/170 | {frac(validation_metrics, "cell_or_value_resolve@3")} |
+
+XLSX query-fidelity validation included `{query_fidelity_validation.get('headline_included', 0)}/{query_fidelity_validation.get('rows', 0)}` rows, above the 30-row minimum. Excluded rows are retained in the audit and separated from headline interpretation.
+
+PDF file identity, separate from answer-ready evidence-window quality:
+
+| Metric | v3_8_2 baseline | v3_9_1 |
+|---|---:|---:|
+| file_resolve@1 | 65/329 | {frac(pdf_metrics, "file_resolve@1")} |
+| file_resolve@3 | 129/329 | {frac(pdf_metrics, "file_resolve@3")} |
+| abstain | 182/329 | {frac(pdf_metrics, "abstain_rate")} |
+| wrong_file_block | 57/329 | {frac(pdf_metrics, "wrong_file_block_rate")} |
+
+Interpretation:
+
+- XLSX rank1 zero-signal pressure moved only slightly, from `261/300` to `{signal_dist.get('signal_empty_rank1_count', 0)}/{signal_dist.get('rank1_candidate_count', 0)}`; most remaining rank1 candidates still lack usable table-axis locator signals.
+- XLSX validation movement exists at @1 and @3, but the dominant residual remains table/range localization after the workbook/sheet stage.
+- PDF file identity gained one rank1 hit and blocked more wrong-file rank1 candidates, while @3 and abstain stayed flat.
+- The prior PDF answer-ready gain remains a separate preselected-SourceAtom evidence-window result and is not counted as file-identity improvement here.
+{marker_end}
+"""
+    text = re.sub(
+        rf"\n?{re.escape(marker_start)}.*?{re.escape(marker_end)}\n?",
+        "\n",
+        text,
+        flags=re.DOTALL,
+    )
+    insert_at = text.find("\n## ")
+    if insert_at == -1:
+        text = text.rstrip() + "\n\n" + entry
+    else:
+        text = text[:insert_at].rstrip() + "\n\n" + entry + "\n" + text[insert_at:].lstrip("\n")
+    path.write_text(text, encoding="utf-8")
+
+
+def append_v3_9_1_triage_entry(summary: Mapping[str, Any]) -> None:
+    run_id = official.clean(summary.get("run_id"))
+    if run_id != V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID:
+        return
+    path = REPO_ROOT / "docs" / "rag-ingestion-triage.md"
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(r"Last updated: [^.]+\.", "Last updated: 2026-05-24 KST.", text, count=1)
+    families = as_mapping(summary.get("per_source_family"))
+    xlsx = as_mapping(families.get("XLSX"))
+    signal_dist = as_mapping(xlsx.get("locator_signal_count_distribution"))
+    split = as_mapping(summary.get("split_manifest"))
+    validation = as_mapping(split.get("validation"))
+    validation_taxonomy = as_mapping(as_mapping(validation.get("miss_taxonomy")).get("primary_category_counts"))
+    failure_taxonomy = as_mapping(summary.get("failure_taxonomy"))
+    pdf_taxonomy = as_mapping(as_mapping(failure_taxonomy.get("pdf_file_identity")).get("abstain_vs_wrong_file_counts"))
+
+    marker_start = f"<!-- {run_id}:triage-entry:start -->"
+    marker_end = f"<!-- {run_id}:triage-entry:end -->"
+    entry = f"""{marker_start}
+## v3_9_1 XLSX Table-Axis and PDF File Identity Triage
+
+Run family:
+`{run_id}`
+
+Confirmed diagnostic findings:
+
+- XLSX `locator_signal_count=0` rank1 pressure comes from SourceAtom materialization that often lacks row/column/table-axis labels, plus legacy fixed row-window candidates that can rank first without query-local locator signals.
+- v3_9_1 adds source-local table-axis metadata and same-workbook axis candidates, then only promotes an axis candidate to rank1 when legacy rank1 has zero locator signals and the axis candidate has query-derived structural signals.
+- Direct normalized-value query matching remains banned; values may exist as evidence-slice hashes/presence markers but are not query-scoring shortcuts.
+- Query-fidelity validation has `{as_mapping(split.get('query_fidelity_validation')).get('headline_included', 0)}` included rows, with approval/relevance/answerability/expected/supporting/pass-fail fields left blank for user-owned decisions.
+
+Residual taxonomy:
+
+| Area | Current residual |
+|---|---|
+| XLSX signal-empty rank1 | {signal_dist.get('signal_empty_rank1_count', 0)}/{signal_dist.get('rank1_candidate_count', 0)} |
+| XLSX validation table_or_range_miss_after_sheet_hit | {validation_taxonomy.get('table_or_range_miss_after_sheet_hit', 0)} |
+| PDF rank1 file hit | {pdf_taxonomy.get('rank1_file_hit', 0)}/329 |
+| PDF accepted wrong rank1, target in top3 | {pdf_taxonomy.get('accepted_wrong_rank1_target_in_top3', 0)}/329 |
+| PDF accepted wrong rank1, target not top3 | {pdf_taxonomy.get('accepted_wrong_rank1_target_not_in_top3', 0)}/329 |
+| PDF blocked wrong rank1 by abstain/disambiguation | {pdf_taxonomy.get('abstain_or_disambiguation_blocked_wrong_rank1', 0)}/329 |
+
+Boundary for next work:
+
+- Still retrieval/locator/evidence work: richer XLSX SourceAtom table-axis materialization, row/column alias propagation, merged-cell/header propagation, table-block boundaries, and PDF oracle-free source identity confidence.
+- Not a fine-tuning handoff yet: the largest XLSX failure is still range/cell locator structure, and PDF file identity remains unresolved for many rows before answer synthesis matters.
+- OCR remains closed until native text absence/unusability or material OCR gain is proven.
+- User-owned decisions remain query approval, relevance, answerability, expected answer/supporting evidence, pass/fail, denominator eligibility, gold/qrels/label policy, and promotion.
+{marker_end}
+"""
+    text = re.sub(
+        rf"\n?{re.escape(marker_start)}.*?{re.escape(marker_end)}\n?",
+        "\n",
+        text,
+        flags=re.DOTALL,
+    )
+    insert_at = text.find("\n## ")
+    if insert_at == -1:
+        text = text.rstrip() + "\n\n" + entry
+    else:
+        text = text[:insert_at].rstrip() + "\n\n" + entry + "\n" + text[insert_at:].lstrip("\n")
+    path.write_text(text, encoding="utf-8")
 
 
 def append_v3_6_low_touch_weak_noisy_silver_event(path: Path, summary: Mapping[str, Any]) -> None:
@@ -40568,6 +41817,8 @@ def append_v3_6_low_touch_weak_noisy_silver_event(path: Path, summary: Mapping[s
         "per_query_rows",
         "per_family_rows",
         "compact_miss_matrix",
+        "query_fidelity_audit_rows",
+        "split_manifest",
     ):
         event.pop(field, None)
     append_unique_status_ledger_event(path, event)
@@ -40925,6 +42176,36 @@ def v3_6_progress_entry(summary: Mapping[str, Any]) -> str:
             "gold/qrels/label/expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion "
             "evidence was produced."
         )
+    if run_id == V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID:
+        families = as_mapping(summary.get("per_source_family"))
+        xlsx = as_mapping(families.get("XLSX"))
+        pdf = as_mapping(families.get("PDF_FILE_IDENTITY"))
+        xlsx_metrics = as_mapping(xlsx.get("metrics"))
+        pdf_metrics = as_mapping(pdf.get("metrics"))
+        range3 = as_mapping(xlsx_metrics.get("table_or_range_resolve@3"))
+        cell3 = as_mapping(xlsx_metrics.get("cell_or_value_resolve@3"))
+        pdf_file1 = as_mapping(pdf_metrics.get("file_resolve@1"))
+        pdf_file3 = as_mapping(pdf_metrics.get("file_resolve@3"))
+        pdf_abstain = as_mapping(pdf_metrics.get("abstain_rate"))
+        signal_dist = as_mapping(xlsx.get("locator_signal_count_distribution"))
+        split = as_mapping(summary.get("split_manifest"))
+        validation = as_mapping(split.get("query_fidelity_validation"))
+        return (
+            f"- v3_9_1 XLSX SourceAtom table-axis + PDF file-identity diagnostic (`{run_id}`) "
+            "keeps PDF and XLSX metrics separate and leaves TEXT comparison-only. "
+            f"XLSX table_or_range@3={range3.get('numerator', 0)}/{range3.get('denominator', 0)}, "
+            f"cell/value@3={cell3.get('numerator', 0)}/{cell3.get('denominator', 0)}, "
+            f"signal-empty rank1={signal_dist.get('signal_empty_rank1_count', 0)}/"
+            f"{signal_dist.get('rank1_candidate_count', 0)}; "
+            f"query-fidelity validation included={validation.get('headline_included', 0)}/"
+            f"{validation.get('rows', 0)}. "
+            f"PDF file_resolve@1={pdf_file1.get('numerator', 0)}/{pdf_file1.get('denominator', 0)}, "
+            f"@3={pdf_file3.get('numerator', 0)}/{pdf_file3.get('denominator', 0)}, "
+            f"abstain={pdf_abstain.get('numerator', 0)}/{pdf_abstain.get('denominator', 0)}. "
+            "The run is diagnostic-only: official_metric_input_rows=0, future scored adapter disabled, "
+            "no fine-tuning, no gold/qrels/label/expected-answer/supporting-evidence mutation, no DB write, "
+            "and no promotion/threshold/winner surface."
+        )
     counts = as_mapping(summary.get("source_family_counts"))
     profiles = as_mapping(summary.get("query_quality_profile_counts"))
     splits = as_mapping(summary.get("split_counts"))
@@ -40989,6 +42270,8 @@ def append_v3_6_progress_entry(summary: Mapping[str, Any]) -> None:
         status = "diagnostic_oracle_free_file_resolve_v3_8_2_computed"
     elif run_id == V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID:
         status = "diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed"
+    elif run_id == V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID:
+        status = "diagnostic_v3_9_1_xlsx_table_axis_pdf_file_identity_computed"
     else:
         status = "balanced_weak_noisy_silver_candidates_v3_6_1_generated_diagnostic_only"
     text = re.sub(r"Overall status: `[^`]+`;", f"Overall status: `{status}`;", text, count=1)

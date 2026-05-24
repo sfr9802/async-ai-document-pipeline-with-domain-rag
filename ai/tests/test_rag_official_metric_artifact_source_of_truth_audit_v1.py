@@ -228,6 +228,15 @@ AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID = (
 AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic"
 )
+AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement"
+)
+AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -1303,6 +1312,93 @@ AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL = report_artifact_path(
     AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
     "per_family.jsonl",
 )
+AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_SUMMARY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_RUN_ID}_summary.json"
+)
+AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_METRICS_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_RUN_ID}_metrics.json"
+)
+AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_PER_FAMILY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_RUN_ID}_per_family.json"
+)
+AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_PER_QUERY_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_RUN_ID}_per_query.jsonl"
+)
+AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_FAILURE_TAXONOMY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_RUN_ID}_failure_taxonomy.json"
+)
+AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_QUERY_FIDELITY_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_RUN_ID}_query_fidelity_audit.jsonl"
+)
+AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_PDF_RESIDUAL_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_RUN_ID}_pdf_residual_review.jsonl"
+)
+AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_XLSX_RESIDUAL_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_RUN_ID}_xlsx_locator_residual_review.jsonl"
+)
+AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_SPLIT_MANIFEST_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_RUN_ID}_split_manifest.json"
+)
+AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SUMMARY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_summary.json"
+)
+AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_metrics.json"
+)
+AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_per_query.jsonl"
+)
+AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_per_family.json"
+)
+AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_failure_taxonomy.json"
+)
+AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_query_fidelity_audit.jsonl"
+)
+AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID}_split_manifest.json"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SUMMARY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_summary.json"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_METRICS_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_metrics.json"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_OVERFIT_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_overfit_risk_by_delta.jsonl"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEEN_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_seen_surface_manifest.json"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_CANDIDATE_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_fresh_holdout_candidate_manifest.json"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SPLIT_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_fresh_holdout_split_manifest.json"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_QUERY_FIDELITY_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_query_fidelity_audit.jsonl"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_LEAKAGE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_leakage_audit.jsonl"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_ARCH_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_architecture_scope_assessment.json"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_FAILURE_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_failure_taxonomy.json"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SOURCEATOM_PROPOSAL_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_proposed_sourceatom_table_axis_schema.json"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEARCHUNIT_PROPOSAL_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_proposed_searchunit_table_axis_fields.json"
+)
+AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_REMAT_PLAN_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID}_proposed_nonprod_rematerialization_plan.json"
+)
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
@@ -1351,6 +1447,16 @@ def require_v3_8_3_local_artifacts(*paths: Path) -> None:
         return
     message = "missing v3_8_3 local report artifacts: " + ", ".join(str(path) for path in missing)
     if os.environ.get("RAG_V3_8_3_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
+def require_v3_9_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_9 local report artifacts: " + ", ".join(str(path) for path in missing)
+    if os.environ.get("RAG_V3_9_ARTIFACTS_REQUIRED") == "1":
         pytest.fail(message)
     pytest.skip(message)
 
@@ -1575,6 +1681,35 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL,
     AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON,
     AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_SUMMARY_JSON,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_METRICS_JSON,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_PER_FAMILY_JSON,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_PER_QUERY_JSONL,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_FAILURE_TAXONOMY_JSON,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_QUERY_FIDELITY_JSONL,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_PDF_RESIDUAL_JSONL,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_XLSX_RESIDUAL_JSONL,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_SPLIT_MANIFEST_JSON,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SUMMARY_JSON,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_JSONL,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SUMMARY_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_METRICS_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_OVERFIT_JSONL,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEEN_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_CANDIDATE_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SPLIT_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_QUERY_FIDELITY_JSONL,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_LEAKAGE_JSONL,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_ARCH_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_FAILURE_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SOURCEATOM_PROPOSAL_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEARCHUNIT_PROPOSAL_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_REMAT_PLAN_JSON,
 }
 PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS = CURRENT_REPORT_PATHS
 ARCHIVED_REPORT_PATHS = {
@@ -1683,6 +1818,35 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL,
     AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON,
     AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_SUMMARY_JSON,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_METRICS_JSON,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_PER_FAMILY_JSON,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_PER_QUERY_JSONL,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_FAILURE_TAXONOMY_JSON,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_QUERY_FIDELITY_JSONL,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_PDF_RESIDUAL_JSONL,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_XLSX_RESIDUAL_JSONL,
+    AGENTIC_V3_9_PDF_XLSX_BOTTLENECK_QUALITY_SPLIT_MANIFEST_JSON,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SUMMARY_JSON,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_JSONL,
+    AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SUMMARY_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_METRICS_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_OVERFIT_JSONL,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEEN_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_CANDIDATE_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SPLIT_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_QUERY_FIDELITY_JSONL,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_LEAKAGE_JSONL,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_ARCH_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_FAILURE_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SOURCEATOM_PROPOSAL_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEARCHUNIT_PROPOSAL_JSON,
+    AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_REMAT_PLAN_JSON,
 }
 ARCHIVED_REPORT_PATHS = (
     ARCHIVED_REPORT_PATHS | (PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS - CURRENT_REPORT_PATHS)
@@ -3168,6 +3332,354 @@ def test_v3_8_3_xlsx_scoped_cell_resolve_writer_emits_compact_artifacts_and_summ
     assert summary["artifact_sha256"]["per_family_jsonl_sha256"] == sha256_file(per_family_jsonl_path)
     assert summary["artifact_sha256"]["summary_json_sha256"] == sha256_file(summary_path)
     assert "summary_json_sha256" not in persisted["artifact_sha256"]
+
+
+def test_v3_9_1_xlsx_table_axis_pdf_file_identity_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_9_local_artifacts(
+        AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SUMMARY_JSON,
+        AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON,
+        AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL,
+        AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON,
+        AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON,
+        AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_JSONL,
+        AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON,
+    )
+    summary = read_json(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON)
+    per_family = read_json(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON)
+    per_query_rows = read_jsonl(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL)
+    query_fidelity_rows = read_jsonl(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_JSONL)
+    failure_taxonomy = read_json(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON)
+    split_manifest = read_json(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON)
+    expected_artifacts = {
+        "metrics_json_sha256": AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON,
+        "per_query_jsonl_sha256": AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL,
+        "per_family_json_sha256": AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON,
+        "failure_taxonomy_json_sha256": AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON,
+        "query_fidelity_audit_jsonl_sha256": AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_JSONL,
+        "split_manifest_json_sha256": AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON,
+    }
+
+    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+
+    assert summary["run_id"] == AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_COMPUTED"
+    assert summary["artifact_kind"] == "v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_summary"
+    assert summary["run_class"] == "diagnostic_only_xlsx_sourceatom_table_axis_pdf_file_identity"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["answer_generation_metric_computed"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["fine_tuning_started"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["qrels_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["measurements_doc_updated"] is True
+    assert summary["triage_doc_updated"] is True
+    assert summary["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert set(summary["per_source_family"]) == {"XLSX", "PDF_FILE_IDENTITY", "PDF_CONTENT", "TEXT"}
+    assert summary["per_source_family"] == per_family
+    assert metrics["per_source_family"] == per_family
+    assert metrics["failure_taxonomy"] == failure_taxonomy
+    assert metrics["split_manifest"] == split_manifest
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert metrics["source_families_reported_separately"] == ["XLSX", "PDF_FILE_IDENTITY"]
+    assert metrics["direct_normalized_value_query_matching_used"] is False
+    assert metrics["answer_value_in_query_success_evidence_used"] is False
+    assert metrics["index_to_content_success_evidence_used"] is False
+    assert metrics["file_or_source_title_leak_success_evidence_used"] is False
+
+    xlsx = per_family["XLSX"]
+    assert xlsx["query_count"] == 344
+    assert xlsx["locator_signal_count_distribution"]["signal_empty_rank1_count"] == 257
+    assert xlsx["locator_signal_count_distribution"]["rank1_candidate_count"] == 300
+    assert xlsx["baseline_v3_8_3_metrics"]["table_or_range_resolve@1"]["numerator"] == 22
+    assert xlsx["metrics"]["table_or_range_resolve@1"]["numerator"] == 23
+    assert xlsx["metrics"]["cell_or_value_resolve@1"]["numerator"] == 20
+    assert xlsx["metrics"]["cell_or_value_resolve@3"]["numerator"] == 26
+    assert xlsx["source_atom_table_axis_ranked_into_top3_count"] == 60
+    assert split_manifest["query_fidelity_validation_minimum_met"] is True
+    assert split_manifest["query_fidelity_validation"]["headline_included"] == 118
+    assert split_manifest["source_atom_disjoint_guard"]["workbook_disjoint_from_dev"] is True
+    assert split_manifest["source_atom_disjoint_guard"]["source_identity_disjoint_from_dev"] is True
+    assert split_manifest["candidate_rule_freeze"]["exact_query_hacks"] is False
+    assert split_manifest["candidate_rule_freeze"]["expected_supporting_gold_text_input"] is False
+    assert split_manifest["candidate_rule_freeze"]["file_or_source_title_hacks"] is False
+    assert split_manifest["validation"]["metrics"]["table_or_range_resolve@1"]["numerator"] == 3
+    assert split_manifest["validation"]["metrics"]["table_or_range_resolve@3"]["numerator"] == 9
+    assert split_manifest["validation"]["metrics"]["cell_or_value_resolve@1"]["numerator"] == 3
+    assert split_manifest["validation"]["metrics"]["cell_or_value_resolve@3"]["numerator"] == 9
+
+    pdf = per_family["PDF_FILE_IDENTITY"]
+    assert pdf["query_count"] == 329
+    assert pdf["metrics"]["file_resolve@1"]["numerator"] == 66
+    assert pdf["metrics"]["file_resolve@3"]["numerator"] == 129
+    assert pdf["metrics"]["abstain_rate"]["numerator"] == 182
+    assert pdf["metrics"]["wrong_file_block_rate"]["numerator"] == 60
+    assert per_family["PDF_CONTENT"]["computed_in_this_run"] is False
+    assert per_family["PDF_CONTENT"]["preselected_sourceatom_evidence_quality_gain_mixed_with_file_identity"] is False
+    assert per_family["TEXT"]["comparison_only"] is True
+    assert failure_taxonomy["pdf_answer_ready_evidence_window"]["computed_in_this_run"] is False
+    assert failure_taxonomy["pdf_answer_ready_evidence_window"]["file_identity_gain_not_mixed_with_answer_ready_gain"] is True
+
+    assert len(per_query_rows) == 673
+    assert Counter(row["source_family"] for row in per_query_rows) == {"XLSX": 344, "PDF": 329}
+    assert len(query_fidelity_rows) == 344
+    assert all(row["official_metric_input_rows"] == 0 for row in query_fidelity_rows)
+    assert all(
+        row[column] == ""
+        for row in query_fidelity_rows
+        for column in ("query_approval", "relevance", "answerability", "expected_answer", "supporting_evidence", "pass_fail")
+    )
+    assert "per_query_rows" not in metrics
+    assert "query_fidelity_audit_rows" not in metrics
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+
+    forbidden_candidate_artifact_keys = {
+        "target_source_atom_ids",
+        "target_search_view_ids",
+        "target_locator_fingerprint",
+        "expected_answer",
+        "supporting_evidence",
+        "qrels",
+        "relevance_label",
+        "answerability_label",
+        "normalized_value",
+        "raw_value",
+        "raw_text",
+        "source_text",
+    }
+
+    def assert_forbidden_candidate_keys_absent(value: object) -> None:
+        if isinstance(value, dict):
+            assert not forbidden_candidate_artifact_keys.intersection(value)
+            for child in value.values():
+                assert_forbidden_candidate_keys_absent(child)
+        elif isinstance(value, list):
+            for child in value:
+                assert_forbidden_candidate_keys_absent(child)
+
+    assert_forbidden_candidate_keys_absent(
+        [
+            row.get("scoped_cell_candidates", [])
+            for row in per_query_rows
+            if row.get("source_family") == "XLSX"
+        ]
+    )
+
+    for heavy_key in (
+        "metrics",
+        "per_query_rows",
+        "topk_result_rows",
+        "source_atom_rows",
+        "search_view_rows",
+        "generated_answers",
+        "prompt_payloads",
+        "db_snapshot_rows",
+        "full_evidence_bundles",
+        "query_fidelity_audit_rows",
+        "split_manifest",
+        "failure_taxonomy",
+    ):
+        assert heavy_key not in summary
+    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SUMMARY_JSON.stat().st_size < 500_000
+    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON.stat().st_size < 2_000_000
+    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL.stat().st_size < 8_000_000
+    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON.stat().st_size < 500_000
+    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_JSONL.stat().st_size < 1_000_000
+    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON.stat().st_size < 1_000_000
+
+
+def test_v3_9_1_writer_emits_compact_artifacts_and_summary_hashes(tmp_path, monkeypatch) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    summary_path = tmp_path / "v3_9_1_summary.json"
+    metrics_path = tmp_path / "v3_9_1_metrics.json"
+    per_query_path = tmp_path / "v3_9_1_per_query.jsonl"
+    per_family_path = tmp_path / "v3_9_1_per_family.json"
+    failure_path = tmp_path / "v3_9_1_failure.json"
+    fidelity_path = tmp_path / "v3_9_1_fidelity.jsonl"
+    split_path = tmp_path / "v3_9_1_split.json"
+
+    monkeypatch.setattr(runner, "DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON", metrics_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL", per_query_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON", per_family_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON", failure_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_AUDIT_JSONL", fidelity_path)
+    monkeypatch.setattr(runner, "DEFAULT_V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON", split_path)
+    monkeypatch.setattr(runner, "append_v3_9_1_measurements_entry", lambda summary: None)
+    monkeypatch.setattr(runner, "append_v3_9_1_triage_entry", lambda summary: None)
+    monkeypatch.setattr(
+        runner,
+        "report_artifact_path",
+        lambda run_id, suffix: summary_path
+        if run_id == runner.V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID and suffix == "summary.json"
+        else tmp_path / f"{run_id}_{suffix}",
+    )
+
+    summary = {
+        "run_id": runner.V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID,
+        "status": "DIAGNOSTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_COMPUTED",
+        "metrics": {
+            "artifact_kind": "v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_metrics",
+            "per_source_family": {"XLSX": {"query_count": 1}, "PDF_FILE_IDENTITY": {"query_count": 1}},
+            "per_query_rows": [{"query_id": "heavy_row"}],
+        },
+        "per_query_rows": [{"query_id": "xlsx_q", "source_family": "XLSX"}],
+        "per_source_family": {"XLSX": {"query_count": 1}, "PDF_FILE_IDENTITY": {"query_count": 1}},
+        "failure_taxonomy": {"xlsx": {}, "pdf_file_identity": {}},
+        "query_fidelity_audit_rows": [{"query_id": "xlsx_q", "query_approval": ""}],
+        "split_manifest": {"official_metric_input_rows": 0},
+        "artifact_paths": {
+            "summary_json": "tmp/v3_9_1_summary.json",
+            "metrics_json": "tmp/v3_9_1_metrics.json",
+            "per_query_jsonl": "tmp/v3_9_1_per_query.jsonl",
+            "per_family_json": "tmp/v3_9_1_per_family.json",
+            "failure_taxonomy_json": "tmp/v3_9_1_failure.json",
+            "query_fidelity_audit_jsonl": "tmp/v3_9_1_fidelity.jsonl",
+            "split_manifest_json": "tmp/v3_9_1_split.json",
+        },
+    }
+
+    runner.write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
+
+    persisted = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert metrics_path.exists()
+    assert per_query_path.exists()
+    assert per_family_path.exists()
+    assert failure_path.exists()
+    assert fidelity_path.exists()
+    assert split_path.exists()
+    assert "metrics" not in persisted
+    assert "per_query_rows" not in persisted
+    assert "failure_taxonomy" not in persisted
+    assert "query_fidelity_audit_rows" not in persisted
+    assert "split_manifest" not in persisted
+    assert "per_query_rows" not in json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert persisted["per_source_family"] == {"XLSX": {"query_count": 1}, "PDF_FILE_IDENTITY": {"query_count": 1}}
+    assert persisted["measurements_doc_updated"] is True
+    assert persisted["triage_doc_updated"] is True
+    assert summary["artifact_sha256"]["metrics_json_sha256"] == sha256_file(metrics_path)
+    assert summary["artifact_sha256"]["per_query_jsonl_sha256"] == sha256_file(per_query_path)
+    assert summary["artifact_sha256"]["per_family_json_sha256"] == sha256_file(per_family_path)
+    assert summary["artifact_sha256"]["failure_taxonomy_json_sha256"] == sha256_file(failure_path)
+    assert summary["artifact_sha256"]["query_fidelity_audit_jsonl_sha256"] == sha256_file(fidelity_path)
+    assert summary["artifact_sha256"]["split_manifest_json_sha256"] == sha256_file(split_path)
+    assert summary["artifact_sha256"]["summary_json_sha256"] == sha256_file(summary_path)
+    assert "summary_json_sha256" not in persisted["artifact_sha256"]
+
+
+def test_v3_9_2_overfit_risk_audit_and_holdout_reset_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_9_local_artifacts(
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SUMMARY_JSON,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_METRICS_JSON,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_OVERFIT_JSONL,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEEN_JSON,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_CANDIDATE_JSON,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SPLIT_JSON,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_QUERY_FIDELITY_JSONL,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_LEAKAGE_JSONL,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_ARCH_JSON,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_FAILURE_JSON,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SOURCEATOM_PROPOSAL_JSON,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEARCHUNIT_PROPOSAL_JSON,
+        AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_REMAT_PLAN_JSON,
+    )
+    summary = read_json(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_METRICS_JSON)
+    overfit_rows = read_jsonl(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_OVERFIT_JSONL)
+    seen = read_json(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEEN_JSON)
+    candidate = read_json(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_CANDIDATE_JSON)
+    split = read_json(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SPLIT_JSON)
+    query_fidelity = read_jsonl(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_QUERY_FIDELITY_JSONL)
+    leakage = read_jsonl(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_LEAKAGE_JSONL)
+    architecture = read_json(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_ARCH_JSON)
+    failure = read_json(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_FAILURE_JSON)
+    remat_plan = read_json(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_REMAT_PLAN_JSON)
+
+    expected_artifacts = {
+        "metrics_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_METRICS_JSON,
+        "overfit_risk_by_delta_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_OVERFIT_JSONL,
+        "seen_surface_manifest_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEEN_JSON,
+        "fresh_holdout_candidate_manifest_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_CANDIDATE_JSON,
+        "fresh_holdout_split_manifest_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SPLIT_JSON,
+        "query_fidelity_audit_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_QUERY_FIDELITY_JSONL,
+        "leakage_audit_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_LEAKAGE_JSONL,
+        "architecture_scope_assessment_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_ARCH_JSON,
+        "failure_taxonomy_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_FAILURE_JSON,
+        "proposed_sourceatom_table_axis_schema_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SOURCEATOM_PROPOSAL_JSON,
+        "proposed_searchunit_table_axis_fields_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SEARCHUNIT_PROPOSAL_JSON,
+        "proposed_nonprod_rematerialization_plan_sha256": AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_REMAT_PLAN_JSON,
+    }
+    assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+
+    assert summary["run_id"] == AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_9_2_OVERFIT_RISK_AUDIT_AND_BLIND_HOLDOUT_RESET_READY"
+    assert summary["run_class"] == "diagnostic_only_overfit_risk_audit_and_blind_holdout_reset"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["seen_validation_is_strong_blind_validation"] is False
+    assert summary["seen_validation_downgraded_to_seen_validation_only"] is True
+    assert summary["fresh_holdout_sufficient"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["answer_value_in_query_success_evidence_used"] is False
+    assert summary["index_to_content_success_evidence_used"] is False
+    assert summary["file_or_source_title_leak_success_evidence_used"] is False
+
+    assert metrics["overfit_risk_label_counts"]["likely_general"] == 0
+    assert metrics["fresh_holdout"]["real_unseen_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert seen["real_unseen_holdout_sufficient"] is False
+    assert candidate["synthetic_ood_fixture_created"] is True
+    assert candidate["candidate_count"] == 14
+    assert split["product_success_evidence_allowed"] is False
+    assert split["headline_candidate_count"] == 14
+    assert len(query_fidelity) == 14
+    assert all(row["official_metric_input_rows"] == 0 for row in query_fidelity)
+    assert all(row["expected_answer"] == "" and row["supporting_evidence"] == "" for row in query_fidelity)
+    assert any(row["bucket"] == "answer_value_in_query" for row in leakage)
+    assert len(overfit_rows) == metrics["delta_row_count"]
+    assert any(row["delta_type"] == "rank1_signal_empty_delta" for row in overfit_rows)
+    assert any(row["delta_type"] == "table_range_at3_regression_case" for row in overfit_rows)
+    assert architecture["xlsx_sourceatom_searchunit_table_axis_materialization"]["scope"] == "overlay_rerank_only"
+    assert architecture["xlsx_sourceatom_searchunit_table_axis_materialization"][
+        "nonprod_rematerialization_needed_for_next_performance_phase"
+    ] is True
+    assert architecture["pdf_file_identity_scope"]["file_identity_gain_mixed_with_answer_ready_gain"] is False
+    assert failure["fresh_holdout_failure_taxonomy"]["synthetic_ood_guard_used"] is True
+    assert remat_plan["proposal_only"] is True
+    assert remat_plan["diagnostic_only"] is True
+    assert "rag-data-official-denominator-v1" in remat_plan["blocked_namespaces"]
+
+    assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SUMMARY_JSON.stat().st_size < 250_000
+    assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_METRICS_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_OVERFIT_JSONL.stat().st_size < 500_000
+    assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_CANDIDATE_JSON.stat().st_size < 200_000
 
 
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:

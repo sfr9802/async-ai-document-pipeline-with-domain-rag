@@ -20,7 +20,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Mapping, Sequence
 
 
 AI_ROOT = Path(__file__).resolve().parents[1]
@@ -57,6 +57,7 @@ FRIENDLY_SUFFIXES = ("주세요", "주세요.", "답하세요", "답하세요.",
 QUERY_REWRITE_MAX_ATTEMPTS = 2
 PDF_EXPANSION_MAX_CHARS = 900
 PDF_EXPANSION_MAX_LINES = 6
+PDF_EXPANSION_MAX_VERTICAL_GAP = 96.0
 PDF_WEAK_CHAR_THRESHOLD = 90
 PDF_WEAK_TOKEN_THRESHOLD = 6
 QUERY_REWRITE_STYLE_CYCLE = (
@@ -69,6 +70,7 @@ QUERY_REWRITE_STYLE_CYCLE = (
 )
 DEFAULT_SPLIT_ROLE = "dev_current_pdf_headline"
 VALIDATION_SPLIT_ROLE = "validation_holdout"
+DEFAULT_SOURCE_FAMILIES = ("PDF", "XLSX")
 
 
 @dataclass(frozen=True)
@@ -111,6 +113,7 @@ def main(argv: list[str] | None = None) -> int:
         timeout_seconds=args.timeout_seconds,
         split_role=args.split_role,
         dev_summary_path=Path(args.dev_summary) if args.dev_summary else None,
+        source_families=parse_source_families(args.source_families),
         dry_run=args.dry_run,
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
@@ -145,6 +148,11 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         action="store_true",
         help="Write prompts and query-quality metrics without calling the local LLM.",
     )
+    parser.add_argument(
+        "--source-families",
+        default=",".join(DEFAULT_SOURCE_FAMILIES),
+        help="Comma-separated diagnostic source families. Defaults to PDF,XLSX; TEXT is opt-in for v3_9.",
+    )
     return parser.parse_args(argv)
 
 
@@ -162,6 +170,7 @@ def run_benchmark(
     timeout_seconds: int,
     split_role: str = DEFAULT_SPLIT_ROLE,
     dev_summary_path: Path | None = None,
+    source_families: Sequence[str] = DEFAULT_SOURCE_FAMILIES,
     dry_run: bool = False,
 ) -> dict[str, Any]:
     generated_at = utc_now()
@@ -170,6 +179,11 @@ def run_benchmark(
     summary_path = output_dir / f"{RUN_PREFIX}_{label}_summary.json"
     rows_path = output_dir / f"{RUN_PREFIX}_{label}_responses.jsonl"
     pdf_audit_path = output_dir / f"{RUN_PREFIX}_{label}_pdf_evidence_readiness_audit.jsonl"
+    metrics_path = output_dir / f"{RUN_PREFIX}_{label}_metrics.json"
+    per_family_path = output_dir / f"{RUN_PREFIX}_{label}_per_family.json"
+    per_query_path = output_dir / f"{RUN_PREFIX}_{label}_per_query.jsonl"
+    failure_taxonomy_path = output_dir / f"{RUN_PREFIX}_{label}_failure_taxonomy.json"
+    failure_taxonomy_rows_path = output_dir / f"{RUN_PREFIX}_{label}_failure_taxonomy.jsonl"
 
     silver_index = load_silver_seed_index(silver_manifest_path)
     manifest_rows = read_jsonl(manifest_path)
@@ -180,6 +194,7 @@ def run_benchmark(
             silver_index=silver_index,
             dev_summary_path=dev_summary_path,
             cases_per_family=cases_per_family,
+            source_families=source_families,
         )
     pdf_context_index = build_pdf_context_index(manifest_rows)
     manifest_rows_by_source_atom = {
@@ -193,6 +208,7 @@ def run_benchmark(
         silver_index=silver_index,
         split_role=split_role,
         dev_cases=dev_cases,
+        source_families=source_families,
     )
     case_selection = case_selection_summary(cases, split_role=split_role, dev_cases=dev_cases)
     friendly_queries = [build_friendly_query(case) for case in cases]
@@ -210,6 +226,7 @@ def run_benchmark(
                     "query_rewrite_error": "",
                     "query_rewrite_raw_response": "",
                     "query_validation_failures": [],
+                    "query_style": classify_query_style(build_challenge_query(case, ordinal=index)),
                 }
             )
             continue
@@ -264,15 +281,19 @@ def run_benchmark(
                 started = time.perf_counter()
                 reuse_raw_final = (
                     prompt_mode == "answer_ready_context"
-                    and case.family == "PDF"
-                    and should_reuse_raw_final_for_answer_ready(evidence_profile)
                     and "final_locator_context" in prompt_rows_by_mode
+                    and (
+                        case.family != "PDF"
+                        or should_reuse_raw_final_for_answer_ready(evidence_profile)
+                    )
                 )
-                reuse_reason = (
-                    "no_structural_answer_ready_evidence_gain_preserve_raw_final"
-                    if reuse_raw_final
-                    else ""
-                )
+                reuse_reason = ""
+                if reuse_raw_final:
+                    reuse_reason = (
+                        "no_structural_answer_ready_evidence_gain_preserve_raw_final"
+                        if case.family == "PDF"
+                        else "non_pdf_answer_ready_context_reuses_final_locator_response"
+                    )
                 if reuse_raw_final:
                     final_row = prompt_rows_by_mode["final_locator_context"]
                     raw_response = clean(final_row.get("raw_response"))
@@ -375,11 +396,39 @@ def run_benchmark(
                 handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
                 handle.flush()
 
+    answer_quality = answer_quality_summary(output_rows)
+    taxonomy = failure_taxonomy(output_rows)
+    per_query_rows = v3_9_per_query_rows(
+        cases=cases,
+        query_rows=query_rows,
+        output_rows=output_rows,
+        split_role=split_role,
+    )
+    per_family = v3_9_per_family_metrics(per_query_rows)
+    failure_taxonomy_rows = v3_9_failure_taxonomy_rows(per_query_rows)
+    metrics_payload = v3_9_metrics_payload(
+        run_label=label,
+        generated_at=generated_at,
+        split_role=split_role,
+        case_selection=case_selection,
+        per_family=per_family,
+        per_query_rows=per_query_rows,
+        answer_quality=answer_quality,
+        failure_taxonomy_json=taxonomy,
+        source_families=source_families,
+    )
+    write_json(metrics_path, metrics_payload)
+    write_json(per_family_path, per_family)
+    write_jsonl(per_query_path, per_query_rows)
+    write_json(failure_taxonomy_path, taxonomy)
+    write_jsonl(failure_taxonomy_rows_path, failure_taxonomy_rows)
+
     summary = {
         "schema_version": SCHEMA_VERSION,
         "status": "PASS_DRY_RUN" if dry_run else "PASS",
         "generated_at": generated_at,
         "run_label": label,
+        "run_id": "official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic",
         "model": model,
         "base_url": base_url,
         "manifest": repo_relative(manifest_path),
@@ -388,8 +437,28 @@ def run_benchmark(
         "silver_manifest_sha256": sha256_file(silver_manifest_path) if silver_manifest_path.exists() else "",
         "summary_path": repo_relative(summary_path),
         "responses_path": repo_relative(rows_path),
+        "artifact_paths": {
+            "summary_json": repo_relative(summary_path),
+            "metrics_json": repo_relative(metrics_path),
+            "per_family_json": repo_relative(per_family_path),
+            "per_query_jsonl": repo_relative(per_query_path),
+            "failure_taxonomy_json": repo_relative(failure_taxonomy_path),
+            "failure_taxonomy_jsonl": repo_relative(failure_taxonomy_rows_path),
+            "responses_jsonl": repo_relative(rows_path),
+            "pdf_evidence_readiness_audit_jsonl": repo_relative(pdf_audit_path),
+        },
+        "artifact_hashes": {
+            "metrics_json_sha256": sha256_file(metrics_path),
+            "per_family_json_sha256": sha256_file(per_family_path),
+            "per_query_jsonl_sha256": sha256_file(per_query_path),
+            "failure_taxonomy_json_sha256": sha256_file(failure_taxonomy_path),
+            "failure_taxonomy_jsonl_sha256": sha256_file(failure_taxonomy_rows_path),
+            "responses_jsonl_sha256": sha256_file(rows_path),
+            "pdf_evidence_readiness_audit_jsonl_sha256": sha256_file(pdf_audit_path),
+        },
         "case_count": len(cases),
         "cases_by_family": dict(sorted(Counter(case.family for case in cases).items())),
+        "source_families_requested": normalize_source_families(source_families),
         "case_selection": case_selection,
         "selected_cases": [selected_case_record(case, split_role=split_role, dev_cases=dev_cases) for case in cases],
         "silver_seed_match_count": sum(1 for case in cases if case.silver_query),
@@ -408,12 +477,24 @@ def run_benchmark(
         "query_quality": {
             "friendly_baseline": query_quality_metrics(friendly_queries),
             "llm_rewrite_final": query_quality_metrics(challenge_queries),
+            "query_style_target_counts": dict(
+                sorted(Counter(query_rewrite_style(index) for index in range(1, len(cases) + 1)).items())
+            ),
         },
         "query_rewrite_summary": query_rewrite_summary(query_rows),
-        "answer_quality": answer_quality_summary(output_rows),
-        "failure_taxonomy": failure_taxonomy(output_rows),
+        "answer_quality": answer_quality,
+        "failure_taxonomy": taxonomy,
+        "per_family_metrics": per_family,
+        "compact_per_query_row_count": len(per_query_rows),
         "sample_rows": sample_rows(output_rows, limit=30),
         "policy": policy_flags(),
+        "future_scored_adapter_status": "DISABLED_PENDING_USER_APPROVAL",
+        "future_scored_adapter": {
+            "status": "DISABLED_PENDING_USER_APPROVAL",
+            "adapter_enabled": False,
+            "official_metric_input_rows": 0,
+            "blocked_reasons": ["diagnostic_only_v3_9_not_scored_eval_input"],
+        },
     }
     summary_path.write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True),
@@ -429,6 +510,7 @@ def load_evidence_cases(
     silver_index: Mapping[str, Mapping[str, dict[str, Any]]] | None = None,
     split_role: str = DEFAULT_SPLIT_ROLE,
     dev_cases: list[EvidenceCase] | None = None,
+    source_families: Sequence[str] = DEFAULT_SOURCE_FAMILIES,
 ) -> list[EvidenceCase]:
     return load_evidence_cases_from_rows(
         read_jsonl(manifest_path),
@@ -436,6 +518,7 @@ def load_evidence_cases(
         silver_index=silver_index,
         split_role=split_role,
         dev_cases=dev_cases,
+        source_families=source_families,
     )
 
 
@@ -446,8 +529,10 @@ def load_evidence_cases_from_rows(
     silver_index: Mapping[str, Mapping[str, dict[str, Any]]] | None = None,
     split_role: str = DEFAULT_SPLIT_ROLE,
     dev_cases: list[EvidenceCase] | None = None,
+    source_families: Sequence[str] = DEFAULT_SOURCE_FAMILIES,
 ) -> list[EvidenceCase]:
-    by_family: dict[str, list[EvidenceCase]] = {"PDF": [], "XLSX": []}
+    requested_families = normalize_source_families(source_families)
+    by_family: dict[str, list[EvidenceCase]] = {family: [] for family in requested_families}
     for row in manifest_rows:
         family = clean(row.get("source_family") or row.get("sourceFamily")).upper()
         if family not in by_family:
@@ -499,11 +584,11 @@ def load_evidence_cases_from_rows(
         by_family[family].append(case)
     selected: list[EvidenceCase] = []
     dev_case_ids = {case.case_id for case in dev_cases or []}
-    dev_docs_by_family: dict[str, set[str]] = {"PDF": set(), "XLSX": set()}
+    dev_docs_by_family: dict[str, set[str]] = {family: set() for family in requested_families}
     for case in dev_cases or []:
         if case.family in dev_docs_by_family:
             dev_docs_by_family[case.family].add(case_document_key(case))
-    for family in ("PDF", "XLSX"):
+    for family in requested_families:
         candidates = sorted(
             by_family[family],
             key=lambda case: (
@@ -540,6 +625,7 @@ def load_dev_cases_for_validation(
     silver_index: Mapping[str, Mapping[str, dict[str, Any]]],
     dev_summary_path: Path | None,
     cases_per_family: int,
+    source_families: Sequence[str] = DEFAULT_SOURCE_FAMILIES,
 ) -> list[EvidenceCase]:
     if dev_summary_path and dev_summary_path.exists():
         summary = json.loads(dev_summary_path.read_text(encoding="utf-8"))
@@ -551,7 +637,25 @@ def load_dev_cases_for_validation(
         cases_per_family=cases_per_family,
         silver_index=silver_index,
         split_role=DEFAULT_SPLIT_ROLE,
+        source_families=source_families,
     )
+
+
+def parse_source_families(value: str) -> tuple[str, ...]:
+    return tuple(normalize_source_families(value.split(",")))
+
+
+def normalize_source_families(values: Iterable[str]) -> list[str]:
+    families: list[str] = []
+    for value in values:
+        family = clean(value).upper()
+        if not family:
+            continue
+        if family not in {"PDF", "XLSX", "TEXT"}:
+            raise ValueError(f"unsupported source family for diagnostic benchmark: {family}")
+        if family not in families:
+            families.append(family)
+    return families or list(DEFAULT_SOURCE_FAMILIES)
 
 
 def selected_case_record(
@@ -636,21 +740,22 @@ def case_selection_summary(
 ) -> dict[str, Any]:
     dev_document_keys = {case_document_key(case) for case in dev_cases or []}
     overlap_count = sum(1 for case in cases if case_document_key(case) in dev_document_keys)
-    source_doc_disjoint = split_role != VALIDATION_SPLIT_ROLE or overlap_count == 0
+    validation_split = split_role == VALIDATION_SPLIT_ROLE
+    source_doc_disjoint: bool | str = overlap_count == 0 if validation_split else "not_applicable_dev_split"
     return {
         "role": split_role,
         "diagnostic_only": True,
         "official_metric_input_rows": 0,
         "dev_only": split_role == DEFAULT_SPLIT_ROLE,
-        "success_evidence_allowed": split_role == VALIDATION_SPLIT_ROLE and source_doc_disjoint,
+        "success_evidence_allowed": validation_split and source_doc_disjoint is True,
         "source_document_disjoint_from_dev": source_doc_disjoint,
         "dev_overlap_document_count": overlap_count,
-        "fallback_strategy_used": "non_disjoint_fill" if split_role == VALIDATION_SPLIT_ROLE and overlap_count else "",
+        "fallback_strategy_used": "non_disjoint_fill" if validation_split and overlap_count else "",
         "cases_by_family": dict(sorted(Counter(case.family for case in cases).items())),
         "case_count": len(cases),
         "validation_strategy": (
             "source_identity_document_disjoint_holdout"
-            if split_role == VALIDATION_SPLIT_ROLE and source_doc_disjoint
+            if validation_split and source_doc_disjoint is True
             else "dev_current_query_fidelity_headline_relabel"
         ),
     }
@@ -662,7 +767,7 @@ def load_silver_seed_index(path: Path) -> dict[str, dict[str, dict[str, Any]]]:
         return index
     for row in read_jsonl(path):
         family = clean(row.get("source_family")).upper()
-        if family not in {"PDF", "XLSX"}:
+        if family not in {"PDF", "XLSX", "TEXT"}:
             continue
         if not silver_policy_safe(row):
             continue
@@ -964,7 +1069,7 @@ def answer_ready_pdf_evidence(
         "normalized_snippet": normalized_snippet,
         "answer_ready_snippet": answer_ready_snippet,
         "bounded_expansion_applied": bounded,
-        "bounded_expansion_scope": "same_page_neighbor_lines",
+        "bounded_expansion_scope": "same_page_native_bounded_window",
         "bounded_expansion_max_chars": max_chars,
         "bounded_expansion_max_lines": PDF_EXPANSION_MAX_LINES,
         "bounded_expansion_source_count": len(expansion_sources),
@@ -985,10 +1090,24 @@ def select_pdf_expansion_candidates(
     if not candidates:
         return []
     target_y = float(target.get("y0") or 0.0)
+    target_bbox = parse_bbox_value(target.get("bbox") or as_mapping(target.get("locator")).get("bbox"))
+    target_low_trust = pdf_low_trust_anchor(clean(target.get("normalized_snippet")))
     selected: list[dict[str, Any]] = []
     for item in sorted(candidates, key=lambda entry: abs(float(entry.get("y0") or 0.0) - target_y)):
         text = clean(item.get("normalized_snippet"))
         if not text:
+            continue
+        item_bbox = parse_bbox_value(item.get("bbox") or as_mapping(item.get("locator")).get("bbox"))
+        if target_bbox and item is not target and not same_column_bbox(target_bbox, item_bbox):
+            continue
+        if item is not target and selected and not pdf_bbox_adjacent_to_selected(
+            item_bbox,
+            selected,
+            max_vertical_gap=PDF_EXPANSION_MAX_VERTICAL_GAP,
+        ):
+            continue
+        if item is target and target_low_trust:
+            selected.append(item)
             continue
         if item is not target and not expansion_candidate_useful(text, query=query):
             continue
@@ -1001,6 +1120,52 @@ def select_pdf_expansion_candidates(
             selected = ordered
             break
     return sorted(selected, key=lambda entry: float(entry.get("y0") or 0.0))
+
+
+def pdf_bbox_adjacent_to_selected(
+    item_bbox: list[float],
+    selected: Sequence[Mapping[str, Any]],
+    *,
+    max_vertical_gap: float,
+) -> bool:
+    if len(item_bbox) != 4:
+        return True
+    for entry in selected:
+        selected_bbox = parse_bbox_value(entry.get("bbox") or as_mapping(entry.get("locator")).get("bbox"))
+        if len(selected_bbox) != 4:
+            continue
+        if pdf_vertical_gap(item_bbox, selected_bbox) <= max_vertical_gap:
+            return True
+    return False
+
+
+def pdf_vertical_gap(left: list[float], right: list[float]) -> float:
+    if len(left) != 4 or len(right) != 4:
+        return 0.0
+    if left[3] < right[1]:
+        return right[1] - left[3]
+    if right[3] < left[1]:
+        return left[1] - right[3]
+    return 0.0
+
+
+def same_column_bbox(left: list[float], right: list[float]) -> bool:
+    if len(left) != 4 or len(right) != 4:
+        return True
+    overlap = max(0.0, min(left[2], right[2]) - max(left[0], right[0]))
+    min_width = max(1.0, min(left[2] - left[0], right[2] - right[0]))
+    return overlap / min_width >= 0.45
+
+
+def pdf_low_trust_anchor(text: str) -> bool:
+    value = clean(text)
+    if not value:
+        return True
+    return (
+        repeated_punctuation_ratio(value) >= 0.08
+        or bool(re.search(r"(목\s*차|contents|제\s*\d+\s*장|제\s*\d+\s*절).{0,80}\.{2,}\s*[ivxlcdm\d]+$", value, flags=re.I))
+        or bool(re.search(r"\.{2,}\s*[ivxlcdm\d]+$", value, flags=re.I))
+    )
 
 
 def expansion_candidate_useful(text: str, *, query: str) -> bool:
@@ -1484,7 +1649,9 @@ def build_friendly_query(case: EvidenceCase) -> str:
     locator = short_locator_hint(case)
     if case.family == "XLSX":
         return f"제시된 XLSX 근거({locator})에서 확인되는 핵심 값 또는 항목을 한 문장으로 답하세요."
-    return f"제시된 PDF 근거({locator})의 핵심 내용을 한 문장으로 답하세요."
+    if case.family == "PDF":
+        return f"제시된 PDF 근거({locator})의 핵심 내용을 한 문장으로 답하세요."
+    return f"제시된 TEXT 근거({locator})의 핵심 내용을 한 문장으로 답하세요."
 
 
 def build_challenge_query(case: EvidenceCase, *, ordinal: int) -> str:
@@ -1508,6 +1675,19 @@ def build_challenge_query(case: EvidenceCase, *, ordinal: int) -> str:
             value_kind = "수치" if likely_numeric(clean(locator.get("normalized_value"))) else "항목"
             return f"{row or keyword or sheet} 근처 {value_kind} 확인"
         return f"{row or keyword or target or sheet} 나온 행이 어디였지"
+
+    if case.family == "TEXT":
+        if profile == 1:
+            return f"{keyword} 뭐였지"
+        if profile == 2:
+            return f"{keyword} 관련 핵심?"
+        if profile == 3:
+            return f"{keyword} 이거 맞나"
+        if profile == 4:
+            return f"{keyword} 설명만"
+        if profile == 5:
+            return f"{keyword} 나온 문장"
+        return f"{keyword} 무슨 내용"
 
     page = clean(locator.get("page"))
     region = human_region_label(clean(locator.get("region_type")))
@@ -1780,6 +1960,8 @@ def classify_query_style(query: str) -> str:
     text = clean(query)
     if any(token in text for token in ("이거", "맞나", "어디였지", "그 문구", "뭐야", "뭐죠", "뭐임", "어떻게 돼")):
         return "messy_user_like"
+    if any(token in text for token in ("관련 핵심", "나온 문장", "근처", "그 문구")):
+        return "implicit_context"
     if any(token in text for token in ("값만", "핵심만", "내용만", "만,")):
         return "direct_value_or_summary"
     if any(token in text for token in ("쪽", "시트", "범위", "셀")):
@@ -1887,6 +2069,7 @@ def answer_quality_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
     for key, items in sorted(grouped.items()):
         scores = [as_mapping(item.get("score")) for item in items]
         total = len(scores)
+        aggregate_block = "::" not in key
         summary[key] = {
             "rows": total,
             "quality_pass": sum(bool(score.get("quality_pass")) for score in scores),
@@ -1900,12 +2083,27 @@ def answer_quality_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
                 else 0.0
             ),
         }
+        if aggregate_block:
+            summary[key].update(
+                {
+                    "diagnostic_aggregate_only": True,
+                    "headline_allowed": False,
+                    "no_collapsed_cross_family_score": True,
+                }
+            )
     baseline = summary.get("baseline_legacy_context", {})
     final = summary.get("final_locator_context", {})
     answer_ready = summary.get("answer_ready_context", final)
     delta_by_family = {}
     answer_ready_delta_by_family = {}
-    for family in ("PDF", "XLSX"):
+    families = sorted(
+        {
+            clean(row.get("family"))
+            for row in rows
+            if clean(row.get("family"))
+        }
+    )
+    for family in families:
         family_baseline = summary.get(f"baseline_legacy_context::{family}", {})
         family_final = summary.get(f"final_locator_context::{family}", {})
         family_answer_ready = summary.get(f"answer_ready_context::{family}", family_final)
@@ -1935,6 +2133,8 @@ def answer_quality_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
     summary["delta_by_family_answer_ready_minus_raw_final"] = answer_ready_delta_by_family
     summary["delta_final_minus_baseline"] = {
         "diagnostic_aggregate_only": True,
+        "headline_allowed": False,
+        "no_collapsed_cross_family_score": True,
         "quality_pass": int(final.get("quality_pass") or 0) - int(baseline.get("quality_pass") or 0),
         "quality_pass_rate": round(
             float(final.get("quality_pass_rate") or 0.0)
@@ -1945,6 +2145,8 @@ def answer_quality_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
     }
     summary["delta_answer_ready_minus_raw_final"] = {
         "diagnostic_aggregate_only": True,
+        "headline_allowed": False,
+        "no_collapsed_cross_family_score": True,
         "quality_pass": int(answer_ready.get("quality_pass") or 0) - int(final.get("quality_pass") or 0),
         "quality_pass_rate": round(
             float(answer_ready.get("quality_pass_rate") or 0.0)
@@ -1963,7 +2165,13 @@ def failure_taxonomy(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
         by_mode.setdefault(mode, Counter())
         for failure in as_mapping(row.get("score")).get("failure_types") or []:
             by_mode[mode][clean(failure)] += 1
-    return {mode: dict(sorted(counter.items())) for mode, counter in sorted(by_mode.items())}
+    return {
+        "schema_version": "rag_natural_answer_quality_v3_9_failure_taxonomy_v1",
+        "diagnostic_only": True,
+        "official_metric_input_rows": 0,
+        "promotion_evidence": False,
+        "by_prompt_mode": {mode: dict(sorted(counter.items())) for mode, counter in sorted(by_mode.items())},
+    }
 
 
 def query_rewrite_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
@@ -2013,12 +2221,9 @@ def sample_rows(rows: list[Mapping[str, Any]], *, limit: int) -> list[dict[str, 
         grouped.setdefault((clean(row.get("family")), clean(row.get("prompt_mode"))), []).append(row)
     ordered_rows: list[Mapping[str, Any]] = []
     keys = [
-        ("PDF", "baseline_legacy_context"),
-        ("PDF", "final_locator_context"),
-        ("PDF", "answer_ready_context"),
-        ("XLSX", "baseline_legacy_context"),
-        ("XLSX", "final_locator_context"),
-        ("XLSX", "answer_ready_context"),
+        (family, mode)
+        for family in sorted({clean(row.get("family")) for row in rows if clean(row.get("family"))})
+        for mode in PROMPT_MODES
     ]
     for offset in range(max((len(items) for items in grouped.values()), default=0)):
         for key in keys:
@@ -2045,6 +2250,364 @@ def sample_rows(rows: list[Mapping[str, Any]], *, limit: int) -> list[dict[str, 
             }
         )
     return samples
+
+
+def v3_9_per_query_rows(
+    *,
+    cases: Sequence[EvidenceCase],
+    query_rows: Sequence[Mapping[str, Any]],
+    output_rows: Sequence[Mapping[str, Any]],
+    split_role: str,
+) -> list[dict[str, Any]]:
+    rows_by_case: dict[str, dict[str, Mapping[str, Any]]] = {}
+    for row in output_rows:
+        rows_by_case.setdefault(clean(row.get("case_id")), {})[clean(row.get("prompt_mode"))] = row
+    query_by_case = {
+        case.case_id: query_row
+        for case, query_row in zip(cases, query_rows)
+    }
+    compact_rows: list[dict[str, Any]] = []
+    for case in cases:
+        prompt_rows = rows_by_case.get(case.case_id, {})
+        baseline = as_mapping(prompt_rows.get("baseline_legacy_context"))
+        final = as_mapping(prompt_rows.get("final_locator_context"))
+        answer_ready = as_mapping(prompt_rows.get("answer_ready_context") or final)
+        query_row = as_mapping(query_by_case.get(case.case_id))
+        query = clean(final.get("query") or answer_ready.get("query") or query_row.get("query"))
+        seed_query = clean(final.get("seed_query") or query_row.get("seed_query"))
+        fidelity = v3_9_query_fidelity(
+            case=case,
+            query=query,
+            seed_query=seed_query,
+            evidence_text=case.evidence_text,
+        )
+        baseline_score = as_mapping(baseline.get("score"))
+        final_score = as_mapping(final.get("score"))
+        ready_score = as_mapping(answer_ready.get("score"))
+        ready_failures = v3_9_failure_categories(ready_score.get("failure_types") or [])
+        locator_status = v3_9_locator_status(case)
+        row = {
+            "schema_version": "rag_natural_answer_quality_v3_9_per_query_v1",
+            "run_id": "official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic",
+            "case_id": case.case_id,
+            "source_family": case.family,
+            "split": split_role,
+            "source_identity_sha256": sha256_text(case.source_identity) if case.source_identity else "",
+            "query_style": classify_query_style(query),
+            "query_generation_mode": clean(fidelity.get("query_generation_mode")),
+            "query_fidelity_bucket": clean(fidelity.get("query_fidelity_bucket")),
+            "query_fidelity_headline_included": bool(fidelity.get("headline_included")),
+            "query_fidelity_exclusion_reason": clean(fidelity.get("exclusion_reason")),
+            "retrieval_stage_status": "preselected_sourceatom_evidence_only",
+            "file_or_workbook_resolve_status": locator_status["file_or_workbook_resolve_status"],
+            "page_or_sheet_resolve_status": locator_status["page_or_sheet_resolve_status"],
+            "range_or_bbox_status": locator_status["range_or_bbox_status"],
+            "cell_or_span_status": locator_status["cell_or_span_status"],
+            "baseline_pass_like": bool(baseline_score.get("quality_pass")),
+            "raw_final_pass_like": bool(final_score.get("quality_pass")),
+            "answer_pass_like": bool(ready_score.get("quality_pass")),
+            "citation_support": bool(ready_score.get("citation_valid")),
+            "context_sufficiency": bool(
+                ready_score.get("text_supported")
+                or ready_score.get("value_supported")
+            ),
+            "raw_pass_to_ready_fail_regression": bool(final_score.get("quality_pass")) and not bool(ready_score.get("quality_pass")),
+            "abstain_behavior": "abstain" if "missing_answer" in ready_failures else "answered",
+            "failure_categories": ready_failures,
+            "evaluator_limitation_flags": [
+                failure for failure in ready_failures if failure in {"low_evidence_overlap", "source_value_unmatched"}
+            ],
+            "raw_reused": bool(answer_ready.get("answer_ready_reused_raw_final")),
+            "raw_reuse_reason": clean(answer_ready.get("answer_ready_reuse_reason")),
+            "official_metric_candidate": False,
+            "official_metric_input_rows": 0,
+            "diagnostic_only": True,
+            "promotion_evidence": False,
+        }
+        compact_rows.append(row)
+    return compact_rows
+
+
+def v3_9_locator_status(case: EvidenceCase) -> dict[str, str]:
+    locator = case.locator
+    if case.family == "PDF":
+        return {
+            "file_or_workbook_resolve_status": "file_locator_present" if clean(locator.get("source_pdf_path") or locator.get("source_path")) else "file_locator_missing",
+            "page_or_sheet_resolve_status": "page_present" if clean(locator.get("page")) else "page_missing",
+            "range_or_bbox_status": "bbox_present" if clean(locator.get("bbox")) else "bbox_missing",
+            "cell_or_span_status": "not_applicable_pdf",
+        }
+    if case.family == "XLSX":
+        return {
+            "file_or_workbook_resolve_status": "workbook_present" if clean(locator.get("workbook")) else "workbook_missing",
+            "page_or_sheet_resolve_status": "sheet_present" if clean(locator.get("sheet")) else "sheet_missing",
+            "range_or_bbox_status": "range_present" if clean(locator.get("range")) else "range_missing",
+            "cell_or_span_status": "cell_present" if clean(locator.get("cell")) else "cell_missing",
+        }
+    return {
+        "file_or_workbook_resolve_status": "document_version_present" if case.doc_id else "document_version_missing",
+        "page_or_sheet_resolve_status": "not_applicable_text",
+        "range_or_bbox_status": "not_applicable_text",
+        "cell_or_span_status": "text_locator_present" if clean(locator.get("text_locator") or locator.get("search_unit_id")) else "text_locator_missing",
+    }
+
+
+def v3_9_failure_categories(failures: Iterable[Any]) -> list[str]:
+    mapped = []
+    for failure in failures:
+        value = clean(failure)
+        if not value:
+            continue
+        if value == "missing_expected_value":
+            value = "source_value_unmatched"
+        mapped.append(value)
+    return list(dict.fromkeys(mapped))
+
+
+def v3_9_query_fidelity(
+    *,
+    case: EvidenceCase,
+    query: str,
+    seed_query: str,
+    evidence_text: str,
+) -> dict[str, Any]:
+    seed_tokens = v3_9_content_tokens(seed_query)
+    query_tokens = v3_9_content_tokens(query)
+    evidence_tokens = v3_9_content_tokens(evidence_text)
+    seed_query_overlap = max(v3_9_overlap_ratio(seed_tokens, query_tokens), v3_9_char_ngram_overlap(seed_query, query))
+    query_evidence_overlap = max(v3_9_overlap_ratio(query_tokens, evidence_tokens), v3_9_char_ngram_overlap(query, evidence_text))
+    seed_evidence_overlap = max(v3_9_overlap_ratio(seed_tokens, evidence_tokens), v3_9_char_ngram_overlap(seed_query, evidence_text))
+    exact_query = bool(clean(query) and clean(query) == clean(seed_query))
+    source_title_leak = v3_9_contains_source_title_leak(query, case=case)
+    answer_value_in_query = v3_9_answer_value_in_query(query, case=case)
+    index_to_content = (
+        v3_9_index_like_query(seed_query)
+        and query_evidence_overlap >= 0.25
+        and seed_evidence_overlap < 0.25
+    )
+    major_drift = seed_query_overlap < 0.18 and (query_evidence_overlap < 0.12 or bool(seed_tokens))
+    if exact_query:
+        bucket = "exact_query_hack"
+        mode = "copy_seed_or_friendly_template"
+        exclusion = "exact_query_hack_unapproved"
+    elif source_title_leak:
+        bucket = "source_title_leak"
+        mode = "source_title_leak"
+        exclusion = "source_title_leak_unapproved"
+    elif answer_value_in_query:
+        bucket = "answer_value_in_query"
+        mode = "answer_value_shortcut"
+        exclusion = "answer_value_in_query_unapproved"
+    elif index_to_content:
+        bucket = "index_to_content"
+        mode = "source_grounded_synthetic_query"
+        exclusion = "index_to_content_query_unapproved"
+    elif major_drift:
+        bucket = "major_topic_drift"
+        mode = "invalid_drift"
+        exclusion = "major_topic_drift"
+    elif query_evidence_overlap < 0.12:
+        bucket = "low_source_overlap"
+        mode = "low_source_overlap"
+        exclusion = "low_source_overlap"
+    elif seed_query_overlap >= 0.65:
+        bucket = "style_only_seed_preserving"
+        mode = "seed_preserving_rewrite"
+        exclusion = ""
+    elif seed_query_overlap >= 0.35:
+        bucket = "minor_specificity_change"
+        mode = "seed_preserving_rewrite"
+        exclusion = ""
+    else:
+        bucket = "source_grounded_synthetic_verified"
+        mode = "source_grounded_synthetic_query"
+        exclusion = "source_grounded_synthetic_requires_user_query_approval"
+    return {
+        "query_fidelity_bucket": bucket,
+        "query_generation_mode": mode,
+        "headline_included": not bool(exclusion),
+        "exclusion_reason": exclusion,
+        "seed_query_overlap": round(seed_query_overlap, 4),
+        "query_evidence_overlap": round(query_evidence_overlap, 4),
+        "seed_evidence_overlap": round(seed_evidence_overlap, 4),
+    }
+
+
+def v3_9_content_tokens(text: str) -> set[str]:
+    generic = {
+        "관련", "내용", "정보", "자료", "확인", "검색", "설명", "주세요", "무엇", "어떤", "있나요", "데이터", "수치", "항목", "값",
+    }
+    return {
+        token.casefold()
+        for token in meaningful_tokens_ordered(text)
+        if token.casefold() not in generic and len(token) >= 2
+    }
+
+
+def v3_9_overlap_ratio(left: set[str], right: set[str]) -> float:
+    if not left or not right:
+        return 0.0
+    return len(left & right) / max(1, min(len(left), len(right)))
+
+
+def v3_9_char_ngram_overlap(left: str, right: str, n: int = 3) -> float:
+    left_compact = re.sub(r"[^0-9A-Za-z가-힣]+", "", clean(left)).casefold()
+    right_compact = re.sub(r"[^0-9A-Za-z가-힣]+", "", clean(right)).casefold()
+    if len(left_compact) < n or len(right_compact) < n:
+        return 0.0
+    left_grams = {left_compact[index : index + n] for index in range(0, len(left_compact) - n + 1)}
+    right_grams = {right_compact[index : index + n] for index in range(0, len(right_compact) - n + 1)}
+    return v3_9_overlap_ratio(left_grams, right_grams)
+
+
+def v3_9_index_like_query(text: str) -> bool:
+    value = clean(text)
+    return any(marker in value for marker in ("검색", "자료", "정보", "항목", "번호", "데이터", "수치", "경로")) or bool(
+        re.fullmatch(r"(?:page|p\.?|쪽)\s*\d+", value, flags=re.I)
+    )
+
+
+def v3_9_contains_source_title_leak(query: str, *, case: EvidenceCase) -> bool:
+    value = clean(query).casefold()
+    if re.search(r"\.(pdf|xlsx|xls|csv|txt)\b", value):
+        return True
+    for key in ("source_pdf_path", "source_path", "workbook"):
+        raw = clean(case.locator.get(key))
+        if not raw:
+            continue
+        stem = Path(raw).stem.casefold()
+        stem_tokens = [token for token in re.split(r"[\W_]+", stem) if len(token) >= 4]
+        if stem and stem in value:
+            return True
+        if stem_tokens and sum(token in value for token in stem_tokens) >= 2:
+            return True
+    return False
+
+
+def v3_9_answer_value_in_query(query: str, *, case: EvidenceCase) -> bool:
+    if case.family != "XLSX":
+        return False
+    value = clean(case.locator.get("normalized_value") or case.evidence_text)
+    if not value:
+        return False
+    value_compact = re.sub(r"[^0-9A-Za-z가-힣]+", "", value).casefold()
+    query_compact = re.sub(r"[^0-9A-Za-z가-힣]+", "", clean(query)).casefold()
+    if len(value_compact) >= 8 and value_compact in query_compact:
+        return True
+    value_tokens = {
+        token.casefold()
+        for token in meaningful_tokens_ordered(value)
+        if len(token) >= 3 and not likely_numeric(token)
+    }
+    query_tokens = {
+        token.casefold()
+        for token in meaningful_tokens_ordered(query)
+        if len(token) >= 3
+    }
+    if len(value_tokens) < 2:
+        return False
+    return len(value_tokens & query_tokens) >= min(3, len(value_tokens))
+
+
+def v3_9_per_family_metrics(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    by_family: dict[str, Any] = {}
+    for family in sorted({clean(row.get("source_family")) for row in rows if clean(row.get("source_family"))}):
+        family_rows = [row for row in rows if clean(row.get("source_family")) == family]
+        denominator = len(family_rows)
+        failure_counts = Counter(
+            failure
+            for row in family_rows
+            for failure in row.get("failure_categories", [])
+            if clean(failure)
+        )
+        by_family[family] = {
+            "source_family": family,
+            "rows": denominator,
+            "query_fidelity_included_count": sum(bool(row.get("query_fidelity_headline_included")) for row in family_rows),
+            "query_fidelity_excluded_count": sum(not bool(row.get("query_fidelity_headline_included")) for row in family_rows),
+            "answer_pass_like": sum(bool(row.get("answer_pass_like")) for row in family_rows),
+            "raw_final_pass_like": sum(bool(row.get("raw_final_pass_like")) for row in family_rows),
+            "baseline_pass_like": sum(bool(row.get("baseline_pass_like")) for row in family_rows),
+            "citation_support": sum(bool(row.get("citation_support")) for row in family_rows),
+            "context_sufficiency": sum(bool(row.get("context_sufficiency")) for row in family_rows),
+            "raw_pass_to_ready_fail_regression": sum(bool(row.get("raw_pass_to_ready_fail_regression")) for row in family_rows),
+            "abstain_count": sum(clean(row.get("abstain_behavior")) == "abstain" for row in family_rows),
+            "failure_category_counts": dict(sorted(failure_counts.items())),
+            "query_fidelity_bucket_counts": dict(sorted(Counter(clean(row.get("query_fidelity_bucket")) for row in family_rows).items())),
+            "diagnostic_only": True,
+            "official_metric_input_rows": 0,
+        }
+    return {
+        "schema_version": "rag_natural_answer_quality_v3_9_per_family_v1",
+        "families": by_family,
+        "family_count": len(by_family),
+        "no_collapsed_cross_family_score": True,
+        "official_metric_input_rows": 0,
+    }
+
+
+def v3_9_failure_taxonomy_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    taxonomy_rows = []
+    for row in rows:
+        failures = [clean(failure) for failure in row.get("failure_categories", []) if clean(failure)]
+        if not failures and bool(row.get("query_fidelity_headline_included")):
+            continue
+        taxonomy_rows.append(
+            {
+                "case_id": row.get("case_id"),
+                "source_family": row.get("source_family"),
+                "split": row.get("split"),
+                "query_fidelity_bucket": row.get("query_fidelity_bucket"),
+                "query_fidelity_headline_included": row.get("query_fidelity_headline_included"),
+                "failure_categories": failures,
+                "answer_pass_like": row.get("answer_pass_like"),
+                "citation_support": row.get("citation_support"),
+                "context_sufficiency": row.get("context_sufficiency"),
+                "diagnostic_only": True,
+                "official_metric_input_rows": 0,
+            }
+        )
+    return taxonomy_rows
+
+
+def v3_9_metrics_payload(
+    *,
+    run_label: str,
+    generated_at: str,
+    split_role: str,
+    case_selection: Mapping[str, Any],
+    per_family: Mapping[str, Any],
+    per_query_rows: Sequence[Mapping[str, Any]],
+    answer_quality: Mapping[str, Any],
+    failure_taxonomy_json: Mapping[str, Any],
+    source_families: Sequence[str],
+) -> dict[str, Any]:
+    return {
+        "schema_version": "rag_natural_answer_quality_v3_9_metrics_v1",
+        "run_id": "official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic",
+        "run_label": run_label,
+        "generated_at": generated_at,
+        "split": split_role,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "adapter_enabled": False,
+        "future_scored_adapter_status": "DISABLED_PENDING_USER_APPROVAL",
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "protected_official_rows_role": "sealed_no_regression_reference_only",
+        "source_families_reported_separately": normalize_source_families(source_families),
+        "no_collapsed_cross_family_score": True,
+        "case_selection": dict(case_selection),
+        "query_fidelity_included_count": sum(bool(row.get("query_fidelity_headline_included")) for row in per_query_rows),
+        "query_fidelity_excluded_count": sum(not bool(row.get("query_fidelity_headline_included")) for row in per_query_rows),
+        "raw_pass_to_ready_fail_regression": sum(bool(row.get("raw_pass_to_ready_fail_regression")) for row in per_query_rows),
+        "per_family": per_family,
+        "answer_quality": answer_quality,
+        "failure_taxonomy": failure_taxonomy_json,
+        "policy": policy_flags(),
+    }
 
 
 def case_to_chunk(case: EvidenceCase, *, evidence_text: str | None = None) -> RetrievedChunk:
@@ -2254,6 +2817,7 @@ def extract_locator(row: Mapping[str, Any]) -> dict[str, Any]:
         "column_label",
         "target_column",
         "normalized_value",
+        "text_locator",
         "source_path",
         "search_unit_id",
     )
@@ -2278,6 +2842,7 @@ def parse_locator_text(text: str) -> dict[str, Any]:
         "column_label",
         "target_column",
         "normalized_value",
+        "text_locator",
         "page",
         "physical_page_index",
         "region_type",
@@ -2300,6 +2865,8 @@ def case_section(family: str, locator: Mapping[str, Any], row: Mapping[str, Any]
     if family == "PDF":
         page = clean(locator.get("page"))
         return f"page-{page}" if page else "pdf"
+    if family == "TEXT":
+        return clean(locator.get("text_locator") or row.get("search_view_id") or "text")
     return clean(row.get("search_view_id") or "source")
 
 
@@ -2323,10 +2890,15 @@ def short_locator_hint(case: EvidenceCase) -> str:
             clean(locator.get("sheet")),
             clean(locator.get("cell") or locator.get("range")),
         ]
-    else:
+    elif case.family == "PDF":
         parts = [
             clean(locator.get("source_pdf_path")),
             f"page={clean(locator.get('page'))}" if clean(locator.get("page")) else "",
+        ]
+    else:
+        parts = [
+            clean(locator.get("text_locator")),
+            clean(locator.get("search_unit_id")),
         ]
     return ", ".join(part for part in parts if part) or f"{case.family} locator"
 
@@ -2342,10 +2914,14 @@ def safe_query_locator_hints(case: EvidenceCase) -> str:
             if clean(locator.get("target_column") or locator.get("column_label"))
             else "",
         ]
-    else:
+    elif case.family == "PDF":
         parts = [
             f"page={clean(locator.get('page'))}" if clean(locator.get("page")) else "",
             f"region={human_region_label(clean(locator.get('region_type')))}" if clean(locator.get("region_type")) else "",
+        ]
+    else:
+        parts = [
+            f"text={clean(locator.get('text_locator'))}" if clean(locator.get("text_locator")) else "",
         ]
     return " | ".join(part for part in parts if part) or case.family
 
@@ -2470,6 +3046,11 @@ def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
     with path.open("w", encoding="utf-8", newline="\n") as handle:
         for row in rows:
             handle.write(json.dumps(dict(row), ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def write_json(path: Path, payload: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(dict(payload), ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
 
 
 def policy_flags() -> dict[str, Any]:

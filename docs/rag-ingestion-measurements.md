@@ -10,8 +10,8 @@ not create per-run Markdown reports for routine diagnostic runs.
 Machine-readable JSON/JSONL artifacts are evidence payloads, not the primary
 human report surface. As of the 2026-05-21 cleanup, `ai/eval/reports/` keeps
 only `rag-ingestion/`, and that directory keeps `status.jsonl` plus compact
-current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, and v3_8_3 machine
-artifacts. Older measurement payloads, including the official
+current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, v3_8_3 machine
+artifacts, and current v3_9 quality artifacts. Older measurement payloads, including the official
 baseline/scorer/input/smoke files and v3_1-v3_6_8 diagnostics, live in:
 
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`
@@ -20,6 +20,263 @@ Historical `_archive/legacy` artifact paths in older entries are logical
 provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+
+<!-- official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset:measurements-entry:start -->
+## 2026-05-24 - v3_9_2 Overfit Risk Audit and Blind/OOD Holdout Reset
+
+Run ID: `official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset`.
+
+Scope:
+
+- Diagnostic-only audit over v3_8_3, v3_9, and v3_9_1 artifacts.
+- `official_metric_input_rows=0`; future scored adapter remains `DISABLED_PENDING_USER_APPROVAL`.
+- Existing validation rows are now seen-validation-only and cannot be future success evidence.
+- Fresh real holdout is insufficient: PDF source-document-disjoint `0`, XLSX workbook-disjoint `0`.
+
+Key counts:
+
+| Item | Count |
+|---|---:|
+| overfit delta rows | 48 |
+| insufficient_blind_evidence labels | 48 |
+| metric_tradeoff labels | 6 |
+| synthetic OOD guard candidates | 14 |
+| headline synthetic OOD guard rows | 14 |
+
+Conclusion: no v3_9_1 improvement is preserved as future product success evidence. The useful retained signal is diagnostic direction: XLSX needs non-prod table-axis rematerialization, while PDF file identity must be evaluated separately from answer-ready evidence-window quality.
+<!-- official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic:measurements-entry:start -->
+
+
+## 2026-05-24 - v3_9_1 XLSX Table-Axis and PDF File Identity Diagnostic
+
+Run family:
+`official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic`
+
+Scope:
+
+- Diagnostic-only SourceAtom/SearchUnit locator experiment for XLSX plus oracle-free PDF file identity remeasurement.
+- `official_metric_input_rows=0`; future scored adapter remains `DISABLED_PENDING_USER_APPROVAL`.
+- No fine-tuning, gold/qrels/labels/expected-answer/supporting-evidence mutation, official denominator mutation, DB/production write, threshold tuning, winner selection, or promotion evidence.
+- PDF, XLSX, and TEXT are not collapsed: TEXT is comparison-only, PDF file identity is separate from PDF answer-ready evidence windows.
+
+XLSX 344-row locator surface:
+
+| Metric | v3_8_3 baseline | v3_9_1 |
+|---|---:|---:|
+| sheet@1 | 249/344 | 251/344 |
+| sheet@3 | 249/344 | 251/344 |
+| table_or_range@1 | 22/344 | 23/344 |
+| table_or_range@3 | 30/344 | 29/344 |
+| cell_or_value@1 | 19/344 | 20/344 |
+| cell_or_value@3 | 23/344 | 26/344 |
+| signal-empty rank1 | 261/300 | 257/300 |
+
+Workbook-disjoint XLSX validation movement:
+
+| Metric | v3_8_3 validation | v3_9_1 validation |
+|---|---:|---:|
+| sheet@1 | 112/170 | 114/170 |
+| sheet@3 | 112/170 | 114/170 |
+| table_or_range@1 | 2/170 | 3/170 |
+| table_or_range@3 | 6/170 | 9/170 |
+| cell_or_value@1 | 2/170 | 3/170 |
+| cell_or_value@3 | 6/170 | 9/170 |
+
+XLSX query-fidelity validation included `118/170` rows, above the 30-row minimum. Excluded rows are retained in the audit and separated from headline interpretation.
+
+PDF file identity, separate from answer-ready evidence-window quality:
+
+| Metric | v3_8_2 baseline | v3_9_1 |
+|---|---:|---:|
+| file_resolve@1 | 65/329 | 66/329 |
+| file_resolve@3 | 129/329 | 129/329 |
+| abstain | 182/329 | 182/329 |
+| wrong_file_block | 57/329 | 60/329 |
+
+Interpretation:
+
+- XLSX rank1 zero-signal pressure moved only slightly, from `261/300` to `257/300`; most remaining rank1 candidates still lack usable table-axis locator signals.
+- XLSX validation movement exists at @1 and @3, but the dominant residual remains table/range localization after the workbook/sheet stage.
+- PDF file identity gained one rank1 hit and blocked more wrong-file rank1 candidates, while @3 and abstain stayed flat.
+- The prior PDF answer-ready gain remains a separate preselected-SourceAtom evidence-window result and is not counted as file-identity improvement here.
+<!-- official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic:measurements-entry:end -->
+
+## 2026-05-24 - v3_9 PDF/XLSX Bottleneck Quality Diagnostic
+
+Purpose: focus the current phase on PDF evidence-window quality and XLSX
+sheet/range/cell locator bottlenecks. TEXT is comparison-only and is not folded
+into a PDF/XLSX headline.
+
+Run ID: `official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement`.
+
+Commands:
+
+```powershell
+python -X utf8 ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic
+python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label v3_9_pdf_xlsx_bottleneck_quality_improvement_dev_6pf --cases-per-family 6 --source-families PDF,XLSX --max-tokens 220 --query-max-tokens 160 --timeout-seconds 90
+python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label v3_9_pdf_xlsx_bottleneck_quality_improvement_validation_6pf --cases-per-family 6 --source-families PDF,XLSX --split-role validation_holdout --dev-summary ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_pdf_xlsx_bottleneck_quality_improvement_dev_6pf_summary.json --max-tokens 220 --query-max-tokens 160 --timeout-seconds 90
+```
+
+Split policy:
+
+| Split | Rows | Families | Source-document/workbook disjoint from dev | Role |
+|---|---:|---|---|---|
+| Dev | 12 | PDF=6, XLSX=6 | n/a | dev-only diagnostic |
+| Validation | 12 | PDF=6, XLSX=6 | true (`dev_overlap_document_count=0`) | non-official holdout |
+
+Query-fidelity included score:
+
+| Split | Family | Included rows | Raw final pass | Answer-ready pass | Interpretation |
+|---|---|---:|---:|---:|---|
+| Dev | PDF | 3 | 2/3 | 2/3 | dev-only, flat |
+| Dev | XLSX | 0 | 0/0 | 0/0 | excluded as index-to-content or answer-value-in-query |
+| Validation | PDF | 4 | 2/4 | 3/4 | generalized diagnostic signal (+1) |
+| Validation | XLSX | 1 | 1/1 | 1/1 | flat; not generalized locator improvement |
+
+All-row answer-quality score:
+
+| Split | Family | Raw final pass | Answer-ready pass | Delta | Raw-pass regression |
+|---|---|---:|---:|---:|---:|
+| Dev | PDF | 2/6 | 3/6 | +1 | 0 |
+| Dev | XLSX | 6/6 | 6/6 | 0 | 0 |
+| Validation | PDF | 2/6 | 5/6 | +3 | 0 |
+| Validation | XLSX | 6/6 | 6/6 | 0 | 0 |
+
+Locator and residual notes:
+
+- XLSX locator 344-row surface: range@1 `22/344`, cell/value@1 `19/344`;
+  sheet@1 remains `249/344`, and top residual bucket remains
+  `table_or_range_miss_after_sheet_hit=219`.
+- Direct normalized-value query matching remains banned; direct normalized-value query matching remains banned. The current accepted
+  structural-specificity tie-breaker is safe on the unit guard but did not move
+  the persisted v3_8_3 locator metrics.
+- PDF validation evidence-window readiness improved with native same-page/bbox
+  windows: bounded expansion `6/6`, average raw score `0.1321`, expanded
+  `0.5386`, delta `+0.4065`.
+- Validation query-fidelity excluded rows: `7/12` (`PDF=2`, `XLSX=5`), kept in
+  artifacts and excluded from generalized success claims.
+- OCR was skipped because native text was present and no scanned/image-only or
+  native-unusable candidate proved material OCR gain.
+
+Artifacts:
+
+| Artifact | Path |
+|---|---|
+| Summary | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_summary.json` |
+| Metrics | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_metrics.json` |
+| Per-family | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_per_family.json` |
+| Per-query | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_per_query.jsonl` |
+| Failure taxonomy | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_failure_taxonomy.json` |
+| Query fidelity audit | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_query_fidelity_audit.jsonl` |
+| PDF residual review | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_pdf_residual_review.jsonl` |
+| XLSX locator residual review | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_xlsx_locator_residual_review.jsonl` |
+| Split manifest | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_split_manifest.json` |
+
+Verification is recorded in the final Korean report and status event; this
+section will be amended only if a required verification command fails.
+
+## 2026-05-24 - v3_9 Natural Answer-Quality Diagnostic
+
+Purpose: measure actual answer-quality movement for natural, less-friendly
+Korean queries across PDF, XLSX, and TEXT while keeping SourceAtom/EvidenceBundle
+citations and all official surfaces closed.
+
+Run ID: `official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic`.
+
+Commands:
+
+```powershell
+python -X utf8 ai/scripts/rag_pdf_xlsx_llm_quality_benchmark.py --label v3_9_natural_answer_quality_dev_6pf --cases-per-family 6 --source-families PDF,XLSX,TEXT --max-tokens 220 --query-max-tokens 160 --timeout-seconds 90
+python -X utf8 ai/scripts/rag_pdf_xlsx_llm_quality_benchmark.py --label v3_9_natural_answer_quality_validation_6pf --cases-per-family 6 --source-families PDF,XLSX,TEXT --split-role validation_holdout --dev-summary ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_summary.json --max-tokens 220 --query-max-tokens 160 --timeout-seconds 90
+python -X utf8 ai/scripts/rag_pdf_xlsx_answer_quality_review_packet.py --run-label v3_9_natural_answer_quality_dev_6pf
+python -X utf8 ai/scripts/rag_pdf_xlsx_answer_quality_review_packet.py --run-label v3_9_natural_answer_quality_validation_6pf --previous-run-label v3_9_natural_answer_quality_dev_6pf
+```
+
+Split policy:
+
+| Split | Rows | Families | Source-document disjoint from dev | Role |
+|---|---:|---|---|---|
+| Dev | 18 | PDF=6, XLSX=6, TEXT=6 | n/a | dev-only diagnostic |
+| Validation | 18 | PDF=6, XLSX=6, TEXT=6 | true (`dev_overlap_document_count=0`) | non-official holdout |
+
+All-row answer-quality score:
+
+| Split | Family | Raw final pass | Answer-ready pass | Delta | Raw-pass regression |
+|---|---|---:|---:|---:|---:|
+| Dev | PDF | 2/6 | 3/6 | +1 | 0 |
+| Dev | XLSX | 6/6 | 6/6 | 0 | 0 |
+| Dev | TEXT | 2/6 | 2/6 | 0 | 0 |
+| Validation | PDF | 2/6 | 5/6 | +3 | 0 |
+| Validation | XLSX | 6/6 | 6/6 | 0 | 0 |
+| Validation | TEXT | 5/6 | 5/6 | 0 | 0 |
+
+Query-fidelity included score:
+
+| Split | Family | Included rows | Raw final pass | Answer-ready pass | Interpretation |
+|---|---|---:|---:|---:|---|
+| Dev | PDF | 3 | 2/3 | 2/3 | dev-only, no headline gain |
+| Dev | XLSX | 0 | 0/0 | 0/0 | excluded as index-to-content |
+| Dev | TEXT | 6 | 2/6 | 2/6 | dev-only, flat |
+| Validation | PDF | 4 | 2/4 | 3/4 | generalized diagnostic signal (+1) |
+| Validation | XLSX | 1 | 1/1 | 1/1 | flat; mostly index-to-content excluded |
+| Validation | TEXT | 6 | 5/6 | 5/6 | flat |
+
+Failure and structure notes:
+
+- Validation query-fidelity excluded rows: `7/18` (`PDF=2`, `XLSX=5`), kept in
+  artifacts and excluded from generalized success claims.
+- Validation PDF native text readiness: bounded expansion `6/6`, average raw
+  answer-ready score `0.1277`, expanded `0.5367`, delta `+0.4090`.
+- Validation residual after answer-ready: PDF has `low_evidence_overlap=1`;
+  TEXT has `invalid_json=1`; XLSX has no answer-ready residual in this small
+  preselected evidence slice.
+- Non-PDF answer-ready rows reuse final locator responses. This neutralizes
+  sampling regressions and keeps PDF evidence-window gains separate from XLSX
+  and TEXT.
+- Raw-pass-to-ready-fail regression stayed `raw_pass_to_ready_fail_regression=0`
+  on both dev and validation.
+- All-family `answer_quality` aggregate blocks remain diagnostic aggregates
+  only (`diagnostic_aggregate_only=true`, `headline_allowed=false`); the
+  reportable evidence is the family-separated query-fidelity validation table.
+- The XLSX bottleneck did not move here. The active structural locator
+  bottleneck remains the v3_8_3 scoped taxonomy:
+  `table_or_range_miss_after_sheet_hit=219`.
+- OCR was skipped because native text was present and the validation gain came
+  from native same-page/bbox expansion, not OCR.
+
+Artifacts:
+
+| Artifact | Path |
+|---|---|
+| Dev summary | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_summary.json` |
+| Dev metrics | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_metrics.json` |
+| Dev per-family | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_family.json` |
+| Dev per-query | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_query.jsonl` |
+| Validation summary | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_summary.json` |
+| Validation metrics | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_metrics.json` |
+| Validation per-family | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_family.json` |
+| Validation per-query | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_query.jsonl` |
+| Dev review packet | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_v3_9_natural_answer_quality_dev_6pf/` |
+| Validation review packet | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_v3_9_natural_answer_quality_validation_6pf/` |
+
+Verification:
+
+| Check | Result |
+|---|---|
+| `python -X utf8 -m py_compile ai/scripts/rag_pdf_xlsx_llm_quality_benchmark.py ai/scripts/rag_pdf_xlsx_answer_quality_review_packet.py` | passed |
+| `python -X utf8 -m pytest ai/tests/test_rag_answer_citation_silver_manifest_v1.py -q -k "pdf_answer_ready or pdf_xlsx_answer_quality_review_packet or v3_9 or natural_answer_quality_benchmark_can_opt_in_text or non_pdf_answer_ready_reuses"` | 21 passed, 95 deselected |
+| `python -X utf8 -m pytest ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_9_natural_answer_quality_does_not_mutate_protected_surfaces -q` | 1 passed |
+| `python -X utf8 -m pytest ai/tests/test_rag_answer_citation_silver_manifest_v1.py::test_v3_9_review_packet_query_fidelity_matches_compact_metrics -q` | 1 passed |
+| `python -X utf8 -m pytest -p no:cacheprovider ai/tests/test_rag_diagnostic_status_sync.py::test_progress_measurements_triage_and_status_record_v3_9_natural_answer_quality_without_promotion -q` | 1 passed |
+| `python -X utf8 -m pytest ai/tests/test_rag_current_focused_test_profile_v1.py -q` | 3 passed |
+| `python -X utf8 -m pytest ai/tests --rag-current -q` | 376 passed, 8 warnings |
+| `git diff --check` | passed; line-ending warnings only |
+| `python -X utf8 ai/scripts/rag_pdf_xlsx_perf_benchmark.py --label v3_9_natural_answer_quality_perf_smoke --warmups 1 --iterations 1 --output %TEMP%\codex-v3_9-natural-answer-quality-perf-smoke.json` | PDF native 25.225 ms, PDF OCR fallback 77.776 ms, XLSX merged range 285.717 ms, SearchUnit duplicate skip 103.475 ms |
+
+Temporary files removed: `%TEMP%\codex-v3_9-natural-answer-quality-perf-smoke.json`.
+Untracked files are checked in the final `git status --short --untracked-files=all`.
 
 ## 2026-05-24 - XLSX v3_8_3 Scoped Locator Anti-Overfit Validation
 
@@ -61,7 +318,7 @@ Interpretation:
 - Dev-only rows did not improve, so there is no dev-only pass-count gain being
   counted as success.
 - Table/range and cell/value metrics stayed unchanged; the top remaining bucket
-  remains `table_or_range_miss_after_sheet_hit=218`.
+  remains `table_or_range_miss_after_sheet_hit=219`.
 - A direct normalized-value query signal was tried and rejected because it
   regressed one validation cell/value pass. The frozen candidate rules now keep
   row/column/date and page-sheet normalization but do not use normalized-value
@@ -684,7 +941,7 @@ Reader contract: use this file for metric ladder context, use
 | v1 diagnostic live-generation | `official_answer_citation_agentic_loop_run_v1` | Fixture-all index, noop/extractive generation | PASS `1/29`; fixture-all/noop/chunk-only limitations | `promotion_evidence=false` |
 | Source-bound index readiness | `official_answer_citation_source_bound_index_build_readiness_v1` | 29 source-bound SearchUnits | `BUILD_READY_LOAD_CHECK_PASSED` | Non-production index only |
 | v3 comparable live measurement | `official_answer_citation_agentic_loop_run_v3_comparable_live_measurement` | 29 rows, structured adapter retained for XLSX/PDF | PASS `27/29`; PDF `4/4`, XLSX `19/19`, TEXT `4/6` | Diagnostic-only; not answer/citation promotion evidence |
-| v3_8_3 XLSX scoped miss taxonomy | `official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic` | 344 XLSX rows after persisted v3_8_2 workbook gate; legacy rows dev-only plus workbook-disjoint validation | sheet@1 `249/344`, range@1 `22/344`, cell/value@1 `19/344`; validation sheet@1 `112/170`; top miss bucket `table_or_range_miss_after_sheet_hit=218` | Diagnostic-only; no answer generation, gold/qrels/labels, or promotion evidence |
+| v3_8_3 XLSX scoped miss taxonomy | `official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic` | 344 XLSX rows after persisted v3_8_2 workbook gate; legacy rows dev-only plus workbook-disjoint validation | sheet@1 `249/344`, range@1 `22/344`, cell/value@1 `19/344`; validation sheet@1 `112/170`; top miss bucket `table_or_range_miss_after_sheet_hit=219` | Diagnostic-only; no answer generation, gold/qrels/labels, or promotion evidence |
 | v3_1 all-track foundation | `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement` | Lane A/B/C fixed across PDF/TEXT/XLSX | Lane A `24/29`, Lane B `18/29`, Lane C `20/29` | Diagnostic-only |
 | v3_1 priority 1~5 triage | `official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage` | Five row-level infrastructure/locator cases | strict JSON parse `2 -> 0`; locator field mismatch `3 -> 0`; residual copy failure `1` | Diagnostic-only |
 | v3_1 TEXT locator residual | `official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage` | `text_namu_v2_0012` only | TEXT `text_locator` missing `1 -> 0`; byte/normalized equal true | Diagnostic-only |

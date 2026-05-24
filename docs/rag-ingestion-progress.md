@@ -20,9 +20,23 @@ durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
+<!-- official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset:progress-entry:start -->
+- v3_9_2 overfit-risk audit and blind/OOD holdout reset (`official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset`) downgrades the repeated v3_8_3/v3_9/v3_9_1 validation surface to seen-validation-only. Real unseen PDF/XLSX source coverage is insufficient (PDF document-disjoint=0, XLSX workbook-disjoint=0), so the new holdout manifest is synthetic OOD anti-overfit guard only, not product success evidence. XLSX remains overlay/rerank-only and needs a non-prod SourceAtom/SearchUnit table-axis rematerialization before the next performance-success claim; PDF file identity is kept separate from answer-ready evidence windows. official_metric_input_rows=0, future scored adapter disabled, no fine-tuning, no gold/qrels/labels/expected/supporting/denominator/prod mutation.
+<!-- official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset:progress-entry:end -->
+
 ## Current Status
 
-Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;
+Overall status: `diagnostic_v3_9_2_overfit_risk_audit_holdout_reset_ready`;
+current diagnostic answer-quality loop:
+`official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement`;
+retained prior PDF/XLSX bottleneck status:
+`pdf_xlsx_bottleneck_quality_diagnostic_v3_9_validation_ready`;
+prior PDF/XLSX/TEXT comparison loop:
+`official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic`;
+retained XLSX locator status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;
+retained prior natural answer-quality status:
+`natural_answer_quality_diagnostic_v3_9_validation_ready`;
+previous Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;
 supplemental PDF/XLSX answer-quality review status: `pdf_xlsx_answer_quality_overfit_guard_holdout_ready`;
 query fidelity packet status: `pdf_xlsx_answer_quality_query_fidelity_holdout_ready`;
 retained prior packet statuses: `pdf_xlsx_answer_quality_evidence_readiness_packet_ready`,
@@ -39,7 +53,11 @@ candidates and selector artifacts from the v3_8/v3_7_2 SourceAtom-hydrated top-k
 and v3_8_2 computes oracle-free source_file/document candidates without
 target-locator or manifest-assisted selection. v3_8_3 uses that persisted
 v3_8_2 gate for XLSX sheet/range/cell diagnostics and miss taxonomy without
-answer generation.
+answer generation and no scoped answer route. The current v3_9 PDF/XLSX
+bottleneck loop keeps TEXT as
+comparison-only; TEXT is comparison-only in this phase. It uses
+source-document/workbook-disjoint validation as the only
+generalized success surface, and keeps PDF and XLSX metrics separated.
 v3_7_2 regenerated the inherited
 diagnostic silver query surface with local LLM natural Korean queries, then
 produced the source registry-backed retrieval smoke report. After
@@ -47,6 +65,74 @@ the structured target-hit rerank, the comparable live measurement was rerun
 with the local `gemma4-e2b-local` endpoint: PASS=27/29, PDF=4/4, XLSX=19/19,
 TEXT=4/6, real LLM invoked for six TEXT rows. Promotion readiness remains
 closed; threshold tuning and winner selection also remain closed.
+
+<!-- official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement:progress-entry:start -->
+- 2026-05-24 v3_9 PDF/XLSX bottleneck quality diagnostic completed with TEXT
+  held as comparison-only. Both dev and validation splits use existing
+  non-official SourceAtom/EvidenceBundle material; the validation split is
+  source-document/workbook-disjoint from dev
+  (`source_document_disjoint_from_dev=true`, `dev_overlap_document_count=0`).
+  The run stays diagnostic-only: `official_metric_input_rows=0`, future scored
+  adapter `DISABLED_PENDING_USER_APPROVAL`, no fine-tuning, and no gold/qrels/
+  labels/expected-answer/supporting-evidence/official-denominator/namespace/
+  production/promotion/threshold/winner mutation.
+- PDF query-fidelity included validation improved `2/4 -> 3/4`; this is the
+  only generalized validation answer-quality signal in this phase. PDF all-row
+  validation moved `2/6 -> 5/6`, but rows outside query-fidelity inclusion are
+  retained as diagnostics and are not counted alone as success evidence.
+- XLSX validation included stayed `1/1 -> 1/1`; there is no generalized XLSX
+  answer-quality gain. The 344-row locator surface also stayed unchanged after
+  the structural-specificity rule: sheet@1 `249/344`, range@1 `22/344`,
+  cell/value@1 `19/344`, with top residual
+  `table_or_range_miss_after_sheet_hit=219`.
+- Dev-only movement remains visible but not success evidence: PDF included dev
+  is flat (`2/3 -> 2/3`), XLSX included dev has `0/6`, and raw-pass-to-ready
+  regression is zero in both splits.
+- OCR remains skipped. Native text was present and validation PDF improvement
+  came from native same-page/bbox evidence windows; scanned/image-only or
+  native-unusable evidence with material OCR gain was not proven.
+- Compact artifacts are written under
+  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_*`.
+  They include summary, metrics, per-family, per-query, failure taxonomy,
+  query-fidelity audit, PDF residual review, XLSX locator residual review, and
+  split manifest JSON/JSONL payloads.
+<!-- official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic:progress-entry:start -->
+- 2026-05-24 v3_9 natural answer-quality diagnostic completed across PDF,
+  XLSX, and TEXT (`6` rows per family in dev and `6` rows per family in
+  validation). Both splits are non-official and diagnostic-only:
+  `official_metric_input_rows=0`, future scored adapter
+  `DISABLED_PENDING_USER_APPROVAL`, and no gold/qrels/label/expected-answer/
+  supporting-evidence/official-denominator/namespace/production/promotion/
+  threshold/winner mutation.
+- The current dev split is explicitly dev-only. All-row raw final ->
+  answer-ready: PDF `2/6 -> 3/6`, XLSX `6/6 -> 6/6`, TEXT `2/6 -> 2/6`.
+  Query-fidelity included rows show no PDF dev headline gain (`2/3 -> 2/3`);
+  XLSX included rows are `0/6`; TEXT is `2/6 -> 2/6`. These numbers stay
+  visible but are not success evidence.
+- Source-document-disjoint validation has `dev_overlap_document_count=0` and
+  `source_document_disjoint_from_dev=true`. All-row raw final -> answer-ready:
+  PDF `2/6 -> 5/6`, XLSX `6/6 -> 6/6`, TEXT `5/6 -> 5/6`. Query-fidelity
+  included validation is the only generalized signal: PDF `2/4 -> 3/4`
+  (`+1`), XLSX `1/1 -> 1/1`, TEXT `5/6 -> 5/6`. Query-fidelity-excluded rows
+  remain retained and reported (`7/18` validation rows), not deleted.
+- Raw-pass-to-ready-fail regressions are neutralized to zero. Non-PDF
+  answer-ready rows now reuse the final locator response because no XLSX/TEXT
+  answer-ready evidence transform exists in this diagnostic path; this keeps
+  PDF evidence-window gains separated from XLSX/TEXT LLM sampling noise.
+- Generalized interpretation: PDF native evidence-window assembly improved
+  answer quality on validation query-fidelity included rows. XLSX did not
+  improve in this answer-ready loop; the remaining XLSX priority is still
+  range/table localization after a sheet hit
+  (`table_or_range_miss_after_sheet_hit=219` in the v3_8_3 scoped locator
+  taxonomy). TEXT did not improve; the remaining bottleneck is strict JSON /
+  narrow answer-span behavior (`invalid_json=1` on validation ready rows,
+  with baseline TEXT still `6/6` versus final/ready `5/6`).
+- OCR remains skipped. Validation PDF gain came from native text bounded
+  same-page/bbox windows while native text was present; no scanned/image-only
+  or native-unusable proof showed material OCR benefit.
+<!-- official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic:progress-entry:end -->
 
 <!-- pdf_xlsx_answer_ready_overfit_guard_20260524:progress-entry:start -->
 - 2026-05-24 PDF answer-ready overfit guard completed as diagnostic-only
@@ -255,9 +341,18 @@ closed; threshold tuning and winner selection also remain closed.
 
 
 
+
+
 <!-- official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic:progress-entry:start -->
-- v3_8_3 XLSX scoped cell resolve (`official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic`) now treats the legacy 344-row XLSX surface as diagnostic-only with a separate workbook-disjoint non-official validation report. Overall XLSX diagnostics after the v3_8_2 oracle-free workbook/document gate: sheet_resolve@1=249/344 (baseline 248/344, +1), table_or_range_resolve@1=22/344 (no change), cell_or_value_resolve@1=19/344 (no change), abstain=44/344. The only validated gain is sheet-name normalization for page-style sheets (`26페이지` -> `26p`), observed in validation: sheet_resolve@1 111/170 -> 112/170; dev stayed 120/155 and protected rows stayed unchanged. A direct normalized-value query signal was rejected after it regressed one validation cell/value pass, so it is not in the frozen rule set. Target SourceAtom/manifest locator data is metrics-only, not resolver input; `official_metric_input_rows=0`, the future scored adapter remains `DISABLED_PENDING_USER_APPROVAL`, PDF rows are excluded instead of collapsed with XLSX, and no scoped answer route, answer generation, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, index mutation, DB write, threshold tuning, winner selection, or promotion evidence was produced.
+- v3_8_3 XLSX scoped cell resolve (`official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic`) computes sheet/table-range/cell-value diagnostics after the v3_8_2 oracle-free workbook/document gate and before answer generation. XLSX queries=344, sheet_resolve@1=249/344, table_or_range_resolve@1=22/344, cell_or_value_resolve@1=19/344, abstain=44/344. Target SourceAtom/manifest locator data is metrics-only, not resolver input; PDF rows are excluded instead of collapsed with XLSX. No scoped answer route, answer generation, prompt/scorer tuning, gold/qrels/label/expected-answer/supporting-evidence mutation, index mutation, DB write, or promotion evidence was produced.
 <!-- official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic:progress-entry:end -->
+
+
+
+
+<!-- official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic:progress-entry:start -->
+- v3_9_1 XLSX SourceAtom table-axis + PDF file-identity diagnostic (`official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic`) keeps PDF and XLSX metrics separate and leaves TEXT comparison-only. XLSX table_or_range@3=29/344, cell/value@3=26/344, signal-empty rank1=257/300; query-fidelity validation included=118/170. PDF file_resolve@1=66/329, @3=129/329, abstain=182/329. The run is diagnostic-only: official_metric_input_rows=0, future scored adapter disabled, no fine-tuning, no gold/qrels/label/expected-answer/supporting-evidence mutation, no DB write, and no promotion/threshold/winner surface.
+<!-- official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic:progress-entry:end -->
 
 - Official first-run baseline is `status=BLOCKED_OR_PARTIAL`,
   `status_detail=SCORED_BASELINE_PARTIAL`,
@@ -565,9 +660,9 @@ closed; threshold tuning and winner selection also remain closed.
 |---|---|---|---|
 | Source architecture | v3_8_3 now uses persisted v3_8_2 workbook/document gates for XLSX scoped sheet/range/cell diagnostics plus miss taxonomy | XLSX-only metrics are reported separately; target SourceAtom/manifest data is metrics-only; citation truth remains source-registry hydrated, not vector metadata | Use the taxonomy to improve scoped evidence/cell resolution, then open PDF page/span resolve only after the gate contract is stable. |
 | `text_namu_v2_1` | v3_2_7 closes the post-fix implementation queue; `text_namu_v2_0017` and `text_namu_v2_0084` remain diagnostic-only | Lane A/B/C: `24/29`, `27/29`, `27/29`; `text_namu_v2_0012` and `text_namu_v2_0077` are frozen Lane A replay residuals | Do not reopen gold policy automatically. |
-| `xlsx_business_structured` | v3_8_3 scoped cell diagnostic is computed after the v3_8_2 workbook/document gate with legacy rows marked dev-only and a workbook-disjoint validation split | sheet_resolve@1 `249/344` (baseline `248/344`); validation sheet@1 `112/170` (baseline `111/170`); table_or_range_resolve@1 `22/344`; cell_or_value_resolve@1 `19/344`; abstain `44/344`; top miss bucket table_or_range_miss_after_sheet_hit `218`; oracle-free input violations `0`; official_metric_input_rows `0` | Keep range/cell work diagnostic-only; do not count dev-only gains without validation evidence. |
+| `xlsx_business_structured` | v3_8_3 scoped cell diagnostic is computed after the v3_8_2 workbook/document gate with legacy rows marked dev-only and a workbook-disjoint validation split | sheet_resolve@1 `249/344` (baseline `248/344`); validation sheet@1 `112/170` (baseline `111/170`); table_or_range_resolve@1 `22/344`; cell_or_value_resolve@1 `19/344`; abstain `44/344`; top miss bucket table_or_range_miss_after_sheet_hit `219`; oracle-free input violations `0`; official_metric_input_rows `0` | Keep range/cell work diagnostic-only; do not count dev-only gains without validation evidence. |
 | `pdf_business_ocr_mm` | v3_8_2 oracle-free resolver is computed before scoped retrieval | file_resolve@1 `65/329`; file_resolve@3 `129/329`; abstain `182/329`; wrong-file block `57/329`; upstream v3_8 page_hit@5 `266/329` | Improve PDF file identity confidence, then defer exact bbox overlap and OCR trust policy to a later slice. |
-| Report artifacts | Human narrative stays in three rolling docs; machine evidence stays compact | `status.jsonl` plus v3_8, v3_8_1, v3_8_2, and v3_8_3 summary/metrics/per-query/per-family JSON/JSONL where required by tests | Avoid per-run Markdown and full forensic payloads unless the run contract requires them. |
+| Report artifacts | Human narrative stays in three rolling docs; machine evidence stays compact | `status.jsonl` plus v3_8, v3_8_1, v3_8_2, v3_8_3 summary/metrics/per-query/per-family JSON/JSONL, and v3_9 quality artifacts where required by tests | Avoid per-run Markdown and full forensic payloads unless the run contract requires them. |
 
 ## 2026-05-22 - PDF/XLSX Performance Checkpoint
 
@@ -613,9 +708,10 @@ python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_
 ```
 
 Current verification: local results recorded in this progress log. Latest full
-current-profile evidence after the PDF query-fidelity packet refresh was
-`python -m pytest ai/tests --rag-current -q` -> 351 passed, 0 skipped, 0 failed,
-8 warnings. Targeted packet/status/source-bound/anti-shortcut checks also pass.
+current-profile evidence after the v3_9 natural answer-quality diagnostic was
+`python -X utf8 -m pytest ai/tests --rag-current -q` -> 376 passed, 0 skipped,
+0 failed, 8 warnings. Targeted packet/status/source-bound/anti-shortcut checks
+also pass.
 
 Current test surface is intentionally compact after legacy test deletion:
 `python -X utf8 -m pytest ai/tests --rag-current -q`; full `ai/tests`
@@ -657,7 +753,7 @@ Machine-readable official/status surfaces:
 
 As of the 2026-05-21 report cleanup, `ai/eval/reports/` intentionally keeps
 only `rag-ingestion/`, and that directory keeps `status.jsonl` plus the compact
-current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, and v3_8_3 machine artifacts. Older
+current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, v3_8_3 machine artifacts, and v3_9 quality artifacts. Older
 `rag-ingestion` payloads, including the
 official baseline/scorer/input/smoke/source-bound files and v3_1-v3_6_8
 diagnostics, are consolidated under

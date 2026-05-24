@@ -5571,6 +5571,111 @@ def test_v3_8_3_xlsx_scoped_cell_resolver_promotes_query_locator_signal_inside_g
     assert "target_source_atom_ids" not in resolved["candidates"][0]
 
 
+def test_v3_8_3_xlsx_scoped_cell_resolver_prefers_structural_specificity_over_rank() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_rank1_generic": {
+            "source_family": "XLSX",
+            "source_identity": "docv_rail:rail.xlsx:철도:A2:D51:D2",
+            "raw_locator": {
+                "workbook": "rail.xlsx",
+                "document_version_id": "docv_rail",
+                "sheet": "철도",
+                "range": "A2:D51",
+                "cell": "D2",
+                "row_label": "노선명=1호선",
+                "column_label": "승차총승객수",
+                "target_column": "승차총승객수",
+                "normalized_value": "111",
+            },
+            "workbook_id": "rail.xlsx",
+            "workbook_version_id": "docv_rail",
+            "normalized_text_or_value_snapshot": "111",
+        },
+        "atom_rank2_specific": {
+            "source_family": "XLSX",
+            "source_identity": "docv_rail:rail.xlsx:철도:A552:D601:D552",
+            "raw_locator": {
+                "workbook": "rail.xlsx",
+                "document_version_id": "docv_rail",
+                "sheet": "철도",
+                "range": "A552:D601",
+                "cell": "D552",
+                "row_label": "노선명=1호선 | 기준월=2019년 5월",
+                "column_label": "승차총승객수",
+                "target_column": "승차총승객수",
+                "normalized_value": "222",
+            },
+            "workbook_id": "rail.xlsx",
+            "workbook_version_id": "docv_rail",
+            "normalized_text_or_value_snapshot": "222",
+        },
+    }
+    row = {
+        "query_id": "xlsx_structural_specificity",
+        "query_text": "철도 기준월 2019년 5월 1호선 승차총승객수",
+        "source_family": "XLSX",
+        "target_source_atom_ids": ["atom_rank1_generic"],
+        "top_result_envelopes": [
+            {
+                "rank": 1,
+                "search_view_id": "sv_generic",
+                "source_atom_id": "atom_rank1_generic",
+                "source_family": "XLSX",
+                "source_identity": "docv_rail:rail.xlsx:철도:A2:D51:D2",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+            {
+                "rank": 2,
+                "search_view_id": "sv_specific",
+                "source_atom_id": "atom_rank2_specific",
+                "source_family": "XLSX",
+                "source_identity": "docv_rail:rail.xlsx:철도:A552:D601:D552",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+        ],
+    }
+    file_gate_row = {
+        "query_id": "xlsx_structural_specificity",
+        "source_family": "XLSX",
+        "resolve_status": "resolved",
+        "resolved_file_candidates": [
+            {
+                "candidate_rank": 1,
+                "source_family": "XLSX",
+                "source_identity": "docv_rail:rail.xlsx:철도:A2:D51:D2",
+                "source_file_name": "rail.xlsx",
+                "document_version_id": "docv_rail",
+                "workbook_version_id": "docv_rail",
+                "resolve_score": 0.91,
+                "oracle_free": True,
+            }
+        ],
+        "oracle_free_input_violation_count": 0,
+        "oracle_free": True,
+    }
+
+    resolved = runner.v3_8_3_xlsx_scoped_cell_resolve(
+        row,
+        source_registry=source_registry,
+        file_gate_row=file_gate_row,
+    )
+
+    assert resolved["resolve_status"] == "resolved"
+    assert resolved["candidates"][0]["source_atom_id"] == "atom_rank2_specific"
+    assert "query_row_label_key_value_pair_match" in resolved["candidates"][0]["query_locator_signals"]
+    assert resolved["candidates"][0]["structural_specificity_rank"] > resolved["candidates"][1]["structural_specificity_rank"]
+    assert "normalized_value" not in resolved["candidates"][0]
+    assert "target_source_atom_ids" not in resolved["candidates"][0]
+
+
 def test_v3_8_3_xlsx_scoped_cell_metrics_keep_xlsx_denominator_and_v3_8_2_gate() -> None:
     sys.path.insert(0, str(ROOT / "ai"))
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
@@ -6414,6 +6519,271 @@ def test_v3_8_3_run_measurement_wires_xlsx_scoped_cell_summary_without_answer_ge
     assert summary["artifact_paths"]["metrics_json"].endswith("_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_metrics.json")
     assert summary["artifact_paths"]["per_query_jsonl"].endswith("_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_per_query.jsonl")
     assert summary["artifact_paths"]["per_family_json"].endswith("_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_per_family.json")
+
+
+def test_v3_9_1_xlsx_axis_signals_do_not_use_normalized_value_shortcuts() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    scoring_source = "\n".join(
+        inspect.getsource(func)
+        for func in (
+            runner.v3_9_1_xlsx_axis_signals,
+            runner.v3_9_1_xlsx_candidate_from_source_atom,
+            runner.v3_9_1_xlsx_merge_candidates,
+        )
+    )
+
+    assert "target_value" not in scoring_source
+    assert "expected_answer" not in scoring_source
+    assert "supporting_evidence" not in scoring_source
+    assert "normalized_value=\"\"" in inspect.getsource(runner.v3_9_1_xlsx_axis_signals)
+
+    signals, score = runner.v3_9_1_xlsx_axis_signals(
+        query_text="2019년 2월 철도 승차총승객수와 5호선 행을 찾아주세요",
+        workbook="",
+        sheet="철도",
+        cell_range="A1:D50",
+        cell="D3",
+        row_label="노선명=5호선 | 년월=201902",
+        column_label="승차총승객수",
+        target_column="승차총승객수",
+    )
+
+    assert "query_row_label_token_match" in signals
+    assert "query_column_label_match" in signals
+    assert score > 0
+
+
+def test_v3_9_1_run_measurement_wires_xlsx_table_axis_pdf_file_identity_without_promotion() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    args = runner.parse_args(["--run-id", runner.V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID])
+
+    summary, rows = runner.run_measurement(args)
+
+    assert rows == []
+    assert summary["run_id"] == runner.V3_9_1_XLSX_SOURCEATOM_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_COMPUTED"
+    assert summary["run_class"] == "diagnostic_only_xlsx_sourceatom_table_axis_pdf_file_identity"
+    assert summary["source_run_id"] == runner.V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID
+    assert summary["parent_file_resolve_run_id"] == runner.V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID
+    assert summary["parent_xlsx_scoped_cell_run_id"] == runner.V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["answer_generation_metric_computed"] is False
+    assert summary["answer_metric_computed"] is False
+    assert summary["fine_tuning_started"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["qrels_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["source_family_counts"] == {"XLSX": 344, "PDF": 329}
+    assert set(summary["per_source_family"]) == {"XLSX", "PDF_FILE_IDENTITY", "PDF_CONTENT", "TEXT"}
+    assert summary["xlsx_pdf_collapsed_score_reported"] is False
+    assert summary["headline_aggregate_score_reported"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["answer_value_in_query_success_evidence_used"] is False
+    assert summary["index_to_content_success_evidence_used"] is False
+    assert summary["file_or_source_title_leak_success_evidence_used"] is False
+
+    xlsx = summary["per_source_family"]["XLSX"]
+    xlsx_metrics = xlsx["metrics"]
+    assert xlsx["locator_signal_count_distribution"]["signal_empty_rank1_count"] == 257
+    assert xlsx["locator_signal_count_distribution"]["rank1_candidate_count"] == 300
+    assert xlsx["baseline_v3_8_3_metrics"]["table_or_range_resolve@1"]["numerator"] == 22
+    assert xlsx_metrics["table_or_range_resolve@1"]["numerator"] == 23
+    assert xlsx_metrics["cell_or_value_resolve@1"]["numerator"] == 20
+    assert xlsx_metrics["cell_or_value_resolve@3"]["numerator"] == 26
+    assert xlsx["source_atom_table_axis_ranked_into_top3_count"] == 60
+
+    split = summary["split_manifest"]
+    assert split["official_metric_input_rows"] == 0
+    assert split["source_atom_disjoint_guard"]["workbook_disjoint_from_dev"] is True
+    assert split["source_atom_disjoint_guard"]["source_identity_disjoint_from_dev"] is True
+    assert split["query_fidelity_validation_minimum_met"] is True
+    assert split["query_fidelity_validation"]["headline_included"] >= 30
+    assert split["query_fidelity_validation"]["headline_included"] == 118
+    assert split["validation"]["metrics"]["table_or_range_resolve@1"]["numerator"] == 3
+    assert split["validation"]["metrics"]["table_or_range_resolve@3"]["numerator"] == 9
+    assert split["validation"]["metrics"]["cell_or_value_resolve@1"]["numerator"] == 3
+    assert split["validation"]["metrics"]["cell_or_value_resolve@3"]["numerator"] == 9
+    assert split["validation"]["miss_taxonomy"]["primary_category_counts"]["table_or_range_miss_after_sheet_hit"] == 105
+
+    pdf = summary["per_source_family"]["PDF_FILE_IDENTITY"]
+    pdf_metrics = pdf["metrics"]
+    assert pdf_metrics["file_resolve@1"]["numerator"] == 66
+    assert pdf_metrics["file_resolve@3"]["numerator"] == 129
+    assert pdf_metrics["abstain_rate"]["numerator"] == 182
+    assert pdf_metrics["wrong_file_block_rate"]["numerator"] == 60
+    assert summary["per_source_family"]["PDF_CONTENT"]["computed_in_this_run"] is False
+    assert summary["per_source_family"]["PDF_CONTENT"]["preselected_sourceatom_evidence_quality_gain_mixed_with_file_identity"] is False
+    assert summary["per_source_family"]["TEXT"]["comparison_only"] is True
+    assert summary["failure_taxonomy"]["pdf_answer_ready_evidence_window"]["computed_in_this_run"] is False
+    assert summary["failure_taxonomy"]["pdf_answer_ready_evidence_window"]["file_identity_gain_not_mixed_with_answer_ready_gain"] is True
+
+    assert len(summary["per_query_rows"]) == 673
+    assert len(summary["query_fidelity_audit_rows"]) == 344
+    assert all(row["official_metric_input_rows"] == 0 for row in summary["query_fidelity_audit_rows"])
+    assert all(
+        row[column] == ""
+        for row in summary["query_fidelity_audit_rows"]
+        for column in ("query_approval", "relevance", "answerability", "expected_answer", "supporting_evidence", "pass_fail")
+    )
+    assert summary["fail_closed_reasons"] == []
+    assert summary["artifact_paths"]["summary_json"].endswith("_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic_summary.json")
+    assert summary["artifact_paths"]["metrics_json"].endswith("_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic_metrics.json")
+    assert summary["artifact_paths"]["per_query_jsonl"].endswith("_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic_per_query.jsonl")
+    assert summary["artifact_paths"]["query_fidelity_audit_jsonl"].endswith("_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic_query_fidelity_audit.jsonl")
+
+
+def test_v3_9_2_overfit_risk_audit_builds_seen_blind_holdout_reset_without_success_evidence() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_9_2_overfit_risk_audit_and_blind_holdout_reset as audit
+
+    artifacts = audit.build_artifacts()
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    seen = artifacts["seen_manifest"]
+    split = artifacts["split_manifest"]
+    architecture = artifacts["architecture"]
+    overfit_rows = artifacts["overfit_rows"]
+
+    assert summary["run_id"] == audit.RUN_ID
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["fine_tuning_executed"] is False
+    assert summary["gold_mutation"] is False
+    assert summary["qrels_mutation"] is False
+    assert summary["label_mutation"] is False
+    assert summary["expected_answer_mutation"] is False
+    assert summary["supporting_evidence_mutation"] is False
+    assert summary["official_denominator_mutation"] is False
+    assert summary["production_mutation"] is False
+    assert summary["staging_or_commit_performed"] is False
+    assert summary["seen_validation_is_strong_blind_validation"] is False
+    assert summary["seen_validation_downgraded_to_seen_validation_only"] is True
+    assert summary["fresh_holdout_sufficient"] is False
+    assert "No v3_9_1 metric improvement is preserved as future success evidence" in summary[
+        "generalizable_signal_conclusion"
+    ]
+
+    assert seen["real_unseen_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert seen["real_unseen_holdout_sufficient"] is False
+    assert metrics["overfit_risk_label_counts"]["likely_general"] == 0
+    assert metrics["overfit_risk_label_counts"]["insufficient_blind_evidence"] >= 1
+    assert metrics["fresh_holdout"]["product_success_evidence_allowed"] is False
+    assert split["product_success_evidence_allowed"] is False
+    assert split["synthetic_ood_guard_used"] is True
+    assert split["workbook_disjoint_guard"]["passed_for_synthetic_ood"] is True
+    assert split["source_document_disjoint_guard"]["passed_for_synthetic_ood"] is True
+
+    assert architecture["xlsx_sourceatom_searchunit_table_axis_materialization"]["scope"] == "overlay_rerank_only"
+    assert architecture["xlsx_sourceatom_searchunit_table_axis_materialization"][
+        "nonprod_rematerialization_needed_for_next_performance_phase"
+    ] is True
+    assert architecture["pdf_file_identity_scope"]["file_identity_gain_mixed_with_answer_ready_gain"] is False
+
+    delta_types = {row["delta_type"] for row in overfit_rows}
+    assert {
+        "dev_delta",
+        "old_validation_delta",
+        "leave_one_workbook_out_delta",
+        "query_fidelity_included_delta",
+        "query_fidelity_excluded_delta",
+        "leakage_bucket_delta",
+        "locator_signal_count_delta",
+        "rank1_signal_empty_delta",
+        "pdf_file1_gain_vs_wrong_file_disambiguation_abstain_movement",
+        "pdf_file_at1_gain_case_review",
+    } <= delta_types
+    pdf_gain = next(row for row in overfit_rows if row["delta_type"] == "pdf_file_at1_gain_case_review")
+    assert pdf_gain["gain_case_count"] == 1
+    assert pdf_gain["gain_cases"][0]["query_id"] == "v3_6_1_weak_noisy_silver_v3_5_3_pdf_a99e56be96dcc462"
+    assert "query_source_date_alias_match" in pdf_gain["gain_cases"][0]["source_identity_normalization_signals"]
+    assert pdf_gain["future_success_evidence"] is False
+    assert any("metric_tradeoff" in row["overfit_risk_labels"] for row in overfit_rows)
+
+
+def test_v3_9_2_fresh_holdout_query_fidelity_keeps_user_fields_blank_and_shortcuts_blocked() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_9_2_overfit_risk_audit_and_blind_holdout_reset as audit
+
+    artifacts = audit.build_artifacts()
+    candidates = artifacts["candidate_manifest"]["candidates"]
+    fidelity_rows = artifacts["query_fidelity_rows"]
+    leakage_rows = artifacts["leakage_audit_rows"]
+
+    assert len(candidates) == 14
+    assert {row["source_family"] for row in candidates} == {"PDF", "XLSX"}
+    assert {row["query_style"] for row in candidates} >= {
+        "terse_question",
+        "messy_user_like",
+        "short_fragment",
+        "implicit_context",
+        "no_source_title",
+        "colloquial_korean",
+    }
+    assert all(row["synthetic"] is True for row in candidates)
+    assert all(row["product_success_evidence_allowed"] is False for row in candidates)
+    assert all(row["official_metric_input_rows"] == 0 for row in candidates)
+    assert all(
+        row[field] == ""
+        for row in candidates
+        for field in (
+            "query_approval",
+            "relevance",
+            "answerability",
+            "expected_answer",
+            "supporting_evidence",
+            "pass_fail",
+            "denominator_eligibility",
+        )
+    )
+
+    assert len(fidelity_rows) == len(candidates)
+    assert all(row["query_fidelity_headline_included"] is True for row in fidelity_rows)
+    assert all(row["official_metric_input_rows"] == 0 for row in fidelity_rows)
+    assert all(row["answer_value_in_query"] is False for row in fidelity_rows)
+    assert all(row["index_to_content"] is False for row in fidelity_rows)
+    assert all(row["source_title_leak"] is False for row in fidelity_rows)
+    assert all(row["file_title_leak"] is False for row in fidelity_rows)
+    assert all(row["exact_query_hack"] is False for row in fidelity_rows)
+    assert all(row["unnatural_sheet_or_cell_reference"] is False for row in fidelity_rows)
+    assert all(
+        row[field] == ""
+        for row in fidelity_rows
+        for field in (
+            "query_approval",
+            "relevance",
+            "answerability",
+            "expected_answer",
+            "supporting_evidence",
+            "pass_fail",
+            "denominator_eligibility",
+        )
+    )
+    assert any(row["bucket"] == "answer_value_in_query" for row in leakage_rows)
+    assert all(
+        row["success_evidence_allowed"] is False
+        for row in leakage_rows
+        if row["bucket"] in {"answer_value_in_query", "index_to_content", "source_title_leak", "file_title_leak"}
+    )
 
 
 def test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank(tmp_path) -> None:
@@ -7266,6 +7636,144 @@ def test_pdf_answer_ready_expansion_uses_bounded_same_page_neighbors_and_preserv
     assert ready["answer_ready_score"] > audit["answer_ready_score"]
 
 
+def test_pdf_answer_ready_pairs_toc_anchor_with_same_column_body_window() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    target_row = pdf_manifest_row(
+        source_atom_id="src-toc",
+        search_view_id="search-toc",
+        document_version_id="docv-pdf",
+        search_unit_id="su-page",
+        page=7,
+        bbox=[58.0, 88.0, 272.0, 101.0],
+        text="제1장 과업개요 ........................................ 01",
+    )
+    same_page_rows = [
+        target_row,
+        pdf_manifest_row(
+            source_atom_id="src-other-column",
+            search_view_id="search-other-column",
+            document_version_id="docv-pdf",
+            search_unit_id="su-page",
+            page=7,
+            bbox=[330.0, 104.0, 540.0, 122.0],
+            text="제2장 환경분석의 세부 표제는 이 창에 섞이면 안 됩니다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-body",
+            search_view_id="search-body",
+            document_version_id="docv-pdf",
+            search_unit_id="su-page",
+            page=7,
+            bbox=[60.0, 112.0, 276.0, 138.0],
+            text="본 과업은 항공기 소음 피해 현황을 조사하고 주민 지원 방안을 검토하는 데 목적이 있다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-body-next",
+            search_view_id="search-body-next",
+            document_version_id="docv-pdf",
+            search_unit_id="su-page",
+            page=7,
+            bbox=[60.0, 141.0, 276.0, 165.0],
+            text="과업의 범위에는 관련 문헌 연구와 사례 분석, 개선 방안 도출이 포함된다.",
+        ),
+    ]
+    context_index = quality.build_pdf_context_index(same_page_rows)
+    locator = quality.extract_locator({**target_row, **quality.parse_locator_text(target_row["embedding_text"])})
+    audit = quality.pdf_evidence_readiness_audit(
+        raw_snippet=target_row["display_text"],
+        normalized_snippet=quality.normalize_pdf_evidence_snippet(target_row["display_text"]),
+        query="과업개요 목적 범위",
+        locator=locator,
+        bounded_expansion_applied=False,
+    )
+
+    ready = quality.answer_ready_pdf_evidence(
+        row=target_row,
+        locator=locator,
+        query="과업개요 목적 범위",
+        context_index=context_index,
+        audit=audit,
+        max_chars=260,
+    )
+
+    assert ready["bounded_expansion_applied"] is True
+    assert "항공기 소음 피해 현황" in ready["answer_ready_snippet"]
+    assert "개선 방안 도출" in ready["answer_ready_snippet"]
+    assert "제2장 환경분석" not in ready["answer_ready_snippet"]
+    assert ready["locator"]["bbox"] == [58.0, 88.0, 272.0, 101.0]
+
+
+def test_pdf_answer_ready_same_page_expansion_suppresses_far_broad_context() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    target_row = pdf_manifest_row(
+        source_atom_id="src-anchor",
+        search_view_id="search-anchor",
+        document_version_id="docv-pdf",
+        search_unit_id="su-page",
+        page=5,
+        bbox=[60.0, 100.0, 520.0, 114.0],
+        text="제2절 주요 결과 ........................................ 15",
+    )
+    same_page_rows = [
+        target_row,
+        pdf_manifest_row(
+            source_atom_id="src-body",
+            search_view_id="search-body",
+            document_version_id="docv-pdf",
+            search_unit_id="su-page",
+            page=5,
+            bbox=[60.0, 122.0, 520.0, 140.0],
+            text="주요 결과는 이용자 만족도가 상승했고 응답률도 개선되었다는 점이다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-body-next",
+            search_view_id="search-body-next",
+            document_version_id="docv-pdf",
+            search_unit_id="su-page",
+            page=5,
+            bbox=[60.0, 145.0, 520.0, 162.0],
+            text="다만 표본 규모가 작아 다음 조사에서 추가 검증이 필요하다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-far-footer",
+            search_view_id="search-far-footer",
+            document_version_id="docv-pdf",
+            search_unit_id="su-page",
+            page=5,
+            bbox=[60.0, 620.0, 520.0, 640.0],
+            text="부록 안내 문구와 연락처는 본문 근거 창에 섞이면 안 됩니다.",
+        ),
+    ]
+    context_index = quality.build_pdf_context_index(same_page_rows)
+    locator = quality.extract_locator({**target_row, **quality.parse_locator_text(target_row["embedding_text"])})
+    audit = quality.pdf_evidence_readiness_audit(
+        raw_snippet=target_row["display_text"],
+        normalized_snippet=quality.normalize_pdf_evidence_snippet(target_row["display_text"]),
+        query="주요 결과 만족도 응답률",
+        locator=locator,
+        bounded_expansion_applied=False,
+    )
+
+    ready = quality.answer_ready_pdf_evidence(
+        row=target_row,
+        locator=locator,
+        query="주요 결과 만족도 응답률",
+        context_index=context_index,
+        audit=audit,
+        max_chars=360,
+    )
+
+    assert ready["bounded_expansion_applied"] is True
+    assert "이용자 만족도" in ready["answer_ready_snippet"]
+    assert "추가 검증" in ready["answer_ready_snippet"]
+    assert "부록 안내" not in ready["answer_ready_snippet"]
+    assert ready["bounded_expansion_scope"] == "same_page_native_bounded_window"
+
+
 def test_pdf_answer_ready_score_demotes_locator_only_dot_heavy_evidence() -> None:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_pdf_xlsx_llm_quality_benchmark as quality
@@ -7385,6 +7893,550 @@ def test_pdf_answer_ready_dry_run_audit_is_diagnostic_only_and_keeps_xlsx_unchan
     xlsx_ready = next(row for row in xlsx_rows if row["prompt_mode"] == "answer_ready_context")
     assert xlsx_ready["effective_evidence_text"] == xlsx_final["effective_evidence_text"]
     assert xlsx_ready["evidence_variant"] == "raw"
+
+
+def test_natural_answer_quality_benchmark_can_opt_in_text_without_changing_pdf_xlsx_default(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    manifest = tmp_path / "manifest.jsonl"
+    silver = tmp_path / "silver.jsonl"
+    pdf_row = pdf_manifest_row(
+        source_atom_id="src-pdf",
+        search_view_id="search-pdf",
+        document_version_id="docv-pdf",
+        search_unit_id="su-page",
+        page=1,
+        bbox=[60.0, 90.0, 540.0, 105.0],
+        text="본문에는 재난방송 수신환경 개선 노력이 포함된다.",
+    )
+    rows = [pdf_row, xlsx_manifest_row(), text_manifest_row()]
+    manifest.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in rows) + "\n",
+        encoding="utf-8",
+    )
+    silver.write_text("", encoding="utf-8")
+
+    default_summary = quality.run_benchmark(
+        manifest_path=manifest,
+        silver_manifest_path=silver,
+        output_dir=tmp_path / "default",
+        run_label="default_pdf_xlsx",
+        model="unused",
+        base_url="http://localhost:9/v1",
+        cases_per_family=1,
+        max_tokens=10,
+        query_max_tokens=10,
+        timeout_seconds=1,
+        dry_run=True,
+    )
+    text_summary = quality.run_benchmark(
+        manifest_path=manifest,
+        silver_manifest_path=silver,
+        output_dir=tmp_path / "with_text",
+        run_label="with_text",
+        model="unused",
+        base_url="http://localhost:9/v1",
+        cases_per_family=1,
+        max_tokens=10,
+        query_max_tokens=10,
+        timeout_seconds=1,
+        dry_run=True,
+        source_families=("PDF", "XLSX", "TEXT"),
+    )
+
+    rows_with_text = read_jsonl(tmp_path / "with_text" / "pdf_xlsx_llm_quality_with_text_responses.jsonl")
+    text_rows = [row for row in rows_with_text if row["family"] == "TEXT"]
+
+    assert default_summary["case_selection"]["cases_by_family"] == {"PDF": 1, "XLSX": 1}
+    assert text_summary["case_selection"]["cases_by_family"] == {"PDF": 1, "TEXT": 1, "XLSX": 1}
+    assert text_summary["source_families_requested"] == ["PDF", "XLSX", "TEXT"]
+    assert {row["prompt_mode"] for row in text_rows} == {
+        "baseline_legacy_context",
+        "final_locator_context",
+        "answer_ready_context",
+    }
+    assert {row["evidence_variant"] for row in text_rows} == {"raw"}
+    assert text_rows[0]["policy"]["official_metric_input_rows"] == 0
+    assert text_summary["query_quality"]["query_style_target_counts"]
+
+    artifact_paths = {key: Path(value) for key, value in text_summary["artifact_paths"].items()}
+    for key in (
+        "metrics_json",
+        "per_family_json",
+        "per_query_jsonl",
+        "failure_taxonomy_json",
+        "failure_taxonomy_jsonl",
+    ):
+        assert artifact_paths[key].exists()
+        assert text_summary["artifact_hashes"][f"{key}_sha256"] == sha256_file(artifact_paths[key])
+
+    metrics = read_json(artifact_paths["metrics_json"])
+    per_family = read_json(artifact_paths["per_family_json"])
+    per_query = read_jsonl(artifact_paths["per_query_jsonl"])
+    failure_taxonomy = read_json(artifact_paths["failure_taxonomy_json"])
+    failure_taxonomy_rows = read_jsonl(artifact_paths["failure_taxonomy_jsonl"])
+
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["adapter_enabled"] is False
+    assert metrics["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert metrics["promotion_evidence"] is False
+    assert metrics["threshold_tuning"] is False
+    assert metrics["winner_selection"] is False
+    assert metrics["no_collapsed_cross_family_score"] is True
+    assert metrics["source_families_reported_separately"] == ["PDF", "XLSX", "TEXT"]
+    assert metrics["answer_quality"]["answer_ready_context"]["diagnostic_aggregate_only"] is True
+    assert metrics["answer_quality"]["answer_ready_context"]["headline_allowed"] is False
+    assert metrics["answer_quality"]["answer_ready_context"]["no_collapsed_cross_family_score"] is True
+    assert per_family["official_metric_input_rows"] == 0
+    assert per_family["no_collapsed_cross_family_score"] is True
+    assert set(per_family["families"]) == {"PDF", "XLSX", "TEXT"}
+    assert failure_taxonomy["official_metric_input_rows"] == 0
+    assert len(per_query) == len(failure_taxonomy_rows) == 3
+    for row in per_query:
+        assert row["official_metric_input_rows"] == 0
+        assert row["official_metric_candidate"] is False
+        assert row["promotion_evidence"] is False
+        assert "source_identity" not in row
+        assert "evidence_text" not in row
+        assert "expected_answer" not in row
+        assert "supporting_evidence" not in row
+
+
+def test_non_pdf_answer_ready_reuses_final_locator_response_to_neutralize_llm_regression(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    manifest = tmp_path / "manifest.jsonl"
+    silver = tmp_path / "silver.jsonl"
+    manifest.write_text(
+        "\n".join(
+            json.dumps(row, ensure_ascii=False, sort_keys=True)
+            for row in [xlsx_manifest_row(), text_manifest_row()]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    silver.write_text("", encoding="utf-8")
+    calls: list[str] = []
+
+    def fake_llm(**kwargs: Any) -> str:
+        system_prompt = kwargs["system_prompt"]
+        user_prompt = kwargs["user_prompt"]
+        calls.append(system_prompt)
+        if system_prompt.startswith("You rewrite Korean diagnostic RAG benchmark queries"):
+            query = (
+                "5호선 2019년 2월 승차총승객수 수치"
+                if "승차총승객수" in user_prompt
+                else "실크캣 소년 성격 행동"
+            )
+            return json.dumps({"query": query, "style": "terse_question", "rationale": "unit"}, ensure_ascii=False)
+        if "15,446,522" in user_prompt:
+            return json.dumps(
+                {
+                    "answer": "2019년 2월 5호선 승차총승객수 15,446,522명",
+                    "citations": [{"citation_id": "S1", "locator": "sheet=Sheet1; cell=B2"}],
+                    "abstain_reason": "",
+                },
+                ensure_ascii=False,
+            )
+        return json.dumps(
+            {
+                "answer": "실크캣 소년은 조용한 성격과 특정 장면의 행동으로 소개된다.",
+                "citations": [{"citation_id": "S1", "locator": "text_locator=paragraph-3"}],
+                "abstain_reason": "",
+            },
+            ensure_ascii=False,
+        )
+
+    monkeypatch.setattr(quality, "call_local_llm", fake_llm)
+    summary = quality.run_benchmark(
+        manifest_path=manifest,
+        silver_manifest_path=silver,
+        output_dir=tmp_path / "reuse",
+        run_label="non_pdf_reuse",
+        model="unused",
+        base_url="http://localhost:9/v1",
+        cases_per_family=1,
+        max_tokens=80,
+        query_max_tokens=80,
+        timeout_seconds=1,
+        source_families=("XLSX", "TEXT"),
+    )
+    rows = read_jsonl(tmp_path / "reuse" / "pdf_xlsx_llm_quality_non_pdf_reuse_responses.jsonl")
+    by_mode = {(row["family"], row["prompt_mode"]): row for row in rows}
+
+    for family in ("XLSX", "TEXT"):
+        final_row = by_mode[(family, "final_locator_context")]
+        ready_row = by_mode[(family, "answer_ready_context")]
+        assert ready_row["raw_response"] == final_row["raw_response"]
+        assert ready_row["score"] == final_row["score"] | {"answer_ready_reused_raw_final": True}
+        assert ready_row["answer_ready_reused_raw_final"] is True
+        assert ready_row["answer_ready_reuse_reason"] == "non_pdf_answer_ready_context_reuses_final_locator_response"
+
+    assert summary["answer_quality"]["delta_by_family_answer_ready_minus_raw_final"]["XLSX"]["quality_pass"] == 0
+    assert summary["answer_quality"]["delta_by_family_answer_ready_minus_raw_final"]["TEXT"]["quality_pass"] == 0
+    assert summary["per_family_metrics"]["families"]["XLSX"]["raw_pass_to_ready_fail_regression"] == 0
+    assert summary["per_family_metrics"]["families"]["TEXT"]["raw_pass_to_ready_fail_regression"] == 0
+    assert len([call for call in calls if call.startswith("You rewrite Korean diagnostic")]) == 2
+
+
+def test_v3_9_per_query_rows_exclude_shortcut_buckets_and_keep_rows() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    evidence = "지역순환경제 정책은 지역 자원 순환과 산업 연계를 통해 실행 전략을 마련한다."
+    cases = [
+        quality.EvidenceCase(
+            case_id=case_id,
+            family="PDF",
+            source_atom_id=f"src-{case_id}",
+            doc_id="docv",
+            section="page-1",
+            evidence_text=evidence,
+            locator={"source_pdf_path": "D:/safe/region-report.pdf", "page": 1, "bbox": [1, 2, 3, 4]},
+            source_identity=f"PDF:docv:{case_id}",
+        )
+        for case_id in ("exact", "title", "drift", "index")
+    ]
+    query_specs = {
+        "exact": ("지역순환경제 정책", "지역순환경제 정책", "exact_query_hack"),
+        "title": ("region-report.pdf 지역순환경제 정책", "지역순환경제 정책", "source_title_leak"),
+        "drift": ("반도체 공급망 수출 규제", "지역순환경제 정책", "major_topic_drift"),
+        "index": ("지역 자원 순환 산업 연계 실행 전략", "page 1", "index_to_content"),
+    }
+    query_rows = []
+    output_rows = []
+    for case in cases:
+        query, seed_query, _bucket = query_specs[case.case_id]
+        query_rows.append({"query": query, "seed_query": seed_query})
+        for mode in ("baseline_legacy_context", "final_locator_context", "answer_ready_context"):
+            row = packet_unit_response_row(case.case_id, mode, query=query, quality_pass=True)
+            row["seed_query"] = seed_query
+            output_rows.append(row)
+
+    rows = quality.v3_9_per_query_rows(
+        cases=cases,
+        query_rows=query_rows,
+        output_rows=output_rows,
+        split_role=quality.VALIDATION_SPLIT_ROLE,
+    )
+
+    assert len(rows) == 4
+    assert {row["case_id"]: row["query_fidelity_bucket"] for row in rows} == {
+        case_id: bucket for case_id, (_query, _seed, bucket) in query_specs.items()
+    }
+    assert all(row["query_fidelity_headline_included"] is False for row in rows)
+    assert all(row["official_metric_input_rows"] == 0 for row in rows)
+    assert all(row["official_metric_candidate"] is False for row in rows)
+
+
+def test_v3_9_validation_holdout_fallback_blocks_success_when_disjoint_pool_is_insufficient() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    rows = [
+        pdf_manifest_row(
+            source_atom_id="src-dev",
+            search_view_id="search-dev",
+            document_version_id="docv-shared",
+            search_unit_id="su-dev",
+            page=1,
+            bbox=[60.0, 90.0, 540.0, 105.0],
+            text="지역순환경제 정책은 지역 자원 순환과 산업 연계를 통해 실행 전략을 마련한다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-validation",
+            search_view_id="search-validation",
+            document_version_id="docv-shared",
+            search_unit_id="su-validation",
+            page=2,
+            bbox=[60.0, 120.0, 540.0, 145.0],
+            text="지역순환경제 실행 계획은 산업 연계와 순환 자원 활용을 중점으로 둔다.",
+        ),
+    ]
+    dev_cases = quality.load_evidence_cases_from_rows(
+        rows,
+        cases_per_family=1,
+        source_families=("PDF",),
+    )
+    dev_selection = quality.case_selection_summary(
+        dev_cases,
+        split_role=quality.DEFAULT_SPLIT_ROLE,
+    )
+    validation_cases = quality.load_evidence_cases_from_rows(
+        rows,
+        cases_per_family=1,
+        split_role=quality.VALIDATION_SPLIT_ROLE,
+        dev_cases=dev_cases,
+        source_families=("PDF",),
+    )
+    selection = quality.case_selection_summary(
+        validation_cases,
+        split_role=quality.VALIDATION_SPLIT_ROLE,
+        dev_cases=dev_cases,
+    )
+
+    assert [case.case_id for case in dev_cases] == ["pdf-001"]
+    assert dev_selection["dev_only"] is True
+    assert dev_selection["source_document_disjoint_from_dev"] == "not_applicable_dev_split"
+    assert dev_selection["success_evidence_allowed"] is False
+    assert [case.case_id for case in validation_cases] == ["pdf-002"]
+    assert selection["fallback_strategy_used"] == "non_disjoint_fill"
+    assert selection["source_document_disjoint_from_dev"] is False
+    assert selection["success_evidence_allowed"] is False
+    assert selection["official_metric_input_rows"] == 0
+
+
+def test_v3_9_review_packet_query_fidelity_matches_compact_metrics(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    label = "v3_9_natural_answer_quality_validation_6pf"
+    summary_path = REPORT_DIR / "quality" / f"pdf_xlsx_llm_quality_{label}_summary.json"
+    metrics_path = REPORT_DIR / "quality" / f"pdf_xlsx_llm_quality_{label}_metrics.json"
+    per_query_path = REPORT_DIR / "quality" / f"pdf_xlsx_llm_quality_{label}_per_query.jsonl"
+    require_pdf_xlsx_answer_quality_local_artifacts(summary_path, metrics_path, per_query_path)
+
+    report = packet.run_packet(summary_path=summary_path, output_dir=tmp_path)
+    metric_rows = {row["case_id"]: row for row in read_jsonl(per_query_path)}
+    packet_rows = {row["case_id"]: row for row in read_jsonl(tmp_path / "query_fidelity_audit.jsonl")}
+    review_rows = read_jsonl(tmp_path / "review_packet.jsonl")
+
+    assert set(packet_rows) == set(metric_rows)
+    for case_id, metric_row in metric_rows.items():
+        packet_row = packet_rows[case_id]
+        assert packet_row["query_fidelity_bucket"] == metric_row["query_fidelity_bucket"]
+        assert packet_row["query_fidelity_headline_included"] == metric_row["query_fidelity_headline_included"]
+        assert packet_row["query_fidelity_exclusion_reason"] == metric_row["query_fidelity_exclusion_reason"]
+        assert packet_row["official_metric_input_rows"] == 0
+    expected_policy = sorted(
+        {
+            row["query_fidelity_exclusion_reason"]
+            for row in packet_rows.values()
+            if not row["query_fidelity_headline_included"]
+        }
+    )
+    assert report["query_fidelity_summary"]["excluded_from_headline_policy"] == expected_policy
+    assert report["query_fidelity_summary"]["headline_included"] == read_json(metrics_path)["query_fidelity_included_count"]
+    assert report["query_fidelity_summary"]["excluded"] == read_json(metrics_path)["query_fidelity_excluded_count"]
+    assert all(row["official_metric_input_rows"] == "0" for row in review_rows)
+
+
+def test_v3_9_query_fidelity_classifier_separates_shortcut_and_drift_buckets() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    case = packet.quality_benchmark.EvidenceCase(
+        case_id="pdf-001",
+        family="PDF",
+        source_atom_id="src",
+        doc_id="docv",
+        section="page-1",
+        evidence_text="지역순환경제 정책은 지역 자원 순환과 산업 연계를 통해 실행 전략을 마련한다.",
+        locator={"source_pdf_path": "D:/safe/region-report.pdf", "page": 1, "bbox": [1, 2, 3, 4]},
+    )
+
+    exact = packet.query_fidelity_audit_v3_9(
+        case=case,
+        query="지역순환경제 정책",
+        seed_query="지역순환경제 정책",
+        evidence_text=case.evidence_text,
+    )
+    source_title = packet.query_fidelity_audit_v3_9(
+        case=case,
+        query="region-report.pdf 지역순환경제 정책",
+        seed_query="지역순환경제 정책",
+        evidence_text=case.evidence_text,
+    )
+    drift = packet.query_fidelity_audit_v3_9(
+        case=case,
+        query="반도체 공급망 수출 규제",
+        seed_query="지역순환경제 정책",
+        evidence_text=case.evidence_text,
+    )
+    index_to_content = packet.query_fidelity_audit_v3_9(
+        case=case,
+        query="지역 자원 순환과 산업 연계 실행 전략",
+        seed_query="page 1",
+        evidence_text=case.evidence_text,
+    )
+
+    assert exact["v3_9_bucket"] == "exact_query_hack"
+    assert source_title["v3_9_bucket"] == "source_title_leak"
+    assert drift["v3_9_bucket"] == "major_topic_drift"
+    assert index_to_content["v3_9_bucket"] == "index_to_content"
+    assert not exact["headline_included"]
+    assert not source_title["headline_included"]
+    assert not drift["headline_included"]
+    assert not index_to_content["headline_included"]
+    assert exact["official_metric_candidate"] is False
+
+
+def test_v3_9_query_fidelity_classifier_separates_answer_value_in_query_bucket() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    case = packet.quality_benchmark.EvidenceCase(
+        case_id="xlsx-001",
+        family="XLSX",
+        source_atom_id="src",
+        doc_id="docv",
+        section="Sheet1",
+        evidence_text="숨기려 해도 숨길 수 없는 마음 : 배명훈 장편소설",
+        locator={
+            "workbook": "books.xlsx",
+            "sheet": "Sheet1",
+            "range": "A10:J10",
+            "normalized_value": "숨기려 해도 숨길 수 없는 마음 : 배명훈 장편소설",
+        },
+    )
+
+    answer_value = packet.query_fidelity_audit_v3_9(
+        case=case,
+        query="숨기려 해도 숨길 수 없는 마음 배명훈 장편소설 뭐야?",
+        seed_query="도서정보 자료에서 특정 항목을 찾아줘",
+        evidence_text=case.evidence_text,
+    )
+
+    assert answer_value["v3_9_bucket"] == "answer_value_in_query"
+    assert answer_value["query_fidelity_exclusion_reason"] == "answer_value_in_query_unapproved"
+    assert answer_value["headline_included"] is False
+    assert answer_value["official_metric_candidate"] is False
+
+
+def test_v3_9_pdf_xlsx_bottleneck_quality_artifacts_are_validation_separated_and_hash_locked() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement"
+    summary_path = REPORT_DIR / f"{run_id}_summary.json"
+    metrics_path = REPORT_DIR / f"{run_id}_metrics.json"
+    per_family_path = REPORT_DIR / f"{run_id}_per_family.json"
+    per_query_path = REPORT_DIR / f"{run_id}_per_query.jsonl"
+    failure_taxonomy_path = REPORT_DIR / f"{run_id}_failure_taxonomy.json"
+    query_fidelity_path = REPORT_DIR / f"{run_id}_query_fidelity_audit.jsonl"
+    pdf_residual_path = REPORT_DIR / f"{run_id}_pdf_residual_review.jsonl"
+    xlsx_residual_path = REPORT_DIR / f"{run_id}_xlsx_locator_residual_review.jsonl"
+    split_manifest_path = REPORT_DIR / f"{run_id}_split_manifest.json"
+
+    for path in (
+        summary_path,
+        metrics_path,
+        per_family_path,
+        per_query_path,
+        failure_taxonomy_path,
+        query_fidelity_path,
+        pdf_residual_path,
+        xlsx_residual_path,
+        split_manifest_path,
+    ):
+        assert resolve_report_artifact_path(path).exists(), path
+
+    summary = read_json(summary_path)
+    metrics = read_json(metrics_path)
+    per_family = read_json(per_family_path)
+    per_query = read_jsonl(per_query_path)
+    failure_taxonomy = read_json(failure_taxonomy_path)
+    query_fidelity = read_jsonl(query_fidelity_path)
+    pdf_residuals = read_jsonl(pdf_residual_path)
+    xlsx_residuals = read_jsonl(xlsx_residual_path)
+    split_manifest = read_json(split_manifest_path)
+
+    assert summary["run_id"] == run_id
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["fine_tuning_executed"] is False
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["dev_only_gain_is_success_evidence"] is False
+    assert summary["no_collapsed_pdf_xlsx_headline"] is True
+    assert summary["query_fidelity_excluded_rows_retained"] is True
+    assert summary["candidate_rule_freeze"]["direct_normalized_value_query_matching"] is False
+    assert summary["candidate_rule_freeze"]["case_id_branches"] is False
+    assert summary["candidate_rule_freeze"]["exact_query_hacks"] is False
+    assert summary["candidate_rule_freeze"]["file_or_source_title_hacks"] is False
+    assert summary["candidate_rule_freeze"]["expected_supporting_gold_text_input"] is False
+    assert summary["candidate_rule_freeze"]["pass_fail_threshold_tuning"] is False
+
+    for flag in (
+        "gold_mutation",
+        "label_mutation",
+        "qrels_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "namespace_mutation",
+        "production_mutation",
+    ):
+        assert metrics[flag] is False
+
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["adapter_enabled"] is False
+    assert metrics["validation_improvement_only_generalized_signal"] is True
+    assert metrics["generalized_validation_signal"]["PDF"] == {
+        "delta": 1,
+        "generalized": True,
+        "query_fidelity_included_answer_ready": "3/4",
+        "query_fidelity_included_raw_final": "2/4",
+    }
+    assert metrics["generalized_validation_signal"]["XLSX"]["delta"] == 0
+    assert metrics["generalized_validation_signal"]["XLSX"]["generalized"] is False
+    assert metrics["XLSX"]["table_or_range_resolve"]["@1"]["numerator"] == 22
+    assert metrics["XLSX"]["cell_or_value_resolve"]["@1"]["numerator"] == 19
+    assert metrics["XLSX"]["miss_taxonomy"]["primary_category_counts"][
+        "table_or_range_miss_after_sheet_hit"
+    ] == 219
+    assert metrics["XLSX"]["direct_normalized_value_query_matching_used"] is False
+    assert metrics["PDF"]["ocr_rationale"]["decision"] == "skipped"
+    assert metrics["PDF"]["ocr_rationale"]["ocr_touched"] is False
+
+    assert per_family["source_families_reported_separately"] == ["PDF", "XLSX"]
+    assert per_family["text_comparison_only"] is True
+    assert per_family["validation"]["answer_quality"]["PDF"]["query_fidelity_included"][
+        "answer_pass_like"
+    ] == {"denominator": 4, "numerator": 3, "rate": 0.75}
+    assert per_family["validation"]["answer_quality"]["XLSX"]["query_fidelity_included"][
+        "answer_pass_like"
+    ] == {"denominator": 1, "numerator": 1, "rate": 1.0}
+    assert per_family["xlsx_locator_diagnostic"]["metric_movement_after_structural_specificity_rule"] == (
+        "unchanged_on_current_344_row_v3_8_3_surface"
+    )
+
+    assert len(per_query) == 24
+    assert {row["source_family"] for row in per_query} == {"PDF", "XLSX"}
+    assert {row["split"] for row in per_query} == {"dev", "validation"}
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in per_query)
+    validation_rows = [row for row in per_query if row["split"] == "validation"]
+    assert sum(1 for row in validation_rows if row["query_fidelity_headline_included"]) == 5
+    assert sum(1 for row in validation_rows if not row["query_fidelity_headline_included"]) == 7
+    assert sum(1 for row in validation_rows if row["raw_pass_to_ready_fail_regression"]) == 0
+    assert any(row["query_fidelity_bucket"] == "answer_value_in_query" for row in query_fidelity)
+
+    assert failure_taxonomy["official_metric_input_rows"] == 0
+    assert failure_taxonomy["xlsx_locator_miss_taxonomy"]["primary_category_counts"][
+        "table_or_range_miss_after_sheet_hit"
+    ] == 219
+    assert len(pdf_residuals) == 12
+    assert len(xlsx_residuals) == 325
+    assert all(row["direct_normalized_value_query_matching_used"] is False for row in xlsx_residuals)
+    assert split_manifest["validation_split"]["source_document_disjoint_from_dev"] is True
+    assert split_manifest["validation_split"]["dev_overlap_document_count"] == 0
+    assert split_manifest["protected_rows_role"] == "sealed_no_regression_reference_only_not_tuning_input"
+
+    hash_contract = {
+        "metrics_sha256": metrics_path,
+        "per_family_sha256": per_family_path,
+        "per_query_sha256": per_query_path,
+        "failure_taxonomy_sha256": failure_taxonomy_path,
+        "query_fidelity_audit_sha256": query_fidelity_path,
+        "pdf_residual_review_sha256": pdf_residual_path,
+        "xlsx_locator_residual_review_sha256": xlsx_residual_path,
+        "split_manifest_sha256": split_manifest_path,
+    }
+    for hash_key, path in hash_contract.items():
+        assert summary["artifact_sha256"][hash_key] == sha256_file(path)
 
 
 def test_pdf_content_window_sufficiency_gate_blocks_tiny_locator_fragments() -> None:
@@ -8181,6 +9233,33 @@ def xlsx_manifest_row() -> dict[str, Any]:
             "Locator: workbook=book.xlsx | sheet=Sheet1 | range=A2:D2 | cell=B2 | "
             "row_label=2019년 2월 5호선 | target_column=승차총승객수 | normalized_value=2019년 2월 5호선 승차총승객수 15,446,522명"
         ),
+        "generation_source_allowed": True,
+        "runtime_evidence_allowed": True,
+        "official_denominator_overlap": False,
+    }
+
+
+def text_manifest_row() -> dict[str, Any]:
+    locator_fingerprint = json_hash(
+        {
+            "document_version_id": "docv-text",
+            "search_unit_id": "su-text",
+            "text_locator": "paragraph-3",
+            "text": "실크캣 소년은 작품 설명에서 조용한 성격과 특정 장면의 행동으로 소개된다.",
+        }
+    )
+    text = "실크캣 소년은 작품 설명에서 조용한 성격과 특정 장면의 행동으로 소개된다."
+    return {
+        "source_family": "TEXT",
+        "source_atom_id": "src-text",
+        "search_view_id": "search-text",
+        "document_version_id": "docv-text",
+        "parent_search_unit_id": "su-text",
+        "source_identity": f"TEXT:docv-text:su-text:{locator_fingerprint}",
+        "locator_fingerprint": locator_fingerprint,
+        "display_text": text,
+        "bm25_text": text,
+        "embedding_text": "Locator: text_locator=paragraph-3 | Snapshot: " + text,
         "generation_source_allowed": True,
         "runtime_evidence_allowed": True,
         "official_denominator_overlap": False,

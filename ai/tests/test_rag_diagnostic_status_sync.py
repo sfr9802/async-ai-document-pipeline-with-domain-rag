@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -74,6 +75,22 @@ def require_pdf_xlsx_answer_quality_local_artifacts(*paths: Path) -> None:
     pytest.skip(message)
 
 
+def require_v3_9_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    message = "missing v3_9 natural answer-quality local report artifacts: " + ", ".join(
+        str(path) for path in missing
+    )
+    if os.environ.get("RAG_V3_9_ARTIFACTS_REQUIRED") == "1":
+        pytest.fail(message)
+    pytest.skip(message)
+
+
+def sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unavailable():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = text.split("## Short History", 1)[0]
@@ -134,7 +151,10 @@ def test_measurements_doc_keeps_current_artifact_layout_and_v3_comparable_counts
     text = MEASUREMENTS_DOC.read_text(encoding="utf-8")
     flat_text = " ".join(text.split())
 
-    assert "compact current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, and v3_8_3" in flat_text
+    assert (
+        "compact current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, v3_8_3 machine artifacts, and current v3_9 quality artifacts"
+        in flat_text
+    )
     assert "latest v3_6_9 SearchUnit/SearchView/SourceAtom refactor artifacts" not in text
     assert "| v3 comparable live measurement |" in text
     assert "PASS `27/29`; PDF `4/4`, XLSX `19/19`, TEXT `4/6`" in text
@@ -2504,9 +2524,11 @@ def test_progress_status_and_triage_gate_record_v3_8_3_xlsx_scoped_cell_resolve_
     assert "Target SourceAtom/manifest locator data is metrics-only" in current_flat
     assert "no scoped answer route" in current_flat
     assert "`official_metric_input_rows=0`" in current_text
-    assert "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
+    assert "retained XLSX locator status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress or (
+        "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
+    )
     assert run_id in measurements
-    assert "top miss bucket `table_or_range_miss_after_sheet_hit=218`" in measurements
+    assert "top miss bucket `table_or_range_miss_after_sheet_hit=219`" in measurements
     assert "Metrics + compact miss matrix" in measurements
     assert "sheet@1 baseline -> current" in measurements
     assert run_id in triage
@@ -2711,3 +2733,437 @@ def test_progress_measurements_triage_and_status_record_pdf_query_fidelity_packe
     assert "Rows excluded from the headline subset are not deleted" in measurements
     assert "OCR decision: skipped" in measurements
     assert "future official-adjacent adapter is still disabled" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_9_natural_answer_quality_without_promotion():
+    dev_metrics_path = (
+        ROOT
+        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_metrics.json"
+    )
+    dev_per_family_path = (
+        ROOT
+        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_family.json"
+    )
+    dev_per_query_path = (
+        ROOT
+        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_query.jsonl"
+    )
+    validation_metrics_path = (
+        ROOT
+        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_metrics.json"
+    )
+    validation_per_family_path = (
+        ROOT
+        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_family.json"
+    )
+    validation_per_query_path = (
+        ROOT
+        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_query.jsonl"
+    )
+    require_v3_9_local_artifacts(
+        STATUS_JSONL,
+        dev_metrics_path,
+        dev_per_family_path,
+        dev_per_query_path,
+        validation_metrics_path,
+        validation_per_family_path,
+        validation_per_query_path,
+    )
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    run_id = "official_answer_citation_agentic_loop_run_v3_9_natural_answer_quality_diagnostic"
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "natural_answer_quality_diagnostic_v3_9"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "NATURAL_ANSWER_QUALITY_DIAGNOSTIC_V3_9_VALIDATION_READY"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["adapter_enabled"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    for flag in (
+        "gold_mutation",
+        "label_mutation",
+        "qrels_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "namespace_mutation",
+        "production_mutation",
+    ):
+        assert event[flag] is False
+
+    assert event["source_families"] == ["PDF", "XLSX", "TEXT"]
+    assert event["source_family_counts"] == {"PDF": 6, "XLSX": 6, "TEXT": 6}
+    assert event["dev_split"]["dev_only"] is True
+    assert event["dev_split"]["success_evidence_allowed"] is False
+    assert event["validation_split"]["success_evidence_allowed"] is True
+    assert event["validation_split"]["source_document_disjoint_from_dev"] is True
+    assert event["validation_split"]["dev_overlap_document_count"] == 0
+    assert event["dev_split"]["raw_pass_to_ready_fail_regression"] == 0
+    assert event["validation_split"]["raw_pass_to_ready_fail_regression"] == 0
+    assert event["validation_split"]["query_fidelity_included_count"] == 11
+    assert event["validation_split"]["query_fidelity_excluded_count"] == 7
+    assert event["validation_split"]["generalized_signal"] == {
+        "family": "PDF",
+        "query_fidelity_included_raw_final": "2/4",
+        "query_fidelity_included_answer_ready": "3/4",
+        "delta": 1,
+    }
+    assert event["query_fidelity_excluded_rows_retained"] is True
+    assert event["query_fidelity_classifier_synced_between_metrics_and_packet"] is True
+    assert event["raw_pass_to_ready_fail_regression_neutralized"] is True
+    assert event["non_pdf_answer_ready_reuses_final_locator_response"] is True
+    assert "ai/eval/reports/rag-ingestion/status.jsonl" not in event["changed_tracked_files"]
+    assert event["ocr_rationale"]["decision"] == "skipped"
+    assert event["ocr_rationale"]["ocr_touched"] is False
+
+    hash_contract = {
+        "dev_metrics_json": ("dev_metrics_json_sha256", dev_metrics_path),
+        "dev_per_family_json": ("dev_per_family_json_sha256", dev_per_family_path),
+        "dev_per_query_jsonl": ("dev_per_query_jsonl_sha256", dev_per_query_path),
+        "validation_metrics_json": ("validation_metrics_json_sha256", validation_metrics_path),
+        "validation_per_family_json": ("validation_per_family_json_sha256", validation_per_family_path),
+        "validation_per_query_jsonl": ("validation_per_query_jsonl_sha256", validation_per_query_path),
+    }
+    for path_key, (hash_key, path) in hash_contract.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    validation_per_family = json.loads(validation_per_family_path.read_text(encoding="utf-8"))
+    validation_metrics = json.loads(validation_metrics_path.read_text(encoding="utf-8"))
+    dev_metrics = json.loads(dev_metrics_path.read_text(encoding="utf-8"))
+    assert dev_metrics["case_selection"]["source_document_disjoint_from_dev"] == "not_applicable_dev_split"
+    assert validation_metrics["answer_quality"]["answer_ready_context"]["diagnostic_aggregate_only"] is True
+    assert validation_metrics["answer_quality"]["answer_ready_context"]["headline_allowed"] is False
+    assert validation_metrics["answer_quality"]["answer_ready_context"]["no_collapsed_cross_family_score"] is True
+    assert validation_per_family["no_collapsed_cross_family_score"] is True
+    assert validation_per_family["families"]["PDF"]["query_fidelity_included_count"] == 4
+    assert validation_per_family["families"]["PDF"]["raw_final_pass_like"] == 2
+    assert validation_per_family["families"]["PDF"]["answer_pass_like"] == 5
+    assert validation_per_family["families"]["XLSX"]["query_fidelity_excluded_count"] == 5
+    assert validation_per_family["families"]["TEXT"]["failure_category_counts"] == {"invalid_json": 1}
+
+    validation_rows = [
+        json.loads(line) for line in validation_per_query_path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+    assert len(validation_rows) == 18
+    assert sum(1 for row in validation_rows if row["query_fidelity_headline_included"]) == 11
+    assert sum(1 for row in validation_rows if not row["query_fidelity_headline_included"]) == 7
+    assert all(row["official_metric_input_rows"] == 0 for row in validation_rows)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in validation_rows)
+
+    assert "natural_answer_quality_diagnostic_v3_9_validation_ready" in current_text
+    assert run_id in current_text
+    assert "Query-fidelity included validation is the only generalized signal: PDF `2/4 -> 3/4`" in current_flat
+    assert "dev-only" in current_flat
+    assert "`table_or_range_miss_after_sheet_hit=219`" in current_text
+    assert "`invalid_json=1`" in current_text
+    assert "OCR remains skipped" in current_flat
+    assert run_id in measurements
+    assert "| Validation | PDF | 4 | 2/4 | 3/4 | generalized diagnostic signal (+1) |" in measurements
+    assert "| Validation | XLSX | 1 | 1/1 | 1/1 | flat; mostly index-to-content excluded |" in measurements
+    assert "Validation query-fidelity excluded rows: `7/18`" in measurements
+    assert "raw_pass_to_ready_fail_regression=0" in measurements
+    assert run_id in triage
+    assert "Generalized validation signal exists only for PDF query-fidelity included" in triage
+    assert "Codex-owned diagnostic decisions" in triage
+    assert "User-owned decisions remain only" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_9_pdf_xlsx_bottleneck_quality_without_promotion():
+    run_id = "official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement"
+    artifact_paths = {
+        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
+        "per_query_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_query.jsonl",
+        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "query_fidelity_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
+        "pdf_residual_review_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_pdf_residual_review.jsonl",
+        "xlsx_locator_residual_review_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_locator_residual_review.jsonl",
+        "split_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_split_manifest.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "pdf_xlsx_bottleneck_quality_improvement_v3_9"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "PDF_XLSX_BOTTLENECK_QUALITY_DIAGNOSTIC_V3_9_VALIDATION_READY"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["adapter_enabled"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    for flag in (
+        "gold_mutation",
+        "label_mutation",
+        "qrels_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "namespace_mutation",
+        "production_mutation",
+    ):
+        assert event[flag] is False
+
+    assert event["source_families"] == ["PDF", "XLSX"]
+    assert event["text_comparison_only"] is True
+    assert event["source_family_counts"] == {"PDF": 6, "XLSX": 6}
+    assert event["dev_split"]["dev_only"] is True
+    assert event["dev_split"]["success_evidence_allowed"] is False
+    assert event["validation_split"]["source_document_disjoint_from_dev"] is True
+    assert event["validation_split"]["dev_overlap_document_count"] == 0
+    assert event["validation_split"]["query_fidelity_included_count"] == 5
+    assert event["validation_split"]["query_fidelity_excluded_count"] == 7
+    assert event["validation_split"]["generalized_signal"]["PDF"] == {
+        "delta": 1,
+        "generalized": True,
+        "query_fidelity_included_answer_ready": "3/4",
+        "query_fidelity_included_raw_final": "2/4",
+    }
+    assert event["validation_split"]["generalized_signal"]["XLSX"]["delta"] == 0
+    assert event["query_fidelity_excluded_rows_retained"] is True
+    assert event["raw_pass_to_ready_fail_regression_neutralized"] is True
+    assert event["ocr_rationale"]["decision"] == "skipped"
+    assert event["ocr_rationale"]["ocr_touched"] is False
+    assert event["xlsx_locator_metrics"]["table_or_range_resolve"]["@1"]["numerator"] == 22
+    assert event["xlsx_locator_metrics"]["cell_or_value_resolve"]["@1"]["numerator"] == 19
+    assert event["xlsx_locator_metrics"]["direct_normalized_value_query_matching_used"] is False
+    assert event["pdf_metrics"]["file_resolve_reference"]["file_resolve@1"]["numerator"] == 65
+
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = path_key.replace("_jsonl", "").replace("_json", "") + "_sha256"
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert "pdf_xlsx_bottleneck_quality_diagnostic_v3_9_validation_ready" in current_text
+    assert run_id in current_text
+    assert "TEXT is comparison-only" in current_flat
+    assert "PDF query-fidelity included validation improved `2/4 -> 3/4`" in current_flat
+    assert "XLSX validation included stayed `1/1 -> 1/1`" in current_flat
+    assert "`table_or_range_miss_after_sheet_hit=219`" in current_text
+    assert "OCR remains skipped" in current_flat
+    assert run_id in measurements
+    assert "| Validation | PDF | 4 | 2/4 | 3/4 | generalized diagnostic signal (+1) |" in measurements
+    assert "| Validation | XLSX | 1 | 1/1 | 1/1 | flat; not generalized locator improvement |" in measurements
+    assert "XLSX locator 344-row surface: range@1 `22/344`, cell/value@1 `19/344`" in measurements
+    assert "direct normalized-value query matching remains banned" in measurements
+    assert run_id in triage
+    assert "PDF generalized validation signal exists" in triage
+    assert "XLSX generalized answer-quality signal does not exist" in triage
+    assert "Fine-tuning remains deferred" in triage
+    assert "User-owned decisions remain only" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_9_1_xlsx_table_axis_pdf_file_identity_without_promotion():
+    run_id = "official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic"
+    artifact_paths = {
+        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
+        "per_query_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_query.jsonl",
+        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "query_fidelity_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
+        "split_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_split_manifest.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_COMPUTED"
+    assert event["run_class"] == "diagnostic_only_xlsx_sourceatom_table_axis_pdf_file_identity"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["answer_generation_metric_computed"] is False
+    assert event["answer_metric_computed"] is False
+    assert event["fine_tuning_started"] is False
+    assert event["promotion_evidence"] is False
+    assert event["promotion_gate"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["measurements_doc_updated"] is True
+    assert event["triage_doc_updated"] is True
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+    ):
+        assert event[flag] is False
+    assert event["source_family_counts"] == {"PDF": 329, "XLSX": 344}
+    assert set(event["per_source_family"]) == {"XLSX", "PDF_FILE_IDENTITY", "PDF_CONTENT", "TEXT"}
+    assert event["per_source_family"]["XLSX"]["locator_signal_count_distribution"]["signal_empty_rank1_count"] == 257
+    assert event["per_source_family"]["XLSX"]["metrics"]["table_or_range_resolve@1"]["numerator"] == 23
+    assert event["per_source_family"]["XLSX"]["metrics"]["cell_or_value_resolve@1"]["numerator"] == 20
+    assert event["per_source_family"]["PDF_FILE_IDENTITY"]["metrics"]["file_resolve@1"]["numerator"] == 66
+    assert event["per_source_family"]["PDF_FILE_IDENTITY"]["metrics"]["file_resolve@3"]["numerator"] == 129
+    assert event["per_source_family"]["PDF_FILE_IDENTITY"]["metrics"]["abstain_rate"]["numerator"] == 182
+    assert event["per_source_family"]["PDF_FILE_IDENTITY"]["metrics"]["wrong_file_block_rate"]["numerator"] == 60
+    assert event["per_source_family"]["PDF_CONTENT"]["computed_in_this_run"] is False
+    assert event["per_source_family"]["TEXT"]["comparison_only"] is True
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["answer_value_in_query_success_evidence_used"] is False
+    assert event["index_to_content_success_evidence_used"] is False
+    assert event["file_or_source_title_leak_success_evidence_used"] is False
+    assert event["fail_closed_reasons"] == []
+    hash_keys = {
+        "summary_json": "summary_json_sha256",
+        "metrics_json": "metrics_json_sha256",
+        "per_family_json": "per_family_json_sha256",
+        "per_query_jsonl": "per_query_jsonl_sha256",
+        "failure_taxonomy_json": "failure_taxonomy_json_sha256",
+        "query_fidelity_audit_jsonl": "query_fidelity_audit_jsonl_sha256",
+        "split_manifest_json": "split_manifest_json_sha256",
+    }
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        assert event["artifact_sha256"][hash_keys[path_key]] == sha256_file(path)
+
+    assert (
+        "diagnostic_v3_9_1_xlsx_table_axis_pdf_file_identity_computed" in current_text
+        or "diagnostic_v3_9_2_overfit_risk_audit_holdout_reset_ready" in current_text
+    )
+    assert run_id in current_text
+    assert "keeps PDF and XLSX metrics separate" in current_flat
+    assert "query-fidelity validation included=118/170" in current_flat
+    assert "PDF file_resolve@1=66/329" in current_flat
+    assert "no fine-tuning" in current_flat
+    assert run_id in measurements
+    assert "| signal-empty rank1 | 261/300 | 257/300 |" in measurements
+    assert "| table_or_range@1 | 2/170 | 3/170 |" in measurements
+    assert "| cell_or_value@3 | 6/170 | 9/170 |" in measurements
+    assert "| file_resolve@1 | 65/329 | 66/329 |" in measurements
+    assert "| abstain | 182/329 | 182/329 |" in measurements
+    assert "PDF file identity, separate from answer-ready evidence-window quality" in measurements
+    assert run_id in triage
+    assert "Direct normalized-value query matching remains banned" in triage
+    assert "XLSX `locator_signal_count=0` rank1 pressure" in triage
+    assert "Not a fine-tuning handoff yet" in triage
+    assert "OCR remains closed" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audit_holdout_reset():
+    run_id = "official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset"
+    artifact_paths = {
+        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
+        "overfit_risk_by_delta_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_overfit_risk_by_delta.jsonl",
+        "seen_surface_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_seen_surface_manifest.json",
+        "fresh_holdout_candidate_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_fresh_holdout_candidate_manifest.json",
+        "fresh_holdout_split_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_fresh_holdout_split_manifest.json",
+        "query_fidelity_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
+        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "architecture_scope_assessment_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_architecture_scope_assessment.json",
+        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_9_2_overfit_risk_audit_and_blind_holdout_reset"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_9_2_OVERFIT_RISK_AUDIT_AND_BLIND_HOLDOUT_RESET_READY"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["fine_tuning_executed"] is False
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["label_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["production_mutation"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["seen_validation_downgraded_to_seen_validation_only"] is True
+    assert event["fresh_holdout_sufficient"] is False
+    assert event["real_unseen_holdout_sufficient"] is False
+    assert event["synthetic_ood_guard_used"] is True
+    assert event["product_success_evidence_allowed"] is False
+    assert event["xlsx_nonprod_rematerialization_needed"] is True
+    assert event["pdf_file_identity_answer_window_kept_separate"] is True
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = (
+            "summary_json_sha256"
+            if path_key == "summary_json"
+            else path_key.replace("_jsonl", "").replace("_json", "") + "_sha256"
+        )
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert "Overall status: `diagnostic_v3_9_2_overfit_risk_audit_holdout_reset_ready`;" in progress
+    assert "seen-validation-only" in current_flat
+    assert "PDF document-disjoint=0, XLSX workbook-disjoint=0" in current_flat
+    assert "synthetic OOD anti-overfit guard only" in current_flat
+    assert "overlay/rerank-only" in current_flat
+    assert run_id in measurements
+    assert "Fresh real holdout is insufficient" in measurements
+    assert "| synthetic OOD guard candidates | 14 |" in measurements
+    assert "no v3_9_1 improvement is preserved as future product success evidence" in measurements
+    assert run_id in triage
+    assert "`likely_general` future-success evidence count is `0`" in triage
+    assert "Leakage-adjacent" in triage
+    assert "Pause performance success claims" in triage
