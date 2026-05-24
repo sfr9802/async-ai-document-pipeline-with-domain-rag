@@ -23,8 +23,10 @@ for behavior-changing runs or explicit forensic evidence requirements.
 ## Current Status
 
 Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;
-supplemental PDF/XLSX answer-quality review status: `pdf_xlsx_answer_quality_evidence_readiness_packet_ready`;
-query fidelity packet status: `pdf_xlsx_answer_quality_query_fidelity_packet_ready`;
+supplemental PDF/XLSX answer-quality review status: `pdf_xlsx_answer_quality_overfit_guard_holdout_ready`;
+query fidelity packet status: `pdf_xlsx_answer_quality_query_fidelity_holdout_ready`;
+retained prior packet statuses: `pdf_xlsx_answer_quality_evidence_readiness_packet_ready`,
+`pdf_xlsx_answer_quality_query_fidelity_packet_ready`;
 portfolio freeze status: `portfolio_ready_freeze_v1_completed`;
 the prior gates `official_denominator_source_bound_index_build_ready_load_checked`
 and `v3_comparable_live_measurement_completed` remain satisfied. The v3_2
@@ -46,9 +48,62 @@ with the local `gemma4-e2b-local` endpoint: PASS=27/29, PDF=4/4, XLSX=19/19,
 TEXT=4/6, real LLM invoked for six TEXT rows. Promotion readiness remains
 closed; threshold tuning and winner selection also remain closed.
 
+<!-- pdf_xlsx_answer_ready_overfit_guard_20260524:progress-entry:start -->
+- 2026-05-24 PDF answer-ready overfit guard completed as diagnostic-only
+  hardening over `answer_ready_pdf_v1_llm_15pf`. The earlier
+  `19/30 -> 23/30`, headline `9/16 -> 11/16`, and PDF headline `5/12 -> 7/12`
+  counts remain visible but are now explicitly prior dev/query-fidelity
+  diagnostics, not validation evidence.
+- The frozen candidate rules are only bounded same-page windows,
+  heading/body pairing by page order, dot-leader cleanup, locator-only
+  demotion, broad/duplicate suppression, evidence-density scoring, context
+  ordering, and raw-final reuse when no structural evidence gain exists. The
+  packet guardrails record no case_id branch, exact-query hack, file/title
+  hack, pass/fail threshold tuning, expected/supporting/gold text input, or
+  drift-contaminated headline gain.
+- Fresh dev rerun packet: all rows raw final `17/30` -> answer-ready `20/30`;
+  PDF `5/15 -> 8/15`, XLSX `12/15 -> 12/15`. The PDF combined answer-ready
+  count includes one preserved raw-final pass; fresh PDF answer-ready passes
+  are `7/15`. Query-fidelity headline subset: `9/17 -> 12/17`; PDF headline
+  `5/13 -> 8/13` with fresh answer-ready `7/13`, XLSX headline `4/4 -> 4/4`.
+  This split is `dev_current_pdf_headline`, `dev_only=true`,
+  `success_evidence_allowed=false`, and raw-pass-to-ready-fail regressions are
+  neutralized to zero.
+- Source-document-disjoint validation packet:
+  `answer_ready_pdf_v1_llm_15pf_validation`, 30 rows with 15 PDF and 15 XLSX,
+  `source_document_disjoint_from_dev=true`, `dev_overlap_document_count=0`.
+  All rows raw final `18/30` -> answer-ready `20/30`; PDF `8/15 -> 9/15`,
+  XLSX `10/15 -> 11/15`. The validation PDF combined answer-ready count
+  includes three preserved raw-final passes; fresh PDF answer-ready passes are
+  `6/15`. The query-fidelity headline validation subset is `8/15 -> 8/15`;
+  PDF headline `8/14 -> 8/14` with fresh answer-ready `5/14`, and XLSX
+  headline `0/1 -> 0/1`. Therefore the dev PDF headline gain stayed dev-only;
+  validation only preserves existing raw-final passes plus a small all-row
+  diagnostic signal, not a query-fidelity headline gain.
+- PDF residuals after hardening: dev answer-ready residuals=7 with weak
+  evidence=6, dot/OCR artifact=7, locator-only=3, broad context=4,
+  evaluator limitation=7, query drift=2, true answer failure=0. Validation has
+  six answer-ready residuals with weak evidence=6, dot/OCR artifact=6,
+  locator-only=0, broad context=2, evaluator limitation=2, query drift=0, and
+  true answer failure=0; the broader validation review table has one additional
+  query-fidelity-excluded pass row, so its combined review buckets are
+  weak=7, dot/OCR=7, and query_drift=1.
+- OCR remains skipped. Native text evidence is present and the validation
+  packet does not prove OCR absence/unusability or material OCR gain; the
+  remaining bottlenecks are evidence-window quality, locator/citation shape,
+  evaluator overlap, and user-owned query/policy decisions.
+- `official_metric_input_rows=0`, the future scored adapter remains
+  `DISABLED_PENDING_USER_APPROVAL`, and user decision columns remain blank.
+  No gold, qrels, labels, expected answers, supporting evidence, official
+  denominator, namespace, production, promotion, threshold, or winner surface
+  was mutated.
+<!-- pdf_xlsx_answer_ready_overfit_guard_20260524:progress-entry:end -->
+
 <!-- pdf_xlsx_query_fidelity_packet_20260524:progress-entry:start -->
 - 2026-05-24 PDF/XLSX answer-quality query fidelity packet completed as a
-  diagnostic-only addendum over `answer_ready_pdf_v1_llm_15pf`. It keeps the
+  diagnostic-only addendum over `answer_ready_pdf_v1_llm_15pf`. This entry is
+  retained as prior status-ledger history; the overfit-guard entry above
+  supersedes the packet artifacts and current interpretation. It keeps the
   raw diagnostic counts visible (`raw_final=19/30`, `answer_ready=23/30`,
   PDF 5/15 -> 8/15, XLSX 14/15 -> 15/15) but marks those prior aggregates
   query-fidelity-unverified until the packet's seed/query classification is

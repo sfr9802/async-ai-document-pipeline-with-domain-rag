@@ -78,6 +78,9 @@ REVIEW_COLUMNS = [
     "answer_ready_answer",
     "answer_ready_result",
     "answer_ready_failure_types",
+    "answer_ready_context_missing",
+    "answer_ready_reused_raw_final",
+    "answer_ready_reuse_reason",
     "retrieved_evidence_text",
     "retrieved_evidence_truncated",
     "retrieved_evidence_sha256",
@@ -138,6 +141,7 @@ PDF_RESIDUAL_REVIEW_COLUMNS = [
     "query_drift_severity",
     "query_generation_mode",
     "query_fidelity_headline_included",
+    "review_scope",
     "answer_ready_result",
     "answer_ready_failure_types",
     "delta_bucket",
@@ -224,7 +228,7 @@ def run_packet(
             previous_responses_path = resolve_repo_path(clean(previous_summary.get("responses_path")))
             if previous_responses_path.exists():
                 previous_response_rows = read_jsonl(previous_responses_path)
-    cases = load_cases_for_summary(summary)
+    cases = load_cases_for_summary(summary, response_rows=response_rows)
     review_rows = build_review_rows(
         summary=summary,
         response_rows=response_rows,
@@ -316,6 +320,7 @@ def build_report(
     )
     status = "PASS" if validation["ok"] and future_adapter["official_metric_input_rows"] == 0 else "FAIL"
     policy = summary.get("policy") if isinstance(summary.get("policy"), Mapping) else {}
+    evaluation_split = evaluation_split_summary(summary, review_rows)
     return {
         "schema_version": SCHEMA_VERSION,
         "status": status,
@@ -366,12 +371,14 @@ def build_report(
         "source_pdf_evidence_readiness_summary": summary.get("pdf_evidence_readiness_summary", {}),
         "source_query_rewrite_summary": summary.get("query_rewrite_summary", {}),
         "source_policy": dict(policy),
+        "evaluation_split": evaluation_split,
+        "anti_overfit_guardrails": anti_overfit_guardrails(evaluation_split),
         "validation": validation,
         "future_scored_adapter": future_adapter,
         "pdf_residuals": pdf_residuals,
         "pdf_delta_audit_summary": summarize_pdf_delta_rows(pdf_delta_rows),
         "query_fidelity_summary": summarize_query_fidelity_rows(query_fidelity_rows),
-        "headline_quality_counts": headline_quality_counts(review_rows),
+        "headline_quality_counts": headline_quality_counts(review_rows, evaluation_split=evaluation_split),
         "pdf_residual_review_summary": summarize_pdf_residual_review_rows(pdf_residual_review_rows),
         "ocr_rationale": ocr_rationale(pdf_residual_review_rows),
         "prior_metrics_query_fidelity_status": "query_fidelity_unverified_until_this_packet",
@@ -400,7 +407,18 @@ def build_report(
     }
 
 
-def load_cases_for_summary(summary: Mapping[str, Any]) -> dict[str, quality_benchmark.EvidenceCase]:
+def load_cases_for_summary(
+    summary: Mapping[str, Any],
+    response_rows: list[Mapping[str, Any]] | None = None,
+) -> dict[str, quality_benchmark.EvidenceCase]:
+    selected_cases = summary.get("selected_cases")
+    if isinstance(selected_cases, list) and selected_cases:
+        cases = [
+            quality_benchmark.case_from_selected_record(row)
+            for row in selected_cases
+            if isinstance(row, Mapping)
+        ]
+        return augment_cases_from_response_manifest(summary, {case.case_id: case for case in cases}, response_rows)
     cases_by_family = summary.get("cases_by_family") if isinstance(summary.get("cases_by_family"), Mapping) else {}
     cases_per_family = max([int_value(value) for value in cases_by_family.values()] or [15])
     manifest_path = resolve_repo_path(clean(summary.get("manifest")))
@@ -411,7 +429,100 @@ def load_cases_for_summary(summary: Mapping[str, Any]) -> dict[str, quality_benc
         cases_per_family=cases_per_family,
         silver_index=silver_index,
     )
-    return {case.case_id: case for case in cases}
+    return augment_cases_from_response_manifest(summary, {case.case_id: case for case in cases}, response_rows)
+
+
+def augment_cases_from_response_manifest(
+    summary: Mapping[str, Any],
+    cases: dict[str, quality_benchmark.EvidenceCase],
+    response_rows: list[Mapping[str, Any]] | None,
+) -> dict[str, quality_benchmark.EvidenceCase]:
+    if not response_rows:
+        return cases
+    required_case_ids = {clean(row.get("case_id")) for row in response_rows if clean(row.get("case_id"))}
+    missing_case_ids = sorted(required_case_ids.difference(cases))
+    if not missing_case_ids:
+        return cases
+
+    manifest_path = resolve_repo_path(clean(summary.get("manifest")))
+    silver_path = resolve_repo_path(clean(summary.get("silver_manifest")))
+    silver_index = quality_benchmark.load_silver_seed_index(silver_path)
+    manifest_rows = read_jsonl(manifest_path) if manifest_path.exists() else []
+    by_identity: dict[tuple[str, str, str], Mapping[str, Any]] = {}
+    for row in manifest_rows:
+        key = (
+            clean(row.get("source_atom_id") or row.get("sourceAtomId")),
+            clean(row.get("search_view_id") or row.get("searchViewId")),
+            clean(row.get("locator_fingerprint")),
+        )
+        if any(key):
+            by_identity.setdefault(key, row)
+
+    for row in response_rows:
+        case_id = clean(row.get("case_id"))
+        if case_id not in missing_case_ids or case_id in cases:
+            continue
+        key = (
+            clean(row.get("source_atom_id")),
+            clean(row.get("search_view_id")),
+            clean(row.get("locator_fingerprint")),
+        )
+        manifest_row = by_identity.get(key)
+        if manifest_row is None:
+            continue
+        case = case_from_response_manifest_row(row, manifest_row, silver_index)
+        cases[case.case_id] = case
+    return cases
+
+
+def case_from_response_manifest_row(
+    response_row: Mapping[str, Any],
+    manifest_row: Mapping[str, Any],
+    silver_index: Mapping[str, Mapping[str, dict[str, Any]]],
+) -> quality_benchmark.EvidenceCase:
+    family = clean(response_row.get("family") or manifest_row.get("source_family") or manifest_row.get("sourceFamily")).upper()
+    raw_evidence_text = clean(
+        manifest_row.get("display_text")
+        or manifest_row.get("bm25_text")
+        or manifest_row.get("embedding_text")
+    )
+    embedding_text = clean(manifest_row.get("embedding_text"))
+    locator = quality_benchmark.extract_locator(
+        {
+            **manifest_row,
+            **quality_benchmark.parse_locator_text(embedding_text),
+            **quality_benchmark.parse_locator_text(raw_evidence_text),
+        }
+    )
+    evidence_text = quality_benchmark.safe_evidence_text(manifest_row, locator)
+    normalized_evidence_text = (
+        quality_benchmark.normalize_pdf_evidence_snippet(evidence_text)
+        if family == "PDF"
+        else evidence_text
+    )
+    silver_seed = quality_benchmark.find_silver_seed(manifest_row, silver_index)
+    return quality_benchmark.EvidenceCase(
+        case_id=clean(response_row.get("case_id")),
+        family=family,
+        source_atom_id=clean(response_row.get("source_atom_id") or manifest_row.get("source_atom_id") or manifest_row.get("sourceAtomId")),
+        doc_id=clean(manifest_row.get("document_version_id") or manifest_row.get("document_id") or manifest_row.get("sourceIdentity")),
+        section=quality_benchmark.case_section(family, locator, manifest_row),
+        evidence_text=evidence_text,
+        locator=locator,
+        source_identity=quality_benchmark.canonical_source_identity(manifest_row),
+        locator_fingerprint=clean(response_row.get("locator_fingerprint") or manifest_row.get("locator_fingerprint")),
+        search_view_id=clean(response_row.get("search_view_id") or manifest_row.get("search_view_id") or manifest_row.get("searchViewId")),
+        silver_query=clean(response_row.get("seed_query") or silver_seed.get("generated_question_draft")),
+        silver_query_profile=clean(response_row.get("seed_query_profile") or silver_seed.get("query_quality_profile")),
+        silver_manifest_row_ordinal=int(response_row.get("silver_manifest_row_ordinal") or silver_seed.get("row_ordinal") or 0),
+        silver_manifest_partition=clean(response_row.get("silver_manifest_partition") or silver_seed.get("manifest_partition")),
+        weak_silver_candidate_id=clean(response_row.get("weak_silver_candidate_id") or silver_seed.get("weak_silver_candidate_id")),
+        source_candidate_id=clean(response_row.get("source_candidate_id") or silver_seed.get("source_candidate_id")),
+        join_key_used=clean(response_row.get("join_key_used") or silver_seed.get("_join_key_used")),
+        raw_evidence_text=evidence_text,
+        normalized_evidence_text=normalized_evidence_text,
+        answer_ready_evidence_text=normalized_evidence_text,
+    )
 
 
 def build_review_rows(
@@ -422,7 +533,7 @@ def build_review_rows(
     cases: Mapping[str, quality_benchmark.EvidenceCase],
     max_evidence_chars: int,
 ) -> list[dict[str, str]]:
-    del summary
+    answer_ready_required = requires_answer_ready_context(summary)
     by_case: dict[str, dict[str, Mapping[str, Any]]] = defaultdict(dict)
     for row in response_rows:
         case_id = clean(row.get("case_id"))
@@ -445,9 +556,14 @@ def build_review_rows(
             raise ValueError(f"case {case_id} is missing from benchmark case loader")
         baseline = by_case[case_id].get("baseline_legacy_context")
         final = by_case[case_id].get("final_locator_context")
-        answer_ready = by_case[case_id].get("answer_ready_context") or final
         if baseline is None or final is None:
             raise ValueError(f"case {case_id} does not have both baseline and final rows")
+        answer_ready = by_case[case_id].get("answer_ready_context")
+        answer_ready_context_missing = answer_ready is None
+        if answer_ready is None:
+            if answer_ready_required:
+                raise ValueError(f"missing required answer_ready_context rows for answer-ready packet: {case_id}")
+            answer_ready = final
         if clean(baseline.get("query")) != clean(final.get("query")):
             raise ValueError(f"case {case_id} baseline/final query mismatch")
         if answer_ready is not None and clean(answer_ready.get("query")) != clean(final.get("query")):
@@ -461,9 +577,14 @@ def build_review_rows(
         final_failure_types = failure_types(final)
         final_pass = bool(as_mapping(final.get("score")).get("quality_pass"))
         answer_ready_failure_types = failure_types(answer_ready)
+        answer_ready_pass = bool(as_mapping(answer_ready.get("score")).get("quality_pass"))
+        answer_ready_reused = bool(answer_ready.get("answer_ready_reused_raw_final")) or bool(
+            as_mapping(answer_ready.get("score")).get("answer_ready_reused_raw_final")
+        )
+        answer_ready_reuse_reason = clean(answer_ready.get("answer_ready_reuse_reason"))
         previous_failure_types = failure_types(previous_final) if previous_final else []
         evidence_profile = as_mapping(answer_ready.get("evidence_readiness")) or as_mapping(final.get("evidence_readiness"))
-        pdf_causes = classify_pdf_residual_causes(case=case, final_row=final, final_answer=final_answer)
+        pdf_causes = classify_pdf_residual_causes(case=case, final_row=answer_ready, final_answer=answer_ready_answer)
         query_audit = query_fidelity_audit(
             case=case,
             query=clean(final.get("query")),
@@ -497,6 +618,9 @@ def build_review_rows(
             "answer_ready_answer": answer_ready_answer,
             "answer_ready_result": result_label(answer_ready),
             "answer_ready_failure_types": "|".join(answer_ready_failure_types),
+            "answer_ready_context_missing": bool_cell(answer_ready_context_missing),
+            "answer_ready_reused_raw_final": bool_cell(answer_ready_reused),
+            "answer_ready_reuse_reason": answer_ready_reuse_reason,
             "retrieved_evidence_text": evidence_text,
             "retrieved_evidence_truncated": bool_cell(evidence_truncated),
             "retrieved_evidence_sha256": sha256_text(case.evidence_text),
@@ -521,9 +645,14 @@ def build_review_rows(
             "locator_cell": clean(locator.get("cell")),
             "locator_json": compact_json(locator),
             "normalized_value": clean(locator.get("normalized_value")),
-            "failure_category": failure_category(case.family, final_pass, final_failure_types, pdf_causes),
+            "failure_category": failure_category(case.family, answer_ready_pass, answer_ready_failure_types, pdf_causes),
             "pdf_residual_likely_causes": "|".join(pdf_causes),
-            "codex_diagnostic_note": codex_note(case=case, final_pass=final_pass, final_failure_types=final_failure_types, pdf_causes=pdf_causes),
+            "codex_diagnostic_note": codex_note(
+                case=case,
+                final_pass=answer_ready_pass,
+                final_failure_types=answer_ready_failure_types,
+                pdf_causes=pdf_causes,
+            ),
             "source_atom_id": clean(final.get("source_atom_id")),
             "search_view_id": clean(final.get("search_view_id")),
             "locator_fingerprint": clean(final.get("locator_fingerprint")),
@@ -550,6 +679,16 @@ def build_review_rows(
         row.update({column: "" for column in USER_DECISION_COLUMNS})
         review_rows.append(row)
     return review_rows
+
+
+def requires_answer_ready_context(summary: Mapping[str, Any]) -> bool:
+    run_label = clean(summary.get("run_label")).lower()
+    case_selection = as_mapping(summary.get("case_selection"))
+    split_role = clean(case_selection.get("role")).lower()
+    return "answer_ready" in run_label or split_role in {
+        "dev_current_pdf_headline",
+        "validation_holdout",
+    }
 
 
 def validate_review_rows(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
@@ -782,6 +921,7 @@ def build_pdf_residual_review_rows(rows: list[Mapping[str, str]]) -> list[dict[s
         true_answer_failure = answer_ready_failed and not any(
             [weak, dot_or_ocr, locator_only, table_form, query_drift, evaluator_limitation]
         )
+        review_scope = "answer_ready_failure" if answer_ready_failed else "query_fidelity_excluded_only"
         residual_rows.append(
             {
                 "case_id": row["case_id"],
@@ -789,6 +929,7 @@ def build_pdf_residual_review_rows(rows: list[Mapping[str, str]]) -> list[dict[s
                 "query_drift_severity": row["query_drift_severity"],
                 "query_generation_mode": row["query_generation_mode"],
                 "query_fidelity_headline_included": row["query_fidelity_headline_included"],
+                "review_scope": review_scope,
                 "answer_ready_result": row["answer_ready_result"],
                 "answer_ready_failure_types": row["answer_ready_failure_types"],
                 "delta_bucket": row["delta_bucket"],
@@ -828,7 +969,7 @@ def build_pdf_residual_summary(rows: list[Mapping[str, str]]) -> dict[str, Any]:
             {
                 "case_id": row["case_id"],
                 "query": row["query"],
-                "final_failure_types": split_pipe(row.get("answer_ready_failure_types")),
+                "final_failure_types": split_pipe(row.get("final_failure_types")),
                 "raw_final_failure_types": split_pipe(row.get("final_failure_types")),
                 "answer_ready_failure_types": split_pipe(row.get("answer_ready_failure_types")),
                 "likely_causes": causes,
@@ -880,34 +1021,114 @@ def summarize_query_fidelity_rows(rows: list[Mapping[str, Any]]) -> dict[str, An
     }
 
 
-def headline_quality_counts(rows: list[Mapping[str, str]]) -> dict[str, Any]:
+def evaluation_split_summary(summary: Mapping[str, Any], rows: list[Mapping[str, str]]) -> dict[str, Any]:
+    source = summary.get("case_selection") if isinstance(summary.get("case_selection"), Mapping) else {}
+    run_label = clean(summary.get("run_label"))
+    role = clean(source.get("role"))
+    if not role:
+        role = "dev_current_pdf_headline" if run_label == "answer_ready_pdf_v1_llm_15pf" else "diagnostic_unspecified"
+    dev_only = bool(source.get("dev_only")) or role == "dev_current_pdf_headline"
+    source_document_disjoint = bool(source.get("source_document_disjoint_from_dev")) if source else False
+    success_allowed = bool(source.get("success_evidence_allowed")) and not dev_only
+    pdf_headline_rows = [
+        row
+        for row in rows
+        if row["source_type"] == "PDF" and clean(row.get("query_fidelity_headline_included")).upper() == "TRUE"
+    ]
     return {
-        "all_rows_query_fidelity_unverified": quality_count_block(rows),
+        "role": role,
+        "diagnostic_only": True,
+        "dev_only": dev_only,
+        "validation_holdout": role == "validation_holdout",
+        "source_document_disjoint_from_dev": source_document_disjoint,
+        "dev_overlap_document_count": int(source.get("dev_overlap_document_count") or 0),
+        "fallback_strategy_used": clean(source.get("fallback_strategy_used")),
+        "validation_strategy": clean(source.get("validation_strategy")),
+        "success_evidence_allowed": success_allowed,
+        "official_metric_input_rows": 0,
+        "pdf_headline_rows": len(pdf_headline_rows),
+        "pdf_headline_scope": "dev_only_query_fidelity_subset" if dev_only else "validation_query_fidelity_subset",
+    }
+
+
+def anti_overfit_guardrails(evaluation_split: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "diagnostic_only": True,
+        "candidate_rules_frozen_before_validation": True,
+        "allowed_rules": [
+            "bounded_same_page_windows",
+            "heading_body_pairing_by_same_page_order",
+            "dot_leader_cleanup",
+            "locator_only_demotion",
+            "broad_duplicate_suppression",
+            "evidence_density_scoring",
+            "context_ordering",
+            "raw_final_reuse_when_no_structural_gain",
+        ],
+        "forbidden_rule_status": {
+            "case_id_branches": False,
+            "exact_query_hacks": False,
+            "file_or_source_title_hacks": False,
+            "pass_fail_threshold_tuning": False,
+            "expected_supporting_or_gold_text_input": False,
+            "drift_contaminated_headline_gain": False,
+        },
+        "dev_only_gain_counts_as_success": False,
+        "validation_success_evidence_allowed": bool(evaluation_split.get("success_evidence_allowed")),
+        "official_metric_input_rows": 0,
+    }
+
+
+def headline_quality_counts(
+    rows: list[Mapping[str, str]],
+    *,
+    evaluation_split: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "all_rows_query_fidelity_unverified": quality_count_block(rows, evaluation_split=evaluation_split),
         "query_fidelity_subset": quality_count_block(
-            [row for row in rows if clean(row.get("query_fidelity_headline_included")).upper() == "TRUE"]
+            [row for row in rows if clean(row.get("query_fidelity_headline_included")).upper() == "TRUE"],
+            evaluation_split=evaluation_split,
         ),
     }
 
 
-def quality_count_block(rows: list[Mapping[str, str]]) -> dict[str, Any]:
+def quality_count_block(
+    rows: list[Mapping[str, str]],
+    *,
+    evaluation_split: Mapping[str, Any],
+) -> dict[str, Any]:
     by_family: dict[str, Any] = {}
     for family in ("PDF", "XLSX"):
         family_rows = [row for row in rows if row["source_type"] == family]
-        by_family[family] = {
-            "rows": len(family_rows),
-            "raw_final_pass": sum(result_passed(row["final_result"]) for row in family_rows),
-            "answer_ready_pass": sum(result_passed(row["answer_ready_result"]) for row in family_rows),
-            "delta_answer_ready_minus_raw": sum(result_passed(row["answer_ready_result"]) for row in family_rows)
-            - sum(result_passed(row["final_result"]) for row in family_rows),
-        }
+        by_family[family] = quality_count_values(family_rows)
+    values = quality_count_values(rows)
     return {
-        "rows": len(rows),
-        "raw_final_pass": sum(result_passed(row["final_result"]) for row in rows),
-        "answer_ready_pass": sum(result_passed(row["answer_ready_result"]) for row in rows),
-        "delta_answer_ready_minus_raw": sum(result_passed(row["answer_ready_result"]) for row in rows)
-        - sum(result_passed(row["final_result"]) for row in rows),
+        **values,
         "by_family": by_family,
         "diagnostic_only": True,
+        "dev_only": bool(evaluation_split.get("dev_only")),
+        "success_evidence_allowed": bool(evaluation_split.get("success_evidence_allowed")),
+        "official_metric_input_rows": 0,
+    }
+
+
+def quality_count_values(rows: list[Mapping[str, str]]) -> dict[str, Any]:
+    raw_final_pass = sum(result_passed(row["final_result"]) for row in rows)
+    answer_ready_pass = sum(result_passed(row["answer_ready_result"]) for row in rows)
+    reused_rows = [row for row in rows if truthy_cell(row.get("answer_ready_reused_raw_final"))]
+    reused_pass = [row for row in reused_rows if result_passed(row["answer_ready_result"])]
+    return {
+        "rows": len(rows),
+        "raw_final_pass": raw_final_pass,
+        "answer_ready_pass": answer_ready_pass,
+        "fresh_answer_ready_pass": answer_ready_pass - len(reused_pass),
+        "raw_final_reused_rows": len(reused_rows),
+        "raw_final_reused_pass": len(reused_pass),
+        "delta_answer_ready_minus_raw": answer_ready_pass - raw_final_pass,
+        "answer_ready_reuse_reason_counts": dict(
+            sorted(Counter(clean(row.get("answer_ready_reuse_reason")) for row in reused_rows if clean(row.get("answer_ready_reuse_reason"))).items())
+        ),
     }
 
 
@@ -922,10 +1143,21 @@ def summarize_pdf_residual_review_rows(rows: list[Mapping[str, str]]) -> dict[st
         "evaluator_limitation",
         "true_answer_failure",
     ]
+    answer_ready_failed = [row for row in rows if row.get("review_scope") == "answer_ready_failure"]
+    query_excluded = [row for row in rows if row.get("review_scope") == "query_fidelity_excluded_only"]
     return {
+        "review_scope": "answer_ready_failure_or_query_fidelity_excluded",
         "rows": len(rows),
-        "bucket_counts": {field: sum(row.get(field) == "TRUE" for row in rows) for field in fields},
+        "answer_ready_failed_review_rows": len(answer_ready_failed),
+        "query_excluded_review_rows": len(query_excluded),
+        "bucket_counts": pdf_residual_review_bucket_counts(rows, fields),
+        "answer_ready_failed_bucket_counts": pdf_residual_review_bucket_counts(answer_ready_failed, fields),
+        "query_excluded_bucket_counts": pdf_residual_review_bucket_counts(query_excluded, fields),
     }
+
+
+def pdf_residual_review_bucket_counts(rows: list[Mapping[str, str]], fields: list[str]) -> dict[str, int]:
+    return {field: sum(row.get(field) == "TRUE" for row in rows) for field in fields}
 
 
 def ocr_rationale(rows: list[Mapping[str, str]]) -> dict[str, Any]:
@@ -1239,6 +1471,12 @@ def failure_types(row: Mapping[str, Any]) -> list[str]:
 
 def result_passed(value: str) -> bool:
     return clean(value).upper() == "PASS"
+
+
+def truthy_cell(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    return clean(value).upper() == "TRUE"
 
 
 def render_markdown(report: Mapping[str, Any], review_rows: list[Mapping[str, str]]) -> str:

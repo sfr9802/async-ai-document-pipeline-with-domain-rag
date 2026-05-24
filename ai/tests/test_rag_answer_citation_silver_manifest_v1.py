@@ -6176,14 +6176,44 @@ def test_pdf_xlsx_answer_quality_review_packet_answer_ready_delta_and_query_fide
     report = packet.run_packet(summary_path=summary_path, output_dir=tmp_path)
 
     assert report["status"] == "PASS"
-    assert report["aggregate_raw_final_diagnostic_only"] == "19/30"
-    assert report["aggregate_answer_ready_diagnostic_only"] == "23/30"
+    assert report["aggregate_raw_final_diagnostic_only"] == "17/30"
+    assert report["aggregate_answer_ready_diagnostic_only"] == "20/30"
     assert report["official_metric_input_rows"] == 0
+    assert report["evaluation_split"]["role"] == "dev_current_pdf_headline"
+    assert report["evaluation_split"]["success_evidence_allowed"] is False
+    assert report["evaluation_split"]["official_metric_input_rows"] == 0
+    assert report["headline_quality_counts"]["query_fidelity_subset"]["dev_only"] is True
+    assert report["headline_quality_counts"]["query_fidelity_subset"]["success_evidence_allowed"] is False
+    assert report["headline_quality_counts"]["query_fidelity_subset"]["by_family"]["PDF"] == {
+        "rows": 13,
+        "raw_final_pass": 5,
+        "answer_ready_pass": 8,
+        "fresh_answer_ready_pass": 7,
+        "raw_final_reused_rows": 4,
+        "raw_final_reused_pass": 1,
+        "delta_answer_ready_minus_raw": 3,
+        "answer_ready_reuse_reason_counts": {
+            "no_structural_answer_ready_evidence_gain_preserve_raw_final": 3,
+            "raw_pass_regression_guard_preserve_existing_pass": 1,
+        },
+    }
     assert report["pdf_delta_audit_summary"]["pdf_case_count"] == 15
-    assert report["pdf_delta_audit_summary"]["delta_bucket_counts"]["raw_fail_to_ready_pass"] == 4
+    assert report["pdf_delta_audit_summary"]["delta_bucket_counts"]["raw_fail_to_ready_pass"] == 3
+    assert report["pdf_delta_audit_summary"]["delta_bucket_counts"].get("raw_pass_to_ready_fail_regression", 0) == 0
     assert report["pdf_residuals"]["residual_scope"] == "answer_ready_context"
     assert report["pdf_residuals"]["total_residuals"] == 7
+    assert report["pdf_residual_review_summary"]["answer_ready_failed_review_rows"] == 7
+    assert report["pdf_residual_review_summary"]["query_excluded_review_rows"] == 0
     assert report["query_fidelity_summary"]["excluded"] > 0
+    assert report["anti_overfit_guardrails"]["candidate_rules_frozen_before_validation"] is True
+    assert report["anti_overfit_guardrails"]["forbidden_rule_status"] == {
+        "case_id_branches": False,
+        "exact_query_hacks": False,
+        "file_or_source_title_hacks": False,
+        "pass_fail_threshold_tuning": False,
+        "expected_supporting_or_gold_text_input": False,
+        "drift_contaminated_headline_gain": False,
+    }
     assert report["headline_quality_counts"]["query_fidelity_subset"]["rows"] < report[
         "headline_quality_counts"
     ]["all_rows_query_fidelity_unverified"]["rows"]
@@ -6201,6 +6231,334 @@ def test_pdf_xlsx_answer_quality_review_packet_answer_ready_delta_and_query_fide
     assert any(row["query_fidelity_headline_included"] is False for row in query_rows)
     assert residual_rows
     assert (tmp_path / "pdf_residual_review.md").read_text(encoding="utf-8").startswith("# PDF Residual Review")
+
+
+def test_pdf_xlsx_answer_quality_review_packet_validation_holdout_artifacts(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    summary_path = REPORT_DIR / "quality" / "pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_validation_summary.json"
+    require_pdf_xlsx_answer_quality_local_artifacts(summary_path)
+    report = packet.run_packet(summary_path=summary_path, output_dir=tmp_path)
+
+    split = report["evaluation_split"]
+    assert report["status"] == "PASS"
+    assert report["aggregate_raw_final_diagnostic_only"] == "18/30"
+    assert report["aggregate_answer_ready_diagnostic_only"] == "20/30"
+    assert report["official_metric_input_rows"] == 0
+    assert split["role"] == "validation_holdout"
+    assert split["dev_only"] is False
+    assert split["source_document_disjoint_from_dev"] is True
+    assert split["dev_overlap_document_count"] == 0
+    assert split["success_evidence_allowed"] is True
+    assert split["official_metric_input_rows"] == 0
+
+    assert report["headline_quality_counts"]["all_rows_query_fidelity_unverified"]["by_family"]["PDF"] == {
+        "rows": 15,
+        "raw_final_pass": 8,
+        "answer_ready_pass": 9,
+        "fresh_answer_ready_pass": 6,
+        "raw_final_reused_rows": 3,
+        "raw_final_reused_pass": 3,
+        "delta_answer_ready_minus_raw": 1,
+        "answer_ready_reuse_reason_counts": {
+            "raw_pass_regression_guard_preserve_existing_pass": 3,
+        },
+    }
+    assert report["headline_quality_counts"]["query_fidelity_subset"]["by_family"]["PDF"] == {
+        "rows": 14,
+        "raw_final_pass": 8,
+        "answer_ready_pass": 8,
+        "fresh_answer_ready_pass": 5,
+        "raw_final_reused_rows": 3,
+        "raw_final_reused_pass": 3,
+        "delta_answer_ready_minus_raw": 0,
+        "answer_ready_reuse_reason_counts": {
+            "raw_pass_regression_guard_preserve_existing_pass": 3,
+        },
+    }
+    assert report["pdf_delta_audit_summary"]["delta_bucket_counts"]["raw_fail_to_ready_pass"] == 1
+    assert report["pdf_delta_audit_summary"]["delta_bucket_counts"].get("raw_pass_to_ready_fail_regression", 0) == 0
+    assert report["pdf_residuals"]["total_residuals"] == 6
+    assert report["pdf_residual_review_summary"]["answer_ready_failed_review_rows"] == 6
+    assert report["pdf_residual_review_summary"]["query_excluded_review_rows"] == 1
+    assert report["pdf_residual_review_summary"]["bucket_counts"]["true_answer_failure"] == 0
+    assert report["anti_overfit_guardrails"]["dev_only_gain_counts_as_success"] is False
+    assert report["anti_overfit_guardrails"]["forbidden_rule_status"]["drift_contaminated_headline_gain"] is False
+    assert report["future_scored_adapter"]["adapter_enabled"] is False
+    assert report["validation"]["scored_eval_entry_allowed"] is False
+
+
+def test_pdf_answer_ready_reuses_raw_final_when_structural_evidence_does_not_improve() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    no_gain_profile = {
+        "family": "PDF",
+        "bounded_expansion_applied": False,
+        "raw_answer_ready_score": 0.0,
+        "answer_ready_score": 0.0,
+        "answer_ready_score_delta": 0.0,
+        "raw_snippet": "내부감시장치에 대한 감사의 의견서................................................................1",
+        "answer_ready_snippet": "내부감시장치에 대한 감사의 의견서 ... 1",
+    }
+    structural_gain_profile = {
+        "family": "PDF",
+        "bounded_expansion_applied": True,
+        "raw_answer_ready_score": 0.1,
+        "answer_ready_score": 0.45,
+        "answer_ready_score_delta": 0.35,
+        "raw_snippet": "감 사 보 고 서................................................................1",
+        "answer_ready_snippet": "감 사 보 고 서 ... 1 독립된 감사인의 감사보고서 ... 2",
+    }
+
+    assert quality.should_reuse_raw_final_for_answer_ready(no_gain_profile) is True
+    assert quality.should_reuse_raw_final_for_answer_ready(structural_gain_profile) is False
+
+
+def test_pdf_validation_split_prefers_document_disjoint_cases_and_records_metadata() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    rows = [
+        pdf_manifest_row(
+            source_atom_id="src-dev-a",
+            search_view_id="search-dev-a",
+            document_version_id="doc-dev-a",
+            search_unit_id="su-dev-a",
+            page=1,
+            bbox=[1.0, 2.0, 3.0, 4.0],
+            text="개발 문서 A의 PDF 본문이며 충분한 길이의 문장입니다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-dev-b",
+            search_view_id="search-dev-b",
+            document_version_id="doc-dev-b",
+            search_unit_id="su-dev-b",
+            page=1,
+            bbox=[1.0, 2.0, 3.0, 4.0],
+            text="개발 문서 B의 PDF 본문이며 충분한 길이의 문장입니다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-overlap",
+            search_view_id="search-overlap",
+            document_version_id="doc-dev-a",
+            search_unit_id="su-overlap",
+            page=2,
+            bbox=[1.0, 2.0, 3.0, 4.0],
+            text="개발 문서 A와 겹치는 검증 후보입니다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-val-c",
+            search_view_id="search-val-c",
+            document_version_id="doc-val-c",
+            search_unit_id="su-val-c",
+            page=1,
+            bbox=[1.0, 2.0, 3.0, 4.0],
+            text="검증 문서 C의 독립 PDF 본문이며 충분한 길이의 문장입니다.",
+        ),
+        pdf_manifest_row(
+            source_atom_id="src-val-d",
+            search_view_id="search-val-d",
+            document_version_id="doc-val-d",
+            search_unit_id="su-val-d",
+            page=1,
+            bbox=[1.0, 2.0, 3.0, 4.0],
+            text="검증 문서 D의 독립 PDF 본문입니다.",
+        ),
+    ]
+
+    dev_cases = quality.load_evidence_cases_from_rows(
+        rows,
+        cases_per_family=2,
+        split_role="dev_current_pdf_headline",
+    )
+    validation_cases = quality.load_evidence_cases_from_rows(
+        rows,
+        cases_per_family=2,
+        split_role="validation_holdout",
+        dev_cases=dev_cases,
+    )
+    split = quality.case_selection_summary(
+        validation_cases,
+        split_role="validation_holdout",
+        dev_cases=dev_cases,
+    )
+
+    assert [case.source_atom_id for case in validation_cases] == ["src-val-c", "src-val-d"]
+    assert split["role"] == "validation_holdout"
+    assert split["source_document_disjoint_from_dev"] is True
+    assert split["fallback_strategy_used"] == ""
+    assert split["dev_overlap_document_count"] == 0
+    assert split["official_metric_input_rows"] == 0
+
+
+def test_pdf_answer_ready_silver_seed_index_excludes_holdout_and_kfold_rows(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    manifest_row = pdf_manifest_row(
+        source_atom_id="src-pdf",
+        search_view_id="search-pdf",
+        document_version_id="docv-pdf",
+        search_unit_id="su-page",
+        page=1,
+        bbox=[1.0, 2.0, 3.0, 4.0],
+        text="정책 연구 보고서의 PDF 본문이며 검증에 충분한 문장입니다.",
+    )
+    base_silver = {
+        "source_family": "PDF",
+        "source_identity": quality.canonical_source_identity(manifest_row),
+        "locator_fingerprint": manifest_row["locator_fingerprint"],
+        "diagnostic_only": True,
+        "not_gold": True,
+        "not_official_denominator": True,
+        "not_official_qrels": True,
+        "official_metric_denominator_usage_allowed": False,
+        "promotion_evidence": False,
+        "threshold_tuning": False,
+        "winner_selection": False,
+        "query_quality_profile": "diagnostic",
+    }
+    holdout = {
+        **base_silver,
+        "generated_question_draft": "홀드아웃 질문은 개발 시드로 쓰면 안 됩니다.",
+        "manifest_partition": "holdout",
+        "split_role": "validation_holdout",
+        "row_ordinal": 1,
+    }
+    kfold = {
+        **base_silver,
+        "generated_question_draft": "kfold 홀드아웃 질문도 개발 시드로 쓰면 안 됩니다.",
+        "manifest_partition": "kfold_holdout",
+        "row_ordinal": 2,
+    }
+    dev = {
+        **base_silver,
+        "generated_question_draft": "개발 전용 진단 질문만 선택합니다.",
+        "manifest_partition": "core",
+        "split_role": "dev",
+        "row_ordinal": 3,
+    }
+    silver_path = tmp_path / "silver.jsonl"
+    silver_path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in [holdout, kfold, dev]) + "\n",
+        encoding="utf-8",
+    )
+
+    silver_index = quality.load_silver_seed_index(silver_path)
+    seed = quality.find_silver_seed(manifest_row, silver_index)
+
+    assert seed["generated_question_draft"] == "개발 전용 진단 질문만 선택합니다."
+    assert seed["manifest_partition"] == "core"
+
+
+def test_pdf_xlsx_answer_quality_packet_loads_selected_cases_for_holdout_roundtrip(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    selected_case = {
+        "case_id": "pdf-016",
+        "family": "PDF",
+        "source_atom_id": "src-val",
+        "doc_id": "doc-val",
+        "section": "page=7",
+        "evidence_text": "검증 전용 PDF 근거 본문입니다.",
+        "locator": {"page": 7, "bbox": [10.0, 20.0, 30.0, 40.0], "source_pdf_path": "D:/diagnostic/source/validation.pdf"},
+        "locator_fingerprint": "fp-val",
+        "search_view_id": "search-val",
+        "raw_evidence_text": "검증 전용 PDF 근거 본문입니다.",
+        "normalized_evidence_text": "검증 전용 PDF 근거 본문입니다.",
+        "answer_ready_evidence_text": "검증 전용 PDF 근거 본문입니다.",
+    }
+    summary = {
+        "run_label": "answer_ready_pdf_v1_llm_15pf_validation",
+        "cases_by_family": {"PDF": 1},
+        "selected_cases": [selected_case],
+        "case_selection": {"role": "validation_holdout"},
+        "manifest": str(tmp_path / "missing_manifest.jsonl"),
+        "silver_manifest": str(tmp_path / "missing_silver.jsonl"),
+    }
+
+    cases = packet.load_cases_for_summary(summary)
+
+    assert list(cases) == ["pdf-016"]
+    assert cases["pdf-016"].evidence_text == "검증 전용 PDF 근거 본문입니다."
+    assert cases["pdf-016"].locator["page"] == 7
+
+
+def test_pdf_xlsx_answer_quality_packet_fails_closed_if_official_metric_candidate_is_set() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    row = {column: "" for column in packet.REVIEW_COLUMNS}
+    row.update(
+        {
+            "case_id": "pdf-unit",
+            "source_type": "PDF",
+            "diagnostic_only": "TRUE",
+            "not_gold": "TRUE",
+            "not_official_denominator": "TRUE",
+            "not_official_qrels": "TRUE",
+            "official_metric_candidate": "TRUE",
+            "promotion_evidence": "FALSE",
+        }
+    )
+
+    validation = packet.validate_review_rows([row])
+
+    assert validation["ok"] is False
+    assert validation["official_metric_input_rows"] == 1
+    assert "pdf-unit has official_metric_candidate='TRUE', expected FALSE" in validation["errors"]
+
+
+def test_pdf_xlsx_answer_ready_anti_overfit_audit_scans_benchmark_and_packet_files(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_anti_overfit_audit as audit
+
+    default_scan_names = {path.name for path in audit.DEFAULT_SCAN_FILES}
+    assert "rag_pdf_xlsx_llm_quality_benchmark.py" in default_scan_names
+    assert "rag_pdf_xlsx_answer_quality_review_packet.py" in default_scan_names
+
+    review_csv = tmp_path / "review.csv"
+    review_csv.write_text(
+        "\n".join(
+            [
+                "query_id,query,expected_answer,expected_evidence_location",
+                "pdf_case_001,동성제약 감사보고서 핵심,감사의견 적정,page=7; bbox=[1,2,3,4]",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    bad_source = tmp_path / "bad_answer_ready_rule.py"
+    bad_source.write_text(
+        "\n".join(
+            [
+                'if case_id == "pdf_case_001":',
+                '    selected_answer = "감사의견 적정"',
+                'EXPECTED_LOCATOR = "page=7; bbox=[1,2,3,4]"',
+                'DOMAIN_ALIAS = {"동성제약": "감사의견"}',
+                'if expected_evidence_locator and answer_allowed:',
+                '    content_source = expected_evidence_locator',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = audit.run_audit(
+        scan_files=[bad_source],
+        review_paths=[review_csv],
+        output_json=tmp_path / "audit.json",
+        output_csv=tmp_path / "audit.csv",
+    )
+
+    assert report["status"] == "FAIL"
+    assert report["hardcoded_query_id_count"] == 1
+    assert report["hardcoded_gold_answer_literal_count"] == 1
+    assert report["hardcoded_expected_locator_usage_count"] >= 1
+    assert report["hardcoded_domain_alias_count"] >= 1
 
 
 def test_pdf_xlsx_answer_quality_review_packet_query_fidelity_classifies_exclusions() -> None:
@@ -6262,6 +6620,124 @@ def test_pdf_xlsx_answer_quality_review_packet_duplicate_rows_fail_closed() -> N
             cases={},
             max_evidence_chars=100,
         )
+
+
+def test_pdf_xlsx_answer_ready_packet_requires_answer_ready_rows_for_answer_ready_runs() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import pytest
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+    import rag_pdf_xlsx_llm_quality_benchmark as quality
+
+    case = quality.EvidenceCase(
+        case_id="pdf-unit",
+        family="PDF",
+        source_atom_id="src",
+        doc_id="doc",
+        section="page=1",
+        evidence_text="서울의 역사적 스케치와 도시 변천 과정을 설명한다.",
+        locator={"page": 1, "bbox": [1.0, 2.0, 3.0, 4.0]},
+    )
+    rows = [
+        packet_unit_response_row("pdf-unit", "baseline_legacy_context", query="서울의 역사적 스케치", quality_pass=False),
+        packet_unit_response_row("pdf-unit", "final_locator_context", query="서울의 역사적 스케치", quality_pass=True),
+    ]
+
+    with pytest.raises(ValueError, match="missing required answer_ready_context rows"):
+        packet.build_review_rows(
+            summary={"run_label": "answer_ready_pdf_v1_llm_15pf"},
+            response_rows=rows,
+            previous_response_rows=[],
+            cases={"pdf-unit": case},
+            max_evidence_chars=100,
+        )
+
+
+def test_pdf_xlsx_answer_quality_review_packet_splits_residual_review_scope() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    failed = {
+        "source_type": "PDF",
+        "case_id": "pdf-failed",
+        "query": "서울의 역사적 스케치",
+        "query_drift_severity": "style_only",
+        "query_generation_mode": "seed_preserving_rewrite",
+        "query_fidelity_headline_included": "TRUE",
+        "query_fidelity_exclusion_reason": "",
+        "answer_ready_result": "FAIL: low_evidence_overlap",
+        "answer_ready_failure_types": "low_evidence_overlap",
+        "delta_bucket": "raw_fail_to_ready_fail_same_failure",
+        "weak_snippet_flag": "TRUE",
+        "dot_heavy_flag": "FALSE",
+        "ocr_ish_flag": "FALSE",
+        "locator_only_flag": "FALSE",
+        "table_form_like_flag": "FALSE",
+        "bounded_expansion_applied": "TRUE",
+        "locator_page": "1",
+        "locator_bbox": "[1,2,3,4]",
+        "answer_ready_evidence_text": "서울의 역사적 스케치",
+    }
+    query_excluded_pass = {
+        **failed,
+        "case_id": "pdf-query-excluded",
+        "query_fidelity_headline_included": "FALSE",
+        "answer_ready_result": "PASS",
+        "answer_ready_failure_types": "",
+        "weak_snippet_flag": "FALSE",
+        "bounded_expansion_applied": "FALSE",
+    }
+
+    review_rows = packet.build_pdf_residual_review_rows([failed, query_excluded_pass])
+    summary = packet.summarize_pdf_residual_review_rows(review_rows)
+
+    assert summary["rows"] == 2
+    assert summary["answer_ready_failed_review_rows"] == 1
+    assert summary["query_excluded_review_rows"] == 1
+    assert summary["answer_ready_failed_bucket_counts"]["weak_evidence"] == 1
+    assert summary["query_excluded_bucket_counts"]["query_drift"] == 1
+    assert {row["review_scope"] for row in review_rows} == {
+        "answer_ready_failure",
+        "query_fidelity_excluded_only",
+    }
+
+
+def test_pdf_xlsx_answer_quality_counts_separate_fresh_answer_ready_from_raw_reuse() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_pdf_xlsx_answer_quality_review_packet as packet
+
+    rows = [
+        {
+            "source_type": "PDF",
+            "final_result": "PASS",
+            "answer_ready_result": "PASS",
+            "answer_ready_reused_raw_final": "TRUE",
+            "answer_ready_reuse_reason": "raw_pass_regression_guard_preserve_existing_pass",
+        },
+        {
+            "source_type": "PDF",
+            "final_result": "FAIL: low_evidence_overlap",
+            "answer_ready_result": "PASS",
+            "answer_ready_reused_raw_final": "FALSE",
+            "answer_ready_reuse_reason": "",
+        },
+        {
+            "source_type": "XLSX",
+            "final_result": "PASS",
+            "answer_ready_result": "PASS",
+            "answer_ready_reused_raw_final": "FALSE",
+            "answer_ready_reuse_reason": "",
+        },
+    ]
+
+    block = packet.quality_count_block(rows, evaluation_split={"dev_only": False, "success_evidence_allowed": True})
+
+    assert block["answer_ready_pass"] == 3
+    assert block["fresh_answer_ready_pass"] == 2
+    assert block["raw_final_reused_pass"] == 1
+    assert block["raw_final_reused_rows"] == 1
+    assert block["answer_ready_reuse_reason_counts"] == {"raw_pass_regression_guard_preserve_existing_pass": 1}
+    assert block["by_family"]["PDF"]["fresh_answer_ready_pass"] == 1
+    assert block["by_family"]["PDF"]["raw_final_reused_pass"] == 1
 
 
 def test_pdf_xlsx_answer_quality_summary_keeps_two_mode_compatibility() -> None:
@@ -7237,6 +7713,52 @@ def pdf_manifest_row(
         "generation_source_allowed": True,
         "runtime_evidence_allowed": True,
         "official_denominator_overlap": False,
+    }
+
+
+def packet_unit_response_row(
+    case_id: str,
+    prompt_mode: str,
+    *,
+    query: str,
+    quality_pass: bool,
+    family: str = "PDF",
+    answer_ready_reused_raw_final: bool = False,
+    answer_ready_reuse_reason: str = "",
+) -> dict[str, Any]:
+    failure_types = [] if quality_pass else ["low_evidence_overlap"]
+    return {
+        "case_id": case_id,
+        "family": family,
+        "prompt_mode": prompt_mode,
+        "query": query,
+        "seed_query": query,
+        "query_style": "terse_question",
+        "raw_response": json.dumps(
+            {
+                "answer": f"{query} 답변",
+                "citations": [{"citation_id": "S1", "locator": "page=1; bbox=[1,2,3,4]"}],
+                "abstain_reason": "",
+            },
+            ensure_ascii=False,
+        ),
+        "score": {
+            "quality_pass": quality_pass,
+            "parse_ok": True,
+            "citation_valid": True,
+            "text_supported": quality_pass,
+            "value_supported": False,
+            "failure_types": failure_types,
+            "answer_ready_reused_raw_final": answer_ready_reused_raw_final,
+        },
+        "answer_ready_reused_raw_final": answer_ready_reused_raw_final,
+        "answer_ready_reuse_reason": answer_ready_reuse_reason,
+        "source_atom_id": "src",
+        "search_view_id": "search",
+        "locator_fingerprint": "fp",
+        "join_key_used": "source_family+source_identity+locator_fingerprint",
+        "weak_silver_candidate_id": "silver",
+        "source_candidate_id": "candidate",
     }
 
 

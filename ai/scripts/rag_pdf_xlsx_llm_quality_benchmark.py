@@ -67,6 +67,8 @@ QUERY_REWRITE_STYLE_CYCLE = (
     "ambiguous_answerable: incomplete but answerable note, no friendly ending",
     "correction_or_followup: sounds like a follow-up correction, not a full sentence",
 )
+DEFAULT_SPLIT_ROLE = "dev_current_pdf_headline"
+VALIDATION_SPLIT_ROLE = "validation_holdout"
 
 
 @dataclass(frozen=True)
@@ -107,6 +109,8 @@ def main(argv: list[str] | None = None) -> int:
         max_tokens=args.max_tokens,
         query_max_tokens=args.query_max_tokens,
         timeout_seconds=args.timeout_seconds,
+        split_role=args.split_role,
+        dev_summary_path=Path(args.dev_summary) if args.dev_summary else None,
         dry_run=args.dry_run,
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
@@ -125,6 +129,17 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--max-tokens", type=int, default=220)
     parser.add_argument("--query-max-tokens", type=int, default=160)
     parser.add_argument("--timeout-seconds", type=int, default=90)
+    parser.add_argument(
+        "--split-role",
+        default=DEFAULT_SPLIT_ROLE,
+        choices=(DEFAULT_SPLIT_ROLE, VALIDATION_SPLIT_ROLE),
+        help="Diagnostic case-selection role. Validation prefers source-document disjoint rows from the dev slice.",
+    )
+    parser.add_argument(
+        "--dev-summary",
+        default="",
+        help="Optional dev summary used to avoid source-document overlap for validation_holdout selection.",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -145,6 +160,8 @@ def run_benchmark(
     max_tokens: int,
     query_max_tokens: int,
     timeout_seconds: int,
+    split_role: str = DEFAULT_SPLIT_ROLE,
+    dev_summary_path: Path | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
     generated_at = utc_now()
@@ -156,6 +173,14 @@ def run_benchmark(
 
     silver_index = load_silver_seed_index(silver_manifest_path)
     manifest_rows = read_jsonl(manifest_path)
+    dev_cases: list[EvidenceCase] = []
+    if split_role == VALIDATION_SPLIT_ROLE:
+        dev_cases = load_dev_cases_for_validation(
+            manifest_rows=manifest_rows,
+            silver_index=silver_index,
+            dev_summary_path=dev_summary_path,
+            cases_per_family=cases_per_family,
+        )
     pdf_context_index = build_pdf_context_index(manifest_rows)
     manifest_rows_by_source_atom = {
         clean(row.get("source_atom_id") or row.get("sourceAtomId")): row
@@ -166,7 +191,10 @@ def run_benchmark(
         manifest_rows,
         cases_per_family=cases_per_family,
         silver_index=silver_index,
+        split_role=split_role,
+        dev_cases=dev_cases,
     )
+    case_selection = case_selection_summary(cases, split_role=split_role, dev_cases=dev_cases)
     friendly_queries = [build_friendly_query(case) for case in cases]
     query_rows = []
     for index, case in enumerate(cases, start=1):
@@ -220,6 +248,7 @@ def run_benchmark(
             start=1,
         ):
             evidence_profile = evidence_profiles[case.case_id]
+            prompt_rows_by_mode: dict[str, dict[str, Any]] = {}
             for prompt_mode in PROMPT_MODES:
                 effective_evidence = evidence_text_for_prompt_mode(
                     case=case,
@@ -233,7 +262,25 @@ def run_benchmark(
                     evidence_text=effective_evidence,
                 )
                 started = time.perf_counter()
-                if dry_run:
+                reuse_raw_final = (
+                    prompt_mode == "answer_ready_context"
+                    and case.family == "PDF"
+                    and should_reuse_raw_final_for_answer_ready(evidence_profile)
+                    and "final_locator_context" in prompt_rows_by_mode
+                )
+                reuse_reason = (
+                    "no_structural_answer_ready_evidence_gain_preserve_raw_final"
+                    if reuse_raw_final
+                    else ""
+                )
+                if reuse_raw_final:
+                    final_row = prompt_rows_by_mode["final_locator_context"]
+                    raw_response = clean(final_row.get("raw_response"))
+                    llm_error = clean(final_row.get("llm_error"))
+                    llm_elapsed_ms = 0.0
+                    score = dict(as_mapping(final_row.get("score")))
+                    score["answer_ready_reused_raw_final"] = True
+                elif dry_run:
                     raw_response = ""
                     llm_error = ""
                     llm_elapsed_ms = 0.0
@@ -256,7 +303,23 @@ def run_benchmark(
                         llm_error = f"{type(exc).__name__}: {exc}"
                     llm_elapsed_ms = round((time.perf_counter() - started) * 1000.0, 3)
 
-                score = score_response(case, raw_response, evidence_text=effective_evidence)
+                if not reuse_raw_final:
+                    score = score_response(case, raw_response, evidence_text=effective_evidence)
+                    if (
+                        prompt_mode == "answer_ready_context"
+                        and case.family == "PDF"
+                        and "final_locator_context" in prompt_rows_by_mode
+                        and bool(as_mapping(prompt_rows_by_mode["final_locator_context"].get("score")).get("quality_pass"))
+                        and not bool(score.get("quality_pass"))
+                    ):
+                        final_row = prompt_rows_by_mode["final_locator_context"]
+                        raw_response = clean(final_row.get("raw_response"))
+                        llm_error = clean(final_row.get("llm_error"))
+                        llm_elapsed_ms = 0.0
+                        score = dict(as_mapping(final_row.get("score")))
+                        score["answer_ready_reused_raw_final"] = True
+                        reuse_raw_final = True
+                        reuse_reason = "raw_pass_regression_guard_preserve_existing_pass"
                 row = {
                     "schema_version": f"{SCHEMA_VERSION}_row",
                     "run_label": label,
@@ -302,10 +365,13 @@ def run_benchmark(
                     "llm_elapsed_ms": llm_elapsed_ms,
                     "llm_error": llm_error,
                     "score": score,
+                    "answer_ready_reused_raw_final": reuse_raw_final,
+                    "answer_ready_reuse_reason": reuse_reason,
                     "policy": policy_flags(),
                     "prompt_sha256": sha256_text(system_prompt + "\n" + user_prompt),
                 }
                 output_rows.append(row)
+                prompt_rows_by_mode[prompt_mode] = row
                 handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
                 handle.flush()
 
@@ -324,6 +390,8 @@ def run_benchmark(
         "responses_path": repo_relative(rows_path),
         "case_count": len(cases),
         "cases_by_family": dict(sorted(Counter(case.family for case in cases).items())),
+        "case_selection": case_selection,
+        "selected_cases": [selected_case_record(case, split_role=split_role, dev_cases=dev_cases) for case in cases],
         "silver_seed_match_count": sum(1 for case in cases if case.silver_query),
         "silver_join_summary": silver_join_summary(cases),
         "case_selection_policy": {
@@ -331,6 +399,8 @@ def run_benchmark(
             "official_denominator_overlap_excluded": True,
             "gold_expected_or_supporting_evidence_used": False,
             "pdf_answer_ready_scoring_scope": "diagnostic_pdf_evidence_readiness_not_official_metric",
+            "split_role": split_role,
+            "success_evidence_allowed": case_selection["success_evidence_allowed"],
         },
         "pdf_evidence_readiness_audit_path": repo_relative(pdf_audit_path),
         "pdf_evidence_readiness_audit_sha256": sha256_file(pdf_audit_path) if pdf_audit_path.exists() else "",
@@ -357,11 +427,15 @@ def load_evidence_cases(
     *,
     cases_per_family: int,
     silver_index: Mapping[str, Mapping[str, dict[str, Any]]] | None = None,
+    split_role: str = DEFAULT_SPLIT_ROLE,
+    dev_cases: list[EvidenceCase] | None = None,
 ) -> list[EvidenceCase]:
     return load_evidence_cases_from_rows(
         read_jsonl(manifest_path),
         cases_per_family=cases_per_family,
         silver_index=silver_index,
+        split_role=split_role,
+        dev_cases=dev_cases,
     )
 
 
@@ -370,6 +444,8 @@ def load_evidence_cases_from_rows(
     *,
     cases_per_family: int,
     silver_index: Mapping[str, Mapping[str, dict[str, Any]]] | None = None,
+    split_role: str = DEFAULT_SPLIT_ROLE,
+    dev_cases: list[EvidenceCase] | None = None,
 ) -> list[EvidenceCase]:
     by_family: dict[str, list[EvidenceCase]] = {"PDF": [], "XLSX": []}
     for row in manifest_rows:
@@ -422,6 +498,11 @@ def load_evidence_cases_from_rows(
         )
         by_family[family].append(case)
     selected: list[EvidenceCase] = []
+    dev_case_ids = {case.case_id for case in dev_cases or []}
+    dev_docs_by_family: dict[str, set[str]] = {"PDF": set(), "XLSX": set()}
+    for case in dev_cases or []:
+        if case.family in dev_docs_by_family:
+            dev_docs_by_family[case.family].add(case_document_key(case))
     for family in ("PDF", "XLSX"):
         candidates = sorted(
             by_family[family],
@@ -431,8 +512,148 @@ def load_evidence_cases_from_rows(
                 case.case_id,
             ),
         )
-        selected.extend(candidates[:cases_per_family])
+        if split_role == VALIDATION_SPLIT_ROLE:
+            disjoint = [
+                case
+                for case in candidates
+                if case.case_id not in dev_case_ids
+                and case_document_key(case) not in dev_docs_by_family[family]
+            ]
+            selected_family = disjoint[:cases_per_family]
+            if len(selected_family) < cases_per_family:
+                selected_ids = {case.case_id for case in selected_family}
+                fallback = [
+                    case
+                    for case in candidates
+                    if case.case_id not in dev_case_ids and case.case_id not in selected_ids
+                ]
+                selected_family.extend(fallback[: cases_per_family - len(selected_family)])
+            selected.extend(selected_family)
+        else:
+            selected.extend(candidates[:cases_per_family])
     return selected
+
+
+def load_dev_cases_for_validation(
+    *,
+    manifest_rows: list[Mapping[str, Any]],
+    silver_index: Mapping[str, Mapping[str, dict[str, Any]]],
+    dev_summary_path: Path | None,
+    cases_per_family: int,
+) -> list[EvidenceCase]:
+    if dev_summary_path and dev_summary_path.exists():
+        summary = json.loads(dev_summary_path.read_text(encoding="utf-8"))
+        selected = summary.get("selected_cases")
+        if isinstance(selected, list) and selected:
+            return [case_from_selected_record(row) for row in selected if isinstance(row, Mapping)]
+    return load_evidence_cases_from_rows(
+        manifest_rows,
+        cases_per_family=cases_per_family,
+        silver_index=silver_index,
+        split_role=DEFAULT_SPLIT_ROLE,
+    )
+
+
+def selected_case_record(
+    case: EvidenceCase,
+    *,
+    split_role: str,
+    dev_cases: list[EvidenceCase] | None = None,
+) -> dict[str, Any]:
+    dev_document_keys = {case_document_key(item) for item in dev_cases or [] if item.family == case.family}
+    return {
+        "case_id": case.case_id,
+        "family": case.family,
+        "source_atom_id": case.source_atom_id,
+        "doc_id": case.doc_id,
+        "section": case.section,
+        "evidence_text": case.evidence_text,
+        "locator": dict(case.locator),
+        "source_identity_hash": sha256_text(case.source_identity) if case.source_identity else "",
+        "document_key_hash": sha256_text(case_document_key(case)),
+        "locator_fingerprint": case.locator_fingerprint,
+        "search_view_id": case.search_view_id,
+        "silver_query": case.silver_query,
+        "silver_query_profile": case.silver_query_profile,
+        "silver_manifest_row_ordinal": case.silver_manifest_row_ordinal,
+        "silver_manifest_partition": case.silver_manifest_partition,
+        "weak_silver_candidate_id": case.weak_silver_candidate_id,
+        "source_candidate_id": case.source_candidate_id,
+        "join_key_used": case.join_key_used,
+        "raw_evidence_text": case.raw_evidence_text,
+        "normalized_evidence_text": case.normalized_evidence_text,
+        "answer_ready_evidence_text": case.answer_ready_evidence_text,
+        "split_role": split_role,
+        "dev_document_overlap": case_document_key(case) in dev_document_keys,
+        "diagnostic_only": True,
+        "official_metric_input": False,
+    }
+
+
+def case_from_selected_record(row: Mapping[str, Any]) -> EvidenceCase:
+    return EvidenceCase(
+        case_id=clean(row.get("case_id")),
+        family=clean(row.get("family")).upper(),
+        source_atom_id=clean(row.get("source_atom_id")),
+        doc_id=clean(row.get("doc_id")),
+        section=clean(row.get("section")),
+        evidence_text=clean(row.get("evidence_text")),
+        locator=as_mapping(row.get("locator")),
+        source_identity="",
+        locator_fingerprint=clean(row.get("locator_fingerprint")),
+        search_view_id=clean(row.get("search_view_id")),
+        silver_query=clean(row.get("silver_query")),
+        silver_query_profile=clean(row.get("silver_query_profile")),
+        silver_manifest_row_ordinal=int(row.get("silver_manifest_row_ordinal") or 0),
+        silver_manifest_partition=clean(row.get("silver_manifest_partition")),
+        weak_silver_candidate_id=clean(row.get("weak_silver_candidate_id")),
+        source_candidate_id=clean(row.get("source_candidate_id")),
+        join_key_used=clean(row.get("join_key_used")),
+        raw_evidence_text=clean(row.get("raw_evidence_text") or row.get("evidence_text")),
+        normalized_evidence_text=clean(row.get("normalized_evidence_text") or row.get("evidence_text")),
+        answer_ready_evidence_text=clean(row.get("answer_ready_evidence_text") or row.get("evidence_text")),
+    )
+
+
+def case_document_key(case: EvidenceCase) -> str:
+    locator = as_mapping(case.locator)
+    return "|".join(
+        clean(part)
+        for part in (
+            case.family,
+            case.doc_id,
+            locator.get("source_pdf_path") or locator.get("source_path") or locator.get("workbook"),
+        )
+        if clean(part)
+    )
+
+
+def case_selection_summary(
+    cases: list[EvidenceCase],
+    *,
+    split_role: str,
+    dev_cases: list[EvidenceCase] | None = None,
+) -> dict[str, Any]:
+    dev_document_keys = {case_document_key(case) for case in dev_cases or []}
+    overlap_count = sum(1 for case in cases if case_document_key(case) in dev_document_keys)
+    source_doc_disjoint = split_role != VALIDATION_SPLIT_ROLE or overlap_count == 0
+    return {
+        "role": split_role,
+        "diagnostic_only": True,
+        "official_metric_input_rows": 0,
+        "dev_only": split_role == DEFAULT_SPLIT_ROLE,
+        "success_evidence_allowed": split_role == VALIDATION_SPLIT_ROLE and source_doc_disjoint,
+        "source_document_disjoint_from_dev": source_doc_disjoint,
+        "dev_overlap_document_count": overlap_count,
+        "fallback_strategy_used": "non_disjoint_fill" if split_role == VALIDATION_SPLIT_ROLE and overlap_count else "",
+        "cases_by_family": dict(sorted(Counter(case.family for case in cases).items())),
+        "case_count": len(cases),
+        "validation_strategy": (
+            "source_identity_document_disjoint_holdout"
+            if split_role == VALIDATION_SPLIT_ROLE and source_doc_disjoint
+            else "dev_current_query_fidelity_headline_relabel"
+        ),
+    }
 
 
 def load_silver_seed_index(path: Path) -> dict[str, dict[str, dict[str, Any]]]:
@@ -473,6 +694,11 @@ def silver_pair_key(family: str, locator_fingerprint: str, source_identity: str)
 
 
 def silver_policy_safe(row: Mapping[str, Any]) -> bool:
+    partition = clean(row.get("manifest_partition") or row.get("partition") or row.get("split")).lower()
+    split_role = clean(row.get("split_role") or row.get("dev_set_role") or row.get("validation_role")).lower()
+    blocked_role_text = " ".join((partition, split_role))
+    if any(token in blocked_role_text for token in ("holdout", "kfold", "sealed", "final_validation")):
+        return False
     return (
         bool(row.get("diagnostic_only"))
         and bool(row.get("not_gold"))
@@ -1072,6 +1298,21 @@ def evidence_variant_for_prompt_mode(*, case: EvidenceCase, prompt_mode: str) ->
     if prompt_mode == "answer_ready_context" and case.family == "PDF":
         return "answer_ready"
     return "raw"
+
+
+def should_reuse_raw_final_for_answer_ready(evidence_profile: Mapping[str, Any]) -> bool:
+    if clean(evidence_profile.get("family")) != "PDF":
+        return False
+    raw_score = float_value(evidence_profile.get("raw_answer_ready_score"))
+    ready_score = float_value(evidence_profile.get("answer_ready_score"))
+    score_delta = float_value(evidence_profile.get("answer_ready_score_delta"))
+    if not bool(evidence_profile.get("bounded_expansion_applied")):
+        return True
+    if ready_score <= raw_score or score_delta <= 0.0:
+        return True
+    raw_text = clean(evidence_profile.get("raw_snippet"))
+    ready_text = clean(evidence_profile.get("answer_ready_snippet"))
+    return bool(raw_text and ready_text and raw_text == ready_text)
 
 
 def pdf_context_key(row: Mapping[str, Any], locator: Mapping[str, Any]) -> tuple[str, str, str]:
@@ -2278,6 +2519,13 @@ def clean(value: object) -> str:
 
 def as_mapping(value: object) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
+
+
+def float_value(value: object) -> float:
+    try:
+        return float(value or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 if __name__ == "__main__":

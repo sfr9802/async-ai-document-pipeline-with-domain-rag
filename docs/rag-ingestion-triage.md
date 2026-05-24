@@ -21,6 +21,62 @@ The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
 
+## 2026-05-24 - PDF Answer-Ready Overfit Guard Triage Note
+
+This triage note freezes the current candidate rules before validation and
+keeps residual work diagnostic-only. It creates no gold, qrels,
+expected-answer, supporting-evidence, denominator, namespace, DB, production,
+promotion, threshold, or winner mutation.
+
+- The current PDF headline rows are re-labeled as dev-only. Fresh dev packet:
+  raw final 17/30 -> answer-ready 20/30; PDF all rows 5/15 -> 8/15; PDF
+  query-fidelity headline 5/13 -> 8/13. The combined PDF answer-ready counts
+  include one preserved raw-final pass; fresh PDF answer-ready passes are 7/15
+  all rows and 7/13 headline. These gains stay visible but are not success
+  evidence by themselves.
+- A separate validation holdout was selected from existing non-gold,
+  non-official material. The packet records 15 PDF and 15 XLSX rows,
+  `source_document_disjoint_from_dev=true`, `dev_overlap_document_count=0`,
+  `official_metric_input_rows=0`.
+- Validation all-row answer quality: 18/30 -> 20/30. Validation PDF all-row
+  answer quality: 8/15 -> 9/15, with three preserved raw-final passes and
+  fresh PDF answer-ready passes at 6/15. Validation query-fidelity headline
+  quality: 8/15 -> 8/15; PDF headline: 8/14 -> 8/14 with fresh answer-ready
+  5/14. This means the dev headline gain stayed dev-only and the holdout only
+  shows a small combined all-row diagnostic gain.
+- Raw-pass-to-ready-fail regression was neutralized first. Dev PDF delta
+  buckets are raw_fail_to_ready_pass=3, raw_fail_to_ready_fail_same_failure=6,
+  raw_fail_to_ready_fail_changed_failure=1, raw_pass_to_ready_pass=5, with no
+  raw-pass regression. Validation PDF delta buckets are raw_fail_to_ready_pass=1,
+  raw_fail_to_ready_fail_same_failure=1, raw_fail_to_ready_fail_changed_failure=5,
+  raw_pass_to_ready_pass=8, with no raw-pass regression.
+- Allowed candidate rules remain bounded same-page windows, heading/body
+  pairing by same-page order, dot-leader cleanup, locator-only demotion,
+  broad/duplicate suppression, evidence-density scoring, context ordering, and
+  raw-final reuse when answer-ready evidence has no structural gain. Guardrails
+  record no case_id branches, exact query hacks, file/source-title hacks,
+  pass/fail threshold tuning, expected/supporting/gold text input, or
+  drift-contaminated headline gain.
+- Dev residuals after answer-ready: `pdf-005`, `pdf-008`, `pdf-010`,
+  `pdf-011`, `pdf-012`, `pdf-013`, `pdf-015`. Bucket counts: weak_evidence=6,
+  dot_or_ocr_artifact=7, broad_context=4, locator_only=3, query_drift=2,
+  evaluator_limitation=7, true_answer_failure=0.
+- Validation residuals after answer-ready: `pdf-025`, `pdf-027`, `pdf-030`,
+  `pdf-031`, `pdf-033`, `pdf-035`. Answer-ready failed-row bucket counts:
+  weak_evidence=6, dot_or_ocr_artifact=6, broad_context=2, locator_only=0,
+  query_drift=0, evaluator_limitation=2, true_answer_failure=0. The broader
+  validation residual review table includes one additional query-fidelity
+  excluded pass row, so its combined review buckets are weak_evidence=7,
+  dot_or_ocr_artifact=7, and query_drift=1.
+- OCR remains skipped. The holdout still has native text and does not prove OCR
+  absence/unusability or material OCR gain. Revisit OCR only after
+  scanned/image-only PDF evidence proves native text is absent or unusable and
+  OCR would materially change evidence.
+- Remaining user-owned decisions are answerable, relevance, expected answer,
+  supporting evidence, pass/fail, denominator eligibility, policy note, review
+  approval, query intent preservation, query approval, and query policy note.
+  The future official-adjacent adapter remains disabled.
+
 ## 2026-05-24 - PDF Query Fidelity And Residual Review Note
 
 This addendum keeps the PDF answer-ready evidence work diagnostic-only while
@@ -28,6 +84,8 @@ separating query drift from evidence-window quality. It creates no gold,
 qrels, expected-answer, supporting-evidence, denominator, namespace, DB,
 production, promotion, threshold, or winner mutation. The status event is
 `pdf_xlsx_answer_quality_query_fidelity_packet_answer_ready_pdf_v1_llm_15pf`.
+This entry is retained as prior status-ledger history; the overfit-guard
+triage note above supersedes the packet artifacts and current interpretation.
 
 - The prior all-row diagnostic counts remain visible but are marked
   query-fidelity-unverified: raw final 19/30, answer-ready 23/30, PDF 5/15 ->

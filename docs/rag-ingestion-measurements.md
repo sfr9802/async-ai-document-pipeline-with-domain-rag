@@ -21,6 +21,139 @@ provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 
+## 2026-05-24 - PDF Answer-Ready Overfit Guard And Holdout
+
+Purpose: keep PDF answer-ready evidence work diagnostic-only while separating
+dev gains from validation evidence before any residual optimization.
+
+Commands:
+
+```powershell
+python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label answer_ready_pdf_v1_llm_15pf --cases-per-family 15 --max-tokens 220 --query-max-tokens 180 --timeout-seconds 90 --split-role dev_current_pdf_headline
+python -X utf8 ai\scripts\rag_pdf_xlsx_answer_quality_review_packet.py --run-label answer_ready_pdf_v1_llm_15pf
+python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label answer_ready_pdf_v1_llm_15pf_validation --cases-per-family 15 --max-tokens 220 --query-max-tokens 180 --timeout-seconds 90 --split-role validation_holdout --dev-summary ai\eval\reports\rag-ingestion\quality\pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_summary.json
+python -X utf8 ai\scripts\rag_pdf_xlsx_answer_quality_review_packet.py --run-label answer_ready_pdf_v1_llm_15pf_validation --previous-run-label answer_ready_pdf_v1_llm_15pf
+```
+
+Split policy:
+
+| Split | Rows | PDF rows | XLSX rows | Source-document disjoint from dev | Success evidence allowed |
+|---|---:|---:|---:|---|---|
+| Dev current PDF headline | 30 | 15 | 15 | n/a | false |
+| Validation holdout | 30 | 15 | 15 | true, overlap=0 | true, diagnostic-only |
+
+Answer quality:
+
+| Split/scope | Raw final pass | Combined answer-ready pass | Fresh answer-ready pass | Raw-final reused pass | Delta combined vs raw |
+|---|---:|---:|---:|---:|---:|
+| Dev all rows | 17/30 | 20/30 | 19/30 | 1/30 | +3 |
+| Dev PDF all rows | 5/15 | 8/15 | 7/15 | 1/15 | +3 |
+| Dev XLSX all rows | 12/15 | 12/15 | 12/15 | 0/15 | +0 |
+| Dev query-fidelity headline | 9/17 | 12/17 | 11/17 | 1/17 | +3 |
+| Dev PDF headline | 5/13 | 8/13 | 7/13 | 1/13 | +3 |
+| Validation all rows | 18/30 | 20/30 | 17/30 | 3/30 | +2 |
+| Validation PDF all rows | 8/15 | 9/15 | 6/15 | 3/15 | +1 |
+| Validation XLSX all rows | 10/15 | 11/15 | 11/15 | 0/15 | +1 |
+| Validation query-fidelity headline | 8/15 | 8/15 | 5/15 | 3/15 | +0 |
+| Validation PDF headline | 8/14 | 8/14 | 5/14 | 3/14 | +0 |
+
+Interpretation:
+
+- The prior `19/30 -> 23/30`, headline `9/16 -> 11/16`, and PDF headline
+  `5/12 -> 7/12` counts are retained only as prior dev/query-fidelity
+  diagnostics.
+- The fresh dev PDF headline gain is not counted as success by itself:
+  `dev_only=true` and `success_evidence_allowed=false`.
+- The source-document-disjoint holdout gives a small combined all-row PDF
+  diagnostic gain (`8/15 -> 9/15`), but that combined count includes three
+  raw-final reused passes. It has no query-fidelity headline PDF gain
+  (`8/14 -> 8/14`) and fresh PDF answer-ready headline passes are `5/14`.
+  Residual optimization should not claim generalized PDF answer-ready success
+  from the dev headline count alone.
+- Raw-pass-to-ready-fail regressions are zero in both dev and validation after
+  the raw-final reuse guard.
+
+PDF evidence readiness:
+
+| Split | Bounded expansion | Weak snippets | Dot-heavy | Locator-only | OCR-ish | Avg raw score | Avg expanded score | Avg delta |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Dev | 12/15 | 11/15 | 11/15 | 3/15 | 12/15 | 0.1235 | 0.4501 | +0.3266 |
+| Validation | 15/15 | 11/15 | 11/15 | 0/15 | 14/15 | 0.1184 | 0.5291 | +0.4107 |
+
+Residual review:
+
+| Split | Answer-ready failed rows | Query-excluded review-only rows | Weak evidence | Dot/OCR artifact | Locator-only | Broad context | Evaluator limitation | Query drift | True answer failure |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Dev answer-ready failures | 7 | 0 | 6 | 7 | 3 | 4 | 7 | 2 | 0 |
+| Validation answer-ready failures | 6 | 0 | 6 | 6 | 0 | 2 | 2 | 0 | 0 |
+| Validation full review table | 6 | 1 | 7 | 7 | 0 | 2 | 2 | 1 | 0 |
+
+Primary artifacts:
+
+- Dev summary:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_summary.json`
+- Dev packet:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/`
+- Validation summary:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_validation_summary.json`
+- Validation packet:
+  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf_validation/`
+- Perf smoke:
+  `ai/eval/reports/rag-ingestion/perf/pdf_xlsx_perf_answer_ready_overfit_guard_smoke.json`
+
+Boundary and OCR rationale:
+
+- `official_metric_input_rows=0` in both packets.
+- The future scored adapter remains `DISABLED_PENDING_USER_APPROVAL`.
+- Expected answers, supporting evidence, gold fields, qrels, labels, official
+  denominator, namespace isolation, production, promotion, thresholds, and
+  winner selection remain unchanged.
+- OCR was skipped because validation did not prove native text absence or
+  unusability, and OCR-ish residuals are still mixed with weak evidence,
+  locator/citation shape, evaluator overlap, and query-policy issues.
+
+Verification completed for this entry:
+
+```powershell
+python -X utf8 -m py_compile ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py ai\scripts\rag_pdf_xlsx_answer_quality_review_packet.py ai\scripts\rag_pdf_xlsx_anti_overfit_audit.py
+python -X utf8 -m pytest ai/tests/test_rag_answer_citation_silver_manifest_v1.py -q -k "pdf_xlsx_answer_quality_review_packet or pdf_answer_ready or query_fidelity or anti_overfit"
+python -X utf8 ai\scripts\rag_pdf_xlsx_anti_overfit_audit.py
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label answer_ready_pdf_overfit_guard_perf_smoke --warmups 1 --iterations 1 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_answer_ready_overfit_guard_smoke.json
+python -X utf8 -m pytest ai/tests/test_rag_diagnostic_status_sync.py -q -k "pdf_answer_ready or query_fidelity or status_jsonl"
+python -X utf8 -m pytest ai/tests/test_rag_anti_shortcut_guardrail_audit_v1.py ai/tests/test_rag_diagnostic_guardrail_git_diff.py -q
+python -X utf8 -m pytest ai/tests --rag-current -q
+git diff --name-only -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver ai/eval/reports/rag-ingestion/baseline_v1.json ai/eval/reports/rag-ingestion/metric_input_v1.json ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl
+git diff --cached --name-only -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver ai/eval/reports/rag-ingestion/baseline_v1.json ai/eval/reports/rag-ingestion/metric_input_v1.json ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl
+git diff --check
+git status --short --untracked-files=all
+```
+
+Results: focused packet tests `15 passed`; status sync `4 passed`; guardrail
+tests `39 passed`; current profile `361 passed`. The first current-profile
+attempt correctly failed on temporary anti-overfit audit files in the report
+root; those files were removed and the audit default now writes to the system
+temp directory instead of the protected report root.
+
+Protected diff checks reported no tracked or staged changes under eval queries,
+source registry, indexes, silver, official baseline/config, or candidate JSONL
+surfaces. `git diff --check` passed with line-ending warnings only. `git status
+--short --untracked-files=all` showed no untracked files.
+
+Changed tracked files:
+
+- `ai/scripts/rag_pdf_xlsx_llm_quality_benchmark.py`
+- `ai/scripts/rag_pdf_xlsx_answer_quality_review_packet.py`
+- `ai/scripts/rag_pdf_xlsx_anti_overfit_audit.py`
+- `ai/tests/test_rag_answer_citation_silver_manifest_v1.py`
+- `docs/rag-ingestion-progress.md`
+- `docs/rag-ingestion-measurements.md`
+- `docs/rag-ingestion-triage.md`
+
+New tracked files: none. New repo-local scratch artifacts: none. Temporary
+files removed: accidental report-root `rag_pdf_xlsx_anti_overfit_audit.json`
+and `.csv`, plus the system-temp anti-overfit audit JSON/CSV created by the
+final scanner run.
+
 ## 2026-05-22 - PDF Answer-Ready Evidence Readiness Audit
 
 Purpose: improve diagnostic PDF answer quality by shaping retrieved PDF

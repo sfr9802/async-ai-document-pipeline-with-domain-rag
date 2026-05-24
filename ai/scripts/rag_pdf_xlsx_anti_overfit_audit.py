@@ -15,6 +15,7 @@ import hashlib
 import json
 import re
 import sys
+import tempfile
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,14 +26,16 @@ AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
 REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
 DEFAULT_XLSX_REVIEW = AI_WORKER_ROOT / "eval" / "review" / "gold_set_review" / "xlsx_gold_review_pack.csv"
-DEFAULT_OUTPUT_JSON = REPORT_DIR / "rag_pdf_xlsx_anti_overfit_audit.json"
-DEFAULT_OUTPUT_CSV = REPORT_DIR / "rag_pdf_xlsx_anti_overfit_audit.csv"
+DEFAULT_OUTPUT_JSON = Path(tempfile.gettempdir()) / "rag_pdf_xlsx_anti_overfit_audit.json"
+DEFAULT_OUTPUT_CSV = Path(tempfile.gettempdir()) / "rag_pdf_xlsx_anti_overfit_audit.csv"
 DEFAULT_SCAN_FILES = [
     AI_WORKER_ROOT / "eval" / "harness" / "pdf_xlsx_answer_evidence_serializer.py",
     AI_WORKER_ROOT / "eval" / "harness" / "pdf_xlsx_deterministic_answer_compiler.py",
     AI_WORKER_ROOT / "scripts" / "rag_pdf_xlsx_answer_generation_input_builder.py",
     AI_WORKER_ROOT / "scripts" / "rag_pdf_xlsx_local_llm_answer_runner.py",
     AI_WORKER_ROOT / "scripts" / "rag_pdf_xlsx_answer_shape_evaluator.py",
+    AI_WORKER_ROOT / "scripts" / "rag_pdf_xlsx_llm_quality_benchmark.py",
+    AI_WORKER_ROOT / "scripts" / "rag_pdf_xlsx_answer_quality_review_packet.py",
 ]
 
 SCHEMA_VERSION = "rag_pdf_xlsx_anti_overfit_audit_v1"
