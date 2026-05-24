@@ -21,6 +21,92 @@ provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 
+## 2026-05-24 - XLSX v3_8_3 Scoped Locator Anti-Overfit Validation
+
+Purpose: harden the post-v3_8_3 XLSX scoped sheet/table-range/cell diagnostic
+resolver without opening answer generation, official metrics, qrels, gold, or
+promotion surfaces.
+
+Commands:
+
+```powershell
+python -X utf8 -m pytest ai/tests/test_rag_answer_citation_silver_manifest_v1.py -q -k "v3_8_3_xlsx_query_locator_signals_normalize_page_sheet_names"
+python -X utf8 -m py_compile ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py
+python -X utf8 ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic
+python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_8_3_xlsx_scoped_cell_resolve_artifacts_are_registered_hash_locked_and_compact ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_8_3_xlsx_scoped_cell_resolve_writer_emits_compact_artifacts_and_summary_hashes -q
+```
+
+Split policy:
+
+| Split | Rows | Workbook disjoint from dev | Source-identity disjoint from dev | Role |
+|---|---:|---|---|---|
+| Protected regression | 19 | n/a | n/a | sealed no-regression check |
+| Dev | 155 | n/a | n/a | legacy v3_8_3 rows, dev-only |
+| Validation | 170 | true | true | workbook-disjoint non-official validation |
+
+Diagnostic locator metrics:
+
+| Scope | sheet@1 baseline -> current | range@1 baseline -> current | cell/value@1 baseline -> current | abstain baseline -> current |
+|---|---:|---:|---:|---:|
+| Overall XLSX | 248/344 -> 249/344 | 22/344 -> 22/344 | 19/344 -> 19/344 | 44/344 -> 44/344 |
+| Protected | 17/19 -> 17/19 | 17/19 -> 17/19 | 17/19 -> 17/19 | 1/19 -> 1/19 |
+| Dev | 120/155 -> 120/155 | 3/155 -> 3/155 | 0/155 -> 0/155 | 9/155 -> 9/155 |
+| Validation | 111/170 -> 112/170 | 2/170 -> 2/170 | 2/170 -> 2/170 | 34/170 -> 34/170 |
+
+Interpretation:
+
+- The only generalized gain is validation sheet@1 +1 from generic page-style
+  sheet-name normalization (`26페이지` matching `26p`). It is diagnostic-only
+  and not an official Hit@K/MRR/nDCG claim.
+- Dev-only rows did not improve, so there is no dev-only pass-count gain being
+  counted as success.
+- Table/range and cell/value metrics stayed unchanged; the top remaining bucket
+  remains `table_or_range_miss_after_sheet_hit=218`.
+- A direct normalized-value query signal was tried and rejected because it
+  regressed one validation cell/value pass. The frozen candidate rules now keep
+  row/column/date and page-sheet normalization but do not use normalized-value
+  text as a direct scoring signal.
+- `official_metric_input_rows=0`; future scored adapter status remains
+  `DISABLED_PENDING_USER_APPROVAL`; no PDF/OCR optimization was opened.
+
+Artifacts:
+
+| Artifact | Path |
+|---|---|
+| Summary | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_summary.json` |
+| Metrics + compact miss matrix | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_metrics.json` |
+| Per-query diagnostics | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_per_query.jsonl` |
+| Per-family diagnostics | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_per_family.json` |
+| Status ledger | `ai/eval/reports/rag-ingestion/status.jsonl` |
+
+Verification:
+
+| Check | Result |
+|---|---|
+| `python -X utf8 -m pytest ai/tests/test_rag_answer_citation_silver_manifest_v1.py -q -k "v3_8_3"` | 12 passed |
+| `python -X utf8 -m pytest ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_8_3_xlsx_scoped_cell_resolve_artifacts_are_registered_hash_locked_and_compact ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_v3_8_3_xlsx_scoped_cell_resolve_writer_emits_compact_artifacts_and_summary_hashes -q` | 2 passed |
+| `python -X utf8 -m pytest ai/tests/test_rag_diagnostic_status_sync.py::test_progress_status_and_triage_gate_record_v3_8_3_xlsx_scoped_cell_resolve_without_promotion -q` | 1 passed |
+| `python -X utf8 -m pytest ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v3_8_3_xlsx_scoped_cell_resolve_does_not_mutate_source_registry_or_protected_surfaces -q` | 1 passed |
+| `python -X utf8 -m pytest ai/tests/test_rag_current_focused_test_profile_v1.py -q` | 3 passed |
+| `python -X utf8 -m pytest ai/tests --rag-current -q` | 367 passed, 8 warnings |
+| `python -X utf8 -m py_compile ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py ai/scripts/rag_pdf_xlsx_perf_benchmark.py` | passed |
+| `python -X utf8 ai/scripts/rag_pdf_xlsx_perf_benchmark.py --label v3_8_3_xlsx_scoped_locator_validation_smoke --warmups 1 --iterations 1 --output %TEMP%\codex-v3_8_3-xlsx-perf-smoke.json` | PDF native 30.625 ms, PDF OCR fallback 65.236 ms, XLSX merged range 198.396 ms, SearchUnit duplicate skip 95.566 ms |
+| `git diff --check` | passed; line-ending warnings only |
+
+Changed tracked files:
+
+- `ai/scripts/rag_official_answer_citation_agentic_loop_run_v1.py`
+- `ai/tests/test_rag_answer_citation_silver_manifest_v1.py`
+- `ai/tests/test_rag_current_focused_test_profile_v1.py`
+- `ai/tests/test_rag_diagnostic_status_sync.py`
+- `ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py`
+- `docs/rag-ingestion-progress.md`
+- `docs/rag-ingestion-measurements.md`
+- `docs/rag-ingestion-triage.md`
+
+Temporary files removed: `%TEMP%\codex-v3_8_3-xlsx-perf-smoke.json`,
+`%TEMP%\codex-v3_8_3-xlsx-baseline.json`. Untracked files: none.
+
 ## 2026-05-24 - PDF Answer-Ready Overfit Guard And Holdout
 
 Purpose: keep PDF answer-ready evidence work diagnostic-only while separating
@@ -598,7 +684,7 @@ Reader contract: use this file for metric ladder context, use
 | v1 diagnostic live-generation | `official_answer_citation_agentic_loop_run_v1` | Fixture-all index, noop/extractive generation | PASS `1/29`; fixture-all/noop/chunk-only limitations | `promotion_evidence=false` |
 | Source-bound index readiness | `official_answer_citation_source_bound_index_build_readiness_v1` | 29 source-bound SearchUnits | `BUILD_READY_LOAD_CHECK_PASSED` | Non-production index only |
 | v3 comparable live measurement | `official_answer_citation_agentic_loop_run_v3_comparable_live_measurement` | 29 rows, structured adapter retained for XLSX/PDF | PASS `27/29`; PDF `4/4`, XLSX `19/19`, TEXT `4/6` | Diagnostic-only; not answer/citation promotion evidence |
-| v3_8_3 XLSX scoped miss taxonomy | `official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic` | 344 XLSX rows after persisted v3_8_2 workbook gate | sheet@1 `248/344`, range@1 `22/344`, cell/value@1 `19/344`; top miss bucket `table_or_range_miss_after_sheet_hit=218` | Diagnostic-only; no answer generation, gold/qrels/labels, or promotion evidence |
+| v3_8_3 XLSX scoped miss taxonomy | `official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic` | 344 XLSX rows after persisted v3_8_2 workbook gate; legacy rows dev-only plus workbook-disjoint validation | sheet@1 `249/344`, range@1 `22/344`, cell/value@1 `19/344`; validation sheet@1 `112/170`; top miss bucket `table_or_range_miss_after_sheet_hit=218` | Diagnostic-only; no answer generation, gold/qrels/labels, or promotion evidence |
 | v3_1 all-track foundation | `official_answer_citation_agentic_loop_run_v3_1_all_track_foundation_measurement` | Lane A/B/C fixed across PDF/TEXT/XLSX | Lane A `24/29`, Lane B `18/29`, Lane C `20/29` | Diagnostic-only |
 | v3_1 priority 1~5 triage | `official_answer_citation_agentic_loop_run_v3_1_priority_1_5_strict_json_locator_triage` | Five row-level infrastructure/locator cases | strict JSON parse `2 -> 0`; locator field mismatch `3 -> 0`; residual copy failure `1` | Diagnostic-only |
 | v3_1 TEXT locator residual | `official_answer_citation_agentic_loop_run_v3_1_text_locator_residual_triage` | `text_namu_v2_0012` only | TEXT `text_locator` missing `1 -> 0`; byte/normalized equal true | Diagnostic-only |

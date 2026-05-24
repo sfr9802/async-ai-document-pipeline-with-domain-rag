@@ -33262,6 +33262,28 @@ V3_8_3_XLSX_QUERY_METRICS = (
     "abstain_rate",
     "wrong_workbook_block_rate",
 )
+V3_8_3_LEGACY_ROWS_ROLE = "dev_only_diagnostic_not_validation_success"
+V3_8_3_FUTURE_SCORED_ADAPTER_STATUS = "DISABLED_PENDING_USER_APPROVAL"
+V3_8_3_DRIFT_PROFILES = frozenset(
+    {
+        "query_drift",
+        "major_topic_drift",
+        "wrong_topic",
+        "off_topic",
+    }
+)
+V3_8_3_ALLOWED_FROZEN_RULES = (
+    "bounded_same_workbook_windows",
+    "sheet_name_normalization",
+    "query_literal_to_header_alignment",
+    "bounded_range_scoring",
+    "merged_cell_or_header_propagation",
+    "row_column_label_pairing",
+    "numeric_date_normalization",
+    "duplicate_or_broad_range_demotion",
+    "low_confidence_abstain",
+    "stable_ordering",
+)
 V3_8_2_ORACLE_FREE_RESOLVE_TOP_K = 5
 V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES = 3
 V3_8_2_RESOLVE_SCORE_THRESHOLD = 0.75
@@ -34656,6 +34678,94 @@ def v3_8_2_file_resolve_metric_definitions() -> dict[str, str]:
     }
 
 
+def v3_8_3_candidate_rule_freeze() -> dict[str, Any]:
+    return {
+        "frozen_before_validation": True,
+        "allowed_rules": list(V3_8_3_ALLOWED_FROZEN_RULES),
+        "case_id_branches": False,
+        "exact_query_hacks": False,
+        "file_or_source_title_hacks": False,
+        "pass_fail_threshold_tuning": False,
+        "expected_supporting_gold_text_input": False,
+        "drift_contaminated_headline_gain": False,
+    }
+
+
+def v3_8_3_normalized_query_token(value: Any) -> str:
+    text = unicodedata.normalize("NFKC", official.clean(value)).casefold()
+    return re.sub(r"[\W_]+", "", text)
+
+
+def v3_8_3_numeric_forms(value: Any) -> set[str]:
+    text = unicodedata.normalize("NFKC", official.clean(value))
+    forms = {item for item in re.findall(r"\d+", text) if item}
+    for year, month in re.findall(r"(\d{4})\D{0,8}(\d{1,2})\s*월", text):
+        forms.add(f"{year}{int(month):02d}")
+    for year, month in re.findall(r"(\d{4})[-./](\d{1,2})(?:[-./]\d{1,2})?", text):
+        forms.add(f"{year}{int(month):02d}")
+    return forms
+
+
+def v3_8_3_page_number_forms(value: Any) -> set[str]:
+    text = unicodedata.normalize("NFKC", official.clean(value)).casefold()
+    forms = {
+        str(int(number))
+        for number in re.findall(r"(?<!\d)(\d{1,4})\s*(?:p|page|페이지|쪽)(?![a-z0-9])", text)
+    }
+    forms.update(
+        str(int(number))
+        for number in re.findall(r"(?<![a-z0-9])p\s*(\d{1,4})(?!\d)", text)
+    )
+    return forms
+
+
+def v3_8_3_text_contains_token(query_token: str, value: Any, *, min_length: int = 2) -> bool:
+    token = v3_8_3_normalized_query_token(value)
+    return bool(token and len(token) >= min_length and token in query_token)
+
+
+def v3_8_3_label_pairs(row_label: Any) -> list[tuple[str, str]]:
+    pairs: list[tuple[str, str]] = []
+    for part in re.split(r"\s*\|\s*", official.clean(row_label)):
+        if not part:
+            continue
+        if "=" in part:
+            key, value = part.split("=", 1)
+            pairs.append((official.clean(key), official.clean(value)))
+        else:
+            pairs.append(("", official.clean(part)))
+    return [(key, value) for key, value in pairs if key or value]
+
+
+def v3_8_3_range_shape(cell_range: Any) -> dict[str, int]:
+    text = official.clean(cell_range).upper()
+    match = re.fullmatch(r"([A-Z]+)(\d+):([A-Z]+)(\d+)", text)
+    if not match:
+        return {"row_count": 0, "column_count": 0}
+    col_a, row_a, col_b, row_b = match.groups()
+
+    def column_index(label: str) -> int:
+        index = 0
+        for char in label:
+            index = index * 26 + (ord(char) - ord("A") + 1)
+        return index
+
+    row_count = abs(int(row_b) - int(row_a)) + 1
+    column_count = abs(column_index(col_b) - column_index(col_a)) + 1
+    return {"row_count": row_count, "column_count": column_count}
+
+
+def v3_8_3_broad_range_demotion(cell_range: Any) -> float:
+    shape = v3_8_3_range_shape(cell_range)
+    row_count = int(shape.get("row_count") or 0)
+    column_count = int(shape.get("column_count") or 0)
+    if row_count >= 100 or column_count >= 25:
+        return 0.06
+    if row_count >= 75 or column_count >= 18:
+        return 0.03
+    return 0.0
+
+
 def v3_8_3_xlsx_scoped_cell_resolve(
     row: Mapping[str, Any],
     *,
@@ -34737,6 +34847,33 @@ def v3_8_3_xlsx_scoped_cell_resolve(
     workbook_gate = workbook_candidates[0] if workbook_candidates else {}
     resolve_block_reasons = list(gate_row.get("resolve_block_reasons", []))
     gate_status = official.clean(gate_row.get("resolve_status")) or "abstain"
+    if total_violation_count:
+        if "oracle_free_input_violation_count" not in resolve_block_reasons:
+            resolve_block_reasons.append("oracle_free_input_violation_count")
+        return {
+            "schema_version": f"{V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID}_candidate_resolution_v1",
+            "query_id": official.clean(row.get("query_id")),
+            "source_family_intent": family,
+            "oracle_free": True,
+            "resolve_status": "abstain",
+            "resolve_block_reasons": resolve_block_reasons,
+            "workbook_gate": v3_8_3_compact_workbook_gate(workbook_gate),
+            "candidates": [],
+            "candidate_count": 0,
+            "forbidden_input_fields_used": forbidden_input_fields_used,
+            "forbidden_input_policy": v3_8_2_forbidden_input_policy(),
+            "oracle_free_input_violation_count": total_violation_count,
+            "file_resolve_gate_run_id": V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
+            "v3_8_2_gate_row_found": True,
+            "v3_8_2_gate_resolved": False,
+            "resolver_policy": {
+                "oracle_free": True,
+                "input_gate": "persisted_v3_8_2_oracle_free_file_resolve_per_query_row",
+                "forbidden_inputs_used_for_selection": forbidden_input_fields_used,
+                "target_source_atom_ids_used_for_metrics_only": True,
+                "answer_generation_metric_computed": False,
+            },
+        }
     if gate_status != "resolved":
         if not resolve_block_reasons:
             resolve_block_reasons.append("v3_8_2_file_gate_not_resolved")
@@ -34784,6 +34921,8 @@ def v3_8_3_xlsx_scoped_cell_resolve(
             atom=atom,
             source_identity=official.clean(envelope.get("source_identity")),
         )
+        raw_locator = as_mapping(atom.get("raw_locator"))
+        payload = as_mapping(atom.get("canonical_citation_payload"))
         rank = int(envelope.get("rank") or len(scoped_candidates) + 1)
         workbook = official.clean(
             envelope.get("workbook")
@@ -34800,16 +34939,41 @@ def v3_8_3_xlsx_scoped_cell_resolve(
         sheet = official.clean(envelope.get("sheet") or locator.get("sheet"))
         cell_range = official.clean(envelope.get("range") or locator.get("range"))
         cell = official.clean(envelope.get("cell") or locator.get("cell"))
+        if not sheet or not cell_range:
+            if "candidate_missing_sheet_or_range_locator" not in resolve_block_reasons:
+                resolve_block_reasons.append("candidate_missing_sheet_or_range_locator")
+            continue
+        row_label = official.clean(raw_locator.get("row_label") or payload.get("row_label"))
+        column_label = official.clean(raw_locator.get("column_label") or payload.get("column_label"))
+        target_column = official.clean(raw_locator.get("target_column") or payload.get("target_column"))
+        normalized_value = official.clean(
+            raw_locator.get("normalized_value")
+            or payload.get("normalized_value")
+            or locator.get("normalized_value")
+        )
         query_locator_signals = v3_8_3_query_locator_signals(
             query_text=row.get("query_text"),
             workbook=workbook,
             sheet=sheet,
             cell_range=cell_range,
             cell=cell,
+            row_label=row_label,
+            column_label=column_label,
+            target_column=target_column,
+            normalized_value=normalized_value,
         )
         base_score = max(0.05, 0.80 - (0.08 * max(rank - 1, 0)))
+        broad_range_demotion = v3_8_3_broad_range_demotion(cell_range)
         resolve_score = round(
-            min(0.99, base_score + v3_8_3_query_locator_signal_score(query_locator_signals)),
+            max(
+                0.01,
+                min(
+                    0.99,
+                    base_score
+                    + v3_8_3_query_locator_signal_score(query_locator_signals)
+                    - broad_range_demotion,
+                ),
+            ),
             6,
         )
         candidate = {
@@ -34844,6 +35008,8 @@ def v3_8_3_xlsx_scoped_cell_resolve(
             candidate["resolve_reasons"].append("range_locator_present")
         if candidate["cell"]:
             candidate["resolve_reasons"].append("cell_locator_present")
+        if broad_range_demotion:
+            candidate["resolve_reasons"].append("broad_or_duplicate_range_demoted")
         candidate["resolve_reasons"].extend(query_locator_signals)
         scoped_candidates.append(candidate)
 
@@ -34936,6 +35102,10 @@ def v3_8_3_query_locator_signals(
     sheet: Any,
     cell_range: Any,
     cell: Any,
+    row_label: Any = "",
+    column_label: Any = "",
+    target_column: Any = "",
+    normalized_value: Any = "",
 ) -> list[str]:
     query = official.clean(query_text)
     if not query:
@@ -34943,6 +35113,8 @@ def v3_8_3_query_locator_signals(
     query_casefold = query.casefold()
     query_compact = re.sub(r"\s+", "", query_casefold)
     query_upper = query.upper()
+    query_token = v3_8_3_normalized_query_token(query)
+    query_numeric_forms = v3_8_3_numeric_forms(query)
     signals: list[str] = []
 
     workbook_key = v3_8_file_key(workbook)
@@ -34952,6 +35124,10 @@ def v3_8_3_query_locator_signals(
     sheet_text = official.clean(sheet)
     if sheet_text and sheet_text.casefold() in query_casefold:
         signals.append("query_sheet_literal_match")
+    query_page_forms = v3_8_3_page_number_forms(query)
+    sheet_page_forms = v3_8_3_page_number_forms(sheet_text)
+    if query_page_forms and sheet_page_forms and query_page_forms.intersection(sheet_page_forms):
+        signals.append("query_sheet_normalized_page_match")
 
     range_text = official.clean(cell_range)
     if range_text and re.sub(r"\s+", "", range_text.casefold()) in query_compact:
@@ -34961,15 +35137,41 @@ def v3_8_3_query_locator_signals(
     if cell_text and re.search(rf"(?<![A-Z0-9]){re.escape(cell_text)}(?![A-Z0-9])", query_upper):
         signals.append("query_cell_literal_match")
 
-    return signals
+    column_values = [column_label, target_column]
+    if any(v3_8_3_text_contains_token(query_token, value) for value in column_values):
+        signals.append("query_column_label_match")
+
+    row_pairs = v3_8_3_label_pairs(row_label)
+    if any(v3_8_3_text_contains_token(query_token, value) for _key, value in row_pairs):
+        signals.append("query_row_label_value_match")
+    if any(
+        v3_8_3_text_contains_token(query_token, key)
+        and v3_8_3_text_contains_token(query_token, value)
+        for key, value in row_pairs
+        if key and value
+    ):
+        signals.append("query_row_label_key_value_pair_match")
+
+    candidate_numeric_forms: set[str] = set()
+    for value in [row_label, column_label, target_column, cell_range, cell]:
+        candidate_numeric_forms.update(v3_8_3_numeric_forms(value))
+    if query_numeric_forms and candidate_numeric_forms and query_numeric_forms.intersection(candidate_numeric_forms):
+        signals.append("query_date_number_normalized_match")
+
+    return list(dict.fromkeys(signals))
 
 
 def v3_8_3_query_locator_signal_score(signals: Sequence[str]) -> float:
     weights = {
         "query_workbook_literal_match": 0.02,
         "query_sheet_literal_match": 0.08,
+        "query_sheet_normalized_page_match": 0.16,
         "query_range_literal_match": 0.10,
         "query_cell_literal_match": 0.16,
+        "query_column_label_match": 0.14,
+        "query_row_label_value_match": 0.18,
+        "query_row_label_key_value_pair_match": 0.08,
+        "query_date_number_normalized_match": 0.12,
     }
     return sum(weights.get(signal, 0.0) for signal in signals)
 
@@ -35105,6 +35307,286 @@ def v3_8_3_xlsx_miss_taxonomy_aggregate(
     }
 
 
+def v3_8_3_xlsx_source_identity_workbook(source_identity: Any) -> str:
+    parsed = v3_8_parse_source_identity(family="XLSX", source_identity=official.clean(source_identity))
+    return official.clean(parsed.get("workbook"))
+
+
+def v3_8_3_xlsx_row_workbook(row: Mapping[str, Any]) -> str:
+    gate = as_mapping(row.get("workbook_gate"))
+    candidates = [as_mapping(candidate) for candidate in row.get("scoped_cell_candidates", [])]
+    return official.clean(
+        gate.get("source_file_name")
+        or gate.get("workbook_id")
+        or v3_8_3_xlsx_source_identity_workbook(gate.get("source_identity"))
+        or next((candidate.get("workbook") for candidate in candidates if official.clean(candidate.get("workbook"))), "")
+        or next(
+            (
+                v3_8_3_xlsx_source_identity_workbook(candidate.get("source_identity"))
+                for candidate in candidates
+                if official.clean(candidate.get("source_identity"))
+            ),
+            "",
+        )
+    )
+
+
+def v3_8_3_xlsx_row_source_identity(row: Mapping[str, Any]) -> str:
+    gate = as_mapping(row.get("workbook_gate"))
+    candidates = [as_mapping(candidate) for candidate in row.get("scoped_cell_candidates", [])]
+    return official.clean(
+        gate.get("source_identity")
+        or next(
+            (
+                candidate.get("source_identity")
+                for candidate in candidates
+                if official.clean(candidate.get("source_identity"))
+            ),
+            "",
+        )
+    )
+
+
+def v3_8_3_xlsx_query_drift_audit(
+    per_query_row: Mapping[str, Any],
+    *,
+    source_row: Mapping[str, Any],
+) -> dict[str, Any]:
+    profile = official.clean(source_row.get("silver_query_quality_profile"))
+    reasons: list[str] = []
+    if bool(source_row.get("query_drift")):
+        reasons.append("query_drift_flag")
+    if bool(source_row.get("major_topic_drift")):
+        reasons.append("major_topic_drift_flag")
+    if profile in V3_8_3_DRIFT_PROFILES:
+        reasons.append(f"quality_profile:{profile}")
+    max_signal_count = max(
+        (
+            int(as_mapping(candidate).get("query_locator_signal_count") or 0)
+            for candidate in per_query_row.get("scoped_cell_candidates", [])
+        ),
+        default=0,
+    )
+    return {
+        "exclude_from_validation_headline": bool(reasons),
+        "reasons": list(dict.fromkeys(reasons)),
+        "max_query_locator_signal_count": max_signal_count,
+        "query_quality_profile": profile,
+    }
+
+
+def v3_8_3_xlsx_split_metrics(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    all_rows = list(rows)
+    headline_rows = [
+        row
+        for row in all_rows
+        if not as_mapping(row.get("query_drift_audit")).get("exclude_from_validation_headline")
+    ]
+
+    def metrics_for(metric_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+        denominator = len(metric_rows)
+        return {
+            metric: v3_8_rate(
+                numerator=sum(1 for row in metric_rows if bool(row.get(metric))),
+                denominator=denominator,
+            )
+            for metric in V3_8_3_XLSX_QUERY_METRICS
+        }
+
+    workbooks = sorted({v3_8_3_xlsx_row_workbook(row) for row in all_rows if v3_8_3_xlsx_row_workbook(row)})
+    source_identities = sorted(
+        {
+            v3_8_3_xlsx_row_source_identity(row)
+            for row in all_rows
+            if v3_8_3_xlsx_row_source_identity(row)
+        }
+    )
+    return {
+        "query_count": len(all_rows),
+        "headline_query_count": len(headline_rows),
+        "query_drift_excluded_count": len(all_rows) - len(headline_rows),
+        "anchor_bound_query_count": sum(
+            1
+            for row in headline_rows
+            if int(as_mapping(row.get("query_drift_audit")).get("max_query_locator_signal_count") or 0) > 0
+        ),
+        "resolved_query_count": sum(1 for row in all_rows if row.get("resolve_status") == "resolved"),
+        "abstained_query_count": sum(
+            1 for row in all_rows if row.get("resolve_status") in {"abstain", "disambiguation"}
+        ),
+        "workbook_count": len(workbooks),
+        "source_identity_count": len(source_identities),
+        "workbooks": workbooks,
+        "source_identities_sha256": [sha256_text(item) for item in source_identities],
+        "per_workbook_query_counts": dict(
+            sorted(Counter(v3_8_3_xlsx_row_workbook(row) for row in all_rows if v3_8_3_xlsx_row_workbook(row)).items())
+        ),
+        "metrics": metrics_for(all_rows),
+        "headline_metrics_drift_excluded": metrics_for(headline_rows),
+        "miss_taxonomy": v3_8_3_xlsx_miss_taxonomy_aggregate(all_rows),
+        "headline_miss_taxonomy_drift_excluded": v3_8_3_xlsx_miss_taxonomy_aggregate(headline_rows),
+    }
+
+
+def v3_8_3_xlsx_diagnostic_validation_split(
+    per_query_rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    protected_rows = [
+        row
+        for row in per_query_rows
+        if official.clean(row.get("query_scope")) == "sealed_gold_no_regression_check"
+    ]
+    overlay_rows = [
+        row
+        for row in per_query_rows
+        if official.clean(row.get("query_scope")) == "silver_1000_diagnostic_overlay"
+    ]
+    rows_by_workbook: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
+    for row in overlay_rows:
+        workbook = v3_8_3_xlsx_row_workbook(row) or "unknown_workbook"
+        rows_by_workbook[workbook].append(row)
+
+    protected_workbooks = {
+        v3_8_3_xlsx_row_workbook(row) for row in protected_rows if v3_8_3_xlsx_row_workbook(row)
+    }
+    protected_identities = {
+        v3_8_3_xlsx_row_source_identity(row)
+        for row in protected_rows
+        if v3_8_3_xlsx_row_source_identity(row)
+    }
+    overlapping_workbooks = sorted(
+        workbook
+        for workbook, rows in rows_by_workbook.items()
+        if workbook in protected_workbooks
+        or bool(
+            protected_identities.intersection(
+                v3_8_3_xlsx_row_source_identity(row)
+                for row in rows
+                if v3_8_3_xlsx_row_source_identity(row)
+            )
+        )
+    )
+    disjoint_workbooks = sorted(
+        workbook for workbook in rows_by_workbook if workbook not in set(overlapping_workbooks)
+    )
+    split_strategy = "workbook_disjoint_non_official_overlay"
+    if overlapping_workbooks and disjoint_workbooks:
+        dev_workbooks = overlapping_workbooks
+        validation_workbooks = disjoint_workbooks
+    else:
+        workbook_names = sorted(rows_by_workbook)
+        if len(workbook_names) >= 2:
+            midpoint = max(1, len(workbook_names) // 2)
+            dev_workbooks = workbook_names[:midpoint]
+            validation_workbooks = workbook_names[midpoint:]
+        else:
+            dev_workbooks = workbook_names
+            validation_workbooks = []
+            split_strategy = "leave_one_workbook_out_diagnostic_fallback"
+
+    dev_rows = [row for workbook in dev_workbooks for row in rows_by_workbook.get(workbook, [])]
+    validation_rows = [
+        row for workbook in validation_workbooks for row in rows_by_workbook.get(workbook, [])
+    ]
+    dev_workbook_set = {v3_8_3_xlsx_row_workbook(row) for row in dev_rows if v3_8_3_xlsx_row_workbook(row)}
+    validation_workbook_set = {
+        v3_8_3_xlsx_row_workbook(row)
+        for row in validation_rows
+        if v3_8_3_xlsx_row_workbook(row)
+    }
+    dev_identity_set = {
+        v3_8_3_xlsx_row_source_identity(row)
+        for row in dev_rows
+        if v3_8_3_xlsx_row_source_identity(row)
+    }
+    validation_identity_set = {
+        v3_8_3_xlsx_row_source_identity(row)
+        for row in validation_rows
+        if v3_8_3_xlsx_row_source_identity(row)
+    }
+    leave_one_workbook_out = {
+        workbook: v3_8_3_xlsx_split_metrics(rows)
+        for workbook, rows in sorted(rows_by_workbook.items())
+    }
+    split = {
+        "schema_version": f"{V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID}_diagnostic_validation_split_v1",
+        "official_metric_input_rows": 0,
+        "promotion_evidence": False,
+        "legacy_v3_8_3_rows_role": V3_8_3_LEGACY_ROWS_ROLE,
+        "split_strategy": split_strategy,
+        "split_source": "v3_8_3_non_official_overlay",
+        "external_workbook_disjoint_holdout_status": (
+            "existing_external_non_official_holdout_insufficient_for_clean_workbook_disjoint_split"
+        ),
+        "candidate_rule_freeze": v3_8_3_candidate_rule_freeze(),
+        "protected_regression": v3_8_3_xlsx_split_metrics(protected_rows),
+        "dev": v3_8_3_xlsx_split_metrics(dev_rows),
+        "validation": v3_8_3_xlsx_split_metrics(validation_rows),
+        "leave_one_workbook_out": leave_one_workbook_out,
+        "workbook_disjoint_from_protected": not bool(validation_workbook_set.intersection(protected_workbooks)),
+        "source_identity_disjoint_from_protected": not bool(validation_identity_set.intersection(protected_identities)),
+    }
+    split["dev"]["role"] = V3_8_3_LEGACY_ROWS_ROLE
+    split["validation"]["role"] = "workbook_disjoint_validation_diagnostic_only"
+    split["validation"]["workbook_disjoint_from_dev"] = not bool(validation_workbook_set.intersection(dev_workbook_set))
+    split["validation"]["source_identity_disjoint_from_dev"] = not bool(validation_identity_set.intersection(dev_identity_set))
+    if not validation_rows:
+        split["blocked_reason"] = "no_workbook_disjoint_non_official_validation_rows"
+    return split
+
+
+def v3_8_3_xlsx_compact_miss_matrix(
+    per_query_rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    matrix: list[dict[str, Any]] = []
+    for row in per_query_rows:
+        taxonomy = as_mapping(row.get("xlsx_miss_taxonomy"))
+        candidates = [as_mapping(candidate) for candidate in row.get("scoped_cell_candidates", [])]
+        top_candidate = candidates[0] if candidates else {}
+        drift_audit = as_mapping(row.get("query_drift_audit"))
+        matrix.append(
+            {
+                "query_id": official.clean(row.get("query_id")),
+                "query_text_sha256": official.clean(row.get("query_text_sha256")),
+                "query_scope": official.clean(row.get("query_scope")),
+                "workbook": v3_8_3_xlsx_row_workbook(row),
+                "source_identity_sha256": sha256_text(v3_8_3_xlsx_row_source_identity(row))
+                if v3_8_3_xlsx_row_source_identity(row)
+                else "",
+                "resolve_status": official.clean(row.get("resolve_status")),
+                "abstain_or_block_reasons": [
+                    official.clean(reason)
+                    for reason in row.get("resolve_block_reasons", [])
+                    if official.clean(reason)
+                ],
+                "miss_stage": official.clean(taxonomy.get("miss_stage")),
+                "primary_category": official.clean(taxonomy.get("primary_category")),
+                "likely_fix_surface": official.clean(taxonomy.get("resolver_improvement_hint")),
+                "candidate_count": int(row.get("scoped_cell_candidate_count") or 0),
+                "top_candidate": {
+                    "rank": top_candidate.get("retrieval_rank"),
+                    "sheet": official.clean(top_candidate.get("sheet")),
+                    "range": official.clean(top_candidate.get("range")),
+                    "cell": official.clean(top_candidate.get("cell")),
+                    "score": top_candidate.get("resolve_score"),
+                    "signals": list(top_candidate.get("query_locator_signals", [])),
+                }
+                if top_candidate
+                else {},
+                "rank1": {
+                    "sheet": bool(row.get("sheet_resolve@1")),
+                    "range": bool(row.get("table_or_range_resolve@1")),
+                    "cell": bool(row.get("cell_or_value_resolve@1")),
+                    "abstain": bool(row.get("abstain_rate")),
+                    "wrong_workbook": bool(row.get("wrong_workbook_block_rate")),
+                },
+                "query_drift_excluded": bool(drift_audit.get("exclude_from_validation_headline")),
+                "locator_signal_count": int(drift_audit.get("max_query_locator_signal_count") or 0),
+            }
+        )
+    return matrix
+
+
 def v3_8_3_xlsx_scoped_cell_resolve_per_query_row(
     row: Mapping[str, Any],
     *,
@@ -35145,7 +35627,9 @@ def v3_8_3_xlsx_scoped_cell_resolve_per_query_row(
     per_query = {
         "schema_version": f"{V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID}_per_query_v1",
         "query_id": official.clean(row.get("query_id")),
+        "query_text_sha256": sha256_text(row.get("query_text")) if official.clean(row.get("query_text")) else "",
         "query_scope": official.clean(row.get("query_scope")),
+        "query_quality_profile": official.clean(row.get("silver_query_quality_profile")),
         "source_family": "XLSX",
         "resolve_status": resolved_status,
         "resolve_block_reasons": list(resolved.get("resolve_block_reasons", [])),
@@ -35172,6 +35656,7 @@ def v3_8_3_xlsx_scoped_cell_resolve_per_query_row(
         "vector_metadata_used_as_canonical_citation_source": False,
         "vector_metadata_used_as_evidence_truth": False,
     }
+    per_query["query_drift_audit"] = v3_8_3_xlsx_query_drift_audit(per_query, source_row=row)
     per_query["xlsx_miss_taxonomy"] = v3_8_3_xlsx_miss_taxonomy(per_query)
     return per_query
 
@@ -35231,11 +35716,18 @@ def v3_8_3_xlsx_scoped_cell_resolve_metrics(
             **per_source_family["XLSX"],
         }
     ]
+    diagnostic_validation_split = v3_8_3_xlsx_diagnostic_validation_split(per_query_rows)
+    compact_miss_matrix = v3_8_3_xlsx_compact_miss_matrix(per_query_rows)
     return {
         "schema_version": f"{V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID}_metrics_v1",
         "run_id": V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID,
         "artifact_kind": "v3_8_3_xlsx_scoped_cell_resolve_metrics",
         "resolver_version": "v2_query_locator_signals",
+        "diagnostic_role": "dev_only_with_separate_validation_report",
+        "legacy_v3_8_3_rows_role": V3_8_3_LEGACY_ROWS_ROLE,
+        "official_metric_input_rows": 0,
+        "future_scored_adapter_status": V3_8_3_FUTURE_SCORED_ADAPTER_STATUS,
+        "candidate_rule_freeze": v3_8_3_candidate_rule_freeze(),
         "top_k_input": top_k,
         "resolver_max_candidates": V3_8_2_ORACLE_FREE_RESOLVE_MAX_CANDIDATES,
         "source_families_reported_separately": ["XLSX"],
@@ -35249,6 +35741,8 @@ def v3_8_3_xlsx_scoped_cell_resolve_metrics(
         "per_source_family": per_source_family,
         "per_family_rows": per_family_rows,
         "per_query_rows": per_query_rows,
+        "diagnostic_validation_split": diagnostic_validation_split,
+        "compact_miss_matrix": compact_miss_matrix,
         "metric_definitions": v3_8_3_xlsx_scoped_cell_resolve_metric_definitions(),
         "resolver_policy": {
             "oracle_free": True,
@@ -35258,6 +35752,7 @@ def v3_8_3_xlsx_scoped_cell_resolve_metrics(
             "forbidden_inputs_used_for_selection": forbidden_inputs_used,
             "forbidden_inputs": v3_8_2_forbidden_input_policy(),
             "query_locator_signal_ranking": True,
+            "candidate_rule_freeze": v3_8_3_candidate_rule_freeze(),
         },
         "denominator_policy": {
             "row_scope": "XLSX query rows from the v3_8/v3_7_2 diagnostic top-k surface, gated by persisted v3_8_2 per-query file resolve rows",
@@ -35278,6 +35773,8 @@ def v3_8_3_xlsx_scoped_cell_resolve_metrics(
         "expected_answer_mutation": False,
         "supporting_evidence_mutation": False,
         "promotion_evidence": False,
+        "future_scored_adapter_status": V3_8_3_FUTURE_SCORED_ADAPTER_STATUS,
+        "official_metric_input_rows": 0,
         "oracle_free_input_violation_count": oracle_free_input_violation_count,
         "vector_metadata_used_as_canonical_citation_source": False,
         "vector_metadata_used_as_evidence_truth": False,
@@ -36121,6 +36618,11 @@ def run_v3_8_3_xlsx_scoped_cell_resolve(*, args: argparse.Namespace) -> dict[str
         "event_type": "diagnostic_xlsx_scoped_cell_resolve_v3_8_3",
         "status": status,
         "run_class": "diagnostic_only_xlsx_scoped_cell_resolve_v1",
+        "diagnostic_role": "dev_only_with_separate_validation_report",
+        "legacy_v3_8_3_rows_role": V3_8_3_LEGACY_ROWS_ROLE,
+        "official_metric_input_rows": 0,
+        "future_scored_adapter_status": V3_8_3_FUTURE_SCORED_ADAPTER_STATUS,
+        "candidate_rule_freeze": metrics["candidate_rule_freeze"],
         "source_run_id": V3_7_2_SOURCE_REGISTRY_BACKED_RETRIEVAL_SMOKE_REPORT_RUN_ID,
         "parent_file_resolve_run_id": V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
         "file_resolve_gate_run_id": V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID,
@@ -36153,6 +36655,9 @@ def run_v3_8_3_xlsx_scoped_cell_resolve(*, args: argparse.Namespace) -> dict[str
         "per_source_family": metrics["per_source_family"],
         "per_family_rows": metrics["per_family_rows"],
         "miss_taxonomy": as_mapping(metrics["per_source_family"].get("XLSX")).get("miss_taxonomy"),
+        "diagnostic_validation_split": metrics["diagnostic_validation_split"],
+        "compact_miss_matrix_query_count": len(metrics["compact_miss_matrix"]),
+        "compact_miss_matrix_sample": metrics["compact_miss_matrix"][:20],
         "metric_definitions": metrics["metric_definitions"],
         "resolver_policy": metrics["resolver_policy"],
         "denominator_policy": metrics["denominator_policy"],
@@ -40062,6 +40567,7 @@ def append_v3_6_low_touch_weak_noisy_silver_event(path: Path, summary: Mapping[s
         "metrics",
         "per_query_rows",
         "per_family_rows",
+        "compact_miss_matrix",
     ):
         event.pop(field, None)
     append_unique_status_ledger_event(path, event)

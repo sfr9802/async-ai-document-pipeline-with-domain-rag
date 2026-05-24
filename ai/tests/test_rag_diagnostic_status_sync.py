@@ -2502,13 +2502,16 @@ def test_progress_status_and_triage_gate_record_v3_8_3_xlsx_scoped_cell_resolve_
     assert run_id in current_text
     assert "after the v3_8_2 oracle-free workbook/document gate" in current_flat
     assert "Target SourceAtom/manifest locator data is metrics-only" in current_flat
-    assert "No scoped answer route" in current_flat
+    assert "no scoped answer route" in current_flat
+    assert "`official_metric_input_rows=0`" in current_text
     assert "Overall status: `diagnostic_xlsx_scoped_cell_resolve_v3_8_3_computed`;" in progress
     assert run_id in measurements
     assert "top miss bucket `table_or_range_miss_after_sheet_hit=218`" in measurements
-    measurement_row = measurements.split(run_id, 1)[1].split("| v3_1 all-track foundation |", 1)[0]
-    assert "per-query" not in measurement_row.lower()
-    assert run_id not in triage
+    assert "Metrics + compact miss matrix" in measurements
+    assert "sheet@1 baseline -> current" in measurements
+    assert run_id in triage
+    assert "direct normalized-value query matching" in triage
+    assert "official_metric_input_rows=0" in triage
 
 
 def test_progress_measurements_triage_and_status_record_pdf_xlsx_quality_review_packet_without_promotion():

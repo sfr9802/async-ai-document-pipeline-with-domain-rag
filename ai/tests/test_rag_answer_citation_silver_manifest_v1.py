@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import csv
+import inspect
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -5977,6 +5978,397 @@ def test_v3_8_3_xlsx_scoped_cell_resolver_abstains_after_wrong_workbook_gate() -
     assert per_query["metric_overlay_redacted_from_candidate_artifact"] is True
 
 
+def test_v3_8_3_xlsx_scoped_cell_resolver_fails_closed_on_parent_gate_forbidden_inputs() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_budget": {
+            "source_family": "XLSX",
+            "source_identity": "docv_budget:budget.xlsx:Summary:A1:D10:C4",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "document_version_id": "docv_budget",
+                "sheet": "Summary",
+                "range": "A1:D10",
+                "cell": "C4",
+                "normalized_value": "41786",
+            },
+            "workbook_id": "budget.xlsx",
+            "workbook_version_id": "docv_budget",
+            "normalized_text_or_value_snapshot": "41786",
+        }
+    }
+    row = {
+        "query_id": "xlsx_scope_parent_gate_leak",
+        "query_text": "budget.xlsx Summary C4 값",
+        "source_family": "XLSX",
+        "target_source_atom_ids": ["atom_budget"],
+        "top_result_envelopes": [
+            {
+                "rank": 1,
+                "search_view_id": "sv_budget",
+                "source_atom_id": "atom_budget",
+                "source_family": "XLSX",
+                "source_identity": "docv_budget:budget.xlsx:Summary:A1:D10:C4",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            }
+        ],
+    }
+    file_gate_row = {
+        "query_id": "xlsx_scope_parent_gate_leak",
+        "source_family": "XLSX",
+        "resolve_status": "resolved",
+        "resolve_block_reasons": [],
+        "resolved_file_candidates": [
+            {
+                "candidate_rank": 1,
+                "source_family": "XLSX",
+                "source_identity": "docv_budget:budget.xlsx:Summary:A1:D10:C4",
+                "source_file_name": "budget.xlsx",
+                "document_version_id": "docv_budget",
+                "workbook_version_id": "docv_budget",
+                "resolve_score": 0.92,
+                "resolve_reasons": ["persisted_v3_8_2_gate"],
+                "oracle_free": True,
+            }
+        ],
+        "forbidden_input_fields_used": ["expected_answer"],
+        "oracle_free_input_violation_count": 1,
+        "oracle_free": True,
+    }
+
+    resolved = runner.v3_8_3_xlsx_scoped_cell_resolve(
+        row,
+        source_registry=source_registry,
+        file_gate_row=file_gate_row,
+    )
+
+    assert resolved["resolve_status"] == "abstain"
+    assert resolved["oracle_free_input_violation_count"] == 1
+    assert resolved["candidates"] == []
+    assert resolved["forbidden_input_fields_used"] == ["expected_answer"]
+    assert "oracle_free_input_violation_count" in resolved["resolve_block_reasons"]
+
+
+def test_v3_8_3_xlsx_scoped_cell_resolver_abstains_without_usable_sheet_range_candidates() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    row = {
+        "query_id": "xlsx_scope_no_usable_locator",
+        "query_text": "budget workbook 안의 Summary 값을 확인해줘",
+        "source_family": "XLSX",
+        "target_source_atom_ids": [],
+        "top_result_envelopes": [
+            {
+                "rank": 1,
+                "search_view_id": "sv_budget_no_range",
+                "source_atom_id": "atom_budget_no_range",
+                "source_family": "XLSX",
+                "source_identity": "docv_budget:budget.xlsx",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            }
+        ],
+    }
+    file_gate_row = {
+        "query_id": "xlsx_scope_no_usable_locator",
+        "source_family": "XLSX",
+        "resolve_status": "resolved",
+        "resolve_block_reasons": [],
+        "resolved_file_candidates": [
+            {
+                "candidate_rank": 1,
+                "source_family": "XLSX",
+                "source_identity": "docv_budget:budget.xlsx",
+                "source_file_name": "budget.xlsx",
+                "document_version_id": "docv_budget",
+                "workbook_version_id": "docv_budget",
+                "resolve_score": 0.88,
+                "resolve_reasons": ["persisted_v3_8_2_gate"],
+                "oracle_free": True,
+            }
+        ],
+        "oracle_free_input_violation_count": 0,
+        "oracle_free": True,
+    }
+
+    resolved = runner.v3_8_3_xlsx_scoped_cell_resolve(
+        row,
+        source_registry={},
+        file_gate_row=file_gate_row,
+    )
+
+    assert resolved["resolve_status"] == "abstain"
+    assert resolved["candidates"] == []
+    assert "no_xlsx_scoped_cell_candidates_after_workbook_gate" in resolved["resolve_block_reasons"]
+
+
+def test_v3_8_3_xlsx_structural_row_column_signals_rank_generic_candidates() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    source_registry = {
+        "atom_wrong_rank1": {
+            "source_family": "XLSX",
+            "source_identity": "docv_budget:budget.xlsx:Summary:A1:D10:C4",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "document_version_id": "docv_budget",
+                "sheet": "Summary",
+                "range": "A1:D10",
+                "cell": "C4",
+                "row_label": "부서=영업1팀 | 월=202601",
+                "target_column": "예산",
+                "normalized_value": "1100",
+            },
+            "workbook_id": "budget.xlsx",
+            "workbook_version_id": "docv_budget",
+            "normalized_text_or_value_snapshot": "영업1팀 예산 1100",
+        },
+        "atom_query_row": {
+            "source_family": "XLSX",
+            "source_identity": "docv_budget:budget.xlsx:Summary:A11:D20:D14",
+            "raw_locator": {
+                "workbook": "budget.xlsx",
+                "document_version_id": "docv_budget",
+                "sheet": "Summary",
+                "range": "A11:D20",
+                "cell": "D14",
+                "row_label": "부서=전략기획팀 | 월=202602",
+                "target_column": "집행액",
+                "normalized_value": "41786",
+            },
+            "workbook_id": "budget.xlsx",
+            "workbook_version_id": "docv_budget",
+            "normalized_text_or_value_snapshot": "전략기획팀 집행액 41786",
+        },
+    }
+    row = {
+        "query_id": "xlsx_scope_generic_row_column",
+        "query_text": "budget.xlsx Summary에서 2026년 2월 전략기획팀 집행액을 확인해줘",
+        "source_family": "XLSX",
+        "target_source_atom_ids": ["atom_query_row"],
+        "top_result_envelopes": [
+            {
+                "rank": 1,
+                "search_view_id": "sv_wrong_rank1",
+                "source_atom_id": "atom_wrong_rank1",
+                "source_family": "XLSX",
+                "source_identity": "docv_budget:budget.xlsx:Summary:A1:D10:C4",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+            {
+                "rank": 2,
+                "search_view_id": "sv_query_row",
+                "source_atom_id": "atom_query_row",
+                "source_family": "XLSX",
+                "source_identity": "docv_budget:budget.xlsx:Summary:A11:D20:D14",
+                "source_atom_hydrated_from_registry": True,
+                "evidence_bundle_render_valid": True,
+                "citation_render_valid": True,
+            },
+        ],
+    }
+    file_gate_row = {
+        "query_id": "xlsx_scope_generic_row_column",
+        "source_family": "XLSX",
+        "resolve_status": "resolved",
+        "resolve_block_reasons": [],
+        "resolved_file_candidates": [
+            {
+                "candidate_rank": 1,
+                "source_family": "XLSX",
+                "source_identity": "docv_budget:budget.xlsx:Summary:A1:D10:C4",
+                "source_file_name": "budget.xlsx",
+                "document_version_id": "docv_budget",
+                "workbook_version_id": "docv_budget",
+                "resolve_score": 0.92,
+                "resolve_reasons": ["persisted_v3_8_2_gate"],
+                "oracle_free": True,
+            }
+        ],
+        "oracle_free_input_violation_count": 0,
+        "oracle_free": True,
+    }
+
+    resolved = runner.v3_8_3_xlsx_scoped_cell_resolve(
+        row,
+        source_registry=source_registry,
+        file_gate_row=file_gate_row,
+    )
+
+    assert resolved["resolve_status"] == "resolved"
+    assert resolved["candidates"][0]["source_atom_id"] == "atom_query_row"
+    assert resolved["candidates"][0]["range"] == "A11:D20"
+    assert set(resolved["candidates"][0]["query_locator_signals"]) >= {
+        "query_row_label_value_match",
+        "query_column_label_match",
+        "query_date_number_normalized_match",
+    }
+    assert "row_label" not in resolved["candidates"][0]
+    assert "target_column" not in resolved["candidates"][0]
+    assert "normalized_value" not in resolved["candidates"][0]
+
+
+def test_v3_8_3_xlsx_query_locator_signals_normalize_page_sheet_names() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    signals = runner.v3_8_3_query_locator_signals(
+        query_text="26페이지의 연령별 성별 수술 현황 수치를 찾아주세요.",
+        workbook="generic.xlsx",
+        sheet="26p",
+        cell_range="A1:BE71",
+        cell="A1",
+    )
+
+    assert "query_sheet_normalized_page_match" in signals
+
+
+def test_v3_8_3_xlsx_scoped_metrics_split_validation_and_exclude_drift_headlines() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    def atom(atom_id: str, workbook: str, sheet: str, cell_range: str, cell: str, value: str) -> dict[str, Any]:
+        return {
+            "source_family": "XLSX",
+            "source_identity": f"docv_{workbook}:{workbook}:{sheet}:{cell_range}:{cell}",
+            "raw_locator": {
+                "workbook": workbook,
+                "document_version_id": f"docv_{workbook}",
+                "sheet": sheet,
+                "range": cell_range,
+                "cell": cell,
+                "normalized_value": value,
+            },
+            "workbook_id": workbook,
+            "workbook_version_id": f"docv_{workbook}",
+            "normalized_text_or_value_snapshot": value,
+        }
+
+    source_registry = {
+        "atom_sealed": atom("atom_sealed", "sealed.xlsx", "Sheet1", "A1:B2", "B2", "10"),
+        "atom_dev": atom("atom_dev", "dev.xlsx", "Sheet1", "A1:B2", "B2", "20"),
+        "atom_val": atom("atom_val", "validation.xlsx", "Sheet1", "A1:B2", "B2", "30"),
+        "atom_drift": atom("atom_drift", "validation.xlsx", "Sheet1", "A3:B4", "B4", "40"),
+    }
+
+    def topk_row(query_id: str, scope: str, atom_id: str, workbook: str, *, drift: bool = False) -> dict[str, Any]:
+        query_text = "major topic drift" if drift else f"{workbook} Sheet1 B2 값"
+        return {
+            "query_id": query_id,
+            "query_scope": scope,
+            "query_text": query_text,
+            "source_family": "XLSX",
+            "target_source_atom_ids": [atom_id],
+            "query_drift": drift,
+            "silver_query_quality_profile": "major_topic_drift" if drift else "clean_source_grounded",
+            "top_result_envelopes": [
+                {
+                    "rank": 1,
+                    "search_view_id": f"sv_{atom_id}",
+                    "source_atom_id": atom_id,
+                    "source_family": "XLSX",
+                    "source_identity": source_registry[atom_id]["source_identity"],
+                    "source_atom_hydrated_from_registry": True,
+                    "evidence_bundle_render_valid": True,
+                    "citation_render_valid": True,
+                }
+            ],
+        }
+
+    def gate(query_id: str, atom_id: str, workbook: str) -> dict[str, Any]:
+        return {
+            "query_id": query_id,
+            "source_family": "XLSX",
+            "resolve_status": "resolved",
+            "resolve_block_reasons": [],
+            "resolved_file_candidates": [
+                {
+                    "candidate_rank": 1,
+                    "source_family": "XLSX",
+                    "source_identity": source_registry[atom_id]["source_identity"],
+                    "source_file_name": workbook,
+                    "document_version_id": f"docv_{workbook}",
+                    "workbook_version_id": f"docv_{workbook}",
+                    "resolve_score": 0.92,
+                    "resolve_reasons": ["persisted_v3_8_2_gate"],
+                    "oracle_free": True,
+                }
+            ],
+            "oracle_free_input_violation_count": 0,
+            "oracle_free": True,
+        }
+
+    metrics = runner.v3_8_3_xlsx_scoped_cell_resolve_metrics(
+        [
+            topk_row("sealed_q", "sealed_gold_no_regression_check", "atom_sealed", "sealed.xlsx"),
+            topk_row("dev_q", "silver_1000_diagnostic_overlay", "atom_dev", "dev.xlsx"),
+            topk_row("val_q", "silver_1000_diagnostic_overlay", "atom_val", "validation.xlsx"),
+            topk_row("drift_q", "silver_1000_diagnostic_overlay", "atom_drift", "validation.xlsx", drift=True),
+        ],
+        source_registry=source_registry,
+        file_gate_rows=[
+            gate("sealed_q", "atom_sealed", "sealed.xlsx"),
+            gate("dev_q", "atom_dev", "dev.xlsx"),
+            gate("val_q", "atom_val", "validation.xlsx"),
+            gate("drift_q", "atom_drift", "validation.xlsx"),
+        ],
+    )
+
+    split = metrics["diagnostic_validation_split"]
+    assert split["split_strategy"] == "workbook_disjoint_non_official_overlay"
+    assert split["legacy_v3_8_3_rows_role"] == "dev_only_diagnostic_not_validation_success"
+    assert split["protected_regression"]["query_count"] == 1
+    assert split["dev"]["query_count"] == 1
+    assert split["validation"]["query_count"] == 2
+    assert split["validation"]["query_drift_excluded_count"] == 1
+    assert split["validation"]["anchor_bound_query_count"] == 1
+    assert split["validation"]["source_identity_disjoint_from_dev"] is True
+    assert split["validation"]["workbook_disjoint_from_dev"] is True
+    assert metrics["promotion_evidence"] is False
+    assert metrics["official_metric_input_rows"] == 0
+
+
+def test_v3_8_3_xlsx_scoped_resolver_has_no_query_id_or_file_title_hacks() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_official_answer_citation_agentic_loop_run_v1 as runner
+
+    checked_source = "\n".join(
+        inspect.getsource(func)
+        for func in (
+            runner.v3_8_3_xlsx_scoped_cell_resolve,
+            runner.v3_8_3_query_locator_signals,
+            runner.v3_8_3_query_locator_signal_score,
+            runner.v3_8_3_xlsx_diagnostic_validation_split,
+        )
+    )
+
+    forbidden_fragments = [
+        "gq_auto_",
+        "v3_6_1_weak_noisy",
+        "과학기술정보통신부",
+        "국민건강보험공단",
+        "서울시 대중교통",
+        "제_1장",
+        "rag-ingestion-sales.xlsx",
+    ]
+    assert not any(fragment in checked_source for fragment in forbidden_fragments)
+
+
 def test_v3_8_3_run_measurement_wires_xlsx_scoped_cell_summary_without_answer_generation() -> None:
     sys.path.insert(0, str(ROOT / "ai"))
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
@@ -6013,6 +6405,10 @@ def test_v3_8_3_run_measurement_wires_xlsx_scoped_cell_summary_without_answer_ge
     assert summary["resolver_uses_target_source_atom_ids_for_selection"] is False
     assert summary["target_source_atom_ids_used_for_metrics_only"] is True
     assert summary["xlsx_pdf_collapsed_score_reported"] is False
+    assert summary["diagnostic_validation_split"]["official_metric_input_rows"] == 0
+    assert summary["diagnostic_validation_split"]["promotion_evidence"] is False
+    assert summary["diagnostic_validation_split"]["validation"]["query_count"] > 0
+    assert summary["diagnostic_validation_split"]["validation"]["source_identity_disjoint_from_dev"] is True
     assert summary["fail_closed_reasons"] == []
     assert summary["artifact_paths"]["summary_json"].endswith("_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_summary.json")
     assert summary["artifact_paths"]["metrics_json"].endswith("_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_metrics.json")

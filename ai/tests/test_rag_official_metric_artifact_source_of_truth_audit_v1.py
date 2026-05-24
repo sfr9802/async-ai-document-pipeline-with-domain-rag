@@ -2961,6 +2961,22 @@ def test_v3_8_3_xlsx_scoped_cell_resolve_artifacts_are_registered_hash_locked_an
     assert summary["vector_db_role"] == "candidate_generator_only"
     assert summary["xlsx_pdf_collapsed_score_reported"] is False
     assert summary["source_family_counts"] == {"XLSX": 344}
+    assert summary["diagnostic_validation_split"]["official_metric_input_rows"] == 0
+    assert summary["diagnostic_validation_split"]["promotion_evidence"] is False
+    assert summary["diagnostic_validation_split"]["split_strategy"] in {
+        "workbook_disjoint_non_official_overlay",
+        "leave_one_workbook_out_diagnostic_fallback",
+    }
+    assert summary["diagnostic_validation_split"]["legacy_v3_8_3_rows_role"] == (
+        "dev_only_diagnostic_not_validation_success"
+    )
+    assert summary["diagnostic_validation_split"]["validation"]["query_count"] > 0
+    assert summary["diagnostic_validation_split"]["validation"]["workbook_disjoint_from_dev"] is True
+    assert summary["diagnostic_validation_split"]["validation"]["source_identity_disjoint_from_dev"] is True
+    assert summary["diagnostic_validation_split"]["candidate_rule_freeze"]["frozen_before_validation"] is True
+    assert summary["diagnostic_validation_split"]["candidate_rule_freeze"]["case_id_branches"] is False
+    assert summary["diagnostic_validation_split"]["candidate_rule_freeze"]["exact_query_hacks"] is False
+    assert summary["diagnostic_validation_split"]["candidate_rule_freeze"]["file_or_source_title_hacks"] is False
     assert summary["all_xlsx_query_count"] == 344
     assert summary["v3_8_2_gate_row_found_count"] == 344
     assert summary["v3_8_2_gate_missing_count"] == 0
@@ -2979,6 +2995,9 @@ def test_v3_8_3_xlsx_scoped_cell_resolve_artifacts_are_registered_hash_locked_an
     assert metrics["resolver_policy"]["input_gate"] == "persisted_v3_8_2_oracle_free_file_resolve_per_query_row"
     assert metrics["resolver_policy"]["forbidden_inputs_used_for_selection"] == []
     assert metrics["oracle_free_input_violation_count"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert metrics["diagnostic_validation_split"] == summary["diagnostic_validation_split"]
     assert len(per_query_rows) == 344
     assert len({row["query_id"] for row in per_query_rows}) == 344
     assert all(row["source_family"] == "XLSX" for row in per_query_rows)
@@ -3023,6 +3042,10 @@ def test_v3_8_3_xlsx_scoped_cell_resolve_artifacts_are_registered_hash_locked_an
         "target_parent_source_unit_id",
         "target_mapping_audit",
         "matched_text_or_value",
+        "normalized_value",
+        "raw_value",
+        "raw_text",
+        "source_text",
         "expected_answer",
         "supporting_evidence",
         "qrels",

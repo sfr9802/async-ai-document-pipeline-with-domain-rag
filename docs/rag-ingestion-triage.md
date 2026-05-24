@@ -21,6 +21,40 @@ The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
 
+## 2026-05-24 - XLSX v3_8_3 Scoped Locator Anti-Overfit Triage Note
+
+This triage note keeps the XLSX scoped locator work diagnostic-only. It creates
+no gold, qrels, expected-answer, supporting-evidence, denominator, namespace,
+DB, production, promotion, threshold, or winner mutation. The status event is
+`diagnostic_xlsx_scoped_cell_resolve_v3_8_3` for
+`official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic`.
+
+- The current v3_8_3 344-row XLSX surface is treated as dev-only unless
+  validated separately. A workbook-disjoint non-official validation split is
+  recorded: protected=19, dev=155, validation=170,
+  `official_metric_input_rows=0`.
+- Generalized signal: page-style sheet normalization (`26페이지` to `26p`)
+  improved validation sheet@1 from 111/170 to 112/170. Protected rows did not
+  regress, dev rows did not change, and table/range plus cell/value metrics did
+  not change.
+- Rejected rule: direct normalized-value query matching improved no accepted
+  validation metric and regressed one existing validation cell/value pass, so it
+  was removed before the final artifact. This keeps value text from becoming an
+  overfit-prone answer-like scoring shortcut.
+- Remaining residual buckets after the accepted rule: workbook gate
+  disambiguation=44, sheet_miss_after_workbook_gate=51,
+  table_or_range_miss_after_sheet_hit=218,
+  table_or_range_rank_gap_within_top3=8,
+  cell_or_value_miss_after_range_hit=3, hit=19. The largest remaining safe
+  surface is still table/range locator recall after a sheet hit.
+- Frozen guardrails record no case_id branches, exact query hacks,
+  workbook/file/source-title hacks, pass/fail threshold tuning,
+  expected/supporting/gold text input, denominator mutation, namespace mutation,
+  production mutation, or adapter enablement.
+- Remaining user-owned decisions are relevance, answerability, expected answer,
+  supporting evidence, pass/fail, denominator eligibility, policy note, query
+  approval, and any future official metric boundary or adapter approval.
+
 ## 2026-05-24 - PDF Answer-Ready Overfit Guard Triage Note
 
 This triage note freezes the current candidate rules before validation and
