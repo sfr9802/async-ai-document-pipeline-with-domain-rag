@@ -241,6 +241,9 @@ AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_10_"
     "fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization"
 )
+AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -1436,6 +1439,42 @@ AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_EVAL_PER_QUERY_JSONL = (
 AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_FAILURE_JSON = (
     REPORT_DIR / f"{AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID}_failure_taxonomy.json"
 )
+AGENTIC_V3_11_LAYERED_RETRIEVAL_SUMMARY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_summary.json"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_BOOTSTRAP_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_bootstrap.json"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_METRICS_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_metrics.json"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_FAMILY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_per_family.json"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_QUERY_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_per_query.jsonl"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_TRACE_SAMPLE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_layer_trace_sample.jsonl"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_ROUTING_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_query_routing_audit.jsonl"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_QUERY_GUARDRAIL_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_query_guardrail_summary.json"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_SELECTED_EVIDENCE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_selected_evidence.jsonl"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_FAILURE_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_failure_taxonomy.json"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_GUARDRAIL_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_guardrail_audit.json"
+)
+AGENTIC_V3_11_LAYERED_RETRIEVAL_HOLDOUT_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_holdout_manifest.json"
+)
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
@@ -1758,6 +1797,18 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_INDEX_SUMMARY_JSON,
     AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_EVAL_PER_QUERY_JSONL,
     AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_FAILURE_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_SUMMARY_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_BOOTSTRAP_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_METRICS_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_FAMILY_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_QUERY_JSONL,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_TRACE_SAMPLE_JSONL,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_ROUTING_JSONL,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_QUERY_GUARDRAIL_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_SELECTED_EVIDENCE_JSONL,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_FAILURE_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_GUARDRAIL_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_HOLDOUT_JSON,
 }
 PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS = CURRENT_REPORT_PATHS
 ARCHIVED_REPORT_PATHS = {
@@ -1906,6 +1957,18 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_INDEX_SUMMARY_JSON,
     AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_EVAL_PER_QUERY_JSONL,
     AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_FAILURE_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_SUMMARY_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_BOOTSTRAP_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_METRICS_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_FAMILY_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_QUERY_JSONL,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_TRACE_SAMPLE_JSONL,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_ROUTING_JSONL,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_QUERY_GUARDRAIL_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_SELECTED_EVIDENCE_JSONL,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_FAILURE_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_GUARDRAIL_JSON,
+    AGENTIC_V3_11_LAYERED_RETRIEVAL_HOLDOUT_JSON,
 }
 ARCHIVED_REPORT_PATHS = (
     ARCHIVED_REPORT_PATHS | (PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS - CURRENT_REPORT_PATHS)
@@ -3876,6 +3939,124 @@ def test_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_artifacts_are_regi
     assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_HOLDOUT_JSON.stat().st_size < 300_000
     assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SOURCEATOM_JSONL.stat().st_size < 2_000_000
     assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEARCHUNIT_JSONL.stat().st_size < 2_000_000
+
+
+def test_v3_11_layered_retrieval_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_9_local_artifacts(
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_SUMMARY_JSON,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_BOOTSTRAP_JSON,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_METRICS_JSON,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_FAMILY_JSON,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_QUERY_JSONL,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_TRACE_SAMPLE_JSONL,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_ROUTING_JSONL,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_QUERY_GUARDRAIL_JSON,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_SELECTED_EVIDENCE_JSONL,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_FAILURE_JSON,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_GUARDRAIL_JSON,
+        AGENTIC_V3_11_LAYERED_RETRIEVAL_HOLDOUT_JSON,
+    )
+    summary = read_json(AGENTIC_V3_11_LAYERED_RETRIEVAL_SUMMARY_JSON)
+    bootstrap = read_json(AGENTIC_V3_11_LAYERED_RETRIEVAL_BOOTSTRAP_JSON)
+    metrics = read_json(AGENTIC_V3_11_LAYERED_RETRIEVAL_METRICS_JSON)
+    per_family = read_json(AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_FAMILY_JSON)
+    per_query = read_jsonl(AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_QUERY_JSONL)
+    traces = read_jsonl(AGENTIC_V3_11_LAYERED_RETRIEVAL_TRACE_SAMPLE_JSONL)
+    routing = read_jsonl(AGENTIC_V3_11_LAYERED_RETRIEVAL_ROUTING_JSONL)
+    query_guardrail = read_json(AGENTIC_V3_11_LAYERED_RETRIEVAL_QUERY_GUARDRAIL_JSON)
+    selected = read_jsonl(AGENTIC_V3_11_LAYERED_RETRIEVAL_SELECTED_EVIDENCE_JSONL)
+    failure = read_json(AGENTIC_V3_11_LAYERED_RETRIEVAL_FAILURE_JSON)
+    guardrail = read_json(AGENTIC_V3_11_LAYERED_RETRIEVAL_GUARDRAIL_JSON)
+    holdout = read_json(AGENTIC_V3_11_LAYERED_RETRIEVAL_HOLDOUT_JSON)
+
+    expected_artifacts = {
+        "bootstrap_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_BOOTSTRAP_JSON,
+        "metrics_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_METRICS_JSON,
+        "per_family_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_FAMILY_JSON,
+        "per_query_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_QUERY_JSONL,
+        "layer_trace_sample_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_TRACE_SAMPLE_JSONL,
+        "query_routing_audit_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_ROUTING_JSONL,
+        "query_guardrail_summary_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_QUERY_GUARDRAIL_JSON,
+        "selected_evidence_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_SELECTED_EVIDENCE_JSONL,
+        "failure_taxonomy_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_FAILURE_JSON,
+        "guardrail_audit_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_GUARDRAIL_JSON,
+        "holdout_manifest_sha256": AGENTIC_V3_11_LAYERED_RETRIEVAL_HOLDOUT_JSON,
+    }
+    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+
+    assert summary["run_id"] == AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_11_LAYERED_RETRIEVAL_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["answer_generation_executed"] is False
+    assert summary["pdf_file_identity_answer_window_kept_separate"] is True
+    assert summary["pdf_bbox_correctness_metric_computed"] is False
+    assert summary["ocr_touched"] is False
+    assert summary["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "direct_normalized_value_query_matching_used",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+    ):
+        assert summary[flag] is False, flag
+
+    assert bootstrap["layer_contract"] == summary["layer_contract"]
+    assert bootstrap["protected_namespaces_touched"] == []
+    assert guardrail["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrail["protected_namespaces_touched"] == []
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert holdout["fresh_real_holdout_sufficient"] is False
+    assert holdout["product_success_evidence_allowed"] is False
+    assert holdout["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["sheet@1"]["numerator"] == 251
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["table_or_range@3"]["numerator"] == 29
+    assert metrics["per_source_family"]["XLSX"]["metrics"]["cell_or_value@3"]["numerator"] == 26
+    assert metrics["per_source_family"]["PDF_FILE_IDENTITY"]["metrics"]["file_resolve@1"]["numerator"] == 66
+    assert metrics["per_source_family"]["PDF_EVIDENCE_WINDOW"]["metrics"]["bbox_correctness_metric_computed"] is False
+    assert per_family["families_reported_separately"] == ["PDF_EVIDENCE_WINDOW", "PDF_FILE_IDENTITY", "XLSX"]
+    assert len(per_query) == 673
+    assert len(routing) == len(per_query)
+    assert traces
+    assert selected
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["used_gold_or_expected_text"] is False for row in per_query)
+    assert all(row["used_answer_value_shortcut"] is False for row in per_query)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in per_query)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in selected)
+    assert query_guardrail["shortcut_success_evidence_allowed"] is False
+    assert failure["pdf_answer_ready_evidence_window"]["computed_in_this_run"] is False
+
+    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_SUMMARY_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_METRICS_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_QUERY_JSONL.stat().st_size < 1_000_000
+    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_TRACE_SAMPLE_JSONL.stat().st_size < 1_000_000
+    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_SELECTED_EVIDENCE_JSONL.stat().st_size < 1_000_000
 
 
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:

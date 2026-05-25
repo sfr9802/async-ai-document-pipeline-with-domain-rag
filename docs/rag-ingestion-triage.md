@@ -1,6 +1,6 @@
 # RAG Ingestion Triage
 
-Last updated: 2026-05-24 KST.
+Last updated: 2026-05-25 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of
@@ -20,6 +20,15 @@ v3_8_2, v3_8_3 machine artifacts, and current v3_9 quality artifacts; older tria
 The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
+
+<!-- official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic:triage-entry:start -->
+## v3_11 Layered Retrieval Diagnostic Triage
+
+- XLSX remains blocked mainly at table/range and cell locator layers after workbook/sheet routing: table_or_range@3=29/344, cell_or_value@3=26/344.
+- PDF remains a file-identity-first bottleneck: file_resolve@1=66/329, file_resolve@3=129/329. Page/block/bbox evidence-window rows are diagnostic decomposition only.
+- SourceAtom hydration and EvidenceBundle assembly are recorded as separate layers so vector metadata remains candidate-only, not evidence truth.
+- Fresh real holdout insufficiency is unchanged; no product performance or promotion claim is made.
+<!-- official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic:triage-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization:triage-entry:start -->
 ## v3_10 Fresh Holdout and XLSX Rematerialization Triage

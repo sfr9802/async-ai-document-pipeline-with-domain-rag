@@ -1,6 +1,6 @@
 # RAG Ingestion Progress
 
-Last updated: 2026-05-24 KST.
+Last updated: 2026-05-25 KST.
 
 This is the compact status index for the current RAG ingestion and official
 answer/citation metric work. Do not append turn transcripts or create new
@@ -20,6 +20,10 @@ durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
+<!-- official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic:progress-entry:start -->
+- v3_11 layered retrieval diagnostic (`official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic`) adds a sidecar trace contract for L0 query routing through L7 answer-ready context plus L9 metrics/failure taxonomy. It keeps XLSX workbook/sheet/table/range/cell resolution separate from PDF file/page/block/bbox-window diagnostics, hydrates selected evidence through SourceAtom ids, and leaves L8 generation closed. official_metric_input_rows=0; no gold/qrels/labels/expected/supporting/denominator/prod mutation; fresh real holdout remains insufficient, so product success claims stay blocked.
+<!-- official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic:progress-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization:progress-entry:start -->
 - v3_10 fresh real holdout and XLSX table-axis non-prod rematerialization (`official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization`) keeps v3_8_3/v3_9/v3_9_1 validation fixed as seen-validation-only. Fresh real holdout is still insufficient (PDF source-document-disjoint=0, XLSX workbook-disjoint=0), so product success claims stay blocked. XLSX SourceAtom/SearchUnit table-axis fields are materialized in `rag-data-xlsx-table-axis-ood-nonprod-v1` as non-prod manifests, not overlay-only; protected official/source registry/all-source/prod namespaces were not touched. PDF is baseline-only for file identity, with answer-ready evidence-window and OCR closed.
 <!-- official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization:progress-entry:end -->
@@ -30,7 +34,7 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized`;
+Overall status: `diagnostic_v3_11_layered_retrieval_ready`;
 current diagnostic answer-quality loop:
 `official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement`;
 retained prior PDF/XLSX bottleneck status:

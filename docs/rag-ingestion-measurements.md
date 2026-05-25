@@ -1,6 +1,6 @@
 # RAG Ingestion Measurements
 
-Last updated: 2026-05-24 KST.
+Last updated: 2026-05-25 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new
@@ -20,6 +20,27 @@ Historical `_archive/legacy` artifact paths in older entries are logical
 provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+
+<!-- official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic:measurements-entry:start -->
+## 2026-05-25 - v3_11 Layered Retrieval Diagnostic
+
+- Run: `official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic`
+- Policy: diagnostic-only; official_metric_input_rows=0; future scored adapter remains DISABLED_PENDING_USER_APPROVAL; no answer generation, fine-tuning, threshold tuning, or winner selection.
+- Layer contract: L0 query routing, L1 coarse candidates, L2 file/workbook identity, L3 structural locator, L4 SourceAtom hydration, L5 EvidenceBundle assembly, L6 evidence selector, L7 answer-ready context, L9 metrics/failure taxonomy. L8 generation/deterministic execution is skipped by design.
+- Holdout: still insufficient. Existing seen validation is retained only for no-regression and layer attribution.
+
+| Family/lane | Diagnostic metric | Value |
+| --- | --- | ---: |
+| XLSX | sheet@1 | 251/344 |
+| XLSX | table_or_range@3 | 29/344 |
+| XLSX | cell_or_value@3 | 26/344 |
+| XLSX | signal-empty rank1 | 0/300 |
+| PDF file identity | file_resolve@1 | 66/329 |
+| PDF file identity | file_resolve@3 | 129/329 |
+| PDF evidence window | bbox_present@3 | 7/942 |
+
+PDF bbox correctness and answer-ready window sufficiency are explicitly not computed in this run; the lane records availability/decomposition only.
+<!-- official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic:measurements-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization:measurements-entry:start -->
 ## 2026-05-24 - v3_10 Fresh Real Holdout and XLSX Table-Axis Non-Prod Rematerialization

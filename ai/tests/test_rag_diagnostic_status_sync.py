@@ -3068,12 +3068,13 @@ def test_progress_measurements_triage_and_status_record_v3_9_1_xlsx_table_axis_p
         assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
         assert event["artifact_sha256"][hash_keys[path_key]] == sha256_file(path)
 
-    assert (
-        "diagnostic_v3_9_1_xlsx_table_axis_pdf_file_identity_computed" in current_text
-        or "diagnostic_v3_9_2_overfit_risk_audit_holdout_reset_ready" in current_text
-        or "diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized"
-        in current_text
-    )
+        assert (
+            "diagnostic_v3_9_1_xlsx_table_axis_pdf_file_identity_computed" in current_text
+            or "diagnostic_v3_9_2_overfit_risk_audit_holdout_reset_ready" in current_text
+            or "diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized"
+            in current_text
+            or "diagnostic_v3_11_layered_retrieval_ready" in current_text
+        )
     assert run_id in current_text
     assert "keeps PDF and XLSX metrics separate" in current_flat
     assert "query-fidelity validation included=118/170" in current_flat
@@ -3160,6 +3161,7 @@ def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audi
         "Overall status: `diagnostic_v3_9_2_overfit_risk_audit_holdout_reset_ready`;" in progress
         or "Overall status: `diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized`;"
         in progress
+        or "Overall status: `diagnostic_v3_11_layered_retrieval_ready`;" in progress
     )
     assert "seen-validation-only" in current_flat
     assert "PDF document-disjoint=0, XLSX workbook-disjoint=0" in current_flat
@@ -3240,6 +3242,7 @@ def test_progress_measurements_triage_and_status_record_v3_10_fresh_holdout_xlsx
     assert (
         "Overall status: `diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized`;"
         in progress
+        or "Overall status: `diagnostic_v3_11_layered_retrieval_ready`;" in progress
     )
     assert "seen-validation-only" in current_flat
     assert "Fresh real holdout is still insufficient" in current_flat
@@ -3253,3 +3256,74 @@ def test_progress_measurements_triage_and_status_record_v3_10_fresh_holdout_xlsx
     assert run_id in triage
     assert "There is no performance success claim in v3_10" in triage
     assert "PDF work is limited to file identity baseline accounting" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_11_layered_retrieval():
+    run_id = "official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic"
+    artifact_paths = {
+        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
+        "bootstrap_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_bootstrap.json",
+        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
+        "per_query_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_query.jsonl",
+        "layer_trace_sample_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_layer_trace_sample.jsonl",
+        "query_routing_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_query_routing_audit.jsonl",
+        "query_guardrail_summary_json": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_query_guardrail_summary.json",
+        "selected_evidence_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_selected_evidence.jsonl",
+        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "guardrail_audit_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_guardrail_audit.json",
+        "holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_holdout_manifest.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == "diagnostic_v3_11_layered_retrieval"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_11_LAYERED_RETRIEVAL_READY"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["fresh_real_holdout_sufficient"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["answer_generation_executed"] is False
+    assert event["pdf_file_identity_answer_window_kept_separate"] is True
+    assert event["pdf_bbox_correctness_metric_computed"] is False
+    assert event["ocr_touched"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = (
+            "summary_json_sha256"
+            if path_key == "summary_json"
+            else path_key.replace("_jsonl", "").replace("_json", "") + "_sha256"
+        )
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert "diagnostic_v3_11_layered_retrieval_ready" in progress
+    assert "L0 query routing through L7 answer-ready context plus L9 metrics" in current_flat
+    assert "leaves L8 generation closed" in current_flat
+    assert run_id in measurements
+    assert "Layer contract: L0 query routing" in measurements
+    assert "| XLSX | table_or_range@3 | 29/344 |" in measurements
+    assert "| PDF file identity | file_resolve@1 | 66/329 |" in measurements
+    assert "bbox correctness and answer-ready window sufficiency are explicitly not computed" in measurements
+    assert run_id in triage
+    assert "XLSX remains blocked mainly at table/range and cell locator layers" in triage
+    assert "PDF remains a file-identity-first bottleneck" in triage
+    assert "no product performance or promotion claim is made" in triage

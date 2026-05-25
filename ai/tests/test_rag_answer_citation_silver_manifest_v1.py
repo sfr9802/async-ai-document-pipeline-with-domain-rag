@@ -6918,6 +6918,151 @@ def test_v3_10_query_fidelity_and_leakage_guards_keep_holdout_rows_user_owned_bl
     assert all(row["success_evidence_allowed"] is False for row in leakage_rows)
 
 
+def test_v3_11_layered_retrieval_trace_contract_keeps_source_atoms_as_evidence_truth() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from app.capabilities.rag.layered_retrieval import (
+        LayerCandidate,
+        LayerDecision,
+        LayeredRetrievalTrace,
+        route_query_for_layered_retrieval,
+        serialize_layered_trace,
+    )
+
+    route = route_query_for_layered_retrieval(
+        query_id="layered_xlsx_probe",
+        query_text="Which value is in workbook.xlsx Summary sheet cell B2?",
+        requested_family="XLSX",
+    )
+
+    assert route.layer_name == "L0_QUERY_ROUTING"
+    assert route.source_family == "XLSX"
+    assert route.intent_type == "cell_or_value_lookup"
+    assert route.used_gold_or_expected_text is False
+    assert route.used_answer_value_shortcut is False
+    assert route.direct_normalized_value_query_matching_used is False
+    assert "unnatural_sheet_or_cell_reference" in route.guardrail_flags
+    assert route.headline_eligible is False
+
+    trace = LayeredRetrievalTrace(
+        query_id="layered_xlsx_probe",
+        query_text_sha256=route.query_text_sha256,
+        source_family="XLSX",
+        decisions=(
+            route,
+            LayerDecision(
+                query_id="layered_xlsx_probe",
+                source_family="XLSX",
+                layer_name="L4_SOURCEATOM_HYDRATION",
+                selected_candidate_ids=("xlsx-sourceatom-1",),
+                candidates=(
+                    LayerCandidate(
+                        candidate_id="xlsx-sourceatom-1",
+                        source_family="XLSX",
+                        layer_name="L4_SOURCEATOM_HYDRATION",
+                        source_atom_id="srcatom_v1_xlsx_demo",
+                        search_view_id="searchview_v1_srcatom_v1_xlsx_demo",
+                        source_identity="docv_demo:workbook.xlsx:Summary:A1:B4:B2",
+                        workbook_id="workbook.xlsx",
+                        sheet_name="Summary",
+                        table_range="A1:B4",
+                        cell="B2",
+                        score_components={"source_registry_metadata": True},
+                        canonical_payload_source="source_registry",
+                        source_atom_hydrated_from_registry=True,
+                    ),
+                ),
+                source_atom_hydrated_from_registry=True,
+                evidence_bundle_assembled=True,
+                vector_payload_used_as_evidence_truth=False,
+            ),
+        ),
+    )
+
+    payload = serialize_layered_trace(trace)
+    assert payload["schema_version"] == "layered_retrieval_trace_v1"
+    assert payload["diagnostic_only"] is True
+    assert payload["used_gold_or_expected_text"] is False
+    assert payload["used_answer_value_shortcut"] is False
+    assert payload["decisions"][1]["source_atom_hydrated_from_registry"] is True
+    assert payload["decisions"][1]["evidence_bundle_assembled"] is True
+    assert payload["decisions"][1]["vector_payload_used_as_evidence_truth"] is False
+    assert payload["decisions"][1]["candidates"][0]["canonical_payload_source"] == "source_registry"
+
+
+def test_v3_11_layered_retrieval_diagnostic_builds_compact_metrics_without_success_claim() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_11_layered_retrieval_diagnostic as run
+
+    artifacts = run.build_artifacts()
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    per_family = artifacts["per_family"]
+    per_query = artifacts["per_query_rows"]
+    trace_sample = artifacts["layer_trace_sample_rows"]
+    routing_rows = artifacts["query_routing_rows"]
+    guardrail = artifacts["guardrail_audit"]
+    selected = artifacts["selected_evidence_rows"]
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["answer_generation_executed"] is False
+    assert summary["layer_contract"] == list(run.LAYER_NAMES)
+    assert summary["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "direct_normalized_value_query_matching_used",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+    ):
+        assert summary[flag] is False, flag
+
+    xlsx_metrics = metrics["per_source_family"]["XLSX"]["metrics"]
+    assert xlsx_metrics["query_count"] == 344
+    assert xlsx_metrics["sheet@1"] == {"numerator": 251, "denominator": 344, "rate": 251 / 344}
+    assert xlsx_metrics["table_or_range@3"]["numerator"] == 29
+    assert xlsx_metrics["cell_or_value@3"]["numerator"] == 26
+    assert xlsx_metrics["signal_empty_rank1_rate"] == {"numerator": 0, "denominator": 300, "rate": 0.0}
+    assert metrics["per_source_family"]["PDF_FILE_IDENTITY"]["metrics"]["file_resolve@1"] == {
+        "numerator": 66,
+        "denominator": 329,
+        "rate": 66 / 329,
+    }
+    assert metrics["per_source_family"]["PDF_FILE_IDENTITY"]["metrics"]["file_resolve@3"]["numerator"] == 129
+    assert metrics["per_source_family"]["PDF_EVIDENCE_WINDOW"]["metrics"]["bbox_correctness_metric_computed"] is False
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+
+    assert per_family["families_reported_separately"] == ["PDF_EVIDENCE_WINDOW", "PDF_FILE_IDENTITY", "XLSX"]
+    assert len(per_query) == 344 + 329
+    assert trace_sample
+    assert routing_rows
+    assert selected
+    assert all(row["diagnostic_only"] is True for row in per_query)
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["used_gold_or_expected_text"] is False for row in per_query)
+    assert all(row["used_answer_value_shortcut"] is False for row in per_query)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in per_query)
+    assert {decision["layer_name"] for row in trace_sample for decision in row["decisions"]} >= set(run.LAYER_NAMES)
+    assert all(row["canonical_payload_source"] == "source_registry" for row in selected if row["source_atom_id"])
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in selected)
+    assert guardrail["protected_namespaces_touched"] == []
+    assert guardrail["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+
+
 def test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank(tmp_path) -> None:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_pdf_xlsx_answer_quality_review_packet as packet
