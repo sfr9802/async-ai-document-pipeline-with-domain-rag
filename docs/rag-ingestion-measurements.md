@@ -21,6 +21,57 @@ provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 
+<!-- official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment:measurements-entry:start -->
+## 2026-05-25 - v3_13 PDF File Identity Structural Locator Non-Prod Alignment
+
+- Run: `official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment`
+- Policy: diagnostic-only; official_metric_input_rows=0; product_success_evidence_allowed=false; future scored adapter remains DISABLED_PENDING_USER_APPROVAL; no answer generation, deterministic answer execution, fine-tuning, threshold tuning, winner selection, or promotion.
+- Scope: PDF L2/L3 catch-up only. File identity metrics are reported separately from evidence-window metrics. XLSX v3_12 remains a visible control lane, not optimized in v3_13.
+- Holdout: still insufficient. Fresh real PDF source-document-disjoint holdout is required before product success evidence.
+
+| Lane | metric | value |
+| --- | --- | ---: |
+| PDF file identity | file_resolve@1 | 66/329 |
+| PDF file identity | file_resolve@3 | 129/329 |
+| PDF file identity | abstain_or_disambiguation | 182/329 |
+| PDF file identity | accepted wrong rank1 with target in top3 | 63/329 |
+| PDF file identity | wrong-file forcing delta from v3_11 | 0/329 |
+| PDF structural locator | page candidates | 942/942 |
+| PDF structural locator | block candidates | 942/942 |
+| PDF structural locator | bbox candidates | 942/942 |
+| PDF evidence window | same-page bounded candidates | 341/942 |
+| PDF evidence window | answer-ready sufficiency | 251/329 |
+| PDF evidence window | bbox correctness | not computed |
+| XLSX v3_12 control | optimized in v3_13 | false |
+| XLSX v3_12 control | cell_or_value@1 | 21/344 |
+
+Reference: v3_11 PDF file_resolve@1 was 66/329. The wrong-file forcing delta is explicitly disclosed as zero because v3_13 does not change PDF file selection.
+<!-- official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement:measurements-entry:start -->
+## 2026-05-25 - v3_12 XLSX Structural Locator Non-Prod Improvement
+
+- Run: `official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement`
+- Policy: diagnostic-only; official_metric_input_rows=0; future scored adapter remains DISABLED_PENDING_USER_APPROVAL; no answer generation, fine-tuning, threshold tuning, winner selection, or promotion.
+- Scope: XLSX L3 structural locator only, after workbook/sheet routing. The checkpoint is v3_11; the compact candidate surface is the v3_9_1 XLSX candidate JSONL because v3_11 stores layer traces rather than candidate lists. PDF lanes and production namespaces are not touched.
+- Holdout: still insufficient. Seen-reference lift is no-regression evidence only, not product success.
+
+| XLSX diagnostic metric | v3_11 seen reference | v3_12 non-prod structural locator |
+| --- | ---: | ---: |
+| table_or_range@1 | 23/344 | 23/344 |
+| table_or_range@3 | 29/344 | 29/344 |
+| cell_or_value@1 | 20/344 | 21/344 |
+| cell_or_value@3 | 26/344 | 26/344 |
+| rank1 reranked count | n/a | 11 |
+| structural-signal-empty rank1 | n/a | 0/300 |
+| zero-signal legacy candidate demotion opportunities | n/a | 796 |
+| zero-signal legacy rank1 demotions | n/a | 0 |
+| table_or_range@1 gain/loss | n/a | +1/-1 |
+| cell_or_value@1 gain/loss | n/a | +1/-0 |
+
+Delta is diagnostic only: cell_or_value@1 +1 on seen-reference rows; table_or_range@1 delta 0 with row-level gain/loss churn shown above.
+<!-- official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement:measurements-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic:measurements-entry:start -->
 ## 2026-05-25 - v3_11 Layered Retrieval Diagnostic
 

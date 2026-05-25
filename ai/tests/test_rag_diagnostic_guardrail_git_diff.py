@@ -2001,6 +2001,9 @@ def test_v3_7_2_source_registry_backed_retrieval_smoke_does_not_mutate_source_re
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_sourceatom_manifest.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_searchunit_manifest.jsonl",
+        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_index_build_summary.json",
     )
 
     for protected_path in protected_paths:
@@ -2865,3 +2868,200 @@ def test_v3_11_layered_retrieval_diagnostic_does_not_mutate_protected_surfaces()
     assert guardrail["source_atom_registry_mutated"] is False
     assert guardrail["official_denominator_mutated"] is False
     assert guardrail["db_or_production_namespace_written"] is False
+
+
+def test_v3_12_xlsx_structural_locator_does_not_mutate_protected_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement"
+    summary_path = REPORT_DIR / f"{run_id}_summary.json"
+    metrics_path = REPORT_DIR / f"{run_id}_metrics.json"
+    guardrail_path = REPORT_DIR / f"{run_id}_guardrail_audit.json"
+    index_path = REPORT_DIR / f"{run_id}_xlsx_nonprod_index_build_summary.json"
+    require_v3_9_local_artifacts(summary_path, metrics_path, guardrail_path, index_path)
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = read_json(summary_path)
+    metrics = read_json(metrics_path)
+    guardrail = read_json(guardrail_path)
+    index_summary = read_json(index_path)
+    assert summary["run_id"] == run_id
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["answer_generation_executed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["index_namespace"] == "rag-data-xlsx-structural-locator-nonprod-v1"
+    assert summary["source_index_namespace"] == "rag-data-xlsx-table-axis-ood-nonprod-v1"
+    assert summary["protected_namespaces_touched"] == []
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "direct_normalized_value_query_matching_used",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["fresh_real_holdout"]["sufficient"] is False
+    assert metrics["fresh_real_holdout"]["product_success_evidence_allowed"] is False
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert guardrail["protected_namespaces_touched"] == []
+    assert guardrail["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert guardrail["source_atom_registry_mutated"] is False
+    assert guardrail["official_denominator_mutated"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+    assert index_summary["index_namespace"] == "rag-data-xlsx-structural-locator-nonprod-v1"
+    assert index_summary["source_namespace"] == "rag-data-xlsx-table-axis-ood-nonprod-v1"
+    assert index_summary["manifest_only"] is True
+    assert index_summary["protected_namespaces_touched"] == []
+    assert index_summary["db_or_production_namespace_written"] is False
+
+
+def test_v3_13_pdf_file_identity_structural_locator_does_not_mutate_protected_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment"
+    summary_path = REPORT_DIR / f"{run_id}_summary.json"
+    metrics_path = REPORT_DIR / f"{run_id}_metrics.json"
+    guardrail_path = REPORT_DIR / f"{run_id}_guardrail_audit.json"
+    manifest_path = REPORT_DIR / f"{run_id}_pdf_nonprod_manifest_summary.json"
+    require_v3_9_local_artifacts(summary_path, metrics_path, guardrail_path, manifest_path)
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v3_10_"
+        "fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_index_build_summary.json",
+        "ai/eval/reports/rag-ingestion/"
+        "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_"
+        "xlsx_nonprod_index_build_summary.json",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = read_json(summary_path)
+    metrics = read_json(metrics_path)
+    guardrail = read_json(guardrail_path)
+    manifest_summary = read_json(manifest_path)
+    assert summary["run_id"] == run_id
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["answer_generation_executed"] is False
+    assert summary["deterministic_answer_execution_executed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["pdf_file_identity_answer_window_kept_separate"] is True
+    assert summary["pdf_bbox_correctness_metric_computed"] is False
+    assert summary["xlsx_v3_12_control_lane_only"] is True
+    assert summary["index_namespace"] == "rag-data-pdf-structural-locator-nonprod-v1"
+    assert summary["source_index_namespace"] == "rag-data-all-source-citable-nonprod-v1"
+    assert summary["protected_namespaces_touched"] == []
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["product_success_evidence_allowed"] is False
+    assert metrics["answer_generation_executed"] is False
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert metrics["pdf_file_identity_structural_locator_eval"]["v3_13_pdf_evidence_window_diagnostic"][
+        "bbox_correctness_metric_computed"
+    ] is False
+    assert guardrail["protected_namespaces_touched"] == []
+    assert guardrail["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrail["source_atom_registry_mutated"] is False
+    assert guardrail["official_denominator_mutated"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert manifest_summary["index_namespace"] == "rag-data-pdf-structural-locator-nonprod-v1"
+    assert manifest_summary["manifest_only"] is True
+    assert manifest_summary["index_build_executed"] is False
+    assert manifest_summary["protected_namespaces_touched"] == []
+    assert manifest_summary["db_or_production_namespace_written"] is False

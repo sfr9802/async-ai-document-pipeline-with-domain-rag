@@ -7063,6 +7063,206 @@ def test_v3_11_layered_retrieval_diagnostic_builds_compact_metrics_without_succe
     assert guardrail["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
 
 
+def test_v3_12_xlsx_structural_locator_nonprod_improvement_builds_seen_reference_only_artifacts() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_12_xlsx_structural_locator_nonprod_improvement as run
+
+    artifacts = run.build_artifacts()
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    eval_rows = artifacts["xlsx_eval_rows"]
+    score_rows = artifacts["score_component_rows"]
+    trace_rows = artifacts["layer_trace_rows"]
+    sourceatoms = artifacts["xlsx_sourceatom_rows"]
+    searchunits = artifacts["xlsx_searchunit_rows"]
+    index_summary = artifacts["xlsx_index_build_summary"]
+    guardrail = artifacts["guardrail_audit"]
+    holdout = artifacts["holdout_manifest"]
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["answer_generation_executed"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["index_namespace"] == run.ALLOWED_NAMESPACE
+    assert summary["source_index_namespace"] == run.SOURCE_NAMESPACE
+    assert summary["protected_namespaces_touched"] == []
+    assert summary["layer_contract"] == list(run.LAYER_NAMES)
+    assert "L8_GENERATION_OR_DETERMINISTIC_EXECUTION" not in summary["layer_contract"]
+    assert summary["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+    assert summary["v3_12_nonprod_structural_locator_smoke"]["cell_or_value@1"]["numerator"] == 21
+    assert summary["v3_12_nonprod_structural_locator_smoke"]["table_or_range@1"]["numerator"] == 23
+    assert summary["v3_12_nonprod_structural_locator_smoke"]["table_or_range@3"]["numerator"] == 29
+    assert summary["v3_12_nonprod_structural_locator_smoke"]["cell_or_value@3"]["numerator"] == 26
+
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+
+    xlsx_eval = metrics["xlsx_structural_locator_eval"]
+    old_seen = xlsx_eval["old_seen_reference_v3_11"]
+    smoke = xlsx_eval["v3_12_nonprod_structural_locator_smoke"]
+    assert old_seen["row_count"] == 344
+    assert smoke["row_count"] == 344
+    assert old_seen["table_or_range@1"]["numerator"] == 23
+    assert smoke["table_or_range@1"]["numerator"] == 23
+    assert old_seen["cell_or_value@1"]["numerator"] == 20
+    assert smoke["cell_or_value@1"]["numerator"] == 21
+    assert smoke["rank1_reranked_count"] > 0
+    assert smoke["structural_signal_empty_rank1_rate"]["numerator"] == 0
+    assert smoke["zero_signal_legacy_row_window_demotion_candidate_count"] > 0
+    assert smoke["table_or_range@1_gain_count"] == 1
+    assert smoke["table_or_range@1_loss_count"] == 1
+    assert smoke["cell_or_value@1_gain_count"] == 1
+    assert smoke["cell_or_value@1_loss_count"] == 0
+    assert smoke["zero_signal_legacy_rank1_demoted_count"] == 0
+    assert smoke["rank1_reranked_old_query_signal_count_distribution"] == {"1": 8, "2": 3}
+    assert smoke["success_claim_allowed"] is False
+    assert metrics["fresh_real_holdout"]["sufficient"] is False
+    assert metrics["fresh_real_holdout"]["product_success_evidence_allowed"] is False
+
+    assert len(eval_rows) == 344
+    assert len(trace_rows) == len(eval_rows)
+    assert score_rows
+    assert sourceatoms
+    assert len(sourceatoms) == len(searchunits) == index_summary["sourceatom_manifest_rows"]
+    assert index_summary["index_namespace"] == run.ALLOWED_NAMESPACE
+    assert index_summary["source_namespace"] == run.SOURCE_NAMESPACE
+    assert index_summary["protected_namespaces_touched"] == []
+    assert index_summary["db_or_production_namespace_written"] is False
+    assert index_summary["direct_normalized_value_query_matching_used"] is False
+    assert all(row["index_namespace"] == run.ALLOWED_NAMESPACE for row in sourceatoms)
+    assert all(row["index_namespace"] == run.ALLOWED_NAMESPACE for row in searchunits)
+    assert all(row["materialized_in_nonprod_sourceatom"] is True for row in sourceatoms)
+    assert all(row["materialized_in_nonprod_searchunit"] is True for row in searchunits)
+    assert all(row["raw_answer_value_for_query_scoring_used"] is False for row in sourceatoms)
+    assert all(row["raw_answer_value_for_query_scoring_used"] is False for row in searchunits)
+    assert all(row["expected_supporting_gold_text_used"] is False for row in sourceatoms)
+    assert all(row["expected_supporting_gold_text_used"] is False for row in searchunits)
+    assert all(row["direct_normalized_value_query_matching_used"] is False for row in score_rows)
+    assert all(row["used_gold_or_expected_text"] is False for row in score_rows)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in eval_rows)
+    candidate_rows = [row for row in eval_rows if row["new_candidate_count"] > 0]
+    assert candidate_rows
+    assert all(row["source_atom_hydrated_from_registry"] is True for row in candidate_rows)
+    assert all(row["evidence_bundle_assembled"] is True for row in candidate_rows)
+    assert all(row["canonical_payload_source"] == "source_registry" for row in candidate_rows)
+    assert all(set(row["layers_recorded"]) >= {"L2_FILE_WORKBOOK_IDENTITY", "L3_STRUCTURAL_LOCATOR"} for row in trace_rows)
+    assert guardrail["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert holdout["fresh_real_holdout_sufficient"] is False
+    assert holdout["product_success_evidence_allowed"] is False
+
+
+def test_v3_13_pdf_file_identity_structural_locator_builds_diagnostic_artifacts() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_13_pdf_file_identity_structural_locator_nonprod_alignment as run
+
+    artifacts = run.build_artifacts()
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    per_family = artifacts["per_family"]
+    per_query = artifacts["pdf_eval_rows"]
+    score_rows = artifacts["pdf_score_rows"]
+    trace_rows = artifacts["pdf_trace_rows"]
+    manifest_summary = artifacts["pdf_manifest_summary"]
+    leakage_rows = artifacts["leakage_audit_rows"]
+    failure = artifacts["failure_taxonomy"]
+    guardrail = artifacts["guardrail_audit"]
+    holdout = artifacts["holdout_manifest"]
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_NONPROD_ALIGNMENT_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["answer_generation_executed"] is False
+    assert summary["deterministic_answer_execution_executed"] is False
+    assert summary["index_namespace"] == "rag-data-pdf-structural-locator-nonprod-v1"
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["source_atom_registry_mutated"] is False
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["xlsx_v3_12_control_lane_only"] is True
+    assert "L8_GENERATION_OR_DETERMINISTIC_EXECUTION" not in summary["layer_contract"]
+    assert summary["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+
+    assert metrics["diagnostic_only"] is True
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["product_success_evidence_allowed"] is False
+    assert metrics["answer_generation_executed"] is False
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert set(metrics["pdf_file_identity_structural_locator_eval"]) == {
+        "v3_11_pdf_file_identity_reference",
+        "v3_13_pdf_file_identity_confidence_diagnostic",
+        "v3_13_pdf_evidence_window_diagnostic",
+    }
+    identity = metrics["pdf_file_identity_structural_locator_eval"]["v3_13_pdf_file_identity_confidence_diagnostic"]
+    window = metrics["pdf_file_identity_structural_locator_eval"]["v3_13_pdf_evidence_window_diagnostic"]
+    assert identity["query_count"] == 329
+    assert identity["file_resolve@1"]["denominator"] == 329
+    assert identity["wrong_file_forcing_delta_from_v3_11"]["numerator"] == 0
+    assert identity["accepted_wrong_rank1_with_target_in_top3_rerank_candidates"]["numerator"] > 0
+    assert identity["abstain_or_disambiguation_count"] == identity["abstain_count"] + identity["disambiguation_count"]
+    assert window["query_count"] == 329
+    assert window["bbox_correctness_metric_computed"] is False
+    assert window["answer_ready_window_sufficiency_metric_computed"] is True
+    assert window["answer_ready_window_sufficiency_metric_scope"] == "selector_target_hit_same_page_bbox_window_only"
+
+    assert per_family["families_reported_separately"] == [
+        "PDF_FILE_IDENTITY",
+        "PDF_STRUCTURAL_LOCATOR",
+        "PDF_EVIDENCE_WINDOW",
+        "XLSX_CONTROL",
+    ]
+    assert per_family["per_source_family"]["XLSX_CONTROL"]["source_run_id"].endswith(
+        "v3_12_xlsx_structural_locator_nonprod_improvement"
+    )
+    assert per_family["per_source_family"]["XLSX_CONTROL"]["optimized_in_this_phase"] is False
+
+    assert len(per_query) == 329
+    assert len(trace_rows) == len(per_query)
+    assert score_rows
+    assert manifest_summary["index_namespace"] == "rag-data-pdf-structural-locator-nonprod-v1"
+    assert manifest_summary["manifest_only"] is True
+    assert manifest_summary["index_build_executed"] is False
+    assert manifest_summary["sourceatom_registry_rows_scanned"] >= 329
+    assert manifest_summary["protected_namespaces_touched"] == []
+    assert failure["taxonomy_scope"] == "pdf_file_identity_structural_locator_nonprod_alignment"
+    assert holdout["fresh_real_holdout_sufficient"] is False
+    assert holdout["product_success_evidence_allowed"] is False
+    assert leakage_rows and all(row["success_evidence_allowed"] is False for row in leakage_rows)
+
+    assert all(row["source_family"] == "PDF" for row in per_query)
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["answer_generation_executed"] is False for row in per_query)
+    assert all(row["bbox_correctness_metric_computed"] is False for row in per_query)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in per_query)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in score_rows)
+    assert all(row["used_gold_or_expected_text"] is False for row in score_rows)
+    assert all(set(row["layers_recorded"]) >= {"L2_FILE_WORKBOOK_IDENTITY", "L3_STRUCTURAL_LOCATOR"} for row in trace_rows)
+    assert guardrail["protected_namespaces_touched"] == []
+    assert guardrail["source_atom_registry_mutated"] is False
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+
+
 def test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank(tmp_path) -> None:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_pdf_xlsx_answer_quality_review_packet as packet

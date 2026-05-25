@@ -20,6 +20,14 @@ durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
+<!-- official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment:progress-entry:start -->
+- v3_13 PDF file identity structural locator non-prod alignment (`official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment`) adds diagnostic-only PDF L2 file identity confidence diagnostics, abstain/disambiguation vs wrong-file forcing analysis, accepted wrong rank1 with target in top3 rerank candidates, page/block/bbox structural locator candidates, and same-page bounded evidence-window candidates. SourceAtom registry remains canonical truth; SearchView/vector payload remains candidate-only; L8 generation and deterministic answer execution stay closed. XLSX v3_12 remains visible as a no-regression/control lane only. official_metric_input_rows=0; product_success_evidence_allowed=false; protected_namespaces_touched=[]; fresh real PDF source-document-disjoint holdout remains required.
+<!-- official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement:progress-entry:start -->
+- v3_12 XLSX structural locator non-prod improvement (`official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement`) adds a diagnostic-only L3 sidecar after workbook/sheet routing: table-boundary candidates, header/axis alias propagation, structural score components, and zero-signal legacy row-window demotion. It reuses SourceAtom registry hydration for evidence truth, writes only the non-prod namespace `rag-data-xlsx-structural-locator-nonprod-v1`, leaves direct normalized-value query matching disabled, and keeps seen rows as reference/no-regression only. The checkpoint is v3_11, while the compact candidate list is the v3_9_1 XLSX candidate surface because v3_11 stores layer traces rather than full candidate lists. official_metric_input_rows=0; no gold/qrels/labels/expected/supporting/official denominator/prod mutation; fresh workbook-disjoint holdout remains required.
+<!-- official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement:progress-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic:progress-entry:start -->
 - v3_11 layered retrieval diagnostic (`official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic`) adds a sidecar trace contract for L0 query routing through L7 answer-ready context plus L9 metrics/failure taxonomy. It keeps XLSX workbook/sheet/table/range/cell resolution separate from PDF file/page/block/bbox-window diagnostics, hydrates selected evidence through SourceAtom ids, and leaves L8 generation closed. official_metric_input_rows=0; no gold/qrels/labels/expected/supporting/denominator/prod mutation; fresh real holdout remains insufficient, so product success claims stay blocked.
 <!-- official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic:progress-entry:end -->
@@ -34,7 +42,7 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `diagnostic_v3_11_layered_retrieval_ready`;
+Overall status: `diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready`;
 current diagnostic answer-quality loop:
 `official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement`;
 retained prior PDF/XLSX bottleneck status:

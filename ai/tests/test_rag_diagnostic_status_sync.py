@@ -3074,6 +3074,8 @@ def test_progress_measurements_triage_and_status_record_v3_9_1_xlsx_table_axis_p
             or "diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized"
             in current_text
             or "diagnostic_v3_11_layered_retrieval_ready" in current_text
+            or "diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement_ready" in current_text
+            or "diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready" in current_text
         )
     assert run_id in current_text
     assert "keeps PDF and XLSX metrics separate" in current_flat
@@ -3162,6 +3164,9 @@ def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audi
         or "Overall status: `diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized`;"
         in progress
         or "Overall status: `diagnostic_v3_11_layered_retrieval_ready`;" in progress
+        or "Overall status: `diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement_ready`;" in progress
+        or "Overall status: `diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready`;"
+        in progress
     )
     assert "seen-validation-only" in current_flat
     assert "PDF document-disjoint=0, XLSX workbook-disjoint=0" in current_flat
@@ -3243,6 +3248,9 @@ def test_progress_measurements_triage_and_status_record_v3_10_fresh_holdout_xlsx
         "Overall status: `diagnostic_v3_10_fresh_real_holdout_insufficient_xlsx_table_axis_nonprod_materialized`;"
         in progress
         or "Overall status: `diagnostic_v3_11_layered_retrieval_ready`;" in progress
+        or "Overall status: `diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement_ready`;" in progress
+        or "Overall status: `diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready`;"
+        in progress
     )
     assert "seen-validation-only" in current_flat
     assert "Fresh real holdout is still insufficient" in current_flat
@@ -3315,7 +3323,11 @@ def test_progress_measurements_triage_and_status_record_v3_11_layered_retrieval(
         assert event["artifact_sha256"][hash_key] == sha256_file(path)
 
     assert run_id in current_text
-    assert "diagnostic_v3_11_layered_retrieval_ready" in progress
+    assert (
+        "diagnostic_v3_11_layered_retrieval_ready" in progress
+        or "diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement_ready" in progress
+        or "diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready" in progress
+    )
     assert "L0 query routing through L7 answer-ready context plus L9 metrics" in current_flat
     assert "leaves L8 generation closed" in current_flat
     assert run_id in measurements
@@ -3327,3 +3339,160 @@ def test_progress_measurements_triage_and_status_record_v3_11_layered_retrieval(
     assert "XLSX remains blocked mainly at table/range and cell locator layers" in triage
     assert "PDF remains a file-identity-first bottleneck" in triage
     assert "no product performance or promotion claim is made" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_12_xlsx_structural_locator():
+    run_id = "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement"
+    artifact_paths = {
+        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
+        "xlsx_structural_locator_eval_per_query_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_structural_locator_eval_per_query.jsonl",
+        "xlsx_score_components_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_score_components.jsonl",
+        "xlsx_layer_trace_per_query_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_layer_trace_per_query.jsonl",
+        "xlsx_nonprod_sourceatom_manifest_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_sourceatom_manifest.jsonl",
+        "xlsx_nonprod_searchunit_manifest_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_searchunit_manifest.jsonl",
+        "xlsx_nonprod_index_build_summary_json": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_index_build_summary.json",
+        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "guardrail_audit_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_guardrail_audit.json",
+        "holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_holdout_manifest.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_NONPROD_IMPROVEMENT_READY"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["fresh_real_holdout_sufficient"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["answer_generation_executed"] is False
+    assert event["index_namespace"] == "rag-data-xlsx-structural-locator-nonprod-v1"
+    assert event["source_index_namespace"] == "rag-data-xlsx-table-axis-ood-nonprod-v1"
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["raw_answer_value_for_query_scoring_used"] is False
+    assert event["protected_namespaces_touched"] == []
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = (
+            "summary_json_sha256"
+            if path_key == "summary_json"
+            else path_key.replace("_jsonl", "").replace("_json", "") + "_sha256"
+        )
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert (
+        "diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement_ready" in progress
+        or "diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready" in progress
+    )
+    assert "table-boundary candidates, header/axis alias propagation" in current_flat
+    assert "fresh workbook-disjoint holdout remains required" in current_flat
+    assert run_id in measurements
+    assert "| cell_or_value@1 | 20/344 | 21/344 |" in measurements
+    assert "| structural-signal-empty rank1 | n/a | 0/300 |" in measurements
+    assert "| table_or_range@1 gain/loss | n/a | +1/-1 |" in measurements
+    assert "| cell_or_value@1 gain/loss | n/a | +1/-0 |" in measurements
+    assert "Delta is diagnostic only" in measurements
+    assert run_id in triage
+    assert "Merged-header lift is not claimed" in triage
+    assert "no product success or promotion claim is allowed" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_13_pdf_file_identity_structural_locator():
+    run_id = "official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment"
+    artifact_paths = {
+        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
+        "pdf_structural_locator_eval_per_query_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_pdf_structural_locator_eval_per_query.jsonl",
+        "pdf_layer_trace_per_query_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_pdf_layer_trace_per_query.jsonl",
+        "pdf_score_components_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_pdf_score_components.jsonl",
+        "pdf_nonprod_manifest_summary_json": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_pdf_nonprod_manifest_summary.json",
+        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "guardrail_audit_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_guardrail_audit.json",
+        "holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_holdout_manifest.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_NONPROD_ALIGNMENT_READY"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["fresh_real_holdout_sufficient"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["answer_generation_executed"] is False
+    assert event["deterministic_answer_execution_executed"] is False
+    assert event["index_namespace"] == "rag-data-pdf-structural-locator-nonprod-v1"
+    assert event["source_index_namespace"] == "rag-data-all-source-citable-nonprod-v1"
+    assert event["pdf_file_identity_answer_window_kept_separate"] is True
+    assert event["pdf_bbox_correctness_metric_computed"] is False
+    assert event["xlsx_v3_12_control_lane_only"] is True
+    assert event["protected_namespaces_touched"] == []
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = (
+            "summary_json_sha256"
+            if path_key == "summary_json"
+            else path_key.replace("_jsonl", "").replace("_json", "") + "_sha256"
+        )
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert "diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready" in progress
+    assert "PDF L2 file identity confidence diagnostics" in current_flat
+    assert "same-page bounded evidence-window candidates" in current_flat
+    assert "XLSX v3_12 remains visible as a no-regression/control lane only" in current_flat
+    assert run_id in measurements
+    assert "| PDF file identity | file_resolve@1 |" in measurements
+    assert "| PDF evidence window | bbox correctness | not computed |" in measurements
+    assert "| XLSX v3_12 control | optimized in v3_13 | false |" in measurements
+    assert "wrong-file forcing delta" in measurements
+    assert run_id in triage
+    assert "accepted wrong rank1 with target in top3" in triage
+    assert "bbox correctness is not claimed" in triage
+    assert "fresh real PDF source-document-disjoint holdout remains required" in triage

@@ -21,6 +21,25 @@ The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
 
+<!-- official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment:triage-entry:start -->
+## v3_13 PDF File Identity Structural Locator Triage
+
+- PDF remains a file-identity-first bottleneck, but the catch-up surface now separates file confidence from structural evidence windows.
+- The main disclosed risk slice is accepted wrong rank1 with target in top3: 63/329. This is a rerank-candidate diagnostic, not a file-forcing change.
+- bbox correctness is not claimed. v3_13 only reports page/block/bbox availability and same-page bounded evidence-window sufficiency where selector evidence can be measured without expected/supporting/gold text.
+- XLSX v3_12 stays as no-regression control only; no XLSX optimization or metric promotion is part of this phase.
+- fresh real PDF source-document-disjoint holdout remains required before product success evidence or promotion.
+<!-- official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement:triage-entry:start -->
+## v3_12 XLSX Structural Locator Non-Prod Triage
+
+- L3 remains the active XLSX bottleneck after workbook/sheet routing. v3_12 records table-boundary, header-path, row-axis, column-axis, period/number token, merged-header, and zero-signal legacy demotion components per candidate.
+- Seen-reference smoke: table_or_range@1 stays 23/344 net but has +1/-1 row-level churn; cell_or_value@1 moves from 20/344 to 21/344 with +1/-0 churn.
+- Merged-header lift is not claimed: current SourceAtom/v3_10 surfaces expose no merged header propagation rows, so the component is present as an audit field and remains zero.
+- Fresh real workbook-disjoint holdout is still unavailable; no product success or promotion claim is allowed.
+<!-- official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement:triage-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic:triage-entry:start -->
 ## v3_11 Layered Retrieval Diagnostic Triage
 

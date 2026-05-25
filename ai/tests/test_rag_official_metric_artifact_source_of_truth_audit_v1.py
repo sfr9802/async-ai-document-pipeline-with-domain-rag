@@ -244,6 +244,13 @@ AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_RUN_ID = (
 AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic"
 )
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_13_"
+    "pdf_file_identity_structural_locator_nonprod_alignment"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -1475,6 +1482,78 @@ AGENTIC_V3_11_LAYERED_RETRIEVAL_GUARDRAIL_JSON = (
 AGENTIC_V3_11_LAYERED_RETRIEVAL_HOLDOUT_JSON = (
     REPORT_DIR / f"{AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID}_holdout_manifest.json"
 )
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SUMMARY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_summary.json"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_METRICS_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_metrics.json"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_PER_FAMILY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_per_family.json"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_EVAL_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_xlsx_structural_locator_eval_per_query.jsonl"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SCORE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_xlsx_score_components.jsonl"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_TRACE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_xlsx_layer_trace_per_query.jsonl"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SOURCEATOM_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_xlsx_nonprod_sourceatom_manifest.jsonl"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SEARCHUNIT_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_xlsx_nonprod_searchunit_manifest.jsonl"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_INDEX_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_xlsx_nonprod_index_build_summary.json"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_LEAKAGE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_leakage_audit.jsonl"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_FAILURE_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_failure_taxonomy.json"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_GUARDRAIL_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_guardrail_audit.json"
+)
+AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_HOLDOUT_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID}_holdout_manifest.json"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SUMMARY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_summary.json"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_METRICS_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_metrics.json"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_PER_FAMILY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_per_family.json"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_EVAL_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_pdf_structural_locator_eval_per_query.jsonl"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_TRACE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_pdf_layer_trace_per_query.jsonl"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SCORE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_pdf_score_components.jsonl"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_MANIFEST_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_pdf_nonprod_manifest_summary.json"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_LEAKAGE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_leakage_audit.jsonl"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_FAILURE_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_failure_taxonomy.json"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_GUARDRAIL_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_guardrail_audit.json"
+)
+AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_HOLDOUT_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_holdout_manifest.json"
+)
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
@@ -1809,6 +1888,30 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_11_LAYERED_RETRIEVAL_FAILURE_JSON,
     AGENTIC_V3_11_LAYERED_RETRIEVAL_GUARDRAIL_JSON,
     AGENTIC_V3_11_LAYERED_RETRIEVAL_HOLDOUT_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SUMMARY_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_METRICS_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_PER_FAMILY_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_EVAL_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SCORE_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_TRACE_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SOURCEATOM_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SEARCHUNIT_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_INDEX_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_LEAKAGE_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_FAILURE_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_GUARDRAIL_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_HOLDOUT_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SUMMARY_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_METRICS_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_PER_FAMILY_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_EVAL_JSONL,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_TRACE_JSONL,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SCORE_JSONL,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_MANIFEST_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_LEAKAGE_JSONL,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_FAILURE_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_GUARDRAIL_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_HOLDOUT_JSON,
 }
 PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS = CURRENT_REPORT_PATHS
 ARCHIVED_REPORT_PATHS = {
@@ -1969,6 +2072,30 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_11_LAYERED_RETRIEVAL_FAILURE_JSON,
     AGENTIC_V3_11_LAYERED_RETRIEVAL_GUARDRAIL_JSON,
     AGENTIC_V3_11_LAYERED_RETRIEVAL_HOLDOUT_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SUMMARY_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_METRICS_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_PER_FAMILY_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_EVAL_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SCORE_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_TRACE_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SOURCEATOM_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SEARCHUNIT_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_INDEX_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_LEAKAGE_JSONL,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_FAILURE_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_GUARDRAIL_JSON,
+    AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_HOLDOUT_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SUMMARY_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_METRICS_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_PER_FAMILY_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_EVAL_JSONL,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_TRACE_JSONL,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SCORE_JSONL,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_MANIFEST_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_LEAKAGE_JSONL,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_FAILURE_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_GUARDRAIL_JSON,
+    AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_HOLDOUT_JSON,
 }
 ARCHIVED_REPORT_PATHS = (
     ARCHIVED_REPORT_PATHS | (PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS - CURRENT_REPORT_PATHS)
@@ -4004,6 +4131,8 @@ def test_v3_11_layered_retrieval_artifacts_are_registered_hash_locked_and_compac
     assert summary["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
     assert summary["source_atom_registry_canonical_truth"] is True
     assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert "L8_GENERATION_OR_DETERMINISTIC_EXECUTION" not in summary["layer_contract"]
+    assert summary["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
     for flag in (
         "gold_mutation",
         "qrels_mutation",
@@ -4057,6 +4186,317 @@ def test_v3_11_layered_retrieval_artifacts_are_registered_hash_locked_and_compac
     assert AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_QUERY_JSONL.stat().st_size < 1_000_000
     assert AGENTIC_V3_11_LAYERED_RETRIEVAL_TRACE_SAMPLE_JSONL.stat().st_size < 1_000_000
     assert AGENTIC_V3_11_LAYERED_RETRIEVAL_SELECTED_EVIDENCE_JSONL.stat().st_size < 1_000_000
+
+
+def test_v3_12_xlsx_structural_locator_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_9_local_artifacts(
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SUMMARY_JSON,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_METRICS_JSON,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_PER_FAMILY_JSON,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_EVAL_JSONL,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SCORE_JSONL,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_TRACE_JSONL,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SOURCEATOM_JSONL,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SEARCHUNIT_JSONL,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_INDEX_JSON,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_LEAKAGE_JSONL,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_FAILURE_JSON,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_GUARDRAIL_JSON,
+        AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_HOLDOUT_JSON,
+    )
+    summary = read_json(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_METRICS_JSON)
+    per_family = read_json(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_PER_FAMILY_JSON)
+    eval_rows = read_jsonl(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_EVAL_JSONL)
+    score_rows = read_jsonl(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SCORE_JSONL)
+    trace_rows = read_jsonl(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_TRACE_JSONL)
+    sourceatoms = read_jsonl(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SOURCEATOM_JSONL)
+    searchunits = read_jsonl(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SEARCHUNIT_JSONL)
+    index_summary = read_json(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_INDEX_JSON)
+    leakage = read_jsonl(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_LEAKAGE_JSONL)
+    failure = read_json(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_FAILURE_JSON)
+    guardrail = read_json(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_GUARDRAIL_JSON)
+    holdout = read_json(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_HOLDOUT_JSON)
+
+    expected_artifacts = {
+        "metrics_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_METRICS_JSON,
+        "per_family_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_PER_FAMILY_JSON,
+        "xlsx_structural_locator_eval_per_query_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_EVAL_JSONL,
+        "xlsx_score_components_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SCORE_JSONL,
+        "xlsx_layer_trace_per_query_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_TRACE_JSONL,
+        "xlsx_nonprod_sourceatom_manifest_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SOURCEATOM_JSONL,
+        "xlsx_nonprod_searchunit_manifest_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SEARCHUNIT_JSONL,
+        "xlsx_nonprod_index_build_summary_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_INDEX_JSON,
+        "leakage_audit_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_LEAKAGE_JSONL,
+        "failure_taxonomy_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_FAILURE_JSON,
+        "guardrail_audit_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_GUARDRAIL_JSON,
+        "holdout_manifest_sha256": AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_HOLDOUT_JSON,
+    }
+    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+
+    assert summary["run_id"] == AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_NONPROD_IMPROVEMENT_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["answer_generation_executed"] is False
+    assert summary["index_namespace"] == "rag-data-xlsx-structural-locator-nonprod-v1"
+    assert summary["source_index_namespace"] == "rag-data-xlsx-table-axis-ood-nonprod-v1"
+    assert summary["protected_namespaces_touched"] == []
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert "L8_GENERATION_OR_DETERMINISTIC_EXECUTION" not in summary["layer_contract"]
+    assert summary["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+    assert summary["input_lineage"]["v3_11_summary_json"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic_summary.json"
+    )
+    assert summary["input_lineage"]["v3_9_1_per_query_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic_per_query.jsonl"
+    )
+    assert summary["input_lineage"]["v3_10_xlsx_nonprod_sourceatom_manifest_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_sourceatom_manifest.jsonl"
+    )
+    assert summary["input_lineage"]["v3_10_xlsx_nonprod_searchunit_manifest_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_searchunit_manifest.jsonl"
+    )
+    assert summary["input_lineage"]["v3_10_xlsx_nonprod_index_build_summary_json"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_index_build_summary.json"
+    )
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "direct_normalized_value_query_matching_used",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+
+    xlsx_eval = metrics["xlsx_structural_locator_eval"]
+    old_seen = xlsx_eval["old_seen_reference_v3_11"]
+    smoke = xlsx_eval["v3_12_nonprod_structural_locator_smoke"]
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["fresh_real_holdout"]["sufficient"] is False
+    assert metrics["fresh_real_holdout"]["product_success_evidence_allowed"] is False
+    assert old_seen["row_count"] == 344
+    assert old_seen["checkpoint_reference_run_id"] == AGENTIC_V3_11_LAYERED_RETRIEVAL_RUN_ID
+    assert old_seen["candidate_surface_source_run_id"] == AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID
+    assert smoke["row_count"] == 344
+    assert old_seen["cell_or_value@1"]["numerator"] == 20
+    assert smoke["cell_or_value@1"]["numerator"] == 21
+    assert smoke["table_or_range@1"]["numerator"] == 23
+    assert smoke["table_or_range@3"]["numerator"] == 29
+    assert smoke["cell_or_value@3"]["numerator"] == 26
+    assert smoke["rank1_reranked_count"] > 0
+    assert smoke["structural_signal_empty_rank1_rate"]["numerator"] == 0
+    assert smoke["table_or_range@1_gain_count"] == 1
+    assert smoke["table_or_range@1_loss_count"] == 1
+    assert smoke["cell_or_value@1_gain_count"] == 1
+    assert smoke["cell_or_value@1_loss_count"] == 0
+    assert smoke["zero_signal_legacy_rank1_demoted_count"] == 0
+    assert smoke["rank1_reranked_old_query_signal_count_distribution"] == {"1": 8, "2": 3}
+    assert per_family["families_reported_separately"] == ["XLSX"]
+
+    assert len(eval_rows) == 344
+    assert len(trace_rows) == len(eval_rows)
+    assert score_rows
+    assert len(sourceatoms) == len(searchunits) == index_summary["sourceatom_manifest_rows"]
+    assert index_summary["index_namespace"] == "rag-data-xlsx-structural-locator-nonprod-v1"
+    assert index_summary["source_namespace"] == "rag-data-xlsx-table-axis-ood-nonprod-v1"
+    assert index_summary["manifest_only"] is True
+    assert index_summary["db_or_production_namespace_written"] is False
+    assert index_summary["protected_namespaces_touched"] == []
+    assert guardrail["protected_namespaces_touched"] == []
+    assert guardrail["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrail["source_atom_registry_mutated"] is False
+    assert guardrail["official_denominator_mutated"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+    assert holdout["fresh_real_holdout_sufficient"] is False
+    assert holdout["product_success_evidence_allowed"] is False
+    assert leakage and all(row["success_evidence_allowed"] is False for row in leakage)
+    assert failure["taxonomy_scope"] == "xlsx_structural_locator_seen_reference_only"
+    assert all(row["direct_normalized_value_query_matching_used"] is False for row in score_rows)
+    assert all(row["used_gold_or_expected_text"] is False for row in score_rows)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in eval_rows)
+    candidate_rows = [row for row in eval_rows if row["new_candidate_count"] > 0]
+    assert candidate_rows
+    assert all(row["source_atom_hydrated_from_registry"] is True for row in candidate_rows)
+    assert all(row["evidence_bundle_assembled"] is True for row in candidate_rows)
+    assert all(row["canonical_payload_source"] == "source_registry" for row in candidate_rows)
+    assert all(set(row["layers_recorded"]) >= {"L2_FILE_WORKBOOK_IDENTITY", "L3_STRUCTURAL_LOCATOR"} for row in trace_rows)
+    assert all("embedding_text" in row and "bm25_text" in row for row in searchunits)
+
+    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SUMMARY_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_METRICS_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_EVAL_JSONL.stat().st_size < 1_000_000
+    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SCORE_JSONL.stat().st_size < 2_000_000
+    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_TRACE_JSONL.stat().st_size < 1_000_000
+    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SOURCEATOM_JSONL.stat().st_size < 2_000_000
+    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SEARCHUNIT_JSONL.stat().st_size < 2_000_000
+
+
+def test_v3_13_pdf_file_identity_structural_locator_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_9_local_artifacts(
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SUMMARY_JSON,
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_METRICS_JSON,
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_PER_FAMILY_JSON,
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_EVAL_JSONL,
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_TRACE_JSONL,
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SCORE_JSONL,
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_MANIFEST_JSON,
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_LEAKAGE_JSONL,
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_FAILURE_JSON,
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_GUARDRAIL_JSON,
+        AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_HOLDOUT_JSON,
+    )
+    summary = read_json(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_METRICS_JSON)
+    per_family = read_json(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_PER_FAMILY_JSON)
+    eval_rows = read_jsonl(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_EVAL_JSONL)
+    trace_rows = read_jsonl(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_TRACE_JSONL)
+    score_rows = read_jsonl(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SCORE_JSONL)
+    manifest_summary = read_json(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_MANIFEST_JSON)
+    leakage = read_jsonl(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_LEAKAGE_JSONL)
+    failure = read_json(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_FAILURE_JSON)
+    guardrail = read_json(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_GUARDRAIL_JSON)
+    holdout = read_json(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_HOLDOUT_JSON)
+
+    expected_artifacts = {
+        "metrics_sha256": AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_METRICS_JSON,
+        "per_family_sha256": AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_PER_FAMILY_JSON,
+        "pdf_structural_locator_eval_per_query_sha256": AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_EVAL_JSONL,
+        "pdf_layer_trace_per_query_sha256": AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_TRACE_JSONL,
+        "pdf_score_components_sha256": AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SCORE_JSONL,
+        "pdf_nonprod_manifest_summary_sha256": AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_MANIFEST_JSON,
+        "leakage_audit_sha256": AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_LEAKAGE_JSONL,
+        "failure_taxonomy_sha256": AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_FAILURE_JSON,
+        "guardrail_audit_sha256": AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_GUARDRAIL_JSON,
+        "holdout_manifest_sha256": AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_HOLDOUT_JSON,
+    }
+    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+
+    assert summary["run_id"] == AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_NONPROD_ALIGNMENT_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["promotion_evidence"] is False
+    assert summary["answer_generation_executed"] is False
+    assert summary["deterministic_answer_execution_executed"] is False
+    assert summary["index_namespace"] == "rag-data-pdf-structural-locator-nonprod-v1"
+    assert summary["source_index_namespace"] == "rag-data-all-source-citable-nonprod-v1"
+    assert summary["protected_namespaces_touched"] == []
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["source_atom_registry_mutated"] is False
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["pdf_file_identity_answer_window_kept_separate"] is True
+    assert summary["pdf_bbox_correctness_metric_computed"] is False
+    assert summary["xlsx_v3_12_control_lane_only"] is True
+    assert "L8_GENERATION_OR_DETERMINISTIC_EXECUTION" not in summary["layer_contract"]
+    assert summary["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+    assert summary["input_lineage"]["v3_11_metrics_json"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic_metrics.json"
+    )
+    assert summary["input_lineage"]["v3_8_2_pdf_file_resolve_per_query_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_8_2_oracle_free_file_resolve_per_query.jsonl"
+    )
+    assert summary["input_lineage"]["v3_8_1_evidence_selector_per_query_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_8_1_evidence_selector_v1_per_query.jsonl"
+    )
+    assert summary["input_lineage"]["v3_12_xlsx_summary_json"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_summary.json"
+    )
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["product_success_evidence_allowed"] is False
+    pdf_eval = metrics["pdf_file_identity_structural_locator_eval"]
+    identity = pdf_eval["v3_13_pdf_file_identity_confidence_diagnostic"]
+    window = pdf_eval["v3_13_pdf_evidence_window_diagnostic"]
+    assert pdf_eval["v3_11_pdf_file_identity_reference"]["file_resolve@1"]["numerator"] == 66
+    assert identity["file_resolve@1"]["denominator"] == 329
+    assert identity["wrong_file_forcing_delta_from_v3_11"]["numerator"] == 0
+    assert identity["accepted_wrong_rank1_with_target_in_top3_rerank_candidates"]["numerator"] > 0
+    assert window["bbox_correctness_metric_computed"] is False
+    assert window["answer_ready_window_sufficiency_metric_computed"] is True
+    assert window["answer_ready_window_sufficiency_metric_scope"] == "selector_target_hit_same_page_bbox_window_only"
+    assert per_family["families_reported_separately"] == [
+        "PDF_FILE_IDENTITY",
+        "PDF_STRUCTURAL_LOCATOR",
+        "PDF_EVIDENCE_WINDOW",
+        "XLSX_CONTROL",
+    ]
+    assert per_family["per_source_family"]["XLSX_CONTROL"]["optimized_in_this_phase"] is False
+
+    assert len(eval_rows) == 329
+    assert len(trace_rows) == len(eval_rows)
+    assert score_rows
+    assert manifest_summary["manifest_only"] is True
+    assert manifest_summary["index_build_executed"] is False
+    assert manifest_summary["protected_namespaces_touched"] == []
+    assert guardrail["protected_namespaces_touched"] == []
+    assert guardrail["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrail["source_atom_registry_mutated"] is False
+    assert guardrail["official_denominator_mutated"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert holdout["fresh_real_holdout_sufficient"] is False
+    assert holdout["product_success_evidence_allowed"] is False
+    assert leakage and all(row["success_evidence_allowed"] is False for row in leakage)
+    assert failure["taxonomy_scope"] == "pdf_file_identity_structural_locator_nonprod_alignment"
+    assert all(row["source_family"] == "PDF" for row in eval_rows)
+    assert all(row["bbox_correctness_metric_computed"] is False for row in eval_rows)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in score_rows)
+    assert all(row["used_gold_or_expected_text"] is False for row in score_rows)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in eval_rows)
+
+    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SUMMARY_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_METRICS_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_EVAL_JSONL.stat().st_size < 1_000_000
+    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_TRACE_JSONL.stat().st_size < 1_000_000
+    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SCORE_JSONL.stat().st_size < 2_000_000
 
 
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:
