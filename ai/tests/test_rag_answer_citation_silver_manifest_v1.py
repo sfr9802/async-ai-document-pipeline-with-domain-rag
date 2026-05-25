@@ -3504,34 +3504,34 @@ def test_v3_6_9_source_atom_search_view_contract_hydrates_evidence_without_vecto
 def test_v3_6_9_retrieval_context_payload_exposes_search_view_and_source_atom_refs() -> None:
     sys.path.insert(0, str(ROOT / "ai"))
     from app.capabilities.rag.generation import RetrievedChunk
-    from app.capabilities.rag.retrieval_contract import citation_payload
+    from app.capabilities.rag.retrieval_contract import citation_payload, grounding_readiness
 
-    citation = citation_payload(
-        RetrievedChunk(
-            chunk_id="chunk-text",
-            doc_id="source-file-text",
-            section="section",
-            text="text",
-            score=0.9,
-            search_unit_id="su-text",
-            metadata_json={
-                "search_view_id": "view-text",
-                "search_view_kind": "dense_embedding_chunk",
-                "source_atom_id": "atom-text",
-                "source_atom_ids": ["atom-text"],
-                "source_registry_version": "source-registry-v1",
-                "canonical_payload_source": "source_registry",
+    chunk = RetrievedChunk(
+        chunk_id="chunk-text",
+        doc_id="source-file-text",
+        section="section",
+        text="text",
+        score=0.9,
+        search_unit_id="su-text",
+        metadata_json={
+            "search_view_id": "view-text",
+            "search_view_kind": "dense_embedding_chunk",
+            "source_atom_id": "atom-text",
+            "source_atom_ids": ["atom-text"],
+            "source_registry_version": "source-registry-v1",
+            "canonical_payload_source": "source_registry",
+            "source_identity": "TEXT:doc-text:v1:span-1",
+            "locator_fingerprint": "fp-text",
+            "canonical_citation_payload": {
+                "source_family": "TEXT",
                 "source_identity": "TEXT:doc-text:v1:span-1",
                 "locator_fingerprint": "fp-text",
-                "canonical_citation_payload": {
-                    "source_family": "TEXT",
-                    "source_identity": "TEXT:doc-text:v1:span-1",
-                    "locator_fingerprint": "fp-text",
-                    "search_unit_id": "su-text",
-                },
+                "search_unit_id": "su-text",
             },
-        )
+        },
     )
+    citation = citation_payload(chunk)
+    readiness = grounding_readiness(chunk, selected_for_context=True)
 
     assert citation["searchViewId"] == "view-text"
     assert citation["search_view_id"] == "view-text"
@@ -3551,6 +3551,11 @@ def test_v3_6_9_retrieval_context_payload_exposes_search_view_and_source_atom_re
     assert citation["candidateSourceIdentity"] == "TEXT:doc-text:v1:span-1"
     assert citation["candidateLocatorFingerprint"] == "fp-text"
     assert citation["candidateCanonicalCitationPayload"]["search_unit_id"] == "su-text"
+    assert readiness["sourceRegistryHydrationRequired"] is True
+    assert readiness["sourceAtomHydratedFromRegistry"] is False
+    assert readiness["canonicalPayloadSource"] == "source_registry_hydration_required"
+    assert readiness["vectorPayloadUsedAsEvidenceTruth"] is False
+    assert readiness["readyForAnswerContext"] is False
 
 
 def test_rag_query_orchestrator_can_use_injected_retriever_vector_tools() -> None:
@@ -3841,6 +3846,47 @@ def test_rag_query_orchestrator_retriever_path_rejects_off_track_and_policy_mism
     assert all("score_status" not in item for item in state["route_diagnostics"])
 
 
+def test_citation_verifier_rejects_tenant_and_acl_mismatch() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.citation_verify import citation_verify_tool
+    from app.capabilities.rag_orchestrator.evidence import Evidence, QueryPolicy
+
+    policy = QueryPolicy(
+        request_id="req-acl",
+        required_index_version="idx-v1",
+        allowed_source_file_types=["SPREADSHEET"],
+        allowed_parser_versions=["xlsx-extract-v2-hidden-safe"],
+        tenant_id="tenant-a",
+        acl_tags=["team-blue"],
+    )
+    evidence = Evidence(
+        evidence_id="evidence-acl-mismatch",
+        retrieval_backend="vector",
+        rank=1,
+        source_file_id="source-xlsx",
+        source_file_type="SPREADSHEET",
+        index_version="idx-v1",
+        embedding_status="EMBEDDED",
+        parser_version="xlsx-extract-v2-hidden-safe",
+        citation_text="Sheet1 A1:B2",
+        location_json={"sheetName": "Sheet1", "cellRange": "A1:B2"},
+        search_unit_id="su-xlsx",
+        chunk_id="chunk-xlsx",
+        text="bounded text",
+        tenant_id="tenant-b",
+        acl_tags=["team-red"],
+    )
+
+    result = citation_verify_tool([evidence], policy)
+
+    assert result.verified == ()
+    assert result.rejected[0].fatal_reasons == (
+        "tenant_id_mismatch",
+        "acl_tags_not_allowed",
+    )
+
+
 def test_vector_retriever_overfetch_is_restored_when_retrieve_raises() -> None:
     sys.path.insert(0, str(ROOT / "ai"))
 
@@ -3911,6 +3957,35 @@ def test_rag_query_orchestrator_conflicting_policy_metadata_does_not_call_retrie
     assert "policy_source_metadata_conflict" in state["route_decision"]["blocked_flags"]
     assert state["route_diagnostics"][0]["production_vector_written"] is False
     assert state["route_diagnostics"][0]["official_denominator_registry_changed"] is False
+
+
+def test_rag_query_orchestrator_route_tools_does_not_expand_empty_routes_to_all_tools() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.graph import route_tools
+
+    state = route_tools(
+        {
+            "query": "ambiguous",
+            "policy": QueryPolicy(
+                request_id="req-empty-route",
+                required_index_version="idx-v1",
+                allowed_source_file_types=["SPREADSHEET"],
+                allowed_parser_versions=["xlsx-extract-v2-hidden-safe"],
+            ),
+            "route_decision": {
+                "route": "diagnostic_multi_route",
+                "routes": [],
+                "allow_fallback": False,
+                "fallback_routes": [],
+            },
+        }
+    )
+
+    assert state["selected_tools"] == []
+    assert state["trace"][-1]["selected_tools"] == []
+    assert state["trace"][-1]["route_decision"]["routes"] == []
 
 
 def test_registry_wires_query_orchestrator_to_registered_rag_retriever(
@@ -8033,6 +8108,109 @@ def test_v3_17_query_without_locator_ignores_artifact_locator_fields() -> None:
     assert resolution["selected_source_atom_ids"] == []
 
 
+def test_v3_17_locator_parser_keeps_rough_table_text_and_pdf_pages_separate() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_17_user_locator_and_rough_query_answer_quality_nonprod as run
+
+    rough = run.parse_user_locator_text("이 표에서 뭐라고 돼 있어?")
+    pdf_page = run.parse_user_locator_text("1페이지에서 확인되는 내용 알려줘")
+    named_table = run.parse_user_locator_text("table: Sales_Q1 범위 A1:C3 확인해줘")
+
+    assert rough["query_user_provided_locator"] is False
+    assert rough["user_locator_type"] == "none"
+    assert rough["user_locator_text"] == ""
+    assert rough["locator_terms"]["table"] == []
+    assert pdf_page["query_user_provided_locator"] is True
+    assert pdf_page["user_locator_type"] == "page"
+    assert pdf_page["locator_terms"]["page"] == ["1"]
+    assert pdf_page["user_locator_text"] == "1"
+    assert "('" not in pdf_page["user_locator_text"]
+    assert named_table["query_user_provided_locator"] is True
+    assert named_table["user_locator_type"] == "mixed"
+    assert named_table["locator_terms"]["table"] == ["Sales_Q1"]
+
+
+def test_bounded_tool_registry_exposes_versioned_l0_l8_specs_and_route_policy() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from app.capabilities.rag_orchestrator.tool_registry import (
+        EXECUTABLE_ROUTE_LANES,
+        ROUTE_HYBRID,
+        ROUTE_ROUGH_QUERY,
+        ROUTE_UNSUPPORTED,
+        ROUTE_USER_LOCATOR,
+        build_default_tool_registry,
+    )
+
+    expected_layers = (
+        "L0_QUERY_ROUTING",
+        "L1_COARSE_CANDIDATE_GENERATION",
+        "L2_FILE_WORKBOOK_IDENTITY",
+        "L3_STRUCTURAL_LOCATOR",
+        "L4_SOURCEATOM_HYDRATION",
+        "L5_EVIDENCE_BUNDLE_ASSEMBLY",
+        "L6_EVIDENCE_SELECTOR",
+        "L7_ANSWER_READY_CONTEXT",
+        "L8_FINAL_LLM_ANSWER_GENERATION",
+    )
+    registry = build_default_tool_registry()
+
+    assert registry.registry_version == "rag_tool_registry_l0_l8_v1"
+    assert tuple(registry.layer_names()) == expected_layers
+    assert len(registry.tool_specs()) == len(expected_layers)
+    assert all(spec.layer_name in expected_layers for spec in registry.tool_specs())
+    assert not any(spec.layer_name.startswith("L9_") for spec in registry.tool_specs())
+
+    for spec in registry.tool_specs():
+        payload = spec.to_dict()
+        assert payload["toolSpecVersion"] == "rag_tool_spec_v1"
+        assert payload["toolId"].startswith("rag.")
+        assert payload["layerName"] == spec.layer_name
+        assert payload["allowedRouteLanes"] == list(EXECUTABLE_ROUTE_LANES)
+        assert ROUTE_UNSUPPORTED not in payload["allowedRouteLanes"]
+        assert payload["allowedInput"]
+        assert payload["forbiddenInput"]
+        assert payload["inputSchema"]["type"] == "object"
+        assert payload["outputSchema"]["type"] == "object"
+        assert payload["confidencePolicy"]["policy"]
+        assert payload["dropReasons"]
+        assert payload["provenanceRequirements"]
+        assert payload["bounded"] is True
+        assert payload["unboundedFallbackAllowed"] is False
+        assert payload["diagnosticOnly"] is True
+
+    user_locator = registry.route_policy(
+        user_locator_present=True,
+        rough_query_present=False,
+        supported_source_family=True,
+    )
+    rough_query = registry.route_policy(
+        user_locator_present=False,
+        rough_query_present=True,
+        supported_source_family=True,
+    )
+    hybrid = registry.route_policy(
+        user_locator_present=True,
+        rough_query_present=True,
+        supported_source_family=True,
+    )
+    unsupported = registry.route_policy(
+        user_locator_present=False,
+        rough_query_present=False,
+        supported_source_family=False,
+    )
+
+    assert user_locator.route_lane == ROUTE_USER_LOCATOR
+    assert rough_query.route_lane == ROUTE_ROUGH_QUERY
+    assert hybrid.route_lane == ROUTE_HYBRID
+    assert unsupported.route_lane == ROUTE_UNSUPPORTED
+    assert unsupported.selected_tool_ids == ()
+    for decision in (user_locator, rough_query, hybrid, unsupported):
+        assert decision.allow_unbounded_fallback is False
+        assert decision.official_metric_input_rows == 0
+        assert decision.diagnostic_only is True
+        assert decision.provenance_policy == "source_atom_registry_canonical_truth"
+
+
 def test_v3_17_diagnostic_artifacts_cover_user_locator_and_rough_query_buckets() -> None:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_v3_17_user_locator_and_rough_query_answer_quality_nonprod as run
@@ -8076,6 +8254,9 @@ def test_v3_17_diagnostic_artifacts_cover_user_locator_and_rough_query_buckets()
     parse_audit = artifacts["user_locator_parse_audit_rows"]
     resolution_audit = artifacts["user_locator_resolution_audit_rows"]
     rough_audit = artifacts["rough_query_bucket_audit_rows"]
+    tool_registry = artifacts["tool_registry"]
+    route_policy_audit = artifacts["route_policy_audit_rows"]
+    runtime_plan = artifacts["runtime_materialization_plan"]
 
     required_buckets = {
         "xlsx_user_provided_file_sheet_cell",
@@ -8122,6 +8303,20 @@ def test_v3_17_diagnostic_artifacts_cover_user_locator_and_rough_query_buckets()
     assert len(parse_audit) == len(review_rows)
     assert len(resolution_audit) == len(review_rows)
     assert rough_audit
+    assert len(route_policy_audit) == len(review_rows)
+    assert tool_registry["registryVersion"] == "rag_tool_registry_l0_l8_v1"
+    assert tool_registry["routeLanes"] == ["user_locator", "rough_query", "hybrid", "unsupported"]
+    assert tool_registry["executableRouteLanes"] == ["user_locator", "rough_query", "hybrid"]
+    assert [spec["layerName"] for spec in tool_registry["toolSpecs"]] == list(run.RUNTIME_LAYER_NAMES)
+    assert all("unsupported" not in spec["allowedRouteLanes"] for spec in tool_registry["toolSpecs"])
+    assert runtime_plan["all_l0_l8_components_classified_once"] is True
+    assert runtime_plan["tool_registry_version"] == "rag_tool_registry_l0_l8_v1"
+    assert runtime_plan["db_contract"]["adapter_classification"] == "replay_or_mock_live_runtime_like"
+    assert runtime_plan["index_contract"]["adapter_classification"] == "replay_or_mock_live_runtime_like"
+    assert runtime_plan["cache_contract"]["adapter_classification"] == "replay_or_mock_live_runtime_like"
+    assert runtime_plan["bounded_tool_registry"]["unbounded_fallback_allowed"] is False
+    assert {row["route_lane"] for row in route_policy_audit} >= {"user_locator", "rough_query"}
+    assert all(row["allow_unbounded_fallback"] is False for row in route_policy_audit)
     assert all(row["target_locator_used"] is False for row in parse_audit)
     assert all(row["gold_locator_used"] is False for row in parse_audit)
     assert all(row["expected_supporting_text_used"] is False for row in parse_audit)
@@ -8148,15 +8343,28 @@ def test_v3_17_diagnostic_artifacts_cover_user_locator_and_rough_query_buckets()
         assert row["official_metric_candidate"] is False
         assert row["promotion_evidence"] is False
         assert all(row[field] == "" for field in user_owned_fields)
+        assert row["route_lane"] in {"user_locator", "rough_query", "hybrid", "unsupported"}
+        assert row["allow_unbounded_fallback"] is False
         assert "SourceAtom" not in row["final_answer"]
         assert "SearchView" not in row["final_answer"]
         assert "L8_" not in row["final_answer"]
+        assert run.leakage_hits(row) == []
+        if row["query_user_provided_locator"]:
+            assert row["locator_bounds_answerability"] in {
+                "ANSWERABLE_FROM_LOCATOR_BOUNDS",
+                "UNANSWERABLE_FROM_LOCATOR_BOUNDS",
+                "AMBIGUOUS_FROM_LOCATOR_BOUNDS",
+            }
+            assert row["locator_bounds_answerability_reason"]
+        else:
+            assert row["locator_bounds_answerability"] == "NOT_USER_LOCATOR"
 
     unresolved = next(
         row for row in review_rows if row["user_locator_resolution_status"] == "UNRESOLVED"
     )
     assert unresolved["query_user_provided_locator"] is True
     assert unresolved["selected_source_atom_ids"] == ""
+    assert unresolved["locator_bounds_answerability"] == "UNANSWERABLE_FROM_LOCATOR_BOUNDS"
     assert "찾을 수 없습니다" in unresolved["final_answer"] or "확인할 수 없습니다" in unresolved["final_answer"]
     assert "999" not in unresolved["final_answer"]
 
@@ -8169,10 +8377,13 @@ def test_v3_17_diagnostic_artifacts_cover_user_locator_and_rough_query_buckets()
     assert guardrail["gold_locator_used"] is False
     assert guardrail["expected_supporting_text_used"] is False
     assert leakage_rows and all(row["leakage_detected"] is False for row in leakage_rows)
+    assert all(row["leakage_fields"] == [] for row in leakage_rows)
+    assert all(row["leakage_scan_fields"] == list(run.LEAKAGE_SCAN_FIELDS) for row in leakage_rows)
     assert prompt_manifest["requires_korean_answer"] is True
     assert prompt_manifest["uses_user_provided_locator_text_from_query"] is True
     assert prompt_manifest["uses_artifact_target_or_gold_locator_text"] is False
     assert prompt_manifest["uses_expected_or_supporting_gold_text"] is False
+    assert prompt_manifest["route_policy_lanes"] == ["user_locator", "rough_query", "hybrid", "unsupported"]
 
 
 def test_v3_17_runtime_path_has_no_raw_file_parser_or_normalized_value_shortcut() -> None:

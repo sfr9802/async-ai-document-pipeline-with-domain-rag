@@ -27,6 +27,7 @@ archived under
 - Scope: diagnostic-only PDF/XLSX answer-quality review for rough, terse, incomplete user queries and user-provided file/sheet/cell/range/page locator text; XLSX is primary and PDF is control only.
 - This is not official scoring, not promotion evidence, not product success evidence, and not a winner-selection or threshold-tuning run.
 - User-owned review fields remain blank for satisfaction, relevance, answerability, expected-answer decision, and supporting-evidence decision.
+- locator-bounds answerability is machine-stated for user locator rows only and remains a review aid, not a human answerability label or official metric.
 - If query-owned locator text cannot be resolved to bounded SourceAtom ids, the row abstains with a location-not-found answer rather than inventing values.
 - SourceAtom registry is the canonical evidence truth; SearchView/vector payload stays candidate-only.
 <!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:triage-entry:end -->

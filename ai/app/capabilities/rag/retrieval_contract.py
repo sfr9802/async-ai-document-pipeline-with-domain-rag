@@ -208,6 +208,8 @@ def grounding_readiness(
 ) -> dict[str, Any]:
     citation = citation_payload(chunk)
     has_page_range = chunk.page_start is not None and chunk.page_end is not None
+    source_atom_hydrated = bool(citation.get("sourceAtomHydratedFromRegistry"))
+    hydration_required = bool(citation.get("sourceRegistryHydrationRequired"))
     return {
         "hasCitation": citation is not None,
         "hasSearchUnitId": bool(chunk.search_unit_id),
@@ -215,6 +217,22 @@ def grounding_readiness(
         "hasDiagnosticDocId": bool(chunk.doc_id),
         "hasPageRange": has_page_range,
         "hasTextPreview": bool(preview(chunk.text)),
+        "sourceAtomHydratedFromRegistry": source_atom_hydrated,
+        "sourceRegistryHydrationRequired": hydration_required,
+        "canonicalPayloadSource": citation.get("canonicalPayloadSource"),
+        "vectorPayloadUsedAsEvidenceTruth": citation.get("vectorPayloadUsedAsEvidenceTruth"),
+        "readyForAnswerContext": bool(
+            selected_for_context
+            and not hydration_required
+            and (
+                not citation.get("searchViewId")
+                or (
+                    source_atom_hydrated
+                    and citation.get("canonicalPayloadSource") == "source_registry"
+                    and citation.get("vectorPayloadUsedAsEvidenceTruth") is False
+                )
+            )
+        ),
         "selectedForContext": bool(selected_for_context),
     }
 

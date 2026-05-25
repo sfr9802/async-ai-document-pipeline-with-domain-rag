@@ -23,6 +23,8 @@ FATAL_MISSING_LOCATION = "missing_location_json"
 FATAL_INVALID_LOCATION = "invalid_location_json"
 FATAL_SOURCE_TYPE = "source_file_type_mismatch"
 FATAL_PARSER_VERSION = "parser_version_not_allowed"
+FATAL_TENANT = "tenant_id_mismatch"
+FATAL_ACL = "acl_tags_not_allowed"
 FATAL_PDF_PAGE = "pdf_locator_missing_page"
 FATAL_PDF_STABLE_IDENTITY_REQUIRED = "stable_identity_required"
 FATAL_XLSX_SHEET = "xlsx_locator_missing_sheet"
@@ -153,6 +155,10 @@ def _fatal_reasons(evidence: Evidence, policy: QueryPolicy) -> list[str]:
         reasons.append(FATAL_SOURCE_TYPE)
     if evidence.parser_version not in policy.allowed_parser_versions:
         reasons.append(FATAL_PARSER_VERSION)
+    if policy.tenant_id and evidence.tenant_id != policy.tenant_id:
+        reasons.append(FATAL_TENANT)
+    if policy.acl_tags and not (set(policy.acl_tags) & set(evidence.acl_tags)):
+        reasons.append(FATAL_ACL)
     if source_type == SOURCE_FILE_TYPE_PDF and _is_pdf_file_identity_evidence(evidence):
         if not _has_stable_pdf_document_identity(evidence):
             reasons.append(FATAL_PDF_STABLE_IDENTITY_REQUIRED)

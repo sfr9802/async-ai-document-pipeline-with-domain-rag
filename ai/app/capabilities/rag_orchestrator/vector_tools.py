@@ -267,6 +267,10 @@ def retrieved_chunk_to_evidence(
         )
         or _default_location_type(source_file_type),
         location_json=location_json,
+        tenant_id=_optional_string(
+            _metadata_any(metadata, "tenantId", "tenant_id")
+        ),
+        acl_tags=_list_strings(_metadata_any(metadata, "aclTags", "acl_tags")),
         hidden_policy_version=_optional_string(
             _metadata_any(metadata, "hiddenPolicyVersion", "hidden_policy_version")
             or _location_value(location_json, "hidden_policy_version")
@@ -498,6 +502,16 @@ def _string(value: Any, *, fallback: str = "") -> str:
 def _optional_string(value: Any) -> str | None:
     text = _string(value)
     return text or None
+
+
+def _list_strings(value: Any) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        return (value.strip(),) if value.strip() else ()
+    if isinstance(value, Iterable) and not isinstance(value, (bytes, bytearray, Mapping)):
+        return tuple(str(item).strip() for item in value if str(item).strip())
+    return ()
 
 
 def _bool_metadata(metadata: Mapping[str, Any], *keys: str) -> bool:

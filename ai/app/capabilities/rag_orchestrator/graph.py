@@ -1573,8 +1573,6 @@ def route_tools(state: QueryOrchestratorState) -> QueryOrchestratorState:
     selected_tools = [
         ROUTE_TO_TOOL[route] for route in routes if route in ROUTE_TO_TOOL
     ]
-    if not selected_tools:
-        selected_tools = list(ALL_TOOLS)
 
     current["selected_tools"] = selected_tools
     return _with_trace(

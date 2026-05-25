@@ -27,6 +27,11 @@ if str(ROOT / "ai" / "scripts") not in sys.path:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
 
 from app.capabilities.rag.source_registry import assemble_evidence_bundle, render_citation
+from app.capabilities.rag_orchestrator.tool_registry import (
+    ROUTE_LANES,
+    ToolRegistry,
+    build_default_tool_registry,
+)
 
 
 RUN_ID = "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod"
@@ -52,6 +57,22 @@ SAMPLE_LIMITS = {
 }
 MAX_EVIDENCE_BUNDLES = 3
 MAX_RESOLVED_SOURCE_ATOMS = 3
+LEAKAGE_SCAN_FIELDS = (
+    "final_answer",
+    "abstain_reason",
+    "selected_evidence_excerpt",
+    "locator_bounds_answerability_reason",
+    "locator_summary",
+    "rendered_citations",
+)
+LEAKAGE_PATTERNS = {
+    "local_storage_path": re.compile(r"local-storage[\\/]|input_file[\\/]", flags=re.IGNORECASE),
+    "windows_absolute_path": re.compile(r"\b[A-Za-z]:\\"),
+    "posix_runtime_path": re.compile(r"(?<![A-Za-z0-9_])/(?:tmp|var|home|mnt|Users|local-storage)/"),
+    "internal_search_view_name": re.compile(r"\bSearchView\b"),
+    "internal_source_atom_name": re.compile(r"\bSourceAtom\b"),
+    "internal_layer_name": re.compile(r"\bL[0-8]_[A-Z0-9_]+\b"),
+}
 
 OUTPUTS = {
     "summary_json": OUTPUT_DIR / "summary.json",
@@ -67,6 +88,8 @@ OUTPUTS = {
     "user_locator_parse_audit_jsonl": OUTPUT_DIR / "user_locator_parse_audit.jsonl",
     "user_locator_resolution_audit_jsonl": OUTPUT_DIR / "user_locator_resolution_audit.jsonl",
     "rough_query_bucket_audit_jsonl": OUTPUT_DIR / "rough_query_bucket_audit.jsonl",
+    "tool_registry_json": OUTPUT_DIR / "tool_registry.json",
+    "route_policy_audit_jsonl": OUTPUT_DIR / "route_policy_audit.jsonl",
     "runtime_materialization_plan_json": OUTPUT_DIR / "runtime_materialization_plan.json",
     "latency_budget_contract_json": OUTPUT_DIR / "latency_budget_contract.json",
 }
@@ -93,6 +116,11 @@ REVIEW_COLUMNS = (
     "user_locator_type",
     "user_locator_text",
     "user_locator_resolution_status",
+    "route_lane",
+    "route_policy_reason",
+    "allow_unbounded_fallback",
+    "locator_bounds_answerability",
+    "locator_bounds_answerability_reason",
     "selected_source_atom_ids",
     "locator_summary",
     "selected_evidence_excerpt",
@@ -117,6 +145,40 @@ def utc_now() -> str:
 
 def clean(value: Any) -> str:
     return v316.clean(value)
+
+
+def sanitize_internal_references(value: Any) -> str:
+    text = clean(value)
+    if not text:
+        return ""
+    text = re.sub(
+        r"(?i)(?:[A-Za-z]:\\|/)?(?:[^\\/\s]+[\\/])*local-storage[\\/][^\\/\s]+[\\/]input_file[\\/]",
+        "",
+        text,
+    )
+    return re.sub(r"(?i)\binput_file[\\/]", "", text)
+
+
+def sanitize_json_strings(value: Any) -> Any:
+    if isinstance(value, str):
+        return sanitize_internal_references(value)
+    if isinstance(value, Mapping):
+        return {key: sanitize_json_strings(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [sanitize_json_strings(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(sanitize_json_strings(item) for item in value)
+    return value
+
+
+def leakage_hits(row: Mapping[str, Any]) -> list[str]:
+    hits: list[str] = []
+    for field in LEAKAGE_SCAN_FIELDS:
+        text = clean(row.get(field))
+        for name, pattern in LEAKAGE_PATTERNS.items():
+            if pattern.search(text):
+                hits.append(f"{field}:{name}")
+    return hits
 
 
 def as_mapping(value: Any) -> Mapping[str, Any]:
@@ -240,17 +302,23 @@ def parse_user_locator_text(
     sheet_before = re.findall(r"([A-Za-z0-9가-힣_ \-]{1,40})\s*(?:시트|sheet)", query_text, flags=re.IGNORECASE)
     sheet_terms.extend(sheet_after)
     sheet_terms.extend(sheet_before)
-    page_sheets = unique_preserve(re.findall(r"\b[0-9]{1,4}\s*p\b|[0-9]{1,4}\s*페이지", query_text, flags=re.IGNORECASE))
-    sheet_terms.extend(page_sheets)
     sheets = unique_preserve(sheet_terms)
     table_terms = unique_preserve(
-        re.findall(r"(?:표|테이블|table)\s*[:=]?\s*([A-Za-z0-9가-힣_ \-]{1,40})", query_text, flags=re.IGNORECASE)
+        re.findall(
+            r"(?:표|테이블|table)\s*[:=]\s*([A-Za-z0-9가-힣_ \-]{1,40}?)(?=\s*(?:셀|cell|범위|range|값|의|에서|$))",
+            query_text,
+            flags=re.IGNORECASE,
+        )
     )
     section_terms = unique_preserve(
         re.findall(r"(?:절|섹션|section)\s*[:=]?\s*([A-Za-z0-9가-힣_ \-]{1,50})", query_text, flags=re.IGNORECASE)
     )
-    page_terms = unique_preserve(re.findall(r"(?:page|p\.?|쪽|페이지)\s*([0-9]{1,4})|([0-9]{1,4})\s*(?:쪽|페이지)", query_text, flags=re.IGNORECASE))
-    flat_pages = unique_preserve([item for pair in page_terms for item in (pair if isinstance(pair, tuple) else (pair,))])
+    page_matches = re.findall(
+        r"(?:page|p\.?|쪽|페이지)\s*([0-9]{1,4})|([0-9]{1,4})\s*(?:쪽|페이지)",
+        query_text,
+        flags=re.IGNORECASE,
+    )
+    flat_pages = unique_preserve([item for pair in page_matches for item in pair if item])
 
     locator_types: list[str] = []
     if files:
@@ -415,6 +483,54 @@ def resolve_user_locator_to_source_atoms(
             f"{source_atom_id}:{notes}:score={score}" for score, source_atom_id, notes in selected_source[:top_k]
         ),
         "vector_payload_used_as_evidence_truth": False,
+    }
+
+
+def route_policy_for_case(
+    *,
+    parsed_locator: Mapping[str, Any],
+    bucket: str,
+    source_family: str,
+    registry: ToolRegistry,
+) -> dict[str, Any]:
+    route_decision = registry.route_policy(
+        user_locator_present=bool(parsed_locator.get("query_user_provided_locator")),
+        rough_query_present="rough_query" in clean(bucket),
+        supported_source_family=clean(source_family).upper() in {"PDF", "XLSX"},
+    )
+    return route_decision.to_dict()
+
+
+def locator_bounds_answerability(
+    *,
+    parsed_locator: Mapping[str, Any],
+    resolution: Mapping[str, Any],
+    evidence: Mapping[str, Any],
+) -> dict[str, str]:
+    if not parsed_locator.get("query_user_provided_locator"):
+        return {
+            "locator_bounds_answerability": "NOT_USER_LOCATOR",
+            "locator_bounds_answerability_reason": "query has no query-owned locator bounds",
+        }
+    status = clean(resolution.get("user_locator_resolution_status"))
+    if status == "UNRESOLVED":
+        return {
+            "locator_bounds_answerability": "UNANSWERABLE_FROM_LOCATOR_BOUNDS",
+            "locator_bounds_answerability_reason": "query-owned locator could not be resolved to bounded evidence ids",
+        }
+    if status == "AMBIGUOUS_MULTIPLE_SOURCEATOMS":
+        return {
+            "locator_bounds_answerability": "AMBIGUOUS_FROM_LOCATOR_BOUNDS",
+            "locator_bounds_answerability_reason": "query-owned locator resolves to multiple tied bounded evidence candidates",
+        }
+    if status == "RESOLVED" and clean(evidence.get("selected_evidence_excerpt")):
+        return {
+            "locator_bounds_answerability": "ANSWERABLE_FROM_LOCATOR_BOUNDS",
+            "locator_bounds_answerability_reason": "bounded registry evidence is available for the query-owned locator",
+        }
+    return {
+        "locator_bounds_answerability": "UNANSWERABLE_FROM_LOCATOR_BOUNDS",
+        "locator_bounds_answerability_reason": "resolved locator did not produce answer-ready bounded evidence",
     }
 
 
@@ -665,7 +781,9 @@ def evidence_for_source_atom_ids(
         citation_text = citation_to_text(index, rendered)
         citation_texts.append(citation_text)
         locator_summaries.append(citation_text)
-        matched = clean(bundle.get("matched_text_or_value") or atom.get("normalized_text_or_value_snapshot"))
+        matched = sanitize_internal_references(
+            bundle.get("matched_text_or_value") or atom.get("normalized_text_or_value_snapshot")
+        )
         if matched:
             evidence_blocks.append(f"[S{index}] {matched[:max_evidence_chars]}")
     return {
@@ -800,19 +918,29 @@ def generate_rows(
     cases: Sequence[Mapping[str, Any]],
     *,
     source_registry: Mapping[str, Mapping[str, Any]],
+    tool_registry: ToolRegistry,
     model: str,
     base_url: str,
     max_tokens: int,
     timeout_seconds: int,
     llm_client: Callable[[str, str], str] | None,
     max_evidence_chars: int,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+) -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+]:
     per_query_rows: list[dict[str, Any]] = []
     response_rows: list[dict[str, Any]] = []
     review_rows: list[dict[str, Any]] = []
     parse_audit_rows: list[dict[str, Any]] = []
     resolution_audit_rows: list[dict[str, Any]] = []
     rough_audit_rows: list[dict[str, Any]] = []
+    route_policy_audit_rows: list[dict[str, Any]] = []
 
     for case in cases:
         query = clean(case.get("query"))
@@ -833,6 +961,17 @@ def generate_rows(
             selected_ids,
             source_registry=source_registry,
             max_evidence_chars=max_evidence_chars,
+        )
+        route_policy = route_policy_for_case(
+            parsed_locator=parsed,
+            bucket=bucket,
+            source_family=family,
+            registry=tool_registry,
+        )
+        locator_answerability = locator_bounds_answerability(
+            parsed_locator=parsed,
+            resolution=resolution,
+            evidence=evidence,
         )
         resolution_status = clean(resolution["user_locator_resolution_status"])
         should_abstain_without_llm = (
@@ -877,6 +1016,9 @@ def generate_rows(
             final_answer, citations, abstain_reason, parse_ok, malformed_response, parse_error_reason = parse_answer(
                 raw_response
             )
+            final_answer = sanitize_internal_references(final_answer)
+            abstain_reason = sanitize_internal_references(abstain_reason)
+            citations = sanitize_json_strings(citations)
             prompt_sha = sha256_text(system_prompt + "\n" + user_prompt)
             llm_executed = True
         flags = build_row_flags(
@@ -938,6 +1080,8 @@ def generate_rows(
             "l8_generation_latency_ms": elapsed_ms,
             "retrieval_latency_includes_l8_generation": False,
             "latency_scope": "l0_l7_retrieval_from_upstream_trace_or_user_locator_resolution_l8_generation_separate",
+            **route_policy,
+            **locator_answerability,
         }
         per_query = {
             "schema_version": f"{RUN_ID}_per_query_v1",
@@ -974,6 +1118,11 @@ def generate_rows(
             "user_locator_type": clean(parsed["user_locator_type"]),
             "user_locator_text": clean(parsed["user_locator_text"]),
             "user_locator_resolution_status": resolution_status,
+            "route_lane": route_policy["route_lane"],
+            "route_policy_reason": route_policy["route_policy_reason"],
+            "allow_unbounded_fallback": route_policy["allow_unbounded_fallback"],
+            "locator_bounds_answerability": locator_answerability["locator_bounds_answerability"],
+            "locator_bounds_answerability_reason": locator_answerability["locator_bounds_answerability_reason"],
             "selected_source_atom_ids": "|".join(selected_output_ids),
             "locator_summary": evidence["locator_summary"],
             "selected_evidence_excerpt": evidence["selected_evidence_excerpt"],
@@ -1012,12 +1161,29 @@ def generate_rows(
                     "official_metric_input_rows": 0,
                 }
             )
+        route_policy_audit_rows.append(
+            {
+                "schema_version": f"{RUN_ID}_route_policy_audit_v1",
+                **common,
+                "bounded_tool_registry_version": tool_registry.registry_version,
+                "selected_tool_count": len(route_policy["selected_tool_ids"]),
+                "selected_tool_ids": route_policy["selected_tool_ids"],
+            }
+        )
         per_query_rows.append(per_query)
         response_rows.append(response)
         review_rows.append(review)
         parse_audit_rows.append(parse_audit)
         resolution_audit_rows.append(resolution_audit)
-    return per_query_rows, response_rows, review_rows, parse_audit_rows, resolution_audit_rows, rough_audit_rows
+    return (
+        per_query_rows,
+        response_rows,
+        review_rows,
+        parse_audit_rows,
+        resolution_audit_rows,
+        rough_audit_rows,
+        route_policy_audit_rows,
+    )
 
 
 def guardrail_flags(*, l8_generation_executed: bool, fail_closed: bool = False) -> dict[str, Any]:
@@ -1035,12 +1201,46 @@ def review_packet_user_fields_blank(review_rows: Sequence[Mapping[str, Any]]) ->
     return all(row.get(field, "") == "" for row in review_rows for field in USER_REVIEW_FIELDS)
 
 
+def query_duplicate_metrics(review_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    hashes = [sha256_text(clean(row.get("query"))) for row in review_rows]
+    hash_counts = Counter(hashes)
+    bucket_hashes: dict[str, set[str]] = defaultdict(set)
+    bucket_locator_status_l8: Counter[tuple[str, str, bool]] = Counter()
+    for row, query_hash in zip(review_rows, hashes):
+        bucket = clean(row.get("bucket"))
+        bucket_hashes[bucket].add(query_hash)
+        flags = row_diagnostic_flags(row)
+        bucket_locator_status_l8[
+            (
+                bucket,
+                clean(row.get("user_locator_resolution_status")),
+                bool(flags.get("llm_executed")),
+            )
+        ] += 1
+    return {
+        "unique_query_hash_count": len(hash_counts),
+        "duplicate_query_hash_groups": [
+            {"query_text_sha256": query_hash, "row_count": count}
+            for query_hash, count in sorted(hash_counts.items())
+            if count > 1
+        ],
+        "per_bucket_unique_query_count": {
+            bucket: len(values) for bucket, values in sorted(bucket_hashes.items())
+        },
+        "per_bucket_locator_status_l8_generation": {
+            f"{bucket}|{status or 'NONE'}|L8_generation_executed={str(l8).lower()}": count
+            for (bucket, status, l8), count in sorted(bucket_locator_status_l8.items())
+        },
+    }
+
+
 def build_metrics(review_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     bucket_counts = Counter(clean(row.get("bucket")) for row in review_rows)
     family_counts = Counter(clean(row.get("source_family")) for row in review_rows)
     parse_ok_count = sum(bool(row_diagnostic_flags(row).get("parse_ok")) for row in review_rows)
     locator_rows = [row for row in review_rows if bool(row.get("query_user_provided_locator"))]
     rough_rows = [row for row in review_rows if "rough_query" in clean(row.get("bucket"))]
+    duplicate_metrics = query_duplicate_metrics(review_rows)
     return {
         "schema_version": f"{RUN_ID}_metrics_v1",
         "run_id": RUN_ID,
@@ -1069,6 +1269,7 @@ def build_metrics(review_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "review_packet_user_fields_blank": review_packet_user_fields_blank(review_rows),
         "family_counts": dict(sorted(family_counts.items())),
         "bucket_counts": dict(sorted(bucket_counts.items())),
+        **duplicate_metrics,
         "pdf_xlsx_collapsed_headline_score_reported": False,
         "headline_score": None,
         **guardrail_flags(l8_generation_executed=any(bool(row_diagnostic_flags(row).get("llm_executed")) for row in review_rows)),
@@ -1092,6 +1293,8 @@ def build_per_family(review_rows: Sequence[Mapping[str, Any]], sample_reasons: M
                 "user_locator_query_count": sum(bool(row.get("query_user_provided_locator")) for row in rows),
                 "rough_query_count": sum("rough_query" in clean(row.get("bucket")) for row in rows),
                 "abstain_count": sum(bool(row_diagnostic_flags(row).get("abstain_quality_flag")) for row in rows),
+                "unique_query_hash_count": query_duplicate_metrics(rows)["unique_query_hash_count"],
+                "per_bucket_unique_query_count": query_duplicate_metrics(rows)["per_bucket_unique_query_count"],
             }
             for family, rows in sorted(by_family.items())
         },
@@ -1127,6 +1330,7 @@ def build_leakage_audit(review_rows: Sequence[Mapping[str, Any]]) -> list[dict[s
     rows: list[dict[str, Any]] = []
     for row in review_rows:
         flags = row_diagnostic_flags(row)
+        hits = leakage_hits(row)
         rows.append(
             {
                 "schema_version": f"{RUN_ID}_leakage_audit_v1",
@@ -1142,7 +1346,9 @@ def build_leakage_audit(review_rows: Sequence[Mapping[str, Any]]) -> list[dict[s
                 "vector_payload_used_as_evidence_truth": False,
                 "direct_normalized_value_query_matching_used": False,
                 "unsupported_claim_risk": bool(flags.get("unsupported_claim_risk")),
-                "leakage_detected": False,
+                "leakage_detected": bool(hits),
+                "leakage_fields": hits,
+                "leakage_scan_fields": list(LEAKAGE_SCAN_FIELDS),
                 "official_metric_input_rows": 0,
             }
         )
@@ -1166,19 +1372,55 @@ def build_prompt_manifest(*, model: str, base_url: str, backend: str) -> dict[st
         "uses_artifact_target_or_gold_locator_text": False,
         "uses_expected_or_supporting_gold_text": False,
         "exposes_internal_layer_names": False,
+        "route_policy_lanes": list(ROUTE_LANES),
         "official_metric_input_rows": 0,
         "promotion_evidence": False,
     }
 
 
 def build_runtime_materialization_plan() -> dict[str, Any]:
+    registry = build_default_tool_registry()
     return {
         "schema_version": f"{RUN_ID}_runtime_materialization_plan_v1",
         "run_id": RUN_ID,
         "generated_at": utc_now(),
         "reused_or_linked_from_run_id": v316.RUN_ID,
         "materialization_contract_unchanged_from_v3_16": True,
+        "all_l0_l8_components_classified_once": set(LAYER_MATERIALIZATION_CLASSIFICATION) == set(RUNTIME_LAYER_NAMES),
         "per_layer_classification": dict(LAYER_MATERIALIZATION_CLASSIFICATION),
+        "tool_registry_version": registry.registry_version,
+        "bounded_tool_registry": {
+            "registered_layer_names": list(registry.layer_names()),
+            "route_lanes": list(ROUTE_LANES),
+            "unbounded_fallback_allowed": False,
+            "official_metric_input_rows": 0,
+            "diagnostic_only": True,
+        },
+        "db_contract": {
+            "adapter_classification": "replay_or_mock_live_runtime_like",
+            "production_write_allowed": False,
+            "required_policy_fields": [
+                "request_id",
+                "required_index_version",
+                "allowed_source_file_types",
+                "allowed_parser_versions",
+                "tenant_id",
+                "acl_tags",
+            ],
+            "current_enforcement_status": "diagnostic_post_filter_or_replay_until_preranking_scope_enforcement_exists",
+        },
+        "index_contract": {
+            "adapter_classification": "replay_or_mock_live_runtime_like",
+            "retrieval_scope_required_before_ranking": True,
+            "current_vector_adapter_production_filter_enforcement": False,
+            "protected_namespaces_touched": [],
+        },
+        "cache_contract": {
+            "adapter_classification": "replay_or_mock_live_runtime_like",
+            "cache_material_is_source_truth": False,
+            "source_atom_registry_remains_canonical_truth": True,
+            "policy_snapshot_required_in_cache_key": True,
+        },
         "raw_pdf_xlsx_query_time_accessed": False,
         "raw_pdf_xlsx_query_time_parsing_forbidden": True,
         "broad_source_atom_registry_scan_query_time_forbidden": True,
@@ -1246,11 +1488,18 @@ def build_summary(
         "user_locator_unresolved_count": metrics["user_locator_unresolved_count"],
         "rough_query_count": metrics["rough_query_count"],
         "rough_query_abstain_count": metrics["rough_query_abstain_count"],
+        "unique_query_hash_count": metrics["unique_query_hash_count"],
+        "duplicate_query_hash_groups": metrics["duplicate_query_hash_groups"],
+        "per_bucket_unique_query_count": metrics["per_bucket_unique_query_count"],
+        "per_bucket_locator_status_l8_generation": metrics["per_bucket_locator_status_l8_generation"],
         "hallucination_risk_flag_count": metrics["hallucination_risk_flag_count"],
         "unsupported_claim_risk_count": metrics["unsupported_claim_risk_count"],
         "xlsx_value_formatting_risk_count": metrics["xlsx_value_formatting_risk_count"],
         "over_abstain_review_candidate_count": metrics["over_abstain_review_candidate_count"],
         "families_reported_separately": per_family["families_reported_separately"],
+        "route_policy_lanes": list(ROUTE_LANES),
+        "tool_registry_version": build_default_tool_registry().registry_version,
+        "runtime_materialization": dict(LAYER_MATERIALIZATION_CLASSIFICATION),
         "review_packet_user_fields_blank": bool(metrics["review_packet_user_fields_blank"]),
         "input_lineage": dict(input_lineage),
         "artifact_paths": {key: repo_relative(path) for key, path in OUTPUTS.items()},
@@ -1289,6 +1538,10 @@ def fail_closed_artifacts(
         "user_locator_unresolved_count": 0,
         "rough_query_count": 0,
         "rough_query_abstain_count": 0,
+        "unique_query_hash_count": 0,
+        "duplicate_query_hash_groups": [],
+        "per_bucket_unique_query_count": {},
+        "per_bucket_locator_status_l8_generation": {},
         "hallucination_risk_flag_count": 0,
         "unsupported_claim_risk_count": 0,
         "xlsx_value_formatting_risk_count": 0,
@@ -1338,6 +1591,8 @@ def fail_closed_artifacts(
         "user_locator_parse_audit_rows": [],
         "user_locator_resolution_audit_rows": [],
         "rough_query_bucket_audit_rows": [],
+        "tool_registry": build_default_tool_registry().to_dict(),
+        "route_policy_audit_rows": [],
         "runtime_materialization_plan": build_runtime_materialization_plan(),
         "latency_budget_contract": build_latency_budget_contract([]),
         "input_lineage": input_lineage,
@@ -1378,9 +1633,19 @@ def build_artifacts(
 
     cases, sample_reasons = build_diagnostic_cases()
     source_registry = load_source_registry_for_cases(cases)
-    per_query_rows, response_rows, review_rows, parse_rows, resolution_rows, rough_rows = generate_rows(
+    tool_registry = build_default_tool_registry()
+    (
+        per_query_rows,
+        response_rows,
+        review_rows,
+        parse_rows,
+        resolution_rows,
+        rough_rows,
+        route_policy_rows,
+    ) = generate_rows(
         cases,
         source_registry=source_registry,
+        tool_registry=tool_registry,
         model=model,
         base_url=resolved_base_url,
         max_tokens=max_tokens,
@@ -1422,6 +1687,8 @@ def build_artifacts(
         "user_locator_parse_audit_rows": parse_rows,
         "user_locator_resolution_audit_rows": resolution_rows,
         "rough_query_bucket_audit_rows": rough_rows,
+        "tool_registry": tool_registry.to_dict(),
+        "route_policy_audit_rows": route_policy_rows,
         "runtime_materialization_plan": runtime_plan,
         "latency_budget_contract": latency_contract,
         "input_lineage": input_lineage,
@@ -1449,7 +1716,8 @@ def update_docs(summary: Mapping[str, Any], metrics: Mapping[str, Any]) -> None:
         "The user-provided locator text is query-owned only: target_locator_used=false, gold_locator_used=false, "
         "expected_supporting_text_used=false, official_metric=false, official_metric_input_rows=0, "
         "promotion_evidence=false, raw_file_query_time_accessed=false. SourceAtom registry remains canonical truth, "
-        "and SearchView/vector payload remains candidate-only."
+        "SearchView/vector payload remains candidate-only, and the bounded ToolRegistry declares the diagnostic L0-L8 "
+        "tool specs plus user_locator, rough_query, hybrid, and unsupported route lanes with unbounded fallback disabled."
     )
     measurements_entry = f"""### v3_17 User-Locator And Rough-Query Review Packet
 
@@ -1471,13 +1739,14 @@ def update_docs(summary: Mapping[str, Any], metrics: Mapping[str, Any]) -> None:
 | user_locator_unresolved_count | {metrics["user_locator_unresolved_count"]} |
 | rough_query_count | {metrics["rough_query_count"]} |
 | rough_query_abstain_count | {metrics["rough_query_abstain_count"]} |
+| unique_query_hash_count | {metrics["unique_query_hash_count"]} |
 | hallucination_risk_flag_count | {metrics["hallucination_risk_flag_count"]} |
 | unsupported_claim_risk_count | {metrics["unsupported_claim_risk_count"]} |
 | xlsx_value_formatting_risk_count | {metrics["xlsx_value_formatting_risk_count"]} |
 | over_abstain_review_candidate_count | {metrics["over_abstain_review_candidate_count"]} |
 | official_metric_input_rows | 0 |
 
-Artifacts: `{summary["review_packet_dir"]}/summary.json`, `metrics.json`, `per_family.json`, `per_query.jsonl`, `responses.jsonl`, `review_packet.csv`, `review_packet.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `prompt_manifest.json`, `user_locator_parse_audit.jsonl`, `user_locator_resolution_audit.jsonl`, `rough_query_bucket_audit.jsonl`, `runtime_materialization_plan.json`, and `latency_budget_contract.json`.
+Artifacts: `{summary["review_packet_dir"]}/summary.json`, `metrics.json`, `per_family.json`, `per_query.jsonl`, `responses.jsonl`, `review_packet.csv`, `review_packet.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `prompt_manifest.json`, `user_locator_parse_audit.jsonl`, `user_locator_resolution_audit.jsonl`, `rough_query_bucket_audit.jsonl`, `tool_registry.json`, `route_policy_audit.jsonl`, `runtime_materialization_plan.json`, and `latency_budget_contract.json`.
 """
     triage_entry = (
         "### v3_17 User-Locator And Rough-Query Review Triage\n\n"
@@ -1485,6 +1754,7 @@ Artifacts: `{summary["review_packet_dir"]}/summary.json`, `metrics.json`, `per_f
         "- Scope: diagnostic-only PDF/XLSX answer-quality review for rough, terse, incomplete user queries and user-provided file/sheet/cell/range/page locator text; XLSX is primary and PDF is control only.\n"
         "- This is not official scoring, not promotion evidence, not product success evidence, and not a winner-selection or threshold-tuning run.\n"
         "- User-owned review fields remain blank for satisfaction, relevance, answerability, expected-answer decision, and supporting-evidence decision.\n"
+        "- locator-bounds answerability is machine-stated for user locator rows only and remains a review aid, not a human answerability label or official metric.\n"
         "- If query-owned locator text cannot be resolved to bounded SourceAtom ids, the row abstains with a location-not-found answer rather than inventing values.\n"
         "- SourceAtom registry is the canonical evidence truth; SearchView/vector payload stays candidate-only.\n"
     )
@@ -1535,6 +1805,13 @@ def append_status_event(summary: Mapping[str, Any]) -> None:
         "user_locator_unresolved_count": summary["user_locator_unresolved_count"],
         "rough_query_count": summary["rough_query_count"],
         "rough_query_abstain_count": summary["rough_query_abstain_count"],
+        "unique_query_hash_count": summary.get("unique_query_hash_count", 0),
+        "duplicate_query_hash_groups": summary.get("duplicate_query_hash_groups", []),
+        "per_bucket_unique_query_count": summary.get("per_bucket_unique_query_count", {}),
+        "per_bucket_locator_status_l8_generation": summary.get("per_bucket_locator_status_l8_generation", {}),
+        "route_policy_lanes": summary.get("route_policy_lanes", list(ROUTE_LANES)),
+        "tool_registry_version": summary.get("tool_registry_version", build_default_tool_registry().registry_version),
+        "runtime_materialization": summary.get("runtime_materialization", dict(LAYER_MATERIALIZATION_CLASSIFICATION)),
         "future_scored_adapter_status": "DISABLED_PENDING_USER_APPROVAL",
         "artifact_paths": summary["artifact_paths"],
         "artifact_sha256": {**summary["artifact_sha256"], "summary_json_sha256": sha256_file(OUTPUTS["summary_json"])},
@@ -1560,6 +1837,8 @@ def write_artifacts(artifacts: Mapping[str, Any]) -> dict[str, Any]:
     write_jsonl(OUTPUTS["user_locator_parse_audit_jsonl"], artifacts["user_locator_parse_audit_rows"])
     write_jsonl(OUTPUTS["user_locator_resolution_audit_jsonl"], artifacts["user_locator_resolution_audit_rows"])
     write_jsonl(OUTPUTS["rough_query_bucket_audit_jsonl"], artifacts["rough_query_bucket_audit_rows"])
+    write_json(OUTPUTS["tool_registry_json"], artifacts["tool_registry"])
+    write_jsonl(OUTPUTS["route_policy_audit_jsonl"], artifacts["route_policy_audit_rows"])
     write_json(OUTPUTS["runtime_materialization_plan_json"], artifacts["runtime_materialization_plan"])
     write_json(OUTPUTS["latency_budget_contract_json"], artifacts["latency_budget_contract"])
     artifact_sha = artifact_sha256_without_summary()

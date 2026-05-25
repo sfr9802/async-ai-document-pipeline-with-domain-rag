@@ -3805,6 +3805,8 @@ def test_progress_measurements_triage_and_status_record_v3_17_user_locator_rough
         "user_locator_parse_audit_jsonl": output_dir / "user_locator_parse_audit.jsonl",
         "user_locator_resolution_audit_jsonl": output_dir / "user_locator_resolution_audit.jsonl",
         "rough_query_bucket_audit_jsonl": output_dir / "rough_query_bucket_audit.jsonl",
+        "tool_registry_json": output_dir / "tool_registry.json",
+        "route_policy_audit_jsonl": output_dir / "route_policy_audit.jsonl",
         "runtime_materialization_plan_json": output_dir / "runtime_materialization_plan.json",
         "latency_budget_contract_json": output_dir / "latency_budget_contract.json",
     }
@@ -3845,6 +3847,11 @@ def test_progress_measurements_triage_and_status_record_v3_17_user_locator_rough
     assert event["user_locator_unresolved_count"] > 0
     assert event["rough_query_count"] > 0
     assert event["rough_query_abstain_count"] > 0
+    assert event["unique_query_hash_count"] > 0
+    assert event["duplicate_query_hash_groups"]
+    assert event["route_policy_lanes"] == ["user_locator", "rough_query", "hybrid", "unsupported"]
+    assert event["tool_registry_version"] == "rag_tool_registry_l0_l8_v1"
+    assert event["runtime_materialization"]["L8_FINAL_LLM_ANSWER_GENERATION"] == "query_time_cacheable"
     assert "prompt_template" not in event
     assert "responses" not in event
     assert "per_query_rows" not in event
@@ -3861,14 +3868,19 @@ def test_progress_measurements_triage_and_status_record_v3_17_user_locator_rough
     assert "expected_supporting_text_used=false" in current_flat
     assert "SourceAtom registry remains canonical truth" in current_flat
     assert "SearchView/vector payload remains candidate-only" in current_flat
+    assert "bounded ToolRegistry" in current_flat
     assert run_id in measurements
     assert "| user_locator_query_count |" in measurements
     assert "| user_locator_resolved_count |" in measurements
     assert "| user_locator_unresolved_count |" in measurements
     assert "| rough_query_count |" in measurements
     assert "| rough_query_abstain_count |" in measurements
+    assert "| unique_query_hash_count |" in measurements
     assert "| official_metric_input_rows | 0 |" in measurements
+    assert "tool_registry.json" in measurements
+    assert "route_policy_audit.jsonl" in measurements
     assert run_id in triage
     assert "rough, terse, incomplete user queries" in triage
+    assert "locator-bounds answerability" in triage
     assert "User-owned review fields remain blank" in triage
     assert "not official scoring" in triage

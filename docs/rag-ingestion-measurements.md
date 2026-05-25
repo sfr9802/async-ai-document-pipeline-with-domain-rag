@@ -33,20 +33,21 @@ runtime archive under
 | review_packet_row_count | 39 |
 | parse_ok_count | 39 |
 | invalid_json_count | 0 |
-| citation_rendered_count | 23 |
-| abstain_count | 19 |
-| user_locator_query_count | 26 |
-| user_locator_resolved_count | 16 |
-| user_locator_unresolved_count | 10 |
+| citation_rendered_count | 32 |
+| abstain_count | 10 |
+| user_locator_query_count | 21 |
+| user_locator_resolved_count | 20 |
+| user_locator_unresolved_count | 1 |
 | rough_query_count | 18 |
-| rough_query_abstain_count | 11 |
+| rough_query_abstain_count | 6 |
+| unique_query_hash_count | 21 |
 | hallucination_risk_flag_count | 0 |
 | unsupported_claim_risk_count | 0 |
-| xlsx_value_formatting_risk_count | 15 |
+| xlsx_value_formatting_risk_count | 17 |
 | over_abstain_review_candidate_count | 3 |
 | official_metric_input_rows | 0 |
 
-Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/summary.json`, `metrics.json`, `per_family.json`, `per_query.jsonl`, `responses.jsonl`, `review_packet.csv`, `review_packet.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `prompt_manifest.json`, `user_locator_parse_audit.jsonl`, `user_locator_resolution_audit.jsonl`, `rough_query_bucket_audit.jsonl`, `runtime_materialization_plan.json`, and `latency_budget_contract.json`.
+Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/summary.json`, `metrics.json`, `per_family.json`, `per_query.jsonl`, `responses.jsonl`, `review_packet.csv`, `review_packet.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `prompt_manifest.json`, `user_locator_parse_audit.jsonl`, `user_locator_resolution_audit.jsonl`, `rough_query_bucket_audit.jsonl`, `tool_registry.json`, `route_policy_audit.jsonl`, `runtime_materialization_plan.json`, and `latency_budget_contract.json`.
 <!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:measurements-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod:measurements-entry:start -->

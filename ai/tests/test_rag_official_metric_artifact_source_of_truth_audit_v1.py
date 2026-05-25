@@ -5090,6 +5090,8 @@ def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() 
         "user_locator_parse_audit_jsonl": output_dir / "user_locator_parse_audit.jsonl",
         "user_locator_resolution_audit_jsonl": output_dir / "user_locator_resolution_audit.jsonl",
         "rough_query_bucket_audit_jsonl": output_dir / "rough_query_bucket_audit.jsonl",
+        "tool_registry_json": output_dir / "tool_registry.json",
+        "route_policy_audit_jsonl": output_dir / "route_policy_audit.jsonl",
         "runtime_materialization_plan_json": output_dir / "runtime_materialization_plan.json",
         "latency_budget_contract_json": output_dir / "latency_budget_contract.json",
     }
@@ -5107,6 +5109,8 @@ def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() 
     parse_audit = read_jsonl(artifact_paths["user_locator_parse_audit_jsonl"])
     resolution_audit = read_jsonl(artifact_paths["user_locator_resolution_audit_jsonl"])
     rough_audit = read_jsonl(artifact_paths["rough_query_bucket_audit_jsonl"])
+    tool_registry = read_json(artifact_paths["tool_registry_json"])
+    route_policy_audit = read_jsonl(artifact_paths["route_policy_audit_jsonl"])
     runtime_plan = read_json(artifact_paths["runtime_materialization_plan_json"])
     latency_contract = read_json(artifact_paths["latency_budget_contract_json"])
 
@@ -5153,6 +5157,8 @@ def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() 
         "user_locator_parse_audit.jsonl",
         "user_locator_resolution_audit.jsonl",
         "rough_query_bucket_audit.jsonl",
+        "tool_registry.json",
+        "route_policy_audit.jsonl",
         "runtime_materialization_plan.json",
         "latency_budget_contract.json",
     }
@@ -5173,6 +5179,24 @@ def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() 
     assert len(parse_audit) == len(review_rows)
     assert len(resolution_audit) == len(review_rows)
     assert rough_audit
+    assert tool_registry["registryVersion"] == "rag_tool_registry_l0_l8_v1"
+    assert tool_registry["routeLanes"] == ["user_locator", "rough_query", "hybrid", "unsupported"]
+    assert tool_registry["executableRouteLanes"] == ["user_locator", "rough_query", "hybrid"]
+    assert [spec["layerName"] for spec in tool_registry["toolSpecs"]] == [
+        "L0_QUERY_ROUTING",
+        "L1_COARSE_CANDIDATE_GENERATION",
+        "L2_FILE_WORKBOOK_IDENTITY",
+        "L3_STRUCTURAL_LOCATOR",
+        "L4_SOURCEATOM_HYDRATION",
+        "L5_EVIDENCE_BUNDLE_ASSEMBLY",
+        "L6_EVIDENCE_SELECTOR",
+        "L7_ANSWER_READY_CONTEXT",
+        "L8_FINAL_LLM_ANSWER_GENERATION",
+    ]
+    assert all("unsupported" not in spec["allowedRouteLanes"] for spec in tool_registry["toolSpecs"])
+    assert len(route_policy_audit) == len(review_rows)
+    assert {row["route_lane"] for row in route_policy_audit} >= {"user_locator", "rough_query"}
+    assert all(row["allow_unbounded_fallback"] is False for row in route_policy_audit)
     assert metrics["generated_response_count"] == len(review_rows)
     assert metrics["review_packet_row_count"] == len(review_rows)
     assert metrics["user_locator_query_count"] > 0
@@ -5180,6 +5204,9 @@ def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() 
     assert metrics["user_locator_unresolved_count"] > 0
     assert metrics["rough_query_count"] > 0
     assert metrics["rough_query_abstain_count"] > 0
+    assert metrics["unique_query_hash_count"] > 0
+    assert metrics["duplicate_query_hash_groups"]
+    assert metrics["per_bucket_unique_query_count"]
     assert metrics["official_metric"] is False
     assert metrics["official_metric_input_rows"] == 0
     assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
@@ -5200,6 +5227,21 @@ def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() 
     assert all(row["user_supporting_evidence_decision"] == "" for row in review_rows)
     assert all(row["user_relevance_decision"] == "" for row in review_rows)
     assert all(row["user_answerability_decision"] == "" for row in review_rows)
+    assert {row["route_lane"] for row in review_rows} >= {"user_locator", "rough_query"}
+    assert all(row["allow_unbounded_fallback"] is False for row in review_rows)
+    assert all(row["locator_bounds_answerability"] for row in review_rows)
+    leakage_scan_fields = {
+        "final_answer",
+        "abstain_reason",
+        "selected_evidence_excerpt",
+        "locator_bounds_answerability_reason",
+        "locator_summary",
+        "rendered_citations",
+    }
+    leakage_terms = ("local-storage", "input_file", "SourceAtom", "SearchView", "L8_")
+    for row in review_rows:
+        for field in leakage_scan_fields:
+            assert not any(term in str(row.get(field, "")) for term in leakage_terms)
     assert any(row["user_locator_resolution_status"] == "UNRESOLVED" for row in review_rows)
     assert all(row["target_locator_used"] is False for row in parse_audit)
     assert all(row["gold_locator_used"] is False for row in parse_audit)
@@ -5215,13 +5257,21 @@ def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() 
     assert guardrail["expected_supporting_text_used"] is False
     assert guardrail["protected_namespaces_touched"] == []
     assert leakage_rows and all(row["leakage_detected"] is False for row in leakage_rows)
+    assert all(row["leakage_fields"] == [] for row in leakage_rows)
+    assert all(set(row["leakage_scan_fields"]) == leakage_scan_fields for row in leakage_rows)
     assert prompt_manifest["requires_korean_answer"] is True
     assert prompt_manifest["uses_user_provided_locator_text_from_query"] is True
     assert prompt_manifest["uses_artifact_target_or_gold_locator_text"] is False
     assert prompt_manifest["uses_expected_or_supporting_gold_text"] is False
+    assert prompt_manifest["route_policy_lanes"] == ["user_locator", "rough_query", "hybrid", "unsupported"]
     assert runtime_plan["source_atom_registry_canonical_truth"] is True
     assert runtime_plan["vector_payload_used_as_evidence_truth"] is False
     assert runtime_plan["raw_pdf_xlsx_query_time_accessed"] is False
+    assert runtime_plan["all_l0_l8_components_classified_once"] is True
+    assert runtime_plan["tool_registry_version"] == "rag_tool_registry_l0_l8_v1"
+    assert runtime_plan["db_contract"]["adapter_classification"] == "replay_or_mock_live_runtime_like"
+    assert runtime_plan["index_contract"]["current_vector_adapter_production_filter_enforcement"] is False
+    assert runtime_plan["cache_contract"]["source_atom_registry_remains_canonical_truth"] is True
     assert latency_contract["retrieval_latency_excludes_l8_generation"] is True
     assert latency_contract["l8_generation_latency_reported_separately"] is True
 
