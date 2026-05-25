@@ -14,12 +14,52 @@ Historical `_archive/legacy` artifact paths below are logical provenance names.
 Their physical generated payloads may live in the external runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 As of the 2026-05-21 cleanup, the current repo-local report directory keeps
-`status.jsonl` plus compact v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1,
-v3_8_2, v3_8_3 machine artifacts, and current v3_9 quality artifacts; older triage payloads are consolidated under
+`status.jsonl` plus compact current v3_6_9 and later diagnostic artifacts required by the current RAG profile; older triage payloads are consolidated under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`.
 The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
+
+<!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:triage-entry:start -->
+### v3_17 User-Locator And Rough-Query Review Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod`
+- Scope: diagnostic-only PDF/XLSX answer-quality review for rough, terse, incomplete user queries and user-provided file/sheet/cell/range/page locator text; XLSX is primary and PDF is control only.
+- This is not official scoring, not promotion evidence, not product success evidence, and not a winner-selection or threshold-tuning run.
+- User-owned review fields remain blank for satisfaction, relevance, answerability, expected-answer decision, and supporting-evidence decision.
+- If query-owned locator text cannot be resolved to bounded SourceAtom ids, the row abstains with a location-not-found answer rather than inventing values.
+- SourceAtom registry is the canonical evidence truth; SearchView/vector payload stays candidate-only.
+<!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod:triage-entry:start -->
+### v3_16 Final LLM Answer-Quality Review Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod`
+- This is a user-perception review packet, not retrieval improvement and not official scoring. PDF and XLSX stay family-separated and no collapsed headline score is reported.
+- User-owned review fields remain blank for satisfaction, relevance, answerability, expected-answer decision, and supporting-evidence decision.
+- Generated final answers are source-truth diagnostics only: SourceAtom/EvidenceBundle citations are review metadata, while final answers remain evaluation artifacts/log-like outputs rather than production source truth.
+- If the local LLM endpoint is unavailable, v3_16 fails closed and records readiness instead of silently using a noop/extractive generator.
+- The runtime materialization contract keeps query-time work bounded: L3 reranks only precomputed structural candidates, L4 hydrates by SourceAtom id, L5 assembles bounded bundles, and the latency budget is diagnostic-only with L8 generation reported separately from retrieval.
+<!-- official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement:triage-entry:start -->
+### v3_15 XLSX L3 Table/Range Locator Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement`
+- v3_15 optimizes table/range candidate availability, not direct value matching. The cell/value diagnostics remain downstream only, and direct normalized answer-value query matching stays disabled.
+- PDF is excluded from the optimization surface; v3_14 PDF/XLSX runtime separation remains the reference boundary and no PDF tuning is claimed here.
+- SourceAtom registry hydration is the canonical evidence truth, SearchView/vector payload remains candidate-only, and fresh workbook-disjoint holdout remains required before any product-success or promotion claim.
+<!-- official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod:triage-entry:start -->
+## v3_14 Layered Retrieval Runtime Adapter Triage
+
+- runtime adapter success is trace completeness, not score lift: each diagnostic query records L0-L7 candidate counts, latency, drop reasons, signal types, SourceAtom hydration, EvidenceBundle assembly, selected candidates, and answer-ready context availability.
+- PDF and XLSX remain separated. v3_13 PDF rows and v3_12 XLSX rows enter the same orchestration interface, but their metrics are source-family separated and are not collapsed into a headline score.
+- Raw PDF/XLSX query-time access is rejected by design. The adapter uses existing artifacts, manifests, candidate surfaces, and SourceAtom registry joins only.
+- SourceAtom registry remains canonical evidence truth; SearchView/vector payload remains candidate-only.
+- The future scored adapter remains disabled, and fresh real source-document/workbook-disjoint holdout remains unavailable, so product success and promotion remain blocked.
+<!-- official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod:triage-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment:triage-entry:start -->
 ## v3_13 PDF File Identity Structural Locator Triage

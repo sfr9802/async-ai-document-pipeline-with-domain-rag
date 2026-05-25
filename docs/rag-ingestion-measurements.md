@@ -9,9 +9,7 @@ not create per-run Markdown reports for routine diagnostic runs.
 
 Machine-readable JSON/JSONL artifacts are evidence payloads, not the primary
 human report surface. As of the 2026-05-21 cleanup, `ai/eval/reports/` keeps
-only `rag-ingestion/`, and that directory keeps `status.jsonl` plus compact
-current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, v3_8_3 machine
-artifacts, and current v3_9 quality artifacts. Older measurement payloads, including the official
+only `rag-ingestion/`, and that directory keeps `status.jsonl` plus compact current v3_6_9 and later diagnostic artifacts required by the current RAG profile. Older measurement payloads, including the official
 baseline/scorer/input/smoke files and v3_1-v3_6_8 diagnostics, live in:
 
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`
@@ -20,6 +18,110 @@ Historical `_archive/legacy` artifact paths in older entries are logical
 provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+
+<!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:measurements-entry:start -->
+### v3_17 User-Locator And Rough-Query Review Packet
+
+- Run: `official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod`
+- Policy: diagnostic-only answer-quality review; no official metric, score lift, promotion, threshold tuning, winner selection, production DB write, raw PDF/XLSX query-time parsing, target/gold locator use, expected/supporting text use, or direct normalized answer-value query matching.
+- User locator policy: locator text is allowed only when it appears in the user query. Artifact target/gold/supporting/expected locator text is forbidden.
+- Runtime evidence policy: resolved user locators hydrate through SourceAtom registry; SearchView/vector payload remains candidate-only.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| generated_response_count | 39 |
+| review_packet_row_count | 39 |
+| parse_ok_count | 39 |
+| invalid_json_count | 0 |
+| citation_rendered_count | 23 |
+| abstain_count | 19 |
+| user_locator_query_count | 26 |
+| user_locator_resolved_count | 16 |
+| user_locator_unresolved_count | 10 |
+| rough_query_count | 18 |
+| rough_query_abstain_count | 11 |
+| hallucination_risk_flag_count | 0 |
+| unsupported_claim_risk_count | 0 |
+| xlsx_value_formatting_risk_count | 15 |
+| over_abstain_review_candidate_count | 3 |
+| official_metric_input_rows | 0 |
+
+Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/summary.json`, `metrics.json`, `per_family.json`, `per_query.jsonl`, `responses.jsonl`, `review_packet.csv`, `review_packet.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `prompt_manifest.json`, `user_locator_parse_audit.jsonl`, `user_locator_resolution_audit.jsonl`, `rough_query_bucket_audit.jsonl`, `runtime_materialization_plan.json`, and `latency_budget_contract.json`.
+<!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod:measurements-entry:start -->
+### v3_16 Final LLM Answer-Quality Review Packet
+
+- Run: `official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod`
+- Policy: diagnostic-only local LLM answer generation for human review; no score lift, official metric, promotion, threshold tuning, winner selection, gold/qrels/label mutation, expected/supporting evidence mutation, raw PDF/XLSX query-time access, or production DB write.
+- Inputs: v3_15 XLSX L7 contexts, v3_14 PDF/XLSX runtime traces, v3_13 PDF answer-ready controls, SourceAtom registry, and existing local LLM review conventions.
+- Local LLM unavailable behavior: fail explicitly with `LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED`; no noop or extractive substitute is allowed.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| generated_response_count | 60 |
+| review_packet_row_count | 60 |
+| parse_ok_count | 60 |
+| invalid_json_count | 0 |
+| truncated_or_malformed_response_count | 0 |
+| citation_rendered_count | 50 |
+| abstain_count | 10 |
+| unsupported_claim_risk_count | 0 |
+| evidence_underuse_flag_count | 0 |
+| xlsx_value_formatting_risk_count | 16 |
+| pdf_weak_evidence_window_flag_count | 6 |
+| official_metric_input_rows | 0 |
+| L8_generation_executed | true |
+| deterministic_official_execution | false |
+| p95_llm_elapsed_ms | 2160.201 |
+
+Runtime materialization and latency budget: L0-L8 are classified exactly once across `ingestion_time_materialized`, `index_time_materialized`, `query_time_lightweight`, `query_time_cacheable`, or `forbidden_query_time_work`; raw PDF/XLSX query-time parsing, full workbook/sheet scans, full PDF page/block scans, broad SourceAtom scans, and vector-payload-as-evidence-truth are forbidden. L8 generation latency is diagnostic-only and is not mixed into retrieval latency.
+
+Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod/review_packet.csv`, `review_packet.jsonl`, `responses.jsonl`, `summary.json`, `metrics.json`, `per_family.json`, `per_query.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `prompt_manifest.json`, `local_llm_readiness.json`, `runtime_materialization_plan.json`, `latency_budget_contract.json`, `per_layer_online_work_audit.jsonl`, `cache_key_contract.json`, and `forbidden_query_time_work_audit.json`.
+<!-- official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement:measurements-entry:start -->
+### v3_15 XLSX L3 Table/Range Locator Diagnostic
+
+- Run: `official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement`
+- Policy: diagnostic-only XLSX L3 table/range locator improvement; official_metric_input_rows=0; no answer generation, deterministic execution, promotion, threshold tuning, winner selection, direct normalized value matching, or product success claim.
+- Inputs: v3_14 XLSX runtime adapter trace/per-query artifacts, v3_12 XLSX structural score components, v3_12 metrics-only eval reference flags, and SourceAtom registry joins. No raw XLSX/PDF query-time access.
+- Metric boundary: table_or_range@1/@3 are metrics-only diagnostics from the v3_12 reference eval artifact, not v3_15 recomputed success metrics; cell/value@1/@3 are downstream diagnostics and not an optimization target.
+
+| Metric | Value |
+| --- | ---: |
+| XLSX rows | 344 |
+| PDF rows | 0 |
+| L3 output availability | 300/344 |
+| SourceAtom hydrated after L3 | 300/344 |
+| EvidenceBundle assembled after L5 | 300/344 |
+| answer-ready context available after L7 | 300/344 |
+| L3 zero-output rows | 44 |
+| raw_file_query_time_accessed | false |
+| L8_executed | false |
+<!-- official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod:measurements-entry:start -->
+## 2026-05-25 - v3_14 Layered Retrieval Runtime Adapter Non-Prod
+
+- Run: `official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod`
+- Policy: diagnostic-only runtime adapter; official_metric_input_rows=0; product_success_evidence_allowed=false; future scored adapter remains DISABLED_PENDING_USER_APPROVAL; no L8 generation, deterministic answer execution, promotion, threshold tuning, or winner selection.
+- Scope: query-time L0-L7 adapter replay over existing v3_12 XLSX and v3_13 PDF diagnostic artifacts. This measures trace completeness, candidate flow, latency instrumentation, and guardrails, not score lift.
+- Holdout: fresh real source-document/workbook-disjoint holdout remains unavailable; current seen rows are diagnostic/no-regression only.
+
+| Runtime adapter metric | value |
+| --- | ---: |
+| total runtime adapter rows | 673 |
+| PDF rows | 329 |
+| XLSX rows | 344 |
+| median total retrieval latency ms | 0.0429 |
+| p95 total retrieval latency ms | 0.06362 |
+| max L4 hydrated candidate count | 3 |
+| raw_file_query_time_accessed | false |
+| L8_executed | false |
+
+Per-family latency and candidate-count summaries are reported separately in the compact metrics, latency, candidate-flow, and per-family artifacts. No PDF/XLSX headline score, official metric, product success evidence, or promotion evidence is produced.
+<!-- official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod:measurements-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment:measurements-entry:start -->
 ## 2026-05-25 - v3_13 PDF File Identity Structural Locator Non-Prod Alignment

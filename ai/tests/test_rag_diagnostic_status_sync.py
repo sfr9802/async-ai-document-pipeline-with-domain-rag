@@ -154,6 +154,7 @@ def test_measurements_doc_keeps_current_artifact_layout_and_v3_comparable_counts
     assert (
         "compact current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, v3_8_3 machine artifacts, and current v3_9 quality artifacts"
         in flat_text
+        or "compact current v3_6_9 and later diagnostic artifacts required by the current RAG profile" in flat_text
     )
     assert "latest v3_6_9 SearchUnit/SearchView/SourceAtom refactor artifacts" not in text
     assert "| v3 comparable live measurement |" in text
@@ -3076,6 +3077,8 @@ def test_progress_measurements_triage_and_status_record_v3_9_1_xlsx_table_axis_p
             or "diagnostic_v3_11_layered_retrieval_ready" in current_text
             or "diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement_ready" in current_text
             or "diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready" in current_text
+            or "diagnostic_v3_14_layered_retrieval_runtime_adapter_nonprod_ready" in current_text
+            or "diagnostic_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_ready" in current_text
         )
     assert run_id in current_text
     assert "keeps PDF and XLSX metrics separate" in current_flat
@@ -3167,6 +3170,12 @@ def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audi
         or "Overall status: `diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement_ready`;" in progress
         or "Overall status: `diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready`;"
         in progress
+        or "Overall status: `diagnostic_v3_14_layered_retrieval_runtime_adapter_nonprod_ready`;" in progress
+        or "Overall status: `diagnostic_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v3_16_final_llm_answer_quality_review_nonprod_ready`;" in progress
+        or "Overall status: `diagnostic_v3_17_user_locator_rough_query_answer_quality_nonprod_ready`;"
+        in progress
     )
     assert "seen-validation-only" in current_flat
     assert "PDF document-disjoint=0, XLSX workbook-disjoint=0" in current_flat
@@ -3251,6 +3260,12 @@ def test_progress_measurements_triage_and_status_record_v3_10_fresh_holdout_xlsx
         or "Overall status: `diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement_ready`;" in progress
         or "Overall status: `diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready`;"
         in progress
+        or "Overall status: `diagnostic_v3_14_layered_retrieval_runtime_adapter_nonprod_ready`;" in progress
+        or "Overall status: `diagnostic_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v3_16_final_llm_answer_quality_review_nonprod_ready`;" in progress
+        or "Overall status: `diagnostic_v3_17_user_locator_rough_query_answer_quality_nonprod_ready`;"
+        in progress
     )
     assert "seen-validation-only" in current_flat
     assert "Fresh real holdout is still insufficient" in current_flat
@@ -3327,6 +3342,8 @@ def test_progress_measurements_triage_and_status_record_v3_11_layered_retrieval(
         "diagnostic_v3_11_layered_retrieval_ready" in progress
         or "diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement_ready" in progress
         or "diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready" in progress
+        or "diagnostic_v3_14_layered_retrieval_runtime_adapter_nonprod_ready" in progress
+        or "diagnostic_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_ready" in progress
     )
     assert "L0 query routing through L7 answer-ready context plus L9 metrics" in current_flat
     assert "leaves L8 generation closed" in current_flat
@@ -3407,6 +3424,8 @@ def test_progress_measurements_triage_and_status_record_v3_12_xlsx_structural_lo
     assert (
         "diagnostic_v3_12_xlsx_structural_locator_nonprod_improvement_ready" in progress
         or "diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready" in progress
+        or "diagnostic_v3_14_layered_retrieval_runtime_adapter_nonprod_ready" in progress
+        or "diagnostic_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_ready" in progress
     )
     assert "table-boundary candidates, header/axis alias propagation" in current_flat
     assert "fresh workbook-disjoint holdout remains required" in current_flat
@@ -3483,7 +3502,11 @@ def test_progress_measurements_triage_and_status_record_v3_13_pdf_file_identity_
         assert event["artifact_sha256"][hash_key] == sha256_file(path)
 
     assert run_id in current_text
-    assert "diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready" in progress
+    assert (
+        "diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready" in progress
+        or "diagnostic_v3_14_layered_retrieval_runtime_adapter_nonprod_ready" in progress
+        or "diagnostic_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_ready" in progress
+    )
     assert "PDF L2 file identity confidence diagnostics" in current_flat
     assert "same-page bounded evidence-window candidates" in current_flat
     assert "XLSX v3_12 remains visible as a no-regression/control lane only" in current_flat
@@ -3496,3 +3519,356 @@ def test_progress_measurements_triage_and_status_record_v3_13_pdf_file_identity_
     assert "accepted wrong rank1 with target in top3" in triage
     assert "bbox correctness is not claimed" in triage
     assert "fresh real PDF source-document-disjoint holdout remains required" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_14_layered_retrieval_runtime_adapter():
+    run_id = "official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod"
+    artifact_paths = {
+        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
+        "per_query_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_query.jsonl",
+        "layer_trace_per_query_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_layer_trace_per_query.jsonl",
+        "latency_summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_latency_summary.json",
+        "candidate_flow_summary_json": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_candidate_flow_summary.json",
+        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "guardrail_audit_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_guardrail_audit.json",
+        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_holdout_manifest.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_14_layered_retrieval_runtime_adapter_nonprod"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_NONPROD_READY"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["fresh_real_holdout_sufficient"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["answer_generation_executed"] is False
+    assert event["deterministic_answer_execution_executed"] is False
+    assert event["L8_executed"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["source_atom_registry_canonical_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["total_pdf_rows"] == 329
+    assert event["total_xlsx_rows"] == 344
+    assert event["total_runtime_adapter_rows"] == 673
+    assert event["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = (
+            "summary_json_sha256"
+            if path_key == "summary_json"
+            else path_key.replace("_jsonl", "").replace("_json", "") + "_sha256"
+        )
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert (
+        "diagnostic_v3_14_layered_retrieval_runtime_adapter_nonprod_ready" in progress
+        or "diagnostic_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_ready" in progress
+    )
+    assert "runs L0 through L7 over the common PDF/XLSX runtime adapter surface" in current_flat
+    assert "raw_file_query_time_accessed=false" in current_flat
+    assert "L8 generation and deterministic answer execution stay closed" in current_flat
+    assert "fresh real source-document/workbook-disjoint holdout remains unavailable" in current_flat
+    assert run_id in measurements
+    assert "| total runtime adapter rows | 673 |" in measurements
+    assert "| PDF rows | 329 |" in measurements
+    assert "| XLSX rows | 344 |" in measurements
+    assert "| raw_file_query_time_accessed | false |" in measurements
+    assert "| L8_executed | false |" in measurements
+    assert "Per-family latency and candidate-count summaries are reported separately" in measurements
+    assert run_id in triage
+    assert "runtime adapter success is trace completeness, not score lift" in triage
+    assert "PDF and XLSX remain separated" in triage
+    assert "future scored adapter remains disabled" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_15_xlsx_l3_table_range_locator():
+    run_id = "official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement"
+    artifact_paths = {
+        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
+        "per_query_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_query.jsonl",
+        "layer_trace_per_query_jsonl": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_layer_trace_per_query.jsonl",
+        "latency_summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_latency_summary.json",
+        "candidate_flow_summary_json": ROOT
+        / f"ai/eval/reports/rag-ingestion/{run_id}_candidate_flow_summary.json",
+        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "guardrail_audit_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_guardrail_audit.json",
+        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_holdout_manifest.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_15_xlsx_l3_table_range_locator_nonprod_improvement"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_NONPROD_IMPROVEMENT_READY"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert event["fresh_real_holdout_sufficient"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["answer_generation_executed"] is False
+    assert event["deterministic_answer_execution_executed"] is False
+    assert event["L8_executed"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["source_atom_registry_canonical_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["total_pdf_rows"] == 0
+    assert event["total_xlsx_rows"] == 344
+    assert event["total_runtime_adapter_rows"] == 344
+    assert event["optimization_surface"] == "XLSX_L3_TABLE_RANGE_LOCATOR_ONLY"
+    assert event["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = (
+            "summary_json_sha256"
+            if path_key == "summary_json"
+            else path_key.replace("_jsonl", "").replace("_json", "") + "_sha256"
+        )
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert "diagnostic_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_ready" in progress
+    assert "built on v3_14 XLSX runtime adapter outputs" in current_flat
+    assert "XLSX L3 table/range locator only" in current_flat
+    assert "raw_file_query_time_accessed=false" in current_flat
+    assert "SourceAtom registry remains canonical truth" in current_flat
+    assert "SearchView/vector payload remains candidate-only" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert run_id in measurements
+    assert "| XLSX rows | 344 |" in measurements
+    assert "| PDF rows | 0 |" in measurements
+    assert "| raw_file_query_time_accessed | false |" in measurements
+    assert "| L8_executed | false |" in measurements
+    assert "table_or_range@1/@3 are metrics-only diagnostics" in measurements
+    assert "from the v3_12 reference eval artifact" in measurements
+    assert run_id in triage
+    assert "v3_15 optimizes table/range candidate availability, not direct value matching" in triage
+    assert "PDF is excluded from the optimization surface" in triage
+    assert "fresh workbook-disjoint holdout remains required" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_16_final_llm_answer_quality_review_packet():
+    run_id = "official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod"
+    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_family_json": output_dir / "per_family.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "responses_jsonl": output_dir / "responses.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "prompt_manifest_json": output_dir / "prompt_manifest.json",
+        "local_llm_readiness_json": output_dir / "local_llm_readiness.json",
+        "runtime_materialization_plan_json": output_dir / "runtime_materialization_plan.json",
+        "latency_budget_contract_json": output_dir / "latency_budget_contract.json",
+        "per_layer_online_work_audit_jsonl": output_dir / "per_layer_online_work_audit.jsonl",
+        "cache_key_contract_json": output_dir / "cache_key_contract.json",
+        "forbidden_query_time_work_audit_json": output_dir / "forbidden_query_time_work_audit.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_16_FINAL_LLM_ANSWER_QUALITY_REVIEW_NONPROD_READY"
+    assert event["diagnostic_only"] is True
+    assert event["L8_generation_executed"] is True
+    assert event["deterministic_official_execution"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["source_atom_registry_canonical_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert event["generated_response_count"] == 60
+    assert event["review_packet_row_count"] == 60
+    assert event["parse_ok_count"] + event["invalid_json_count"] == 60
+    assert event["truncated_or_malformed_response_count"] == event["invalid_json_count"]
+    assert event["latency_budget"]["budget_role"] == "diagnostic_only"
+    assert event["latency_budget"]["promotion_evidence"] is False
+    assert event["latency_budget"]["l8_generation_latency_reported_separately"] is True
+    assert event["runtime_materialization"]["L8_FINAL_LLM_ANSWER_GENERATION"] == "query_time_cacheable"
+    assert "prompt_template" not in event
+    assert "responses" not in event
+    assert "per_query_rows" not in event
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = "summary_json_sha256" if path_key == "summary_json" else f"{path_key}_sha256"
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert "diagnostic_v3_16_final_llm_answer_quality_review_nonprod_ready" in progress
+    assert "opens L8 only for local LLM answer generation" in current_flat
+    assert "deterministic_official_execution=false" in current_flat
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "SourceAtom registry remains canonical truth" in current_flat
+    assert "SearchView/vector payload remains candidate-only" in current_flat
+    assert "Runtime materialization and latency-budget artifacts classify L0-L8 online work" in current_flat
+    assert run_id in measurements
+    assert "| generated_response_count | 60 |" in measurements
+    assert "| parse_ok_count |" in measurements
+    assert "| invalid_json_count |" in measurements
+    assert "| p95_llm_elapsed_ms |" in measurements
+    assert "| official_metric_input_rows | 0 |" in measurements
+    assert "| L8_generation_executed | true |" in measurements
+    assert "| deterministic_official_execution | false |" in measurements
+    assert "LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED" in measurements
+    assert "runtime_materialization_plan.json" in measurements
+    assert "latency_budget_contract.json" in measurements
+    assert run_id in triage
+    assert "not retrieval improvement and not official scoring" in triage
+    assert "User-owned review fields remain blank" in triage
+    assert "fails closed" in triage
+    assert "latency budget is diagnostic-only" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_17_user_locator_rough_query_packet():
+    run_id = "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod"
+    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_family_json": output_dir / "per_family.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "responses_jsonl": output_dir / "responses.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "prompt_manifest_json": output_dir / "prompt_manifest.json",
+        "user_locator_parse_audit_jsonl": output_dir / "user_locator_parse_audit.jsonl",
+        "user_locator_resolution_audit_jsonl": output_dir / "user_locator_resolution_audit.jsonl",
+        "rough_query_bucket_audit_jsonl": output_dir / "rough_query_bucket_audit.jsonl",
+        "runtime_materialization_plan_json": output_dir / "runtime_materialization_plan.json",
+        "latency_budget_contract_json": output_dir / "latency_budget_contract.json",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_17_user_locator_rough_query_answer_quality_nonprod"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_17_USER_LOCATOR_ROUGH_QUERY_ANSWER_QUALITY_NONPROD_READY"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["source_atom_registry_canonical_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_text_used"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert event["user_locator_query_count"] > 0
+    assert event["user_locator_resolved_count"] > 0
+    assert event["user_locator_unresolved_count"] > 0
+    assert event["rough_query_count"] > 0
+    assert event["rough_query_abstain_count"] > 0
+    assert "prompt_template" not in event
+    assert "responses" not in event
+    assert "per_query_rows" not in event
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = "summary_json_sha256" if path_key == "summary_json" else f"{path_key}_sha256"
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert "diagnostic_v3_17_user_locator_rough_query_answer_quality_nonprod_ready" in progress
+    assert "user-provided locator text is query-owned only" in current_flat
+    assert "target_locator_used=false" in current_flat
+    assert "gold_locator_used=false" in current_flat
+    assert "expected_supporting_text_used=false" in current_flat
+    assert "SourceAtom registry remains canonical truth" in current_flat
+    assert "SearchView/vector payload remains candidate-only" in current_flat
+    assert run_id in measurements
+    assert "| user_locator_query_count |" in measurements
+    assert "| user_locator_resolved_count |" in measurements
+    assert "| user_locator_unresolved_count |" in measurements
+    assert "| rough_query_count |" in measurements
+    assert "| rough_query_abstain_count |" in measurements
+    assert "| official_metric_input_rows | 0 |" in measurements
+    assert run_id in triage
+    assert "rough, terse, incomplete user queries" in triage
+    assert "User-owned review fields remain blank" in triage
+    assert "not official scoring" in triage

@@ -251,6 +251,14 @@ AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v3_13_"
     "pdf_file_identity_structural_locator_nonprod_alignment"
 )
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_14_"
+    "layered_retrieval_runtime_adapter_nonprod"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v3_15_"
+    "xlsx_l3_table_range_locator_nonprod_improvement"
+)
 AGENTIC_V3_1_PRIORITY_QUERY_IDS = (
     "gq_pdf_section_question_001",
     "text_namu_v2_0012",
@@ -1554,6 +1562,72 @@ AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_GUARDRAIL_JSON = (
 AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_HOLDOUT_JSON = (
     REPORT_DIR / f"{AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_RUN_ID}_holdout_manifest.json"
 )
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_SUMMARY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_summary.json"
+)
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_METRICS_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_metrics.json"
+)
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_FAMILY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_per_family.json"
+)
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_QUERY_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_per_query.jsonl"
+)
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_TRACE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_layer_trace_per_query.jsonl"
+)
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LATENCY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_latency_summary.json"
+)
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_CANDIDATE_FLOW_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_candidate_flow_summary.json"
+)
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_FAILURE_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_failure_taxonomy.json"
+)
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_GUARDRAIL_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_guardrail_audit.json"
+)
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LEAKAGE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_leakage_audit.jsonl"
+)
+AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_HOLDOUT_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID}_holdout_manifest.json"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_SUMMARY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_summary.json"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_METRICS_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_metrics.json"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_FAMILY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_per_family.json"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_QUERY_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_per_query.jsonl"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_TRACE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_layer_trace_per_query.jsonl"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LATENCY_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_latency_summary.json"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_CANDIDATE_FLOW_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_candidate_flow_summary.json"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_FAILURE_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_failure_taxonomy.json"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_GUARDRAIL_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_guardrail_audit.json"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LEAKAGE_JSONL = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_leakage_audit.jsonl"
+)
+AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_HOLDOUT_JSON = (
+    REPORT_DIR / f"{AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID}_holdout_manifest.json"
+)
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
@@ -1912,6 +1986,28 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_FAILURE_JSON,
     AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_GUARDRAIL_JSON,
     AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_HOLDOUT_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_SUMMARY_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_METRICS_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_FAMILY_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_QUERY_JSONL,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_TRACE_JSONL,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LATENCY_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_CANDIDATE_FLOW_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_FAILURE_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_GUARDRAIL_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LEAKAGE_JSONL,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_HOLDOUT_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_SUMMARY_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_METRICS_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_FAMILY_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_QUERY_JSONL,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_TRACE_JSONL,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LATENCY_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_CANDIDATE_FLOW_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_FAILURE_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_GUARDRAIL_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LEAKAGE_JSONL,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_HOLDOUT_JSON,
 }
 PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS = CURRENT_REPORT_PATHS
 ARCHIVED_REPORT_PATHS = {
@@ -2096,6 +2192,28 @@ CURRENT_REPORT_PATHS = {
     AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_FAILURE_JSON,
     AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_GUARDRAIL_JSON,
     AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_HOLDOUT_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_SUMMARY_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_METRICS_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_FAMILY_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_QUERY_JSONL,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_TRACE_JSONL,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LATENCY_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_CANDIDATE_FLOW_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_FAILURE_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_GUARDRAIL_JSON,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LEAKAGE_JSONL,
+    AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_HOLDOUT_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_SUMMARY_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_METRICS_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_FAMILY_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_QUERY_JSONL,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_TRACE_JSONL,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LATENCY_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_CANDIDATE_FLOW_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_FAILURE_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_GUARDRAIL_JSON,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LEAKAGE_JSONL,
+    AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_HOLDOUT_JSON,
 }
 ARCHIVED_REPORT_PATHS = (
     ARCHIVED_REPORT_PATHS | (PRE_ARCHIVE_LAYOUT_CURRENT_REPORT_PATHS - CURRENT_REPORT_PATHS)
@@ -4497,6 +4615,623 @@ def test_v3_13_pdf_file_identity_structural_locator_artifacts_are_registered_has
     assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_EVAL_JSONL.stat().st_size < 1_000_000
     assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_TRACE_JSONL.stat().st_size < 1_000_000
     assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SCORE_JSONL.stat().st_size < 2_000_000
+
+
+def test_v3_14_layered_retrieval_runtime_adapter_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_9_local_artifacts(
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_SUMMARY_JSON,
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_METRICS_JSON,
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_FAMILY_JSON,
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_QUERY_JSONL,
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_TRACE_JSONL,
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LATENCY_JSON,
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_CANDIDATE_FLOW_JSON,
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_FAILURE_JSON,
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_GUARDRAIL_JSON,
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LEAKAGE_JSONL,
+        AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_HOLDOUT_JSON,
+    )
+    summary = read_json(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_METRICS_JSON)
+    per_family = read_json(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_FAMILY_JSON)
+    per_query = read_jsonl(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_QUERY_JSONL)
+    trace_rows = read_jsonl(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_TRACE_JSONL)
+    latency = read_json(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LATENCY_JSON)
+    candidate_flow = read_json(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_CANDIDATE_FLOW_JSON)
+    failure = read_json(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_FAILURE_JSON)
+    guardrail = read_json(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_GUARDRAIL_JSON)
+    leakage = read_jsonl(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LEAKAGE_JSONL)
+    holdout = read_json(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_HOLDOUT_JSON)
+
+    expected_artifacts = {
+        "metrics_sha256": AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_METRICS_JSON,
+        "per_family_sha256": AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_FAMILY_JSON,
+        "per_query_sha256": AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_QUERY_JSONL,
+        "layer_trace_per_query_sha256": AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_TRACE_JSONL,
+        "latency_summary_sha256": AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LATENCY_JSON,
+        "candidate_flow_summary_sha256": AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_CANDIDATE_FLOW_JSON,
+        "failure_taxonomy_sha256": AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_FAILURE_JSON,
+        "guardrail_audit_sha256": AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_GUARDRAIL_JSON,
+        "leakage_audit_sha256": AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_LEAKAGE_JSONL,
+        "holdout_manifest_sha256": AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_HOLDOUT_JSON,
+    }
+    assert AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+
+    assert summary["run_id"] == AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_NONPROD_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["answer_generation_executed"] is False
+    assert summary["deterministic_answer_execution_executed"] is False
+    assert summary["L8_executed"] is False
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["protected_namespaces_touched"] == []
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["source_atom_registry_mutated"] is False
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert summary["total_pdf_rows"] == 329
+    assert summary["total_xlsx_rows"] == 344
+    assert summary["total_runtime_adapter_rows"] == 673
+    assert summary["input_lineage"]["v3_12_xlsx_trace_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_layer_trace_per_query.jsonl"
+    )
+    assert summary["input_lineage"]["v3_13_pdf_trace_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_layer_trace_per_query.jsonl"
+    )
+
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "promotion_evidence",
+        "direct_normalized_value_query_matching_used",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+
+    assert metrics["total_runtime_adapter_rows"] == 673
+    assert metrics["raw_file_query_time_accessed"] is False
+    assert metrics["L8_executed"] is False
+    assert set(metrics["source_family_separated_metrics"]) == {"PDF", "XLSX"}
+    assert per_family["families_reported_separately"] == ["PDF", "XLSX"]
+    assert len(per_query) == 673
+    assert len(trace_rows) == len(per_query)
+    assert {row["source_family"] for row in per_query} == {"PDF", "XLSX"}
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["raw_file_query_time_accessed"] is False for row in per_query)
+    assert all(row["L8_executed"] is False for row in per_query)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in per_query)
+    assert all(row["layers_recorded"] == summary["layer_contract"] for row in trace_rows)
+    assert latency["total_runtime_adapter_rows"] == 673
+    assert set(latency["per_source_family"]) == {"PDF", "XLSX"}
+    assert candidate_flow["total_runtime_adapter_rows"] == 673
+    assert set(candidate_flow["per_source_family"]) == {"PDF", "XLSX"}
+    assert failure["taxonomy_scope"] == "layered_retrieval_runtime_adapter_nonprod"
+    assert guardrail["protected_namespaces_touched"] == []
+    assert guardrail["raw_file_query_time_accessed"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+    assert leakage and all(row["success_evidence_allowed"] is False for row in leakage)
+    assert holdout["fresh_real_holdout_sufficient"] is False
+    assert holdout["product_success_evidence_allowed"] is False
+
+    assert AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_SUMMARY_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_METRICS_JSON.stat().st_size < 200_000
+    assert AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_QUERY_JSONL.stat().st_size < 2_000_000
+    assert AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_TRACE_JSONL.stat().st_size < 4_000_000
+
+
+def test_v3_15_xlsx_l3_table_range_locator_artifacts_are_registered_hash_locked_and_compact() -> None:
+    require_v3_9_local_artifacts(
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_SUMMARY_JSON,
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_METRICS_JSON,
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_FAMILY_JSON,
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_QUERY_JSONL,
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_TRACE_JSONL,
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LATENCY_JSON,
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_CANDIDATE_FLOW_JSON,
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_FAILURE_JSON,
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_GUARDRAIL_JSON,
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LEAKAGE_JSONL,
+        AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_HOLDOUT_JSON,
+    )
+    summary = read_json(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_SUMMARY_JSON)
+    metrics = read_json(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_METRICS_JSON)
+    per_family = read_json(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_FAMILY_JSON)
+    per_query = read_jsonl(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_QUERY_JSONL)
+    trace_rows = read_jsonl(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_TRACE_JSONL)
+    latency = read_json(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LATENCY_JSON)
+    candidate_flow = read_json(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_CANDIDATE_FLOW_JSON)
+    failure = read_json(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_FAILURE_JSON)
+    guardrail = read_json(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_GUARDRAIL_JSON)
+    leakage = read_jsonl(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LEAKAGE_JSONL)
+    holdout = read_json(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_HOLDOUT_JSON)
+
+    expected_artifacts = {
+        "metrics_sha256": AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_METRICS_JSON,
+        "per_family_sha256": AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_FAMILY_JSON,
+        "per_query_sha256": AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_QUERY_JSONL,
+        "layer_trace_per_query_sha256": AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_TRACE_JSONL,
+        "latency_summary_sha256": AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LATENCY_JSON,
+        "candidate_flow_summary_sha256": AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_CANDIDATE_FLOW_JSON,
+        "failure_taxonomy_sha256": AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_FAILURE_JSON,
+        "guardrail_audit_sha256": AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_GUARDRAIL_JSON,
+        "leakage_audit_sha256": AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_LEAKAGE_JSONL,
+        "holdout_manifest_sha256": AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_HOLDOUT_JSON,
+    }
+    assert AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_SUMMARY_JSON in CURRENT_REPORT_PATHS
+    assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
+    for key, path in expected_artifacts.items():
+        assert path.exists(), path
+        assert summary["artifact_sha256"][key] == sha256_file(path)
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+
+    assert summary["run_id"] == AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_NONPROD_IMPROVEMENT_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["answer_generation_executed"] is False
+    assert summary["deterministic_answer_execution_executed"] is False
+    assert summary["L8_executed"] is False
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["protected_namespaces_touched"] == []
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["source_atom_registry_mutated"] is False
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert summary["total_xlsx_rows"] == 344
+    assert summary["total_pdf_rows"] == 0
+    assert summary["total_runtime_adapter_rows"] == 344
+    assert summary["optimization_surface"] == "XLSX_L3_TABLE_RANGE_LOCATOR_ONLY"
+    assert summary["input_lineage"]["v3_14_xlsx_runtime_per_query_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_per_query.jsonl"
+    )
+    assert summary["input_lineage"]["v3_12_xlsx_eval_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_structural_locator_eval_per_query.jsonl"
+    )
+    assert summary["input_lineage"]["v3_12_xlsx_score_components_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_score_components.jsonl"
+    )
+
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "promotion_evidence",
+        "direct_normalized_value_query_matching_used",
+        "raw_answer_value_for_query_scoring_used",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+        "exact_query_hack_used",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+
+    assert metrics["total_runtime_adapter_rows"] == 344
+    assert metrics["raw_file_query_time_accessed"] is False
+    assert metrics["L8_executed"] is False
+    assert metrics["source_family_separated_metrics"]["XLSX"]["table_or_range@3"]["source_run_id"].endswith(
+        "v3_12_xlsx_structural_locator_nonprod_improvement"
+    )
+    assert metrics["source_family_separated_metrics"]["XLSX"]["table_or_range@3"]["computed_by_v3_15"] is False
+    assert metrics["source_family_separated_metrics"]["XLSX"]["cell_or_value@3"]["optimization_target"] is False
+    assert set(metrics["source_family_separated_metrics"]) == {"XLSX"}
+    assert per_family["families_reported_separately"] == ["XLSX"]
+    assert len(per_query) == 344
+    assert len(trace_rows) == len(per_query)
+    assert {row["source_family"] for row in per_query} == {"XLSX"}
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["raw_file_query_time_accessed"] is False for row in per_query)
+    assert all(row["L8_executed"] is False for row in per_query)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in per_query)
+    assert all(row["layers_recorded"] == summary["layer_contract"] for row in trace_rows)
+    assert latency["total_runtime_adapter_rows"] == 344
+    assert set(latency["per_source_family"]) == {"XLSX"}
+    assert candidate_flow["total_runtime_adapter_rows"] == 344
+    assert set(candidate_flow["per_source_family"]) == {"XLSX"}
+    assert candidate_flow["per_layer"]["L3_STRUCTURAL_LOCATOR"]["zero_output_layer_count"] < 315
+    assert failure["taxonomy_scope"] == "xlsx_l3_table_range_locator_nonprod_improvement"
+    assert guardrail["protected_namespaces_touched"] == []
+    assert guardrail["raw_file_query_time_accessed"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+    assert leakage and all(row["success_evidence_allowed"] is False for row in leakage)
+    assert holdout["fresh_real_holdout_sufficient"] is False
+    assert holdout["product_success_evidence_allowed"] is False
+
+    assert AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_SUMMARY_JSON.stat().st_size < 100_000
+    assert AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_METRICS_JSON.stat().st_size < 200_000
+    assert AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_QUERY_JSONL.stat().st_size < 2_000_000
+    assert AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_TRACE_JSONL.stat().st_size < 4_000_000
+
+
+def test_v3_16_final_llm_answer_quality_review_packet_artifacts_are_hash_locked_and_compact() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_family_json": output_dir / "per_family.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "responses_jsonl": output_dir / "responses.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "prompt_manifest_json": output_dir / "prompt_manifest.json",
+        "local_llm_readiness_json": output_dir / "local_llm_readiness.json",
+        "runtime_materialization_plan_json": output_dir / "runtime_materialization_plan.json",
+        "latency_budget_contract_json": output_dir / "latency_budget_contract.json",
+        "per_layer_online_work_audit_jsonl": output_dir / "per_layer_online_work_audit.jsonl",
+        "cache_key_contract_json": output_dir / "cache_key_contract.json",
+        "forbidden_query_time_work_audit_json": output_dir / "forbidden_query_time_work_audit.json",
+    }
+    require_v3_9_local_artifacts(*artifact_paths.values())
+
+    summary = read_json(artifact_paths["summary_json"])
+    metrics = read_json(artifact_paths["metrics_json"])
+    per_family = read_json(artifact_paths["per_family_json"])
+    per_query = read_jsonl(artifact_paths["per_query_jsonl"])
+    responses = read_jsonl(artifact_paths["responses_jsonl"])
+    review_rows = read_jsonl(artifact_paths["review_packet_jsonl"])
+    guardrail = read_json(artifact_paths["guardrail_audit_json"])
+    leakage_rows = read_jsonl(artifact_paths["leakage_audit_jsonl"])
+    prompt_manifest = read_json(artifact_paths["prompt_manifest_json"])
+    runtime_plan = read_json(artifact_paths["runtime_materialization_plan_json"])
+    latency_contract = read_json(artifact_paths["latency_budget_contract_json"])
+    online_audit = read_jsonl(artifact_paths["per_layer_online_work_audit_jsonl"])
+    cache_contract = read_json(artifact_paths["cache_key_contract_json"])
+    forbidden_audit = read_json(artifact_paths["forbidden_query_time_work_audit_json"])
+
+    assert summary["run_id"] == run_id
+    assert summary["status"] == "DIAGNOSTIC_V3_16_FINAL_LLM_ANSWER_QUALITY_REVIEW_NONPROD_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["L8_generation_executed"] is True
+    assert summary["answer_generation_executed"] is True
+    assert summary["deterministic_official_execution"] is False
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["protected_namespaces_touched"] == []
+    assert summary["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert summary["headline_score"] is None
+    assert summary["review_packet_user_fields_blank"] is True
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert set(summary["input_lineage"]) >= {
+        "v3_15_summary_json",
+        "v3_15_per_query_jsonl",
+        "v3_15_layer_trace_per_query_jsonl",
+        "v3_14_summary_json",
+        "v3_14_per_query_jsonl",
+        "v3_14_layer_trace_per_query_jsonl",
+        "v3_13_pdf_eval_jsonl",
+        "v3_13_pdf_trace_jsonl",
+        "source_registry_jsonl",
+    }
+    assert all(item["exists"] is True for item in summary["input_lineage"].values())
+    assert all(item["sha256"] for item in summary["input_lineage"].values())
+    assert not any(item["path"].endswith((".pdf", ".xlsx")) for item in summary["input_lineage"].values())
+    assert not any("local-storage" in item["path"] for item in summary["input_lineage"].values())
+
+    expected_artifacts = {key: path for key, path in artifact_paths.items() if key != "summary_json"}
+    for key, path in expected_artifacts.items():
+        assert summary["artifact_paths"][key] == path.relative_to(ROOT).as_posix()
+        assert summary["artifact_sha256"][f"{key}_sha256"] == sha256_file(path)
+    assert "summary_json_sha256" not in summary["artifact_sha256"]
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {
+        "summary.json",
+        "metrics.json",
+        "per_family.json",
+        "per_query.jsonl",
+        "responses.jsonl",
+        "review_packet.csv",
+        "review_packet.jsonl",
+        "guardrail_audit.json",
+        "leakage_audit.jsonl",
+        "prompt_manifest.json",
+        "local_llm_readiness.json",
+        "runtime_materialization_plan.json",
+        "latency_budget_contract.json",
+        "per_layer_online_work_audit.jsonl",
+        "cache_key_contract.json",
+        "forbidden_query_time_work_audit.json",
+    }
+
+    assert metrics["generated_response_count"] == 60
+    assert metrics["review_packet_row_count"] == 60
+    assert metrics["parse_ok_count"] + metrics["invalid_json_count"] == 60
+    assert metrics["truncated_or_malformed_response_count"] == metrics["invalid_json_count"]
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert set(per_family["families_reported_separately"]) == {"PDF", "XLSX"}
+    assert set(per_family["per_source_family"]) == {"PDF", "XLSX"}
+    assert len(per_query) == len(responses) == len(review_rows) == 60
+    assert {row["source_family"] for row in per_query} == {"PDF", "XLSX"}
+    assert any(row["sample_bucket"] == "xlsx_no_candidate_abstain" for row in per_query)
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["official_metric_candidate"] is False for row in per_query)
+    assert all(row["promotion_evidence"] is False for row in per_query)
+    assert all(row["raw_file_query_time_accessed"] is False for row in per_query)
+    assert all(row["L8_generation_executed"] is True for row in per_query)
+    assert all(row["retrieval_latency_includes_l8_generation"] is False for row in per_query)
+    assert all("retrieval_latency_ms" in row for row in per_query)
+    assert all("l8_generation_latency_ms" in row for row in per_query)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in per_query)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in per_query)
+
+    user_owned_fields = {
+        "user_review_like",
+        "user_review_note",
+        "user_expected_answer_decision",
+        "user_supporting_evidence_decision",
+        "user_relevance_decision",
+        "user_answerability_decision",
+    }
+    assert all(row["official_metric_candidate"] is False for row in review_rows)
+    assert all(row["promotion_evidence"] is False for row in review_rows)
+    assert all(row[field] == "" for row in review_rows for field in user_owned_fields)
+    assert all(str(row["final_answer"]).strip() for row in review_rows)
+    assert all("runtime_materialization_classification" in row for row in review_rows)
+    assert all(
+        "L8_FINAL_LLM_ANSWER_GENERATION=query_time_cacheable"
+        in row["runtime_materialization_classification"]
+        for row in review_rows
+    )
+    assert not any(str(row["final_answer"]).lstrip().startswith("{") for row in review_rows)
+    assert guardrail["L8_generation_executed"] is True
+    assert guardrail["official_metric"] is False
+    assert guardrail["official_metric_input_rows"] == 0
+    assert guardrail["promotion_evidence"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+    assert guardrail["source_atom_registry_canonical_truth"] is True
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert guardrail["protected_namespaces_touched"] == []
+    assert leakage_rows and all(row["leakage_detected"] is False for row in leakage_rows)
+    assert prompt_manifest["requires_korean_answer"] is True
+    assert prompt_manifest["uses_expected_or_supporting_gold_text"] is False
+    assert runtime_plan["all_l0_l8_components_classified_once"] is True
+    assert set(runtime_plan["per_layer_classification"]) == {
+        "L0_QUERY_ROUTING",
+        "L1_COARSE_CANDIDATE_GENERATION",
+        "L2_FILE_WORKBOOK_IDENTITY",
+        "L3_STRUCTURAL_LOCATOR",
+        "L4_SOURCEATOM_HYDRATION",
+        "L5_EVIDENCE_BUNDLE_ASSEMBLY",
+        "L6_EVIDENCE_SELECTOR",
+        "L7_ANSWER_READY_CONTEXT",
+        "L8_FINAL_LLM_ANSWER_GENERATION",
+    }
+    assert runtime_plan["per_layer_classification"]["L3_STRUCTURAL_LOCATOR"] == "query_time_lightweight"
+    assert runtime_plan["per_layer_classification"]["L8_FINAL_LLM_ANSWER_GENERATION"] == "query_time_cacheable"
+    assert latency_contract["retrieval_latency_excludes_l8_generation"] is True
+    assert latency_contract["l8_generation_latency_reported_separately"] is True
+    assert latency_contract["actual_l8_generation_latency_ms"]["count"] == 60
+    assert latency_contract["actual_retrieval_latency_ms"]["count"] == 60
+    assert len(online_audit) == 9
+    assert all(row["forbidden_query_time_work_detected"] is False for row in online_audit)
+    assert next(row for row in online_audit if row["layer_name"] == "L3_STRUCTURAL_LOCATOR")[
+        "reads_only_precomputed_structural_features"
+    ] is True
+    assert next(row for row in online_audit if row["layer_name"] == "L4_SOURCEATOM_HYDRATION")[
+        "hydrates_by_source_atom_id"
+    ] is True
+    assert next(row for row in online_audit if row["layer_name"] == "L5_EVIDENCE_BUNDLE_ASSEMBLY")[
+        "bounded_by_max_candidate_count"
+    ] is True
+    assert next(row for row in online_audit if row["layer_name"] == "L8_FINAL_LLM_ANSWER_GENERATION")[
+        "latency_reported_separately_from_retrieval"
+    ] is True
+    assert cache_contract["cache_material_is_source_truth"] is False
+    assert cache_contract["l7_answer_ready_context_cacheable"] is True
+    assert cache_contract["l7_answer_ready_context_source_truth"] is False
+    assert forbidden_audit["policy_pass"] is True
+    assert forbidden_audit["vector_payload_used_as_evidence_truth"]["detected"] is False
+
+    assert artifact_paths["summary_json"].stat().st_size < 100_000
+    assert artifact_paths["metrics_json"].stat().st_size < 60_000
+    assert artifact_paths["per_family_json"].stat().st_size < 60_000
+    assert artifact_paths["per_query_jsonl"].stat().st_size < 300_000
+    assert artifact_paths["responses_jsonl"].stat().st_size < 500_000
+    assert artifact_paths["review_packet_csv"].stat().st_size < 500_000
+    assert artifact_paths["review_packet_jsonl"].stat().st_size < 500_000
+
+
+def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_family_json": output_dir / "per_family.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "responses_jsonl": output_dir / "responses.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "prompt_manifest_json": output_dir / "prompt_manifest.json",
+        "user_locator_parse_audit_jsonl": output_dir / "user_locator_parse_audit.jsonl",
+        "user_locator_resolution_audit_jsonl": output_dir / "user_locator_resolution_audit.jsonl",
+        "rough_query_bucket_audit_jsonl": output_dir / "rough_query_bucket_audit.jsonl",
+        "runtime_materialization_plan_json": output_dir / "runtime_materialization_plan.json",
+        "latency_budget_contract_json": output_dir / "latency_budget_contract.json",
+    }
+    require_v3_9_local_artifacts(*artifact_paths.values())
+
+    summary = read_json(artifact_paths["summary_json"])
+    metrics = read_json(artifact_paths["metrics_json"])
+    per_family = read_json(artifact_paths["per_family_json"])
+    per_query = read_jsonl(artifact_paths["per_query_jsonl"])
+    responses = read_jsonl(artifact_paths["responses_jsonl"])
+    review_rows = read_jsonl(artifact_paths["review_packet_jsonl"])
+    guardrail = read_json(artifact_paths["guardrail_audit_json"])
+    leakage_rows = read_jsonl(artifact_paths["leakage_audit_jsonl"])
+    prompt_manifest = read_json(artifact_paths["prompt_manifest_json"])
+    parse_audit = read_jsonl(artifact_paths["user_locator_parse_audit_jsonl"])
+    resolution_audit = read_jsonl(artifact_paths["user_locator_resolution_audit_jsonl"])
+    rough_audit = read_jsonl(artifact_paths["rough_query_bucket_audit_jsonl"])
+    runtime_plan = read_json(artifact_paths["runtime_materialization_plan_json"])
+    latency_contract = read_json(artifact_paths["latency_budget_contract_json"])
+
+    assert summary["run_id"] == run_id
+    assert summary["status"] == "DIAGNOSTIC_V3_17_USER_LOCATOR_ROUGH_QUERY_ANSWER_QUALITY_NONPROD_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["target_locator_used"] is False
+    assert summary["gold_locator_used"] is False
+    assert summary["expected_supporting_text_used"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert summary["headline_score"] is None
+    assert summary["review_packet_user_fields_blank"] is True
+    assert set(summary["input_lineage"]) >= {
+        "v3_16_summary_json",
+        "v3_16_review_packet_jsonl",
+        "v3_16_responses_jsonl",
+        "v3_15_per_query_jsonl",
+        "v3_14_per_query_jsonl",
+        "source_registry_jsonl",
+    }
+    assert all(item["exists"] is True for item in summary["input_lineage"].values())
+    assert not any(item["path"].endswith((".pdf", ".xlsx")) for item in summary["input_lineage"].values())
+    assert not any("local-storage" in item["path"] for item in summary["input_lineage"].values())
+
+    expected_names = {
+        "summary.json",
+        "metrics.json",
+        "per_family.json",
+        "per_query.jsonl",
+        "responses.jsonl",
+        "review_packet.csv",
+        "review_packet.jsonl",
+        "guardrail_audit.json",
+        "leakage_audit.jsonl",
+        "prompt_manifest.json",
+        "user_locator_parse_audit.jsonl",
+        "user_locator_resolution_audit.jsonl",
+        "rough_query_bucket_audit.jsonl",
+        "runtime_materialization_plan.json",
+        "latency_budget_contract.json",
+    }
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == expected_names
+    for key, path in artifact_paths.items():
+        assert summary["artifact_paths"][key] == path.relative_to(ROOT).as_posix()
+        if key != "summary_json":
+            assert summary["artifact_sha256"][f"{key}_sha256"] == sha256_file(path)
+
+    required_buckets = {
+        "xlsx_user_provided_file_sheet_cell",
+        "xlsx_user_provided_range_or_table",
+        "xlsx_rough_query_answerable",
+        "xlsx_rough_query_unanswerable_or_ambiguous",
+    }
+    assert required_buckets <= {row["bucket"] for row in per_query}
+    assert len(per_query) == len(responses) == len(review_rows)
+    assert len(parse_audit) == len(review_rows)
+    assert len(resolution_audit) == len(review_rows)
+    assert rough_audit
+    assert metrics["generated_response_count"] == len(review_rows)
+    assert metrics["review_packet_row_count"] == len(review_rows)
+    assert metrics["user_locator_query_count"] > 0
+    assert metrics["user_locator_resolved_count"] > 0
+    assert metrics["user_locator_unresolved_count"] > 0
+    assert metrics["rough_query_count"] > 0
+    assert metrics["rough_query_abstain_count"] > 0
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert set(per_family["families_reported_separately"]) >= {"XLSX"}
+    assert per_family["no_collapsed_cross_family_score"] is True
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["raw_file_query_time_accessed"] is False for row in per_query)
+    assert all(row["source_atom_registry_canonical_truth"] is True for row in per_query)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in per_query)
+    assert all(row["target_locator_used"] is False for row in per_query)
+    assert all(row["gold_locator_used"] is False for row in per_query)
+    assert all(row["expected_supporting_text_used"] is False for row in per_query)
+    assert not any("expected_answer" in row or "supporting_evidence" in row for row in per_query)
+    assert all(row["official_metric_candidate"] is False for row in review_rows)
+    assert all(row["promotion_evidence"] is False for row in review_rows)
+    assert all(row["user_review_like"] == "" for row in review_rows)
+    assert all(row["user_expected_answer_decision"] == "" for row in review_rows)
+    assert all(row["user_supporting_evidence_decision"] == "" for row in review_rows)
+    assert all(row["user_relevance_decision"] == "" for row in review_rows)
+    assert all(row["user_answerability_decision"] == "" for row in review_rows)
+    assert any(row["user_locator_resolution_status"] == "UNRESOLVED" for row in review_rows)
+    assert all(row["target_locator_used"] is False for row in parse_audit)
+    assert all(row["gold_locator_used"] is False for row in parse_audit)
+    assert all(row["expected_supporting_text_used"] is False for row in parse_audit)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in resolution_audit)
+    assert guardrail["official_metric"] is False
+    assert guardrail["official_metric_input_rows"] == 0
+    assert guardrail["promotion_evidence"] is False
+    assert guardrail["source_atom_registry_canonical_truth"] is True
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert guardrail["target_locator_used"] is False
+    assert guardrail["gold_locator_used"] is False
+    assert guardrail["expected_supporting_text_used"] is False
+    assert guardrail["protected_namespaces_touched"] == []
+    assert leakage_rows and all(row["leakage_detected"] is False for row in leakage_rows)
+    assert prompt_manifest["requires_korean_answer"] is True
+    assert prompt_manifest["uses_user_provided_locator_text_from_query"] is True
+    assert prompt_manifest["uses_artifact_target_or_gold_locator_text"] is False
+    assert prompt_manifest["uses_expected_or_supporting_gold_text"] is False
+    assert runtime_plan["source_atom_registry_canonical_truth"] is True
+    assert runtime_plan["vector_payload_used_as_evidence_truth"] is False
+    assert runtime_plan["raw_pdf_xlsx_query_time_accessed"] is False
+    assert latency_contract["retrieval_latency_excludes_l8_generation"] is True
+    assert latency_contract["l8_generation_latency_reported_separately"] is True
+
+    assert artifact_paths["summary_json"].stat().st_size < 120_000
+    assert artifact_paths["metrics_json"].stat().st_size < 80_000
+    assert artifact_paths["per_family_json"].stat().st_size < 80_000
+    assert artifact_paths["per_query_jsonl"].stat().st_size < 400_000
+    assert artifact_paths["responses_jsonl"].stat().st_size < 700_000
+    assert artifact_paths["review_packet_csv"].stat().st_size < 700_000
+    assert artifact_paths["review_packet_jsonl"].stat().st_size < 700_000
 
 
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:

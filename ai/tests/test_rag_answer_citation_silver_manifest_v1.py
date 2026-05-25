@@ -5,7 +5,7 @@ import os
 import sys
 import csv
 import inspect
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -7258,9 +7258,944 @@ def test_v3_13_pdf_file_identity_structural_locator_builds_diagnostic_artifacts(
     assert all(row["vector_payload_used_as_evidence_truth"] is False for row in score_rows)
     assert all(row["used_gold_or_expected_text"] is False for row in score_rows)
     assert all(set(row["layers_recorded"]) >= {"L2_FILE_WORKBOOK_IDENTITY", "L3_STRUCTURAL_LOCATOR"} for row in trace_rows)
+
+
+def test_v3_14_layered_retrieval_runtime_adapter_nonprod_builds_pdf_xlsx_runtime_traces() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_14_layered_retrieval_runtime_adapter_nonprod as run
+
+    artifacts = run.build_artifacts()
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    per_family = artifacts["per_family"]
+    per_query = artifacts["per_query_rows"]
+    trace_rows = artifacts["layer_trace_rows"]
+    latency = artifacts["latency_summary"]
+    candidate_flow = artifacts["candidate_flow_summary"]
+    failure = artifacts["failure_taxonomy"]
+    guardrail = artifacts["guardrail_audit"]
+    leakage_rows = artifacts["leakage_audit_rows"]
+    holdout = artifacts["holdout_manifest"]
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_NONPROD_READY"
+    assert summary["run_class"] == "diagnostic_only_layered_retrieval_runtime_adapter_nonprod"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["answer_generation_executed"] is False
+    assert summary["deterministic_answer_execution_executed"] is False
+    assert summary["L8_executed"] is False
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert summary["protected_namespaces_touched"] == []
+    assert summary["total_runtime_adapter_rows"] == 673
+    assert summary["total_pdf_rows"] == 329
+    assert summary["total_xlsx_rows"] == 344
+    assert summary["families_reported_separately"] == ["PDF", "XLSX"]
+    assert summary["layer_contract"] == list(run.RUNTIME_LAYER_NAMES)
+    assert summary["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+    assert summary["runtime_adapter_surface"] == "diagnostic_replay_query_time_adapter"
+    assert summary["v3_12_xlsx_control_reference"]["optimized_in_v3_14"] is False
+    assert summary["v3_13_pdf_diagnostic_reference"]["optimized_in_v3_14"] is False
+
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+        "promotion_evidence",
+        "direct_normalized_value_query_matching_used",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+
+    assert metrics["total_runtime_adapter_rows"] == 673
+    assert metrics["total_pdf_rows"] == 329
+    assert metrics["total_xlsx_rows"] == 344
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["product_success_evidence_allowed"] is False
+    assert metrics["raw_file_query_time_accessed"] is False
+    assert metrics["L8_executed"] is False
+    assert set(metrics["source_family_separated_metrics"]) == {"PDF", "XLSX"}
+    assert set(per_family["per_source_family"]) == {"PDF", "XLSX"}
+    assert per_family["families_reported_separately"] == ["PDF", "XLSX"]
+
+    assert len(per_query) == 673
+    assert len(trace_rows) == len(per_query)
+    assert {row["source_family"] for row in per_query} == {"PDF", "XLSX"}
+    assert {row["source_family"] for row in trace_rows} == {"PDF", "XLSX"}
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["raw_file_query_time_accessed"] is False for row in per_query)
+    assert all(row["L8_executed"] is False for row in per_query)
+    assert all(row["answer_generation_executed"] is False for row in per_query)
+    assert all(row["deterministic_answer_execution_executed"] is False for row in per_query)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in per_query)
+    assert all(row["source_atom_hydration_status"] in {"HYDRATED", "NO_SOURCEATOM_CANDIDATE"} for row in per_query)
+    assert all(row["evidence_bundle_assembly_status"] in {"ASSEMBLED", "NO_HYDRATED_EVIDENCE"} for row in per_query)
+    assert all(isinstance(row["selected_candidate_ids"], list) for row in per_query)
+    invalid_registry_candidate = run.Candidate(
+        candidate_id="invalid-registry-row",
+        source_family="XLSX",
+        rank=1,
+        source_atom_id="invalid-source-atom",
+    )
+    assert (
+        run.registry_evidence_bundle_is_valid(
+            invalid_registry_candidate,
+            {"invalid-source-atom": {"source_atom_id": "invalid-source-atom", "source_family": "XLSX"}},
+        )
+        is False
+    )
+
+    for row in trace_rows[:25] + trace_rows[-25:]:
+        assert row["layers_recorded"] == list(run.RUNTIME_LAYER_NAMES)
+        assert row["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+        assert row["raw_file_query_time_accessed"] is False
+        assert row["L8_executed"] is False
+        by_layer = {layer["layer_name"]: layer for layer in row["layer_timings"]}
+        assert set(by_layer) == set(run.RUNTIME_LAYER_NAMES)
+        for layer_name in run.RUNTIME_LAYER_NAMES:
+            layer = by_layer[layer_name]
+            assert layer["duration_ms"] >= 0
+            assert layer["input_candidate_count"] >= 0
+            assert layer["output_candidate_count"] >= 0
+            assert layer["dropped_candidate_count"] >= 0
+            assert isinstance(layer["drop_reasons"], list)
+            assert isinstance(layer["signal_types"], list)
+            assert layer["raw_file_query_time_accessed"] is False
+        assert by_layer["L4_SOURCEATOM_HYDRATION"]["source_atom_hydration_status"] in {
+            "HYDRATED",
+            "NO_SOURCEATOM_CANDIDATE",
+        }
+        assert by_layer["L5_EVIDENCE_BUNDLE_ASSEMBLY"]["evidence_bundle_assembly_status"] in {
+            "ASSEMBLED",
+            "NO_HYDRATED_EVIDENCE",
+        }
+        assert by_layer["L7_ANSWER_READY_CONTEXT"]["answer_ready_context_status"] in {
+            "AVAILABLE",
+            "UNAVAILABLE",
+        }
+
+    for row in trace_rows:
+        by_layer = {layer["layer_name"]: layer for layer in row["layer_timings"]}
+        l5 = by_layer["L5_EVIDENCE_BUNDLE_ASSEMBLY"]
+        l7 = by_layer["L7_ANSWER_READY_CONTEXT"]
+        if l5["evidence_bundle_assembly_status"] == "ASSEMBLED":
+            assert l5["output_candidate_count"] > 0
+            assert all(
+                drop["reason"] != "source_atom_registry_bundle_invalid" for drop in l5["drop_reasons"]
+            )
+        if l7["answer_ready_context_status"] == "AVAILABLE":
+            assert l7["output_candidate_count"] == l7["input_candidate_count"]
+            assert all(
+                drop["reason"] != "answer_ready_context_unavailable" for drop in l7["drop_reasons"]
+            )
+
+    assert latency["total_runtime_adapter_rows"] == 673
+    assert latency["median_total_retrieval_latency_ms"] >= 0
+    assert latency["p95_total_retrieval_latency_ms"] >= latency["median_total_retrieval_latency_ms"]
+    assert set(latency["per_layer"]) == set(run.RUNTIME_LAYER_NAMES)
+    assert set(latency["per_source_family"]) == {"PDF", "XLSX"}
+    assert candidate_flow["total_runtime_adapter_rows"] == 673
+    assert set(candidate_flow["per_layer"]) == set(run.RUNTIME_LAYER_NAMES)
+    assert all(layer["max_output_candidate_count"] >= 0 for layer in candidate_flow["per_layer"].values())
+    assert failure["taxonomy_scope"] == "layered_retrieval_runtime_adapter_nonprod"
+    assert failure["zero_output_layer_counts"].get("L0_QUERY_ROUTING", 0) == 0
+    assert guardrail["raw_file_query_time_accessed"] is False
+    assert guardrail["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert guardrail["source_atom_registry_mutated"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert leakage_rows and all(row["success_evidence_allowed"] is False for row in leakage_rows)
+    assert holdout["fresh_real_holdout_sufficient"] is False
+    assert holdout["product_success_evidence_allowed"] is False
+
+
+def test_v3_15_xlsx_l3_table_range_locator_nonprod_builds_on_v3_14_runtime_trace() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_15_xlsx_l3_table_range_locator_nonprod_improvement as run
+
+    artifacts = run.build_artifacts()
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    per_family = artifacts["per_family"]
+    per_query = artifacts["per_query_rows"]
+    trace_rows = artifacts["layer_trace_rows"]
+    latency = artifacts["latency_summary"]
+    candidate_flow = artifacts["candidate_flow_summary"]
+    failure = artifacts["failure_taxonomy"]
+    guardrail = artifacts["guardrail_audit"]
+    leakage_rows = artifacts["leakage_audit_rows"]
+    holdout = artifacts["holdout_manifest"]
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_NONPROD_IMPROVEMENT_READY"
+    assert summary["run_class"] == "diagnostic_only_xlsx_l3_table_range_locator_nonprod_improvement"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["fresh_real_holdout_sufficient"] is False
+    assert summary["answer_generation_executed"] is False
+    assert summary["deterministic_answer_execution_executed"] is False
+    assert summary["L8_executed"] is False
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert summary["protected_namespaces_touched"] == []
+    assert summary["total_runtime_adapter_rows"] == 344
+    assert summary["total_xlsx_rows"] == 344
+    assert summary["total_pdf_rows"] == 0
+    assert summary["families_reported_separately"] == ["XLSX"]
+    assert summary["optimization_surface"] == "XLSX_L3_TABLE_RANGE_LOCATOR_ONLY"
+    assert summary["pdf_control_status"] == "EXCLUDED_FROM_OPTIMIZATION_SURFACE"
+    assert summary["input_lineage"]["v3_14_xlsx_runtime_trace_jsonl"]["path"].endswith(
+        "official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_layer_trace_per_query.jsonl"
+    )
+
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "production_mutation",
+        "source_atom_registry_mutated",
+        "threshold_tuning",
+        "winner_selection",
+        "promotion_evidence",
+        "direct_normalized_value_query_matching_used",
+        "raw_answer_value_for_query_scoring_used",
+        "answer_value_in_query_success_evidence_used",
+        "index_to_content_success_evidence_used",
+        "file_or_source_title_leak_success_evidence_used",
+        "exact_query_hack_used",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+
+    assert metrics["total_runtime_adapter_rows"] == 344
+    assert metrics["source_family_separated_metrics"]["XLSX"]["row_count"] == 344
+    assert metrics["source_family_separated_metrics"]["XLSX"]["l3_output_availability"]["denominator"] == 344
+    assert metrics["source_family_separated_metrics"]["XLSX"]["l3_output_availability"]["numerator"] > 29
+    assert metrics["source_family_separated_metrics"]["XLSX"]["source_atom_hydrated_after_l3"]["numerator"] > 29
+    assert metrics["source_family_separated_metrics"]["XLSX"]["table_or_range@3"]["denominator"] == 344
+    assert metrics["source_family_separated_metrics"]["XLSX"]["table_or_range@3"]["source_run_id"] == run.v312.RUN_ID
+    assert metrics["source_family_separated_metrics"]["XLSX"]["table_or_range@3"]["computed_by_v3_15"] is False
+    assert metrics["source_family_separated_metrics"]["XLSX"]["table_or_range@3"]["optimization_target"] is False
+    assert metrics["source_family_separated_metrics"]["XLSX"]["cell_or_value@3"]["metric_role"] == "downstream_diagnostic_only"
+    assert metrics["source_family_separated_metrics"]["XLSX"]["cell_or_value@3"]["source_run_id"] == run.v312.RUN_ID
+    assert metrics["source_family_separated_metrics"]["XLSX"]["cell_or_value@3"]["optimization_target"] is False
+    assert per_family["families_reported_separately"] == ["XLSX"]
+
+    assert len(per_query) == 344
+    assert len(trace_rows) == 344
+    assert {row["source_family"] for row in per_query} == {"XLSX"}
+    assert {row["source_family"] for row in trace_rows} == {"XLSX"}
+    assert all(row["source_artifact_run_id"] == run.RUN_ID for row in per_query)
+    assert all(row["v3_14_source_trace_run_id"].endswith("runtime_adapter_nonprod") for row in per_query)
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["raw_file_query_time_accessed"] is False for row in per_query)
+    assert all(row["L8_executed"] is False for row in per_query)
+    assert all(row["answer_generation_executed"] is False for row in per_query)
+    assert all(row["deterministic_answer_execution_executed"] is False for row in per_query)
+    assert all(row["direct_normalized_value_query_matching_used"] is False for row in per_query)
+    assert all(row["raw_answer_value_for_query_scoring_used"] is False for row in per_query)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in per_query)
+    assert any(row["l3_output_candidate_count"] > row["v3_14_l3_output_candidate_count"] for row in per_query)
+    assert all(row["table_or_range_metric_source_run_id"] == run.v312.RUN_ID for row in per_query)
+    assert all(row["table_or_range_metric_computed_by_v3_15"] is False for row in per_query)
+    assert all(row["cell_value_metric_source_run_id"] == run.v312.RUN_ID for row in per_query)
+    assert all(row["cell_value_optimization_target"] is False for row in per_query)
+
+    for row in trace_rows:
+        assert row["layers_recorded"] == list(run.RUNTIME_LAYER_NAMES)
+        assert row["layers_skipped_by_design"] == ["L8_GENERATION_OR_DETERMINISTIC_EXECUTION"]
+        assert row["raw_file_query_time_accessed"] is False
+        assert row["L8_executed"] is False
+        by_layer = {layer["layer_name"]: layer for layer in row["layer_timings"]}
+        assert set(by_layer) == set(run.RUNTIME_LAYER_NAMES)
+        assert by_layer["L3_STRUCTURAL_LOCATOR"]["signal_types"]
+        assert "structural" in by_layer["L3_STRUCTURAL_LOCATOR"]["signal_types"]
+        assert by_layer["L3_STRUCTURAL_LOCATOR"]["output_candidate_count"] >= by_layer["L4_SOURCEATOM_HYDRATION"][
+            "output_candidate_count"
+        ]
+        for layer_name in run.RUNTIME_LAYER_NAMES:
+            layer = by_layer[layer_name]
+            assert layer["duration_ms"] >= 0
+            assert layer["input_candidate_count"] >= 0
+            assert layer["output_candidate_count"] >= 0
+            assert layer["dropped_candidate_count"] >= 0
+            assert isinstance(layer["drop_reasons"], list)
+            assert isinstance(layer["signal_types"], list)
+            assert layer["raw_file_query_time_accessed"] is False
+
+    assert latency["total_runtime_adapter_rows"] == 344
+    assert set(latency["per_layer"]) == set(run.RUNTIME_LAYER_NAMES)
+    assert candidate_flow["total_runtime_adapter_rows"] == 344
+    assert candidate_flow["per_layer"]["L3_STRUCTURAL_LOCATOR"]["zero_output_layer_count"] < 315
+    assert failure["taxonomy_scope"] == "xlsx_l3_table_range_locator_nonprod_improvement"
+    assert guardrail["raw_file_query_time_accessed"] is False
+    assert guardrail["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+    assert guardrail["source_atom_registry_mutated"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert leakage_rows and all(row["success_evidence_allowed"] is False for row in leakage_rows)
+    assert holdout["fresh_real_holdout_sufficient"] is False
+    assert holdout["product_success_evidence_allowed"] is False
     assert guardrail["protected_namespaces_touched"] == []
     assert guardrail["source_atom_registry_mutated"] is False
     assert guardrail["vector_payload_used_as_evidence_truth"] is False
+
+
+def test_v3_16_pdf_xlsx_final_llm_answer_quality_review_builds_review_packet_without_scoring() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod as run
+
+    def fake_llm(system_prompt: str, user_prompt: str) -> str:
+        assert "expected" not in user_prompt.lower()
+        assert "supporting" not in user_prompt.lower()
+        assert "L0_" not in user_prompt
+        assert "L7_" not in user_prompt
+        return json.dumps(
+            {
+                "answer": "제공된 근거에 따르면 요청한 값은 근거 범위 안에서 확인됩니다.",
+                "citations": [{"citation_id": "S1", "locator": "source_atom=S1"}],
+                "abstain_reason": "",
+            },
+            ensure_ascii=False,
+        )
+
+    artifacts = run.build_artifacts(llm_client=fake_llm)
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    per_family = artifacts["per_family"]
+    per_query = artifacts["per_query_rows"]
+    responses = artifacts["response_rows"]
+    review_rows = artifacts["review_rows"]
+    guardrail = artifacts["guardrail_audit"]
+    leakage_rows = artifacts["leakage_audit_rows"]
+    prompt_manifest = artifacts["prompt_manifest"]
+    runtime_plan = artifacts["runtime_materialization_plan"]
+    latency_contract = artifacts["latency_budget_contract"]
+    online_audit = artifacts["per_layer_online_work_audit_rows"]
+    cache_contract = artifacts["cache_key_contract"]
+    forbidden_audit = artifacts["forbidden_query_time_work_audit"]
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_16_FINAL_LLM_ANSWER_QUALITY_REVIEW_NONPROD_READY"
+    assert summary["run_class"] == "diagnostic_only_final_llm_answer_quality_review_nonprod"
+    assert summary["diagnostic_only"] is True
+    assert summary["L8_generation_executed"] is True
+    assert summary["answer_generation_executed"] is True
+    assert summary["deterministic_official_execution"] is False
+    assert summary["deterministic_answer_execution_executed"] is False
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["db_or_production_namespace_written"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["threshold_tuning"] is False
+    assert summary["winner_selection"] is False
+    assert summary["protected_namespaces_touched"] == []
+    assert summary["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert summary["headline_score"] is None
+    assert summary["review_packet_user_fields_blank"] is True
+    assert summary["future_scored_adapter_status"] == "DISABLED_PENDING_USER_APPROVAL"
+
+    assert metrics["diagnostic_only"] is True
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["generated_response_count"] == len(responses) == len(review_rows)
+    assert metrics["review_packet_row_count"] == len(review_rows)
+    assert metrics["parse_ok_count"] == len(review_rows)
+    assert metrics["invalid_json_count"] == 0
+    assert metrics["truncated_or_malformed_response_count"] == 0
+    assert metrics["citation_rendered_count"] == sum(
+        1 for row in review_rows if row["sample_bucket"] != "xlsx_no_candidate_abstain"
+    )
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert set(per_family["families_reported_separately"]) == {"PDF", "XLSX"}
+    assert "PDF" in per_family["per_source_family"]
+    assert "XLSX" in per_family["per_source_family"]
+    assert any(row["sample_bucket"] == "xlsx_answer_ready" for row in per_query)
+    assert any(row["sample_bucket"] == "xlsx_no_candidate_abstain" for row in per_query)
+    assert any(row["sample_bucket"] == "pdf_answer_ready_control" for row in per_query)
+    assert any(row["sample_bucket"] == "pdf_residual_control" for row in per_query)
+    assert Counter(row["sample_bucket"] for row in per_query) == {
+        "xlsx_answer_ready": 30,
+        "xlsx_no_candidate_abstain": 10,
+        "pdf_answer_ready_control": 15,
+        "pdf_residual_control": 5,
+    }
+    assert per_family["per_source_family"]["XLSX"]["row_count"] == 40
+    assert per_family["per_source_family"]["PDF"]["row_count"] == 20
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["raw_file_query_time_accessed"] is False for row in per_query)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in per_query)
+    assert all(row["L8_generation_executed"] is True for row in per_query)
+    assert all(row["official_metric_candidate"] is False for row in per_query)
+    assert all("expected_answer" not in row and "supporting_evidence" not in row for row in per_query)
+
+    user_owned_fields = {
+        "user_review_like",
+        "user_review_note",
+        "user_expected_answer_decision",
+        "user_supporting_evidence_decision",
+        "user_relevance_decision",
+        "user_answerability_decision",
+    }
+    for row in review_rows:
+        assert row["final_answer"]
+        assert row["source_family"] in {"PDF", "XLSX"}
+        if row["sample_bucket"] == "xlsx_no_candidate_abstain":
+            assert row["abstain_quality_flag"] is True
+        else:
+            assert row["rendered_citations"]
+            assert row["selected_source_atom_ids"]
+            assert row["selected_evidence_excerpt"]
+        assert row["promotion_evidence"] is False
+        assert row["official_metric_candidate"] is False
+        assert all(row[field] == "" for field in user_owned_fields)
+        assert "L7_" not in row["final_answer"]
+        assert "debug" not in row["final_answer"].lower()
+
+    assert guardrail["L8_generation_executed"] is True
+    assert guardrail["deterministic_official_execution"] is False
+    assert guardrail["official_metric"] is False
+    assert guardrail["official_metric_input_rows"] == 0
+    assert guardrail["promotion_evidence"] is False
+    assert guardrail["raw_file_query_time_accessed"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+    assert guardrail["source_atom_registry_canonical_truth"] is True
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert guardrail["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrail["direct_normalized_value_query_matching_used"] is False
+    assert guardrail["protected_namespaces_touched"] == []
+    assert leakage_rows and all(row["leakage_detected"] is False for row in leakage_rows)
+    assert prompt_manifest["prompt_version"] == run.PROMPT_VERSION
+    assert prompt_manifest["requires_korean_answer"] is True
+    assert prompt_manifest["uses_expected_or_supporting_gold_text"] is False
+    assert runtime_plan["all_l0_l8_components_classified_once"] is True
+    assert runtime_plan["source_atom_registry_canonical_truth"] is True
+    assert runtime_plan["vector_payload_used_as_evidence_truth"] is False
+    assert set(runtime_plan["per_layer_classification"]) == set(run.RUNTIME_LAYER_NAMES)
+    assert all(
+        row["materialization_classification"] in run.MATERIALIZATION_CLASSES for row in online_audit
+    )
+    assert all(row["raw_pdf_xlsx_query_time_accessed"] is False for row in online_audit)
+    assert all(row["full_workbook_or_sheet_scan_query_time"] is False for row in online_audit)
+    assert all(row["full_pdf_page_or_block_scan_query_time"] is False for row in online_audit)
+    assert all(row["broad_source_atom_registry_scan_query_time"] is False for row in online_audit)
+    l3_audit = next(row for row in online_audit if row["layer_name"] == "L3_STRUCTURAL_LOCATOR")
+    l4_audit = next(row for row in online_audit if row["layer_name"] == "L4_SOURCEATOM_HYDRATION")
+    l5_audit = next(row for row in online_audit if row["layer_name"] == "L5_EVIDENCE_BUNDLE_ASSEMBLY")
+    l8_audit = next(row for row in online_audit if row["layer_name"] == "L8_FINAL_LLM_ANSWER_GENERATION")
+    assert l3_audit["reads_only_precomputed_structural_features"] is True
+    assert l3_audit["reranks_only_bounded_precomputed_structural_candidates"] is True
+    assert l4_audit["hydrates_by_source_atom_id"] is True
+    assert l4_audit["hydrates_from_vector_payload"] is False
+    assert l5_audit["bounded_by_max_candidate_count"] is True
+    assert l5_audit["max_candidate_count_contract"] >= 1
+    assert l8_audit["latency_reported_separately_from_retrieval"] is True
+    assert latency_contract["retrieval_latency_excludes_l8_generation"] is True
+    assert latency_contract["l8_generation_latency_reported_separately"] is True
+    assert latency_contract["retrieval_latency_field"] == "retrieval_latency_ms"
+    assert latency_contract["l8_generation_latency_field"] == "l8_generation_latency_ms"
+    assert metrics["llm_latency_summary"]["row_count"] == len(per_query)
+    assert metrics["llm_latency_summary"]["p95_llm_elapsed_ms"] >= metrics["llm_latency_summary"]["median_llm_elapsed_ms"]
+    assert metrics["latency_budget"]["budget_role"] == "diagnostic_only"
+    assert metrics["latency_budget"]["promotion_evidence"] is False
+    assert cache_contract["cache_material_is_source_truth"] is False
+    assert cache_contract["source_atom_registry_remains_canonical_truth"] is True
+    assert forbidden_audit["policy_pass"] is True
+    assert forbidden_audit["raw_pdf_xlsx_parsing_query_time"]["detected"] is False
+    assert forbidden_audit["full_workbook_scan_query_time"]["detected"] is False
+    assert forbidden_audit["full_pdf_page_block_scan_query_time"]["detected"] is False
+    assert forbidden_audit["broad_source_atom_registry_scan_query_time"]["detected"] is False
+    assert all("runtime_materialization_classification" in row for row in review_rows)
+    assert all("L8_FINAL_LLM_ANSWER_GENERATION=query_time_cacheable" in row["runtime_materialization_classification"] for row in review_rows)
+
+
+def test_v3_16_local_llm_unavailable_path_fails_explicitly_without_noop_generation() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod as run
+
+    artifacts = run.build_artifacts(
+        base_url="http://127.0.0.1:9/v1",
+        timeout_seconds=1,
+        llm_client=None,
+    )
+    summary = artifacts["summary"]
+    guardrail = artifacts["guardrail_audit"]
+
+    assert summary["status"] == "LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED"
+    assert summary["diagnostic_only"] is True
+    assert summary["local_llm_unavailable_fail_closed"] is True
+    assert summary["noop_or_extractive_generator_used"] is False
+    assert summary["generated_response_count"] == 0
+    assert summary["L8_generation_executed"] is False
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert guardrail["local_llm_unavailable_fail_closed"] is True
+    assert guardrail["noop_or_extractive_generator_used"] is False
+    assert artifacts["runtime_materialization_plan"]["all_l0_l8_components_classified_once"] is True
+    assert artifacts["latency_budget_contract"]["l8_generation_latency_reported_separately"] is True
+
+
+def test_v3_16_local_llm_unavailable_write_path_persists_status_without_crash(tmp_path, monkeypatch) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod as run
+
+    output_dir = tmp_path / "quality" / run.RUN_ID
+    monkeypatch.setattr(run, "OUTPUT_DIR", output_dir)
+    monkeypatch.setattr(
+        run,
+        "OUTPUTS",
+        {
+            "summary_json": output_dir / "summary.json",
+            "metrics_json": output_dir / "metrics.json",
+            "per_family_json": output_dir / "per_family.json",
+            "per_query_jsonl": output_dir / "per_query.jsonl",
+            "responses_jsonl": output_dir / "responses.jsonl",
+            "review_packet_csv": output_dir / "review_packet.csv",
+            "review_packet_jsonl": output_dir / "review_packet.jsonl",
+            "guardrail_audit_json": output_dir / "guardrail_audit.json",
+            "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+            "prompt_manifest_json": output_dir / "prompt_manifest.json",
+            "local_llm_readiness_json": output_dir / "local_llm_readiness.json",
+            "runtime_materialization_plan_json": output_dir / "runtime_materialization_plan.json",
+            "latency_budget_contract_json": output_dir / "latency_budget_contract.json",
+            "per_layer_online_work_audit_jsonl": output_dir / "per_layer_online_work_audit.jsonl",
+            "cache_key_contract_json": output_dir / "cache_key_contract.json",
+            "forbidden_query_time_work_audit_json": output_dir / "forbidden_query_time_work_audit.json",
+        },
+    )
+    monkeypatch.setattr(run, "STATUS_JSONL", tmp_path / "status.jsonl")
+
+    artifacts = run.build_artifacts(
+        base_url="http://127.0.0.1:9/v1",
+        timeout_seconds=1,
+        llm_client=None,
+    )
+    summary = run.write_artifacts(artifacts)
+    events = [json.loads(line) for line in run.STATUS_JSONL.read_text(encoding="utf-8").splitlines()]
+
+    assert summary["status"] == "LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED"
+    expected_dir = output_dir.relative_to(ROOT).as_posix() if output_dir.is_relative_to(ROOT) else output_dir.as_posix()
+    assert summary["review_packet_dir"] == expected_dir
+    assert summary["generated_response_count"] == 0
+    assert summary["L8_generation_executed"] is False
+    assert events[-1]["status"] == "LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED"
+    assert events[-1]["local_llm_unavailable_fail_closed"] is True
+    assert events[-1]["L8_generation_executed"] is False
+    assert (output_dir / "runtime_materialization_plan.json").exists()
+    assert (output_dir / "latency_budget_contract.json").exists()
+
+
+def test_v3_16_malformed_llm_output_is_fail_row_closed_not_final_answer_raw_json() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod as run
+
+    artifacts = run.build_artifacts(llm_client=lambda _system, _user: '{"answer": "잘린 응답"')
+    metrics = artifacts["metrics"]
+    review_rows = artifacts["review_rows"]
+    responses = artifacts["response_rows"]
+
+    assert metrics["parse_ok_count"] == 0
+    assert metrics["invalid_json_count"] == len(review_rows)
+    assert metrics["truncated_or_malformed_response_count"] == len(review_rows)
+    assert all(row["parse_ok"] is False for row in responses)
+    assert all(row["malformed_response_flag"] is True for row in responses)
+    assert all(not row["final_answer"].lstrip().startswith("{") for row in review_rows)
+    assert all("유효한 JSON" in row["final_answer"] for row in review_rows)
+    assert all(
+        json.loads(row["diagnostic_flags"])["malformed_response_flag"] is True for row in review_rows
+    )
+
+
+def test_v3_16_evidence_context_preserves_sourceatom_truth_over_vector_payload() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod as run
+
+    source_atom_id = "srcatom_v1_xlsx_unit_test"
+    source_registry = {
+        source_atom_id: {
+            "source_atom_id": source_atom_id,
+            "source_family": "XLSX",
+            "source_identity": "docv_unit:correct.xlsx:Sheet1:A1:B2:B2",
+            "content_hash": "hash",
+            "extraction_version": "unit_test_snapshot",
+            "raw_locator": {
+                "workbook": "correct.xlsx",
+                "sheet": "Sheet1",
+                "range": "A1:B2",
+                "cell": "B2",
+                "row_label": "항목=정상",
+                "target_column": "값",
+                "normalized_value": "42",
+                "source_path": "local-storage/unit/correct.xlsx",
+            },
+            "normalized_text_or_value_snapshot": "correct.xlsx / Sheet1 B2: 항목=정상 | 값=42",
+            "parent_pointers": {"search_view_ids": ["searchview_poisoned"]},
+            "canonical_citation_payload": {
+                "source_family": "XLSX",
+                "source_identity": "docv_unit:correct.xlsx:Sheet1:A1:B2:B2",
+                "locator_fingerprint": "correct-fingerprint",
+                "search_unit_id": "su_unit",
+                "workbook": "correct.xlsx",
+                "sheet": "Sheet1",
+                "range": "A1:B2",
+                "cell": "B2",
+                "row_label": "항목=정상",
+                "target_column": "값",
+                "normalized_value": "42",
+            },
+            "workbook_id": "correct.xlsx",
+            "workbook_version_id": "docv_unit",
+            "raw_file_exists": True,
+            "extraction_snapshot_present": True,
+            "source_registry_version": "source-registry-v1",
+        }
+    }
+    case = {
+        "review_id": "v3_16_unit_001",
+        "diagnostic_case_id": "unit:poisoned_vector",
+        "query_id": "unit_query",
+        "sample_bucket": "xlsx_answer_ready",
+        "source_family": "XLSX",
+        "selected_source_atom_ids": [source_atom_id],
+        "source_row": {
+            "vector_payload_used_as_evidence_truth": False,
+            "canonical_citation_payload": {"source_identity": "POISONED_VECTOR_PAYLOAD"},
+            "display_text": "POISONED_VECTOR_TEXT",
+        },
+    }
+
+    evidence = run.evidence_for_case(case, source_registry=source_registry, max_evidence_chars=500)
+
+    assert "correct.xlsx" in evidence["rendered_citations"]
+    assert "값=42" in evidence["selected_evidence_excerpt"]
+    assert "POISONED_VECTOR_PAYLOAD" not in evidence["rendered_citations"]
+    assert "POISONED_VECTOR_TEXT" not in evidence["selected_evidence_excerpt"]
+
+
+def test_v3_16_runtime_path_has_no_raw_pdf_xlsx_parser_or_unbounded_scan_calls() -> None:
+    script_path = ROOT / "ai" / "scripts" / "rag_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod.py"
+    source = script_path.read_text(encoding="utf-8")
+
+    forbidden_snippets = (
+        "openpyxl.load_workbook",
+        "pdfplumber.open",
+        "fitz.open",
+        "pypdf.PdfReader",
+        "PdfReader(",
+        "load_workbook(",
+        "iter_rows(",
+        "iter_cols(",
+        "extract_text(",
+        "extract_words(",
+    )
+    assert not any(snippet in source for snippet in forbidden_snippets)
+    assert "assemble_evidence_bundle" in source
+    assert "render_citation" in source
+    assert "source_registry=source_registry" in source
+
+
+def test_v3_17_user_locator_parser_uses_query_text_only_and_resolves_sourceatoms() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_17_user_locator_and_rough_query_answer_quality_nonprod as run
+
+    source_atom_id = "srcatom_v1_xlsx_locator_unit"
+    source_registry = {
+        source_atom_id: {
+            "source_atom_id": source_atom_id,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:docv_unit:correct.xlsx:Sheet1:A1:C3:B2",
+            "content_hash": "hash",
+            "extraction_version": "unit_test_snapshot",
+            "raw_locator": {
+                "workbook": "correct.xlsx",
+                "sheet": "Sheet1",
+                "range": "A1:C3",
+                "cell": "B2",
+                "row_label": "항목=정상",
+                "target_column": "값",
+                "normalized_value": "42",
+            },
+            "normalized_text_or_value_snapshot": "correct.xlsx / Sheet1 B2: 항목=정상 | 값=42",
+            "parent_pointers": {"search_view_ids": ["searchview_unit"]},
+            "canonical_citation_payload": {
+                "source_family": "XLSX",
+                "source_identity": "XLSX:docv_unit:correct.xlsx:Sheet1:A1:C3:B2",
+                "locator_fingerprint": "correct-fingerprint",
+                "search_unit_id": "su_unit",
+                "workbook": "correct.xlsx",
+                "sheet": "Sheet1",
+                "range": "A1:C3",
+                "cell": "B2",
+                "row_label": "항목=정상",
+                "target_column": "값",
+                "normalized_value": "42",
+            },
+            "workbook_id": "correct.xlsx",
+            "workbook_version_id": "docv_unit",
+            "raw_file_exists": True,
+            "extraction_snapshot_present": True,
+            "source_registry_version": "source-registry-v1",
+        }
+    }
+    artifact_context = {
+        "target_locator": "forbidden.xlsx / GoldSheet!Z99",
+        "gold_locator": "forbidden.xlsx / GoldSheet!Z99",
+        "expected_answer": "금지된 정답",
+        "supporting_evidence": "금지된 근거",
+    }
+
+    parsed = run.parse_user_locator_text(
+        "correct.xlsx 파일 Sheet1 시트 B2 값 알려줘",
+        artifact_context=artifact_context,
+    )
+    resolution = run.resolve_user_locator_to_source_atoms(
+        parsed,
+        source_registry=source_registry,
+        source_family="XLSX",
+        top_k=3,
+    )
+
+    assert parsed["query_user_provided_locator"] is True
+    assert parsed["user_locator_type"] == "mixed"
+    assert "correct.xlsx" in parsed["user_locator_text"]
+    assert "Sheet1" in parsed["user_locator_text"]
+    assert "B2" in parsed["user_locator_text"]
+    assert "forbidden.xlsx" not in parsed["user_locator_text"]
+    assert parsed["target_locator_used"] is False
+    assert parsed["gold_locator_used"] is False
+    assert parsed["expected_supporting_text_used"] is False
+    assert resolution["user_locator_resolved_to_sourceatom"] is True
+    assert resolution["user_locator_resolution_status"] == "RESOLVED"
+    assert resolution["selected_source_atom_ids"] == [source_atom_id]
+    assert resolution["vector_payload_used_as_evidence_truth"] is False
+
+
+def test_v3_17_query_without_locator_ignores_artifact_locator_fields() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_17_user_locator_and_rough_query_answer_quality_nonprod as run
+
+    parsed = run.parse_user_locator_text(
+        "이거 값 좀 봐줘",
+        artifact_context={
+            "target_locator": "forbidden.xlsx / GoldSheet!Z99",
+            "gold_locator": "forbidden.xlsx / GoldSheet!Z99",
+            "expected_answer": "금지된 정답",
+            "supporting_evidence": "금지된 근거",
+        },
+    )
+    resolution = run.resolve_user_locator_to_source_atoms(
+        parsed,
+        source_registry={},
+        source_family="XLSX",
+        top_k=3,
+    )
+
+    assert parsed["query_user_provided_locator"] is False
+    assert parsed["user_locator_type"] == "none"
+    assert parsed["user_locator_text"] == ""
+    assert parsed["target_locator_used"] is False
+    assert parsed["gold_locator_used"] is False
+    assert parsed["expected_supporting_text_used"] is False
+    assert resolution["user_locator_resolved_to_sourceatom"] is False
+    assert resolution["user_locator_resolution_status"] == "NO_USER_LOCATOR"
+    assert resolution["selected_source_atom_ids"] == []
+
+
+def test_v3_17_diagnostic_artifacts_cover_user_locator_and_rough_query_buckets() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_17_user_locator_and_rough_query_answer_quality_nonprod as run
+
+    def fake_llm(_system_prompt: str, user_prompt: str) -> str:
+        lower_prompt = user_prompt.lower()
+        forbidden_prompt_terms = (
+            "target_locator",
+            "gold_locator",
+            "expected_answer",
+            "supporting_evidence",
+            "qrels",
+            "label",
+            "sourceatom",
+            "searchview",
+            "l7_",
+            "l8_",
+        )
+        assert not any(term in lower_prompt for term in forbidden_prompt_terms)
+        assert "한국어" in user_prompt
+        assert "제공 근거" in user_prompt
+        return json.dumps(
+            {
+                "answer": "제공된 근거에 따르면 요청한 내용은 근거 범위 안에서 확인됩니다.",
+                "citations": [{"citation_id": "S1", "locator": "제공된 위치"}],
+                "abstain_reason": "",
+            },
+            ensure_ascii=False,
+        )
+
+    artifacts = run.build_artifacts(llm_client=fake_llm)
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    per_family = artifacts["per_family"]
+    per_query = artifacts["per_query_rows"]
+    responses = artifacts["response_rows"]
+    review_rows = artifacts["review_rows"]
+    guardrail = artifacts["guardrail_audit"]
+    leakage_rows = artifacts["leakage_audit_rows"]
+    prompt_manifest = artifacts["prompt_manifest"]
+    parse_audit = artifacts["user_locator_parse_audit_rows"]
+    resolution_audit = artifacts["user_locator_resolution_audit_rows"]
+    rough_audit = artifacts["rough_query_bucket_audit_rows"]
+
+    required_buckets = {
+        "xlsx_user_provided_file_sheet_cell",
+        "xlsx_user_provided_range_or_table",
+        "xlsx_rough_query_answerable",
+        "xlsx_rough_query_unanswerable_or_ambiguous",
+    }
+    buckets = {row["bucket"] for row in review_rows}
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["status"] == "DIAGNOSTIC_V3_17_USER_LOCATOR_ROUGH_QUERY_ANSWER_QUALITY_NONPROD_READY"
+    assert summary["run_class"] == "diagnostic_only_user_locator_and_rough_query_answer_quality_nonprod"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["product_success_evidence_allowed"] is False
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["target_locator_used"] is False
+    assert summary["gold_locator_used"] is False
+    assert summary["expected_supporting_text_used"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert summary["headline_score"] is None
+    assert summary["review_packet_user_fields_blank"] is True
+    assert required_buckets <= buckets
+
+    assert metrics["diagnostic_only"] is True
+    assert metrics["generated_response_count"] == len(responses) == len(review_rows)
+    assert metrics["review_packet_row_count"] == len(review_rows)
+    assert metrics["parse_ok_count"] + metrics["invalid_json_count"] == len(review_rows)
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["user_locator_query_count"] > 0
+    assert metrics["user_locator_resolved_count"] > 0
+    assert metrics["user_locator_unresolved_count"] > 0
+    assert metrics["rough_query_count"] > 0
+    assert metrics["rough_query_abstain_count"] > 0
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert set(per_family["families_reported_separately"]) >= {"XLSX"}
+    assert per_family["no_collapsed_cross_family_score"] is True
+
+    assert len(parse_audit) == len(review_rows)
+    assert len(resolution_audit) == len(review_rows)
+    assert rough_audit
+    assert all(row["target_locator_used"] is False for row in parse_audit)
+    assert all(row["gold_locator_used"] is False for row in parse_audit)
+    assert all(row["expected_supporting_text_used"] is False for row in parse_audit)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in resolution_audit)
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert all(row["raw_file_query_time_accessed"] is False for row in per_query)
+    assert all(row["source_atom_registry_canonical_truth"] is True for row in per_query)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in per_query)
+    assert all(row["target_locator_used"] is False for row in per_query)
+    assert all(row["gold_locator_used"] is False for row in per_query)
+    assert all(row["expected_supporting_text_used"] is False for row in per_query)
+    assert not any("expected_answer" in row or "supporting_evidence" in row for row in per_query)
+
+    user_owned_fields = {
+        "user_review_like",
+        "user_review_note",
+        "user_expected_answer_decision",
+        "user_supporting_evidence_decision",
+        "user_relevance_decision",
+        "user_answerability_decision",
+    }
+    for row in review_rows:
+        assert row["bucket"] in buckets
+        assert row["official_metric_candidate"] is False
+        assert row["promotion_evidence"] is False
+        assert all(row[field] == "" for field in user_owned_fields)
+        assert "SourceAtom" not in row["final_answer"]
+        assert "SearchView" not in row["final_answer"]
+        assert "L8_" not in row["final_answer"]
+
+    unresolved = next(
+        row for row in review_rows if row["user_locator_resolution_status"] == "UNRESOLVED"
+    )
+    assert unresolved["query_user_provided_locator"] is True
+    assert unresolved["selected_source_atom_ids"] == ""
+    assert "찾을 수 없습니다" in unresolved["final_answer"] or "확인할 수 없습니다" in unresolved["final_answer"]
+    assert "999" not in unresolved["final_answer"]
+
+    assert guardrail["official_metric"] is False
+    assert guardrail["official_metric_input_rows"] == 0
+    assert guardrail["promotion_evidence"] is False
+    assert guardrail["source_atom_registry_canonical_truth"] is True
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert guardrail["target_locator_used"] is False
+    assert guardrail["gold_locator_used"] is False
+    assert guardrail["expected_supporting_text_used"] is False
+    assert leakage_rows and all(row["leakage_detected"] is False for row in leakage_rows)
+    assert prompt_manifest["requires_korean_answer"] is True
+    assert prompt_manifest["uses_user_provided_locator_text_from_query"] is True
+    assert prompt_manifest["uses_artifact_target_or_gold_locator_text"] is False
+    assert prompt_manifest["uses_expected_or_supporting_gold_text"] is False
+
+
+def test_v3_17_runtime_path_has_no_raw_file_parser_or_normalized_value_shortcut() -> None:
+    script_path = ROOT / "ai" / "scripts" / "rag_v3_17_user_locator_and_rough_query_answer_quality_nonprod.py"
+    source = script_path.read_text(encoding="utf-8")
+
+    forbidden_snippets = (
+        "openpyxl.load_workbook",
+        "pdfplumber.open",
+        "fitz.open",
+        "pypdf.PdfReader",
+        "PdfReader(",
+        "load_workbook(",
+        "iter_rows(",
+        "iter_cols(",
+        "extract_text(",
+        "extract_words(",
+    )
+    assert not any(snippet in source for snippet in forbidden_snippets)
+    assert "assemble_evidence_bundle" in source
+    assert "render_citation" in source
+    assert "source_registry=source_registry" in source
+    assert "direct_normalized_value_query_matching_used" in source
 
 
 def test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank(tmp_path) -> None:

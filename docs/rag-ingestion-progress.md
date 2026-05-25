@@ -20,6 +20,22 @@ durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
+<!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:progress-entry:start -->
+- v3_17 user-locator and rough-query answer-quality packet (`official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod`) is diagnostic_v3_17_user_locator_rough_query_answer_quality_nonprod_ready. It creates a compact PDF/XLSX review packet for rough, terse, incomplete user queries and query-owned locator text. The user-provided locator text is query-owned only: target_locator_used=false, gold_locator_used=false, expected_supporting_text_used=false, official_metric=false, official_metric_input_rows=0, promotion_evidence=false, raw_file_query_time_accessed=false. SourceAtom registry remains canonical truth, and SearchView/vector payload remains candidate-only.
+<!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod:progress-entry:start -->
+- v3_16 final LLM answer-quality review packet (`official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod`) is diagnostic_v3_16_final_llm_answer_quality_review_nonprod_ready. It opens L8 only for local LLM answer generation from L7 answer-ready PDF/XLSX contexts and packages CSV/JSONL rows for human qualitative review. L8_generation_executed=true is separated from official scoring: deterministic_official_execution=false, official_metric=false, official_metric_input_rows=0, promotion_evidence=false, product_success_evidence_allowed=false, raw_file_query_time_accessed=false, SourceAtom registry remains canonical truth, and SearchView/vector payload remains candidate-only. Runtime materialization and latency-budget artifacts classify L0-L8 online work, forbid raw PDF/XLSX or broad registry scans at query time, and report L8 generation latency separately from retrieval latency.
+<!-- official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement:progress-entry:start -->
+- v3_15 XLSX L3 table/range locator non-prod improvement (`official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement`) is diagnostic_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_ready and is built on v3_14 XLSX runtime adapter outputs. Scope is XLSX L3 table/range locator only: PDF is excluded from the optimization surface, SearchView/vector payload remains candidate-only, SourceAtom registry remains canonical truth, raw_file_query_time_accessed=false, L8 generation/deterministic answer execution remain disabled, official_metric_input_rows=0, product_success_evidence_allowed=false, protected_namespaces_touched=[].
+<!-- official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod:progress-entry:start -->
+- v3_14 layered retrieval runtime adapter non-prod (`official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod`) runs L0 through L7 over the common PDF/XLSX runtime adapter surface using existing v3_12 XLSX and v3_13 PDF diagnostic artifacts. It records per-layer candidate counts, latency, drop reasons, signal types, SourceAtom hydration, EvidenceBundle assembly, selected candidates, and answer-ready context availability. SourceAtom registry remains canonical truth; SearchView/vector payload remains candidate-only; raw_file_query_time_accessed=false; L8 generation and deterministic answer execution stay closed. PDF and XLSX are reported separately, current seen rows are diagnostic/no-regression only, and fresh real source-document/workbook-disjoint holdout remains unavailable. official_metric_input_rows=0; future scored adapter remains DISABLED_PENDING_USER_APPROVAL; product_success_evidence_allowed=false; protected_namespaces_touched=[].
+<!-- official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod:progress-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment:progress-entry:start -->
 - v3_13 PDF file identity structural locator non-prod alignment (`official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment`) adds diagnostic-only PDF L2 file identity confidence diagnostics, abstain/disambiguation vs wrong-file forcing analysis, accepted wrong rank1 with target in top3 rerank candidates, page/block/bbox structural locator candidates, and same-page bounded evidence-window candidates. SourceAtom registry remains canonical truth; SearchView/vector payload remains candidate-only; L8 generation and deterministic answer execution stay closed. XLSX v3_12 remains visible as a no-regression/control lane only. official_metric_input_rows=0; product_success_evidence_allowed=false; protected_namespaces_touched=[]; fresh real PDF source-document-disjoint holdout remains required.
 <!-- official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment:progress-entry:end -->
@@ -42,9 +58,9 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `diagnostic_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_ready`;
+Overall status: `diagnostic_v3_17_user_locator_rough_query_answer_quality_nonprod_ready`;
 current diagnostic answer-quality loop:
-`official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement`;
+`official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod`;
 retained prior PDF/XLSX bottleneck status:
 `pdf_xlsx_bottleneck_quality_diagnostic_v3_9_validation_ready`;
 prior PDF/XLSX/TEXT comparison loop:
@@ -678,7 +694,7 @@ closed; threshold tuning and winner selection also remain closed.
 | `text_namu_v2_1` | v3_2_7 closes the post-fix implementation queue; `text_namu_v2_0017` and `text_namu_v2_0084` remain diagnostic-only | Lane A/B/C: `24/29`, `27/29`, `27/29`; `text_namu_v2_0012` and `text_namu_v2_0077` are frozen Lane A replay residuals | Do not reopen gold policy automatically. |
 | `xlsx_business_structured` | v3_8_3 scoped cell diagnostic is computed after the v3_8_2 workbook/document gate with legacy rows marked dev-only and a workbook-disjoint validation split | sheet_resolve@1 `249/344` (baseline `248/344`); validation sheet@1 `112/170` (baseline `111/170`); table_or_range_resolve@1 `22/344`; cell_or_value_resolve@1 `19/344`; abstain `44/344`; top miss bucket table_or_range_miss_after_sheet_hit `219`; oracle-free input violations `0`; official_metric_input_rows `0` | Keep range/cell work diagnostic-only; do not count dev-only gains without validation evidence. |
 | `pdf_business_ocr_mm` | v3_8_2 oracle-free resolver is computed before scoped retrieval | file_resolve@1 `65/329`; file_resolve@3 `129/329`; abstain `182/329`; wrong-file block `57/329`; upstream v3_8 page_hit@5 `266/329` | Improve PDF file identity confidence, then defer exact bbox overlap and OCR trust policy to a later slice. |
-| Report artifacts | Human narrative stays in three rolling docs; machine evidence stays compact | `status.jsonl` plus v3_8, v3_8_1, v3_8_2, v3_8_3 summary/metrics/per-query/per-family JSON/JSONL, and v3_9 quality artifacts where required by tests | Avoid per-run Markdown and full forensic payloads unless the run contract requires them. |
+| Report artifacts | Human narrative stays in three rolling docs; machine evidence stays compact | `status.jsonl` plus compact current v3_6_9 and later diagnostic artifacts required by the current RAG profile | Avoid per-run Markdown and full forensic payloads unless the run contract requires them. |
 
 ## 2026-05-22 - PDF/XLSX Performance Checkpoint
 
