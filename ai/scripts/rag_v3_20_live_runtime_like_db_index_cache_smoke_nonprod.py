@@ -22,6 +22,8 @@ TRIAGE_DOC = v319.TRIAGE_DOC
 if str(ROOT / "ai") not in sys.path:
     sys.path.insert(0, str(ROOT / "ai"))
 
+from eval.harness import rag_diagnostic_common as diagnostic_common  # noqa: E402
+
 from app.capabilities.rag_orchestrator.agent_runtime import (  # noqa: E402
     AgentRuntime,
     AgentRuntimeRequest,
@@ -112,39 +114,39 @@ REVIEW_COLUMNS = (
 
 
 def clean(value: Any) -> str:
-    return v319.clean(value)
+    return diagnostic_common.clean(value)
 
 
 def repo_relative(path: Path) -> str:
-    return v319.repo_relative(path)
+    return diagnostic_common.repo_relative(path, root=ROOT)
 
 
 def utc_now() -> str:
-    return v319.utc_now()
+    return diagnostic_common.utc_now()
 
 
 def sha256_file(path: Path) -> str:
-    return v319.sha256_file(path)
+    return diagnostic_common.sha256_file(path)
 
 
 def sha256_text(value: str) -> str:
-    return v319.sha256_text(value)
+    return diagnostic_common.sha256_text(value)
 
 
 def read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return diagnostic_common.read_json(path)
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
-    return v319.read_jsonl(path)
+    return diagnostic_common.read_jsonl(path)
 
 
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
-    v319.write_json(path, payload)
+    diagnostic_common.write_json(path, payload)
 
 
 def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
-    v319.write_jsonl(path, rows)
+    diagnostic_common.write_jsonl(path, rows)
 
 
 def build_input_paths() -> dict[str, Path]:
@@ -800,16 +802,11 @@ def write_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
 
 
 def artifact_sha256_without_summary() -> dict[str, str]:
-    hashes: dict[str, str] = {}
-    for key, path in OUTPUTS.items():
-        if key == "summary_json":
-            continue
-        hashes[f"{key}_sha256"] = sha256_file(path)
-    return hashes
+    return diagnostic_common.artifact_sha256_without_summary(OUTPUTS)
 
 
 def replace_marked_entry(path: Path, marker: str, entry: str) -> None:
-    v319.replace_marked_entry(path, marker, entry)
+    diagnostic_common.replace_marked_entry(path, marker, entry)
 
 
 def refresh_stale_v3_19_gate_wording() -> None:

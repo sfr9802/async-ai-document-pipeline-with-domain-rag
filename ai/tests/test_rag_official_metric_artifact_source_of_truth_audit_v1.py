@@ -5693,6 +5693,132 @@ def test_v3_20_live_runtime_like_db_index_cache_smoke_artifacts_are_hash_locked_
     assert artifact_paths["review_packet_jsonl"].stat().st_size < 900_000
 
 
+def test_v3_21_agent_runtime_llm_io_observability_packet_artifacts_are_hash_locked_and_compact() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "agent_tool_call_trace_jsonl": output_dir / "agent_tool_call_trace.jsonl",
+        "route_policy_audit_jsonl": output_dir / "route_policy_audit.jsonl",
+        "runtime_contract_audit_jsonl": output_dir / "runtime_contract_audit.jsonl",
+        "user_response_policy_audit_jsonl": output_dir / "user_response_policy_audit.jsonl",
+        "db_contract_audit_jsonl": output_dir / "db_contract_audit.jsonl",
+        "index_contract_audit_jsonl": output_dir / "index_contract_audit.jsonl",
+        "cache_contract_audit_jsonl": output_dir / "cache_contract_audit.jsonl",
+        "live_runtime_smoke_audit_jsonl": output_dir / "live_runtime_smoke_audit.jsonl",
+        "llm_io_packet_jsonl": output_dir / "llm_io_packet.jsonl",
+        "llm_io_packet_csv": output_dir / "llm_io_packet.csv",
+        "llm_invocation_audit_jsonl": output_dir / "llm_invocation_audit.jsonl",
+        "local_llm_readiness_json": output_dir / "local_llm_readiness.json",
+        "prompt_manifest_json": output_dir / "prompt_manifest.json",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+    }
+    require_v3_9_local_artifacts(*artifact_paths.values())
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "agent_tool_call_trace.jsonl",
+        "route_policy_audit.jsonl",
+        "runtime_contract_audit.jsonl",
+        "user_response_policy_audit.jsonl",
+        "db_contract_audit.jsonl",
+        "index_contract_audit.jsonl",
+        "cache_contract_audit.jsonl",
+        "live_runtime_smoke_audit.jsonl",
+        "llm_io_packet.jsonl",
+        "llm_io_packet.csv",
+        "llm_invocation_audit.jsonl",
+        "local_llm_readiness.json",
+        "prompt_manifest.json",
+        "guardrail_audit.json",
+        "leakage_audit.jsonl",
+        "review_packet.jsonl",
+        "review_packet.csv",
+    }
+
+    summary = read_json(artifact_paths["summary_json"])
+    metrics = read_json(artifact_paths["metrics_json"])
+    packet_rows = read_jsonl(artifact_paths["llm_io_packet_jsonl"])
+    invocation_rows = read_jsonl(artifact_paths["llm_invocation_audit_jsonl"])
+    prompt_manifest = read_json(artifact_paths["prompt_manifest_json"])
+    readiness = read_json(artifact_paths["local_llm_readiness_json"])
+    guardrail = read_json(artifact_paths["guardrail_audit_json"])
+    leakage = read_jsonl(artifact_paths["leakage_audit_jsonl"])
+    review_rows = read_jsonl(artifact_paths["review_packet_jsonl"])
+
+    assert summary["run_id"] == run_id
+    assert summary["status"] in {
+        "DIAGNOSTIC_V3_21_AGENT_RUNTIME_LLM_IO_OBSERVABILITY_PACKET_NONPROD_READY",
+        "LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED",
+    }
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["agent_runtime_nonprod"] is True
+    assert summary["agent_runtime_product_ready"] is False
+    assert summary["live_db_index_cache_readiness"] is False
+    assert summary["actual_llm_responses_are_required_when_llm_invoked"] is True
+    assert summary["noop_or_extractive_generator_used"] is False
+    assert summary["artifact_paths"] == {key: path.relative_to(ROOT).as_posix() for key, path in artifact_paths.items()}
+    for key, path in artifact_paths.items():
+        if key == "summary_json":
+            continue
+        assert summary["artifact_sha256"][f"{key}_sha256"] == sha256_file(path)
+
+    assert metrics["llm_io_packet_row_count"] == len(packet_rows) == len(review_rows)
+    assert metrics["llm_invocation_audit_row_count"] == len(invocation_rows)
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["prompt_leakage_flag_count"] == 0
+    assert metrics["response_leakage_flag_count"] == 0
+    assert metrics["path_leakage_flag_count"] == 0
+    assert metrics["evidence_truth_violation_count"] == 0
+    assert metrics["vector_payload_evidence_truth_violation_count"] == 0
+    assert metrics["production_write_attempt_count"] == 0
+    assert metrics["broad_source_atom_scan_attempt_count"] == 0
+    assert metrics["raw_file_query_time_accessed"] is False
+    assert metrics["local_llm_unavailable_fail_closed_count"] > 0 or metrics["raw_llm_response_present_count"] == metrics["llm_invoked_count"]
+    assert all(row["llm_invoked"] is False or row["raw_llm_response"] for row in packet_rows)
+    assert all(row["raw_llm_response"] == "" or row["llm_invoked"] is True for row in packet_rows)
+    assert all(row["official_metric_candidate"] is False for row in packet_rows)
+    assert all(row["promotion_evidence"] is False for row in packet_rows)
+    assert all(row["evidence_truth_source"] in {"source_atom_evidence_bundle", "none"} for row in packet_rows)
+    assert all(row["vector_payload_candidate_only"] is True for row in packet_rows)
+    assert all("D:\\" not in json.dumps(row, ensure_ascii=False) for row in packet_rows)
+    assert all("expected_answer" not in json.dumps(row, ensure_ascii=False) for row in packet_rows)
+    assert all("supporting_evidence" not in json.dumps(row, ensure_ascii=False) for row in packet_rows)
+
+    assert prompt_manifest["requires_supplied_evidence_only"] is True
+    assert prompt_manifest["uses_expected_or_supporting_gold_text"] is False
+    assert prompt_manifest["uses_raw_file_query_time_access"] is False
+    assert prompt_manifest["prompt_template_version"]
+    assert prompt_manifest["prompt_sha256"]
+    assert readiness["noop_or_extractive_generator_used"] is False
+    assert readiness["official_metric_input_rows"] == 0
+    assert readiness["promotion_evidence"] is False
+    assert guardrail["actual_llm_responses_are_required_when_llm_invoked"] is True
+    assert guardrail["noop_or_extractive_generator_used"] is False
+    assert guardrail["source_atom_store_canonical_truth"] is True
+    assert guardrail["search_index_candidate_only"] is True
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert leakage and all(row["leakage_detected"] is False for row in leakage)
+    assert all(row["user_review_like"] == "" for row in review_rows)
+    assert all(row["user_review_note"] == "" for row in review_rows)
+
+    assert artifact_paths["summary_json"].stat().st_size < 220_000
+    assert artifact_paths["metrics_json"].stat().st_size < 100_000
+    assert artifact_paths["llm_io_packet_jsonl"].stat().st_size < 1_000_000
+    assert artifact_paths["llm_invocation_audit_jsonl"].stat().st_size < 500_000
+    assert artifact_paths["review_packet_jsonl"].stat().st_size < 1_000_000
+
+
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:
     first_run = read_json(REPORT_DIR / "baseline_v1.json")
     input_config = read_json(REPORT_DIR / "metric_input_v1.json")

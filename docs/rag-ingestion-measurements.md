@@ -19,6 +19,36 @@ provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 
+<!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:measurements-entry:start -->
+### v3_21 Agent Runtime LLM I/O Observability Packet
+
+- Run: `official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod`
+- Policy: diagnostic-only, non-production LLM I/O observability; fail-closed rows do not invoke LLM, local LLM unavailable rows emit no fake raw response, and all raw I/O stays in ignored JSONL/CSV artifacts rather than status or Markdown.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| llm_io_packet_row_count | 10 |
+| llm_invocation_audit_row_count | 5 |
+| llm_invoked_count | 5 |
+| raw_llm_response_present_count | 5 |
+| parsed_final_answer_present_count | 5 |
+| fail_closed_no_llm_invocation_count | 5 |
+| local_llm_unavailable_fail_closed_count | 0 |
+| prompt_leakage_flag_count | 0 |
+| response_leakage_flag_count | 0 |
+| path_leakage_flag_count | 0 |
+| evidence_truth_violation_count | 0 |
+| vector_payload_evidence_truth_violation_count | 0 |
+| runtime_contract_violation_count | 0 |
+| production_write_attempt_count | 0 |
+| broad_source_atom_scan_attempt_count | 0 |
+| official_metric_input_rows | 0 |
+
+Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `user_response_policy_audit.jsonl`, `db_contract_audit.jsonl`, `index_contract_audit.jsonl`, `cache_contract_audit.jsonl`, `live_runtime_smoke_audit.jsonl`, `llm_io_packet.jsonl`, `llm_io_packet.csv`, `llm_invocation_audit.jsonl`, `local_llm_readiness.json`, `prompt_manifest.json`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.jsonl`, and `review_packet.csv`.
+
+Counter source-of-truth: `metrics.json` carries the LLM invocation, leakage, adapter, and guardrail counters; `status.jsonl` records only counts, paths, hashes, and policy flags, not raw prompts or raw responses.
+<!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:measurements-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:measurements-entry:start -->
 ### v3_20 Live-Runtime-Like DB/Index/Cache Smoke
 
@@ -1196,10 +1226,9 @@ older evidence reproducible through the external archive resolver.
 Current repo-local machine payloads:
 
 - `ai/eval/reports/rag-ingestion/status.jsonl`
-- Compact current v3_6_9 SearchUnit/SearchView/SourceAtom refactor artifacts,
-  v3_7 source-registry/index/retrieval-smoke artifacts, and v3_8/v3_8_1/v3_8_2/v3_8_3
-  diagnostic retrieval, evidence-selector, oracle-free file-resolve, and XLSX scoped cell-resolve
-  artifacts.
+- Compact current v3_6_9 and later diagnostic artifacts required by the current
+  RAG profile, including v3_10-v3_15 root artifacts and v3_16-v3_21
+  quality/runtime packet directories.
 
 Archived payload families:
 

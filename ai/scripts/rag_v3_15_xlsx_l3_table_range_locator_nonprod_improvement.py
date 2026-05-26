@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import datetime as dt
 import json
 import re
 import sys
@@ -67,45 +66,16 @@ LayerTiming = v314.LayerTiming
 LayerDropReason = v314.LayerDropReason
 registry_evidence_bundle_is_valid = v314.registry_evidence_bundle_is_valid
 
-
-def utc_now() -> str:
-    return dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat(timespec="microseconds") + "Z"
-
-
-def clean(value: Any) -> str:
-    return v314.clean(value)
-
-
-def as_mapping(value: Any) -> Mapping[str, Any]:
-    return v314.as_mapping(value)
-
-
-def sha256_file(path: Path) -> str:
-    return v314.sha256_file(path)
-
-
-def sha256_text(value: str) -> str:
-    return v314.sha256_text(value)
-
-
-def repo_relative(path: Path) -> str:
-    return v314.repo_relative(path)
-
-
-def read_json(path: Path) -> dict[str, Any]:
-    return v314.read_json(path)
-
-
-def read_jsonl(path: Path) -> list[dict[str, Any]]:
-    return v314.read_jsonl(path)
-
-
-def write_json(path: Path, payload: Mapping[str, Any]) -> None:
-    v314.write_json(path, payload)
-
-
-def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
-    v314.write_jsonl(path, rows)
+utc_now = v314.utc_now
+clean = v314.clean
+as_mapping = v314.as_mapping
+sha256_file = v314.sha256_file
+sha256_text = v314.sha256_text
+repo_relative = v314.repo_relative
+read_json = v314.read_json
+read_jsonl = v314.read_jsonl
+write_json = v314.write_json
+write_jsonl = v314.write_jsonl
 
 
 def ratio(numerator: int, denominator: int, *, metric_role: str | None = None) -> dict[str, Any]:
@@ -128,61 +98,16 @@ def reference_ratio(numerator: int, denominator: int, *, metric_role: str) -> di
     return payload
 
 
-def percentile(values: Sequence[float | int], percentile_value: float) -> float:
-    return v314.percentile(values, percentile_value)
-
-
-def top(values: Sequence[str], limit: int = 3) -> tuple[str, ...]:
-    return v314.top(values, limit=limit)
-
-
-def source_atom_id_from_row(row: Mapping[str, Any]) -> str:
-    return v314.source_atom_id_from_row(row)
-
-
-def compact_layer_timing(layer: LayerTiming) -> dict[str, Any]:
-    return v314.compact_layer_timing(layer)
-
-
-def layer_drop(layer_name: str, reason: str, count: int) -> tuple[Mapping[str, Any], ...]:
-    return v314.layer_drop(layer_name, reason, count)
+percentile = v314.percentile
+top = v314.top
+source_atom_id_from_row = v314.source_atom_id_from_row
+compact_layer_timing = v314.compact_layer_timing
+layer_drop = v314.layer_drop
+timed_layer = v314.timed_layer
 
 
 def elapsed_ms(start: float) -> float:
     return round((time.perf_counter() - start) * 1000.0, 6)
-
-
-def timed_layer(
-    *,
-    layer_name: str,
-    input_count: int,
-    output_count: int,
-    family: str,
-    route: str,
-    signal_types: Sequence[str],
-    top_candidate_ids: Sequence[str] = (),
-    top_source_atom_ids: Sequence[str] = (),
-    source_atom_hydration_status: str = "",
-    evidence_bundle_assembly_status: str = "",
-    answer_ready_context_status: str = "",
-    drop_reason: str = "candidate_not_selected_by_diagnostic_layer",
-    duration_ms: float | None = None,
-) -> LayerTiming:
-    return v314.timed_layer(
-        layer_name=layer_name,
-        input_count=input_count,
-        output_count=output_count,
-        family=family,
-        route=route,
-        signal_types=signal_types,
-        top_candidate_ids=top_candidate_ids,
-        top_source_atom_ids=top_source_atom_ids,
-        source_atom_hydration_status=source_atom_hydration_status,
-        evidence_bundle_assembly_status=evidence_bundle_assembly_status,
-        answer_ready_context_status=answer_ready_context_status,
-        drop_reason=drop_reason,
-        duration_ms=duration_ms,
-    )
 
 
 def trace_rows_by_query(rows: Sequence[Mapping[str, Any]]) -> dict[str, Mapping[str, Any]]:

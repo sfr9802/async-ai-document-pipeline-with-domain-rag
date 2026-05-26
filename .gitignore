@@ -92,130 +92,12 @@ ai/tests/_drafts/
 /test/
 
 # ---- Eval harness generated artifacts ----
-# Reports change every run and should not be committed. Sample OCR
-# fixture images are synthesized by scripts/make_ocr_sample_fixtures.py
-# and drift across fonts, so they are regenerated on demand. Phase-0
-# baseline reports are the one exception — they anchor the README
-# benchmark table and later phases diff against them.
+# Reports change every run and should not be committed. Human-facing
+# RAG ingestion state lives in docs/rag-ingestion-*.md; machine-readable
+# report payloads are generated/local-only and may be regenerated or
+# externalized as needed.
 ai/eval/reports/*
 !ai/eval/reports/rag-ingestion/
-!ai/eval/reports/phase0/
-ai/eval/reports/phase0/*
-!ai/eval/reports/phase0/baseline.json
-!ai/eval/reports/phase0/baseline-anime.json
-# Phase 8 agent-loop decision: the markdown + backing JSON are the
-# record of the measured A/B, not a run-to-run report.
-!ai/eval/reports/phase8/
-ai/eval/reports/phase8/*
-!ai/eval/reports/phase8/agent_loop_decision.md
-!ai/eval/reports/phase8/agent_loop_decision.json
-# Phase 2A reranker summary artifacts — small, deterministic, anchor
-# the README benchmark table. We commit the flat candidate-recall /
-# comparison / failure-analysis files; the per-run retrieval dirs
-# (top_k_dump.jsonl, miss_analysis, duplicate_analysis) stay local
-# because they're large and reproducible from corpus + dataset.
-!ai/eval/reports/phase2/
-ai/eval/reports/phase2/*
-!ai/eval/reports/phase2/2a_reranker/
-ai/eval/reports/phase2/2a_reranker/*
-!ai/eval/reports/phase2/2a_reranker/candidate-recall-b2.json
-!ai/eval/reports/phase2/2a_reranker/candidate-recall-b2.md
-!ai/eval/reports/phase2/2a_reranker/reranker-comparison.json
-!ai/eval/reports/phase2/2a_reranker/reranker-comparison.md
-!ai/eval/reports/phase2/2a_reranker/reranker-failure-analysis.json
-!ai/eval/reports/phase2/2a_reranker/reranker-failure-analysis.md
-# Locked legacy retrieval baseline — the A/B reference for LangGraph
-# adoption. Files are deterministic post-process output of
-# scripts/build_legacy_baseline_final.py (no top_k_dump or per-row
-# JSON, only the consolidated metrics + manifest + README).
-!ai/eval/reports/legacy-baseline-final/
-ai/eval/reports/legacy-baseline-final/*
-!ai/eval/reports/legacy-baseline-final/README.md
-!ai/eval/reports/legacy-baseline-final/metrics.json
-!ai/eval/reports/legacy-baseline-final/metrics.md
-!ai/eval/reports/legacy-baseline-final/latency_breakdown.json
-!ai/eval/reports/legacy-baseline-final/latency_breakdown.md
-!ai/eval/reports/legacy-baseline-final/selected_config.json
-!ai/eval/reports/legacy-baseline-final/baseline_manifest.json
-# Phase 7.0 retrieval-title A/B — commit the small decision artefacts
-# (final report, A/B summary, diff report, improved/regressed/per-query
-# JSONL, manifest digests, generated silver query set). The two
-# rag_chunks_<variant>.jsonl exports (~318 MB each) are
-# deterministically reproducible from the Phase 6.3 source via
-# eval.harness.v4_chunk_export and stay local.
-!ai/eval/reports/phase7/
-ai/eval/reports/phase7/*
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/
-ai/eval/reports/phase7/7.0_retrieval_title_ab/*
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/PHASE7_0_FINAL_REPORT.md
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/ab_summary.json
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/ab_summary.md
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/manifest_title_section.json
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/manifest_retrieval_title_section.json
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/variant_diff_report.json
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/variant_diff_report.md
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/queries_v4_silver.jsonl
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/per_query_comparison.jsonl
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/improved_queries.jsonl
-!ai/eval/reports/phase7/7.0_retrieval_title_ab/regressed_queries.jsonl
-# Phase 7.6 — section-aware reranking plan (no experiment artefacts yet,
-# just the plan doc)
-!ai/eval/reports/phase7/phase7_6_section_aware_reranking_plan.md
-!ai/eval/reports/phase7/PHASE7_WRAP_UP.md
-!ai/eval/reports/phase7/legacy_cleanup_candidates.md
-# Phase 7.7 answerability audit — commit the operator README and any
-# reviewer-labelled outputs / score reports. The raw `*_unlabeled_export`
-# CSV / JSONL drops are regenerable from a retrieval emit + chunk fixture
-# and carry zero labelling signal, so they stay local. Reviewer-filled
-# files MUST use the `*_human_labeled.{csv,jsonl}` naming convention to
-# survive this allowlist.
-!ai/eval/reports/phase7/7.7_answerability_audit/
-ai/eval/reports/phase7/7.7_answerability_audit/*
-!ai/eval/reports/phase7/7.7_answerability_audit/README.md
-!ai/eval/reports/phase7/7.7_answerability_audit/*_GUIDE.md
-!ai/eval/reports/phase7/7.7_answerability_audit/*_human_labeled.csv
-!ai/eval/reports/phase7/7.7_answerability_audit/*_human_labeled.jsonl
-!ai/eval/reports/phase7/7.7_answerability_audit/*_score_report.md
-!ai/eval/reports/phase7/7.7_answerability_audit/*_score_report.json
-# Phase 7.5 — human gold seed 50 tuning + MMR confirm sweep + production
-# promotion + latency smoke + Phase 7.6 section-rerank scaffold. Decision
-# artefacts only (small JSON / MD / digests) — the bulk
-# retrieval_*.jsonl exports and candidate_pool_*.jsonl files are
-# deterministically reproducible from the cached FAISS index via
-# scripts/run_phase7_mmr_confirm_sweep.py, so we keep them local.
-!ai/eval/reports/phase7/seeds/
-ai/eval/reports/phase7/seeds/*
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/
-ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/*
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/best_config.env
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/best_config.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/baseline_gold_summary.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/baseline_silver_summary.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/candidate_results.jsonl
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/comparison_report.md
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/comparison_summary.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_gold.jsonl
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_gold.md
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_silver.jsonl
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/failure_audit_silver.md
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/manifest.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/
-ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/*
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.confirmed.env
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.confirmed.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.production_recommended.env
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/best_config.production_recommended.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/confirm_sweep_report.md
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/confirm_sweep_results.jsonl
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/confirm_sweep_summary.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/manifest.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/latency_smoke_report.md
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/latency_smoke_results.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/confirm_sweep/promotion_pr_summary.md
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/
-ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/*
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/section_rerank_grid.json
-!ai/eval/reports/phase7/seeds/human_gold_seed_50_tuning/section_rerank/section_rerank_grid.md
 ai/eval/datasets/samples/
 
 # Dataset inputs and generated evidence files are local-only by default.
@@ -386,6 +268,4 @@ ai/eval/experiments/run_output/
 **/_scratch/
 **/_local/
 **/_drafts/
-# Phase 0 baseline tradeoffs / decisions doc — local-only by policy.
-ai/eval/reports/phase0/tradeoffs.md
 

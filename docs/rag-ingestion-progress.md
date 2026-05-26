@@ -20,6 +20,10 @@ durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
+<!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:progress-entry:start -->
+- v3_21 agent-runtime LLM I/O observability packet (`official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod`) is diagnostic_v3_21_agent_runtime_llm_io_observability_packet_nonprod_ready. It reuses the v3_20 non-production ToolRegistry-only agent runtime, SourceAtomStoreContract, SearchIndexContract, and RuntimeCacheContract smoke cases, then records user-observable actual input queries plus actual raw LLM responses only for rows that reached L7 answer-ready context and were allowed by response policy. Fail-closed rows do not invoke LLM. If the localhost local LLM backend is unavailable, answer-allowed rows fail closed with LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED and no fake raw response is emitted. SourceAtom/EvidenceBundle remains canonical evidence truth; SearchView/vector payload remains candidate-only. This is not production routing, not product success, not promotion evidence, not official scoring, and not live DB/index/cache readiness.
+<!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:progress-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:progress-entry:start -->
 - v3_20 live-runtime-like DB/index/cache smoke (`official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod`) is diagnostic_v3_20_live_runtime_like_db_index_cache_smoke_nonprod_ready. It keeps the non-production ToolRegistry-only agent runtime and introduces SourceAtomStoreContract, SearchIndexContract, and RuntimeCacheContract adapters that look like live contracts without touching production surfaces. SearchIndexContract returns candidates only; SourceAtomStoreContract hydrates canonical SourceAtom ids; RuntimeCacheContract is optional and never evidence truth. SourceAtom/EvidenceBundle remains canonical answer evidence; vector/SearchView payload remains candidate-only. Index unavailable and DB/source-atom-store unavailable rows fail closed, cache unavailable is bypassed without changing answer truth, and stale cache namespace mismatch fails closed with audit. This is not production routing, not product success, not promotion evidence, not official scoring, and not live DB/index/cache readiness.
 <!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:progress-entry:end -->
@@ -70,9 +74,9 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `diagnostic_v3_20_live_runtime_like_db_index_cache_smoke_nonprod_ready`;
-current diagnostic live-runtime-like smoke loop:
-`official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod`;
+Overall status: `diagnostic_v3_21_agent_runtime_llm_io_observability_packet_nonprod_ready`;
+current diagnostic LLM I/O observability loop:
+`official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod`;
 retained prior PDF/XLSX bottleneck status:
 `pdf_xlsx_bottleneck_quality_diagnostic_v3_9_validation_ready`;
 prior PDF/XLSX/TEXT comparison loop:
@@ -751,11 +755,10 @@ python -X utf8 -m pytest ai/tests --rag-current -q
 python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q
 ```
 
-Current verification: local results recorded in this progress log. Latest full
-current-profile evidence after the v3_9 natural answer-quality diagnostic was
-`python -X utf8 -m pytest ai/tests --rag-current -q` -> 376 passed, 0 skipped,
-0 failed, 8 warnings. Targeted packet/status/source-bound/anti-shortcut checks
-also pass.
+Current verification: local results are recorded in this progress log. After
+the v3_20/v3_21 shared-helper cleanup and report-ignore policy cleanup,
+`python -X utf8 -m pytest ai/tests --rag-current -q` -> 480 passed, 0 skipped,
+0 failed, 8 warnings.
 
 Current test surface is intentionally compact after legacy test deletion:
 `python -X utf8 -m pytest ai/tests --rag-current -q`; full `ai/tests`
@@ -777,27 +780,16 @@ Human-facing rolling docs:
 Machine-readable official/status surfaces:
 
 - `ai/eval/reports/rag-ingestion/status.jsonl`
-- latest v3_6_9 SearchUnit/SearchView/SourceAtom refactor JSON artifacts:
-  summary, contract refactor, adapter diagnostics, SourceAtom hydration smoke,
-  and failure buckets.
-- v3_7_0 source registry materialization artifacts.
-- v3_7_1 all-source citable non-production index artifacts.
-- v3_7_2 source registry-backed retrieval smoke artifacts.
-- v3_8 file-grounded retrieval/evidence eval artifacts:
-  summary, metrics, per-query rows, and per-family metrics.
-- v3_8_1 evidence selector artifacts:
-  summary, metrics, per-query selected evidence rows, and per-family metrics.
-- v3_8_2 oracle-free file resolve artifacts:
-  summary, metrics, per-query resolved file candidate rows, and per-family metrics.
-- v3_8_3 XLSX scoped cell resolve artifacts:
-  summary, metrics, per-query scoped cell candidate rows, per-query miss
-  taxonomy, per-family metrics JSON, and per-family diagnostic JSONL.
+- compact v3_6_9 and later diagnostic artifacts required by the current RAG
+  profile, including v3_10-v3_15 root artifacts and v3_16-v3_21
+  quality/runtime packet directories.
 - `ai/eval/silver/answer_citation_silver_manifest_v1.json`
 - `ai/eval/silver/answer_citation_silver_readiness_v1.json`
 
 As of the 2026-05-21 report cleanup, `ai/eval/reports/` intentionally keeps
-only `rag-ingestion/`, and that directory keeps `status.jsonl` plus the compact
-current v3_6_9, v3_7_0, v3_7_1, v3_7_2, v3_8, v3_8_1, v3_8_2, v3_8_3 machine artifacts, and v3_9 quality artifacts. Older
+only `rag-ingestion/`, and that directory keeps `status.jsonl` plus compact
+current v3_6_9 and later diagnostic artifacts required by the current RAG
+profile. Older
 `rag-ingestion` payloads, including the
 official baseline/scorer/input/smoke/source-bound files and v3_1-v3_6_8
 diagnostics, are consolidated under

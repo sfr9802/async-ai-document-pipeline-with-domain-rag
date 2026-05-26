@@ -20,6 +20,18 @@ The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
 
+<!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:triage-entry:start -->
+### v3_21 Agent Runtime LLM I/O Observability Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod`
+- Scope: diagnostic-only non-production packet for actual input query and actual raw LLM response observability after L7 answer-ready context.
+- Fail-closed rows do not invoke LLM; unsupported, deictic-context-missing, index unavailable, DB unavailable, and stale cache namespace cases remain policy or adapter fail-closed.
+- LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED is recorded when the localhost local LLM backend is unavailable; no noop, deterministic extractive substitute, or smoke final_answer is emitted as raw_llm_response.
+- SourceAtom/EvidenceBundle remains evidence truth for prompt evidence previews and parsed final answers; SearchView/vector payload remains candidate-only.
+- User-owned review fields remain blank and non-scoring; official_metric_input_rows stays 0.
+- This is not production routing and not live DB/index/cache readiness.
+<!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:triage-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:triage-entry:start -->
 ### v3_20 Live-Runtime-Like DB/Index/Cache Smoke Triage
 
@@ -1887,7 +1899,10 @@ All-track remeasurement:
 Remaining queue after v3_1_6: empty.
 
 Machine remaining-queue artifact:
-`ai/eval/reports/rag-ingestion/v3_1_6_gq010_pdfwin_queue.json`
+logical/externalized provenance path
+`ai/eval/reports/rag-ingestion/v3_1_6_gq010_pdfwin_queue.json`; the physical
+payload is resolved through the external runtime archive when it is not present
+repo-locally.
 
 Guardrail audit:
 

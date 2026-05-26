@@ -9655,6 +9655,382 @@ def test_v3_20_runtime_path_has_no_raw_parser_broad_scan_or_production_mutation_
         assert snippet not in source
 
 
+def test_rag_diagnostic_common_helpers_write_stable_artifacts_and_doc_entries(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from eval.harness import rag_diagnostic_common as common
+
+    payload = {"message": "한글", "count": 2}
+    json_path = tmp_path / "nested" / "payload.json"
+    common.write_json(json_path, payload)
+
+    assert common.read_json(json_path) == payload
+    assert json_path.read_text(encoding="utf-8").endswith("\n")
+    assert common.sha256_file(json_path) == common.sha256_text(json_path.read_text(encoding="utf-8"))
+
+    rows = [{"name": "alpha", "tags": ["x", "y"], "enabled": True, "note": None}]
+    jsonl_path = tmp_path / "rows.jsonl"
+    common.write_jsonl(jsonl_path, rows)
+    assert common.read_jsonl(jsonl_path) == rows
+
+    csv_path = tmp_path / "rows.csv"
+    common.write_csv(csv_path, rows, columns=("name", "tags", "enabled", "note"))
+    csv_rows = list(csv.DictReader(csv_path.open("r", encoding="utf-8-sig", newline="")))
+    assert csv_rows == [{"name": "alpha", "tags": "x|y", "enabled": "TRUE", "note": ""}]
+
+    doc_path = tmp_path / "ledger.md"
+    doc_path.write_text(
+        "before\n<!-- run:entry:start -->\nold\n<!-- run:entry:end -->\nafter\n",
+        encoding="utf-8",
+    )
+    common.replace_marked_entry(doc_path, "run:entry", "new entry\n")
+    assert doc_path.read_text(encoding="utf-8") == (
+        "before\n<!-- run:entry:start -->\nnew entry\n<!-- run:entry:end -->\nafter\n"
+    )
+
+
+def test_rag_diagnostic_performance_helpers_summarize_tuning_metrics() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from eval.harness import rag_diagnostic_performance as perf
+
+    assert perf.safe_ratio(9, 3) == 3.0
+    assert perf.safe_ratio(1, 0) is None
+    assert perf.percentile_nearest_rank([30, 10, 20], 95) == 30.0
+    assert perf.percentile_nearest_rank([], 50) is None
+
+    candidates = [
+        {"query_id": "q1", "candidate_count": 3, "latency_ms": 15.2},
+        {"query_id": "q2", "candidate_count": 0, "latency_ms": 7.0},
+        {"query_id": "q3", "candidate_count": 10, "latency_ms": None},
+    ]
+
+    assert perf.candidate_count_stats(candidates, field="candidate_count") == {
+        "row_count": 3,
+        "nonzero_count": 2,
+        "min": 0,
+        "max": 10,
+        "mean": 4.3333,
+        "p50": 3.0,
+        "p95": 10.0,
+    }
+    assert perf.latency_summary(candidates, field="latency_ms") == {
+        "row_count": 3,
+        "measured_count": 2,
+        "missing_count": 1,
+        "min_ms": 7.0,
+        "max_ms": 15.2,
+        "mean_ms": 11.1,
+        "p50_ms": 7.0,
+        "p95_ms": 15.2,
+    }
+
+
+def test_v3_20_and_v3_21_runtime_scripts_use_shared_diagnostic_common_helpers() -> None:
+    v3_20_path = ROOT / "ai" / "scripts" / "rag_v3_20_live_runtime_like_db_index_cache_smoke_nonprod.py"
+    v3_21_path = ROOT / "ai" / "scripts" / "rag_v3_21_agent_runtime_llm_io_observability_packet_nonprod.py"
+
+    for script_path in (v3_20_path, v3_21_path):
+        source = script_path.read_text(encoding="utf-8")
+        assert "from eval.harness import rag_diagnostic_common as diagnostic_common" in source
+        assert "diagnostic_common.artifact_sha256_without_summary(OUTPUTS)" in source
+
+
+def test_rag_layered_runtime_trace_helpers_compact_runtime_layer_payloads() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from eval.harness import rag_layered_runtime_trace as layered_trace
+
+    layer = layered_trace.timed_layer(
+        layer_name="L1_COARSE_CANDIDATE_GENERATION",
+        input_count=3,
+        output_count=1,
+        family="PDF",
+        route="pdf_document_lookup",
+        signal_types=("structural", "", "metadata", "structural"),
+        top_candidate_ids=("candidate-1", "candidate-2"),
+        top_source_atom_ids=("source-1", "source-2"),
+        duration_ms=4.25,
+    )
+
+    assert layer.dropped_candidate_count == 2
+    assert layer.raw_file_query_time_accessed is False
+    assert layer.drop_reasons == (
+        {
+            "count": 2,
+            "layer_name": "L1_COARSE_CANDIDATE_GENERATION",
+            "reason": "candidate_not_selected_by_diagnostic_layer",
+        },
+    )
+
+    compact = layered_trace.compact_layer_timing(layer)
+    assert compact == {
+        "layer_name": "L1_COARSE_CANDIDATE_GENERATION",
+        "duration_ms": 4.25,
+        "input_candidate_count": 3,
+        "output_candidate_count": 1,
+        "dropped_candidate_count": 2,
+        "top_candidate_ids": ["candidate-1"],
+        "top_source_atom_ids": ["source-1"],
+        "route": "pdf_document_lookup",
+        "family": "PDF",
+        "drop_reasons": [
+            {
+                "count": 2,
+                "layer_name": "L1_COARSE_CANDIDATE_GENERATION",
+                "reason": "candidate_not_selected_by_diagnostic_layer",
+            }
+        ],
+        "signal_types": ["metadata", "structural"],
+        "raw_file_query_time_accessed": False,
+    }
+    assert layered_trace.layer_drop("L0_QUERY_ROUTING", "no_drop", 0) == ()
+
+
+def test_v3_14_runtime_script_uses_shared_layered_trace_and_common_helpers() -> None:
+    script_path = ROOT / "ai" / "scripts" / "rag_v3_14_layered_retrieval_runtime_adapter_nonprod.py"
+    source = script_path.read_text(encoding="utf-8")
+
+    assert "from eval.harness import rag_diagnostic_common as diagnostic_common" in source
+    assert "from eval.harness import rag_layered_runtime_trace as layered_trace" in source
+    assert "layered_trace.timed_layer(" in source
+    assert "layered_trace.compact_layer_timing(" in source
+    assert "diagnostic_common.artifact_sha256_without_summary(OUTPUTS)" in source
+    assert "@dataclass(frozen=True)\nclass LayeredRetrievalRequest" not in source
+    assert "@dataclass(frozen=True)\nclass LayeredRetrievalTrace" not in source
+
+
+def test_v3_15_runtime_script_keeps_layered_trace_helpers_delegated_to_v3_14_contract() -> None:
+    script_path = ROOT / "ai" / "scripts" / "rag_v3_15_xlsx_l3_table_range_locator_nonprod_improvement.py"
+    source = script_path.read_text(encoding="utf-8")
+
+    assert "import datetime as dt" not in source
+    assert "def timed_layer(" not in source
+    assert "def compact_layer_timing(" not in source
+    assert "def layer_drop(" not in source
+    assert "timed_layer = v314.timed_layer" in source
+    assert "compact_layer_timing = v314.compact_layer_timing" in source
+    assert "LayerDropReason = v314.LayerDropReason" in source
+
+
+def test_v3_21_llm_io_packet_invokes_llm_only_for_answer_allowed_rows() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_21_agent_runtime_llm_io_observability_packet_nonprod as run
+
+    calls: list[dict[str, str]] = []
+
+    def fake_llm(prompt: str, *, query_id: str, **_: object) -> str:
+        calls.append({"query_id": query_id, "prompt": prompt})
+        return json.dumps(
+            {
+                "final_answer": f"실제 LLM 응답: {query_id}",
+                "citation_or_provenance_summary": "SourceAtom/EvidenceBundle 근거에서 생성",
+            },
+            ensure_ascii=False,
+        )
+
+    artifacts = run.build_artifacts(llm_client=fake_llm)
+    metrics = artifacts["metrics"]
+    rows = artifacts["llm_io_packet_rows"]
+    audit_rows = artifacts["llm_invocation_audit_rows"]
+    review_rows = artifacts["review_rows"]
+
+    assert metrics["llm_io_packet_row_count"] == len(rows) == 10
+    assert metrics["llm_invocation_audit_row_count"] == len(audit_rows)
+    assert metrics["llm_invoked_count"] == len(calls) > 0
+    assert metrics["raw_llm_response_present_count"] == metrics["llm_invoked_count"]
+    assert metrics["parsed_final_answer_present_count"] == metrics["llm_invoked_count"]
+    assert metrics["fail_closed_no_llm_invocation_count"] > 0
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["prompt_leakage_flag_count"] == 0
+    assert metrics["response_leakage_flag_count"] == 0
+    assert metrics["path_leakage_flag_count"] == 0
+    assert metrics["evidence_truth_violation_count"] == 0
+    assert metrics["vector_payload_evidence_truth_violation_count"] == 0
+
+    allowed_rows = [row for row in rows if row["answer_allowed_by_policy"]]
+    blocked_rows = [row for row in rows if not row["answer_allowed_by_policy"]]
+    assert allowed_rows
+    assert blocked_rows
+    assert all(row["llm_invoked"] is True for row in allowed_rows)
+    assert all(row["raw_llm_response"] for row in allowed_rows)
+    assert all(row["parsed_final_answer"].startswith("실제 LLM 응답:") for row in allowed_rows)
+    assert all(row["final_user_visible_answer"] == row["parsed_final_answer"] for row in allowed_rows)
+    assert all(row["llm_invoked"] is False for row in blocked_rows)
+    assert all(row["raw_llm_response"] == "" for row in blocked_rows)
+    assert all(row["parsed_final_answer"] == "" for row in blocked_rows)
+    assert all(row["blocked_reason"] for row in blocked_rows)
+    assert all(row["official_metric_candidate"] is False for row in rows)
+    assert all(row["promotion_evidence"] is False for row in rows)
+    assert all(row["evidence_truth_source"] in {"source_atom_evidence_bundle", "none"} for row in rows)
+    assert all(row["vector_payload_candidate_only"] is True for row in rows)
+
+    required_packet_fields = {
+        "run_id",
+        "query_id",
+        "diagnostic_case_id",
+        "source_family",
+        "route_lane",
+        "live_runtime_smoke_case",
+        "actual_input_query",
+        "active_context_present",
+        "response_policy_bucket",
+        "answer_allowed_by_policy",
+        "abstained",
+        "llm_invoked",
+        "llm_backend",
+        "llm_model_label",
+        "llm_request_id",
+        "llm_latency_ms",
+        "prompt_template_version",
+        "prompt_sha256",
+        "sanitized_prompt_preview",
+        "evidence_truth_source",
+        "selected_source_atom_ids",
+        "evidence_bundle_ids",
+        "sanitized_evidence_preview",
+        "raw_llm_response",
+        "parsed_final_answer",
+        "final_user_visible_answer",
+        "citation_or_provenance_summary",
+        "blocked_reason",
+        "runtime_contract_violation",
+        "official_metric_candidate",
+        "promotion_evidence",
+    }
+    assert required_packet_fields <= set(rows[0])
+
+    assert all(ROOT.as_posix() not in json.dumps(row, ensure_ascii=False) for row in rows)
+    assert all(str(ROOT) not in json.dumps(row, ensure_ascii=False) for row in rows)
+    assert all("D:\\" not in row["sanitized_prompt_preview"] for row in rows)
+    assert all("expected_answer" not in json.dumps(row, ensure_ascii=False) for row in rows)
+    assert all("supporting_evidence" not in json.dumps(row, ensure_ascii=False) for row in rows)
+    assert all("VECTOR_PAYLOAD" not in row["sanitized_evidence_preview"] for row in rows)
+    assert all("vector_payload" not in row["sanitized_evidence_preview"].lower() for row in rows)
+
+    required_review_fields = {
+        "actual_input_query",
+        "llm_invoked",
+        "raw_llm_response",
+        "parsed_final_answer",
+        "final_user_visible_answer",
+        "sanitized_evidence_preview",
+        "prompt_sha256",
+        "llm_backend",
+        "llm_model_label",
+        "llm_unavailable_reason",
+        "user_review_like",
+        "user_review_note",
+    }
+    assert required_review_fields <= set(review_rows[0])
+    assert all(row["user_review_like"] == "" for row in review_rows)
+    assert all(row["user_review_note"] == "" for row in review_rows)
+    assert {row["query_id"] for row in audit_rows} == {row["query_id"] for row in allowed_rows}
+
+
+def test_v3_21_leakage_guards_detect_windows_forward_slash_paths() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_21_agent_runtime_llm_io_observability_packet_nonprod as run
+
+    for path_text in (
+        "C:/Users/sfr99/secret.txt",
+        "D:/async-ocr-rag-multimodal-pipeline/private.json",
+        "D:\\async-ocr-rag-multimodal-pipeline\\private.json",
+    ):
+        preview = run.sanitize_preview(f"see {path_text}", max_chars=200)
+        assert "[LOCAL_PATH]" in preview or "[REPO_ROOT]" in preview
+        assert path_text not in preview
+
+        flags = run.leakage_flags(
+            {
+                "sanitized_prompt_preview": "",
+                "raw_llm_response": f"raw leaked path {path_text}",
+                "parsed_final_answer": "",
+                "evidence_truth_source": "source_atom_evidence_bundle",
+            }
+        )
+        assert flags["path_leakage"] is True
+
+
+def test_v3_21_local_llm_unavailable_fails_closed_without_fake_raw_responses() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_21_agent_runtime_llm_io_observability_packet_nonprod as run
+
+    artifacts = run.build_artifacts(base_url="https://example.com/v1")
+    metrics = artifacts["metrics"]
+    readiness = artifacts["local_llm_readiness"]
+    rows = artifacts["llm_io_packet_rows"]
+    review_rows = artifacts["review_rows"]
+
+    assert readiness["status"] == "LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED"
+    assert readiness["local_llm_available"] is False
+    assert readiness["noop_or_extractive_generator_used"] is False
+    assert readiness["blockers"]
+    assert metrics["local_llm_unavailable_fail_closed_count"] > 0
+    assert metrics["llm_invoked_count"] == 0
+    assert metrics["raw_llm_response_present_count"] == 0
+    assert metrics["parsed_final_answer_present_count"] == 0
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert any(row["answer_allowed_by_policy"] for row in rows)
+    assert all(row["llm_invoked"] is False for row in rows)
+    assert all(row["raw_llm_response"] == "" for row in rows)
+    assert all(row["parsed_final_answer"] == "" for row in rows)
+    unavailable_rows = [row for row in rows if row["answer_allowed_by_policy"]]
+    assert unavailable_rows
+    assert all(row["blocked_reason"] == "LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED" for row in unavailable_rows)
+    assert all(row["final_user_visible_answer"] == "LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED" for row in unavailable_rows)
+    assert all(row["llm_unavailable_reason"] for row in review_rows if row["answer_allowed_by_policy"])
+
+
+def test_v3_21_rejects_empty_or_noop_llm_output_as_raw_answer() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_21_agent_runtime_llm_io_observability_packet_nonprod as run
+
+    artifacts = run.build_artifacts(llm_client=lambda *_args, **_kwargs: "")
+    metrics = artifacts["metrics"]
+    rows = artifacts["llm_io_packet_rows"]
+
+    assert metrics["llm_invoked_count"] > 0
+    assert metrics["raw_llm_response_present_count"] == 0
+    assert metrics["parsed_final_answer_present_count"] == 0
+    assert metrics["noop_or_extractive_substitute_response_count"] == 0
+    assert all(row["raw_llm_response"] == "" for row in rows)
+    assert all(row["parsed_final_answer"] == "" for row in rows)
+    assert all(
+        row["blocked_reason"] in {"LOCAL_LLM_EMPTY_RESPONSE_FAIL_CLOSED", "ANSWER_NOT_ALLOWED_BY_POLICY"}
+        or row["blocked_reason"]
+        for row in rows
+    )
+
+
+def test_v3_21_runtime_path_has_no_raw_parser_broad_scan_production_or_fake_llm_shortcuts() -> None:
+    script_path = ROOT / "ai" / "scripts" / "rag_v3_21_agent_runtime_llm_io_observability_packet_nonprod.py"
+    v3_20_path = ROOT / "ai" / "scripts" / "rag_v3_20_live_runtime_like_db_index_cache_smoke_nonprod.py"
+    runtime_path = ROOT / "ai" / "app" / "capabilities" / "rag_orchestrator" / "agent_runtime.py"
+    source = "\n".join(path.read_text(encoding="utf-8") for path in (script_path, v3_20_path, runtime_path))
+
+    forbidden_snippets = (
+        "openpyxl.load_workbook",
+        "pdfplumber.open",
+        "fitz.open",
+        "pypdf.PdfReader",
+        "PdfReader(",
+        "load_workbook(",
+        "iter_rows(",
+        "iter_cols(",
+        "SELECT *",
+        "allow_unbounded_fallback=True",
+        "production_write_attempted=True",
+        "vector_payload_used_as_evidence_truth=True",
+        "target_locator_used=True",
+        "gold_locator_used=True",
+        "direct_normalized_value_query_matching_used=True",
+        "none_extractive_generator",
+        "noop_backend_used_for_raw_llm_response=True",
+    )
+    for snippet in forbidden_snippets:
+        assert snippet not in source
+
+
 def test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank(tmp_path) -> None:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_pdf_xlsx_answer_quality_review_packet as packet
