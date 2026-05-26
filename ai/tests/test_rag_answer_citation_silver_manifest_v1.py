@@ -8409,6 +8409,1252 @@ def test_v3_17_runtime_path_has_no_raw_file_parser_or_normalized_value_shortcut(
     assert "direct_normalized_value_query_matching_used" in source
 
 
+def test_v3_18_agent_runtime_invokes_registered_tool_specs_and_emits_trace_schema() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import (
+        AgentRuntime,
+        AgentRuntimeRequest,
+        TRACE_SCHEMA_VERSION,
+    )
+    from app.capabilities.rag_orchestrator.tool_registry import (
+        LAYER_NAMES,
+        build_default_tool_registry,
+    )
+
+    source_registry = {
+        "atom-xlsx-a1": {
+            "source_atom_id": "atom-xlsx-a1",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Book.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1", "range": "A1:B2"},
+            "canonical_citation_payload": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1", "range": "A1:B2"},
+            "normalized_text_or_value_snapshot": "Book.xlsx / Sheet1 A1: 계약금=42",
+        },
+        "atom-pdf-p3": {
+            "source_atom_id": "atom-pdf-p3",
+            "mock_source_atom": True,
+            "source_family": "PDF",
+            "source_identity": "PDF:Manual.pdf:p3",
+            "raw_locator": {"file_name": "Manual.pdf", "page": "3", "section": "계약"},
+            "canonical_citation_payload": {"file_name": "Manual.pdf", "page": "3", "section": "계약"},
+            "normalized_text_or_value_snapshot": "Manual.pdf page 3: 계약 조항=bounded",
+        }
+    }
+    registry = build_default_tool_registry()
+    runtime = AgentRuntime(registry=registry)
+
+    result = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-user-locator-a1",
+            query_text="Book.xlsx 시트 Sheet1 셀 A1 값 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("atom-xlsx-a1",),
+            internal_replay_adapter=True,
+        )
+    )
+
+    registered_tool_ids = {spec.tool_id for spec in registry.tool_specs()}
+    assert result.route_lane == "user_locator"
+    assert result.locator_resolution_bucket == "LOCATION_FOUND"
+    assert result.evidence_truth_source == "source_atom_evidence_bundle"
+    assert tuple(row["layer_id"] for row in result.trace_rows) == LAYER_NAMES
+    assert result.tool_call_sequence == [row["tool_name"] for row in result.trace_rows]
+    assert all(row["schema_version"] == TRACE_SCHEMA_VERSION for row in result.trace_rows)
+    assert all(row["tool_name"] in registered_tool_ids for row in result.trace_rows)
+    assert all(row["allowed_input_passed"] is True for row in result.trace_rows)
+    assert all(row["forbidden_input_blocked"] is True for row in result.trace_rows)
+    assert all(row["runtime_contract_violation"] is False for row in result.trace_rows)
+    assert all(row["input_schema_version"] == "rag_tool_spec_v1.input.v1" for row in result.trace_rows)
+    assert all(row["output_schema_version"] == "rag_tool_spec_v1.output.v1" for row in result.trace_rows)
+    assert result.trace_rows[-1]["source_atom_ids"] == ["atom-xlsx-a1"]
+    assert result.trace_rows[-1]["evidence_bundle_ids"] == ["bundle:atom-xlsx-a1"]
+    assert "42" in result.final_answer
+
+    range_result = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-user-locator-range",
+            query_text="Book.xlsx 시트 Sheet1 범위 A1:B2 값 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("atom-xlsx-a1",),
+            internal_replay_adapter=True,
+        )
+    )
+    assert range_result.route_lane == "user_locator"
+    assert range_result.locator_resolution_bucket == "LOCATION_FOUND"
+    assert range_result.selected_source_atom_ids == ("atom-xlsx-a1",)
+
+    page_result = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-user-locator-page",
+            query_text="3페이지 계약 조항 알려줘",
+            source_family="PDF",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("atom-pdf-p3",),
+            request_context={"active_source_atom_ids": ("atom-pdf-p3",)},
+            internal_replay_adapter=True,
+        )
+    )
+    assert page_result.route_lane == "user_locator"
+    assert page_result.locator_resolution_bucket == "LOCATION_FOUND"
+    assert page_result.selected_source_atom_ids == ("atom-pdf-p3",)
+    assert "Manual.pdf page 3" in page_result.final_answer
+
+
+def test_v3_18_agent_runtime_fail_closes_unresolved_unsupported_and_contract_violations() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.tool_registry import build_default_tool_registry
+
+    source_registry = {
+        "atom-xlsx-a1": {
+            "source_atom_id": "atom-xlsx-a1",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Book.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1", "range": "A1:B2"},
+            "canonical_citation_payload": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1", "range": "A1:B2"},
+            "normalized_text_or_value_snapshot": "bounded evidence",
+        }
+    }
+    runtime = AgentRuntime(registry=build_default_tool_registry())
+
+    unresolved = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-out-of-bounds",
+            query_text="Book.xlsx 시트 Sheet1 셀 Z999 값 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("atom-xlsx-a1",),
+        )
+    )
+    assert unresolved.route_lane == "user_locator"
+    assert unresolved.locator_resolution_bucket == "OUT_OF_BOUNDS_LOCATOR"
+    assert unresolved.blocked_reason == "OUT_OF_BOUNDS_LOCATOR"
+    assert unresolved.final_answer.startswith("요청한 위치를 찾지 못했습니다")
+    assert unresolved.locator_bounds_answerability == "UNANSWERABLE_FROM_LOCATOR_BOUNDS"
+
+    unsupported = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-unsupported",
+            query_text="",
+            source_family="IMAGE",
+            source_registry={},
+            candidate_source_atom_ids=(),
+            rough_query_hint=False,
+        )
+    )
+    assert unsupported.route_lane == "unsupported"
+    assert unsupported.fail_closed_reason == "unsupported_source_family_or_policy"
+    assert len(unsupported.trace_rows) == 1
+    assert unsupported.trace_rows[0]["layer_id"] == "L0_QUERY_ROUTING"
+
+    guard_names = (
+        "raw_pdf_xlsx_query_time_parse",
+        "full_workbook_sheet_scan",
+        "full_pdf_page_block_scan",
+        "broad_source_atom_scan",
+        "vector_payload_used_as_evidence_truth",
+        "target_locator_used",
+        "gold_locator_used",
+        "supporting_evidence_used",
+        "expected_answer_used",
+        "direct_normalized_answer_value_query_matching",
+        "unbounded_fallback",
+    )
+    for guard_name in guard_names:
+        violated = runtime.invoke(
+            AgentRuntimeRequest(
+                query_id=f"q-guard-{guard_name}",
+                query_text="Book.xlsx 시트 Sheet1 셀 A1 값 알려줘",
+                source_family="XLSX",
+                source_registry=source_registry,
+                candidate_source_atom_ids=("atom-xlsx-a1",),
+                runtime_flags={guard_name: True},
+            )
+        )
+        assert violated.route_lane == "unsupported"
+        assert violated.runtime_contract_violation is True
+        assert violated.locator_resolution_bucket == "CONTRACT_VIOLATION"
+        assert violated.fail_closed_reason == f"CONTRACT_VIOLATION:{guard_name}"
+        assert violated.trace_rows[0]["runtime_contract_violation"] is True
+
+
+def test_v3_18_agent_runtime_keeps_rough_query_and_vector_payload_candidate_only() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.tool_registry import build_default_tool_registry
+
+    source_registry = {
+        "atom-rough": {
+            "source_atom_id": "atom-rough",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Book.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "canonical_citation_payload": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "normalized_text_or_value_snapshot": "bounded rough evidence only",
+            "vector_payload_text": "POISONED_VECTOR_PAYLOAD",
+        }
+    }
+    runtime = AgentRuntime(registry=build_default_tool_registry())
+
+    result = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-rough",
+            query_text="이 내용 짧게 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("atom-rough",),
+            rough_query_hint=True,
+            internal_replay_adapter=True,
+            artifact_context={
+                "target_locator": "Sheet1!Z999",
+                "gold_locator": "Sheet1!Z999",
+                "expected_answer": "POISONED_EXPECTED",
+                "supporting_evidence": "POISONED_SUPPORT",
+            },
+        )
+    )
+
+    assert result.route_lane == "rough_query"
+    assert result.evidence_truth_source == "source_atom_evidence_bundle"
+    assert "bounded rough evidence only" in result.final_answer
+    assert "POISONED" not in result.final_answer
+    assert all("POISONED" not in json.dumps(row, ensure_ascii=False) for row in result.trace_rows)
+    assert all(row["provenance"]["vector_payload_used_as_evidence_truth"] is False for row in result.trace_rows)
+
+
+def test_v3_18_agent_runtime_artifacts_cover_trace_review_and_guardrails() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_18_agent_runtime_tool_invocation_contract_nonprod as run
+
+    artifacts = run.build_artifacts()
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    per_query = artifacts["per_query_rows"]
+    trace_rows = artifacts["agent_tool_call_trace_rows"]
+    review_rows = artifacts["review_rows"]
+    route_policy = artifacts["route_policy_audit_rows"]
+    runtime_audit = artifacts["runtime_contract_audit_rows"]
+    guardrail = artifacts["guardrail_audit"]
+    leakage = artifacts["leakage_audit_rows"]
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["agent_runtime_nonprod"] is True
+    assert summary["agent_runtime_product_ready"] is False
+    assert summary["tool_registry_only_invocation"] is True
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert metrics["agent_tool_call_trace_row_count"] == len(trace_rows)
+    assert metrics["rough_query_abstain_count"] >= 0
+    assert metrics["over_abstain_review_candidate_count"] >= 0
+    assert {row["route_lane"] for row in route_policy} >= {"user_locator", "rough_query"}
+    assert all(row["allow_unbounded_fallback"] is False for row in route_policy)
+    assert all(row["runtime_contract_violation"] is False for row in runtime_audit)
+    assert all(row["leakage_detected"] is False for row in leakage)
+    assert guardrail["raw_file_query_time_accessed"] is False
+    assert guardrail["direct_normalized_value_query_matching_used"] is False
+    assert guardrail["source_atom_registry_canonical_truth"] is True
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+
+    required_trace_fields = {
+        "run_id",
+        "query_id",
+        "diagnostic_case_id",
+        "tool_call_id",
+        "parent_tool_call_id",
+        "layer_id",
+        "tool_name",
+        "route_lane",
+        "input_schema_version",
+        "output_schema_version",
+        "allowed_input_passed",
+        "forbidden_input_blocked",
+        "confidence",
+        "drop_reason",
+        "provenance",
+        "source_atom_ids",
+        "evidence_bundle_ids",
+        "latency_ms",
+        "runtime_contract_violation",
+        "fail_closed_reason",
+    }
+    assert trace_rows
+    assert required_trace_fields <= set(trace_rows[0])
+    assert {row["layer_id"] for row in trace_rows} >= set(run.RUNTIME_LAYER_NAMES)
+    assert all(row["run_id"] == run.RUN_ID for row in trace_rows)
+
+    required_review_fields = {
+        "agent_route",
+        "tool_call_sequence",
+        "tool_call_trace_path",
+        "runtime_contract_violation",
+        "blocked_reason",
+        "locator_resolution_bucket",
+        "locator_bounds_answerability",
+        "evidence_truth_source",
+    }
+    assert review_rows and required_review_fields <= set(review_rows[0])
+    assert all(row["tool_call_trace_path"].endswith("agent_tool_call_trace.jsonl") for row in review_rows)
+    assert all(
+        row["evidence_truth_source"] == "source_atom_evidence_bundle"
+        for row in review_rows
+        if row["selected_source_atom_ids"]
+    )
+    assert any(row["locator_resolution_bucket"] == "OUT_OF_BOUNDS_LOCATOR" for row in review_rows)
+    assert any(row["locator_resolution_bucket"] == "AMBIGUOUS_LOCATOR" for row in review_rows)
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert not any("expected_answer" in row or "supporting_evidence" in row for row in per_query)
+
+
+def test_v3_18_runtime_path_has_no_raw_parser_or_unbounded_scan_shortcuts() -> None:
+    runtime_path = ROOT / "ai" / "app" / "capabilities" / "rag_orchestrator" / "agent_runtime.py"
+    script_path = ROOT / "ai" / "scripts" / "rag_v3_18_agent_runtime_tool_invocation_contract_nonprod.py"
+    source = runtime_path.read_text(encoding="utf-8") + "\n" + script_path.read_text(encoding="utf-8")
+
+    forbidden_snippets = (
+        "openpyxl.load_workbook",
+        "pdfplumber.open",
+        "fitz.open",
+        "pypdf.PdfReader",
+        "PdfReader(",
+        "load_workbook(",
+        "iter_rows(",
+        "iter_cols(",
+        "raw_pdf_xlsx_query_time_parse=True",
+        "vector_payload_used_as_evidence_truth=True",
+        "allow_unbounded_fallback=True",
+        "target_locator_used=True",
+        "gold_locator_used=True",
+        "direct_normalized_value_query_matching_used=True",
+    )
+    for snippet in forbidden_snippets:
+        assert snippet not in source
+
+
+def test_v3_19_agent_runtime_fails_closed_for_page_and_sheet_only_ambiguous_locators() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.tool_registry import build_default_tool_registry
+
+    source_registry = {
+        "pdf-manual-p1": {
+            "source_atom_id": "pdf-manual-p1",
+            "mock_source_atom": True,
+            "source_family": "PDF",
+            "source_identity": "PDF:Manual.pdf:p1",
+            "raw_locator": {"file_name": "Manual.pdf", "page": "1"},
+            "canonical_citation_payload": {"file_name": "Manual.pdf", "page": "1"},
+            "normalized_text_or_value_snapshot": "Manual page 1 bounded evidence",
+        },
+        "pdf-other-p1": {
+            "source_atom_id": "pdf-other-p1",
+            "mock_source_atom": True,
+            "source_family": "PDF",
+            "source_identity": "PDF:Other.pdf:p1",
+            "raw_locator": {"file_name": "Other.pdf", "page": "1"},
+            "canonical_citation_payload": {"file_name": "Other.pdf", "page": "1"},
+            "normalized_text_or_value_snapshot": "Other page 1 bounded evidence",
+        },
+        "xlsx-book-sheet1": {
+            "source_atom_id": "xlsx-book-sheet1",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Book.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "canonical_citation_payload": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "normalized_text_or_value_snapshot": "Book Sheet1 bounded evidence",
+        },
+        "xlsx-other-sheet1": {
+            "source_atom_id": "xlsx-other-sheet1",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Other.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Other.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "canonical_citation_payload": {"workbook": "Other.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "normalized_text_or_value_snapshot": "Other Sheet1 bounded evidence",
+        },
+    }
+    runtime = AgentRuntime(registry=build_default_tool_registry())
+
+    page_only = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-page-only",
+            query_text="1페이지에서 확인되는 내용 알려줘",
+            source_family="PDF",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("pdf-manual-p1", "pdf-other-p1"),
+        )
+    )
+    assert page_only.route_lane == "user_locator"
+    assert page_only.locator_resolution_bucket == "AMBIGUOUS_PAGE_ONLY_LOCATOR"
+    assert page_only.response_policy_bucket == "AMBIGUOUS_FILE_IDENTITY"
+    assert page_only.blocked_reason == "AMBIGUOUS_FILE_IDENTITY"
+    assert page_only.abstained is True
+    assert page_only.answer_allowed_by_policy is False
+    assert page_only.user_clarification_required is True
+    assert page_only.ambiguity_requires_clarification is True
+    assert page_only.active_context_required is True
+    assert page_only.active_context_present is False
+    assert page_only.evidence_truth_source == "none"
+    assert page_only.selected_source_atom_ids == ()
+    assert "파일" in page_only.final_answer or "문서" in page_only.final_answer
+
+    sheet_only = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-sheet-only",
+            query_text="Sheet1에서 뭐야?",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("xlsx-book-sheet1", "xlsx-other-sheet1"),
+        )
+    )
+    assert sheet_only.route_lane == "user_locator"
+    assert sheet_only.locator_resolution_bucket == "AMBIGUOUS_SHEET_ONLY_LOCATOR"
+    assert sheet_only.response_policy_bucket == "AMBIGUOUS_WORKBOOK_IDENTITY"
+    assert sheet_only.blocked_reason == "AMBIGUOUS_WORKBOOK_IDENTITY"
+    assert sheet_only.abstained is True
+    assert sheet_only.answer_allowed_by_policy is False
+    assert sheet_only.user_clarification_required is True
+    assert sheet_only.evidence_truth_source == "none"
+    assert sheet_only.selected_source_atom_ids == ()
+    assert "파일" in sheet_only.final_answer or "워크북" in sheet_only.final_answer
+
+
+def test_v3_19_agent_runtime_allows_unique_locator_and_bounded_broad_range() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.tool_registry import LAYER_NAMES, build_default_tool_registry
+
+    source_registry = {
+        "xlsx-book-a1": {
+            "source_atom_id": "xlsx-book-a1",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Book.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1", "range": "A1:B2"},
+            "canonical_citation_payload": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1", "range": "A1:B2"},
+            "normalized_text_or_value_snapshot": "Book Sheet1 A1 value=42",
+        },
+        "xlsx-book-b2": {
+            "source_atom_id": "xlsx-book-b2",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Book.xlsx:Sheet1:B2",
+            "raw_locator": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "B2", "range": "A1:B2"},
+            "canonical_citation_payload": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "B2", "range": "A1:B2"},
+            "normalized_text_or_value_snapshot": "Book Sheet1 B2 value=84",
+        },
+    }
+    runtime = AgentRuntime(registry=build_default_tool_registry())
+
+    cell = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-unique-cell",
+            query_text="Book.xlsx 시트 Sheet1 셀 A1 값 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("xlsx-book-a1", "xlsx-book-b2"),
+            internal_replay_adapter=True,
+        )
+    )
+    assert cell.locator_resolution_bucket == "LOCATION_FOUND"
+    assert cell.response_policy_bucket == "ANSWER_ALLOWED"
+    assert cell.answer_allowed_by_policy is True
+    assert cell.user_clarification_required is False
+    assert cell.selected_source_atom_ids == ("xlsx-book-a1",)
+    assert cell.evidence_truth_source == "source_atom_evidence_bundle"
+    assert "42" in cell.final_answer
+
+    broad_range = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-bounded-broad-range",
+            query_text="Book.xlsx 시트 Sheet1 범위 A1:B2 내용 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("xlsx-book-a1", "xlsx-book-b2"),
+            internal_replay_adapter=True,
+        )
+    )
+    assert broad_range.route_lane == "user_locator"
+    assert broad_range.locator_resolution_bucket == "BOUNDED_BROAD_RANGE"
+    assert broad_range.response_policy_bucket == "ANSWER_ALLOWED"
+    assert broad_range.answer_allowed_by_policy is True
+    assert broad_range.user_clarification_required is False
+    assert broad_range.selected_source_atom_ids == ("xlsx-book-a1", "xlsx-book-b2")
+    assert broad_range.evidence_truth_source == "source_atom_evidence_bundle"
+    assert tuple(row["layer_id"] for row in broad_range.trace_rows) == LAYER_NAMES
+
+
+def test_v3_19_agent_runtime_deictic_queries_require_bounded_active_context() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.tool_registry import LAYER_NAMES, build_default_tool_registry
+
+    source_registry = {
+        "xlsx-active-table": {
+            "source_atom_id": "xlsx-active-table",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Book.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "canonical_citation_payload": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "normalized_text_or_value_snapshot": "active table bounded evidence",
+            "vector_payload_text": "POISONED_VECTOR_PAYLOAD",
+        }
+    }
+    runtime = AgentRuntime(registry=build_default_tool_registry())
+
+    for query_text in ("이 표에서 뭐라고 돼 있어?", "이거 값 좀 봐줘"):
+        missing_context = runtime.invoke(
+            AgentRuntimeRequest(
+                query_id=f"q-deictic-{query_text[:2]}",
+                query_text=query_text,
+                source_family="XLSX",
+                source_registry=source_registry,
+                candidate_source_atom_ids=("xlsx-active-table",),
+                rough_query_hint=True,
+            )
+        )
+        assert missing_context.route_lane == "rough_query"
+        assert missing_context.locator_resolution_bucket == "CONTEXT_REQUIRED"
+        assert missing_context.response_policy_bucket == "CONTEXT_REQUIRED"
+        assert missing_context.blocked_reason == "CONTEXT_REQUIRED"
+        assert missing_context.abstained is True
+        assert missing_context.answer_allowed_by_policy is False
+        assert missing_context.user_clarification_required is True
+        assert missing_context.active_context_required is True
+        assert missing_context.active_context_present is False
+        assert missing_context.selected_source_atom_ids == ()
+        assert missing_context.evidence_truth_source == "none"
+        assert "파일" in missing_context.final_answer
+        assert "범위" in missing_context.final_answer or "셀" in missing_context.final_answer
+
+    active_context = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-deictic-active-context",
+            query_text="이 표에서 뭐라고 돼 있어?",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("xlsx-active-table",),
+            rough_query_hint=True,
+            request_context={"active_source_atom_ids": ("xlsx-active-table",)},
+            internal_replay_adapter=True,
+        )
+    )
+    assert active_context.route_lane == "rough_query"
+    assert active_context.locator_resolution_bucket == "NO_USER_LOCATOR"
+    assert active_context.response_policy_bucket == "ANSWER_ALLOWED"
+    assert active_context.answer_allowed_by_policy is True
+    assert active_context.user_clarification_required is False
+    assert active_context.active_context_required is True
+    assert active_context.active_context_present is True
+    assert active_context.selected_source_atom_ids == ("xlsx-active-table",)
+    assert active_context.evidence_truth_source == "source_atom_evidence_bundle"
+    assert "active table bounded evidence" in active_context.final_answer
+    assert "POISONED" not in active_context.final_answer
+    assert tuple(row["layer_id"] for row in active_context.trace_rows) == LAYER_NAMES
+
+
+def test_v3_19_agent_runtime_does_not_use_hidden_artifact_context_as_active_context() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.tool_registry import build_default_tool_registry
+
+    source_registry = {
+        "xlsx-hidden": {
+            "source_atom_id": "xlsx-hidden",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Hidden.xlsx:GoldSheet:Z99",
+            "raw_locator": {"workbook": "Hidden.xlsx", "sheet": "GoldSheet", "cell": "Z99"},
+            "canonical_citation_payload": {"workbook": "Hidden.xlsx", "sheet": "GoldSheet", "cell": "Z99"},
+            "normalized_text_or_value_snapshot": "POISONED_SOURCE_ATOM",
+        }
+    }
+    runtime = AgentRuntime(registry=build_default_tool_registry())
+
+    result = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="diagnostic_case_with_hidden_context",
+            query_text="이 파일 내용 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("xlsx-hidden",),
+            rough_query_hint=True,
+            artifact_context={
+                "target_locator": "Hidden.xlsx GoldSheet Z99",
+                "gold_locator": "Hidden.xlsx GoldSheet Z99",
+                "expected_answer": "POISONED_EXPECTED",
+                "supporting_evidence": "POISONED_SUPPORT",
+                "source_identity": "XLSX:Hidden.xlsx:GoldSheet:Z99",
+            },
+        )
+    )
+
+    assert result.response_policy_bucket == "CONTEXT_REQUIRED"
+    assert result.blocked_reason == "CONTEXT_REQUIRED"
+    assert result.abstained is True
+    assert result.answer_allowed_by_policy is False
+    assert result.active_context_present is False
+    assert result.selected_source_atom_ids == ()
+    assert result.evidence_truth_source == "none"
+    assert "POISONED" not in result.final_answer
+    assert all("POISONED" not in json.dumps(row, ensure_ascii=False) for row in result.trace_rows)
+    assert all(row["provenance"]["vector_payload_used_as_evidence_truth"] is False for row in result.trace_rows)
+
+
+def test_v3_19_agent_runtime_rejects_unbounded_active_context_and_unauthorized_candidates() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.tool_registry import build_default_tool_registry
+
+    source_registry = {
+        "secret": {
+            "source_atom_id": "secret",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Secret.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Secret.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "canonical_citation_payload": {"workbook": "Secret.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "normalized_text_or_value_snapshot": "SECRET_EVIDENCE_FROM_UNBOUNDED_ACTIVE_CONTEXT",
+        },
+        "foreign-tenant": {
+            "source_atom_id": "foreign-tenant",
+            "mock_source_atom": True,
+            "tenant_id": "tenant-b",
+            "source_family": "XLSX",
+            "source_identity": "XLSX:TenantB.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "TenantB.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "canonical_citation_payload": {"workbook": "TenantB.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "normalized_text_or_value_snapshot": "FOREIGN_TENANT_EVIDENCE",
+        },
+        "untagged": {
+            "source_atom_id": "untagged",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Untagged.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Untagged.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "canonical_citation_payload": {"workbook": "Untagged.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "normalized_text_or_value_snapshot": "UNTAGGED_TENANT_EVIDENCE",
+        },
+    }
+    runtime = AgentRuntime(registry=build_default_tool_registry())
+
+    unbounded_active = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-unbounded-active-context",
+            query_text="이 표 내용 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=(),
+            rough_query_hint=True,
+            request_context={"active_source_atom_ids": ("secret",)},
+        )
+    )
+    assert unbounded_active.response_policy_bucket == "CONTEXT_REQUIRED"
+    assert unbounded_active.blocked_reason == "CONTEXT_REQUIRED"
+    assert unbounded_active.active_context_present is False
+    assert unbounded_active.selected_source_atom_ids == ()
+    assert unbounded_active.evidence_truth_source == "none"
+    assert "SECRET_EVIDENCE" not in unbounded_active.final_answer
+
+    unauthorized = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-foreign-tenant",
+            query_text="계약 내용 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("foreign-tenant",),
+            rough_query_hint=True,
+            request_context={"tenant_id": "tenant-a"},
+        )
+    )
+    assert unauthorized.abstained is True
+    assert unauthorized.selected_source_atom_ids == ()
+    assert unauthorized.evidence_truth_source == "none"
+    assert "FOREIGN_TENANT_EVIDENCE" not in unauthorized.final_answer
+
+    empty_authorization_scope = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-empty-authorization-scope",
+            query_text="계약 내용 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("secret",),
+            rough_query_hint=True,
+            request_context={"authorized_source_atom_ids": []},
+        )
+    )
+    assert empty_authorization_scope.abstained is True
+    assert empty_authorization_scope.selected_source_atom_ids == ()
+    assert empty_authorization_scope.evidence_truth_source == "none"
+    assert "SECRET_EVIDENCE" not in empty_authorization_scope.final_answer
+
+    untagged_tenant = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-tenant-context-untagged-atom",
+            query_text="계약 내용 알려줘",
+            source_family="XLSX",
+            source_registry=source_registry,
+            candidate_source_atom_ids=("untagged",),
+            rough_query_hint=True,
+            request_context={"tenant_id": "tenant-a"},
+        )
+    )
+    assert untagged_tenant.abstained is True
+    assert untagged_tenant.selected_source_atom_ids == ()
+    assert untagged_tenant.evidence_truth_source == "none"
+    assert "UNTAGGED_TENANT_EVIDENCE" not in untagged_tenant.final_answer
+
+
+def test_v3_19_agent_runtime_blocks_additional_korean_deictic_forms_without_context() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.tool_registry import build_default_tool_registry
+
+    source_registry = {
+        "bounded-table": {
+            "source_atom_id": "bounded-table",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Book.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "canonical_citation_payload": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "normalized_text_or_value_snapshot": "DEICTIC_FORM_SHOULD_NOT_ANSWER",
+        }
+    }
+    runtime = AgentRuntime(registry=build_default_tool_registry())
+
+    for index, query_text in enumerate(("이 문서 내용 알려줘", "해당 문서 내용 알려줘", "해당 표 내용 알려줘", "현재 표 내용 알려줘", "위 표 내용 알려줘", "선택 영역 값 알려줘"), start=1):
+        result = runtime.invoke(
+            AgentRuntimeRequest(
+                query_id=f"q-deictic-expanded-{index}",
+                query_text=query_text,
+                source_family="XLSX",
+                source_registry=source_registry,
+                candidate_source_atom_ids=("bounded-table",),
+                rough_query_hint=True,
+            )
+        )
+        assert result.deictic_query is True
+        assert result.response_policy_bucket == "CONTEXT_REQUIRED"
+        assert result.blocked_reason == "CONTEXT_REQUIRED"
+        assert result.abstained is True
+        assert result.selected_source_atom_ids == ()
+        assert result.evidence_truth_source == "none"
+        assert "DEICTIC_FORM_SHOULD_NOT_ANSWER" not in result.final_answer
+
+
+def test_v3_19_agent_runtime_requires_valid_sourceatom_bundle_and_blocks_low_ocr() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.tool_registry import build_default_tool_registry
+
+    runtime = AgentRuntime(registry=build_default_tool_registry())
+    invalid_source_registry = {
+        "invalid": {
+            "source_atom_id": "invalid",
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Invalid.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Invalid.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "canonical_citation_payload": {"workbook": "Invalid.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "normalized_text_or_value_snapshot": "INCOMPLETE_METADATA_EVIDENCE",
+        }
+    }
+    invalid = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-invalid-sourceatom",
+            query_text="Invalid.xlsx 시트 Sheet1 셀 A1 값 알려줘",
+            source_family="XLSX",
+            source_registry=invalid_source_registry,
+            candidate_source_atom_ids=("invalid",),
+        )
+    )
+    assert invalid.runtime_contract_violation is True
+    assert invalid.locator_resolution_bucket == "CONTRACT_VIOLATION"
+    assert invalid.response_policy_bucket == "CONTRACT_VIOLATION"
+    assert "SOURCE_ATOM_SCHEMA_INCOMPLETE" in invalid.fail_closed_reason
+    assert invalid.selected_source_atom_ids == ()
+    assert invalid.evidence_truth_source == "none"
+    assert "INCOMPLETE_METADATA_EVIDENCE" not in invalid.final_answer
+
+    forged_replay_registry = {
+        "forged": {
+            "source_atom_id": "forged",
+            "mock_source_atom": True,
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Forged.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Forged.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "canonical_citation_payload": {"workbook": "Forged.xlsx", "sheet": "Sheet1", "cell": "A1"},
+            "normalized_text_or_value_snapshot": "FORGED_REPLAY_EVIDENCE",
+        }
+    }
+    forged_replay = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-forged-replay-sourceatom",
+            query_text="Forged.xlsx 시트 Sheet1 셀 A1 값 알려줘",
+            source_family="XLSX",
+            source_registry=forged_replay_registry,
+            candidate_source_atom_ids=("forged",),
+        )
+    )
+    assert forged_replay.runtime_contract_violation is True
+    assert forged_replay.locator_resolution_bucket == "CONTRACT_VIOLATION"
+    assert "SOURCE_ATOM_SCHEMA_INCOMPLETE" in forged_replay.fail_closed_reason
+    assert forged_replay.selected_source_atom_ids == ()
+    assert forged_replay.evidence_truth_source == "none"
+    assert "FORGED_REPLAY_EVIDENCE" not in forged_replay.final_answer
+
+    low_ocr_registry = {
+        "low-ocr": {
+            "source_atom_id": "low-ocr",
+            "mock_source_atom": True,
+            "source_family": "PDF",
+            "source_identity": "PDF:LowOcr.pdf:p1",
+            "raw_locator": {"file_name": "LowOcr.pdf", "source_pdf_path": "LowOcr.pdf", "page": 1, "ocr_confidence": 0.12},
+            "canonical_citation_payload": {"file_name": "LowOcr.pdf", "page": 1},
+            "normalized_text_or_value_snapshot": "LOW_OCR_EVIDENCE_ANSWERED",
+        }
+    }
+    low_ocr = runtime.invoke(
+        AgentRuntimeRequest(
+            query_id="q-low-ocr",
+            query_text="LowOcr.pdf 1페이지 내용 알려줘",
+            source_family="PDF",
+            source_registry=low_ocr_registry,
+            candidate_source_atom_ids=("low-ocr",),
+            internal_replay_adapter=True,
+        )
+    )
+    assert low_ocr.runtime_contract_violation is True
+    assert low_ocr.locator_resolution_bucket == "CONTRACT_VIOLATION"
+    assert "LOW_TRUST_OCR_EVIDENCE" in low_ocr.fail_closed_reason
+    assert low_ocr.selected_source_atom_ids == ()
+    assert low_ocr.evidence_truth_source == "none"
+    assert "LOW_OCR_EVIDENCE_ANSWERED" not in low_ocr.final_answer
+
+
+def test_v3_19_runtime_artifacts_cover_user_response_policy_and_acceptance_targets() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod as run
+
+    artifacts = run.build_artifacts()
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    per_query = artifacts["per_query_rows"]
+    review_rows = artifacts["review_rows"]
+    policy_rows = artifacts["user_response_policy_audit_rows"]
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["agent_runtime_nonprod"] is True
+    assert summary["agent_runtime_product_ready"] is False
+    assert metrics["review_packet_row_count"] == len(review_rows) == len(per_query)
+    assert metrics["user_response_policy_audit_row_count"] == len(policy_rows)
+    assert metrics["ambiguous_locator_nonabstained_count"] == 0
+    assert metrics["page_only_locator_nonabstained_count"] == 0
+    assert metrics["sheet_only_locator_nonabstained_count"] == 0
+    assert metrics["deictic_context_missing_nonabstained_count"] == 0
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["duplicate_query_hash_count"] >= 1
+    assert metrics["duplicate_query_text_group_count"] >= 1
+    assert "user_response_policy_audit_jsonl" in summary["artifact_paths"]
+
+    required_policy_fields = {
+        "run_id",
+        "query_id",
+        "diagnostic_case_id",
+        "agent_route",
+        "route_lane",
+        "locator_resolution_bucket",
+        "response_policy_bucket",
+        "answer_allowed_by_policy",
+        "user_clarification_required",
+        "abstained",
+        "blocked_reason",
+        "final_answer_policy",
+        "evidence_truth_source",
+        "selected_source_atom_count",
+        "runtime_contract_violation",
+    }
+    assert policy_rows and required_policy_fields <= set(policy_rows[0])
+    assert any(row["response_policy_bucket"] == "CONTEXT_REQUIRED" for row in policy_rows)
+    assert any(row["locator_resolution_bucket"] == "AMBIGUOUS_PAGE_ONLY_LOCATOR" for row in policy_rows)
+    assert any(row["locator_resolution_bucket"] == "AMBIGUOUS_SHEET_ONLY_LOCATOR" for row in policy_rows)
+    assert any(row["locator_resolution_bucket"] == "BOUNDED_BROAD_RANGE" for row in policy_rows)
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert not any("expected_answer" in row or "supporting_evidence" in row for row in per_query)
+    for row in review_rows:
+        for field in (
+            "response_policy_bucket",
+            "answer_allowed_by_policy",
+            "user_clarification_required",
+            "ambiguity_requires_clarification",
+            "active_context_required",
+            "active_context_present",
+            "duplicate_query_hash_count",
+            "duplicate_query_group_size",
+        ):
+            assert field in row
+
+
+def test_v3_19_runtime_path_has_no_raw_parser_or_hidden_context_shortcuts() -> None:
+    runtime_path = ROOT / "ai" / "app" / "capabilities" / "rag_orchestrator" / "agent_runtime.py"
+    script_path = ROOT / "ai" / "scripts" / "rag_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod.py"
+    source = runtime_path.read_text(encoding="utf-8") + "\n" + script_path.read_text(encoding="utf-8")
+
+    forbidden_snippets = (
+        "openpyxl.load_workbook",
+        "pdfplumber.open",
+        "fitz.open",
+        "pypdf.PdfReader",
+        "PdfReader(",
+        "load_workbook(",
+        "iter_rows(",
+        "iter_cols(",
+        "raw_pdf_xlsx_query_time_parse=True",
+        "vector_payload_used_as_evidence_truth=True",
+        "allow_unbounded_fallback=True",
+        "target_locator_used=True",
+        "gold_locator_used=True",
+        "direct_normalized_value_query_matching_used=True",
+        "artifact_context.get(\"source_identity\")",
+        "artifact_context.get('source_identity')",
+    )
+    for snippet in forbidden_snippets:
+        assert snippet not in source
+
+
+def test_v3_20_runtime_adapters_are_live_like_but_keep_evidence_truth_sourceatom_owned() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.runtime_adapters import (
+        InMemoryRuntimeCacheAdapter,
+        InMemorySearchIndexAdapter,
+        InMemorySourceAtomStoreAdapter,
+    )
+    from app.capabilities.rag_orchestrator.tool_registry import LAYER_NAMES, build_default_tool_registry
+
+    source_atoms = {
+        "atom-xlsx-a1": {
+            "source_atom_id": "atom-xlsx-a1",
+            "mock_source_atom": True,
+            "tenant_id": "diagnostic-tenant",
+            "source_family": "XLSX",
+            "source_identity": "XLSX:Book.xlsx:Sheet1:A1",
+            "raw_locator": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1", "range": "A1:B2"},
+            "canonical_citation_payload": {"workbook": "Book.xlsx", "sheet": "Sheet1", "cell": "A1", "range": "A1:B2"},
+            "normalized_text_or_value_snapshot": "SOURCE_ATOM_CANONICAL_VALUE=42",
+        }
+    }
+    search_views = {
+        "sv-xlsx-a1": {
+            "search_view_id": "sv-xlsx-a1",
+            "source_atom_ids": ["atom-xlsx-a1"],
+            "vector_payload_text": "POISONED_VECTOR_PAYLOAD_SHOULD_NOT_APPEAR",
+            "canonical_citation_payload": {"workbook": "Poison.xlsx", "sheet": "Wrong", "cell": "Z99"},
+            "source_family": "XLSX",
+        }
+    }
+    runtime = AgentRuntime(
+        registry=build_default_tool_registry(),
+        search_index=InMemorySearchIndexAdapter(search_views=search_views),
+        source_atom_store=InMemorySourceAtomStoreAdapter(source_atoms=source_atoms),
+        runtime_cache=InMemoryRuntimeCacheAdapter(namespace="rag-v3-20-smoke-cache"),
+    )
+
+    result = runtime.invoke(
+        AgentRuntimeRequest(
+            run_id="v3_20_unit",
+            query_id="v3_20_unit_explicit_cell",
+            query_text="Book.xlsx 시트 Sheet1 셀 A1 값 알려줘",
+            source_family="XLSX",
+            source_registry={},
+            candidate_source_atom_ids=(),
+            request_context={
+                "diagnostic_tenant_id": "diagnostic-tenant",
+                "namespace": "rag-data-live-runtime-smoke-nonprod",
+                "cache_namespace": "rag-v3-20-smoke-cache",
+            },
+            internal_replay_adapter=True,
+        )
+    )
+
+    assert result.route_lane == "user_locator"
+    assert result.selected_source_atom_ids == ("atom-xlsx-a1",)
+    assert result.evidence_bundle_ids == ("bundle:atom-xlsx-a1",)
+    assert result.evidence_truth_source == "source_atom_evidence_bundle"
+    assert result.index_contract_status == "available"
+    assert result.db_contract_status == "available"
+    assert result.cache_contract_status in {"miss", "hit"}
+    assert result.cache_hit is False
+    assert result.cache_key_namespace == "rag-v3-20-smoke-cache"
+    assert "SOURCE_ATOM_CANONICAL_VALUE=42" in result.final_answer
+    assert "POISONED_VECTOR_PAYLOAD" not in result.final_answer
+    assert tuple(row["layer_id"] for row in result.trace_rows) == LAYER_NAMES
+    assert all(row["tool_name"].startswith("rag.") for row in result.trace_rows)
+
+    adapter_rows = list(result.runtime_adapter_trace_rows)
+    assert {row["adapter_name"] for row in adapter_rows} >= {
+        "InMemorySearchIndexAdapter",
+        "InMemorySourceAtomStoreAdapter",
+        "InMemoryRuntimeCacheAdapter",
+    }
+    assert all(row["production_write_attempted"] is False for row in adapter_rows)
+    assert all(row["broad_scan_attempted"] is False for row in adapter_rows)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in adapter_rows)
+    index_rows = [row for row in adapter_rows if row["adapter_name"] == "InMemorySearchIndexAdapter"]
+    assert index_rows
+    assert index_rows[0]["search_view_ids"] == ["sv-xlsx-a1"]
+    assert index_rows[0]["source_atom_ids"] == ["atom-xlsx-a1"]
+
+
+def test_v3_20_runtime_adapters_fail_closed_for_index_db_and_stale_cache_namespace() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntime, AgentRuntimeRequest
+    from app.capabilities.rag_orchestrator.runtime_adapters import (
+        InMemoryRuntimeCacheAdapter,
+        InMemorySearchIndexAdapter,
+        InMemorySourceAtomStoreAdapter,
+    )
+    from app.capabilities.rag_orchestrator.tool_registry import build_default_tool_registry
+
+    source_atoms = {
+        "atom-pdf-p3": {
+            "source_atom_id": "atom-pdf-p3",
+            "mock_source_atom": True,
+            "tenant_id": "diagnostic-tenant",
+            "source_family": "PDF",
+            "source_identity": "PDF:Manual.pdf:p3",
+            "raw_locator": {"file_name": "Manual.pdf", "page": 3},
+            "canonical_citation_payload": {"file_name": "Manual.pdf", "page": 3},
+            "normalized_text_or_value_snapshot": "PDF_SOURCE_ATOM_TRUTH",
+        }
+    }
+    search_views = {
+        "sv-pdf-p3": {
+            "search_view_id": "sv-pdf-p3",
+            "source_atom_ids": ["atom-pdf-p3"],
+            "source_family": "PDF",
+            "vector_payload_text": "VECTOR_PAYLOAD_IS_CANDIDATE_ONLY",
+        }
+    }
+    base_request = dict(
+        run_id="v3_20_unit",
+        query_id="v3_20_unit_pdf_page",
+        query_text="Manual.pdf 3페이지 내용 알려줘",
+        source_family="PDF",
+        source_registry={},
+        candidate_source_atom_ids=(),
+        request_context={
+            "diagnostic_tenant_id": "diagnostic-tenant",
+            "namespace": "rag-data-live-runtime-smoke-nonprod",
+            "cache_namespace": "rag-v3-20-smoke-cache",
+        },
+        internal_replay_adapter=True,
+    )
+
+    index_unavailable = AgentRuntime(
+        registry=build_default_tool_registry(),
+        search_index=InMemorySearchIndexAdapter(search_views=search_views, available=False),
+        source_atom_store=InMemorySourceAtomStoreAdapter(source_atoms=source_atoms),
+        runtime_cache=InMemoryRuntimeCacheAdapter(namespace="rag-v3-20-smoke-cache"),
+    ).invoke(AgentRuntimeRequest(**base_request))
+    assert index_unavailable.abstained is True
+    assert index_unavailable.index_contract_status == "unavailable"
+    assert index_unavailable.fail_closed_reason == "INDEX_UNAVAILABLE"
+    assert index_unavailable.evidence_truth_source == "none"
+    assert index_unavailable.selected_source_atom_ids == ()
+
+    db_unavailable = AgentRuntime(
+        registry=build_default_tool_registry(),
+        search_index=InMemorySearchIndexAdapter(search_views=search_views),
+        source_atom_store=InMemorySourceAtomStoreAdapter(source_atoms=source_atoms, available=False),
+        runtime_cache=InMemoryRuntimeCacheAdapter(namespace="rag-v3-20-smoke-cache"),
+    ).invoke(AgentRuntimeRequest(**base_request))
+    assert db_unavailable.abstained is True
+    assert db_unavailable.db_contract_status == "unavailable"
+    assert db_unavailable.fail_closed_reason == "SOURCE_ATOM_STORE_UNAVAILABLE"
+    assert db_unavailable.evidence_truth_source == "none"
+    assert db_unavailable.selected_source_atom_ids == ()
+
+    cache_unavailable = AgentRuntime(
+        registry=build_default_tool_registry(),
+        search_index=InMemorySearchIndexAdapter(search_views=search_views),
+        source_atom_store=InMemorySourceAtomStoreAdapter(source_atoms=source_atoms),
+        runtime_cache=InMemoryRuntimeCacheAdapter(namespace="rag-v3-20-smoke-cache", available=False),
+    ).invoke(AgentRuntimeRequest(**base_request))
+    assert cache_unavailable.cache_contract_status == "unavailable"
+    assert cache_unavailable.answer_allowed_by_policy is True
+    assert cache_unavailable.evidence_truth_source == "source_atom_evidence_bundle"
+    assert "PDF_SOURCE_ATOM_TRUTH" in cache_unavailable.final_answer
+
+    stale_cache = AgentRuntime(
+        registry=build_default_tool_registry(),
+        search_index=InMemorySearchIndexAdapter(search_views=search_views),
+        source_atom_store=InMemorySourceAtomStoreAdapter(source_atoms=source_atoms),
+        runtime_cache=InMemoryRuntimeCacheAdapter(namespace="stale-cache-namespace"),
+    ).invoke(AgentRuntimeRequest(**base_request))
+    assert stale_cache.abstained is True
+    assert stale_cache.cache_contract_status == "namespace_mismatch"
+    assert stale_cache.fail_closed_reason == "CACHE_NAMESPACE_MISMATCH"
+    assert stale_cache.evidence_truth_source == "none"
+    assert "PDF_SOURCE_ATOM_TRUTH" not in stale_cache.final_answer
+
+
+def test_v3_20_live_runtime_smoke_artifacts_cover_db_index_cache_contracts() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_20_live_runtime_like_db_index_cache_smoke_nonprod as run
+
+    artifacts = run.build_artifacts()
+    summary = artifacts["summary"]
+    metrics = artifacts["metrics"]
+    per_query = artifacts["per_query_rows"]
+    review_rows = artifacts["review_rows"]
+    trace_rows = artifacts["agent_tool_call_trace_rows"]
+    db_rows = artifacts["db_contract_audit_rows"]
+    index_rows = artifacts["index_contract_audit_rows"]
+    cache_rows = artifacts["cache_contract_audit_rows"]
+    live_rows = artifacts["live_runtime_smoke_audit_rows"]
+
+    assert summary["run_id"] == run.RUN_ID
+    assert summary["status"] == run.STATUS
+    assert summary["diagnostic_only"] is True
+    assert summary["agent_runtime_nonprod"] is True
+    assert summary["agent_runtime_product_ready"] is False
+    assert summary["tool_registry_only_invocation"] is True
+    assert summary["live_db_index_cache_readiness"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert metrics["live_runtime_smoke_row_count"] == len(per_query) == len(review_rows) == len(live_rows)
+    assert metrics["agent_tool_call_trace_row_count"] == len(trace_rows)
+    assert metrics["db_contract_audit_row_count"] == len(db_rows)
+    assert metrics["index_contract_audit_row_count"] == len(index_rows)
+    assert metrics["cache_contract_audit_row_count"] == len(cache_rows)
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["production_write_attempt_count"] == 0
+    assert metrics["broad_source_atom_scan_attempt_count"] == 0
+    assert metrics["vector_payload_evidence_truth_violation_count"] == 0
+    assert metrics["raw_file_query_time_accessed"] is False
+    assert metrics["index_unavailable_fail_closed_count"] >= 1
+    assert metrics["db_unavailable_fail_closed_count"] >= 1
+    assert metrics["cache_unavailable_count"] >= 1
+    assert metrics["cache_namespace_mismatch_blocked_count"] >= 1
+    assert metrics["cache_hit_count"] >= 1
+    assert metrics["cache_miss_count"] >= 1
+    assert metrics["response_policy_bucket_counts"]["ANSWER_ALLOWED"] >= 1
+    assert metrics["response_policy_bucket_counts"]["CONTEXT_REQUIRED"] >= 1
+
+    required_audit_fields = {
+        "run_id",
+        "query_id",
+        "route_lane",
+        "adapter_name",
+        "operation",
+        "input_schema_version",
+        "output_schema_version",
+        "diagnostic_tenant_id",
+        "namespace",
+        "cache_key",
+        "source_atom_ids",
+        "search_view_ids",
+        "evidence_bundle_ids",
+        "allowed_by_contract",
+        "fail_closed",
+        "fail_closed_reason",
+        "latency_ms",
+        "timeout_ms",
+        "production_write_attempted",
+        "broad_scan_attempted",
+        "vector_payload_used_as_evidence_truth",
+        "runtime_contract_violation",
+    }
+    for rows in (db_rows, index_rows, cache_rows, live_rows):
+        assert rows
+        assert required_audit_fields <= set(rows[0])
+        assert all(row["production_write_attempted"] is False for row in rows)
+        assert all(row["broad_scan_attempted"] is False for row in rows)
+        assert all(row["vector_payload_used_as_evidence_truth"] is False for row in rows)
+
+    assert any(row["operation"] == "search" for row in index_rows)
+    assert any(row["operation"] == "hydrate_source_atoms" for row in db_rows)
+    assert any(row["operation"] == "get_bundle" for row in cache_rows)
+    assert any(row["fail_closed_reason"] == "INDEX_UNAVAILABLE" for row in live_rows)
+    assert any(row["fail_closed_reason"] == "SOURCE_ATOM_STORE_UNAVAILABLE" for row in live_rows)
+    assert any(row["fail_closed_reason"] == "CACHE_NAMESPACE_MISMATCH" for row in live_rows)
+
+    required_review_fields = {
+        "live_runtime_smoke_case",
+        "db_contract_status",
+        "index_contract_status",
+        "cache_contract_status",
+        "cache_hit",
+        "cache_key_namespace",
+        "adapter_fail_closed_reason",
+        "runtime_adapter_trace_path",
+        "evidence_truth_source",
+        "vector_payload_candidate_only",
+        "production_write_attempted",
+        "broad_scan_attempted",
+    }
+    assert required_review_fields <= set(review_rows[0])
+    assert all(row["evidence_truth_source"] in {"source_atom_evidence_bundle", "none"} for row in review_rows)
+    assert all(row["vector_payload_candidate_only"] is True for row in review_rows)
+    assert all(row["production_write_attempted"] is False for row in review_rows)
+    assert all(row["broad_scan_attempted"] is False for row in review_rows)
+    assert any(row["live_runtime_smoke_case"] == "deictic_active_context_allowed" for row in review_rows)
+    assert any(row["live_runtime_smoke_case"] == "deictic_context_missing_fail_closed" for row in review_rows)
+
+
+def test_v3_20_runtime_path_has_no_raw_parser_broad_scan_or_production_mutation_shortcuts() -> None:
+    runtime_path = ROOT / "ai" / "app" / "capabilities" / "rag_orchestrator" / "agent_runtime.py"
+    adapters_path = ROOT / "ai" / "app" / "capabilities" / "rag_orchestrator" / "runtime_adapters.py"
+    script_path = ROOT / "ai" / "scripts" / "rag_v3_20_live_runtime_like_db_index_cache_smoke_nonprod.py"
+    source = "\n".join(path.read_text(encoding="utf-8") for path in (runtime_path, adapters_path, script_path))
+
+    forbidden_snippets = (
+        "openpyxl.load_workbook",
+        "pdfplumber.open",
+        "fitz.open",
+        "pypdf.PdfReader",
+        "PdfReader(",
+        "load_workbook(",
+        "iter_rows(",
+        "iter_cols(",
+        "SELECT *",
+        "allow_unbounded_fallback=True",
+        "production_write_attempted=True",
+        "vector_payload_used_as_evidence_truth=True",
+        "target_locator_used=True",
+        "gold_locator_used=True",
+        "direct_normalized_value_query_matching_used=True",
+    )
+    for snippet in forbidden_snippets:
+        assert snippet not in source
+
+
 def test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank(tmp_path) -> None:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_pdf_xlsx_answer_quality_review_packet as packet

@@ -3440,3 +3440,304 @@ def test_v3_17_user_locator_rough_query_packet_does_not_mutate_protected_surface
     assert metrics["official_metric_input_rows"] == 0
     assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
     assert guardrail["db_or_production_namespace_written"] is False
+
+
+def test_v3_18_agent_runtime_tool_invocation_contract_does_not_mutate_protected_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    summary_path = output_dir / "summary.json"
+    metrics_path = output_dir / "metrics.json"
+    guardrail_path = output_dir / "guardrail_audit.json"
+    require_v3_9_local_artifacts(summary_path, metrics_path, guardrail_path)
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/quality/"
+        "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/"
+        "summary.json",
+        "ai/eval/reports/rag-ingestion/quality/"
+        "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/"
+        "review_packet.jsonl",
+        "ai/eval/reports/rag-ingestion/quality/"
+        "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/"
+        "tool_registry.json",
+        "ai/eval/reports/rag-ingestion/quality/"
+        "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/"
+        "route_policy_audit.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = read_json(summary_path)
+    metrics = read_json(metrics_path)
+    guardrail = read_json(guardrail_path)
+    assert summary["run_id"] == run_id
+    assert summary["diagnostic_only"] is True
+    assert summary["agent_runtime_nonprod"] is True
+    assert summary["agent_runtime_product_ready"] is False
+    assert summary["tool_registry_only_invocation"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["source_atom_registry_mutated"] is False
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["target_locator_used"] is False
+    assert summary["gold_locator_used"] is False
+    assert summary["expected_supporting_text_used"] is False
+    assert summary["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["protected_namespaces_touched"] == []
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "official_denominator_mutated",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+
+
+def test_v3_19_locator_ambiguity_deictic_response_policy_does_not_mutate_protected_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    summary_path = output_dir / "summary.json"
+    metrics_path = output_dir / "metrics.json"
+    guardrail_path = output_dir / "guardrail_audit.json"
+    require_v3_9_local_artifacts(summary_path, metrics_path, guardrail_path)
+    v3_18_dir = (
+        "ai/eval/reports/rag-ingestion/quality/"
+        "official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod/"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        f"{v3_18_dir}summary.json",
+        f"{v3_18_dir}metrics.json",
+        f"{v3_18_dir}per_query.jsonl",
+        f"{v3_18_dir}agent_tool_call_trace.jsonl",
+        f"{v3_18_dir}route_policy_audit.jsonl",
+        f"{v3_18_dir}runtime_contract_audit.jsonl",
+        f"{v3_18_dir}guardrail_audit.json",
+        f"{v3_18_dir}leakage_audit.jsonl",
+        f"{v3_18_dir}review_packet.jsonl",
+        f"{v3_18_dir}review_packet.csv",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = read_json(summary_path)
+    metrics = read_json(metrics_path)
+    guardrail = read_json(guardrail_path)
+    assert summary["run_id"] == run_id
+    assert summary["diagnostic_only"] is True
+    assert summary["agent_runtime_nonprod"] is True
+    assert summary["agent_runtime_product_ready"] is False
+    assert summary["tool_registry_only_invocation"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["ambiguous_locator_fail_closed"] is True
+    assert summary["page_only_locator_without_context_fail_closed"] is True
+    assert summary["deictic_context_missing_fail_closed"] is True
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["source_atom_registry_mutated"] is False
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["target_locator_used"] is False
+    assert summary["gold_locator_used"] is False
+    assert summary["expected_supporting_text_used"] is False
+    assert summary["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["protected_namespaces_touched"] == []
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "official_denominator_mutated",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["ambiguous_locator_nonabstained_count"] == 0
+    assert metrics["page_only_locator_nonabstained_count"] == 0
+    assert metrics["sheet_only_locator_nonabstained_count"] == 0
+    assert metrics["deictic_context_missing_nonabstained_count"] == 0
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert guardrail["db_or_production_namespace_written"] is False
+
+
+def test_v3_20_live_runtime_like_db_index_cache_smoke_does_not_mutate_protected_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    summary_path = output_dir / "summary.json"
+    metrics_path = output_dir / "metrics.json"
+    guardrail_path = output_dir / "guardrail_audit.json"
+    require_v3_9_local_artifacts(summary_path, metrics_path, guardrail_path)
+    v3_19_dir = (
+        "ai/eval/reports/rag-ingestion/quality/"
+        "official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod/"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        f"{v3_19_dir}summary.json",
+        f"{v3_19_dir}metrics.json",
+        f"{v3_19_dir}per_query.jsonl",
+        f"{v3_19_dir}agent_tool_call_trace.jsonl",
+        f"{v3_19_dir}route_policy_audit.jsonl",
+        f"{v3_19_dir}runtime_contract_audit.jsonl",
+        f"{v3_19_dir}user_response_policy_audit.jsonl",
+        f"{v3_19_dir}guardrail_audit.json",
+        f"{v3_19_dir}leakage_audit.jsonl",
+        f"{v3_19_dir}review_packet.jsonl",
+        f"{v3_19_dir}review_packet.csv",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    summary = read_json(summary_path)
+    metrics = read_json(metrics_path)
+    guardrail = read_json(guardrail_path)
+    assert summary["run_id"] == run_id
+    assert summary["diagnostic_only"] is True
+    assert summary["agent_runtime_nonprod"] is True
+    assert summary["agent_runtime_product_ready"] is False
+    assert summary["tool_registry_only_invocation"] is True
+    assert summary["live_db_index_cache_readiness"] is False
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["raw_file_query_time_accessed"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["source_atom_store_canonical_truth"] is True
+    assert summary["source_atom_registry_mutated"] is False
+    assert summary["search_index_candidate_only"] is True
+    assert summary["runtime_cache_evidence_truth"] is False
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["target_locator_used"] is False
+    assert summary["gold_locator_used"] is False
+    assert summary["expected_supporting_text_used"] is False
+    assert summary["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert summary["direct_normalized_value_query_matching_used"] is False
+    assert summary["protected_namespaces_touched"] == []
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "official_denominator_mutated",
+        "production_mutation",
+        "threshold_tuning",
+        "winner_selection",
+    ):
+        assert summary[flag] is False, flag
+        assert guardrail[flag] is False, flag
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["production_write_attempt_count"] == 0
+    assert metrics["broad_source_atom_scan_attempt_count"] == 0
+    assert metrics["vector_payload_evidence_truth_violation_count"] == 0
+    assert metrics["pdf_xlsx_collapsed_headline_score_reported"] is False
+    assert guardrail["db_or_production_namespace_written"] is False

@@ -3176,6 +3176,12 @@ def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audi
         or "Overall status: `diagnostic_v3_16_final_llm_answer_quality_review_nonprod_ready`;" in progress
         or "Overall status: `diagnostic_v3_17_user_locator_rough_query_answer_quality_nonprod_ready`;"
         in progress
+        or "Overall status: `diagnostic_v3_18_agent_runtime_tool_invocation_contract_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v3_19_locator_ambiguity_deictic_response_policy_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v3_20_live_runtime_like_db_index_cache_smoke_nonprod_ready`;"
+        in progress
     )
     assert "seen-validation-only" in current_flat
     assert "PDF document-disjoint=0, XLSX workbook-disjoint=0" in current_flat
@@ -3265,6 +3271,12 @@ def test_progress_measurements_triage_and_status_record_v3_10_fresh_holdout_xlsx
         in progress
         or "Overall status: `diagnostic_v3_16_final_llm_answer_quality_review_nonprod_ready`;" in progress
         or "Overall status: `diagnostic_v3_17_user_locator_rough_query_answer_quality_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v3_18_agent_runtime_tool_invocation_contract_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v3_19_locator_ambiguity_deictic_response_policy_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v3_20_live_runtime_like_db_index_cache_smoke_nonprod_ready`;"
         in progress
     )
     assert "seen-validation-only" in current_flat
@@ -3884,3 +3896,287 @@ def test_progress_measurements_triage_and_status_record_v3_17_user_locator_rough
     assert "locator-bounds answerability" in triage
     assert "User-owned review fields remain blank" in triage
     assert "not official scoring" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_18_agent_runtime_tool_invocation_contract():
+    run_id = "official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod"
+    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "agent_tool_call_trace_jsonl": output_dir / "agent_tool_call_trace.jsonl",
+        "route_policy_audit_jsonl": output_dir / "route_policy_audit.jsonl",
+        "runtime_contract_audit_jsonl": output_dir / "runtime_contract_audit.jsonl",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_18_agent_runtime_tool_invocation_contract_nonprod"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_18_AGENT_RUNTIME_TOOL_INVOCATION_CONTRACT_NONPROD_READY"
+    assert event["diagnostic_only"] is True
+    assert event["agent_runtime_nonprod"] is True
+    assert event["agent_runtime_product_ready"] is False
+    assert event["tool_registry_only_invocation"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["source_atom_registry_canonical_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_text_used"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["route_policy_lanes"] == ["user_locator", "rough_query", "hybrid", "unsupported"]
+    assert event["tool_registry_version"] == "rag_tool_registry_l0_l8_v1"
+    assert event["agent_tool_call_trace_row_count"] > 0
+    assert event["review_packet_row_count"] > 0
+    assert event["user_locator_query_count"] > 0
+    assert event["rough_query_count"] > 0
+    assert event["rough_query_abstain_count"] >= 0
+    assert event["over_abstain_review_candidate_count"] >= 0
+    assert event["unsupported_route_count"] > 0
+    assert event["runtime_contract_violation_count"] == 0
+    assert "prompt_template" not in event
+    assert "responses" not in event
+    assert "per_query_rows" not in event
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = "summary_json_sha256" if path_key == "summary_json" else f"{path_key}_sha256"
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert "diagnostic_v3_18_agent_runtime_tool_invocation_contract_nonprod_ready" in progress
+    assert "non-production agent-runtime invocation surface" in current_flat
+    assert "registered ToolSpec" in current_flat
+    assert "unsupported and contract-violating routes fail closed" in current_flat
+    assert "SourceAtom/EvidenceBundle remains canonical evidence truth" in current_flat
+    assert "not production routing" in current_flat
+    assert "official_metric_input_rows | 0" in measurements
+    assert "agent_tool_call_trace.jsonl" in measurements
+    assert "runtime_contract_audit.jsonl" in measurements
+    assert "over_abstain_review_candidate_count" in measurements
+    assert run_id in triage
+    assert "LOCATION_NOT_FOUND" in triage
+    assert "AMBIGUOUS_LOCATOR" in triage
+    assert "OUT_OF_BOUNDS_LOCATOR" in triage
+    assert "UNSUPPORTED_LOCATOR_FORMAT" in triage
+    assert "CONTRACT_VIOLATION" in triage
+    assert "not human answerability labels" in triage
+    assert "Rough-query over-abstain diagnostics remain review aids" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_19_locator_ambiguity_deictic_response_policy():
+    run_id = "official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod"
+    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "agent_tool_call_trace_jsonl": output_dir / "agent_tool_call_trace.jsonl",
+        "route_policy_audit_jsonl": output_dir / "route_policy_audit.jsonl",
+        "runtime_contract_audit_jsonl": output_dir / "runtime_contract_audit.jsonl",
+        "user_response_policy_audit_jsonl": output_dir / "user_response_policy_audit.jsonl",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_19_locator_ambiguity_deictic_response_policy_nonprod"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_19_LOCATOR_AMBIGUITY_DEICTIC_RESPONSE_POLICY_NONPROD_READY"
+    assert event["diagnostic_only"] is True
+    assert event["agent_runtime_nonprod"] is True
+    assert event["agent_runtime_product_ready"] is False
+    assert event["tool_registry_only_invocation"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["source_atom_registry_canonical_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_text_used"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["route_policy_lanes"] == ["user_locator", "rough_query", "hybrid", "unsupported"]
+    assert event["tool_registry_version"] == "rag_tool_registry_l0_l8_v1"
+    assert event["review_packet_row_count"] > 0
+    assert event["agent_tool_call_trace_row_count"] > 0
+    assert event["user_response_policy_audit_row_count"] > 0
+    assert event["ambiguous_locator_nonabstained_count"] == 0
+    assert event["page_only_locator_nonabstained_count"] == 0
+    assert event["sheet_only_locator_nonabstained_count"] == 0
+    assert event["deictic_context_missing_nonabstained_count"] == 0
+    assert event["duplicate_query_hash_count"] >= 1
+    assert event["duplicate_query_text_group_count"] >= 1
+    assert event["runtime_contract_violation_count"] == 0
+    assert "prompt_template" not in event
+    assert "responses" not in event
+    assert "per_query_rows" not in event
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = "summary_json_sha256" if path_key == "summary_json" else f"{path_key}_sha256"
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert "diagnostic_v3_19_locator_ambiguity_deictic_response_policy_nonprod_ready" in progress
+    assert "page-only" in current_flat
+    assert "sheet-only" in current_flat
+    assert "Korean deictic rough queries" in current_flat
+    assert "SourceAtom/EvidenceBundle remains canonical evidence truth" in current_flat
+    assert "SearchView/vector payload remains candidate-only" in current_flat
+    assert "not production routing" in current_flat
+    assert "user_response_policy_audit.jsonl" in measurements
+    assert "| ambiguous_locator_nonabstained_count | 0 |" in measurements
+    assert "| page_only_locator_nonabstained_count | 0 |" in measurements
+    assert "| sheet_only_locator_nonabstained_count | 0 |" in measurements
+    assert "| deictic_context_missing_nonabstained_count | 0 |" in measurements
+    assert "| official_metric_input_rows | 0 |" in measurements
+    assert run_id in triage
+    assert "CONTEXT_REQUIRED" in triage
+    assert "BOUNDED_BROAD_RANGE" in triage
+    assert "Duplicate query text" in triage
+    assert "No target/gold/supporting/expected locator text" in triage
+    assert "metrics.json` carries the full bucket maps" in measurements
+
+
+def test_progress_measurements_triage_and_status_record_v3_20_live_runtime_like_db_index_cache_smoke():
+    run_id = "official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod"
+    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "agent_tool_call_trace_jsonl": output_dir / "agent_tool_call_trace.jsonl",
+        "route_policy_audit_jsonl": output_dir / "route_policy_audit.jsonl",
+        "runtime_contract_audit_jsonl": output_dir / "runtime_contract_audit.jsonl",
+        "user_response_policy_audit_jsonl": output_dir / "user_response_policy_audit.jsonl",
+        "db_contract_audit_jsonl": output_dir / "db_contract_audit.jsonl",
+        "index_contract_audit_jsonl": output_dir / "index_contract_audit.jsonl",
+        "cache_contract_audit_jsonl": output_dir / "cache_contract_audit.jsonl",
+        "live_runtime_smoke_audit_jsonl": output_dir / "live_runtime_smoke_audit.jsonl",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+    }
+    require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_20_live_runtime_like_db_index_cache_smoke_nonprod"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_20_LIVE_RUNTIME_LIKE_DB_INDEX_CACHE_SMOKE_NONPROD_READY"
+    assert event["diagnostic_only"] is True
+    assert event["agent_runtime_nonprod"] is True
+    assert event["agent_runtime_product_ready"] is False
+    assert event["tool_registry_only_invocation"] is True
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["source_atom_registry_canonical_truth"] is True
+    assert event["source_atom_store_canonical_truth"] is True
+    assert event["search_index_candidate_only"] is True
+    assert event["runtime_cache_evidence_truth"] is False
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_text_used"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["route_policy_lanes"] == ["user_locator", "rough_query", "hybrid", "unsupported"]
+    assert event["tool_registry_version"] == "rag_tool_registry_l0_l8_v1"
+    assert event["live_runtime_smoke_row_count"] > 0
+    assert event["agent_tool_call_trace_row_count"] > 0
+    assert event["db_contract_audit_row_count"] > 0
+    assert event["index_contract_audit_row_count"] > 0
+    assert event["cache_contract_audit_row_count"] > 0
+    assert event["db_unavailable_fail_closed_count"] >= 1
+    assert event["index_unavailable_fail_closed_count"] >= 1
+    assert event["cache_namespace_mismatch_blocked_count"] >= 1
+    assert event["runtime_contract_violation_count"] == 0
+    assert event["production_write_attempt_count"] == 0
+    assert event["broad_source_atom_scan_attempt_count"] == 0
+    assert event["vector_payload_evidence_truth_violation_count"] == 0
+    assert "prompt_template" not in event
+    assert "responses" not in event
+    assert "per_query_rows" not in event
+    for path_key, path in artifact_paths.items():
+        assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
+        hash_key = "summary_json_sha256" if path_key == "summary_json" else f"{path_key}_sha256"
+        assert event["artifact_sha256"][hash_key] == sha256_file(path)
+
+    assert run_id in current_text
+    assert "diagnostic_v3_20_live_runtime_like_db_index_cache_smoke_nonprod_ready" in progress
+    assert "live-runtime-like DB/index/cache smoke" in current_flat
+    assert "not production routing" in current_flat
+    assert "not live DB/index/cache readiness" in current_flat
+    assert "SourceAtomStoreContract hydrates canonical SourceAtom ids" in current_flat
+    assert "SearchIndexContract returns candidates only" in current_flat
+    assert "RuntimeCacheContract is optional and never evidence truth" in current_flat
+    assert "db_contract_audit.jsonl" in measurements
+    assert "index_contract_audit.jsonl" in measurements
+    assert "cache_contract_audit.jsonl" in measurements
+    assert "live_runtime_smoke_audit.jsonl" in measurements
+    assert "| official_metric_input_rows | 0 |" in measurements
+    assert "| runtime_contract_violation_count | 0 |" in measurements
+    assert "| production_write_attempt_count | 0 |" in measurements
+    assert "| broad_source_atom_scan_attempt_count | 0 |" in measurements
+    assert "| vector_payload_evidence_truth_violation_count | 0 |" in measurements
+    assert run_id in triage
+    assert "INDEX_UNAVAILABLE" in triage
+    assert "SOURCE_ATOM_STORE_UNAVAILABLE" in triage
+    assert "CACHE_NAMESPACE_MISMATCH" in triage
+    assert "Cache unavailable is optional" in triage

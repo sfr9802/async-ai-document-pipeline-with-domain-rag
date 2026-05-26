@@ -1,6 +1,6 @@
 # RAG Ingestion Measurements
 
-Last updated: 2026-05-25 KST.
+Last updated: 2026-05-26 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new
@@ -18,6 +18,93 @@ Historical `_archive/legacy` artifact paths in older entries are logical
 provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+
+<!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:measurements-entry:start -->
+### v3_20 Live-Runtime-Like DB/Index/Cache Smoke
+
+- Run: `official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod`
+- Policy: diagnostic-only, non-production live-runtime-like adapter smoke; no official metric, promotion, production DB/index/cache write, raw PDF/XLSX query-time parsing, broad SourceAtom scan, target/gold/supporting/expected locator use, or vector-payload evidence truth.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| live_runtime_smoke_row_count | 10 |
+| db_contract_audit_row_count | 11 |
+| index_contract_audit_row_count | 7 |
+| cache_contract_audit_row_count | 10 |
+| agent_tool_call_trace_row_count | 82 |
+| db_available_count | 10 |
+| db_unavailable_fail_closed_count | 1 |
+| index_available_count | 6 |
+| index_unavailable_fail_closed_count | 1 |
+| cache_hit_count | 1 |
+| cache_miss_count | 7 |
+| cache_unavailable_count | 1 |
+| cache_namespace_mismatch_blocked_count | 1 |
+| runtime_contract_violation_count | 0 |
+| production_write_attempt_count | 0 |
+| broad_source_atom_scan_attempt_count | 0 |
+| vector_payload_evidence_truth_violation_count | 0 |
+| official_metric_input_rows | 0 |
+
+Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `user_response_policy_audit.jsonl`, `db_contract_audit.jsonl`, `index_contract_audit.jsonl`, `cache_contract_audit.jsonl`, `live_runtime_smoke_audit.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.jsonl`, and `review_packet.csv`.
+
+Counter source-of-truth: `metrics.json` carries the adapter availability, fail-closed, cache, and guardrail counters; `status.jsonl` is a compact event ledger with acceptance counters and artifact hashes.
+<!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod:measurements-entry:start -->
+### v3_19 Locator Ambiguity And Deictic Response Policy
+
+- Run: `official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod`
+- Policy: diagnostic-only, non-production response-policy hardening; ambiguous locator and missing-context deictic rows ask for clarification instead of answering.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| review_packet_row_count | 53 |
+| agent_tool_call_trace_row_count | 469 |
+| user_response_policy_audit_row_count | 53 |
+| ambiguous_locator_count | 6 |
+| ambiguous_locator_nonabstained_count | 0 |
+| page_only_locator_count | 5 |
+| page_only_locator_nonabstained_count | 0 |
+| sheet_only_locator_count | 1 |
+| sheet_only_locator_nonabstained_count | 0 |
+| deictic_query_count | 18 |
+| deictic_context_missing_count | 17 |
+| deictic_context_missing_nonabstained_count | 0 |
+| duplicate_query_hash_count | 9 |
+| duplicate_query_text_group_count | 9 |
+| rough_query_abstain_count | 13 |
+| over_abstain_review_candidate_count | 0 |
+| runtime_contract_violation_count | 0 |
+| official_metric_input_rows | 0 |
+
+Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `user_response_policy_audit.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.jsonl`, and `review_packet.csv`.
+
+Counter source-of-truth: `metrics.json` carries the full bucket maps and diagnostic counters; `status.jsonl` is a compact event ledger with the acceptance and headline diagnostic counters.
+
+Verification note: the v3_19 `--check`, runtime-policy tests, artifact hash-lock test, guardrail test, status-sync test, py_compile, diff checks, protected-surface checks, and ignored-artifact checks pass in this checkout. The broad current-profile gate was reclassified during v3_20 preflight: sampled older v3_6_9-v3_15 compact artifact locks were available in this checkout, while the concrete blocker was the incomplete v3_20 live-runtime-like DB/index/cache handoff. This remains diagnostic-only and not a v3_19 official metric or promotion signal.
+<!-- official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod:measurements-entry:start -->
+### v3_18 Agent Runtime Tool Invocation Contract
+
+- Run: `official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod`
+- Policy: diagnostic-only, non-production agent runtime contract; no official metric, promotion, threshold tuning, winner selection, production DB/index write, raw PDF/XLSX query-time parsing, broad registry scan, target/gold/supporting/expected locator use, or vector-payload evidence truth.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| review_packet_row_count | 44 |
+| agent_tool_call_trace_row_count | 388 |
+| user_locator_query_count | 29 |
+| rough_query_count | 14 |
+| rough_query_abstain_count | 6 |
+| over_abstain_review_candidate_count | 0 |
+| unsupported_route_count | 1 |
+| runtime_contract_violation_count | 0 |
+| official_metric_input_rows | 0 |
+
+Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.csv`, and `review_packet.jsonl`.
+<!-- official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod:measurements-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:measurements-entry:start -->
 ### v3_17 User-Locator And Rough-Query Review Packet

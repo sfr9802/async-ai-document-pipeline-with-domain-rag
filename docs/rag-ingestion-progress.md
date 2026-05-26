@@ -1,6 +1,6 @@
 # RAG Ingestion Progress
 
-Last updated: 2026-05-25 KST.
+Last updated: 2026-05-26 KST.
 
 This is the compact status index for the current RAG ingestion and official
 answer/citation metric work. Do not append turn transcripts or create new
@@ -19,6 +19,18 @@ machine-readable status event ledger. For run artifacts, write only the minimal
 durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
+
+<!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:progress-entry:start -->
+- v3_20 live-runtime-like DB/index/cache smoke (`official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod`) is diagnostic_v3_20_live_runtime_like_db_index_cache_smoke_nonprod_ready. It keeps the non-production ToolRegistry-only agent runtime and introduces SourceAtomStoreContract, SearchIndexContract, and RuntimeCacheContract adapters that look like live contracts without touching production surfaces. SearchIndexContract returns candidates only; SourceAtomStoreContract hydrates canonical SourceAtom ids; RuntimeCacheContract is optional and never evidence truth. SourceAtom/EvidenceBundle remains canonical answer evidence; vector/SearchView payload remains candidate-only. Index unavailable and DB/source-atom-store unavailable rows fail closed, cache unavailable is bypassed without changing answer truth, and stale cache namespace mismatch fails closed with audit. This is not production routing, not product success, not promotion evidence, not official scoring, and not live DB/index/cache readiness.
+<!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod:progress-entry:start -->
+- v3_19 locator ambiguity and deictic response policy (`official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod`) is diagnostic_v3_19_locator_ambiguity_deictic_response_policy_nonprod_ready. It keeps the non-production ToolRegistry runtime, but fail-closes ambiguous file/workbook identity, page-only and sheet-only locator requests without bounded active context, and Korean deictic rough queries without explicit active context. SourceAtom/EvidenceBundle remains canonical evidence truth; SearchView/vector payload remains candidate-only; official_metric_input_rows=0. This is not production routing, product success, promotion evidence, official scoring, or live DB/index/cache readiness. Targeted v3_19 checks pass; full `--rag-current` was reclassified during v3_20 preflight; the concrete blocker in this checkout was the incomplete v3_20 live-runtime-like handoff, not sampled v3_6_9-v3_15 compact artifact availability.
+<!-- official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod:progress-entry:start -->
+- v3_18 agent runtime tool-invocation contract (`official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod`) is diagnostic_v3_18_agent_runtime_tool_invocation_contract_nonprod_ready. It moves the bounded ToolRegistry from review-packet declaration toward a non-production agent-runtime invocation surface: each L0-L8 call is executed through a registered ToolSpec, unsupported and contract-violating routes fail closed, tool-call traces are written to compact JSONL, and SourceAtom/EvidenceBundle remains canonical evidence truth. This is not production routing, product success, promotion evidence, official scoring, or live DB/index/cache readiness.
+<!-- official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod:progress-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:progress-entry:start -->
 - v3_17 user-locator and rough-query answer-quality packet (`official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod`) is diagnostic_v3_17_user_locator_rough_query_answer_quality_nonprod_ready. It creates a compact PDF/XLSX review packet for rough, terse, incomplete user queries and query-owned locator text. The user-provided locator text is query-owned only: target_locator_used=false, gold_locator_used=false, expected_supporting_text_used=false, official_metric=false, official_metric_input_rows=0, promotion_evidence=false, raw_file_query_time_accessed=false. SourceAtom registry remains canonical truth, SearchView/vector payload remains candidate-only, and the bounded ToolRegistry declares the diagnostic L0-L8 tool specs plus user_locator, rough_query, hybrid, and unsupported route lanes with unbounded fallback disabled.
@@ -58,9 +70,9 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `diagnostic_v3_17_user_locator_rough_query_answer_quality_nonprod_ready`;
-current diagnostic answer-quality loop:
-`official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod`;
+Overall status: `diagnostic_v3_20_live_runtime_like_db_index_cache_smoke_nonprod_ready`;
+current diagnostic live-runtime-like smoke loop:
+`official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod`;
 retained prior PDF/XLSX bottleneck status:
 `pdf_xlsx_bottleneck_quality_diagnostic_v3_9_validation_ready`;
 prior PDF/XLSX/TEXT comparison loop:

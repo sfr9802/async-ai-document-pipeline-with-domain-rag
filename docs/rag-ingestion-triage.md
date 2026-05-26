@@ -1,6 +1,6 @@
 # RAG Ingestion Triage
 
-Last updated: 2026-05-25 KST.
+Last updated: 2026-05-26 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of
@@ -19,6 +19,43 @@ As of the 2026-05-21 cleanup, the current repo-local report directory keeps
 The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
+
+<!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:triage-entry:start -->
+### v3_20 Live-Runtime-Like DB/Index/Cache Smoke Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod`
+- Scope: diagnostic-only non-production smoke over live-runtime-like SourceAtomStoreContract, SearchIndexContract, and RuntimeCacheContract adapters.
+- INDEX_UNAVAILABLE rows fail closed before evidence assembly; SOURCE_ATOM_STORE_UNAVAILABLE rows fail closed before SourceAtom/EvidenceBundle truth can be produced.
+- Cache unavailable is optional: it is audited and bypassed only when SourceAtomStore/EvidenceBundle truth can still be hydrated.
+- CACHE_NAMESPACE_MISMATCH fails closed in this v3_20 contract, so stale cache namespaces do not return evidence.
+- SearchIndexContract output is candidate-only; vector/SearchView payload and cache payload are never evidence truth.
+- The smoke covers explicit XLSX file/sheet/cell, explicit PDF file/page, rough-query semantic constraints, missing-context deictic fail-closed, bounded active-context deictic allowed, unsupported source policy fail-closed, index unavailable, DB unavailable, cache unavailable, and stale cache namespace mismatch.
+- This is not production routing and not live DB/index/cache readiness.
+<!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod:triage-entry:start -->
+### v3_19 Locator Ambiguity And Deictic Response Policy Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod`
+- Scope: diagnostic-only non-production response-policy hardening before live DB/index/cache smoke.
+- Ambiguous file/workbook/document identity, page-only locators without active file context, and sheet-only locators without active workbook context fail closed with user clarification; sheet-only rows are surfaced as `AMBIGUOUS_SHEET_ONLY_LOCATOR` in `locator_resolution_bucket_counts` and dedicated sheet-only counters.
+- Deictic Korean rough queries such as `이 표`, `이거`, `그 페이지`, `이 페이지`, `이 파일`, `방금 것`, `여기`, and `선택한 범위` require bounded active context and otherwise use the `CONTEXT_REQUIRED` response policy bucket.
+- `BOUNDED_BROAD_RANGE` can answer only when the broad locator resolves to a unique source identity.
+- Duplicate query text is surfaced in summary metrics and review packet fields; it remains diagnostic-only and not a gold label.
+- No target/gold/supporting/expected locator text or hidden artifact source identity is used as active context.
+- Verification risk: the broad `--rag-current` blocker was reclassified in v3_20 preflight as the incomplete v3_20 handoff rather than sampled v3_6_9-v3_15 artifact availability; v3_19 targeted policy, artifact, guardrail, and status checks pass.
+<!-- official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod:triage-entry:start -->
+### v3_18 Agent Runtime Tool Invocation Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod`
+- Scope: diagnostic-only non-production agent-runtime contract for invoking L0-L8 ToolSpecs through the bounded ToolRegistry.
+- Unsupported route and runtime-contract violations fail closed; no unbounded fallback is allowed.
+- User locator resolution buckets are machine diagnostics only: LOCATION_NOT_FOUND, AMBIGUOUS_LOCATOR, OUT_OF_BOUNDS_LOCATOR, UNSUPPORTED_LOCATOR_FORMAT, and CONTRACT_VIOLATION are not human answerability labels.
+- Rough-query over-abstain diagnostics remain review aids and do not use expected, supporting, gold, or target text.
+- SourceAtom/EvidenceBundle is the evidence truth; SearchView/vector payload remains candidate-only.
+<!-- official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod:triage-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:triage-entry:start -->
 ### v3_17 User-Locator And Rough-Query Review Triage

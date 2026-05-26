@@ -5284,6 +5284,415 @@ def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() 
     assert artifact_paths["review_packet_jsonl"].stat().st_size < 700_000
 
 
+def test_v3_18_agent_runtime_tool_invocation_artifacts_are_hash_locked_and_compact() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "agent_tool_call_trace_jsonl": output_dir / "agent_tool_call_trace.jsonl",
+        "route_policy_audit_jsonl": output_dir / "route_policy_audit.jsonl",
+        "runtime_contract_audit_jsonl": output_dir / "runtime_contract_audit.jsonl",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+    }
+    require_v3_9_local_artifacts(*artifact_paths.values())
+    assert {
+        path.name
+        for path in output_dir.iterdir()
+        if path.is_file()
+    } == {
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "agent_tool_call_trace.jsonl",
+        "route_policy_audit.jsonl",
+        "runtime_contract_audit.jsonl",
+        "guardrail_audit.json",
+        "leakage_audit.jsonl",
+        "review_packet.csv",
+        "review_packet.jsonl",
+    }
+
+    summary = read_json(artifact_paths["summary_json"])
+    metrics = read_json(artifact_paths["metrics_json"])
+    per_query = read_jsonl(artifact_paths["per_query_jsonl"])
+    trace_rows = read_jsonl(artifact_paths["agent_tool_call_trace_jsonl"])
+    route_policy = read_jsonl(artifact_paths["route_policy_audit_jsonl"])
+    runtime_audit = read_jsonl(artifact_paths["runtime_contract_audit_jsonl"])
+    guardrail = read_json(artifact_paths["guardrail_audit_json"])
+    leakage = read_jsonl(artifact_paths["leakage_audit_jsonl"])
+    review_rows = read_jsonl(artifact_paths["review_packet_jsonl"])
+
+    assert summary["run_id"] == run_id
+    assert summary["status"] == "DIAGNOSTIC_V3_18_AGENT_RUNTIME_TOOL_INVOCATION_CONTRACT_NONPROD_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["agent_runtime_nonprod"] is True
+    assert summary["agent_runtime_product_ready"] is False
+    assert summary["tool_registry_only_invocation"] is True
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["artifact_paths"] == {key: path.relative_to(ROOT).as_posix() for key, path in artifact_paths.items()}
+    for key, path in artifact_paths.items():
+        if key == "summary_json":
+            continue
+        assert summary["artifact_sha256"][f"{key}_sha256"] == sha256_file(path)
+
+    assert metrics["agent_tool_call_trace_row_count"] == len(trace_rows)
+    assert metrics["review_packet_row_count"] == len(review_rows) == len(per_query)
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["rough_query_abstain_count"] >= 0
+    assert metrics["over_abstain_review_candidate_count"] >= 0
+    assert {row["route_lane"] for row in route_policy} >= {"user_locator", "rough_query", "unsupported"}
+    assert all(row["allow_unbounded_fallback"] is False for row in route_policy)
+    assert all(row["runtime_contract_violation"] is False for row in runtime_audit)
+    assert leakage and all(row["leakage_detected"] is False for row in leakage)
+    assert guardrail["raw_file_query_time_accessed"] is False
+    assert guardrail["source_atom_registry_canonical_truth"] is True
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+
+    required_trace_fields = {
+        "run_id",
+        "query_id",
+        "diagnostic_case_id",
+        "tool_call_id",
+        "parent_tool_call_id",
+        "layer_id",
+        "tool_name",
+        "route_lane",
+        "input_schema_version",
+        "output_schema_version",
+        "allowed_input_passed",
+        "forbidden_input_blocked",
+        "confidence",
+        "drop_reason",
+        "provenance",
+        "source_atom_ids",
+        "evidence_bundle_ids",
+        "latency_ms",
+        "runtime_contract_violation",
+        "fail_closed_reason",
+    }
+    assert required_trace_fields <= set(trace_rows[0])
+    assert all(row["run_id"] == run_id for row in trace_rows)
+    assert all(row["allowed_input_passed"] is True for row in trace_rows)
+    assert all(row["forbidden_input_blocked"] is True for row in trace_rows)
+    assert all(row["provenance"]["vector_payload_used_as_evidence_truth"] is False for row in trace_rows)
+    assert any(row["layer_id"] == "L8_FINAL_LLM_ANSWER_GENERATION" for row in trace_rows)
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert not any("expected_answer" in row or "supporting_evidence" in row for row in per_query)
+    assert all(row["user_review_like"] == "" for row in review_rows)
+    assert all(row["user_answerability_decision"] == "" for row in review_rows)
+    assert any(row["locator_resolution_bucket"] == "OUT_OF_BOUNDS_LOCATOR" for row in review_rows)
+    assert any(row["locator_resolution_bucket"] == "AMBIGUOUS_LOCATOR" for row in review_rows)
+    assert any(row["locator_resolution_bucket"] == "LOCATION_NOT_FOUND" for row in review_rows)
+    assert any(row["locator_resolution_bucket"] == "UNSUPPORTED_LOCATOR_FORMAT" for row in review_rows)
+    assert metrics["locator_resolution_bucket_counts"]["OUT_OF_BOUNDS_LOCATOR"] >= 1
+    assert metrics["locator_resolution_bucket_counts"]["AMBIGUOUS_LOCATOR"] >= 1
+    assert metrics["locator_resolution_bucket_counts"]["LOCATION_NOT_FOUND"] >= 1
+    assert metrics["locator_resolution_bucket_counts"]["UNSUPPORTED_LOCATOR_FORMAT"] >= 1
+
+    assert artifact_paths["summary_json"].stat().st_size < 120_000
+    assert artifact_paths["metrics_json"].stat().st_size < 80_000
+    assert artifact_paths["per_query_jsonl"].stat().st_size < 900_000
+    assert artifact_paths["agent_tool_call_trace_jsonl"].stat().st_size < 1_500_000
+    assert artifact_paths["review_packet_jsonl"].stat().st_size < 700_000
+
+
+def test_v3_19_locator_ambiguity_deictic_response_policy_artifacts_are_hash_locked_and_compact() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "agent_tool_call_trace_jsonl": output_dir / "agent_tool_call_trace.jsonl",
+        "route_policy_audit_jsonl": output_dir / "route_policy_audit.jsonl",
+        "runtime_contract_audit_jsonl": output_dir / "runtime_contract_audit.jsonl",
+        "user_response_policy_audit_jsonl": output_dir / "user_response_policy_audit.jsonl",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+    }
+    require_v3_9_local_artifacts(*artifact_paths.values())
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "agent_tool_call_trace.jsonl",
+        "route_policy_audit.jsonl",
+        "runtime_contract_audit.jsonl",
+        "user_response_policy_audit.jsonl",
+        "guardrail_audit.json",
+        "leakage_audit.jsonl",
+        "review_packet.jsonl",
+        "review_packet.csv",
+    }
+
+    summary = read_json(artifact_paths["summary_json"])
+    metrics = read_json(artifact_paths["metrics_json"])
+    per_query = read_jsonl(artifact_paths["per_query_jsonl"])
+    trace_rows = read_jsonl(artifact_paths["agent_tool_call_trace_jsonl"])
+    route_policy = read_jsonl(artifact_paths["route_policy_audit_jsonl"])
+    runtime_audit = read_jsonl(artifact_paths["runtime_contract_audit_jsonl"])
+    policy_rows = read_jsonl(artifact_paths["user_response_policy_audit_jsonl"])
+    guardrail = read_json(artifact_paths["guardrail_audit_json"])
+    leakage = read_jsonl(artifact_paths["leakage_audit_jsonl"])
+    review_rows = read_jsonl(artifact_paths["review_packet_jsonl"])
+
+    assert summary["run_id"] == run_id
+    assert summary["status"] == "DIAGNOSTIC_V3_19_LOCATOR_AMBIGUITY_DEICTIC_RESPONSE_POLICY_NONPROD_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["agent_runtime_nonprod"] is True
+    assert summary["agent_runtime_product_ready"] is False
+    assert summary["tool_registry_only_invocation"] is True
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["ambiguous_locator_fail_closed"] is True
+    assert summary["page_only_locator_without_context_fail_closed"] is True
+    assert summary["deictic_context_missing_fail_closed"] is True
+    assert summary["artifact_paths"] == {key: path.relative_to(ROOT).as_posix() for key, path in artifact_paths.items()}
+    for key, path in artifact_paths.items():
+        if key == "summary_json":
+            continue
+        assert summary["artifact_sha256"][f"{key}_sha256"] == sha256_file(path)
+
+    assert metrics["review_packet_row_count"] == len(review_rows) == len(per_query)
+    assert metrics["agent_tool_call_trace_row_count"] == len(trace_rows)
+    assert metrics["user_response_policy_audit_row_count"] == len(policy_rows)
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["ambiguous_locator_nonabstained_count"] == 0
+    assert metrics["page_only_locator_nonabstained_count"] == 0
+    assert metrics["sheet_only_locator_count"] >= 1
+    assert metrics["sheet_only_locator_nonabstained_count"] == 0
+    assert metrics["deictic_context_missing_nonabstained_count"] == 0
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["duplicate_query_hash_count"] >= 1
+    assert metrics["duplicate_query_text_group_count"] >= 1
+    assert metrics["route_lane_counts"]["user_locator"] > 0
+    assert metrics["route_lane_counts"]["rough_query"] > 0
+    assert metrics["locator_resolution_bucket_counts"]["AMBIGUOUS_PAGE_ONLY_LOCATOR"] >= 1
+    assert metrics["locator_resolution_bucket_counts"]["AMBIGUOUS_SHEET_ONLY_LOCATOR"] >= 1
+    assert metrics["locator_resolution_bucket_counts"]["BOUNDED_BROAD_RANGE"] >= 1
+    assert metrics["response_policy_bucket_counts"]["CONTEXT_REQUIRED"] >= 1
+    assert metrics["response_policy_bucket_counts"]["ANSWER_ALLOWED"] >= 1
+
+    assert all(row["allow_unbounded_fallback"] is False for row in route_policy)
+    assert all(row["runtime_contract_violation"] is False for row in runtime_audit)
+    assert leakage and all(row["leakage_detected"] is False for row in leakage)
+    assert guardrail["raw_file_query_time_accessed"] is False
+    assert guardrail["source_atom_registry_canonical_truth"] is True
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert guardrail["ambiguous_locator_fail_closed"] is True
+    assert guardrail["page_only_locator_without_context_fail_closed"] is True
+    assert guardrail["deictic_context_missing_fail_closed"] is True
+
+    required_policy_fields = {
+        "run_id",
+        "query_id",
+        "diagnostic_case_id",
+        "agent_route",
+        "route_lane",
+        "locator_resolution_bucket",
+        "response_policy_bucket",
+        "answer_allowed_by_policy",
+        "user_clarification_required",
+        "abstained",
+        "blocked_reason",
+        "final_answer_policy",
+        "evidence_truth_source",
+        "selected_source_atom_count",
+        "runtime_contract_violation",
+    }
+    assert required_policy_fields <= set(policy_rows[0])
+    assert any(row["blocked_reason"] == "CONTEXT_REQUIRED" for row in policy_rows)
+    assert all(row["evidence_truth_source"] == "none" for row in policy_rows if row["blocked_reason"] in {"CONTEXT_REQUIRED", "AMBIGUOUS_FILE_IDENTITY", "AMBIGUOUS_WORKBOOK_IDENTITY"})
+
+    required_review_fields = {
+        "response_policy_bucket",
+        "answer_allowed_by_policy",
+        "user_clarification_required",
+        "ambiguity_requires_clarification",
+        "active_context_required",
+        "active_context_present",
+        "duplicate_query_hash_count",
+        "duplicate_query_group_size",
+    }
+    assert required_review_fields <= set(review_rows[0])
+    assert all(row["user_review_like"] == "" for row in review_rows)
+    assert all(row["user_answerability_decision"] == "" for row in review_rows)
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert not any("expected_answer" in row or "supporting_evidence" in row for row in per_query)
+    assert all(row["provenance"]["source_atom_registry_canonical_truth"] is True for row in trace_rows)
+    assert all(row["provenance"]["vector_payload_used_as_evidence_truth"] is False for row in trace_rows)
+
+    assert artifact_paths["summary_json"].stat().st_size < 140_000
+    assert artifact_paths["metrics_json"].stat().st_size < 80_000
+    assert artifact_paths["per_query_jsonl"].stat().st_size < 1_100_000
+    assert artifact_paths["agent_tool_call_trace_jsonl"].stat().st_size < 1_800_000
+    assert artifact_paths["user_response_policy_audit_jsonl"].stat().st_size < 500_000
+    assert artifact_paths["review_packet_jsonl"].stat().st_size < 900_000
+
+
+def test_v3_20_live_runtime_like_db_index_cache_smoke_artifacts_are_hash_locked_and_compact() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    artifact_paths = {
+        "summary_json": output_dir / "summary.json",
+        "metrics_json": output_dir / "metrics.json",
+        "per_query_jsonl": output_dir / "per_query.jsonl",
+        "agent_tool_call_trace_jsonl": output_dir / "agent_tool_call_trace.jsonl",
+        "route_policy_audit_jsonl": output_dir / "route_policy_audit.jsonl",
+        "runtime_contract_audit_jsonl": output_dir / "runtime_contract_audit.jsonl",
+        "user_response_policy_audit_jsonl": output_dir / "user_response_policy_audit.jsonl",
+        "db_contract_audit_jsonl": output_dir / "db_contract_audit.jsonl",
+        "index_contract_audit_jsonl": output_dir / "index_contract_audit.jsonl",
+        "cache_contract_audit_jsonl": output_dir / "cache_contract_audit.jsonl",
+        "live_runtime_smoke_audit_jsonl": output_dir / "live_runtime_smoke_audit.jsonl",
+        "guardrail_audit_json": output_dir / "guardrail_audit.json",
+        "leakage_audit_jsonl": output_dir / "leakage_audit.jsonl",
+        "review_packet_jsonl": output_dir / "review_packet.jsonl",
+        "review_packet_csv": output_dir / "review_packet.csv",
+    }
+    require_v3_9_local_artifacts(*artifact_paths.values())
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "agent_tool_call_trace.jsonl",
+        "route_policy_audit.jsonl",
+        "runtime_contract_audit.jsonl",
+        "user_response_policy_audit.jsonl",
+        "db_contract_audit.jsonl",
+        "index_contract_audit.jsonl",
+        "cache_contract_audit.jsonl",
+        "live_runtime_smoke_audit.jsonl",
+        "guardrail_audit.json",
+        "leakage_audit.jsonl",
+        "review_packet.jsonl",
+        "review_packet.csv",
+    }
+
+    summary = read_json(artifact_paths["summary_json"])
+    metrics = read_json(artifact_paths["metrics_json"])
+    per_query = read_jsonl(artifact_paths["per_query_jsonl"])
+    trace_rows = read_jsonl(artifact_paths["agent_tool_call_trace_jsonl"])
+    route_policy = read_jsonl(artifact_paths["route_policy_audit_jsonl"])
+    runtime_audit = read_jsonl(artifact_paths["runtime_contract_audit_jsonl"])
+    db_rows = read_jsonl(artifact_paths["db_contract_audit_jsonl"])
+    index_rows = read_jsonl(artifact_paths["index_contract_audit_jsonl"])
+    cache_rows = read_jsonl(artifact_paths["cache_contract_audit_jsonl"])
+    live_rows = read_jsonl(artifact_paths["live_runtime_smoke_audit_jsonl"])
+    guardrail = read_json(artifact_paths["guardrail_audit_json"])
+    leakage = read_jsonl(artifact_paths["leakage_audit_jsonl"])
+    review_rows = read_jsonl(artifact_paths["review_packet_jsonl"])
+
+    assert summary["run_id"] == run_id
+    assert summary["status"] == "DIAGNOSTIC_V3_20_LIVE_RUNTIME_LIKE_DB_INDEX_CACHE_SMOKE_NONPROD_READY"
+    assert summary["diagnostic_only"] is True
+    assert summary["official_metric"] is False
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["promotion_evidence"] is False
+    assert summary["agent_runtime_nonprod"] is True
+    assert summary["agent_runtime_product_ready"] is False
+    assert summary["tool_registry_only_invocation"] is True
+    assert summary["live_db_index_cache_readiness"] is False
+    assert summary["source_atom_registry_canonical_truth"] is True
+    assert summary["source_atom_store_canonical_truth"] is True
+    assert summary["search_index_candidate_only"] is True
+    assert summary["runtime_cache_evidence_truth"] is False
+    assert summary["vector_payload_used_as_evidence_truth"] is False
+    assert summary["artifact_paths"] == {key: path.relative_to(ROOT).as_posix() for key, path in artifact_paths.items()}
+    for key, path in artifact_paths.items():
+        if key == "summary_json":
+            continue
+        assert summary["artifact_sha256"][f"{key}_sha256"] == sha256_file(path)
+
+    assert metrics["live_runtime_smoke_row_count"] == len(per_query) == len(review_rows) == len(live_rows)
+    assert metrics["agent_tool_call_trace_row_count"] == len(trace_rows)
+    assert metrics["db_contract_audit_row_count"] == len(db_rows)
+    assert metrics["index_contract_audit_row_count"] == len(index_rows)
+    assert metrics["cache_contract_audit_row_count"] == len(cache_rows)
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["production_write_attempt_count"] == 0
+    assert metrics["broad_source_atom_scan_attempt_count"] == 0
+    assert metrics["vector_payload_evidence_truth_violation_count"] == 0
+    assert metrics["raw_file_query_time_accessed"] is False
+    assert metrics["index_unavailable_fail_closed_count"] >= 1
+    assert metrics["db_unavailable_fail_closed_count"] >= 1
+    assert metrics["cache_namespace_mismatch_blocked_count"] >= 1
+    assert metrics["cache_unavailable_count"] >= 1
+    assert metrics["route_lane_counts"]["user_locator"] >= 1
+    assert metrics["route_lane_counts"]["rough_query"] >= 1
+    assert metrics["response_policy_bucket_counts"]["ANSWER_ALLOWED"] >= 1
+    assert metrics["response_policy_bucket_counts"]["CONTEXT_REQUIRED"] >= 1
+
+    assert all(row["allow_unbounded_fallback"] is False for row in route_policy)
+    assert all(row["runtime_contract_violation"] is False for row in runtime_audit)
+    assert leakage and all(row["leakage_detected"] is False for row in leakage)
+    assert guardrail["raw_file_query_time_accessed"] is False
+    assert guardrail["source_atom_store_canonical_truth"] is True
+    assert guardrail["search_index_candidate_only"] is True
+    assert guardrail["runtime_cache_evidence_truth"] is False
+    assert guardrail["live_db_index_cache_readiness"] is False
+
+    required_audit_fields = {
+        "run_id",
+        "query_id",
+        "route_lane",
+        "adapter_name",
+        "operation",
+        "input_schema_version",
+        "output_schema_version",
+        "diagnostic_tenant_id",
+        "namespace",
+        "cache_key",
+        "source_atom_ids",
+        "search_view_ids",
+        "evidence_bundle_ids",
+        "allowed_by_contract",
+        "fail_closed",
+        "fail_closed_reason",
+        "latency_ms",
+        "timeout_ms",
+        "production_write_attempted",
+        "broad_scan_attempted",
+        "vector_payload_used_as_evidence_truth",
+        "runtime_contract_violation",
+    }
+    for rows in (db_rows, index_rows, cache_rows, live_rows):
+        assert required_audit_fields <= set(rows[0])
+        assert all(row["production_write_attempted"] is False for row in rows)
+        assert all(row["broad_scan_attempted"] is False for row in rows)
+        assert all(row["vector_payload_used_as_evidence_truth"] is False for row in rows)
+
+    assert all(row["official_metric_input_rows"] == 0 for row in per_query)
+    assert not any("expected_answer" in row or "supporting_evidence" in row for row in per_query)
+    assert all(row["user_review_like"] == "" for row in review_rows)
+    assert all(row["user_answerability_decision"] == "" for row in review_rows)
+    assert any(row["adapter_fail_closed_reason"] == "INDEX_UNAVAILABLE" for row in review_rows)
+    assert any(row["adapter_fail_closed_reason"] == "SOURCE_ATOM_STORE_UNAVAILABLE" for row in review_rows)
+    assert any(row["adapter_fail_closed_reason"] == "CACHE_NAMESPACE_MISMATCH" for row in review_rows)
+
+    assert artifact_paths["summary_json"].stat().st_size < 180_000
+    assert artifact_paths["metrics_json"].stat().st_size < 90_000
+    assert artifact_paths["per_query_jsonl"].stat().st_size < 900_000
+    assert artifact_paths["agent_tool_call_trace_jsonl"].stat().st_size < 1_500_000
+    assert artifact_paths["live_runtime_smoke_audit_jsonl"].stat().st_size < 700_000
+    assert artifact_paths["review_packet_jsonl"].stat().st_size < 900_000
+
+
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:
     first_run = read_json(REPORT_DIR / "baseline_v1.json")
     input_config = read_json(REPORT_DIR / "metric_input_v1.json")
