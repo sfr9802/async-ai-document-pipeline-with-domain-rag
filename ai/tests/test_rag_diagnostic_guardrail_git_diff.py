@@ -3855,3 +3855,215 @@ def test_v3_21_agent_runtime_llm_io_observability_packet_does_not_mutate_protect
     assert metrics["production_write_attempt_count"] == 0
     assert metrics["broad_source_atom_scan_attempt_count"] == 0
     assert guardrail["db_or_production_namespace_written"] is False
+
+
+def test_v3_22_xlsx_display_value_and_range_rendering_does_not_mutate_protected_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    require_v3_9_local_artifacts(report_path)
+    v3_21_dir = (
+        "ai/eval/reports/rag-ingestion/quality/"
+        "official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod/"
+    )
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        f"{v3_21_dir}summary.json",
+        f"{v3_21_dir}metrics.json",
+        f"{v3_21_dir}per_query.jsonl",
+        f"{v3_21_dir}agent_tool_call_trace.jsonl",
+        f"{v3_21_dir}route_policy_audit.jsonl",
+        f"{v3_21_dir}runtime_contract_audit.jsonl",
+        f"{v3_21_dir}user_response_policy_audit.jsonl",
+        f"{v3_21_dir}db_contract_audit.jsonl",
+        f"{v3_21_dir}index_contract_audit.jsonl",
+        f"{v3_21_dir}cache_contract_audit.jsonl",
+        f"{v3_21_dir}live_runtime_smoke_audit.jsonl",
+        f"{v3_21_dir}llm_io_packet.jsonl",
+        f"{v3_21_dir}llm_io_packet.csv",
+        f"{v3_21_dir}llm_invocation_audit.jsonl",
+        f"{v3_21_dir}local_llm_readiness.json",
+        f"{v3_21_dir}prompt_manifest.json",
+        f"{v3_21_dir}guardrail_audit.json",
+        f"{v3_21_dir}leakage_audit.jsonl",
+        f"{v3_21_dir}review_packet.jsonl",
+        f"{v3_21_dir}review_packet.csv",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    guardrail = report["guardrails"]
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["human_review_required"] is False
+    assert report["review_csv_created"] is False
+    assert guardrail["single_report_artifact_contract"] is True
+    assert guardrail["agent_runtime_nonprod"] is True
+    assert guardrail["agent_runtime_product_ready"] is False
+    assert guardrail["tool_registry_only_invocation"] is True
+    assert guardrail["live_db_index_cache_readiness"] is False
+    assert guardrail["raw_file_query_time_accessed"] is False
+    assert guardrail["source_atom_registry_canonical_truth"] is True
+    assert guardrail["source_atom_store_canonical_truth"] is True
+    assert guardrail["source_atom_registry_mutated"] is False
+    assert guardrail["search_index_candidate_only"] is True
+    assert guardrail["runtime_cache_evidence_truth"] is False
+    assert guardrail["vector_payload_used_as_evidence_truth"] is False
+    assert guardrail["target_locator_used"] is False
+    assert guardrail["gold_locator_used"] is False
+    assert guardrail["expected_supporting_text_used"] is False
+    assert guardrail["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrail["direct_normalized_value_query_matching_used"] is False
+    assert guardrail["raw_xlsx_query_time_parsing_forbidden"] is True
+    assert guardrail["formula_evaluation_at_query_time"] is False
+    for flag in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "official_denominator_mutation",
+        "official_denominator_mutated",
+        "production_mutation",
+        "db_or_production_namespace_written",
+        "threshold_tuning",
+        "winner_selection",
+        "pdf_xlsx_collapsed_headline_score_reported",
+    ):
+        assert guardrail[flag] is False, flag
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["vector_payload_evidence_truth_violation_count"] == 0
+    assert metrics["raw_file_query_time_accessed"] is False
+    assert metrics["production_write_attempt_count"] == 0
+    assert metrics["broad_source_atom_scan_attempt_count"] == 0
+
+
+def test_phase1_diagnostic_contract_closure_after_v3_22_does_not_mutate_or_promote_surfaces():
+    closure_id = "phase1_diagnostic_contract_closure_after_v3_22"
+    closure_event_type = "phase1_diagnostic_contract_closure_after_v3_22_ready"
+    v3_22_run_id = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    v3_22_report_path = REPORT_DIR / "quality" / v3_22_run_id / "report.json"
+    require_v3_9_local_artifacts(STATUS_JSONL, v3_22_report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(v3_22_report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    event = next(
+        item
+        for item in reversed(events)
+        if item.get("run_id") == closure_id and item.get("event_type") == closure_event_type
+    )
+    assert event["phase1_closed"] is True
+    assert event["closure_basis_run_id"] == v3_22_run_id
+    assert event["counter_source_of_truth"] == v3_22_report_path.relative_to(ROOT).as_posix()
+    assert event["diagnostic_only"] is True
+    assert event["production_routing"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["official_metric_lift"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["xlsx_locator_performance_completion"] is False
+    assert event["representative_product_performance"] is False
+    assert event["source_atom_registry_mutated"] is False
+    assert event["source_atom_registry_canonical_truth"] is True
+    assert event["searchview_vector_payload_candidate_only"] is True
+    assert event["source_atom_evidence_bundle_evidence_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["raw_xlsx_query_time_parsing_forbidden"] is True
+    assert event["formula_evaluation_at_query_time"] is False
+    assert event["formula_text_visible_to_user_default"] is False
+    assert event["review_csv_created"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["label_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["production_mutation"] is False
+    assert event["db_or_production_namespace_written"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["pdf_xlsx_text_collapsed_headline_product_score"] is False
+    assert event["artifact_paths"]["v3_22_report_json"] == v3_22_report_path.relative_to(ROOT).as_posix()
+    assert event["artifact_sha256"]["v3_22_report_json_sha256"] == sha256_file(v3_22_report_path)
+    assert report["summary"]["official_metric_input_rows"] == 0
+    assert report["summary"]["product_success_evidence_allowed"] is False
+    assert report["summary"]["promotion_evidence"] is False
+    assert report["summary"]["live_db_index_cache_readiness"] is False
+    assert report["summary"]["review_csv_created"] is False
+    assert report["artifact_paths"] == {"report_json": v3_22_report_path.relative_to(ROOT).as_posix()}

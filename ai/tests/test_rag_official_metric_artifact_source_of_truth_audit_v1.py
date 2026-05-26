@@ -5819,6 +5819,186 @@ def test_v3_21_agent_runtime_llm_io_observability_packet_artifacts_are_hash_lock
     assert artifact_paths["review_packet_jsonl"].stat().st_size < 1_000_000
 
 
+def test_v3_22_xlsx_display_value_and_range_rendering_single_report_artifact_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v3_9_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "route_policy_audit.jsonl",
+        "runtime_contract_audit.jsonl",
+        "user_response_policy_audit.jsonl",
+        "db_contract_audit.jsonl",
+        "index_contract_audit.jsonl",
+        "cache_contract_audit.jsonl",
+        "llm_io_packet.jsonl",
+        "guardrail_audit.json",
+        "leakage_audit.jsonl",
+        "prompt_manifest.json",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    per_query = report["per_query"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    ]
+
+    assert report["schema_version"] == "rag_v3_22_single_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["human_review_required"] is False
+    assert report["review_csv_created"] is False
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert report["summary"]["schema_version"] == f"{run_id}_summary_v1"
+    assert set(report) >= {
+        "summary",
+        "metrics",
+        "per_query",
+        "audits",
+        "route_policy_audit",
+        "runtime_contract_audit",
+        "user_response_policy_audit",
+        "runtime_adapter_audit",
+        "llm_io_observability",
+        "formatting_audit",
+        "guardrail_audit",
+        "leakage_audit",
+        "prompt_manifest",
+        "verification",
+        "changed_files",
+        "residual_risks",
+        "next_recommendation",
+    }
+    assert set(report["audits"]) == {
+        "route_policy_audit",
+        "runtime_contract_audit",
+        "user_response_policy_audit",
+        "runtime_adapter_audit",
+        "llm_io_observability",
+        "formatting_audit",
+    }
+    assert metrics["report_row_count"] == len(per_query)
+    assert metrics["xlsx_case_count"] == len(per_query)
+    assert metrics["xlsx_answer_allowed_count"] == metrics["llm_invoked_count"] or metrics["local_llm_available"] is False
+    assert metrics["single_cell_value_count"] >= 7
+    assert metrics["small_range_table_count"] >= 1
+    assert metrics["bounded_range_summary_count"] >= 1
+    assert metrics["display_value_used_count"] >= 1
+    assert metrics["raw_value_fallback_count"] >= 1
+    assert metrics["format_metadata_unavailable_count"] >= 1
+    assert metrics["formula_cached_value_used_count"] >= 1
+    assert metrics["blank_cell_answer_count"] >= 1
+    assert metrics["unsupported_range_too_large_count"] >= 1
+    assert metrics["ambiguous_range_context_required_count"] >= 1
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["vector_payload_evidence_truth_violation_count"] == 0
+    assert metrics["raw_file_query_time_accessed"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["review_csv_created"] is False
+    assert matches[-1]["artifact_sha256"] == {"report_json_sha256": sha256_file(report_path)}
+    assert report["guardrails"]["single_report_artifact_contract"] is True
+    assert report["guardrails"]["raw_xlsx_query_time_parsing_forbidden"] is True
+    assert report["guardrails"]["source_atom_store_canonical_truth"] is True
+    assert report["guardrails"]["search_index_candidate_only"] is True
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["prompt_manifest"]["prefers_display_value_when_format_confidence_high"] is True
+    assert report["prompt_manifest"]["uses_expected_or_supporting_gold_text"] is False
+    assert report["prompt_manifest"]["uses_raw_file_query_time_access"] is False
+    assert all(row["evidence_truth_source"] in {"source_atom_evidence_bundle", "none"} for row in per_query)
+    assert all(row["vector_payload_candidate_only"] is True for row in per_query)
+    assert all(row["official_metric_candidate"] is False for row in per_query)
+    assert all(row["promotion_evidence"] is False for row in per_query)
+    leakage_surfaces = (
+        row.get("sanitized_prompt_preview", "")
+        + row.get("sanitized_evidence_preview", "")
+        + row.get("raw_llm_response", "")
+        + row.get("parsed_final_answer", "")
+        + row.get("final_user_visible_answer", "")
+        for row in per_query
+    )
+    assert all("expected_answer" not in surface for surface in leakage_surfaces)
+    leakage_surfaces = (
+        row.get("sanitized_prompt_preview", "")
+        + row.get("sanitized_evidence_preview", "")
+        + row.get("raw_llm_response", "")
+        + row.get("parsed_final_answer", "")
+        + row.get("final_user_visible_answer", "")
+        for row in per_query
+    )
+    assert all("supporting_evidence" not in surface for surface in leakage_surfaces)
+    assert all("POISONED_VECTOR_PAYLOAD" not in json.dumps(row, ensure_ascii=False) for row in per_query)
+    assert all(row["llm_invoked"] is False for row in per_query if not row["answer_allowed_by_policy"])
+    assert len(matches) == 1
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in matches[0]
+    assert "per_query" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert "raw_llm_response_sha256" not in matches[0]
+    assert report_path.stat().st_size < 1_500_000
+
+
+def test_phase1_diagnostic_contract_closure_after_v3_22_report_flags_are_hash_locked_and_non_promotional() -> None:
+    closure_id = "phase1_diagnostic_contract_closure_after_v3_22"
+    closure_event_type = "phase1_diagnostic_contract_closure_after_v3_22_ready"
+    v3_22_run_id = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    v3_22_report_path = REPORT_DIR / "quality" / v3_22_run_id / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v3_9_local_artifacts(status_path, v3_22_report_path)
+
+    report = read_json(v3_22_report_path)
+    summary = report["summary"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == closure_id and event.get("event_type") == closure_event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["closure_basis_run_id"] == v3_22_run_id
+    assert event["counter_source_of_truth"] == v3_22_report_path.relative_to(ROOT).as_posix()
+    assert event["artifact_sha256"]["v3_22_report_json_sha256"] == sha256_file(v3_22_report_path)
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["official_metric_lift"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["xlsx_locator_completion_claimed"] is False
+    assert event["xlsx_locator_repair_complete"] is False
+    assert event["real_workbook_disjoint_holdout_available"] is False
+    assert event["pdf_xlsx_text_collapsed_headline_product_score"] is False
+    assert event["v3_22_counters"]["report_row_count"] == summary["report_row_count"] == 14
+    assert event["v3_22_counters"]["xlsx_answer_allowed_count"] == summary["xlsx_answer_allowed_count"] == 10
+    assert event["v3_22_counters"]["display_value_used_count"] == summary["display_value_used_count"] == 8
+    assert event["v3_22_counters"]["official_metric_input_rows"] == summary["official_metric_input_rows"] == 0
+    assert event["v3_22_counters"]["review_csv_created"] is summary["review_csv_created"] is False
+    assert report["artifact_paths"] == {"report_json": v3_22_report_path.relative_to(ROOT).as_posix()}
+    assert "summary.json" not in event["artifact_paths"].values()
+    assert "metrics.json" not in event["artifact_paths"].values()
+    assert "review_packet.csv" not in event["artifact_paths"].values()
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
 def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_only_state() -> None:
     first_run = read_json(REPORT_DIR / "baseline_v1.json")
     input_config = read_json(REPORT_DIR / "metric_input_v1.json")

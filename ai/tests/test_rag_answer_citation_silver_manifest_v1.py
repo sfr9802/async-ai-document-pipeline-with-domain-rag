@@ -7,6 +7,7 @@ import csv
 import inspect
 from collections import Counter, defaultdict
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -10025,6 +10026,299 @@ def test_v3_21_runtime_path_has_no_raw_parser_broad_scan_production_or_fake_llm_
         "gold_locator_used=True",
         "direct_normalized_value_query_matching_used=True",
         "none_extractive_generator",
+        "noop_backend_used_for_raw_llm_response=True",
+    )
+    for snippet in forbidden_snippets:
+        assert snippet not in source
+
+
+def _v3_22_fake_llm(prompt: str, *, query_id: str, **_: object) -> str:
+    return json.dumps(
+        {
+            "final_answer": f"표시값 기반 응답: {query_id}",
+            "citation_or_provenance_summary": "SourceAtom/EvidenceBundle 근거에서 생성",
+        },
+        ensure_ascii=False,
+    )
+
+
+def test_v3_22_builds_single_report_artifact_contract_and_default_review_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod as run
+
+    artifacts = run.build_artifacts(llm_client=_v3_22_fake_llm)
+    report = artifacts["report"]
+    metrics = report["metrics"]
+
+    assert set(report) >= {
+        "schema_version",
+        "run_id",
+        "generated_at",
+        "diagnostic_only",
+        "official_metric_input_rows",
+        "promotion_evidence",
+        "human_review_required",
+        "review_csv_created",
+        "summary",
+        "metrics",
+        "per_query",
+        "audits",
+        "prompt_manifest",
+        "guardrails",
+        "leakage",
+        "verification",
+        "changed_files",
+        "residual_risks",
+        "next_recommendation",
+    }
+    assert report["schema_version"] == "rag_v3_22_single_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["human_review_required"] is False
+    assert report["review_csv_created"] is False
+    assert metrics["report_row_count"] == len(report["per_query"])
+    assert metrics["xlsx_case_count"] >= 10
+    assert metrics["xlsx_answer_allowed_count"] == metrics["llm_invoked_count"]
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["vector_payload_evidence_truth_violation_count"] == 0
+    assert metrics["raw_file_query_time_accessed"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["review_csv_created"] is False
+    assert "route_policy_audit" in report["audits"]
+    assert "runtime_contract_audit" in report["audits"]
+    assert "user_response_policy_audit" in report["audits"]
+    assert "runtime_adapter_audit" in report["audits"]
+    assert "llm_io_observability" in report["audits"]
+    assert "formatting_audit" in report["audits"]
+    assert report["summary"]["schema_version"] == f"{run.RUN_ID}_summary_v1"
+    assert report["summary"]["human_review_required"] is False
+    assert report["summary"]["review_csv_created"] is False
+
+    for stale_name in ("summary.json", "metrics.json", "review_packet.csv"):
+        (tmp_path / stale_name).write_text("stale v3_22 sidecar", encoding="utf-8")
+    written_report = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written_report["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert not (tmp_path / "review_packet.csv").exists()
+
+
+def test_v3_22_optional_review_csv_created_only_for_user_owned_decisions(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod as run
+
+    default_artifacts = run.build_artifacts(llm_client=_v3_22_fake_llm)
+    default_output = tmp_path / "default"
+    default_report = run.write_artifacts(default_artifacts, output_dir=default_output)
+    assert default_report["human_review_required"] is False
+    assert default_report["review_csv_created"] is False
+    assert {path.name for path in default_output.iterdir() if path.is_file()} == {"report.json"}
+
+    review_artifacts = run.build_artifacts(
+        llm_client=_v3_22_fake_llm,
+        include_user_review_required_case=True,
+    )
+    review_output = tmp_path / "review"
+    review_report = run.write_artifacts(review_artifacts, output_dir=review_output)
+    assert review_report["human_review_required"] is True
+    assert review_report["review_csv_created"] is True
+    assert {path.name for path in review_output.iterdir() if path.is_file()} == {"report.json", "review_packet.csv"}
+    assert "review_packet_csv" in review_report["artifact_paths"]
+    review_csv = (review_output / "review_packet.csv").read_text(encoding="utf-8")
+    assert "user_owned_review_reason" in review_csv
+    assert "formatting_policy_user_decision_required" in review_csv
+
+    default_after_review_report = run.write_artifacts(default_artifacts, output_dir=review_output)
+    assert default_after_review_report["human_review_required"] is False
+    assert default_after_review_report["review_csv_created"] is False
+    assert {path.name for path in review_output.iterdir() if path.is_file()} == {"report.json"}
+
+
+def test_v3_22_xlsx_display_value_contract_and_range_rendering_modes() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod as run
+
+    artifacts = run.build_artifacts(llm_client=_v3_22_fake_llm)
+    report = artifacts["report"]
+    rows = {row["diagnostic_case_id"]: row for row in report["per_query"]}
+    metrics = report["metrics"]
+
+    integer = rows["v3_22_xlsx_integer_a1"]
+    assert integer["xlsx_raw_value"] == "42"
+    assert integer["xlsx_normalized_value"] == "42"
+    assert integer["xlsx_display_value"] == "42"
+    assert integer["xlsx_value_type"] == "integer"
+    assert integer["xlsx_number_format"] == "0"
+    assert integer["xlsx_format_confidence"] == "high"
+    assert integer["xlsx_range_rendering_mode"] == "SINGLE_CELL_VALUE"
+
+    percentage = rows["v3_22_xlsx_percentage_b1"]
+    assert percentage["xlsx_raw_value"] == "0.125"
+    assert percentage["xlsx_display_value"] == "12.5%"
+    assert percentage["xlsx_value_type"] == "percentage"
+    assert percentage["xlsx_format_confidence"] == "high"
+
+    currency = rows["v3_22_xlsx_currency_c1"]
+    assert currency["xlsx_raw_value"] == "1234.5"
+    assert currency["xlsx_display_value"] == "$1,234.50"
+    assert currency["xlsx_value_type"] == "currency"
+    assert currency["xlsx_format_confidence"] == "high"
+
+    date = rows["v3_22_xlsx_date_d1"]
+    assert date["xlsx_raw_value"] == "45123"
+    assert date["xlsx_display_value"] == "2023-07-17"
+    assert date["xlsx_value_type"] == "date"
+    assert date["xlsx_format_confidence"] == "high"
+
+    datetime = rows["v3_22_xlsx_datetime_d2"]
+    assert datetime["xlsx_display_value"] == "2023-07-17 09:30"
+    assert datetime["xlsx_value_type"] == "datetime"
+
+    blank = rows["v3_22_xlsx_blank_e1"]
+    assert blank["xlsx_raw_value"] == ""
+    assert blank["xlsx_display_value"] == ""
+    assert blank["xlsx_value_type"] == "blank"
+    assert blank["xlsx_range_rendering_mode"] == "SINGLE_CELL_VALUE"
+
+    formula = rows["v3_22_xlsx_formula_cached_f1"]
+    assert formula["xlsx_raw_value"] == "168"
+    assert formula["xlsx_formula_cached_value"] == "168"
+    assert formula["xlsx_formula_text_visible_to_user"] is False
+    assert formula["xlsx_display_value"] == "168"
+    assert formula["xlsx_range_rendering_mode"] == "SINGLE_CELL_VALUE"
+    assert formula["formula_evaluated_at_query_time"] is False
+
+    small_range = rows["v3_22_xlsx_small_range_a1_b2"]
+    assert small_range["xlsx_range_rendering_mode"] == "SMALL_RANGE_TABLE"
+    assert "| Cell | Display value |" in small_range["xlsx_display_value"]
+    assert "A1" in small_range["xlsx_display_value"]
+    assert "B2" in small_range["xlsx_display_value"]
+
+    broad = rows["v3_22_xlsx_broad_bounded_summary"]
+    assert broad["xlsx_range_rendering_mode"] == "BOUNDED_RANGE_SUMMARY"
+    assert "bounded_range=A1:E20" in broad["xlsx_display_value"]
+    assert broad["answer_allowed_by_policy"] is True
+
+    missing = rows["v3_22_xlsx_missing_format_metadata_fallback"]
+    assert missing["xlsx_raw_value"] == "9999.5"
+    assert missing["xlsx_display_value"] == "9999.5"
+    assert missing["xlsx_format_confidence"] == "low"
+    assert missing["xlsx_format_drop_reason"] == "FORMAT_METADATA_UNAVAILABLE"
+    assert missing["xlsx_range_rendering_mode"] == "FORMAT_METADATA_UNAVAILABLE"
+
+    large = rows["v3_22_xlsx_unsupported_large_range"]
+    assert large["xlsx_range_rendering_mode"] == "UNSUPPORTED_RANGE_TOO_LARGE"
+    assert large["answer_allowed_by_policy"] is False
+    assert large["llm_invoked"] is False
+    assert (
+        run.determine_range_mode(
+            {
+                "query": "Book.xlsx 시트 Sheet1 범위 A1:Z1000 값을 전부 알려줘",
+                "rendering_mode_hint": "SINGLE_CELL_VALUE",
+            },
+            ["atom-xlsx-large-range"],
+            SimpleNamespace(active_context_required=False, response_policy_bucket="ANSWER_ALLOWED"),
+        )
+        == "UNSUPPORTED_RANGE_TOO_LARGE"
+    )
+
+    ambiguous = rows["v3_22_xlsx_ambiguous_range_context_required"]
+    assert ambiguous["xlsx_range_rendering_mode"] == "AMBIGUOUS_RANGE_CONTEXT_REQUIRED"
+    assert ambiguous["answer_allowed_by_policy"] is False
+    assert ambiguous["llm_invoked"] is False
+
+    assert metrics["single_cell_value_count"] >= 7
+    assert metrics["small_range_table_count"] >= 1
+    assert metrics["bounded_range_summary_count"] >= 1
+    expected_display_value_used_count = sum(
+        1
+        for row in report["per_query"]
+        if row["answer_allowed_by_policy"]
+        and row["xlsx_format_confidence"] == "high"
+        and row["xlsx_display_value"] != ""
+        and row["xlsx_format_drop_reason"] == ""
+        and row["xlsx_range_rendering_mode"] != "FORMAT_METADATA_UNAVAILABLE"
+    )
+    assert metrics["display_value_used_count"] == expected_display_value_used_count == 8
+    assert metrics["raw_value_fallback_count"] >= 1
+    assert metrics["format_confidence_high_count"] >= 8
+    assert metrics["format_confidence_low_count"] >= 1
+    assert metrics["format_metadata_unavailable_count"] >= 1
+    assert metrics["formula_cached_value_used_count"] >= 1
+    assert metrics["blank_cell_answer_count"] >= 1
+    assert metrics["unsupported_range_too_large_count"] >= 1
+    assert metrics["ambiguous_range_context_required_count"] >= 1
+
+
+def test_v3_22_llm_policy_and_guardrails_preserve_evidence_truth() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod as run
+
+    calls: list[dict[str, str]] = []
+
+    def fake_llm(prompt: str, *, query_id: str, **kwargs: object) -> str:
+        calls.append({"query_id": query_id, "prompt": prompt})
+        return _v3_22_fake_llm(prompt, query_id=query_id, **kwargs)
+
+    artifacts = run.build_artifacts(llm_client=fake_llm)
+    report = artifacts["report"]
+    metrics = report["metrics"]
+    rows = report["per_query"]
+    allowed_rows = [row for row in rows if row["answer_allowed_by_policy"]]
+    blocked_rows = [row for row in rows if not row["answer_allowed_by_policy"]]
+
+    assert allowed_rows
+    assert blocked_rows
+    assert metrics["llm_invoked_count"] == len(calls) == len(allowed_rows)
+    assert metrics["raw_llm_response_present_count"] == metrics["llm_invoked_count"]
+    assert metrics["parsed_final_answer_present_count"] == metrics["llm_invoked_count"]
+    assert all(row["llm_invoked"] is True for row in allowed_rows)
+    assert all(row["raw_llm_response"] for row in allowed_rows)
+    assert all(row["parsed_final_answer"].startswith("표시값 기반 응답:") for row in allowed_rows)
+    assert all(row["llm_invoked"] is False for row in blocked_rows)
+    assert all(row["raw_llm_response"] == "" for row in blocked_rows)
+    assert all(row["parsed_final_answer"] == "" for row in blocked_rows)
+    assert any(row["response_policy_bucket"] == "CONTEXT_REQUIRED" for row in blocked_rows)
+    assert all(row["evidence_truth_source"] in {"source_atom_evidence_bundle", "none"} for row in rows)
+    assert all(row["vector_payload_candidate_only"] is True for row in rows)
+    assert report["guardrails"]["source_atom_store_canonical_truth"] is True
+    assert report["guardrails"]["search_index_candidate_only"] is True
+    assert report["guardrails"]["raw_xlsx_query_time_parsing_forbidden"] is True
+    assert report["guardrails"]["direct_normalized_value_query_matching_used"] is False
+    assert report["leakage"]["prompt_leakage_count"] == 0
+    assert report["leakage"]["response_leakage_count"] == 0
+    assert report["leakage"]["path_leakage_count"] == 0
+    assert report["leakage"]["vector_payload_evidence_truth_violation_count"] == 0
+    assert all("expected_answer" not in call["prompt"] for call in calls)
+    assert all("supporting_evidence" not in call["prompt"] for call in calls)
+    assert all("VECTOR_PAYLOAD" not in call["prompt"] for call in calls)
+    assert any("xlsx_display_value=42" in call["prompt"] for call in calls)
+    assert any("xlsx_format_confidence=high" in call["prompt"] for call in calls)
+
+
+def test_v3_22_runtime_path_has_no_raw_parser_broad_scan_production_or_fake_llm_shortcuts() -> None:
+    script_path = ROOT / "ai" / "scripts" / "rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod.py"
+    runtime_path = ROOT / "ai" / "app" / "capabilities" / "rag_orchestrator" / "agent_runtime.py"
+    source = "\n".join(path.read_text(encoding="utf-8") for path in (script_path, runtime_path))
+
+    forbidden_snippets = (
+        "openpyxl.load_workbook",
+        "pdfplumber.open",
+        "fitz.open",
+        "pypdf.PdfReader",
+        "PdfReader(",
+        "load_workbook(",
+        "iter_rows(",
+        "iter_cols(",
+        "SELECT *",
+        "allow_unbounded_fallback=True",
+        "production_write_attempted=True",
+        "vector_payload_used_as_evidence_truth=True",
+        "target_locator_used=True",
+        "gold_locator_used=True",
+        "direct_normalized_value_query_matching_used=True",
+        "formula_evaluated_at_query_time=True",
         "noop_backend_used_for_raw_llm_response=True",
     )
     for snippet in forbidden_snippets:

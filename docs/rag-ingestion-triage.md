@@ -20,6 +20,28 @@ The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
 
+<!-- phase1_diagnostic_contract_closure_after_v3_22:triage-entry:start -->
+### Phase 1 Diagnostic Contract Closure After v3_22 Triage
+
+- Closure: `phase1_diagnostic_contract_closure_after_v3_22`.
+- Closed scope: SearchView/vector payload candidate-only boundary; SourceAtom/EvidenceBundle evidence-truth boundary; ToolRegistry-only non-production L0-L8 runtime contract; ambiguous/deictic/missing-context fail-closed response policy; live-runtime-like DB/index/cache smoke at non-production contract level only; LLM I/O observability for answer-allowed rows; XLSX display-value and cell/range rendering contract; single-report v3_22 artifact policy; guardrail/status/doc sync hygiene.
+- Boundary: diagnostic-only closure after v3_22. It is not production routing, not product success evidence, not promotion evidence, not official metric lift, not live DB/index/cache readiness, not XLSX locator performance completion, and not representative product performance.
+- Carry-forward Phase 2 backlog: persisted XLSX SourceAtom display metadata materialization path; XLSX table/range/cell locator improvement; real workbook/document-disjoint holdout; live DB/index/cache readiness verification; official metric/promotion only after user-owned gold/qrels/denominator decisions.
+- User-owned decisions remain limited to golden set creation, golden set review, expected answer/evidence judgment, relevance/answerability label judgment, gold policy decision, and official denominator/promotion policy decision.
+<!-- phase1_diagnostic_contract_closure_after_v3_22:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod:triage-entry:start -->
+### v3_22 XLSX Display-Value And Cell/Range Rendering Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`; single-report contract is active.
+- Formatting uses bounded materialized SourceAtom/runtime metadata only; missing or ambiguous display metadata falls back to raw_value with low confidence and FORMAT_METADATA_UNAVAILABLE.
+- Formula cells use cached values only; formula text is not exposed and formulas are not evaluated at query time.
+- Small ranges render as bounded tables, broad bounded ranges render compact summaries, unsupported large ranges and ambiguous/deictic context-missing rows fail closed without LLM invocation.
+- SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only; official_metric_input_rows stays 0.
+- This is not production routing, not product success, not promotion evidence, not official metric lift, and not live DB/index/cache readiness.
+<!-- official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod:triage-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:triage-entry:start -->
 ### v3_21 Agent Runtime LLM I/O Observability Triage
 

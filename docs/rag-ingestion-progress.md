@@ -20,6 +20,14 @@ durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
+<!-- phase1_diagnostic_contract_closure_after_v3_22:progress-entry:start -->
+- Phase 1 diagnostic contract closure after v3_22 (`phase1_diagnostic_contract_closure_after_v3_22`) is phase1_diagnostic_contract_closure_after_v3_22_ready. Phase 1 is closed as a diagnostic source-first RAG contract closure after v3_22, anchored to `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod` and its single primary report artifact. Closed scope: SearchView/vector payload candidate-only boundary, SourceAtom/EvidenceBundle evidence-truth boundary, ToolRegistry-only non-production L0-L8 runtime contract, ambiguous/deictic/missing-context fail-closed response policy, live-runtime-like DB/index/cache smoke at non-production contract level only, LLM I/O observability for answer-allowed rows, XLSX display-value and cell/range rendering contract, single-report v3_22 artifact policy, and guardrail/status/doc sync hygiene. Boundary: this is diagnostic-only, not production routing, not product success evidence, not promotion evidence, not official metric lift, not live DB/index/cache readiness, not XLSX locator performance completion, and not representative product performance. `official_metric_input_rows=0`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, and `live_db_index_cache_readiness=false` remain locked. Phase 2 backlog is separate: persisted XLSX SourceAtom display metadata materialization path, XLSX table/range/cell locator improvement, real workbook/document-disjoint holdout, live DB/index/cache readiness verification, and official metric/promotion only after user-owned gold/qrels/denominator decisions.
+<!-- phase1_diagnostic_contract_closure_after_v3_22:progress-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod:progress-entry:start -->
+- v3_22 XLSX display-value and cell/range rendering (`official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`) is diagnostic_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod_ready. It keeps the v3_19-v3_21 fail-closed runtime policy, uses report-local/runtime SourceAtom-owned XLSX display metadata (raw_value, normalized_value, display_value, number_format, value_type, formula cached value, confidence, provenance, and drop reason), and renders SINGLE_CELL_VALUE, SMALL_RANGE_TABLE, BOUNDED_RANGE_SUMMARY, FORMAT_METADATA_UNAVAILABLE, UNSUPPORTED_RANGE_TOO_LARGE, and AMBIGUOUS_RANGE_CONTEXT_REQUIRED rows. v3_22 uses the new single-report artifact policy: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json` is the only primary report artifact; review_packet.csv is omitted unless user-owned review is required. SourceAtom/EvidenceBundle remains canonical evidence truth; SearchView/vector payload remains candidate-only. This is not production routing, not product success, not promotion evidence, not official metric lift, not XLSX locator performance completion, and not live DB/index/cache readiness.
+<!-- official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod:progress-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:progress-entry:start -->
 - v3_21 agent-runtime LLM I/O observability packet (`official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod`) is diagnostic_v3_21_agent_runtime_llm_io_observability_packet_nonprod_ready. It reuses the v3_20 non-production ToolRegistry-only agent runtime, SourceAtomStoreContract, SearchIndexContract, and RuntimeCacheContract smoke cases, then records user-observable actual input queries plus actual raw LLM responses only for rows that reached L7 answer-ready context and were allowed by response policy. Fail-closed rows do not invoke LLM. If the localhost local LLM backend is unavailable, answer-allowed rows fail closed with LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED and no fake raw response is emitted. SourceAtom/EvidenceBundle remains canonical evidence truth; SearchView/vector payload remains candidate-only. This is not production routing, not product success, not promotion evidence, not official scoring, and not live DB/index/cache readiness.
 <!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:progress-entry:end -->
@@ -74,9 +82,11 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `diagnostic_v3_21_agent_runtime_llm_io_observability_packet_nonprod_ready`;
-current diagnostic LLM I/O observability loop:
-`official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod`;
+Overall status: `phase1_diagnostic_contract_closure_after_v3_22_ready`;
+current diagnostic Phase 1 closure marker:
+`phase1_diagnostic_contract_closure_after_v3_22`;
+current diagnostic XLSX display/range rendering loop remains the closure basis:
+`official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`;
 retained prior PDF/XLSX bottleneck status:
 `pdf_xlsx_bottleneck_quality_diagnostic_v3_9_validation_ready`;
 prior PDF/XLSX/TEXT comparison loop:

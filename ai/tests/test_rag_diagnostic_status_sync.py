@@ -3184,6 +3184,10 @@ def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audi
         in progress
         or "Overall status: `diagnostic_v3_21_agent_runtime_llm_io_observability_packet_nonprod_ready`;"
         in progress
+        or "Overall status: `diagnostic_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod_ready`;"
+        in progress
+        or "Overall status: `phase1_diagnostic_contract_closure_after_v3_22_ready`;"
+        in progress
     )
     assert "seen-validation-only" in current_flat
     assert "PDF document-disjoint=0, XLSX workbook-disjoint=0" in current_flat
@@ -3281,6 +3285,10 @@ def test_progress_measurements_triage_and_status_record_v3_10_fresh_holdout_xlsx
         or "Overall status: `diagnostic_v3_20_live_runtime_like_db_index_cache_smoke_nonprod_ready`;"
         in progress
         or "Overall status: `diagnostic_v3_21_agent_runtime_llm_io_observability_packet_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod_ready`;"
+        in progress
+        or "Overall status: `phase1_diagnostic_contract_closure_after_v3_22_ready`;"
         in progress
     )
     assert "seen-validation-only" in current_flat
@@ -4289,3 +4297,252 @@ def test_progress_measurements_triage_and_status_record_v3_21_agent_runtime_llm_
     assert "Fail-closed rows do not invoke LLM" in triage
     assert "LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED" in triage
     assert "SourceAtom/EvidenceBundle remains evidence truth" in triage
+
+
+def test_progress_measurements_triage_and_status_record_v3_22_xlsx_display_value_and_range_rendering_single_report():
+    run_id = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    report_path = output_dir / "report.json"
+    require_v3_9_local_artifacts(STATUS_JSONL, report_path)
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split("### v3_22 XLSX Display-Value And Cell/Range Rendering", 1)[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split("### v3_22 XLSX Display-Value And Cell/Range Rendering Triage", 1)[1].split("\n### ", 1)[0]
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == "DIAGNOSTIC_V3_22_XLSX_VALUE_FORMATTING_AND_CELL_RANGE_ANSWER_RENDERING_NONPROD_READY"
+    assert event["diagnostic_only"] is True
+    assert event["single_report_artifact_contract"] is True
+    assert event["agent_runtime_nonprod"] is True
+    assert event["agent_runtime_product_ready"] is False
+    assert event["tool_registry_only_invocation"] is True
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["source_atom_registry_canonical_truth"] is True
+    assert event["source_atom_store_canonical_truth"] is True
+    assert event["search_index_candidate_only"] is True
+    assert event["runtime_cache_evidence_truth"] is False
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_text_used"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["raw_xlsx_query_time_parsing_forbidden"] is True
+    assert event["formula_evaluation_at_query_time"] is False
+    assert event["human_review_required"] is False
+    assert event["review_csv_created"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["report_row_count"] == report["metrics"]["report_row_count"] == len(report["per_query"])
+    assert event["single_cell_value_count"] >= 7
+    assert event["small_range_table_count"] >= 1
+    assert event["bounded_range_summary_count"] >= 1
+    assert event["format_metadata_unavailable_count"] >= 1
+    assert event["unsupported_range_too_large_count"] >= 1
+    assert event["ambiguous_range_context_required_count"] >= 1
+    assert event["runtime_contract_violation_count"] == 0
+    assert event["vector_payload_evidence_truth_violation_count"] == 0
+    assert "prompt_template" not in event
+    assert "raw_llm_response" not in event
+    assert "responses" not in event
+    assert "per_query" not in event
+
+    assert run_id in current_text
+    assert "diagnostic_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod_ready" in progress
+    assert (
+        "XLSX display/range rendering loop" in current_flat
+        or "persisted XLSX SourceAtom display metadata materialization loop" in current_flat
+    )
+    assert "single-report artifact policy" in current_flat
+    assert "not production routing" in current_flat
+    assert "not product success" in current_flat
+    assert "not promotion evidence" in current_flat
+    assert "not official metric lift" in current_flat
+    assert "not live DB/index/cache readiness" in current_flat
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "The run directory intentionally does not write summary.json" in measurements_section
+    assert "llm_io_packet.jsonl" in measurements_section
+    assert "prompt_manifest.json" in measurements_section
+    assert "no review CSV unless user-owned review is required" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "| review_csv_created | false |" in measurements_section
+    assert run_id in triage_section
+    assert "single-report contract is active" in triage_section
+    assert "FORMAT_METADATA_UNAVAILABLE" in triage_section
+    assert "Formula cells use cached values only" in triage_section
+    assert "fail closed without LLM invocation" in triage_section
+    assert "SourceAtom/EvidenceBundle remains evidence truth" in triage_section
+
+
+def test_phase1_diagnostic_contract_closure_after_v3_22_records_boundary_and_backlog():
+    closure_id = "phase1_diagnostic_contract_closure_after_v3_22"
+    closure_status = "PHASE1_DIAGNOSTIC_CONTRACT_CLOSURE_AFTER_V3_22_READY"
+    closure_event_type = "phase1_diagnostic_contract_closure_after_v3_22_ready"
+    v3_22_run_id = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    v3_22_report_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / "quality"
+        / v3_22_run_id
+        / "report.json"
+    )
+    require_v3_9_local_artifacts(STATUS_JSONL, v3_22_report_path)
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### Phase 1 Diagnostic Contract Closure After v3_22",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### Phase 1 Diagnostic Contract Closure After v3_22 Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    report = json.loads(v3_22_report_path.read_text(encoding="utf-8"))
+    summary = report["summary"]
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == closure_id and event.get("event_type") == closure_event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == closure_status
+    assert event["phase1_closed"] is True
+    assert event["closure_basis_run_id"] == v3_22_run_id
+    assert event["counter_source_of_truth"] == v3_22_report_path.relative_to(ROOT).as_posix()
+    assert event["diagnostic_only"] is True
+    assert event["production_routing"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["official_metric_lift"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["xlsx_locator_performance_completion"] is False
+    assert event["representative_product_performance"] is False
+    assert event["source_atom_registry_mutated"] is False
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["raw_xlsx_query_time_parsing_forbidden"] is True
+    assert event["formula_evaluation_at_query_time"] is False
+    assert event["formula_text_visible_to_user_default"] is False
+    assert event["review_csv_created"] is False
+    assert event["review_csv_optional_only_for_user_owned_decision"] is True
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {
+        "v3_22_report_json": v3_22_report_path.relative_to(ROOT).as_posix(),
+        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "progress_doc": "docs/rag-ingestion-progress.md",
+        "measurements_doc": "docs/rag-ingestion-measurements.md",
+        "triage_doc": "docs/rag-ingestion-triage.md",
+    }
+    assert event["artifact_sha256"]["v3_22_report_json_sha256"] == sha256_file(v3_22_report_path)
+    assert event["v3_22_counters"] == {
+        "report_row_count": 14,
+        "xlsx_answer_allowed_count": 10,
+        "llm_invoked_count": 10,
+        "raw_llm_response_present_count": 10,
+        "parsed_final_answer_present_count": 10,
+        "fail_closed_no_llm_invocation_count": 4,
+        "display_value_used_count": 8,
+        "raw_value_fallback_count": 1,
+        "runtime_contract_violation_count": 0,
+        "vector_payload_evidence_truth_violation_count": 0,
+        "official_metric_input_rows": 0,
+        "review_csv_created": False,
+    }
+    for key, expected in event["v3_22_counters"].items():
+        assert summary[key] == expected, key
+
+    assert event["phase1_closed_scope"] == [
+        "SearchView/vector payload candidate-only boundary",
+        "SourceAtom/EvidenceBundle evidence-truth boundary",
+        "ToolRegistry-only non-production L0-L8 runtime contract",
+        "Ambiguous/deictic/missing-context fail-closed response policy",
+        "Live-runtime-like DB/index/cache smoke at non-production contract level only",
+        "LLM I/O observability for answer-allowed rows",
+        "XLSX display-value and cell/range rendering contract",
+        "Single-report v3_22 artifact policy",
+        "Guardrail/status/doc sync hygiene",
+    ]
+    assert event["phase2_backlog"] == [
+        "persisted XLSX SourceAtom display metadata materialization path",
+        "XLSX table/range/cell locator improvement",
+        "real workbook/document-disjoint holdout",
+        "live DB/index/cache readiness verification",
+        "official metric/promotion only after user-owned gold/qrels/denominator decisions",
+    ]
+    assert event["user_owned_decisions_remain_limited_to"] == [
+        "golden set creation",
+        "golden set review",
+        "expected answer/evidence judgment",
+        "relevance/answerability label judgment",
+        "gold policy decision",
+        "official denominator/promotion policy decision",
+    ]
+    assert "prompt_template" not in event
+    assert "raw_llm_response" not in event
+    assert "responses" not in event
+    assert "per_query" not in event
+
+    assert f"Overall status: `{closure_event_type}`;" in current_text
+    assert closure_id in current_text
+    assert "Phase 1 is closed as a diagnostic source-first RAG contract closure after v3_22" in current_flat
+    for phrase in (
+        "not production routing",
+        "not product success evidence",
+        "not promotion evidence",
+        "not official metric lift",
+        "not live DB/index/cache readiness",
+        "not XLSX locator performance completion",
+        "not representative product performance",
+    ):
+        assert phrase in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert v3_22_report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| report_row_count | 14 |" in measurements_section
+    assert "| display_value_used_count | 8 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "| product_success_evidence_allowed | false |" in measurements_section
+    assert "| promotion_evidence | false |" in measurements_section
+    assert "| live_db_index_cache_readiness | false |" in measurements_section
+    assert "single primary report artifact" in measurements_section
+    assert "status.jsonl is ignored" in measurements_section
+    assert "report.json is ignored" in measurements_section
+    assert "review_packet.csv" in measurements_section
+    assert "SearchView/vector payload candidate-only boundary" in triage_section
+    assert "SourceAtom/EvidenceBundle evidence-truth boundary" in triage_section
+    assert "ToolRegistry-only non-production L0-L8 runtime contract" in triage_section
+    assert "persisted XLSX SourceAtom display metadata materialization path" in triage_section
+    assert "XLSX table/range/cell locator improvement" in triage_section
+    assert "official metric/promotion only after user-owned gold/qrels/denominator decisions" in triage_section

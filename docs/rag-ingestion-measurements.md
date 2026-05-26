@@ -19,6 +19,69 @@ provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 
+<!-- phase1_diagnostic_contract_closure_after_v3_22:measurements-entry:start -->
+### Phase 1 Diagnostic Contract Closure After v3_22
+
+- Closure: `phase1_diagnostic_contract_closure_after_v3_22`
+- Closure basis run: `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`
+- Counter source-of-truth: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
+- Artifact policy: single primary report artifact only. `status.jsonl is ignored`, `report.json is ignored`, and optional `review_packet.csv` remains user-owned/optional and ignored; it was not created for the closure.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| report_row_count | 14 |
+| xlsx_answer_allowed_count | 10 |
+| llm_invoked_count | 10 |
+| raw_llm_response_present_count | 10 |
+| parsed_final_answer_present_count | 10 |
+| fail_closed_no_llm_invocation_count | 4 |
+| display_value_used_count | 8 |
+| raw_value_fallback_count | 1 |
+| runtime_contract_violation_count | 0 |
+| vector_payload_evidence_truth_violation_count | 0 |
+| official_metric_input_rows | 0 |
+| product_success_evidence_allowed | false |
+| promotion_evidence | false |
+| live_db_index_cache_readiness | false |
+| review_csv_created | false |
+
+Interpretation: Phase 1 is closed as a diagnostic contract closure only. These v3_22 counters are not production routing, product success evidence, promotion evidence, official metric lift, live DB/index/cache readiness, XLSX locator performance completion, or representative product performance.
+<!-- phase1_diagnostic_contract_closure_after_v3_22:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod:measurements-entry:start -->
+### v3_22 XLSX Display-Value And Cell/Range Rendering
+
+- Run: `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`
+- Policy: diagnostic-only, non-production, SourceAtom/EvidenceBundle-owned XLSX display metadata; no raw XLSX query-time parsing, no sidecar primary artifacts, no review CSV unless user-owned review is required.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
+
+| Diagnostic count | Value |
+| --- | ---: |
+| report_row_count | 14 |
+| xlsx_case_count | 14 |
+| xlsx_answer_allowed_count | 10 |
+| llm_invoked_count | 10 |
+| raw_llm_response_present_count | 10 |
+| parsed_final_answer_present_count | 10 |
+| single_cell_value_count | 7 |
+| small_range_table_count | 1 |
+| bounded_range_summary_count | 1 |
+| display_value_used_count | 8 |
+| raw_value_fallback_count | 1 |
+| format_metadata_unavailable_count | 1 |
+| formula_cached_value_used_count | 1 |
+| blank_cell_answer_count | 1 |
+| unsupported_range_too_large_count | 1 |
+| ambiguous_range_context_required_count | 2 |
+| runtime_contract_violation_count | 0 |
+| vector_payload_evidence_truth_violation_count | 0 |
+| raw_file_query_time_accessed | false |
+| official_metric_input_rows | 0 |
+| review_csv_created | false |
+
+Counter source-of-truth: `report.json` embeds summary, metrics, per_query, route/user/runtime/adapter/LLM/formatting audits, guardrails, leakage, prompt_manifest, verification, changed_files, residual_risks, and next_recommendation. The run directory intentionally does not write summary.json, metrics.json, per_query.jsonl, audit JSONL files, llm_io_packet.jsonl, guardrail_audit.json, leakage_audit.jsonl, or prompt_manifest.json.
+<!-- official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod:measurements-entry:end -->
+
 <!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:measurements-entry:start -->
 ### v3_21 Agent Runtime LLM I/O Observability Packet
 
