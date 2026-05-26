@@ -24,6 +24,8 @@
 
 FAISS/vector index metadata는 candidate generation only입니다. Citation truth는 SourceAtom/source registry에서 가져오며, expected answer/supporting evidence/gold fields는 generation source로 사용하지 않습니다.
 
+Current RAG status: `phase1_diagnostic_contract_closure_after_v3_22_ready`. Phase 1 is closed as a diagnostic source-first RAG contract closure after v3_22; `production_routing=false`, `official_metric_input_rows=0`, `official_metric_lift=false`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, and `live_db_index_cache_readiness=false` remain locked.
+
 ## Recent Focus: PDF/XLSX RAG Support
 
 | Track | Query | Evidence surface | Response |
@@ -36,8 +38,7 @@ FAISS/vector index metadata는 candidate generation only입니다. Citation trut
 | TEXT | 미츠하는 타키를 만나려고 어디로 향했어 | TEXT chunk/source context | 미츠하는 타키를 실제로 만나기 위해 도쿄로 향했습니다. |
 | TEXT | 유우야키의 나이와 생일은 어떻게 적혀 있어 | TEXT chunk/source context | 유우야키의 나이는 16세이고 생일은 9월 29일입니다. |
 
-이 표는 representative benchmark가 아니라, query -> evidence -> response 경로가 TEXT/PDF/XLSX에서 동작하는지 빠르게 보여주는 portfolio-facing sample입니다. 
-더 많은 샘플과 raw locator 진단 표면은 [Evaluation harness samples](ai/eval/README.md)에 분리했습니다.
+이 표는 representative benchmark가 아니라, query -> evidence -> response 경로를 빠르게 보여주는 diagnostic/portfolio-facing sample입니다. 더 많은 샘플과 v3_22 XLSX display-value/cell-range 진단 표면은 [Evaluation harness samples](ai/eval/README.md)에 분리했습니다.
 
 ## Architecture
 
@@ -67,8 +68,8 @@ flowchart LR
 Production DB write, production index mutation, new gold/qrels/label 변경 없이 현재 RAG diagnostic profile을 확인하는 최소 명령입니다.
 
 ```powershell
+python -X utf8 ai\scripts\rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod.py --check
 python -X utf8 -m pytest ai/tests --rag-current -q
-python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q
 ```
 
 ## Repo Map
@@ -86,6 +87,7 @@ python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_
 
 - [RAG ingestion progress](docs/rag-ingestion-progress.md)
 - [RAG ingestion measurements](docs/rag-ingestion-measurements.md)
+- [RAG ingestion triage](docs/rag-ingestion-triage.md)
 - [Evaluation harness](ai/eval/README.md)
 - [Third-party data license notice](docs/THIRD_PARTY_DATA_LICENSES.md)
 

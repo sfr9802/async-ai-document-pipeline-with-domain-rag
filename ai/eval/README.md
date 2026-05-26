@@ -3,14 +3,15 @@
 이 파일은 TEXT/PDF/XLSX의 query -> evidence -> response 표면을 빠르게 보여주는 샘플입니다.
 대표 성능 benchmark나 promotion evidence가 아닙니다.
 
-샘플 수는 총 50개입니다. TEXT/PDF/XLSX 비율은 1:2:2로 맞추어 TEXT 10개, PDF 20개, XLSX 20개를 담았습니다. Portfolio-facing sample과 diagnostic locator sample을 함께 쓰되, 
+샘플 수는 총 64개입니다. 기존 balanced sample 50개(TEXT 10, PDF 20, XLSX 20)에 v3_22 XLSX display-value/cell-range diagnostic sample 14개를 더했습니다. Portfolio-facing sample과 diagnostic locator sample을 함께 쓰되,
 `Response` 칸에는 저장 응답/어댑터 응답 excerpt, 최신 diagnostic answer derivation 출력(PDF/XLSX: deterministic compiler + local LLM polish, TEXT: source-bound local LLM rewrite verifier), stored residual excerpt, 또는 fail-closed 상태가 들어갈 수 있습니다. PDF에서 목차 점선, 단독 섹션 번호, 페이지 번호, 숫자축처럼 content window가 얇은 행은 답변처럼 노출하지 않고 `PDF_CONTENT_WINDOW_TOO_THIN`으로 표시합니다.
 
-- Balanced samples: 50개 (TEXT 10, PDF 20, XLSX 20)
+- Query/response samples: 64개 (TEXT 10, PDF 20, XLSX 34)
+- Current closure: `phase1_diagnostic_contract_closure_after_v3_22_ready`
 - Sensitive-topic README display exclusion: enabled
 - Diagnostic-only policy: unchanged
 
-## Balanced Samples
+## Query / Response Samples
 
 이 표는 query -> evidence -> response 흐름을 빠르게 확인하기 위한 샘플 표입니다. Representative benchmark가 아니며, 공식 denominator나 promotion evidence로 사용하지 않습니다.
 
@@ -66,12 +67,28 @@
 | XLSX | 2008년 6월에 지정된 청운노인요양원의 기관별 상세주소는 무엇입니까? | XLSX sheet/range/cell: 국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx / 일반현황 A2:J51 J2 | 서울특별시 종로구 비봉길 76 (구기동)입니다. |
 | XLSX | 2015년 6월에 지정된 부여효요양원의 기관별 상세주소는 무엇입니까? | XLSX sheet/range/cell: 국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx / 일반현황 A5002:J5051 J5002 | 충청남도 부여군 석성면 왕릉로 773 (석성면)입니다. |
 | XLSX | 대덕구 컴퓨터 윈도우탑재 제품 정보 알려주세요. | XLSX scoped locator: 과학기술정보통신부 국립과천과학관_과학기술자료실 도서정보_20250513.xlsx / Sheet1 A9852:J9901 A9852 | diagnostic-only fail-closed: XLSX_QUERY_ANCHOR_MISSING |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 A1 값 알려줘 | SourceAtom: atom-xlsx-a1-int; Book.xlsx / Sheet1 A1; mode=SINGLE_CELL_VALUE | 42 |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 B1 퍼센트 표시값 알려줘 | SourceAtom: atom-xlsx-b1-percent; Book.xlsx / Sheet1 B1; mode=SINGLE_CELL_VALUE | 12.5% |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 C1 통화 표시값 알려줘 | SourceAtom: atom-xlsx-c1-currency; Book.xlsx / Sheet1 C1; mode=SINGLE_CELL_VALUE | $1,234.50 |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 D1 날짜 표시값 알려줘 | SourceAtom: atom-xlsx-d1-date; Book.xlsx / Sheet1 D1; mode=SINGLE_CELL_VALUE | 2023-07-17 |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 D2 일시 표시값 알려줘 | SourceAtom: atom-xlsx-d2-datetime; Book.xlsx / Sheet1 D2; mode=SINGLE_CELL_VALUE | 2023-07-17 09:30 |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 E1 빈 셀인지 알려줘 | SourceAtom: atom-xlsx-e1-blank; Book.xlsx / Sheet1 E1; mode=SINGLE_CELL_VALUE | E1 셀은 비어 있습니다. |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 F1 수식 캐시 표시값 알려줘 | SourceAtom: atom-xlsx-f1-formula-cached; Book.xlsx / Sheet1 F1; mode=SINGLE_CELL_VALUE | 168 |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 범위 A1:B2 값을 표로 알려줘 | SourceAtoms: atom-xlsx-a1-int, atom-xlsx-a2-text, atom-xlsx-b1-percent, atom-xlsx-b2-merged; mode=SMALL_RANGE_TABLE | A1: 42<br>B1: 12.5%<br>A2: 서울<br>B2: Header total |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 범위 A1:E20 값을 요약해줘 | SourceAtoms: atom-xlsx-summary-1..5; Book.xlsx / Sheet1 A1:E20; mode=BOUNDED_RANGE_SUMMARY | Book.xlsx 시트 Sheet1 범위 A1:E20의 일부 값은 A1이 42, B1이 12.5%, C1이 $1,234.50, D1이 2023-07-17 등으로 요약될 수 있습니다. |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 G1 값 알려줘 | SourceAtom: atom-xlsx-g1-missing-format; Book.xlsx / Sheet1 G1; mode=FORMAT_METADATA_UNAVAILABLE | 9999.5 |
+| XLSX v3_22 | 이 표에서 선택한 범위 값을 알려줘 | No selected SourceAtom; mode=AMBIGUOUS_RANGE_CONTEXT_REQUIRED | diagnostic-only fail-closed: 답변하려면 파일/문서, 시트, 범위, 페이지 또는 셀을 더 구체적으로 지정해 주세요. |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 범위 A1:Z1000 값을 전부 알려줘 | SourceAtom: atom-xlsx-large-range; Book.xlsx / Sheet1 A1:Z1000; mode=UNSUPPORTED_RANGE_TOO_LARGE | diagnostic-only fail-closed: UNSUPPORTED_RANGE_TOO_LARGE |
+| XLSX v3_22 | Sheet1 시트 셀 A1 값 알려줘 | No selected SourceAtom; mode=AMBIGUOUS_RANGE_CONTEXT_REQUIRED | diagnostic-only fail-closed: 답변하려면 파일/문서, 시트, 범위, 페이지 또는 셀을 더 구체적으로 지정해 주세요. |
+| XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 A1 값 알려줘 | No selected SourceAtom; mode=FORMAT_METADATA_UNAVAILABLE; index unavailable case | diagnostic-only fail-closed: 요청한 위치를 찾지 못했습니다. 제공된 위치 범위 안에서 답변하지 않습니다. |
 
 ## Evaluation Boundary
 
 - 이 sample README는 대표 benchmark가 아닙니다.
+- Phase 1 is closed as `phase1_diagnostic_contract_closure_after_v3_22_ready`, diagnostic-only after v3_22.
 - Official exact-evidence retrieval smoke는 28-query small-sample regression guard일 뿐, representative product-performance benchmark가 아닙니다.
-- v3 comparable live diagnostic과 v3_8 계열 resolver diagnostics는 구분해서 읽어야 합니다.
+- v3 comparable live diagnostic, v3_8 resolver diagnostics, v3_20 non-production DB/index/cache smoke, v3_22 XLSX display-value contract는 구분해서 읽어야 합니다.
 - Promotion evidence, threshold tuning, winner selection, production mutation, qrels/gold/label/expected answer/supporting evidence mutation과 무관합니다.
 - SourceAtom/source registry가 citation truth이고, vector index metadata는 candidate generation surface일 뿐입니다.
+- `production_routing=false`, `official_metric_input_rows=0`, `official_metric_lift=false`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, `live_db_index_cache_readiness=false`.
 - TEXT/PDF/XLSX metrics are not collapsed into one headline score.
