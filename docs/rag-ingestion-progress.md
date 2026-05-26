@@ -20,6 +20,14 @@ durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
+<!-- official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod:progress-entry:start -->
+- v4_1 persisted XLSX SourceAtom display metadata (`official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod`) is diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod_ready. It materializes the v3_22 XLSX display contract into a runtime-adjacent persisted SourceAtom manifest with raw_value, normalized_value, display_value, number_format, value_type, formula cached value, format confidence/provenance/drop reason, and merged-cell metadata. The run writes one primary artifact, `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod/report.json`, and suppresses summary/metrics/per-query/manifest sidecars. SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only; raw XLSX query-time parsing, query-time formula evaluation, formula text exposure, direct normalized-value query matching, target/gold locator use, and expected/supporting gold text use remain forbidden. This is not production routing, not product success evidence, not promotion evidence, not official metric lift, not live DB/index/cache readiness, and not fine-tuning execution.
+<!-- official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod:progress-entry:end -->
+
+<!-- v4_source_grounded_runtime_locator_and_finetune_readiness:progress-entry:start -->
+- v4 source-grounded runtime locator and fine-tuning readiness (`v4_source_grounded_runtime_locator_and_finetune_readiness`) is v4_source_grounded_runtime_locator_and_finetune_readiness_opened. v4 starts after the Phase 1 diagnostic closure at v3_22 and keeps `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod` plus its single `report.json` as the counter source of truth. v4 targets persisted/runtime-adjacent SourceAtom display metadata materialization, family-separated XLSX table/range/cell locator improvement, PDF file identity separated from evidence-window quality, real blind/OOD holdout and leakage-audit infrastructure, and fine-tuning readiness packets only after evidence and split quality gates are satisfied. Boundary: this is non-production and diagnostic-first; it is not production routing, not product success evidence, not promotion evidence, not official metric lift, not live DB/index/cache readiness, not actual fine-tuning/training, not threshold tuning, and not winner selection. `official_metric_input_rows=0`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, `fine_tuning_readiness_only=true`, `fine_tuning_started=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false` remain locked until user-owned gold/qrels/denominator decisions explicitly open official evaluation.
+<!-- v4_source_grounded_runtime_locator_and_finetune_readiness:progress-entry:end -->
+
 <!-- phase1_diagnostic_contract_closure_after_v3_22:progress-entry:start -->
 - Phase 1 diagnostic contract closure after v3_22 (`phase1_diagnostic_contract_closure_after_v3_22`) is phase1_diagnostic_contract_closure_after_v3_22_ready. Phase 1 is closed as a diagnostic source-first RAG contract closure after v3_22, anchored to `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod` and its single primary report artifact. Closed scope: SearchView/vector payload candidate-only boundary, SourceAtom/EvidenceBundle evidence-truth boundary, ToolRegistry-only non-production L0-L8 runtime contract, ambiguous/deictic/missing-context fail-closed response policy, live-runtime-like DB/index/cache smoke at non-production contract level only, LLM I/O observability for answer-allowed rows, XLSX display-value and cell/range rendering contract, single-report v3_22 artifact policy, and guardrail/status/doc sync hygiene. Boundary: this is diagnostic-only, not production routing, not product success evidence, not promotion evidence, not official metric lift, not live DB/index/cache readiness, not XLSX locator performance completion, and not representative product performance. `official_metric_input_rows=0`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, and `live_db_index_cache_readiness=false` remain locked. Phase 2 backlog is separate: persisted XLSX SourceAtom display metadata materialization path, XLSX table/range/cell locator improvement, real workbook/document-disjoint holdout, live DB/index/cache readiness verification, and official metric/promotion only after user-owned gold/qrels/denominator decisions.
 <!-- phase1_diagnostic_contract_closure_after_v3_22:progress-entry:end -->
@@ -82,7 +90,13 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `phase1_diagnostic_contract_closure_after_v3_22_ready`;
+Overall status: `diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod_ready`;
+current v4 marker:
+`v4_source_grounded_runtime_locator_and_finetune_readiness`;
+recommended v4 run family if a run is created:
+`official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`;
+current diagnostic v4_1 persisted XLSX SourceAtom display metadata loop:
+`official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod`;
 current diagnostic Phase 1 closure marker:
 `phase1_diagnostic_contract_closure_after_v3_22`;
 current diagnostic XLSX display/range rendering loop remains the closure basis:

@@ -7,7 +7,7 @@
 `Response` 칸에는 저장 응답/어댑터 응답 excerpt, 최신 diagnostic answer derivation 출력(PDF/XLSX: deterministic compiler + local LLM polish, TEXT: source-bound local LLM rewrite verifier), stored residual excerpt, 또는 fail-closed 상태가 들어갈 수 있습니다. PDF에서 목차 점선, 단독 섹션 번호, 페이지 번호, 숫자축처럼 content window가 얇은 행은 답변처럼 노출하지 않고 `PDF_CONTENT_WINDOW_TOO_THIN`으로 표시합니다.
 
 - Query/response samples: 64개 (TEXT 10, PDF 20, XLSX 34)
-- Current closure: `phase1_diagnostic_contract_closure_after_v3_22_ready`
+- Current RAG status: `diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod_ready`
 - Sensitive-topic README display exclusion: enabled
 - Diagnostic-only policy: unchanged
 
@@ -85,10 +85,11 @@
 ## Evaluation Boundary
 
 - 이 sample README는 대표 benchmark가 아닙니다.
-- Phase 1 is closed as `phase1_diagnostic_contract_closure_after_v3_22_ready`, diagnostic-only after v3_22.
+- Phase 1 is closed as `phase1_diagnostic_contract_closure_after_v3_22_ready`, diagnostic-only after v3_22; v4 is opened as `v4_source_grounded_runtime_locator_and_finetune_readiness_opened`; v4_1 is `diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod_ready`.
+- v4 is a non-production readiness charter for persisted/runtime-adjacent SourceAtom paths, family-separated XLSX locator and PDF file-identity work, real blind/OOD holdout and leakage-audit infrastructure, and fine-tuning readiness only after evidence and split gates.
 - Official exact-evidence retrieval smoke는 28-query small-sample regression guard일 뿐, representative product-performance benchmark가 아닙니다.
 - v3 comparable live diagnostic, v3_8 resolver diagnostics, v3_20 non-production DB/index/cache smoke, v3_22 XLSX display-value contract는 구분해서 읽어야 합니다.
 - Promotion evidence, threshold tuning, winner selection, production mutation, qrels/gold/label/expected answer/supporting evidence mutation과 무관합니다.
 - SourceAtom/source registry가 citation truth이고, vector index metadata는 candidate generation surface일 뿐입니다.
-- `production_routing=false`, `official_metric_input_rows=0`, `official_metric_lift=false`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, `live_db_index_cache_readiness=false`.
+- `production_routing=false`, `official_metric_input_rows=0`, `official_metric_lift=false`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, `fine_tuning_readiness_only=true`, `fine_tuning_started=false`, `fine_tuning_executed=false`, `live_db_index_cache_readiness=false`.
 - TEXT/PDF/XLSX metrics are not collapsed into one headline score.

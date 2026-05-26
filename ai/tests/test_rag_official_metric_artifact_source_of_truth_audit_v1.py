@@ -5953,6 +5953,79 @@ def test_v3_22_xlsx_display_value_and_range_rendering_single_report_artifact_is_
     assert report_path.stat().st_size < 1_500_000
 
 
+def test_v4_1_persisted_xlsx_sourceatom_display_metadata_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v3_9_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "persisted_sourceatom_manifest.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    rows = report["persisted_sourceatom_manifest"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod"
+    ]
+
+    assert report["schema_version"] == "rag_v4_1_persisted_xlsx_sourceatom_display_metadata_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert metrics["persisted_xlsx_sourceatom_display_metadata_rows"] == len(rows) == 17
+    assert metrics["persisted_display_value_available_count"] == 15
+    assert metrics["persisted_raw_value_fallback_count"] == 1
+    assert metrics["formula_cached_value_used_count"] == 1
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["vector_payload_evidence_truth_violation_count"] == 0
+    assert metrics["raw_xlsx_query_time_parsing_count"] == 0
+    assert metrics["formula_evaluated_at_query_time_count"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert report["v3_22_rendering_contract_replay"]["v3_22_report_row_count"] == 14
+    assert report["v3_22_rendering_contract_replay"]["display_value_used_count"] == 8
+    assert report["guardrails"]["persisted_xlsx_sourceatom_display_metadata"] is True
+    assert report["guardrails"]["raw_xlsx_query_time_parsing_forbidden"] is True
+    assert report["guardrails"]["formula_text_visible_to_user_default"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert all(row["source_family"] == "XLSX" for row in rows)
+    assert all(row["source_atom_evidence_bundle_truth_only"] is True for row in rows)
+    assert all(row["vector_payload_used_as_evidence_truth"] is False for row in rows)
+    assert all(row["formula_text_visible_to_user"] is False for row in rows)
+    assert all(row["formula_evaluated_at_query_time"] is False for row in rows)
+    assert all("formula_text" not in row for row in rows)
+    assert all("expected_answer" not in row for row in rows)
+    assert all("supporting_evidence" not in row for row in rows)
+    assert len(matches) == 1
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"] == {"report_json_sha256": sha256_file(report_path)}
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["fine_tuning_executed"] is False
+    assert "per_query" not in matches[0]
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 500_000
+
+
 def test_phase1_diagnostic_contract_closure_after_v3_22_report_flags_are_hash_locked_and_non_promotional() -> None:
     closure_id = "phase1_diagnostic_contract_closure_after_v3_22"
     closure_event_type = "phase1_diagnostic_contract_closure_after_v3_22_ready"

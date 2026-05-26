@@ -20,6 +20,33 @@ The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
 
+<!-- official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod:triage-entry:start -->
+### v4_1 Persisted XLSX SourceAtom Display Metadata Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod/report.json`; single-report contract is active.
+- v4_1 closes the first persisted/runtime-adjacent gap after v3_22: XLSX display metadata now exists as SourceAtom-owned manifest fields instead of only report-local runtime fixture data.
+- Formula cells carry cached values only; formula text is not exposed and formulas are not evaluated at query time.
+- Missing display metadata remains explicit low-confidence raw fallback with FORMAT_METADATA_UNAVAILABLE.
+- SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only.
+- No raw XLSX query-time parsing, direct normalized-value query matching, target/gold locator use, expected/supporting gold text use, official metric rows, promotion evidence, product-success evidence, production mutation, or fine-tuning execution is allowed.
+- GPU is not required for this slice because the runner performs deterministic materialization/replay only; future embedding/LLM/index workloads should prefer GPU when available.
+- Next lane: v4_2 XLSX locator v2 table/range/cell structural materialization.
+<!-- official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod:triage-entry:end -->
+
+<!-- v4_source_grounded_runtime_locator_and_finetune_readiness:triage-entry:start -->
+### v4 Source-Grounded Runtime Locator And Fine-Tuning Readiness Triage
+
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`.
+- Recommended run family if a run is created: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`.
+- Scope: persisted/runtime-adjacent SourceAtom display metadata materialization, family-separated XLSX table/range/cell locator work and XLSX table/range/cell locator improvement, PDF file identity separated from answer-ready evidence-window quality, real blind/OOD holdout and leakage-audit infrastructure, and fine-tuning readiness only after evidence and split quality gates.
+- Boundary: v4 is non-production and diagnostic-first. It is not production routing, product success evidence, promotion evidence, official metric lift, live DB/index/cache readiness, actual fine-tuning/training, threshold tuning, winner selection, or a collapsed PDF/XLSX/TEXT headline score.
+- Guardrails: SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only; raw XLSX/PDF query-time parsing, direct normalized answer-value query matching, target/gold/supporting/expected locator use, formula evaluation, and formula-text exposure stay closed.
+- User-owned decisions remain limited to golden set creation/review, expected answer/evidence judgment, relevance and answerability labels, gold policy, official denominator policy, and promotion policy.
+- official metric/promotion only after user-owned gold/qrels/denominator decisions explicitly open that gate.
+- Next technical lane: v4_1 persisted XLSX SourceAtom display metadata materialization, followed by v4_2 XLSX locator v2, v4_3 PDF file identity split, v4_4 real blind/OOD holdout and leakage audit, and v4_5 fine-tuning readiness packet.
+<!-- v4_source_grounded_runtime_locator_and_finetune_readiness:triage-entry:end -->
+
 <!-- phase1_diagnostic_contract_closure_after_v3_22:triage-entry:start -->
 ### Phase 1 Diagnostic Contract Closure After v3_22 Triage
 

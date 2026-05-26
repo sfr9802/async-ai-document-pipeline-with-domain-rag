@@ -10325,6 +10325,137 @@ def test_v3_22_runtime_path_has_no_raw_parser_broad_scan_production_or_fake_llm_
         assert snippet not in source
 
 
+def test_v4_1_persisted_xlsx_sourceatom_display_metadata_materializes_v3_22_contract() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    metrics = report["metrics"]
+    rows = {row["source_atom_id"]: row for row in report["persisted_sourceatom_manifest"]}
+
+    assert report["schema_version"] == "rag_v4_1_persisted_xlsx_sourceatom_display_metadata_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert metrics["persisted_xlsx_sourceatom_display_metadata_rows"] == len(rows) == 17
+    assert metrics["persisted_display_value_available_count"] == 15
+    assert metrics["persisted_raw_value_fallback_count"] == 1
+    assert metrics["formula_cached_value_used_count"] == 1
+    assert metrics["format_confidence_high_count"] == 16
+    assert metrics["format_confidence_low_count"] == 1
+    assert metrics["runtime_contract_violation_count"] == 0
+    assert metrics["vector_payload_evidence_truth_violation_count"] == 0
+    assert metrics["raw_xlsx_query_time_parsing_count"] == 0
+    assert metrics["formula_evaluated_at_query_time_count"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+
+    required_row_fields = {
+        "schema_version",
+        "source_atom_id",
+        "source_family",
+        "source_identity",
+        "workbook_id",
+        "sheet_name",
+        "cell",
+        "cell_range",
+        "table_id",
+        "raw_value",
+        "normalized_value",
+        "display_value",
+        "number_format",
+        "value_type",
+        "formula_cached_value",
+        "format_confidence",
+        "format_provenance",
+        "format_drop_reason",
+        "formula_text_visible_to_user",
+        "formula_evaluated_at_query_time",
+        "merged_cell",
+        "merged_range",
+        "merged_owner_cell",
+        "source_atom_evidence_bundle_truth_only",
+        "vector_payload_used_as_evidence_truth",
+        "materialized_from_v3_22_contract",
+    }
+    for row in rows.values():
+        assert required_row_fields <= set(row), row["source_atom_id"]
+        assert row["source_family"] == "XLSX"
+        assert row["source_atom_evidence_bundle_truth_only"] is True
+        assert row["vector_payload_used_as_evidence_truth"] is False
+        assert row["formula_text_visible_to_user"] is False
+        assert row["formula_evaluated_at_query_time"] is False
+        assert row["materialized_from_v3_22_contract"] is True
+        assert "formula_text" not in row
+        assert "expected_answer" not in row
+        assert "supporting_evidence" not in row
+
+    assert rows["atom-xlsx-b1-percent"]["raw_value"] == "0.125"
+    assert rows["atom-xlsx-b1-percent"]["display_value"] == "12.5%"
+    assert rows["atom-xlsx-c1-currency"]["display_value"] == "$1,234.50"
+    assert rows["atom-xlsx-d1-date"]["normalized_value"] == "2023-07-17"
+    assert rows["atom-xlsx-d1-date"]["display_value"] == "2023-07-17"
+    assert rows["atom-xlsx-f1-formula-cached"]["value_type"] == "formula_cached_value"
+    assert rows["atom-xlsx-f1-formula-cached"]["formula_cached_value"] == "168"
+    assert rows["atom-xlsx-f1-formula-cached"]["display_value"] == "168"
+    assert rows["atom-xlsx-g1-missing-format"]["display_value"] == "9999.5"
+    assert rows["atom-xlsx-g1-missing-format"]["format_confidence"] == "low"
+    assert rows["atom-xlsx-g1-missing-format"]["format_drop_reason"] == "FORMAT_METADATA_UNAVAILABLE"
+    assert rows["atom-xlsx-b2-merged"]["merged_cell"] is True
+    assert rows["atom-xlsx-b2-merged"]["merged_range"] == "B2:C2"
+    assert rows["atom-xlsx-b2-merged"]["merged_owner_cell"] == "B2"
+
+    render = report["v3_22_rendering_contract_replay"]
+    assert render["v3_22_report_row_count"] == 14
+    assert render["display_value_used_count"] == 8
+    assert render["raw_value_fallback_count"] == 1
+    assert render["runtime_contract_violation_count"] == 0
+    assert render["vector_payload_evidence_truth_violation_count"] == 0
+    assert render["official_metric_input_rows"] == 0
+
+
+def test_v4_1_persisted_xlsx_sourceatom_display_metadata_single_report_and_guardrails(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert guardrails["persisted_xlsx_sourceatom_display_metadata"] is True
+    assert guardrails["raw_xlsx_query_time_parsing_forbidden"] is True
+    assert guardrails["formula_evaluation_at_query_time"] is False
+    assert guardrails["formula_text_visible_to_user_default"] is False
+    assert guardrails["direct_normalized_value_query_matching_used"] is False
+    assert guardrails["target_locator_used"] is False
+    assert guardrails["gold_locator_used"] is False
+    assert guardrails["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrails["source_atom_registry_mutated"] is False
+    assert guardrails["db_or_production_namespace_written"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "persisted_sourceatom_manifest.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_1 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["summary"]["review_csv_created"] is False
+    assert "persisted_sourceatom_manifest_jsonl" not in written["artifact_paths"]
+
+
 def test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank(tmp_path) -> None:
     sys.path.insert(0, str(ROOT / "ai" / "scripts"))
     import rag_pdf_xlsx_answer_quality_review_packet as packet

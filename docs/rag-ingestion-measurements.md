@@ -19,6 +19,63 @@ provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
 
+<!-- official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod:measurements-entry:start -->
+### v4_1 Persisted XLSX SourceAtom Display Metadata
+
+- Run: `official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, single `report.json`; persisted/runtime-adjacent XLSX SourceAtom display metadata only.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod/report.json`
+
+| Diagnostic count | Value |
+| --- | ---: |
+| persisted_xlsx_sourceatom_display_metadata_rows | 17 |
+| persisted_display_value_available_count | 15 |
+| persisted_raw_value_fallback_count | 1 |
+| formula_cached_value_used_count | 1 |
+| format_confidence_high_count | 16 |
+| format_confidence_low_count | 1 |
+| runtime_contract_violation_count | 0 |
+| vector_payload_evidence_truth_violation_count | 0 |
+| raw_xlsx_query_time_parsing_count | 0 |
+| formula_evaluated_at_query_time_count | 0 |
+| official_metric_input_rows | 0 |
+| product_success_evidence_allowed | false |
+| promotion_evidence | false |
+| fine_tuning_executed | false |
+| live_db_index_cache_readiness | false |
+| gpu_required_for_this_slice | false |
+
+Counter source-of-truth: `report.json` embeds summary, metrics, persisted_sourceatom_manifest, v3_22_rendering_contract_replay, guardrails, verification, changed_files, residual_risks, and next_recommendation. `report.json` and `status.jsonl` are ignored artifacts; no review CSV or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod:measurements-entry:end -->
+
+<!-- v4_source_grounded_runtime_locator_and_finetune_readiness:measurements-entry:start -->
+### v4 Source-Grounded Runtime Locator And Fine-Tuning Readiness Charter
+
+- v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Recommended run family if a run is created: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Phase 1 closure basis: `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`
+- Counter source-of-truth remains: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
+- Charter: v4 extends the Phase 1 diagnostic source-first RAG contract into persisted/runtime-adjacent paths, improves family-separated XLSX locator and PDF file-identity bottlenecks, builds real blind/OOD holdout and leakage-audit infrastructure, and prepares fine-tuning lanes only after evidence and split quality gates are satisfied.
+
+| v4 opening gate | Value |
+| --- | --- |
+| official_metric_input_rows | 0 |
+| product_success_evidence_allowed | false |
+| promotion_evidence | false |
+| production_routing | false |
+| live_db_index_cache_readiness | false |
+| real_blind_ood_holdout_available | false |
+| fine_tuning_readiness_only | true |
+| fine_tuning_started | false |
+| fine_tuning_executed | false |
+| threshold_tuning | false |
+| winner_selection | false |
+
+Interpretation: v4 is opened as a non-production diagnostic charter, not as a scored run. Fine-tuning is a readiness lane only; any official evaluation, promotion, or production-readiness claim remains closed until user-owned gold/qrels/denominator decisions explicitly open it.
+<!-- v4_source_grounded_runtime_locator_and_finetune_readiness:measurements-entry:end -->
+
 <!-- phase1_diagnostic_contract_closure_after_v3_22:measurements-entry:start -->
 ### Phase 1 Diagnostic Contract Closure After v3_22
 

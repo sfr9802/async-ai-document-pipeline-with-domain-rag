@@ -24,7 +24,7 @@
 
 FAISS/vector index metadata는 candidate generation only입니다. Citation truth는 SourceAtom/source registry에서 가져오며, expected answer/supporting evidence/gold fields는 generation source로 사용하지 않습니다.
 
-Current RAG status: `phase1_diagnostic_contract_closure_after_v3_22_ready`. Phase 1 is closed as a diagnostic source-first RAG contract closure after v3_22; `production_routing=false`, `official_metric_input_rows=0`, `official_metric_lift=false`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, and `live_db_index_cache_readiness=false` remain locked.
+Current RAG status: `diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod_ready`. Phase 1 is closed as a diagnostic source-first RAG contract closure after v3_22; v4 is now a non-production charter for persisted/runtime-adjacent SourceAtom paths, family-separated XLSX locator and PDF file-identity work, real blind/OOD holdout and leakage-audit infrastructure, and fine-tuning readiness only after evidence and split gates. `production_routing=false`, `official_metric_input_rows=0`, `official_metric_lift=false`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, `fine_tuning_readiness_only=true`, `fine_tuning_started=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false` remain locked.
 
 ## Recent Focus: PDF/XLSX RAG Support
 
