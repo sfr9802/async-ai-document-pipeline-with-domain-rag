@@ -1,3 +1,29 @@
+<!-- official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod:measurements-entry:start -->
+### v4_7_1 Korean Review Packet And README Diagnostic Snapshot
+
+- Run: `official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod`
+- Primary artifacts: `report.json`, `review_packet_ko.xlsx`, `review_packet_ko.csv`, `review_packet_ko.jsonl`, `review_guidelines_ko.md`, `review_summary_ko.json` under `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod`.
+- Source evidence: v4_7 pre-official registration report plus external manifest SHA-256 `15b2f5f61a03bf588bf49d74a95a11259e2a6a83c0a32a727625344cae7af58c`; actual LLM response examples are from v3_22 answer-allowed rows only.
+- Interpretation: Korean packet artifacts are user-owned review surfaces. They are not gold/qrels, expected answer, supporting evidence, official metric input, training data, FT-A execution, promotion evidence, product-success evidence, or live readiness evidence.
+
+| Counter | Value |
+|---|---:|
+| human_review_only | true |
+| review_packet_row_count | 204 |
+| review_packet_pdf_rows | 100 |
+| review_packet_xlsx_rows | 104 |
+| review_packet_text_rows | 0 |
+| review_packet_source_rows_have_actual_query_text | false |
+| review_packet_source_rows_have_evidence_context | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| ft_a_execution | false |
+| fine_tuning | false |
+| live_db_index_cache_readiness | false |
+
+`preofficial_candidate_thresholds_met=true` in v4_7 means intake thresholds only; `real_holdout_sufficient=false` remains because official denominator, gold/qrels, expected evidence, and promotion gates are still closed and user-owned.
+<!-- official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod:measurements-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod:measurements-entry:start -->
 ### v4_7 Preofficial External Holdout Candidate Manifest Registration
 

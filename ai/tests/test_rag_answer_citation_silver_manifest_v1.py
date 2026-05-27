@@ -6904,6 +6904,19 @@ def test_v3_10_fresh_holdout_and_xlsx_nonprod_materialization_stays_diagnostic_o
     }
     assert holdout["real_query_fidelity_included_counts"]["XLSX"] == 0
     assert holdout["real_query_fidelity_included_counts"]["PDF"] == 0
+    assert all(
+        not path.startswith("ai/eval/reports/rag-ingestion/")
+        for path in holdout["local_fixture_scan"]["candidate_file_paths_outside_registry"]
+    )
+    ignored_report_assets = [
+        item
+        for item in holdout["local_fixture_scan"]["ignored_non_holdout_assets"]
+        if item["path"].startswith("ai/eval/reports/rag-ingestion/")
+    ]
+    assert all(
+        item["reason"] == "rag_ingestion_generated_report_artifact_not_holdout_eligible"
+        for item in ignored_report_assets
+    )
     assert holdout["synthetic_ood_guard"]["product_success_evidence_allowed"] is False
     assert holdout["synthetic_ood_guard"]["candidate_count"] > 14
 
@@ -15986,6 +15999,171 @@ def test_v4_7_preofficial_registration_single_report_guardrails_and_cli_check(tm
     assert output["candidate_manifest_available"] is False
     assert output["official_metric_input_rows"] == 0
     assert output["v4_7_official_metric_gate_opened"] is False
+
+
+def test_v4_7_1_korean_review_packet_builds_human_review_only_rows(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod as run
+
+    manifest_path = tmp_path / "external_candidates.jsonl"
+    _write_jsonl(manifest_path, _v4_7_target_sufficient_candidate_rows())
+
+    artifacts = run.build_artifacts(candidate_manifest_path=manifest_path, output_dir=tmp_path)
+    report = artifacts["report"]
+    rows = artifacts["review_rows"]
+    examples = report["actual_llm_response_examples"]
+
+    assert report["status"] == "DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY"
+    assert report["diagnostic_only"] is True
+    assert report["human_review_only"] is True
+    assert report["generation_source"] is False
+    assert report["not_silver_source"] is True
+    assert report["not_gold_mutation"] is True
+    assert report["not_official_metric_input"] is True
+    assert report["not_training_dataset"] is True
+    assert report["not_promotion_evidence"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["ft_a_execution"] is False
+    assert report["fine_tuning"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["review_packet_row_count"] == 204
+    assert report["review_packet_counts_by_family"] == {"PDF": 100, "XLSX": 104, "TEXT": 0}
+    assert report["review_packet_source_rows_have_actual_query_text"] is False
+    assert report["review_packet_source_rows_have_evidence_context"] is False
+    assert report["query_text_source"] == "not_supplied_by_v4_7_registration_manifest"
+    assert report["review_packet_artifacts_created"] == {
+        "report_json": True,
+        "review_packet_ko_xlsx": True,
+        "review_packet_ko_csv": True,
+        "review_packet_ko_jsonl": True,
+        "review_guidelines_ko_md": True,
+        "review_summary_ko_json": True,
+    }
+
+    required_columns = set(run.KOREAN_REVIEW_COLUMNS + run.MACHINE_CONTEXT_COLUMNS)
+    assert rows
+    assert set(rows[0]) == required_columns
+    assert {row["소스계열"] for row in rows} == {"PDF", "XLSX"}
+    assert all(row["검수상태"] == "미검수" for row in rows)
+    assert all(row["질의문"] == "" for row in rows)
+    assert all(row["기대답변_한국어"] == "" for row in rows)
+    assert all(row["근거판단_한국어"] == "" for row in rows)
+    assert all(row["관련성라벨"] == "보류" for row in rows)
+    assert all(row["답변가능성라벨"] == "보류" for row in rows)
+    assert all(row["공식분모포함판단"] == "보류" for row in rows)
+    assert all(row["검수자"] == "" for row in rows)
+    assert all(row["검수일시"] == "" for row in rows)
+    assert all(row["manifest_sha256"] == run.EXPECTED_V4_7_MANIFEST_SHA256 for row in rows)
+    assert all(row["source_preview_redacted"] == "__not_supplied_by_v4_7_registration_manifest__" for row in rows)
+    assert all(row["evidence_preview_redacted"] == "__not_supplied_by_v4_7_registration_manifest__" for row in rows)
+    assert all(row["prior_identity_collision"] == "false" for row in rows)
+    assert all(row["source_disjointness_gate"] == "pass" for row in rows)
+    assert all(row["query_fidelity_included"] == "true" for row in rows)
+
+    serialized = json.dumps({"report": report, "rows": rows}, ensure_ascii=False, sort_keys=True)
+    assert str(manifest_path) not in serialized
+    assert "D:/" not in serialized
+    assert "D:\\" not in serialized
+    assert "source_identity_key" not in serialized
+    assert "v47_pdf_doc_sha_" not in serialized
+    assert "v47_xlsx_workbook_sha_" not in serialized
+    assert '"raw_llm_response":' not in serialized
+    assert "prompt_payload" not in serialized
+    assert "official_metric_input.jsonl" not in serialized
+    assert "training_dataset.jsonl" not in serialized
+    assert "training_dataset_path" not in serialized
+    assert "checkpoint" not in serialized
+
+    assert len(examples) == 10
+    assert {example["source_run"] for example in examples} == {
+        "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    }
+    assert all(example["source_family"] == "XLSX" for example in examples)
+    assert all(example["response_policy_bucket"] == "ANSWER_ALLOWED" for example in examples)
+    assert all(example["diagnostic_boundary"] == "diagnostic_only_non_official_not_v4_7_output" for example in examples)
+    assert all(example["raw_response_hash"] for example in examples)
+    assert all(example["prompt_hash"] for example in examples)
+    assert all(example["parsed_final_answer_or_sanitized_excerpt"] for example in examples)
+
+
+def test_v4_7_1_korean_review_packet_writes_allowed_artifacts_and_cli_check(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod as run
+
+    input_dir = tmp_path / "inputs"
+    input_dir.mkdir()
+    manifest_path = input_dir / "external_candidates.jsonl"
+    _write_jsonl(manifest_path, _v4_7_target_sufficient_candidate_rows())
+
+    report = run.run_write(candidate_manifest_path=manifest_path, output_dir=tmp_path, update_docs=False)
+    expected_files = {
+        "report.json",
+        "review_packet_ko.xlsx",
+        "review_packet_ko.csv",
+        "review_packet_ko.jsonl",
+        "review_guidelines_ko.md",
+        "review_summary_ko.json",
+    }
+
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == expected_files
+    assert report["artifact_paths"] == {
+        "report_json": (tmp_path / "report.json").as_posix(),
+        "review_packet_ko_xlsx": (tmp_path / "review_packet_ko.xlsx").as_posix(),
+        "review_packet_ko_csv": (tmp_path / "review_packet_ko.csv").as_posix(),
+        "review_packet_ko_jsonl": (tmp_path / "review_packet_ko.jsonl").as_posix(),
+        "review_guidelines_ko_md": (tmp_path / "review_guidelines_ko.md").as_posix(),
+        "review_summary_ko_json": (tmp_path / "review_summary_ko.json").as_posix(),
+    }
+    assert report["review_packet_row_count"] == 204
+    assert report["review_packet_counts_by_family"] == {"PDF": 100, "XLSX": 104, "TEXT": 0}
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["qrels_jsonl_created"] is False
+    assert report["gold_jsonl_created"] is False
+    assert report["labels_jsonl_created"] is False
+    assert report["expected_answers_jsonl_created"] is False
+    assert report["supporting_evidence_jsonl_created"] is False
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["prompt_manifest_jsonl_created"] is False
+    assert report["raw_response_payload_jsonl_created"] is False
+    run.check_report(report)
+    run.check_written_artifacts(tmp_path)
+
+    with (tmp_path / "review_packet_ko.jsonl").open(encoding="utf-8") as handle:
+        jsonl_rows = [json.loads(line) for line in handle if line.strip()]
+    assert len(jsonl_rows) == 204
+    assert jsonl_rows[0]["검수상태"] == "미검수"
+    assert jsonl_rows[0]["질의승인"] == "보류"
+
+    csv_text = (tmp_path / "review_packet_ko.csv").read_text(encoding="utf-8-sig")
+    assert "검수상태,소스계열,후보ID,질의ID,질의문" in csv_text
+    assert "기대답변_한국어" in csv_text
+    assert "D:/" not in csv_text
+    assert "D:\\" not in csv_text
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod.py"),
+            "--check",
+            "--output-dir",
+            str(tmp_path),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+    assert output["run_id"] == run.RUN_ID
+    assert output["status"] == run.STATUS
+    assert output["review_packet_row_count"] == 204
+    assert output["official_metric_input_rows"] == 0
+    assert output["promotion_evidence"] is False
 
 
 def test_v4_6_11_ft_a_runtime_input_validation_route_parity_is_sanitized_and_closed() -> None:

@@ -1,3 +1,13 @@
+<!-- official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod:triage-entry:start -->
+### v4_7_1 Korean Review Packet And README Diagnostic Snapshot Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod`
+- The packet covers PDF 100 rows and XLSX 104 rows from the accepted v4_7 pre-official candidate manifest registration.
+- It is human-review-only. Codex did not fill expected answers, supporting evidence, relevance labels, answerability labels, denominator inclusion, qrels, gold, or promotion decisions.
+- The v4_7 registration manifest did not contain actual query/evidence text, so `질의문`, `기대답변_한국어`, and `근거판단_한국어` remain blank.
+- It is not official metric, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, and not live DB/index/cache readiness.
+- Remaining user-owned actions: provide or adjudicate actual query/evidence context, then decide gold/qrels, expected evidence, relevance, answerability, official denominator inclusion, and promotion policy.
+<!-- official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod:triage-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod:triage-entry:start -->
 ### v4_7 Preofficial External Holdout Candidate Manifest Registration Triage
 
@@ -16,8 +26,8 @@
 - Latest run remains: `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`
 - v4_6 completed its Codex-owned diagnostic/preflight work and is now input-waiting.
 - v4_6_7 through v4_6_12 were checks only: route parity, dependency freshness, duplicate hygiene, manifest replay, and redaction checks.
-- v4_7 remains closed because candidate_manifest_present=false, real_holdout_sufficient=false, accepted PDF holdout candidates are 0/20, accepted XLSX holdout candidates are 0/8, real query-fidelity included rows are 0/100 for PDF and 0/100 for XLSX, v4_5 readiness gate=false, v4_5_1 intake gate=false, v4_5_2 source identity audit gate=false, user-owned gold/qrels policy gate=false, official denominator gate=false, and promotion policy gate=false.
-- Do not open v4_7; do not create candidate manifests, validation sidecars, dry-run input manifests, prompt payloads, datasets, jobs, checkpoints, official metric rows, product-success evidence, promotion evidence, or live readiness claims.
+- At v4_6 closeout time, before v4_7 pre-official registration, the registration lane was closed because candidate_manifest_present=false, real_holdout_sufficient=false, accepted PDF holdout candidates were 0/20, accepted XLSX holdout candidates were 0/8, and real query-fidelity included rows were 0/100 for PDF and 0/100 for XLSX. Current v4_7 registration resolves only the candidate-manifest/source-disjointness blocker; user-owned gold/qrels, expected evidence, official denominator, and promotion policy gates remain closed.
+- Do not open v4_7 official metric, FT-A, promotion, product-success, or live-readiness gates from this marker; do not create official metric rows, training datasets, jobs, checkpoints, promotion evidence, or live readiness claims.
 - Next actionable lane: external source-disjoint holdout candidate manifest acquisition/registration, followed by v4_5_1/v4_5_2/v4_6_10 no-write replay.
 - User-owned decisions remain gold set creation/review, expected answer/evidence judgment, relevance/answerability labels, gold policy, official denominator policy, and promotion policy.
 <!-- v4_6_input_waiting_ft_a_route_policy_and_external_holdout_readiness_closeout:triage-entry:end -->

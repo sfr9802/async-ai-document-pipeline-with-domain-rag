@@ -13,8 +13,10 @@ PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+V4_7_1_CURRENT_STATUS = "DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY"
 V4_7_CURRENT_STATUS = "V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY"
-V4_6_CLOSEOUT_CURRENT_STATUS = V4_7_CURRENT_STATUS
+CURRENT_RAG_STATUS = V4_7_1_CURRENT_STATUS
+V4_6_CLOSEOUT_CURRENT_STATUS = CURRENT_RAG_STATUS
 V4_6_12_CURRENT_STATUS = V4_6_CLOSEOUT_CURRENT_STATUS
 V4_6_11_CURRENT_STATUS = V4_6_12_CURRENT_STATUS
 V4_6_10_CURRENT_STATUS = V4_6_11_CURRENT_STATUS
@@ -42,6 +44,7 @@ V4_6_10_SCRIPT = "rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_no
 V4_6_11_SCRIPT = "rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod.py"
 V4_6_12_SCRIPT = "rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod.py"
 V4_7_SCRIPT = "rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py"
+V4_7_1_SCRIPT = "rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod.py"
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
@@ -7987,9 +7990,9 @@ def test_v4_6_10_external_holdout_manifest_gate_replay_records_status_docs_and_g
     assert "per_query" not in report
     assert "raw_llm_response" not in report
 
-    assert f"Overall status: `{current_status}`;" in current_text
-    assert f"Current RAG status: `{current_status}`" in readme
-    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert f"Overall status: `{CURRENT_RAG_STATUS}`;" in current_text
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in readme
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in eval_readme
     assert "current diagnostic v4_6_10 external holdout candidate manifest gate replay loop" in current_text
     assert "current diagnostic v4_6_9 holdout candidate duplicate hygiene gate loop" in current_text
     assert run_id in current_text
@@ -8113,9 +8116,9 @@ def test_v4_6_11_ft_a_runtime_input_validation_route_parity_records_status_docs_
     assert report["official_metric_input_rows"] == 0
     assert report["source_report_inputs"] == event["source_report_inputs"]
 
-    assert f"Overall status: `{current_status}`;" in current_text
-    assert f"Current RAG status: `{current_status}`" in readme
-    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert f"Overall status: `{CURRENT_RAG_STATUS}`;" in current_text
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in readme
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in eval_readme
     assert "current diagnostic v4_6_11 FT-A runtime input validation route parity loop" in current_text
     assert "current diagnostic v4_6_10 external holdout candidate manifest gate replay loop" in current_text
     assert run_id in current_text
@@ -8245,9 +8248,9 @@ def test_v4_6_12_external_holdout_runtime_replay_route_parity_records_status_doc
     assert report["official_metric_input_rows"] == 0
     assert report["source_report_inputs"] == event["source_report_inputs"]
 
-    assert f"Overall status: `{current_status}`;" in current_text
-    assert f"Current RAG status: `{current_status}`" in readme
-    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert f"Overall status: `{CURRENT_RAG_STATUS}`;" in current_text
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in readme
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in eval_readme
     assert "current diagnostic v4_6_12 external holdout runtime replay route parity loop" in current_text
     assert "current diagnostic v4_6_11 FT-A runtime input validation route parity loop" in current_text
     assert run_id in current_text
@@ -8373,13 +8376,13 @@ def test_v4_6_input_waiting_closeout_records_status_docs_and_keeps_v4_7_closed()
         "promotion policy",
     ]
 
-    assert f"Overall status: `{current_status}`;" in current_text
-    assert f"Current RAG status: `{current_status}`" in readme
-    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert f"Overall status: `{CURRENT_RAG_STATUS}`;" in current_text
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in readme
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in eval_readme
     assert "current latest v4_6 run remains v4_6_12" in current_text
     assert latest_run_id in current_text
     assert "v4_6 completed its Codex-owned diagnostic/preflight work" in current_flat
-    assert "v4_7 remains closed" in current_flat
+    assert "At v4_6 closeout time" in current_flat
     assert "candidate_manifest_present=false" in current_flat
     assert "accepted_pdf_holdout_candidates=0/20" in current_flat
     assert "accepted_xlsx_holdout_candidates=0/8" in current_flat
@@ -8399,9 +8402,9 @@ def test_v4_6_input_waiting_closeout_records_status_docs_and_keeps_v4_7_closed()
     assert run_id in triage_section
     assert "v4_6 completed its Codex-owned diagnostic/preflight work" in triage_section
     assert "v4_6_7 through v4_6_12 were checks only" in triage_section
-    assert "v4_7 remains closed" in triage_section
+    assert "At v4_6 closeout time" in triage_section
     assert "User-owned decisions remain gold set creation/review" in triage_section
-    assert "Do not open v4_7" in triage_section
+    assert "Do not open v4_7 official metric" in triage_section
 
 
 def test_v4_7_preofficial_external_holdout_registration_records_status_docs_and_guardrails():
@@ -8492,9 +8495,9 @@ def test_v4_7_preofficial_external_holdout_registration_records_status_docs_and_
     assert "expected_answer" in report["user_input_requirements_packet"]["forbidden_fields"]
     assert report["user_input_requirements_packet"]["xlsx_workbook_identity_proof"]["source_identity_only_rejected"] is True
 
-    assert f"Overall status: `{current_status}`;" in current_text
-    assert f"Current RAG status: `{current_status}`" in readme
-    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert f"Overall status: `{CURRENT_RAG_STATUS}`;" in current_text
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in readme
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in eval_readme
     assert run_id in current_text
     assert "pre-official external holdout candidate manifest registration" in current_flat
     assert "official_metric_input_rows=0" in current_flat
@@ -8512,9 +8515,151 @@ def test_v4_7_preofficial_external_holdout_registration_records_status_docs_and_
     assert "| official_metric_input_rows | 0 |" in measurements_section
     assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
     assert "not official metric rows" in measurements_section
+    assert "intake thresholds only" in measurements
 
     assert run_id in triage_section
     assert "opens only the v4_7 pre-official external holdout candidate manifest" in triage_section
     assert "not official metric" in triage_section
     assert "not FT-A dry-run execution" in triage_section
     assert "User-owned gold/qrels" in triage_section
+
+
+def test_v4_7_1_korean_review_packet_records_status_docs_and_safe_examples():
+    run_id = "official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod"
+    event_type = "diagnostic_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod"
+    source_run_id = "official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
+    example_source_run_id = (
+        "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    )
+    report_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    report_path = report_dir / "report.json"
+    packet_xlsx = report_dir / "review_packet_ko.xlsx"
+    packet_csv = report_dir / "review_packet_ko.csv"
+    packet_jsonl = report_dir / "review_packet_ko.jsonl"
+    guidelines = report_dir / "review_guidelines_ko.md"
+    summary_json = report_dir / "review_summary_ko.json"
+    require_v4_3_local_artifacts(
+        STATUS_JSONL,
+        report_path,
+        packet_xlsx,
+        packet_csv,
+        packet_jsonl,
+        guidelines,
+        summary_json,
+    )
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    summary = json.loads(summary_json.read_text(encoding="utf-8"))
+    packet_rows = [json.loads(line) for line in packet_jsonl.read_text(encoding="utf-8").splitlines() if line.strip()]
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_7_1 Korean Review Packet And README Diagnostic Snapshot",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_7_1 Korean Review Packet And README Diagnostic Snapshot Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == V4_7_1_CURRENT_STATUS
+    assert event["artifact_paths"]["report_json"] == report_path.relative_to(ROOT).as_posix()
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["artifact_sha256"]["review_packet_ko_xlsx_sha256"] == sha256_file(packet_xlsx)
+    assert event["diagnostic_only"] is True
+    assert event["human_review_only"] is True
+    assert event["review_packet_row_count"] == 204
+    assert event["review_packet_counts_by_family"] == {"PDF": 100, "XLSX": 104, "TEXT": 0}
+    assert event["review_packet_source_rows_have_actual_query_text"] is False
+    assert event["review_packet_source_rows_have_evidence_context"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["ft_a_execution"] is False
+    assert event["fine_tuning"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["source_report_run_id"] == source_run_id
+    assert event["actual_llm_response_example_source_run_id"] == example_source_run_id
+
+    assert report["schema_version"] == "rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_report_v1"
+    assert report["status"] == V4_7_1_CURRENT_STATUS
+    assert report["human_review_only"] is True
+    assert report["generation_source"] is False
+    assert report["not_gold_mutation"] is True
+    assert report["not_official_metric_input"] is True
+    assert report["not_training_dataset"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["review_packet_row_count"] == 204
+    assert report["review_packet_counts_by_family"] == {"PDF": 100, "XLSX": 104, "TEXT": 0}
+    assert report["query_text_source"] == "not_supplied_by_v4_7_registration_manifest"
+    assert len(report["actual_llm_response_examples"]) == 10
+    assert all(example["source_run"] == example_source_run_id for example in report["actual_llm_response_examples"])
+    assert all(
+        example["diagnostic_boundary"] == "diagnostic_only_non_official_not_v4_7_output"
+        for example in report["actual_llm_response_examples"]
+    )
+    assert summary["human_review_only"] is True
+    assert len(packet_rows) == 204
+    assert all(row["검수상태"] == "미검수" for row in packet_rows)
+    assert all(row["질의문"] == "" for row in packet_rows)
+    assert all(row["관련성라벨"] == "보류" for row in packet_rows)
+    assert all(row["답변가능성라벨"] == "보류" for row in packet_rows)
+    assert all(row["공식분모포함판단"] == "보류" for row in packet_rows)
+
+    assert f"Overall status: `{V4_7_1_CURRENT_STATUS}`;" in current_text
+    assert f"Current RAG status: `{V4_7_1_CURRENT_STATUS}`" in readme
+    assert f"Current RAG status: `{V4_7_1_CURRENT_STATUS}`" in eval_readme
+    assert "## Current RAG Diagnostic Status" in readme
+    assert "v4_7 pre-official candidate registration: 204 rows total" in readme
+    assert "PDF 100 rows from 20 source documents" in readme
+    assert "XLSX 104 rows from 8 workbooks" in readme
+    assert "v3_22 diagnostic answer/rendering snapshot: 14 rows, 10 answer-allowed, 10 LLM invoked" in readme
+    assert "official_metric_input_rows=0" in readme
+    assert "no headline product score" in readme
+    for forbidden in (
+        "production-ready",
+        "official metric improved",
+        "promotion-ready",
+        "fine-tuned",
+        "live DB/index/cache ready",
+        "representative benchmark performance",
+        "headline score",
+    ):
+        assert forbidden not in readme
+
+    assert "## Korean human review packet" in eval_readme
+    assert "review_packet_ko.xlsx" in eval_readme
+    assert "all start as `미검수`, `보류`, or blank" in eval_readme
+    assert "v4_7 registration did not execute an LLM" in eval_readme
+    assert "## Actual query and LLM response examples" in eval_readme
+    assert "v3_22 answer-allowed XLSX rows" in eval_readme
+    assert "v3_22_xlsx_integer_a1" in eval_readme
+    assert "627e896cab7dc64c4638ee9c7b2bdd7179b790eee336c40ecc9f3442209fd167" in eval_readme
+    assert "diagnostic_only_non_official_not_v4_7_output" in eval_readme
+    assert "raw_llm_response" not in eval_readme
+    assert "prompt_payload" not in eval_readme
+
+    assert run_id in current_text
+    assert run_id in measurements_section
+    assert "| review_packet_row_count | 204 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "intake thresholds only" in measurements_section
+    assert run_id in triage_section
+    assert "human-review-only" in triage_section
+    assert "did not fill expected answers" in triage_section
+    assert V4_7_1_SCRIPT in scripts_readme
