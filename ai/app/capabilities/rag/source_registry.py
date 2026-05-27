@@ -255,6 +255,7 @@ def assemble_evidence_bundle(
             "ocr_confidence": raw_locator.get("ocr_confidence"),
         }
     elif family == "XLSX":
+        xlsx_display_metadata = _xlsx_display_metadata(atom)
         bundle["xlsx_evidence"] = {
             "workbook_or_source_path": _clean(raw_locator.get("workbook") or raw_locator.get("source_path")),
             "sheet": _clean(raw_locator.get("sheet")),
@@ -267,6 +268,8 @@ def assemble_evidence_bundle(
             "nearby_row_or_range_context": matched[:500],
             "value_locator": _clean(raw_locator.get("value_locator") or raw_locator.get("cell")),
         }
+        if xlsx_display_metadata:
+            bundle["xlsx_evidence"]["xlsx_display_metadata"] = xlsx_display_metadata
     return {"valid": True, "source_atom_id": source_atom_id, "evidence_bundle": bundle}
 
 
@@ -374,3 +377,25 @@ def _mapping(value: Any) -> Mapping[str, Any]:
 
 def _clean(value: Any) -> str:
     return "" if value is None else str(value).strip()
+
+
+def _xlsx_display_metadata(atom: Mapping[str, Any]) -> dict[str, Any]:
+    contract = _mapping(atom.get("xlsx_display_contract") or atom.get("xlsx_display_metadata"))
+    if not contract:
+        return {}
+    return {
+        "display_value": _clean(contract.get("display_value")),
+        "raw_value": _clean(contract.get("raw_value")),
+        "normalized_value": _clean(contract.get("normalized_value")),
+        "number_format": _clean(contract.get("number_format")),
+        "value_type": _clean(contract.get("value_type")),
+        "formula_cached_value_present": bool(_clean(contract.get("formula_cached_value"))),
+        "formula_text_visible_to_user": False,
+        "formula_evaluation_at_query_time": False,
+        "format_confidence": _clean(contract.get("format_confidence")),
+        "format_provenance": _clean(contract.get("format_provenance")),
+        "format_drop_reason": _clean(contract.get("format_drop_reason")),
+        "merged_cell": bool(contract.get("merged_cell")),
+        "merged_range": _clean(contract.get("merged_range")),
+        "merged_owner_cell": _clean(contract.get("merged_owner_cell")),
+    }

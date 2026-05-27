@@ -5,10 +5,24 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, status
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, HTTPException, Request, status
+from pydantic import BaseModel, Field, ValidationError
 
 from app.capabilities.ocr.artifact_builder import OCR_LITE_PIPELINE_VERSION
+from app.capabilities.rag_orchestrator.phase1_diagnostic_runtime import (
+    DIAGNOSTIC_ROUTE_PATH,
+    FT_A_DRY_RUN_INPUT_VALIDATION_ROUTE_PATH,
+    HOLDOUT_CANDIDATE_VALIDATION_ROUTE_PATH,
+    READINESS_ROUTE_PATH,
+    RagFtADryRunInputValidationRequest,
+    RagFtADryRunInputValidationResponse,
+    RagHoldoutCandidateValidationRequest,
+    RagHoldoutCandidateValidationResponse,
+    RagDiagnosticQueryRequest,
+    RagDiagnosticQueryResponse,
+    RagDiagnosticReadinessResponse,
+    SourceFirstRagService,
+)
 from app.capabilities.registry import build_default_registry
 from app.clients.core_api_client import CoreApiClient
 from app.core.config import WorkerSettings, get_settings
@@ -37,10 +51,12 @@ def create_app(
     *,
     runner: Optional[TaskRunner] = None,
     settings: Optional[WorkerSettings] = None,
+    rag_diagnostic_service: Optional[SourceFirstRagService] = None,
 ) -> FastAPI:
     app = FastAPI(title="ai", version="0.1.0")
     app.state.runner = runner
     app.state.settings = settings
+    app.state.rag_diagnostic_service = rag_diagnostic_service
 
     @app.post(
         "/internal/tasks/ocr-extract",
@@ -83,7 +99,107 @@ def create_app(
             "pipelineVersion": body.pipeline_version,
         }
 
+    @app.post(DIAGNOSTIC_ROUTE_PATH, response_model=RagDiagnosticQueryResponse)
+    def run_rag_diagnostic_query(body: RagDiagnosticQueryRequest) -> RagDiagnosticQueryResponse:
+        resolved_settings = app.state.settings or get_settings()
+        if (
+            not resolved_settings.rag_fastapi_diagnostic_route_enabled
+            or resolved_settings.rag_query_orchestrator_mode == "production"
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="diagnostic RAG route disabled",
+            )
+        service = app.state.rag_diagnostic_service or SourceFirstRagService()
+        return service.query(body)
+
+    @app.get(READINESS_ROUTE_PATH, response_model=RagDiagnosticReadinessResponse)
+    def get_rag_diagnostic_readiness() -> RagDiagnosticReadinessResponse:
+        resolved_settings = app.state.settings or get_settings()
+        if (
+            not resolved_settings.rag_fastapi_diagnostic_route_enabled
+            or resolved_settings.rag_query_orchestrator_mode == "production"
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="diagnostic RAG route disabled",
+            )
+        service = app.state.rag_diagnostic_service or SourceFirstRagService()
+        return service.readiness()
+
+    @app.post(
+        HOLDOUT_CANDIDATE_VALIDATION_ROUTE_PATH,
+        response_model=RagHoldoutCandidateValidationResponse,
+    )
+    async def validate_rag_holdout_candidate_rows(
+        request: Request,
+    ) -> RagHoldoutCandidateValidationResponse:
+        resolved_settings = app.state.settings or get_settings()
+        if (
+            not resolved_settings.rag_fastapi_diagnostic_route_enabled
+            or resolved_settings.rag_query_orchestrator_mode == "production"
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="diagnostic RAG route disabled",
+            )
+        service = app.state.rag_diagnostic_service or SourceFirstRagService()
+        body = await _parse_diagnostic_body(request, RagHoldoutCandidateValidationRequest)
+        return service.validate_holdout_candidates(body)
+
+    @app.post(
+        FT_A_DRY_RUN_INPUT_VALIDATION_ROUTE_PATH,
+        response_model=RagFtADryRunInputValidationResponse,
+    )
+    async def validate_rag_ft_a_dry_run_input_manifest_rows(
+        request: Request,
+    ) -> RagFtADryRunInputValidationResponse:
+        resolved_settings = app.state.settings or get_settings()
+        if (
+            not resolved_settings.rag_fastapi_diagnostic_route_enabled
+            or resolved_settings.rag_query_orchestrator_mode == "production"
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="diagnostic RAG route disabled",
+            )
+        body = await _parse_diagnostic_body(request, RagFtADryRunInputValidationRequest)
+        service = app.state.rag_diagnostic_service or SourceFirstRagService()
+        return service.validate_ft_a_dry_run_input_manifest(body)
+
     return app
+
+
+async def _parse_diagnostic_body(request: Request, model: type[BaseModel]) -> BaseModel:
+    try:
+        payload = await request.json()
+    except ValueError as ex:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="invalid JSON body",
+        ) from ex
+    try:
+        if hasattr(model, "model_validate"):
+            return model.model_validate(payload)
+        return model.parse_obj(payload)
+    except ValidationError as ex:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=_sanitize_validation_errors(ex),
+        ) from ex
+
+
+def _sanitize_validation_errors(error: ValidationError) -> list[dict[str, object]]:
+    sanitized: list[dict[str, object]] = []
+    for item in error.errors():
+        sanitized.append(
+            {
+                "loc": list(item.get("loc", ())),
+                "msg": str(item.get("msg", "")),
+                "type": str(item.get("type", "")),
+            }
+        )
+    return sanitized
 
 
 def _get_runner(app: FastAPI) -> TaskRunner:

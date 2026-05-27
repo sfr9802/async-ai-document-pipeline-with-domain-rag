@@ -24,7 +24,7 @@
 
 FAISS/vector index metadata는 candidate generation only입니다. Citation truth는 SourceAtom/source registry에서 가져오며, expected answer/supporting evidence/gold fields는 generation source로 사용하지 않습니다.
 
-Current RAG status: `diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod_ready`. Phase 1 is closed as a diagnostic source-first RAG contract closure after v3_22; v4 is now a non-production charter for persisted/runtime-adjacent SourceAtom paths, family-separated XLSX locator and PDF file-identity work, real blind/OOD holdout and leakage-audit infrastructure, and fine-tuning readiness only after evidence and split gates. `production_routing=false`, `official_metric_input_rows=0`, `official_metric_lift=false`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, `fine_tuning_readiness_only=true`, `fine_tuning_started=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false` remain locked.
+Current RAG status: `V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY`. Phase 1 is closed as a diagnostic source-first RAG contract closure after v3_22, and the main FastAPI worker now exposes default-disabled diagnostic/internal `POST /internal/rag/diagnostic/query`, `GET /internal/rag/diagnostic/readiness`, `POST /internal/rag/diagnostic/holdout-candidates/validate`, and `POST /internal/rag/diagnostic/ft-a/dry-run-input/validate` routes behind `AIPIPELINE_WORKER_RAG_FASTAPI_DIAGNOSTIC_ROUTE_ENABLED`. The latest v4_6 run remains v4_6_12; v4_6 is now input-waiting after Codex-owned diagnostic/preflight work, with v4_6_7 through v4_6_12 limited to route parity, dependency freshness, duplicate hygiene, manifest replay, and redaction checks. v4_7 is open only as a pre-official external holdout candidate manifest registration lane; official metric, FT-A execution, fine-tuning, product success, promotion, production routing, and live DB/index/cache readiness remain closed. The readiness route defaults to the latest v4_6_12 runtime replay route-parity report and projects v4_6_12 route redaction/parity state, v4_6_10 replay state when present, v4_6_6 holdout/dry-run blocker ledgers when present, and holdout acquisition requirements through sanitized diagnostic DTO fields only; candidate-manifest input metadata is redacted/hash-only. The holdout-candidate validation route accepts in-memory `candidate_rows` only and returns hash-only accepted/excluded row diagnostics, family-separated deficits, and optional prior-identity hash collision checks without writing candidate manifests or sidecars. The FT-A dry-run input validation route accepts request-body manifest rows only, reuses the v4_6_4 validator contract through an importable helper, and returns sanitized/hash-only row diagnostics without exporting dry-run inputs, prompt payloads, datasets, jobs, checkpoints, official metrics, promotion evidence, product-success evidence, or live-readiness claims. These routes do not expose raw prompt/LLM/path/source-identity surfaces or open candidate export, dry-run, training, official, promotion, product-success, or live-readiness gates. v4 remains a non-production charter for persisted/runtime-adjacent SourceAtom paths, family-separated XLSX locator and PDF file-identity work, real blind/OOD holdout and leakage-audit infrastructure, and fine-tuning readiness only after evidence and split gates. `production_routing=false`, `official_metric=false`, `official_metric_input_rows=0`, `official_metric_lift=false`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, `fine_tuning_readiness_only=true`, `fine_tuning_started=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false` remain locked.
 
 ## Recent Focus: PDF/XLSX RAG Support
 
@@ -68,7 +68,46 @@ flowchart LR
 Production DB write, production index mutation, new gold/qrels/label 변경 없이 현재 RAG diagnostic profile을 확인하는 최소 명령입니다.
 
 ```powershell
-python -X utf8 ai\scripts\rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod.py --check
+python -X utf8 -m py_compile ai\scripts\rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_5_finetune_readiness_packet_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_ft_route_policy_dry_run_preflight_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_2_ft_route_policy_fixture_contract_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py
+python -X utf8 ai\scripts\rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_5_finetune_readiness_packet_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_ft_route_policy_dry_run_preflight_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_2_ft_route_policy_fixture_contract_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py --check
 python -X utf8 -m pytest ai/tests --rag-current -q
 ```
 

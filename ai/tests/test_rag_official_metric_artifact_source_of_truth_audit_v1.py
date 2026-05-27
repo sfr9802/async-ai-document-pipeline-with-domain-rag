@@ -1690,6 +1690,139 @@ def require_v3_9_local_artifacts(*paths: Path) -> None:
     pytest.skip(message)
 
 
+def require_v4_3_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_3 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_4_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_4 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_5_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_5 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_5_1_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_5_1 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_5_2_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_5_2 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_5_3_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_5_3 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_1_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_1 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_2_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_2 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_3_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_3 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_4_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_4 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_5_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_5 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_6_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_6 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_7_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_7 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_8_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_8 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_9_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_9 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_10_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_10 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_11_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_11 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
+def require_v4_6_12_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_6_12 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
 AGENTIC_INDEX_DIR = ROOT / "ai" / "eval" / "indexes" / "rag-data"
 EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES: set[str] = set()
 CURRENT_REPORT_PATHS = {
@@ -5826,7 +5959,7 @@ def test_v3_22_xlsx_display_value_and_range_rendering_single_report_artifact_is_
     status_path = REPORT_DIR / "status.jsonl"
     require_v3_9_local_artifacts(report_path, status_path)
 
-    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {"report.json"}
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
     for forbidden_name in (
         "summary.json",
         "metrics.json",
@@ -6024,6 +6157,2136 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_report_is_hash_locked_c
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
     assert report_path.stat().st_size < 500_000
+
+
+def test_v4_2_xlsx_locator_v2_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v3_9_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "xlsx_locator_v2_manifest.jsonl",
+        "xlsx_locator_v2_candidate_components.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    rows = report["xlsx_locator_v2_manifest"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod"
+    ]
+
+    assert report["schema_version"] == "rag_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert metrics["xlsx_locator_v2_rows"] == len(rows) == 344
+    assert metrics["xlsx_locator_v2_candidate_component_rows"] == 900
+    assert metrics["pdf_rows_included"] == 0
+    assert metrics["text_rows_included"] == 0
+    assert metrics["seen_reference_only_rows"] == 344
+    assert metrics["workbook_disjoint_validation_rows"] == 0
+    assert metrics["fresh_real_holdout_available"] is False
+    assert metrics["table_or_range_at1"]["computed_by_v4_2"] is False
+    assert metrics["table_or_range_at1"]["metric_role"] == "reference_only_seen_diagnostic"
+    assert metrics["table_or_range_at1"]["optimization_target"] is False
+    assert metrics["cell_or_value_at1"]["computed_by_v4_2"] is False
+    assert metrics["display_metadata_coverage"]["coverage_role"] == "input_readiness_only_not_locator_denominator"
+    assert report["holdout_policy"]["seen_reference_success_claim_allowed"] is False
+    assert report["guardrails"]["family_separated_xlsx_only"] is True
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert all(row["source_family"] == "XLSX" for row in rows)
+    assert all(row["source_family_separated"] is True for row in rows)
+    assert all(row["computed_by_v4_2"] is False for row in rows)
+    assert all(row["metric_role"] == "reference_only_seen_diagnostic" for row in rows)
+    assert all(row["success_claim_allowed"] is False for row in rows)
+    assert all(row["official_metric_input_rows"] == 0 for row in rows)
+    assert all("expected_answer" not in row for row in rows)
+    assert all("supporting_evidence" not in row for row in rows)
+    assert len(matches) == 1
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"] == {"report_json_sha256": sha256_file(report_path)}
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["fine_tuning_executed"] is False
+    assert "per_query" not in matches[0]
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_500_000
+
+
+def test_v4_3_pdf_file_identity_split_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_4_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "pdf_file_identity_split_manifest.jsonl",
+        "pdf_candidate_components.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    rows = report["pdf_file_identity_split_manifest"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod"
+    ]
+
+    assert report["schema_version"] == "rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["pdf_file_identity_answer_window_kept_separate"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert metrics["pdf_file_identity_rows"] == len(rows) == 329
+    assert metrics["pdf_candidate_component_rows"] == 942
+    assert metrics["xlsx_rows_included"] == 0
+    assert metrics["text_rows_included"] == 0
+    assert metrics["seen_reference_only_rows"] == 329
+    assert metrics["source_document_disjoint_validation_rows"] == 0
+    assert metrics["fresh_real_holdout_available"] is False
+    assert metrics["file_resolve_at1"]["computed_by_v4_3"] is False
+    assert metrics["file_resolve_at1"]["metric_role"] == "reference_only_seen_diagnostic"
+    assert metrics["file_resolve_at1"]["optimization_target"] is False
+    assert metrics["answer_ready_window_sufficient_at_query"]["computed_by_v4_3"] is False
+    assert metrics["pdf_file_identity_metrics"]["source_metric_key"] == (
+        "pdf_file_identity_structural_locator_eval.v3_13_pdf_file_identity_confidence_diagnostic"
+    )
+    assert metrics["pdf_file_identity_metrics"]["source_metric_scope"] == (
+        "diagnostic_only_seen_reference_file_identity_confidence_no_rerank"
+    )
+    assert metrics["pdf_evidence_window_metrics"]["source_metric_key"] == (
+        "pdf_file_identity_structural_locator_eval.v3_13_pdf_evidence_window_diagnostic"
+    )
+    assert metrics["pdf_evidence_window_metrics"]["source_metric_scope"] == (
+        "diagnostic_only_same_page_bbox_window_availability_not_answer_generation"
+    )
+    assert metrics["bbox_correctness_metric_computed"] is False
+    assert report["holdout_policy"]["real_unseen_registry_counts"] == {"PDF_source_document_disjoint": 0}
+    assert report["holdout_policy"]["minimum_targets"] == {
+        "pdf_unseen_source_documents": 20,
+        "query_fidelity_included_rows_per_family": 100,
+    }
+    assert report["holdout_policy"]["seen_reference_success_claim_allowed"] is False
+    assert report["guardrails"]["family_separated_pdf_only"] is True
+    assert report["guardrails"]["pdf_file_identity_answer_window_kept_separate"] is True
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert all(row["source_family"] == "PDF" for row in rows)
+    assert all(row["source_family_separated"] is True for row in rows)
+    assert all(row["computed_by_v4_3"] is False for row in rows)
+    assert all(row["metric_role"] == "reference_only_seen_diagnostic" for row in rows)
+    assert all("file_identity" in row["metric_provenance"] for row in rows)
+    assert all("evidence_window" in row["metric_provenance"] for row in rows)
+    assert all(
+        row["metric_provenance"]["file_identity"]["source_metric_key"]
+        == "pdf_file_identity_structural_locator_eval.v3_13_pdf_file_identity_confidence_diagnostic"
+        for row in rows
+    )
+    assert all(
+        row["metric_provenance"]["evidence_window"]["source_metric_key"]
+        == "pdf_file_identity_structural_locator_eval.v3_13_pdf_evidence_window_diagnostic"
+        for row in rows
+    )
+    assert all(row["success_claim_allowed"] is False for row in rows)
+    assert all(row["official_metric_input_rows"] == 0 for row in rows)
+    assert all("expected_answer" not in row for row in rows)
+    assert all("supporting_evidence" not in row for row in rows)
+    assert len(matches) == 1
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"] == {"report_json_sha256": sha256_file(report_path)}
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["fine_tuning_executed"] is False
+    assert "per_query" not in matches[0]
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_500_000
+
+
+def test_v4_3_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_3 local report artifacts"):
+        require_v4_3_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_4_real_blind_ood_holdout_leakage_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_3_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "holdout_manifest.json",
+        "split_manifest.json",
+        "query_fidelity_audit.jsonl",
+        "leakage_audit.jsonl",
+        "excluded_row_ledger.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id
+        and event.get("event_type") == "diagnostic_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod"
+    ]
+
+    assert report["schema_version"] == "rag_v4_4_real_blind_ood_holdout_and_leakage_audit_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["real_blind_ood_holdout_infrastructure_ready"] is True
+    assert report["leakage_audit_infrastructure_ready"] is True
+    assert report["summary"]["single_report_artifact_contract"] is True
+    assert report["summary"]["holdout_manifest_json_created"] is False
+    assert report["summary"]["query_fidelity_audit_jsonl_created"] is False
+    assert report["summary"]["leakage_audit_jsonl_created"] is False
+    assert report["summary"]["excluded_row_ledger_jsonl_created"] is False
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert report["holdout_manifest"]["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert report["holdout_manifest"]["real_holdout_available"] is False
+    assert report["holdout_manifest"]["real_holdout_sufficient"] is False
+    assert report["holdout_manifest"]["minimum_targets"]["pdf_unseen_source_documents"] == 20
+    assert report["holdout_manifest"]["minimum_targets"]["xlsx_unseen_workbooks"] == 8
+    assert metrics["leakage_bucket_count"] == 9
+    assert metrics["leakage_excluded_count"] == 9
+    assert metrics["query_fidelity_audit_present"] is True
+    assert metrics["official_metric_input_rows"] == 0
+    assert {row["bucket"] for row in report["leakage_audit"]} == {
+        "answer_value_in_query",
+        "index_to_content_query",
+        "source_title_leak",
+        "file_title_leak",
+        "exact_query_hack",
+        "major_topic_drift",
+        "unnatural_sheet_or_cell_reference",
+        "target_locator_leak",
+        "gold_supporting_expected_text_leak",
+    }
+    assert all(row["success_evidence_allowed"] is False for row in report["leakage_audit"])
+    assert all(row["excluded_from_holdout"] is True for row in report["leakage_audit"])
+    assert len(matches) == 1
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"] == {"report_json_sha256": sha256_file(report_path)}
+    assert matches[0]["official_metric"] is False
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["real_holdout_available"] is False
+    assert matches[0]["leakage_bucket_count"] == 9
+    assert matches[0]["summary_json_created"] is False
+    assert matches[0]["holdout_manifest_json_created"] is False
+    assert matches[0]["query_fidelity_audit_jsonl_created"] is False
+    assert matches[0]["leakage_audit_jsonl_created"] is False
+    assert matches[0]["excluded_row_ledger_jsonl_created"] is False
+    assert "per_query" not in matches[0]
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_500_000
+
+
+def test_v4_4_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_4 local report artifacts"):
+        require_v4_4_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_5_finetune_readiness_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod"
+    event_type = "diagnostic_v4_5_finetune_readiness_packet_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_5_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "finetune_readiness_packet.json",
+        "fine_tuning_lanes.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    gates = report["readiness_gates"]
+    lanes = report["fine_tuning_lanes"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_5_finetune_readiness_packet_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_readiness_only"] is True
+    assert report["fine_tuning_started"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["route_policy_projection_recorded"] is True
+    assert report["ft_route_policy_dry_run"]["executed"] is False
+    assert report["ft_route_policy_dry_run"]["route_policy_projection_recorded"] is True
+    assert report["readiness_decision"] == "blocked_pending_real_holdout_and_user_owned_policy"
+    assert report["summary"]["single_report_artifact_contract"] is True
+    assert report["summary"]["training_manifest_jsonl_created"] is False
+    assert report["summary"]["fine_tuning_lanes_json_created"] is False
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert gates["split_quality_gate"]["passed"] is False
+    assert gates["leakage_audit_gate"]["passed"] is True
+    assert metrics["readiness_gate_passed"] is False
+    assert metrics["fine_tuning_dataset_exports_created"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert all(lane["lane_ready"] is False for lane in lanes.values())
+    assert all(lane["dataset_export_created"] is False for lane in lanes.values())
+    assert len(matches) == 1
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"] == {"report_json_sha256": sha256_file(report_path)}
+    assert matches[0]["official_metric"] is False
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert matches[0]["readiness_gate_passed"] is False
+    assert matches[0]["split_quality_gate_passed"] is False
+    assert matches[0]["leakage_audit_gate_passed"] is True
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["ft_route_policy_dry_run_executed"] is False
+    assert matches[0]["route_policy_projection_recorded"] is True
+    assert matches[0]["summary_json_created"] is False
+    assert matches[0]["training_manifest_jsonl_created"] is False
+    assert matches[0]["fine_tuning_lanes_json_created"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "per_query" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_500_000
+
+
+def test_v4_5_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_5 local report artifacts"):
+        require_v4_5_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_5_1_holdout_candidate_intake_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod"
+    event_type = "diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_5_1_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "holdout_candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    gate = report["candidate_intake_gate"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_5_1_holdout_candidate_intake_gate_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_intake_only"] is True
+    assert report["candidate_intake_schema_ready"] is True
+    assert report["candidate_manifest_present"] is False
+    assert report["candidate_manifest_rows"] == 0
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["summary"]["single_report_artifact_contract"] is True
+    assert report["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert gate["passed"] is False
+    assert gate["candidate_manifest_present"] is False
+    assert gate["accepted_holdout_candidate_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+        "TEXT_control_only": 0,
+    }
+    assert metrics["candidate_intake_gate_passed"] is False
+    assert metrics["accepted_pdf_holdout_candidates"] == 0
+    assert metrics["accepted_xlsx_holdout_candidates"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["candidate_manifest_present"] is False
+    assert matches[0]["candidate_manifest_rows"] == 0
+    assert matches[0]["candidate_intake_gate_passed"] is False
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["v4_6_ft_dry_run_opened"] is False
+    assert "per_query" not in matches[0]
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_500_000
+
+
+def test_v4_5_1_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_5_1 local report artifacts"):
+        require_v4_5_1_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_5_2_external_source_identity_audit_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod"
+    event_type = "diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    v4_5_1_report_path = (
+        REPORT_DIR
+        / "quality"
+        / "official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod"
+        / "report.json"
+    )
+    v4_5_report_path = (
+        REPORT_DIR
+        / "quality"
+        / "official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod"
+        / "report.json"
+    )
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_5_2_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "holdout_candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "prior_identity_ledger.jsonl",
+        "source_identity_audit.jsonl",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    gate = report["source_identity_audit_gate"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_5_2_external_holdout_candidate_source_identity_audit_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_candidate_source_identity_audit_only"] is True
+    assert report["source_identity_audit_ready"] is True
+    assert report["candidate_manifest_present"] is False
+    assert report["candidate_manifest_rows"] == 0
+    assert report["prior_identity_ledger_present"] is False
+    assert report["prior_identity_rows"] == 0
+    assert report["prior_identity_summary_report_present"] is True
+    assert report["prior_identity_summary_hash_records"] == 102
+    assert report["prior_identity_baseline_present"] is True
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["prior_identity_ledger_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["summary"]["single_report_artifact_contract"] is True
+    assert report["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert gate["passed"] is False
+    assert gate["candidate_manifest_present"] is False
+    assert gate["prior_identity_ledger_present"] is False
+    assert gate["prior_identity_hash_summary_present"] is True
+    assert gate["prior_identity_baseline_present"] is True
+    assert gate["source_identity_collision_count"] == 0
+    assert gate["source_identity_audit_excluded_count"] == 0
+    assert metrics["source_identity_audit_gate_passed"] is False
+    assert metrics["source_identity_collision_count"] == 0
+    assert metrics["source_identity_audit_excluded_count"] == 0
+    assert metrics["prior_identity_summary_report_present"] is True
+    assert metrics["prior_identity_summary_hash_records"] == 102
+    assert metrics["prior_identity_baseline_present"] is True
+    assert metrics["real_holdout_available"] is False
+    assert metrics["real_holdout_sufficient"] is False
+    assert metrics["accepted_pdf_holdout_candidates"] == 0
+    assert metrics["accepted_xlsx_holdout_candidates"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["candidate_manifest_present"] is False
+    assert matches[0]["prior_identity_ledger_present"] is False
+    assert matches[0]["prior_identity_summary_report_present"] is True
+    assert matches[0]["prior_identity_summary_hash_records"] == 102
+    assert matches[0]["prior_identity_baseline_present"] is True
+    assert matches[0]["source_identity_audit_gate_passed"] is False
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert matches[0]["real_holdout_available"] is False
+    assert matches[0]["real_holdout_sufficient"] is False
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["v4_6_ft_dry_run_opened"] is False
+    assert "per_query" not in matches[0]
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report["source_run_references"]["previous_gate_report_json"] == v4_5_1_report_path.relative_to(ROOT).as_posix()
+    assert report["source_run_references"]["previous_gate_report_sha256"] == sha256_file(v4_5_1_report_path)
+    assert report["source_run_references"]["previous_gate_report_sha256"] != sha256_file(v4_5_report_path)
+    assert report_path.stat().st_size < 1_500_000
+
+
+def test_v4_5_2_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_5_2 local report artifacts"):
+        require_v4_5_2_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_5_3_external_holdout_prior_identity_summary_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod"
+    event_type = "diagnostic_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_5_3_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "holdout_candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "prior_identity_ledger.jsonl",
+        "source_identity_audit.jsonl",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    prior_summary = report["prior_identity_ledger_summary"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+    serialized_report = json.dumps(report, ensure_ascii=False)
+
+    assert report["schema_version"] == "rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["prior_source_identity_ledger_summary_only"] is True
+    assert report["prior_identity_collision_baseline_available"] is True
+    assert report["prior_identity_ledger_rows_embedded_in_report"] is False
+    assert report["prior_identity_ledger_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["raw_source_identity_values_embedded"] is False
+    assert report["raw_local_path_values_exposed"] is False
+    assert report["candidate_manifest_present"] is False
+    assert report["candidate_manifest_rows"] == 0
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["summary"]["single_report_artifact_contract"] is True
+    assert report["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+
+    assert prior_summary["identity_key_hash_algorithm"] == "sha256(family:identity_key)"
+    assert prior_summary["raw_source_identity_values_embedded"] is False
+    assert prior_summary["raw_local_path_values_exposed"] is False
+    assert prior_summary["prior_identity_key_counts_by_family"] == {"PDF": 98, "XLSX": 4, "TEXT": 0}
+    assert prior_summary["prior_identity_source_atom_counts_by_family"] == {
+        "PDF": 329,
+        "XLSX": 343,
+        "TEXT": 0,
+    }
+    assert prior_summary["source_registry_family_row_counts"] == {"PDF": 329, "XLSX": 343, "TEXT": 0}
+    assert prior_summary["prior_identity_hash_record_count"] == 102
+    assert prior_summary["path_like_source_identity_count"] == 0
+    assert prior_summary["path_like_identity_key_candidate_count"] == 0
+    assert prior_summary["path_like_raw_locator_row_count"] == 669
+    assert len(prior_summary["prior_identity_hash_records_by_family"]["PDF"]) == 98
+    assert len(prior_summary["prior_identity_hash_records_by_family"]["XLSX"]) == 4
+    for family_rows in prior_summary["prior_identity_hash_records_by_family"].values():
+        for row in family_rows:
+            assert set(row) >= {
+                "source_family",
+                "source_identity_hash",
+                "identity_scope",
+                "source_atom_count",
+            }
+            assert "source_identity_key" not in row
+            assert row["source_identity_hash"]
+
+    assert metrics["prior_identity_hash_record_count"] == 102
+    assert metrics["prior_pdf_identity_count"] == 98
+    assert metrics["prior_xlsx_identity_count"] == 4
+    assert metrics["source_registry_pdf_xlsx_rows_scanned"] == 672
+    assert metrics["real_holdout_available"] is False
+    assert metrics["real_holdout_sufficient"] is False
+    assert metrics["readiness_gate_passed"] is False
+    assert metrics["fine_tuning_dataset_exports_created"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+
+    assert "source_identity_key" not in serialized_report
+    assert '"source_identity":' not in serialized_report
+    assert "D:/" not in serialized_report
+    assert "file://" not in serialized_report
+    assert '"raw_llm_response":' not in serialized_report
+    assert "prompt_manifest" not in serialized_report
+    assert "per_query" not in serialized_report
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["prior_source_identity_ledger_summary_only"] is True
+    assert event["prior_identity_collision_baseline_available"] is True
+    assert event["prior_identity_hash_record_count"] == 102
+    assert event["prior_pdf_identity_count"] == 98
+    assert event["prior_xlsx_identity_count"] == 4
+    assert event["candidate_manifest_present"] is False
+    assert event["source_identity_audit_gate_passed"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["real_holdout_available"] is False
+    assert event["real_holdout_sufficient"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["v4_6_ft_dry_run_opened"] is False
+    assert "per_query" not in event
+    assert "prompt_manifest" not in event
+    assert "raw_llm_response" not in event
+    assert report_path.stat().st_size < 1_500_000
+
+
+def test_v4_5_3_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_5_3 local report artifacts"):
+        require_v4_5_3_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_ft_route_policy_preflight_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod"
+    event_type = "diagnostic_v4_6_ft_route_policy_dry_run_preflight_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "ft_route_policy_dry_run.json",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    guardrails = report["guardrails"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_ft_route_policy_dry_run_preflight_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["ft_route_policy_dry_run_preflight_only"] is True
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_5", "v4_5_1", "v4_5_2", "v4_5_3"}
+    for source_key, source_input in report["source_report_inputs"].items():
+        source_report_path = ROOT / source_input["source_report_json"]
+        assert source_input["source_report_exists"] is True
+        assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+        assert source_input["source_report_schema_version"]
+        assert source_input["source_report_status"]
+        assert source_input["official_metric_input_rows"] == 0
+        assert source_input["promotion_evidence"] is False
+        assert source_input["product_success_evidence_allowed"] is False
+        assert report["source_run_references"][f"{source_key}_report_sha256"] == source_input["source_report_sha256"]
+    assert metrics["all_preflight_gates_passed"] is False
+    assert metrics["v4_5_readiness_gate_passed"] is False
+    assert metrics["v4_5_1_candidate_intake_gate_passed"] is False
+    assert metrics["v4_5_2_source_identity_audit_gate_passed"] is False
+    assert metrics["v4_5_3_prior_identity_baseline_gate_passed"] is True
+    assert metrics["user_owned_gold_policy_gate_passed"] is False
+    assert metrics["official_denominator_gate_passed"] is False
+    assert metrics["promotion_policy_gate_passed"] is False
+    assert metrics["ft_route_policy_dry_run_opened"] is False
+    assert metrics["ft_route_policy_dry_run_executed"] is False
+    assert metrics["fine_tuning_dataset_exports_created"] == 0
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["source_atom_registry_canonical_truth"] is True
+    assert guardrails["source_atom_registry_mutated"] is False
+    assert guardrails["target_locator_used"] is False
+    assert guardrails["gold_locator_used"] is False
+    assert guardrails["direct_normalized_answer_value_query_matching_used"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["source_report_inputs"] == report["source_report_inputs"]
+    assert matches[0]["all_preflight_gates_passed"] is False
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["ft_route_policy_dry_run_executed"] is False
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6 local report artifacts"):
+        require_v4_6_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_1_holdout_manifest_identity_contract_bridge_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod"
+    event_type = "diagnostic_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_1_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "contract_probe_results.jsonl",
+        "holdout_candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    guardrails = report["guardrails"]
+    gate = report["contract_bridge_gate"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_manifest_identity_contract_bridge_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6"}
+    for source_key, source_input in report["source_report_inputs"].items():
+        source_report_path = ROOT / source_input["source_report_json"]
+        assert source_input["source_report_exists"] is True
+        assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+        assert source_input["source_report_holdout_candidate_manifest_contract_hash"] == (
+            report["holdout_candidate_manifest_contract_hash"]
+        )
+        assert source_input["official_metric_input_rows"] == 0
+        assert source_input["promotion_evidence"] is False
+        assert source_input["product_success_evidence_allowed"] is False
+    assert (
+        report["source_report_inputs"]["v4_6"]["source_report_holdout_candidate_manifest_contract_hash_source"]
+        == "v4_6.source_report_inputs"
+    )
+    assert gate["passed"] is True
+    assert gate["contract_hashes_match"] is True
+    assert gate["missing_contract_hash_inputs"] == []
+    assert set(gate["observed_contract_hashes"]) == {
+        "v4_5_1",
+        "v4_5_2",
+        "v4_5_3",
+        "v4_6.source_report_inputs.v4_5_1",
+        "v4_6.source_report_inputs.v4_5_2",
+        "v4_6.source_report_inputs.v4_5_3",
+    }
+    assert gate["identity_probe_passed"] is True
+    assert gate["v4_6_hash_mismatch_rejection_passed"] is True
+    assert metrics["contract_bridge_gate_passed"] is True
+    assert metrics["identity_contract_probe_count"] == 5
+    assert metrics["identity_contract_probe_passed_count"] == 5
+    assert metrics["ft_route_policy_dry_run_opened"] is False
+    assert metrics["v4_7_official_metric_gate_opened"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["contract_bridge_gate_passed"] is True
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["v4_7_official_metric_gate_opened"] is False
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_1_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_1 local report artifacts"):
+        require_v4_6_1_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_2_ft_route_policy_fixture_contract_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod"
+    event_type = "diagnostic_v4_6_2_ft_route_policy_fixture_contract_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_2_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "ft_a_fixture_contract.json",
+        "ft_route_policy_dry_run.json",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    guardrails = report["guardrails"]
+    gate = report["fixture_contract_gate"]
+    fixture_contract = report["ft_a_fixture_contract"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_2_ft_route_policy_fixture_contract_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["ft_route_policy_fixture_contract_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_6", "v4_6_1"}
+    for source_input in report["source_report_inputs"].values():
+        source_report_path = ROOT / source_input["source_report_json"]
+        assert source_input["source_report_exists"] is True
+        assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+        assert source_input["run_id"] == run_id
+        assert source_input["schema_version"] == f"{run_id}_source_report_input_v1"
+        assert source_input["official_metric_input_rows"] == 0
+        assert source_input["promotion_evidence"] is False
+        assert source_input["product_success_evidence_allowed"] is False
+    assert fixture_contract["lane"] == "FT-A"
+    assert fixture_contract["row_source"] == "route_policy_audit_rows_only"
+    assert "expected_answer" in fixture_contract["forbidden_model_input_fields"]
+    assert "raw_prompt" in fixture_contract["forbidden_model_input_fields"]
+    assert gate["fixture_contract_schema_check_passed"] is True
+    assert gate["dry_run_dataset_gate_passed"] is False
+    assert gate["dataset_export_gate_opened"] is False
+    assert gate["ft_route_policy_dry_run_opened"] is False
+    assert gate["ft_route_policy_dry_run_executed"] is False
+    assert gate["fine_tuning_dataset_exports_created"] == 0
+    assert gate["blocked_reasons"] == ["dry_run_and_dataset_export_require_all_v4_6_preflight_gates"]
+    assert metrics["fixture_contract_schema_check_passed"] is True
+    assert metrics["dry_run_dataset_gate_passed"] is False
+    assert metrics["fixture_validation_probe_count"] == 5
+    assert metrics["accepted_fixture_probe_count"] == 1
+    assert metrics["rejected_fixture_probe_count"] == 4
+    assert metrics["gold_oracle_field_rejection_count"] == 3
+    assert metrics["dataset_export_gate_opened"] is False
+    assert metrics["ft_route_policy_dry_run_opened"] is False
+    assert metrics["ft_route_policy_dry_run_executed"] is False
+    assert metrics["fine_tuning_dataset_exports_created"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["fixture_contract_schema_check_passed"] is True
+    assert matches[0]["dry_run_dataset_gate_passed"] is False
+    assert matches[0]["dataset_export_gate_opened"] is False
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["ft_route_policy_dry_run_executed"] is False
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_2_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_2 local report artifacts"):
+        require_v4_6_2_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_3_ft_a_prompt_policy_baseline_schema_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod"
+    event_type = "diagnostic_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_3_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "prompt_policy_baseline_schema.json",
+        "ft_route_policy_dry_run.json",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    guardrails = report["guardrails"]
+    gate = report["prompt_policy_baseline_gate"]
+    schema = report["prompt_policy_baseline_schema"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_3_ft_a_prompt_policy_baseline_schema_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_prompt_policy_baseline_schema_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_6_2"}
+    source_input = report["source_report_inputs"]["v4_6_2"]
+    source_report_path = ROOT / source_input["source_report_json"]
+    assert source_input["source_report_exists"] is True
+    assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+    assert source_input["source_run_id"] == (
+        "official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod"
+    )
+    assert source_input["run_id"] == run_id
+    assert source_input["official_metric_input_rows"] == 0
+    assert schema["prompt_only_baseline_schema_frozen"] is True
+    assert schema["raw_prompt_text_embedded"] is False
+    assert schema["prompt_payload_created"] is False
+    assert schema["raw_llm_response_payload_created"] is False
+    assert gate["prompt_policy_baseline_schema_check_passed"] is True
+    assert gate["fixture_contract_gate_ready"] is True
+    assert gate["dry_run_prompt_baseline_gate_passed"] is False
+    assert gate["ft_route_policy_dry_run_opened"] is False
+    assert gate["ft_route_policy_dry_run_executed"] is False
+    assert metrics["prompt_policy_baseline_schema_check_passed"] is True
+    assert metrics["dry_run_prompt_baseline_gate_passed"] is False
+    assert metrics["future_dry_run_required_output_count"] == 4
+    assert metrics["stop_condition_audit_bucket_count"] == 5
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["promotion_evidence"] is False
+    assert metrics["product_success_evidence_allowed"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["prompt_policy_baseline_schema_check_passed"] is True
+    assert matches[0]["dry_run_prompt_baseline_gate_passed"] is False
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["ft_route_policy_dry_run_executed"] is False
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_3_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_3 local report artifacts"):
+        require_v4_6_3_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_4_ft_a_dry_run_input_manifest_validator_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod"
+    event_type = "diagnostic_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_4_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "dry_run_input_manifest.jsonl",
+        "dry_run_input_manifest_validation.json",
+        "ft_route_policy_dry_run.json",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    guardrails = report["guardrails"]
+    gate = report["dry_run_input_manifest_gate"]
+    contract = report["dry_run_input_manifest_contract"]
+    validation = report["dry_run_input_manifest_validation"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_4_ft_a_dry_run_input_manifest_validator_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_dry_run_input_manifest_validator_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_6_2", "v4_6_3"}
+    for source_input in report["source_report_inputs"].values():
+        source_report_path = ROOT / source_input["source_report_json"]
+        assert source_input["source_report_exists"] is True
+        assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+        assert source_input["run_id"] == run_id
+        assert source_input["official_metric_input_rows"] == 0
+    assert contract["manifest_validator_schema_ready"] is True
+    assert contract["manifest_rows_exported"] is False
+    assert contract["raw_prompt_text_allowed"] is False
+    assert contract["raw_llm_response_allowed"] is False
+    assert validation["fixture_row_count"] == 6
+    assert validation["accepted_manifest_row_count"] == 1
+    assert validation["excluded_manifest_row_count"] == 5
+    assert validation["gold_or_prompt_or_output_rejection_count"] == 3
+    assert gate["manifest_validator_schema_check_passed"] is True
+    assert gate["prompt_policy_baseline_gate_ready"] is True
+    assert gate["dry_run_input_manifest_gate_passed"] is False
+    assert gate["ft_route_policy_dry_run_opened"] is False
+    assert gate["ft_route_policy_dry_run_executed"] is False
+    assert metrics["manifest_validator_schema_check_passed"] is True
+    assert metrics["dry_run_input_manifest_gate_passed"] is False
+    assert metrics["accepted_manifest_row_count"] == 1
+    assert metrics["excluded_manifest_row_count"] == 5
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["promotion_evidence"] is False
+    assert metrics["product_success_evidence_allowed"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["prompt_manifest_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["manifest_validator_schema_check_passed"] is True
+    assert matches[0]["dry_run_input_manifest_gate_passed"] is False
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["ft_route_policy_dry_run_executed"] is False
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_4_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_4 local report artifacts"):
+        require_v4_6_4_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_5_ft_a_dry_run_execution_plan_gate_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod"
+    event_type = "diagnostic_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_5_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "ft_route_policy_dry_run.json",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    guardrails = report["guardrails"]
+    gate = report["dry_run_execution_plan_gate"]
+    contract = report["dry_run_execution_plan_contract"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_5_ft_a_dry_run_execution_plan_gate_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_dry_run_execution_plan_gate_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_6_4"}
+    source_input = report["source_report_inputs"]["v4_6_4"]
+    source_report_path = ROOT / source_input["source_report_json"]
+    assert source_input["source_report_exists"] is True
+    assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+    assert source_input["run_id"] == run_id
+    assert source_input["official_metric_input_rows"] == 0
+    assert source_input["promotion_evidence"] is False
+    assert contract["execution_plan_schema_ready"] is True
+    assert contract["dry_run_execution_plan_exported"] is False
+    assert contract["dry_run_executes_prompts"] is False
+    assert gate["dry_run_execution_plan_schema_check_passed"] is True
+    assert gate["dry_run_execution_plan_gate_passed"] is False
+    assert gate["v4_6_4_source_report_ready"] is True
+    assert gate["v4_6_4_dry_run_input_manifest_gate_passed"] is False
+    assert gate["manifest_rows_exported"] is False
+    assert gate["ft_route_policy_dry_run_opened"] is False
+    assert gate["ft_route_policy_dry_run_executed"] is False
+    assert metrics["dry_run_execution_plan_schema_check_passed"] is True
+    assert metrics["dry_run_execution_plan_gate_passed"] is False
+    assert metrics["dry_run_execution_plan_exported"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["promotion_evidence"] is False
+    assert metrics["product_success_evidence_allowed"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["dry_run_execution_plan_exported"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["prompt_manifest_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["dry_run_execution_plan_schema_check_passed"] is True
+    assert matches[0]["dry_run_execution_plan_gate_passed"] is False
+    assert matches[0]["dry_run_execution_plan_exported"] is False
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["ft_route_policy_dry_run_executed"] is False
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_5_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_5 local report artifacts"):
+        require_v4_6_5_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_6_holdout_gap_blocker_ledger_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod"
+    event_type = "diagnostic_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_6_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "holdout_gap_ledger.json",
+        "dry_run_blocker_ledger.json",
+        "candidate_manifest.jsonl",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    guardrails = report["guardrails"]
+    holdout_gap = report["holdout_gap_ledger"]
+    blockers = report["dry_run_blocker_ledger"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["holdout_gap_and_dry_run_blocker_ledger_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {
+        "v4_4",
+        "v4_5",
+        "v4_5_1",
+        "v4_5_2",
+        "v4_5_3",
+        "v4_6",
+        "v4_6_1",
+        "v4_6_2",
+        "v4_6_3",
+        "v4_6_4",
+        "v4_6_5",
+    }
+    for source_input in report["source_report_inputs"].values():
+        source_report_path = ROOT / source_input["source_report_json"]
+        assert source_input["source_report_exists"] is True
+        assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+        assert source_input["source_report_diagnostic_only"] is True
+        assert source_input["source_report_boundary_flags_clean"] is True
+        assert source_input["official_metric_input_rows"] == 0
+        assert source_input["promotion_evidence"] is False
+        assert source_input["product_success_evidence_allowed"] is False
+
+    assert holdout_gap["real_holdout_available"] is False
+    assert holdout_gap["real_holdout_sufficient"] is False
+    assert holdout_gap["deficits"]["pdf_source_document_disjoint_needed"] == 20
+    assert holdout_gap["deficits"]["xlsx_workbook_disjoint_needed"] == 8
+    assert blockers["all_non_gold_source_gates_passed"] is False
+    assert blockers["dry_run_blocker_count"] >= 6
+    assert metrics["candidate_manifest_exported"] is False
+    assert metrics["dry_run_execution_plan_exported"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["promotion_evidence"] is False
+    assert metrics["product_success_evidence_allowed"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["candidate_manifest_exported"] is False
+    assert guardrails["dry_run_execution_plan_exported"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["prompt_manifest_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["real_holdout_sufficient"] is False
+    assert matches[0]["candidate_manifest_exported"] is False
+    assert matches[0]["all_non_gold_source_gates_passed"] is False
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["v4_7_official_metric_gate_opened"] is False
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_6_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_6 local report artifacts"):
+        require_v4_6_6_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod"
+    event_type = "diagnostic_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_7_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "runtime_gate_parity.json",
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    guardrails = report["guardrails"]
+    parity = report["runtime_gate_parity"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_runtime_gate_parity_bridge_only"] is True
+    assert report["runtime_parity_probe_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6"}
+    assert parity["all_parity_checks_passed"] is True
+    assert parity["runtime_candidate_intake_gate_matches_v4_5_1"] is True
+    assert parity["runtime_source_identity_audit_gate_matches_v4_5_2"] is True
+    assert parity["runtime_prior_hash_collision_matches_v4_5_2"] is True
+    assert parity["raw_candidate_rows_embedded"] is False
+    assert parity["raw_source_identity_values_embedded"] is False
+    assert parity["raw_local_path_values_exposed"] is False
+    assert metrics["real_holdout_sufficient"] is False
+    assert metrics["candidate_manifest_exported"] is False
+    assert metrics["dry_run_execution_plan_exported"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["promotion_evidence"] is False
+    assert metrics["product_success_evidence_allowed"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["candidate_manifest_exported"] is False
+    assert guardrails["candidate_validation_jsonl_created"] is False
+    assert guardrails["source_identity_audit_jsonl_created"] is False
+    assert guardrails["dry_run_execution_plan_exported"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["all_parity_checks_passed"] is True
+    assert matches[0]["real_holdout_sufficient"] is False
+    assert matches[0]["candidate_manifest_exported"] is False
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["v4_7_official_metric_gate_opened"] is False
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    assert "parity-pdf-doc" not in json.dumps(report, ensure_ascii=False)
+    assert "parity-workbook" not in json.dumps(report, ensure_ascii=False)
+    assert "collision-doc" not in json.dumps(report, ensure_ascii=False)
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_7_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_7 local report artifacts"):
+        require_v4_6_7_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_8_runtime_readiness_dependency_freshness_gate_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod"
+    event_type = "diagnostic_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_8_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "dependency_freshness_gate.json",
+        "holdout_acquisition_requirements.json",
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    metrics = report["metrics"]
+    guardrails = report["guardrails"]
+    freshness = report["dependency_freshness_gate"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_8_runtime_readiness_dependency_freshness_gate_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["runtime_readiness_dependency_freshness_gate_only"] is True
+    assert report["external_holdout_acquisition_requirements_packet_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6", "v4_6_7"}
+    for source_input in report["source_report_inputs"].values():
+        source_report_path = ROOT / source_input["source_report_json"]
+        assert source_report_path.exists()
+        assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+        assert source_input["source_report_hash_current"] is True
+        assert source_input["official_metric_input_rows"] == 0
+        assert source_input["promotion_evidence"] is False
+        assert source_input["product_success_evidence_allowed"] is False
+    assert freshness["gate_passed"] is True
+    assert freshness["all_source_report_hashes_current"] is True
+    assert freshness["runtime_readiness_dto_projection_matches_v4_6_6"] is True
+    assert freshness["holdout_validation_contract_hash_matches"] is True
+    assert freshness["forbidden_surface_violation_count"] == 0
+    assert freshness["raw_source_identity_or_path_leak_count"] == 0
+    assert freshness["official_or_promotion_flag_open_count"] == 0
+    assert metrics["real_holdout_sufficient"] is False
+    assert metrics["candidate_manifest_exported"] is False
+    assert metrics["dry_run_input_manifest_exported"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert metrics["promotion_evidence"] is False
+    assert metrics["product_success_evidence_allowed"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["candidate_manifest_exported"] is False
+    assert guardrails["candidate_validation_jsonl_created"] is False
+    assert guardrails["source_identity_audit_jsonl_created"] is False
+    assert guardrails["dry_run_execution_plan_exported"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["all_source_report_hashes_current"] is True
+    assert matches[0]["runtime_readiness_dto_projection_matches_v4_6_6"] is True
+    assert matches[0]["holdout_validation_contract_hash_matches"] is True
+    assert matches[0]["real_holdout_sufficient"] is False
+    assert matches[0]["candidate_manifest_exported"] is False
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["v4_7_official_metric_gate_opened"] is False
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    serialized = json.dumps(report, ensure_ascii=False)
+    assert "parity-pdf-doc" not in serialized
+    assert "parity-workbook" not in serialized
+    assert "collision-doc" not in serialized
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_8_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_8 local report artifacts"):
+        require_v4_6_8_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_9_holdout_candidate_duplicate_hygiene_gate_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod"
+    event_type = "diagnostic_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_9_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "duplicate_hygiene_gate.json",
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    hygiene = report["duplicate_hygiene_gate"]
+    guardrails = report["guardrails"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_duplicate_hygiene_gate_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_6_7", "v4_6_8"}
+    for source_input in report["source_report_inputs"].values():
+        source_report_path = ROOT / source_input["source_report_json"]
+        assert source_report_path.exists()
+        assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+        assert source_input["official_metric_input_rows"] == 0
+        assert source_input["promotion_evidence"] is False
+        assert source_input["product_success_evidence_allowed"] is False
+    assert hygiene["gate_passed"] is True
+    assert hygiene["runtime_invalid_first_duplicate_rejected"] is True
+    assert hygiene["script_invalid_first_duplicate_rejected"] is True
+    assert hygiene["runtime_script_duplicate_hygiene_consistent"] is True
+    assert hygiene["distinct_query_rows_preserved_without_identity_count_inflation"] is True
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["candidate_manifest_exported"] is False
+    assert guardrails["candidate_validation_jsonl_created"] is False
+    assert guardrails["source_identity_audit_jsonl_created"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["raw_source_identity_values_embedded"] is False
+    assert guardrails["raw_candidate_rows_embedded"] is False
+    assert guardrails["raw_local_path_values_exposed"] is False
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["duplicate_hygiene_gate_passed"] is True
+    assert matches[0]["runtime_invalid_first_duplicate_rejected"] is True
+    assert matches[0]["script_invalid_first_duplicate_rejected"] is True
+    assert matches[0]["real_holdout_sufficient"] is False
+    assert matches[0]["candidate_manifest_exported"] is False
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["v4_7_official_metric_gate_opened"] is False
+    assert matches[0]["fine_tuning_dataset_exports_created"] == 0
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    serialized = json.dumps(report, ensure_ascii=False)
+    assert "shadowed" not in serialized
+    assert "shadow-query" not in serialized
+    assert "pdf-invalid-first" not in serialized
+    assert "pdf-valid-looking-duplicate" not in serialized
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_9_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_9 local report artifacts"):
+        require_v4_6_9_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_10_external_holdout_manifest_gate_replay_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod"
+    event_type = "diagnostic_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_10_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "external_holdout_candidate_manifest_gate_replay.json",
+        "official_metric_opening_preflight.json",
+        "official_metric_input_rows.jsonl",
+        "official_metric_results.jsonl",
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    replay = report["external_holdout_candidate_manifest_gate_replay"]
+    preflight = report["official_metric_opening_preflight"]
+    guardrails = report["guardrails"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_candidate_manifest_gate_replay_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6", "v4_6_8", "v4_6_9"}
+    for source_input in report["source_report_inputs"].values():
+        source_report_path = ROOT / source_input["source_report_json"]
+        assert source_report_path.exists()
+        assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+        assert source_input["official_metric_input_rows"] == 0
+        assert source_input["promotion_evidence"] is False
+        assert source_input["product_success_evidence_allowed"] is False
+    assert replay["gate_passed"] is False
+    assert replay["candidate_manifest_present"] is False
+    assert replay["candidate_rows_replayed"] == 0
+    assert replay["accepted_pdf_holdout_candidates"] == 0
+    assert replay["accepted_xlsx_holdout_candidates"] == 0
+    assert replay["real_holdout_sufficient"] is False
+    assert preflight["gate_passed"] is False
+    assert preflight["gate_opened"] is False
+    assert preflight["user_owned_required_input_count"] == 6
+    assert preflight["user_owned_required_inputs_present_count"] == 0
+    assert preflight["missing_user_owned_input_count"] == 6
+    assert preflight["codex_owned_dependency_checks_passed"] is True
+    assert preflight["real_holdout_sufficient"] is False
+    assert preflight["official_metric_rows_authorized"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["review_csv_created"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["official_metric_rows_created"] == 0
+    assert guardrails["raw_source_identity_values_embedded"] is False
+    assert guardrails["raw_candidate_rows_embedded"] is False
+    assert guardrails["raw_local_path_values_exposed"] is False
+    assert len(matches) == 1
+    assert matches[0]["schema_version"] == f"{run_id}_status_event_v1"
+    assert matches[0]["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert matches[0]["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert matches[0]["external_holdout_candidate_manifest_gate_replay_only"] is True
+    assert matches[0]["gate_passed"] is False
+    assert matches[0]["gate_opened"] is False
+    assert matches[0]["candidate_manifest_present"] is False
+    assert matches[0]["candidate_rows_replayed"] == 0
+    assert matches[0]["missing_user_owned_input_count"] == 6
+    assert matches[0]["official_metric"] is False
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert matches[0]["product_success_evidence_allowed"] is False
+    assert matches[0]["real_holdout_sufficient"] is False
+    assert matches[0]["candidate_manifest_exported"] is False
+    assert matches[0]["ft_route_policy_dry_run_opened"] is False
+    assert matches[0]["v4_7_official_metric_gate_opened"] is False
+    assert "prompt_manifest" not in matches[0]
+    assert "raw_llm_response" not in matches[0]
+    serialized = json.dumps(report, ensure_ascii=False)
+    assert "source_identity_key" not in serialized
+    assert "D:/" not in serialized
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_10_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_10 local report artifacts"):
+        require_v4_6_10_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_11_ft_a_runtime_input_validation_route_parity_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod"
+    event_type = "diagnostic_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_11_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "ft_a_runtime_input_validation_route_parity.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    parity = report["ft_a_runtime_input_validation_route_parity"]
+    guardrails = report["guardrails"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_11_ft_a_runtime_input_validation_route_parity_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_runtime_input_validation_route_parity_only"] is True
+    assert report["runtime_parity_probe_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_6_4", "v4_6_5", "v4_6_6", "v4_6_10"}
+    for source_input in report["source_report_inputs"].values():
+        source_report_path = ROOT / source_input["source_report_json"]
+        assert source_report_path.exists()
+        assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+        assert source_input["source_report_boundary_flags_clean"] is True
+        assert source_input["official_metric_input_rows"] == 0
+        assert source_input["promotion_evidence"] is False
+        assert source_input["product_success_evidence_allowed"] is False
+        assert source_input["live_db_index_cache_readiness"] is False
+    assert parity["route_path"] == "/internal/rag/diagnostic/ft-a/dry-run-input/validate"
+    assert parity["feature_flag_default_enabled"] is False
+    assert parity["production_orchestrator_mode_enabled"] is False
+    assert parity["disabled_route_status_code"] == 404
+    assert parity["production_disabled_route_status_code"] == 404
+    assert parity["enabled_valid_probe_status_code"] == 200
+    assert parity["enabled_validation_error_status_code"] == 422
+    assert parity["script_runtime_counts_match"] is True
+    assert parity["contract_metadata_bridge_present"] is True
+    assert parity["runtime_response_sanitized"] is True
+    assert parity["runtime_rejects_operational_metric_identity_fields"] is True
+    assert parity["enabled_validation_error_raw_input_redacted"] is True
+    assert parity["service_route_count_parity"]["accepted_manifest_row_count"] == {
+        "service": 1,
+        "route": 1,
+        "script": 1,
+    }
+    assert parity["service_route_count_parity"]["excluded_manifest_row_count"] == {
+        "service": 1,
+        "route": 1,
+        "script": 1,
+    }
+    assert parity["route_exclusion_reason_counts"] == {"unsupported_prompt_policy_id": 1}
+    assert parity["script_exclusion_reason_counts"] == {"unsupported_prompt_policy_id": 1}
+    assert parity["leaky_probe_exclusion_reason_counts"] == {
+        "forbidden_prompt_gold_or_output_field_present": 2
+    }
+    assert parity["response_boundary"]["official_metric_input_rows"] == 0
+    assert parity["response_boundary"]["promotion_evidence"] is False
+    assert parity["response_boundary"]["protected_namespaces_touched"] == []
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert guardrails["raw_runtime_request_body_embedded"] is False
+    assert guardrails["raw_runtime_response_body_embedded"] is False
+    assert guardrails["raw_local_path_values_exposed"] is False
+    assert guardrails["raw_source_identity_values_embedded"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["ft_a_runtime_input_validation_route_parity_only"] is True
+    assert event["runtime_parity_probe_only"] is True
+    assert event["script_runtime_counts_match"] is True
+    assert event["runtime_response_sanitized"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    serialized = json.dumps(report, ensure_ascii=False)
+    for forbidden in (
+        "이전 셀의 값을 설명해줘",
+        "hidden prompt",
+        "hidden response",
+        "secret answer",
+        "secret support",
+        "pdf-source-identity",
+        "D:/private",
+        "row-ok",
+        "query-ok",
+        "per_query",
+    ):
+        assert forbidden not in serialized
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_11_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_11 local report artifacts"):
+        require_v4_6_11_local_artifacts(tmp_path / "missing-report.json")
+
+
+def test_v4_6_12_external_holdout_runtime_replay_route_parity_report_is_hash_locked_compact_and_complete() -> None:
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod"
+    event_type = "diagnostic_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod"
+    output_dir = REPORT_DIR / "quality" / run_id
+    report_path = output_dir / "report.json"
+    status_path = REPORT_DIR / "status.jsonl"
+    require_v4_6_12_local_artifacts(report_path, status_path)
+
+    assert {path.name for path in output_dir.iterdir()} == {"report.json"}
+    for forbidden_name in (
+        "summary.json",
+        "metrics.json",
+        "external_holdout_runtime_replay_route_parity.json",
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        assert not (output_dir / forbidden_name).exists()
+
+    report = read_json(report_path)
+    parity = report["external_holdout_runtime_replay_route_parity"]
+    guardrails = report["guardrails"]
+    events = read_jsonl(status_path)
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["schema_version"] == "rag_v4_6_12_external_holdout_runtime_replay_route_parity_report_v1"
+    assert report["run_id"] == run_id
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_runtime_replay_route_parity_only"] is True
+    assert report["runtime_parity_probe_only"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert set(report["source_report_inputs"]) == {"v4_6_7", "v4_6_10", "v4_6_11"}
+    for source_input in report["source_report_inputs"].values():
+        source_report_path = ROOT / source_input["source_report_json"]
+        assert source_report_path.exists()
+        assert source_input["source_report_sha256"] == sha256_file(source_report_path)
+        assert source_input["source_report_boundary_flags_clean"] is True
+        assert source_input["official_metric_input_rows"] == 0
+        assert source_input["promotion_evidence"] is False
+        assert source_input["product_success_evidence_allowed"] is False
+        assert source_input["live_db_index_cache_readiness"] is False
+    assert parity["route_path"] == "/internal/rag/diagnostic/holdout-candidates/validate"
+    assert parity["feature_flag_default_enabled"] is False
+    assert parity["production_orchestrator_mode_enabled"] is False
+    assert parity["disabled_route_status_code"] == 404
+    assert parity["production_disabled_route_status_code"] == 404
+    assert parity["enabled_target_sufficient_status_code"] == 200
+    assert parity["enabled_validation_error_status_code"] == 422
+    assert parity["enabled_validation_error_raw_input_redacted"] is True
+    assert parity["route_response_sanitized"] is True
+    assert parity["transient_external_manifest_deleted"] is True
+    assert parity["route_candidate_counts_match_v4_6_10_replay"] is True
+    assert parity["route_source_identity_audit_matches_v4_6_10_replay"] is True
+    assert parity["route_rejects_prompt_path_metric_and_readiness_fields"] is True
+    assert parity["v4_6_10_replay_real_holdout_sufficient"] is False
+    assert report["candidate_manifest_present"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["real_holdout_sufficient"] is False
+    assert guardrails["raw_runtime_request_body_embedded"] is False
+    assert guardrails["raw_runtime_response_body_embedded"] is False
+    assert guardrails["raw_candidate_rows_embedded"] is False
+    assert guardrails["raw_local_path_values_exposed"] is False
+    assert guardrails["raw_source_identity_values_embedded"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["external_holdout_runtime_replay_route_parity_only"] is True
+    assert event["runtime_parity_probe_only"] is True
+    assert event["route_candidate_counts_match_v4_6_10_replay"] is True
+    assert event["route_response_sanitized"] is True
+    assert event["candidate_manifest_exported"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    serialized = json.dumps(report, ensure_ascii=False)
+    for forbidden in (
+        "pdf-v4612",
+        "xlsx-v4612",
+        "pdf-doc-v4612",
+        "workbook-v4612",
+        "hidden holdout prompt",
+        "secret holdout answer",
+        "D:/private",
+        "candidate_manifest_path",
+        "per_query",
+    ):
+        assert forbidden not in serialized
+    assert report_path.stat().st_size < 1_000_000
+
+
+def test_v4_6_12_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
+    with pytest.raises(pytest.fail.Exception, match="missing v4_6_12 local report artifacts"):
+        require_v4_6_12_local_artifacts(tmp_path / "missing-report.json")
 
 
 def test_phase1_diagnostic_contract_closure_after_v3_22_report_flags_are_hash_locked_and_non_promotional() -> None:

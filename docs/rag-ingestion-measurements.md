@@ -1,6 +1,311 @@
+<!-- official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod:measurements-entry:start -->
+### v4_7 Preofficial External Holdout Candidate Manifest Registration
+
+- Run: `official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod`
+- v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod/report.json`
+- Source evidence: v4_5_1/v4_5_2/v4_6_10-compatible candidate manifest contract, v4_5_3 prior identity hash baseline, and optional external candidate manifest input. This is pre-official registration evidence only.
+- Interpretation: accepted counts here are candidate registration counters, not official metric rows, not promotion evidence, not product success evidence, and not FT-A execution.
+
+| Counter | Value |
+|---|---:|
+| preofficial_external_holdout_candidate_manifest_registration_only | true |
+| registration_gate_passed | true |
+| candidate_manifest_available | true |
+| candidate_rows_registered | 204 |
+| accepted_pdf_holdout_candidates | 20/20 |
+| accepted_xlsx_holdout_candidates | 8/8 |
+| real_query_fidelity_included_rows_per_family | 100/100 PDF, 104/100 XLSX |
+| rejected_candidate_count | 0 |
+| source_identity_collision_count | 0 |
+| preofficial_candidate_thresholds_met | true |
+| real_holdout_sufficient | false |
+| official_metric_input_rows | 0 |
+| v4_7_official_metric_gate_opened | false |
+| product_success_evidence_allowed | false |
+| promotion_evidence | false |
+| live_db_index_cache_readiness | false |
+
+Artifact policy: single ignored `report.json`; no candidate manifest sidecar, validation JSONL, source-identity audit JSONL, dry-run input manifest, prompt manifest, raw LLM response payload, training manifest, dataset export, checkpoint, review CSV, official metric results, or per-run Markdown is created. Raw candidate rows, raw source identities, and raw local paths are not embedded.
+<!-- official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod:measurements-entry:end -->
+<!-- v4_6_input_waiting_ft_a_route_policy_and_external_holdout_readiness_closeout:measurements-entry:start -->
+### v4_6 Input-Waiting FT-A Route-Policy And External-Holdout Readiness Closeout
+
+- Marker: `v4_6_input_waiting_ft_a_route_policy_and_external_holdout_readiness_closeout`
+- Latest run: `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`
+- Interpretation: v4_6 completed Codex-owned diagnostic/preflight work and is waiting on external source-disjoint holdout candidate manifest acquisition/registration plus user-owned policy decisions. This is a closeout marker only, not a new parity probe, not v4_7, not official evaluation, and not product/live readiness.
+
+| Counter | Value |
+|---|---:|
+| v4_6_codex_owned_diagnostic_preflight_work_completed | true |
+| v4_6_7_through_v4_6_12_checks_only | route parity, dependency freshness, duplicate hygiene, manifest replay, redaction checks |
+| candidate_manifest_present | false |
+| real_holdout_sufficient | false |
+| accepted_pdf_holdout_candidates | 0/20 |
+| accepted_xlsx_holdout_candidates | 0/8 |
+| real_query_fidelity_included_rows_per_family | 0/100 PDF, 0/100 XLSX |
+| v4_5_readiness_gate | false |
+| v4_5_1_intake_gate | false |
+| v4_5_2_source_identity_audit_gate | false |
+| user_owned_gold_qrels_policy_gate | false |
+| official_denominator_gate | false |
+| promotion_policy_gate | false |
+| v4_7_official_metric_gate_opened | false |
+| official_metric_input_rows | 0 |
+| product_success_evidence_allowed | false |
+| promotion_evidence | false |
+| live_db_index_cache_readiness | false |
+
+No candidate manifest, validation sidecar, dry-run input manifest, prompt payload, dataset, job, checkpoint, official metric row, product-success evidence, promotion evidence, or live-readiness claim is created by this closeout marker.
+<!-- v4_6_input_waiting_ft_a_route_policy_and_external_holdout_readiness_closeout:measurements-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod:measurements-entry:start -->
+### v4_6_12 External Holdout Runtime Replay Route Parity
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod/report.json`
+- Source evidence: v4_6_7/v4_6_10/v4_6_11 report hashes, FastAPI holdout-candidate validation route, and transient external-manifest replay against v4_6_10.
+- Interpretation: route/replay parity and redaction are deterministic contract checks only. This is not real external holdout registration, not candidate manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, and not product/live readiness.
+
+| Counter | Value |
+|---|---:|
+| external_holdout_runtime_replay_route_parity_only | true |
+| runtime_parity_probe_only | true |
+| route_candidate_counts_match_v4_6_10_replay | true |
+| route_source_identity_audit_matches_v4_6_10_replay | true |
+| enabled_validation_error_raw_input_redacted | true |
+| route_response_sanitized | true |
+| transient_external_manifest_deleted | true |
+| fastapi_readiness_default_report | v4_6_12 |
+| real_holdout_sufficient | false |
+| candidate_manifest_exported | false |
+| dry_run_input_manifest_exported | false |
+| ft_route_policy_dry_run_opened | false |
+| v4_7_official_metric_gate_opened | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Artifact policy: single ignored `report.json`; no route-parity sidecar, candidate manifest, validation JSONL, source-identity audit JSONL, dry-run input manifest, prompt manifest, raw LLM response payload, training manifest, dataset export, checkpoint, review CSV, official metric result, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod:measurements-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod:measurements-entry:measurements-entry:start -->
+### v4_6_11 FT-A Runtime Input Validation Route Parity
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod/report.json`
+- Source evidence: v4_6_4/v4_6_5/v4_6_6/v4_6_10 report hashes and the FastAPI diagnostic/internal FT-A dry-run input validation route.
+- Interpretation: route parity and redaction are measured as deterministic contract checks only. This is not dry-run input manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, not product-success evidence, and not live readiness.
+
+| Counter | Value |
+|---|---:|
+| ft_a_runtime_input_validation_route_parity_only | true |
+| runtime_parity_probe_only | true |
+| disabled_route_status_code | 404 |
+| production_disabled_route_status_code | 404 |
+| enabled_valid_probe_status_code | 200 |
+| enabled_validation_error_status_code | 422 |
+| script_runtime_counts_match | true |
+| contract_metadata_bridge_present | true |
+| runtime_response_sanitized | true |
+| runtime_rejects_operational_metric_identity_fields | true |
+| dry_run_input_manifest_exported | false |
+| ft_route_policy_dry_run_opened | false |
+| ft_route_policy_dry_run_executed | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Artifact policy: single ignored `report.json`; no route-parity sidecar, dry-run input manifest, prompt manifest, raw LLM response payload, training manifest, dataset export, checkpoint, review CSV, official metric result, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod:measurements-entry:measurements-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod:measurements-entry:start -->
+### v4_6_10 External Holdout Candidate Manifest Gate Replay
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod`
+- v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod/report.json`
+- Source evidence: v4_5_1/v4_5_2/v4_5_3/v4_6_6/v4_6_8/v4_6_9 report hashes and the empty external holdout candidate manifest boundary. Optional `--candidate-manifest` replay is input-only and records redacted/hash metadata plus aggregate v4_5_1/v4_5_2 gate outcomes without writing sidecars.
+- Interpretation: the default artifact is an input-waiting manifest replay and v4_7-closed preflight only. Optional manifest replay is a no-write gate check, not external holdout acquisition, not candidate manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, and not product/live readiness.
+
+| Counter | Value |
+|---|---:|
+| external_holdout_candidate_manifest_gate_replay_only | true |
+| gate_passed | false |
+| candidate_manifest_present | false |
+| candidate_manifest_input_provided | false |
+| candidate_rows_replayed | 0 |
+| fastapi_readiness_default_report_at_v4_6_10 | v4_6_10 |
+| fastapi_readiness_projects_manifest_replay | true |
+| fastapi_readiness_rejects_inconsistent_replay_counters | true |
+| missing_user_owned_input_count | 6 |
+| codex_owned_dependency_checks_passed | true |
+| real_holdout_sufficient | false |
+| candidate_manifest_exported | false |
+| dry_run_input_manifest_exported | false |
+| ft_route_policy_dry_run_opened | false |
+| v4_7_official_metric_gate_opened | false |
+| official_metric_input_rows | 0 |
+
+Artifact policy: single ignored `report.json`; no manifest replay sidecar, official metric preflight sidecar, candidate manifest, validation JSONL, source-identity audit JSONL, dry-run plan/input manifest, prompt manifest, raw LLM response payload, training manifest, dataset export, checkpoint, review CSV, official metric results, or per-run Markdown is created. Optional manifest input is not copied into the run directory and raw candidate rows/source identities are not embedded in v4_6_10. This is not a v4_7 opening.
+<!-- official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod:measurements-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod:measurements-entry:start -->
+### v4_6_9 Holdout Candidate Duplicate Hygiene Gate
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod`
+- v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod/report.json`
+- Source evidence: sanitized in-memory duplicate probes against the default-disabled FastAPI holdout validator and v4_5_1 intake gate.
+- Interpretation: this is a deterministic duplicate-hygiene check only. It is not real external holdout acquisition, not candidate manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, and not product/live readiness.
+
+| Counter | Value |
+|---|---:|
+| holdout_candidate_duplicate_hygiene_gate_only | true |
+| duplicate_hygiene_gate_passed | true |
+| runtime_invalid_first_duplicate_rejected | true |
+| script_invalid_first_duplicate_rejected | true |
+| runtime_script_duplicate_hygiene_consistent | true |
+| distinct_query_rows_preserved_without_identity_count_inflation | true |
+| accepted_duplicate_row_count | 0 |
+| real_holdout_sufficient | false |
+| candidate_manifest_exported | false |
+| dry_run_input_manifest_exported | false |
+| ft_route_policy_dry_run_opened | false |
+| v4_7_official_metric_gate_opened | false |
+| official_metric_input_rows | 0 |
+
+Artifact policy: single ignored `report.json`; no duplicate-hygiene sidecar, candidate manifest sidecar, validation JSONL, source-identity audit JSONL, dry-run plan/input manifest, prompt manifest, raw LLM response payload, training manifest, dataset export, checkpoint, review CSV, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod:measurements-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod:measurements-entry:start -->
+### v4_6_8 Runtime Readiness Dependency Freshness Gate
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod`
+- v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod/report.json`
+- Source evidence: current report hashes for v4_5_1, v4_5_2, v4_5_3, v4_6_6, and v4_6_7 plus FastAPI readiness/holdout-candidate validation DTO projections.
+- Interpretation: this is a deterministic dependency-freshness and acquisition-requirements packet only. It is not real external holdout acquisition, not candidate manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, and not product/live readiness.
+
+| Counter | Value |
+|---|---:|
+| runtime_readiness_dependency_freshness_gate_only | true |
+| external_holdout_acquisition_requirements_packet_only | true |
+| all_source_report_hashes_current | true |
+| runtime_readiness_dto_projection_matches_v4_6_6 | true |
+| holdout_validation_contract_hash_matches | true |
+| forbidden_surface_violation_count | 0 |
+| raw_source_identity_or_path_leak_count | 0 |
+| real_holdout_sufficient | false |
+| candidate_manifest_exported | false |
+| dry_run_input_manifest_exported | false |
+| ft_route_policy_dry_run_opened | false |
+| v4_7_official_metric_gate_opened | false |
+| official_metric_input_rows | 0 |
+
+Artifact policy: single ignored `report.json`; no acquisition sidecar, candidate manifest sidecar, validation JSONL, source-identity audit JSONL, dry-run plan/input manifest, prompt manifest, raw LLM response payload, training manifest, dataset export, checkpoint, review CSV, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod:measurements-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod:measurements-entry:start -->
+### v4_6_7 Holdout Candidate Runtime Gate Parity Bridge
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod`
+- v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod/report.json`
+- Source evidence: in-memory parity probes against FastAPI holdout candidate validation, v4_5_1 intake, v4_5_2 source-identity audit, and v4_5_3-compatible prior hash records.
+- Interpretation: this is a deterministic contract-parity check only. It is not real external holdout acquisition, not manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, and not product/live readiness.
+
+| Counter | Value |
+|---|---:|
+| holdout_candidate_runtime_gate_parity_bridge_only | true |
+| runtime_parity_probe_only | true |
+| probe_case_count | 2 |
+| all_parity_checks_passed | true |
+| runtime_candidate_intake_gate_matches_v4_5_1 | true |
+| runtime_source_identity_audit_gate_matches_v4_5_2 | true |
+| runtime_prior_hash_collision_matches_v4_5_2 | true |
+| real_holdout_sufficient | false |
+| candidate_manifest_exported | false |
+| dry_run_execution_plan_exported | false |
+| dry_run_input_manifest_exported | false |
+| v4_7_official_metric_gate_opened | false |
+| official_metric_input_rows | 0 |
+
+Artifact policy: single ignored `report.json`; no runtime parity sidecar, candidate manifest sidecar, validation JSONL, source-identity audit JSONL, dry-run plan/input manifest, prompt manifest, raw LLM response payload, training manifest, dataset export, checkpoint, review CSV, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod:measurements-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod:measurements-entry:start -->
+### v4_6_6 Holdout Gap And Dry-Run Blocker Ledger
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod`
+- v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, holdout-gap and dry-run-blocker ledger only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod/report.json`
+- Source evidence: v4_4 through v4_6_5 diagnostic reports.
+
+| Field | Value |
+| --- | --- |
+| holdout_gap_and_dry_run_blocker_ledger_only | true |
+| real_holdout_sufficient | false |
+| candidate_manifest_present | false |
+| candidate_manifest_exported | false |
+| accepted_pdf_holdout_candidates | 0 |
+| accepted_xlsx_holdout_candidates | 0 |
+| pdf_source_document_disjoint_needed | 20 |
+| xlsx_workbook_disjoint_needed | 8 |
+| all_non_gold_source_gates_passed | false |
+| dry_run_blocker_count | 7 |
+| dry_run_execution_plan_exported | false |
+| dry_run_input_manifest_exported | false |
+| ft_route_policy_dry_run_opened | false |
+| ft_route_policy_dry_run_executed | false |
+| v4_7_official_metric_gate_opened | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Counter source-of-truth: `report.json` embeds holdout_gap_ledger, dry_run_blocker_ledger, source_report_inputs, metrics, guardrails, verification, residual_risks, and next_recommendation. There is no holdout-gap sidecar, dry-run-blocker sidecar, candidate manifest sidecar, dry-run execution plan sidecar, dry-run input manifest sidecar, prompt manifest, raw LLM response, dataset sidecar, training manifest, training job, checkpoint, review CSV, official metric result, or per-run Markdown.
+<!-- official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod:measurements-entry:start -->
+### v4_6_5 FT-A Dry-Run Execution Plan Gate
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod`
+- v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, FT-A dry-run execution-plan-gate only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod/report.json`
+- Source evidence: v4_6_4 FT-A dry-run input manifest validator report.
+
+| Field | Value |
+| --- | --- |
+| ft_a_dry_run_execution_plan_gate_only | true |
+| dry_run_execution_plan_schema_check_passed | true |
+| dry_run_execution_plan_gate_passed | false |
+| dry_run_execution_plan_exported | false |
+| dry_run_input_manifest_exported | false |
+| ft_route_policy_dry_run_opened | false |
+| ft_route_policy_dry_run_executed | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Counter source-of-truth: `report.json` embeds the dry-run execution plan contract, dry_run_execution_plan_gate, source_report_inputs, metrics, guardrails, verification, residual_risks, and next_recommendation. There is no dry-run execution plan sidecar, dry-run input manifest sidecar, prompt manifest, raw LLM response, dataset sidecar, training manifest, training job, checkpoint, review CSV, official metric result, or per-run Markdown.
+<!-- official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod:measurements-entry:end -->
+
 # RAG Ingestion Measurements
 
-Last updated: 2026-05-26 KST.
+Last updated: 2026-05-27 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new
@@ -18,6 +323,453 @@ Historical `_archive/legacy` artifact paths in older entries are logical
 provenance names. Their physical generated payloads may live in the external
 runtime archive under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod:measurements-entry:start -->
+### v4_6_4 FT-A Dry-Run Input Manifest Validator
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, validator-only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod/report.json`
+- Source evidence: v4_6_2 FT-A route-policy fixture contract and v4_6_3 prompt-policy baseline schema reports.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| ft_a_dry_run_input_manifest_validator_only | true |
+| manifest_validator_schema_check_passed | true |
+| dry_run_input_manifest_gate_passed | false |
+| fixture_contract_gate_ready | true |
+| prompt_policy_baseline_gate_ready | true |
+| fixture_row_count | 6 |
+| accepted_manifest_row_count | 1 |
+| excluded_manifest_row_count | 5 |
+| gold_or_prompt_or_output_rejection_count | 3 |
+| manifest_rows_exported | false |
+| raw_prompt_text_embedded | false |
+| prompt_payload_created | false |
+| prompt_manifest_created | false |
+| raw_llm_response_payload_created | false |
+| ft_route_policy_dry_run_opened | false |
+| ft_route_policy_dry_run_executed | false |
+| v4_7_official_metric_gate_opened | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Counter source-of-truth: `report.json` embeds the dry-run input manifest contract, validation probes, dry_run_input_manifest_gate, metrics, guardrails, verification, residual_risks, and next_recommendation. There is no dry-run input manifest sidecar, prompt manifest, raw LLM response, dataset sidecar, training manifest, training job, checkpoint, review CSV, or per-run Markdown.
+<!-- official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod:measurements-entry:start -->
+### v4_6_3 FT-A Prompt-Policy Baseline Schema
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, schema-only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod/report.json`
+- Source evidence: v4_6_2 FT-A route-policy fixture contract report.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| ft_a_prompt_policy_baseline_schema_only | true |
+| prompt_policy_baseline_schema_check_passed | true |
+| dry_run_prompt_baseline_gate_passed | false |
+| fixture_contract_gate_ready | true |
+| future_dry_run_required_output_count | 4 |
+| stop_condition_audit_bucket_count | 5 |
+| raw_prompt_text_embedded | false |
+| prompt_payload_created | false |
+| raw_llm_response_payload_created | false |
+| ft_route_policy_dry_run_opened | false |
+| ft_route_policy_dry_run_executed | false |
+| v4_7_official_metric_gate_opened | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Counter source-of-truth: `report.json` embeds the prompt-policy baseline schema, prompt_policy_baseline_gate, metrics, guardrails, verification, residual_risks, and next_recommendation. There is no raw prompt text, prompt payload, raw LLM response, dataset sidecar, training manifest, training job, checkpoint, review CSV, or per-run Markdown.
+<!-- official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod:measurements-entry:start -->
+### v4_6_2 FT-A Route-Policy Fixture Contract
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, fixture-contract-only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod/report.json`
+- Source evidence: v4_6 preflight report and v4_6_1 holdout manifest identity contract bridge report.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| ft_route_policy_fixture_contract_only | true |
+| fixture_contract_schema_ready | true |
+| fixture_contract_schema_check_passed | true |
+| dry_run_dataset_gate_passed | false |
+| fixture_validation_probe_count | 5 |
+| accepted_fixture_probe_count | 1 |
+| rejected_fixture_probe_count | 4 |
+| gold_oracle_field_rejection_count | 3 |
+| dataset_export_gate_opened | false |
+| ft_route_policy_dry_run_opened | false |
+| ft_route_policy_dry_run_executed | false |
+| v4_7_official_metric_gate_opened | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Counter source-of-truth: `report.json` embeds the FT-A fixture contract, validation probes, fixture_contract_gate, metrics, guardrails, verification, residual_risks, and next_recommendation. There is no prompt payload, raw LLM response, dataset sidecar, training manifest, training job, checkpoint, review CSV, or per-run Markdown.
+<!-- official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod:measurements-entry:start -->
+### v4_6_1 Holdout Candidate Manifest Identity Contract Bridge
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, identity-contract bridge only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod/report.json`
+- Source evidence: v4_5_1/v4_5_2/v4_5_3 reports expose the shared holdout manifest contract hash, and v4_6 source report inputs re-lock those same hashes.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| holdout_candidate_manifest_identity_contract_bridge_only | true |
+| contract_bridge_gate_passed | true |
+| contract_hashes_match | true |
+| identity_probe_passed | true |
+| v4_6_hash_mismatch_rejection_passed | true |
+| identity_contract_probe_count | 5 |
+| identity_contract_probe_passed_count | 5 |
+| ft_route_policy_dry_run_opened | false |
+| ft_route_policy_dry_run_executed | false |
+| v4_7_official_metric_gate_opened | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Counter source-of-truth: `report.json` embeds the shared contract hash, source report input hashes, identity probe results, contract_bridge_gate, metrics, guardrails, verification, residual_risks, and next_recommendation. There is no candidate manifest, validation sidecar, source-identity audit sidecar, prompt payload, raw LLM response, dataset sidecar, training job, checkpoint, review CSV, or per-run Markdown.
+<!-- official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod:measurements-entry:start -->
+### v4_6 FT Route Policy Dry-Run Preflight
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, preflight-only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod/report.json`
+- Source evidence: v4_5/v4_5_1/v4_5_2/v4_5_3 report inputs are hash-locked in `source_report_inputs`; v4_5_3 supplies the hash-only prior identity baseline.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| ft_route_policy_dry_run_preflight_only | true |
+| all_preflight_gates_passed | false |
+| v4_5_readiness_gate_passed | false |
+| v4_5_1_candidate_intake_gate_passed | false |
+| v4_5_2_source_identity_audit_gate_passed | false |
+| v4_5_3_prior_identity_baseline_gate_passed | true |
+| user_owned_gold_policy_gate_passed | false |
+| official_denominator_gate_passed | false |
+| promotion_policy_gate_passed | false |
+| ft_route_policy_dry_run_opened | false |
+| ft_route_policy_dry_run_executed | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Counter source-of-truth: `report.json` embeds the preflight gates, source report input hashes, v4_5_3 prior identity hash-set provenance, metrics, guardrails, verification, residual_risks, and next_recommendation. There is no prompt payload, raw LLM response, dataset sidecar, training job, checkpoint, review CSV, or per-run Markdown.
+<!-- official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod:measurements-entry:start -->
+### v4_5_3 External Holdout Prior Source Identity Ledger Summary
+
+- Run: `official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, hash-only prior source-identity ledger summary only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod/report.json`
+- Source evidence: `ai/eval/source_registry/source_atom_registry_v1.jsonl` PDF/XLSX SourceAtom rows.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| prior_source_identity_ledger_summary_only | true |
+| prior_identity_collision_baseline_available | true |
+| prior_identity_hash_record_count | 102 |
+| prior_pdf_identity_count | 98 |
+| prior_xlsx_identity_count | 4 |
+| prior_pdf_source_atom_count | 329 |
+| prior_xlsx_source_atom_count | 343 |
+| path_like_source_identity_count | 0 |
+| path_like_identity_key_candidate_count | 0 |
+| path_like_raw_locator_row_count | 669 |
+| candidate_manifest_present | false |
+| candidate_manifest_rows | 0 |
+| real_holdout_available | false |
+| real_holdout_sufficient | false |
+| v4_6_ft_dry_run_opened | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Counter source-of-truth: `report.json` embeds the hash-only `prior_identity_ledger_summary`, metrics, guardrails, source registry input hashes, verification, residual_risks, and next_recommendation. `report.json` and `status.jsonl` are ignored artifacts; no raw prior identity values, prior identity ledger sidecar, candidate manifest sidecar, validation JSONL, review CSV, training manifest, dataset sidecar, checkpoint, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod:measurements-entry:start -->
+### v4_5_2 External Holdout Candidate Source Identity Audit
+
+- Run: `official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, external holdout candidate source-identity audit only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod/report.json`
+- Source evidence: v4_5_1 candidate intake gate plus optional external candidate manifest, optional raw prior identity ledger input, and the v4_5_3 hash-only prior summary report when available.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| source_identity_audit_ready | true |
+| candidate_manifest_input_provided | false |
+| candidate_manifest_input_path_kind | not_provided |
+| prior_identity_ledger_input_provided | false |
+| prior_identity_ledger_input_path_kind | not_provided |
+| prior_identity_summary_report_defaulted_from_v4_5_3 | true |
+| prior_identity_summary_report_path_kind | repo_relative |
+| candidate_manifest_present | false |
+| candidate_manifest_rows | 0 |
+| prior_identity_ledger_present | false |
+| prior_identity_rows | 0 |
+| prior_identity_summary_report_present | true |
+| prior_identity_summary_hash_records | 102 |
+| prior_identity_baseline_present | true |
+| source_identity_audit_gate_passed | false |
+| source_identity_collision_count | 0 |
+| accepted_pdf_holdout_candidates | 0/20 |
+| accepted_xlsx_holdout_candidates | 0/8 |
+| real_query_fidelity_included_rows_per_family | 0/100 PDF, 0/100 XLSX |
+| real_holdout_available | false |
+| real_holdout_sufficient | false |
+| v4_6_ft_dry_run_opened | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Counter source-of-truth: `report.json` embeds candidate_manifest_input, prior_identity_ledger_input, prior_identity_summary_report_input, the compact hash-only prior summary bridge, source_identity_audit_gate, accepted/excluded sanitized candidate rows, metrics, guardrails, source lineage, verification, residual_risks, and next_recommendation. `report.json` and `status.jsonl` are ignored artifacts; no candidate manifest sidecar, prior identity ledger sidecar, validation JSONL, review CSV, training manifest, dataset sidecar, checkpoint, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod:measurements-entry:start -->
+### v4_5_1 Holdout Candidate Intake Gate
+
+- Run: `official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, holdout-candidate-intake only, single `report.json`.
+- Candidate manifest input: optional external manifest path is input-only; raw external paths are redacted in reports/status.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod/report.json`
+- Source evidence: v4_5 fine-tuning-readiness packet plus v4_4 holdout/leakage gates.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| candidate_intake_schema_ready | true |
+| candidate_manifest_input_provided | false |
+| candidate_manifest_input_path_kind | not_provided |
+| candidate_manifest_present | false |
+| candidate_manifest_rows | 0 |
+| candidate_intake_gate_passed | false |
+| accepted_pdf_holdout_candidates | 0/20 |
+| accepted_xlsx_holdout_candidates | 0/8 |
+| real_query_fidelity_included_rows_per_family | 0/100 PDF, 0/100 XLSX |
+| excluded_holdout_candidate_count | 0 |
+| v4_6_ft_dry_run_opened | false |
+| fine_tuning_dataset_exports_created | 0 |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+Counter source-of-truth: `report.json` embeds candidate_manifest_input, candidate_intake_gate, accepted/excluded sanitized candidate rows, metrics, guardrails, source lineage, verification, residual_risks, and next_recommendation. `report.json` and `status.jsonl` are ignored artifacts; no candidate manifest sidecar, validation JSONL, review CSV, training manifest, dataset sidecar, checkpoint, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod:measurements-entry:start -->
+### v4_5 Fine-Tuning Readiness Packet
+
+- Run: `official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, fine-tuning-readiness only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod/report.json`
+- Source evidence: v4_4 real blind/OOD holdout and leakage-audit report.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| readiness_gate_passed | false |
+| evidence_path_quality_gate_passed | true |
+| split_quality_gate_passed | false |
+| leakage_audit_gate_passed | true |
+| PDF_source_document_disjoint | 0/20 |
+| XLSX_workbook_disjoint | 0/8 |
+| real_query_fidelity_included_rows_per_family | 0/100 PDF, 0/100 XLSX |
+| leakage_bucket_count | 9 |
+| leakage_excluded_count | 9 |
+| fine_tuning_dataset_exports_created | 0 |
+| sft_ready | false |
+| dpo_ready | false |
+| reward_model_ready | false |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| fine_tuning_started | false |
+| fine_tuning_executed | false |
+| ft_route_policy_dry_run_executed | false |
+| route_policy_projection_recorded | true |
+| gpu_required_for_this_slice | false |
+| gpu_required_for_future_training_when_opened | true |
+
+Counter source-of-truth: `report.json` embeds readiness_gates, fine_tuning_lanes, ft_route_policy_dry_run, metrics, family_separated_readiness, guardrails, verification, changed_files, residual_risks, and next_recommendation. `report.json` and `status.jsonl` are ignored artifacts; no review CSV, training manifest, dataset sidecar, checkpoint, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod:measurements-entry:end -->
+
+<!-- phase1_diagnostic_contract_closure_fastapi_diagnostic_integration:measurements-entry:start -->
+### Phase 1 Closeout FastAPI Diagnostic Integration
+
+- Marker: `phase1_diagnostic_contract_closure_fastapi_diagnostic_integration`
+- Routes: `POST /internal/rag/diagnostic/query`, `GET /internal/rag/diagnostic/readiness`, `POST /internal/rag/diagnostic/holdout-candidates/validate`, `POST /internal/rag/diagnostic/ft-a/dry-run-input/validate`
+- Feature flag: `AIPIPELINE_WORKER_RAG_FASTAPI_DIAGNOSTIC_ROUTE_ENABLED` / `rag_fastapi_diagnostic_route_enabled`
+- Primary app: `ai/app/main.py` exposes `app = create_app()`; `ai/app/api.py` owns the only discovered `FastAPI(...)` factory.
+- Counter source-of-truth: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
+- Script inventory: `ai/scripts/README.md`; no required v3 artifact/script was deleted.
+
+| Integration check | Value |
+| --- | --- |
+| diagnostic route default-enabled | false |
+| disabled in production orchestrator mode | true |
+| diagnostic route tests | 35 passed |
+| readiness route holdout candidate manifest contract | exposed, input-only, hash-locked, no writes |
+| FT-A dry-run input validation route | exposed, input-only, sanitized/hash-only, no writes |
+| v3_22 script entrypoint | retained and imports `phase1_diagnostic_runtime` helpers |
+| SourceAtom/EvidenceBundle display metadata bridge | present for XLSX bundles |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+
+This section records integration and cleanup checks only. It does not add a new performance, quality, promotion, official metric, or product-success measurement. `report.json` and `status.jsonl` remain ignored artifacts; no review packet was created by this closeout.
+<!-- phase1_diagnostic_contract_closure_fastapi_diagnostic_integration:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod:measurements-entry:start -->
+### v4_4 Real Blind/OOD Holdout And Leakage Audit
+
+- Run: `official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, family-separated PDF/XLSX holdout infrastructure, TEXT comparison/control only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod/report.json`
+- Source evidence: v3_10 holdout manifest, v3_10 query-fidelity audit, v3_10 leakage audit, v4_2 XLSX locator report, and v4_3 PDF file-identity split report.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| real_holdout_available | false |
+| PDF_source_document_disjoint | 0/20 |
+| XLSX_workbook_disjoint | 0/8 |
+| query_fidelity_included_rows_per_family | 0/100 |
+| query_fidelity_audit_rows | 200 |
+| leakage_bucket_count | 9 |
+| leakage_excluded_count | 9 |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| fine_tuning_executed | false |
+| gpu_required_for_this_slice | false |
+
+Counter source-of-truth: `report.json` embeds summary, metrics, holdout_manifest, split_manifest, query_fidelity_audit, leakage_audit, excluded_row_ledger, family_separated_metrics, guardrails, verification, changed_files, residual_risks, and next_recommendation. `report.json` and `status.jsonl` are ignored artifacts; no review CSV, sidecar manifest, metrics sidecar, audit sidecar, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod:measurements-entry:start -->
+### v4_3 PDF File Identity Confidence And Evidence-Window Split
+
+- Run: `official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, family-separated PDF-only, single `report.json`, `official_metric=false`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod/report.json`
+- Metric provenance: PDF file-identity and evidence-window counts are v3_13 reference-only seen diagnostics with `computed_by_v4_3=false`.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| pdf_file_identity_rows | 329 |
+| pdf_candidate_component_rows | 942 |
+| file_resolve_at1 | 66/329 |
+| file_resolve_at3 | 129/329 |
+| abstain_or_disambiguation_count | 182 |
+| accepted_wrong_rank1_with_target_in_top3_count | 63 |
+| wrong_file_forcing_accepted_count | 81 |
+| same_page_bounded_evidence_window_candidate_at3 | 341/942 |
+| answer_ready_window_sufficient_at_query | 251/329 |
+| bbox_correctness_metric_computed | false |
+| source_document_disjoint_validation_rows | 0 |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| fine_tuning_executed | false |
+| gpu_required_for_this_slice | false |
+
+Counter source-of-truth: `report.json` embeds summary, metrics, per-query PDF file-identity split manifest, failure taxonomy, source run references, holdout policy, guardrails, verification, changed_files, residual_risks, and next_recommendation. `report.json` and `status.jsonl` are ignored artifacts; no review CSV, sidecar manifest, metrics sidecar, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod:measurements-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod:measurements-entry:start -->
+### v4_2 XLSX Locator v2 Table/Range/Cell Structural Materialization
+
+- Run: `official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod`
+- v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
+- Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
+- Policy: diagnostic-only, non-production, family-separated XLSX-only, single `report.json`.
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod/report.json`
+- Metric provenance: table/range and cell/value counts are v3_12/v3_15 reference-only seen diagnostics with `computed_by_v4_2=false`.
+
+| Diagnostic count | Value |
+| --- | ---: |
+| xlsx_locator_v2_rows | 344 |
+| xlsx_locator_v2_candidate_component_rows | 900 |
+| table_or_range_at1 | 23/344 |
+| table_or_range_at3 | 29/344 |
+| cell_or_value_at1 | 21/344 |
+| cell_or_value_at3 | 26/344 |
+| table_or_range_miss_after_sheet_hit_count | 228 |
+| cell_or_value_miss_after_range_hit_count | 2 |
+| abstain_or_disambiguation_count | 44 |
+| sheet_or_workbook_locator_miss_count | 49 |
+| workbook_disjoint_validation_rows | 0 |
+| official_metric_input_rows | 0 |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| fine_tuning_executed | false |
+| gpu_required_for_this_slice | false |
+
+Counter source-of-truth: `report.json` embeds summary, metrics, per-query XLSX locator v2 manifest, candidate flow, failure taxonomy, source run references, holdout policy, guardrails, verification, changed_files, residual_risks, and next_recommendation. `report.json` and `status.jsonl` are ignored artifacts; no review CSV, sidecar manifest, metrics sidecar, or per-run Markdown is created.
+<!-- official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod:measurements-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod:measurements-entry:start -->
 ### v4_1 Persisted XLSX SourceAtom Display Metadata

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import copy
 import json
 import os
+import subprocess
 import sys
 import csv
 import inspect
@@ -10454,6 +10456,6051 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_single_report_and_guard
     assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
     assert written["summary"]["review_csv_created"] is False
     assert "persisted_sourceatom_manifest_jsonl" not in written["artifact_paths"]
+
+
+def test_v4_2_xlsx_locator_v2_builds_family_separated_structural_report() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    metrics = report["metrics"]
+    rows = report["xlsx_locator_v2_manifest"]
+
+    assert report["schema_version"] == "rag_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert metrics["xlsx_locator_v2_rows"] == len(rows) == 344
+    assert metrics["xlsx_locator_v2_candidate_component_rows"] == 900
+    assert metrics["pdf_rows_included"] == 0
+    assert metrics["text_rows_included"] == 0
+    assert metrics["seen_reference_only_rows"] == 344
+    assert metrics["workbook_disjoint_validation_rows"] == 0
+    assert metrics["fresh_real_holdout_available"] is False
+    assert metrics["table_or_range_at1"]["numerator"] == 23
+    assert metrics["table_or_range_at1"]["denominator"] == 344
+    assert metrics["table_or_range_at3"]["numerator"] == 29
+    assert metrics["cell_or_value_at1"]["numerator"] == 21
+    assert metrics["cell_or_value_at3"]["numerator"] == 26
+    assert metrics["table_or_range_miss_after_sheet_hit_count"] == 228
+    assert metrics["cell_or_value_miss_after_range_hit_count"] == 2
+    assert metrics["cell_or_value_resolved_at_rank_1_count"] == 21
+    assert metrics["abstain_or_disambiguation_count"] == 44
+    assert metrics["sheet_or_workbook_locator_miss_count"] == 49
+    assert metrics["rank1_reranked_count"] == 11
+    assert metrics["zero_signal_legacy_candidate_demotions_available_count"] == 796
+    assert metrics["direct_normalized_value_query_matching_used"] is False
+    assert metrics["raw_answer_value_for_query_scoring_used"] is False
+    assert metrics["official_metric_input_rows"] == 0
+
+    required_row_fields = {
+        "schema_version",
+        "query_id",
+        "source_family",
+        "source_family_separated",
+        "candidate_generation_mode",
+        "old_candidate_count",
+        "v4_2_candidate_count",
+        "old_rank1_source_atom_id_original",
+        "v4_2_rank1_source_atom_id_original",
+        "table_or_range_at1",
+        "table_or_range_at3",
+        "cell_or_value_at1",
+        "cell_or_value_at3",
+        "failure_bucket",
+        "locator_v2_features",
+        "direct_normalized_value_query_matching_used",
+        "raw_answer_value_for_query_scoring_used",
+        "used_gold_or_expected_text",
+        "target_locator_used",
+        "gold_locator_used",
+        "expected_supporting_gold_text_used_for_retrieval_or_generation",
+        "success_claim_allowed",
+        "official_metric_input_rows",
+        "diagnostic_only",
+    }
+    for row in rows:
+        assert required_row_fields <= set(row), row["query_id"]
+        assert row["source_family"] == "XLSX"
+        assert row["source_family_separated"] is True
+        assert row["direct_normalized_value_query_matching_used"] is False
+        assert row["raw_answer_value_for_query_scoring_used"] is False
+        assert row["used_gold_or_expected_text"] is False
+        assert row["target_locator_used"] is False
+        assert row["gold_locator_used"] is False
+        assert row["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+        assert row["success_claim_allowed"] is False
+        assert row["official_metric_input_rows"] == 0
+        assert row["diagnostic_only"] is True
+
+    assert report["source_run_references"]["v3_12_run_id"] == (
+        "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement"
+    )
+    assert report["source_run_references"]["v3_15_run_id"] == (
+        "official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement"
+    )
+    assert report["source_run_references"]["v4_1_run_id"] == (
+        "official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod"
+    )
+
+
+def test_v4_2_xlsx_locator_v2_single_report_guardrails_and_holdout_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+    holdout = report["holdout_policy"]
+
+    assert guardrails["family_separated_xlsx_only"] is True
+    assert guardrails["pdf_lane_excluded"] is True
+    assert guardrails["text_lane_excluded"] is True
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["direct_normalized_value_query_matching_used"] is False
+    assert guardrails["raw_answer_value_for_query_scoring_used"] is False
+    assert guardrails["target_locator_used"] is False
+    assert guardrails["gold_locator_used"] is False
+    assert guardrails["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrails["source_atom_registry_mutated"] is False
+    assert guardrails["db_or_production_namespace_written"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["promotion_evidence"] is False
+    assert guardrails["fine_tuning_executed"] is False
+    assert guardrails["gpu_required_for_this_slice"] is False
+
+    assert holdout["seen_reference_only_rows"] == 344
+    assert holdout["workbook_disjoint_validation_rows"] == 0
+    assert holdout["fresh_real_holdout_available"] is False
+    assert holdout["seen_reference_success_claim_allowed"] is False
+    assert holdout["product_success_evidence_allowed"] is False
+    assert holdout["blocked_reason"] == "fresh real XLSX workbook-disjoint holdout unavailable"
+    assert "seen-reference/no-regression" in holdout["interpretation"]
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "xlsx_locator_v2_manifest.jsonl",
+        "xlsx_locator_v2_candidate_components.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_2 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["summary"]["review_csv_created"] is False
+    assert "xlsx_locator_v2_manifest_jsonl" not in written["artifact_paths"]
+
+
+def test_v4_3_pdf_file_identity_split_builds_family_separated_report() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v3_13_pdf_file_identity_structural_locator_nonprod_alignment as v313
+    import rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    metrics = report["metrics"]
+    rows = report["pdf_file_identity_split_manifest"]
+    source_rows = run.read_jsonl(v313.OUTPUTS["pdf_structural_locator_eval_per_query_jsonl"])
+    source_query_ids = sorted(run.clean(row.get("query_id")) for row in source_rows)
+    row_query_ids = [row["query_id"] for row in rows]
+
+    assert report["schema_version"] == "rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["pdf_file_identity_answer_window_kept_separate"] is True
+    assert metrics["pdf_file_identity_rows"] == len(rows) == 329
+    assert metrics["pdf_candidate_component_rows"] == 942
+    assert metrics["xlsx_rows_included"] == 0
+    assert metrics["text_rows_included"] == 0
+    assert metrics["seen_reference_only_rows"] == 329
+    assert metrics["source_document_disjoint_validation_rows"] == 0
+    assert metrics["fresh_real_holdout_available"] is False
+    assert metrics["file_resolve_at1"]["numerator"] == 66
+    assert metrics["file_resolve_at1"]["denominator"] == 329
+    assert metrics["file_resolve_at3"]["numerator"] == 129
+    assert metrics["abstain_or_disambiguation_count"] == 182
+    assert metrics["accepted_wrong_rank1_with_target_in_top3_count"] == 63
+    assert metrics["wrong_file_forcing_accepted_count"] == 81
+    assert metrics["wrong_file_forcing_delta_from_v3_11"]["numerator"] == 0
+    assert metrics["rank1_confidence_bucket_counts"] == {"high": 183, "medium": 146}
+    assert metrics["same_page_bounded_evidence_window_candidate_at3"]["numerator"] == 341
+    assert metrics["same_page_bounded_evidence_window_candidate_at3"]["denominator"] == 942
+    assert metrics["answer_ready_window_sufficient_at_query"]["numerator"] == 251
+    assert metrics["answer_ready_window_sufficient_at_query"]["denominator"] == 329
+    assert metrics["bbox_correctness_metric_computed"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert row_query_ids == source_query_ids
+    assert len(set(row_query_ids)) == len(row_query_ids)
+    assert sum(1 for row in rows if row["file_resolve_at1"]) == metrics["file_resolve_at1"]["numerator"]
+    assert sum(1 for row in rows if row["file_resolve_at3"]) == metrics["file_resolve_at3"]["numerator"]
+    assert (
+        sum(1 for row in rows if row["abstain_or_disambiguate"])
+        == metrics["abstain_or_disambiguation_count"]
+    )
+    assert (
+        sum(row["same_page_bounded_evidence_window_candidate_count"] for row in rows)
+        == metrics["same_page_bounded_evidence_window_candidate_at3"]["numerator"]
+    )
+    assert (
+        sum(1 for row in rows if row["answer_ready_window_sufficient"])
+        == metrics["answer_ready_window_sufficient_at_query"]["numerator"]
+    )
+
+    required_row_fields = {
+        "schema_version",
+        "query_id",
+        "source_family",
+        "source_family_separated",
+        "file_identity_answer_window_kept_separate",
+        "file_identity_metric_computed",
+        "evidence_window_metric_computed",
+        "file_resolve_at1",
+        "file_resolve_at3",
+        "resolve_status",
+        "failure_bucket",
+        "rank1_confidence_bucket",
+        "answer_ready_window_sufficiency_measurable",
+        "answer_ready_window_sufficient",
+        "bbox_correctness_metric_computed",
+        "computed_by_v4_3",
+        "metric_role",
+        "optimization_target",
+        "source_metric_key",
+        "source_metric_scope",
+        "metric_provenance",
+        "seen_reference_only",
+        "source_document_disjoint_validation",
+        "fresh_real_holdout",
+        "direct_normalized_value_query_matching_used",
+        "raw_answer_value_for_query_scoring_used",
+        "used_gold_or_expected_text",
+        "target_locator_used",
+        "gold_locator_used",
+        "expected_supporting_gold_text_used_for_retrieval_or_generation",
+        "success_claim_allowed",
+        "official_metric_input_rows",
+        "diagnostic_only",
+    }
+    for row in rows:
+        assert required_row_fields <= set(row), row["query_id"]
+        assert row["source_family"] == "PDF"
+        assert row["source_family_separated"] is True
+        assert row["file_identity_answer_window_kept_separate"] is True
+        assert row["bbox_correctness_metric_computed"] is False
+        assert row["computed_by_v4_3"] is False
+        assert row["metric_role"] == "reference_only_seen_diagnostic"
+        assert row["optimization_target"] is False
+        assert row["source_metric_key"] == (
+            "pdf_file_identity_structural_locator_eval.v3_13_pdf_file_identity_confidence_diagnostic"
+        )
+        assert row["source_metric_scope"] == "diagnostic_only_seen_reference_file_identity_confidence_no_rerank"
+        assert row["metric_provenance"] == {
+            "file_identity": {
+                "computed_by_v4_3": False,
+                "metric_role": "reference_only_seen_diagnostic",
+                "optimization_target": False,
+                "source_run_id": v313.RUN_ID,
+                "source_metric_key": (
+                    "pdf_file_identity_structural_locator_eval."
+                    "v3_13_pdf_file_identity_confidence_diagnostic"
+                ),
+                "source_metric_scope": "diagnostic_only_seen_reference_file_identity_confidence_no_rerank",
+                "seen_reference_only": True,
+            },
+            "evidence_window": {
+                "computed_by_v4_3": False,
+                "metric_role": "reference_only_seen_diagnostic",
+                "optimization_target": False,
+                "source_run_id": v313.RUN_ID,
+                "source_metric_key": (
+                    "pdf_file_identity_structural_locator_eval."
+                    "v3_13_pdf_evidence_window_diagnostic"
+                ),
+                "source_metric_scope": "diagnostic_only_same_page_bbox_window_availability_not_answer_generation",
+                "answer_ready_window_sufficiency_metric_scope": (
+                    "selector_target_hit_same_page_bbox_window_only"
+                ),
+                "bbox_correctness_metric_computed": False,
+                "seen_reference_only": True,
+            },
+        }
+        assert row["seen_reference_only"] is True
+        assert row["source_document_disjoint_validation"] is False
+        assert row["fresh_real_holdout"] is False
+        assert row["direct_normalized_value_query_matching_used"] is False
+        assert row["raw_answer_value_for_query_scoring_used"] is False
+        assert row["used_gold_or_expected_text"] is False
+        assert row["target_locator_used"] is False
+        assert row["gold_locator_used"] is False
+        assert row["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+        assert row["success_claim_allowed"] is False
+        assert row["official_metric_input_rows"] == 0
+        assert row["diagnostic_only"] is True
+
+    assert report["source_run_references"]["v3_13_run_id"] == (
+        "official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment"
+    )
+    assert report["source_run_references"]["v4_2_run_id"] == (
+        "official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod"
+    )
+
+
+def test_v4_3_pdf_file_identity_split_single_report_guardrails_and_holdout_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+    holdout = report["holdout_policy"]
+
+    assert guardrails["family_separated_pdf_only"] is True
+    assert guardrails["xlsx_lane_excluded"] is True
+    assert guardrails["text_lane_excluded"] is True
+    assert guardrails["pdf_file_identity_answer_window_kept_separate"] is True
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["direct_normalized_value_query_matching_used"] is False
+    assert guardrails["raw_answer_value_for_query_scoring_used"] is False
+    assert guardrails["target_locator_used"] is False
+    assert guardrails["gold_locator_used"] is False
+    assert guardrails["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrails["source_atom_registry_mutated"] is False
+    assert guardrails["db_or_production_namespace_written"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["bbox_correctness_metric_computed"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["promotion_evidence"] is False
+    assert guardrails["fine_tuning_executed"] is False
+    assert guardrails["gpu_required_for_this_slice"] is False
+
+    assert holdout["seen_reference_only_rows"] == 329
+    assert holdout["source_document_disjoint_validation_rows"] == 0
+    assert holdout["fresh_real_holdout_available"] is False
+    assert holdout["seen_reference_success_claim_allowed"] is False
+    assert holdout["product_success_evidence_allowed"] is False
+    assert holdout["blocked_reason"] == "fresh real PDF source-document-disjoint holdout unavailable"
+    assert holdout["real_unseen_registry_counts"] == {"PDF_source_document_disjoint": 0}
+    assert holdout["minimum_targets"] == {
+        "pdf_unseen_source_documents": 20,
+        "query_fidelity_included_rows_per_family": 100,
+    }
+    assert "seen-reference/no-regression" in holdout["interpretation"]
+
+    unknown_sidecar_dir = tmp_path / "unknown-sidecar"
+    unknown_sidecar_dir.mkdir()
+    (unknown_sidecar_dir / "debug.json").write_text("unexpected v4_3 sidecar", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="unexpected v4_3 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=unknown_sidecar_dir)
+    (unknown_sidecar_dir / "debug.json").unlink()
+    unknown_sidecar_dir.rmdir()
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "per_query.jsonl",
+        "pdf_file_identity_split_manifest.jsonl",
+        "pdf_candidate_components.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_3 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["summary"]["review_csv_created"] is False
+    assert "pdf_file_identity_split_manifest_jsonl" not in written["artifact_paths"]
+
+
+def test_v4_4_real_blind_ood_holdout_and_leakage_audit_builds_family_separated_report() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    holdout = report["holdout_manifest"]
+    metrics = report["metrics"]
+    leakage_rows = report["leakage_audit"]
+    query_rows = report["query_fidelity_audit"]
+
+    assert report["schema_version"] == "rag_v4_4_real_blind_ood_holdout_and_leakage_audit_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["v4_name"] == "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    assert report["diagnostic_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["fine_tuning_readiness_only"] is True
+    assert report["fine_tuning_started"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["real_blind_ood_holdout_infrastructure_ready"] is True
+    assert report["leakage_audit_infrastructure_ready"] is True
+    assert report["query_fidelity_audit_present"] is True
+    assert report["leakage_excluded_count_reported"] is True
+    assert report["family_separated_metrics"]["PDF"]["source_document_disjoint_required"] is True
+    assert report["family_separated_metrics"]["XLSX"]["workbook_disjoint_required"] is True
+    assert report["family_separated_metrics"]["TEXT"]["comparison_control_only"] is True
+
+    assert holdout["real_holdout_available"] is False
+    assert holdout["real_holdout_sufficient"] is False
+    assert holdout["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert holdout["minimum_targets"] == {
+        "pdf_unseen_source_documents": 20,
+        "xlsx_unseen_workbooks": 8,
+        "query_fidelity_included_rows_per_family": 100,
+    }
+    assert holdout["pdf_source_document_disjoint_from_dev"] is False
+    assert holdout["xlsx_workbook_disjoint_from_dev"] is False
+    assert holdout["text_control_opened"] is False
+    assert "unavailable" in holdout["blocked_reason"]
+    assert holdout["synthetic_ood_guard"]["product_success_evidence_allowed"] is False
+
+    assert metrics["real_holdout_available"] is False
+    assert metrics["real_query_fidelity_included_counts"] == {"PDF": 0, "XLSX": 0, "TEXT": 0}
+    assert metrics["synthetic_ood_guard_product_success_evidence_allowed"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert len(query_rows) == metrics["query_fidelity_audit_rows"]
+    assert len(leakage_rows) == metrics["leakage_audit_rows"]
+
+    required_buckets = {
+        "answer_value_in_query",
+        "index_to_content_query",
+        "source_title_leak",
+        "file_title_leak",
+        "exact_query_hack",
+        "major_topic_drift",
+        "unnatural_sheet_or_cell_reference",
+        "target_locator_leak",
+        "gold_supporting_expected_text_leak",
+    }
+    assert {row["bucket"] for row in leakage_rows} == required_buckets
+    for row in leakage_rows:
+        assert row["schema_version"] == "rag_v4_4_leakage_bucket_audit_row_v1"
+        assert row["diagnostic_only"] is True
+        assert row["success_evidence_allowed"] is False
+        assert row["excluded_from_holdout"] is True
+        assert row["official_metric_input_rows"] == 0
+        assert row["bucket_classified"] is True
+
+
+def test_v4_4_real_blind_ood_holdout_separates_availability_from_sufficiency() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod as run
+
+    holdout = run.build_holdout_manifest(
+        {
+            "real_unseen_registry_counts": {
+                "PDF_source_document_disjoint": 3,
+                "XLSX_workbook_disjoint": 2,
+            },
+            "minimum_targets": {
+                "pdf_unseen_source_documents": 20,
+                "xlsx_unseen_workbooks": 8,
+                "query_fidelity_included_rows_per_family": 100,
+            },
+            "synthetic_ood_guard": {"row_count": 12},
+        }
+    )
+    metrics = run.build_metrics(holdout=holdout, query_rows=[], leakage_rows=[], excluded_rows=[])
+    family_metrics = run.build_family_separated_metrics(metrics)
+
+    assert holdout["real_holdout_available"] is True
+    assert holdout["real_holdout_sufficient"] is False
+    assert holdout["real_holdout_acquired"] is True
+    assert holdout["pdf_source_document_disjoint_from_dev"] is True
+    assert holdout["xlsx_workbook_disjoint_from_dev"] is True
+    assert "below minimum" in holdout["blocked_reason"]
+    assert holdout["synthetic_ood_guard"]["product_success_evidence_allowed"] is False
+    assert holdout["official_metric"] is False
+    assert holdout["official_metric_input_rows"] == 0
+    assert metrics["real_holdout_available"] is True
+    assert metrics["real_holdout_sufficient"] is False
+    assert metrics["product_success_evidence_allowed"] is False
+    assert metrics["promotion_evidence"] is False
+    assert metrics["official_metric"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert family_metrics["PDF"]["real_holdout_rows"] == 3
+    assert family_metrics["XLSX"]["real_holdout_rows"] == 2
+    assert family_metrics["PDF"]["product_success_evidence_allowed"] is False
+    assert family_metrics["XLSX"]["product_success_evidence_allowed"] is False
+
+
+def test_v4_4_leakage_bucket_ledger_reconciles_exclusions_and_query_fidelity() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    metrics = report["metrics"]
+    leakage_rows = report["leakage_audit"]
+    excluded_rows = report["excluded_row_ledger"]
+    query_rows = report["query_fidelity_audit"]
+    leakage_ledger_rows = [row for row in excluded_rows if row["row_type"] == "leakage_bucket"]
+    forbidden_keys = {
+        "expected_answer",
+        "supporting_evidence",
+        "target_locator",
+        "gold_locator",
+        "expected_supporting_gold_text",
+    }
+
+    assert len(leakage_ledger_rows) == len(leakage_rows) == metrics["leakage_excluded_count"]
+    assert {row["bucket"] for row in leakage_ledger_rows} == {row["bucket"] for row in leakage_rows}
+    for row in leakage_rows:
+        assert row["leakage_buckets"] == [row["bucket"]]
+        assert row["primary_leakage_bucket"] == row["bucket"]
+        assert row["excluded_from_holdout"] is True
+        assert row["excluded_from_headline"] is True
+        assert row["success_evidence_allowed"] is False
+        assert row["product_success_evidence_allowed"] is False
+        assert row["official_metric_input_rows"] == 0
+        assert row["query_fidelity_headline_included"] is False
+        assert row["target_locator_used"] is False
+        assert row["gold_locator_used"] is False
+        assert row["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+        assert not (forbidden_keys & set(row))
+
+    for row in leakage_ledger_rows:
+        assert row["excluded_from_holdout"] is True
+        assert row["excluded_from_headline"] is True
+        assert row["success_evidence_allowed"] is False
+        assert row["official_metric_input_rows"] == 0
+        assert row["excluded_reason"] == "leakage_bucket_not_holdout_eligible"
+
+    assert all(not (forbidden_keys & set(row)) for row in query_rows)
+    assert metrics["query_fidelity_audit_rows"] == len(query_rows)
+    assert metrics["excluded_row_ledger_rows"] == len(excluded_rows)
+
+
+def test_v4_4_real_blind_ood_holdout_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["raw_pdf_query_time_parsing"] is False
+    assert guardrails["raw_xlsx_query_time_parsing"] is False
+    assert guardrails["direct_normalized_answer_value_query_matching_used"] is False
+    assert guardrails["target_locator_used"] is False
+    assert guardrails["gold_locator_used"] is False
+    assert guardrails["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrails["gold_mutation"] is False
+    assert guardrails["qrels_mutation"] is False
+    assert guardrails["label_mutation"] is False
+    assert guardrails["official_denominator_mutation"] is False
+    assert guardrails["production_mutation"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["official_metric"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["promotion_evidence"] is False
+    assert guardrails["product_success_evidence_allowed"] is False
+    assert guardrails["fine_tuning_executed"] is False
+    assert guardrails["gpu_required_for_this_slice"] is False
+
+    (tmp_path / "leakage_audit.jsonl").write_text("stale sidecar", encoding="utf-8")
+    (tmp_path / "query_fidelity_audit.jsonl").write_text("stale sidecar", encoding="utf-8")
+    (tmp_path / "holdout_manifest.json").write_text("stale sidecar", encoding="utf-8")
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["review_csv_created"] is False
+
+    unknown_sidecar_dir = tmp_path / "unknown-sidecar"
+    unknown_sidecar_dir.mkdir()
+    (unknown_sidecar_dir / "debug.json").write_text("unexpected v4_4 sidecar", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="unexpected v4_4 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=unknown_sidecar_dir)
+
+
+def test_v4_5_finetune_readiness_packet_blocks_training_until_holdout_and_policy_gates_pass() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_finetune_readiness_packet_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    metrics = report["metrics"]
+    gates = report["readiness_gates"]
+    lanes = report["fine_tuning_lanes"]
+
+    assert report["schema_version"] == "rag_v4_5_finetune_readiness_packet_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["v4_name"] == "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    assert report["diagnostic_only"] is True
+    assert report["readiness_decision"] == "blocked_pending_real_holdout_and_user_owned_policy"
+    assert report["fine_tuning_readiness_only"] is True
+    assert report["fine_tuning_started"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["route_policy_projection_recorded"] is True
+    assert report["ft_route_policy_dry_run"]["executed"] is False
+    assert report["ft_route_policy_dry_run"]["route_policy_projection_recorded"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["single_report_artifact_contract"] is True
+
+    assert gates["evidence_path_quality_gate"]["passed"] is True
+    assert gates["split_quality_gate"]["passed"] is False
+    assert gates["split_quality_gate"]["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert gates["split_quality_gate"]["minimum_targets"] == {
+        "pdf_unseen_source_documents": 20,
+        "xlsx_unseen_workbooks": 8,
+        "query_fidelity_included_rows_per_family": 100,
+    }
+    assert "real_disjoint_holdout_unavailable" in gates["split_quality_gate"]["blocked_reasons"]
+    assert gates["leakage_audit_gate"]["passed"] is True
+    assert gates["leakage_audit_gate"]["leakage_bucket_count"] == 9
+    assert gates["leakage_audit_gate"]["leakage_excluded_count"] == 9
+    assert gates["user_owned_gold_policy_gate"]["passed"] is False
+    assert gates["official_denominator_gate"]["passed"] is False
+    assert gates["promotion_policy_gate"]["passed"] is False
+
+    assert set(lanes) == {"SFT", "DPO", "reward_model"}
+    for lane in lanes.values():
+        assert lane["lane_ready"] is False
+        assert lane["dataset_export_created"] is False
+        assert lane["training_started"] is False
+        assert lane["training_executed"] is False
+        assert lane["requires_gpu_when_opened"] is True
+        assert "user_owned_gold_qrels_denominator_policy_pending" in lane["blocked_reasons"]
+
+    assert metrics["readiness_gate_passed"] is False
+    assert metrics["split_quality_gate_passed"] is False
+    assert metrics["leakage_audit_gate_passed"] is True
+    assert metrics["fine_tuning_dataset_exports_created"] == 0
+    assert metrics["sft_ready"] is False
+    assert metrics["dpo_ready"] is False
+    assert metrics["reward_model_ready"] is False
+    assert metrics["official_metric_input_rows"] == 0
+    assert report["family_separated_readiness"]["PDF"]["source_document_disjoint_required"] is True
+    assert report["family_separated_readiness"]["XLSX"]["workbook_disjoint_required"] is True
+    assert report["family_separated_readiness"]["TEXT"]["comparison_control_only"] is True
+
+
+def test_v4_5_finetune_readiness_gate_logic_keeps_split_quality_separate_from_user_policy() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_finetune_readiness_packet_nonprod as run
+    import rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod as v44
+
+    source_report = v44.build_artifacts()["report"]
+    source_report["holdout_manifest"] = dict(source_report["holdout_manifest"])
+    source_report["holdout_manifest"]["real_holdout_available"] = True
+    source_report["holdout_manifest"]["real_holdout_sufficient"] = True
+    source_report["holdout_manifest"]["real_unseen_registry_counts"] = {
+        "PDF_source_document_disjoint": 20,
+        "XLSX_workbook_disjoint": 8,
+    }
+    source_report["metrics"] = dict(source_report["metrics"])
+    source_report["metrics"]["real_holdout_available"] = True
+    source_report["metrics"]["real_holdout_sufficient"] = True
+    source_report["metrics"]["real_unseen_registry_counts"] = {
+        "PDF_source_document_disjoint": 20,
+        "XLSX_workbook_disjoint": 8,
+    }
+    source_report["metrics"]["real_query_fidelity_included_counts"] = {"PDF": 100, "XLSX": 100, "TEXT": 0}
+
+    gates = run.build_readiness_gates(source_report)
+    lanes = run.build_fine_tuning_lanes(gates)
+    metrics = run.build_metrics(source_report=source_report, gates=gates, lanes=lanes)
+
+    assert gates["split_quality_gate"]["passed"] is True
+    assert gates["leakage_audit_gate"]["passed"] is True
+    assert gates["user_owned_gold_policy_gate"]["passed"] is False
+    assert gates["official_denominator_gate"]["passed"] is False
+    assert gates["promotion_policy_gate"]["passed"] is False
+    assert metrics["split_quality_gate_passed"] is True
+    assert metrics["readiness_gate_passed"] is False
+    assert metrics["fine_tuning_dataset_exports_created"] == 0
+    for lane in lanes.values():
+        assert lane["lane_ready"] is False
+        assert "user_owned_gold_qrels_denominator_policy_pending" in lane["blocked_reasons"]
+        assert "split_quality_gate_failed" not in lane["blocked_reasons"]
+
+
+def test_v4_5_finetune_readiness_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_finetune_readiness_packet_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["raw_pdf_query_time_parsing"] is False
+    assert guardrails["raw_xlsx_query_time_parsing"] is False
+    assert guardrails["direct_normalized_answer_value_query_matching_used"] is False
+    assert guardrails["target_locator_used"] is False
+    assert guardrails["gold_locator_used"] is False
+    assert guardrails["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["fine_tuning_started"] is False
+    assert guardrails["fine_tuning_executed"] is False
+    assert guardrails["gpu_required_for_this_slice"] is False
+    assert guardrails["gpu_required_for_future_training_when_opened"] is True
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["official_metric_input_rows"] == 0
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "finetune_readiness_packet.json",
+        "fine_tuning_lanes.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_5 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["summary"]["review_csv_created"] is False
+    assert written["fine_tuning_dataset_export_created"] is False
+
+    unknown_sidecar_dir = tmp_path / "unknown-sidecar"
+    unknown_sidecar_dir.mkdir()
+    (unknown_sidecar_dir / "debug.json").write_text("unexpected v4_5 sidecar", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="unexpected v4_5 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=unknown_sidecar_dir)
+
+
+def test_v4_5_1_holdout_candidate_intake_gate_fails_closed_without_candidate_manifest_and_policy() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    metrics = report["metrics"]
+    gate = report["candidate_intake_gate"]
+
+    assert report["schema_version"] == "rag_v4_5_1_holdout_candidate_intake_gate_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["v4_name"] == "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_intake_only"] is True
+    assert report["candidate_intake_schema_ready"] is True
+    assert report["candidate_manifest_present"] is False
+    assert report["candidate_manifest_rows"] == 0
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["readiness_decision"] == "blocked_pending_holdout_candidate_manifest_and_user_policy"
+
+    assert gate["passed"] is False
+    assert gate["candidate_manifest_present"] is False
+    assert gate["accepted_holdout_candidate_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+        "TEXT_control_only": 0,
+    }
+    assert "candidate_manifest_missing" in gate["blocked_reasons"]
+    assert "real_disjoint_holdout_candidates_below_target" in gate["blocked_reasons"]
+    assert "real_query_fidelity_candidates_below_target" in gate["blocked_reasons"]
+    assert metrics["candidate_manifest_rows"] == 0
+    assert metrics["accepted_pdf_holdout_candidates"] == 0
+    assert metrics["accepted_xlsx_holdout_candidates"] == 0
+    assert metrics["candidate_intake_gate_passed"] is False
+    assert metrics["split_quality_gate_passed"] is False
+    assert metrics["fine_tuning_dataset_exports_created"] == 0
+    assert report["source_run_references"]["previous_gate_run_id"].endswith("_v4_5_finetune_readiness_packet_nonprod")
+    assert report["source_run_references"]["v4_4_report_json"].endswith(
+        "official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod/report.json"
+    )
+
+
+def test_v4_5_1_holdout_candidate_validator_accepts_only_disjoint_leakage_clean_family_rows() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    candidate_rows = [
+        {
+            "candidate_id": "pdf-ok",
+            "query_id": "pdf-ok-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-unseen-001",
+            "source_identity": "pdf-unseen-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+            "leakage_bucket": "",
+        },
+        {
+            "candidate_id": "xlsx-ok",
+            "query_id": "xlsx-ok-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-unseen-001",
+            "source_identity": "xlsx-unseen-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+            "leakage_bucket": "",
+        },
+        {
+            "candidate_id": "text-control",
+            "query_id": "text-control-q1",
+            "source_family": "TEXT",
+            "source_identity": "text-control-001",
+            "disjoint_from_prior": True,
+            "control_only": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "pdf-duplicate",
+            "query_id": "pdf-duplicate-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-unseen-001",
+            "source_identity": "pdf-unseen-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-leak",
+            "query_id": "xlsx-leak-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-unseen-002",
+            "source_identity": "xlsx-unseen-002",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+            "leakage_bucket": "answer_value_in_query",
+        },
+        {
+            "candidate_id": "pdf-seen",
+            "query_id": "pdf-seen-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-seen-001",
+            "source_identity": "pdf-seen-001",
+            "disjoint_from_prior": False,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-target-locator",
+            "query_id": "xlsx-target-locator-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-unseen-003",
+            "source_identity": "xlsx-unseen-003",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+            "target_locator": "Sheet1!A1",
+        },
+        {
+            "candidate_id": "pdf-local-path",
+            "query_id": "pdf-local-path-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-unseen-local-path",
+            "source_identity": "pdf-unseen-local-path",
+            "source_path": "D:\\private\\source.pdf",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+    ]
+    minimum_targets = {
+        "pdf_unseen_source_documents": 1,
+        "xlsx_unseen_workbooks": 1,
+        "query_fidelity_included_rows_per_family": 1,
+    }
+
+    validation = run.validate_holdout_candidate_rows(candidate_rows, minimum_targets=minimum_targets)
+
+    assert validation["candidate_intake_schema_ready"] is True
+    assert validation["candidate_manifest_present"] is True
+    assert validation["candidate_manifest_rows"] == len(candidate_rows)
+    assert validation["candidate_intake_gate"]["passed"] is False
+    assert "candidate_rows_excluded" in validation["candidate_intake_gate"]["blocked_reasons"]
+    assert validation["candidate_intake_gate"]["accepted_holdout_candidate_counts"] == {
+        "PDF_source_document_disjoint": 1,
+        "XLSX_workbook_disjoint": 1,
+        "TEXT_control_only": 1,
+    }
+    assert validation["candidate_intake_gate"]["real_query_fidelity_included_counts"] == {
+        "PDF": 2,
+        "XLSX": 1,
+        "TEXT": 1,
+    }
+    accepted_ids = {row["candidate_id"] for row in validation["accepted_candidates"]}
+    rejected = {row["candidate_id"]: row for row in validation["excluded_candidates"]}
+    assert accepted_ids == {"pdf-ok", "pdf-duplicate", "xlsx-ok", "text-control"}
+    assert rejected["xlsx-leak"]["exclusion_reason"] == "leakage_bucket_present"
+    assert rejected["pdf-seen"]["exclusion_reason"] == "not_disjoint_from_prior"
+    assert rejected["xlsx-target-locator"]["exclusion_reason"] == "protected_oracle_field_present"
+    assert rejected["pdf-local-path"]["exclusion_reason"] == "raw_local_path_present"
+    assert all("target_locator" not in row for row in validation["accepted_candidates"])
+    assert validation["official_metric_input_rows"] == 0
+    assert validation["product_success_evidence_allowed"] is False
+
+
+def test_v4_5_1_holdout_candidate_manifest_file_is_input_only_and_path_redacted(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    manifest_path = tmp_path / "holdout_candidate_manifest.jsonl"
+    manifest_rows = [
+        {
+            "candidate_id": "pdf-manifest-ok",
+            "query_id": "pdf-manifest-ok-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-unseen-manifest-001",
+            "source_identity": "pdf-unseen-manifest-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-manifest-ok",
+            "query_id": "xlsx-manifest-ok-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-unseen-manifest-001",
+            "source_identity": "xlsx-unseen-manifest-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "text-manifest-control",
+            "query_id": "text-manifest-control-q1",
+            "source_family": "TEXT",
+            "source_identity": "text-manifest-control-001",
+            "disjoint_from_prior": True,
+            "control_only": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+    ]
+    manifest_path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in manifest_rows) + "\n",
+        encoding="utf-8",
+    )
+
+    artifacts = run.build_artifacts(
+        candidate_manifest_path=manifest_path,
+        minimum_targets={
+            "pdf_unseen_source_documents": 1,
+            "xlsx_unseen_workbooks": 1,
+            "query_fidelity_included_rows_per_family": 1,
+        },
+    )
+    report = artifacts["report"]
+    manifest_input = report["candidate_manifest_input"]
+
+    assert report["candidate_manifest_present"] is True
+    assert report["candidate_manifest_rows"] == 3
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["candidate_intake_gate"]["passed"] is True
+    assert report["readiness_decision"] == "blocked_pending_user_owned_gold_qrels_denominator_policy"
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert manifest_input["provided"] is True
+    assert manifest_input["exists"] is True
+    assert manifest_input["format"] == "jsonl"
+    assert manifest_input["rows_loaded"] == 3
+    assert manifest_input["sha256"]
+    assert manifest_input["path_kind"] == "external_redacted"
+    assert manifest_input["path_label"] == "__external_candidate_manifest_path_redacted__"
+    assert str(manifest_path) not in json.dumps(report, ensure_ascii=False)
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path / "out")
+    assert {path.name for path in (tmp_path / "out").iterdir() if path.is_file()} == {"report.json"}
+    assert written["candidate_manifest_jsonl_created"] is False
+
+
+def test_v4_5_1_missing_candidate_manifest_file_fails_closed_without_training(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    missing_path = tmp_path / "missing_holdout_candidate_manifest.jsonl"
+
+    report = run.build_artifacts(candidate_manifest_path=missing_path)["report"]
+    manifest_input = report["candidate_manifest_input"]
+
+    assert report["candidate_manifest_present"] is False
+    assert report["candidate_manifest_rows"] == 0
+    assert report["candidate_intake_gate"]["passed"] is False
+    assert "candidate_manifest_file_missing" in report["candidate_intake_gate"]["blocked_reasons"]
+    assert manifest_input["provided"] is True
+    assert manifest_input["exists"] is False
+    assert manifest_input["format"] == "jsonl"
+    assert manifest_input["load_error"] == "candidate_manifest_file_missing"
+    assert manifest_input["path_kind"] == "external_redacted"
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+
+
+def test_v4_5_1_candidate_manifest_rejects_json_envelope_format_without_training(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    manifest_path = tmp_path / "holdout_candidate_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "candidates": [
+                    {
+                        "candidate_id": "pdf-envelope",
+                        "source_family": "PDF",
+                        "source_document_id": "pdf-envelope-001",
+                        "source_identity": "pdf-envelope-001",
+                        "disjoint_from_prior": True,
+                        "query_fidelity_included": True,
+                    }
+                ]
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    report = run.build_artifacts(candidate_manifest_path=manifest_path)["report"]
+    manifest_input = report["candidate_manifest_input"]
+
+    assert report["candidate_manifest_present"] is False
+    assert report["candidate_manifest_rows"] == 0
+    assert report["candidate_intake_gate"]["passed"] is False
+    assert "candidate_manifest_unsupported_format" in report["candidate_intake_gate"]["blocked_reasons"]
+    assert manifest_input["provided"] is True
+    assert manifest_input["exists"] is True
+    assert manifest_input["format"] == "jsonl"
+    assert manifest_input["load_error"] == "candidate_manifest_unsupported_format"
+    assert manifest_input["path_kind"] == "external_redacted"
+    assert str(manifest_path) not in json.dumps(report, ensure_ascii=False)
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+
+
+def test_v4_5_1_manifest_file_check_cli_loads_external_rows_without_writing_artifacts(tmp_path, capsys) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    manifest_path = tmp_path / "holdout_candidate_manifest.jsonl"
+    manifest_rows = [
+        {
+            "candidate_id": "pdf-cli-ok",
+            "query_id": "pdf-cli-ok-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-cli-001",
+            "source_identity": "pdf-cli-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-cli-ok",
+            "query_id": "xlsx-cli-ok-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-cli-001",
+            "source_identity": "xlsx-cli-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "text-cli-control",
+            "query_id": "text-cli-control-q1",
+            "source_family": "TEXT",
+            "source_identity": "text-cli-control-001",
+            "disjoint_from_prior": True,
+            "control_only": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+    ]
+    manifest_path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in manifest_rows) + "\n",
+        encoding="utf-8",
+    )
+
+    assert run.main(["--check", "--manifest-file", str(manifest_path)]) == 0
+
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["candidate_manifest_input_provided"] is True
+    assert summary["candidate_manifest_load_error"] == ""
+    assert summary["candidate_manifest_present"] is True
+    assert summary["candidate_manifest_rows"] == 3
+    assert summary["accepted_pdf_holdout_candidates"] == 1
+    assert summary["accepted_xlsx_holdout_candidates"] == 1
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["fine_tuning_dataset_exports_created"] == 0
+    assert summary["v4_6_ft_dry_run_opened"] is False
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"holdout_candidate_manifest.jsonl"}
+
+
+def test_v4_5_1_validator_counts_query_fidelity_rows_separately_from_source_identities() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    candidate_rows = [
+        {
+            "candidate_id": "pdf-doc-1-q1",
+            "query_id": "pdf-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-unseen-doc-001",
+            "source_identity": "pdf-unseen-doc-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "pdf-doc-1-q2",
+            "query_id": "pdf-q2",
+            "source_family": "PDF",
+            "source_document_id": "pdf-unseen-doc-001",
+            "source_identity": "pdf-unseen-doc-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-book-1-q1",
+            "query_id": "xlsx-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-unseen-book-001",
+            "source_identity": "xlsx-unseen-book-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-book-1-q2",
+            "query_id": "xlsx-q2",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-unseen-book-001",
+            "source_identity": "xlsx-unseen-book-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "pdf-duplicate-query",
+            "query_id": "pdf-q2",
+            "source_family": "PDF",
+            "source_document_id": "pdf-unseen-doc-002",
+            "source_identity": "pdf-unseen-doc-002",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-synthetic",
+            "query_id": "xlsx-q3",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-unseen-book-002",
+            "source_identity": "xlsx-unseen-book-002",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": False,
+        },
+        {
+            "candidate_id": "pdf-promotion-flag",
+            "query_id": "pdf-q3",
+            "source_family": "PDF",
+            "source_document_id": "pdf-unseen-doc-003",
+            "source_identity": "pdf-unseen-doc-003",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+            "promotion_evidence": True,
+        },
+    ]
+
+    validation = run.validate_holdout_candidate_rows(
+        candidate_rows,
+        minimum_targets={
+            "pdf_unseen_source_documents": 1,
+            "xlsx_unseen_workbooks": 1,
+            "query_fidelity_included_rows_per_family": 2,
+        },
+    )
+
+    gate = validation["candidate_intake_gate"]
+    rejected = {row["candidate_id"]: row for row in validation["excluded_candidates"]}
+
+    assert gate["passed"] is False
+    assert "candidate_rows_excluded" in gate["blocked_reasons"]
+    assert gate["accepted_holdout_candidate_counts"] == {
+        "PDF_source_document_disjoint": 1,
+        "XLSX_workbook_disjoint": 1,
+        "TEXT_control_only": 0,
+    }
+    assert gate["real_query_fidelity_included_counts"] == {"PDF": 2, "XLSX": 2, "TEXT": 0}
+    assert rejected["pdf-duplicate-query"]["exclusion_reason"] == "duplicate_query_id"
+    assert rejected["xlsx-synthetic"]["exclusion_reason"] == "synthetic_or_not_real_unseen"
+    assert rejected["pdf-promotion-flag"]["exclusion_reason"] == "forbidden_readiness_flag_present"
+
+
+def test_v4_5_1_validator_rejects_duplicates_even_when_first_row_is_invalid() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    validation = run.validate_holdout_candidate_rows(
+        [
+            {
+                "candidate_id": "shadowed",
+                "query_id": "shadow-query",
+                "source_family": "PDF",
+                "source_document_id": "pdf-invalid-first",
+                "source_identity": "pdf-invalid-first",
+                "disjoint_from_prior": False,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            {
+                "candidate_id": "shadowed",
+                "query_id": "shadow-query",
+                "source_family": "PDF",
+                "source_document_id": "pdf-valid-looking-duplicate",
+                "source_identity": "pdf-valid-looking-duplicate",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+        ],
+        minimum_targets={
+            "pdf_unseen_source_documents": 1,
+            "xlsx_unseen_workbooks": 0,
+            "query_fidelity_included_rows_per_family": 1,
+        },
+    )
+
+    gate = validation["candidate_intake_gate"]
+    rejected = validation["excluded_candidates"]
+
+    assert validation["accepted_candidates"] == []
+    assert len(rejected) == 2
+    assert rejected[0]["exclusion_reason"] == "not_disjoint_from_prior"
+    assert rejected[1]["exclusion_reason"] == "duplicate_candidate_id"
+    assert gate["excluded_candidate_count"] == 2
+    assert gate["accepted_holdout_candidate_counts"]["PDF_source_document_disjoint"] == 0
+    assert gate["passed"] is False
+
+
+def test_v4_5_1_target_sufficient_manifest_with_duplicate_rows_fails_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    validation = run.validate_holdout_candidate_rows(
+        [
+            {
+                "candidate_id": "pdf-clean-q1",
+                "query_id": "pdf-clean-q1",
+                "source_family": "PDF",
+                "source_document_id": "pdf-clean-doc-001",
+                "source_identity": "pdf-clean-doc-001",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            {
+                "candidate_id": "xlsx-clean-q1",
+                "query_id": "xlsx-clean-q1",
+                "source_family": "XLSX",
+                "workbook_id": "xlsx-clean-book-001",
+                "source_identity": "xlsx-clean-book-001",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            {
+                "candidate_id": "pdf-clean-q1",
+                "query_id": "pdf-clean-q1-duplicate",
+                "source_family": "PDF",
+                "source_document_id": "pdf-clean-doc-002",
+                "source_identity": "pdf-clean-doc-002",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+        ],
+        minimum_targets={
+            "pdf_unseen_source_documents": 1,
+            "xlsx_unseen_workbooks": 1,
+            "query_fidelity_included_rows_per_family": 1,
+        },
+    )
+
+    gate = validation["candidate_intake_gate"]
+    rejected = {row["candidate_id"]: row for row in validation["excluded_candidates"]}
+
+    assert gate["accepted_holdout_candidate_counts"] == {
+        "PDF_source_document_disjoint": 1,
+        "XLSX_workbook_disjoint": 1,
+        "TEXT_control_only": 0,
+    }
+    assert gate["real_query_fidelity_included_counts"] == {"PDF": 1, "XLSX": 1, "TEXT": 0}
+    assert gate["excluded_candidate_count"] == 1
+    assert gate["passed"] is False
+    assert "candidate_rows_excluded" in gate["blocked_reasons"]
+    assert rejected["pdf-clean-q1"]["exclusion_reason"] == "duplicate_candidate_id"
+
+
+def test_v4_5_1_validator_rejects_missing_required_contract_fields() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    validation = run.validate_holdout_candidate_rows(
+        [
+            {
+                "candidate_id": "missing-query-real-unseen",
+                "source_family": "PDF",
+                "source_document_id": "pdf-missing-required-001",
+                "source_identity": "pdf-missing-required-001",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+            },
+        ],
+        minimum_targets={
+            "pdf_unseen_source_documents": 0,
+            "xlsx_unseen_workbooks": 0,
+            "query_fidelity_included_rows_per_family": 0,
+        },
+    )
+
+    gate = validation["candidate_intake_gate"]
+    rejected = validation["excluded_candidates"][0]
+
+    assert validation["accepted_candidates"] == []
+    assert rejected["exclusion_reason"] == "required_fields_missing"
+    assert rejected["missing_required_fields"] == ["query_id", "real_unseen"]
+    assert gate["excluded_candidate_count"] == 1
+    assert gate["passed"] is False
+    assert "candidate_rows_excluded" in gate["blocked_reasons"]
+
+
+def test_v4_5_1_candidate_identity_accepts_v4_5_2_source_identity_aliases() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    validation = run.validate_holdout_candidate_rows(
+        [
+            {
+                "candidate_id": "pdf-document-version-id-only",
+                "query_id": "pdf-alias-q1",
+                "source_family": "PDF",
+                "document_version_id": "pdf-doc-version-alias-001",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            {
+                "candidate_id": "xlsx-workbook-version-id-only",
+                "query_id": "xlsx-alias-q1",
+                "source_family": "XLSX",
+                "workbook_version_id": "xlsx-workbook-version-alias-001",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            {
+                "candidate_id": "pdf-raw-locator-version-id",
+                "query_id": "pdf-alias-q2",
+                "source_family": "PDF",
+                "raw_locator": {"document_version_id": "pdf-doc-version-alias-002"},
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            {
+                "candidate_id": "xlsx-raw-locator-workbook",
+                "query_id": "xlsx-alias-q2",
+                "source_family": "XLSX",
+                "raw_locator": {"workbook": "xlsx-workbook-alias-002"},
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+        ],
+        minimum_targets={
+            "pdf_unseen_source_documents": 2,
+            "xlsx_unseen_workbooks": 2,
+            "query_fidelity_included_rows_per_family": 2,
+        },
+    )
+
+    accepted = {row["candidate_id"]: row for row in validation["accepted_candidates"]}
+    assert validation["candidate_intake_gate"]["passed"] is True
+    assert accepted["pdf-document-version-id-only"]["source_identity_key"] == "pdf-doc-version-alias-001"
+    assert accepted["xlsx-workbook-version-id-only"]["source_identity_key"] == "xlsx-workbook-version-alias-001"
+    assert accepted["pdf-raw-locator-version-id"]["source_identity_key"] == "pdf-doc-version-alias-002"
+    assert accepted["xlsx-raw-locator-workbook"]["source_identity_key"] == "xlsx-workbook-alias-002"
+
+
+def test_v4_5_1_holdout_identity_contract_prioritizes_versions_and_rejects_conflicts() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    validation = run.validate_holdout_candidate_rows(
+        [
+            {
+                "candidate_id": "pdf-version-priority",
+                "query_id": "pdf-contract-q1",
+                "source_family": "PDF",
+                "document_version_id": "pdf-doc-version-001",
+                "source_document_id": "pdf-source-document-001",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            {
+                "candidate_id": "xlsx-workbook-priority",
+                "query_id": "xlsx-contract-q1",
+                "source_family": "XLSX",
+                "workbook_id": "xlsx-workbook-001",
+                "workbook_version_id": "xlsx-workbook-version-001",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            {
+                "candidate_id": "pdf-version-conflict",
+                "query_id": "pdf-contract-q2",
+                "source_family": "PDF",
+                "document_version_id": "pdf-doc-version-a",
+                "raw_locator": {"document_version_id": "pdf-doc-version-b"},
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            {
+                "candidate_id": "xlsx-source-identity-only",
+                "query_id": "xlsx-contract-q2",
+                "source_family": "XLSX",
+                "source_identity": "xlsx-source-identity-is-not-workbook-proof",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            {
+                "candidate_id": "xlsx-workbook-conflict",
+                "query_id": "xlsx-contract-q3",
+                "source_family": "XLSX",
+                "workbook_id": "xlsx-workbook-a",
+                "raw_locator": {"workbook": "xlsx-workbook-b"},
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+        ],
+        minimum_targets={
+            "pdf_unseen_source_documents": 1,
+            "xlsx_unseen_workbooks": 1,
+            "query_fidelity_included_rows_per_family": 1,
+        },
+    )
+
+    accepted = {row["candidate_id"]: row for row in validation["accepted_candidates"]}
+    excluded = {row["candidate_id"]: row for row in validation["excluded_candidates"]}
+    gate = validation["candidate_intake_gate"]
+
+    assert gate["passed"] is False
+    assert "candidate_rows_excluded" in gate["blocked_reasons"]
+    assert gate["holdout_candidate_manifest_contract_hash"]
+    assert accepted["pdf-version-priority"]["source_identity_key"] == "pdf-doc-version-001"
+    assert accepted["xlsx-workbook-priority"]["source_identity_key"] == "xlsx-workbook-001"
+    assert excluded["pdf-version-conflict"]["exclusion_reason"] == "source_identity_field_conflict"
+    assert excluded["pdf-version-conflict"]["source_identity_field_conflicts"] == [
+        "document_version_id",
+        "raw_locator.document_version_id",
+    ]
+    assert excluded["xlsx-source-identity-only"]["exclusion_reason"] == "source_identity_missing"
+    assert excluded["xlsx-source-identity-only"].get("source_identity_key") is None
+    assert excluded["xlsx-workbook-conflict"]["exclusion_reason"] == "source_identity_field_conflict"
+    assert excluded["xlsx-workbook-conflict"]["source_identity_field_conflicts"] == [
+        "raw_locator.workbook",
+        "workbook_id",
+    ]
+    assert validation["official_metric_input_rows"] == 0
+    assert validation["promotion_evidence"] is False
+
+
+def test_v4_5_2_external_source_identity_audit_fails_closed_without_manifest_but_uses_default_hash_baseline() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    metrics = report["metrics"]
+    gate = report["source_identity_audit_gate"]
+
+    assert report["schema_version"] == "rag_v4_5_2_external_holdout_candidate_source_identity_audit_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["v4_name"] == "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_candidate_source_identity_audit_only"] is True
+    assert report["source_identity_audit_ready"] is True
+    assert report["candidate_manifest_present"] is False
+    assert report["candidate_manifest_rows"] == 0
+    assert report["prior_identity_ledger_present"] is False
+    assert report["prior_identity_summary_report_present"] is True
+    assert report["prior_identity_summary_hash_records"] > 0
+    assert report["prior_identity_baseline_present"] is True
+    assert report["prior_identity_summary_report_input"]["defaulted_from_v4_5_3_report"] is True
+    assert report["prior_identity_summary_report_input"]["path_kind"] == "repo_relative"
+    assert gate["passed"] is False
+    assert gate["candidate_manifest_present"] is False
+    assert gate["prior_identity_ledger_present"] is False
+    assert gate["prior_identity_hash_summary_present"] is True
+    assert gate["prior_identity_baseline_present"] is True
+    assert gate["blocked_reasons"] == [
+        "candidate_manifest_missing",
+        "real_disjoint_holdout_candidates_below_target",
+        "real_query_fidelity_candidates_below_target",
+    ]
+    assert metrics["candidate_manifest_rows"] == 0
+    assert metrics["prior_identity_rows"] == 0
+    assert metrics["prior_identity_summary_report_present"] is True
+    assert metrics["prior_identity_baseline_present"] is True
+    assert metrics["source_identity_collision_count"] == 0
+    assert metrics["source_identity_audit_excluded_count"] == 0
+    assert metrics["real_holdout_available"] is False
+    assert metrics["real_holdout_sufficient"] is False
+    assert metrics["accepted_pdf_holdout_candidates"] == 0
+    assert metrics["accepted_xlsx_holdout_candidates"] == 0
+    assert metrics["real_query_fidelity_included_counts"] == {"PDF": 0, "XLSX": 0, "TEXT": 0}
+    assert report["readiness_decision"] == "blocked_pending_external_manifest_identity_audit_and_user_policy"
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+
+
+def test_v4_5_2_source_identity_audit_excludes_prior_pdf_and_xlsx_collisions() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod as run
+
+    prior_ledger_path = "D:/private/source/prior-ledger-row.jsonl"
+    prior_source_run_path = "D:/private/run/source"
+    candidate_rows = [
+        {
+            "candidate_id": "pdf-clean-q1",
+            "query_id": "pdf-clean-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-new-doc-001",
+            "source_identity": "pdf-new-doc-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "pdf-clean-q2",
+            "query_id": "pdf-clean-q2",
+            "source_family": "PDF",
+            "source_document_id": "pdf-new-doc-001",
+            "source_identity": "pdf-new-doc-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-clean-q1",
+            "query_id": "xlsx-clean-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-new-book-001",
+            "source_identity": "xlsx-new-book-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-clean-q2",
+            "query_id": "xlsx-clean-q2",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-new-book-001",
+            "source_identity": "xlsx-new-book-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "pdf-prior-collision",
+            "query_id": "pdf-prior-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-seen-doc-001",
+            "source_identity": "pdf-seen-doc-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-prior-collision",
+            "query_id": "xlsx-prior-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-seen-book-001",
+            "source_identity": "xlsx-seen-book-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+    ]
+    prior_identity_rows = [
+        {
+            "source_family": "PDF",
+            "source_document_id": "pdf-seen-doc-001",
+            "source_identity": "pdf-seen-doc-001",
+            "source_run_id": prior_source_run_path,
+            "ledger_row_id": prior_ledger_path,
+        },
+        {
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-seen-book-001",
+            "source_identity": "xlsx-seen-book-001",
+            "source_run_id": "seen_xlsx_surface",
+        },
+    ]
+
+    report = run.build_artifacts(
+        candidate_rows=candidate_rows,
+        prior_identity_rows=prior_identity_rows,
+        minimum_targets={
+            "pdf_unseen_source_documents": 1,
+            "xlsx_unseen_workbooks": 1,
+            "query_fidelity_included_rows_per_family": 2,
+        },
+    )["report"]
+
+    gate = report["source_identity_audit_gate"]
+    excluded = {row["candidate_id"]: row for row in report["excluded_candidates"]}
+
+    assert gate["passed"] is True
+    assert gate["prior_identity_ledger_present"] is True
+    assert gate["source_identity_collision_count"] == 2
+    assert gate["source_identity_audit_excluded_count"] == 2
+    assert gate["excluded_candidate_count"] == 2
+    assert gate["accepted_holdout_candidate_counts"] == {
+        "PDF_source_document_disjoint": 1,
+        "XLSX_workbook_disjoint": 1,
+        "TEXT_control_only": 0,
+    }
+    assert gate["real_query_fidelity_included_counts"] == {"PDF": 2, "XLSX": 2, "TEXT": 0}
+    assert excluded["pdf-prior-collision"]["exclusion_reason"] == "prior_source_identity_collision"
+    assert excluded["pdf-prior-collision"]["prior_identity_collision"] is True
+    pdf_match = excluded["pdf-prior-collision"]["prior_identity_match"]
+    assert pdf_match["match_source"] == "prior_identity_ledger"
+    assert pdf_match["source_identity_hash"]
+    assert pdf_match["source_identity_hash_algorithm"] == "sha256(family:identity_key)"
+    assert "source_identity_key" not in pdf_match
+    assert "source_run_id" not in pdf_match
+    assert "ledger_row_id" not in pdf_match
+    assert excluded["xlsx-prior-collision"]["exclusion_reason"] == "prior_source_identity_collision"
+    assert excluded["xlsx-prior-collision"]["prior_identity_collision"] is True
+    serialized = json.dumps(report, ensure_ascii=False)
+    assert prior_ledger_path not in serialized
+    assert prior_source_run_path not in serialized
+    for raw_identity in (
+        "pdf-new-doc-001",
+        "xlsx-new-book-001",
+        "pdf-seen-doc-001",
+        "xlsx-seen-book-001",
+    ):
+        assert raw_identity not in serialized
+    assert report["readiness_decision"] == "blocked_pending_user_owned_gold_qrels_denominator_policy"
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["real_holdout_available"] is False
+    assert report["real_holdout_sufficient"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+
+
+def test_v4_5_2_manifest_and_prior_ledger_cli_redacts_external_paths_and_writes_no_sidecars(
+    tmp_path,
+    capsys,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod as run
+
+    manifest_path = tmp_path / "external_candidates.jsonl"
+    ledger_path = tmp_path / "prior_identities.jsonl"
+    manifest_rows = [
+        {
+            "candidate_id": "pdf-cli-clean-q1",
+            "query_id": "pdf-cli-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-cli-new-doc-001",
+            "source_identity": "pdf-cli-new-doc-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-cli-clean-q1",
+            "query_id": "xlsx-cli-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-cli-new-book-001",
+            "source_identity": "xlsx-cli-new-book-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+    ]
+    prior_rows = [
+        {
+            "source_family": "PDF",
+            "source_document_id": "pdf-cli-seen-doc-001",
+            "source_identity": "pdf-cli-seen-doc-001",
+        }
+    ]
+    manifest_path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in manifest_rows) + "\n",
+        encoding="utf-8",
+    )
+    ledger_path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in prior_rows) + "\n",
+        encoding="utf-8",
+    )
+
+    assert run.main(["--check", "--manifest-file", str(manifest_path), "--prior-identity-ledger", str(ledger_path)]) == 0
+
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["candidate_manifest_input_provided"] is True
+    assert summary["prior_identity_ledger_input_provided"] is True
+    assert summary["candidate_manifest_present"] is True
+    assert summary["prior_identity_ledger_present"] is True
+    assert summary["source_identity_collision_count"] == 0
+    assert summary["official_metric_input_rows"] == 0
+    assert summary["fine_tuning_dataset_exports_created"] == 0
+    assert summary["v4_6_ft_dry_run_opened"] is False
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {
+        "external_candidates.jsonl",
+        "prior_identities.jsonl",
+    }
+
+
+def test_v4_5_2_external_manifest_rejects_oracle_raw_path_leakage_and_official_flags() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod as run
+
+    local_path = "D:/private/source/holdout.pdf"
+    identity_path = "D:/private/source/holdout.xlsx"
+    candidate_rows = [
+        {
+            "candidate_id": "oracle-row",
+            "query_id": "oracle-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-oracle-doc",
+            "source_identity": "pdf-oracle-doc",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+            "expected_answer": "secret expected answer",
+        },
+        {
+            "candidate_id": "raw-path-row",
+            "query_id": "raw-path-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-raw-path-doc",
+            "source_identity": "pdf-raw-path-doc",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+            "source_uri": local_path,
+        },
+        {
+            "candidate_id": "identity-path-row",
+            "query_id": "identity-path-q1",
+            "source_family": "XLSX",
+            "source_identity": identity_path,
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "leakage-row",
+            "query_id": "leakage-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-leakage-book",
+            "source_identity": "xlsx-leakage-book",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+            "leakage_bucket": "source_title_leak",
+        },
+        {
+            "candidate_id": "official-row",
+            "query_id": "official-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-official-book",
+            "source_identity": "xlsx-official-book",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+            "official_metric_input_rows": 1,
+            "official_denominator": True,
+        },
+        {
+            "candidate_id": "promotion-row",
+            "query_id": "promotion-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-promotion-doc",
+            "source_identity": "pdf-promotion-doc",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+            "promotion_evidence": True,
+        },
+    ]
+
+    report = run.build_artifacts(
+        candidate_rows=candidate_rows,
+        prior_identity_rows=[{"source_family": "PDF", "source_document_id": "seen-prior"}],
+    )["report"]
+
+    excluded = {row["candidate_id"]: row for row in report["excluded_candidates"]}
+    serialized = json.dumps(report, ensure_ascii=False)
+
+    assert excluded["oracle-row"]["exclusion_reason"] == "protected_oracle_field_present"
+    assert excluded["raw-path-row"]["exclusion_reason"] == "raw_local_path_present"
+    assert excluded["raw-path-row"]["raw_local_path_fields_present"] == ["source_uri"]
+    assert excluded["identity-path-row"]["exclusion_reason"] == "raw_local_path_present"
+    assert excluded["identity-path-row"]["raw_local_path_fields_present"] == ["source_identity"]
+    assert excluded["identity-path-row"].get("source_identity_key") in (None, "__raw_local_path_redacted__")
+    assert "source_identity" not in excluded["identity-path-row"]
+    assert excluded["leakage-row"]["exclusion_reason"] == "leakage_bucket_present"
+    assert excluded["official-row"]["exclusion_reason"] == "forbidden_readiness_flag_present"
+    assert sorted(excluded["official-row"]["forbidden_readiness_flags_present"]) == [
+        "official_denominator",
+        "official_metric_input_rows",
+    ]
+    assert excluded["promotion-row"]["exclusion_reason"] == "forbidden_readiness_flag_present"
+    assert report["source_identity_audit_gate"]["candidate_manifest_present"] is True
+    assert report["source_identity_audit_gate"]["source_identity_collision_count"] == 0
+    assert report["source_identity_audit_gate"]["source_identity_audit_excluded_count"] == len(candidate_rows)
+    assert report["metrics"]["excluded_holdout_candidate_count"] == len(candidate_rows)
+    assert "candidate_manifest_missing" not in report["source_identity_audit_gate"]["blocked_reasons"]
+    assert "secret expected answer" not in serialized
+    assert local_path not in serialized
+    assert identity_path not in serialized
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+
+
+def test_v4_5_2_source_identity_aliases_match_holdout_manifest_contract() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod as run
+
+    assert run.holdout_manifest_contract.HOLDOUT_CANDIDATE_MANIFEST_CONTRACT_HASH
+    assert run.source_identity_key(
+        {
+            "source_family": "PDF",
+            "document_version_id": "pdf-doc-version-priority",
+            "source_document_id": "pdf-source-document-fallback",
+        },
+        "PDF",
+    ) == "pdf-doc-version-priority"
+    assert run.source_identity_key(
+        {
+            "source_family": "PDF",
+            "raw_locator": {"source_document_id": "pdf-source-document-from-raw-locator"},
+        },
+        "PDF",
+    ) == "pdf-source-document-from-raw-locator"
+    assert run.source_identity_key(
+        {
+            "source_family": "XLSX",
+            "source_identity": "xlsx-source-identity-is-metadata-only",
+        },
+        "XLSX",
+    ) == ""
+    assert run.source_identity_field_conflicts(
+        {
+            "source_family": "PDF",
+            "document_version_id": "pdf-doc-version-a",
+            "raw_locator": {"document_version_id": "pdf-doc-version-b"},
+        },
+        "PDF",
+    ) == ["document_version_id", "raw_locator.document_version_id"]
+    assert run.source_identity_field_conflicts(
+        {
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-workbook-a",
+            "source_workbook_id": "xlsx-workbook-b",
+        },
+        "XLSX",
+    ) == ["source_workbook_id", "workbook_id"]
+
+
+def test_v4_5_2_source_identity_audit_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod as run
+
+    candidate_rows = [
+        {
+            "candidate_id": "pdf-clean-q1",
+            "query_id": "pdf-clean-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-new-doc-001",
+            "source_identity": "pdf-new-doc-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-clean-q1",
+            "query_id": "xlsx-clean-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-new-book-001",
+            "source_identity": "xlsx-new-book-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+    ]
+    artifacts = run.build_artifacts(
+        candidate_rows=candidate_rows,
+        prior_identity_rows=[{"source_family": "PDF", "source_document_id": "seen-prior"}],
+        minimum_targets={
+            "pdf_unseen_source_documents": 1,
+            "xlsx_unseen_workbooks": 1,
+            "query_fidelity_included_rows_per_family": 1,
+        },
+    )
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert guardrails["source_identity_audit_ready"] is True
+    assert guardrails["source_identity_audit_jsonl_created"] is False
+    assert guardrails["prior_identity_ledger_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["v4_6_ft_dry_run_opened"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "holdout_candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "prior_identity_ledger.jsonl",
+        "source_identity_audit.jsonl",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_5_2 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["summary"]["review_csv_created"] is False
+    assert written["source_identity_audit_jsonl_created"] is False
+    assert written["prior_identity_ledger_jsonl_created"] is False
+
+    unexpected_child_dir = tmp_path / "checkpoint-0001"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_5_2 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    unknown_sidecar_dir = tmp_path / "unknown-sidecar"
+    unknown_sidecar_dir.mkdir()
+    (unknown_sidecar_dir / "debug.json").write_text("unexpected v4_5_2 sidecar", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="unexpected v4_5_2 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=unknown_sidecar_dir)
+
+
+def test_v4_5_2_source_identity_audit_uses_v4_5_3_hash_only_prior_summary_without_raw_identity_leakage() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod as run
+    import rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod as prior_run
+
+    prior_summary_report = prior_run.build_report(
+        source_rows=[
+            {
+                "source_atom_id": "pdf-prior-1",
+                "source_family": "PDF",
+                "source_identity": "docv_seen_pdf:D:/private/seen.pdf:1:[1,2,3,4]",
+                "document_version_id": "docv_seen_pdf",
+                "raw_locator": {"source_pdf_path": "D:/private/seen.pdf"},
+            },
+            {
+                "source_atom_id": "xlsx-prior-1",
+                "source_family": "XLSX",
+                "source_identity": "docv_seen_xlsx:D:/private/seen.xlsx:Sheet1:A1:B2:B2",
+                "workbook_id": "seen-workbook.xlsx",
+                "workbook_version_id": "docv_seen_xlsx",
+                "raw_locator": {"source_file_path": "D:/private/seen.xlsx"},
+            },
+        ]
+    )
+    candidate_rows = [
+        {
+            "candidate_id": "pdf-collision",
+            "source_family": "PDF",
+            "source_document_id": "docv_seen_pdf",
+            "query_text": "What does the seen PDF say?",
+        },
+        {
+            "candidate_id": "xlsx-collision",
+            "source_family": "XLSX",
+            "workbook_id": "seen-workbook.xlsx",
+            "query_text": "What does the seen workbook say?",
+        },
+    ]
+
+    report = run.build_report(
+        candidate_rows=candidate_rows,
+        prior_identity_summary_report=prior_summary_report,
+        minimum_targets={"PDF_source_document_disjoint": 1, "XLSX_workbook_disjoint": 1},
+    )
+    serialized_report = json.dumps(report, ensure_ascii=False)
+    excluded = {row["candidate_id"]: row for row in report["excluded_candidates"]}
+
+    assert report["prior_identity_summary_report_present"] is True
+    assert report["prior_identity_summary_hash_records"] == 2
+    assert report["prior_identity_baseline_present"] is True
+    assert report["source_identity_audit_gate"]["prior_identity_baseline_present"] is True
+    assert report["source_identity_audit_gate"]["prior_identity_hash_summary_present"] is True
+    assert report["source_identity_audit_gate"]["source_identity_collision_count"] == 2
+    assert excluded["pdf-collision"]["exclusion_reason"] == "prior_source_identity_collision"
+    assert excluded["xlsx-collision"]["exclusion_reason"] == "prior_source_identity_collision"
+    assert excluded["pdf-collision"]["prior_identity_match"]["match_source"] == "hash_summary_report"
+    assert excluded["xlsx-collision"]["prior_identity_match"]["match_source"] == "hash_summary_report"
+    assert "source_identity_key" not in json.dumps(excluded["pdf-collision"]["prior_identity_match"], ensure_ascii=False)
+    assert "source_identity_key" not in json.dumps(excluded["xlsx-collision"]["prior_identity_match"], ensure_ascii=False)
+    assert "D:/private" not in serialized_report
+    assert "docv_seen_pdf" not in json.dumps(report["prior_identity_summary_report"], ensure_ascii=False)
+    assert "seen-workbook.xlsx" not in json.dumps(report["prior_identity_summary_report"], ensure_ascii=False)
+    assert report["prior_identity_ledger_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+
+
+def test_v4_5_2_cli_accepts_v4_5_3_hash_summary_without_prior_identity_sidecar(
+    tmp_path,
+    capsys,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod as run
+    import rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod as prior_run
+
+    prior_summary_report = prior_run.build_report(
+        source_rows=[
+            {
+                "source_atom_id": "pdf-prior-cli-1",
+                "source_family": "PDF",
+                "source_identity": "docv_seen_pdf_cli:D:/private/seen-cli.pdf:1:[1,2,3,4]",
+                "document_version_id": "docv_seen_pdf_cli",
+                "raw_locator": {"source_pdf_path": "D:/private/seen-cli.pdf"},
+            }
+        ]
+    )
+    summary_path = tmp_path / "prior_summary.json"
+    summary_path.write_text(json.dumps(prior_summary_report, ensure_ascii=False), encoding="utf-8")
+    manifest_path = tmp_path / "external_candidates.jsonl"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "candidate_id": "pdf-cli-hash-collision",
+                "source_family": "PDF",
+                "source_document_id": "docv_seen_pdf_cli",
+                "query_text": "What does the seen CLI PDF say?",
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    assert run.main(
+        [
+            "--check",
+            "--candidate-manifest",
+            str(manifest_path),
+            "--prior-identity-summary-report",
+            str(summary_path),
+        ]
+    ) == 0
+    output_text = capsys.readouterr().out
+    output = json.loads(output_text)
+
+    assert output["prior_identity_ledger_present"] is False
+    assert output["prior_identity_summary_report_present"] is True
+    assert output["prior_identity_summary_hash_records"] == 1
+    assert output["prior_identity_baseline_present"] is True
+    assert output["source_identity_collision_count"] == 1
+    assert str(summary_path) not in output_text
+    assert str(manifest_path) not in output_text
+    assert "D:/private" not in output_text
+
+
+def test_v4_5_3_prior_identity_ledger_summary_builds_hash_only_pdf_xlsx_baseline_from_source_atoms() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod as run
+
+    private_pdf_path = "D:/private/source/seen.pdf"
+    private_xlsx_path = "D:/private/source/seen.xlsx"
+    source_rows = [
+        {
+            "source_atom_id": "pdf-atom-1",
+            "source_family": "PDF",
+            "source_identity": f"docv_pdf_seen:{private_pdf_path}:1:[1,2,3,4]",
+            "document_id": "doc_pdf_seen",
+            "document_version_id": "docv_pdf_seen",
+            "raw_locator": {"source_pdf_path": private_pdf_path, "page": 1},
+        },
+        {
+            "source_atom_id": "pdf-atom-2",
+            "source_family": "PDF",
+            "source_identity": f"docv_pdf_seen:{private_pdf_path}:2:[1,2,3,4]",
+            "document_id": "doc_pdf_seen",
+            "document_version_id": "docv_pdf_seen",
+            "raw_locator": {"source_pdf_path": private_pdf_path, "page": 2},
+        },
+        {
+            "source_atom_id": "xlsx-atom-1",
+            "source_family": "XLSX",
+            "source_identity": f"docv_xlsx_seen:{private_xlsx_path}:Sheet1:A1:B2:B2",
+            "workbook_id": "seen-workbook.xlsx",
+            "workbook_version_id": "docv_xlsx_seen",
+            "raw_locator": {"source_file_path": private_xlsx_path, "sheet": "Sheet1", "cell": "B2"},
+        },
+    ]
+
+    hash_records = run.build_prior_identity_hash_records(source_rows)
+    summary = run.build_prior_identity_ledger_summary(source_rows)
+    serialized = json.dumps(summary, ensure_ascii=False)
+    by_family = {row["source_family"]: row for row in hash_records}
+
+    assert len(hash_records) == 2
+    assert by_family["PDF"]["source_atom_count"] == 2
+    assert by_family["PDF"]["identity_scope"] == "PDF_document_version"
+    assert by_family["XLSX"]["source_atom_count"] == 1
+    assert by_family["XLSX"]["identity_scope"] == "XLSX_workbook"
+    assert all(row["source_identity_hash"] for row in hash_records)
+    assert all("source_identity_key" not in row for row in hash_records)
+    assert summary["prior_source_identity_ledger_summary_only"] is True
+    assert summary["prior_identity_collision_baseline_available"] is True
+    assert summary["identity_key_hash_algorithm"] == "sha256(family:identity_key)"
+    assert summary["raw_source_identity_values_embedded"] is False
+    assert summary["raw_local_path_values_exposed"] is False
+    assert summary["prior_identity_key_counts_by_family"] == {"PDF": 1, "XLSX": 1, "TEXT": 0}
+    assert summary["prior_identity_source_atom_counts_by_family"] == {"PDF": 2, "XLSX": 1, "TEXT": 0}
+    assert private_pdf_path not in serialized
+    assert private_xlsx_path not in serialized
+    assert "docv_pdf_seen" not in serialized
+    assert "seen-workbook.xlsx" not in serialized
+    assert '"source_identity":' not in serialized
+    assert "source_identity_key" not in serialized
+    assert '"raw_locator":' not in serialized
+
+
+def test_v4_5_3_pdf_source_document_id_fallback_matches_v4_5_2_collision_audit() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod as audit_run
+    import rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod as prior_run
+
+    prior_summary_report = prior_run.build_report(
+        source_rows=[
+            {
+                "source_atom_id": "pdf-source-doc-only-1",
+                "source_family": "PDF",
+                "source_document_id": "pdf-source-doc-only",
+                "source_identity": "pdf-source-doc-only:D:/private/seen.pdf:1:[1,2,3,4]",
+                "raw_locator": {"source_pdf_path": "D:/private/seen.pdf"},
+            }
+        ]
+    )
+    report = audit_run.build_report(
+        candidate_rows=[
+            {
+                "candidate_id": "pdf-source-doc-collision",
+                "source_family": "PDF",
+                "source_document_id": "pdf-source-doc-only",
+                "query_text": "What does the seen source document say?",
+            }
+        ],
+        prior_identity_summary_report=prior_summary_report,
+    )
+    excluded = {row["candidate_id"]: row for row in report["excluded_candidates"]}
+    serialized_report = json.dumps(report, ensure_ascii=False)
+
+    assert prior_summary_report["metrics"]["prior_identity_hash_record_count"] == 1
+    assert prior_summary_report["prior_identity_ledger_summary"]["prior_identity_hash_records_by_family"]["PDF"][0][
+        "identity_scope"
+    ] == "PDF_source_document"
+    assert report["prior_identity_baseline_present"] is True
+    assert report["source_identity_audit_gate"]["source_identity_collision_count"] == 1
+    assert excluded["pdf-source-doc-collision"]["exclusion_reason"] == "prior_source_identity_collision"
+    assert excluded["pdf-source-doc-collision"]["prior_identity_match"]["match_source"] == "hash_summary_report"
+    assert "pdf-source-doc-only" not in serialized_report
+    assert "D:/private" not in serialized_report
+
+
+def test_v4_5_3_prior_identity_ledger_summary_single_report_and_closed_gates(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod as run
+
+    artifacts = run.build_artifacts(
+        source_rows=[
+            {
+                "source_atom_id": "pdf-atom-1",
+                "source_family": "PDF",
+                "source_identity": "docv_pdf_seen:D:/private/source/seen.pdf:1:[1,2,3,4]",
+                "document_version_id": "docv_pdf_seen",
+                "raw_locator": {"source_pdf_path": "D:/private/source/seen.pdf"},
+            },
+            {
+                "source_atom_id": "xlsx-atom-1",
+                "source_family": "XLSX",
+                "source_identity": "docv_xlsx_seen:D:/private/source/seen.xlsx:Sheet1:A1:B2:B2",
+                "workbook_id": "seen-workbook.xlsx",
+                "workbook_version_id": "docv_xlsx_seen",
+                "raw_locator": {"source_file_path": "D:/private/source/seen.xlsx"},
+            },
+        ]
+    )
+    report = artifacts["report"]
+
+    assert report["schema_version"] == "rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_report_v1"
+    assert report["diagnostic_only"] is True
+    assert report["prior_source_identity_ledger_summary_only"] is True
+    assert report["prior_identity_collision_baseline_available"] is True
+    assert report["prior_identity_ledger_rows_embedded_in_report"] is False
+    assert report["prior_identity_ledger_jsonl_created"] is False
+    assert report["raw_source_identity_values_embedded"] is False
+    assert report["raw_local_path_values_exposed"] is False
+    assert report["candidate_manifest_present"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["training_job_created"] is False
+    assert report["metrics"]["prior_pdf_identity_count"] == 1
+    assert report["metrics"]["prior_xlsx_identity_count"] == 1
+    serialized_report = json.dumps(report, ensure_ascii=False)
+    assert "D:/private" not in serialized_report
+    assert "docv_pdf_seen" not in serialized_report
+    assert "seen-workbook.xlsx" not in serialized_report
+    assert "source_identity_key" not in serialized_report
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "prior_identity_ledger.jsonl",
+        "source_identity_audit.jsonl",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_5_3 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+
+    unexpected_child_dir = tmp_path / "checkpoint-0001"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_5_3 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    unknown_sidecar_dir = tmp_path / "unknown-sidecar"
+    unknown_sidecar_dir.mkdir()
+    (unknown_sidecar_dir / "debug.json").write_text("unexpected v4_5_3 sidecar", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="unexpected v4_5_3 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=unknown_sidecar_dir)
+
+
+def _v4_6_source_contract_base(run_id: str, schema_version: str) -> dict[str, object]:
+    return {
+        "schema_version": schema_version,
+        "run_id": run_id,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "promotion_evidence": False,
+        "product_success_evidence_allowed": False,
+        "fine_tuning_dataset_export_created": False,
+        "training_job_created": False,
+        "model_or_adapter_checkpoint_written": False,
+        "single_report_artifact_contract": True,
+        "sidecar_primary_artifacts_suppressed": True,
+        "review_csv_created": False,
+    }
+
+
+def _v4_6_valid_v4_5_report(run, *, readiness_gate_passed: bool = True) -> dict[str, object]:
+    return {
+        **_v4_6_source_contract_base(run.v45.RUN_ID, run.v45.REPORT_SCHEMA_VERSION),
+        "readiness_decision": "ready_for_training" if readiness_gate_passed else "blocked",
+        "ft_route_policy_dry_run_executed": False,
+        "route_policy_projection_recorded": True,
+        "metrics": {
+            "readiness_gate_passed": readiness_gate_passed,
+            "split_quality_gate_passed": True,
+            "leakage_audit_gate_passed": True,
+            "fine_tuning_dataset_exports_created": 0,
+            "official_metric_input_rows": 0,
+            "sidecar_primary_artifacts_suppressed": True,
+            "single_report_artifact_contract": True,
+            "ft_route_policy_dry_run_executed": False,
+            "route_policy_projection_recorded": True,
+        },
+    }
+
+
+def _v4_6_valid_v4_5_1_report(run, *, gate_passed: bool = True) -> dict[str, object]:
+    return {
+        **_v4_6_source_contract_base(run.v451.RUN_ID, run.v451.REPORT_SCHEMA_VERSION),
+        "holdout_candidate_manifest_contract_version": (
+            run.holdout_manifest_contract.HOLDOUT_CANDIDATE_MANIFEST_CONTRACT_VERSION
+        ),
+        "holdout_candidate_manifest_contract_hash": (
+            run.holdout_manifest_contract.HOLDOUT_CANDIDATE_MANIFEST_CONTRACT_HASH
+        ),
+        "candidate_manifest_present": True,
+        "candidate_manifest_rows": 2,
+        "candidate_manifest_jsonl_created": False,
+        "candidate_validation_jsonl_created": False,
+        "candidate_intake_gate": {"passed": gate_passed},
+        "metrics": {
+            "official_metric_input_rows": 0,
+            "sidecar_primary_artifacts_suppressed": True,
+            "single_report_artifact_contract": True,
+        },
+    }
+
+
+def _v4_6_valid_v4_5_2_report(
+    run,
+    *,
+    gate_passed: bool = True,
+    prior_identity_hash_set_sha256: str = "hash-set-abc",
+) -> dict[str, object]:
+    return {
+        **_v4_6_source_contract_base(run.v452.RUN_ID, run.v452.REPORT_SCHEMA_VERSION),
+        "holdout_candidate_manifest_contract_version": (
+            run.holdout_manifest_contract.HOLDOUT_CANDIDATE_MANIFEST_CONTRACT_VERSION
+        ),
+        "holdout_candidate_manifest_contract_hash": (
+            run.holdout_manifest_contract.HOLDOUT_CANDIDATE_MANIFEST_CONTRACT_HASH
+        ),
+        "candidate_manifest_jsonl_created": False,
+        "source_identity_audit_jsonl_created": False,
+        "prior_identity_baseline_present": True,
+        "prior_identity_summary_report_present": True,
+        "prior_identity_summary_report": {
+            "identity_key_hash_algorithm": "sha256(family:identity_key)",
+            "prior_identity_hash_record_count": 2,
+            "prior_identity_hash_set_sha256": prior_identity_hash_set_sha256,
+            "raw_local_path_values_exposed": False,
+            "raw_source_identity_values_embedded": False,
+        },
+        "source_identity_audit_gate": {
+            "passed": gate_passed,
+            "source_identity_collision_count": 0,
+        },
+        "metrics": {
+            "official_metric_input_rows": 0,
+            "sidecar_primary_artifacts_suppressed": True,
+            "single_report_artifact_contract": True,
+        },
+    }
+
+
+def _v4_6_valid_v4_5_3_report(run, *, prior_identity_hash_set_sha256: str = "hash-set-abc") -> dict[str, object]:
+    return {
+        **_v4_6_source_contract_base(run.v453.RUN_ID, run.v453.REPORT_SCHEMA_VERSION),
+        "holdout_candidate_manifest_contract_version": (
+            run.holdout_manifest_contract.HOLDOUT_CANDIDATE_MANIFEST_CONTRACT_VERSION
+        ),
+        "holdout_candidate_manifest_contract_hash": (
+            run.holdout_manifest_contract.HOLDOUT_CANDIDATE_MANIFEST_CONTRACT_HASH
+        ),
+        "prior_identity_collision_baseline_available": True,
+        "raw_source_identity_values_embedded": False,
+        "raw_local_path_values_exposed": False,
+        "prior_identity_ledger_jsonl_created": False,
+        "prior_identity_ledger_summary": {
+            "identity_key_hash_algorithm": "sha256(family:identity_key)",
+            "prior_identity_hash_record_count": 2,
+            "prior_identity_hash_set_sha256": prior_identity_hash_set_sha256,
+        },
+        "source_registry_inputs": {
+            "rows_scanned": 2,
+            "source_atom_registry_jsonl_sha256": "source-registry-abc",
+        },
+        "metrics": {
+            "official_metric_input_rows": 0,
+            "sidecar_primary_artifacts_suppressed": True,
+            "single_report_artifact_contract": True,
+        },
+    }
+
+
+def test_v4_6_ft_route_policy_dry_run_preflight_stays_closed_until_all_gates_pass() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_ft_route_policy_dry_run_preflight_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    gates = report["preflight_gates"]
+    metrics = report["metrics"]
+    ft_a = report["ft_a_route_policy_preflight"]
+
+    assert report["schema_version"] == "rag_v4_6_ft_route_policy_dry_run_preflight_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["v4_name"] == "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    assert report["diagnostic_only"] is True
+    assert report["ft_route_policy_dry_run_preflight_only"] is True
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["fine_tuning_started"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+
+    assert gates["v4_5_readiness_gate"]["passed"] is False
+    assert gates["v4_5_1_candidate_intake_gate"]["passed"] is False
+    assert gates["v4_5_2_source_identity_audit_gate"]["passed"] is False
+    assert gates["v4_5_3_prior_identity_baseline_gate"]["passed"] is True
+    assert gates["user_owned_gold_policy_gate"]["passed"] is False
+    assert gates["official_denominator_gate"]["passed"] is False
+    assert gates["promotion_policy_gate"]["passed"] is False
+    assert metrics["all_preflight_gates_passed"] is False
+    assert metrics["ft_route_policy_dry_run_opened"] is False
+    assert metrics["ft_route_policy_dry_run_executed"] is False
+    assert metrics["fine_tuning_dataset_exports_created"] == 0
+    assert metrics["training_job_created"] is False
+    assert "v4_5_readiness_gate_failed" in report["blocked_reasons"]
+    assert "v4_5_1_candidate_intake_gate_failed" in report["blocked_reasons"]
+    assert "v4_5_2_source_identity_audit_gate_failed" in report["blocked_reasons"]
+    assert "user_owned_gold_qrels_denominator_policy_pending" in report["blocked_reasons"]
+
+    assert ft_a["lane"] == "FT-A"
+    assert ft_a["target_policy_buckets"] == [
+        "ANSWER_ALLOWED",
+        "CONTEXT_REQUIRED",
+        "AMBIGUOUS_WORKBOOK_IDENTITY",
+        "AMBIGUOUS_FILE_IDENTITY",
+        "UNSUPPORTED_RANGE_TOO_LARGE",
+    ]
+    assert ft_a["prompt_payload_created"] is False
+    assert ft_a["raw_llm_response_payload_created"] is False
+    assert ft_a["training_dataset_export_created"] is False
+
+
+def test_v4_6_preflight_gate_logic_keeps_user_policy_separate_after_source_gates_pass() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_ft_route_policy_dry_run_preflight_nonprod as run
+
+    gates = run.build_preflight_gates(
+        v4_5_report=_v4_6_valid_v4_5_report(run),
+        v4_5_1_report=_v4_6_valid_v4_5_1_report(run),
+        v4_5_2_report=_v4_6_valid_v4_5_2_report(run),
+        v4_5_3_report=_v4_6_valid_v4_5_3_report(run),
+        user_owned_policy_opened=False,
+    )
+    blocked_reasons = run.blocked_reasons_for_preflight(gates)
+
+    assert gates["v4_5_readiness_gate"]["passed"] is True
+    assert gates["v4_5_1_candidate_intake_gate"]["passed"] is True
+    assert gates["v4_5_2_source_identity_audit_gate"]["passed"] is True
+    assert gates["v4_5_3_prior_identity_baseline_gate"]["passed"] is True
+    assert gates["user_owned_gold_policy_gate"]["passed"] is False
+    assert run.all_preflight_gates_passed(gates) is False
+    assert "v4_5_readiness_gate_failed" not in blocked_reasons
+    assert "v4_5_1_candidate_intake_gate_failed" not in blocked_reasons
+    assert "v4_5_2_source_identity_audit_gate_failed" not in blocked_reasons
+    assert blocked_reasons == [
+        "user_owned_gold_qrels_denominator_policy_pending",
+        "official_denominator_policy_closed",
+        "promotion_policy_closed",
+    ]
+
+
+def test_v4_6_preflight_only_opens_dry_run_lane_when_all_source_and_policy_gates_pass() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_ft_route_policy_dry_run_preflight_nonprod as run
+
+    v4_5_3_report = _v4_6_valid_v4_5_3_report(run)
+    gates = run.build_preflight_gates(
+        v4_5_report=_v4_6_valid_v4_5_report(run),
+        v4_5_1_report=_v4_6_valid_v4_5_1_report(run),
+        v4_5_2_report=_v4_6_valid_v4_5_2_report(run),
+        v4_5_3_report=v4_5_3_report,
+        user_owned_policy_opened=True,
+        official_denominator_policy_opened=True,
+        promotion_policy_opened=True,
+    )
+    ft_a = run.build_ft_a_route_policy_preflight(gates)
+    metrics = run.build_metrics(gates, ft_a)
+
+    assert run.all_preflight_gates_passed(gates) is True
+    assert gates["v4_5_3_prior_identity_baseline_gate"]["evidence"]["source_atom_registry_jsonl_sha256"] == (
+        "source-registry-abc"
+    )
+    assert gates["v4_5_3_prior_identity_baseline_gate"]["evidence"]["prior_identity_hash_set_sha256"] == (
+        "hash-set-abc"
+    )
+    assert ft_a["dry_run_opened"] is True
+    assert ft_a["dry_run_executed"] is False
+    assert ft_a["prompt_payload_created"] is False
+    assert ft_a["raw_llm_response_payload_created"] is False
+    assert ft_a["training_dataset_export_created"] is False
+    assert ft_a["training_job_created"] is False
+    assert ft_a["model_or_adapter_checkpoint_written"] is False
+    assert metrics["ft_route_policy_dry_run_opened"] is True
+    assert metrics["ft_route_policy_dry_run_executed"] is False
+    assert metrics["fine_tuning_dataset_exports_created"] == 0
+    assert metrics["training_job_created"] is False
+
+
+def test_v4_6_preflight_rejects_empty_or_provenance_free_prior_identity_baseline() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_ft_route_policy_dry_run_preflight_nonprod as run
+
+    base_reports = {
+        "v4_5_report": _v4_6_valid_v4_5_report(run),
+        "v4_5_1_report": _v4_6_valid_v4_5_1_report(run),
+        "v4_5_2_report": _v4_6_valid_v4_5_2_report(run),
+    }
+    empty_prior_gates = run.build_preflight_gates(
+        **base_reports,
+        v4_5_3_report={
+            "prior_identity_collision_baseline_available": True,
+            "raw_source_identity_values_embedded": False,
+            "raw_local_path_values_exposed": False,
+            "prior_identity_ledger_jsonl_created": False,
+            "prior_identity_ledger_summary": {
+                "identity_key_hash_algorithm": "sha256(family:identity_key)",
+                "prior_identity_hash_record_count": 0,
+            },
+            "source_registry_inputs": {
+                "rows_scanned": 2,
+                "source_atom_registry_jsonl_sha256": "abc123",
+            },
+        },
+        user_owned_policy_opened=True,
+        official_denominator_policy_opened=True,
+        promotion_policy_opened=True,
+    )
+    provenance_free_gates = run.build_preflight_gates(
+        **base_reports,
+        v4_5_3_report={
+            "prior_identity_collision_baseline_available": True,
+            "raw_source_identity_values_embedded": False,
+            "raw_local_path_values_exposed": False,
+            "prior_identity_ledger_jsonl_created": False,
+            "prior_identity_ledger_summary": {
+                "identity_key_hash_algorithm": "sha256(family:identity_key)",
+                "prior_identity_hash_record_count": 2,
+            },
+        },
+        user_owned_policy_opened=True,
+        official_denominator_policy_opened=True,
+        promotion_policy_opened=True,
+    )
+
+    assert empty_prior_gates["v4_5_3_prior_identity_baseline_gate"]["passed"] is False
+    assert provenance_free_gates["v4_5_3_prior_identity_baseline_gate"]["passed"] is False
+    assert run.blocked_reasons_for_preflight(empty_prior_gates) == [
+        "v4_5_2_source_identity_audit_gate_failed",
+        "v4_5_3_prior_identity_baseline_gate_failed"
+    ]
+    assert run.blocked_reasons_for_preflight(provenance_free_gates) == [
+        "v4_5_2_source_identity_audit_gate_failed",
+        "v4_5_3_prior_identity_baseline_gate_failed"
+    ]
+
+
+def test_v4_6_preflight_rejects_source_gate_booleans_without_report_contract_provenance() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_ft_route_policy_dry_run_preflight_nonprod as run
+
+    gates = run.build_preflight_gates(
+        v4_5_report={"metrics": {"readiness_gate_passed": True}},
+        v4_5_1_report={"candidate_intake_gate": {"passed": True}},
+        v4_5_2_report={"source_identity_audit_gate": {"passed": True}},
+        v4_5_3_report=_v4_6_valid_v4_5_3_report(run),
+        user_owned_policy_opened=True,
+        official_denominator_policy_opened=True,
+        promotion_policy_opened=True,
+    )
+    ft_a = run.build_ft_a_route_policy_preflight(gates)
+    metrics = run.build_metrics(gates, ft_a)
+
+    assert gates["v4_5_readiness_gate"]["passed"] is False
+    assert gates["v4_5_1_candidate_intake_gate"]["passed"] is False
+    assert gates["v4_5_2_source_identity_audit_gate"]["passed"] is False
+    assert gates["v4_5_readiness_gate"]["evidence"]["source_report_contract"]["passed"] is False
+    assert "schema_version_matches" in gates["v4_5_readiness_gate"]["evidence"]["source_report_contract"]["failed_checks"]
+    assert "diagnostic_only" in gates["v4_5_1_candidate_intake_gate"]["evidence"]["source_report_contract"]["failed_checks"]
+    assert "prior_identity_summary_report_present" in (
+        gates["v4_5_2_source_identity_audit_gate"]["evidence"]["source_report_contract"]["failed_checks"]
+    )
+    assert run.all_preflight_gates_passed(gates) is False
+    assert ft_a["dry_run_opened"] is False
+    assert metrics["ft_route_policy_dry_run_opened"] is False
+    assert metrics["fine_tuning_dataset_exports_created"] == 0
+    assert metrics["official_metric_input_rows"] == 0
+    assert run.blocked_reasons_for_preflight(gates) == [
+        "v4_5_readiness_gate_failed",
+        "v4_5_1_candidate_intake_gate_failed",
+        "v4_5_2_source_identity_audit_gate_failed",
+    ]
+
+
+def test_v4_6_preflight_rejects_v4_5_2_prior_identity_hash_mismatch_with_v4_5_3_baseline() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_ft_route_policy_dry_run_preflight_nonprod as run
+
+    gates = run.build_preflight_gates(
+        v4_5_report=_v4_6_valid_v4_5_report(run),
+        v4_5_1_report=_v4_6_valid_v4_5_1_report(run),
+        v4_5_2_report=_v4_6_valid_v4_5_2_report(run, prior_identity_hash_set_sha256="stale-hash"),
+        v4_5_3_report=_v4_6_valid_v4_5_3_report(run, prior_identity_hash_set_sha256="current-hash"),
+        user_owned_policy_opened=True,
+        official_denominator_policy_opened=True,
+        promotion_policy_opened=True,
+    )
+    ft_a = run.build_ft_a_route_policy_preflight(gates)
+
+    assert gates["v4_5_readiness_gate"]["passed"] is True
+    assert gates["v4_5_1_candidate_intake_gate"]["passed"] is True
+    assert gates["v4_5_2_source_identity_audit_gate"]["passed"] is False
+    assert gates["v4_5_2_source_identity_audit_gate"]["evidence"]["prior_identity_hash_set_matches_v4_5_3"] is False
+    assert gates["v4_5_3_prior_identity_baseline_gate"]["passed"] is True
+    assert run.blocked_reasons_for_preflight(gates) == [
+        "v4_5_2_source_identity_audit_gate_failed"
+    ]
+    assert ft_a["dry_run_opened"] is False
+
+
+def test_v4_6_preflight_rejects_holdout_manifest_contract_hash_mismatch() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_ft_route_policy_dry_run_preflight_nonprod as run
+
+    stale_v4_5_1 = _v4_6_valid_v4_5_1_report(run)
+    stale_v4_5_1["holdout_candidate_manifest_contract_hash"] = "stale-contract-hash"
+
+    gates = run.build_preflight_gates(
+        v4_5_report=_v4_6_valid_v4_5_report(run),
+        v4_5_1_report=stale_v4_5_1,
+        v4_5_2_report=_v4_6_valid_v4_5_2_report(run),
+        v4_5_3_report=_v4_6_valid_v4_5_3_report(run),
+        user_owned_policy_opened=True,
+        official_denominator_policy_opened=True,
+        promotion_policy_opened=True,
+    )
+
+    assert gates["v4_5_readiness_gate"]["passed"] is True
+    assert gates["v4_5_1_candidate_intake_gate"]["passed"] is False
+    assert gates["v4_5_2_source_identity_audit_gate"]["passed"] is True
+    assert gates["v4_5_3_prior_identity_baseline_gate"]["passed"] is True
+    assert "holdout_candidate_manifest_contract_hash_matches" in (
+        gates["v4_5_1_candidate_intake_gate"]["evidence"]["source_report_contract"]["failed_checks"]
+    )
+    assert run.blocked_reasons_for_preflight(gates) == ["v4_5_1_candidate_intake_gate_failed"]
+
+
+def test_v4_6_1_holdout_manifest_identity_contract_bridge_hash_locks_current_chain() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    contract_hash = run.holdout_manifest_contract.HOLDOUT_CANDIDATE_MANIFEST_CONTRACT_HASH
+    gate = report["contract_bridge_gate"]
+    probe_results = {row["probe_id"]: row for row in report["identity_contract_probe_results"]}
+
+    assert report["schema_version"] == "rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_manifest_identity_contract_bridge_only"] is True
+    assert report["holdout_candidate_manifest_contract_hash"] == contract_hash
+    assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6"}
+    assert all(
+        source_input["source_report_holdout_candidate_manifest_contract_hash"] == contract_hash
+        for source_input in report["source_report_inputs"].values()
+    )
+    assert (
+        report["source_report_inputs"]["v4_6"]["source_report_holdout_candidate_manifest_contract_hash_source"]
+        == "v4_6.source_report_inputs"
+    )
+    assert gate["passed"] is True
+    assert gate["contract_hashes_match"] is True
+    assert gate["missing_contract_hash_inputs"] == []
+    assert set(gate["observed_contract_hashes"]) == set(run.REQUIRED_CONTRACT_HASH_INPUTS)
+    assert gate["identity_probe_passed"] is True
+    assert gate["v4_6_hash_mismatch_rejection_passed"] is True
+    assert probe_results["PDF_DOCUMENT_VERSION_PRIORITY"]["passed"] is True
+    assert probe_results["PDF_SAME_TIER_CONFLICT_FAILS_CLOSED"]["passed"] is True
+    assert probe_results["XLSX_SOURCE_IDENTITY_ONLY_REJECTED"]["passed"] is True
+    assert probe_results["XLSX_SAME_TIER_CONFLICT_FAILS_CLOSED"]["passed"] is True
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+
+
+def test_v4_6_1_contract_bridge_fails_closed_when_v4_6_embedded_contract_hash_is_missing() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod as run
+
+    source_reports = run.load_source_reports()
+    stale_v4_6 = dict(source_reports["v4_6"])
+    embedded_inputs = dict(stale_v4_6["source_report_inputs"])
+    stale_v4_5_2 = dict(embedded_inputs["v4_5_2"])
+    stale_v4_5_2["source_report_holdout_candidate_manifest_contract_hash"] = ""
+    embedded_inputs["v4_5_2"] = stale_v4_5_2
+    stale_v4_6["source_report_inputs"] = embedded_inputs
+    source_reports["v4_6"] = stale_v4_6
+
+    gate = run.build_contract_bridge_gate(
+        source_reports=source_reports,
+        probe_results=run.build_identity_contract_probe_results(),
+    )
+
+    assert gate["passed"] is False
+    assert gate["contract_hashes_match"] is False
+    assert gate["missing_contract_hash_inputs"] == ["v4_6.source_report_inputs.v4_5_2"]
+    assert gate["blocked_reasons"] == ["holdout_candidate_manifest_contract_hash_missing"]
+
+
+def test_v4_6_1_identity_contract_bridge_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["v4_6_ft_dry_run_opened"] is False
+    assert guardrails["v4_7_official_metric_gate_opened"] is False
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "contract_probe_results.jsonl",
+        "holdout_candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_1 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["review_csv_created"] is False
+    assert written["fine_tuning_dataset_export_created"] is False
+
+    unexpected_child_dir = tmp_path / "checkpoint-0001"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_1 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+
+def test_v4_6_2_ft_route_policy_fixture_contract_stays_non_writing_and_gate_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_2_ft_route_policy_fixture_contract_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    fixture_contract = report["ft_a_fixture_contract"]
+    gate = report["fixture_contract_gate"]
+
+    assert report["schema_version"] == "rag_v4_6_2_ft_route_policy_fixture_contract_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["ft_route_policy_fixture_contract_only"] is True
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+
+    assert fixture_contract["lane"] == "FT-A"
+    assert fixture_contract["row_source"] == "route_policy_audit_rows_only"
+    assert "ANSWER_ALLOWED" in fixture_contract["target_policy_buckets"]
+    assert "UNSUPPORTED_ROUTE" in fixture_contract["target_policy_buckets"]
+    assert "INDEX_UNAVAILABLE" in fixture_contract["target_policy_buckets"]
+    assert "raw_query_text" in fixture_contract["allowed_model_input_fields"]
+    assert "response_policy_bucket" in fixture_contract["label_only_fields"]
+    assert "expected_answer" in fixture_contract["forbidden_model_input_fields"]
+    assert "supporting_evidence" in fixture_contract["forbidden_model_input_fields"]
+    assert "target_locator" in fixture_contract["forbidden_model_input_fields"]
+    assert "gold_locator" in fixture_contract["forbidden_model_input_fields"]
+    assert gate["fixture_contract_schema_check_passed"] is True
+    assert gate["dry_run_dataset_gate_passed"] is False
+    assert gate["fixture_validation_probe_count"] >= 4
+    assert gate["accepted_fixture_probe_count"] >= 1
+    assert gate["rejected_fixture_probe_count"] >= 3
+    assert gate["dataset_export_gate_opened"] is False
+    assert gate["blocked_reasons"] == ["dry_run_and_dataset_export_require_all_v4_6_preflight_gates"]
+
+
+def test_v4_6_2_ft_route_policy_fixture_validator_rejects_gold_prompts_and_answer_text() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_2_ft_route_policy_fixture_contract_nonprod as run
+
+    rows = [
+        {
+            "row_id": "ok-context-required",
+            "query_id": "q-context",
+            "source_family": "XLSX",
+            "raw_query_text": "이 셀 값 알려줘",
+            "route_lane": "deictic",
+            "response_policy_bucket": "CONTEXT_REQUIRED",
+            "fail_closed": True,
+            "source_atom_ids": ["sa-1"],
+            "evidence_bundle_ids": ["eb-1"],
+            "search_view_ids": ["sv-1"],
+        },
+        {
+            "row_id": "bad-expected-answer",
+            "query_id": "q-leak",
+            "source_family": "PDF",
+            "raw_query_text": "정답 알려줘",
+            "route_lane": "rough_query",
+            "response_policy_bucket": "ANSWER_ALLOWED",
+            "expected_answer": "hidden gold answer",
+        },
+        {
+            "row_id": "bad-target-locator",
+            "query_id": "q-target",
+            "source_family": "XLSX",
+            "raw_query_text": "B7 값",
+            "route_lane": "user_locator",
+            "response_policy_bucket": "ANSWER_ALLOWED",
+            "target_locator": "Sheet1!B7",
+        },
+        {
+            "row_id": "bad-raw-prompt",
+            "query_id": "q-prompt",
+            "source_family": "TEXT",
+            "raw_query_text": "요약해줘",
+            "route_lane": "rough_query",
+            "response_policy_bucket": "UNSUPPORTED_ROUTE",
+            "raw_prompt": "full training prompt must not exist",
+        },
+        {
+            "row_id": "bad-alias-leakage",
+            "query_id": "q-alias",
+            "source_family": "PDF",
+            "raw_query_text": "답변해줘",
+            "route_lane": "rough_query",
+            "response_policy_bucket": "ANSWER_ALLOWED",
+            "expected_answer_text": "hidden alias answer",
+            "prompt_payload": "prompt alias",
+            "llm_response": "response alias",
+            "human_label": "approved",
+        },
+        {
+            "row_id": "bad-unknown-bucket",
+            "query_id": "q-bucket",
+            "source_family": "PDF",
+            "raw_query_text": "이 파일 뭐야",
+            "route_lane": "rough_query",
+            "response_policy_bucket": "PROMOTE_TO_PRODUCTION",
+        },
+    ]
+
+    validation = run.validate_ft_a_fixture_rows(rows)
+
+    assert [row["row_id"] for row in validation["accepted_fixture_rows"]] == ["ok-context-required"]
+    excluded = {row["row_id"]: row["exclusion_reason"] for row in validation["excluded_fixture_rows"]}
+    assert excluded == {
+        "bad-expected-answer": "forbidden_model_input_field_present",
+        "bad-target-locator": "forbidden_model_input_field_present",
+        "bad-raw-prompt": "forbidden_model_input_field_present",
+        "bad-alias-leakage": "forbidden_model_input_field_present",
+        "bad-unknown-bucket": "unsupported_response_policy_bucket",
+    }
+    assert validation["gold_oracle_field_rejection_count"] == 4
+    assert validation["official_metric_input_rows"] == 0
+    assert validation["training_dataset_export_created"] is False
+
+
+def test_v4_6_2_ft_route_policy_fixture_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_2_ft_route_policy_fixture_contract_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    for source_key, source_input in report["source_report_inputs"].items():
+        assert source_input["run_id"] == run.RUN_ID
+        assert source_input["schema_version"] == f"{run.RUN_ID}_source_report_input_v1"
+        assert source_input["source_run_id"] in {run.v46.RUN_ID, run.v461.RUN_ID}
+
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["ft_route_policy_dry_run_opened"] is False
+    assert guardrails["ft_route_policy_dry_run_executed"] is False
+    assert guardrails["v4_7_official_metric_gate_opened"] is False
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "ft_a_fixture_contract.json",
+        "ft_route_policy_dry_run.json",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_2 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["review_csv_created"] is False
+    assert written["fine_tuning_dataset_export_created"] is False
+
+    unexpected_child_dir = tmp_path / "checkpoint-0001"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_2 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+
+def test_v4_6_3_ft_a_prompt_policy_baseline_schema_stays_non_writing_and_gate_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    schema = report["prompt_policy_baseline_schema"]
+    gate = report["prompt_policy_baseline_gate"]
+
+    assert report["schema_version"] == "rag_v4_6_3_ft_a_prompt_policy_baseline_schema_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_prompt_policy_baseline_schema_only"] is True
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+
+    assert schema["lane"] == "FT-A"
+    assert schema["source_fixture_run_id"] == run.v462.RUN_ID
+    assert schema["prompt_only_baseline_schema_frozen"] is True
+    assert schema["raw_prompt_text_embedded"] is False
+    assert schema["prompt_payload_created"] is False
+    assert schema["required_future_dry_run_outputs"] == [
+        "deterministic_rule_baseline_policy_bucket",
+        "prompt_only_baseline_policy_bucket",
+        "ft_model_policy_bucket",
+        "conservative_fallback_policy_bucket",
+    ]
+    assert schema["confusion_matrix_axes"]["row_axis"] == "label_response_policy_bucket"
+    assert schema["confusion_matrix_axes"]["column_axis"] == "predicted_response_policy_bucket"
+    assert "answer_allowed_overreach" in schema["stop_condition_audit_buckets"]
+    assert "ambiguous_identity_false_negative" in schema["stop_condition_audit_buckets"]
+    assert gate["prompt_policy_baseline_schema_check_passed"] is True
+    assert gate["dry_run_prompt_baseline_gate_passed"] is False
+    assert gate["fixture_contract_gate_ready"] is True
+    assert gate["blocked_reasons"] == ["dry_run_comparison_requires_v4_6_preflight_and_user_policy_gates"]
+
+
+def test_v4_6_3_prompt_policy_baseline_gate_fails_closed_without_fixture_contract() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod as run
+
+    gate = run.build_prompt_policy_baseline_gate(source_fixture_report={})
+
+    assert gate["prompt_policy_baseline_schema_check_passed"] is True
+    assert gate["fixture_contract_gate_ready"] is False
+    assert gate["dry_run_prompt_baseline_gate_passed"] is False
+    assert gate["ft_route_policy_dry_run_opened"] is False
+    assert gate["ft_route_policy_dry_run_executed"] is False
+    assert "missing_or_invalid_v4_6_2_fixture_contract" in gate["blocked_reasons"]
+
+
+def test_v4_6_3_prompt_policy_baseline_schema_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert set(report["source_report_inputs"]) == {"v4_6_2"}
+    source_input = report["source_report_inputs"]["v4_6_2"]
+    assert source_input["run_id"] == run.RUN_ID
+    assert source_input["schema_version"] == f"{run.RUN_ID}_source_report_input_v1"
+    assert source_input["source_run_id"] == run.v462.RUN_ID
+
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "prompt_policy_baseline_schema.json",
+        "ft_route_policy_dry_run.json",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_3 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["review_csv_created"] is False
+    assert written["fine_tuning_dataset_export_created"] is False
+
+    unexpected_child_dir = tmp_path / "checkpoint-0001"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_3 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+
+def test_v4_6_4_ft_a_dry_run_input_manifest_validator_stays_non_writing_and_gate_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    contract = report["dry_run_input_manifest_contract"]
+    validation = report["dry_run_input_manifest_validation"]
+    gate = report["dry_run_input_manifest_gate"]
+
+    assert report["schema_version"] == "rag_v4_6_4_ft_a_dry_run_input_manifest_validator_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_dry_run_input_manifest_validator_only"] is True
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+
+    assert contract["lane"] == "FT-A"
+    assert contract["source_fixture_run_id"] == run.v462.RUN_ID
+    assert contract["source_prompt_policy_baseline_run_id"] == run.v463.RUN_ID
+    assert contract["manifest_validator_schema_ready"] is True
+    assert contract["manifest_rows_exported"] is False
+    assert contract["raw_prompt_text_allowed"] is False
+    assert contract["raw_llm_response_allowed"] is False
+    assert contract["required_manifest_fields"] == [
+        "row_id",
+        "query_id",
+        "source_family",
+        "route_lane",
+        "response_policy_bucket",
+        "prompt_policy_id",
+    ]
+    assert validation["fixture_row_count"] == 6
+    assert validation["accepted_manifest_row_count"] == 1
+    assert validation["excluded_manifest_row_count"] == 5
+    assert validation["gold_or_prompt_or_output_rejection_count"] == 3
+    assert gate["manifest_validator_schema_check_passed"] is True
+    assert gate["dry_run_input_manifest_gate_passed"] is False
+    assert gate["prompt_policy_baseline_gate_ready"] is True
+    assert gate["blocked_reasons"] == ["dry_run_input_manifest_export_requires_v4_6_preflight_and_user_policy_gates"]
+
+
+def test_v4_6_4_dry_run_input_manifest_validator_rejects_prompt_outputs_gold_and_bad_policy_ids() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod as run
+
+    rows = [
+        {
+            "row_id": "ok-manifest-row",
+            "query_id": "q-ok",
+            "source_family": "XLSX",
+            "route_lane": "deictic",
+            "response_policy_bucket": "CONTEXT_REQUIRED",
+            "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+            "active_context_available": False,
+            "candidate_search_view_count": 0,
+        },
+        {
+            "row_id": "bad-raw-prompt",
+            "query_id": "q-prompt",
+            "source_family": "PDF",
+            "route_lane": "rough_query",
+            "response_policy_bucket": "ANSWER_ALLOWED",
+            "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+            "raw_prompt": "rendered prompt must not exist",
+        },
+        {
+            "row_id": "bad-llm-output",
+            "query_id": "q-output",
+            "source_family": "TEXT",
+            "route_lane": "rough_query",
+            "response_policy_bucket": "UNSUPPORTED_ROUTE",
+            "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+            "raw_llm_response": "model output must not exist",
+        },
+        {
+            "row_id": "bad-gold",
+            "query_id": "q-gold",
+            "source_family": "XLSX",
+            "route_lane": "user_locator",
+            "response_policy_bucket": "ANSWER_ALLOWED",
+            "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+            "expected_answer": "hidden answer",
+        },
+        {
+            "row_id": "bad-empty-raw-prompt",
+            "query_id": "q-empty-prompt",
+            "source_family": "PDF",
+            "route_lane": "rough_query",
+            "response_policy_bucket": "ANSWER_ALLOWED",
+            "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+            "raw_prompt": "",
+        },
+        {
+            "row_id": "bad-null-llm-output",
+            "query_id": "q-null-output",
+            "source_family": "TEXT",
+            "route_lane": "rough_query",
+            "response_policy_bucket": "UNSUPPORTED_ROUTE",
+            "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+            "raw_llm_response": None,
+        },
+        {
+            "row_id": "bad-empty-gold",
+            "query_id": "q-empty-gold",
+            "source_family": "XLSX",
+            "route_lane": "user_locator",
+            "response_policy_bucket": "ANSWER_ALLOWED",
+            "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+            "expected_answer": "",
+        },
+        {
+            "row_id": "bad-pattern-prompt-payload",
+            "query_id": "q-pattern-prompt",
+            "source_family": "PDF",
+            "route_lane": "rough_query",
+            "response_policy_bucket": "ANSWER_ALLOWED",
+            "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+            "rendered_prompt_payload": "",
+        },
+        {
+            "row_id": "bad-policy-id",
+            "query_id": "q-policy",
+            "source_family": "PDF",
+            "route_lane": "rough_query",
+            "response_policy_bucket": "ANSWER_ALLOWED",
+            "prompt_policy_id": "production_prompt_policy",
+        },
+        {
+            "row_id": "bad-route-lane",
+            "query_id": "q-route",
+            "source_family": "PDF",
+            "route_lane": "production_chat",
+            "response_policy_bucket": "ANSWER_ALLOWED",
+            "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+        },
+    ]
+
+    validation = run.validate_dry_run_input_manifest_rows(rows)
+
+    assert [row["row_id"] for row in validation["accepted_manifest_rows"]] == ["ok-manifest-row"]
+    excluded = {row["row_id"]: row["exclusion_reason"] for row in validation["excluded_manifest_rows"]}
+    assert excluded == {
+        "bad-raw-prompt": "forbidden_prompt_gold_or_output_field_present",
+        "bad-llm-output": "forbidden_prompt_gold_or_output_field_present",
+        "bad-gold": "forbidden_prompt_gold_or_output_field_present",
+        "bad-empty-raw-prompt": "forbidden_prompt_gold_or_output_field_present",
+        "bad-null-llm-output": "forbidden_prompt_gold_or_output_field_present",
+        "bad-empty-gold": "forbidden_prompt_gold_or_output_field_present",
+        "bad-pattern-prompt-payload": "forbidden_prompt_gold_or_output_field_present",
+        "bad-policy-id": "unsupported_prompt_policy_id",
+        "bad-route-lane": "unsupported_route_lane",
+    }
+    assert validation["gold_or_prompt_or_output_rejection_count"] == 7
+    assert validation["training_dataset_export_created"] is False
+    assert validation["manifest_rows_exported"] is False
+    assert validation["official_metric_input_rows"] == 0
+
+
+def test_v4_6_4_dry_run_input_manifest_gate_fails_closed_for_contaminated_source_reports() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod as run
+
+    fixture_report = run.load_v4_6_2_report()
+    prompt_policy_report = run.load_v4_6_3_report()
+    clean_gate = run.build_dry_run_input_manifest_gate(
+        fixture_report=fixture_report,
+        prompt_policy_report=prompt_policy_report,
+    )
+    assert clean_gate["fixture_contract_gate_ready"] is True
+    assert clean_gate["prompt_policy_baseline_gate_ready"] is True
+
+    contaminated_fixture = dict(fixture_report)
+    contaminated_fixture.update(
+        {
+            "official_metric": True,
+            "official_metric_input_rows": 1,
+            "promotion_evidence": True,
+            "product_success_evidence_allowed": True,
+            "live_db_index_cache_readiness": True,
+        }
+    )
+    fixture_gate = run.build_dry_run_input_manifest_gate(
+        fixture_report=contaminated_fixture,
+        prompt_policy_report=prompt_policy_report,
+    )
+    assert fixture_gate["fixture_contract_gate_ready"] is False
+    assert fixture_gate["prompt_policy_baseline_gate_ready"] is True
+    assert "v4_6_2_source_boundary_flags_not_clean" in fixture_gate["blocked_reasons"]
+    assert fixture_gate["dry_run_input_manifest_gate_passed"] is False
+    assert fixture_gate["ft_route_policy_dry_run_opened"] is False
+    assert fixture_gate["v4_7_official_metric_gate_opened"] is False
+
+    contaminated_prompt_policy = dict(prompt_policy_report)
+    contaminated_prompt_policy.update(
+        {
+            "official_metric": True,
+            "official_metric_input_rows": 2,
+            "promotion_evidence": True,
+            "product_success_evidence_allowed": True,
+            "live_db_index_cache_readiness": True,
+        }
+    )
+    prompt_gate = run.build_dry_run_input_manifest_gate(
+        fixture_report=fixture_report,
+        prompt_policy_report=contaminated_prompt_policy,
+    )
+    assert prompt_gate["fixture_contract_gate_ready"] is True
+    assert prompt_gate["prompt_policy_baseline_gate_ready"] is False
+    assert "v4_6_3_source_boundary_flags_not_clean" in prompt_gate["blocked_reasons"]
+    assert prompt_gate["dry_run_input_manifest_gate_passed"] is False
+    assert prompt_gate["ft_route_policy_dry_run_opened"] is False
+    assert prompt_gate["v4_7_official_metric_gate_opened"] is False
+
+
+def test_v4_6_4_dry_run_input_manifest_validator_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert set(report["source_report_inputs"]) == {"v4_6_2", "v4_6_3"}
+    assert report["source_report_inputs"]["v4_6_2"]["source_run_id"] == run.v462.RUN_ID
+    assert report["source_report_inputs"]["v4_6_3"]["source_run_id"] == run.v463.RUN_ID
+
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["prompt_manifest_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "dry_run_input_manifest.jsonl",
+        "dry_run_input_manifest_validation.json",
+        "ft_route_policy_dry_run.json",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_4 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["review_csv_created"] is False
+    assert written["fine_tuning_dataset_export_created"] is False
+
+    unexpected_child_dir = tmp_path / "checkpoint-0001"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_4 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+
+def test_v4_6_4_cli_check_is_no_write_and_bytecode_free() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod as run
+
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["manifest_validator_schema_check_passed"] is True
+    assert output["dry_run_input_manifest_gate_passed"] is False
+    assert output["ft_route_policy_dry_run_opened"] is False
+    assert output["ft_route_policy_dry_run_executed"] is False
+    assert output["fine_tuning_dataset_exports_created"] == 0
+    assert output["official_metric_input_rows"] == 0
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_6_5_ft_a_dry_run_execution_plan_gate_stays_non_executing_and_gate_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    contract = report["dry_run_execution_plan_contract"]
+    gate = report["dry_run_execution_plan_gate"]
+
+    assert report["schema_version"] == "rag_v4_6_5_ft_a_dry_run_execution_plan_gate_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_dry_run_execution_plan_gate_only"] is True
+    assert report["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["prompt_manifest_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+
+    assert contract["source_validator_run_id"] == run.v464.RUN_ID
+    assert contract["execution_plan_schema_ready"] is True
+    assert contract["dry_run_execution_plan_exported"] is False
+    assert contract["dry_run_executes_prompts"] is False
+    assert contract["llm_invocation_allowed"] is False
+    assert contract["allowed_execution_plan_steps"] == [
+        "validate_v4_6_preflight_gate_state",
+        "validate_dry_run_input_manifest_gate_state",
+        "validate_prompt_policy_baseline_gate_state",
+        "validate_user_owned_policy_gate_state",
+        "emit_closed_gate_report_only",
+    ]
+    assert gate["dry_run_execution_plan_schema_check_passed"] is True
+    assert gate["dry_run_execution_plan_gate_passed"] is False
+    assert gate["v4_6_4_source_report_ready"] is True
+    assert gate["v4_6_4_dry_run_input_manifest_gate_passed"] is False
+    assert gate["manifest_rows_exported"] is False
+    assert gate["user_owned_policy_gate_ready"] is False
+    assert gate["ft_route_policy_dry_run_opened"] is False
+    assert gate["ft_route_policy_dry_run_executed"] is False
+    assert "v4_6_4_dry_run_input_manifest_gate_not_passed" in gate["blocked_reasons"]
+    assert "dry_run_input_manifest_not_exported" in gate["blocked_reasons"]
+    assert "user_owned_gold_qrels_denominator_policy_pending" in gate["blocked_reasons"]
+
+
+def test_v4_6_5_dry_run_execution_plan_gate_keeps_source_manifest_and_user_policy_gates_separate() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod as run
+
+    source_report = run.load_v4_6_4_report()
+    current_gate = run.build_dry_run_execution_plan_gate(
+        v4_6_4_report=source_report,
+        user_owned_policy_gate_ready=False,
+    )
+    assert current_gate["v4_6_4_source_report_ready"] is True
+    assert current_gate["v4_6_4_dry_run_input_manifest_gate_passed"] is False
+    assert current_gate["user_owned_policy_gate_ready"] is False
+    assert "v4_6_4_dry_run_input_manifest_gate_not_passed" in current_gate["blocked_reasons"]
+    assert "user_owned_gold_qrels_denominator_policy_pending" in current_gate["blocked_reasons"]
+    assert current_gate["dry_run_execution_plan_gate_passed"] is False
+
+    source_gate_open_but_policy_closed = dict(source_report)
+    source_gate_open_but_policy_closed["dry_run_input_manifest_gate"] = {
+        **dict(source_report["dry_run_input_manifest_gate"]),
+        "dry_run_input_manifest_gate_passed": True,
+        "manifest_rows_exported": True,
+    }
+    source_gate_open_but_policy_closed["dry_run_input_manifest_contract"] = {
+        **dict(source_report["dry_run_input_manifest_contract"]),
+        "manifest_rows_exported": True,
+    }
+    source_gate_open_but_policy_closed["manifest_rows_exported"] = True
+    policy_closed_gate = run.build_dry_run_execution_plan_gate(
+        v4_6_4_report=source_gate_open_but_policy_closed,
+        user_owned_policy_gate_ready=False,
+    )
+    assert policy_closed_gate["v4_6_4_source_report_ready"] is True
+    assert policy_closed_gate["v4_6_4_dry_run_input_manifest_gate_passed"] is True
+    assert policy_closed_gate["manifest_rows_exported"] is True
+    assert policy_closed_gate["user_owned_policy_gate_ready"] is False
+    assert "v4_6_4_dry_run_input_manifest_gate_not_passed" not in policy_closed_gate["blocked_reasons"]
+    assert "dry_run_input_manifest_not_exported" not in policy_closed_gate["blocked_reasons"]
+    assert policy_closed_gate["blocked_reasons"] == [
+        "dry_run_execution_requires_manifest_export_prompt_policy_and_user_policy_gates",
+        "user_owned_gold_qrels_denominator_policy_pending",
+    ]
+    assert policy_closed_gate["dry_run_execution_plan_gate_passed"] is False
+
+    contaminated_report = dict(source_report)
+    contaminated_report.update(
+        {
+            "official_metric": True,
+            "official_metric_input_rows": 1,
+            "promotion_evidence": True,
+            "product_success_evidence_allowed": True,
+            "live_db_index_cache_readiness": True,
+        }
+    )
+    contaminated_gate = run.build_dry_run_execution_plan_gate(
+        v4_6_4_report=contaminated_report,
+        user_owned_policy_gate_ready=True,
+    )
+    assert contaminated_gate["v4_6_4_source_report_ready"] is False
+    assert contaminated_gate["user_owned_policy_gate_ready"] is True
+    assert "v4_6_4_source_boundary_flags_not_clean" in contaminated_gate["blocked_reasons"]
+    assert contaminated_gate["dry_run_execution_plan_gate_passed"] is False
+    assert contaminated_gate["ft_route_policy_dry_run_opened"] is False
+
+
+def test_v4_6_5_dry_run_execution_plan_gate_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert set(report["source_report_inputs"]) == {"v4_6_4"}
+    assert report["source_report_inputs"]["v4_6_4"]["source_run_id"] == run.v464.RUN_ID
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["dry_run_execution_plan_exported"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["prompt_manifest_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "ft_route_policy_dry_run.json",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_5 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["review_csv_created"] is False
+    assert written["fine_tuning_dataset_export_created"] is False
+    assert written["dry_run_execution_plan_exported"] is False
+
+    unexpected_child_dir = tmp_path / "dry-run-execution"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_5 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+
+def test_v4_6_5_cli_check_is_no_write_and_bytecode_free() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod as run
+
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["dry_run_execution_plan_schema_check_passed"] is True
+    assert output["dry_run_execution_plan_gate_passed"] is False
+    assert output["dry_run_execution_plan_exported"] is False
+    assert output["ft_route_policy_dry_run_opened"] is False
+    assert output["ft_route_policy_dry_run_executed"] is False
+    assert output["fine_tuning_dataset_exports_created"] == 0
+    assert output["official_metric_input_rows"] == 0
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_stays_closed_and_non_writing() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    holdout_gap = report["holdout_gap_ledger"]
+    dry_run_blockers = report["dry_run_blocker_ledger"]
+
+    assert report["schema_version"] == "rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["holdout_gap_and_dry_run_blocker_ledger_only"] is True
+    assert report["candidate_manifest_exported"] is False
+    assert report["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["prompt_manifest_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+
+    assert holdout_gap["real_holdout_available"] is False
+    assert holdout_gap["real_holdout_sufficient"] is False
+    assert holdout_gap["candidate_manifest_present"] is False
+    assert holdout_gap["accepted_pdf_holdout_candidates"] == 0
+    assert holdout_gap["accepted_xlsx_holdout_candidates"] == 0
+    assert holdout_gap["minimum_targets"] == {
+        "pdf_unseen_source_documents": 20,
+        "query_fidelity_included_rows_per_family": 100,
+        "xlsx_unseen_workbooks": 8,
+    }
+    assert holdout_gap["deficits"] == {
+        "pdf_source_document_disjoint_needed": 20,
+        "pdf_query_fidelity_rows_needed": 100,
+        "xlsx_workbook_disjoint_needed": 8,
+        "xlsx_query_fidelity_rows_needed": 100,
+    }
+    assert dry_run_blockers["dry_run_blocker_count"] >= 6
+    assert dry_run_blockers["all_non_gold_source_gates_passed"] is False
+    assert dry_run_blockers["user_owned_policy_gate_ready"] is False
+    assert dry_run_blockers["v4_7_official_metric_gate_opened"] is False
+    assert "v4_5_readiness_gate_failed" in dry_run_blockers["blocked_reasons"]
+    assert "v4_5_1_candidate_intake_gate_failed" in dry_run_blockers["blocked_reasons"]
+    assert "v4_5_2_source_identity_audit_gate_failed" in dry_run_blockers["blocked_reasons"]
+    assert "dry_run_input_manifest_not_exported" in dry_run_blockers["blocked_reasons"]
+    assert "user_owned_gold_qrels_denominator_policy_pending" in dry_run_blockers["blocked_reasons"]
+
+
+def test_v4_6_6_holdout_gap_ledger_keeps_family_deficits_and_user_policy_separate() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod as run
+
+    source_reports = run.load_source_reports()
+    holdout_gap = run.build_holdout_gap_ledger(source_reports=source_reports)
+    dry_run_blockers = run.build_dry_run_blocker_ledger(
+        source_reports=source_reports,
+        user_owned_policy_gate_ready=False,
+    )
+
+    assert holdout_gap["source_counts"]["PDF_source_document_disjoint"] == 0
+    assert holdout_gap["source_counts"]["XLSX_workbook_disjoint"] == 0
+    assert holdout_gap["query_fidelity_included_counts"]["PDF"] == 0
+    assert holdout_gap["query_fidelity_included_counts"]["XLSX"] == 0
+    assert holdout_gap["acquisition_requirements"] == [
+        "add_20_pdf_source_document_disjoint_candidates",
+        "add_8_xlsx_workbook_disjoint_candidates",
+        "add_100_pdf_query_fidelity_included_rows",
+        "add_100_xlsx_query_fidelity_included_rows",
+        "rerun_v4_5_1_candidate_intake_gate",
+        "rerun_v4_5_2_source_identity_audit_gate",
+        "rerun_v4_6_preflight_before_any_ft_a_dry_run",
+    ]
+    assert dry_run_blockers["source_gate_state"]["v4_5_readiness_gate_passed"] is False
+    assert dry_run_blockers["source_gate_state"]["v4_5_1_candidate_intake_gate_passed"] is False
+    assert dry_run_blockers["source_gate_state"]["v4_5_2_source_identity_audit_gate_passed"] is False
+    assert dry_run_blockers["source_gate_state"]["v4_5_3_prior_identity_baseline_gate_passed"] is True
+    assert dry_run_blockers["source_gate_state"]["v4_6_preflight_all_gates_passed"] is False
+    assert dry_run_blockers["source_gate_state"]["v4_6_5_execution_plan_gate_passed"] is False
+    assert dry_run_blockers["user_owned_policy_gate_ready"] is False
+    assert dry_run_blockers["non_gold_next_actions"] == holdout_gap["acquisition_requirements"]
+    assert dry_run_blockers["user_owned_next_actions"] == [
+        "approve_gold_qrels_denominator_policy_before_any_official_metric_or_promotion_gate",
+    ]
+
+
+def test_v4_6_6_holdout_gap_ledger_uses_latest_non_empty_source_report_counts() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod as run
+
+    source_reports = {
+        "v4_4": {
+            "metrics": {
+                "minimum_targets": {
+                    "pdf_unseen_source_documents": 20,
+                    "xlsx_unseen_workbooks": 8,
+                    "query_fidelity_included_rows_per_family": 100,
+                },
+                "real_unseen_registry_counts": {},
+                "real_query_fidelity_included_counts": {},
+            }
+        },
+        "v4_5_2": {
+            "metrics": {
+                "candidate_manifest_present": True,
+                "accepted_pdf_holdout_candidates": 20,
+                "accepted_xlsx_holdout_candidates": 8,
+                "real_unseen_registry_counts": {
+                    "PDF_source_document_disjoint": 20,
+                    "XLSX_workbook_disjoint": 8,
+                },
+                "real_query_fidelity_included_counts": {
+                    "PDF": 100,
+                    "XLSX": 100,
+                },
+            }
+        },
+    }
+
+    holdout_gap = run.build_holdout_gap_ledger(source_reports=source_reports)
+
+    assert holdout_gap["candidate_manifest_present"] is True
+    assert holdout_gap["accepted_pdf_holdout_candidates"] == 20
+    assert holdout_gap["accepted_xlsx_holdout_candidates"] == 8
+    assert holdout_gap["source_counts"] == {
+        "PDF_source_document_disjoint": 20,
+        "XLSX_workbook_disjoint": 8,
+    }
+    assert holdout_gap["query_fidelity_included_counts"] == {"PDF": 100, "XLSX": 100}
+    assert holdout_gap["deficits"] == {
+        "pdf_source_document_disjoint_needed": 0,
+        "pdf_query_fidelity_rows_needed": 0,
+        "xlsx_workbook_disjoint_needed": 0,
+        "xlsx_query_fidelity_rows_needed": 0,
+    }
+    assert holdout_gap["real_holdout_sufficient"] is False
+    assert holdout_gap["official_metric_input_rows"] == 0
+
+
+def test_v4_6_6_minimum_targets_fall_back_on_partial_target_mapping() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod as run
+
+    source_reports = {
+        "v4_4": {
+            "metrics": {
+                "minimum_targets": {
+                    "pdf_unseen_source_documents": 3,
+                }
+            }
+        }
+    }
+
+    holdout_gap = run.build_holdout_gap_ledger(source_reports=source_reports)
+
+    assert holdout_gap["minimum_targets"] == {
+        "pdf_unseen_source_documents": 3,
+        "query_fidelity_included_rows_per_family": 100,
+        "xlsx_unseen_workbooks": 8,
+    }
+    assert holdout_gap["deficits"]["pdf_source_document_disjoint_needed"] == 3
+    assert holdout_gap["deficits"]["pdf_query_fidelity_rows_needed"] == 100
+    assert holdout_gap["deficits"]["xlsx_workbook_disjoint_needed"] == 8
+
+
+def test_v4_6_6_check_report_fails_closed_on_promotion_or_artifact_opening_flags() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod as run
+
+    base_report = run.build_artifacts()["report"]
+    for field, value in {
+        "promotion_evidence": True,
+        "product_success_evidence_allowed": True,
+        "candidate_manifest_exported": True,
+        "dry_run_execution_plan_exported": True,
+        "dry_run_input_manifest_exported": True,
+        "v4_7_official_metric_gate_opened": True,
+    }.items():
+        contaminated = dict(base_report)
+        contaminated[field] = value
+        with pytest.raises(AssertionError):
+            run.check_report(contaminated)
+
+
+def test_v4_6_6_check_report_rejects_nested_ledger_opening_flags() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod as run
+
+    base_report = run.build_artifacts()["report"]
+    nested_cases = [
+        ("holdout_gap_ledger", "candidate_manifest_exported", True),
+        ("holdout_gap_ledger", "official_metric_input_rows", 1),
+        ("dry_run_blocker_ledger", "dry_run_execution_plan_exported", True),
+        ("dry_run_blocker_ledger", "dry_run_input_manifest_exported", True),
+        ("dry_run_blocker_ledger", "ft_route_policy_dry_run_executed", True),
+        ("dry_run_blocker_ledger", "v4_7_official_metric_gate_opened", True),
+        ("metrics", "promotion_evidence", True),
+        ("guardrails", "training_job_created", True),
+    ]
+    for container, field, value in nested_cases:
+        contaminated = dict(base_report)
+        contaminated[container] = dict(base_report[container])
+        contaminated[container][field] = value
+        with pytest.raises(AssertionError):
+            run.check_report(contaminated)
+
+
+def test_v4_6_6_holdout_gap_blocker_ledger_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert set(report["source_report_inputs"]) == {
+        "v4_4",
+        "v4_5",
+        "v4_5_1",
+        "v4_5_2",
+        "v4_5_3",
+        "v4_6",
+        "v4_6_1",
+        "v4_6_2",
+        "v4_6_3",
+        "v4_6_4",
+        "v4_6_5",
+    }
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["candidate_manifest_exported"] is False
+    assert guardrails["dry_run_execution_plan_exported"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["prompt_manifest_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["protected_namespaces_touched"] == []
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "holdout_gap_ledger.json",
+        "dry_run_blocker_ledger.json",
+        "candidate_manifest.jsonl",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_6 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["review_csv_created"] is False
+    assert written["candidate_manifest_exported"] is False
+    assert written["dry_run_execution_plan_exported"] is False
+
+    unexpected_child_dir = tmp_path / "holdout-gap-ledger"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_6 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+
+def test_v4_6_6_cli_check_is_no_write_and_bytecode_free() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod as run
+
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["holdout_gap_and_dry_run_blocker_ledger_only"] is True
+    assert output["real_holdout_sufficient"] is False
+    assert output["all_non_gold_source_gates_passed"] is False
+    assert output["ft_route_policy_dry_run_opened"] is False
+    assert output["v4_7_official_metric_gate_opened"] is False
+    assert output["fine_tuning_dataset_exports_created"] == 0
+    assert output["official_metric_input_rows"] == 0
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_is_hash_only_and_non_writing() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    parity = report["runtime_gate_parity"]
+
+    assert report["schema_version"] == "rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_runtime_gate_parity_bridge_only"] is True
+    assert report["runtime_parity_probe_only"] is True
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+
+    assert parity["all_parity_checks_passed"] is True
+    assert parity["probe_case_count"] == 2
+    assert parity["runtime_candidate_intake_gate_matches_v4_5_1"] is True
+    assert parity["runtime_source_identity_audit_gate_matches_v4_5_2"] is True
+    assert parity["runtime_prior_hash_collision_matches_v4_5_2"] is True
+    assert parity["source_identity_hash_algorithm"] == "sha256(family:identity_key)"
+    assert parity["raw_candidate_rows_embedded"] is False
+    assert parity["raw_source_identity_values_embedded"] is False
+    assert parity["raw_local_path_values_exposed"] is False
+
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    for forbidden_text in (
+        "parity-pdf-doc",
+        "parity-workbook",
+        "collision-doc",
+        "raw_prompt",
+        "D:/",
+    ):
+        assert forbidden_text not in serialized
+
+
+def test_v4_6_7_bridge_keeps_probe_source_gate_success_separate_from_real_holdout_and_user_policy() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    sufficient_probe = report["runtime_gate_parity"]["probe_cases"]["target_sufficient_no_collision"]
+
+    assert sufficient_probe["runtime_candidate_intake_gate"]["passed"] is True
+    assert sufficient_probe["v4_5_1_candidate_intake_gate"]["passed"] is True
+    assert sufficient_probe["v4_5_2_source_identity_audit_gate"]["passed"] is True
+    assert sufficient_probe["parity_checks"]["all_passed"] is True
+    assert sufficient_probe["runtime_candidate_intake_gate"]["deficits"] == {
+        "pdf_source_document_disjoint_needed": 0,
+        "xlsx_workbook_disjoint_needed": 0,
+        "pdf_query_fidelity_rows_needed": 0,
+        "xlsx_query_fidelity_rows_needed": 0,
+    }
+
+    assert report["real_holdout_available"] is False
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_present"] is False
+    assert report["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["user_owned_policy_gate_ready"] is False
+    assert report["readiness_decision"] == "blocked_pending_real_external_holdout_candidates_and_user_policy"
+    assert "real_external_holdout_candidates_not_registered" in report["blocked_reasons"]
+    assert "user_owned_gold_qrels_denominator_policy_pending" in report["blocked_reasons"]
+
+
+def test_v4_6_7_bridge_prior_collision_probe_fails_closed_in_runtime_and_v4_5_2() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    collision_probe = report["runtime_gate_parity"]["probe_cases"]["prior_hash_collision_fail_closed"]
+
+    assert collision_probe["runtime_source_identity_audit_gate"]["collision_count"] == 1
+    assert collision_probe["v4_5_2_source_identity_audit_gate"]["source_identity_collision_count"] == 1
+    assert collision_probe["runtime_candidate_intake_gate"]["passed"] is False
+    assert collision_probe["v4_5_2_source_identity_audit_gate"]["passed"] is False
+    assert collision_probe["parity_checks"]["source_identity_collision_count_matches"] is True
+    assert collision_probe["parity_checks"]["all_passed"] is True
+
+
+def test_v4_6_7_runtime_gate_parity_bridge_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6"}
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["candidate_manifest_exported"] is False
+    assert guardrails["candidate_manifest_jsonl_created"] is False
+    assert guardrails["candidate_validation_jsonl_created"] is False
+    assert guardrails["source_identity_audit_jsonl_created"] is False
+    assert guardrails["dry_run_execution_plan_exported"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["protected_namespaces_touched"] == []
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "runtime_gate_parity.json",
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_7 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["review_csv_created"] is False
+    assert written["candidate_manifest_exported"] is False
+    assert written["dry_run_execution_plan_exported"] is False
+
+    unexpected_child_dir = tmp_path / "runtime-gate-parity"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_7 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+
+def test_v4_6_7_cli_check_is_no_write_and_bytecode_free() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod as run
+
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["holdout_candidate_runtime_gate_parity_bridge_only"] is True
+    assert output["all_parity_checks_passed"] is True
+    assert output["real_holdout_sufficient"] is False
+    assert output["candidate_manifest_exported"] is False
+    assert output["ft_route_policy_dry_run_opened"] is False
+    assert output["v4_7_official_metric_gate_opened"] is False
+    assert output["fine_tuning_dataset_exports_created"] == 0
+    assert output["official_metric_input_rows"] == 0
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_6_8_runtime_readiness_dependency_freshness_gate_is_actionable_and_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    requirements = report["holdout_acquisition_requirements"]
+    freshness = report["dependency_freshness_gate"]
+
+    assert report["schema_version"] == "rag_v4_6_8_runtime_readiness_dependency_freshness_gate_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["runtime_readiness_dependency_freshness_gate_only"] is True
+    assert report["external_holdout_acquisition_requirements_packet_only"] is True
+    assert freshness["all_source_report_hashes_current"] is True
+    assert freshness["runtime_readiness_dto_projection_matches_v4_6_6"] is True
+    assert freshness["holdout_validation_contract_hash_matches"] is True
+    assert freshness["forbidden_surface_violation_count"] == 0
+    assert freshness["official_or_promotion_flag_open_count"] == 0
+    assert report["real_holdout_available"] is False
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_present"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+
+    assert requirements["schema_version"] == "v4_holdout_acquisition_requirements_v1"
+    assert requirements["external_holdout_acquisition_requirements_only"] is True
+    assert requirements["validation_route_path"] == "/internal/rag/diagnostic/holdout-candidates/validate"
+    assert requirements["candidate_manifest_contract_hash"] == report["holdout_candidate_manifest_contract"]["contract_hash"]
+    assert requirements["deficits"] == {
+        "pdf_source_document_disjoint_needed": 20,
+        "xlsx_workbook_disjoint_needed": 8,
+        "pdf_query_fidelity_rows_needed": 100,
+        "xlsx_query_fidelity_rows_needed": 100,
+    }
+    assert requirements["accepted_source_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert requirements["identity_fields_by_family"]["PDF"][0] == "document_version_id"
+    assert "source_identity" not in requirements["identity_fields_by_family"]["XLSX"]
+    assert "raw_locator.workbook" in requirements["identity_fields_by_family"]["XLSX"]
+    assert "expected_answer" in requirements["forbidden_fields"]
+    assert "gold_locator" in requirements["forbidden_fields"]
+    assert "add_20_pdf_source_document_disjoint_candidates" in requirements["non_gold_next_actions"]
+    assert "approve_gold_qrels_denominator_policy_before_any_official_metric_or_promotion_gate" in requirements[
+        "user_owned_next_actions"
+    ]
+    assert requirements["readiness_decision"] == "blocked_pending_real_external_holdout_candidates_and_user_policy"
+
+
+def test_v4_6_8_check_report_fails_closed_on_opened_artifact_training_official_or_live_flags() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    for path, value in (
+        (("candidate_manifest_exported",), True),
+        (("guardrails", "training_job_created"), True),
+        (("metrics", "official_metric_input_rows"), 1),
+        (("guardrail_audit", "live_db_index_cache_readiness"), True),
+    ):
+        mutated = copy.deepcopy(report)
+        cursor = mutated
+        for key in path[:-1]:
+            cursor = cursor[key]
+        cursor[path[-1]] = value
+        with pytest.raises(AssertionError):
+            run.check_report(mutated)
+
+
+def test_v4_6_8_dependency_freshness_gate_fails_closed_on_stale_source_hash_runtime_mismatch_or_contract_mismatch() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    for path, value in (
+        (("dependency_freshness_gate", "all_source_report_hashes_current"), False),
+        (("dependency_freshness_gate", "source_report_hash_current_by_input", "v4_6_7"), False),
+        (("dependency_freshness_gate", "runtime_readiness_dto_projection_matches_v4_6_6"), False),
+        (("dependency_freshness_gate", "holdout_validation_contract_hash_matches"), False),
+        (("source_report_inputs", "v4_6_7", "source_report_hash_current"), False),
+    ):
+        mutated = copy.deepcopy(report)
+        cursor = mutated
+        for key in path[:-1]:
+            cursor = cursor[key]
+        cursor[path[-1]] = value
+        with pytest.raises(AssertionError):
+            run.check_report(mutated)
+
+
+def test_v4_6_8_freshness_gate_counts_nested_forbidden_surfaces_and_raw_path_leaks() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    nested_open = copy.deepcopy(report)
+    nested_open["guardrails"]["raw_llm_response_payload_created"] = True
+    assert run.forbidden_surface_violation_count(nested_open) > 0
+    with pytest.raises(AssertionError):
+        run.check_report(nested_open)
+
+    path_leak = copy.deepcopy(report)
+    path_leak["debug_local_path"] = "D:/private/source/holdout.pdf"
+    assert run.raw_source_identity_or_path_leak_count(path_leak) > 0
+    with pytest.raises(AssertionError):
+        run.check_report(path_leak)
+
+
+def test_v4_6_8_freshness_gate_single_report_guardrails_and_no_raw_surfaces(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6", "v4_6_7"}
+    assert report["dependency_freshness_gate"]["source_report_hash_current_by_input"] == {
+        "v4_5_1": True,
+        "v4_5_2": True,
+        "v4_5_3": True,
+        "v4_6_6": True,
+        "v4_6_7": True,
+    }
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["candidate_manifest_exported"] is False
+    assert guardrails["candidate_manifest_jsonl_created"] is False
+    assert guardrails["candidate_validation_jsonl_created"] is False
+    assert guardrails["source_identity_audit_jsonl_created"] is False
+    assert guardrails["dry_run_execution_plan_exported"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["raw_source_identity_values_embedded"] is False
+    assert guardrails["raw_candidate_rows_embedded"] is False
+    assert guardrails["raw_local_path_values_exposed"] is False
+
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    for forbidden_text in ("raw prompt text", "raw llm response text", "D:/", "C:/"):
+        assert forbidden_text not in serialized
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "dependency_freshness_gate.json",
+        "holdout_acquisition_requirements.json",
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_8 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["review_csv_created"] is False
+    assert written["candidate_manifest_exported"] is False
+    assert written["dry_run_input_manifest_exported"] is False
+
+    unexpected_child_dir = tmp_path / "holdout-acquisition"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_8 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+
+def test_v4_6_8_cli_check_is_no_write_and_bytecode_free() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod as run
+
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["runtime_readiness_dependency_freshness_gate_only"] is True
+    assert output["external_holdout_acquisition_requirements_packet_only"] is True
+    assert output["all_source_report_hashes_current"] is True
+    assert output["real_holdout_sufficient"] is False
+    assert output["candidate_manifest_exported"] is False
+    assert output["ft_route_policy_dry_run_opened"] is False
+    assert output["v4_7_official_metric_gate_opened"] is False
+    assert output["fine_tuning_dataset_exports_created"] == 0
+    assert output["official_metric_input_rows"] == 0
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_6_9_holdout_candidate_duplicate_hygiene_gate_is_strict_and_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    hygiene = report["duplicate_hygiene_gate"]
+
+    assert report["schema_version"] == "rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_duplicate_hygiene_gate_only"] is True
+    assert hygiene["gate_passed"] is True
+    assert hygiene["runtime_invalid_first_duplicate_rejected"] is True
+    assert hygiene["script_invalid_first_duplicate_rejected"] is True
+    assert hygiene["runtime_script_duplicate_hygiene_consistent"] is True
+    assert hygiene["runtime_accepted_candidate_count"] == 0
+    assert hygiene["script_accepted_candidate_count"] == 0
+    assert "not_disjoint_from_prior" in hygiene["runtime_exclusion_reasons"]
+    assert "duplicate_candidate_id" in hygiene["runtime_exclusion_reasons"]
+    assert "duplicate_query_id" in hygiene["runtime_exclusion_reasons"]
+    assert hygiene["script_second_exclusion_reason"] == "duplicate_candidate_id"
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_6_7", "v4_6_8"}
+
+
+def test_v4_6_9_duplicate_hygiene_single_report_guardrails_and_no_raw_surfaces(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert guardrails["candidate_manifest_exported"] is False
+    assert guardrails["candidate_manifest_jsonl_created"] is False
+    assert guardrails["candidate_validation_jsonl_created"] is False
+    assert guardrails["source_identity_audit_jsonl_created"] is False
+    assert guardrails["dry_run_execution_plan_exported"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["training_manifest_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["raw_source_identity_values_embedded"] is False
+    assert guardrails["raw_candidate_rows_embedded"] is False
+    assert guardrails["raw_local_path_values_exposed"] is False
+
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    for forbidden_text in ("shadowed", "shadow-query", "pdf-invalid-first", "pdf-valid-looking-duplicate", "D:/", "C:/"):
+        assert forbidden_text not in serialized
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "duplicate_hygiene_gate.json",
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_9 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["review_csv_created"] is False
+    assert written["candidate_manifest_exported"] is False
+    assert written["dry_run_input_manifest_exported"] is False
+
+    unexpected_child_dir = tmp_path / "duplicate-hygiene"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_9 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+
+def test_v4_6_9_cli_check_is_no_write_and_bytecode_free() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod as run
+
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["holdout_candidate_duplicate_hygiene_gate_only"] is True
+    assert output["duplicate_hygiene_gate_passed"] is True
+    assert output["runtime_invalid_first_duplicate_rejected"] is True
+    assert output["script_invalid_first_duplicate_rejected"] is True
+    assert output["real_holdout_sufficient"] is False
+    assert output["candidate_manifest_exported"] is False
+    assert output["ft_route_policy_dry_run_opened"] is False
+    assert output["v4_7_official_metric_gate_opened"] is False
+    assert output["official_metric_input_rows"] == 0
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_6_10_external_holdout_manifest_gate_replay_blocks_without_manifest_policy_and_holdout() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    replay = report["external_holdout_candidate_manifest_gate_replay"]
+    preflight = report["official_metric_opening_preflight"]
+
+    assert report["schema_version"] == "rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_candidate_manifest_gate_replay_only"] is True
+    assert replay["gate_passed"] is False
+    assert replay["candidate_manifest_present"] is False
+    assert replay["candidate_rows_replayed"] == 0
+    assert replay["accepted_pdf_holdout_candidates"] == 0
+    assert replay["accepted_xlsx_holdout_candidates"] == 0
+    assert replay["real_holdout_sufficient"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert preflight["gate_passed"] is False
+    assert preflight["gate_opened"] is False
+    assert preflight["mechanical_policy_application_allowed"] is False
+    assert preflight["official_metric_rows_authorized"] is False
+    assert preflight["user_owned_required_input_count"] == 6
+    assert preflight["user_owned_required_inputs_present_count"] == 0
+    assert set(preflight["missing_user_owned_inputs"]) == {
+        "official_denominator_policy",
+        "relevance_labels",
+        "answerability_labels",
+        "qrels_policy",
+        "expected_answer_evidence_policy",
+        "promotion_threshold_policy",
+    }
+    assert preflight["codex_owned_dependency_checks_passed"] is True
+    assert preflight["real_holdout_sufficient"] is False
+    assert preflight["candidate_manifest_exported"] is False
+    assert preflight["dry_run_input_manifest_exported"] is False
+    assert preflight["ft_route_policy_dry_run_opened"] is False
+    assert "external_holdout_candidate_manifest_missing" in report["blocked_reasons"]
+    assert "user_owned_official_denominator_policy_missing" in report["blocked_reasons"]
+    assert "real_holdout_sufficient_false" in report["blocked_reasons"]
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6", "v4_6_8", "v4_6_9"}
+
+
+def test_v4_6_10_manifest_gate_replay_check_report_fails_closed_on_policy_metric_or_artifact_opening() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    report = run.build_artifacts()["report"]
+
+    opened = json.loads(json.dumps(report))
+    opened["v4_7_official_metric_gate_opened"] = True
+    with pytest.raises(AssertionError, match="v4_7_official_metric_gate_opened"):
+        run.check_report(opened)
+
+    metric_rows = json.loads(json.dumps(report))
+    metric_rows["official_metric_input_rows"] = 1
+    with pytest.raises(AssertionError, match="official_metric_input_rows"):
+        run.check_report(metric_rows)
+
+    user_policy = json.loads(json.dumps(report))
+    user_policy["official_metric_opening_preflight"]["required_user_owned_inputs"][0]["present"] = True
+    with pytest.raises(AssertionError, match="user-owned policy inputs must remain pending"):
+        run.check_report(user_policy)
+
+    manifest_present = json.loads(json.dumps(report))
+    manifest_present["external_holdout_candidate_manifest_gate_replay"]["candidate_manifest_present"] = True
+    with pytest.raises(AssertionError, match="candidate_manifest_present"):
+        run.check_report(manifest_present)
+
+    exported = json.loads(json.dumps(report))
+    exported["candidate_manifest_exported"] = True
+    with pytest.raises(AssertionError, match="candidate_manifest_exported"):
+        run.check_report(exported)
+
+
+def test_v4_6_10_manifest_gate_replay_single_report_guardrails_and_no_raw_surfaces(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["v4_7_official_metric_gate_opened"] is False
+    assert guardrails["candidate_manifest_exported"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["source_identity_audit_jsonl_created"] is False
+    assert guardrails["official_metric_rows_created"] == 0
+    assert guardrails["review_packet_created"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["raw_source_identity_values_embedded"] is False
+    assert guardrails["raw_candidate_rows_embedded"] is False
+    assert guardrails["raw_local_path_values_exposed"] is False
+
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    for forbidden_text in ("D:/", "C:/", "\\\\", "shadowed", "pdf-invalid-first", "source_identity_key"):
+        assert forbidden_text not in serialized
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "external_holdout_candidate_manifest_gate_replay.json",
+        "official_metric_opening_preflight.json",
+        "official_metric_input_rows.jsonl",
+        "official_metric_results.jsonl",
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_execution_plan.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_10 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["single_report_artifact_contract"] is True
+    assert written["external_holdout_candidate_manifest_gate_replay_only"] is True
+    assert written["v4_7_official_metric_gate_opened"] is False
+    assert written["review_csv_created"] is False
+
+    unexpected_child_dir = tmp_path / "official-metric"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_10 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+
+def test_v4_6_10_cli_check_is_no_write_and_bytecode_free() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["external_holdout_candidate_manifest_gate_replay_only"] is True
+    assert output["gate_passed"] is False
+    assert output["gate_opened"] is False
+    assert output["candidate_manifest_present"] is False
+    assert output["candidate_rows_replayed"] == 0
+    assert output["missing_user_owned_input_count"] == 6
+    assert output["real_holdout_sufficient"] is False
+    assert output["candidate_manifest_exported"] is False
+    assert output["ft_route_policy_dry_run_opened"] is False
+    assert output["v4_7_official_metric_gate_opened"] is False
+    assert output["official_metric_input_rows"] == 0
+    assert output["promotion_evidence"] is False
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_6_10_manifest_input_replays_v4_5_1_and_v4_5_2_without_opening_official_surfaces(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    manifest_path = tmp_path / "external_candidates.jsonl"
+    manifest_rows = [
+        {
+            "candidate_id": "pdf-v4610-input-ok",
+            "query_id": "pdf-v4610-input-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-v4610-unseen-001",
+            "source_identity": "pdf-v4610-unseen-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-v4610-input-ok",
+            "query_id": "xlsx-v4610-input-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-v4610-unseen-001",
+            "source_identity": "xlsx-v4610-unseen-001",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+    ]
+    manifest_path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in manifest_rows) + "\n",
+        encoding="utf-8",
+    )
+    prior_summary_report = {
+        "identity_key_hash_algorithm": "sha256(family:identity_key)",
+        "raw_source_identity_values_embedded": False,
+        "raw_local_path_values_exposed": False,
+        "prior_identity_hash_records_by_family": {
+            "PDF": [
+                {
+                    "source_family": "PDF",
+                    "source_identity_hash": run.v452.source_identity_hash("PDF", "unrelated-prior-pdf"),
+                    "identity_scope": "PDF_document_or_document_version",
+                    "source_atom_count": 1,
+                }
+            ],
+            "XLSX": [
+                {
+                    "source_family": "XLSX",
+                    "source_identity_hash": run.v452.source_identity_hash("XLSX", "unrelated-prior-xlsx"),
+                    "identity_scope": "XLSX_workbook",
+                    "source_atom_count": 1,
+                }
+            ],
+            "TEXT": [],
+        },
+    }
+
+    report = run.build_artifacts(
+        candidate_manifest_path=manifest_path,
+        prior_identity_summary_report=prior_summary_report,
+        minimum_targets={
+            "pdf_unseen_source_documents": 1,
+            "xlsx_unseen_workbooks": 1,
+            "query_fidelity_included_rows_per_family": 1,
+        },
+    )["report"]
+    replay = report["external_holdout_candidate_manifest_gate_replay"]
+    manifest_input = replay["candidate_manifest_input"]
+
+    assert replay["candidate_manifest_input_only"] is True
+    assert replay["candidate_manifest_present"] is True
+    assert replay["candidate_rows_replayed"] == 2
+    assert replay["v4_5_1_intake_gate_passed"] is True
+    assert replay["v4_5_2_source_identity_audit_gate_passed"] is True
+    assert replay["candidate_gate_target_sufficient"] is True
+    assert replay["real_holdout_sufficient"] is False
+    assert "external_holdout_candidate_manifest_missing" not in report["blocked_reasons"]
+    assert "real_holdout_sufficient_false" in report["blocked_reasons"]
+    assert manifest_input["provided"] is True
+    assert manifest_input["exists"] is True
+    assert manifest_input["rows_loaded"] == 2
+    assert manifest_input["path_kind"] == "external_redacted"
+    assert manifest_input["path_label"] == "__external_candidate_manifest_path_redacted__"
+    assert manifest_input["sha256"]
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    run.check_report(report)
+
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    for forbidden_text in (
+        str(manifest_path),
+        "pdf-v4610-input-ok",
+        "pdf-v4610-input-q1",
+        "pdf-v4610-unseen-001",
+        "xlsx-v4610-input-ok",
+        "xlsx-v4610-input-q1",
+        "xlsx-v4610-unseen-001",
+        "source_identity_key",
+    ):
+        assert forbidden_text not in serialized
+
+
+def test_v4_6_10_manifest_input_redacts_repo_relative_path_metadata(monkeypatch) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    manifest_rows = [
+        {
+            "candidate_id": "pdf-v4610-repo-path",
+            "query_id": "pdf-v4610-repo-path-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-v4610-repo-path",
+            "source_identity": "pdf-v4610-repo-path",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        }
+    ]
+    monkeypatch.setattr(
+        run.v452,
+        "load_candidate_manifest_rows",
+        lambda _path: (
+            manifest_rows,
+            {
+                "schema_version": "test_candidate_manifest_input_v1",
+                "provided": True,
+                "exists": True,
+                "format": "jsonl",
+                "path_label": "ai/private/external_candidates.jsonl",
+                "path_kind": "repo_relative",
+                "sha256": "abc123",
+                "rows_loaded": len(manifest_rows),
+                "load_error": "",
+                "raw_local_path_exposed": False,
+            },
+        ),
+    )
+
+    report = run.build_artifacts(candidate_manifest_path=ROOT / "ai" / "private" / "external_candidates.jsonl")[
+        "report"
+    ]
+    manifest_input = report["external_holdout_candidate_manifest_gate_replay"]["candidate_manifest_input"]
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+
+    assert manifest_input["provided"] is True
+    assert manifest_input["path_kind"] == "external_redacted"
+    assert manifest_input["path_label"] == "__external_candidate_manifest_path_redacted__"
+    assert manifest_input["sha256"] == "abc123"
+    assert "ai/private/external_candidates.jsonl" not in serialized
+    assert "pdf-v4610-repo-path" not in serialized
+    run.check_report(report)
+
+
+def test_v4_6_10_manifest_input_with_prior_collision_fails_closed_after_v4_5_2(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    manifest_path = tmp_path / "external_candidates_with_collision.jsonl"
+    manifest_rows = [
+        {
+            "candidate_id": "pdf-v4610-collision",
+            "query_id": "pdf-v4610-collision-q1",
+            "source_family": "PDF",
+            "source_document_id": "pdf-v4610-prior-seen",
+            "source_identity": "pdf-v4610-prior-seen",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "xlsx-v4610-clean",
+            "query_id": "xlsx-v4610-clean-q1",
+            "source_family": "XLSX",
+            "workbook_id": "xlsx-v4610-clean",
+            "source_identity": "xlsx-v4610-clean",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+    ]
+    manifest_path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in manifest_rows) + "\n",
+        encoding="utf-8",
+    )
+    prior_summary_report = {
+        "identity_key_hash_algorithm": "sha256(family:identity_key)",
+        "raw_source_identity_values_embedded": False,
+        "raw_local_path_values_exposed": False,
+        "prior_identity_hash_records_by_family": {
+            "PDF": [
+                {
+                    "source_family": "PDF",
+                    "source_identity_hash": run.v452.source_identity_hash("PDF", "pdf-v4610-prior-seen"),
+                    "identity_scope": "PDF_document_or_document_version",
+                    "source_atom_count": 1,
+                }
+            ],
+            "XLSX": [],
+            "TEXT": [],
+        },
+    }
+
+    report = run.build_artifacts(
+        candidate_manifest_path=manifest_path,
+        prior_identity_summary_report=prior_summary_report,
+        minimum_targets={
+            "pdf_unseen_source_documents": 1,
+            "xlsx_unseen_workbooks": 1,
+            "query_fidelity_included_rows_per_family": 1,
+        },
+    )["report"]
+    replay = report["external_holdout_candidate_manifest_gate_replay"]
+
+    assert replay["candidate_manifest_present"] is True
+    assert replay["candidate_rows_replayed"] == 2
+    assert replay["v4_5_1_intake_gate_passed"] is True
+    assert replay["v4_5_2_source_identity_audit_gate_passed"] is False
+    assert replay["source_identity_collision_count"] == 1
+    assert "prior_source_identity_collision" in replay["source_identity_audit_exclusion_reasons"]
+    assert "source_identity_audit_failed" in report["blocked_reasons"]
+    assert replay["candidate_gate_target_sufficient"] is False
+    assert replay["real_holdout_sufficient"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    run.check_report(report)
+
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    assert "pdf-v4610-prior-seen" not in serialized
+    assert "pdf-v4610-collision" not in serialized
+    assert "xlsx-v4610-clean" not in serialized
+
+
+@pytest.mark.parametrize(
+    ("manifest_text", "expected_error"),
+    [
+        ("{not-json}\n", "candidate_manifest_invalid_jsonl"),
+        (json.dumps({"rows": []}) + "\n", "candidate_manifest_unsupported_format"),
+    ],
+)
+def test_v4_6_10_invalid_manifest_load_error_is_propagated_without_sidecars(
+    tmp_path,
+    manifest_text,
+    expected_error,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    manifest_path = tmp_path / "invalid_candidates.jsonl"
+    manifest_path.write_text(manifest_text, encoding="utf-8")
+
+    report = run.build_artifacts(candidate_manifest_path=manifest_path)["report"]
+    replay = report["external_holdout_candidate_manifest_gate_replay"]
+    manifest_input = replay["candidate_manifest_input"]
+
+    assert manifest_input["provided"] is True
+    assert manifest_input["exists"] is True
+    assert manifest_input["load_error"] == expected_error
+    assert replay["candidate_manifest_present"] is False
+    assert replay["candidate_rows_replayed"] == 0
+    assert expected_error in report["blocked_reasons"]
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["official_metric_input_rows"] == 0
+    run.check_report(report)
+
+
+def test_v4_6_10_check_report_accepts_manifest_input_but_rejects_inconsistent_or_open_surfaces(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    manifest_path = tmp_path / "external_candidates.jsonl"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "candidate_id": "pdf-v4610-check",
+                "query_id": "pdf-v4610-check-q1",
+                "source_family": "PDF",
+                "source_document_id": "pdf-v4610-check",
+                "source_identity": "pdf-v4610-check",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = run.build_artifacts(candidate_manifest_path=manifest_path)["report"]
+    run.check_report(report)
+
+    for field in ("candidate_manifest_exported", "candidate_validation_jsonl_created", "source_identity_audit_jsonl_created"):
+        mutated = json.loads(json.dumps(report))
+        mutated[field] = True
+        with pytest.raises(AssertionError, match=field):
+            run.check_report(mutated)
+
+    metric_rows = json.loads(json.dumps(report))
+    metric_rows["official_metric_input_rows"] = 1
+    with pytest.raises(AssertionError, match="official_metric_input_rows"):
+        run.check_report(metric_rows)
+
+    promoted = json.loads(json.dumps(report))
+    promoted["promotion_evidence"] = True
+    with pytest.raises(AssertionError, match="promotion_evidence"):
+        run.check_report(promoted)
+
+    inconsistent = json.loads(json.dumps(report))
+    inconsistent["external_holdout_candidate_manifest_gate_replay"]["candidate_manifest_present"] = True
+    inconsistent["external_holdout_candidate_manifest_gate_replay"]["candidate_rows_replayed"] = 0
+    with pytest.raises(AssertionError, match="candidate_rows_replayed"):
+        run.check_report(inconsistent)
+
+
+def test_v4_6_10_cli_check_accepts_candidate_manifest_and_is_no_write(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    manifest_path = tmp_path / "external_candidates.jsonl"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "candidate_id": "pdf-v4610-cli",
+                "query_id": "pdf-v4610-cli-q1",
+                "source_family": "PDF",
+                "source_document_id": "pdf-v4610-cli",
+                "source_identity": "pdf-v4610-cli",
+                "disjoint_from_prior": True,
+                "query_fidelity_included": True,
+                "real_unseen": True,
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod.py"),
+            "--check",
+            "--candidate-manifest",
+            str(manifest_path),
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["candidate_manifest_input_provided"] is True
+    assert output["candidate_manifest_present"] is True
+    assert output["candidate_rows_replayed"] == 1
+    assert output["candidate_manifest_exported"] is False
+    assert output["real_holdout_sufficient"] is False
+    assert output["official_metric_input_rows"] == 0
+    assert output["promotion_evidence"] is False
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_6_10_source_report_closure_rejects_official_live_or_export_opening() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    base_inputs = run.build_source_report_inputs()
+
+    for field, value in (
+        ("official_metric", True),
+        ("v4_7_official_metric_gate_opened", True),
+        ("candidate_manifest_exported", True),
+        ("live_db_index_cache_readiness", True),
+        ("official_metric_input_rows", 1),
+    ):
+        source_inputs = copy.deepcopy(base_inputs)
+        source_inputs["v4_5_1"][field] = value
+        replay = run.build_external_holdout_candidate_manifest_gate_replay(source_inputs)
+        assert replay["source_reports_closed"] is False
+        assert replay["codex_owned_dependency_checks_passed"] is False
+
+
+def test_v4_6_10_manifest_gate_replay_carries_holdout_contract_hash() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    contract = report["holdout_candidate_manifest_contract"]
+    replay = report["external_holdout_candidate_manifest_gate_replay"]
+
+    assert contract["schema_version"] == run.holdout_manifest_contract.HOLDOUT_CANDIDATE_MANIFEST_CONTRACT_VERSION
+    assert contract["contract_hash"] == run.holdout_manifest_contract.HOLDOUT_CANDIDATE_MANIFEST_CONTRACT_HASH
+    assert report["holdout_candidate_manifest_contract_version"] == contract["schema_version"]
+    assert report["holdout_candidate_manifest_contract_hash"] == contract["contract_hash"]
+    assert replay["holdout_candidate_manifest_contract_version"] == contract["schema_version"]
+    assert replay["holdout_candidate_manifest_contract_hash"] == contract["contract_hash"]
+    for source_name in ("v4_5_1", "v4_5_2"):
+        source_input = report["source_report_inputs"][source_name]
+        assert source_input["source_report_holdout_candidate_manifest_contract_version"] == contract["schema_version"]
+        assert source_input["source_report_holdout_candidate_manifest_contract_hash"] == contract["contract_hash"]
+        assert source_input["source_report_holdout_candidate_manifest_contract_hash_matches"] is True
+    run.check_report(report)
+
+
+def _v4_7_target_sufficient_candidate_rows() -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for doc_index in range(1, 21):
+        doc_id = f"v47_pdf_doc_sha_{doc_index:02d}"
+        for query_index in range(1, 6):
+            rows.append(
+                {
+                    "candidate_id": f"v47_pdf_{doc_index:02d}_{query_index:02d}",
+                    "query_id": f"v47_pdf_query_{doc_index:02d}_{query_index:02d}",
+                    "source_family": "PDF",
+                    "source_document_id": doc_id,
+                    "disjoint_from_prior": True,
+                    "query_fidelity_included": True,
+                    "real_unseen": True,
+                }
+            )
+    for workbook_index in range(1, 9):
+        workbook_id = f"v47_xlsx_workbook_sha_{workbook_index:02d}"
+        for query_index in range(1, 14):
+            rows.append(
+                {
+                    "candidate_id": f"v47_xlsx_{workbook_index:02d}_{query_index:02d}",
+                    "query_id": f"v47_xlsx_query_{workbook_index:02d}_{query_index:02d}",
+                    "source_family": "XLSX",
+                    "workbook_id": workbook_id,
+                    "disjoint_from_prior": True,
+                    "query_fidelity_included": True,
+                    "real_unseen": True,
+                }
+            )
+    return rows
+
+
+def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
+    path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in rows) + "\n",
+        encoding="utf-8",
+    )
+
+
+def test_v4_7_preofficial_registration_input_required_packet_keeps_official_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    packet = report["user_input_requirements_packet"]
+
+    assert report["schema_version"] == "rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["status"] == "v4_7_preofficial_external_holdout_candidate_manifest_registration_input_required"
+    assert report["diagnostic_only"] is True
+    assert report["preofficial_external_holdout_candidate_manifest_registration_only"] is True
+    assert report["registration_gate_passed"] is False
+    assert report["candidate_manifest_available"] is False
+    assert report["user_input_required"] is True
+    assert packet["required_file_source_counts"] == {
+        "pdf_source_document_disjoint": 20,
+        "xlsx_workbook_disjoint": 8,
+        "pdf_query_fidelity_rows": 100,
+        "xlsx_query_fidelity_rows": 100,
+    }
+    assert packet["required_row_fields"] == [
+        "candidate_id",
+        "query_id",
+        "source_family",
+        "disjoint_from_prior",
+        "query_fidelity_included",
+        "real_unseen",
+    ]
+    assert "expected_answer" in packet["forbidden_fields"]
+    assert "prompt_payload" in packet["forbidden_fields"]
+    assert "official_metric_input_rows" in packet["forbidden_fields"]
+    assert packet["accepted_examples"]["PDF"]["source_document_id"]
+    assert packet["accepted_examples"]["XLSX"]["workbook_id"]
+    assert packet["rejected_examples"]["XLSX_source_identity_only"]["rejection_reason"] == "workbook_identity_missing"
+    assert packet["pdf_document_identity_proof"]["accepted_identity_fields"] == [
+        "document_version_id",
+        "source_document_id",
+        "document_id",
+        "source_identity",
+    ]
+    assert packet["xlsx_workbook_identity_proof"]["source_identity_only_rejected"] is True
+    assert packet["prior_identity_collision_exclusion"]["uses_v4_5_3_prior_identity_hash_ledger"] is True
+    assert packet["leakage_bucket_exclusion"]["non_empty_leakage_bucket_rejected"] is True
+    assert packet["query_fidelity_counting"]["minimum_included_rows_per_family"] == {"PDF": 100, "XLSX": 100}
+    assert report["official_metric_input_rows"] == 0
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["promotion_evidence"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert "external_holdout_candidate_manifest_missing" in report["blocked_reasons"]
+    run.check_report(report)
+
+
+def test_v4_7_preofficial_registration_validates_manifest_counts_without_official_opening(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod as run
+
+    manifest_path = tmp_path / "external_candidates.jsonl"
+    _write_jsonl(manifest_path, _v4_7_target_sufficient_candidate_rows())
+    prior_summary_report = {
+        "identity_key_hash_algorithm": "sha256(family:identity_key)",
+        "raw_source_identity_values_embedded": False,
+        "raw_local_path_values_exposed": False,
+        "prior_identity_hash_records_by_family": {
+            "PDF": [
+                {
+                    "source_family": "PDF",
+                    "source_identity_hash": run.v4610.v452.source_identity_hash("PDF", "unrelated-prior-pdf"),
+                    "identity_scope": "PDF_document_or_document_version",
+                    "source_atom_count": 1,
+                }
+            ],
+            "XLSX": [
+                {
+                    "source_family": "XLSX",
+                    "source_identity_hash": run.v4610.v452.source_identity_hash("XLSX", "unrelated-prior-xlsx"),
+                    "identity_scope": "XLSX_workbook",
+                    "source_atom_count": 1,
+                }
+            ],
+            "TEXT": [],
+        },
+    }
+
+    report = run.build_artifacts(
+        candidate_manifest_path=manifest_path,
+        prior_identity_summary_report=prior_summary_report,
+    )["report"]
+    registration = report["preofficial_external_holdout_candidate_manifest_registration"]
+
+    assert report["candidate_manifest_available"] is True
+    assert report["registration_gate_passed"] is True
+    assert report["candidate_rows_registered"] == 204
+    assert report["candidate_counts_by_family"] == {"PDF": 100, "XLSX": 104, "TEXT": 0}
+    assert report["accepted_candidate_counts_by_family"] == {"PDF": 20, "XLSX": 8, "TEXT": 0}
+    assert report["accepted_pdf_holdout_candidates"] == 20
+    assert report["accepted_xlsx_holdout_candidates"] == 8
+    assert report["real_query_fidelity_included_counts"] == {"PDF": 100, "XLSX": 104, "TEXT": 0}
+    assert report["rejected_candidate_count"] == 0
+    assert report["rejection_buckets"] == {}
+    assert registration["v4_5_1_intake_gate_passed"] is True
+    assert registration["v4_5_2_source_identity_audit_gate_passed"] is True
+    assert registration["v4_6_10_manifest_replay_executed"] is True
+    assert registration["source_identity_collision_count"] == 0
+    assert registration["prior_identity_collisions_excluded"] is True
+    assert registration["leakage_buckets_excluded"] is True
+    assert registration["protected_oracle_fields_absent"] is True
+    assert registration["official_metric_input_rows"] == 0
+    assert report["official_metric_input_rows"] == 0
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["promotion_evidence"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["real_holdout_sufficient"] is False
+    assert report["preofficial_candidate_thresholds_met"] is True
+    run.check_report(report)
+
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    assert str(manifest_path) not in serialized
+    assert "v47_pdf_doc_sha_" not in serialized
+    assert "v47_xlsx_workbook_sha_" not in serialized
+    assert "source_identity_key" not in serialized
+
+
+def test_v4_7_preofficial_registration_rejects_oracle_path_xlsx_source_identity_only_and_prior_collision(
+    tmp_path,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod as run
+
+    manifest_path = tmp_path / "external_candidates_with_rejections.jsonl"
+    rows = [
+        {
+            "candidate_id": "v47-protected-oracle",
+            "query_id": "v47-protected-oracle-q1",
+            "source_family": "PDF",
+            "source_document_id": "v47-protected-oracle-doc",
+            "expected_answer": "hidden oracle",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "v47-raw-path",
+            "query_id": "v47-raw-path-q1",
+            "source_family": "PDF",
+            "source_document_id": "D:/private/source.pdf",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "v47-xlsx-source-identity-only",
+            "query_id": "v47-xlsx-source-identity-only-q1",
+            "source_family": "XLSX",
+            "source_identity": "v47-xlsx-cell-only",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "v47-prior-collision",
+            "query_id": "v47-prior-collision-q1",
+            "source_family": "PDF",
+            "source_document_id": "v47-prior-seen-doc",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+        {
+            "candidate_id": "v47-leakage",
+            "query_id": "v47-leakage-q1",
+            "source_family": "PDF",
+            "source_document_id": "v47-leakage-doc",
+            "leakage_bucket": "seen_reference_overlap",
+            "disjoint_from_prior": True,
+            "query_fidelity_included": True,
+            "real_unseen": True,
+        },
+    ]
+    _write_jsonl(manifest_path, rows)
+    prior_summary_report = {
+        "identity_key_hash_algorithm": "sha256(family:identity_key)",
+        "raw_source_identity_values_embedded": False,
+        "raw_local_path_values_exposed": False,
+        "prior_identity_hash_records_by_family": {
+            "PDF": [
+                {
+                    "source_family": "PDF",
+                    "source_identity_hash": run.v4610.v452.source_identity_hash("PDF", "v47-prior-seen-doc"),
+                    "identity_scope": "PDF_document_or_document_version",
+                    "source_atom_count": 1,
+                }
+            ],
+            "XLSX": [],
+            "TEXT": [],
+        },
+    }
+
+    report = run.build_artifacts(
+        candidate_manifest_path=manifest_path,
+        prior_identity_summary_report=prior_summary_report,
+    )["report"]
+    registration = report["preofficial_external_holdout_candidate_manifest_registration"]
+
+    assert report["candidate_manifest_available"] is True
+    assert report["registration_gate_passed"] is False
+    assert report["rejected_candidate_count"] == 5
+    assert report["rejection_buckets"]["protected_oracle_field_present"] == 1
+    assert report["rejection_buckets"]["raw_local_path_present"] == 1
+    assert report["rejection_buckets"]["workbook_identity_missing"] == 1
+    assert report["rejection_buckets"]["prior_source_identity_collision"] == 1
+    assert report["rejection_buckets"]["leakage_bucket_present"] == 1
+    assert registration["source_identity_collision_count"] == 1
+    assert registration["v4_5_2_source_identity_audit_gate_passed"] is False
+    assert "source_identity_audit_failed" in report["blocked_reasons"]
+    assert report["official_metric_input_rows"] == 0
+    assert report["v4_7_official_metric_gate_opened"] is False
+    run.check_report(report)
+
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    assert "D:/private/source.pdf" not in serialized
+    assert "hidden oracle" not in serialized
+    assert "v47-prior-seen-doc" not in serialized
+
+
+def test_v4_7_preofficial_registration_single_report_guardrails_and_cli_check(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod as run
+
+    stale_names = (
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+    )
+    for stale_name in stale_names:
+        (tmp_path / stale_name).write_text("stale sidecar", encoding="utf-8")
+
+    report = run.write_artifacts(run.build_artifacts(), output_dir=tmp_path)
+    assert {path.name for path in tmp_path.iterdir()} == {"report.json"}
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["official_metric_input_rows"] == 0
+    run.check_report(report)
+
+    for field in ("v4_7_official_metric_gate_opened", "promotion_evidence", "product_success_evidence_allowed"):
+        mutated = json.loads(json.dumps(report))
+        mutated[field] = True
+        with pytest.raises(AssertionError, match=field):
+            run.check_report(mutated)
+
+    metric_rows = json.loads(json.dumps(report))
+    metric_rows["official_metric_input_rows"] = 1
+    with pytest.raises(AssertionError, match="official_metric_input_rows"):
+        run.check_report(metric_rows)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+    assert output["run_id"] == run.RUN_ID
+    assert output["status"] == "v4_7_preofficial_external_holdout_candidate_manifest_registration_input_required"
+    assert output["candidate_manifest_available"] is False
+    assert output["official_metric_input_rows"] == 0
+    assert output["v4_7_official_metric_gate_opened"] is False
+
+
+def test_v4_6_11_ft_a_runtime_input_validation_route_parity_is_sanitized_and_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    parity = report["ft_a_runtime_input_validation_route_parity"]
+
+    assert report["schema_version"] == "rag_v4_6_11_ft_a_runtime_input_validation_route_parity_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_runtime_input_validation_route_parity_only"] is True
+    assert parity["route_path"] == "/internal/rag/diagnostic/ft-a/dry-run-input/validate"
+    assert parity["feature_flag_default_enabled"] is False
+    assert parity["production_orchestrator_mode_enabled"] is False
+    assert parity["disabled_route_status_code"] == 404
+    assert parity["production_disabled_route_status_code"] == 404
+    assert parity["disabled_route_raw_body_leakage_detected"] is False
+    assert parity["enabled_valid_probe_status_code"] == 200
+    assert parity["script_runtime_counts_match"] is True
+    assert parity["contract_metadata_bridge_present"] is True
+    assert parity["runtime_response_sanitized"] is True
+    assert parity["runtime_rejects_operational_metric_identity_fields"] is True
+    assert parity["enabled_validation_error_status_code"] == 422
+    assert parity["enabled_validation_error_raw_input_redacted"] is True
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    run.check_report(report)
+
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    for forbidden_text in (
+        "이전 셀의 값을 설명해줘",
+        "hidden prompt",
+        "hidden response",
+        "secret answer",
+        "pdf-source-identity",
+        "D:/private",
+    ):
+        assert forbidden_text not in serialized
+
+
+def test_v4_6_11_check_report_fails_closed_on_route_leak_or_opening_flags() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod as run
+
+    base_report = run.build_artifacts()["report"]
+    for field, value in {
+        "dry_run_input_manifest_exported": True,
+        "ft_route_policy_dry_run_opened": True,
+        "ft_route_policy_dry_run_executed": True,
+        "fine_tuning_dataset_exports_created": 1,
+        "training_job_created": True,
+        "model_or_adapter_checkpoint_written": True,
+        "official_metric_input_rows": 1,
+        "promotion_evidence": True,
+        "product_success_evidence_allowed": True,
+        "live_db_index_cache_readiness": True,
+        "v4_7_official_metric_gate_opened": True,
+    }.items():
+        contaminated = dict(base_report)
+        contaminated[field] = value
+        with pytest.raises(AssertionError):
+            run.check_report(contaminated)
+
+    contaminated = dict(base_report)
+    contaminated["ft_a_runtime_input_validation_route_parity"] = dict(
+        base_report["ft_a_runtime_input_validation_route_parity"]
+    )
+    contaminated["ft_a_runtime_input_validation_route_parity"][
+        "disabled_route_raw_body_leakage_detected"
+    ] = True
+    with pytest.raises(AssertionError):
+        run.check_report(contaminated)
+
+    for parity_field in (
+        "script_runtime_counts_match",
+        "contract_metadata_bridge_present",
+        "runtime_response_sanitized",
+        "runtime_rejects_operational_metric_identity_fields",
+        "enabled_validation_error_raw_input_redacted",
+    ):
+        contaminated = dict(base_report)
+        contaminated["ft_a_runtime_input_validation_route_parity"] = dict(
+            base_report["ft_a_runtime_input_validation_route_parity"]
+        )
+        contaminated["ft_a_runtime_input_validation_route_parity"][parity_field] = False
+        with pytest.raises(AssertionError):
+            run.check_report(contaminated)
+
+
+def test_v4_6_11_single_report_guardrails_and_cli_check(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert set(report["source_report_inputs"]) == {"v4_6_4", "v4_6_5", "v4_6_6", "v4_6_10"}
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["prompt_manifest_created"] is False
+    assert guardrails["raw_prompt_text_embedded"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["dry_run_input_manifest_exported"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["raw_runtime_request_body_embedded"] is False
+    assert guardrails["raw_runtime_response_body_embedded"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "ft_a_runtime_input_validation_route_parity.json",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_11 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["review_csv_created"] is False
+
+    unexpected_child_dir = tmp_path / "runtime-parity"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_11 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["ft_a_runtime_input_validation_route_parity_only"] is True
+    assert output["script_runtime_counts_match"] is True
+    assert output["runtime_response_sanitized"] is True
+    assert output["official_metric_input_rows"] == 0
+    assert output["promotion_evidence"] is False
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_6_12_external_holdout_runtime_replay_route_parity_is_sanitized_and_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod as run
+
+    report = run.build_artifacts()["report"]
+    parity = report["external_holdout_runtime_replay_route_parity"]
+
+    assert report["schema_version"] == "rag_v4_6_12_external_holdout_runtime_replay_route_parity_report_v1"
+    assert report["run_id"] == run.RUN_ID
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_runtime_replay_route_parity_only"] is True
+    assert parity["route_path"] == "/internal/rag/diagnostic/holdout-candidates/validate"
+    assert parity["feature_flag_default_enabled"] is False
+    assert parity["production_orchestrator_mode_enabled"] is False
+    assert parity["disabled_route_status_code"] == 404
+    assert parity["production_disabled_route_status_code"] == 404
+    assert parity["disabled_route_raw_body_leakage_detected"] is False
+    assert parity["enabled_target_sufficient_status_code"] == 200
+    assert parity["enabled_validation_error_status_code"] == 422
+    assert parity["enabled_validation_error_raw_input_redacted"] is True
+    assert parity["route_response_sanitized"] is True
+    assert parity["transient_external_manifest_deleted"] is True
+    assert parity["route_candidate_counts_match_v4_6_10_replay"] is True
+    assert parity["route_source_identity_audit_matches_v4_6_10_replay"] is True
+    assert parity["route_rejects_prompt_path_metric_and_readiness_fields"] is True
+    assert parity["v4_6_10_replay_candidate_gate_target_sufficient"] is True
+    assert parity["route_candidate_intake_gate_passed"] is True
+    assert parity["route_source_identity_audit_gate_passed"] is True
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    run.check_report(report)
+
+    serialized = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    for forbidden_text in (
+        "pdf-v4612",
+        "xlsx-v4612",
+        "pdf-doc-v4612",
+        "workbook-v4612",
+        "hidden holdout prompt",
+        "secret holdout answer",
+        "D:/private",
+        "candidate_manifest_path",
+    ):
+        assert forbidden_text not in serialized
+
+
+def test_v4_6_12_check_report_fails_closed_on_route_leak_or_opening_flags() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod as run
+
+    base_report = run.build_artifacts()["report"]
+    for field, value in {
+        "candidate_manifest_exported": True,
+        "candidate_manifest_jsonl_created": True,
+        "candidate_validation_jsonl_created": True,
+        "source_identity_audit_jsonl_created": True,
+        "dry_run_input_manifest_exported": True,
+        "ft_route_policy_dry_run_opened": True,
+        "ft_route_policy_dry_run_executed": True,
+        "fine_tuning_dataset_exports_created": 1,
+        "training_job_created": True,
+        "model_or_adapter_checkpoint_written": True,
+        "official_metric_input_rows": 1,
+        "promotion_evidence": True,
+        "product_success_evidence_allowed": True,
+        "live_db_index_cache_readiness": True,
+        "v4_7_official_metric_gate_opened": True,
+        "real_holdout_sufficient": True,
+    }.items():
+        contaminated = copy.deepcopy(base_report)
+        contaminated[field] = value
+        with pytest.raises(AssertionError):
+            run.check_report(contaminated)
+
+    for parity_field in (
+        "enabled_validation_error_raw_input_redacted",
+        "route_response_sanitized",
+        "transient_external_manifest_deleted",
+        "route_candidate_counts_match_v4_6_10_replay",
+        "route_source_identity_audit_matches_v4_6_10_replay",
+        "route_rejects_prompt_path_metric_and_readiness_fields",
+    ):
+        contaminated = copy.deepcopy(base_report)
+        contaminated["external_holdout_runtime_replay_route_parity"][parity_field] = False
+        with pytest.raises(AssertionError):
+            run.check_report(contaminated)
+
+    contaminated = copy.deepcopy(base_report)
+    contaminated["external_holdout_runtime_replay_route_parity"]["debug_path"] = "D:/private/holdout.jsonl"
+    with pytest.raises(AssertionError):
+        run.check_report(contaminated)
+
+
+def test_v4_6_12_single_report_guardrails_and_cli_check(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert set(report["source_report_inputs"]) == {"v4_6_7", "v4_6_10", "v4_6_11"}
+    assert guardrails["raw_runtime_request_body_embedded"] is False
+    assert guardrails["raw_runtime_response_body_embedded"] is False
+    assert guardrails["raw_candidate_rows_embedded"] is False
+    assert guardrails["raw_source_identity_values_embedded"] is False
+    assert guardrails["raw_local_path_values_exposed"] is False
+    assert guardrails["candidate_manifest_exported"] is False
+    assert guardrails["candidate_manifest_jsonl_created"] is False
+    assert guardrails["candidate_validation_jsonl_created"] is False
+    assert guardrails["source_identity_audit_jsonl_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["protected_namespaces_touched"] == []
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "external_holdout_runtime_replay_route_parity.json",
+        "candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "source_identity_audit.jsonl",
+        "dry_run_input_manifest.jsonl",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "official_metric_results.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6_12 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["review_csv_created"] is False
+
+    unexpected_child_dir = tmp_path / "route-parity"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6_12 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["external_holdout_runtime_replay_route_parity_only"] is True
+    assert output["route_candidate_counts_match_v4_6_10_replay"] is True
+    assert output["route_response_sanitized"] is True
+    assert output["official_metric_input_rows"] == 0
+    assert output["promotion_evidence"] is False
+    assert output["gpu_required_for_this_slice"] is False
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_6_preflight_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_ft_route_policy_dry_run_preflight_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["prompt_payload_created"] is False
+    assert guardrails["raw_llm_response_payload_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["model_or_adapter_checkpoint_written"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+    assert guardrails["official_metric_input_rows"] == 0
+    assert guardrails["gpu_required_for_this_slice"] is False
+    assert guardrails["gpu_required_for_future_training_when_opened"] is True
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "ft_route_policy_dry_run.json",
+        "prompt_manifest.json",
+        "raw_llm_response.json",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_6 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["ft_route_policy_dry_run_executed"] is False
+    assert written["fine_tuning_dataset_export_created"] is False
+
+    unexpected_child_dir = tmp_path / "checkpoint-0001"
+    unexpected_child_dir.mkdir()
+    with pytest.raises(RuntimeError, match="unexpected v4_6 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=tmp_path)
+
+    unknown_sidecar_dir = tmp_path / "unknown-sidecar"
+    unknown_sidecar_dir.mkdir()
+    (unknown_sidecar_dir / "debug.json").write_text("unexpected v4_6 sidecar", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="unexpected v4_6 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=unknown_sidecar_dir)
+
+
+def test_v4_6_cli_check_is_no_write_and_bytecode_free() -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_6_ft_route_policy_dry_run_preflight_nonprod as run
+
+    report_path = run.REPORT_JSON
+    status_path = run.STATUS_JSONL
+    before_report = report_path.read_bytes() if report_path.exists() else None
+    before_status = status_path.read_bytes() if status_path.exists() else None
+    before_sidecars = sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []
+    env = dict(os.environ)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            str(ROOT / "ai" / "scripts" / "rag_v4_6_ft_route_policy_dry_run_preflight_nonprod.py"),
+            "--check",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    output = json.loads(result.stdout)
+
+    assert output["run_id"] == run.RUN_ID
+    assert output["ft_route_policy_dry_run_opened"] is False
+    assert output["ft_route_policy_dry_run_executed"] is False
+    assert output["fine_tuning_dataset_exports_created"] == 0
+    assert output["official_metric_input_rows"] == 0
+    assert (report_path.read_bytes() if report_path.exists() else None) == before_report
+    assert (status_path.read_bytes() if status_path.exists() else None) == before_status
+    assert (sorted(path.name for path in run.OUTPUT_DIR.glob("*")) if run.OUTPUT_DIR.exists() else []) == before_sidecars
+
+
+def test_v4_5_1_holdout_candidate_intake_single_report_guardrails_and_sidecar_policy(tmp_path) -> None:
+    sys.path.insert(0, str(ROOT / "ai" / "scripts"))
+    import rag_v4_5_1_holdout_candidate_intake_gate_nonprod as run
+
+    artifacts = run.build_artifacts()
+    report = artifacts["report"]
+    guardrails = report["guardrails"]
+
+    assert guardrails["candidate_manifest_created"] is False
+    assert guardrails["candidate_validation_jsonl_created"] is False
+    assert guardrails["fine_tuning_dataset_export_created"] is False
+    assert guardrails["training_job_created"] is False
+    assert guardrails["v4_6_ft_dry_run_opened"] is False
+    assert guardrails["source_atom_evidence_bundle_evidence_truth"] is True
+    assert guardrails["searchview_vector_payload_candidate_only"] is True
+    assert guardrails["vector_payload_used_as_evidence_truth"] is False
+    assert guardrails["target_locator_used"] is False
+    assert guardrails["gold_locator_used"] is False
+    assert guardrails["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert guardrails["protected_namespaces_touched"] == []
+
+    for stale_name in (
+        "summary.json",
+        "metrics.json",
+        "holdout_candidate_manifest.jsonl",
+        "candidate_validation.jsonl",
+        "training_manifest.jsonl",
+        "sft_dataset.jsonl",
+        "dpo_dataset.jsonl",
+        "reward_model_dataset.jsonl",
+        "review_packet.csv",
+    ):
+        (tmp_path / stale_name).write_text("stale v4_5_1 sidecar", encoding="utf-8")
+
+    written = run.write_artifacts(artifacts, output_dir=tmp_path)
+    assert written["artifact_paths"]["report_json"] == (tmp_path / "report.json").as_posix()
+    assert {path.name for path in tmp_path.iterdir() if path.is_file()} == {"report.json"}
+    assert written["summary"]["single_report_artifact_contract"] is True
+    assert written["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert written["summary"]["review_csv_created"] is False
+    assert written["candidate_manifest_jsonl_created"] is False
+
+    unknown_sidecar_dir = tmp_path / "unknown-sidecar"
+    unknown_sidecar_dir.mkdir()
+    (unknown_sidecar_dir / "debug.json").write_text("unexpected v4_5_1 sidecar", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="unexpected v4_5_1 primary artifacts"):
+        run.write_artifacts(artifacts, output_dir=unknown_sidecar_dir)
 
 
 def test_pdf_xlsx_answer_quality_review_packet_pairs_final_run_rows_and_keeps_user_fields_blank(tmp_path) -> None:

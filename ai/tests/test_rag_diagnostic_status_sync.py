@@ -13,6 +13,35 @@ PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+V4_7_CURRENT_STATUS = "V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY"
+V4_6_CLOSEOUT_CURRENT_STATUS = V4_7_CURRENT_STATUS
+V4_6_12_CURRENT_STATUS = V4_6_CLOSEOUT_CURRENT_STATUS
+V4_6_11_CURRENT_STATUS = V4_6_12_CURRENT_STATUS
+V4_6_10_CURRENT_STATUS = V4_6_11_CURRENT_STATUS
+V4_6_9_CURRENT_STATUS = V4_6_10_CURRENT_STATUS
+V4_6_8_CURRENT_STATUS = V4_6_9_CURRENT_STATUS
+V4_6_7_CURRENT_STATUS = V4_6_8_CURRENT_STATUS
+V4_6_6_CURRENT_STATUS = V4_6_7_CURRENT_STATUS
+V4_6_5_CURRENT_STATUS = V4_6_6_CURRENT_STATUS
+V4_6_4_CURRENT_STATUS = V4_6_5_CURRENT_STATUS
+V4_6_3_CURRENT_STATUS = V4_6_4_CURRENT_STATUS
+V4_6_2_CURRENT_STATUS = V4_6_3_CURRENT_STATUS
+V4_6_1_CURRENT_STATUS = V4_6_2_CURRENT_STATUS
+V4_6_CURRENT_STATUS = V4_6_2_CURRENT_STATUS
+V4_5_3_CURRENT_STATUS = V4_6_CURRENT_STATUS
+V4_6_SCRIPT = "rag_v4_6_ft_route_policy_dry_run_preflight_nonprod.py"
+V4_6_1_SCRIPT = "rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod.py"
+V4_6_2_SCRIPT = "rag_v4_6_2_ft_route_policy_fixture_contract_nonprod.py"
+V4_6_3_SCRIPT = "rag_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod.py"
+V4_6_4_SCRIPT = "rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod.py"
+V4_6_5_SCRIPT = "rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod.py"
+V4_6_6_SCRIPT = "rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod.py"
+V4_6_8_SCRIPT = "rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod.py"
+V4_6_9_SCRIPT = "rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod.py"
+V4_6_10_SCRIPT = "rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod.py"
+V4_6_11_SCRIPT = "rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod.py"
+V4_6_12_SCRIPT = "rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod.py"
+V4_7_SCRIPT = "rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py"
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
@@ -85,6 +114,13 @@ def require_v3_9_local_artifacts(*paths: Path) -> None:
     if os.environ.get("RAG_V3_9_ARTIFACTS_REQUIRED") == "1":
         pytest.fail(message)
     pytest.skip(message)
+
+
+def require_v4_3_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_3 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def sha256_file(path: Path) -> str:
@@ -3190,6 +3226,21 @@ def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audi
         in progress
         or "Overall status: `diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod_ready`;"
         in progress
+        or "Overall status: `diagnostic_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_5_finetune_readiness_packet_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod_ready`;"
+        in progress
+        or f"Overall status: `{V4_6_CURRENT_STATUS}`;" in progress
         or "Overall status: `phase1_diagnostic_contract_closure_after_v3_22_ready`;"
         in progress
     )
@@ -3296,6 +3347,21 @@ def test_progress_measurements_triage_and_status_record_v3_10_fresh_holdout_xlsx
         in progress
         or "Overall status: `diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod_ready`;"
         in progress
+        or "Overall status: `diagnostic_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_5_finetune_readiness_packet_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod_ready`;"
+        in progress
+        or "Overall status: `diagnostic_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod_ready`;"
+        in progress
+        or f"Overall status: `{V4_6_CURRENT_STATUS}`;" in progress
         or "Overall status: `phase1_diagnostic_contract_closure_after_v3_22_ready`;"
         in progress
     )
@@ -4554,6 +4620,130 @@ def test_phase1_diagnostic_contract_closure_after_v3_22_records_boundary_and_bac
     assert "persisted XLSX SourceAtom display metadata materialization path" in triage_section
 
 
+def test_phase1_fastapi_diagnostic_integration_records_cleanup_route_and_boundary():
+    marker = "phase1_diagnostic_contract_closure_fastapi_diagnostic_integration"
+    event_type = "phase1_diagnostic_contract_closure_fastapi_diagnostic_integration_ready"
+    status = "PHASE1_DIAGNOSTIC_CONTRACT_CLOSURE_FASTAPI_DIAGNOSTIC_INTEGRATION_READY"
+    v3_22_run_id = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    v3_22_report_path = (
+        ROOT
+        / "ai"
+        / "eval"
+        / "reports"
+        / "rag-ingestion"
+        / "quality"
+        / v3_22_run_id
+        / "report.json"
+    )
+    require_v3_9_local_artifacts(STATUS_JSONL, v3_22_report_path)
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### Phase 1 Closeout FastAPI Diagnostic Integration",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### Phase 1 Closeout FastAPI Diagnostic Integration Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == marker and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == status
+    assert event["phase1_closed"] is True
+    assert event["repository_cleanup_completed"] is True
+    assert event["script_inventory_updated"] is True
+    assert event["required_v3_artifacts_deleted"] is False
+    assert event["v3_22_report_preserved"] is True
+    assert event["v3_22_script_entrypoint_retained"] is True
+    assert event["reusable_runtime_logic_extracted"] is True
+    assert event["fastapi_integration_ready"] is True
+    assert event["fastapi_primary_app"] == "ai/app/main.py -> app = create_app()"
+    assert event["fastapi_factory"] == "ai/app/api.py:create_app"
+    assert event["route_path"] == "/internal/rag/diagnostic/query"
+    assert event["route_method"] == "POST"
+    assert event["route_scope"] == "diagnostic_internal"
+    assert event["feature_flag"] == "AIPIPELINE_WORKER_RAG_FASTAPI_DIAGNOSTIC_ROUTE_ENABLED"
+    assert event["settings_field"] == "rag_fastapi_diagnostic_route_enabled"
+    assert event["feature_flag_default_enabled"] is False
+    assert event["production_orchestrator_mode_enabled"] is False
+    assert event["diagnostic_only"] is True
+    assert event["production_routing"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["official_metric_lift"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["xlsx_locator_completion_claimed"] is False
+    assert event["no_production_db_index_cache_writes"] is True
+    assert event["source_atom_evidence_bundle_evidence_truth"] is True
+    assert event["searchview_vector_payload_candidate_only"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["raw_xlsx_query_time_parsing_forbidden"] is True
+    assert event["raw_pdf_query_time_parsing_forbidden"] is True
+    assert event["formula_cached_values_only"] is True
+    assert event["formula_text_visible_to_user_default"] is False
+    assert event["formula_evaluation_at_query_time"] is False
+    assert event["unsupported_large_ranges_fail_closed"] is True
+    assert event["ambiguous_deictic_context_missing_fail_closed"] is True
+    assert event["review_packet_created_by_closeout"] is False
+    assert event["artifact_sha256"]["v3_22_report_json_sha256"] == sha256_file(v3_22_report_path)
+    assert event["v3_22_counters"]["report_row_count"] == 14
+    assert event["v3_22_counters"]["official_metric_input_rows"] == 0
+    assert event["v3_22_counters"]["review_csv_created"] is False
+
+    assert marker in current_text
+    assert "POST /internal/rag/diagnostic/query" in current_text
+    assert "GET /internal/rag/diagnostic/readiness" in current_text
+    assert "AIPIPELINE_WORKER_RAG_FASTAPI_DIAGNOSTIC_ROUTE_ENABLED" in current_text
+    for phrase in (
+        "not production routing",
+        "not product success evidence",
+        "not promotion evidence",
+        "not official metric lift",
+        "not live DB/index/cache readiness",
+        "not XLSX locator completion",
+    ):
+        assert phrase in current_flat
+    assert "diagnostic route default-enabled | false" in measurements_section
+    assert "diagnostic route tests | 35 passed" in measurements_section
+    assert "FT-A dry-run input validation route | exposed, input-only, sanitized/hash-only, no writes" in measurements_section
+    assert "readiness route holdout candidate manifest contract | exposed, input-only, hash-locked, no writes" in measurements_section
+    assert "v3_22 script entrypoint | retained" in measurements_section
+    assert "SourceAtom/EvidenceBundle display metadata bridge | present" in measurements_section
+    assert "does not add a new performance, quality, promotion, official metric, or product-success measurement" in measurements_section
+    assert "User-owned decisions remain" in triage_section
+    assert "Codex-owned non-gold decisions remain" in triage_section
+    assert "hash-locked holdout candidate manifest contract" in triage_section
+    assert "XLSX `source_identity` alone is not workbook proof" in triage_section
+    assert "forbidden gold/target/supporting/expected fields" in triage_section
+    assert "SearchView/vector payload remains candidate-only" in triage_section
+    assert "SourceAtom/EvidenceBundle remains evidence truth" in triage_section
+    for bucket in (
+        "required_by_current_tests",
+        "required_by_docs_or_status_sync",
+        "ignored_diagnostic_artifact",
+        "external_archive_candidate",
+        "legacy_script_entrypoint_to_keep",
+        "reusable_runtime_logic_to_extract",
+        "dead_temp_or_scratch_candidate",
+    ):
+        assert bucket in scripts_readme
+
+
 def test_v4_0_charter_status_opening_records_boundary_and_non_promotion_status():
     v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
     v4_event_type = "v4_source_grounded_runtime_locator_and_finetune_readiness_opened"
@@ -4563,6 +4753,12 @@ def test_v4_0_charter_status_opening_records_boundary_and_non_promotion_status()
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
     v4_1_current_status = "diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod_ready"
+    v4_2_current_status = "diagnostic_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod_ready"
+    v4_3_current_status = "diagnostic_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod_ready"
+    v4_4_current_status = "diagnostic_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod_ready"
+    v4_5_current_status = "diagnostic_v4_5_finetune_readiness_packet_nonprod_ready"
+    v4_5_1_current_status = "diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod_ready"
+    v4_5_2_current_status = "diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod_ready"
     v3_22_run_id = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
     v3_22_report_path = (
         ROOT
@@ -4590,6 +4786,7 @@ def test_v4_0_charter_status_opening_records_boundary_and_non_promotion_status()
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
     matches = [
@@ -4706,6 +4903,13 @@ def test_v4_0_charter_status_opening_records_boundary_and_non_promotion_status()
     assert (
         f"Overall status: `{v4_event_type}`;" in current_text
         or f"Overall status: `{v4_1_current_status}`;" in current_text
+        or f"Overall status: `{v4_2_current_status}`;" in current_text
+        or f"Overall status: `{v4_3_current_status}`;" in current_text
+        or f"Overall status: `{v4_4_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_1_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_2_current_status}`;" in current_text
+        or f"Overall status: `{V4_5_3_CURRENT_STATUS}`;" in current_text
     )
     assert v4_id in current_text
     assert v4_run_family in current_text
@@ -4760,11 +4964,25 @@ def test_v4_0_charter_status_opening_records_boundary_and_non_promotion_status()
     assert (
         f"Current RAG status: `{v4_event_type}`" in readme
         or f"Current RAG status: `{v4_1_current_status}`" in readme
+        or f"Current RAG status: `{v4_2_current_status}`" in readme
+        or f"Current RAG status: `{v4_3_current_status}`" in readme
+        or f"Current RAG status: `{v4_4_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in readme
     )
     assert "fine_tuning_executed=false" in readme
     assert (
         f"Current RAG status: `{v4_event_type}`" in eval_readme
         or f"Current RAG status: `{v4_1_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_2_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_3_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_4_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in eval_readme
     )
     assert "fine_tuning_executed=false" in eval_readme
     assert "XLSX table/range/cell locator improvement" in triage_section
@@ -4775,6 +4993,12 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_records_status_docs_and
     run_id = "official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod"
     event_type = "diagnostic_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod"
     current_status = f"{event_type}_ready"
+    v4_2_current_status = "diagnostic_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod_ready"
+    v4_3_current_status = "diagnostic_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod_ready"
+    v4_4_current_status = "diagnostic_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod_ready"
+    v4_5_current_status = "diagnostic_v4_5_finetune_readiness_packet_nonprod_ready"
+    v4_5_1_current_status = "diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod_ready"
+    v4_5_2_current_status = "diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod_ready"
     status = "DIAGNOSTIC_V4_1_PERSISTED_XLSX_SOURCEATOM_DISPLAY_METADATA_NONPROD_READY"
     v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
     v4_run_family = (
@@ -4782,7 +5006,7 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_records_status_docs_and
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
-    require_v3_9_local_artifacts(STATUS_JSONL, report_path)
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
@@ -4799,6 +5023,7 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_records_status_docs_and
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
     matches = [
@@ -4860,9 +5085,36 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_records_status_docs_and
     assert report["metrics"]["official_metric_input_rows"] == 0
     assert report["guardrails"]["protected_namespaces_touched"] == []
 
-    assert f"Overall status: `{current_status}`;" in current_text
-    assert f"Current RAG status: `{current_status}`" in readme
-    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{v4_2_current_status}`;" in current_text
+        or f"Overall status: `{v4_3_current_status}`;" in current_text
+        or f"Overall status: `{v4_4_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_1_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_2_current_status}`;" in current_text
+        or f"Overall status: `{V4_5_3_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{v4_2_current_status}`" in readme
+        or f"Current RAG status: `{v4_3_current_status}`" in readme
+        or f"Current RAG status: `{v4_4_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_2_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_3_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_4_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in eval_readme
+    )
     assert run_id in current_text
     assert v4_id in current_text
     assert v4_run_family in current_text
@@ -4895,3 +5147,3374 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_records_status_docs_and
     assert "No raw XLSX query-time parsing" in triage_section
     assert "future embedding/LLM/index workloads should prefer GPU when available" in triage_section
     assert "Next lane: v4_2 XLSX locator v2" in triage_section
+
+
+def test_v4_2_xlsx_locator_v2_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod"
+    event_type = "diagnostic_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod"
+    current_status = f"{event_type}_ready"
+    v4_3_current_status = "diagnostic_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod_ready"
+    v4_4_current_status = "diagnostic_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod_ready"
+    v4_5_current_status = "diagnostic_v4_5_finetune_readiness_packet_nonprod_ready"
+    v4_5_1_current_status = "diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod_ready"
+    v4_5_2_current_status = "diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod_ready"
+    status = "DIAGNOSTIC_V4_2_XLSX_LOCATOR_V2_TABLE_RANGE_CELL_STRUCTURAL_MATERIALIZATION_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_2 XLSX Locator v2 Table/Range/Cell Structural Materialization",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_2 XLSX Locator v2 Table/Range/Cell Structural Materialization Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["xlsx_locator_v2_rows"] == 344
+    assert event["xlsx_locator_v2_candidate_component_rows"] == 900
+    assert event["pdf_rows_included"] == 0
+    assert event["text_rows_included"] == 0
+    assert event["seen_reference_only_rows"] == 344
+    assert event["workbook_disjoint_validation_rows"] == 0
+    assert event["fresh_real_holdout_available"] is False
+    assert event["table_or_range_at1"]["numerator"] == 23
+    assert event["table_or_range_at1"]["computed_by_v4_2"] is False
+    assert event["table_or_range_at1"]["metric_role"] == "reference_only_seen_diagnostic"
+    assert event["cell_or_value_at1"]["numerator"] == 21
+    assert event["cell_or_value_at1"]["computed_by_v4_2"] is False
+    assert event["diagnostic_only"] is True
+    assert event["production_routing"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["official_metric_lift"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["fine_tuning_readiness_only"] is True
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["family_separated_xlsx_only"] is True
+    assert event["pdf_lane_excluded"] is True
+    assert event["text_lane_excluded"] is True
+    assert event["source_atom_registry_mutated"] is False
+    assert event["searchview_vector_payload_candidate_only"] is True
+    assert event["source_atom_evidence_bundle_evidence_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["raw_answer_value_for_query_scoring_used"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["review_csv_created"] is False
+    assert event["report_json_created"] is True
+    assert event["summary_json_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert event["xlsx_locator_v2_manifest_jsonl_created"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["gpu_required_for_this_slice"] is False
+    assert event["holdout_policy"]["seen_reference_success_claim_allowed"] is False
+
+    assert report["schema_version"] == "rag_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["summary"]["single_report_artifact_contract"] is True
+    assert report["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert report["metrics"]["official_metric_input_rows"] == 0
+    assert report["metrics"]["display_metadata_coverage"]["coverage_role"] == "input_readiness_only_not_locator_denominator"
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["holdout_policy"]["blocked_reason"] == "fresh real XLSX workbook-disjoint holdout unavailable"
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{v4_3_current_status}`;" in current_text
+        or f"Overall status: `{v4_4_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_1_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_2_current_status}`;" in current_text
+        or f"Overall status: `{V4_5_3_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{v4_3_current_status}`" in readme
+        or f"Current RAG status: `{v4_4_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_3_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_4_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in eval_readme
+    )
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert v4_run_family in current_text
+    assert "current diagnostic v4_2 XLSX locator v2 structural materialization loop" in current_text
+    assert "current diagnostic v4_1 persisted XLSX SourceAtom display metadata loop" in current_text
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| xlsx_locator_v2_rows | 344 |" in measurements_section
+    assert "| xlsx_locator_v2_candidate_component_rows | 900 |" in measurements_section
+    assert "| table_or_range_at1 | 23/344 |" in measurements_section
+    assert "| cell_or_value_at1 | 21/344 |" in measurements_section
+    assert "| workbook_disjoint_validation_rows | 0 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "| product_success_evidence_allowed | false |" in measurements_section
+    assert "| promotion_evidence | false |" in measurements_section
+    assert "| fine_tuning_executed | false |" in measurements_section
+    assert "| gpu_required_for_this_slice | false |" in measurements_section
+    assert "computed_by_v4_2=false" in measurements_section
+    assert "no review CSV, sidecar manifest, metrics sidecar, or per-run Markdown is created" in measurements_section
+
+    assert run_id in triage_section
+    assert "PDF/TEXT lanes excluded" in triage_section
+    assert "v3_12/v3_15 XLSX locator surface" in triage_section
+    assert "v4_1 display metadata rows are input readiness only" in triage_section
+    assert "`reference_only_seen_diagnostic` with `computed_by_v4_2=false`" in triage_section
+    assert "Fresh real workbook-disjoint holdout remains unavailable" in triage_section
+    assert "future embedding/LLM/index workloads should prefer GPU when available" in triage_section
+
+
+def test_v4_3_pdf_file_identity_split_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod"
+    event_type = "diagnostic_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod"
+    current_status = f"{event_type}_ready"
+    v4_4_current_status = "diagnostic_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod_ready"
+    v4_5_current_status = "diagnostic_v4_5_finetune_readiness_packet_nonprod_ready"
+    v4_5_1_current_status = "diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod_ready"
+    v4_5_2_current_status = "diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod_ready"
+    status = "DIAGNOSTIC_V4_3_PDF_FILE_IDENTITY_CONFIDENCE_AND_EVIDENCE_WINDOW_SPLIT_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_3 PDF File Identity Confidence And Evidence-Window Split",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_3 PDF File Identity Confidence And Evidence-Window Split Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["pdf_file_identity_rows"] == 329
+    assert event["pdf_candidate_component_rows"] == 942
+    assert event["xlsx_rows_included"] == 0
+    assert event["text_rows_included"] == 0
+    assert event["seen_reference_only_rows"] == 329
+    assert event["source_document_disjoint_validation_rows"] == 0
+    assert event["fresh_real_holdout_available"] is False
+    assert event["file_resolve_at1"]["numerator"] == 66
+    assert event["file_resolve_at1"]["computed_by_v4_3"] is False
+    assert event["file_resolve_at1"]["metric_role"] == "reference_only_seen_diagnostic"
+    assert event["answer_ready_window_sufficient_at_query"]["numerator"] == 251
+    assert event["answer_ready_window_sufficient_at_query"]["computed_by_v4_3"] is False
+    assert event["pdf_file_identity_answer_window_kept_separate"] is True
+    assert event["bbox_correctness_metric_computed"] is False
+    assert event["diagnostic_only"] is True
+    assert event["production_routing"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["official_metric_lift"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["fine_tuning_readiness_only"] is True
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["family_separated_pdf_only"] is True
+    assert event["xlsx_lane_excluded"] is True
+    assert event["text_lane_excluded"] is True
+    assert event["source_atom_registry_mutated"] is False
+    assert event["searchview_vector_payload_candidate_only"] is True
+    assert event["source_atom_evidence_bundle_evidence_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["raw_answer_value_for_query_scoring_used"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["review_csv_created"] is False
+    assert event["report_json_created"] is True
+    assert event["summary_json_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert event["pdf_file_identity_split_manifest_jsonl_created"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["gpu_required_for_this_slice"] is False
+    assert event["holdout_policy"]["seen_reference_success_claim_allowed"] is False
+    assert event["holdout_policy"]["real_unseen_registry_counts"] == {"PDF_source_document_disjoint": 0}
+
+    assert report["schema_version"] == "rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_report_v1"
+    assert report["run_id"] == run_id
+    assert report["official_metric"] is False
+    assert report["summary"]["status"] == status
+    assert report["summary"]["single_report_artifact_contract"] is True
+    assert report["summary"]["sidecar_primary_artifacts_suppressed"] is True
+    assert report["metrics"]["official_metric_input_rows"] == 0
+    assert report["metrics"]["pdf_file_identity_metrics"]["source_metric_scope"] == (
+        "diagnostic_only_seen_reference_file_identity_confidence_no_rerank"
+    )
+    assert report["metrics"]["pdf_evidence_window_metrics"]["source_metric_scope"] == (
+        "diagnostic_only_same_page_bbox_window_availability_not_answer_generation"
+    )
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["holdout_policy"]["blocked_reason"] == "fresh real PDF source-document-disjoint holdout unavailable"
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{v4_4_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_1_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_2_current_status}`;" in current_text
+        or f"Overall status: `{V4_5_3_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{v4_4_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_4_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in eval_readme
+    )
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    assert (
+        (
+            "python -X utf8 -m py_compile "
+            "ai\\scripts\\rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py"
+        )
+        in readme_verify_section
+        or (
+            "python -X utf8 -m py_compile "
+            "ai\\scripts\\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py"
+        )
+        in readme_verify_section
+        or (
+            "python -X utf8 -m py_compile "
+            "ai\\scripts\\rag_v4_5_finetune_readiness_packet_nonprod.py"
+        )
+        in readme_verify_section
+        or (
+            "python -X utf8 -m py_compile "
+            "ai\\scripts\\rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py"
+        )
+        in readme_verify_section
+            or (
+                "python -X utf8 -m py_compile "
+                "ai\\scripts\\rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py"
+            )
+            in readme_verify_section
+            or (
+                "python -X utf8 -m py_compile "
+                "ai\\scripts\\rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py"
+            )
+            in readme_verify_section
+            or ("python -X utf8 -m py_compile ai\\scripts\\" + V4_6_SCRIPT) in readme_verify_section
+            or ("python -X utf8 -m py_compile ai\\scripts\\" + V4_6_1_SCRIPT) in readme_verify_section
+            or ("python -X utf8 -m py_compile ai\\scripts\\" + V4_6_2_SCRIPT) in readme_verify_section
+        )
+    assert (
+        (
+            "python -X utf8 ai\\scripts\\rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py --check"
+        )
+        in readme_verify_section
+        or (
+            "python -X utf8 ai\\scripts\\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py --check"
+        )
+        in readme_verify_section
+        or (
+            "python -X utf8 ai\\scripts\\rag_v4_5_finetune_readiness_packet_nonprod.py --check"
+        )
+        in readme_verify_section
+        or (
+            "python -X utf8 ai\\scripts\\rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py --check"
+        )
+        in readme_verify_section
+            or (
+                "python -X utf8 ai\\scripts\\rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py --check"
+            )
+            in readme_verify_section
+            or (
+                "python -X utf8 ai\\scripts\\rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py --check"
+            )
+            in readme_verify_section
+            or ("python -X utf8 ai\\scripts\\" + V4_6_SCRIPT + " --check") in readme_verify_section
+            or ("python -X utf8 ai\\scripts\\" + V4_6_1_SCRIPT + " --check") in readme_verify_section
+            or ("python -X utf8 ai\\scripts\\" + V4_6_2_SCRIPT + " --check") in readme_verify_section
+        )
+    assert "rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod.py --check" not in readme_verify_section
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert v4_run_family in current_text
+    assert "current diagnostic v4_3 PDF file identity confidence and evidence-window split loop" in current_text
+    assert "current diagnostic v4_2 XLSX locator v2 structural materialization loop" in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| pdf_file_identity_rows | 329 |" in measurements_section
+    assert "| pdf_candidate_component_rows | 942 |" in measurements_section
+    assert "| file_resolve_at1 | 66/329 |" in measurements_section
+    assert "| file_resolve_at3 | 129/329 |" in measurements_section
+    assert "| same_page_bounded_evidence_window_candidate_at3 | 341/942 |" in measurements_section
+    assert "| answer_ready_window_sufficient_at_query | 251/329 |" in measurements_section
+    assert "| bbox_correctness_metric_computed | false |" in measurements_section
+    assert "| source_document_disjoint_validation_rows | 0 |" in measurements_section
+    assert "| official_metric | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "| product_success_evidence_allowed | false |" in measurements_section
+    assert "| promotion_evidence | false |" in measurements_section
+    assert "| fine_tuning_executed | false |" in measurements_section
+    assert "| gpu_required_for_this_slice | false |" in measurements_section
+    assert "computed_by_v4_3=false" in measurements_section
+    assert "no review CSV, sidecar manifest, metrics sidecar, or per-run Markdown is created" in measurements_section
+    assert "Phase 1 closure baseline" in progress
+    assert "each v4_n diagnostic slice uses its own single `report.json` as the current counter source of truth" in progress
+
+    assert run_id in triage_section
+    assert "XLSX/TEXT lanes excluded" in triage_section
+    assert "v3_13 PDF file-identity/evidence-window seen diagnostic surface" in triage_section
+    assert "File identity metrics are kept separate from answer-ready evidence-window metrics" in triage_section
+    assert "`reference_only_seen_diagnostic` with `computed_by_v4_3=false`" in triage_section
+    assert "Fresh real source-document-disjoint holdout remains unavailable" in triage_section
+    assert "future embedding/LLM/index workloads should prefer GPU when available" in triage_section
+    assert "Completed v4_1-v4_3" in triage
+    assert (
+        "Next technical lane: v4_4 real blind/OOD holdout and leakage audit" in triage
+        or "v4_4 real blind/OOD holdout and leakage audit infrastructure is now materialized" in triage
+    )
+
+
+def test_v4_4_real_blind_ood_holdout_leakage_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod"
+    event_type = "diagnostic_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod"
+    current_status = f"{event_type}_ready"
+    v4_5_current_status = "diagnostic_v4_5_finetune_readiness_packet_nonprod_ready"
+    v4_5_1_current_status = "diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod_ready"
+    v4_5_2_current_status = "diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod_ready"
+    status = "DIAGNOSTIC_V4_4_REAL_BLIND_OOD_HOLDOUT_AND_LEAKAGE_AUDIT_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_4 Real Blind/OOD Holdout And Leakage Audit",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_4 Real Blind/OOD Holdout And Leakage Audit Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["production_routing"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["official_metric_lift"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["fine_tuning_readiness_only"] is True
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["real_blind_ood_holdout_infrastructure_ready"] is True
+    assert event["leakage_audit_infrastructure_ready"] is True
+    assert event["query_fidelity_audit_present"] is True
+    assert event["real_holdout_available"] is False
+    assert event["real_holdout_sufficient"] is False
+    assert event["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert event["real_query_fidelity_included_counts"] == {"PDF": 0, "XLSX": 0, "TEXT": 0}
+    assert event["leakage_bucket_count"] == 9
+    assert event["leakage_excluded_count"] == 9
+    assert event["source_atom_registry_mutated"] is False
+    assert event["searchview_vector_payload_candidate_only"] is True
+    assert event["source_atom_evidence_bundle_evidence_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["direct_normalized_answer_value_query_matching_used"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["review_csv_created"] is False
+    assert event["report_json_created"] is True
+    assert event["summary_json_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["gpu_required_for_this_slice"] is False
+
+    assert report["schema_version"] == "rag_v4_4_real_blind_ood_holdout_and_leakage_audit_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["metrics"]["official_metric_input_rows"] == 0
+    assert report["metrics"]["real_holdout_available"] is False
+    assert report["holdout_manifest"]["blocked_reason"] == (
+        "fresh real PDF source-document-disjoint and XLSX workbook-disjoint holdout unavailable"
+    )
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{v4_5_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_1_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_2_current_status}`;" in current_text
+        or f"Overall status: `{V4_5_3_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{v4_5_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in eval_readme
+    )
+    assert (
+        (
+            "python -X utf8 -m py_compile "
+            "ai\\scripts\\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py"
+        )
+        in readme_verify_section
+        or (
+            "python -X utf8 -m py_compile "
+            "ai\\scripts\\rag_v4_5_finetune_readiness_packet_nonprod.py"
+        )
+        in readme_verify_section
+        or (
+            "python -X utf8 -m py_compile "
+            "ai\\scripts\\rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py"
+        )
+        in readme_verify_section
+            or (
+                "python -X utf8 -m py_compile "
+                "ai\\scripts\\rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py"
+            )
+            in readme_verify_section
+            or (
+                "python -X utf8 -m py_compile "
+                "ai\\scripts\\rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py"
+            )
+            in readme_verify_section
+            or ("python -X utf8 -m py_compile ai\\scripts\\" + V4_6_SCRIPT) in readme_verify_section
+            or ("python -X utf8 -m py_compile ai\\scripts\\" + V4_6_1_SCRIPT) in readme_verify_section
+            or ("python -X utf8 -m py_compile ai\\scripts\\" + V4_6_2_SCRIPT) in readme_verify_section
+        )
+    assert (
+        (
+            "python -X utf8 ai\\scripts\\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py --check"
+        )
+        in readme_verify_section
+        or (
+            "python -X utf8 ai\\scripts\\rag_v4_5_finetune_readiness_packet_nonprod.py --check"
+        )
+        in readme_verify_section
+        or (
+            "python -X utf8 ai\\scripts\\rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py --check"
+        )
+        in readme_verify_section
+            or (
+                "python -X utf8 ai\\scripts\\rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py --check"
+            )
+            in readme_verify_section
+            or (
+                "python -X utf8 ai\\scripts\\rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py --check"
+            )
+            in readme_verify_section
+            or ("python -X utf8 ai\\scripts\\" + V4_6_SCRIPT + " --check") in readme_verify_section
+            or ("python -X utf8 ai\\scripts\\" + V4_6_1_SCRIPT + " --check") in readme_verify_section
+            or ("python -X utf8 ai\\scripts\\" + V4_6_2_SCRIPT + " --check") in readme_verify_section
+        )
+    assert "current diagnostic v4_4 real blind/OOD holdout and leakage audit loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| real_holdout_available | false |" in measurements_section
+    assert "| PDF_source_document_disjoint | 0/20 |" in measurements_section
+    assert "| XLSX_workbook_disjoint | 0/8 |" in measurements_section
+    assert "| query_fidelity_included_rows_per_family | 0/100 |" in measurements_section
+    assert "| leakage_bucket_count | 9 |" in measurements_section
+    assert "| leakage_excluded_count | 9 |" in measurements_section
+    assert "| official_metric | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "single `report.json`" in measurements_section
+
+    assert run_id in triage_section
+    assert "PDF source-document-disjoint" in triage_section
+    assert "XLSX workbook-disjoint" in triage_section
+    assert "TEXT remains comparison/control only" in triage_section
+    assert "answer_value_in_query" in triage_section
+    assert "gold_supporting_expected_text_leak" in triage_section
+    assert "Fresh real holdout remains unavailable" in triage_section
+    assert "future embedding/LLM/index workloads should prefer GPU when available" in triage_section
+
+
+def test_v4_5_finetune_readiness_packet_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod"
+    event_type = "diagnostic_v4_5_finetune_readiness_packet_nonprod"
+    current_status = f"{event_type}_ready"
+    v4_5_1_current_status = "diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod_ready"
+    v4_5_2_current_status = "diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod_ready"
+    status = "DIAGNOSTIC_V4_5_FINETUNE_READINESS_PACKET_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_5 Fine-Tuning Readiness Packet",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_5 Fine-Tuning Readiness Packet Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["production_routing"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["fine_tuning_readiness_only"] is True
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["readiness_gate_passed"] is False
+    assert event["split_quality_gate_passed"] is False
+    assert event["leakage_audit_gate_passed"] is True
+    assert event["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert event["leakage_bucket_count"] == 9
+    assert event["leakage_excluded_count"] == 9
+    assert event["source_atom_registry_mutated"] is False
+    assert event["searchview_vector_payload_candidate_only"] is True
+    assert event["source_atom_evidence_bundle_evidence_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["direct_normalized_answer_value_query_matching_used"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["review_csv_created"] is False
+    assert event["report_json_created"] is True
+    assert event["summary_json_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["fine_tuning_lanes_json_created"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["gpu_required_for_this_slice"] is False
+    assert event["gpu_required_for_future_training_when_opened"] is True
+
+    assert report["schema_version"] == "rag_v4_5_finetune_readiness_packet_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["metrics"]["official_metric_input_rows"] == 0
+    assert report["metrics"]["readiness_gate_passed"] is False
+    assert report["readiness_gates"]["split_quality_gate"]["passed"] is False
+    assert report["readiness_gates"]["leakage_audit_gate"]["passed"] is True
+    assert report["source_run_references"]["previous_gate_run_id"].endswith("_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod")
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{v4_5_1_current_status}`;" in current_text
+        or f"Overall status: `{v4_5_2_current_status}`;" in current_text
+        or f"Overall status: `{V4_5_3_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_1_current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_5 fine-tuning readiness packet loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert (
+        "rag_v4_5_finetune_readiness_packet_nonprod.py" in readme_verify_section
+        or "rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py" in readme_verify_section
+        or "rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py" in readme_verify_section
+        or "rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py" in readme_verify_section
+        or V4_6_SCRIPT in readme_verify_section
+        or V4_6_1_SCRIPT in readme_verify_section
+        or V4_6_2_SCRIPT in readme_verify_section
+    )
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| readiness_gate_passed | false |" in measurements_section
+    assert "| split_quality_gate_passed | false |" in measurements_section
+    assert "| leakage_audit_gate_passed | true |" in measurements_section
+    assert "| PDF_source_document_disjoint | 0/20 |" in measurements_section
+    assert "| XLSX_workbook_disjoint | 0/8 |" in measurements_section
+    assert "| fine_tuning_dataset_exports_created | 0 |" in measurements_section
+    assert "| sft_ready | false |" in measurements_section
+    assert "| dpo_ready | false |" in measurements_section
+    assert "| reward_model_ready | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "| gpu_required_for_future_training_when_opened | true |" in measurements_section
+    assert "no review CSV, training manifest, dataset sidecar, checkpoint, or per-run Markdown is created" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic fine-tuning-readiness packet" in triage_section
+    assert "not actual fine-tuning/training" in triage_section
+    assert "Split quality remains blocked" in triage_section
+    assert "Leakage audit infrastructure is carried forward as exclusion coverage" in triage_section
+    assert "SFT, DPO, and reward-model lanes are all blocked" in triage_section
+    assert "user-owned label/qrels/denominator policy" in triage_section
+    assert "rag_v4_5_finetune_readiness_packet_nonprod.py" in scripts_readme
+
+
+def test_v4_5_1_holdout_candidate_intake_gate_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod"
+    event_type = "diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_5_1_HOLDOUT_CANDIDATE_INTAKE_GATE_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_5_1 Holdout Candidate Intake Gate",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_5_1 Holdout Candidate Intake Gate Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["holdout_candidate_intake_only"] is True
+    assert event["candidate_intake_schema_ready"] is True
+    assert event["candidate_manifest_present"] is False
+    assert event["candidate_manifest_rows"] == 0
+    assert event["candidate_manifest_jsonl_created"] is False
+    assert event["candidate_validation_jsonl_created"] is False
+    assert event["candidate_intake_gate_passed"] is False
+    assert event["readiness_gate_passed"] is False
+    assert event["readiness_decision"] == "blocked_pending_holdout_candidate_manifest_and_user_policy"
+    assert event["accepted_pdf_holdout_candidates"] == 0
+    assert event["accepted_xlsx_holdout_candidates"] == 0
+    assert event["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["v4_6_ft_dry_run_opened"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+
+    assert report["schema_version"] == "rag_v4_5_1_holdout_candidate_intake_gate_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["metrics"]["candidate_manifest_rows"] == 0
+    assert report["metrics"]["candidate_intake_gate_passed"] is False
+    assert report["candidate_intake_gate"]["blocked_reasons"] == [
+        "candidate_manifest_missing",
+        "real_disjoint_holdout_candidates_below_target",
+        "real_query_fidelity_candidates_below_target",
+    ]
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["v4_6_ft_dry_run_opened"] is False
+
+    v4_5_2_current_status = "diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod_ready"
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{v4_5_2_current_status}`;" in current_text
+        or f"Overall status: `{V4_5_3_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_2_current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_5_1 holdout candidate intake gate loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert (
+        "rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py" in readme_verify_section
+        or "rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py" in readme_verify_section
+        or "rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py" in readme_verify_section
+        or V4_6_SCRIPT in readme_verify_section
+        or V4_6_1_SCRIPT in readme_verify_section
+        or V4_6_2_SCRIPT in readme_verify_section
+    )
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| candidate_manifest_present | false |" in measurements_section
+    assert "| candidate_manifest_rows | 0 |" in measurements_section
+    assert "| candidate_intake_gate_passed | false |" in measurements_section
+    assert "| accepted_pdf_holdout_candidates | 0/20 |" in measurements_section
+    assert "| accepted_xlsx_holdout_candidates | 0/8 |" in measurements_section
+    assert "| v4_6_ft_dry_run_opened | false |" in measurements_section
+    assert "| fine_tuning_dataset_exports_created | 0 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no candidate manifest sidecar, validation JSONL, review CSV" in measurements_section
+
+    assert run_id in triage_section
+    assert "not a v4_6 fine-tuning dry run" in triage_section
+    assert "Current candidate manifest is absent" in triage_section
+    assert "Protected target/gold/expected/supporting fields are rejected" in triage_section
+    assert "user-owned label/qrels/denominator policy" in triage_section
+    assert "rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py" in scripts_readme
+    assert "v4_5_1" in v4_plan
+
+
+def test_v4_5_2_external_holdout_candidate_source_identity_audit_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod"
+    event_type = "diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_5_2_EXTERNAL_HOLDOUT_CANDIDATE_SOURCE_IDENTITY_AUDIT_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_5_2 External Holdout Candidate Source Identity Audit",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_5_2 External Holdout Candidate Source Identity Audit Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["external_holdout_candidate_source_identity_audit_only"] is True
+    assert event["source_identity_audit_ready"] is True
+    assert event["candidate_manifest_present"] is False
+    assert event["candidate_manifest_rows"] == 0
+    assert event["prior_identity_ledger_present"] is False
+    assert event["prior_identity_rows"] == 0
+    assert event["prior_identity_summary_report_present"] is True
+    assert event["prior_identity_summary_hash_records"] == 102
+    assert event["prior_identity_baseline_present"] is True
+    assert event["source_identity_audit_gate_passed"] is False
+    assert event["source_identity_collision_count"] == 0
+    assert event["source_identity_audit_excluded_count"] == 0
+    assert event["real_holdout_available"] is False
+    assert event["real_holdout_sufficient"] is False
+    assert event["readiness_gate_passed"] is False
+    assert event["readiness_decision"] == "blocked_pending_external_manifest_identity_audit_and_user_policy"
+    assert event["accepted_pdf_holdout_candidates"] == 0
+    assert event["accepted_xlsx_holdout_candidates"] == 0
+    assert event["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["v4_6_ft_dry_run_opened"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+
+    assert report["schema_version"] == "rag_v4_5_2_external_holdout_candidate_source_identity_audit_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["metrics"]["candidate_manifest_rows"] == 0
+    assert report["metrics"]["prior_identity_rows"] == 0
+    assert report["metrics"]["prior_identity_summary_report_present"] is True
+    assert report["metrics"]["prior_identity_summary_hash_records"] == 102
+    assert report["metrics"]["prior_identity_baseline_present"] is True
+    assert report["metrics"]["source_identity_audit_gate_passed"] is False
+    assert report["source_identity_audit_gate"]["blocked_reasons"] == [
+        "candidate_manifest_missing",
+        "real_disjoint_holdout_candidates_below_target",
+        "real_query_fidelity_candidates_below_target",
+    ]
+    assert report["source_identity_audit_gate"]["prior_identity_hash_summary_present"] is True
+    assert report["source_identity_audit_gate"]["prior_identity_baseline_present"] is True
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["v4_6_ft_dry_run_opened"] is False
+
+    v4_5_3_current_status = "diagnostic_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod_ready"
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{v4_5_3_current_status}`;" in current_text
+        or f"Overall status: `{V4_6_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{v4_5_3_current_status}`" in readme
+        or f"Current RAG status: `{V4_6_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{v4_5_3_current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_5_2 external holdout candidate source identity audit loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert (
+        "rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py" in readme_verify_section
+        or "rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py" in readme_verify_section
+        or V4_6_SCRIPT in readme_verify_section
+        or V4_6_1_SCRIPT in readme_verify_section
+        or V4_6_2_SCRIPT in readme_verify_section
+    )
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| candidate_manifest_present | false |" in measurements_section
+    assert "| candidate_manifest_rows | 0 |" in measurements_section
+    assert "| prior_identity_ledger_present | false |" in measurements_section
+    assert "| prior_identity_rows | 0 |" in measurements_section
+    assert "| prior_identity_summary_report_present | true |" in measurements_section
+    assert "| prior_identity_summary_hash_records | 102 |" in measurements_section
+    assert "| prior_identity_baseline_present | true |" in measurements_section
+    assert "| source_identity_audit_gate_passed | false |" in measurements_section
+    assert "| source_identity_collision_count | 0 |" in measurements_section
+    assert "| v4_6_ft_dry_run_opened | false |" in measurements_section
+    assert "| fine_tuning_dataset_exports_created | 0 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no candidate manifest sidecar, prior identity ledger sidecar" in measurements_section
+
+    assert run_id in triage_section
+    assert "not a v4_6 fine-tuning dry run" in triage_section
+    assert "no manifest" in triage_section
+    assert "v4_5_3 hash-only prior summary baseline" in triage_section
+    assert "PDF candidates require document-level identity" in triage_section
+    assert "user-owned label/qrels/denominator policy" in triage_section
+    assert "rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py" in scripts_readme
+    assert "v4_5_2" in v4_plan
+    assert "v4_5_2_external_holdout_candidate_source_identity_audit_nonprod" in v4_plan
+
+
+def test_v4_5_3_external_holdout_prior_identity_summary_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod"
+    event_type = "diagnostic_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_5_3_EXTERNAL_HOLDOUT_PRIOR_SOURCE_IDENTITY_LEDGER_SUMMARY_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_5_3 External Holdout Prior Source Identity Ledger Summary",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_5_3 External Holdout Prior Source Identity Ledger Summary Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["prior_source_identity_ledger_summary_only"] is True
+    assert event["prior_identity_collision_baseline_available"] is True
+    assert event["prior_identity_hash_record_count"] == 102
+    assert event["prior_pdf_identity_count"] == 98
+    assert event["prior_xlsx_identity_count"] == 4
+    assert event["candidate_manifest_present"] is False
+    assert event["candidate_manifest_rows"] == 0
+    assert event["source_identity_audit_gate_passed"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["v4_6_ft_dry_run_opened"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+
+    assert report["schema_version"] == "rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["prior_source_identity_ledger_summary_only"] is True
+    assert report["prior_identity_collision_baseline_available"] is True
+    assert report["prior_identity_ledger_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["raw_source_identity_values_embedded"] is False
+    assert report["raw_local_path_values_exposed"] is False
+    assert report["metrics"]["prior_identity_hash_record_count"] == 102
+    assert report["metrics"]["prior_pdf_identity_count"] == 98
+    assert report["metrics"]["prior_xlsx_identity_count"] == 4
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["v4_6_ft_dry_run_opened"] is False
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_5_3 external holdout prior source identity ledger summary loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert (
+        "rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py" in readme_verify_section
+        or V4_6_SCRIPT in readme_verify_section
+        or V4_6_1_SCRIPT in readme_verify_section
+        or V4_6_2_SCRIPT in readme_verify_section
+    )
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| prior_source_identity_ledger_summary_only | true |" in measurements_section
+    assert "| prior_identity_collision_baseline_available | true |" in measurements_section
+    assert "| prior_identity_hash_record_count | 102 |" in measurements_section
+    assert "| prior_pdf_identity_count | 98 |" in measurements_section
+    assert "| prior_xlsx_identity_count | 4 |" in measurements_section
+    assert "| candidate_manifest_present | false |" in measurements_section
+    assert "| v4_6_ft_dry_run_opened | false |" in measurements_section
+    assert "| fine_tuning_dataset_exports_created | 0 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no raw prior identity values" in measurements_section
+
+    assert run_id in triage_section
+    assert "not a v4_6 fine-tuning dry run" in triage_section
+    assert "raw local paths and raw source identities are not exposed" in triage_section
+    assert "User-owned decisions remain gold set creation/review" in triage_section
+    assert "rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py" in scripts_readme
+    assert "v4_5_3" in v4_plan
+    assert "v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod" in v4_plan
+
+
+def test_v4_6_ft_route_policy_preflight_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod"
+    event_type = "diagnostic_v4_6_ft_route_policy_dry_run_preflight_nonprod"
+    current_status = V4_6_CURRENT_STATUS
+    status = "DIAGNOSTIC_V4_6_FT_ROUTE_POLICY_DRY_RUN_PREFLIGHT_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6 FT Route Policy Dry-Run Preflight",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6 FT Route Policy Dry-Run Preflight Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["ft_route_policy_dry_run_preflight_only"] is True
+    assert event["all_preflight_gates_passed"] is False
+    assert event["v4_5_readiness_gate_passed"] is False
+    assert event["v4_5_1_candidate_intake_gate_passed"] is False
+    assert event["v4_5_2_source_identity_audit_gate_passed"] is False
+    assert event["v4_5_3_prior_identity_baseline_gate_passed"] is True
+    assert event["user_owned_gold_policy_gate_passed"] is False
+    assert event["official_denominator_gate_passed"] is False
+    assert event["promotion_policy_gate_passed"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert set(event["source_report_inputs"]) == {"v4_5", "v4_5_1", "v4_5_2", "v4_5_3"}
+
+    assert report["schema_version"] == "rag_v4_6_ft_route_policy_dry_run_preflight_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["ft_route_policy_dry_run_preflight_only"] is True
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["metrics"]["v4_5_3_prior_identity_baseline_gate_passed"] is True
+    assert report["metrics"]["all_preflight_gates_passed"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+    assert report["guardrails"]["fine_tuning_dataset_export_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["source_atom_registry_canonical_truth"] is True
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["target_locator_used"] is False
+    assert report["guardrails"]["gold_locator_used"] is False
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_3_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_3_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_3_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_6 FT route policy dry-run preflight loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert (
+        "rag_v4_6_ft_route_policy_dry_run_preflight_nonprod.py" in readme_verify_section
+        or V4_6_1_SCRIPT in readme_verify_section
+        or V4_6_2_SCRIPT in readme_verify_section
+    )
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| ft_route_policy_dry_run_preflight_only | true |" in measurements_section
+    assert "| all_preflight_gates_passed | false |" in measurements_section
+    assert "| v4_5_3_prior_identity_baseline_gate_passed | true |" in measurements_section
+    assert "| ft_route_policy_dry_run_opened | false |" in measurements_section
+    assert "| ft_route_policy_dry_run_executed | false |" in measurements_section
+    assert "| fine_tuning_dataset_exports_created | 0 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no prompt payload, raw LLM response, dataset sidecar, training job, checkpoint" in measurements_section
+
+    assert run_id in triage_section
+    assert "preflight only" in triage_section
+    assert "not the FT-A dry run itself" in triage_section
+    assert "user-owned gold/qrels/denominator" in triage_section
+    assert "rag_v4_6_ft_route_policy_dry_run_preflight_nonprod.py" in scripts_readme
+    assert "v4_6" in v4_plan
+    assert "v4_6_ft_route_policy_dry_run_preflight_nonprod" in v4_plan
+
+
+def test_v4_6_1_holdout_manifest_identity_contract_bridge_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod"
+    event_type = "diagnostic_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod"
+    current_status = V4_6_1_CURRENT_STATUS
+    status = "DIAGNOSTIC_V4_6_1_HOLDOUT_CANDIDATE_MANIFEST_IDENTITY_CONTRACT_BRIDGE_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_1 Holdout Candidate Manifest Identity Contract Bridge",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_1 Holdout Candidate Manifest Identity Contract Bridge Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["holdout_candidate_manifest_identity_contract_bridge_only"] is True
+    assert event["contract_bridge_gate_passed"] is True
+    assert event["contract_hashes_match"] is True
+    assert event["identity_probe_passed"] is True
+    assert event["v4_6_hash_mismatch_rejection_passed"] is True
+    assert event["identity_contract_probe_count"] == 5
+    assert event["identity_contract_probe_passed_count"] == 5
+    assert event["v4_6_ft_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6"}
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_manifest_identity_contract_bridge_only"] is True
+    assert report["contract_bridge_gate"]["passed"] is True
+    assert report["contract_bridge_gate"]["contract_hashes_match"] is True
+    assert report["contract_bridge_gate"]["identity_probe_passed"] is True
+    assert report["contract_bridge_gate"]["v4_6_hash_mismatch_rejection_passed"] is True
+    assert len(report["contract_bridge_gate"]["observed_contract_hashes"]) == 6
+    assert set(report["contract_bridge_gate"]["observed_contract_hashes"].values()) == {
+        report["holdout_candidate_manifest_contract_hash"]
+    }
+    assert all(row["passed"] is True for row in report["identity_contract_probe_results"])
+    assert report["metrics"]["identity_contract_probe_count"] == 5
+    assert report["metrics"]["identity_contract_probe_passed_count"] == 5
+    assert report["metrics"]["v4_7_official_metric_gate_opened"] is False
+    assert report["metrics"]["fine_tuning_dataset_exports_created"] == 0
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+    assert report["guardrails"]["fine_tuning_dataset_export_created"] is False
+    assert report["guardrails"]["training_manifest_jsonl_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["source_atom_evidence_bundle_evidence_truth"] is True
+    assert report["guardrails"]["searchview_vector_payload_candidate_only"] is True
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_3_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_3_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_3_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_6_1 holdout candidate manifest identity contract bridge loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert V4_6_1_SCRIPT in readme_verify_section or V4_6_2_SCRIPT in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| holdout_candidate_manifest_identity_contract_bridge_only | true |" in measurements_section
+    assert "| contract_bridge_gate_passed | true |" in measurements_section
+    assert "| contract_hashes_match | true |" in measurements_section
+    assert "| identity_probe_passed | true |" in measurements_section
+    assert "| v4_6_hash_mismatch_rejection_passed | true |" in measurements_section
+    assert "| identity_contract_probe_count | 5 |" in measurements_section
+    assert "| identity_contract_probe_passed_count | 5 |" in measurements_section
+    assert "| ft_route_policy_dry_run_opened | false |" in measurements_section
+    assert "| ft_route_policy_dry_run_executed | false |" in measurements_section
+    assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
+    assert "| fine_tuning_dataset_exports_created | 0 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no candidate manifest, validation sidecar" in measurements_section
+    assert "prompt payload, raw LLM response, dataset sidecar, training job, checkpoint" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "holdout-candidate manifest identity contract bridge only" in triage_section
+    assert "not the FT-A dry run" in triage_section
+    assert "not a v4_7 opening" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert V4_6_1_SCRIPT in scripts_readme
+    assert "v4_6_1" in v4_plan
+    assert "v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod" in v4_plan
+
+
+def test_v4_6_2_ft_route_policy_fixture_contract_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod"
+    event_type = "diagnostic_v4_6_2_ft_route_policy_fixture_contract_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_6_2_FT_ROUTE_POLICY_FIXTURE_CONTRACT_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_2 FT-A Route-Policy Fixture Contract",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_2 FT-A Route-Policy Fixture Contract Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["ft_route_policy_fixture_contract_only"] is True
+    assert event["fixture_contract_schema_ready"] is True
+    assert event["fixture_contract_schema_check_passed"] is True
+    assert event["dry_run_dataset_gate_passed"] is False
+    assert event["fixture_validation_probe_count"] == 5
+    assert event["accepted_fixture_probe_count"] == 1
+    assert event["rejected_fixture_probe_count"] == 4
+    assert event["gold_oracle_field_rejection_count"] == 3
+    assert event["dataset_export_gate_opened"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["prompt_payload_created"] is False
+    assert event["raw_llm_response_payload_created"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_6", "v4_6_1"}
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_6_2_ft_route_policy_fixture_contract_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["ft_route_policy_fixture_contract_only"] is True
+    assert report["ft_a_fixture_contract"]["lane"] == "FT-A"
+    assert report["ft_a_fixture_contract"]["row_source"] == "route_policy_audit_rows_only"
+    assert "expected_answer" in report["ft_a_fixture_contract"]["forbidden_model_input_fields"]
+    assert report["fixture_contract_gate"]["fixture_contract_schema_check_passed"] is True
+    assert report["fixture_contract_gate"]["dry_run_dataset_gate_passed"] is False
+    assert report["fixture_contract_gate"]["dataset_export_gate_opened"] is False
+    assert report["fixture_contract_gate"]["blocked_reasons"] == [
+        "dry_run_and_dataset_export_require_all_v4_6_preflight_gates"
+    ]
+    assert report["metrics"]["fixture_validation_probe_count"] == 5
+    assert report["metrics"]["accepted_fixture_probe_count"] == 1
+    assert report["metrics"]["rejected_fixture_probe_count"] == 4
+    assert report["metrics"]["gold_oracle_field_rejection_count"] == 3
+    assert report["metrics"]["dataset_export_gate_opened"] is False
+    assert report["metrics"]["v4_7_official_metric_gate_opened"] is False
+    assert report["metrics"]["fine_tuning_dataset_exports_created"] == 0
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+    assert report["guardrails"]["fine_tuning_dataset_export_created"] is False
+    assert report["guardrails"]["training_manifest_jsonl_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["source_atom_evidence_bundle_evidence_truth"] is True
+    assert report["guardrails"]["searchview_vector_payload_candidate_only"] is True
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_3_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_3_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_3_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_6_2 FT-A route-policy fixture contract loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert V4_6_2_SCRIPT in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| ft_route_policy_fixture_contract_only | true |" in measurements_section
+    assert "| fixture_contract_schema_ready | true |" in measurements_section
+    assert "| fixture_contract_schema_check_passed | true |" in measurements_section
+    assert "| dry_run_dataset_gate_passed | false |" in measurements_section
+    assert "| fixture_validation_probe_count | 5 |" in measurements_section
+    assert "| accepted_fixture_probe_count | 1 |" in measurements_section
+    assert "| rejected_fixture_probe_count | 4 |" in measurements_section
+    assert "| gold_oracle_field_rejection_count | 3 |" in measurements_section
+    assert "| dataset_export_gate_opened | false |" in measurements_section
+    assert "| ft_route_policy_dry_run_opened | false |" in measurements_section
+    assert "| ft_route_policy_dry_run_executed | false |" in measurements_section
+    assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
+    assert "| fine_tuning_dataset_exports_created | 0 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no prompt payload, raw LLM response, dataset sidecar, training manifest" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "FT-A route-policy fixture contract only" in triage_section
+    assert "not the FT-A dry run" in triage_section
+    assert "not dataset export" in triage_section
+    assert "not a v4_7 opening" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert V4_6_2_SCRIPT in scripts_readme
+    assert "v4_6_2" in v4_plan
+    assert "v4_6_2_ft_route_policy_fixture_contract_nonprod" in v4_plan
+
+
+def test_v4_6_3_ft_a_prompt_policy_baseline_schema_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod"
+    event_type = "diagnostic_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_6_3_FT_A_PROMPT_POLICY_BASELINE_SCHEMA_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_3 FT-A Prompt-Policy Baseline Schema",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_3 FT-A Prompt-Policy Baseline Schema Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["ft_a_prompt_policy_baseline_schema_only"] is True
+    assert event["prompt_policy_baseline_schema_check_passed"] is True
+    assert event["dry_run_prompt_baseline_gate_passed"] is False
+    assert event["fixture_contract_gate_ready"] is True
+    assert event["future_dry_run_required_output_count"] == 4
+    assert event["stop_condition_audit_bucket_count"] == 5
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["prompt_payload_created"] is False
+    assert event["raw_llm_response_payload_created"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_6_2"}
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_6_3_ft_a_prompt_policy_baseline_schema_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_prompt_policy_baseline_schema_only"] is True
+    assert report["prompt_policy_baseline_schema"]["prompt_only_baseline_schema_frozen"] is True
+    assert report["prompt_policy_baseline_schema"]["raw_prompt_text_embedded"] is False
+    assert report["prompt_policy_baseline_schema"]["prompt_payload_created"] is False
+    assert report["prompt_policy_baseline_gate"]["prompt_policy_baseline_schema_check_passed"] is True
+    assert report["prompt_policy_baseline_gate"]["dry_run_prompt_baseline_gate_passed"] is False
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_4_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_4_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_4_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_6_3 FT-A prompt-policy baseline schema loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert V4_6_3_SCRIPT in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| ft_a_prompt_policy_baseline_schema_only | true |" in measurements_section
+    assert "| prompt_policy_baseline_schema_check_passed | true |" in measurements_section
+    assert "| dry_run_prompt_baseline_gate_passed | false |" in measurements_section
+    assert "| future_dry_run_required_output_count | 4 |" in measurements_section
+    assert "| stop_condition_audit_bucket_count | 5 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no raw prompt text, prompt payload, raw LLM response, dataset sidecar" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "schema-only" in triage_section
+    assert "not the FT-A dry run" in triage_section
+    assert "not prompt payload creation" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert V4_6_3_SCRIPT in scripts_readme
+    assert "v4_6_3" in v4_plan
+    assert "v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod" in v4_plan
+
+
+def test_v4_6_4_ft_a_dry_run_input_manifest_validator_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod"
+    event_type = "diagnostic_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_6_4_FT_A_DRY_RUN_INPUT_MANIFEST_VALIDATOR_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_4 FT-A Dry-Run Input Manifest Validator",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_4 FT-A Dry-Run Input Manifest Validator Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["ft_a_dry_run_input_manifest_validator_only"] is True
+    assert event["manifest_validator_schema_check_passed"] is True
+    assert event["dry_run_input_manifest_gate_passed"] is False
+    assert event["prompt_policy_baseline_gate_ready"] is True
+    assert event["fixture_row_count"] == 6
+    assert event["accepted_manifest_row_count"] == 1
+    assert event["excluded_manifest_row_count"] == 5
+    assert event["gold_or_prompt_or_output_rejection_count"] == 3
+    assert event["manifest_rows_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["prompt_payload_created"] is False
+    assert event["prompt_manifest_created"] is False
+    assert event["raw_llm_response_payload_created"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_6_2", "v4_6_3"}
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_6_4_ft_a_dry_run_input_manifest_validator_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_dry_run_input_manifest_validator_only"] is True
+    assert report["dry_run_input_manifest_contract"]["manifest_validator_schema_ready"] is True
+    assert report["dry_run_input_manifest_contract"]["manifest_rows_exported"] is False
+    assert report["dry_run_input_manifest_gate"]["manifest_validator_schema_check_passed"] is True
+    assert report["dry_run_input_manifest_gate"]["dry_run_input_manifest_gate_passed"] is False
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_5_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_5_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_5_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_6_4 FT-A dry-run input manifest validator loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert V4_6_4_SCRIPT in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| ft_a_dry_run_input_manifest_validator_only | true |" in measurements_section
+    assert "| manifest_validator_schema_check_passed | true |" in measurements_section
+    assert "| dry_run_input_manifest_gate_passed | false |" in measurements_section
+    assert "| accepted_manifest_row_count | 1 |" in measurements_section
+    assert "| excluded_manifest_row_count | 5 |" in measurements_section
+    assert "| gold_or_prompt_or_output_rejection_count | 3 |" in measurements_section
+    assert "| manifest_rows_exported | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no dry-run input manifest sidecar, prompt manifest, raw LLM response" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "validator-only" in triage_section
+    assert "not the FT-A dry run" in triage_section
+    assert "not manifest export" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert V4_6_4_SCRIPT in scripts_readme
+    assert "v4_6_4" in v4_plan
+    assert "v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod" in v4_plan
+
+
+def test_v4_6_5_ft_a_dry_run_execution_plan_gate_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod"
+    event_type = "diagnostic_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_6_5_FT_A_DRY_RUN_EXECUTION_PLAN_GATE_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_5 FT-A Dry-Run Execution Plan Gate",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_5 FT-A Dry-Run Execution Plan Gate Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["ft_a_dry_run_execution_plan_gate_only"] is True
+    assert event["dry_run_execution_plan_schema_check_passed"] is True
+    assert event["dry_run_execution_plan_gate_passed"] is False
+    assert event["dry_run_execution_plan_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["prompt_payload_created"] is False
+    assert event["prompt_manifest_created"] is False
+    assert event["raw_llm_response_payload_created"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_6_4"}
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_6_5_ft_a_dry_run_execution_plan_gate_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_dry_run_execution_plan_gate_only"] is True
+    assert report["dry_run_execution_plan_contract"]["execution_plan_schema_ready"] is True
+    assert report["dry_run_execution_plan_contract"]["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_execution_plan_gate"]["dry_run_execution_plan_schema_check_passed"] is True
+    assert report["dry_run_execution_plan_gate"]["dry_run_execution_plan_gate_passed"] is False
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_5_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_5_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_5_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_6_5 FT-A dry-run execution plan gate loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert V4_6_5_SCRIPT in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| ft_a_dry_run_execution_plan_gate_only | true |" in measurements_section
+    assert "| dry_run_execution_plan_schema_check_passed | true |" in measurements_section
+    assert "| dry_run_execution_plan_gate_passed | false |" in measurements_section
+    assert "| dry_run_execution_plan_exported | false |" in measurements_section
+    assert "| dry_run_input_manifest_exported | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no dry-run execution plan sidecar, dry-run input manifest sidecar, prompt manifest, raw LLM response" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "execution-plan-gate-only" in triage_section
+    assert "not the FT-A dry run" in triage_section
+    assert "not dry-run execution" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert V4_6_5_SCRIPT in scripts_readme
+    assert "v4_6_5" in v4_plan
+    assert "v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod" in v4_plan
+
+
+def test_v4_6_6_holdout_gap_blocker_ledger_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod"
+    event_type = "diagnostic_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_6_6_HOLDOUT_GAP_AND_DRY_RUN_BLOCKER_LEDGER_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_6 Holdout Gap And Dry-Run Blocker Ledger",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_6 Holdout Gap And Dry-Run Blocker Ledger Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["holdout_gap_and_dry_run_blocker_ledger_only"] is True
+    assert event["real_holdout_available"] is False
+    assert event["real_holdout_sufficient"] is False
+    assert event["candidate_manifest_present"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["all_non_gold_source_gates_passed"] is False
+    assert event["dry_run_blocker_count"] >= 6
+    assert event["dry_run_execution_plan_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["prompt_payload_created"] is False
+    assert event["prompt_manifest_created"] is False
+    assert event["raw_llm_response_payload_created"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {
+        "v4_4",
+        "v4_5",
+        "v4_5_1",
+        "v4_5_2",
+        "v4_5_3",
+        "v4_6",
+        "v4_6_1",
+        "v4_6_2",
+        "v4_6_3",
+        "v4_6_4",
+        "v4_6_5",
+    }
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["holdout_gap_and_dry_run_blocker_ledger_only"] is True
+    assert report["holdout_gap_ledger"]["real_holdout_sufficient"] is False
+    assert report["holdout_gap_ledger"]["deficits"]["pdf_source_document_disjoint_needed"] == 20
+    assert report["holdout_gap_ledger"]["deficits"]["xlsx_workbook_disjoint_needed"] == 8
+    assert report["dry_run_blocker_ledger"]["all_non_gold_source_gates_passed"] is False
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_7_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_7_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_7_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_6_6 holdout gap and dry-run blocker ledger loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert V4_6_6_SCRIPT in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| holdout_gap_and_dry_run_blocker_ledger_only | true |" in measurements_section
+    assert "| real_holdout_sufficient | false |" in measurements_section
+    assert "| candidate_manifest_exported | false |" in measurements_section
+    assert "| all_non_gold_source_gates_passed | false |" in measurements_section
+    assert "| dry_run_execution_plan_exported | false |" in measurements_section
+    assert "| dry_run_input_manifest_exported | false |" in measurements_section
+    assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no holdout-gap sidecar, dry-run-blocker sidecar, candidate manifest sidecar" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "ledger-only" in triage_section
+    assert "not external holdout acquisition" in triage_section
+    assert "not dry-run execution" in triage_section
+    assert "user-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert V4_6_6_SCRIPT in scripts_readme
+    assert "v4_6_6" in v4_plan
+    assert "v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod" in v4_plan
+
+
+def test_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod"
+    event_type = "diagnostic_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_6_7_HOLDOUT_CANDIDATE_RUNTIME_GATE_PARITY_BRIDGE_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    script_name = "rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod.py"
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_7 Holdout Candidate Runtime Gate Parity Bridge",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_7 Holdout Candidate Runtime Gate Parity Bridge Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["holdout_candidate_runtime_gate_parity_bridge_only"] is True
+    assert event["runtime_parity_probe_only"] is True
+    assert event["all_parity_checks_passed"] is True
+    assert event["runtime_candidate_intake_gate_matches_v4_5_1"] is True
+    assert event["runtime_source_identity_audit_gate_matches_v4_5_2"] is True
+    assert event["runtime_prior_hash_collision_matches_v4_5_2"] is True
+    assert event["real_holdout_sufficient"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["dry_run_execution_plan_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["prompt_payload_created"] is False
+    assert event["prompt_manifest_created"] is False
+    assert event["raw_llm_response_payload_created"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6"}
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_runtime_gate_parity_bridge_only"] is True
+    assert report["runtime_gate_parity"]["all_parity_checks_passed"] is True
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_8_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_8_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_8_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_6_7 holdout candidate runtime gate parity bridge loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert script_name in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| holdout_candidate_runtime_gate_parity_bridge_only | true |" in measurements_section
+    assert "| runtime_parity_probe_only | true |" in measurements_section
+    assert "| all_parity_checks_passed | true |" in measurements_section
+    assert "| real_holdout_sufficient | false |" in measurements_section
+    assert "| candidate_manifest_exported | false |" in measurements_section
+    assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no runtime parity sidecar, candidate manifest sidecar" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "parity-bridge-only" in triage_section
+    assert "not real holdout availability" in triage_section
+    assert "not dry-run execution" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert script_name in scripts_readme
+    assert "v4_6_7" in v4_plan
+    assert "v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod" in v4_plan
+
+
+def test_v4_6_8_runtime_readiness_dependency_freshness_gate_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod"
+    event_type = "diagnostic_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_6_8_RUNTIME_READINESS_DEPENDENCY_FRESHNESS_GATE_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    script_name = V4_6_8_SCRIPT
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_8 Runtime Readiness Dependency Freshness Gate",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_8 Runtime Readiness Dependency Freshness Gate Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["runtime_readiness_dependency_freshness_gate_only"] is True
+    assert event["external_holdout_acquisition_requirements_packet_only"] is True
+    assert event["all_source_report_hashes_current"] is True
+    assert event["runtime_readiness_dto_projection_matches_v4_6_6"] is True
+    assert event["holdout_validation_contract_hash_matches"] is True
+    assert event["forbidden_surface_violation_count"] == 0
+    assert event["raw_source_identity_or_path_leak_count"] == 0
+    assert event["real_holdout_sufficient"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6", "v4_6_7"}
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_6_8_runtime_readiness_dependency_freshness_gate_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["runtime_readiness_dependency_freshness_gate_only"] is True
+    assert report["dependency_freshness_gate"]["gate_passed"] is True
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_9_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_9_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_9_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_6_8 runtime readiness dependency freshness gate loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert script_name in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| runtime_readiness_dependency_freshness_gate_only | true |" in measurements_section
+    assert "| external_holdout_acquisition_requirements_packet_only | true |" in measurements_section
+    assert "| all_source_report_hashes_current | true |" in measurements_section
+    assert "| runtime_readiness_dto_projection_matches_v4_6_6 | true |" in measurements_section
+    assert "| real_holdout_sufficient | false |" in measurements_section
+    assert "| candidate_manifest_exported | false |" in measurements_section
+    assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "no acquisition sidecar, candidate manifest sidecar" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "dependency-freshness-gate-only" in triage_section
+    assert "not real holdout availability" in triage_section
+    assert "not dry-run execution" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert script_name in scripts_readme
+    assert "v4_6_8" in v4_plan
+    assert "v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod" in v4_plan
+
+
+def test_v4_6_9_holdout_candidate_duplicate_hygiene_gate_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod"
+    event_type = "diagnostic_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod"
+    current_status = f"{event_type}_ready"
+    status = "DIAGNOSTIC_V4_6_9_HOLDOUT_CANDIDATE_DUPLICATE_HYGIENE_GATE_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    script_name = V4_6_9_SCRIPT
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_9 Holdout Candidate Duplicate Hygiene Gate",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_9 Holdout Candidate Duplicate Hygiene Gate Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["holdout_candidate_duplicate_hygiene_gate_only"] is True
+    assert event["duplicate_hygiene_gate_passed"] is True
+    assert event["runtime_invalid_first_duplicate_rejected"] is True
+    assert event["script_invalid_first_duplicate_rejected"] is True
+    assert event["real_holdout_sufficient"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_5_1", "v4_6_7", "v4_6_8"}
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_duplicate_hygiene_gate_only"] is True
+    assert report["duplicate_hygiene_gate"]["gate_passed"] is True
+    assert report["duplicate_hygiene_gate"]["runtime_invalid_first_duplicate_rejected"] is True
+    assert report["duplicate_hygiene_gate"]["script_invalid_first_duplicate_rejected"] is True
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+
+    assert (
+        f"Overall status: `{current_status}`;" in current_text
+        or f"Overall status: `{V4_6_10_CURRENT_STATUS}`;" in current_text
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in readme
+        or f"Current RAG status: `{V4_6_10_CURRENT_STATUS}`" in readme
+    )
+    assert (
+        f"Current RAG status: `{current_status}`" in eval_readme
+        or f"Current RAG status: `{V4_6_10_CURRENT_STATUS}`" in eval_readme
+    )
+    assert "current diagnostic v4_6_9 holdout candidate duplicate hygiene gate loop" in current_text
+    assert "current diagnostic v4_6_8 runtime readiness dependency freshness gate loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert script_name in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| holdout_candidate_duplicate_hygiene_gate_only | true |" in measurements_section
+    assert "| duplicate_hygiene_gate_passed | true |" in measurements_section
+    assert "| runtime_invalid_first_duplicate_rejected | true |" in measurements_section
+    assert "| script_invalid_first_duplicate_rejected | true |" in measurements_section
+    assert "| real_holdout_sufficient | false |" in measurements_section
+    assert "| candidate_manifest_exported | false |" in measurements_section
+    assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "sanitized in-memory duplicate probes" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "duplicate-hygiene-gate-only" in triage_section
+    assert "not external holdout acquisition" in triage_section
+    assert "not dry-run execution" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert script_name in scripts_readme
+    assert "v4_6_9" in v4_plan
+    assert "v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod" in v4_plan
+
+
+def test_v4_6_10_external_holdout_manifest_gate_replay_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod"
+    event_type = "diagnostic_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod"
+    current_status = V4_6_10_CURRENT_STATUS
+    status = "DIAGNOSTIC_V4_6_10_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_GATE_REPLAY_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    script_name = V4_6_10_SCRIPT
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_10 External Holdout Candidate Manifest Gate Replay",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_10 External Holdout Candidate Manifest Gate Replay Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["external_holdout_candidate_manifest_gate_replay_only"] is True
+    assert event["gate_passed"] is False
+    assert event["gate_opened"] is False
+    assert event["candidate_manifest_present"] is False
+    assert event["candidate_rows_replayed"] == 0
+    assert event["missing_user_owned_input_count"] == 6
+    assert event["codex_owned_dependency_checks_passed"] is True
+    assert event["real_holdout_sufficient"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6", "v4_6_8", "v4_6_9"}
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_candidate_manifest_gate_replay_only"] is True
+    assert report["external_holdout_candidate_manifest_gate_replay"]["gate_passed"] is False
+    assert report["external_holdout_candidate_manifest_gate_replay"]["candidate_manifest_present"] is False
+    assert report["external_holdout_candidate_manifest_gate_replay"]["candidate_rows_replayed"] == 0
+    assert report["official_metric_opening_preflight"]["gate_passed"] is False
+    assert report["official_metric_opening_preflight"]["missing_user_owned_input_count"] == 6
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+
+    assert f"Overall status: `{current_status}`;" in current_text
+    assert f"Current RAG status: `{current_status}`" in readme
+    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert "current diagnostic v4_6_10 external holdout candidate manifest gate replay loop" in current_text
+    assert "current diagnostic v4_6_9 holdout candidate duplicate hygiene gate loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert script_name in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| external_holdout_candidate_manifest_gate_replay_only | true |" in measurements_section
+    assert "| gate_passed | false |" in measurements_section
+    assert "| candidate_manifest_present | false |" in measurements_section
+    assert "| candidate_rows_replayed | 0 |" in measurements_section
+    assert "| missing_user_owned_input_count | 6 |" in measurements_section
+    assert "| codex_owned_dependency_checks_passed | true |" in measurements_section
+    assert "| real_holdout_sufficient | false |" in measurements_section
+    assert "| candidate_manifest_exported | false |" in measurements_section
+    assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "not a v4_7 opening" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "external-holdout-candidate-manifest-gate-replay-only" in triage_section
+    assert "not a v4_7 opening" in triage_section
+    assert "not external holdout acquisition" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert script_name in scripts_readme
+    assert "v4_6_10" in v4_plan
+    assert "v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod" in v4_plan
+
+
+def test_v4_6_11_ft_a_runtime_input_validation_route_parity_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod"
+    event_type = "diagnostic_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod"
+    current_status = V4_6_11_CURRENT_STATUS
+    status = "DIAGNOSTIC_V4_6_11_FT_A_RUNTIME_INPUT_VALIDATION_ROUTE_PARITY_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    script_name = V4_6_11_SCRIPT
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_11 FT-A Runtime Input Validation Route Parity",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_11 FT-A Runtime Input Validation Route Parity Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["ft_a_runtime_input_validation_route_parity_only"] is True
+    assert event["runtime_parity_probe_only"] is True
+    assert event["script_runtime_counts_match"] is True
+    assert event["contract_metadata_bridge_present"] is True
+    assert event["runtime_response_sanitized"] is True
+    assert event["runtime_rejects_operational_metric_identity_fields"] is True
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_6_4", "v4_6_5", "v4_6_6", "v4_6_10"}
+
+    assert report["schema_version"] == "rag_v4_6_11_ft_a_runtime_input_validation_route_parity_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_runtime_input_validation_route_parity_only"] is True
+    assert report["ft_a_runtime_input_validation_route_parity"]["script_runtime_counts_match"] is True
+    assert report["ft_a_runtime_input_validation_route_parity"]["runtime_response_sanitized"] is True
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+
+    assert f"Overall status: `{current_status}`;" in current_text
+    assert f"Current RAG status: `{current_status}`" in readme
+    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert "current diagnostic v4_6_11 FT-A runtime input validation route parity loop" in current_text
+    assert "current diagnostic v4_6_10 external holdout candidate manifest gate replay loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert script_name in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| ft_a_runtime_input_validation_route_parity_only | true |" in measurements_section
+    assert "| runtime_parity_probe_only | true |" in measurements_section
+    assert "| disabled_route_status_code | 404 |" in measurements_section
+    assert "| production_disabled_route_status_code | 404 |" in measurements_section
+    assert "| enabled_valid_probe_status_code | 200 |" in measurements_section
+    assert "| enabled_validation_error_status_code | 422 |" in measurements_section
+    assert "| script_runtime_counts_match | true |" in measurements_section
+    assert "| runtime_response_sanitized | true |" in measurements_section
+    assert "| dry_run_input_manifest_exported | false |" in measurements_section
+    assert "| ft_route_policy_dry_run_opened | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "not FT-A dry-run execution" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "runtime-parity-probe-only" in triage_section
+    assert "not dry-run input manifest export" in triage_section
+    assert "not FT-A dry-run execution" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert script_name in scripts_readme
+    assert "v4_6_11" in v4_plan
+    assert "v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod" in v4_plan
+
+
+def test_v4_6_12_external_holdout_runtime_replay_route_parity_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod"
+    event_type = "diagnostic_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod"
+    current_status = V4_6_12_CURRENT_STATUS
+    status = "DIAGNOSTIC_V4_6_12_EXTERNAL_HOLDOUT_RUNTIME_REPLAY_ROUTE_PARITY_NONPROD_READY"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+    v4_run_family = (
+        "official_answer_citation_agentic_loop_run_v4_"
+        "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
+    )
+    script_name = V4_6_12_SCRIPT
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6_12 External Holdout Runtime Replay Route Parity",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6_12 External Holdout Runtime Replay Route Parity Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
+        encoding="utf-8"
+    )
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["v4_name"] == v4_id
+    assert event["run_family"] == v4_run_family
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["external_holdout_runtime_replay_route_parity_only"] is True
+    assert event["runtime_parity_probe_only"] is True
+    assert event["route_candidate_counts_match_v4_6_10_replay"] is True
+    assert event["route_source_identity_audit_matches_v4_6_10_replay"] is True
+    assert event["route_response_sanitized"] is True
+    assert event["transient_external_manifest_deleted"] is True
+    assert event["candidate_manifest_exported"] is False
+    assert event["candidate_manifest_jsonl_created"] is False
+    assert event["candidate_validation_jsonl_created"] is False
+    assert event["source_identity_audit_jsonl_created"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["review_csv_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert set(event["source_report_inputs"]) == {"v4_6_7", "v4_6_10", "v4_6_11"}
+
+    assert report["schema_version"] == "rag_v4_6_12_external_holdout_runtime_replay_route_parity_report_v1"
+    assert report["run_id"] == run_id
+    assert report["summary"]["status"] == status
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_runtime_replay_route_parity_only"] is True
+    assert report["external_holdout_runtime_replay_route_parity"]["route_response_sanitized"] is True
+    assert report["external_holdout_runtime_replay_route_parity"]["route_candidate_counts_match_v4_6_10_replay"] is True
+    assert report["candidate_manifest_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["source_report_inputs"] == event["source_report_inputs"]
+
+    assert f"Overall status: `{current_status}`;" in current_text
+    assert f"Current RAG status: `{current_status}`" in readme
+    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert "current diagnostic v4_6_12 external holdout runtime replay route parity loop" in current_text
+    assert "current diagnostic v4_6_11 FT-A runtime input validation route parity loop" in current_text
+    assert run_id in current_text
+    assert v4_id in current_text
+    assert "official_metric=false" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "product_success_evidence_allowed=false" in current_flat
+    assert "promotion_evidence=false" in current_flat
+    assert "fine_tuning_executed=false" in current_flat
+    assert "live_db_index_cache_readiness=false" in current_flat
+    assert script_name in readme_verify_section
+
+    assert run_id in measurements_section
+    assert v4_id in measurements_section
+    assert v4_run_family in measurements_section
+    assert report_path.relative_to(ROOT).as_posix() in measurements_section
+    assert "| external_holdout_runtime_replay_route_parity_only | true |" in measurements_section
+    assert "| runtime_parity_probe_only | true |" in measurements_section
+    assert "| route_candidate_counts_match_v4_6_10_replay | true |" in measurements_section
+    assert "| route_response_sanitized | true |" in measurements_section
+    assert "| transient_external_manifest_deleted | true |" in measurements_section
+    assert "| candidate_manifest_exported | false |" in measurements_section
+    assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "not real external holdout registration" in measurements_section
+
+    assert run_id in triage_section
+    assert "diagnostic-only" in triage_section
+    assert "route-parity-probe-only" in triage_section
+    assert "not real holdout registration" in triage_section
+    assert "not a v4_7 opening" in triage_section
+    assert "User-owned gold/qrels/denominator/promotion decisions remain closed" in triage_section
+    assert script_name in scripts_readme
+    assert "v4_6_12" in v4_plan
+    assert "v4_6_12_external_holdout_runtime_replay_route_parity_nonprod" in v4_plan
+
+
+def test_v4_6_input_waiting_closeout_records_status_docs_and_keeps_v4_7_closed():
+    run_id = "v4_6_input_waiting_ft_a_route_policy_and_external_holdout_readiness_closeout"
+    event_type = run_id
+    current_status = V4_6_CLOSEOUT_CURRENT_STATUS
+    status = "V4_6_INPUT_WAITING_FT_A_ROUTE_POLICY_AND_EXTERNAL_HOLDOUT_READINESS_CLOSEOUT_READY"
+    latest_run_id = "official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod"
+    v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
+
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_6 Input-Waiting FT-A Route-Policy And External-Holdout Readiness Closeout",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_6 Input-Waiting FT-A Route-Policy And External-Holdout Readiness Closeout Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == status
+    assert event["diagnostic_only"] is True
+    assert event["v4_name"] == v4_id
+    assert event["latest_run_id"] == latest_run_id
+    assert event["v4_6_codex_owned_diagnostic_preflight_work_completed"] is True
+    assert event["v4_6_input_waiting"] is True
+    assert event["v4_6_7_through_v4_6_12_checks_only"] == [
+        "route_parity",
+        "dependency_freshness",
+        "duplicate_hygiene",
+        "manifest_replay",
+        "redaction_checks",
+    ]
+    assert event["candidate_manifest_present"] is False
+    assert event["real_holdout_sufficient"] is False
+    assert event["accepted_pdf_holdout_candidates"] == 0
+    assert event["accepted_pdf_holdout_candidate_target"] == 20
+    assert event["accepted_xlsx_holdout_candidates"] == 0
+    assert event["accepted_xlsx_holdout_candidate_target"] == 8
+    assert event["real_query_fidelity_included_rows_per_family"] == {"PDF": 0, "XLSX": 0}
+    assert event["real_query_fidelity_included_rows_per_family_target"] == 100
+    assert event["v4_5_readiness_gate"] is False
+    assert event["v4_5_1_intake_gate"] is False
+    assert event["v4_5_2_source_identity_audit_gate"] is False
+    assert event["user_owned_gold_qrels_policy_gate"] is False
+    assert event["official_denominator_gate"] is False
+    assert event["promotion_policy_gate"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["candidate_validation_jsonl_created"] is False
+    assert event["source_identity_audit_jsonl_created"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["prompt_payload_created"] is False
+    assert event["fine_tuning_dataset_export_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["product_success_evidence_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["next_actionable_lane"] == (
+        "external_source_disjoint_holdout_candidate_manifest_acquisition_registration_then_"
+        "v4_5_1_v4_5_2_v4_6_10_no_write_replay"
+    )
+    assert event["user_owned_decisions_remain_limited_to"] == [
+        "gold set creation/review",
+        "expected answer/evidence judgment",
+        "relevance/answerability labels",
+        "gold policy",
+        "official denominator policy",
+        "promotion policy",
+    ]
+
+    assert f"Overall status: `{current_status}`;" in current_text
+    assert f"Current RAG status: `{current_status}`" in readme
+    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert "current latest v4_6 run remains v4_6_12" in current_text
+    assert latest_run_id in current_text
+    assert "v4_6 completed its Codex-owned diagnostic/preflight work" in current_flat
+    assert "v4_7 remains closed" in current_flat
+    assert "candidate_manifest_present=false" in current_flat
+    assert "accepted_pdf_holdout_candidates=0/20" in current_flat
+    assert "accepted_xlsx_holdout_candidates=0/8" in current_flat
+    assert "real_query_fidelity_included_rows_per_family=0/100 PDF and 0/100 XLSX" in current_flat
+    assert "external source-disjoint holdout candidate manifest acquisition/registration" in current_flat
+
+    assert run_id in measurements_section
+    assert "| candidate_manifest_present | false |" in measurements_section
+    assert "| real_holdout_sufficient | false |" in measurements_section
+    assert "| accepted_pdf_holdout_candidates | 0/20 |" in measurements_section
+    assert "| accepted_xlsx_holdout_candidates | 0/8 |" in measurements_section
+    assert "| real_query_fidelity_included_rows_per_family | 0/100 PDF, 0/100 XLSX |" in measurements_section
+    assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "No candidate manifest, validation sidecar, dry-run input manifest, prompt payload" in measurements_section
+
+    assert run_id in triage_section
+    assert "v4_6 completed its Codex-owned diagnostic/preflight work" in triage_section
+    assert "v4_6_7 through v4_6_12 were checks only" in triage_section
+    assert "v4_7 remains closed" in triage_section
+    assert "User-owned decisions remain gold set creation/review" in triage_section
+    assert "Do not open v4_7" in triage_section
+
+
+def test_v4_7_preofficial_external_holdout_registration_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
+    event_type = "diagnostic_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
+    current_status = V4_7_CURRENT_STATUS
+    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_7 Preofficial External Holdout Candidate Manifest Registration",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_7 Preofficial External Holdout Candidate Manifest Registration Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == current_status
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["preofficial_external_holdout_candidate_manifest_registration_only"] is True
+    assert event["registration_gate_passed"] is True
+    assert event["candidate_manifest_available"] is True
+    assert event["candidate_rows_registered"] >= 204
+    assert event["accepted_pdf_holdout_candidates"] >= 20
+    assert event["accepted_xlsx_holdout_candidates"] >= 8
+    assert event["real_query_fidelity_included_counts"]["PDF"] >= 100
+    assert event["real_query_fidelity_included_counts"]["XLSX"] >= 100
+    assert event["rejected_candidate_count"] == 0
+    assert event["source_identity_collision_count"] == 0
+    assert event["preofficial_candidate_thresholds_met"] is True
+    assert event["real_holdout_sufficient"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["candidate_manifest_jsonl_created"] is False
+    assert event["candidate_validation_jsonl_created"] is False
+    assert event["source_identity_audit_jsonl_created"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["protected_namespaces_touched"] == []
+    assert "prompt_manifest" not in event
+    assert "raw_llm_response" not in event
+
+    assert report["schema_version"] == "rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_report_v1"
+    assert report["status"] == current_status
+    assert report["diagnostic_only"] is True
+    assert report["preofficial_external_holdout_candidate_manifest_registration_only"] is True
+    assert report["registration_gate_passed"] is True
+    assert report["candidate_manifest_available"] is True
+    assert report["accepted_pdf_holdout_candidates"] >= 20
+    assert report["accepted_xlsx_holdout_candidates"] >= 8
+    assert report["rejected_candidate_count"] == 0
+    assert report["rejection_buckets"] == {}
+    assert report["real_holdout_sufficient"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert "expected_answer" in report["user_input_requirements_packet"]["forbidden_fields"]
+    assert report["user_input_requirements_packet"]["xlsx_workbook_identity_proof"]["source_identity_only_rejected"] is True
+
+    assert f"Overall status: `{current_status}`;" in current_text
+    assert f"Current RAG status: `{current_status}`" in readme
+    assert f"Current RAG status: `{current_status}`" in eval_readme
+    assert run_id in current_text
+    assert "pre-official external holdout candidate manifest registration" in current_flat
+    assert "official_metric_input_rows=0" in current_flat
+    assert "v4_7_official_metric_gate_opened=false" in current_flat
+    assert V4_7_SCRIPT in readme_verify_section
+    assert V4_7_SCRIPT in scripts_readme
+
+    assert run_id in measurements_section
+    assert "| preofficial_external_holdout_candidate_manifest_registration_only | true |" in measurements_section
+    assert "| registration_gate_passed | true |" in measurements_section
+    assert "| candidate_manifest_available | true |" in measurements_section
+    assert "| accepted_pdf_holdout_candidates | 20/20 |" in measurements_section
+    assert "| accepted_xlsx_holdout_candidates | 8/8 |" in measurements_section
+    assert "| rejected_candidate_count | 0 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "| v4_7_official_metric_gate_opened | false |" in measurements_section
+    assert "not official metric rows" in measurements_section
+
+    assert run_id in triage_section
+    assert "opens only the v4_7 pre-official external holdout candidate manifest" in triage_section
+    assert "not official metric" in triage_section
+    assert "not FT-A dry-run execution" in triage_section
+    assert "User-owned gold/qrels" in triage_section

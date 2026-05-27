@@ -1,6 +1,114 @@
+<!-- official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod:triage-entry:start -->
+### v4_7 Preofficial External Holdout Candidate Manifest Registration Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod/report.json`; single-report contract remains active.
+- This opens only the v4_7 pre-official external holdout candidate manifest acquisition/registration lane.
+- Candidate rows are accepted only if v4_5_1/v4_5_2-compatible validation accepts them, PDF identity is document-level, XLSX identity is workbook-level, prior SourceAtom identity collisions are excluded, leakage buckets are empty, protected oracle fields are absent, and query-fidelity included rows meet the registration target.
+- It is not official metric, not FT-A dry-run execution, not fine-tuning, not dataset export, not promotion evidence, not product-success evidence, not production routing, and not live DB/index/cache readiness.
+- It keeps `official_metric=false`, `official_metric_input_rows=0`, `v4_7_official_metric_gate_opened=false`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, and `live_db_index_cache_readiness=false`.
+- User-owned gold/qrels, official denominator, expected-answer evidence, and promotion policy gates remain closed before any official metric or promotion lane.
+<!-- official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod:triage-entry:end -->
+<!-- v4_6_input_waiting_ft_a_route_policy_and_external_holdout_readiness_closeout:triage-entry:start -->
+### v4_6 Input-Waiting FT-A Route-Policy And External-Holdout Readiness Closeout Triage
+
+- Marker: `v4_6_input_waiting_ft_a_route_policy_and_external_holdout_readiness_closeout`
+- Latest run remains: `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`
+- v4_6 completed its Codex-owned diagnostic/preflight work and is now input-waiting.
+- v4_6_7 through v4_6_12 were checks only: route parity, dependency freshness, duplicate hygiene, manifest replay, and redaction checks.
+- v4_7 remains closed because candidate_manifest_present=false, real_holdout_sufficient=false, accepted PDF holdout candidates are 0/20, accepted XLSX holdout candidates are 0/8, real query-fidelity included rows are 0/100 for PDF and 0/100 for XLSX, v4_5 readiness gate=false, v4_5_1 intake gate=false, v4_5_2 source identity audit gate=false, user-owned gold/qrels policy gate=false, official denominator gate=false, and promotion policy gate=false.
+- Do not open v4_7; do not create candidate manifests, validation sidecars, dry-run input manifests, prompt payloads, datasets, jobs, checkpoints, official metric rows, product-success evidence, promotion evidence, or live readiness claims.
+- Next actionable lane: external source-disjoint holdout candidate manifest acquisition/registration, followed by v4_5_1/v4_5_2/v4_6_10 no-write replay.
+- User-owned decisions remain gold set creation/review, expected answer/evidence judgment, relevance/answerability labels, gold policy, official denominator policy, and promotion policy.
+<!-- v4_6_input_waiting_ft_a_route_policy_and_external_holdout_readiness_closeout:triage-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod:triage-entry:start -->
+### v4_6_12 External Holdout Runtime Replay Route Parity Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod/report.json`; single-report contract remains active.
+- v4_6_12 is diagnostic-only, non-production, and route-parity-probe-only.
+- It verifies the FastAPI holdout-candidate validation route matches v4_6_10 transient manifest replay counts/audit state and redacts route validation errors.
+- It is not real holdout registration, not candidate manifest export, not validation/source-audit sidecar creation, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
+- It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `live_db_index_cache_readiness=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before any official metric or promotion gate.
+<!-- official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod:triage-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod:triage-entry:triage-entry:start -->
+### v4_6_11 FT-A Runtime Input Validation Route Parity Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod/report.json`; single-report contract remains active.
+- v4_6_11 is diagnostic-only, non-production, and runtime-parity-probe-only.
+- It verifies the FastAPI FT-A dry-run input validation route preserves v4_6_4 validator counts, rejects forbidden prompt/gold/output and operational fields, redacts validation error input, and stays default-disabled and production-disabled.
+- It is not dry-run input manifest export, not FT-A dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
+- It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `live_db_index_cache_readiness=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before any official metric or promotion gate.
+<!-- official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod:triage-entry:triage-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod:triage-entry:start -->
+### v4_6_10 External Holdout Candidate Manifest Gate Replay Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod/report.json`; single-report contract remains active.
+- v4_6_10 is diagnostic-only and external-holdout-candidate-manifest-gate-replay-only. The default artifact confirms the external candidate manifest is still missing and keeps the v4_7 opening preflight closed.
+- Optional `--candidate-manifest` input is a no-write replay through v4_5_1/v4_5_2 only; it records redacted/hash input metadata and aggregate gate outcomes, not raw candidate rows or raw source identities.
+- The default-disabled FastAPI readiness route originally projected the v4_6_10 report's bounded manifest replay/preflight fields, redacted provided manifest input paths, and failed closed on sidecar/raw-surface openings or inconsistent replay counters. Current readiness now defaults to the later v4_6_12 route-parity report while retaining v4_6_10 projection support. The default-disabled FT-A dry-run input validation route reuses the v4_6_4 row-shape contract in memory and returns sanitized/hash-only diagnostics without exporting dry-run inputs, prompt payloads, datasets, jobs, checkpoints, official metrics, promotion evidence, product-success evidence, or live-readiness claims.
+- It is not external holdout acquisition, not real holdout availability, not candidate manifest export, not validation/source-audit sidecar creation, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
+- It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `real_holdout_sufficient=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before v4_7.
+<!-- official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod:triage-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod:triage-entry:start -->
+### v4_6_9 Holdout Candidate Duplicate Hygiene Gate Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod/report.json`; single-report contract remains active.
+- v4_6_9 is diagnostic-only and duplicate-hygiene-gate-only. It checks that invalid-first duplicate candidate/query IDs fail closed across runtime and v4_5_1 script validation.
+- It proves duplicate boundary hardening only; it is not real holdout availability, not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
+- It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `real_holdout_sufficient=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before v4_7.
+<!-- official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod:triage-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod:triage-entry:start -->
+### v4_6_8 Runtime Readiness Dependency Freshness Gate Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod/report.json`; single-report contract remains active.
+- v4_6_8 is diagnostic-only, dependency-freshness-gate-only, and external-holdout-acquisition-requirements-packet-only.
+- It proves current dependency freshness and FastAPI DTO projection consistency only; it is not real holdout availability, not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
+- It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `real_holdout_sufficient=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before v4_7.
+<!-- official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod:triage-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod:triage-entry:start -->
+### v4_6_7 Holdout Candidate Runtime Gate Parity Bridge Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod/report.json`; single-report contract remains active.
+- v4_6_7 is diagnostic-only and parity-bridge-only. It compares runtime-adjacent FastAPI holdout validation with v4_5_1/v4_5_2 script gates using in-memory hash-only probes.
+- The bridge proves contract consistency only; it is not real holdout availability, not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
+- It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `real_holdout_sufficient=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before v4_7.
+<!-- official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod:triage-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod:triage-entry:start -->
+### v4_6_6 Holdout Gap And Dry-Run Blocker Ledger Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod/report.json`; single-report contract remains active.
+- v4_6_6 is diagnostic-only, non-production, ledger-only infrastructure over existing v4_4 through v4_6_5 reports.
+- It is not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
+- The FastAPI holdout-candidate validation route is an internal, default-disabled, non-writing projection of this contract: candidate rows are request-body input only, accepted/excluded rows are hash-only, raw source identities and local paths are not exposed, and optional prior identity hashes are collision checks rather than persisted ledgers.
+- Codex-owned next work remains acquiring or registering source-disjoint candidates and rerunning non-gold gates; user-owned gold/qrels/denominator/promotion decisions remain closed before any official metric or promotion-adjacent evaluation.
+<!-- official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod:triage-entry:start -->
+### v4_6_5 FT-A Dry-Run Execution Plan Gate Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod/report.json`; single-report contract remains active.
+- v4_6_5 is diagnostic-only, non-production, execution-plan-gate-only FT-A dry-run preparation.
+- It is not the FT-A dry run, not dry-run execution, not manifest export, not prompt payload creation, not dataset export, and not a v4_7 opening.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before any official metric or promotion-adjacent evaluation.
+<!-- official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod:triage-entry:end -->
+
 # RAG Ingestion Triage
 
-Last updated: 2026-05-26 KST.
+Last updated: 2026-05-27 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of
@@ -19,6 +127,182 @@ As of the 2026-05-21 cleanup, the current repo-local report directory keeps
 The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
 archived under
 `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod:triage-entry:start -->
+### v4_6_4 FT-A Dry-Run Input Manifest Validator Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod/report.json`; single-report contract remains active.
+- v4_6_4 is diagnostic-only, non-production, validator-only FT-A dry-run input manifest preparation.
+- It validates manifest row shape and rejects prompt/gold/output leakage; it is not the FT-A dry run, not manifest export, not prompt payload creation, not dataset export, and not a v4_7 opening.
+- It keeps raw prompt text, prompt manifests, raw LLM responses, datasets, training manifests, jobs, checkpoints, official metrics, promotion evidence, and product-success evidence absent.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before any official metric or promotion gate.
+<!-- official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod:triage-entry:start -->
+### v4_6_3 FT-A Prompt-Policy Baseline Schema Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod/report.json`; single-report contract remains active.
+- v4_6_3 is diagnostic-only, non-production, schema-only FT-A prompt-policy baseline preparation.
+- It freezes prompt-policy baseline identifiers and future dry-run output fields; it is not the FT-A dry run, not prompt payload creation, not dataset export, and not a v4_7 opening.
+- It keeps raw prompt text, prompt manifests, raw LLM responses, datasets, training manifests, jobs, checkpoints, official metrics, promotion evidence, and product-success evidence absent.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before any official metric or promotion gate.
+<!-- official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod:triage-entry:start -->
+### v4_6_2 FT-A Route-Policy Fixture Contract Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod/report.json`; single-report contract remains active.
+- v4_6_2 is diagnostic-only, non-production, FT-A route-policy fixture contract only.
+- The contract prepares row-shape and leakage/no-go rules only; it is not the FT-A dry run, not dataset export, and not a v4_7 opening.
+- It rejects gold/oracle answer text, supporting evidence, target/gold locators, prompt payloads, raw LLM responses, final answers, direct answer values, and local file paths as model inputs.
+- It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before any official metric or promotion gate.
+<!-- official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod:triage-entry:start -->
+### v4_6_1 Holdout Candidate Manifest Identity Contract Bridge Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod/report.json`; single-report contract remains active.
+- v4_6_1 is diagnostic-only, non-production, holdout-candidate manifest identity contract bridge only.
+- The bridge proves contract consistency only; it is not split sufficiency, not holdout availability, not the FT-A dry run, and not a v4_7 opening.
+- It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `v4_6_ft_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
+- No candidate manifest, validation sidecar, training dataset, job, checkpoint, prompt payload, raw LLM response, production route, or live DB/index/cache readiness claim is created.
+- User-owned gold/qrels/denominator/promotion decisions remain closed before v4_7.
+<!-- official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod:triage-entry:start -->
+### v4_6 FT Route Policy Dry-Run Preflight Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod/report.json`; single-report contract remains active.
+- v4_6 is preflight only and is not the FT-A dry run itself.
+- The current default run keeps the dry run closed because v4_5, v4_5_1, v4_5_2, and user-owned gold/qrels/denominator policy gates are not open.
+- v4_5_3 prior identity baseline provenance is accepted only as hash-only SourceAtom-registry-derived evidence; raw source identities and local paths remain unexposed.
+- SearchView/vector payload remains candidate-only; SourceAtom/EvidenceBundle and the source registry remain evidence truth.
+- No official metric rows, promotion evidence, product-success evidence, dataset export, training job, checkpoint, production route, or live DB/index/cache readiness claim is created.
+- GPU is not required for this deterministic preflight; future FT-A training, embedding, or local LLM workloads should use GPU when the gates actually open.
+<!-- official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod:triage-entry:start -->
+### v4_5_3 External Holdout Prior Source Identity Ledger Summary Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod/report.json`; single-report contract remains active.
+- v4_5_3 is diagnostic hash-only prior identity baseline infrastructure, not a v4_6 fine-tuning dry run.
+- Hash records are derived from existing SourceAtom registry PDF document and XLSX workbook identities only; raw local paths and raw source identities are not exposed.
+- The summary does not create external holdout candidates, labels, qrels, denominator rows, review packets, training data, jobs, or checkpoints.
+- Current default run still has no external candidate manifest, so real holdout availability and source-identity audit gate readiness remain closed.
+- User-owned decisions remain gold set creation/review, expected answer/evidence judgment, relevance/answerability labels, gold policy, official denominator policy, and promotion policy.
+- GPU is not required for this deterministic hash summary; future training, embedding, or LLM/index workloads should use GPU when opened.
+<!-- official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod:triage-entry:start -->
+### v4_5_2 External Holdout Candidate Source Identity Audit Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod/report.json`; single-report contract remains active.
+- v4_5_2 is diagnostic source-identity audit infrastructure over external holdout candidate manifests, not a v4_6 fine-tuning dry run.
+- Candidate manifests, raw prior identity ledgers, and v4_5_3 hash-only prior summary reports are read as input only; external paths are redacted and inputs are not copied into the run directory.
+- PDF candidates require document-level identity; XLSX candidates require workbook-level identity. XLSX row/cell-level `source_identity` alone is not accepted as workbook-disjoint proof.
+- Prior source identity collisions are excluded before candidate counts or query-fidelity rows can satisfy gates.
+- Current default run has no manifest; it can consume the v4_5_3 hash-only prior summary baseline, but the source-identity audit gate still fails closed until accepted external candidates exist.
+- User-owned decisions remain gold set creation/review, expected answer/evidence judgment, relevance/answerability labels, gold policy, official denominator policy, and promotion policy; user-owned label/qrels/denominator policy stays closed.
+- GPU is not required for this deterministic source-identity audit; future training, embedding, or LLM/index workloads should use GPU when opened.
+<!-- official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod:triage-entry:start -->
+### v4_5_1 Holdout Candidate Intake Gate Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod/report.json`; single-report contract remains active.
+- v4_5_1 is a diagnostic holdout-candidate intake gate, not a v4_6 fine-tuning dry run.
+- Optional candidate manifest paths are read as input only; external paths are redacted and the manifest is not copied into the run directory.
+- Current candidate manifest is absent, so accepted PDF source-document-disjoint and XLSX workbook-disjoint candidates remain below target.
+- Candidate rows are allowed only when source family, source/workbook identity, disjointness, query-fidelity inclusion, leakage exclusion, protected oracle-field absence, and raw local path absence are satisfied.
+- Protected target/gold/expected/supporting fields are rejected as candidate input, not silently used.
+- User-owned decisions remain gold set creation/review, expected answer/evidence judgment, relevance/answerability labels, gold policy, official denominator policy, and promotion policy; user-owned label/qrels/denominator policy stays closed.
+- GPU is not required for this deterministic intake validator; future training, embedding, or LLM/index workloads should use GPU when opened.
+- Next lane: provide real source-disjoint PDF/XLSX candidate rows, then rerun the intake gate before opening any v4_6 FT-A dry run.
+<!-- official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod:triage-entry:start -->
+### v4_5 Fine-Tuning Readiness Packet Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod/report.json`; single-report contract remains active.
+- v4_5 is a diagnostic fine-tuning-readiness packet, not actual fine-tuning/training.
+- Evidence path quality is read from v4_4 guardrails: SourceAtom/EvidenceBundle remains evidence truth and SearchView/vector remains candidate-only.
+- Split quality remains blocked: PDF source-document-disjoint and XLSX workbook-disjoint holdout counts are below target, and real query-fidelity rows remain below the per-family target.
+- Leakage audit infrastructure is carried forward as exclusion coverage, not as leakage-free or product-success evidence.
+- SFT, DPO, and reward-model lanes are all blocked; no dataset export, training job, prompt payload, raw LLM response, or checkpoint is created.
+- User-owned decisions remain gold set creation/review, expected answer/evidence judgment, relevance/answerability labels, gold policy, official denominator policy, and promotion policy.
+- GPU is not required for this deterministic readiness packet; future training or LLM/index workloads should use GPU when opened.
+- Next lane: acquire real source-disjoint PDF/XLSX holdout identities and user-owned label/qrels/denominator policy before opening any fine-tuning dataset export.
+<!-- official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod:triage-entry:end -->
+
+<!-- phase1_diagnostic_contract_closure_fastapi_diagnostic_integration:triage-entry:start -->
+### Phase 1 Closeout FastAPI Diagnostic Integration Triage
+
+- Marker: `phase1_diagnostic_contract_closure_fastapi_diagnostic_integration`.
+- FastAPI surface: diagnostic/internal `POST /internal/rag/diagnostic/query`, `GET /internal/rag/diagnostic/readiness`, `POST /internal/rag/diagnostic/holdout-candidates/validate`, and `POST /internal/rag/diagnostic/ft-a/dry-run-input/validate`, default-disabled by `AIPIPELINE_WORKER_RAG_FASTAPI_DIAGNOSTIC_ROUTE_ENABLED` and disabled in production orchestrator mode.
+- The route calls `SourceFirstRagService`; v3 script logic is not embedded directly in the handler.
+- The readiness route exposes the hash-locked holdout candidate manifest contract needed by v4_5_1/v4_5_2/v4_5_3/v4_6: accepted source families, PDF/XLSX identity priority, same-tier identity conflict fail-closed behavior, minimum targets, raw external path redaction, and forbidden gold/target/supporting/expected fields. XLSX `source_identity` alone is not workbook proof. It is input-only and creates no candidate manifest, validation sidecar, training dataset, job, checkpoint, official metric, promotion evidence, product-success evidence, or live readiness claim.
+- The holdout-candidate validation route accepts only request-body `candidate_rows` plus optional hash-only prior identity records. It rejects missing required contract fields, protected oracle fields, prompt/LLM payload fields, raw local paths, leakage buckets, forbidden readiness/official/promotion fields, XLSX `source_identity`-only workbook proof, same-tier identity conflicts, and prior identity hash collisions. It returns family-separated counts and deficits without creating manifests, sidecars, datasets, jobs, checkpoints, official metrics, promotion evidence, product-success evidence, or live readiness claims.
+- The FT-A dry-run input validation route accepts only request-body `manifest_rows`. It rejects missing required v4_6_4 fields, unsupported source families/route lanes/response-policy buckets/prompt-policy ids, and prompt/gold/output/path-like leakage fields, while returning row/query ids as hashes and model input field names only. It creates no dry-run input manifest, prompt payload, prompt manifest, raw LLM response, dataset, training manifest, job, checkpoint, official metric, promotion evidence, product-success evidence, or live readiness claim.
+- Query-time policy remains fail-closed for ambiguous workbook/file identity, deictic requests without bounded active context, unsupported large ranges, unavailable index/source-atom store, stale cache namespace mismatch, and any contract violation.
+- SearchView/vector payload remains candidate-only; SourceAtom/EvidenceBundle remains evidence truth; XLSX display metadata is bridged into the runtime EvidenceBundle without exposing formula text.
+- Formula cached values may be used; formula text is not exposed by default; formulas are not evaluated at query time; raw XLSX/PDF files are not parsed at query time.
+- User-owned decisions remain gold set creation/review, expected answer/evidence judgment, relevance/answerability labels, gold policy, official denominator policy, and promotion policy.
+- Codex-owned non-gold decisions remain implementation, paths, tests, docs, report generation, namespace/indexing scope, failure classification, diagnostic-only classification, and denominator-policy application after user approval.
+- Not production routing, not product success evidence, not promotion evidence, not official metric lift, not live DB/index/cache readiness, not XLSX locator completion, and no production DB/index/cache writes.
+<!-- phase1_diagnostic_contract_closure_fastapi_diagnostic_integration:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod:triage-entry:start -->
+### v4_4 Real Blind/OOD Holdout And Leakage Audit Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod/report.json`; single-report contract remains active.
+- v4_4 materializes holdout, split, query-fidelity, leakage-bucket, and excluded-row ledger infrastructure.
+- PDF source-document-disjoint and XLSX workbook-disjoint real holdout rows remain unavailable; TEXT remains comparison/control only.
+- Fresh real holdout remains unavailable, so synthetic OOD rows are anti-overfit guards only and cannot be interpreted as product success.
+- Leakage buckets classified and excluded: answer_value_in_query, index_to_content_query, source_title_leak, file_title_leak, exact_query_hack, major_topic_drift, unnatural_sheet_or_cell_reference, target_locator_leak, gold_supporting_expected_text_leak.
+- Direct normalized answer-value matching, target/gold locator use, expected/supporting gold text use, vector payload as evidence truth, threshold tuning, winner selection, promotion evidence, production routing, and fine-tuning execution remain forbidden.
+- GPU is not required for this slice because the runner performs deterministic audit materialization only; future embedding/LLM/index workloads should prefer GPU when available.
+- Next lane: v4_5 fine-tuning readiness packet only after preserving these split and leakage gates.
+<!-- official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod:triage-entry:start -->
+### v4_3 PDF File Identity Confidence And Evidence-Window Split Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod/report.json`; single-report contract remains active.
+- v4_3 keeps XLSX/TEXT lanes excluded and reports PDF diagnostics separately.
+- The 329-row denominator remains the v3_13 PDF file-identity/evidence-window seen diagnostic surface.
+- File identity metrics are kept separate from answer-ready evidence-window metrics; bbox correctness remains uncomputed without independent gold-free evidence.
+- PDF file-identity and evidence-window metrics are `reference_only_seen_diagnostic` with `computed_by_v4_3=false`.
+- Fresh real source-document-disjoint holdout remains unavailable, so seen-reference/no-regression rows cannot be interpreted as product success.
+- Direct normalized-value matching, raw answer value scoring, target/gold locator use, expected/supporting gold text use, source/file title shortcuts, official_metric=false, threshold tuning, winner selection, promotion evidence, production routing, and fine-tuning execution remain forbidden.
+- GPU is not required for this slice because the runner performs deterministic JSON materialization only; future embedding/LLM/index workloads should prefer GPU when available.
+- Next lane: real blind/OOD holdout and leakage-audit infrastructure.
+<!-- official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod:triage-entry:end -->
+
+<!-- official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod:triage-entry:start -->
+### v4_2 XLSX Locator v2 Table/Range/Cell Structural Materialization Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod/report.json`; single-report contract remains active.
+- v4_2 keeps PDF/TEXT lanes excluded and reports XLSX locator diagnostics separately.
+- The 344-row denominator remains the v3_12/v3_15 XLSX locator surface; v4_1 display metadata rows are input readiness only.
+- Table/range and cell/value metrics are `reference_only_seen_diagnostic` with `computed_by_v4_2=false`.
+- Fresh real workbook-disjoint holdout remains unavailable, so seen-reference/no-regression rows cannot be interpreted as product success.
+- Direct normalized-value matching, raw answer value scoring, target/gold locator use, expected/supporting gold text use, source/file title shortcuts, threshold tuning, winner selection, promotion evidence, production routing, and fine-tuning execution remain forbidden.
+- GPU is not required for this slice because the runner performs deterministic JSON materialization only; future embedding/LLM/index workloads should prefer GPU when available.
+- Next lane: runtime-adjacent XLSX metadata bridge only after preserving this holdout-aware locator contract.
+<!-- official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod:triage-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod:triage-entry:start -->
 ### v4_1 Persisted XLSX SourceAtom Display Metadata Triage
@@ -44,7 +328,7 @@ archived under
 - Guardrails: SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only; raw XLSX/PDF query-time parsing, direct normalized answer-value query matching, target/gold/supporting/expected locator use, formula evaluation, and formula-text exposure stay closed.
 - User-owned decisions remain limited to golden set creation/review, expected answer/evidence judgment, relevance and answerability labels, gold policy, official denominator policy, and promotion policy.
 - official metric/promotion only after user-owned gold/qrels/denominator decisions explicitly open that gate.
-- Next technical lane: v4_1 persisted XLSX SourceAtom display metadata materialization, followed by v4_2 XLSX locator v2, v4_3 PDF file identity split, v4_4 real blind/OOD holdout and leakage audit, and v4_5 fine-tuning readiness packet.
+- Completed v4_1-v4_3: v4_1 persisted XLSX SourceAtom display metadata materialization, v4_2 XLSX locator v2, and v4_3 PDF file identity split. v4_4 real blind/OOD holdout and leakage audit infrastructure is now materialized but still fail-closed on real holdout availability. Next technical lane: v4_5 fine-tuning readiness packet.
 <!-- v4_source_grounded_runtime_locator_and_finetune_readiness:triage-entry:end -->
 
 <!-- phase1_diagnostic_contract_closure_after_v3_22:triage-entry:start -->

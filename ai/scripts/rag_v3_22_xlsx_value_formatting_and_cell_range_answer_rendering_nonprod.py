@@ -37,6 +37,15 @@ from app.capabilities.rag_orchestrator.agent_runtime import (  # noqa: E402
     AgentRuntimeRequest,
     RUNTIME_CONTRACT_GUARDS,
 )
+from app.capabilities.rag_orchestrator.phase1_diagnostic_runtime import (  # noqa: E402
+    BOUNDED_SUMMARY_MAX_CELLS as SHARED_BOUNDED_SUMMARY_MAX_CELLS,
+    PHASE1_V3_22_RUN_ID,
+    RANGE_MODES as SHARED_RANGE_MODES,
+    SMALL_RANGE_MAX_CELLS as SHARED_SMALL_RANGE_MAX_CELLS,
+    cell_ref_to_row_col as shared_cell_ref_to_row_col,
+    explicit_query_range_area as shared_explicit_query_range_area,
+    range_shape as shared_range_shape,
+)
 from app.capabilities.rag_orchestrator.runtime_adapters import (  # noqa: E402
     InMemoryRuntimeCacheAdapter,
     InMemorySearchIndexAdapter,
@@ -49,7 +58,7 @@ from app.capabilities.rag_orchestrator.tool_registry import (  # noqa: E402
 )
 
 
-RUN_ID = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+RUN_ID = PHASE1_V3_22_RUN_ID
 EVENT_TYPE = "diagnostic_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
 STATUS = "DIAGNOSTIC_V3_22_XLSX_VALUE_FORMATTING_AND_CELL_RANGE_ANSWER_RENDERING_NONPROD_READY"
 OUTPUT_DIR = REPORT_DIR / "quality" / RUN_ID
@@ -78,16 +87,9 @@ Evidence:
 {evidence}
 """
 
-RANGE_MODES = {
-    "SINGLE_CELL_VALUE",
-    "SMALL_RANGE_TABLE",
-    "BOUNDED_RANGE_SUMMARY",
-    "FORMAT_METADATA_UNAVAILABLE",
-    "UNSUPPORTED_RANGE_TOO_LARGE",
-    "AMBIGUOUS_RANGE_CONTEXT_REQUIRED",
-}
-SMALL_RANGE_MAX_CELLS = 8
-BOUNDED_SUMMARY_MAX_CELLS = 100
+RANGE_MODES = SHARED_RANGE_MODES
+SMALL_RANGE_MAX_CELLS = SHARED_SMALL_RANGE_MAX_CELLS
+BOUNDED_SUMMARY_MAX_CELLS = SHARED_BOUNDED_SUMMARY_MAX_CELLS
 FORBIDDEN_PRIMARY_SIDECAR_ARTIFACT_NAMES = (
     "summary.json",
     "metrics.json",
@@ -762,39 +764,15 @@ def sort_cell_key(atom_id: str) -> tuple[int, int, str]:
 
 
 def cell_ref_to_row_col(cell: str) -> tuple[int, int] | None:
-    match = re.match(r"^([A-Z]{1,3})([1-9][0-9]*)$", clean(cell).upper())
-    if not match:
-        return None
-    col_text, row_text = match.groups()
-    col = 0
-    for char in col_text:
-        col = col * 26 + (ord(char) - ord("A") + 1)
-    return int(row_text), col
+    return shared_cell_ref_to_row_col(cell)
 
 
 def range_shape(range_text: str) -> tuple[int, int, int]:
-    match = re.match(r"^([A-Z]{1,3})([1-9][0-9]*):([A-Z]{1,3})([1-9][0-9]*)$", clean(range_text).upper())
-    if not match:
-        return (1, 1, 1)
-
-    def col_num(col: str) -> int:
-        value = 0
-        for char in col:
-            value = value * 26 + (ord(char) - ord("A") + 1)
-        return value
-
-    left_col, top_row, right_col, bottom_row = match.groups()
-    rows = int(bottom_row) - int(top_row) + 1
-    cols = col_num(right_col) - col_num(left_col) + 1
-    return rows, cols, max(rows, 0) * max(cols, 0)
+    return shared_range_shape(range_text)
 
 
 def explicit_query_range_area(query: str) -> int | None:
-    match = re.search(r"\b([A-Z]{1,3}[1-9][0-9]*:[A-Z]{1,3}[1-9][0-9]*)\b", clean(query).upper())
-    if not match:
-        return None
-    _rows, _cols, area = range_shape(match.group(1))
-    return area
+    return shared_explicit_query_range_area(query)
 
 
 def selected_cell_span_area(selected_ids: Sequence[str]) -> int:

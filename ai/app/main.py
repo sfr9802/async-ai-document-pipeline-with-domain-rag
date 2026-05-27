@@ -5,10 +5,10 @@ Runs the queue consumer in the foreground. Designed for:
   - a container CMD
   - a systemd unit
 
-Kept deliberately FastAPI-free in phase 1: the worker has no inbound HTTP
-surface of its own — core-api talks to it only via the Redis queue.
-FastAPI remains in the dependency set so phase 2 can add a /health or
-/internal/debug endpoint without a dependency churn.
+The primary worker path remains Redis-queue driven. The FastAPI app also owns
+a default-disabled Phase 1 diagnostic/internal RAG route for source-first
+runtime contract checks; it is not production chat routing and does not imply
+live DB/index/cache readiness.
 """
 
 from __future__ import annotations

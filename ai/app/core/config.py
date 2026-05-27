@@ -334,6 +334,15 @@ class WorkerSettings(BaseSettings):
             "or acl_tags in the policy snapshot."
         ),
     )
+    rag_fastapi_diagnostic_route_enabled: bool = Field(
+        default=False,
+        description=(
+            "Feature flag for the Phase 1 source-first RAG diagnostic/internal "
+            "FastAPI route. Default false and also disabled in production "
+            "orchestrator mode; it is not production routing, not promotion "
+            "evidence, and not live DB/index/cache readiness."
+        ),
+    )
 
     # --- ocr capability (phase 2) ---
     ocr_enabled: bool = Field(

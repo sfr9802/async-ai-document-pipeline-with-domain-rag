@@ -75,6 +75,13 @@ def require_v3_9_local_artifacts(*paths: Path) -> None:
     pytest.skip(message)
 
 
+def require_v4_3_local_artifacts(*paths: Path) -> None:
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return
+    pytest.fail("missing v4_3 local report artifacts: " + ", ".join(str(path) for path in missing))
+
+
 def windows_long_path(path: Path) -> Path:
     if sys.platform != "win32":
         return path
@@ -4069,6 +4076,87 @@ def test_phase1_diagnostic_contract_closure_after_v3_22_does_not_mutate_or_promo
     assert report["artifact_paths"] == {"report_json": v3_22_report_path.relative_to(ROOT).as_posix()}
 
 
+def test_phase1_fastapi_diagnostic_integration_does_not_mutate_or_promote_surfaces():
+    marker = "phase1_diagnostic_contract_closure_fastapi_diagnostic_integration"
+    event_type = "phase1_diagnostic_contract_closure_fastapi_diagnostic_integration_ready"
+    v3_22_run_id = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    v3_22_report_path = REPORT_DIR / "quality" / v3_22_run_id / "report.json"
+    require_v3_9_local_artifacts(STATUS_JSONL, v3_22_report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    event = next(
+        item
+        for item in reversed(events)
+        if item.get("run_id") == marker and item.get("event_type") == event_type
+    )
+    assert event["diagnostic_only"] is True
+    assert event["production_routing"] is False
+    assert event["production_mutation"] is False
+    assert event["db_or_production_namespace_written"] is False
+    assert event["no_production_db_index_cache_writes"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["xlsx_locator_completion_claimed"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["label_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["threshold_tuning"] is False
+    assert event["winner_selection"] is False
+    assert event["pdf_xlsx_text_collapsed_headline_product_score"] is False
+    assert event["searchview_vector_payload_candidate_only"] is True
+    assert event["source_atom_evidence_bundle_evidence_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["raw_file_query_time_accessed"] is False
+    assert event["raw_xlsx_query_time_parsing_forbidden"] is True
+    assert event["raw_pdf_query_time_parsing_forbidden"] is True
+
+    status = subprocess.run(
+        ["git", "status", "--short", "--untracked-files=all"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    forbidden_name_fragments = ("scratch", "tmp", "temp", "adhoc", "ad_hoc")
+    assert not [
+        line
+        for line in status
+        if any(fragment in Path(line[3:].strip()).name.lower() for fragment in forbidden_name_fragments)
+    ]
+
+
 def test_v4_0_charter_status_opening_does_not_mutate_or_promote_surfaces():
     v4_id = "v4_source_grounded_runtime_locator_and_finetune_readiness"
     v4_event_type = "v4_source_grounded_runtime_locator_and_finetune_readiness_opened"
@@ -4294,6 +4382,2398 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_does_not_mutate_or_prom
     assert event["official_denominator_mutation"] is False
     assert event["production_mutation"] is False
     assert event["db_or_production_namespace_written"] is False
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_1_holdout_manifest_identity_contract_bridge_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod"
+    event_type = "diagnostic_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_manifest_identity_contract_bridge_only"] is True
+    assert report["contract_bridge_gate"]["passed"] is True
+    assert report["contract_bridge_gate"]["contract_hashes_match"] is True
+    assert report["contract_bridge_gate"]["identity_probe_passed"] is True
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+    assert report["guardrails"]["training_manifest_jsonl_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["holdout_candidate_manifest_identity_contract_bridge_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_2_ft_route_policy_fixture_contract_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod"
+    event_type = "diagnostic_v4_6_2_ft_route_policy_fixture_contract_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["ft_route_policy_fixture_contract_only"] is True
+    assert report["fixture_contract_gate"]["fixture_contract_schema_check_passed"] is True
+    assert report["fixture_contract_gate"]["dry_run_dataset_gate_passed"] is False
+    assert report["fixture_contract_gate"]["dataset_export_gate_opened"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+    assert report["guardrails"]["training_manifest_jsonl_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["ft_route_policy_fixture_contract_only"] is True
+    assert event["fixture_contract_schema_check_passed"] is True
+    assert event["dry_run_dataset_gate_passed"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["dataset_export_gate_opened"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_3_ft_a_prompt_policy_baseline_schema_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod"
+    event_type = "diagnostic_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_prompt_policy_baseline_schema_only"] is True
+    assert report["prompt_policy_baseline_gate"]["prompt_policy_baseline_schema_check_passed"] is True
+    assert report["prompt_policy_baseline_gate"]["dry_run_prompt_baseline_gate_passed"] is False
+    assert report["prompt_policy_baseline_schema"]["raw_prompt_text_embedded"] is False
+    assert report["prompt_policy_baseline_schema"]["prompt_payload_created"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+    assert report["guardrails"]["training_manifest_jsonl_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["ft_a_prompt_policy_baseline_schema_only"] is True
+    assert event["prompt_policy_baseline_schema_check_passed"] is True
+    assert event["dry_run_prompt_baseline_gate_passed"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_4_ft_a_dry_run_input_manifest_validator_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod"
+    event_type = "diagnostic_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_dry_run_input_manifest_validator_only"] is True
+    assert report["dry_run_input_manifest_gate"]["manifest_validator_schema_check_passed"] is True
+    assert report["dry_run_input_manifest_gate"]["dry_run_input_manifest_gate_passed"] is False
+    assert report["dry_run_input_manifest_contract"]["manifest_rows_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["prompt_manifest_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["prompt_manifest_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+    assert report["guardrails"]["training_manifest_jsonl_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["ft_a_dry_run_input_manifest_validator_only"] is True
+    assert event["manifest_validator_schema_check_passed"] is True
+    assert event["dry_run_input_manifest_gate_passed"] is False
+    assert event["manifest_rows_exported"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_5_ft_a_dry_run_execution_plan_gate_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod"
+    event_type = "diagnostic_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_dry_run_execution_plan_gate_only"] is True
+    assert report["dry_run_execution_plan_gate"]["dry_run_execution_plan_schema_check_passed"] is True
+    assert report["dry_run_execution_plan_gate"]["dry_run_execution_plan_gate_passed"] is False
+    assert report["dry_run_execution_plan_contract"]["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["prompt_manifest_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["dry_run_execution_plan_exported"] is False
+    assert report["guardrails"]["dry_run_input_manifest_exported"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["prompt_manifest_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+    assert report["guardrails"]["training_manifest_jsonl_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["ft_a_dry_run_execution_plan_gate_only"] is True
+    assert event["dry_run_execution_plan_schema_check_passed"] is True
+    assert event["dry_run_execution_plan_gate_passed"] is False
+    assert event["dry_run_execution_plan_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_2_xlsx_locator_v2_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod"
+    event_type = "diagnostic_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v3_9_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert report["metrics"]["official_metric_input_rows"] == 0
+    assert report["metrics"]["product_success_evidence_allowed"] is False
+    assert report["metrics"]["promotion_evidence"] is False
+    assert report["metrics"]["fine_tuning_executed"] is False
+    assert report["metrics"]["workbook_disjoint_validation_rows"] == 0
+    assert report["metrics"]["fresh_real_holdout_available"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["family_separated_xlsx_only"] is True
+    assert report["guardrails"]["pdf_lane_excluded"] is True
+    assert report["guardrails"]["text_lane_excluded"] is True
+    assert report["guardrails"]["direct_normalized_value_query_matching_used"] is False
+    assert report["guardrails"]["raw_answer_value_for_query_scoring_used"] is False
+    assert report["guardrails"]["target_locator_used"] is False
+    assert report["guardrails"]["gold_locator_used"] is False
+    assert report["guardrails"]["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert report["guardrails"]["threshold_tuning"] is False
+    assert report["guardrails"]["winner_selection"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["official_metric_lift"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["fine_tuning_readiness_only"] is True
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["source_atom_registry_mutated"] is False
+    assert event["searchview_vector_payload_candidate_only"] is True
+    assert event["source_atom_evidence_bundle_evidence_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["raw_answer_value_for_query_scoring_used"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert event["review_csv_created"] is False
+    assert event["report_json_created"] is True
+    assert event["summary_json_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert event["raw_llm_response_payload_created"] is False
+    assert event["prompt_payload_created"] is False
+    assert event["xlsx_locator_v2_manifest_jsonl_created"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["label_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["production_mutation"] is False
+    assert event["db_or_production_namespace_written"] is False
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_3_pdf_file_identity_split_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod"
+    event_type = "diagnostic_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert report["official_metric"] is False
+    assert report["metrics"]["official_metric_input_rows"] == 0
+    assert report["metrics"]["product_success_evidence_allowed"] is False
+    assert report["metrics"]["promotion_evidence"] is False
+    assert report["metrics"]["fine_tuning_executed"] is False
+    assert report["metrics"]["source_document_disjoint_validation_rows"] == 0
+    assert report["metrics"]["fresh_real_holdout_available"] is False
+    assert report["metrics"]["pdf_file_identity_answer_window_kept_separate"] is True
+    assert report["metrics"]["bbox_correctness_metric_computed"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["family_separated_pdf_only"] is True
+    assert report["guardrails"]["xlsx_lane_excluded"] is True
+    assert report["guardrails"]["text_lane_excluded"] is True
+    assert report["guardrails"]["pdf_file_identity_answer_window_kept_separate"] is True
+    assert report["guardrails"]["direct_normalized_value_query_matching_used"] is False
+    assert report["guardrails"]["raw_answer_value_for_query_scoring_used"] is False
+    assert report["guardrails"]["target_locator_used"] is False
+    assert report["guardrails"]["gold_locator_used"] is False
+    assert report["guardrails"]["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert report["guardrails"]["threshold_tuning"] is False
+    assert report["guardrails"]["winner_selection"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["official_metric_lift"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["fine_tuning_readiness_only"] is True
+    assert event["fine_tuning_started"] is False
+    assert event["fine_tuning_executed"] is False
+    assert event["source_atom_registry_mutated"] is False
+    assert event["searchview_vector_payload_candidate_only"] is True
+    assert event["source_atom_evidence_bundle_evidence_truth"] is True
+    assert event["vector_payload_used_as_evidence_truth"] is False
+    assert event["direct_normalized_value_query_matching_used"] is False
+    assert event["raw_answer_value_for_query_scoring_used"] is False
+    assert event["target_locator_used"] is False
+    assert event["gold_locator_used"] is False
+    assert event["expected_supporting_gold_text_used_for_retrieval_or_generation"] is False
+    assert event["review_csv_created"] is False
+    assert event["report_json_created"] is True
+    assert event["summary_json_created"] is False
+    assert event["per_run_markdown_created"] is False
+    assert event["raw_llm_response_payload_created"] is False
+    assert event["prompt_payload_created"] is False
+    assert event["pdf_file_identity_split_manifest_jsonl_created"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["label_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["official_denominator_mutation"] is False
+    assert event["production_mutation"] is False
+    assert event["db_or_production_namespace_written"] is False
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_6_holdout_gap_blocker_ledger_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod"
+    event_type = "diagnostic_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["holdout_gap_and_dry_run_blocker_ledger_only"] is True
+    assert report["holdout_gap_ledger"]["real_holdout_sufficient"] is False
+    assert report["dry_run_blocker_ledger"]["all_non_gold_source_gates_passed"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["prompt_manifest_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["candidate_manifest_exported"] is False
+    assert report["guardrails"]["dry_run_execution_plan_exported"] is False
+    assert report["guardrails"]["dry_run_input_manifest_exported"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["prompt_manifest_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+
+
+def test_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod"
+    event_type = "diagnostic_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_runtime_gate_parity_bridge_only"] is True
+    assert report["runtime_parity_probe_only"] is True
+    assert report["runtime_gate_parity"]["all_parity_checks_passed"] is True
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["prompt_payload_created"] is False
+    assert report["prompt_manifest_created"] is False
+    assert report["raw_llm_response_payload_created"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["candidate_manifest_exported"] is False
+    assert report["guardrails"]["dry_run_execution_plan_exported"] is False
+    assert report["guardrails"]["dry_run_input_manifest_exported"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["prompt_manifest_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+    assert report["guardrails"]["source_atom_evidence_bundle_evidence_truth"] is True
+    assert report["guardrails"]["searchview_vector_payload_candidate_only"] is True
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert len(matches) == 1
+    assert matches[0]["diagnostic_only"] is True
+    assert matches[0]["all_parity_checks_passed"] is True
+    assert matches[0]["official_metric_input_rows"] == 0
+    assert matches[0]["promotion_evidence"] is False
+    assert "prompt_manifest" not in report
+    assert "per_query" not in report
+    assert "raw_llm_response" not in report
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["holdout_candidate_runtime_gate_parity_bridge_only"] is True
+    assert event["real_holdout_sufficient"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["all_parity_checks_passed"] is True
+    assert event["dry_run_execution_plan_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_manifest_jsonl_created"] is False
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_8_runtime_readiness_dependency_freshness_gate_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod"
+    event_type = "diagnostic_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["runtime_readiness_dependency_freshness_gate_only"] is True
+    assert report["external_holdout_acquisition_requirements_packet_only"] is True
+    assert report["dependency_freshness_gate"]["gate_passed"] is True
+    assert report["dependency_freshness_gate"]["forbidden_surface_violation_count"] == 0
+    assert report["dependency_freshness_gate"]["raw_source_identity_or_path_leak_count"] == 0
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["runtime_readiness_dependency_freshness_gate_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_9_holdout_candidate_duplicate_hygiene_gate_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod"
+    event_type = "diagnostic_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_duplicate_hygiene_gate_only"] is True
+    assert report["duplicate_hygiene_gate"]["gate_passed"] is True
+    assert report["duplicate_hygiene_gate"]["runtime_invalid_first_duplicate_rejected"] is True
+    assert report["duplicate_hygiene_gate"]["script_invalid_first_duplicate_rejected"] is True
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["holdout_candidate_duplicate_hygiene_gate_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_10_external_holdout_manifest_gate_replay_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod"
+    event_type = "diagnostic_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_candidate_manifest_gate_replay_only"] is True
+    assert report["external_holdout_candidate_manifest_gate_replay"]["gate_passed"] is False
+    assert report["external_holdout_candidate_manifest_gate_replay"]["candidate_manifest_present"] is False
+    assert report["external_holdout_candidate_manifest_gate_replay"]["candidate_rows_replayed"] == 0
+    assert report["official_metric_opening_preflight"]["gate_passed"] is False
+    assert report["official_metric_opening_preflight"]["gate_opened"] is False
+    assert report["official_metric_opening_preflight"]["missing_user_owned_input_count"] == 6
+    assert report["official_metric_opening_preflight"]["official_metric_rows_authorized"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["external_holdout_candidate_manifest_gate_replay_only"] is True
+    assert event["gate_passed"] is False
+    assert event["gate_opened"] is False
+    assert event["candidate_manifest_present"] is False
+    assert event["candidate_rows_replayed"] == 0
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_7_preofficial_external_holdout_registration_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
+    event_type = "diagnostic_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["preofficial_external_holdout_candidate_manifest_registration_only"] is True
+    assert report["registration_gate_passed"] is True
+    assert report["candidate_manifest_available"] is True
+    assert report["real_holdout_sufficient"] is False
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_execution_plan_exported"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["preofficial_external_holdout_candidate_manifest_registration_only"] is True
+    assert event["registration_gate_passed"] is True
+    assert event["candidate_manifest_available"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_11_ft_a_runtime_input_validation_route_parity_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod"
+    event_type = "diagnostic_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["ft_a_runtime_input_validation_route_parity_only"] is True
+    assert report["runtime_parity_probe_only"] is True
+    assert report["ft_a_runtime_input_validation_route_parity"]["feature_flag_default_enabled"] is False
+    assert report["ft_a_runtime_input_validation_route_parity"]["production_disabled_route_status_code"] == 404
+    assert report["ft_a_runtime_input_validation_route_parity"]["script_runtime_counts_match"] is True
+    assert report["ft_a_runtime_input_validation_route_parity"]["runtime_response_sanitized"] is True
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_runtime_request_body_embedded"] is False
+    assert report["guardrails"]["raw_runtime_response_body_embedded"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["ft_a_runtime_input_validation_route_parity_only"] is True
+    assert event["runtime_parity_probe_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    serialized = json.dumps({"report": report, "event": event}, ensure_ascii=False)
+    for forbidden in (
+        "이전 셀의 값을 설명해줘",
+        "hidden prompt",
+        "hidden response",
+        "secret answer",
+        "secret support",
+        "pdf-source-identity",
+        "D:/private",
+        "row-ok",
+        "query-ok",
+        "per_query",
+    ):
+        assert forbidden not in serialized
+
+
+def test_v4_6_12_external_holdout_runtime_replay_route_parity_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod"
+    event_type = "diagnostic_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_runtime_replay_route_parity_only"] is True
+    assert report["runtime_parity_probe_only"] is True
+    assert report["external_holdout_runtime_replay_route_parity"]["feature_flag_default_enabled"] is False
+    assert report["external_holdout_runtime_replay_route_parity"]["production_disabled_route_status_code"] == 404
+    assert report["external_holdout_runtime_replay_route_parity"]["route_response_sanitized"] is True
+    assert report["external_holdout_runtime_replay_route_parity"]["route_candidate_counts_match_v4_6_10_replay"] is True
+    assert report["candidate_manifest_exported"] is False
+    assert report["candidate_manifest_jsonl_created"] is False
+    assert report["candidate_validation_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["dry_run_input_manifest_exported"] is False
+    assert report["ft_route_policy_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["real_holdout_sufficient"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["fine_tuning_dataset_exports_created"] == 0
+    assert report["training_manifest_jsonl_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["single_report_artifact_contract"] is True
+    assert report["review_csv_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_runtime_request_body_embedded"] is False
+    assert report["guardrails"]["raw_runtime_response_body_embedded"] is False
+    assert report["guardrails"]["raw_candidate_rows_embedded"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["external_holdout_runtime_replay_route_parity_only"] is True
+    assert event["runtime_parity_probe_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["candidate_manifest_exported"] is False
+    assert event["dry_run_input_manifest_exported"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    serialized = json.dumps({"report": report, "event": event}, ensure_ascii=False)
+    for forbidden in (
+        "pdf-v4612",
+        "xlsx-v4612",
+        "pdf-doc-v4612",
+        "workbook-v4612",
+        "hidden holdout prompt",
+        "secret holdout answer",
+        "D:/private",
+        "candidate_manifest_path",
+        "per_query",
+    ):
+        assert forbidden not in serialized
+
+
+def test_v4_4_real_blind_ood_holdout_leakage_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod"
+    event_type = "diagnostic_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["production_routing"] is False
+    assert report["threshold_tuning"] is False
+    assert report["winner_selection"] is False
+    assert report["fine_tuning_started"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["direct_normalized_answer_value_query_matching_used"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["real_holdout_available"] is False
+    assert event["real_holdout_sufficient"] is False
+    assert event["real_unseen_registry_counts"] == {
+        "PDF_source_document_disjoint": 0,
+        "XLSX_workbook_disjoint": 0,
+    }
+    assert event["leakage_excluded_count"] == 9
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_5_finetune_readiness_packet_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod"
+    event_type = "diagnostic_v4_5_finetune_readiness_packet_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["production_routing"] is False
+    assert report["threshold_tuning"] is False
+    assert report["winner_selection"] is False
+    assert report["fine_tuning_readiness_only"] is True
+    assert report["fine_tuning_started"] is False
+    assert report["fine_tuning_executed"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["readiness_gates"]["split_quality_gate"]["passed"] is False
+    assert report["readiness_gates"]["leakage_audit_gate"]["passed"] is True
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["direct_normalized_answer_value_query_matching_used"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["readiness_gate_passed"] is False
+    assert event["split_quality_gate_passed"] is False
+    assert event["leakage_audit_gate_passed"] is True
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_5_1_holdout_candidate_intake_gate_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod"
+    event_type = "diagnostic_v4_5_1_holdout_candidate_intake_gate_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["holdout_candidate_intake_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["production_routing"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["candidate_intake_gate"]["passed"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["direct_normalized_answer_value_query_matching_used"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["candidate_intake_gate_passed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["v4_6_ft_dry_run_opened"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_5_2_external_source_identity_audit_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod"
+    event_type = "diagnostic_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["external_holdout_candidate_source_identity_audit_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["production_routing"] is False
+    assert report["real_holdout_available"] is False
+    assert report["real_holdout_sufficient"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["source_identity_audit_gate"]["passed"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["prior_identity_ledger_jsonl_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["direct_normalized_answer_value_query_matching_used"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["real_holdout_available"] is False
+    assert event["real_holdout_sufficient"] is False
+    assert event["source_identity_audit_gate_passed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["v4_6_ft_dry_run_opened"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_5_3_external_holdout_prior_identity_summary_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod"
+    event_type = "diagnostic_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["prior_source_identity_ledger_summary_only"] is True
+    assert report["prior_identity_collision_baseline_available"] is True
+    assert report["raw_source_identity_values_embedded"] is False
+    assert report["raw_local_path_values_exposed"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["production_routing"] is False
+    assert report["real_holdout_available"] is False
+    assert report["real_holdout_sufficient"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["prior_identity_ledger_jsonl_created"] is False
+    assert report["source_identity_audit_jsonl_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["source_atom_registry_mutated"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["direct_normalized_answer_value_query_matching_used"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["real_holdout_available"] is False
+    assert event["real_holdout_sufficient"] is False
+    assert event["source_identity_audit_gate_passed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["v4_6_ft_dry_run_opened"] is False
+    assert event["protected_namespaces_touched"] == []
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
+def test_v4_6_ft_route_policy_preflight_does_not_mutate_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod"
+    event_type = "diagnostic_v4_6_ft_route_policy_dry_run_preflight_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["ft_route_policy_dry_run_preflight_only"] is True
+    assert report["v4_6_ft_dry_run_opened"] is False
+    assert report["ft_route_policy_dry_run_executed"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["production_routing"] is False
+    assert report["fine_tuning_dataset_export_created"] is False
+    assert report["training_job_created"] is False
+    assert report["model_or_adapter_checkpoint_written"] is False
+    assert report["guardrails"]["prompt_payload_created"] is False
+    assert report["guardrails"]["raw_llm_response_payload_created"] is False
+    assert report["guardrails"]["protected_namespaces_touched"] == []
+    assert report["guardrails"]["gold_mutation"] is False
+    assert report["guardrails"]["qrels_mutation"] is False
+    assert report["guardrails"]["label_mutation"] is False
+    assert report["guardrails"]["expected_answer_mutation"] is False
+    assert report["guardrails"]["supporting_evidence_mutation"] is False
+    assert report["guardrails"]["official_denominator_mutation"] is False
+    assert report["guardrails"]["production_mutation"] is False
+    assert report["guardrails"]["db_or_production_namespace_written"] is False
+    assert report["guardrails"]["vector_payload_used_as_evidence_truth"] is False
+    assert report["guardrails"]["raw_pdf_query_time_parsing"] is False
+    assert report["guardrails"]["raw_xlsx_query_time_parsing"] is False
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["ft_route_policy_dry_run_opened"] is False
+    assert event["ft_route_policy_dry_run_executed"] is False
+    assert event["fine_tuning_dataset_exports_created"] == 0
+    assert event["training_job_created"] is False
+    assert event["model_or_adapter_checkpoint_written"] is False
+    assert event["protected_namespaces_touched"] == []
     assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
     assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
     assert "prompt_manifest" not in event
