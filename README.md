@@ -62,56 +62,6 @@ flowchart LR
 | Eval | answer/citation scorer, retrieval smoke metric, silver/gold boundary guard |
 | UI | 작업 목록, 상태 timeline, 결과 preview 중심의 React/Vite 화면 |
 
-## How To Verify Locally
-
-Production DB write, production index mutation, new gold/qrels/label 변경 없이 현재 RAG diagnostic profile을 확인하는 최소 명령입니다.
-
-```powershell
-python -X utf8 -m py_compile ai\scripts\rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_5_finetune_readiness_packet_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_ft_route_policy_dry_run_preflight_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_2_ft_route_policy_fixture_contract_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod.py
-python -X utf8 ai\scripts\rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_5_finetune_readiness_packet_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_ft_route_policy_dry_run_preflight_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_2_ft_route_policy_fixture_contract_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod.py --check
-python -X utf8 -m pytest ai/tests --rag-current -q
-```
-
 ## Repo Map
 
 | Path | 역할 |
