@@ -22,6 +22,7 @@ if str(AI_DIR) not in sys.path:
 V4_7_6_SHORT_RUN_ID = "v4_7_6_eval_artifact_archive_purge"
 V4_7_6_LONG_RUN_ID = "official_answer_citation_agentic_loop_run_v4_7_6_eval_artifact_external_archive_and_purge_nonprod"
 V4_7_6_STATUS = "V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY"
+V4_7_7_STATUS = "V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY"
 V4_7_6_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_6" / "report.json"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
@@ -116,7 +117,7 @@ def test_v476_registry_resolves_current_lineage_short_paths_and_legacy_aliases()
         "v4_7_4": "ai/eval/reports/rag-ingestion/runs/v4_7_4/report.json",
         "v4_7_5": "ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json",
         "v4_7_6": "ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json",
-        "current": "ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json",
+        "current": "ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json",
     }
     for key, rel_path in expected.items():
         resolved = registry.resolve_run(key, root=ROOT)
@@ -130,7 +131,7 @@ def test_v476_registry_resolves_current_lineage_short_paths_and_legacy_aliases()
     assert legacy.logical_key == "v4_7_4"
     assert legacy.legacy_long_path_supported is True
 
-    loaded = registry.load_report("current", root=ROOT)
+    loaded = registry.load_report("v4_7_6", root=ROOT)
     assert loaded["short_run_id"] == V4_7_6_SHORT_RUN_ID
     assert loaded["canonical_long_run_id"] == V4_7_6_LONG_RUN_ID
     assert loaded["status"] == V4_7_6_STATUS
@@ -140,7 +141,7 @@ def test_v476_report_status_docs_and_cleanup_manifest_are_compact_and_closed() -
     from ai.eval import rag_eval_registry as registry
 
     report = registry.load_report("v4_7_6", root=ROOT)
-    latest = _read_jsonl(STATUS_JSONL)[-1]
+    latest = next(row for row in reversed(_read_jsonl(STATUS_JSONL)) if row.get("short_run_id") == V4_7_6_SHORT_RUN_ID)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_progress = progress.split("## Short History", 1)[0]
     measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
@@ -199,8 +200,8 @@ def test_v476_report_status_docs_and_cleanup_manifest_are_compact_and_closed() -
     assert short_report_path in current_progress
     assert short_report_path in measurements
     assert short_report_path in triage
-    assert f"Current RAG status: `{V4_7_6_STATUS}`" in readme
-    assert f"Current RAG status: `{V4_7_6_STATUS}`" in eval_readme
+    assert f"Current RAG status: `{V4_7_7_STATUS}`" in readme
+    assert f"Current RAG status: `{V4_7_7_STATUS}`" in eval_readme
 
     generated_text = "\n".join(
         [

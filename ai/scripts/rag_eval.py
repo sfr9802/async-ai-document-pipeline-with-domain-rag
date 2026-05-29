@@ -5,6 +5,7 @@ import csv
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -20,9 +21,14 @@ if str(AI_DIR) not in sys.path:
 from ai.eval import rag_eval_registry as registry
 from ai.eval import rag_v475_evidence_repair as v475
 from ai.eval import rag_v476_archive_purge as v476
+from ai.eval import rag_v477_legacy_archive_consolidation as v477
 
 
-DEFAULT_RUN_KEY = "v4_7_6"
+DEFAULT_RUN_KEY = "v4_7_7"
+SAFE_LEGACY_CHECK_ALIASES = {
+    "v3_21": Path("ai/scripts/rag_v3_21_agent_runtime_llm_io_observability_packet_nonprod.py"),
+    "v3_22": Path("ai/scripts/rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod.py"),
+}
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
 ARCHIVE_MANIFEST = REPORT_ROOT / "archive_manifest.jsonl"
@@ -451,22 +457,67 @@ def write_v475() -> dict[str, Any]:
     return report
 
 
+def _parse_last_json_line(stdout: str) -> dict[str, Any]:
+    for line in reversed(stdout.splitlines()):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            return json.loads(line)
+        except json.JSONDecodeError:
+            continue
+    raise RuntimeError("legacy diagnostic check produced no JSON line")
+
+
+def _run_safe_legacy_check(alias: str) -> dict[str, Any]:
+    script = SAFE_LEGACY_CHECK_ALIASES[alias]
+    result = subprocess.run(
+        [sys.executable, "-X", "utf8", script.as_posix(), "--check"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=120,
+    )
+    payload = _parse_last_json_line(result.stdout)
+    payload.setdefault("artifact_paths", {})
+    if payload.get("report_json"):
+        payload["artifact_paths"]["report_json"] = payload["report_json"]
+    payload.setdefault("official_metric_input_rows", 0)
+    payload["safe_legacy_alias"] = alias
+    payload["stable_runner"] = "ai/scripts/rag_eval.py"
+    payload["write_supported"] = False
+    return payload
+
+
 def check_run(key: str) -> dict[str, Any]:
     if key == "current":
         key = DEFAULT_RUN_KEY
+    if key in SAFE_LEGACY_CHECK_ALIASES:
+        return _run_safe_legacy_check(key)
     if key == "v4_7_6" and not (ROOT / v476.SHORT_REPORT_PATH).exists():
         return v476.build_report(root=ROOT, execute=False)
+    if key == "v4_7_7" and not (ROOT / v477.SHORT_REPORT_PATH).exists():
+        return v477.build_report(root=ROOT, execute=False)
+    resolved_key = registry.resolve_run(key, root=ROOT).logical_key
     report = registry.load_report(key, root=ROOT)
-    if key == "v4_7_5":
+    if resolved_key == "v4_7_5":
         v475.check_report(report)
-    if key == "v4_7_6":
+    if resolved_key == "v4_7_6":
         v476.check_report(report)
+    if resolved_key == "v4_7_7":
+        v477.check_report(report)
     return report
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Stable RAG eval short-key dispatcher")
-    parser.add_argument("run_key", nargs="?", default=DEFAULT_RUN_KEY, help="logical key such as v4_7_6, v4_7_5, v4_7_4, current")
+    parser.add_argument(
+        "run_key",
+        nargs="?",
+        default=DEFAULT_RUN_KEY,
+        help="logical key such as v4_7_7, v4_7_6, v4_7_5, v4_7_4, v3_22, current",
+    )
     parser.add_argument("--check", action="store_true", help="validate an existing report")
     parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and sync docs/status")
     return parser
@@ -483,8 +534,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             write_json(ROOT / v476.SHORT_REPORT_PATH, report)
             v476.check_report(report)
             v476.append_status(ROOT, report, report_sha256=sha256_file(ROOT / v476.SHORT_REPORT_PATH))
+        elif run_key == "v4_7_7":
+            report = v477.build_report(root=ROOT, execute=True, sync_surfaces=True)
+            write_json(ROOT / v477.SHORT_REPORT_PATH, report)
+            v477.check_report(report)
+            v477.append_status(ROOT, report, report_sha256=sha256_file(ROOT / v477.SHORT_REPORT_PATH))
         else:
-            raise SystemExit("--write is currently supported only for v4_7_5 and v4_7_6")
+            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, and v4_7_7")
     else:
         report = check_run(run_key)
     if args.check or not args.write:
@@ -496,12 +552,18 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "run_key": run_key,
                 "status": report.get("status"),
                 "report_json": report.get("artifact_paths", {}).get("report_json"),
+                "official_metric_input_rows": report.get("official_metric_input_rows"),
+                "safe_legacy_alias": report.get("safe_legacy_alias"),
+                "write_supported": report.get("write_supported"),
                 "evidence_window_sufficient_proxy_count": after.get("evidence_window_sufficient_proxy_count"),
                 "weak_evidence_window_count": after.get("weak_evidence_window_count"),
                 "missing_neighbor_context_count": after.get("missing_neighbor_context_count"),
                 "archived_count": report.get("archived_count"),
                 "removed_count": report.get("removed_count"),
                 "manual_hold_count": report.get("manual_hold_count"),
+                "v3_legacy_artifact_count": report.get("v3_legacy_artifact_count"),
+                "v3_legacy_archived_or_removed_count": report.get("v3_legacy_archived_or_removed_count"),
+                "v3_legacy_manual_hold_count": report.get("v3_legacy_manual_hold_count"),
             },
             ensure_ascii=False,
             sort_keys=True,

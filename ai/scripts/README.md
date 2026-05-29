@@ -17,7 +17,7 @@ python scripts/operational/e2e_smoke.py
 
 | Script | Role |
 |---|---|
-| `rag_eval.py` | Stable short-key dispatcher for current RAG diagnostic checks and writes; `v4_7_6_eval_artifact_archive_purge` writes `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json` while current lineage resolves through short keys. |
+| `rag_eval.py` | Stable short-key dispatcher for current RAG diagnostic checks and writes; `v4_7_7_v3_legacy_archive_and_runner_consolidation` writes `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json`, `current` resolves to `v4_7_7`, and safe legacy check aliases `v3_21`/`v3_22` are available while unverified v3 entrypoints remain explicit holds. |
 | `rag_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod.py` | Persists the v3_22 XLSX display metadata contract into SourceAtom-owned runtime-adjacent fields. |
 | `rag_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod.py` | Packages family-separated XLSX table/range/cell locator diagnostics from seen-reference v3 surfaces. |
 | `rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py` | Keeps PDF file identity confidence separate from answer-ready evidence-window diagnostics. |

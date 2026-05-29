@@ -1,3 +1,22 @@
+<!-- v4_7_7_v3_legacy_archive_and_runner_consolidation:measurements-entry:start -->
+### v4_7_7 V3 Legacy Archive And Runner Consolidation
+
+- Run key: `v4_7_7_v3_legacy_archive_and_runner_consolidation`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json`
+- Interpretation: archive-aware cleanup/refactor counters only. No retrieval, EvidenceBundle, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator, training, FT-A, promotion, product-success, or live-readiness surface is opened.
+
+| Counter | Value |
+|---|---:|
+| v3_legacy_artifact_count | 279 |
+| v3_legacy_archived_or_removed_count | 98 |
+| v3_legacy_deleted_count | 0 |
+| v3_legacy_manual_hold_count | 181 |
+| v3_legacy_unclassified_count | 0 |
+| safe_runner_check_alias_count | 2 |
+| hold_current_test_or_doc_contract | 133 |
+| hold_documented_legacy_review_packet | 16 |
+| hold_ambiguous_generated_surface | 32 |
+<!-- v4_7_7_v3_legacy_archive_and_runner_consolidation:measurements-entry:end -->
 <!-- v4_7_6_eval_artifact_archive_purge:measurements-entry:start -->
 ### v4_7_6 Eval Artifact Archive And Purge
 

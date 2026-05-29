@@ -21,6 +21,10 @@ failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
 
+<!-- v4_7_7_v3_legacy_archive_and_runner_consolidation:progress-entry:start -->
+- v4_7_7_v3_legacy_archive_and_runner_consolidation is V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json`. This is cleanup/refactor only: the current resolver moves to short key `v4_7_7`, v3 legacy generated report artifacts are classified as externally archived/removed or explicit holds, and the stable runner now exposes safe check aliases v3_21, v3_22. Manifest counters: total 279, archived/removed 98, deleted 0, held 181 (EXPLICIT_HOLD_AMBIGUOUS_GENERATED_SURFACE=32, EXPLICIT_HOLD_CURRENT_TEST_OR_DOC_CONTRACT=133, EXPLICIT_HOLD_DOCUMENTED_LEGACY_REVIEW_PACKET=16), unclassified 0. Protected namespaces remain untouched. This does not run retrieval, EvidenceBundle repair, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator mutation, training, FT-A, fine_tuning, promotion, product-success, or live readiness.
+<!-- v4_7_7_v3_legacy_archive_and_runner_consolidation:progress-entry:end -->
+
 <!-- v4_7_6_eval_artifact_archive_purge:progress-entry:start -->
 - v4_7_6_eval_artifact_archive_purge is V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json`. This is cleanup/refactor only: current lineage reports now resolve through short keys `v4_7_preofficial`, `v4_7_2`, `v4_7_3`, `v4_7_4`, `v4_7_5`, and `current`. External archive target resolved=true and redacted; archived 108 files, removed 108, deleted transient cache 47, and held 354 ambiguous/generated surfaces for manual review. Repo-local report files moved 399 -> 293 and bytes 170924057 -> 146192936. Protected namespaces remain untouched. This does not run retrieval, EvidenceBundle repair, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator mutation, training, FT-A, fine_tuning, promotion, product-success, or live readiness.
 <!-- v4_7_6_eval_artifact_archive_purge:progress-entry:end -->
@@ -196,7 +200,7 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY`;
+Overall status: `V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY`;
 current latest v4_6 run remains v4_6_12:
 `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`;
 current Phase 1 FastAPI diagnostic/internal integration marker:

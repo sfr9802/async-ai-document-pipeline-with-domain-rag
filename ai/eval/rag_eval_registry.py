@@ -49,6 +49,14 @@ V4_7_6_LONG_RUN_ID = (
 )
 V4_7_6_STATUS = "V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY"
 
+V4_7_7_SHORT_KEY = "v4_7_7"
+V4_7_7_SHORT_RUN_ID = "v4_7_7_v3_legacy_archive_and_runner_consolidation"
+V4_7_7_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v4_7_7_"
+    "v3_legacy_artifact_archive_and_diagnostic_runner_consolidation_nonprod"
+)
+V4_7_7_STATUS = "V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY"
+
 
 class ReportResolutionError(RuntimeError):
     """Raised when a diagnostic report alias cannot be resolved safely."""
@@ -135,6 +143,15 @@ RUNS: dict[str, RunMetadata] = {
         accepted_aliases=(V4_7_6_SHORT_RUN_ID, V4_7_6_LONG_RUN_ID),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
     ),
+    V4_7_7_SHORT_KEY: RunMetadata(
+        logical_key=V4_7_7_SHORT_KEY,
+        short_run_id=V4_7_7_SHORT_RUN_ID,
+        canonical_long_run_id=V4_7_7_LONG_RUN_ID,
+        status=V4_7_7_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V4_7_7_SHORT_KEY / "report.json",
+        accepted_aliases=(V4_7_7_SHORT_RUN_ID, V4_7_7_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
 }
 
 ALIAS_TO_KEY: dict[str, str] = {
@@ -142,7 +159,7 @@ ALIAS_TO_KEY: dict[str, str] = {
     for key, metadata in RUNS.items()
     for alias in (key, *metadata.accepted_aliases)
 }
-ALIAS_TO_KEY["current"] = V4_7_6_SHORT_KEY
+ALIAS_TO_KEY["current"] = V4_7_7_SHORT_KEY
 
 
 def _repo_root(root: Path | str | None = None) -> Path:

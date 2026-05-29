@@ -1,3 +1,15 @@
+<!-- v4_7_7_v3_legacy_archive_and_runner_consolidation:triage-entry:start -->
+### v4_7_7 V3 Legacy Archive And Runner Consolidation
+
+- Run key: `v4_7_7_v3_legacy_archive_and_runner_consolidation`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json`
+- EXTERNALLY_ARCHIVED_REMOVED: v4_7_6 verified archive copies and removed repo-local generated v3 artifacts.
+- EXPLICIT_HOLD_CURRENT_TEST_OR_DOC_CONTRACT: repo-local v3 artifacts still read by current tests/docs remain held with reasons.
+- EXPLICIT_HOLD_DOCUMENTED_LEGACY_REVIEW_PACKET: documented legacy review packet surfaces remain held until their readers move.
+- Runner consolidation: `ai/scripts/rag_eval.py` owns the current short key plus safe check aliases `v3_21` and `v3_22`; `v3_16` and older unverified legacy entrypoints remain explicit holds.
+- Closed gates: retrieval, EvidenceBundle repair, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator mutation, training, FT-A, fine_tuning, promotion, product-success evidence, and live DB/index/cache readiness.
+- Held count: 181; held breakdown: current test/doc contract 133, documented review packet 16, ambiguous generated surface 32. Unclassified count: 0.
+<!-- v4_7_7_v3_legacy_archive_and_runner_consolidation:triage-entry:end -->
 <!-- v4_7_6_eval_artifact_archive_purge:triage-entry:start -->
 ### v4_7_6 Eval Artifact Cleanup Decision Boundary
 

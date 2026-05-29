@@ -84,12 +84,12 @@ Expected answer, supporting evidence, gold fields는 답변 생성 source로 사
 
 ## Current RAG Diagnostic Status
 
-- Current RAG status: `V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY`.
-- Phase: v4_7 remains pre-official. `v4_7_6_eval_artifact_archive_purge` is cleanup/refactor only and writes `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json`; it does not replay retrieval, EvidenceBundle, or answer generation.
-- Resolver wiring: use `current` or `v4_7_6` for the latest cleanup report, and short lineage keys `v4_7_preofficial`, `v4_7_2`, `v4_7_3`, `v4_7_4`, and `v4_7_5` for preserved current-profile provenance.
+- Current RAG status: `V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY`.
+- Phase: v4_7 remains pre-official. `v4_7_7_v3_legacy_archive_and_runner_consolidation` is cleanup/refactor only and writes `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json`; it does not replay retrieval, EvidenceBundle, or answer generation.
+- Resolver wiring: use `current` or `v4_7_7` for the latest archive-aware cleanup report, `v4_7_6` for the previous archive purge report, and short lineage keys `v4_7_preofficial`, `v4_7_2`, `v4_7_3`, `v4_7_4`, and `v4_7_5` for preserved current-profile provenance.
+- v3 legacy artifact policy: generated v3 report artifacts are now classified in `ai/eval/reports/rag-ingestion/runs/v4_7_7/v3_legacy_artifact_manifest.jsonl` as externally archived/removed, deleted, or explicit holds with reasons. Counters are total 279, archived/removed 98, deleted 0, held 181 (current test/doc contract 133, documented review packet 16, ambiguous generated surface 32), unclassified 0.
+- Runner consolidation: `ai/scripts/rag_eval.py` is the stable short-key runner. It owns `current`, `v4_7_7`, `v4_7_6`, and safe legacy check aliases `v3_21` and `v3_22`; unverified legacy diagnostic entrypoints remain explicit holds rather than being silently folded.
 - v4_7 lineage preserved: v4_7_2 supersedes the abstract v4_7_1 Korean review packet with source-grounded Korean query candidates, hydrated rows 204, PDF 100, XLSX 104, and non-empty `질의문` 204; v4_7_3 applies the user-reviewed Korean query candidate CSV with `미검수=통과`; v4_7_4 replays PDF survivor 58 rows only; v4_7_5 repairs the PDF survivor EvidenceBundle diagnostic window.
-- Cleanup counters: archived 108 generated files, removed 108 after hash verification, deleted 47 transient cache entries, and held 354 ambiguous/generated surfaces.
-- Report surface: repo-local report files 399 -> 293; report bytes 170924057 -> 146192936. External archive target is used only as a redacted repo-external runtime archive.
 - Rolling evidence docs: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md` remain the canonical human-readable status ledgers; no per-run Markdown is created.
 - Hard boundary: not official metric, not gold/qrels, not relevance/answerability labels, not expected answer/evidence approval, not product-success evidence, not promotion evidence, not FT-A execution, not fine_tuning, not actual fine-tuning/training, not threshold tuning, not winner selection, not training data, and not live DB/index/cache readiness. Locked flags remain `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `ft_a_execution=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
 

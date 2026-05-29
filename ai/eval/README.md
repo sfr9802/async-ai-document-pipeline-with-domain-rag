@@ -20,8 +20,10 @@ TEXT, PDF, XLSX 문서에 질문했을 때 AI가 어떤 근거를 찾고, 어떤
 ## 현재 상태
 
 - Query/response samples: 64개 (TEXT 10, PDF 20, XLSX 34)
-- Current RAG status: `V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY`
-- v4_7_6 cleanup/refactor: `v4_7_6_eval_artifact_archive_purge` writes `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json` through `ai/scripts/rag_eval.py`; use resolver key `current` for this report and short lineage keys for v4_7_preofficial/v4_7_2/v4_7_3/v4_7_4/v4_7_5 provenance.
+- Current RAG status: `V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY`
+- v4_7_6 cleanup/refactor: `v4_7_6_eval_artifact_archive_purge` writes `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json` through `ai/scripts/rag_eval.py`; use resolver key `v4_7_6` for this prior archive-purge report and short lineage keys for v4_7_preofficial/v4_7_2/v4_7_3/v4_7_4/v4_7_5 provenance.
+- v4_7_7 archive-aware cleanup/refactor: `v4_7_7_v3_legacy_archive_and_runner_consolidation` writes `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json` through `ai/scripts/rag_eval.py`; use resolver key `current` for v4_7_7, `v4_7_6` for the prior archive purge, and safe legacy check aliases `v3_21`/`v3_22` only for verified check-only diagnostics.
+- v4_7_7 archive-aware cleanup/refactor: `v4_7_7_v3_legacy_archive_and_runner_consolidation` writes `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json` through `ai/scripts/rag_eval.py`; use resolver key `current` for this report, `v4_7_6` for the prior archive purge, and safe legacy check aliases `v3_21`/`v3_22` only for verified check-only diagnostics.
 - Sensitive-topic README display exclusion: enabled
 - Diagnostic-only policy: unchanged
 
