@@ -25,15 +25,6 @@
 FAISS/vector index metadata는 candidate generation only입니다. Citation truth는 SourceAtom/source registry에서 가져오며, expected answer/supporting evidence/gold fields는 generation source로 사용하지 않습니다.
 
 
-## Current RAG Diagnostic Status
-
-- Current RAG status: `DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY`.
-- Phase: Phase 1 closed after v3_22 as a diagnostic source-first RAG contract closure. v4 is source-grounded runtime, locator, external holdout, and fine-tuning-readiness work; v4_7 is open only as pre-official external holdout candidate registration, and v4_7_1 only prepares the Korean human review packet plus README snapshot.
-- v4_7 pre-official candidate registration: 204 rows total, PDF 100 rows from 20 source documents, XLSX 104 rows from 8 workbooks, TEXT 0 rows. Accepted PDF 20/20 source documents, accepted XLSX 8/8 workbooks, rejected 0, prior identity collisions 0, query fidelity PDF 100/100 and XLSX 104/100. External manifest SHA-256: `15b2f5f61a03bf588bf49d74a95a11259e2a6a83c0a32a727625344cae7af58c`.
-- v3_22 diagnostic answer/rendering snapshot: 14 rows, 10 answer-allowed, 10 LLM invoked, display-value used 8, raw-value fallback 1, runtime contract violations 0, vector-payload evidence-truth violations 0, `official_metric_input_rows=0`.
-- v4 reference-only diagnostics: v4_1 persisted XLSX display metadata has 17 rows, 15 persisted display values, 1 raw-value fallback, and zero runtime/vector evidence-truth violations. v4_2 carries 344 XLSX locator seen-reference rows, and v4_3 carries 329 PDF file-identity seen-reference rows; these are not official/product/promotion metrics.
-- Hard boundary: not production routing, not product-success evidence, not promotion evidence, not official metric lift, not live DB/index/cache readiness, not FT-A execution, not fine-tuning, and no headline product score. Locked flags remain `production_routing=false`, `official_metric=false`, `official_metric_input_rows=0`, `official_metric_lift=false`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, `fine_tuning_readiness_only=true`, `fine_tuning_started=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`. Review packet decisions remain pending user adjudication; official metric remains closed pending user-owned gold/qrels, expected evidence, denominator, and promotion decisions.
-
 ## Recent Focus: PDF/XLSX RAG Support
 
 | Track | Query | Evidence surface | Response |
