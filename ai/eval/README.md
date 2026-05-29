@@ -1,19 +1,63 @@
-# Evaluation Harness Samples
+# AI 문서 검색 평가 샘플
 
-이 파일은 TEXT/PDF/XLSX의 query -> evidence -> response 표면을 빠르게 보여주는 샘플입니다.
-대표 성능 benchmark나 promotion evidence가 아닙니다.
+이 문서는 `ai/eval`에서 사용하는 **문서 검색·답변 평가 샘플 README**입니다.
+TEXT, PDF, XLSX 문서에 질문했을 때 AI가 어떤 근거를 찾고, 어떤 응답을 만들었는지 한눈에 확인할 수 있게 정리했습니다.
 
-샘플 수는 총 64개입니다. 기존 balanced sample 50개(TEXT 10, PDF 20, XLSX 20)에 v3_22 XLSX display-value/cell-range diagnostic sample 14개를 더했습니다. Portfolio-facing sample과 diagnostic locator sample을 함께 쓰되,
-`Response` 칸에는 저장 응답/어댑터 응답 excerpt, 최신 diagnostic answer derivation 출력(PDF/XLSX: deterministic compiler + local LLM polish, TEXT: source-bound local LLM rewrite verifier), stored residual excerpt, 또는 fail-closed 상태가 들어갈 수 있습니다. PDF에서 목차 점선, 단독 섹션 번호, 페이지 번호, 숫자축처럼 content window가 얇은 행은 답변처럼 노출하지 않고 `PDF_CONTENT_WINDOW_TOO_THIN`으로 표시합니다.
+중요한 점은 이 문서가 “성능 점수 자랑용”이 아니라는 것입니다.
+여기서는 모델이 그럴듯한 답변을 했는지보다, **답변이 실제 문서 근거에 연결되어 있는지**, 그리고 **근거가 부족할 때 답변을 막는지**를 보여줍니다.
+
+## 한눈에 보기
+
+| 항목 | 내용 |
+|---|---|
+| 문서 목적 | RAG 평가 샘플과 진단 결과를 사람이 빠르게 확인하기 위한 README |
+| 대상 문서 | TEXT, PDF, XLSX |
+| 샘플 수 | 총 64개: TEXT 10개, PDF 20개, XLSX 34개 |
+| 보여주는 흐름 | 질문 → 근거 위치 → 응답 |
+| 핵심 포인트 | 근거 기반 답변, citation 검증, fail-closed 처리, 한국어 검수 패킷 생성 |
+| 운영 반영 여부 | 운영 배포나 공식 성능 지표가 아닌 diagnostic-only 자료 |
+
+## 이 README에서 확인할 수 있는 구현 역량
+
+| 역량 | 이 문서에서 드러나는 부분 |
+|---|---|
+| AI 검색 평가 설계 | query, evidence, response를 분리해서 샘플을 관리 |
+| 근거 기반 답변 검증 | PDF page, XLSX sheet/range/cell, TEXT chunk 단위로 출처를 남김 |
+| 안전한 실패 처리 | 근거가 얇거나 위치가 불명확하면 답변하지 않고 fail-closed 처리 |
+| 데이터 형식별 처리 | TEXT/PDF/XLSX를 같은 방식으로 뭉개지 않고 문서 형식별로 다르게 검증 |
+| 한국어 검수 프로세스 | 사람이 gold, expected answer, evidence 판단을 할 수 있는 검수 패킷 생성 |
+| 운영 경계 통제 | diagnostic-only 결과와 production/promotion evidence를 명확히 분리 |
+
+## 용어를 짧게 풀어보면
+
+| 용어 | 뜻 |
+|---|---|
+| RAG | 문서에서 관련 근거를 찾아 AI 답변에 사용하는 방식 |
+| Evidence surface | 답변이 참고한 문서 위치를 보여주는 표면. 예: PDF p.8, XLSX D352 |
+| SourceAtom | citation의 기준이 되는 원천 근거 단위 |
+| EvidenceBundle | 여러 SourceAtom을 답변용 근거 묶음으로 조립한 것 |
+| Citation truth | “답변이 실제 어떤 원문에 근거했는가”를 판단하는 기준 |
+| Diagnostic-only | 운영 성능 지표나 배포 근거가 아니라, 문제를 찾기 위한 진단 자료 |
+| Fail-closed | 근거가 부족하거나 모호하면 억지로 답하지 않는 정책 |
+| Promotion evidence | 운영 반영이나 성능 개선 주장의 근거로 쓸 수 있는 공식 증거 |
+
+## 현재 상태
 
 - Query/response samples: 64개 (TEXT 10, PDF 20, XLSX 34)
 - Current RAG status: `DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY`
 - Sensitive-topic README display exclusion: enabled
 - Diagnostic-only policy: unchanged
 
-## Query / Response Samples
+샘플은 기존 balanced sample 50개(TEXT 10, PDF 20, XLSX 20)에 v3_22 XLSX display-value/cell-range diagnostic sample 14개를 더한 구성입니다.
+`Response` 칸에는 저장 응답, 어댑터 응답 excerpt, 최신 diagnostic answer derivation 출력, stored residual excerpt, 또는 fail-closed 상태가 들어갈 수 있습니다.
 
-이 표는 query -> evidence -> response 흐름을 빠르게 확인하기 위한 샘플 표입니다. Representative benchmark가 아니며, 공식 denominator나 promotion evidence로 사용하지 않습니다.
+PDF에서 목차 점선, 단독 섹션 번호, 페이지 번호, 숫자축처럼 실제 답변 근거로 보기 어려운 content window는 답변처럼 노출하지 않고 `PDF_CONTENT_WINDOW_TOO_THIN`으로 표시합니다.
+이런 처리는 성능을 좋아 보이게 만들기 위한 장치가 아니라, 근거가 약한 답변을 막기 위한 방어선입니다.
+
+## 실제 질문·근거·응답 샘플
+
+아래 표는 실제 query → evidence → response 흐름을 빠르게 확인하기 위한 샘플입니다.
+대표 benchmark가 아니며, 공식 denominator나 promotion evidence로 사용하지 않습니다.
 
 | Track | Query | Evidence surface | Response |
 |---|---|---|---|
@@ -82,15 +126,39 @@
 | XLSX v3_22 | Sheet1 시트 셀 A1 값 알려줘 | No selected SourceAtom; mode=AMBIGUOUS_RANGE_CONTEXT_REQUIRED | diagnostic-only fail-closed: 답변하려면 파일/문서, 시트, 범위, 페이지 또는 셀을 더 구체적으로 지정해 주세요. |
 | XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 A1 값 알려줘 | No selected SourceAtom; mode=FORMAT_METADATA_UNAVAILABLE; index unavailable case | diagnostic-only fail-closed: 요청한 위치를 찾지 못했습니다. 제공된 위치 범위 안에서 답변하지 않습니다. |
 
-## Korean human review packet
+## 한국어 검수 패킷
 
-The v4_7_1 Korean human review packet is generated under `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod/` with `report.json`, `review_packet_ko.xlsx`, `review_packet_ko.csv`, `review_packet_ko.jsonl`, `review_guidelines_ko.md`, and `review_summary_ko.json`.
+v4_7_1에서는 한국어 검수자가 직접 판단할 수 있는 review packet을 생성합니다.
+생성 위치는 다음 경로입니다.
 
-The user decision columns are Korean and all start as `미검수`, `보류`, or blank. Codex did not fill gold/qrels, expected answers, supporting evidence, relevance labels, answerability labels, official denominator inclusion, or promotion policy. The completed packet should be returned as a user-owned review artifact; the next gate is user-owned adjudication of query/evidence text, gold/qrels, expected evidence, denominator policy, and promotion policy. v4_7 registration did not execute an LLM and did not provide actual query/evidence context, so the review packet keeps `질의문` blank rather than inventing text.
+```text
+ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod/
+```
 
-## Actual query and LLM response examples
+생성되는 주요 파일은 다음과 같습니다.
 
-This table is artifact-backed diagnostic evidence from v3_22 answer-allowed XLSX rows. It is not v4_7 output; v4_7 registration did not invoke an LLM. Full raw prompts and full raw LLM responses are intentionally not embedded here.
+| 파일 | 역할 |
+|---|---|
+| `report.json` | run 상태와 산출물 요약 |
+| `review_packet_ko.xlsx` | 사람이 검수하기 쉬운 엑셀 패킷 |
+| `review_packet_ko.csv` | CSV 형식 검수 데이터 |
+| `review_packet_ko.jsonl` | 자동 처리용 JSONL 검수 데이터 |
+| `review_guidelines_ko.md` | 한국어 검수 가이드 |
+| `review_summary_ko.json` | 검수 패킷 요약 |
+
+검수자가 판단해야 하는 칸은 한국어로 되어 있으며 초기값은 `미검수`, `보류`, 또는 빈 값입니다.
+Codex는 gold/qrels, expected answer, supporting evidence, relevance label, answerability label, official denominator inclusion, promotion policy를 임의로 채우지 않습니다.
+
+이 경계가 중요합니다.
+사람이 결정해야 할 정답 기준과 운영 반영 정책을 자동화가 대신 정하면, 평가 결과가 좋아 보여도 신뢰하기 어렵습니다.
+따라서 v4_7 registration은 LLM을 실행하지 않았고, 실제 query/evidence context가 없는 항목은 `질의문`을 비워 두었습니다.
+없는 내용을 추정해서 채우지 않는 쪽을 선택한 것입니다.
+
+## 실제 쿼리와 LLM 응답 예시
+
+아래 표는 v3_22 XLSX answer-allowed row에서 나온 artifact-backed diagnostic evidence입니다.
+v4_7 output이 아니며, v4_7 registration은 LLM을 호출하지 않았습니다.
+전체 raw prompt와 전체 raw LLM response는 README에 직접 넣지 않고, hash와 sanitized excerpt만 남겼습니다.
 
 | Source run | Source family | Query ID | Actual user query | Response policy bucket | Evidence truth source | Parsed final answer or sanitized LLM response excerpt | Raw response hash | Prompt hash | Diagnostic boundary |
 |---|---|---|---|---|---|---|---|---|---|
@@ -105,10 +173,20 @@ This table is artifact-backed diagnostic evidence from v3_22 answer-allowed XLSX
 | official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_broad_bounded_summary | Book.xlsx 시트 Sheet1 범위 A1:E20 값을 요약해줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | Book.xlsx 시트 Sheet1 범위 A1:E20의 일부 값은 A1이 42, B1이 12.5%, C1이 $1,234.50, D1이 2023-07-17 등으로 요약될 수 있습니다. | d6e41c9832a2a5aad575d389a641324b21aef12e2bb754a7a508671980e8a104 | 2485ba75ecd4ba5dd84ca2660b7bcc1639177787416424e191ea2729df3b0314 | diagnostic_only_non_official_not_v4_7_output |
 | official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_missing_format_metadata_fallback | Book.xlsx 시트 Sheet1 셀 G1 값 알려줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | 9999.5 | 76dab72f9ad4dea62a057e6fc47cc42341d94afa98d3d8c63fcddc5ca92d14db | 56749a3258f554414701229c9fc42f5d98ede0a663a8182961dde51c01cbf7f7 | diagnostic_only_non_official_not_v4_7_output |
 
-## Evaluation Boundary
+## 평가 경계
 
-- 이 sample README는 대표 benchmark가 아닙니다.
-- Promotion evidence, threshold tuning, winner selection, production mutation, qrels/gold/label/expected answer/supporting evidence mutation과 무관합니다.
-- SourceAtom/source registry가 citation truth이고, vector index metadata는 candidate generation surface일 뿐입니다.
-- `production_routing=false`, `official_metric=false`, `official_metric_input_rows=0`, `official_metric_lift=false`, `product_success_evidence_allowed=false`, `promotion_evidence=false`, `fine_tuning_readiness_only=true`, `fine_tuning_started=false`, `fine_tuning_executed=false`, `live_db_index_cache_readiness=false`.
-- TEXT/PDF/XLSX metrics are not collapsed into one headline score.
+이 README는 외부에 보여줄 수 있는 샘플 설명서이지만, 공식 성능 점수표는 아닙니다.
+아래 경계는 의도적으로 강하게 유지합니다.
+
+| 항목 | 정책 |
+|---|---|
+| 대표 benchmark 여부 | 아님 |
+| promotion evidence 여부 | 아님 |
+| production routing | `false` |
+| official metric | `false` |
+| official metric input rows | `0` |
+| product success evidence allowed | `false` |
+| fine-tuning readiness | readiness-only |
+| fine-tuning 실행 여부 | 실행하지 않음 |
+| live DB index cache readiness | `false` |
+| TEXT/PDF/XLSX metric 통합 | 하나의 headline score로 합치지 않음 |

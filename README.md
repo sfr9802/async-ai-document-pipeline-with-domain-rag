@@ -118,7 +118,6 @@ flowchart LR
 | [`docker-compose.yml`](docker-compose.yml) | 로컬 PostgreSQL, Redis, 선택형 MinIO/LLM 인프라 |
 | [`.env.example`](.env.example) | 로컬 실행 환경 변수 예시 |
 
-- [Evaluation harness](ai/eval/README.md)
 - [Third-party data license notice](docs/THIRD_PARTY_DATA_LICENSES.md)
 
 ## 로컬 실행 메모
