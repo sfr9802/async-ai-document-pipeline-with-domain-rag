@@ -20,6 +20,9 @@ durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
+<!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:progress-entry:start -->
+- v4_7_4 PDF survivor retrieval/evidence/answer quality replay (`official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod`) is V4_7_4_PDF_SURVIVOR_RETRIEVAL_EVIDENCE_ANSWER_QUALITY_REPLAY_NONPROD_READY. It replays only PDF survivor 58 rows from v4_7_3; XLSX remains out of scope because passed XLSX count is 0. EvidenceBundle created 58 rows, sufficient proxy 35 rows, weak window 23 rows, generated_response_count 33. It is not official metric, gold/qrels, labels, expected-answer/evidence approval, training data, product-success evidence, promotion evidence, FT-A execution, fine-tuning, or live readiness.
+<!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:progress-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod:progress-entry:start -->
 - v4_7_3 human-reviewed Korean query candidate pass/exclusion application (`official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod`) is V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLUSION_APPLICATION_NONPROD_READY. It applies the user-reviewed CSV over the v4_7_2 hydrated Korean review packet, treating `미검수=통과` per user clarification when `제외사유` is blank. It freezes query candidate decisions only: user-passed 58 rows and user-excluded 146 rows. It does not create official metric rows, gold/qrels, relevance or answerability labels, expected-answer/evidence approvals, training data, product-success evidence, promotion evidence, FT-A execution, fine-tuning, or live readiness.
 <!-- official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod:progress-entry:end -->
@@ -185,7 +188,7 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLUSION_APPLICATION_NONPROD_READY`;
+Overall status: `V4_7_4_PDF_SURVIVOR_RETRIEVAL_EVIDENCE_ANSWER_QUALITY_REPLAY_NONPROD_READY`;
 current latest v4_6 run remains v4_6_12:
 `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`;
 current Phase 1 FastAPI diagnostic/internal integration marker:

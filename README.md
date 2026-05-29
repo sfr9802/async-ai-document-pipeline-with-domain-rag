@@ -84,12 +84,12 @@ Expected answer, supporting evidence, gold fields는 답변 생성 source로 사
 
 ## Current RAG Diagnostic Status
 
-- Current RAG status: `V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLUSION_APPLICATION_NONPROD_READY`.
-- Phase: v4_7 remains pre-official. v4_7_3 applies the user-reviewed Korean query candidate CSV over the v4_7_2 hydrated packet and freezes pass/exclusion decisions only.
-- v4_7_2 supersedes the abstract v4_7_1 Korean review packet with source-grounded Korean query candidates; hydrated rows 204, PDF 100, XLSX 104, and non-empty `질의문` 204 before this decision application.
-- v4_7_3 counters: reviewed rows 204, PDF 100, XLSX 104; user-passed query candidates 58; user-excluded rows 146. `미검수=통과` is applied per user clarification when `제외사유` is blank.
-- Rolling evidence docs: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md` remain the canonical human-readable status ledgers; this packet decision application is not production promotion evidence.
-- Hard boundary: not official metric, not gold/qrels, not relevance/answerability labels, not expected answer/evidence approval, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, not training data, and not live DB/index/cache readiness. Locked flags remain `official_metric=false`, `official_metric_input_rows=0`, `v4_7_official_metric_gate_opened=false`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `ft_a_execution=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
+- Current RAG status: `V4_7_4_PDF_SURVIVOR_RETRIEVAL_EVIDENCE_ANSWER_QUALITY_REPLAY_NONPROD_READY`.
+- Phase: v4_7 remains pre-official. v4_7_4 replays the v4_7_3 user-passed PDF survivor set only; XLSX remains parked because v4_7_3 passed XLSX count is 0.
+- v4_7_2 supersedes the abstract v4_7_1 Korean review packet with source-grounded Korean query candidates; hydrated rows 204, PDF 100, XLSX 104, and non-empty `질의문` 204. v4_7_3 applies the user-reviewed Korean query candidate CSV with `미검수=통과`; v4_7_4 now measures PDF survivor retrieval/evidence/answer-quality proxies.
+- v4_7_4 counters: PDF survivor 58, evidence_bundle_created 58, evidence_window_sufficient_proxy 35, weak_evidence_window 23, generated_response_count 33.
+- Rolling evidence docs: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md` remain the canonical human-readable status ledgers; this replay is not production promotion evidence.
+- Hard boundary: not official metric, not gold/qrels, not relevance/answerability labels, not expected answer/evidence approval, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, not training data, and not live DB/index/cache readiness. Locked flags remain `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `ft_a_execution=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
 
 ## 전체 구조
 
@@ -172,6 +172,7 @@ python -X utf8 -m py_compile ai\scripts\rag_v4_7_preofficial_external_holdout_ca
 python -X utf8 -m py_compile ai\scripts\rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod.py
 python -X utf8 -m py_compile ai\scripts\rag_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod.py
 python -X utf8 -m py_compile ai\scripts\rag_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod.py
+python -X utf8 -m py_compile ai\scripts\rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py
 python -X utf8 ai\scripts\rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py --check --candidate-manifest <external-candidate-manifest-jsonl>
 python -X utf8 ai\scripts\rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py --check
 python -X utf8 ai\scripts\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py --check
@@ -195,6 +196,7 @@ python -X utf8 ai\scripts\rag_v4_6_12_external_holdout_runtime_replay_route_pari
 python -X utf8 ai\scripts\rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod.py --check
 python -X utf8 ai\scripts\rag_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod.py --check
 python -X utf8 ai\scripts\rag_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod.py --check
+python -X utf8 ai\scripts\rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py --check
 ```
 
 ## 라이선스와 외부 데이터

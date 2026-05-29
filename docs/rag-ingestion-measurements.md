@@ -1,3 +1,29 @@
+<!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:measurements-entry:start -->
+### v4_7_4 PDF Survivor Retrieval/Evidence/Answer Quality Replay
+
+- Run: `official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod/report.json`; row-level replay detail is embedded in `report.json` only.
+- Interpretation: all metrics are diagnostic proxies over the v4_7_3 PDF survivor candidate set. They are not official metric rows and do not use gold/qrels, expected answers, supporting evidence approvals, hidden target locators, or source-file title shortcuts.
+
+| Counter | Value |
+|---|---:|
+| pdf_survivor_row_count | 58 |
+| xlsx_rows_in_scope | 0 |
+| file_identity_hit_proxy_at1 | 58 |
+| file_identity_hit_proxy_at3 | 58 |
+| page_locator_signal_present_count | 58 |
+| block_candidate_available_count | 58 |
+| evidence_bundle_created_count | 58 |
+| source_atom_hydration_success_count | 58 |
+| evidence_window_sufficient_proxy_count | 35 |
+| weak_evidence_window_count | 23 |
+| citation_support_proxy_count | 30 |
+| generated_response_count | 33 |
+| unsupported_claim_risk_count | 8 |
+| context_understanding_miss_count | 0 |
+| official_metric_input_rows | 0 |
+| training_dataset_created | false |
+<!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:measurements-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod:measurements-entry:start -->
 ### v4_7_3 Human-Reviewed Korean Query Candidate Pass/Exclusion Application
 

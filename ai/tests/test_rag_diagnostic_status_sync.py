@@ -14,11 +14,12 @@ PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+V4_7_4_CURRENT_STATUS = "V4_7_4_PDF_SURVIVOR_RETRIEVAL_EVIDENCE_ANSWER_QUALITY_REPLAY_NONPROD_READY"
 V4_7_3_CURRENT_STATUS = "V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLUSION_APPLICATION_NONPROD_READY"
 V4_7_2_CURRENT_STATUS = "DIAGNOSTIC_V4_7_2_SOURCE_GROUNDED_KOREAN_QUERY_REVIEW_PACKET_HYDRATION_NONPROD_READY"
 V4_7_1_CURRENT_STATUS = "DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY"
 V4_7_CURRENT_STATUS = "V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY"
-CURRENT_RAG_STATUS = V4_7_3_CURRENT_STATUS
+CURRENT_RAG_STATUS = V4_7_4_CURRENT_STATUS
 V4_6_CLOSEOUT_CURRENT_STATUS = CURRENT_RAG_STATUS
 V4_6_12_CURRENT_STATUS = V4_6_CLOSEOUT_CURRENT_STATUS
 V4_6_11_CURRENT_STATUS = V4_6_12_CURRENT_STATUS
@@ -50,6 +51,7 @@ V4_7_SCRIPT = "rag_v4_7_preofficial_external_holdout_candidate_manifest_registra
 V4_7_1_SCRIPT = "rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod.py"
 V4_7_2_SCRIPT = "rag_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod.py"
 V4_7_3_SCRIPT = "rag_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod.py"
+V4_7_4_SCRIPT = "rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py"
 
 
 def _readme_verify_section(readme: str) -> str:
@@ -9013,3 +9015,131 @@ def test_v4_7_3_human_reviewed_korean_query_candidate_records_status_docs_and_gu
     assert "pass 표기로 override" in triage_section
     assert "all XLSX candidates are user-excluded" in triage_section
     assert "not official metric" in triage_section
+
+
+def test_v4_7_4_pdf_survivor_replay_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod"
+    event_type = "diagnostic_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod"
+    source_run_id = "official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod"
+    source_hydration_run_id = "official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
+    report_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    report_path = report_dir / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    metrics = report["metrics"]
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_7_4 PDF Survivor Retrieval/Evidence/Answer Quality Replay",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_7_4 PDF Survivor Failure Taxonomy And Decision Boundary",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = _readme_verify_section(readme)
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == V4_7_4_CURRENT_STATUS
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["non_production"] is True
+    assert event["pdf_survivor_row_count"] == 58
+    assert event["xlsx_rows_in_scope"] == 0
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["label_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["denominator_mutation"] is False
+    assert event["training_dataset_created"] is False
+    assert event["ft_a_execution"] is False
+    assert event["fine_tuning"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["raw_pdf_query_time_parsing"] is False
+    assert event["broad_source_atom_scan_attempt_count"] == 0
+    assert event["vector_payload_evidence_truth_violation_count"] == 0
+    assert event["hidden_target_locator_used"] is False
+    assert event["expected_or_supporting_gold_text_used"] is False
+    assert event["source_file_title_shortcut_used"] is False
+    assert event["source_run_id"] == source_run_id
+    assert event["source_hydration_run_id"] == source_hydration_run_id
+
+    assert report["schema_version"] == "rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_report_v1"
+    assert report["status"] == V4_7_4_CURRENT_STATUS
+    assert report["source_run_id"] == source_run_id
+    assert report["source_hydration_run_id"] == source_hydration_run_id
+    assert report["pdf_survivor_row_count"] == 58
+    assert report["xlsx_rows_in_scope"] == 0
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["protected_namespaces_touched"] == []
+    assert report["raw_pdf_query_time_parsing"] is False
+    assert report["broad_source_atom_scan_attempt_count"] == 0
+    assert report["SearchView_vector_payload_role"] == "candidate_only"
+    assert report["SourceAtom_EvidenceBundle_role"] == "evidence_truth"
+    assert len(report["pdf_survivor_replay_ledger"]) == 58
+    assert all(row["source_family"] == "PDF" for row in report["pdf_survivor_replay_ledger"])
+    assert all(row["llm_invoked"] is False for row in report["pdf_survivor_replay_ledger"] if not row["answer_ready_evidence_bundle"])
+
+    assert metrics["file_identity"]["file_identity_hit_proxy_at1"] == 58
+    assert metrics["file_identity"]["file_identity_hit_proxy_at3"] == 58
+    assert metrics["file_identity"]["query_visible_locator_signal_present_count"] == 50
+    assert metrics["locator"]["page_locator_signal_present_count"] == 58
+    assert metrics["locator"]["block_candidate_available_count"] == 58
+    assert metrics["evidence_bundle"]["evidence_bundle_created_count"] == 58
+    assert metrics["evidence_bundle"]["source_atom_hydration_success_count"] == 58
+    assert metrics["evidence_bundle"]["evidence_window_sufficient_proxy_count"] == 35
+    assert metrics["evidence_bundle"]["weak_evidence_window_count"] == 23
+    assert metrics["evidence_bundle"]["vector_payload_evidence_truth_violation_count"] == 0
+    assert metrics["llm_answer_quality"]["answer_ready_evidence_bundle_count"] == 35
+    assert metrics["llm_answer_quality"]["generated_response_count"] <= 35
+    assert metrics["llm_answer_quality"]["fake_answer_emitted_count"] == 0
+    assert metrics["failure_taxonomy"]["ANSWER_READY"] == 35
+    assert metrics["failure_taxonomy"]["RIGHT_PAGE_WEAK_WINDOW"] == 23
+
+    assert f"Overall status: `{CURRENT_RAG_STATUS}`;" in current_text
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in readme
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in eval_readme
+    assert "PDF survivor 58" in readme
+    assert "not official metric" in readme
+    assert "v4_7_4 replays only the 58 user-passed PDF survivor candidates" in eval_readme
+    assert V4_7_4_SCRIPT in readme_verify_section
+    assert V4_7_4_SCRIPT in scripts_readme
+
+    assert run_id in current_text
+    assert "PDF survivor 58" in current_text
+    assert "not official metric" in current_text
+    assert run_id in measurements_section
+    assert "| pdf_survivor_row_count | 58 |" in measurements_section
+    assert "| xlsx_rows_in_scope | 0 |" in measurements_section
+    assert "| file_identity_hit_proxy_at1 | 58 |" in measurements_section
+    assert "| evidence_window_sufficient_proxy_count | 35 |" in measurements_section
+    assert "| weak_evidence_window_count | 23 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "| training_dataset_created | false |" in measurements_section
+
+    assert run_id in triage_section
+    assert "SourceAtom/EvidenceBundle remains evidence truth" in triage_section
+    assert "RIGHT_PAGE_WEAK_WINDOW" in triage_section
+    assert "ANSWER_READY" in triage_section
+    assert "XLSX remains parked" in triage_section

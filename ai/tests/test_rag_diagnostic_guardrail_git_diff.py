@@ -4508,6 +4508,121 @@ def test_v4_7_3_human_reviewed_korean_query_candidate_decision_does_not_mutate_p
     assert "raw_llm_response" not in event
 
 
+def test_v4_7_4_pdf_survivor_replay_does_not_mutate_protected_or_promote_surfaces():
+    run_id = "official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod"
+    event_type = "diagnostic_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod"
+    report_path = REPORT_DIR / "quality" / run_id / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    protected_paths = (
+        *STRICT_PROTECTED_PATHS,
+        *V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS,
+        "ai/eval/eval_queries",
+        "ai/eval/silver/answer_citation_silver_manifest_v1.json",
+        "ai/eval/silver/answer_citation_silver_readiness_v1.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/build.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
+        "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/build.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/ingest_manifest.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/source_inventory.json",
+        "ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/faiss.index",
+        "ai/eval/source_registry/source_atom_registry_v1.jsonl",
+        "ai/eval/source_registry/source_atom_registry_build.json",
+        "ai/eval/source_registry/source_atom_registry_inventory.json",
+        "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    )
+
+    for protected_path in protected_paths:
+        unstaged = subprocess.run(
+            ["git", "diff", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", protected_path],
+            cwd=ROOT,
+            check=False,
+        )
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    report = read_json(report_path)
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert report["diagnostic_only"] is True
+    assert report["non_production"] is True
+    assert report["pdf_survivor_row_count"] == 58
+    assert report["xlsx_rows_in_scope"] == 0
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["gold_mutation"] is False
+    assert report["qrels_mutation"] is False
+    assert report["label_mutation"] is False
+    assert report["expected_answer_mutation"] is False
+    assert report["supporting_evidence_mutation"] is False
+    assert report["denominator_mutation"] is False
+    assert report["training_dataset_created"] is False
+    assert report["ft_a_execution"] is False
+    assert report["fine_tuning"] is False
+    assert report["promotion_evidence"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["protected_namespaces_touched"] == []
+    assert report["raw_pdf_query_time_parsing"] is False
+    assert report["broad_source_atom_scan_attempt_count"] == 0
+    assert report["vector_payload_evidence_truth_violation_count"] == 0
+    assert report["hidden_target_locator_used"] is False
+    assert report["expected_or_supporting_gold_text_used"] is False
+    assert report["source_file_title_shortcut_used"] is False
+    assert report["SearchView_vector_payload_role"] == "candidate_only"
+    assert report["SourceAtom_EvidenceBundle_role"] == "evidence_truth"
+    assert report["metrics"]["evidence_bundle"]["evidence_bundle_created_count"] == 58
+    assert report["metrics"]["evidence_bundle"]["vector_payload_evidence_truth_violation_count"] == 0
+    assert "prompt_payload" not in report
+    assert "raw_llm_response" not in report
+    assert "raw_response_payload" not in report
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["diagnostic_only"] is True
+    assert event["non_production"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["ft_a_execution"] is False
+    assert event["fine_tuning"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["qrels_mutation"] is False
+    assert event["gold_mutation"] is False
+    assert event["label_mutation"] is False
+    assert event["training_dataset_created"] is False
+    assert event["pdf_survivor_row_count"] == 58
+    assert event["xlsx_rows_in_scope"] == 0
+    assert event["raw_pdf_query_time_parsing"] is False
+    assert event["broad_source_atom_scan_attempt_count"] == 0
+    assert event["vector_payload_evidence_truth_violation_count"] == 0
+    assert event["hidden_target_locator_used"] is False
+    assert event["artifact_paths"]["report_json"] == report_path.relative_to(ROOT).as_posix()
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert "prompt_manifest" not in event
+    assert "per_query" not in event
+    assert "raw_llm_response" not in event
+
+
 def test_v4_6_1_holdout_manifest_identity_contract_bridge_does_not_mutate_or_promote_surfaces():
     run_id = "official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod"
     event_type = "diagnostic_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod"

@@ -208,7 +208,6 @@ def test_v4_7_3_guardrails_docs_status_and_idempotence() -> None:
         1,
     )[1].split("\n### ", 1)[0]
 
-    assert f"Overall status: `{STATUS}`;" in progress_current
     assert RUN_ID in progress_current
     assert "미검수=통과" in progress_current
     assert "official metric rows" in progress_current

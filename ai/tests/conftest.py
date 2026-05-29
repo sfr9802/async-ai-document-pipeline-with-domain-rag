@@ -26,6 +26,7 @@ CURRENT_RAG_TEST_FILES = frozenset(
         "ai/tests/test_rag_answer_citation_silver_manifest_v1.py",
         "ai/tests/test_rag_v4_7_2_korean_review_packet_hydration_contract.py",
         "ai/tests/test_rag_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_contract.py",
+        "ai/tests/test_rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_contract.py",
         "ai/tests/test_fastapi_phase1_diagnostic_rag_route_v1.py",
     }
 )

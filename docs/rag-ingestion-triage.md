@@ -1,3 +1,12 @@
+<!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:triage-entry:start -->
+### v4_7_4 PDF Survivor Failure Taxonomy And Decision Boundary
+
+- Run: `official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod`
+- Scope: PDF survivor 58 rows from v4_7_3 only. XLSX remains parked because v4_7_3 passed XLSX count is 0.
+- Evidence boundary: SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only. Query-time raw PDF parsing, broad SourceAtom scans, hidden target/gold locator use, expected/supporting gold text use, and source-file title shortcuts remain disabled.
+- Failure buckets: FILE_IDENTITY_MISS 0; FILE_IDENTITY_AMBIGUOUS 0; RIGHT_FILE_WRONG_PAGE 0; RIGHT_PAGE_WEAK_WINDOW 23; TABLE_OR_FIGURE_STRUCTURE_LOST 2; CONTEXT_NEIGHBOR_MISSING 23; EVIDENCE_UNDERUSE 7; OVER_ABSTAIN 0; UNSUPPORTED_CLAIM_RISK 8; ANSWER_READY 35; CONTRACT_FAIL_CLOSED 25.
+- It is not official metric, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, not training data, and not live DB/index/cache readiness.
+<!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:triage-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod:triage-entry:start -->
 ### v4_7_3 Human-Reviewed Korean Query Candidate Decision Boundary
 
