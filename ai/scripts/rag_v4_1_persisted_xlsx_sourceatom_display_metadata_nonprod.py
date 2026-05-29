@@ -73,6 +73,10 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return v322.read_jsonl(path)
 
 
+def artifact_exists(path: Path) -> bool:
+    return v322.artifact_exists(path)
+
+
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
     v322.write_json(path, payload)
 
@@ -600,7 +604,7 @@ def artifact_sha256_from_report_paths(artifact_paths: Mapping[str, str]) -> dict
         path = Path(path_text)
         if not path.is_absolute():
             path = ROOT / path_text
-        if path.exists():
+        if artifact_exists(path):
             hashes[f"{key}_sha256"] = sha256_file(path)
     return hashes
 

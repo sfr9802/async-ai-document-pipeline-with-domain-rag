@@ -21,6 +21,10 @@ failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
 
+<!-- v4_7_6_eval_artifact_archive_purge:progress-entry:start -->
+- v4_7_6_eval_artifact_archive_purge is V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json`. This is cleanup/refactor only: current lineage reports now resolve through short keys `v4_7_preofficial`, `v4_7_2`, `v4_7_3`, `v4_7_4`, `v4_7_5`, and `current`. External archive target resolved=true and redacted; archived 108 files, removed 108, deleted transient cache 47, and held 354 ambiguous/generated surfaces for manual review. Repo-local report files moved 399 -> 293 and bytes 170924057 -> 146192936. Protected namespaces remain untouched. This does not run retrieval, EvidenceBundle repair, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator mutation, training, FT-A, fine_tuning, promotion, product-success, or live readiness.
+<!-- v4_7_6_eval_artifact_archive_purge:progress-entry:end -->
+
 <!-- v4_7_5_pdf_evidence_repair_eval_compaction:progress-entry:start -->
 - v4_7_5_pdf_evidence_repair_eval_compaction is V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json`. EvidenceBundle v2 replays the v4_7_4 PDF survivor 58 rows only: evidence_window_sufficient_proxy 35 -> 48, weak_evidence_window 23 -> 10, missing_neighbor_context 23 -> 10, table_or_figure_structure_repaired 2, prior answer-ready regressions 0. Artifact compaction uses the short run path, keeps the v4_7_4 long path as a resolver alias, records generated ignored artifacts in `ai/eval/reports/rag-ingestion/archive_manifest.jsonl`, and skips physical cleanup until an external archive target is explicit. This remains diagnostic-only: not official metric, not gold/qrels, not labels, not expected/supporting evidence approval, not training data, not promotion evidence, not product-success evidence, and not live readiness.
 <!-- v4_7_5_pdf_evidence_repair_eval_compaction:progress-entry:end -->
@@ -192,7 +196,7 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY`;
+Overall status: `V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY`;
 current latest v4_6 run remains v4_6_12:
 `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`;
 current Phase 1 FastAPI diagnostic/internal integration marker:

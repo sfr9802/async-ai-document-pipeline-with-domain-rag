@@ -109,6 +109,14 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return v451.read_jsonl(path)
 
 
+def artifact_exists(path: Path) -> bool:
+    return v451.artifact_exists(path)
+
+
+def resolve_report_artifact_path(path: Path) -> Path:
+    return v451.v45.v44.v43.v42.v41.v322.diagnostic_common.resolve_report_artifact_path(path)
+
+
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
     v451.write_json(path, payload)
 
@@ -237,15 +245,16 @@ def load_prior_identity_summary_report(path: Path | None) -> tuple[dict[str, Any
     }
     if path is None:
         return {}, metadata
-    if not path.exists():
+    if not artifact_exists(path):
         metadata["load_error"] = "prior_identity_summary_report_file_missing"
         return {}, metadata
     metadata["exists"] = True
-    if not path.is_file():
+    resolved = resolve_report_artifact_path(path)
+    if not resolved.is_file():
         metadata["load_error"] = "prior_identity_summary_report_path_not_file"
         return {}, metadata
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(resolved.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         metadata["load_error"] = "prior_identity_summary_report_invalid_json"
         return {}, metadata
@@ -583,7 +592,7 @@ def default_minimum_targets(source_report: Mapping[str, Any]) -> dict[str, int]:
 
 
 def load_v4_5_1_report() -> dict[str, Any]:
-    if v451.REPORT_JSON.exists():
+    if artifact_exists(v451.REPORT_JSON):
         return read_json(v451.REPORT_JSON)
     return v451.build_artifacts()["report"]
 
@@ -595,12 +604,12 @@ def source_run_references(source_report: Mapping[str, Any]) -> dict[str, Any]:
             "previous_gate_run_id": v451.RUN_ID,
             "previous_gate_report_json": repo_relative(v451.REPORT_JSON),
             "previous_gate_report_sha256": sha256_file(v451.REPORT_JSON)
-            if v451.REPORT_JSON.exists()
+            if artifact_exists(v451.REPORT_JSON)
             else "",
             "v4_5_1_report_json": repo_relative(v451.REPORT_JSON),
             "v4_5_report_json": repo_relative(v451.v45.REPORT_JSON),
             "v4_5_report_sha256": sha256_file(v451.v45.REPORT_JSON)
-            if v451.v45.REPORT_JSON.exists()
+            if artifact_exists(v451.v45.REPORT_JSON)
             else "",
         }
     )
@@ -703,7 +712,7 @@ def build_report(
             and prior_identity_summary_report_path is None
             and prior_identity_rows is None
             and prior_identity_ledger_path is None
-            and V4_5_3_REPORT_JSON.exists()
+            and artifact_exists(V4_5_3_REPORT_JSON)
         )
         else None
     )
@@ -963,7 +972,7 @@ def artifact_sha256_from_report_paths(artifact_paths: Mapping[str, str]) -> dict
         path = Path(path_text)
         if not path.is_absolute():
             path = ROOT / path_text
-        if path.exists():
+        if artifact_exists(path):
             hashes[f"{key}_sha256"] = sha256_file(path)
     return hashes
 

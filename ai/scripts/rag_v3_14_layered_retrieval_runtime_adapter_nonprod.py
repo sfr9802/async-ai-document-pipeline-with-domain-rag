@@ -91,6 +91,8 @@ read_json = diagnostic_common.read_json
 read_jsonl = diagnostic_common.read_jsonl
 write_json = diagnostic_common.write_json
 write_jsonl = diagnostic_common.write_jsonl
+artifact_exists = diagnostic_common.artifact_exists
+artifact_is_file = diagnostic_common.artifact_is_file
 
 
 def repo_relative(path: Path) -> str:
@@ -989,7 +991,7 @@ def build_artifacts() -> dict[str, Any]:
         "v3_10_holdout_manifest_json": v310.OUTPUTS["fresh_real_holdout_manifest_json"],
         "source_registry_jsonl": v392.SOURCE_REGISTRY_JSONL,
     }
-    missing = [repo_relative(path) for path in input_paths.values() if not path.exists()]
+    missing = [repo_relative(path) for path in input_paths.values() if not artifact_exists(path)]
     if missing:
         raise FileNotFoundError("missing required v3_14 input artifacts: " + ", ".join(missing))
     input_lineage = build_input_lineage(input_paths)

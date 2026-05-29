@@ -8342,10 +8342,22 @@ def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_onl
     pdf_rows = read_jsonl(REPORT_DIR / "pdf_candidate_v1.jsonl")
     status_events = read_jsonl(REPORT_DIR / "status.jsonl")
     smoke = read_json(REPORT_DIR / "smoke_v1.json")
+    v476_cleanup_manifest = REPORT_DIR / "runs" / "v4_7_6" / "cleanup_manifest.jsonl"
+    v476_archived_root_filenames: set[str] = set()
+    if v476_cleanup_manifest.exists():
+        for row in read_jsonl(v476_cleanup_manifest):
+            original = Path(str(row.get("original_relative_path", "")))
+            if (
+                row.get("classification") == "ARCHIVE_THEN_REMOVE"
+                and row.get("removed_from_repo_at")
+                and original.parent == Path("ai/eval/reports/rag-ingestion")
+            ):
+                v476_archived_root_filenames.add(original.name)
 
-    assert {path.name for path in REPORT_DIR.iterdir() if path.is_file()} == CURRENT_REPORT_FILENAMES | {
-        "archive_manifest.jsonl"
-    }
+    assert (
+        {path.name for path in REPORT_DIR.iterdir() if path.is_file()} | v476_archived_root_filenames
+        == CURRENT_REPORT_FILENAMES | {"archive_manifest.jsonl"}
+    )
     assert "v3_comparable_summary.md" not in ARCHIVED_REPORT_FILENAMES
     assert not (archived_report_dir() / "v3_comparable_summary.md").exists()
     assert {path.name for path in archived_report_dir().iterdir()} == ARCHIVED_REPORT_FILENAMES

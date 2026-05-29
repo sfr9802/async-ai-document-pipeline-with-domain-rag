@@ -201,6 +201,14 @@ def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
     v316.write_jsonl(path, rows)
 
 
+def artifact_exists(path: Path) -> bool:
+    return v316.artifact_exists(path)
+
+
+def artifact_is_file(path: Path) -> bool:
+    return v316.artifact_is_file(path)
+
+
 def sha256_file(path: Path) -> str:
     return v316.sha256_file(path)
 
@@ -547,7 +555,8 @@ def build_input_paths() -> dict[str, Path]:
 
 
 def lineage_entry(path: Path) -> dict[str, Any]:
-    return {"exists": path.exists(), "path": repo_relative(path), "sha256": sha256_file(path) if path.exists() else ""}
+    exists = artifact_exists(path)
+    return {"exists": exists, "path": repo_relative(path), "sha256": sha256_file(path) if exists else ""}
 
 
 def build_input_lineage(input_paths: Mapping[str, Path]) -> dict[str, Any]:
@@ -555,7 +564,7 @@ def build_input_lineage(input_paths: Mapping[str, Path]) -> dict[str, Any]:
 
 
 def require_input_artifacts(input_paths: Mapping[str, Path]) -> None:
-    missing = [repo_relative(path) for path in input_paths.values() if not path.exists()]
+    missing = [repo_relative(path) for path in input_paths.values() if not artifact_exists(path)]
     if missing:
         raise FileNotFoundError("missing required v3_17 input artifacts: " + ", ".join(missing))
 

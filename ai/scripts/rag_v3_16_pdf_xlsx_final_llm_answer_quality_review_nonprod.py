@@ -179,15 +179,24 @@ def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
     v315.write_jsonl(path, rows)
 
 
+def artifact_exists(path: Path) -> bool:
+    return v315.artifact_exists(path)
+
+
+def artifact_is_file(path: Path) -> bool:
+    return v315.artifact_is_file(path)
+
+
 def ratio(numerator: int, denominator: int) -> dict[str, Any]:
     return v315.ratio(numerator, denominator)
 
 
 def lineage_entry(path: Path) -> dict[str, Any]:
+    exists = artifact_exists(path)
     return {
         "path": repo_relative(path),
-        "exists": path.exists(),
-        "sha256": sha256_file(path) if path.exists() and path.is_file() else "",
+        "exists": exists,
+        "sha256": sha256_file(path) if exists and artifact_is_file(path) else "",
     }
 
 
@@ -212,7 +221,7 @@ def build_input_lineage(input_paths: Mapping[str, Path]) -> dict[str, Any]:
 
 
 def require_input_artifacts(input_paths: Mapping[str, Path]) -> None:
-    missing = [repo_relative(path) for path in input_paths.values() if not path.exists()]
+    missing = [repo_relative(path) for path in input_paths.values() if not artifact_exists(path)]
     if missing:
         raise FileNotFoundError("missing required v3_16 input artifacts: " + ", ".join(missing))
 
@@ -787,7 +796,7 @@ def query_lookup_from_quality_artifacts() -> dict[str, str]:
         / "quality"
         / "pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_responses.jsonl"
     )
-    if not responses_path.exists():
+    if not artifact_exists(responses_path):
         return {}
     lookup: dict[str, str] = {}
     for row in read_jsonl(responses_path):

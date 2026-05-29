@@ -84,13 +84,14 @@ Expected answer, supporting evidence, gold fields는 답변 생성 source로 사
 
 ## Current RAG Diagnostic Status
 
-- Current RAG status: `V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY`.
-- Phase: v4_7 remains pre-official. `v4_7_5_pdf_evidence_repair_eval_compaction` repairs the v4_7_4 PDF survivor EvidenceBundle window diagnostics at `ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json`; XLSX remains parked because v4_7_3 passed XLSX count is 0.
-- v4_7_2 supersedes the abstract v4_7_1 Korean review packet with source-grounded Korean query candidates; hydrated rows 204, PDF 100, XLSX 104, and non-empty `질의문` 204. v4_7_3 applies the user-reviewed Korean query candidate CSV with `미검수=통과`; v4_7_4 replays only the 58 user-passed PDF survivor candidates.
-- EvidenceBundle v2 counters: PDF survivor 58, evidence_window_sufficient_proxy 35 -> 48, weak_evidence_window 23 -> 10, missing_neighbor_context 23 -> 10, table_or_figure_structure_repaired 2, prior answer-ready regressions 0.
-- Eval surface compaction: current run output uses the short `runs/v4_7_5/report.json` path and `ai/scripts/rag_eval.py`; legacy v4_7_4 long path remains a resolver alias for compatibility.
-- Rolling evidence docs: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md` remain the canonical human-readable status ledgers; this replay is not production promotion evidence.
-- Hard boundary: not official metric, not gold/qrels, not relevance/answerability labels, not expected answer/evidence approval, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, not training data, and not live DB/index/cache readiness. Locked flags remain `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `ft_a_execution=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
+- Current RAG status: `V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY`.
+- Phase: v4_7 remains pre-official. `v4_7_6_eval_artifact_archive_purge` is cleanup/refactor only and writes `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json`; it does not replay retrieval, EvidenceBundle, or answer generation.
+- Resolver wiring: use `current` or `v4_7_6` for the latest cleanup report, and short lineage keys `v4_7_preofficial`, `v4_7_2`, `v4_7_3`, `v4_7_4`, and `v4_7_5` for preserved current-profile provenance.
+- v4_7 lineage preserved: v4_7_2 supersedes the abstract v4_7_1 Korean review packet with source-grounded Korean query candidates, hydrated rows 204, PDF 100, XLSX 104, and non-empty `질의문` 204; v4_7_3 applies the user-reviewed Korean query candidate CSV with `미검수=통과`; v4_7_4 replays PDF survivor 58 rows only; v4_7_5 repairs the PDF survivor EvidenceBundle diagnostic window.
+- Cleanup counters: archived 108 generated files, removed 108 after hash verification, deleted 47 transient cache entries, and held 354 ambiguous/generated surfaces.
+- Report surface: repo-local report files 399 -> 293; report bytes 170924057 -> 146192936. External archive target is used only as a redacted repo-external runtime archive.
+- Rolling evidence docs: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md` remain the canonical human-readable status ledgers; no per-run Markdown is created.
+- Hard boundary: not official metric, not gold/qrels, not relevance/answerability labels, not expected answer/evidence approval, not product-success evidence, not promotion evidence, not FT-A execution, not fine_tuning, not actual fine-tuning/training, not threshold tuning, not winner selection, not training data, and not live DB/index/cache readiness. Locked flags remain `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `ft_a_execution=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
 
 
 ## 전체 구조

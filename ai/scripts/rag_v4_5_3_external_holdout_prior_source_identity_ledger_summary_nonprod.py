@@ -73,6 +73,10 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return v452.read_jsonl(path)
 
 
+def artifact_exists(path: Path) -> bool:
+    return v452.artifact_exists(path)
+
+
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
     v452.write_json(path, payload)
 
@@ -507,9 +511,10 @@ def write_artifacts(artifacts: Mapping[str, Any], *, output_dir: Path = OUTPUT_D
 
 
 def artifact_sha256_from_report_paths(paths: Mapping[str, str]) -> dict[str, str]:
-    return {
-        "report_json_sha256": sha256_file(ROOT / paths["report_json"]) if not Path(paths["report_json"]).is_absolute() else sha256_file(Path(paths["report_json"]))
-    }
+    path = Path(paths["report_json"])
+    if not path.is_absolute():
+        path = ROOT / path
+    return {"report_json_sha256": sha256_file(path) if artifact_exists(path) else ""}
 
 
 def append_status_event(report: Mapping[str, Any]) -> None:

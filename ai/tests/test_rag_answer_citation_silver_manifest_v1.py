@@ -14,6 +14,8 @@ from typing import Any
 
 import pytest
 
+from ai.eval.harness import rag_diagnostic_common as diagnostic_common
+
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -329,7 +331,7 @@ V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_BUCKETS = [
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not resolve_report_artifact_path(path).exists()]
     if not missing:
         return
     message = "missing v3_7_2 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -339,7 +341,7 @@ def require_v3_7_2_local_artifacts(*paths: Path) -> None:
 
 
 def require_pdf_xlsx_answer_quality_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not resolve_report_artifact_path(path).exists()]
     if not missing:
         return
     message = "missing PDF/XLSX answer-quality local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -19201,6 +19203,9 @@ def official_denominator_query_ids() -> set[str]:
 
 
 def resolve_report_artifact_path(path: Path) -> Path:
+    resolved = diagnostic_common.resolve_report_artifact_path(path)
+    if resolved.exists() or resolved != path:
+        return resolved
     if path.exists():
         return path
     if path.parent == REPORT_ARCHIVE_DIR:

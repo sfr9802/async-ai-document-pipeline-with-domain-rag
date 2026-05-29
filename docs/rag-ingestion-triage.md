@@ -1,3 +1,15 @@
+<!-- v4_7_6_eval_artifact_archive_purge:triage-entry:start -->
+### v4_7_6 Eval Artifact Cleanup Decision Boundary
+
+- Run key: `v4_7_6_eval_artifact_archive_purge`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json`
+- KEEP_PROTECTED: eval queries, source registry, indexes, silver, source-of-truth/gold/qrels/denominator surfaces, raw user review evidence, and non-generated source/test/doc files.
+- KEEP_CURRENT_MINIMAL: status ledger, archive manifest, v4_7 lineage short report paths, and current resolver-required compatibility reports.
+- ARCHIVE_THEN_REMOVE: verified ignored/generated legacy diagnostic payloads already represented by report/status/docs. Archive copies are hash-verified before repo-local removal.
+- DELETE_ONLY: transient Python/pytest caches and empty directories.
+- REVIEW_MANUAL_HOLD: ambiguous generated-looking files, raw local path/source disclosure risks, and anything still referenced by tests/docs/core. Held count: 354.
+- Closed gates: retrieval, EvidenceBundle repair, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator mutation, training, FT-A, fine_tuning, promotion, product-success evidence, and live DB/index/cache readiness.
+<!-- v4_7_6_eval_artifact_archive_purge:triage-entry:end -->
 <!-- v4_7_5_pdf_evidence_repair_eval_compaction:triage-entry:start -->
 ### v4_7_5 PDF Evidence Repair Failure Taxonomy And Cleanup Boundary
 
@@ -53,7 +65,7 @@
 ### v4_7 Preofficial External Holdout Candidate Manifest Registration Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod/report.json`; single-report contract remains active.
+- Resolver key: `v4_7_preofficial`; primary report resolves to `ai/eval/reports/rag-ingestion/runs/v4_7_preofficial/report.json`. Legacy long-path alias remains compatibility-only.
 - This opens only the v4_7 pre-official external holdout candidate manifest acquisition/registration lane.
 - Candidate rows are accepted only if v4_5_1/v4_5_2-compatible validation accepts them, PDF identity is document-level, XLSX identity is workbook-level, prior SourceAtom identity collisions are excluded, leakage buckets are empty, protected oracle fields are absent, and query-fidelity included rows meet the registration target.
 - It is not official metric, not FT-A dry-run execution, not fine-tuning, not dataset export, not promotion evidence, not product-success evidence, not production routing, and not live DB/index/cache readiness.

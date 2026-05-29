@@ -105,7 +105,7 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return v317.read_json(path)
 
 
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
@@ -124,6 +124,10 @@ def sha256_text(value: str) -> str:
     return v317.sha256_text(value)
 
 
+def artifact_exists(path: Path) -> bool:
+    return v317.artifact_exists(path)
+
+
 def source_atom_ids_from_row(row: Mapping[str, Any]) -> list[str]:
     return v317.source_atom_ids_from_row(row)
 
@@ -139,14 +143,14 @@ def build_input_paths() -> dict[str, Path]:
 
 
 def require_input_artifacts(paths: Mapping[str, Path]) -> None:
-    missing = [repo_relative(path) for path in paths.values() if not path.exists()]
+    missing = [repo_relative(path) for path in paths.values() if not artifact_exists(path)]
     if missing:
         raise FileNotFoundError("missing required v3_18 input artifacts: " + ", ".join(missing))
 
 
 def build_input_lineage(paths: Mapping[str, Path]) -> dict[str, Any]:
     return {
-        key: {"exists": path.exists(), "path": repo_relative(path), "sha256": sha256_file(path) if path.exists() else ""}
+        key: {"exists": artifact_exists(path), "path": repo_relative(path), "sha256": sha256_file(path) if artifact_exists(path) else ""}
         for key, path in paths.items()
     }
 
@@ -559,7 +563,7 @@ def build_artifacts() -> dict[str, Any]:
         input_lineage = build_input_lineage(input_paths)
         cases, source_registry = build_runtime_cases()
     except FileNotFoundError:
-        if all(path.exists() for path in OUTPUTS.values()):
+        if all(artifact_exists(path) for path in OUTPUTS.values()):
             summary = read_json(OUTPUTS["summary_json"])
             return {
                 "summary": summary,

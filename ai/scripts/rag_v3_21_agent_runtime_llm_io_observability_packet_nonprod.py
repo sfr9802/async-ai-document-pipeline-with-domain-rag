@@ -171,6 +171,10 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return diagnostic_common.read_jsonl(path)
 
 
+def artifact_exists(path: Path) -> bool:
+    return diagnostic_common.artifact_exists(path)
+
+
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
     diagnostic_common.write_json(path, payload)
 
@@ -198,14 +202,14 @@ def build_input_paths() -> dict[str, Path]:
 
 
 def require_input_artifacts(paths: Mapping[str, Path]) -> None:
-    missing = [repo_relative(path) for path in paths.values() if not path.exists()]
+    missing = [repo_relative(path) for path in paths.values() if not artifact_exists(path)]
     if missing:
         raise FileNotFoundError("missing required v3_20 input artifacts: " + ", ".join(missing))
 
 
 def build_input_lineage(paths: Mapping[str, Path]) -> dict[str, Any]:
     return {
-        key: {"exists": path.exists(), "path": repo_relative(path), "sha256": sha256_file(path) if path.exists() else ""}
+        key: {"exists": artifact_exists(path), "path": repo_relative(path), "sha256": sha256_file(path) if artifact_exists(path) else ""}
         for key, path in paths.items()
     }
 

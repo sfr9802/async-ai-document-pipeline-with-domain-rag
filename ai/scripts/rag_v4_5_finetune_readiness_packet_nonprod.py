@@ -73,6 +73,10 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return v44.read_jsonl(path)
 
 
+def artifact_exists(path: Path) -> bool:
+    return v44.artifact_exists(path)
+
+
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
     v44.write_json(path, payload)
 
@@ -82,7 +86,7 @@ def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
 
 
 def load_v4_4_report() -> dict[str, Any]:
-    if v44.REPORT_JSON.exists():
+    if artifact_exists(v44.REPORT_JSON):
         return read_json(v44.REPORT_JSON)
     return v44.build_artifacts()["report"]
 
@@ -103,7 +107,7 @@ def previous_gate_report_sha256(source_report: Mapping[str, Any]) -> str:
     artifact_paths = source_report.get("artifact_paths") or {}
     report_text = clean(artifact_paths.get("report_json")) if isinstance(artifact_paths, Mapping) else ""
     report_path = ROOT / report_text if report_text else v44.REPORT_JSON
-    if report_path.exists():
+    if artifact_exists(report_path):
         return sha256_file(report_path)
     return ""
 
@@ -858,7 +862,7 @@ def artifact_sha256_from_report_paths(artifact_paths: Mapping[str, str]) -> dict
         path = Path(path_text)
         if not path.is_absolute():
             path = ROOT / path_text
-        if path.exists():
+        if artifact_exists(path):
             hashes[f"{key}_sha256"] = sha256_file(path)
     return hashes
 

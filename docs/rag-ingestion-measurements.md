@@ -1,3 +1,21 @@
+<!-- v4_7_6_eval_artifact_archive_purge:measurements-entry:start -->
+### v4_7_6 Eval Artifact Archive And Purge
+
+- Run key: `v4_7_6_eval_artifact_archive_purge`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json`
+- Interpretation: cleanup/refactor counters only. No retrieval, EvidenceBundle, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator, training, FT-A, promotion, product-success, or live-readiness surface is opened.
+
+| Counter | Before | After |
+|---|---:|---:|
+| repo_local_report_file_count | 399 | 293 |
+| repo_local_report_bytes | 170924057 | 146192936 |
+| long_path_literal_count | 1589 | 1586 |
+| direct_report_path_dependency_count | 60 | 57 |
+| archived_count | 0 | 108 |
+| removed_count | 0 | 108 |
+| deleted_count | 0 | 47 |
+| manual_hold_count | 0 | 354 |
+<!-- v4_7_6_eval_artifact_archive_purge:measurements-entry:end -->
 <!-- v4_7_5_pdf_evidence_repair_eval_compaction:measurements-entry:start -->
 ### v4_7_5 PDF Evidence Repair And Eval Surface Compaction
 
@@ -53,7 +71,7 @@
 ### v4_7_3 Human-Reviewed Korean Query Candidate Pass/Exclusion Application
 
 - Run: `official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod/report.json`; sidecar ledgers are embedded in `report.json` instead of written as JSONL.
+- Resolver key: `v4_7_3`; primary report resolves to `ai/eval/reports/rag-ingestion/runs/v4_7_3/report.json`. Legacy long-path alias remains compatibility-only, and sidecar ledgers are embedded in `report.json` instead of written as JSONL.
 - Interpretation: `검수상태=미검수` is user-clarified as pass only when `제외사유` is blank. Non-empty `제외사유` means user-excluded. Query candidate pass remains separate from gold/qrels, labels, expected answers/evidence, and official denominator decisions.
 
 | Counter | Value |
@@ -135,7 +153,7 @@
 - Run: `official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod`
 - v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod/report.json`
+- Resolver key: `v4_7_preofficial`; primary report resolves to `ai/eval/reports/rag-ingestion/runs/v4_7_preofficial/report.json`.
 - Source evidence: v4_5_1/v4_5_2/v4_6_10-compatible candidate manifest contract, v4_5_3 prior identity hash baseline, and optional external candidate manifest input. This is pre-official registration evidence only.
 - Interpretation: accepted counts here are candidate registration counters, not official metric rows, not promotion evidence, not product success evidence, and not FT-A execution.
 

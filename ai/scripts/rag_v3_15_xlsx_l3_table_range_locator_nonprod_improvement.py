@@ -76,6 +76,8 @@ read_json = v314.read_json
 read_jsonl = v314.read_jsonl
 write_json = v314.write_json
 write_jsonl = v314.write_jsonl
+artifact_exists = v314.artifact_exists
+artifact_is_file = v314.artifact_is_file
 
 
 def ratio(numerator: int, denominator: int, *, metric_role: str | None = None) -> dict[str, Any]:
@@ -990,7 +992,7 @@ def build_artifacts() -> dict[str, Any]:
         "v3_10_xlsx_nonprod_searchunit_manifest_jsonl": v310.OUTPUTS["xlsx_nonprod_searchunit_manifest_jsonl"],
         "source_registry_jsonl": v392.SOURCE_REGISTRY_JSONL,
     }
-    missing = [repo_relative(path) for path in input_paths.values() if not path.exists()]
+    missing = [repo_relative(path) for path in input_paths.values() if not artifact_exists(path)]
     if missing:
         raise FileNotFoundError("missing required v3_15 input artifacts: " + ", ".join(missing))
 

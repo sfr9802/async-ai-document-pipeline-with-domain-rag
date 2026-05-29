@@ -71,16 +71,11 @@ def sha256_text(value: str) -> str:
 
 
 def read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return v392.read_json(path)
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            if line.strip():
-                rows.append(json.loads(line))
-    return rows
+    return v392.read_jsonl(path)
 
 
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
@@ -96,7 +91,15 @@ def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
 
 
 def sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return v392.sha256_file(path)
+
+
+def artifact_exists(path: Path) -> bool:
+    return v392.artifact_exists(path)
+
+
+def artifact_is_file(path: Path) -> bool:
+    return v392.artifact_is_file(path)
 
 
 def repo_relative(path: Path) -> str:
@@ -702,7 +705,7 @@ def build_artifacts() -> dict[str, Any]:
         "v3_10_xlsx_eval_per_query_jsonl": v310.OUTPUTS["xlsx_table_axis_eval_per_query_jsonl"],
         "source_registry_jsonl": v392.SOURCE_REGISTRY_JSONL,
     }
-    missing = [repo_relative(path) for path in input_paths.values() if not path.exists()]
+    missing = [repo_relative(path) for path in input_paths.values() if not artifact_exists(path)]
     if missing:
         raise FileNotFoundError("missing required v3_11 input artifacts: " + ", ".join(missing))
 

@@ -59,14 +59,13 @@ def test_v475_registry_resolves_short_current_and_legacy_aliases_fail_closed(tmp
     current = registry.resolve_run("current", root=ROOT)
     v475_run = registry.resolve_run("v4_7_5", root=ROOT)
 
-    assert legacy.report_path == V4_7_4_REPORT
+    assert legacy.report_path == ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_4" / "report.json"
     assert legacy.canonical_long_run_id == V4_7_4_LONG_RUN_ID
     assert legacy.legacy_long_path_supported is True
     assert v475_run.report_path == V4_7_5_REPORT
     assert v475_run.short_run_id == V4_7_5_SHORT_RUN_ID
     assert v475_run.canonical_long_run_id == V4_7_5_LONG_RUN_ID
-    assert current.logical_key == "v4_7_5"
-    assert current.report_path == V4_7_5_REPORT
+    assert current.logical_key == "v4_7_6"
 
     loaded = registry.load_report("v4_7_5", root=ROOT)
     assert loaded["short_run_id"] == V4_7_5_SHORT_RUN_ID
@@ -235,7 +234,7 @@ def test_v475_status_docs_and_readme_sync_use_short_key_and_preserve_closed_gate
 
     report = registry.load_report("v4_7_5", root=ROOT)
     events = _read_jsonl(STATUS_JSONL)
-    latest = events[-1]
+    latest = next(row for row in reversed(events) if row.get("short_run_id") == V4_7_5_SHORT_RUN_ID)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
@@ -256,9 +255,6 @@ def test_v475_status_docs_and_readme_sync_use_short_key_and_preserve_closed_gate
     assert latest["live_db_index_cache_readiness"] is False
 
     short_report_path = "ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json"
-    assert f"Overall status: `{V4_7_5_STATUS}`;" in current_text
-    assert f"Current RAG status: `{V4_7_5_STATUS}`" in readme
-    assert f"Current RAG status: `{V4_7_5_STATUS}`" in eval_readme
     assert V4_7_5_SHORT_RUN_ID in current_text
     assert V4_7_5_SHORT_RUN_ID in measurements
     assert V4_7_5_SHORT_RUN_ID in triage
@@ -332,8 +328,9 @@ def test_v475_stable_runner_is_importable_and_current_profile_knows_contract_tes
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
-    assert module.DEFAULT_RUN_KEY == "v4_7_5"
+    assert module.DEFAULT_RUN_KEY == "v4_7_6"
     assert callable(module.main)
+    assert module.check_run("v4_7_5")["short_run_id"] == V4_7_5_SHORT_RUN_ID
 
     import ai.tests.conftest as rag_conftest
 

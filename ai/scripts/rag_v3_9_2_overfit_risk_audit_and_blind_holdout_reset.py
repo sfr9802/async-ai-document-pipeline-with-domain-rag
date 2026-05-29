@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,6 +12,12 @@ from typing import Any, Mapping, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[2]
+AI_ROOT = ROOT / "ai"
+if str(AI_ROOT) not in sys.path:
+    sys.path.insert(0, str(AI_ROOT))
+
+from eval.harness import rag_diagnostic_common as diagnostic_common  # noqa: E402
+
 REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 QUALITY_DIR = REPORT_DIR / "quality"
 SOURCE_REGISTRY_JSONL = ROOT / "ai" / "eval" / "source_registry" / "source_atom_registry_v1.jsonl"
@@ -88,16 +95,11 @@ PDF_FILE_METRICS = (
 
 
 def read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return diagnostic_common.read_json(path)
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            if line.strip():
-                rows.append(json.loads(line))
-    return rows
+    return diagnostic_common.read_jsonl(path)
 
 
 def write_json(path: Path, payload: Mapping[str, Any]) -> None:
@@ -116,7 +118,15 @@ def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
 
 
 def sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return diagnostic_common.sha256_file(path)
+
+
+def artifact_exists(path: Path) -> bool:
+    return diagnostic_common.artifact_exists(path)
+
+
+def artifact_is_file(path: Path) -> bool:
+    return diagnostic_common.artifact_is_file(path)
 
 
 def sha256_text(text: str) -> str:
@@ -1357,7 +1367,7 @@ def build_artifacts() -> dict[str, Any]:
         "v3_9_1_split_manifest_json": V3_9_1_SPLIT,
         "source_registry_jsonl": SOURCE_REGISTRY_JSONL,
     }
-    missing = [repo_relative(path) for path in input_paths.values() if not path.exists()]
+    missing = [repo_relative(path) for path in input_paths.values() if not artifact_exists(path)]
     if missing:
         raise FileNotFoundError("missing required v3_9_2 input artifacts: " + ", ".join(missing))
 

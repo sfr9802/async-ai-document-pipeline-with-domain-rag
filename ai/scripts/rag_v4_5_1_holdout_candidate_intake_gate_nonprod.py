@@ -138,6 +138,10 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return v45.read_jsonl(path)
 
 
+def artifact_exists(path: Path) -> bool:
+    return v45.artifact_exists(path)
+
+
 def candidate_manifest_path_label(path: Path | None) -> tuple[str, str]:
     if path is None:
         return "", "not_provided"
@@ -221,7 +225,7 @@ def bool_value(value: Any) -> bool:
 
 
 def load_v4_5_report() -> dict[str, Any]:
-    if v45.REPORT_JSON.exists():
+    if artifact_exists(v45.REPORT_JSON):
         return read_json(v45.REPORT_JSON)
     return v45.build_artifacts()["report"]
 
@@ -230,7 +234,7 @@ def source_run_references(source_report: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "previous_gate_run_id": v45.RUN_ID,
         "previous_gate_report_json": repo_relative(v45.REPORT_JSON),
-        "previous_gate_report_sha256": sha256_file(v45.REPORT_JSON) if v45.REPORT_JSON.exists() else "",
+        "previous_gate_report_sha256": sha256_file(v45.REPORT_JSON) if artifact_exists(v45.REPORT_JSON) else "",
         "v4_5_report_json": repo_relative(v45.REPORT_JSON),
         "v4_4_report_json": repo_relative(v45.v44.REPORT_JSON),
         "v4_3_report_json": repo_relative(v45.v44.v43.REPORT_JSON),
@@ -985,7 +989,7 @@ def artifact_sha256_from_report_paths(artifact_paths: Mapping[str, str]) -> dict
         path = Path(path_text)
         if not path.is_absolute():
             path = ROOT / path_text
-        if path.exists():
+        if artifact_exists(path):
             hashes[f"{key}_sha256"] = sha256_file(path)
     return hashes
 

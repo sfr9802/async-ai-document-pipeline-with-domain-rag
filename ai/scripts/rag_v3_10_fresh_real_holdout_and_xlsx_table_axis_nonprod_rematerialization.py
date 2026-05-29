@@ -142,6 +142,14 @@ def sha256_file(path: Path) -> str:
     return v392.sha256_file(path)
 
 
+def artifact_exists(path: Path) -> bool:
+    return v392.artifact_exists(path)
+
+
+def artifact_is_file(path: Path) -> bool:
+    return v392.artifact_is_file(path)
+
+
 def as_mapping(value: Any) -> Mapping[str, Any]:
     return value if isinstance(value, Mapping) else {}
 
@@ -1232,7 +1240,7 @@ def build_artifacts() -> dict[str, Any]:
         v392.OUTPUTS["proposed_searchunit_table_axis_fields_json"],
         v392.OUTPUTS["proposed_nonprod_rematerialization_plan_json"],
     )
-    missing = [repo_relative(path) for path in required_inputs if not path.exists()]
+    missing = [repo_relative(path) for path in required_inputs if not artifact_exists(path)]
     if missing:
         raise FileNotFoundError("missing required v3_10 input artifacts: " + ", ".join(missing))
 
