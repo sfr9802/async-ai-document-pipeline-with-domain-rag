@@ -20,7 +20,7 @@ TEXT, PDF, XLSX 문서에 질문했을 때 AI가 어떤 근거를 찾고, 어떤
 ## 현재 상태
 
 - Query/response samples: 64개 (TEXT 10, PDF 20, XLSX 34)
-- Current RAG status: `DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY`
+- Current RAG status: `V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLUSION_APPLICATION_NONPROD_READY`
 - Sensitive-topic README display exclusion: enabled
 - Diagnostic-only policy: unchanged
 
@@ -101,6 +101,14 @@ PDF에서 목차 점선, 단독 섹션 번호, 페이지 번호, 숫자축처럼
 | XLSX v3_22 | Book.xlsx 시트 Sheet1 범위 A1:Z1000 값을 전부 알려줘 | SourceAtom: atom-xlsx-large-range; Book.xlsx / Sheet1 A1:Z1000; mode=UNSUPPORTED_RANGE_TOO_LARGE | diagnostic-only fail-closed: UNSUPPORTED_RANGE_TOO_LARGE |
 | XLSX v3_22 | Sheet1 시트 셀 A1 값 알려줘 | No selected SourceAtom; mode=AMBIGUOUS_RANGE_CONTEXT_REQUIRED | diagnostic-only fail-closed: 답변하려면 파일/문서, 시트, 범위, 페이지 또는 셀을 더 구체적으로 지정해 주세요. |
 | XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 A1 값 알려줘 | No selected SourceAtom; mode=FORMAT_METADATA_UNAVAILABLE; index unavailable case | diagnostic-only fail-closed: 요청한 위치를 찾지 못했습니다. 제공된 위치 범위 안에서 답변하지 않습니다. |
+
+## Korean human review packet
+
+The previous v4_7_1 Korean review packet was abstract because v4_7 registration contained source-disjoint candidate identities but not query text. v4_7_2 superseded it with `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod/review_packet_ko_hydrated.xlsx`, plus CSV/JSONL equivalents, containing actual Korean query candidates, bounded evidence previews, and locator previews. User-owned fields remain blank/default for expected answers, evidence judgment, relevance labels, answerability labels, official denominator inclusion, exclusion reasons, policy memo, reviewer, and review timestamp.
+
+v4_7_3 applies the user-reviewed CSV decisions over that hydrated packet. Per user clarification, `검수상태=미검수` means pass for rows with blank `제외사유`; rows with non-empty `제외사유` are user-excluded. The result freezes 58 passed query candidates and 146 excluded candidates for later human-owned labeling steps.
+
+This is human-review decision application only. It is not official metric, not gold/qrels, not relevance or answerability labels, not expected answer/evidence approval, not training data, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, and not live DB/index/cache readiness. Locked flags include `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
 
 ## 평가 경계
 

@@ -16033,12 +16033,14 @@ def test_v4_7_1_korean_review_packet_builds_human_review_only_rows(tmp_path) -> 
     assert report["review_packet_counts_by_family"] == {"PDF": 100, "XLSX": 104, "TEXT": 0}
     assert report["review_packet_source_rows_have_actual_query_text"] is False
     assert report["review_packet_source_rows_have_evidence_context"] is False
+    assert report["source_manifest_metadata_rows_matched"] + report["source_manifest_metadata_rows_missing"] == 204
     assert report["query_text_source"] == "not_supplied_by_v4_7_registration_manifest"
     assert report["review_packet_artifacts_created"] == {
         "report_json": True,
         "review_packet_ko_xlsx": True,
         "review_packet_ko_csv": True,
         "review_packet_ko_jsonl": True,
+        "actual_query_llm_response_examples_ko_csv": True,
         "review_guidelines_ko_md": True,
         "review_summary_ko_json": True,
     }
@@ -16057,8 +16059,8 @@ def test_v4_7_1_korean_review_packet_builds_human_review_only_rows(tmp_path) -> 
     assert all(row["검수자"] == "" for row in rows)
     assert all(row["검수일시"] == "" for row in rows)
     assert all(row["manifest_sha256"] == run.EXPECTED_V4_7_MANIFEST_SHA256 for row in rows)
-    assert all(row["source_preview_redacted"] == "__not_supplied_by_v4_7_registration_manifest__" for row in rows)
-    assert all(row["evidence_preview_redacted"] == "__not_supplied_by_v4_7_registration_manifest__" for row in rows)
+    assert all(row["source_manifest_match_status"] in {"matched", "missing"} for row in rows)
+    assert all(row["source_preview_redacted"] for row in rows)
     assert all(row["prior_identity_collision"] == "false" for row in rows)
     assert all(row["source_disjointness_gate"] == "pass" for row in rows)
     assert all(row["query_fidelity_included"] == "true" for row in rows)
@@ -16104,6 +16106,7 @@ def test_v4_7_1_korean_review_packet_writes_allowed_artifacts_and_cli_check(tmp_
         "review_packet_ko.xlsx",
         "review_packet_ko.csv",
         "review_packet_ko.jsonl",
+        "actual_query_llm_response_examples_ko.csv",
         "review_guidelines_ko.md",
         "review_summary_ko.json",
     }
@@ -16114,6 +16117,7 @@ def test_v4_7_1_korean_review_packet_writes_allowed_artifacts_and_cli_check(tmp_
         "review_packet_ko_xlsx": (tmp_path / "review_packet_ko.xlsx").as_posix(),
         "review_packet_ko_csv": (tmp_path / "review_packet_ko.csv").as_posix(),
         "review_packet_ko_jsonl": (tmp_path / "review_packet_ko.jsonl").as_posix(),
+        "actual_query_llm_response_examples_ko_csv": (tmp_path / "actual_query_llm_response_examples_ko.csv").as_posix(),
         "review_guidelines_ko_md": (tmp_path / "review_guidelines_ko.md").as_posix(),
         "review_summary_ko_json": (tmp_path / "review_summary_ko.json").as_posix(),
     }
@@ -16136,12 +16140,24 @@ def test_v4_7_1_korean_review_packet_writes_allowed_artifacts_and_cli_check(tmp_
     assert len(jsonl_rows) == 204
     assert jsonl_rows[0]["검수상태"] == "미검수"
     assert jsonl_rows[0]["질의승인"] == "보류"
+    assert jsonl_rows[0]["source_manifest_match_status"] in {"matched", "missing"}
 
     csv_text = (tmp_path / "review_packet_ko.csv").read_text(encoding="utf-8-sig")
     assert "검수상태,소스계열,후보ID,질의ID,질의문" in csv_text
     assert "기대답변_한국어" in csv_text
+    assert "source_manifest_title" in csv_text
     assert "D:/" not in csv_text
     assert "D:\\" not in csv_text
+
+    with (tmp_path / "actual_query_llm_response_examples_ko.csv").open(encoding="utf-8-sig", newline="") as handle:
+        actual_rows = list(csv.DictReader(handle))
+    assert len(actual_rows) == 10
+    assert actual_rows[0]["실제질의문"] == "Book.xlsx 시트 Sheet1 셀 A1 값 알려줘"
+    assert actual_rows[0]["실제답변"] == "42"
+    assert {row["source_run"] for row in actual_rows} == {
+        "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
+    }
+    assert all(row["diagnostic_boundary"] == "diagnostic_only_non_official_not_v4_7_output" for row in actual_rows)
 
     result = subprocess.run(
         [

@@ -1,9 +1,60 @@
+<!-- official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod:measurements-entry:start -->
+### v4_7_3 Human-Reviewed Korean Query Candidate Pass/Exclusion Application
+
+- Run: `official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod`
+- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod/report.json`; sidecar ledgers are embedded in `report.json` instead of written as JSONL.
+- Interpretation: `검수상태=미검수` is user-clarified as pass only when `제외사유` is blank. Non-empty `제외사유` means user-excluded. Query candidate pass remains separate from gold/qrels, labels, expected answers/evidence, and official denominator decisions.
+
+| Counter | Value |
+|---|---:|
+| reviewed_csv_row_count | 204 |
+| reviewed_csv_pdf_rows | 100 |
+| reviewed_csv_xlsx_rows | 104 |
+| user_passed_query_candidate_row_count | 58 |
+| user_excluded_row_count | 146 |
+| passed_counts_by_family | PDF 58, XLSX 0, TEXT 0 |
+| excluded_counts_by_family | PDF 42, XLSX 104, TEXT 0 |
+| official_metric_input_rows | 0 |
+| gold_jsonl_created | false |
+| qrels_jsonl_created | false |
+| labels_jsonl_created | false |
+| training_dataset_created | false |
+| ft_a_execution | false |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+<!-- official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod:measurements-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod:measurements-entry:start -->
+### v4_7_2 Source-Grounded Korean Query Review Packet Hydration
+
+- Run: `official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod`
+- Primary artifacts: `report.json`, `review_packet_ko_hydrated.xlsx`, `review_packet_ko_hydrated.csv`, `review_packet_ko_hydrated.jsonl`, `review_guidelines_ko.md`, `review_summary_ko.json` under `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod`.
+- Interpretation: hydrated Korean query/evidence/locator previews are machine-owned review hints only. They are not gold/qrels, labels, official metric input, training data, FT-A execution, promotion evidence, product-success evidence, or live readiness evidence.
+
+| Counter | Value |
+|---|---:|
+| prior_packet_row_count | 204 |
+| prior_packet_non_empty_query_count | 0 |
+| hydrated_packet_row_count | 204 |
+| hydrated_packet_non_empty_query_count | 204 |
+| hydrated_pdf_row_count | 100 |
+| hydrated_xlsx_row_count | 104 |
+| extraction_failed_row_count | 0 |
+| existing_query_reused_count | 0 |
+| deterministic_query_generated_count | 0 |
+| local_llm_query_generated_count | 204 |
+| official_metric_input_rows | 0 |
+| qrels_mutation | false |
+| gold_mutation | false |
+| label_mutation | false |
+| training_dataset_created | false |
+<!-- official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod:measurements-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod:measurements-entry:start -->
 ### v4_7_1 Korean Review Packet And README Diagnostic Snapshot
 
 - Run: `official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod`
-- Primary artifacts: `report.json`, `review_packet_ko.xlsx`, `review_packet_ko.csv`, `review_packet_ko.jsonl`, `review_guidelines_ko.md`, `review_summary_ko.json` under `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod`.
-- Source evidence: v4_7 pre-official registration report plus external manifest SHA-256 `15b2f5f61a03bf588bf49d74a95a11259e2a6a83c0a32a727625344cae7af58c`; actual LLM response examples are from v3_22 answer-allowed rows only.
+- Primary artifacts: `report.json`, `review_packet_ko.xlsx`, `review_packet_ko.csv`, `review_packet_ko.jsonl`, `actual_query_llm_response_examples_ko.csv`, `review_guidelines_ko.md`, `review_summary_ko.json` under `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod`.
+- Source evidence: v4_7 pre-official registration report plus external manifest SHA-256 `15b2f5f61a03bf588bf49d74a95a11259e2a6a83c0a32a727625344cae7af58c`; source metadata fields are filled from SHA-256 matches against the `source_collection` manifest; actual LLM response examples are from v3_22 answer-allowed rows only.
 - Interpretation: Korean packet artifacts are user-owned review surfaces. They are not gold/qrels, expected answer, supporting evidence, official metric input, training data, FT-A execution, promotion evidence, product-success evidence, or live readiness evidence.
 
 | Counter | Value |
@@ -15,6 +66,9 @@
 | review_packet_text_rows | 0 |
 | review_packet_source_rows_have_actual_query_text | false |
 | review_packet_source_rows_have_evidence_context | false |
+| review_packet_source_rows_have_source_manifest_metadata | true |
+| source_manifest_metadata_rows_matched | 204 |
+| source_manifest_metadata_rows_missing | 0 |
 | official_metric_input_rows | 0 |
 | promotion_evidence | false |
 | product_success_evidence_allowed | false |

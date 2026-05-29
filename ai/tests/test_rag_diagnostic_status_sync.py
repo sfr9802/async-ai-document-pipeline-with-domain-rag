@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import csv
 import json
 import os
 from pathlib import Path
@@ -13,9 +14,11 @@ PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+V4_7_3_CURRENT_STATUS = "V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLUSION_APPLICATION_NONPROD_READY"
+V4_7_2_CURRENT_STATUS = "DIAGNOSTIC_V4_7_2_SOURCE_GROUNDED_KOREAN_QUERY_REVIEW_PACKET_HYDRATION_NONPROD_READY"
 V4_7_1_CURRENT_STATUS = "DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY"
 V4_7_CURRENT_STATUS = "V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY"
-CURRENT_RAG_STATUS = V4_7_1_CURRENT_STATUS
+CURRENT_RAG_STATUS = V4_7_3_CURRENT_STATUS
 V4_6_CLOSEOUT_CURRENT_STATUS = CURRENT_RAG_STATUS
 V4_6_12_CURRENT_STATUS = V4_6_CLOSEOUT_CURRENT_STATUS
 V4_6_11_CURRENT_STATUS = V4_6_12_CURRENT_STATUS
@@ -45,6 +48,16 @@ V4_6_11_SCRIPT = "rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod
 V4_6_12_SCRIPT = "rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod.py"
 V4_7_SCRIPT = "rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py"
 V4_7_1_SCRIPT = "rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod.py"
+V4_7_2_SCRIPT = "rag_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod.py"
+V4_7_3_SCRIPT = "rag_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod.py"
+
+
+def _readme_verify_section(readme: str) -> str:
+    if "## How To Verify Locally" in readme and "## Repo Map" in readme:
+        return readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    if "## 로컬 실행 메모" in readme and "## 라이선스와 외부 데이터" in readme:
+        return readme.split("## 로컬 실행 메모", 1)[1].split("## 라이선스와 외부 데이터", 1)[0]
+    raise AssertionError("README verification section anchor drifted")
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
@@ -4789,7 +4802,10 @@ def test_v4_0_charter_status_opening_records_boundary_and_non_promotion_status()
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    if "## How To Verify Locally" in readme:
+        readme_verify_section = _readme_verify_section(readme)
+    else:
+        readme_verify_section = readme.split("## 로컬 실행 메모", 1)[1].split("## 라이선스와 외부 데이터", 1)[0]
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
     matches = [
@@ -5026,7 +5042,10 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_records_status_docs_and
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    if "## How To Verify Locally" in readme:
+        readme_verify_section = _readme_verify_section(readme)
+    else:
+        readme_verify_section = readme.split("## 로컬 실행 메모", 1)[1].split("## 라이선스와 외부 데이터", 1)[0]
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
     matches = [
@@ -5185,7 +5204,7 @@ def test_v4_2_xlsx_locator_v2_records_status_docs_and_guardrails():
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
     matches = [
@@ -5457,7 +5476,7 @@ def test_v4_3_pdf_file_identity_split_records_status_docs_and_guardrails():
         or f"Current RAG status: `{v4_5_2_current_status}`" in eval_readme
         or f"Current RAG status: `{V4_5_3_CURRENT_STATUS}`" in eval_readme
     )
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     assert (
         (
             "python -X utf8 -m py_compile "
@@ -5603,7 +5622,7 @@ def test_v4_4_real_blind_ood_holdout_leakage_records_status_docs_and_guardrails(
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
     matches = [
@@ -5808,7 +5827,7 @@ def test_v4_5_finetune_readiness_packet_records_status_docs_and_guardrails():
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -5969,7 +5988,7 @@ def test_v4_5_1_holdout_candidate_intake_gate_records_status_docs_and_guardrails
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -6117,7 +6136,7 @@ def test_v4_5_2_external_holdout_candidate_source_identity_audit_records_status_
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -6283,7 +6302,7 @@ def test_v4_5_3_external_holdout_prior_identity_summary_records_status_docs_and_
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -6421,7 +6440,7 @@ def test_v4_6_ft_route_policy_preflight_records_status_docs_and_guardrails():
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -6563,7 +6582,7 @@ def test_v4_6_1_holdout_manifest_identity_contract_bridge_records_status_docs_an
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -6738,7 +6757,7 @@ def test_v4_6_2_ft_route_policy_fixture_contract_records_status_docs_and_guardra
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -6924,7 +6943,7 @@ def test_v4_6_3_ft_a_prompt_policy_baseline_schema_records_status_docs_and_guard
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -7063,7 +7082,7 @@ def test_v4_6_4_ft_a_dry_run_input_manifest_validator_records_status_docs_and_gu
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -7207,7 +7226,7 @@ def test_v4_6_5_ft_a_dry_run_execution_plan_gate_records_status_docs_and_guardra
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -7345,7 +7364,7 @@ def test_v4_6_6_holdout_gap_blocker_ledger_records_status_docs_and_guardrails():
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -7502,7 +7521,7 @@ def test_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_records_status_docs
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -7646,7 +7665,7 @@ def test_v4_6_8_runtime_readiness_dependency_freshness_gate_records_status_docs_
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -7785,7 +7804,7 @@ def test_v4_6_9_holdout_candidate_duplicate_hygiene_gate_records_status_docs_and
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -7924,7 +7943,7 @@ def test_v4_6_10_external_holdout_manifest_gate_replay_records_status_docs_and_g
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -8061,7 +8080,7 @@ def test_v4_6_11_ft_a_runtime_input_validation_route_parity_records_status_docs_
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -8188,7 +8207,7 @@ def test_v4_6_12_external_holdout_runtime_replay_route_parity_records_status_doc
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     v4_plan = (ROOT / "docs" / "rag_v4_source_grounded_runtime_and_finetune_readiness_plan.md").read_text(
@@ -8429,7 +8448,7 @@ def test_v4_7_preofficial_external_holdout_registration_records_status_docs_and_
         1,
     )[1].split("\n### ", 1)[0]
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    readme_verify_section = readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -8536,6 +8555,7 @@ def test_v4_7_1_korean_review_packet_records_status_docs_and_safe_examples():
     packet_xlsx = report_dir / "review_packet_ko.xlsx"
     packet_csv = report_dir / "review_packet_ko.csv"
     packet_jsonl = report_dir / "review_packet_ko.jsonl"
+    actual_examples_csv = report_dir / "actual_query_llm_response_examples_ko.csv"
     guidelines = report_dir / "review_guidelines_ko.md"
     summary_json = report_dir / "review_summary_ko.json"
     require_v4_3_local_artifacts(
@@ -8544,6 +8564,7 @@ def test_v4_7_1_korean_review_packet_records_status_docs_and_safe_examples():
         packet_xlsx,
         packet_csv,
         packet_jsonl,
+        actual_examples_csv,
         guidelines,
         summary_json,
     )
@@ -8551,6 +8572,8 @@ def test_v4_7_1_korean_review_packet_records_status_docs_and_safe_examples():
     report = json.loads(report_path.read_text(encoding="utf-8"))
     summary = json.loads(summary_json.read_text(encoding="utf-8"))
     packet_rows = [json.loads(line) for line in packet_jsonl.read_text(encoding="utf-8").splitlines() if line.strip()]
+    with actual_examples_csv.open(encoding="utf-8-sig", newline="") as handle:
+        actual_example_rows = list(csv.DictReader(handle))
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
@@ -8578,14 +8601,19 @@ def test_v4_7_1_korean_review_packet_records_status_docs_and_safe_examples():
     assert event["schema_version"] == f"{run_id}_status_event_v1"
     assert event["status"] == V4_7_1_CURRENT_STATUS
     assert event["artifact_paths"]["report_json"] == report_path.relative_to(ROOT).as_posix()
+    assert event["artifact_paths"]["actual_query_llm_response_examples_ko_csv"] == actual_examples_csv.relative_to(ROOT).as_posix()
     assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
     assert event["artifact_sha256"]["review_packet_ko_xlsx_sha256"] == sha256_file(packet_xlsx)
+    assert event["artifact_sha256"]["actual_query_llm_response_examples_ko_csv_sha256"] == sha256_file(actual_examples_csv)
     assert event["diagnostic_only"] is True
     assert event["human_review_only"] is True
     assert event["review_packet_row_count"] == 204
     assert event["review_packet_counts_by_family"] == {"PDF": 100, "XLSX": 104, "TEXT": 0}
     assert event["review_packet_source_rows_have_actual_query_text"] is False
     assert event["review_packet_source_rows_have_evidence_context"] is False
+    assert event["review_packet_source_rows_have_source_manifest_metadata"] is True
+    assert event["source_manifest_metadata_rows_matched"] == 204
+    assert event["source_manifest_metadata_rows_missing"] == 0
     assert event["official_metric_input_rows"] == 0
     assert event["promotion_evidence"] is False
     assert event["product_success_evidence_allowed"] is False
@@ -8606,6 +8634,8 @@ def test_v4_7_1_korean_review_packet_records_status_docs_and_safe_examples():
     assert report["official_metric_input_rows"] == 0
     assert report["review_packet_row_count"] == 204
     assert report["review_packet_counts_by_family"] == {"PDF": 100, "XLSX": 104, "TEXT": 0}
+    assert report["source_manifest_metadata_rows_matched"] == 204
+    assert report["source_manifest_metadata_rows_missing"] == 0
     assert report["query_text_source"] == "not_supplied_by_v4_7_registration_manifest"
     assert len(report["actual_llm_response_examples"]) == 10
     assert all(example["source_run"] == example_source_run_id for example in report["actual_llm_response_examples"])
@@ -8617,20 +8647,30 @@ def test_v4_7_1_korean_review_packet_records_status_docs_and_safe_examples():
     assert len(packet_rows) == 204
     assert all(row["검수상태"] == "미검수" for row in packet_rows)
     assert all(row["질의문"] == "" for row in packet_rows)
+    assert all(row["source_manifest_match_status"] == "matched" for row in packet_rows)
+    assert all(row["source_manifest_title"] for row in packet_rows)
+    assert all(row["source_preview_redacted"] != "__not_supplied_by_v4_7_registration_manifest__" for row in packet_rows)
     assert all(row["관련성라벨"] == "보류" for row in packet_rows)
     assert all(row["답변가능성라벨"] == "보류" for row in packet_rows)
     assert all(row["공식분모포함판단"] == "보류" for row in packet_rows)
+    assert len(actual_example_rows) == 10
+    assert actual_example_rows[0]["실제질의문"] == "Book.xlsx 시트 Sheet1 셀 A1 값 알려줘"
+    assert actual_example_rows[0]["실제답변"] == "42"
+    assert {row["source_run"] for row in actual_example_rows} == {example_source_run_id}
+    assert all(
+        row["diagnostic_boundary"] == "diagnostic_only_non_official_not_v4_7_output"
+        for row in actual_example_rows
+    )
 
-    assert f"Overall status: `{V4_7_1_CURRENT_STATUS}`;" in current_text
-    assert f"Current RAG status: `{V4_7_1_CURRENT_STATUS}`" in readme
-    assert f"Current RAG status: `{V4_7_1_CURRENT_STATUS}`" in eval_readme
+    assert f"Overall status: `{CURRENT_RAG_STATUS}`;" in current_text
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in readme
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in eval_readme
+    assert V4_7_1_CURRENT_STATUS in current_text
     assert "## Current RAG Diagnostic Status" in readme
-    assert "v4_7 pre-official candidate registration: 204 rows total" in readme
-    assert "PDF 100 rows from 20 source documents" in readme
-    assert "XLSX 104 rows from 8 workbooks" in readme
-    assert "v3_22 diagnostic answer/rendering snapshot: 14 rows, 10 answer-allowed, 10 LLM invoked" in readme
+    assert "v4_7 remains pre-official" in readme
+    assert "supersedes the abstract v4_7_1 Korean review packet" in readme
+    assert "hydrated rows 204, PDF 100, XLSX 104" in readme
     assert "official_metric_input_rows=0" in readme
-    assert "no headline product score" in readme
     for forbidden in (
         "production-ready",
         "official metric improved",
@@ -8643,23 +8683,333 @@ def test_v4_7_1_korean_review_packet_records_status_docs_and_safe_examples():
         assert forbidden not in readme
 
     assert "## Korean human review packet" in eval_readme
-    assert "review_packet_ko.xlsx" in eval_readme
-    assert "all start as `미검수`, `보류`, or blank" in eval_readme
-    assert "v4_7 registration did not execute an LLM" in eval_readme
-    assert "## Actual query and LLM response examples" in eval_readme
-    assert "v3_22 answer-allowed XLSX rows" in eval_readme
-    assert "v3_22_xlsx_integer_a1" in eval_readme
-    assert "627e896cab7dc64c4638ee9c7b2bdd7179b790eee336c40ecc9f3442209fd167" in eval_readme
-    assert "diagnostic_only_non_official_not_v4_7_output" in eval_readme
+    assert "The previous v4_7_1 Korean review packet was abstract" in eval_readme
+    assert "review_packet_ko_hydrated.xlsx" in eval_readme
+    assert "actual Korean query candidates" in eval_readme
+    assert "User-owned fields remain blank/default" in eval_readme
+    assert "not official metric" in eval_readme
     assert "raw_llm_response" not in eval_readme
     assert "prompt_payload" not in eval_readme
 
     assert run_id in current_text
     assert run_id in measurements_section
+    assert "actual_query_llm_response_examples_ko.csv" in measurements_section
     assert "| review_packet_row_count | 204 |" in measurements_section
+    assert "| source_manifest_metadata_rows_matched | 204 |" in measurements_section
+    assert "| source_manifest_metadata_rows_missing | 0 |" in measurements_section
     assert "| official_metric_input_rows | 0 |" in measurements_section
     assert "intake thresholds only" in measurements_section
     assert run_id in triage_section
     assert "human-review-only" in triage_section
+    assert "source_manifest_*" in triage_section
     assert "did not fill expected answers" in triage_section
+    assert "actual_query_llm_response_examples_ko.csv" in triage_section
     assert V4_7_1_SCRIPT in scripts_readme
+
+
+def test_v4_7_2_source_grounded_korean_review_packet_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
+    event_type = "diagnostic_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
+    source_run_id = "official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
+    report_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    report_path = report_dir / "report.json"
+    packet_xlsx = report_dir / "review_packet_ko_hydrated.xlsx"
+    packet_csv = report_dir / "review_packet_ko_hydrated.csv"
+    packet_jsonl = report_dir / "review_packet_ko_hydrated.jsonl"
+    guidelines = report_dir / "review_guidelines_ko.md"
+    summary_json = report_dir / "review_summary_ko.json"
+    require_v4_3_local_artifacts(
+        STATUS_JSONL,
+        report_path,
+        packet_xlsx,
+        packet_csv,
+        packet_jsonl,
+        guidelines,
+        summary_json,
+    )
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    summary = json.loads(summary_json.read_text(encoding="utf-8"))
+    with packet_csv.open(encoding="utf-8-sig", newline="") as handle:
+        packet_rows = list(csv.DictReader(handle))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_7_2 Source-Grounded Korean Query Review Packet Hydration",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_7_2 Source-Grounded Korean Query Review Packet Hydration Triage",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = _readme_verify_section(readme)
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == V4_7_2_CURRENT_STATUS
+    assert event["artifact_paths"] == {
+        "report_json": report_path.relative_to(ROOT).as_posix(),
+        "review_guidelines_ko_md": guidelines.relative_to(ROOT).as_posix(),
+        "review_packet_ko_hydrated_csv": packet_csv.relative_to(ROOT).as_posix(),
+        "review_packet_ko_hydrated_jsonl": packet_jsonl.relative_to(ROOT).as_posix(),
+        "review_packet_ko_hydrated_xlsx": packet_xlsx.relative_to(ROOT).as_posix(),
+        "review_summary_ko_json": summary_json.relative_to(ROOT).as_posix(),
+    }
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["artifact_sha256"]["review_packet_ko_hydrated_csv_sha256"] == sha256_file(packet_csv)
+    assert event["artifact_sha256"]["review_packet_ko_hydrated_jsonl_sha256"] == sha256_file(packet_jsonl)
+    assert event["artifact_sha256"]["review_packet_ko_hydrated_xlsx_sha256"] == sha256_file(packet_xlsx)
+    assert event["diagnostic_only"] is True
+    assert event["human_review_only"] is True
+    assert event["source_grounded_query_review_packet_hydration_only"] is True
+    assert event["prior_packet_row_count"] == 204
+    assert event["prior_packet_non_empty_query_count"] == 0
+    assert event["hydrated_packet_row_count"] == 204
+    assert event["hydrated_pdf_row_count"] == 100
+    assert event["hydrated_xlsx_row_count"] == 104
+    assert event["hydrated_packet_non_empty_query_count"] == 204
+    assert event["extraction_failed_row_count"] == 0
+    assert event["existing_query_reused_count"] == 0
+    assert event["deterministic_query_generated_count"] == 0
+    assert event["local_llm_query_generated_count"] == 204
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["promotion_evidence"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["ft_a_execution"] is False
+    assert event["fine_tuning"] is False
+    assert event["qrels_mutation"] is False
+    assert event["gold_mutation"] is False
+    assert event["label_mutation"] is False
+    assert event["training_dataset_created"] is False
+    assert event["source_report_run_id"] == source_run_id
+
+    assert report["schema_version"] == "rag_v4_7_2_source_grounded_korean_query_review_packet_hydration_report_v1"
+    assert report["status"] == V4_7_2_CURRENT_STATUS
+    assert report["source_report_run_id"] == source_run_id
+    assert report["source_report_status"] == V4_7_CURRENT_STATUS
+    assert report["candidate_manifest_sha256"] == "15b2f5f61a03bf588bf49d74a95a11259e2a6a83c0a32a727625344cae7af58c"
+    assert report["prior_packet_row_count"] == 204
+    assert report["prior_packet_non_empty_query_count"] == 0
+    assert report["hydrated_packet_row_count"] == 204
+    assert report["hydrated_pdf_row_count"] == 100
+    assert report["hydrated_xlsx_row_count"] == 104
+    assert report["hydrated_packet_non_empty_query_count"] == 204
+    assert report["extraction_failed_row_count"] == 0
+    assert report["existing_query_reused_count"] == 0
+    assert report["deterministic_query_generated_count"] == 0
+    assert report["local_llm_query_generated_count"] == 204
+    assert report["query_generation_strategy"]["local_llm_used"] is True
+    assert report["query_generation_strategy"]["deterministic_template_fallback_enabled"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["v4_7_official_metric_gate_opened"] is False
+    assert report["product_success_evidence_allowed"] is False
+    assert report["promotion_evidence"] is False
+    assert report["live_db_index_cache_readiness"] is False
+    assert report["ft_a_execution"] is False
+    assert report["fine_tuning"] is False
+    assert report["qrels_mutation"] is False
+    assert report["gold_mutation"] is False
+    assert report["label_mutation"] is False
+    assert report["training_dataset_created"] is False
+
+    assert summary["hydrated_packet_row_count"] == 204
+    assert len(packet_rows) == 204
+    assert sum(1 for row in packet_rows if row["소스계열"] == "PDF") == 100
+    assert sum(1 for row in packet_rows if row["소스계열"] == "XLSX") == 104
+    assert all(row["질의문"].strip() for row in packet_rows)
+    assert all(row["근거후보_스니펫"].strip() for row in packet_rows)
+    assert all(row["근거후보_위치"].strip() for row in packet_rows)
+    assert all(row["기대답변_한국어"] == "" for row in packet_rows)
+    assert all(row["근거판단_한국어"] == "" for row in packet_rows)
+    assert all(row["공식분모포함판단"] == "보류" for row in packet_rows)
+    assert all(row["기대답변_초안_비공식"].startswith("비공식 기계초안") for row in packet_rows)
+
+    assert f"Overall status: `{CURRENT_RAG_STATUS}`;" in current_text
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in readme
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in eval_readme
+    assert "supersedes the abstract v4_7_1 packet" in current_text
+    assert "non-empty `질의문` 204" in readme
+    assert "The previous v4_7_1 Korean review packet was abstract" in eval_readme
+    assert "review_packet_ko_hydrated.xlsx" in eval_readme
+    assert V4_7_2_SCRIPT in readme_verify_section
+    assert V4_7_2_SCRIPT in scripts_readme
+
+    assert run_id in measurements_section
+    assert "| prior_packet_row_count | 204 |" in measurements_section
+    assert "| prior_packet_non_empty_query_count | 0 |" in measurements_section
+    assert "| hydrated_packet_row_count | 204 |" in measurements_section
+    assert "| hydrated_packet_non_empty_query_count | 204 |" in measurements_section
+    assert "| hydrated_pdf_row_count | 100 |" in measurements_section
+    assert "| hydrated_xlsx_row_count | 104 |" in measurements_section
+    assert "| extraction_failed_row_count | 0 |" in measurements_section
+    assert "| deterministic_query_generated_count | 0 |" in measurements_section
+    assert "| local_llm_query_generated_count | 204 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "| qrels_mutation | false |" in measurements_section
+    assert "| gold_mutation | false |" in measurements_section
+    assert "| label_mutation | false |" in measurements_section
+    assert "| training_dataset_created | false |" in measurements_section
+
+    assert run_id in triage_section
+    assert "leave every review query blank" in triage_section
+    assert "source-grounded Korean query candidates" in triage_section
+    assert "Reviewable rows: 204; PDF 100; XLSX 104; extraction_failed 0" in triage_section
+    assert "not official metric" in triage_section
+
+
+def test_v4_7_3_human_reviewed_korean_query_candidate_records_status_docs_and_guardrails():
+    run_id = "official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod"
+    event_type = "diagnostic_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod"
+    source_run_id = "official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
+    source_registration_run_id = "official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
+    report_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    report_path = report_dir / "report.json"
+    require_v4_3_local_artifacts(STATUS_JSONL, report_path)
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_text = progress.split("## Short History", 1)[0]
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    measurements_section = measurements.split(
+        "### v4_7_3 Human-Reviewed Korean Query Candidate Pass/Exclusion Application",
+        1,
+    )[1].split("\n### ", 1)[0]
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    triage_section = triage.split(
+        "### v4_7_3 Human-Reviewed Korean Query Candidate Decision Boundary",
+        1,
+    )[1].split("\n### ", 1)[0]
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_verify_section = _readme_verify_section(readme)
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("run_id") == run_id and event.get("event_type") == event_type
+    ]
+
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["schema_version"] == f"{run_id}_status_event_v1"
+    assert event["status"] == V4_7_3_CURRENT_STATUS
+    assert event["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert event["artifact_sha256"]["report_json_sha256"] == sha256_file(report_path)
+    assert event["diagnostic_only"] is True
+    assert event["human_review_applied"] is True
+    assert event["user_clarification_applied"] is True
+    assert event["csv_migeomsu_interpreted_as_pass"] is True
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["v4_7_official_metric_gate_opened"] is False
+    assert event["query_candidate_pass_mutation"] is True
+    assert event["gold_mutation"] is False
+    assert event["qrels_mutation"] is False
+    assert event["label_mutation"] is False
+    assert event["expected_answer_mutation"] is False
+    assert event["supporting_evidence_mutation"] is False
+    assert event["denominator_mutation"] is False
+    assert event["training_dataset_created"] is False
+    assert event["ft_a_execution"] is False
+    assert event["fine_tuning"] is False
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    assert event["reviewed_csv_row_count"] == 204
+    assert event["reviewed_csv_pdf_rows"] == 100
+    assert event["reviewed_csv_xlsx_rows"] == 104
+    assert event["user_passed_query_candidate_row_count"] == 58
+    assert event["user_excluded_row_count"] == 146
+    assert event["passed_counts_by_family"] == {"PDF": 58, "XLSX": 0, "TEXT": 0}
+    assert event["excluded_counts_by_family"] == {"PDF": 42, "XLSX": 104, "TEXT": 0}
+    assert event["source_run_id"] == source_run_id
+    assert event["source_registration_run_id"] == source_registration_run_id
+
+    assert report["schema_version"] == "rag_v4_7_3_human_reviewed_korean_query_candidate_decision_report_v1"
+    assert report["status"] == V4_7_3_CURRENT_STATUS
+    assert report["source_run_id"] == source_run_id
+    assert report["source_registration_run_id"] == source_registration_run_id
+    assert report["reviewed_csv_path_redacted"] is True
+    assert report["artifact_paths"] == {"report_json": report_path.relative_to(ROOT).as_posix()}
+    assert report["reviewed_csv_row_count"] == 204
+    assert report["user_passed_query_candidate_row_count"] == 58
+    assert report["user_excluded_row_count"] == 146
+    assert report["passed_counts_by_family"] == {"PDF": 58, "XLSX": 0, "TEXT": 0}
+    assert report["excluded_counts_by_family"] == {"PDF": 42, "XLSX": 104, "TEXT": 0}
+    assert report["csv_migeomsu_interpreted_as_pass"] is True
+    assert report["decision_policy"] == [
+        "user_clarified_migeomsu_means_pass",
+        "non_empty_exclusion_reason_means_user_excluded",
+        "empty_exclusion_reason_means_user_passed_query_candidate",
+        "query_candidate_pass_does_not_open_gold_qrels_labels_expected_evidence_or_official_denominator",
+    ]
+    assert report["residual_risks"] == [
+        "all passed query candidates are PDF",
+        "all XLSX candidates are user-excluded in this review",
+        "expected answers/evidence and relevance/answerability labels remain unresolved",
+        "official metric and FT-A remain closed",
+    ]
+    assert len(report["review_decision_ledger"]) == 204
+    assert len(report["passed_query_candidates"]) == 58
+    assert all(row["review_status_original"] == "미검수" for row in report["review_decision_ledger"])
+    assert all(row["official_denominator_eligible"] is False for row in report["review_decision_ledger"])
+    assert all(row["gold_status"] == "not_gold" for row in report["review_decision_ledger"])
+    assert all(row["qrels_status"] == "not_qrels" for row in report["review_decision_ledger"])
+    assert all(row["label_status"] == "not_labeled" for row in report["review_decision_ledger"])
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["gold_mutation"] is False
+    assert report["qrels_mutation"] is False
+    assert report["label_mutation"] is False
+    assert report["expected_answer_mutation"] is False
+    assert report["supporting_evidence_mutation"] is False
+    assert report["denominator_mutation"] is False
+    assert report["training_dataset_created"] is False
+    assert report["protected_namespaces_touched"] == []
+
+    assert f"Overall status: `{CURRENT_RAG_STATUS}`;" in current_text
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in readme
+    assert f"Current RAG status: `{CURRENT_RAG_STATUS}`" in eval_readme
+    assert "v4_7_3 applies the user-reviewed Korean query candidate CSV" in readme
+    assert "미검수=통과" in readme
+    assert "not official metric" in readme
+    assert "v4_7_3 applies the user-reviewed CSV decisions" in eval_readme
+    assert "not gold/qrels" in eval_readme
+    assert V4_7_3_SCRIPT in readme_verify_section
+    assert V4_7_3_SCRIPT in scripts_readme
+
+    assert run_id in current_text
+    assert "미검수=통과" in current_text
+    assert "user-passed 58 rows and user-excluded 146 rows" in current_text
+    assert run_id in measurements_section
+    assert "| reviewed_csv_row_count | 204 |" in measurements_section
+    assert "| reviewed_csv_pdf_rows | 100 |" in measurements_section
+    assert "| reviewed_csv_xlsx_rows | 104 |" in measurements_section
+    assert "| user_passed_query_candidate_row_count | 58 |" in measurements_section
+    assert "| user_excluded_row_count | 146 |" in measurements_section
+    assert "| passed_counts_by_family | PDF 58, XLSX 0, TEXT 0 |" in measurements_section
+    assert "| excluded_counts_by_family | PDF 42, XLSX 104, TEXT 0 |" in measurements_section
+    assert "| official_metric_input_rows | 0 |" in measurements_section
+    assert "| training_dataset_created | false |" in measurements_section
+
+    assert run_id in triage_section
+    assert "pass 표기로 override" in triage_section
+    assert "all XLSX candidates are user-excluded" in triage_section
+    assert "not official metric" in triage_section

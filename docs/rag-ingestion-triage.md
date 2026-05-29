@@ -1,10 +1,32 @@
+<!-- official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod:triage-entry:start -->
+### v4_7_3 Human-Reviewed Korean Query Candidate Decision Boundary
+
+- Run: `official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod`
+- Boundary: this step applies user review decisions to v4_7_2 query candidates only. It does not approve relevance, answerability, expected answers, supporting evidence, qrels, gold records, official denominator rows, or official metric input.
+- User clarification: CSV `검수상태=미검수` is not pending for this file; it is interpreted as pass 표기로 override when `제외사유` is blank. Non-empty `제외사유` remains user exclusion text and is preserved in the embedded ledger.
+- Applied counters: reviewed rows 204; passed query candidates 58; excluded rows 146; passed PDF 58; passed XLSX 0.
+- Residual risks: all passed query candidates are PDF; all XLSX candidates are user-excluded in this review; expected answers/evidence and relevance/answerability labels remain unresolved; official metric and FT-A remain closed.
+- It is not official metric, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, not training data, and not live DB/index/cache readiness.
+<!-- official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod:triage-entry:end -->
+<!-- official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod:triage-entry:start -->
+### v4_7_2 Source-Grounded Korean Query Review Packet Hydration Triage
+
+- Run: `official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod`
+- Root cause: v4_7_1 treated missing query text in the registration artifacts as a reason to leave every review query blank, even though source-disjoint candidate sources were registered and extractable source content was available.
+- Fix: v4_7_2 searches for linked query fields first, then uses the local LLM in strict-JSON mode to draft source-grounded Korean query candidates from bounded PDF text and XLSX workbook structure. Deterministic query templates stay disabled and unavailable as a fallback.
+- Reviewable rows: 204; PDF 100; XLSX 104; extraction_failed 0; non-empty `질의문` 204.
+- User-owned fields remain blank/default. Machine draft answer/evidence columns are non-official hints and require review.
+- It is not official metric, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, not training data, and not live DB/index/cache readiness.
+<!-- official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod:triage-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod:triage-entry:start -->
 ### v4_7_1 Korean Review Packet And README Diagnostic Snapshot Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod`
 - The packet covers PDF 100 rows and XLSX 104 rows from the accepted v4_7 pre-official candidate manifest registration.
 - It is human-review-only. Codex did not fill expected answers, supporting evidence, relevance labels, answerability labels, denominator inclusion, qrels, gold, or promotion decisions.
-- The v4_7 registration manifest did not contain actual query/evidence text, so `질의문`, `기대답변_한국어`, and `근거판단_한국어` remain blank.
+- The `source_manifest_*` columns and redacted preview/locator columns are filled from SHA-256 matches against the `source_collection` manifest.
+- The v4_7 registration artifacts did not contain actual query/answer text, so `질의문`, `기대답변_한국어`, and `근거판단_한국어` remain blank.
+- Actual artifact-backed query/answer examples are exported separately in `actual_query_llm_response_examples_ko.csv` from v3_22 answer-allowed LLM rows, not from v4_7.
 - It is not official metric, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, and not live DB/index/cache readiness.
 - Remaining user-owned actions: provide or adjudicate actual query/evidence context, then decide gold/qrels, expected evidence, relevance, answerability, official denominator inclusion, and promotion policy.
 <!-- official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod:triage-entry:end -->
