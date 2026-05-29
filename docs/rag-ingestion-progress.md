@@ -1,6 +1,6 @@
 # RAG Ingestion Progress
 
-Last updated: 2026-05-27 KST.
+Last updated: 2026-05-30 KST.
 
 This is the compact status index for the current RAG ingestion and official
 answer/citation metric work. Do not append turn transcripts or create new
@@ -20,6 +20,10 @@ durable JSON/JSONL payloads needed by the run contract; full `results.jsonl`,
 failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
+
+<!-- v4_7_5_pdf_evidence_repair_eval_compaction:progress-entry:start -->
+- v4_7_5_pdf_evidence_repair_eval_compaction is V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json`. EvidenceBundle v2 replays the v4_7_4 PDF survivor 58 rows only: evidence_window_sufficient_proxy 35 -> 48, weak_evidence_window 23 -> 10, missing_neighbor_context 23 -> 10, table_or_figure_structure_repaired 2, prior answer-ready regressions 0. Artifact compaction uses the short run path, keeps the v4_7_4 long path as a resolver alias, records generated ignored artifacts in `ai/eval/reports/rag-ingestion/archive_manifest.jsonl`, and skips physical cleanup until an external archive target is explicit. This remains diagnostic-only: not official metric, not gold/qrels, not labels, not expected/supporting evidence approval, not training data, not promotion evidence, not product-success evidence, and not live readiness.
+<!-- v4_7_5_pdf_evidence_repair_eval_compaction:progress-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:progress-entry:start -->
 - v4_7_4 PDF survivor retrieval/evidence/answer quality replay (`official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod`) is V4_7_4_PDF_SURVIVOR_RETRIEVAL_EVIDENCE_ANSWER_QUALITY_REPLAY_NONPROD_READY. It replays only PDF survivor 58 rows from v4_7_3; XLSX remains out of scope because passed XLSX count is 0. EvidenceBundle created 58 rows, sufficient proxy 35 rows, weak window 23 rows, generated_response_count 33. It is not official metric, gold/qrels, labels, expected-answer/evidence approval, training data, product-success evidence, promotion evidence, FT-A execution, fine-tuning, or live readiness.
 <!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:progress-entry:end -->
@@ -188,7 +192,7 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V4_7_4_PDF_SURVIVOR_RETRIEVAL_EVIDENCE_ANSWER_QUALITY_REPLAY_NONPROD_READY`;
+Overall status: `V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY`;
 current latest v4_6 run remains v4_6_12:
 `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`;
 current Phase 1 FastAPI diagnostic/internal integration marker:
@@ -544,7 +548,7 @@ closed; threshold tuning and winner selection also remain closed.
 <!-- portfolio_ready_freeze_v1:progress-entry:end -->
 
 <!-- portfolio_repo_cleanup_20260522:progress-entry:start -->
-- Portfolio repository cleanup (`portfolio_repo_cleanup_20260522`) externalized local runtime payloads, the Namu v4 structured combined corpus payload, legacy root-level PDF candidate index files, and legacy root-level PDF diagnostic report JSON files to `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\portfolio-cleanup-20260522-005928\`. Python/Maven cache directories were deleted where Windows permissions allowed. The current `ai/eval/reports/rag-ingestion/`, `ai/eval/source_registry/`, and `ai/eval/indexes/` generated evidence remains local-only because the current pytest profiles read those paths directly. This cleanup made no metric, resolver, gold/qrels/label/expected-answer/supporting-evidence, production index, threshold, winner-selection, promotion, or answer-generation changes.
+- Portfolio repository cleanup (`portfolio_repo_cleanup_20260522`) externalized local runtime payloads, the Namu v4 structured combined corpus payload, legacy root-level PDF candidate index files, and legacy root-level PDF diagnostic report JSON files to a redacted external runtime archive. Python/Maven cache directories were deleted where Windows permissions allowed. The current `ai/eval/reports/rag-ingestion/`, `ai/eval/source_registry/`, and `ai/eval/indexes/` generated evidence remains local-only because the current pytest profiles read those paths directly. This cleanup made no metric, resolver, gold/qrels/label/expected-answer/supporting-evidence, production index, threshold, winner-selection, promotion, or answer-generation changes.
 <!-- portfolio_repo_cleanup_20260522:progress-entry:end -->
 
 <!-- portfolio_readme_nexon_contact_surface_cleanup_20260522:progress-entry:start -->
@@ -958,14 +962,13 @@ current v3_6_9 and later diagnostic artifacts required by the current RAG
 profile. Older
 `rag-ingestion` payloads, including the
 official baseline/scorer/input/smoke/source-bound files and v3_1-v3_6_8
-diagnostics, are consolidated under
-`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`.
+diagnostics, are consolidated under a redacted external runtime archive.
 The former `ai/eval/reports/phase7/` and
-`ai/eval/reports/legacy-baseline-final/` trees are also archived under
-`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
+`ai/eval/reports/legacy-baseline-final/` trees are also archived under the
+same redacted external runtime archive family.
 The previous 2026-05-19 external archive remains a compatibility fallback.
-Repo-local archive payloads are externalized under
-`D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260519-repo-wide-cleanup\files\archive\`.
+Repo-local archive payloads are externalized under a redacted external
+workspace archive.
 
 Per-run Markdown reports under `ai/eval/reports/rag-ingestion/` are no longer
 the human-facing surface. The ongoing narrative stays in the three rolling docs

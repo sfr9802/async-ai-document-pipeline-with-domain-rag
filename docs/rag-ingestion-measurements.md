@@ -1,8 +1,33 @@
+<!-- v4_7_5_pdf_evidence_repair_eval_compaction:measurements-entry:start -->
+### v4_7_5 PDF Evidence Repair And Eval Surface Compaction
+
+- Run key: `v4_7_5_pdf_evidence_repair_eval_compaction`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json`
+- Interpretation: diagnostic proxy before/after over the v4_7_4 PDF survivor 58 rows only. No official metric, gold/qrels, expected answers, supporting evidence approval, labels, training data, promotion evidence, product-success evidence, or live readiness is opened.
+
+| Counter | Before v4_7_4 | After v4_7_5 | Delta |
+|---|---:|---:|---:|
+| evidence_window_sufficient_proxy_count | 35 | 48 | 13 |
+| weak_evidence_window_count | 23 | 10 | -13 |
+| missing_neighbor_context_count | 23 | 10 | -13 |
+| answer_ready_evidence_bundle_count | 35 | 48 | 13 |
+| fail_closed_before_llm_count | 23 | 10 | -13 |
+| generated_response_count | 33 | 0 | -33 |
+| parsed_final_answer_present_count | 33 | 0 | -33 |
+| citation_rendered_count | 33 | 0 | -33 |
+| claim_support_verifier_pass_count | 25 | 0 | -25 |
+| claim_support_verifier_fail_count | 8 | 0 | -8 |
+| unsupported_claim_risk_count | 8 | 0 | -8 |
+| evidence_underuse_flag_count | 7 | 0 | -7 |
+| non_korean_answer_flag_count | 0 | 0 | 0 |
+| table_or_figure_structure_repaired_count | 0 | 2 | 2 |
+| regression_count_for_prior_answer_ready_rows | 0 | 0 | 0 |
+<!-- v4_7_5_pdf_evidence_repair_eval_compaction:measurements-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:measurements-entry:start -->
 ### v4_7_4 PDF Survivor Retrieval/Evidence/Answer Quality Replay
 
 - Run: `official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod/report.json`; row-level replay detail is embedded in `report.json` only.
+- Resolver key: `v4_7_4`; legacy long-path alias remains supported by `ai/eval/rag_eval_registry.py`. Row-level replay detail is embedded in `report.json` only.
 - Interpretation: all metrics are diagnostic proxies over the v4_7_3 PDF survivor candidate set. They are not official metric rows and do not use gold/qrels, expected answers, supporting evidence approvals, hidden target locators, or source-file title shortcuts.
 
 | Counter | Value |
@@ -423,12 +448,11 @@ human report surface. As of the 2026-05-21 cleanup, `ai/eval/reports/` keeps
 only `rag-ingestion/`, and that directory keeps `status.jsonl` plus compact current v3_6_9 and later diagnostic artifacts required by the current RAG profile. Older measurement payloads, including the official
 baseline/scorer/input/smoke files and v3_1-v3_6_8 diagnostics, live in:
 
-`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`
+the redacted external runtime archive.
 
 Historical `_archive/legacy` artifact paths in older entries are logical
 provenance names. Their physical generated payloads may live in the external
-runtime archive under
-`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+runtime archive under redacted external archive paths.
 
 <!-- official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod:measurements-entry:start -->
 ### v4_6_4 FT-A Dry-Run Input Manifest Validator
@@ -1978,7 +2002,7 @@ gold or official labels.
 Environment assumptions:
 
 - Windows/PowerShell workspace:
-  `D:\async-ocr-rag-multimodal-pipeline`
+  repo root path redacted
 - Local OpenAI-compatible llama.cpp endpoint:
   `http://localhost:8081/v1`
 - Model label: `gemma4-e2b-local`
@@ -2131,7 +2155,7 @@ denominator rows, production namespaces, and production indexes.
 Environment assumptions:
 
 - Windows/PowerShell workspace:
-  `D:\async-ocr-rag-multimodal-pipeline`
+  repo root path redacted
 - Python: `python -X utf8` (`Python 3.13.0` in this run)
 - Benchmark script:
   `ai/scripts/rag_pdf_xlsx_perf_benchmark.py`
@@ -2211,10 +2235,10 @@ Current repo-local machine payloads:
 Archived payload families:
 
 - `ai/eval/reports/rag-ingestion/*` except the compact current files listed above:
-  `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`
+  redacted external runtime archive for legacy RAG-ingestion reports
 - former `ai/eval/reports/phase7/` and
   `ai/eval/reports/legacy-baseline-final/`:
-  `D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`
+  redacted external runtime archive for legacy report trees
 
 Reader contract: use this file for metric ladder context, use
 `docs/rag-ingestion-triage.md` for queue/row-level decisions, and use

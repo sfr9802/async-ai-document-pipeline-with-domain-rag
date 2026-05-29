@@ -1,3 +1,13 @@
+<!-- v4_7_5_pdf_evidence_repair_eval_compaction:triage-entry:start -->
+### v4_7_5 PDF Evidence Repair Failure Taxonomy And Cleanup Boundary
+
+- Run key: `v4_7_5_pdf_evidence_repair_eval_compaction`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json`
+- Evidence boundary: SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only. Query-time raw PDF parsing, broad SourceAtom scans, hidden target/gold locators, expected/supporting gold text, and source-file title shortcuts remain disabled.
+- Failure taxonomy after repair: RIGHT_PAGE_WEAK_WINDOW 10; CONTEXT_NEIGHBOR_MISSING 10; TABLE_OR_FIGURE_STRUCTURE_LOST 0; UNSUPPORTED_CLAIM_RISK 0; ANSWER_READY 48; CONTRACT_FAIL_CLOSED 10.
+- Cleanup boundary: generated ignored artifacts are inventoried in `ai/eval/reports/rag-ingestion/archive_manifest.jsonl` with hashes and classifications. Physical cleanup is skipped because the external archive target was not revalidated in this slice. Protected namespaces, raw user CSV/uploaded review evidence, source manifests, and current-profile v4_7_2/v4_7_3/v4_7_4/v4_7_5 evidence remain preserved.
+- XLSX remains parked because v4_7_3 passed XLSX count is 0. This is not official metric, product-success evidence, promotion evidence, FT-A execution, fine-tuning, training data, or live DB/index/cache readiness.
+<!-- v4_7_5_pdf_evidence_repair_eval_compaction:triage-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:triage-entry:start -->
 ### v4_7_4 PDF Survivor Failure Taxonomy And Decision Boundary
 
@@ -161,13 +171,12 @@ queue or decision-boundary detail belongs here.
 
 Historical `_archive/legacy` artifact paths below are logical provenance names.
 Their physical generated payloads may live in the external runtime archive under
-`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\`.
+redacted external runtime archive paths.
 As of the 2026-05-21 cleanup, the current repo-local report directory keeps
 `status.jsonl` plus compact current v3_6_9 and later diagnostic artifacts required by the current RAG profile; older triage payloads are consolidated under
-`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\rag-ingestion-legacy\`.
+the redacted external runtime archive.
 The former non-rag report trees, `phase7/` and `legacy-baseline-final/`, are
-archived under
-`D:\_external_runtime_artifacts\async-ocr-rag-multimodal-pipeline\rag-ingestion\repo-wide-cleanup-20260521\reports\`.
+archived under the same redacted external runtime archive family.
 
 <!-- official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod:triage-entry:start -->
 ### v4_6_4 FT-A Dry-Run Input Manifest Validator Triage

@@ -17,6 +17,7 @@ python scripts/operational/e2e_smoke.py
 
 | Script | Role |
 |---|---|
+| `rag_eval.py` | Stable short-key dispatcher for current RAG diagnostic checks and writes; `v4_7_5_pdf_evidence_repair_eval_compaction` writes `ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json` while legacy long paths stay resolver aliases. |
 | `rag_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod.py` | Persists the v3_22 XLSX display metadata contract into SourceAtom-owned runtime-adjacent fields. |
 | `rag_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod.py` | Packages family-separated XLSX table/range/cell locator diagnostics from seen-reference v3 surfaces. |
 | `rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py` | Keeps PDF file identity confidence separate from answer-ready evidence-window diagnostics. |
@@ -87,7 +88,7 @@ eval/eval_queries/official_denominator_registry.json
 Legacy full72/XLSX v1-v3 builder and comparison scripts were moved to:
 
 ```text
-D:\_external_workspace_archive\async-ocr-rag-multimodal-pipeline\20260519-repo-wide-cleanup\files\archive\results\2026-05-05-eval-query-lineage-cleanup\scripts\
+redacted external workspace archive path
 ```
 
 Keep those scripts provenance-only unless a follow-up explicitly restores or

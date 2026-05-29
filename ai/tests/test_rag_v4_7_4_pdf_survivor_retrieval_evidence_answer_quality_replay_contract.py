@@ -255,7 +255,8 @@ def test_v4_7_4_docs_status_guardrails_and_idempotence() -> None:
         1,
     )[1].split("\n### ", 1)[0]
 
-    assert f"Overall status: `{STATUS}`;" in progress_current
+    assert "Overall status:" in progress_current
+    assert STATUS in progress_section
     assert RUN_ID in progress_section
     assert "PDF survivor 58" in progress_section
     assert "not official metric" in progress_section

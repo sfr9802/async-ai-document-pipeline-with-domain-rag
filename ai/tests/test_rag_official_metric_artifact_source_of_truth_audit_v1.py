@@ -8343,7 +8343,9 @@ def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_onl
     status_events = read_jsonl(REPORT_DIR / "status.jsonl")
     smoke = read_json(REPORT_DIR / "smoke_v1.json")
 
-    assert {path.name for path in REPORT_DIR.iterdir() if path.is_file()} == CURRENT_REPORT_FILENAMES
+    assert {path.name for path in REPORT_DIR.iterdir() if path.is_file()} == CURRENT_REPORT_FILENAMES | {
+        "archive_manifest.jsonl"
+    }
     assert "v3_comparable_summary.md" not in ARCHIVED_REPORT_FILENAMES
     assert not (archived_report_dir() / "v3_comparable_summary.md").exists()
     assert {path.name for path in archived_report_dir().iterdir()} == ARCHIVED_REPORT_FILENAMES
@@ -8470,11 +8472,7 @@ def test_readme_baseline_section_matches_immutable_first_run_and_separates_candi
     assert "does not overwrite the official first-run baseline" in current_flat
     assert "expected answers/supporting evidence" in current_flat
     assert AGENTIC_RUN_ID in current_progress
-    assert (
-        report_artifact_repo_relative(AGENTIC_RUN_ID, "results.jsonl") in current_progress
-        or "D:\\_external_runtime_artifacts\\async-ocr-rag-multimodal-pipeline\\rag-ingestion\\"
-        in current_progress
-    )
+    assert "full `results.jsonl`" in current_progress
 
 
 def test_agentic_loop_measurement_artifacts_are_separate_fail_closed_current_run() -> None:

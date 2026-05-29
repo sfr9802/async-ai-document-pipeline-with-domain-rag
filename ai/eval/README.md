@@ -20,7 +20,7 @@ TEXT, PDF, XLSX 문서에 질문했을 때 AI가 어떤 근거를 찾고, 어떤
 ## 현재 상태
 
 - Query/response samples: 64개 (TEXT 10, PDF 20, XLSX 34)
-- Current RAG status: `V4_7_4_PDF_SURVIVOR_RETRIEVAL_EVIDENCE_ANSWER_QUALITY_REPLAY_NONPROD_READY`
+- Current RAG status: `V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY`
 - Sensitive-topic README display exclusion: enabled
 - Diagnostic-only policy: unchanged
 
@@ -107,6 +107,8 @@ PDF에서 목차 점선, 단독 섹션 번호, 페이지 번호, 숫자축처럼
 The previous v4_7_1 Korean review packet was abstract because v4_7 registration contained source-disjoint candidate identities but not query text. v4_7_2 superseded it with `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod/review_packet_ko_hydrated.xlsx`, plus CSV/JSONL equivalents, containing actual Korean query candidates, bounded evidence previews, and locator previews. User-owned fields remain blank/default for expected answers, evidence judgment, relevance labels, answerability labels, official denominator inclusion, exclusion reasons, policy memo, reviewer, and review timestamp. v4_7_3 applies the user-reviewed CSV decisions with `검수상태=미검수` interpreted as pass when `제외사유` is blank.
 
 v4_7_4 replays only the 58 user-passed PDF survivor candidates. It separates file-identity proxy, page/block locator proxy, EvidenceBundle sufficiency proxy, local-LLM answer replay, citation support proxy, and context-understanding failure buckets. Current counters include evidence_window_sufficient_proxy 35, weak_evidence_window 23, and generated_response_count 33.
+
+v4_7_5 (`v4_7_5_pdf_evidence_repair_eval_compaction`) repairs the v4_7_4 PDF survivor EvidenceBundle diagnostics at `ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json`. It keeps the PDF survivor scope at 58 rows and XLSX at 0, while moving evidence_window_sufficient_proxy 35 -> 48, weak_evidence_window 23 -> 10, and missing_neighbor_context 23 -> 10. The run is diagnostic-only and does not open official metric, gold/qrels, labels, training data, promotion evidence, product-success evidence, or live readiness.
 
 This is diagnostic-only replay. It is not official metric, not gold/qrels, not relevance or answerability labels, not expected answer/evidence approval, not training data, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, and not live DB/index/cache readiness. Locked flags include `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
 

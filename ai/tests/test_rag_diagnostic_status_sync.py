@@ -14,12 +14,13 @@ PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+V4_7_5_CURRENT_STATUS = "V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY"
 V4_7_4_CURRENT_STATUS = "V4_7_4_PDF_SURVIVOR_RETRIEVAL_EVIDENCE_ANSWER_QUALITY_REPLAY_NONPROD_READY"
 V4_7_3_CURRENT_STATUS = "V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLUSION_APPLICATION_NONPROD_READY"
 V4_7_2_CURRENT_STATUS = "DIAGNOSTIC_V4_7_2_SOURCE_GROUNDED_KOREAN_QUERY_REVIEW_PACKET_HYDRATION_NONPROD_READY"
 V4_7_1_CURRENT_STATUS = "DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY"
 V4_7_CURRENT_STATUS = "V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY"
-CURRENT_RAG_STATUS = V4_7_4_CURRENT_STATUS
+CURRENT_RAG_STATUS = V4_7_5_CURRENT_STATUS
 V4_6_CLOSEOUT_CURRENT_STATUS = CURRENT_RAG_STATUS
 V4_6_12_CURRENT_STATUS = V4_6_CLOSEOUT_CURRENT_STATUS
 V4_6_11_CURRENT_STATUS = V4_6_12_CURRENT_STATUS
@@ -52,6 +53,7 @@ V4_7_1_SCRIPT = "rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonp
 V4_7_2_SCRIPT = "rag_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod.py"
 V4_7_3_SCRIPT = "rag_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod.py"
 V4_7_4_SCRIPT = "rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py"
+V4_7_5_SCRIPT = "rag_eval.py"
 
 
 def _readme_verify_section(readme: str) -> str:
