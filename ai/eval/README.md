@@ -17,30 +17,6 @@ TEXT, PDF, XLSX 문서에 질문했을 때 AI가 어떤 근거를 찾고, 어떤
 | 핵심 포인트 | 근거 기반 답변, citation 검증, fail-closed 처리, 한국어 검수 패킷 생성 |
 | 운영 반영 여부 | 운영 배포나 공식 성능 지표가 아닌 diagnostic-only 자료 |
 
-## 이 README에서 확인할 수 있는 구현 역량
-
-| 역량 | 이 문서에서 드러나는 부분 |
-|---|---|
-| AI 검색 평가 설계 | query, evidence, response를 분리해서 샘플을 관리 |
-| 근거 기반 답변 검증 | PDF page, XLSX sheet/range/cell, TEXT chunk 단위로 출처를 남김 |
-| 안전한 실패 처리 | 근거가 얇거나 위치가 불명확하면 답변하지 않고 fail-closed 처리 |
-| 데이터 형식별 처리 | TEXT/PDF/XLSX를 같은 방식으로 뭉개지 않고 문서 형식별로 다르게 검증 |
-| 한국어 검수 프로세스 | 사람이 gold, expected answer, evidence 판단을 할 수 있는 검수 패킷 생성 |
-| 운영 경계 통제 | diagnostic-only 결과와 production/promotion evidence를 명확히 분리 |
-
-## 용어를 짧게 풀어보면
-
-| 용어 | 뜻 |
-|---|---|
-| RAG | 문서에서 관련 근거를 찾아 AI 답변에 사용하는 방식 |
-| Evidence surface | 답변이 참고한 문서 위치를 보여주는 표면. 예: PDF p.8, XLSX D352 |
-| SourceAtom | citation의 기준이 되는 원천 근거 단위 |
-| EvidenceBundle | 여러 SourceAtom을 답변용 근거 묶음으로 조립한 것 |
-| Citation truth | “답변이 실제 어떤 원문에 근거했는가”를 판단하는 기준 |
-| Diagnostic-only | 운영 성능 지표나 배포 근거가 아니라, 문제를 찾기 위한 진단 자료 |
-| Fail-closed | 근거가 부족하거나 모호하면 억지로 답하지 않는 정책 |
-| Promotion evidence | 운영 반영이나 성능 개선 주장의 근거로 쓸 수 있는 공식 증거 |
-
 ## 현재 상태
 
 - Query/response samples: 64개 (TEXT 10, PDF 20, XLSX 34)
@@ -125,53 +101,6 @@ PDF에서 목차 점선, 단독 섹션 번호, 페이지 번호, 숫자축처럼
 | XLSX v3_22 | Book.xlsx 시트 Sheet1 범위 A1:Z1000 값을 전부 알려줘 | SourceAtom: atom-xlsx-large-range; Book.xlsx / Sheet1 A1:Z1000; mode=UNSUPPORTED_RANGE_TOO_LARGE | diagnostic-only fail-closed: UNSUPPORTED_RANGE_TOO_LARGE |
 | XLSX v3_22 | Sheet1 시트 셀 A1 값 알려줘 | No selected SourceAtom; mode=AMBIGUOUS_RANGE_CONTEXT_REQUIRED | diagnostic-only fail-closed: 답변하려면 파일/문서, 시트, 범위, 페이지 또는 셀을 더 구체적으로 지정해 주세요. |
 | XLSX v3_22 | Book.xlsx 시트 Sheet1 셀 A1 값 알려줘 | No selected SourceAtom; mode=FORMAT_METADATA_UNAVAILABLE; index unavailable case | diagnostic-only fail-closed: 요청한 위치를 찾지 못했습니다. 제공된 위치 범위 안에서 답변하지 않습니다. |
-
-## 한국어 검수 패킷
-
-v4_7_1에서는 한국어 검수자가 직접 판단할 수 있는 review packet을 생성합니다.
-생성 위치는 다음 경로입니다.
-
-```text
-ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod/
-```
-
-생성되는 주요 파일은 다음과 같습니다.
-
-| 파일 | 역할 |
-|---|---|
-| `report.json` | run 상태와 산출물 요약 |
-| `review_packet_ko.xlsx` | 사람이 검수하기 쉬운 엑셀 패킷 |
-| `review_packet_ko.csv` | CSV 형식 검수 데이터 |
-| `review_packet_ko.jsonl` | 자동 처리용 JSONL 검수 데이터 |
-| `review_guidelines_ko.md` | 한국어 검수 가이드 |
-| `review_summary_ko.json` | 검수 패킷 요약 |
-
-검수자가 판단해야 하는 칸은 한국어로 되어 있으며 초기값은 `미검수`, `보류`, 또는 빈 값입니다.
-Codex는 gold/qrels, expected answer, supporting evidence, relevance label, answerability label, official denominator inclusion, promotion policy를 임의로 채우지 않습니다.
-
-이 경계가 중요합니다.
-사람이 결정해야 할 정답 기준과 운영 반영 정책을 자동화가 대신 정하면, 평가 결과가 좋아 보여도 신뢰하기 어렵습니다.
-따라서 v4_7 registration은 LLM을 실행하지 않았고, 실제 query/evidence context가 없는 항목은 `질의문`을 비워 두었습니다.
-없는 내용을 추정해서 채우지 않는 쪽을 선택한 것입니다.
-
-## 실제 쿼리와 LLM 응답 예시
-
-아래 표는 v3_22 XLSX answer-allowed row에서 나온 artifact-backed diagnostic evidence입니다.
-v4_7 output이 아니며, v4_7 registration은 LLM을 호출하지 않았습니다.
-전체 raw prompt와 전체 raw LLM response는 README에 직접 넣지 않고, hash와 sanitized excerpt만 남겼습니다.
-
-| Source run | Source family | Query ID | Actual user query | Response policy bucket | Evidence truth source | Parsed final answer or sanitized LLM response excerpt | Raw response hash | Prompt hash | Diagnostic boundary |
-|---|---|---|---|---|---|---|---|---|---|
-| official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_integer_a1 | Book.xlsx 시트 Sheet1 셀 A1 값 알려줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | 42 | 627e896cab7dc64c4638ee9c7b2bdd7179b790eee336c40ecc9f3442209fd167 | 46ff7aa15d74bbb708de1ce64d018156ab83b677cc1e1375d7a067bbf24be8f3 | diagnostic_only_non_official_not_v4_7_output |
-| official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_percentage_b1 | Book.xlsx 시트 Sheet1 셀 B1 퍼센트 표시값 알려줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | 12.5% | e1b495906aef9919d11a996edefab2a66f554152de09511e2b9c615549b84757 | 363d82359f03c05ffef465c18ac5d2a554fe6f46691d07f9bf6acd2c7b52afef | diagnostic_only_non_official_not_v4_7_output |
-| official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_currency_c1 | Book.xlsx 시트 Sheet1 셀 C1 통화 표시값 알려줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | $1,234.50 | 921f8e20bb9cee96b7740da2b6f5b7d56efea109cc8e2c2278c49a5e0202c106 | b6a3352048e238fcf0bc2dbb1dce0c5259718c4e415fb211313f7e70cd3f3478 | diagnostic_only_non_official_not_v4_7_output |
-| official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_date_d1 | Book.xlsx 시트 Sheet1 셀 D1 날짜 표시값 알려줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | 2023-07-17 | 2482deea1efcd477c44c9a70a33498140678d1d9bed0c927c5d1d660f0412d3d | 68fdf2e093a7ccef600544aa4c95eb4a9d912153f737442dfb182f86ba7e4e8e | diagnostic_only_non_official_not_v4_7_output |
-| official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_datetime_d2 | Book.xlsx 시트 Sheet1 셀 D2 일시 표시값 알려줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | 2023-07-17 09:30 | 97f03d0db64abd4e70faeab35f984731b031ff03f6816fb88eaabc2dbf1dc41a | f2ffa4b6513ee97f3963ab784e85bbc4b7e3c5b0a37be552a30304b5a22cbdce | diagnostic_only_non_official_not_v4_7_output |
-| official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_blank_e1 | Book.xlsx 시트 Sheet1 셀 E1 빈 셀인지 알려줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | E1 셀은 비어 있습니다. | af0119747a550b970ebec8b5ab4acb46bad3685ee422fa9cc17937c854ac26ee | 5e6526d3fc353a93c55fb3dea8bbd470daa1cf0f51ce14ce34169387acd214aa | diagnostic_only_non_official_not_v4_7_output |
-| official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_formula_cached_f1 | Book.xlsx 시트 Sheet1 셀 F1 수식 캐시 표시값 알려줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | 168 | e9491252a8fb5f4a3be02c41547687427741ffba0e59259627c52bdf63b474d3 | 9933c6d9fe7a5f648af9392b4d3f885b823ba764105bdff2cd503f4fe3755d1b | diagnostic_only_non_official_not_v4_7_output |
-| official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_small_range_a1_b2 | Book.xlsx 시트 Sheet1 범위 A1:B2 값을 표로 알려줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | Sheet1 범위 A1:B2 값은 다음과 같습니다: - A1: 42 - B1: 12.5% - A2: 서울 - B2: Header total | 62be04b953ab34f65d4e3ca6b6b06cba1042a61f70a5058918d185c4a855c97b | ba93c230ff774798898a58e8a66b907dbea506b4b68748ce858ea8e293ca2b5f | diagnostic_only_non_official_not_v4_7_output |
-| official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_broad_bounded_summary | Book.xlsx 시트 Sheet1 범위 A1:E20 값을 요약해줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | Book.xlsx 시트 Sheet1 범위 A1:E20의 일부 값은 A1이 42, B1이 12.5%, C1이 $1,234.50, D1이 2023-07-17 등으로 요약될 수 있습니다. | d6e41c9832a2a5aad575d389a641324b21aef12e2bb754a7a508671980e8a104 | 2485ba75ecd4ba5dd84ca2660b7bcc1639177787416424e191ea2729df3b0314 | diagnostic_only_non_official_not_v4_7_output |
-| official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod | XLSX | v3_22_xlsx_missing_format_metadata_fallback | Book.xlsx 시트 Sheet1 셀 G1 값 알려줘 | ANSWER_ALLOWED | source_atom_evidence_bundle | 9999.5 | 76dab72f9ad4dea62a057e6fc47cc42341d94afa98d3d8c63fcddc5ca92d14db | 56749a3258f554414701229c9fc42f5d98ede0a663a8182961dde51c01cbf7f7 | diagnostic_only_non_official_not_v4_7_output |
 
 ## 평가 경계
 
