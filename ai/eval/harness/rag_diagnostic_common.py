@@ -15,7 +15,12 @@ from typing import Any, Mapping, Sequence
 ROOT = Path(__file__).resolve().parents[3]
 REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
+V4_7_8_ARCHIVE_RUN_ID = "v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion"
 V4_7_6_ARCHIVE_RUN_ID = "v4_7_6_eval_artifact_archive_purge"
+EXTERNAL_ARCHIVE_RUN_IDS = (
+    V4_7_8_ARCHIVE_RUN_ID,
+    V4_7_6_ARCHIVE_RUN_ID,
+)
 EXTERNAL_ARCHIVE_ENV_KEYS = ("RAG_EVAL_EXTERNAL_ARCHIVE_ROOT", "EXTERNAL_RUNTIME_ARTIFACTS_ROOT")
 DEFAULT_EXTERNAL_ARCHIVE_ROOTS = (
     Path("D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline"),
@@ -62,13 +67,14 @@ def external_archive_namespace_roots() -> tuple[Path, ...]:
     namespaces: list[Path] = []
     seen: set[str] = set()
     for root in roots:
-        namespace = root / "rag-ingestion" / V4_7_6_ARCHIVE_RUN_ID
-        if is_relative_to(namespace, ROOT):
-            continue
-        key = str(namespace).casefold()
-        if key not in seen:
-            seen.add(key)
-            namespaces.append(windows_long_path(namespace))
+        for run_id in EXTERNAL_ARCHIVE_RUN_IDS:
+            namespace = root / "rag-ingestion" / run_id
+            if is_relative_to(namespace, ROOT):
+                continue
+            key = str(namespace).casefold()
+            if key not in seen:
+                seen.add(key)
+                namespaces.append(windows_long_path(namespace))
     return tuple(namespaces)
 
 

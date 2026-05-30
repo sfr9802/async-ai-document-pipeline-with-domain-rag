@@ -14,6 +14,8 @@ from typing import Any
 import numpy as np
 import pytest
 
+from ai.eval.harness import rag_diagnostic_common as diagnostic_common
+
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -1631,7 +1633,7 @@ AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_HOLDOUT_JSON = (
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_7_2 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -1641,7 +1643,7 @@ def require_v3_7_2_local_artifacts(*paths: Path) -> None:
 
 
 def require_v3_8_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_8 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -1651,7 +1653,7 @@ def require_v3_8_local_artifacts(*paths: Path) -> None:
 
 
 def require_v3_8_1_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_8_1 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -1661,7 +1663,7 @@ def require_v3_8_1_local_artifacts(*paths: Path) -> None:
 
 
 def require_v3_8_2_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_8_2 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -1671,7 +1673,7 @@ def require_v3_8_2_local_artifacts(*paths: Path) -> None:
 
 
 def require_v3_8_3_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_8_3 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -1681,7 +1683,7 @@ def require_v3_8_3_local_artifacts(*paths: Path) -> None:
 
 
 def require_v3_9_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_9 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -1691,133 +1693,133 @@ def require_v3_9_local_artifacts(*paths: Path) -> None:
 
 
 def require_v4_3_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_3 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_4_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_4 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_5_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_5 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_5_1_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_5_1 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_5_2_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_5_2 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_5_3_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_5_3 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_1_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_1 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_2_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_2 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_3_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_3 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_4_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_4 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_5_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_5 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_6_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_6 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_7_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_7 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_8_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_8 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_9_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_9 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_10_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_10 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_11_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_11 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def require_v4_6_12_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_6_12 local report artifacts: " + ", ".join(str(path) for path in missing))
@@ -2486,10 +2488,10 @@ def test_v3_6_2_sanity_hash_contract_is_registered_and_matches_artifacts() -> No
     }
 
     assert AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON in REGISTERED_REPORT_PATHS
-    assert AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON.exists()
+    assert artifact_exists(AGENTIC_V3_6_2_CANDIDATE_SANITY_SUMMARY_JSON)
     assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert hash_audit["generated_question_hash_contract"] == "normalized_question_sha256_lowercase_whitespace_collapsed"
@@ -2512,10 +2514,10 @@ def test_v3_6_3_manifest_freeze_artifacts_are_registered_and_hash_locked() -> No
     }
 
     assert AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON in REGISTERED_REPORT_PATHS
-    assert AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON.exists()
+    assert artifact_exists(AGENTIC_V3_6_3_MANIFEST_SUMMARY_JSON)
     assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["manifest_freeze_passed"] is True
@@ -2544,10 +2546,10 @@ def test_v3_6_4_diagnostic_metric_artifacts_are_registered_and_hash_locked() -> 
     }
 
     assert AGENTIC_V3_6_4_SUMMARY_JSON in REGISTERED_REPORT_PATHS
-    assert AGENTIC_V3_6_4_SUMMARY_JSON.exists()
+    assert artifact_exists(AGENTIC_V3_6_4_SUMMARY_JSON)
     assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_6_4_DIAGNOSTIC_ONLY_WEAK_NOISY_SILVER_METRIC_RUN_ID
@@ -2603,10 +2605,10 @@ def test_v3_6_5_runtime_audit_artifacts_are_registered_hash_locked_and_compact()
     }
 
     assert AGENTIC_V3_6_5_SUMMARY_JSON in REGISTERED_REPORT_PATHS
-    assert AGENTIC_V3_6_5_SUMMARY_JSON.exists()
+    assert artifact_exists(AGENTIC_V3_6_5_SUMMARY_JSON)
     assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_6_5_ROUGH_FAILURE_BUCKET_TRIAGE_RUN_ID
@@ -2653,10 +2655,10 @@ def test_v3_6_6_sidecar_runtime_probe_artifacts_are_registered_hash_locked_and_c
     }
 
     assert AGENTIC_V3_6_6_SUMMARY_JSON in REGISTERED_REPORT_PATHS
-    assert AGENTIC_V3_6_6_SUMMARY_JSON.exists()
+    assert artifact_exists(AGENTIC_V3_6_6_SUMMARY_JSON)
     assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_6_6_DIAGNOSTIC_REFERENCE_SIDECAR_AND_RUNTIME_SURFACE_PROBE_RUN_ID
@@ -2700,9 +2702,9 @@ def test_v3_6_6_sidecar_runtime_probe_artifacts_are_registered_hash_locked_and_c
     assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
     assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
     assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
-    assert AGENTIC_V3_6_6_REFERENCE_SIDECAR_JSONL.stat().st_size < 5_000_000
-    assert AGENTIC_V3_6_6_CORE_SMOKE_SAMPLE_JSONL.stat().st_size < 250_000
-    assert AGENTIC_V3_6_6_SUMMARY_JSON.stat().st_size < 250_000
+    assert artifact_size(AGENTIC_V3_6_6_REFERENCE_SIDECAR_JSONL) < 5_000_000
+    assert artifact_size(AGENTIC_V3_6_6_CORE_SMOKE_SAMPLE_JSONL) < 250_000
+    assert artifact_size(AGENTIC_V3_6_6_SUMMARY_JSON) < 250_000
 
 
 def test_v3_6_7_runtime_stability_probe_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -2715,10 +2717,10 @@ def test_v3_6_7_runtime_stability_probe_artifacts_are_registered_hash_locked_and
     }
 
     assert AGENTIC_V3_6_7_SUMMARY_JSON in REGISTERED_REPORT_PATHS
-    assert AGENTIC_V3_6_7_SUMMARY_JSON.exists()
+    assert artifact_exists(AGENTIC_V3_6_7_SUMMARY_JSON)
     assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_6_7_RUNTIME_STABILITY_PROBE_FOR_CORE_ONLY_RUN_ID
@@ -2768,9 +2770,9 @@ def test_v3_6_7_runtime_stability_probe_artifacts_are_registered_hash_locked_and
     assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
     assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
     assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
-    assert AGENTIC_V3_6_7_RUNTIME_ATTEMPTS_JSONL.stat().st_size < 250_000
-    assert AGENTIC_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_6_7_SUMMARY_JSON.stat().st_size < 250_000
+    assert artifact_size(AGENTIC_V3_6_7_RUNTIME_ATTEMPTS_JSONL) < 250_000
+    assert artifact_size(AGENTIC_V3_6_7_RUNTIME_STABILITY_SUMMARY_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_6_7_SUMMARY_JSON) < 250_000
 
 
 def test_v3_6_8_nonprod_index_and_payload_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -2784,10 +2786,10 @@ def test_v3_6_8_nonprod_index_and_payload_artifacts_are_registered_hash_locked_a
     }
 
     assert AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON in REGISTERED_REPORT_PATHS
-    assert AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON.exists()
+    assert artifact_exists(AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON)
     assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == (
@@ -2854,9 +2856,9 @@ def test_v3_6_8_nonprod_index_and_payload_artifacts_are_registered_hash_locked_a
     assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
     assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
     assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
-    assert AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SOURCE_INVENTORY_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_RETRIEVAL_SMOKE_DIAGNOSTICS_JSONL.stat().st_size < 250_000
+    assert artifact_size(AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SUMMARY_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_SOURCE_INVENTORY_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_6_8_NONPROD_ALL_SOURCE_RETRIEVAL_SMOKE_DIAGNOSTICS_JSONL) < 250_000
 
 
 def test_v3_6_8_source_registry_architecture_audit_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -2870,10 +2872,10 @@ def test_v3_6_8_source_registry_architecture_audit_artifacts_are_registered_hash
     }
 
     assert AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON in REGISTERED_REPORT_PATHS
-    assert AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON.exists()
+    assert artifact_exists(AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON)
     assert set(expected_artifacts.values()) <= REGISTERED_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_6_8_SOURCE_REGISTRY_FIRST_EVIDENCE_BUNDLE_ARCHITECTURE_AUDIT_RUN_ID
@@ -2919,9 +2921,9 @@ def test_v3_6_8_source_registry_architecture_audit_artifacts_are_registered_hash
     assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
     assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
     assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
-    assert AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT_JSON.stat().st_size < 250_000
+    assert artifact_size(AGENTIC_V3_6_8_SOURCE_REGISTRY_SUMMARY_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_6_8_SOURCE_REGISTRY_SOURCE_OBJECT_AUDIT_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_6_8_SOURCE_REGISTRY_EVIDENCE_BUNDLE_CONTRACT_JSON) < 250_000
 
 
 def test_v3_6_9_searchunit_searchview_sourceatom_refactor_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -2934,10 +2936,10 @@ def test_v3_6_9_searchunit_searchview_sourceatom_refactor_artifacts_are_register
     }
 
     assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON in CURRENT_REPORT_PATHS
-    assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON.exists()
+    assert artifact_exists(AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON)
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_6_9_SEARCHUNIT_SEARCHVIEW_SOURCEATOM_REFACTOR_RUN_ID
@@ -2990,9 +2992,9 @@ def test_v3_6_9_searchunit_searchview_sourceatom_refactor_artifacts_are_register
     assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
     assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
     assert "canonical_silver_manifest_json_sha256" not in summary["artifact_sha256"]
-    assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON.stat().st_size < 250_000
+    assert artifact_size(AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_SUMMARY_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_CONTRACT_REFACTOR_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_6_9_SEARCHUNIT_SOURCEATOM_HYDRATION_SMOKE_JSON) < 250_000
 
 
 def test_v3_7_2_source_registry_backed_retrieval_smoke_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -3014,10 +3016,10 @@ def test_v3_7_2_source_registry_backed_retrieval_smoke_artifacts_are_registered_
     }
 
     assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON in CURRENT_REPORT_PATHS
-    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON.exists()
+    assert artifact_exists(AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON)
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_RUN_ID
@@ -3056,10 +3058,10 @@ def test_v3_7_2_source_registry_backed_retrieval_smoke_artifacts_are_registered_
     assert "official_qrels_jsonl_sha256" not in summary["artifact_sha256"]
     assert "official_labels_jsonl_sha256" not in summary["artifact_sha256"]
     assert "readme_performance_claim_json_sha256" not in summary["artifact_sha256"]
-    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL.stat().st_size < 12_000_000
-    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON.stat().st_size < 250_000
+    assert artifact_size(AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_SUMMARY_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_TOPK_ROWS_JSONL) < 12_000_000
+    assert artifact_size(AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_FAILURE_BUCKETS_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_7_2_SOURCE_REGISTRY_RETRIEVAL_SMOKE_PER_TRACK_JSON) < 250_000
 
 
 def test_v3_8_file_grounded_retrieval_eval_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -3082,7 +3084,7 @@ def test_v3_8_file_grounded_retrieval_eval_artifacts_are_registered_hash_locked_
     assert AGENTIC_V3_8_FILE_GROUNDED_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID
@@ -3157,10 +3159,10 @@ def test_v3_8_file_grounded_retrieval_eval_artifacts_are_registered_hash_locked_
         "full_evidence_bundles",
     ):
         assert heavy_key not in summary
-    assert AGENTIC_V3_8_FILE_GROUNDED_SUMMARY_JSON.stat().st_size < 500_000
-    assert AGENTIC_V3_8_FILE_GROUNDED_METRICS_JSON.stat().st_size < 500_000
-    assert AGENTIC_V3_8_FILE_GROUNDED_PER_QUERY_JSONL.stat().st_size < 2_000_000
-    assert AGENTIC_V3_8_FILE_GROUNDED_PER_FAMILY_JSON.stat().st_size < 250_000
+    assert artifact_size(AGENTIC_V3_8_FILE_GROUNDED_SUMMARY_JSON) < 500_000
+    assert artifact_size(AGENTIC_V3_8_FILE_GROUNDED_METRICS_JSON) < 500_000
+    assert artifact_size(AGENTIC_V3_8_FILE_GROUNDED_PER_QUERY_JSONL) < 2_000_000
+    assert artifact_size(AGENTIC_V3_8_FILE_GROUNDED_PER_FAMILY_JSON) < 250_000
 
 
 def test_v3_8_file_grounded_writer_emits_compact_artifacts_and_summary_hashes(tmp_path, monkeypatch) -> None:
@@ -3206,13 +3208,13 @@ def test_v3_8_file_grounded_writer_emits_compact_artifacts_and_summary_hashes(tm
 
     runner.write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
 
-    persisted = json.loads(summary_path.read_text(encoding="utf-8"))
-    assert metrics_path.exists()
-    assert per_query_path.exists()
-    assert per_family_path.exists()
+    persisted = read_json(summary_path)
+    assert artifact_exists(metrics_path)
+    assert artifact_exists(per_query_path)
+    assert artifact_exists(per_family_path)
     assert "metrics" not in persisted
     assert "per_query_rows" not in persisted
-    assert "per_query_rows" not in json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert "per_query_rows" not in read_json(metrics_path)
     assert persisted["per_source_family"] == {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}}
     assert summary["artifact_sha256"]["metrics_json_sha256"] == sha256_file(metrics_path)
     assert summary["artifact_sha256"]["per_query_jsonl_sha256"] == sha256_file(per_query_path)
@@ -3241,7 +3243,7 @@ def test_v3_8_1_evidence_selector_artifacts_are_registered_hash_locked_and_compa
     assert AGENTIC_V3_8_1_EVIDENCE_SELECTOR_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_8_1_EVIDENCE_SELECTOR_RUN_ID
@@ -3308,10 +3310,10 @@ def test_v3_8_1_evidence_selector_artifacts_are_registered_hash_locked_and_compa
         "full_evidence_bundles",
     ):
         assert heavy_key not in summary
-    assert AGENTIC_V3_8_1_EVIDENCE_SELECTOR_SUMMARY_JSON.stat().st_size < 500_000
-    assert AGENTIC_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON.stat().st_size < 500_000
-    assert AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL.stat().st_size < 2_000_000
-    assert AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON.stat().st_size < 250_000
+    assert artifact_size(AGENTIC_V3_8_1_EVIDENCE_SELECTOR_SUMMARY_JSON) < 500_000
+    assert artifact_size(AGENTIC_V3_8_1_EVIDENCE_SELECTOR_METRICS_JSON) < 500_000
+    assert artifact_size(AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_QUERY_JSONL) < 2_000_000
+    assert artifact_size(AGENTIC_V3_8_1_EVIDENCE_SELECTOR_PER_FAMILY_JSON) < 250_000
 
 
 def test_v3_8_1_evidence_selector_writer_emits_compact_artifacts_and_summary_hashes(
@@ -3361,13 +3363,13 @@ def test_v3_8_1_evidence_selector_writer_emits_compact_artifacts_and_summary_has
 
     runner.write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
 
-    persisted = json.loads(summary_path.read_text(encoding="utf-8"))
-    assert metrics_path.exists()
-    assert per_query_path.exists()
-    assert per_family_path.exists()
+    persisted = read_json(summary_path)
+    assert artifact_exists(metrics_path)
+    assert artifact_exists(per_query_path)
+    assert artifact_exists(per_family_path)
     assert "metrics" not in persisted
     assert "per_query_rows" not in persisted
-    assert "per_query_rows" not in json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert "per_query_rows" not in read_json(metrics_path)
     assert persisted["per_source_family"] == {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}}
     assert summary["artifact_sha256"]["metrics_json_sha256"] == sha256_file(metrics_path)
     assert summary["artifact_sha256"]["per_query_jsonl_sha256"] == sha256_file(per_query_path)
@@ -3396,7 +3398,7 @@ def test_v3_8_2_oracle_free_file_resolve_artifacts_are_registered_hash_locked_an
     assert AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID
@@ -3504,10 +3506,10 @@ def test_v3_8_2_oracle_free_file_resolve_artifacts_are_registered_hash_locked_an
         "full_evidence_bundles",
     ):
         assert heavy_key not in summary
-    assert AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_SUMMARY_JSON.stat().st_size < 500_000
-    assert AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON.stat().st_size < 500_000
-    assert AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL.stat().st_size < 4_000_000
-    assert AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON.stat().st_size < 250_000
+    assert artifact_size(AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_SUMMARY_JSON) < 500_000
+    assert artifact_size(AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_METRICS_JSON) < 500_000
+    assert artifact_size(AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL) < 4_000_000
+    assert artifact_size(AGENTIC_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_FAMILY_JSON) < 250_000
 
 
 def test_v3_8_2_oracle_free_file_resolve_writer_emits_compact_artifacts_and_summary_hashes(
@@ -3557,13 +3559,13 @@ def test_v3_8_2_oracle_free_file_resolve_writer_emits_compact_artifacts_and_summ
 
     runner.write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
 
-    persisted = json.loads(summary_path.read_text(encoding="utf-8"))
-    assert metrics_path.exists()
-    assert per_query_path.exists()
-    assert per_family_path.exists()
+    persisted = read_json(summary_path)
+    assert artifact_exists(metrics_path)
+    assert artifact_exists(per_query_path)
+    assert artifact_exists(per_family_path)
     assert "metrics" not in persisted
     assert "per_query_rows" not in persisted
-    assert "per_query_rows" not in json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert "per_query_rows" not in read_json(metrics_path)
     assert persisted["per_source_family"] == {"PDF": {"query_count": 1}, "XLSX": {"query_count": 1}}
     assert summary["artifact_sha256"]["metrics_json_sha256"] == sha256_file(metrics_path)
     assert summary["artifact_sha256"]["per_query_jsonl_sha256"] == sha256_file(per_query_path)
@@ -3595,7 +3597,7 @@ def test_v3_8_3_xlsx_scoped_cell_resolve_artifacts_are_registered_hash_locked_an
     assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_RUN_ID
@@ -3755,11 +3757,11 @@ def test_v3_8_3_xlsx_scoped_cell_resolve_artifacts_are_registered_hash_locked_an
         "per_family_rows",
     ):
         assert heavy_key not in summary
-    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_SUMMARY_JSON.stat().st_size < 500_000
-    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON.stat().st_size < 500_000
-    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL.stat().st_size < 4_000_000
-    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL.stat().st_size < 250_000
+    assert artifact_size(AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_SUMMARY_JSON) < 500_000
+    assert artifact_size(AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_METRICS_JSON) < 500_000
+    assert artifact_size(AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL) < 4_000_000
+    assert artifact_size(AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_FAMILY_JSONL) < 250_000
 
 
 def test_v3_8_3_xlsx_scoped_cell_resolve_writer_emits_compact_artifacts_and_summary_hashes(
@@ -3815,15 +3817,15 @@ def test_v3_8_3_xlsx_scoped_cell_resolve_writer_emits_compact_artifacts_and_summ
 
     runner.write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
 
-    persisted = json.loads(summary_path.read_text(encoding="utf-8"))
-    assert metrics_path.exists()
-    assert per_query_path.exists()
-    assert per_family_path.exists()
-    assert per_family_jsonl_path.exists()
+    persisted = read_json(summary_path)
+    assert artifact_exists(metrics_path)
+    assert artifact_exists(per_query_path)
+    assert artifact_exists(per_family_path)
+    assert artifact_exists(per_family_jsonl_path)
     assert "metrics" not in persisted
     assert "per_query_rows" not in persisted
     assert "per_family_rows" not in persisted
-    assert "per_query_rows" not in json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert "per_query_rows" not in read_json(metrics_path)
     assert read_jsonl(per_family_jsonl_path) == [{"source_family": "XLSX", "query_count": 1}]
     assert persisted["per_source_family"] == {"XLSX": {"query_count": 1}}
     assert summary["artifact_sha256"]["metrics_json_sha256"] == sha256_file(metrics_path)
@@ -3863,7 +3865,7 @@ def test_v3_9_1_xlsx_table_axis_pdf_file_identity_artifacts_are_registered_hash_
     assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
 
     assert summary["run_id"] == AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_RUN_ID
@@ -3995,13 +3997,13 @@ def test_v3_9_1_xlsx_table_axis_pdf_file_identity_artifacts_are_registered_hash_
         "failure_taxonomy",
     ):
         assert heavy_key not in summary
-    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SUMMARY_JSON.stat().st_size < 500_000
-    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON.stat().st_size < 2_000_000
-    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL.stat().st_size < 8_000_000
-    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON.stat().st_size < 500_000
-    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_JSONL.stat().st_size < 1_000_000
-    assert AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON.stat().st_size < 1_000_000
+    assert artifact_size(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SUMMARY_JSON) < 500_000
+    assert artifact_size(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_METRICS_JSON) < 2_000_000
+    assert artifact_size(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_QUERY_JSONL) < 8_000_000
+    assert artifact_size(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_PER_FAMILY_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_FAILURE_TAXONOMY_JSON) < 500_000
+    assert artifact_size(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_QUERY_FIDELITY_JSONL) < 1_000_000
+    assert artifact_size(AGENTIC_V3_9_1_XLSX_TABLE_AXIS_PDF_FILE_IDENTITY_SPLIT_MANIFEST_JSON) < 1_000_000
 
 
 def test_v3_9_1_writer_emits_compact_artifacts_and_summary_hashes(tmp_path, monkeypatch) -> None:
@@ -4059,19 +4061,19 @@ def test_v3_9_1_writer_emits_compact_artifacts_and_summary_hashes(tmp_path, monk
 
     runner.write_v3_6_low_touch_weak_noisy_silver_artifacts(summary)
 
-    persisted = json.loads(summary_path.read_text(encoding="utf-8"))
-    assert metrics_path.exists()
-    assert per_query_path.exists()
-    assert per_family_path.exists()
-    assert failure_path.exists()
-    assert fidelity_path.exists()
-    assert split_path.exists()
+    persisted = read_json(summary_path)
+    assert artifact_exists(metrics_path)
+    assert artifact_exists(per_query_path)
+    assert artifact_exists(per_family_path)
+    assert artifact_exists(failure_path)
+    assert artifact_exists(fidelity_path)
+    assert artifact_exists(split_path)
     assert "metrics" not in persisted
     assert "per_query_rows" not in persisted
     assert "failure_taxonomy" not in persisted
     assert "query_fidelity_audit_rows" not in persisted
     assert "split_manifest" not in persisted
-    assert "per_query_rows" not in json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert "per_query_rows" not in read_json(metrics_path)
     assert persisted["per_source_family"] == {"XLSX": {"query_count": 1}, "PDF_FILE_IDENTITY": {"query_count": 1}}
     assert persisted["measurements_doc_updated"] is True
     assert persisted["triage_doc_updated"] is True
@@ -4130,7 +4132,7 @@ def test_v3_9_2_overfit_risk_audit_and_holdout_reset_artifacts_are_registered_ha
     assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
     assert "summary_json_sha256" not in summary["artifact_sha256"]
 
@@ -4176,10 +4178,10 @@ def test_v3_9_2_overfit_risk_audit_and_holdout_reset_artifacts_are_registered_ha
     assert remat_plan["diagnostic_only"] is True
     assert "rag-data-official-denominator-v1" in remat_plan["blocked_namespaces"]
 
-    assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SUMMARY_JSON.stat().st_size < 250_000
-    assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_METRICS_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_OVERFIT_JSONL.stat().st_size < 500_000
-    assert AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_CANDIDATE_JSON.stat().st_size < 200_000
+    assert artifact_size(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_SUMMARY_JSON) < 250_000
+    assert artifact_size(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_METRICS_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_OVERFIT_JSONL) < 500_000
+    assert artifact_size(AGENTIC_V3_9_2_OVERFIT_RISK_AUDIT_HOLDOUT_RESET_CANDIDATE_JSON) < 200_000
 
 
 def test_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -4223,7 +4225,7 @@ def test_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_artifacts_are_regi
     assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
     assert "summary_json_sha256" not in summary["artifact_sha256"]
 
@@ -4312,11 +4314,11 @@ def test_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_artifacts_are_regi
     assert metrics["pdf_file_identity_baseline"]["fresh_real_holdout"]["baseline_remeasured"] is False
     assert failure["performance_success_claim_allowed"] is False
 
-    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SUMMARY_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_METRICS_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_HOLDOUT_JSON.stat().st_size < 300_000
-    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SOURCEATOM_JSONL.stat().st_size < 2_000_000
-    assert AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEARCHUNIT_JSONL.stat().st_size < 2_000_000
+    assert artifact_size(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SUMMARY_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_METRICS_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_HOLDOUT_JSON) < 300_000
+    assert artifact_size(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SOURCEATOM_JSONL) < 2_000_000
+    assert artifact_size(AGENTIC_V3_10_FRESH_HOLDOUT_XLSX_REMAT_SEARCHUNIT_JSONL) < 2_000_000
 
 
 def test_v3_11_layered_retrieval_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -4363,7 +4365,7 @@ def test_v3_11_layered_retrieval_artifacts_are_registered_hash_locked_and_compac
     assert AGENTIC_V3_11_LAYERED_RETRIEVAL_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
     assert "summary_json_sha256" not in summary["artifact_sha256"]
 
@@ -4432,11 +4434,11 @@ def test_v3_11_layered_retrieval_artifacts_are_registered_hash_locked_and_compac
     assert query_guardrail["shortcut_success_evidence_allowed"] is False
     assert failure["pdf_answer_ready_evidence_window"]["computed_in_this_run"] is False
 
-    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_SUMMARY_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_METRICS_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_QUERY_JSONL.stat().st_size < 1_000_000
-    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_TRACE_SAMPLE_JSONL.stat().st_size < 1_000_000
-    assert AGENTIC_V3_11_LAYERED_RETRIEVAL_SELECTED_EVIDENCE_JSONL.stat().st_size < 1_000_000
+    assert artifact_size(AGENTIC_V3_11_LAYERED_RETRIEVAL_SUMMARY_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_11_LAYERED_RETRIEVAL_METRICS_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_11_LAYERED_RETRIEVAL_PER_QUERY_JSONL) < 1_000_000
+    assert artifact_size(AGENTIC_V3_11_LAYERED_RETRIEVAL_TRACE_SAMPLE_JSONL) < 1_000_000
+    assert artifact_size(AGENTIC_V3_11_LAYERED_RETRIEVAL_SELECTED_EVIDENCE_JSONL) < 1_000_000
 
 
 def test_v3_12_xlsx_structural_locator_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -4486,7 +4488,7 @@ def test_v3_12_xlsx_structural_locator_artifacts_are_registered_hash_locked_and_
     assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
     assert "summary_json_sha256" not in summary["artifact_sha256"]
 
@@ -4595,13 +4597,13 @@ def test_v3_12_xlsx_structural_locator_artifacts_are_registered_hash_locked_and_
     assert all(set(row["layers_recorded"]) >= {"L2_FILE_WORKBOOK_IDENTITY", "L3_STRUCTURAL_LOCATOR"} for row in trace_rows)
     assert all("embedding_text" in row and "bm25_text" in row for row in searchunits)
 
-    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SUMMARY_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_METRICS_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_EVAL_JSONL.stat().st_size < 1_000_000
-    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SCORE_JSONL.stat().st_size < 2_000_000
-    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_TRACE_JSONL.stat().st_size < 1_000_000
-    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SOURCEATOM_JSONL.stat().st_size < 2_000_000
-    assert AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SEARCHUNIT_JSONL.stat().st_size < 2_000_000
+    assert artifact_size(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SUMMARY_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_METRICS_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_EVAL_JSONL) < 1_000_000
+    assert artifact_size(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SCORE_JSONL) < 2_000_000
+    assert artifact_size(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_TRACE_JSONL) < 1_000_000
+    assert artifact_size(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SOURCEATOM_JSONL) < 2_000_000
+    assert artifact_size(AGENTIC_V3_12_XLSX_STRUCTURAL_LOCATOR_SEARCHUNIT_JSONL) < 2_000_000
 
 
 def test_v3_13_pdf_file_identity_structural_locator_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -4645,7 +4647,7 @@ def test_v3_13_pdf_file_identity_structural_locator_artifacts_are_registered_has
     assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
     assert "summary_json_sha256" not in summary["artifact_sha256"]
 
@@ -4743,11 +4745,11 @@ def test_v3_13_pdf_file_identity_structural_locator_artifacts_are_registered_has
     assert all(row["used_gold_or_expected_text"] is False for row in score_rows)
     assert all("expected_answer" not in row and "supporting_evidence" not in row for row in eval_rows)
 
-    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SUMMARY_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_METRICS_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_EVAL_JSONL.stat().st_size < 1_000_000
-    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_TRACE_JSONL.stat().st_size < 1_000_000
-    assert AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SCORE_JSONL.stat().st_size < 2_000_000
+    assert artifact_size(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SUMMARY_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_METRICS_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_EVAL_JSONL) < 1_000_000
+    assert artifact_size(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_TRACE_JSONL) < 1_000_000
+    assert artifact_size(AGENTIC_V3_13_PDF_FILE_IDENTITY_STRUCTURAL_LOCATOR_SCORE_JSONL) < 2_000_000
 
 
 def test_v3_14_layered_retrieval_runtime_adapter_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -4791,7 +4793,7 @@ def test_v3_14_layered_retrieval_runtime_adapter_artifacts_are_registered_hash_l
     assert AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
     assert "summary_json_sha256" not in summary["artifact_sha256"]
 
@@ -4866,10 +4868,10 @@ def test_v3_14_layered_retrieval_runtime_adapter_artifacts_are_registered_hash_l
     assert holdout["fresh_real_holdout_sufficient"] is False
     assert holdout["product_success_evidence_allowed"] is False
 
-    assert AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_SUMMARY_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_METRICS_JSON.stat().st_size < 200_000
-    assert AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_QUERY_JSONL.stat().st_size < 2_000_000
-    assert AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_TRACE_JSONL.stat().st_size < 4_000_000
+    assert artifact_size(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_SUMMARY_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_METRICS_JSON) < 200_000
+    assert artifact_size(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_PER_QUERY_JSONL) < 2_000_000
+    assert artifact_size(AGENTIC_V3_14_LAYERED_RETRIEVAL_RUNTIME_ADAPTER_TRACE_JSONL) < 4_000_000
 
 
 def test_v3_15_xlsx_l3_table_range_locator_artifacts_are_registered_hash_locked_and_compact() -> None:
@@ -4913,7 +4915,7 @@ def test_v3_15_xlsx_l3_table_range_locator_artifacts_are_registered_hash_locked_
     assert AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_SUMMARY_JSON in CURRENT_REPORT_PATHS
     assert set(expected_artifacts.values()) <= CURRENT_REPORT_PATHS
     for key, path in expected_artifacts.items():
-        assert path.exists(), path
+        assert artifact_exists(path), path
         assert summary["artifact_sha256"][key] == sha256_file(path)
     assert "summary_json_sha256" not in summary["artifact_sha256"]
 
@@ -5000,10 +5002,10 @@ def test_v3_15_xlsx_l3_table_range_locator_artifacts_are_registered_hash_locked_
     assert holdout["fresh_real_holdout_sufficient"] is False
     assert holdout["product_success_evidence_allowed"] is False
 
-    assert AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_SUMMARY_JSON.stat().st_size < 100_000
-    assert AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_METRICS_JSON.stat().st_size < 200_000
-    assert AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_QUERY_JSONL.stat().st_size < 2_000_000
-    assert AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_TRACE_JSONL.stat().st_size < 4_000_000
+    assert artifact_size(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_SUMMARY_JSON) < 100_000
+    assert artifact_size(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_METRICS_JSON) < 200_000
+    assert artifact_size(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_PER_QUERY_JSONL) < 2_000_000
+    assert artifact_size(AGENTIC_V3_15_XLSX_L3_TABLE_RANGE_LOCATOR_TRACE_JSONL) < 4_000_000
 
 
 def test_v3_16_final_llm_answer_quality_review_packet_artifacts_are_hash_locked_and_compact() -> None:
@@ -5087,7 +5089,7 @@ def test_v3_16_final_llm_answer_quality_review_packet_artifacts_are_hash_locked_
         assert summary["artifact_paths"][key] == path.relative_to(ROOT).as_posix()
         assert summary["artifact_sha256"][f"{key}_sha256"] == sha256_file(path)
     assert "summary_json_sha256" not in summary["artifact_sha256"]
-    assert {path.name for path in output_dir.iterdir() if path.is_file()} == {
+    assert {path.name for path in artifact_paths.values() if artifact_exists(path)} == {
         "summary.json",
         "metrics.json",
         "per_family.json",
@@ -5197,13 +5199,13 @@ def test_v3_16_final_llm_answer_quality_review_packet_artifacts_are_hash_locked_
     assert forbidden_audit["policy_pass"] is True
     assert forbidden_audit["vector_payload_used_as_evidence_truth"]["detected"] is False
 
-    assert artifact_paths["summary_json"].stat().st_size < 100_000
-    assert artifact_paths["metrics_json"].stat().st_size < 60_000
-    assert artifact_paths["per_family_json"].stat().st_size < 60_000
-    assert artifact_paths["per_query_jsonl"].stat().st_size < 300_000
-    assert artifact_paths["responses_jsonl"].stat().st_size < 500_000
-    assert artifact_paths["review_packet_csv"].stat().st_size < 500_000
-    assert artifact_paths["review_packet_jsonl"].stat().st_size < 500_000
+    assert artifact_size(artifact_paths["summary_json"]) < 100_000
+    assert artifact_size(artifact_paths["metrics_json"]) < 60_000
+    assert artifact_size(artifact_paths["per_family_json"]) < 60_000
+    assert artifact_size(artifact_paths["per_query_jsonl"]) < 300_000
+    assert artifact_size(artifact_paths["responses_jsonl"]) < 500_000
+    assert artifact_size(artifact_paths["review_packet_csv"]) < 500_000
+    assert artifact_size(artifact_paths["review_packet_jsonl"]) < 500_000
 
 
 def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() -> None:
@@ -5408,13 +5410,13 @@ def test_v3_17_user_locator_rough_query_artifacts_are_hash_locked_and_compact() 
     assert latency_contract["retrieval_latency_excludes_l8_generation"] is True
     assert latency_contract["l8_generation_latency_reported_separately"] is True
 
-    assert artifact_paths["summary_json"].stat().st_size < 120_000
-    assert artifact_paths["metrics_json"].stat().st_size < 80_000
-    assert artifact_paths["per_family_json"].stat().st_size < 80_000
-    assert artifact_paths["per_query_jsonl"].stat().st_size < 400_000
-    assert artifact_paths["responses_jsonl"].stat().st_size < 700_000
-    assert artifact_paths["review_packet_csv"].stat().st_size < 700_000
-    assert artifact_paths["review_packet_jsonl"].stat().st_size < 700_000
+    assert artifact_size(artifact_paths["summary_json"]) < 120_000
+    assert artifact_size(artifact_paths["metrics_json"]) < 80_000
+    assert artifact_size(artifact_paths["per_family_json"]) < 80_000
+    assert artifact_size(artifact_paths["per_query_jsonl"]) < 400_000
+    assert artifact_size(artifact_paths["responses_jsonl"]) < 700_000
+    assert artifact_size(artifact_paths["review_packet_csv"]) < 700_000
+    assert artifact_size(artifact_paths["review_packet_jsonl"]) < 700_000
 
 
 def test_v3_18_agent_runtime_tool_invocation_artifacts_are_hash_locked_and_compact() -> None:
@@ -5531,11 +5533,11 @@ def test_v3_18_agent_runtime_tool_invocation_artifacts_are_hash_locked_and_compa
     assert metrics["locator_resolution_bucket_counts"]["LOCATION_NOT_FOUND"] >= 1
     assert metrics["locator_resolution_bucket_counts"]["UNSUPPORTED_LOCATOR_FORMAT"] >= 1
 
-    assert artifact_paths["summary_json"].stat().st_size < 120_000
-    assert artifact_paths["metrics_json"].stat().st_size < 80_000
-    assert artifact_paths["per_query_jsonl"].stat().st_size < 900_000
-    assert artifact_paths["agent_tool_call_trace_jsonl"].stat().st_size < 1_500_000
-    assert artifact_paths["review_packet_jsonl"].stat().st_size < 700_000
+    assert artifact_size(artifact_paths["summary_json"]) < 120_000
+    assert artifact_size(artifact_paths["metrics_json"]) < 80_000
+    assert artifact_size(artifact_paths["per_query_jsonl"]) < 900_000
+    assert artifact_size(artifact_paths["agent_tool_call_trace_jsonl"]) < 1_500_000
+    assert artifact_size(artifact_paths["review_packet_jsonl"]) < 700_000
 
 
 def test_v3_19_locator_ambiguity_deictic_response_policy_artifacts_are_hash_locked_and_compact() -> None:
@@ -5669,12 +5671,12 @@ def test_v3_19_locator_ambiguity_deictic_response_policy_artifacts_are_hash_lock
     assert all(row["provenance"]["source_atom_registry_canonical_truth"] is True for row in trace_rows)
     assert all(row["provenance"]["vector_payload_used_as_evidence_truth"] is False for row in trace_rows)
 
-    assert artifact_paths["summary_json"].stat().st_size < 140_000
-    assert artifact_paths["metrics_json"].stat().st_size < 80_000
-    assert artifact_paths["per_query_jsonl"].stat().st_size < 1_100_000
-    assert artifact_paths["agent_tool_call_trace_jsonl"].stat().st_size < 1_800_000
-    assert artifact_paths["user_response_policy_audit_jsonl"].stat().st_size < 500_000
-    assert artifact_paths["review_packet_jsonl"].stat().st_size < 900_000
+    assert artifact_size(artifact_paths["summary_json"]) < 140_000
+    assert artifact_size(artifact_paths["metrics_json"]) < 80_000
+    assert artifact_size(artifact_paths["per_query_jsonl"]) < 1_100_000
+    assert artifact_size(artifact_paths["agent_tool_call_trace_jsonl"]) < 1_800_000
+    assert artifact_size(artifact_paths["user_response_policy_audit_jsonl"]) < 500_000
+    assert artifact_size(artifact_paths["review_packet_jsonl"]) < 900_000
 
 
 def test_v3_20_live_runtime_like_db_index_cache_smoke_artifacts_are_hash_locked_and_compact() -> None:
@@ -5818,12 +5820,12 @@ def test_v3_20_live_runtime_like_db_index_cache_smoke_artifacts_are_hash_locked_
     assert any(row["adapter_fail_closed_reason"] == "SOURCE_ATOM_STORE_UNAVAILABLE" for row in review_rows)
     assert any(row["adapter_fail_closed_reason"] == "CACHE_NAMESPACE_MISMATCH" for row in review_rows)
 
-    assert artifact_paths["summary_json"].stat().st_size < 180_000
-    assert artifact_paths["metrics_json"].stat().st_size < 90_000
-    assert artifact_paths["per_query_jsonl"].stat().st_size < 900_000
-    assert artifact_paths["agent_tool_call_trace_jsonl"].stat().st_size < 1_500_000
-    assert artifact_paths["live_runtime_smoke_audit_jsonl"].stat().st_size < 700_000
-    assert artifact_paths["review_packet_jsonl"].stat().st_size < 900_000
+    assert artifact_size(artifact_paths["summary_json"]) < 180_000
+    assert artifact_size(artifact_paths["metrics_json"]) < 90_000
+    assert artifact_size(artifact_paths["per_query_jsonl"]) < 900_000
+    assert artifact_size(artifact_paths["agent_tool_call_trace_jsonl"]) < 1_500_000
+    assert artifact_size(artifact_paths["live_runtime_smoke_audit_jsonl"]) < 700_000
+    assert artifact_size(artifact_paths["review_packet_jsonl"]) < 900_000
 
 
 def test_v3_21_agent_runtime_llm_io_observability_packet_artifacts_are_hash_locked_and_compact() -> None:
@@ -5945,11 +5947,11 @@ def test_v3_21_agent_runtime_llm_io_observability_packet_artifacts_are_hash_lock
     assert all(row["user_review_like"] == "" for row in review_rows)
     assert all(row["user_review_note"] == "" for row in review_rows)
 
-    assert artifact_paths["summary_json"].stat().st_size < 220_000
-    assert artifact_paths["metrics_json"].stat().st_size < 100_000
-    assert artifact_paths["llm_io_packet_jsonl"].stat().st_size < 1_000_000
-    assert artifact_paths["llm_invocation_audit_jsonl"].stat().st_size < 500_000
-    assert artifact_paths["review_packet_jsonl"].stat().st_size < 1_000_000
+    assert artifact_size(artifact_paths["summary_json"]) < 220_000
+    assert artifact_size(artifact_paths["metrics_json"]) < 100_000
+    assert artifact_size(artifact_paths["llm_io_packet_jsonl"]) < 1_000_000
+    assert artifact_size(artifact_paths["llm_invocation_audit_jsonl"]) < 500_000
+    assert artifact_size(artifact_paths["review_packet_jsonl"]) < 1_000_000
 
 
 def test_v3_22_xlsx_display_value_and_range_rendering_single_report_artifact_is_hash_locked_compact_and_complete() -> None:
@@ -6083,7 +6085,7 @@ def test_v3_22_xlsx_display_value_and_range_rendering_single_report_artifact_is_
     assert "per_query" not in matches[0]
     assert "raw_llm_response" not in matches[0]
     assert "raw_llm_response_sha256" not in matches[0]
-    assert report_path.stat().st_size < 1_500_000
+    assert artifact_size(report_path) < 1_500_000
 
 
 def test_v4_1_persisted_xlsx_sourceatom_display_metadata_report_is_hash_locked_compact_and_complete() -> None:
@@ -6156,7 +6158,7 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_report_is_hash_locked_c
     assert "per_query" not in matches[0]
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 500_000
+    assert artifact_size(report_path) < 500_000
 
 
 def test_v4_2_xlsx_locator_v2_report_is_hash_locked_compact_and_complete() -> None:
@@ -6230,7 +6232,7 @@ def test_v4_2_xlsx_locator_v2_report_is_hash_locked_compact_and_complete() -> No
     assert "per_query" not in matches[0]
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_500_000
+    assert artifact_size(report_path) < 1_500_000
 
 
 def test_v4_3_pdf_file_identity_split_report_is_hash_locked_compact_and_complete() -> None:
@@ -6336,7 +6338,7 @@ def test_v4_3_pdf_file_identity_split_report_is_hash_locked_compact_and_complete
     assert "per_query" not in matches[0]
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_500_000
+    assert artifact_size(report_path) < 1_500_000
 
 
 def test_v4_3_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -6431,7 +6433,7 @@ def test_v4_4_real_blind_ood_holdout_leakage_report_is_hash_locked_compact_and_c
     assert "per_query" not in matches[0]
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_500_000
+    assert artifact_size(report_path) < 1_500_000
 
 
 def test_v4_4_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -6518,7 +6520,7 @@ def test_v4_5_finetune_readiness_report_is_hash_locked_compact_and_complete() ->
     assert "prompt_manifest" not in matches[0]
     assert "per_query" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_500_000
+    assert artifact_size(report_path) < 1_500_000
 
 
 def test_v4_5_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -6604,7 +6606,7 @@ def test_v4_5_1_holdout_candidate_intake_report_is_hash_locked_compact_and_compl
     assert "per_query" not in matches[0]
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_500_000
+    assert artifact_size(report_path) < 1_500_000
 
 
 def test_v4_5_1_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -6726,7 +6728,7 @@ def test_v4_5_2_external_source_identity_audit_report_is_hash_locked_compact_and
     assert report["source_run_references"]["previous_gate_report_json"] == v4_5_1_report_path.relative_to(ROOT).as_posix()
     assert report["source_run_references"]["previous_gate_report_sha256"] == sha256_file(v4_5_1_report_path)
     assert report["source_run_references"]["previous_gate_report_sha256"] != sha256_file(v4_5_report_path)
-    assert report_path.stat().st_size < 1_500_000
+    assert artifact_size(report_path) < 1_500_000
 
 
 def test_v4_5_2_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -6860,7 +6862,7 @@ def test_v4_5_3_external_holdout_prior_identity_summary_report_is_hash_locked_co
     assert "per_query" not in event
     assert "prompt_manifest" not in event
     assert "raw_llm_response" not in event
-    assert report_path.stat().st_size < 1_500_000
+    assert artifact_size(report_path) < 1_500_000
 
 
 def test_v4_5_3_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -6964,7 +6966,7 @@ def test_v4_6_ft_route_policy_preflight_report_is_hash_locked_compact_and_comple
     assert matches[0]["product_success_evidence_allowed"] is False
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -7067,7 +7069,7 @@ def test_v4_6_1_holdout_manifest_identity_contract_bridge_report_is_hash_locked_
     assert matches[0]["product_success_evidence_allowed"] is False
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_1_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -7171,7 +7173,7 @@ def test_v4_6_2_ft_route_policy_fixture_contract_report_is_hash_locked_compact_a
     assert matches[0]["product_success_evidence_allowed"] is False
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_2_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -7268,7 +7270,7 @@ def test_v4_6_3_ft_a_prompt_policy_baseline_schema_report_is_hash_locked_compact
     assert matches[0]["product_success_evidence_allowed"] is False
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_3_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -7369,7 +7371,7 @@ def test_v4_6_4_ft_a_dry_run_input_manifest_validator_report_is_hash_locked_comp
     assert matches[0]["product_success_evidence_allowed"] is False
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_4_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -7470,7 +7472,7 @@ def test_v4_6_5_ft_a_dry_run_execution_plan_gate_report_is_hash_locked_compact_a
     assert matches[0]["product_success_evidence_allowed"] is False
     assert "prompt_manifest" not in matches[0]
     assert "raw_llm_response" not in matches[0]
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_5_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -7586,7 +7588,7 @@ def test_v4_6_6_holdout_gap_blocker_ledger_report_is_hash_locked_compact_and_com
     assert "raw_llm_response" not in matches[0]
     assert "per_query" not in report
     assert "raw_llm_response" not in report
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_6_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -7683,7 +7685,7 @@ def test_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_report_is_hash_lock
     assert "parity-pdf-doc" not in json.dumps(report, ensure_ascii=False)
     assert "parity-workbook" not in json.dumps(report, ensure_ascii=False)
     assert "collision-doc" not in json.dumps(report, ensure_ascii=False)
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_7_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -7741,7 +7743,7 @@ def test_v4_6_8_runtime_readiness_dependency_freshness_gate_report_is_hash_locke
     assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6", "v4_6_7"}
     for source_input in report["source_report_inputs"].values():
         source_report_path = ROOT / source_input["source_report_json"]
-        assert source_report_path.exists()
+        assert artifact_exists(source_report_path)
         assert source_input["source_report_sha256"] == sha256_file(source_report_path)
         assert source_input["source_report_hash_current"] is True
         assert source_input["official_metric_input_rows"] == 0
@@ -7795,7 +7797,7 @@ def test_v4_6_8_runtime_readiness_dependency_freshness_gate_report_is_hash_locke
     assert "parity-pdf-doc" not in serialized
     assert "parity-workbook" not in serialized
     assert "collision-doc" not in serialized
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_8_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -7850,7 +7852,7 @@ def test_v4_6_9_holdout_candidate_duplicate_hygiene_gate_report_is_hash_locked_c
     assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_6_7", "v4_6_8"}
     for source_input in report["source_report_inputs"].values():
         source_report_path = ROOT / source_input["source_report_json"]
-        assert source_report_path.exists()
+        assert artifact_exists(source_report_path)
         assert source_input["source_report_sha256"] == sha256_file(source_report_path)
         assert source_input["official_metric_input_rows"] == 0
         assert source_input["promotion_evidence"] is False
@@ -7901,7 +7903,7 @@ def test_v4_6_9_holdout_candidate_duplicate_hygiene_gate_report_is_hash_locked_c
     assert "pdf-valid-looking-duplicate" not in serialized
     assert "per_query" not in report
     assert "raw_llm_response" not in report
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_9_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -7959,7 +7961,7 @@ def test_v4_6_10_external_holdout_manifest_gate_replay_report_is_hash_locked_com
     assert set(report["source_report_inputs"]) == {"v4_5_1", "v4_5_2", "v4_5_3", "v4_6_6", "v4_6_8", "v4_6_9"}
     for source_input in report["source_report_inputs"].values():
         source_report_path = ROOT / source_input["source_report_json"]
-        assert source_report_path.exists()
+        assert artifact_exists(source_report_path)
         assert source_input["source_report_sha256"] == sha256_file(source_report_path)
         assert source_input["official_metric_input_rows"] == 0
         assert source_input["promotion_evidence"] is False
@@ -8017,7 +8019,7 @@ def test_v4_6_10_external_holdout_manifest_gate_replay_report_is_hash_locked_com
     assert "D:/" not in serialized
     assert "per_query" not in report
     assert "raw_llm_response" not in report
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_10_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -8069,7 +8071,7 @@ def test_v4_6_11_ft_a_runtime_input_validation_route_parity_report_is_hash_locke
     assert set(report["source_report_inputs"]) == {"v4_6_4", "v4_6_5", "v4_6_6", "v4_6_10"}
     for source_input in report["source_report_inputs"].values():
         source_report_path = ROOT / source_input["source_report_json"]
-        assert source_report_path.exists()
+        assert artifact_exists(source_report_path)
         assert source_input["source_report_sha256"] == sha256_file(source_report_path)
         assert source_input["source_report_boundary_flags_clean"] is True
         assert source_input["official_metric_input_rows"] == 0
@@ -8155,7 +8157,7 @@ def test_v4_6_11_ft_a_runtime_input_validation_route_parity_report_is_hash_locke
         "per_query",
     ):
         assert forbidden not in serialized
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_11_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -8208,7 +8210,7 @@ def test_v4_6_12_external_holdout_runtime_replay_route_parity_report_is_hash_loc
     assert set(report["source_report_inputs"]) == {"v4_6_7", "v4_6_10", "v4_6_11"}
     for source_input in report["source_report_inputs"].values():
         source_report_path = ROOT / source_input["source_report_json"]
-        assert source_report_path.exists()
+        assert artifact_exists(source_report_path)
         assert source_input["source_report_sha256"] == sha256_file(source_report_path)
         assert source_input["source_report_boundary_flags_clean"] is True
         assert source_input["official_metric_input_rows"] == 0
@@ -8281,7 +8283,7 @@ def test_v4_6_12_external_holdout_runtime_replay_route_parity_report_is_hash_loc
         "per_query",
     ):
         assert forbidden not in serialized
-    assert report_path.stat().st_size < 1_000_000
+    assert artifact_size(report_path) < 1_000_000
 
 
 def test_v4_6_12_required_artifact_gate_fails_closed_for_missing_report(tmp_path) -> None:
@@ -8345,10 +8347,11 @@ def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_onl
     cleanup_manifests = (
         REPORT_DIR / "runs" / "v4_7_6" / "cleanup_manifest.jsonl",
         REPORT_DIR / "runs" / "v4_7_7" / "v3_legacy_artifact_manifest.jsonl",
+        REPORT_DIR / "runs" / "v4_7_8" / "v3_legacy_hold_reduction_manifest.jsonl",
     )
     archived_root_filenames: set[str] = set()
     for cleanup_manifest in cleanup_manifests:
-        if not cleanup_manifest.exists():
+        if not artifact_exists(cleanup_manifest):
             continue
         for row in read_jsonl(cleanup_manifest):
             original = Path(str(row.get("original_relative_path", "")))
@@ -8371,9 +8374,9 @@ def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_onl
     assert CURRENT_REPORT_FILENAMES | ARCHIVED_REPORT_FILENAMES == ALL_REPORT_FILENAMES
     assert not (REPORT_DIR / "status.md").exists()
     assert {path.name for path in REPORT_DIR.glob("*.md")} == EXPLICIT_GENERATED_REPORT_MARKDOWN_FILENAMES
-    assert PROGRESS_DOC.exists()
-    assert MEASUREMENTS_DOC.exists()
-    assert TRIAGE_DOC.exists()
+    assert artifact_exists(PROGRESS_DOC)
+    assert artifact_exists(MEASUREMENTS_DOC)
+    assert artifact_exists(TRIAGE_DOC)
 
     assert first_run["scored_count"] == 29
     assert first_run["failure_category_counts"] == {
@@ -13866,23 +13869,15 @@ def test_sentence_transformer_embedder_exposes_configured_max_seq_length_for_ing
 
 
 def resolve_report_artifact_path(path: Path) -> Path:
-    if path.exists():
-        return path
-    if path.parent == REPORT_ARCHIVE_DIR:
-        for archive_dir in EXTERNAL_REPORT_ARCHIVE_DIRS:
-            archived_external = archive_dir / path.name
-            if archived_external.exists():
-                return archived_external
-        return path
-    if path.parent == REPORT_DIR:
-        for archive_dir in EXTERNAL_REPORT_ARCHIVE_DIRS:
-            archived_external = archive_dir / path.name
-            if archived_external.exists():
-                return archived_external
-        archived = REPORT_ARCHIVE_DIR / path.name
-        if archived.exists():
-            return archived
-    return path
+    return diagnostic_common.resolve_report_artifact_path(path)
+
+
+def artifact_exists(path: Path) -> bool:
+    return diagnostic_common.artifact_exists(path)
+
+
+def artifact_size(path: Path) -> int:
+    return diagnostic_common.resolve_report_artifact_path(path).stat().st_size
 
 
 def read_json(path: Path) -> dict[str, Any]:

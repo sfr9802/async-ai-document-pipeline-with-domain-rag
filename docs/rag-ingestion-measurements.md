@@ -1,3 +1,53 @@
+<!-- v4_7_9_pdf_evidence_residual_answer_quality_replay:measurements-entry:start -->
+### v4_7_9 PDF Evidence Residual Answer Quality Replay
+
+- Run key: `v4_7_9_pdf_evidence_residual_answer_quality_replay`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json`
+- Local LLM status: `LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED`; no raw prompt or raw response payload is written.
+
+| Counter | Value |
+|---|---:|
+| answer_replay_candidate_count | 7 |
+| citation_rendered_count | 0 |
+| claim_support_verifier_fail_count | 0 |
+| claim_support_verifier_pass_count | 0 |
+| evidence_underuse_flag_count | 0 |
+| generated_response_count | 0 |
+| llm_invoked_count | 0 |
+| local_llm_unavailable_fail_closed_count | 7 |
+| missing_neighbor_context_count_after | 3 |
+| missing_neighbor_context_count_before | 10 |
+| official_metric_input_rows | 0 |
+| parsed_final_answer_present_count | 0 |
+| pdf_survivor_row_count | 58 |
+| prior_answer_ready_evidence_bundle_count | 48 |
+| regression_count_for_prior_answer_ready_rows | 0 |
+| repaired_evidence_bundle_count | 7 |
+| residual_weak_evidence_window_count_after | 3 |
+| residual_weak_evidence_window_count_before | 10 |
+| unsupported_claim_risk_count | 0 |
+<!-- v4_7_9_pdf_evidence_residual_answer_quality_replay:measurements-entry:end -->
+<!-- v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion:measurements-entry:start -->
+### v4_7_8 Test/Doc Dependency Decoupling And Runner Alias Expansion
+
+- Run key: `v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_8/report.json`
+- Interpretation: cleanup/refactor counters only. No retrieval, EvidenceBundle repair, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator, training, FT-A, promotion, product-success, or live-readiness surface is opened.
+
+| Counter | Before | After |
+|---|---:|---:|
+| hold_current_test_or_doc_contract | 133 | 74 |
+| hold_documented_legacy_review_packet | 16 | 16 |
+| hold_ambiguous_generated_surface | 32 | 0 |
+| review_manual_hold_narrowed | 0 | 12 |
+| v3_legacy_manual_hold_count | 181 | 102 |
+| safe_runner_check_alias_count | 2 | 12 |
+| archived_count | 0 | 79 |
+| removed_count | 0 | 79 |
+| unclassified_count | 0 | 0 |
+| archive_copy_failed_count | 0 | 0 |
+| hash_verification_failed_count | 0 | 0 |
+<!-- v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion:measurements-entry:end -->
 <!-- v4_7_7_v3_legacy_archive_and_runner_consolidation:measurements-entry:start -->
 ### v4_7_7 V3 Legacy Archive And Runner Consolidation
 

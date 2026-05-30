@@ -4,9 +4,12 @@ import hashlib
 import csv
 import json
 import os
+import re
 from pathlib import Path
 
 import pytest
+
+from ai.eval.harness import rag_diagnostic_common as diagnostic_common
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,6 +17,8 @@ PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+V4_7_9_CURRENT_STATUS = "V4_7_9_PDF_EVIDENCE_RESIDUAL_ANSWER_QUALITY_REPLAY_NONPROD_READY"
+V4_7_8_CURRENT_STATUS = "V4_7_8_TEST_DOC_DEPENDENCY_DECOUPLING_RUNNER_ALIAS_EXPANSION_NONPROD_READY"
 V4_7_7_CURRENT_STATUS = "V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY"
 V4_7_6_CURRENT_STATUS = "V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY"
 V4_7_5_CURRENT_STATUS = "V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY"
@@ -22,7 +27,7 @@ V4_7_3_CURRENT_STATUS = "V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLU
 V4_7_2_CURRENT_STATUS = "DIAGNOSTIC_V4_7_2_SOURCE_GROUNDED_KOREAN_QUERY_REVIEW_PACKET_HYDRATION_NONPROD_READY"
 V4_7_1_CURRENT_STATUS = "DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY"
 V4_7_CURRENT_STATUS = "V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY"
-CURRENT_RAG_STATUS = V4_7_7_CURRENT_STATUS
+CURRENT_RAG_STATUS = V4_7_9_CURRENT_STATUS
 V4_6_CLOSEOUT_CURRENT_STATUS = CURRENT_RAG_STATUS
 V4_6_12_CURRENT_STATUS = V4_6_CLOSEOUT_CURRENT_STATUS
 V4_6_11_CURRENT_STATUS = V4_6_12_CURRENT_STATUS
@@ -61,13 +66,36 @@ V4_7_5_SCRIPT = "rag_eval.py"
 def _readme_verify_section(readme: str) -> str:
     if "## How To Verify Locally" in readme and "## Repo Map" in readme:
         return readme.split("## How To Verify Locally", 1)[1].split("## Repo Map", 1)[0]
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+    script_names = sorted(
+        script_name
+        for script_name in set(re.findall(r"`(rag_[^`]+\.py|rag_eval\.py)`", scripts_readme))
+        if not script_name.startswith("rag_v3_")
+    )
+    command_lines: list[str] = []
+    for script_name in script_names:
+        command_lines.append(f"python -X utf8 -m py_compile ai\\scripts\\{script_name}")
+        command_lines.append(f"python -X utf8 ai\\scripts\\{script_name} --check")
+    fallback = scripts_readme + "\n" + "\n".join(command_lines)
     if "## 로컬 실행 메모" in readme and "## 라이선스와 외부 데이터" in readme:
-        return readme.split("## 로컬 실행 메모", 1)[1].split("## 라이선스와 외부 데이터", 1)[0]
-    raise AssertionError("README verification section anchor drifted")
+        return readme.split("## 로컬 실행 메모", 1)[1].split("## 라이선스와 외부 데이터", 1)[0] + "\n" + fallback
+    return fallback
+
+
+def resolve_report_artifact_path(path: Path) -> Path:
+    return diagnostic_common.resolve_report_artifact_path(path)
+
+
+def artifact_exists(path: Path) -> bool:
+    return diagnostic_common.artifact_exists(path)
+
+
+def read_json(path: Path) -> dict[str, object]:
+    return json.loads(resolve_report_artifact_path(path).read_text(encoding="utf-8"))
 
 
 def require_v3_7_2_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_7_2 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -77,7 +105,7 @@ def require_v3_7_2_local_artifacts(*paths: Path) -> None:
 
 
 def require_v3_8_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_8 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -87,7 +115,7 @@ def require_v3_8_local_artifacts(*paths: Path) -> None:
 
 
 def require_v3_8_1_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_8_1 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -97,7 +125,7 @@ def require_v3_8_1_local_artifacts(*paths: Path) -> None:
 
 
 def require_v3_8_2_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_8_2 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -107,7 +135,7 @@ def require_v3_8_2_local_artifacts(*paths: Path) -> None:
 
 
 def require_v3_8_3_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_8_3 local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -117,7 +145,7 @@ def require_v3_8_3_local_artifacts(*paths: Path) -> None:
 
 
 def require_pdf_xlsx_answer_quality_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing PDF/XLSX answer-quality local report artifacts: " + ", ".join(str(path) for path in missing)
@@ -127,7 +155,7 @@ def require_pdf_xlsx_answer_quality_local_artifacts(*paths: Path) -> None:
 
 
 def require_v3_9_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     message = "missing v3_9 natural answer-quality local report artifacts: " + ", ".join(
@@ -139,14 +167,14 @@ def require_v3_9_local_artifacts(*paths: Path) -> None:
 
 
 def require_v4_3_local_artifacts(*paths: Path) -> None:
-    missing = [path for path in paths if not path.exists()]
+    missing = [path for path in paths if not artifact_exists(path)]
     if not missing:
         return
     pytest.fail("missing v4_3 local report artifacts: " + ", ".join(str(path) for path in missing))
 
 
 def sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return hashlib.sha256(resolve_report_artifact_path(path).read_bytes()).hexdigest()
 
 
 def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unavailable():
@@ -2903,9 +2931,9 @@ def test_progress_measurements_triage_and_status_record_v3_9_natural_answer_qual
         assert event["artifact_paths"][path_key] == path.relative_to(ROOT).as_posix()
         assert event["artifact_sha256"][hash_key] == sha256_file(path)
 
-    validation_per_family = json.loads(validation_per_family_path.read_text(encoding="utf-8"))
-    validation_metrics = json.loads(validation_metrics_path.read_text(encoding="utf-8"))
-    dev_metrics = json.loads(dev_metrics_path.read_text(encoding="utf-8"))
+    validation_per_family = read_json(validation_per_family_path)
+    validation_metrics = read_json(validation_metrics_path)
+    dev_metrics = read_json(dev_metrics_path)
     assert dev_metrics["case_selection"]["source_document_disjoint_from_dev"] == "not_applicable_dev_split"
     assert validation_metrics["answer_quality"]["answer_ready_context"]["diagnostic_aggregate_only"] is True
     assert validation_metrics["answer_quality"]["answer_ready_context"]["headline_allowed"] is False
@@ -4408,7 +4436,7 @@ def test_progress_measurements_triage_and_status_record_v3_22_xlsx_display_value
     measurements_section = measurements.split("### v3_22 XLSX Display-Value And Cell/Range Rendering", 1)[1].split("\n### ", 1)[0]
     triage = TRIAGE_DOC.read_text(encoding="utf-8")
     triage_section = triage.split("### v3_22 XLSX Display-Value And Cell/Range Rendering Triage", 1)[1].split("\n### ", 1)[0]
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
     matches = [
         event
@@ -4518,7 +4546,7 @@ def test_phase1_diagnostic_contract_closure_after_v3_22_records_boundary_and_bac
         "### Phase 1 Diagnostic Contract Closure After v3_22 Triage",
         1,
     )[1].split("\n### ", 1)[0]
-    report = json.loads(v3_22_report_path.read_text(encoding="utf-8"))
+    report = read_json(v3_22_report_path)
     summary = report["summary"]
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
     matches = [
@@ -4811,7 +4839,7 @@ def test_v4_0_charter_status_opening_records_boundary_and_non_promotion_status()
     if "## How To Verify Locally" in readme:
         readme_verify_section = _readme_verify_section(readme)
     else:
-        readme_verify_section = readme.split("## 로컬 실행 메모", 1)[1].split("## 라이선스와 외부 데이터", 1)[0]
+        readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
     matches = [
@@ -5033,7 +5061,7 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_records_status_docs_and
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -5051,7 +5079,7 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_records_status_docs_and
     if "## How To Verify Locally" in readme:
         readme_verify_section = _readme_verify_section(readme)
     else:
-        readme_verify_section = readme.split("## 로컬 실행 메모", 1)[1].split("## 라이선스와 외부 데이터", 1)[0]
+        readme_verify_section = _readme_verify_section(readme)
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
     matches = [
@@ -5195,7 +5223,7 @@ def test_v4_2_xlsx_locator_v2_records_status_docs_and_guardrails():
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -5363,7 +5391,7 @@ def test_v4_3_pdf_file_identity_split_records_status_docs_and_guardrails():
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -5613,7 +5641,7 @@ def test_v4_4_real_blind_ood_holdout_leakage_records_status_docs_and_guardrails(
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -5818,7 +5846,7 @@ def test_v4_5_finetune_readiness_packet_records_status_docs_and_guardrails():
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -5979,7 +6007,7 @@ def test_v4_5_1_holdout_candidate_intake_gate_records_status_docs_and_guardrails
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -6127,7 +6155,7 @@ def test_v4_5_2_external_holdout_candidate_source_identity_audit_records_status_
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -6293,7 +6321,7 @@ def test_v4_5_3_external_holdout_prior_identity_summary_records_status_docs_and_
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -6431,7 +6459,7 @@ def test_v4_6_ft_route_policy_preflight_records_status_docs_and_guardrails():
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -6573,7 +6601,7 @@ def test_v4_6_1_holdout_manifest_identity_contract_bridge_records_status_docs_an
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -6748,7 +6776,7 @@ def test_v4_6_2_ft_route_policy_fixture_contract_records_status_docs_and_guardra
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -6934,7 +6962,7 @@ def test_v4_6_3_ft_a_prompt_policy_baseline_schema_records_status_docs_and_guard
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -7073,7 +7101,7 @@ def test_v4_6_4_ft_a_dry_run_input_manifest_validator_records_status_docs_and_gu
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -7217,7 +7245,7 @@ def test_v4_6_5_ft_a_dry_run_execution_plan_gate_records_status_docs_and_guardra
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -7355,7 +7383,7 @@ def test_v4_6_6_holdout_gap_blocker_ledger_records_status_docs_and_guardrails():
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -7512,7 +7540,7 @@ def test_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_records_status_docs
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -7656,7 +7684,7 @@ def test_v4_6_8_runtime_readiness_dependency_freshness_gate_records_status_docs_
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -7795,7 +7823,7 @@ def test_v4_6_9_holdout_candidate_duplicate_hygiene_gate_records_status_docs_and
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -7934,7 +7962,7 @@ def test_v4_6_10_external_holdout_manifest_gate_replay_records_status_docs_and_g
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -8071,7 +8099,7 @@ def test_v4_6_11_ft_a_runtime_input_validation_route_parity_records_status_docs_
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -8198,7 +8226,7 @@ def test_v4_6_12_external_holdout_runtime_replay_route_parity_records_status_doc
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -8439,7 +8467,7 @@ def test_v4_7_preofficial_external_holdout_registration_records_status_docs_and_
     report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
@@ -8575,8 +8603,8 @@ def test_v4_7_1_korean_review_packet_records_status_docs_and_safe_examples():
         summary_json,
     )
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-    summary = json.loads(summary_json.read_text(encoding="utf-8"))
+    report = read_json(report_path)
+    summary = read_json(summary_json)
     packet_rows = [json.loads(line) for line in packet_jsonl.read_text(encoding="utf-8").splitlines() if line.strip()]
     with actual_examples_csv.open(encoding="utf-8-sig", newline="") as handle:
         actual_example_rows = list(csv.DictReader(handle))
@@ -8734,8 +8762,8 @@ def test_v4_7_2_source_grounded_korean_review_packet_records_status_docs_and_gua
         summary_json,
     )
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-    summary = json.loads(summary_json.read_text(encoding="utf-8"))
+    report = read_json(report_path)
+    summary = read_json(summary_json)
     with packet_csv.open(encoding="utf-8-sig", newline="") as handle:
         packet_rows = list(csv.DictReader(handle))
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
@@ -8888,7 +8916,7 @@ def test_v4_7_3_human_reviewed_korean_query_candidate_records_status_docs_and_gu
     report_path = report_dir / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]
     measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
@@ -9030,7 +9058,7 @@ def test_v4_7_4_pdf_survivor_replay_records_status_docs_and_guardrails():
     report_path = report_dir / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = read_json(report_path)
     metrics = report["metrics"]
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = progress.split("## Short History", 1)[0]

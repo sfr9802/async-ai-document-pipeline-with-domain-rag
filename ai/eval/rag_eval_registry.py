@@ -57,6 +57,22 @@ V4_7_7_LONG_RUN_ID = (
 )
 V4_7_7_STATUS = "V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY"
 
+V4_7_8_SHORT_KEY = "v4_7_8"
+V4_7_8_SHORT_RUN_ID = "v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion"
+V4_7_8_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v4_7_8_"
+    "test_doc_dependency_decoupling_and_legacy_runner_alias_expansion_nonprod"
+)
+V4_7_8_STATUS = "V4_7_8_TEST_DOC_DEPENDENCY_DECOUPLING_RUNNER_ALIAS_EXPANSION_NONPROD_READY"
+
+V4_7_9_SHORT_KEY = "v4_7_9"
+V4_7_9_SHORT_RUN_ID = "v4_7_9_pdf_evidence_residual_answer_quality_replay"
+V4_7_9_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v4_7_9_"
+    "pdf_evidence_residual_answer_quality_replay_nonprod"
+)
+V4_7_9_STATUS = "V4_7_9_PDF_EVIDENCE_RESIDUAL_ANSWER_QUALITY_REPLAY_NONPROD_READY"
+
 
 class ReportResolutionError(RuntimeError):
     """Raised when a diagnostic report alias cannot be resolved safely."""
@@ -152,6 +168,24 @@ RUNS: dict[str, RunMetadata] = {
         accepted_aliases=(V4_7_7_SHORT_RUN_ID, V4_7_7_LONG_RUN_ID),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
     ),
+    V4_7_8_SHORT_KEY: RunMetadata(
+        logical_key=V4_7_8_SHORT_KEY,
+        short_run_id=V4_7_8_SHORT_RUN_ID,
+        canonical_long_run_id=V4_7_8_LONG_RUN_ID,
+        status=V4_7_8_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V4_7_8_SHORT_KEY / "report.json",
+        accepted_aliases=(V4_7_8_SHORT_RUN_ID, V4_7_8_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
+    V4_7_9_SHORT_KEY: RunMetadata(
+        logical_key=V4_7_9_SHORT_KEY,
+        short_run_id=V4_7_9_SHORT_RUN_ID,
+        canonical_long_run_id=V4_7_9_LONG_RUN_ID,
+        status=V4_7_9_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V4_7_9_SHORT_KEY / "report.json",
+        accepted_aliases=(V4_7_9_SHORT_RUN_ID, V4_7_9_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
 }
 
 ALIAS_TO_KEY: dict[str, str] = {
@@ -159,7 +193,7 @@ ALIAS_TO_KEY: dict[str, str] = {
     for key, metadata in RUNS.items()
     for alias in (key, *metadata.accepted_aliases)
 }
-ALIAS_TO_KEY["current"] = V4_7_7_SHORT_KEY
+ALIAS_TO_KEY["current"] = V4_7_9_SHORT_KEY
 
 
 def _repo_root(root: Path | str | None = None) -> Path:

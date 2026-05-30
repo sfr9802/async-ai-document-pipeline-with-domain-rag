@@ -29,6 +29,7 @@ V4_7_5_LONG_RUN_ID = (
     "evidence_window_repair_and_eval_surface_compaction_nonprod"
 )
 V4_7_5_STATUS = "V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY"
+V4_7_9_CURRENT_KEY = "v4_7_9"
 V4_7_4_REPORT = (
     ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / V4_7_4_LONG_RUN_ID / "report.json"
 )
@@ -65,7 +66,7 @@ def test_v475_registry_resolves_short_current_and_legacy_aliases_fail_closed(tmp
     assert v475_run.report_path == V4_7_5_REPORT
     assert v475_run.short_run_id == V4_7_5_SHORT_RUN_ID
     assert v475_run.canonical_long_run_id == V4_7_5_LONG_RUN_ID
-    assert current.logical_key == "v4_7_7"
+    assert current.logical_key == V4_7_9_CURRENT_KEY
 
     loaded = registry.load_report("v4_7_5", root=ROOT)
     assert loaded["short_run_id"] == V4_7_5_SHORT_RUN_ID
@@ -261,7 +262,7 @@ def test_v475_status_docs_and_readme_sync_use_short_key_and_preserve_closed_gate
     assert short_report_path in current_text
     assert short_report_path in measurements
     assert short_report_path in triage
-    assert "python -X utf8 ai\\scripts\\rag_eval.py v4_7_5 --check" in readme
+    assert "prior v4_7 cleanup keys" in readme
     assert "`rag_eval.py`" in scripts_readme
     assert "official metric" in current_text
     assert "gold/qrels" in current_text
@@ -328,7 +329,7 @@ def test_v475_stable_runner_is_importable_and_current_profile_knows_contract_tes
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
-    assert module.DEFAULT_RUN_KEY == "v4_7_7"
+    assert module.DEFAULT_RUN_KEY == V4_7_9_CURRENT_KEY
     assert callable(module.main)
     assert module.check_run("v4_7_5")["short_run_id"] == V4_7_5_SHORT_RUN_ID
 

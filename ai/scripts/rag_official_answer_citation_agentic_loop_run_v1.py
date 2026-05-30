@@ -38,6 +38,7 @@ if str(AI_WORKER_ROOT) not in sys.path:
 import rag_official_answer_citation_metric_first_run_v1 as official  # noqa: E402
 from app.capabilities.rag import source_registry as source_registry_contract  # noqa: E402
 from app.capabilities.rag.retrieval_contract import citation_payload  # noqa: E402
+from eval.harness import rag_diagnostic_common as diagnostic_common  # noqa: E402
 
 
 REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
@@ -567,6 +568,9 @@ def report_artifact_repo_relative(run_id: str, suffix: str) -> str:
 
 
 def resolve_report_artifact_path(path: Path) -> Path:
+    resolved = diagnostic_common.resolve_report_artifact_path(path)
+    if resolved.exists():
+        return resolved
     if path.exists():
         return path
     if path.parent == REPORT_ARCHIVE_DIR:
@@ -584,6 +588,10 @@ def resolve_report_artifact_path(path: Path) -> Path:
         if archived.exists():
             return archived
     return path
+
+
+def artifact_exists(path: Path) -> bool:
+    return resolve_report_artifact_path(path).exists()
 
 
 DEFAULT_RESULTS_JSONL = report_artifact_path(RUN_ID, "results.jsonl")
@@ -30575,7 +30583,7 @@ def v3_7_1_source_registry_missing_reasons() -> list[str]:
         DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL,
         DEFAULT_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON,
     ):
-        if not path.exists():
+        if not artifact_exists(path):
             reasons.append(f"missing:{official.repo_relative(path)}")
     return reasons
 
@@ -30588,7 +30596,7 @@ def v3_7_1_source_registry_sha256() -> dict[str, str]:
         "source_atom_registry_blocked_jsonl_sha256": DEFAULT_SOURCE_ATOM_REGISTRY_BLOCKED_JSONL,
         "v3_7_0_summary_json_sha256": DEFAULT_V3_7_0_SOURCE_REGISTRY_SUMMARY_JSON,
     }
-    return {key: sha256_file(path) if path.exists() else "" for key, path in files.items()}
+    return {key: sha256_file(path) if artifact_exists(path) else "" for key, path in files.items()}
 
 
 def v3_7_1_load_source_atoms() -> list[dict[str, Any]]:
@@ -31734,7 +31742,7 @@ def v3_7_2_index_artifact_sha256() -> dict[str, str]:
         / "search_view_manifest.jsonl",
         "index_source_inventory_json_sha256": DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "source_inventory.json",
     }
-    return {key: sha256_file(path) if path.exists() else "" for key, path in paths.items()}
+    return {key: sha256_file(path) if artifact_exists(path) else "" for key, path in paths.items()}
 
 
 def v3_7_2_source_registry_retrieval_smoke_preflight() -> dict[str, Any]:
@@ -31747,17 +31755,19 @@ def v3_7_2_source_registry_retrieval_smoke_preflight() -> dict[str, Any]:
         "source_inventory.json",
     )
     missing_index_files = [
-        name for name in required_index_files if not (DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / name).exists()
+        name
+        for name in required_index_files
+        if not artifact_exists(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / name)
     ]
     fail_closed_reasons.extend(f"missing:{official.repo_relative(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / name)}" for name in missing_index_files)
     build_json = (
-        official.read_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json")
-        if (DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json").exists()
+        read_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json")
+        if artifact_exists(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_INDEX_DIR / "build.json")
         else {}
     )
     v3_7_1_summary = (
-        official.read_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON)
-        if DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON.exists()
+        read_json(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON)
+        if artifact_exists(DEFAULT_V3_7_1_ALL_SOURCE_CITABLE_SUMMARY_JSON)
         else {}
     )
     if build_json.get("index_namespace") != V3_7_1_ALL_SOURCE_CITABLE_INDEX_NAMESPACE:
@@ -31768,7 +31778,7 @@ def v3_7_2_source_registry_retrieval_smoke_preflight() -> dict[str, Any]:
         fail_closed_reasons.append("v3_7_1_index_not_built")
     if v3_7_1_summary and not bool(v3_7_1_summary.get("v3_7_2_source_registry_backed_retrieval_smoke_allowed")):
         fail_closed_reasons.append("v3_7_2_retrieval_smoke_not_allowed_by_v3_7_1_summary")
-    if not DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL.exists():
+    if not artifact_exists(DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL):
         fail_closed_reasons.append(
             f"missing:{official.repo_relative(DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL)}"
         )
@@ -35902,7 +35912,7 @@ def v3_8_file_grounded_protected_input_sha256(input_topk_path: Path) -> dict[str
         "v3_7_2_silver_manifest_all_jsonl": DEFAULT_V3_7_2_LOCAL_LLM_NATURAL_SILVER_MANIFEST_ALL_JSONL,
     }
     return {
-        f"{name}_sha256": sha256_file(path) if path.exists() else "MISSING"
+        f"{name}_sha256": sha256_file(path) if artifact_exists(path) else "MISSING"
         for name, path in paths.items()
     }
 
@@ -35975,7 +35985,7 @@ def run_v3_8_file_grounded_retrieval_eval(*, args: argparse.Namespace) -> dict[s
             f"v3_7_2_preflight:{reason}"
             for reason in preflight.get("fail_closed_reasons", [])
         )
-    if input_topk_path.exists():
+    if artifact_exists(input_topk_path):
         topk_rows = read_jsonl(input_topk_path)
     else:
         topk_rows = []
@@ -36152,7 +36162,7 @@ def run_v3_8_1_evidence_selector(*, args: argparse.Namespace) -> dict[str, Any]:
         )
     v3_8_summary_sha_before = (
         sha256_file(report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json"))
-        if report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json").exists()
+        if artifact_exists(report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json"))
         else "MISSING"
     )
     if v3_8_summary_sha_before == "MISSING":
@@ -36160,7 +36170,7 @@ def run_v3_8_1_evidence_selector(*, args: argparse.Namespace) -> dict[str, Any]:
             "missing:"
             + official.repo_relative(report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json"))
         )
-    if input_topk_path.exists():
+    if artifact_exists(input_topk_path):
         topk_rows = read_jsonl(input_topk_path)
     else:
         topk_rows = []
@@ -36216,7 +36226,7 @@ def run_v3_8_1_evidence_selector(*, args: argparse.Namespace) -> dict[str, Any]:
     official_index_sha_after = v3_6_8_all_source_official_index_sha256()
     v3_8_summary_sha_after = (
         sha256_file(report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json"))
-        if report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json").exists()
+        if artifact_exists(report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json"))
         else "MISSING"
     )
     if protected_input_sha_before != protected_input_sha_after:
@@ -36348,8 +36358,8 @@ def run_v3_8_2_oracle_free_file_resolve(*, args: argparse.Namespace) -> dict[str
     official_index_sha_before = v3_6_8_all_source_official_index_sha256()
     v3_8_summary_path = report_artifact_path(V3_8_FILE_GROUNDED_RETRIEVAL_EVAL_RUN_ID, "summary.json")
     v3_8_1_summary_path = report_artifact_path(V3_8_1_EVIDENCE_SELECTOR_RUN_ID, "summary.json")
-    v3_8_summary_sha_before = sha256_file(v3_8_summary_path) if v3_8_summary_path.exists() else "MISSING"
-    v3_8_1_summary_sha_before = sha256_file(v3_8_1_summary_path) if v3_8_1_summary_path.exists() else "MISSING"
+    v3_8_summary_sha_before = sha256_file(v3_8_summary_path) if artifact_exists(v3_8_summary_path) else "MISSING"
+    v3_8_1_summary_sha_before = sha256_file(v3_8_1_summary_path) if artifact_exists(v3_8_1_summary_path) else "MISSING"
     if v3_8_summary_sha_before == "MISSING":
         fail_closed_reasons.append("missing:" + official.repo_relative(v3_8_summary_path))
     if v3_8_1_summary_sha_before == "MISSING":
@@ -36360,7 +36370,7 @@ def run_v3_8_2_oracle_free_file_resolve(*, args: argparse.Namespace) -> dict[str
             f"v3_7_2_preflight:{reason}"
             for reason in preflight.get("fail_closed_reasons", [])
         )
-    if input_topk_path.exists():
+    if artifact_exists(input_topk_path):
         topk_rows = read_jsonl(input_topk_path)
     else:
         topk_rows = []
@@ -36419,8 +36429,8 @@ def run_v3_8_2_oracle_free_file_resolve(*, args: argparse.Namespace) -> dict[str
     )
     index_artifact_sha_after = v3_7_2_index_artifact_sha256()
     official_index_sha_after = v3_6_8_all_source_official_index_sha256()
-    v3_8_summary_sha_after = sha256_file(v3_8_summary_path) if v3_8_summary_path.exists() else "MISSING"
-    v3_8_1_summary_sha_after = sha256_file(v3_8_1_summary_path) if v3_8_1_summary_path.exists() else "MISSING"
+    v3_8_summary_sha_after = sha256_file(v3_8_summary_path) if artifact_exists(v3_8_summary_path) else "MISSING"
+    v3_8_1_summary_sha_after = sha256_file(v3_8_1_summary_path) if artifact_exists(v3_8_1_summary_path) else "MISSING"
     if protected_input_sha_before != protected_input_sha_after:
         fail_closed_reasons.append("protected_input_sha256_changed_during_v3_8_2_file_resolve")
     if source_registry_sha_before != source_registry_sha_after:
@@ -36558,10 +36568,10 @@ def run_v3_8_3_xlsx_scoped_cell_resolve(*, args: argparse.Namespace) -> dict[str
     v3_8_2_summary_path = report_artifact_path(V3_8_2_ORACLE_FREE_FILE_RESOLVE_RUN_ID, "summary.json")
     v3_8_2_per_query_path = DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL
     v3_8_2_summary_sha_before = (
-        sha256_file(v3_8_2_summary_path) if v3_8_2_summary_path.exists() else "MISSING"
+        sha256_file(v3_8_2_summary_path) if artifact_exists(v3_8_2_summary_path) else "MISSING"
     )
     v3_8_2_per_query_sha_before = (
-        sha256_file(v3_8_2_per_query_path) if v3_8_2_per_query_path.exists() else "MISSING"
+        sha256_file(v3_8_2_per_query_path) if artifact_exists(v3_8_2_per_query_path) else "MISSING"
     )
     if v3_8_2_summary_sha_before == "MISSING":
         fail_closed_reasons.append("missing:" + official.repo_relative(v3_8_2_summary_path))
@@ -36573,12 +36583,12 @@ def run_v3_8_3_xlsx_scoped_cell_resolve(*, args: argparse.Namespace) -> dict[str
             f"v3_7_2_preflight:{reason}"
             for reason in preflight.get("fail_closed_reasons", [])
         )
-    if input_topk_path.exists():
+    if artifact_exists(input_topk_path):
         topk_rows = read_jsonl(input_topk_path)
     else:
         topk_rows = []
         fail_closed_reasons.append(f"missing:{official.repo_relative(input_topk_path)}")
-    if v3_8_2_per_query_path.exists():
+    if artifact_exists(v3_8_2_per_query_path):
         file_gate_rows = read_jsonl(v3_8_2_per_query_path)
     else:
         file_gate_rows = []
@@ -36647,10 +36657,10 @@ def run_v3_8_3_xlsx_scoped_cell_resolve(*, args: argparse.Namespace) -> dict[str
     index_artifact_sha_after = v3_7_2_index_artifact_sha256()
     official_index_sha_after = v3_6_8_all_source_official_index_sha256()
     v3_8_2_summary_sha_after = (
-        sha256_file(v3_8_2_summary_path) if v3_8_2_summary_path.exists() else "MISSING"
+        sha256_file(v3_8_2_summary_path) if artifact_exists(v3_8_2_summary_path) else "MISSING"
     )
     v3_8_2_per_query_sha_after = (
-        sha256_file(v3_8_2_per_query_path) if v3_8_2_per_query_path.exists() else "MISSING"
+        sha256_file(v3_8_2_per_query_path) if artifact_exists(v3_8_2_per_query_path) else "MISSING"
     )
     if protected_input_sha_before != protected_input_sha_after:
         fail_closed_reasons.append("protected_input_sha256_changed_during_v3_8_3_xlsx_scoped_cell_resolve")
@@ -37581,19 +37591,19 @@ def run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity(*, args: argparse.Na
         "source_atom_registry_jsonl": DEFAULT_SOURCE_ATOM_REGISTRY_JSONL,
     }
     for name, path in required_inputs.items():
-        if not path.exists():
+        if not artifact_exists(path):
             fail_closed_reasons.append(f"missing:{name}:{official.repo_relative(path)}")
-    topk_rows = read_jsonl(input_topk_path) if input_topk_path.exists() else []
+    topk_rows = read_jsonl(input_topk_path) if artifact_exists(input_topk_path) else []
     source_registry = v3_9_1_source_registry_by_id()
     atoms_by_file_identity = v3_9_1_xlsx_atoms_by_file_identity(source_registry)
     v3_8_2_rows = (
         read_jsonl(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL)
-        if DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL.exists()
+        if artifact_exists(DEFAULT_V3_8_2_ORACLE_FREE_FILE_RESOLVE_PER_QUERY_JSONL)
         else []
     )
     v3_8_3_rows = (
         read_jsonl(DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL)
-        if DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL.exists()
+        if artifact_exists(DEFAULT_V3_8_3_XLSX_SCOPED_CELL_RESOLVE_PER_QUERY_JSONL)
         else []
     )
     file_gate_by_query_id = {
@@ -38666,7 +38676,7 @@ def v3_6_8_all_source_official_index_sha256() -> dict[str, str]:
         "official_denominator_ingest_manifest_json_sha256": DEFAULT_RAG_INDEX_DIR / "ingest_manifest.json",
         "official_denominator_search_unit_manifest_jsonl_sha256": DEFAULT_RAG_INDEX_DIR / "search_unit_manifest.jsonl",
     }
-    return {key: sha256_file(path) if path.exists() else "" for key, path in files.items()}
+    return {key: sha256_file(path) if artifact_exists(path) else "" for key, path in files.items()}
 
 
 def v3_6_8_all_source_source_fail_closed_reasons(
@@ -46316,6 +46326,11 @@ def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:
             handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def read_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(resolve_report_artifact_path(path).read_text(encoding="utf-8"))
+    return dict(payload) if isinstance(payload, Mapping) else {}
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:

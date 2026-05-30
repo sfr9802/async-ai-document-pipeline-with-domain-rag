@@ -1,3 +1,25 @@
+<!-- v4_7_9_pdf_evidence_residual_answer_quality_replay:triage-entry:start -->
+### v4_7_9 PDF Residual Evidence Replay Boundary
+
+- Scope: v4_7_5 PDF survivor rows only; prior answer-ready rows are protected no-regression rows.
+- Repair policy: SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only.
+- Bounded repair: same-page SourceAtom/block/window metadata only; no raw PDF broad scan, hidden target/gold locator, expected/supporting gold text, source-file title shortcut, direct answer-value matching, or full-page dump.
+- Residual after repair: weak evidence/window 3; missing neighbor context 3.
+- Answer replay: 7 repaired candidates were eligible, but local LLM was unavailable and therefore failed closed with `LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED`.
+- Closed gates: official_metric=false, official_metric_input_rows=0, gold/qrels/labels/expected/supporting evidence/denominator/training/FT-A/fine_tuning/promotion/product-success/live-readiness remain closed.
+<!-- v4_7_9_pdf_evidence_residual_answer_quality_replay:triage-entry:end -->
+<!-- v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion:triage-entry:start -->
+### v4_7_8 Test/Doc Dependency Decoupling And Runner Alias Expansion
+
+- Run key: `v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_8/report.json`
+- Reference graph: `ai/eval/reports/rag-ingestion/runs/v4_7_8/v3_legacy_hold_reduction_manifest.jsonl` records sample readers for each v3 legacy artifact and separates test/doc readers from script/core readers.
+- Archive/purge: safe generated root-level v3 artifacts, v3_16 generated quality payloads, and nonessential ambiguous v3_9 response/taxonomy payloads were copied to an external v4_7_8 archive namespace, SHA-256 verified, and removed repo-local.
+- Narrowed holds: documented review packets remain held; retained v3_9 metric/per-family/per-query payloads are `REVIEW_MANUAL_HOLD`; retained v3_17-v3_22 quality payloads remain current contract holds only where current checks or docs still need them.
+- Runner consolidation: `ai/scripts/rag_eval.py` owns `current`, `v4_7_8`, prior v4_7 cleanup keys, and verified check-only aliases v3_9_2, v3_10, v3_11, v3_12, v3_13, v3_14, v3_15, v3_18, v3_19, v3_20, v3_21, v3_22. Held entrypoints: v3_16=check returned nonzero or opened a forbidden gate; alias not added, v3_17=check returned nonzero or opened a forbidden gate; alias not added.
+- Closed gates: retrieval, EvidenceBundle repair, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator mutation, training, FT-A, fine_tuning, promotion, product-success evidence, and live DB/index/cache readiness.
+- Held count: 102; unclassified count: 0; archive copy failures: 0; hash verification failures: 0.
+<!-- v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion:triage-entry:end -->
 <!-- v4_7_7_v3_legacy_archive_and_runner_consolidation:triage-entry:start -->
 ### v4_7_7 V3 Legacy Archive And Runner Consolidation
 

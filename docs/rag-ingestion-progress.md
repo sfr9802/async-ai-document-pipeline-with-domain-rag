@@ -21,6 +21,14 @@ failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
 
+<!-- v4_7_9_pdf_evidence_residual_answer_quality_replay:progress-entry:start -->
+- v4_7_9_pdf_evidence_residual_answer_quality_replay is V4_7_9_PDF_EVIDENCE_RESIDUAL_ANSWER_QUALITY_REPLAY_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json`. This diagnostic-only slice replays the v4_7_5 PDF survivor surface and targets only the residual weak EvidenceBundle rows: weak evidence/window 10 -> 3, missing neighbor context 10 -> 3, repaired bundles 7, prior answer-ready regressions 0. Local LLM replay stayed fail-closed as `LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED` for 7 candidates. SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only. All official, gold/qrels, label, denominator, training, FT-A, fine_tuning, promotion, product-success, and live-readiness gates stay closed.
+<!-- v4_7_9_pdf_evidence_residual_answer_quality_replay:progress-entry:end -->
+
+<!-- v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion:progress-entry:start -->
+- v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion is V4_7_8_TEST_DOC_DEPENDENCY_DECOUPLING_RUNNER_ALIAS_EXPANSION_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_8/report.json`. This is cleanup/refactor only: v3 legacy artifacts previously held by broad test/doc path rules now have a reference graph, archive-aware metadata, and narrower hold reasons. Current test/doc holds 133 -> 74, ambiguous generated holds 32 -> 0, documented review-packet holds remain 16. Archived/removed 79 newly safe files; manual holds are now 102; unclassified 0. `ai/scripts/rag_eval.py` now exposes verified check-only legacy aliases v3_9_2, v3_10, v3_11, v3_12, v3_13, v3_14, v3_15, v3_18, v3_19, v3_20, v3_21, v3_22; v3_16 and v3_17 remain held because bounded checks fail closed on local LLM availability. Protected namespaces remain untouched and all official, gold/qrels, label, denominator, training, FT-A, fine_tuning, promotion, product-success, and live-readiness gates stay closed.
+<!-- v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion:progress-entry:end -->
+
 <!-- v4_7_7_v3_legacy_archive_and_runner_consolidation:progress-entry:start -->
 - v4_7_7_v3_legacy_archive_and_runner_consolidation is V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json`. This is cleanup/refactor only: the current resolver moves to short key `v4_7_7`, v3 legacy generated report artifacts are classified as externally archived/removed or explicit holds, and the stable runner now exposes safe check aliases v3_21, v3_22. Manifest counters: total 279, archived/removed 98, deleted 0, held 181 (EXPLICIT_HOLD_AMBIGUOUS_GENERATED_SURFACE=32, EXPLICIT_HOLD_CURRENT_TEST_OR_DOC_CONTRACT=133, EXPLICIT_HOLD_DOCUMENTED_LEGACY_REVIEW_PACKET=16), unclassified 0. Protected namespaces remain untouched. This does not run retrieval, EvidenceBundle repair, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator mutation, training, FT-A, fine_tuning, promotion, product-success, or live readiness.
 <!-- v4_7_7_v3_legacy_archive_and_runner_consolidation:progress-entry:end -->
@@ -200,7 +208,7 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY`;
+Overall status: `V4_7_9_PDF_EVIDENCE_RESIDUAL_ANSWER_QUALITY_REPLAY_NONPROD_READY`;
 current latest v4_6 run remains v4_6_12:
 `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`;
 current Phase 1 FastAPI diagnostic/internal integration marker:

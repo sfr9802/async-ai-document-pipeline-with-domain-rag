@@ -13,6 +13,7 @@ import csv
 import hashlib
 import json
 import re
+import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,6 +24,10 @@ import rag_pdf_xlsx_llm_quality_benchmark as quality_benchmark
 
 AI_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_ROOT.parent
+if str(AI_ROOT) not in sys.path:
+    sys.path.insert(0, str(AI_ROOT))
+from eval.harness import rag_diagnostic_common as diagnostic_common  # noqa: E402
+
 REPORT_DIR = AI_ROOT / "eval" / "reports" / "rag-ingestion"
 QUALITY_DIR = REPORT_DIR / "quality"
 DEFAULT_RUN_LABEL = "final_llm_rewrite_all_llm_15pf_v3"
@@ -225,10 +230,10 @@ def run_packet(
     previous_summary: Mapping[str, Any] = {}
     if previous_summary_path is not None:
         previous_summary_path = resolve_repo_path(previous_summary_path)
-        if previous_summary_path.exists():
+        if artifact_exists(previous_summary_path):
             previous_summary = read_json(previous_summary_path)
             previous_responses_path = resolve_repo_path(clean(previous_summary.get("responses_path")))
-            if previous_responses_path.exists():
+            if artifact_exists(previous_responses_path):
                 previous_response_rows = read_jsonl(previous_responses_path)
     cases = load_cases_for_summary(summary, response_rows=response_rows)
     metric_query_fidelity_by_case = load_metric_query_fidelity_by_case(summary)
@@ -451,7 +456,7 @@ def augment_cases_from_response_manifest(
     manifest_path = resolve_repo_path(clean(summary.get("manifest")))
     silver_path = resolve_repo_path(clean(summary.get("silver_manifest")))
     silver_index = quality_benchmark.load_silver_seed_index(silver_path)
-    manifest_rows = read_jsonl(manifest_path) if manifest_path.exists() else []
+    manifest_rows = read_jsonl(manifest_path) if artifact_exists(manifest_path) else []
     by_identity: dict[tuple[str, str, str], Mapping[str, Any]] = {}
     for row in manifest_rows:
         key = (
@@ -884,7 +889,7 @@ def load_metric_query_fidelity_by_case(summary: Mapping[str, Any]) -> dict[str, 
     if not per_query_path:
         return {}
     resolved = resolve_repo_path(per_query_path)
-    if not resolved.exists():
+    if not artifact_exists(resolved):
         return {}
     rows = read_jsonl(resolved)
     result: dict[str, Mapping[str, Any]] = {}
@@ -1843,8 +1848,16 @@ def metric_cell(value: object) -> str:
     return clean(value)
 
 
+def resolve_report_artifact_path(path: Path) -> Path:
+    return diagnostic_common.resolve_report_artifact_path(path)
+
+
+def artifact_exists(path: Path) -> bool:
+    return resolve_report_artifact_path(path).exists()
+
+
 def read_json(path: Path) -> dict[str, Any]:
-    with path.open(encoding="utf-8") as handle:
+    with resolve_report_artifact_path(path).open(encoding="utf-8") as handle:
         payload = json.load(handle)
     if not isinstance(payload, dict):
         raise ValueError(f"{path} must contain a JSON object")
@@ -1853,7 +1866,7 @@ def read_json(path: Path) -> dict[str, Any]:
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    with path.open(encoding="utf-8") as handle:
+    with resolve_report_artifact_path(path).open(encoding="utf-8") as handle:
         for line in handle:
             if line.strip():
                 payload = json.loads(line)
@@ -1890,11 +1903,13 @@ def write_json(path: Path, payload: Mapping[str, Any]) -> None:
 
 
 def artifact_entry(path: Path) -> dict[str, Any]:
+    resolved = resolve_report_artifact_path(path)
+    exists = resolved.exists()
     return {
         "path": repo_relative(path),
-        "exists": path.exists(),
-        "bytes": path.stat().st_size if path.exists() else 0,
-        "sha256": sha256_file(path) if path.exists() else "",
+        "exists": exists,
+        "bytes": resolved.stat().st_size if exists else 0,
+        "sha256": sha256_file(path) if exists else "",
     }
 
 
@@ -1904,7 +1919,7 @@ def file_identity(path: Path) -> dict[str, Any]:
 
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
-    with path.open("rb") as handle:
+    with resolve_report_artifact_path(path).open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
