@@ -58,14 +58,17 @@ AI 문서 검색에서 가장 큰 문제는 답변이 그럴듯해 보여도 **�
 
 ## Current RAG Diagnostic Status
 
-- Current RAG status: `V4_7_9_PDF_EVIDENCE_RESIDUAL_ANSWER_QUALITY_REPLAY_NONPROD_READY`.
-- Phase: v4_7 remains pre-official. `v4_7_9_pdf_evidence_residual_answer_quality_replay` writes `ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json` and targets only residual v4_7_5 PDF survivor evidence rows; it does not open official metrics, gold/qrels, labels, denominator, training, promotion, or live-readiness.
-- Resolver wiring: use `current` or `v4_7_9` for the latest PDF residual evidence replay report; use `v4_7_8` for the prior cleanup/refactor report.
-- Runner consolidation: `ai/scripts/rag_eval.py` remains the stable short-key runner for `current`, `v4_7_9`, `v4_7_8`, prior v4_7 cleanup keys, and verified check-only legacy aliases.
-- PDF survivor residuals: weak evidence/window 10 -> 3; repaired bundles 7; prior answer-ready regressions 0; local LLM replay fail-closed as `LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED`.
-- Retained v4_7 context: v4_7_2 supersedes the abstract v4_7_1 Korean review packet with non-empty `질의문` 204 and hydrated rows 204, PDF 100, XLSX 104; v4_7_3 applies the user-reviewed Korean query candidate CSV with 미검수=통과; v4_7_4 keeps PDF survivor 58; these remain not official metric.
-- Rolling evidence docs: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md` remain the canonical human-readable status ledgers; no per-run Markdown is created.
-- Hard boundary: not official metric, not gold/qrels, not relevance/answerability labels, not expected answer/evidence approval, not product-success evidence, not promotion evidence, not FT-A execution, not fine_tuning, not actual fine-tuning/training, not threshold tuning, not winner selection, not training data, and not live DB/index/cache readiness. Locked flags remain `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `ft_a_execution=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
+- Current RAG status: `V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY`.
+- Phase: v4_7 remains pre-official. `v4_7_12_layered_retrieval_generalization_and_overfit_audit` writes `ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json` and checks whether the v3 layered retrieval architecture is still preserved in the v4_7 lineage.
+- Resolver wiring: use `current` or `v4_7_12` for layered retrieval generalization/overfit audit; use `v4_7_11` for prior 9-row answer replay and `v4_7_10` for prior PDF evidence normalization/readiness.
+- Runner consolidation: `ai/scripts/rag_eval.py` remains the stable short-key runner for `current`, `v4_7_12`, `v4_7_11`, `v4_7_10`, `v4_7_9`, `v4_7_8`, prior v4_7 cleanup keys, and verified check-only legacy aliases.
+- Retained v4_7 resolver context: `v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness` is the prior Korean normalization/readiness report with weak evidence/window 3 -> 1, `v4_7_9_pdf_evidence_residual_answer_quality_replay` is the prior PDF residual evidence replay report, and `v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion` remains the prior cleanup/refactor report.
+- Retained review lineage: v4_7_2 supersedes the abstract v4_7_1 Korean review packet with non-empty `질의문` 204 and hydrated rows 204, PDF 100, XLSX 104; v4_7_3 applies the user-reviewed Korean query candidate CSV with 미검수=통과; v4_7_4 keeps PDF survivor 58; these remain not official metric.
+- Generalization surface: v4_7_11 canary rows 9; full PDF answer-ready rows 57; silver retrieval rows 1000 when the v3_7_2 manifest is sha-verified.
+- LLM gates: full PDF replay env_enabled=false generated 0; silver smoke env_enabled=true generated 89. Disabled lanes emit no fake answers.
+- Silver reconnect: manifest found=true, TEXT/PDF/XLSX 350/325/325; silver_official_metric_input_rows=0 and silver_promoted_to_gold_count=0.
+- Rolling evidence docs: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md` remain the canonical human-readable status ledgers; v4_7_12 row details stay in ignored JSON/JSONL run artifacts.
+- Hard boundary: not official metric, not gold/qrels, not relevance/answerability labels, not expected answer/evidence approval, not product-success evidence, not promotion evidence, not FT-A execution, not fine_tuning, not actual fine-tuning/training, not training data, and not live DB/index/cache readiness. Locked flags remain `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `ft_a_execution=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
 
 
 ## 기술적으로 신경 쓴 점

@@ -21,6 +21,16 @@ def load_conftest():
 def test_current_profile_includes_required_official_candidate_and_pdf_tests() -> None:
     rag_conftest = load_conftest()
     required_nodeids = {
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4711_injected_local_llm_replays_v4710_candidates_and_records_answer_audits",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4711_unavailable_or_disabled_local_llm_fails_closed_without_fake_answers",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4711_answer_review_packet_is_ignored_compact_and_status_has_no_raw_payloads",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4711_silver_diagnostic_smoke_is_bounded_or_fail_closed_plan_only",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4712_current_check_builds_in_memory_when_report_artifact_is_missing",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4712_layered_retrieval_audit_preserves_architecture_and_is_not_canary_limited",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4712_silver_reconnect_runs_retrieval_only_audit_or_fails_closed_without_promotion",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4712_silver_reconnect_fails_closed_when_topk_artifact_is_missing",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4712_full_pdf_replay_and_silver_smoke_are_env_gated_without_fake_answers",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4712_status_docs_do_not_leave_stale_current_alias_text",
         "ai/tests/test_rag_official_answer_citation_metric_first_run_v1.py::test_latest_first_run_artifacts_are_scored_baseline_not_backend_unavailable",
         "ai/tests/test_rag_official_metric_artifact_source_of_truth_audit_v1.py::test_source_of_truth_audit_reports_current_scored_baseline",
         "ai/tests/test_rag_xlsx_answer_citation_runtime_precision_candidate_v1.py::test_runtime_candidate_run_emits_report_only_artifacts_without_mutating_baseline",

@@ -1,3 +1,32 @@
+<!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:triage-entry:start -->
+### v4_7_12 Layered Retrieval Generalization Boundary
+
+- Architecture preserved: true; vector-as-evidence violations 0; unsafe shortcuts 0.
+- Full PDF replay: eligible 57, env_enabled=false, generated 0.
+- Silver retrieval audit: found=true, rows 1000, top fail reasons {'TEXT': 'target_not_in_topk', 'PDF': 'contract_survived_same_track', 'XLSX': 'target_not_in_topk'}.
+- Overfit signals: canary-to-full-PDF drop 52, PDF-to-XLSX retrieval drop 0, repeated prefix clusters 11.
+- Closed gates: gold/qrels/labels/expected/supporting evidence/denominator/training/FT-A/fine_tuning/promotion/product-success/live-readiness remain closed.
+<!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:triage-entry:end -->
+<!-- v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke:triage-entry:start -->
+### v4_7_11 Actual LLM Replay Boundary
+
+- Scope: v4_7_10 answer-replay candidates only; the single weak residual row remains fail-closed and excluded from LLM generation.
+- Local LLM policy: `RAG_V4_7_11_ENABLE_LOCAL_LLM_REPLAY=1` plus localhost endpoint availability is required. Disabled/unavailable rows emit no fake, noop, deterministic extractive, raw prompt, or raw response payload.
+- Answer audit: generated 9; parsed answers 9; citation rendered/grounded 9/9; claim-support pass/fail 5/4; unsupported claim risk 4; evidence underuse 4; non-Korean flags 0.
+- Silver lane: diagnostic_silver_only, status `SILVER_SOURCE_ARTIFACTS_UNAVAILABLE_FAIL_CLOSED`, source files mutated=false, official metric input rows=0, promoted-to-gold count=0.
+- Closed gates: official_metric=false, official_metric_input_rows=0, gold/qrels/labels/expected/supporting evidence/denominator/training/FT-A/fine_tuning/promotion/product-success/live-readiness remain closed.
+<!-- v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke:triage-entry:end -->
+<!-- v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness:triage-entry:start -->
+### v4_7_10 PDF Korean Evidence Normalization Boundary
+
+- Scope: v4_7_9 residual weak PDF rows only; v4_7_9 answer-ready rows are protected no-regression rows.
+- Repair policy: SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only.
+- Bounded repair: spacing-insensitive Korean evidence normalization over the existing query text and existing SourceAtom citation span only; no raw PDF broad scan, hidden target/gold locator, expected/supporting gold text, source-file title shortcut, direct answer-value matching, or full-page dump.
+- Result: weak evidence/window 3 -> 1; missing neighbor context 3 -> 1; answer-ready evidence bundles 55 -> 57; spacing-insensitive Korean repairs 2.
+- Remaining row-level fail-closed reason: requires user-owned gold/evidence judgment or new source material for the listed row hashes.
+- Answer replay: 9 answer-replay candidates remain fail-closed with `LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED`; no raw prompt or raw response payload is written.
+- Closed gates: official_metric=false, official_metric_input_rows=0, gold/qrels/labels/expected/supporting evidence/denominator/training/FT-A/fine_tuning/promotion/product-success/live-readiness remain closed.
+<!-- v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness:triage-entry:end -->
 <!-- v4_7_9_pdf_evidence_residual_answer_quality_replay:triage-entry:start -->
 ### v4_7_9 PDF Residual Evidence Replay Boundary
 

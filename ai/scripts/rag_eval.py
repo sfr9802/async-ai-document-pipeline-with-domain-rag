@@ -24,9 +24,12 @@ from ai.eval import rag_v476_archive_purge as v476
 from ai.eval import rag_v477_legacy_archive_consolidation as v477
 from ai.eval import rag_v478_test_doc_dependency_decoupling as v478
 from ai.eval import rag_v479_pdf_evidence_residual_answer_quality_replay as v479
+from ai.eval import rag_v4710_pdf_korean_evidence_normalization_and_answer_replay_readiness as v4710
+from ai.eval import rag_v4711_actual_llm_answer_replay_and_silver_diagnostic_smoke as v4711
+from ai.eval import rag_v4712_layered_retrieval_generalization_and_overfit_audit as v4712
 
 
-DEFAULT_RUN_KEY = "v4_7_9"
+DEFAULT_RUN_KEY = "v4_7_12"
 SAFE_LEGACY_CHECK_ALIASES = dict(v478.SAFE_LEGACY_CHECK_ALIASES)
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
@@ -145,7 +148,7 @@ def _classify_artifact(path: Path) -> str:
     rel = repo_relative(path)
     if rel.endswith("status.jsonl"):
         return "required_by_status_or_docs"
-    if any(key in rel for key in ("v4_7_1", "v4_7_2", "v4_7_3", "v4_7_4", "v4_7_5")):
+    if any(key in rel for key in ("v4_7_1", "v4_7_2", "v4_7_3", "v4_7_4", "v4_7_5", "v4_7_9", "v4_7_10")):
         return "current_profile_minimum_or_compatibility"
     if rel.endswith("report.json"):
         return "legacy_report_alias"
@@ -490,24 +493,40 @@ def _run_safe_legacy_check(alias: str) -> dict[str, Any]:
 
 
 def check_run(key: str) -> dict[str, Any]:
-    if key == "current":
-        key = DEFAULT_RUN_KEY
     if key in SAFE_LEGACY_CHECK_ALIASES:
         return _run_safe_legacy_check(key)
-    if key == "v4_7_6" and not (ROOT / v476.SHORT_REPORT_PATH).exists():
+    resolved_key = DEFAULT_RUN_KEY if key == "current" else registry.resolve_run(key, root=ROOT).logical_key
+    if resolved_key == "v4_7_6" and not (ROOT / v476.SHORT_REPORT_PATH).exists():
         return v476.build_report(root=ROOT, execute=False)
-    if key == "v4_7_7" and not (ROOT / v477.SHORT_REPORT_PATH).exists():
+    if resolved_key == "v4_7_7" and not (ROOT / v477.SHORT_REPORT_PATH).exists():
         return v477.build_report(root=ROOT, execute=False)
-    if key == "v4_7_8" and not (ROOT / v478.SHORT_REPORT_PATH).exists():
+    if resolved_key == "v4_7_8" and not (ROOT / v478.SHORT_REPORT_PATH).exists():
         report = v478.build_report(root=ROOT, execute=False)
         v478.check_report(report)
         return report
-    if key == "v4_7_9" and not (ROOT / v479.SHORT_REPORT_PATH).exists():
+    if resolved_key == "v4_7_9" and not (ROOT / v479.SHORT_REPORT_PATH).exists():
         report = v479.build_report(root=ROOT, execute=False)
         v479.check_report(report)
         return report
-    resolved_key = registry.resolve_run(key, root=ROOT).logical_key
-    report = registry.load_report(key, root=ROOT)
+    if resolved_key == "v4_7_10" and not (ROOT / v4710.SHORT_REPORT_PATH).exists():
+        report = v4710.build_report(root=ROOT, execute=False)
+        v4710.check_report(report)
+        return report
+    if resolved_key == "v4_7_11" and not (ROOT / v4711.SHORT_REPORT_PATH).exists():
+        report = v4711.build_report(root=ROOT, execute=False)
+        v4711.check_report(report)
+        return report
+    if resolved_key == "v4_7_12" and not (ROOT / v4712.SHORT_REPORT_PATH).exists():
+        report = v4712.build_report(
+            root=ROOT,
+            execute=False,
+            v4711_report=check_run("v4_7_11"),
+            v4710_report=check_run("v4_7_10"),
+            prior_v474_report=registry.load_report("v4_7_4", root=ROOT),
+        )
+        v4712.check_report(report)
+        return report
+    report = registry.load_report(resolved_key, root=ROOT)
     if resolved_key == "v4_7_5":
         v475.check_report(report)
     if resolved_key == "v4_7_6":
@@ -518,6 +537,12 @@ def check_run(key: str) -> dict[str, Any]:
         v478.check_report(report)
     if resolved_key == "v4_7_9":
         v479.check_report(report)
+    if resolved_key == "v4_7_10":
+        v4710.check_report(report)
+    if resolved_key == "v4_7_11":
+        v4711.check_report(report)
+    if resolved_key == "v4_7_12":
+        v4712.check_report(report)
     return report
 
 
@@ -527,7 +552,7 @@ def build_parser() -> argparse.ArgumentParser:
         "run_key",
         nargs="?",
         default=DEFAULT_RUN_KEY,
-        help="logical key such as v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
+        help="logical key such as v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
     )
     parser.add_argument("--check", action="store_true", help="validate an existing report")
     parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and sync docs/status")
@@ -536,7 +561,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    run_key = DEFAULT_RUN_KEY if args.run_key == "current" else args.run_key
+    if args.run_key in SAFE_LEGACY_CHECK_ALIASES:
+        run_key = args.run_key
+    else:
+        run_key = registry.resolve_run(args.run_key, root=ROOT).logical_key
     if args.write:
         if run_key == "v4_7_5":
             report = write_v475()
@@ -560,8 +588,31 @@ def main(argv: Sequence[str] | None = None) -> int:
             write_json(ROOT / v479.SHORT_REPORT_PATH, report)
             v479.check_report(report)
             v479.append_status(ROOT, report, report_sha256=sha256_file(ROOT / v479.SHORT_REPORT_PATH))
+        elif run_key == "v4_7_10":
+            report = v4710.build_report(root=ROOT, execute=True, sync_surfaces=True)
+            write_json(ROOT / v4710.SHORT_REPORT_PATH, report)
+            v4710.check_report(report)
+            v4710.append_status(ROOT, report, report_sha256=sha256_file(ROOT / v4710.SHORT_REPORT_PATH))
+        elif run_key == "v4_7_11":
+            report = v4711.build_report(root=ROOT, execute=True, sync_surfaces=True)
+            answer_packet_sha256 = v4711.write_answer_review_packet(ROOT, report)
+            write_json(ROOT / v4711.SHORT_REPORT_PATH, report)
+            v4711.check_report(report)
+            v4711.update_docs(ROOT, report)
+            v4711.append_status(
+                ROOT,
+                report,
+                report_sha256=sha256_file(ROOT / v4711.SHORT_REPORT_PATH),
+                answer_packet_sha256=answer_packet_sha256,
+            )
+        elif run_key == "v4_7_12":
+            report = v4712.build_report(root=ROOT, execute=True, sync_surfaces=True)
+            report, artifact_hashes = v4712.write_report_bundle(ROOT, report)
+            v4712.check_report(report)
+            v4712.update_docs(ROOT, report)
+            v4712.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         else:
-            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, and v4_7_9")
+            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, and v4_7_12")
     else:
         report = check_run(run_key)
     if args.check or not args.write:
@@ -590,16 +641,44 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "resolved_current_test_or_doc_contract_count": report.get("resolved_current_test_or_doc_contract_count"),
                 "resolved_ambiguous_generated_surface_count": report.get("resolved_ambiguous_generated_surface_count"),
                 "answer_replay_candidate_count": counters.get("answer_replay_candidate_count"),
+                "v4_7_10_answer_replay_candidate_count": counters.get("v4_7_10_answer_replay_candidate_count"),
+                "v4_7_10_replayed_candidate_count": counters.get("v4_7_10_replayed_candidate_count"),
+                "answer_replay_ready_count": counters.get("answer_replay_ready_count"),
+                "answer_ready_evidence_bundle_count": counters.get("answer_ready_evidence_bundle_count"),
+                "v4_7_10_answer_ready_evidence_bundle_count": counters.get(
+                    "v4_7_10_answer_ready_evidence_bundle_count"
+                ),
+                "korean_normalized_evidence_repair_count": counters.get("korean_normalized_evidence_repair_count"),
                 "local_llm_unavailable_fail_closed_count": counters.get("local_llm_unavailable_fail_closed_count"),
+                "local_llm_replay_disabled_fail_closed_count": counters.get(
+                    "local_llm_replay_disabled_fail_closed_count"
+                ),
+                "local_llm_available": counters.get("local_llm_available"),
+                "local_llm_replay_env_enabled": counters.get("local_llm_replay_env_enabled"),
+                "llm_invoked_count": counters.get("llm_invoked_count"),
                 "generated_response_count": counters.get("generated_response_count"),
                 "parsed_final_answer_present_count": counters.get("parsed_final_answer_present_count"),
                 "citation_rendered_count": counters.get("citation_rendered_count"),
+                "citation_grounded_to_evidence_count": counters.get("citation_grounded_to_evidence_count"),
                 "claim_support_verifier_pass_count": counters.get("claim_support_verifier_pass_count"),
                 "claim_support_verifier_fail_count": counters.get("claim_support_verifier_fail_count"),
                 "unsupported_claim_risk_count": counters.get("unsupported_claim_risk_count"),
+                "evidence_underuse_flag_count": counters.get("evidence_underuse_flag_count"),
+                "korean_final_answer_count": counters.get("korean_final_answer_count"),
+                "silver_smoke_sample_count": counters.get("silver_smoke_sample_count"),
+                "silver_llm_smoke_sample_count": counters.get("silver_llm_smoke_sample_count"),
+                "silver_llm_invoked_count": counters.get("silver_llm_invoked_count"),
+                "silver_generated_response_count": counters.get("silver_generated_response_count"),
                 "regression_count_for_prior_answer_ready_rows": counters.get(
                     "regression_count_for_prior_answer_ready_rows"
                 ),
+                "layered_retrieval_audit_row_count": counters.get("layered_retrieval_audit_row_count"),
+                "pdf_full_replay_eligible_count": counters.get("pdf_full_replay_eligible_count"),
+                "pdf_generated_response_count": counters.get("pdf_generated_response_count"),
+                "silver_manifest_found": counters.get("silver_manifest_found"),
+                "silver_total_row_count": counters.get("silver_total_row_count"),
+                "silver_retrieval_audit_row_count": counters.get("silver_retrieval_audit_row_count"),
+                "silver_generated_response_count": counters.get("silver_generated_response_count"),
             },
             ensure_ascii=False,
             sort_keys=True,

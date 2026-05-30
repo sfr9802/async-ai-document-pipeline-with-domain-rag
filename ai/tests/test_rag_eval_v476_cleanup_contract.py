@@ -25,6 +25,9 @@ V4_7_6_STATUS = "V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY"
 V4_7_7_STATUS = "V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY"
 V4_7_8_STATUS = "V4_7_8_TEST_DOC_DEPENDENCY_DECOUPLING_RUNNER_ALIAS_EXPANSION_NONPROD_READY"
 V4_7_9_STATUS = "V4_7_9_PDF_EVIDENCE_RESIDUAL_ANSWER_QUALITY_REPLAY_NONPROD_READY"
+V4_7_10_STATUS = "V4_7_10_PDF_KOREAN_EVIDENCE_NORMALIZATION_AND_ANSWER_REPLAY_READINESS_NONPROD_READY"
+V4_7_11_STATUS = "V4_7_11_ACTUAL_LLM_ANSWER_REPLAY_AND_SILVER_DIAGNOSTIC_SMOKE_NONPROD_READY"
+V4_7_12_STATUS = "V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY"
 V4_7_6_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_6" / "report.json"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
@@ -119,7 +122,11 @@ def test_v476_registry_resolves_current_lineage_short_paths_and_legacy_aliases()
         "v4_7_4": "ai/eval/reports/rag-ingestion/runs/v4_7_4/report.json",
         "v4_7_5": "ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json",
         "v4_7_6": "ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json",
-        "current": "ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json",
+        "v4_7_9": "ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json",
+        "v4_7_10": "ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json",
+        "v4_7_11": "ai/eval/reports/rag-ingestion/runs/v4_7_11/report.json",
+        "v4_7_12": "ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json",
+        "current": "ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json",
     }
     for key, rel_path in expected.items():
         resolved = registry.resolve_run(key, root=ROOT)
@@ -202,8 +209,8 @@ def test_v476_report_status_docs_and_cleanup_manifest_are_compact_and_closed() -
     assert short_report_path in current_progress
     assert short_report_path in measurements
     assert short_report_path in triage
-    assert f"Current RAG status: `{V4_7_9_STATUS}`" in readme
-    assert f"Current RAG status: `{V4_7_9_STATUS}`" in eval_readme
+    assert f"Current RAG status: `{V4_7_12_STATUS}`" in readme
+    assert f"Current RAG status: `{V4_7_12_STATUS}`" in eval_readme
 
     generated_text = "\n".join(
         [

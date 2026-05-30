@@ -1,3 +1,155 @@
+<!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:measurements-entry:start -->
+### v4_7_12 Layered Retrieval Generalization And Overfit Audit
+
+- Run key: `v4_7_12_layered_retrieval_generalization_and_overfit_audit`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json`
+- Silver retrieval audit: `ai/eval/reports/rag-ingestion/runs/v4_7_12/silver_layered_retrieval_audit.json`
+- Interpretation: diagnostic-only architecture/generalization audit. Not official scoring, not promotion evidence, not product-success evidence, and not live-readiness.
+
+| Counter | Value |
+|---|---:|
+| v4_7_11_canary_row_count | 9 |
+| pdf_full_replay_eligible_count | 57 |
+| pdf_generated_response_count | 0 |
+| silver_manifest_found | True |
+| silver_total_row_count | 1000 |
+| silver_text_count | 350 |
+| silver_pdf_count | 325 |
+| silver_xlsx_count | 325 |
+| silver_retrieval_audit_row_count | 1000 |
+| silver_llm_smoke_sample_count | 90 |
+| silver_generated_response_count | 89 |
+| canary_to_full_pdf_quality_drop_count | 52 |
+| pdf_to_xlsx_retrieval_drop_count | 0 |
+| official_metric_input_rows | 0 |
+| promotion_evidence | False |
+<!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:measurements-entry:end -->
+<!-- v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke:measurements-entry:start -->
+### v4_7_11 Actual LLM Answer Replay And Silver Diagnostic Smoke
+
+- Run key: `v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_11/report.json`
+- Answer review packet: `ai/eval/reports/rag-ingestion/runs/v4_7_11/answer_review_packet_ko.jsonl`
+- Source artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json`
+- Local LLM env gate: `RAG_V4_7_11_ENABLE_LOCAL_LLM_REPLAY`
+- Boundary: diagnostic-only localhost LLM replay over v4_7_10 EvidenceBundle-ready rows. No raw prompt or raw response payload is written to Markdown/status; no official metric, gold/qrels/labels/expected/supporting evidence mutation, denominator mutation, training/fine_tuning/FT-A, promotion, product success, or live-readiness is opened.
+- Replay result: candidates 9; skipped weak residual 1; generated 9; parsed answers 9; citations rendered 9; claim-support pass/fail 5/4; unsupported/evidence-underuse 4/4; Korean answers 9; non-Korean flags 0.
+- Silver diagnostic smoke: status `SILVER_SOURCE_ARTIFACTS_UNAVAILABLE_FAIL_CLOSED`; sample 0 (TEXT 0, PDF 0, XLSX 0); generated 0; official input rows 0.
+
+| Counter | Value |
+|---|---:|
+| abstain_count | 0 |
+| answer_review_packet_row_count | 9 |
+| broad_source_atom_scan_attempt_count | 0 |
+| citation_grounded_to_evidence_count | 9 |
+| citation_malformed_count | 0 |
+| citation_rendered_count | 9 |
+| claim_support_verifier_fail_count | 4 |
+| claim_support_verifier_pass_count | 5 |
+| denominator_mutation | false |
+| direct_answer_value_matching_used_count | 0 |
+| evidence_truth_violation_count | 0 |
+| evidence_underuse_flag_count | 4 |
+| expected_answer_mutation | false |
+| expected_or_supporting_gold_text_used_count | 0 |
+| fine_tuning | false |
+| ft_a_execution | false |
+| full_page_dump_used_count | 0 |
+| generated_response_count | 9 |
+| gold_mutation | false |
+| hidden_target_locator_used_count | 0 |
+| invalid_json_count | 0 |
+| korean_final_answer_count | 9 |
+| label_mutation | false |
+| live_db_index_cache_readiness | false |
+| llm_invoked_count | 9 |
+| local_llm_available | true |
+| local_llm_invocation_failed_fail_closed_count | 0 |
+| local_llm_replay_disabled_fail_closed_count | 0 |
+| local_llm_replay_env_enabled | true |
+| local_llm_unavailable_fail_closed_count | 0 |
+| non_korean_answer_flag_count | 0 |
+| noop_or_extractive_generator_used | false |
+| official_metric | false |
+| official_metric_input_rows | 0 |
+| parsed_final_answer_present_count | 9 |
+| path_leakage_flag_count | 0 |
+| pdf_survivor_row_count | 58 |
+| product_success_evidence_allowed | false |
+| promotion_evidence | false |
+| prompt_leakage_flag_count | 0 |
+| qrels_mutation | false |
+| raw_llm_response_present_count | 0 |
+| raw_pdf_query_time_parsing_count | 0 |
+| raw_xlsx_query_time_parsing_count | 0 |
+| response_leakage_flag_count | 0 |
+| silver_abstain_count | 0 |
+| silver_candidate_available_count | 0 |
+| silver_citation_rendered_count | 0 |
+| silver_claim_support_verifier_fail_count | 0 |
+| silver_claim_support_verifier_pass_count | 0 |
+| silver_fail_closed_count | 0 |
+| silver_generated_response_count | 0 |
+| silver_llm_invoked_count | 0 |
+| silver_official_metric_input_rows | 0 |
+| silver_parsed_final_answer_present_count | 0 |
+| silver_promoted_to_gold_count | 0 |
+| silver_smoke_pdf_count | 0 |
+| silver_smoke_sample_count | 0 |
+| silver_smoke_text_count | 0 |
+| silver_smoke_xlsx_count | 0 |
+| source_file_title_shortcut_used_count | 0 |
+| supporting_evidence_mutation | false |
+| training_dataset_created | false |
+| truncated_or_malformed_response_count | 0 |
+| unsupported_claim_risk_count | 4 |
+| v4_7_10_answer_ready_evidence_bundle_count | 57 |
+| v4_7_10_answer_replay_candidate_count | 9 |
+| v4_7_10_replayed_candidate_count | 9 |
+| v4_7_10_skipped_weak_residual_count | 1 |
+| vector_payload_evidence_truth_violation_count | 0 |
+<!-- v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke:measurements-entry:end -->
+<!-- v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness:measurements-entry:start -->
+### v4_7_10 PDF Korean Evidence Normalization And Answer Replay Readiness
+
+- Run key: `v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json`
+- Source artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json`
+- Boundary: diagnostic-only spacing-insensitive Korean evidence normalization over existing SourceAtom spans. No raw PDF broad scan, no gold/qrels/labels/expected/supporting evidence mutation, no denominator mutation, no training/fine_tuning/FT-A, no promotion, no live-readiness.
+- Before/after: weak evidence/window 3 -> 1; missing neighbor context 3 -> 1.
+- Answer-ready evidence bundles: 55 -> 57.
+- Local LLM status: `LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED`; no raw prompt or raw response payload is written.
+
+| Counter | Value |
+|---|---:|
+| pdf_survivor_row_count | 58 |
+| answer_ready_evidence_bundle_count_before | 55 |
+| v4_7_9_residual_weak_evidence_window_count_before | 3 |
+| residual_weak_evidence_window_count_before | 3 |
+| residual_weak_evidence_window_count_after | 1 |
+| missing_neighbor_context_count_before | 3 |
+| missing_neighbor_context_count_after | 1 |
+| v4_7_9_repaired_evidence_bundle_count | 7 |
+| newly_repaired_evidence_bundle_count | 2 |
+| korean_normalization_repair_count | 2 |
+| korean_normalized_evidence_repair_count | 2 |
+| total_repaired_evidence_bundle_count_since_v4_7_5 | 9 |
+| answer_ready_evidence_bundle_count | 57 |
+| new_answer_replay_ready_count | 2 |
+| answer_replay_ready_count | 9 |
+| answer_replay_candidate_count | 9 |
+| llm_invoked_count | 0 |
+| local_llm_unavailable_fail_closed_count | 9 |
+| generated_response_count | 0 |
+| parsed_final_answer_present_count | 0 |
+| citation_rendered_count | 0 |
+| claim_support_verifier_pass_count | 0 |
+| claim_support_verifier_fail_count | 0 |
+| unsupported_claim_risk_count | 0 |
+| evidence_underuse_flag_count | 0 |
+| regression_count_for_v4_7_9_answer_ready_rows | 0 |
+| official_metric_input_rows | 0 |
+<!-- v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness:measurements-entry:end -->
 <!-- v4_7_9_pdf_evidence_residual_answer_quality_replay:measurements-entry:start -->
 ### v4_7_9 PDF Evidence Residual Answer Quality Replay
 

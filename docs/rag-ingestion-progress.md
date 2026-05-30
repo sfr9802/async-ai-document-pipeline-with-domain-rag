@@ -21,6 +21,18 @@ failure attribution, response audit, or per-run Markdown outputs are reserved
 for behavior-changing runs or explicit forensic evidence requirements.
 
 
+<!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:progress-entry:start -->
+- v4_7_12_layered_retrieval_generalization_and_overfit_audit is V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json`. The 9-row v4_7_11 answer replay is treated as canary only; this slice audits layered retrieval over 57 full PDF answer-ready rows and 1000 silver rows when available. Silver found=true rows 1000 TEXT/PDF/XLSX 350/325/325. Full PDF LLM replay generated 0 and silver smoke generated 89. SearchView/vector payload remains candidate-only; SourceAtom/EvidenceBundle remains evidence truth. official_metric=false, official_metric_input_rows=0, silver_official_metric_input_rows=0, silver_promoted_to_gold_count=0, promotion_evidence=false, product_success_evidence_allowed=false, live_db_index_cache_readiness=false.
+<!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:progress-entry:end -->
+
+<!-- v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke:progress-entry:start -->
+- v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke is V4_7_11_ACTUAL_LLM_ANSWER_REPLAY_AND_SILVER_DIAGNOSTIC_SMOKE_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_11/report.json`. This diagnostic-only slice consumes v4_7_10 and opens actual localhost LLM answer replay only for 9 v4_7_10 answer-replay candidates; 1 weak residual row stays excluded. Env gate `RAG_V4_7_11_ENABLE_LOCAL_LLM_REPLAY` enabled=true, local_llm_available=true, generated responses 9, parsed answers 9, citations rendered 9, claim-support pass/fail 5/4, Korean answers 9. Silver smoke remains diagnostic_silver_only: sample 0 (TEXT 0, PDF 0, XLSX 0), status `SILVER_SOURCE_ARTIFACTS_UNAVAILABLE_FAIL_CLOSED`. SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only. official_metric=false, official_metric_input_rows=0, and all gold/qrels, labels, denominator, training, FT-A, fine_tuning, promotion, product-success, and live-readiness gates stay closed.
+<!-- v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke:progress-entry:end -->
+
+<!-- v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness:progress-entry:start -->
+- v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness is V4_7_10_PDF_KOREAN_EVIDENCE_NORMALIZATION_AND_ANSWER_REPLAY_READINESS_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json`. This diagnostic-only slice consumes the v4_7_9 PDF residual replay report and targets only its remaining weak EvidenceBundle rows: weak evidence/window 3 -> 1, missing neighbor context 3 -> 1, answer-ready evidence bundles 55 -> 57, spacing-insensitive Korean repairs 2, prior v4_7_9 answer-ready regressions 0. Answer replay readiness now has 9 candidates, all fail-closed as `LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED` because no local LLM replay surface is available. SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only. official_metric=false and all gold/qrels, label, denominator, training, FT-A, fine_tuning, promotion, product-success, and live-readiness gates stay closed.
+<!-- v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness:progress-entry:end -->
+
 <!-- v4_7_9_pdf_evidence_residual_answer_quality_replay:progress-entry:start -->
 - v4_7_9_pdf_evidence_residual_answer_quality_replay is V4_7_9_PDF_EVIDENCE_RESIDUAL_ANSWER_QUALITY_REPLAY_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json`. This diagnostic-only slice replays the v4_7_5 PDF survivor surface and targets only the residual weak EvidenceBundle rows: weak evidence/window 10 -> 3, missing neighbor context 10 -> 3, repaired bundles 7, prior answer-ready regressions 0. Local LLM replay stayed fail-closed as `LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED` for 7 candidates. SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only. All official, gold/qrels, label, denominator, training, FT-A, fine_tuning, promotion, product-success, and live-readiness gates stay closed.
 <!-- v4_7_9_pdf_evidence_residual_answer_quality_replay:progress-entry:end -->
@@ -208,7 +220,7 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V4_7_9_PDF_EVIDENCE_RESIDUAL_ANSWER_QUALITY_REPLAY_NONPROD_READY`;
+Overall status: `V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY`;
 current latest v4_6 run remains v4_6_12:
 `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`;
 current Phase 1 FastAPI diagnostic/internal integration marker:
