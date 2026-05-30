@@ -66,33 +66,6 @@ AI 문서 검색에서 가장 큰 문제는 답변이 그럴듯해 보여도 **�
 | 검색 후보와 실제 citation 근거가 섞일 수 있음 | SearchView와 SourceAtom을 분리해 retrieval candidate와 citation truth를 구분 |
 | 실험 결과가 운영 기준처럼 보일 수 있음 | diagnostic-only 결과, promotion evidence, production promotion을 명확히 구분 |
 
-## 주요 개념을 쉽게 풀면
-
-| 용어 | 이 프로젝트에서의 의미 |
-|---|---|
-| OCR | 이미지나 스캔 문서에서 글자를 읽어내는 작업 |
-| RAG | 질문과 관련된 문서 내용을 먼저 찾고, 그 내용을 바탕으로 답변하는 방식 |
-| Evidence | 답변의 근거가 되는 원문 단위 |
-| Citation | 사용자가 확인할 수 있도록 표시한 근거 위치 |
-| SearchView | 빠르게 검색하기 위한 후보 데이터 |
-| SourceAtom | 실제 citation의 기준이 되는 원문 근거 단위 |
-| EvidenceBundle | 답변 생성과 citation 표시에 필요한 근거 묶음 |
-
-FAISS/vector index metadata는 검색 후보를 찾는 데만 사용합니다.
-최종 citation의 기준은 SourceAtom/source registry에서 가져옵니다.
-Expected answer, supporting evidence, gold fields는 답변 생성 source로 사용하지 않습니다.
-
-## Current RAG Diagnostic Status
-
-- Current RAG status: `V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY`.
-- Phase: v4_7 remains pre-official. `v4_7_7_v3_legacy_archive_and_runner_consolidation` is cleanup/refactor only and writes `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json`; it does not replay retrieval, EvidenceBundle, or answer generation.
-- Resolver wiring: use `current` or `v4_7_7` for the latest archive-aware cleanup report, `v4_7_6` for the previous archive purge report, and short lineage keys `v4_7_preofficial`, `v4_7_2`, `v4_7_3`, `v4_7_4`, and `v4_7_5` for preserved current-profile provenance.
-- v3 legacy artifact policy: generated v3 report artifacts are now classified in `ai/eval/reports/rag-ingestion/runs/v4_7_7/v3_legacy_artifact_manifest.jsonl` as externally archived/removed, deleted, or explicit holds with reasons. Counters are total 279, archived/removed 98, deleted 0, held 181 (current test/doc contract 133, documented review packet 16, ambiguous generated surface 32), unclassified 0.
-- Runner consolidation: `ai/scripts/rag_eval.py` is the stable short-key runner. It owns `current`, `v4_7_7`, `v4_7_6`, and safe legacy check aliases `v3_21` and `v3_22`; unverified legacy diagnostic entrypoints remain explicit holds rather than being silently folded.
-- v4_7 lineage preserved: v4_7_2 supersedes the abstract v4_7_1 Korean review packet with source-grounded Korean query candidates, hydrated rows 204, PDF 100, XLSX 104, and non-empty `질의문` 204; v4_7_3 applies the user-reviewed Korean query candidate CSV with `미검수=통과`; v4_7_4 replays PDF survivor 58 rows only; v4_7_5 repairs the PDF survivor EvidenceBundle diagnostic window.
-- Rolling evidence docs: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md` remain the canonical human-readable status ledgers; no per-run Markdown is created.
-- Hard boundary: not official metric, not gold/qrels, not relevance/answerability labels, not expected answer/evidence approval, not product-success evidence, not promotion evidence, not FT-A execution, not fine_tuning, not actual fine-tuning/training, not threshold tuning, not winner selection, not training data, and not live DB/index/cache readiness. Locked flags remain `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `ft_a_execution=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
-
 
 ## 전체 구조
 
@@ -131,78 +104,6 @@ flowchart LR
 | [`.env.example`](.env.example) | 로컬 실행 환경 변수 예시 |
 
 - [Third-party data license notice](docs/THIRD_PARTY_DATA_LICENSES.md)
-
-## 로컬 실행 메모
-
-로컬 인프라는 기본적으로 PostgreSQL과 Redis를 띄웁니다.
-
-```powershell
-docker compose up -d
-```
-
-애플리케이션은 개발 중 디버깅을 쉽게 하기 위해 각각 로컬 프로세스로 실행하는 구조입니다.
-
-- `core-api`: Java 21 / Maven / Spring Boot
-- `ai`: Python / FastAPI / FAISS / sentence-transformers
-- `frontend/app`: React / Vite / pnpm
-
-대형 local corpus/runtime payload와 legacy root-level report artifacts는 repo 밖의 external runtime archive로 이동했습니다.
-현재 pytest profile이 직접 읽는 `ai/eval/reports/rag-ingestion/`, `ai/eval/source_registry/`, `ai/eval/indexes/` generated evidence는 검증 경로 보존을 위해 local-only로 유지합니다.
-
-진단 산출물 재검증은 원본 외부 manifest 경로를 README에 노출하지 않고 다음 명령으로 수행합니다.
-
-```powershell
-python -X utf8 -m py_compile ai\scripts\rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_5_finetune_readiness_packet_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_ft_route_policy_dry_run_preflight_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_2_ft_route_policy_fixture_contract_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py
-python -X utf8 -m py_compile ai\scripts\rag_eval.py
-python -X utf8 ai\scripts\rag_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod.py --check --candidate-manifest <external-candidate-manifest-jsonl>
-python -X utf8 ai\scripts\rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_5_finetune_readiness_packet_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_5_1_holdout_candidate_intake_gate_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_ft_route_policy_dry_run_preflight_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_2_ft_route_policy_fixture_contract_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod.py --check
-python -X utf8 ai\scripts\rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py --check
-python -X utf8 ai\scripts\rag_eval.py v4_7_5 --check
-```
 
 ## 라이선스와 외부 데이터
 
