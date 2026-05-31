@@ -1,28 +1,44 @@
 <!-- v5_0_v4_closeout_and_v5_gate_plan:measurements-entry:start -->
 ## v5_0 v4 closeout and v5 gate plan
 
-- Closeout basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`
-- Interpretation: plan/documentation only; no official metric, gold/qrels/label, denominator, training, promotion, product-success, or live-readiness gate is opened.
+- Run key: `v5_0_v4_closeout_and_v5_gate_plan`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`
+- Interpretation: diagnostic-only closeout and gate planning; not official scoring, promotion, product-success evidence, or live readiness.
 
 | counter | value |
 | --- | --- |
-| v4_closeout_status | V4_CLOSED_DIAGNOSTIC_ONLY_SOURCE_FIRST_CANDIDATE_ONLY_LINEAGE_REPRODUCIBLE |
-| current_source_of_truth | v4_7_18 |
-| user_owned_decision_group_count | 6 |
-| codex_owned_work_group_count | 4 |
-| xlsx_residual_miss_count | 299 |
+| status | V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY |
+| v4_closeout_source_of_truth | v4_7_18 |
+| v4_closeout_basis_short_run_id | v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility |
+| current_resolves_to | v5_0 |
+| source_report_status | V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY |
+| source_report_sha256 | 3a682ff580ebd3e2db78c013e1b9402bd576b43d2f313b414a293118462b8b8e |
+| lineage_reproducibility_status | LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY |
+| xlsx_materialization_repair_status | XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_ACCEPTED_DIAGNOSTIC_ONLY |
+| xlsx_materialization_repair_decision | accept_materialized_axis_value_overlay_diagnostic_only |
+| text_hit_count | 232 |
+| text_miss_count | 118 |
+| pdf_hit_count | 265 |
+| pdf_miss_count | 60 |
+| xlsx_hit_count | 26 |
+| xlsx_miss_count | 299 |
 | xlsx_zero_candidate_row_count | 78 |
 | xlsx_candidate_budget_exhaustion_count | 109 |
-| official_metric_opening_preconditions_documented | true |
+| family_target_hit_regression_count | {"PDF": 0, "TEXT": 0, "XLSX": 0} |
 | official_metric_opening_preconditions_satisfied | false |
-| live_readiness_promotion_preconditions_documented | true |
 | live_readiness_promotion_preconditions_satisfied | false |
-| ambiguous_non_gold_choices_remain_diagnostic_only | true |
 | official_metric_input_rows | 0 |
+| silver_official_metric_input_rows | 0 |
+| silver_promoted_to_gold_count | 0 |
 | gold_mutation | false |
 | qrels_mutation | false |
+| label_mutation | false |
 | denominator_mutation | false |
+| training_dataset_created | false |
+| fine_tuning | false |
+| ft_a_execution | false |
 | promotion_evidence | false |
+| product_success_evidence_allowed | false |
 | live_db_index_cache_readiness | false |
 <!-- v5_0_v4_closeout_and_v5_gate_plan:measurements-entry:end -->
 
@@ -881,7 +897,7 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 | official_metric_input_rows | 0 |
 <!-- v4_7_13_measurements_end -->
 
-Last updated: 2026-05-31 KST.
+Last updated: 2026-06-01 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new

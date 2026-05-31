@@ -29,7 +29,7 @@ V4_7_5_LONG_RUN_ID = (
     "evidence_window_repair_and_eval_surface_compaction_nonprod"
 )
 V4_7_5_STATUS = "V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY"
-CURRENT_RUN_KEY = "v4_7_18"
+CURRENT_RUN_KEY = "v5_0"
 V4_7_4_REPORT = (
     ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / V4_7_4_LONG_RUN_ID / "report.json"
 )
@@ -322,7 +322,7 @@ def test_v475_no_protected_namespaces_or_training_artifacts_are_modified() -> No
     assert "prompt_manifest" not in json.dumps(report, ensure_ascii=False)
 
 
-def test_v475_stable_runner_is_importable_and_current_profile_knows_contract_test() -> None:
+def test_v475_stable_runner_is_importable_and_contract_test_is_historical() -> None:
     runner_path = ROOT / "ai" / "scripts" / "rag_eval.py"
     spec = importlib.util.spec_from_file_location("rag_eval_runner", runner_path)
     assert spec and spec.loader
@@ -336,5 +336,5 @@ def test_v475_stable_runner_is_importable_and_current_profile_knows_contract_tes
     import ai.tests.conftest as rag_conftest
 
     nodeid = "ai/tests/test_rag_eval_v475_contract.py::test_v475_report_records_required_boundaries_and_artifact_compaction"
-    assert "ai/tests/test_rag_eval_v475_contract.py" in rag_conftest.CURRENT_RAG_TEST_FILES
-    assert rag_conftest.is_rag_current_required_nodeid(nodeid)
+    assert "ai/tests/test_rag_eval_v475_contract.py" in rag_conftest.NON_CURRENT_RAG_TEST_FILES
+    assert not rag_conftest.is_rag_current_required_nodeid(nodeid)

@@ -1,17 +1,10 @@
-<!-- v4_7_18_summary_start -->
+<!-- v5_0_summary_start -->
 ## Current RAG Diagnostic Status
-Current RAG status: `V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY`.
-`current` resolves to `v4_7_18`: non-production XLSX candidate-only materialization repair and lineage reproducibility hardening. v4_7_17 remains explicit for candidate-only generalization validation and XLSX table-axis audit; v4_7_16_target_recall_repair_prototype remains explicit for the 300 -> 514 replay. v4_7_18 improves XLSX combined target hits 17 -> 26 using already-materialized non-numeric axis/header text only, with TEXT held at 232 and PDF held at 265; all family target-hit regressions are 0. v4 is closed as diagnostic-only source-first/candidate-only/lineage-reproducibility work; v5 is a gate plan only until user-owned gold/qrels/expected-evidence/relevance/answerability/denominator/promotion decisions open it. Canonical details: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md`; prior v4_7 cleanup keys remain checkable through explicit aliases.
-Historical continuity markers: v4_7 remains pre-official; supersedes the abstract v4_7_1 Korean review packet; ## Korean human review packet; actual Korean query candidates; User-owned fields remain blank/default; hydrated rows 204, PDF 100, XLSX 104; non-empty `질의문` 204; The previous v4_7_1 Korean review packet was abstract; review_packet_ko_hydrated.xlsx; v4_7_3 applies the user-reviewed Korean query candidate CSV; 미검수=통과; v4_7_3 applies the user-reviewed CSV decisions; not official metric; official_metric_input_rows=0; not gold/qrels; PDF survivor 58; v4_7_4 replays only the 58 user-passed PDF survivor candidates; fine_tuning_executed=false.
-Hard boundary: diagnostic-only, non-production, not official metric, not gold/qrels/labels, not denominator/training/fine-tuning/FT-A, not promotion evidence, not product-success evidence, and not live readiness.
-<!-- v4_7_18_summary_end -->
-# AI 문서 검색 평가 샘플
-
-이 문서는 `ai/eval`에서 사용하는 **문서 검색·답변 평가 샘플 README**입니다.
-TEXT, PDF, XLSX 문서에 질문했을 때 AI가 어떤 근거를 찾고, 어떤 응답을 만들었는지 한눈에 확인할 수 있게 정리했습니다.
-
-중요한 점은 이 문서가 “성능 점수 자랑용”이 아니라는 것입니다.
-여기서는 모델이 그럴듯한 답변을 했는지보다, **답변이 실제 문서 근거에 연결되어 있는지**, 그리고 **근거가 부족할 때 답변을 막는지**를 보여줍니다.
+Current RAG status: `V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY`.
+`current` resolves to `v5_0`: diagnostic-only v4 closeout and v5 gate planning. `v4_7_18` remains the frozen v4 closeout basis at `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` and remains directly checkable. v4 is closed as diagnostic-only source-first/candidate-only/lineage-reproducibility work, not as official evaluation. TEXT 232/350 hit, PDF 265/325 hit, XLSX 26/325 hit; XLSX residual backlog remains 299 misses, 78 zero-candidate rows, and 109 budget-exhausted rows.
+Hard boundary: diagnostic-only, non-production, not official metric, not gold/qrels/labels, not denominator, not training/fine-tuning/FT-A, not promotion evidence, not product-success evidence, and not live readiness. Official opening still requires gold/qrels/expected-evidence/relevance/answerability/denominator/promotion decisions. official_metric_input_rows=0, fine_tuning_executed=false, and protected_namespaces_touched=[].
+Canonical rolling docs remain `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md`; production promotion remains closed. Historical compatibility breadcrumbs retained for lower-section status-sync context, not current handoff: v4_7 remains pre-official; prior v4_7 cleanup keys remain explicit; supersedes the abstract v4_7_1 Korean review packet with hydrated rows 204, PDF 100, XLSX 104; v4_7_2 supersedes the abstract v4_7_1 packet with non-empty `질의문` 204 in `review_packet_ko_hydrated.xlsx`; `## Korean human review packet`; The previous v4_7_1 Korean review packet was abstract; actual Korean query candidates; User-owned fields remain blank/default; v4_7_3 applies the user-reviewed Korean query candidate CSV and v4_7_3 applies the user-reviewed CSV decisions (`미검수=통과`), not official metric and not gold/qrels; PDF survivor 58 and v4_7_4 replays only the 58 user-passed PDF survivor candidates.
+<!-- v5_0_summary_end -->
 
 ## 한눈에 보기
 

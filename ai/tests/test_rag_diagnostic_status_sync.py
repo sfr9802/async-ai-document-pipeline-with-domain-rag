@@ -17,6 +17,7 @@ PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+V5_0_CURRENT_STATUS = "V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY"
 V4_7_18_CURRENT_STATUS = "V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY"
 V4_7_17_CURRENT_STATUS = "V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY"
 V4_7_16_CURRENT_STATUS = "V4_7_16_TARGET_RECALL_REPAIR_PROTOTYPE_NONPROD_READY"
@@ -36,7 +37,7 @@ V4_7_3_CURRENT_STATUS = "V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLU
 V4_7_2_CURRENT_STATUS = "DIAGNOSTIC_V4_7_2_SOURCE_GROUNDED_KOREAN_QUERY_REVIEW_PACKET_HYDRATION_NONPROD_READY"
 V4_7_1_CURRENT_STATUS = "DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY"
 V4_7_CURRENT_STATUS = "V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY"
-CURRENT_RAG_STATUS = V4_7_18_CURRENT_STATUS
+CURRENT_RAG_STATUS = V5_0_CURRENT_STATUS
 V4_6_CLOSEOUT_CURRENT_STATUS = CURRENT_RAG_STATUS
 V4_6_12_CURRENT_STATUS = V4_6_CLOSEOUT_CURRENT_STATUS
 V4_6_11_CURRENT_STATUS = V4_6_12_CURRENT_STATUS
@@ -223,8 +224,8 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
     assert "XLSX/PDF deterministic adapter opt-in wiring is implemented" in current_text
     assert "report-only" in current_text
     assert "pytest ai/tests --rag-current -q" in current_text
-    assert "full `ai/tests`\n  now mirrors the current profile" in current_text
-    assert "broad/nightly legacy\n  suites" in current_text
+    assert "nodeid-scoped for the fast current loop" in current_text
+    assert "broad historical suites remain runnable outside `--rag-current`" in current_text
     assert "status.jsonl" in current_text
 
     assert "SCORER_BACKEND_UNAVAILABLE" not in current_text
@@ -235,10 +236,20 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
 
 def test_progress_doc_does_not_keep_stale_current_profile_test_count():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
+    verification_section = text.split("## Current Verification Command", 1)[1].split(
+        "## Current Source-Of-Truth Artifacts", 1
+    )[0]
 
-    assert "Current verification:" in text
-    assert "0 skipped" in text
-    assert "0 failed" in text
+    assert "Current verification:" in verification_section
+    assert "17 passed" in verification_section
+    assert "14 passed" not in verification_section
+    assert "13 passed" not in verification_section
+    assert "18 passed" not in verification_section
+    assert "823 passed" not in verification_section
+    assert "0 skipped" in verification_section
+    assert "0 failed" in verification_section
+    assert "1 warning" in verification_section
+    assert "8 warnings" not in verification_section
     assert "current focused profile is 61 tests" not in text
 
 

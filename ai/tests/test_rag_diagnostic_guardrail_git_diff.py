@@ -180,6 +180,77 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(resolve_report_artifact_path(path).read_bytes()).hexdigest()
 
 
+def test_v5_0_closeout_gate_plan_does_not_mutate_protected_or_promote_surfaces():
+    import ai.scripts.rag_eval as runner
+
+    report = runner.check_run("v5_0")
+    events = [json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines() if line.strip()]
+    matches = [
+        event
+        for event in events
+        if event.get("short_run_id") == "v5_0_v4_closeout_and_v5_gate_plan"
+        and event.get("event_type") == "diagnostic_v5_0_v4_closeout_and_v5_gate_plan_nonprod"
+    ]
+
+    for protected_path in (
+        "ai/eval/eval_queries",
+        "ai/eval/source_registry",
+        "ai/eval/indexes",
+        "ai/eval/silver",
+    ):
+        unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    assert report["diagnostic_only"] is True
+    assert report["non_production"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["silver_official_metric_input_rows"] == 0
+    assert report["silver_promoted_to_gold_count"] == 0
+    assert report["protected_namespaces_touched"] == []
+    for key in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "denominator_mutation",
+        "training_dataset_created",
+        "fine_tuning",
+        "ft_a_execution",
+        "promotion_evidence",
+        "product_success_evidence_allowed",
+        "live_db_index_cache_readiness",
+        "production_db_mutated",
+        "source_registry_mutated",
+        "silver_mutation",
+        "index_rebuilt",
+        "cache_mutated",
+    ):
+        assert report[key] is False, key
+    generated_text = json.dumps(report, ensure_ascii=False)
+    for token in ("prompt_manifest", "per_query", "raw_llm_response"):
+        assert token not in generated_text
+    assert len(matches) == 1
+    event = matches[0]
+    assert event["official_metric"] is False
+    assert event["official_metric_input_rows"] == 0
+    assert event["protected_namespaces_touched"] == []
+    assert event["promotion_evidence"] is False
+    assert event["product_success_evidence_allowed"] is False
+    assert event["live_db_index_cache_readiness"] is False
+    for key in (
+        "production_db_mutated",
+        "source_registry_mutated",
+        "silver_mutation",
+        "index_rebuilt",
+        "cache_mutated",
+    ):
+        assert event[key] is False, key
+
+
 def test_residual_audit_does_not_mutate_protected_artifacts():
     for protected_path in STRICT_PROTECTED_PATHS:
         unstaged = subprocess.run(

@@ -1,12 +1,12 @@
 <!-- v5_0_v4_closeout_and_v5_gate_plan:triage-entry:start -->
 ### v5_0 v4 closeout and v5 gate plan
 
-- Basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` closes v4 as source-first, candidate-only, lineage-reproducible diagnostic work. All ambiguous non-gold choices remain diagnostic-only because no user-approved relevance, answerability, expected-evidence, qrels, or denominator policy exists for them yet.
-- User-owned decisions: approve gold/qrels policy; expected answer/evidence standards; relevance and answerability labels; official denominator; promotion/product-success policy; explicit official metric opening.
-- Codex-owned work: implement approved schemas, tests, runner/report/status updates, indexing-scope guardrails, protected-surface checks, and failure-taxonomy/reporting changes without opening policy gates.
-- XLSX residual backlog: 299 remaining misses, 78 zero-candidate rows, 109 budget-exhausted rows, repeated-prefix/header-axis/table-range splits, and formatted-value prototypes all stay candidate-only until user gold policy opens.
-- Official metric opening preconditions: approved gold/qrels/labels/denominator, fixed metric definitions, documented blocked/deferred metrics, explicit protected-surface diffs, and status rows that still show `official_metric_input_rows=0` until the approved opening.
-- Live-readiness and promotion preconditions: accepted official metrics, live DB/index/cache rollout evidence, redaction/leakage/latency/rollback/monitoring evidence, and user-approved promotion policy; v4_7_18 counters alone are not product-success or promotion evidence.
+- Basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` freezes v4 as diagnostic-only source-first, candidate-only, lineage-reproducible work. `current` resolves to `v5_0`; `v4_7_18` remains explicit and checkable.
+- User-owned decisions: golden set creation/review, expected answer and expected/supporting evidence judgment, relevance and answerability labels, gold policy, official denominator policy, and promotion policy.
+- Codex-owned work: implementation, test, report, path, indexing-scope, protected-surface, and failure-taxonomy work only; ambiguous non-gold choices stay fail-closed and diagnostic-only.
+- XLSX residual backlog / engineering backlog: XLSX 299 misses, 78 zero-candidate rows, and 109 budget-exhausted rows remain visible; `accept_materialized_axis_value_overlay_diagnostic_only` remains the frozen v4_7_18 repair decision.
+- Official metric opening preconditions: user-approved gold/qrels/labels/expected evidence, frozen denominator, metric definitions, blocked/deferred metric policy, and protected-surface diffs.
+- Live-readiness and promotion preconditions: accepted official metrics, live DB/index/cache rollout evidence, redaction/leakage/latency/rollback/monitoring evidence, and user-approved promotion/product-success policy.
 <!-- v5_0_v4_closeout_and_v5_gate_plan:triage-entry:end -->
 
 <!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:triage-entry:start -->
@@ -269,7 +269,7 @@
 - v4_7_13 live replay status: `LIVE_SILVER_RETRIEVAL_REPLAY_UNAVAILABLE_FAIL_CLOSED`. Full PDF status: `FULL_PDF_LLM_REPLAY_UNAVAILABLE_FAIL_CLOSED`. TEXT silver explanation: TEXT smoke failures are mainly weak-likely-answerable queries whose family route survived but whose target SourceAtom was usually not in top-k, so the selected evidence did not contain enough answer-bearing context. The model therefore produced supported or unsupported insufficient_evidence despite query-level likely_unanswerable=false. SearchView/vector payload remains candidate-only; SourceAtom/EvidenceBundle remains evidence truth.
 <!-- v4_7_13_triage_end -->
 
-Last updated: 2026-05-31 KST.
+Last updated: 2026-06-01 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of

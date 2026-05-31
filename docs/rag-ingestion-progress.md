@@ -1,12 +1,14 @@
+<!-- v5_0_v4_closeout_and_v5_gate_plan:progress-entry:start -->
+- Overall status: `V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY`; v5_0_v4_closeout_and_v5_gate_plan is the diagnostic-only v4 closeout and v5 gate-plan run. Artifact: `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`. v4 closeout basis: `v4_7_18` / `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`; source report status `V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY`; source report hash `3a682ff580ebd3e2db78c013e1b9402bd576b43d2f313b414a293118462b8b8e`. `current` resolves to `v5_0`, while `v4_7_18` remains directly checkable as the frozen v4 closeout basis. TEXT remains 232/350 hit and 118 miss; PDF remains 265/325 hit and 60 miss; XLSX remains 26/325 hit and 299 miss. XLSX 299 misses, 78 zero-candidate rows, and 109 budget-exhausted rows carry into v5 as residual engineering backlog. official_metric_input_rows=0, silver_official_metric_input_rows=0, silver_promoted_to_gold_count=0, promotion_evidence=false, product_success_evidence_allowed=false, live_db_index_cache_readiness=false, gold/qrels/label/expected/supporting/denominator/training/fine-tuning/FT-A gates remain closed, and protected_namespaces_touched=[]; no per-run Markdown or sidecar payloads are created.
+<!-- v5_0_v4_closeout_and_v5_gate_plan:progress-entry:end -->
+
 # RAG Ingestion Progress
 
 <!-- v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility:progress-entry:start -->
-- Overall status: `V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY`; v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility is artifact-ready / XLSX candidate-only materialization repair-ready and lineage reproducibility-hardened. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`. v4_7_16/v4_7_17 counters reproduce before evaluation: baseline 300/1000, v4_7_17 combined 514/1000, TEXT +212, XLSX +2, PDF regression 0. The v4_7_18 XLSX materialized axis overlay uses only current query text, source family, SourceAtom raw_locator axes, and already-materialized non-numeric row-axis/header text; it improves XLSX combined target hits 17 -> 26 with 881 candidates and 109 budget-exhausted rows. Archive denominator trace is explicit: top-k rows 1029 -> filtered replay 1000, excluded 29 {'TEXT': 6, 'PDF': 4, 'XLSX': 19}. Lineage status `LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY`; runner modules v4_7_13-v4_7_18 are required source files, while report/status artifacts remain ignored. official_metric_input_rows=0, silver_promoted_to_gold_count=0, promotion_evidence=false, product_success_evidence_allowed=false, live_db_index_cache_readiness=false; no raw XLSX query-time parsing, direct normalized value matching, formula use, source-title/workbook shortcut, target/gold locator scoring, query_id hack, training, fine-tuning, or protected mutation.
+- Overall status: `V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY`; v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility is artifact-ready / XLSX candidate-only materialization repair-ready and lineage reproducibility-hardened. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`. v4_7_16/v4_7_17 counters reproduce before evaluation: baseline 300/1000, v4_7_17 combined 514/1000, TEXT +212, XLSX +2, PDF regression 0. The v4_7_18 XLSX materialized axis overlay uses only current query text, source family, SourceAtom raw_locator axes, and already-materialized non-numeric row-axis/header text; it improves XLSX combined target hits 17 -> 26 with 881 candidates and 109 budget-exhausted rows. Archive denominator trace is explicit: top-k rows 1029 -> filtered replay 1000, excluded 29 {'TEXT': 6, 'PDF': 4, 'XLSX': 19}. Lineage status `LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY`; runner modules v4_7_13-v4_7_18 are required source files, while report/status artifacts remain ignored. official_metric_input_rows=0, silver_promoted_to_gold_count=0, promotion_evidence=false, product_success_evidence_allowed=false, live_db_index_cache_readiness=false; no raw XLSX query-time parsing, direct normalized value matching, formula use, source-title/workbook shortcut, target/gold locator scoring, query_id hack, training, fine-tuning, or protected mutation.
 <!-- v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility:progress-entry:end -->
 
-<!-- v5_0_v4_closeout_and_v5_gate_plan:progress-entry:start -->
-- v4 closeout basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` is the current source of truth for closing v4 as `V4_CLOSED_DIAGNOSTIC_ONLY_SOURCE_FIRST_CANDIDATE_ONLY_LINEAGE_REPRODUCIBLE`. v5 remains gate-plan-only until user-owned policy inputs are explicit. User-owned decisions: gold/qrels policy, expected evidence, relevance labels, answerability labels, official denominator, and promotion policy. Codex-owned work: schema/runner/test/report plumbing, indexing-scope checks, failure-taxonomy maintenance, and docs/status synchronization after those decisions. XLSX residual backlog: 299 misses, 78 zero-candidate rows, and 109 budget-exhausted rows remain diagnostic-only. Official metric opening preconditions: approved gold/qrels/labels/denominator, documented metric definitions, protected-surface diff approval, and `official_metric_input_rows` sourced only from approved denominator rows. Live-readiness and promotion preconditions: accepted official metrics, explicit live DB/index/cache rollout evidence, leakage/redaction/latency/rollback monitoring, and user-approved promotion/product-success policy. Ambiguous non-gold choices stay diagnostic-only because v4_7_18 target checks are after-the-fact diagnostics, not relevance, answerability, denominator, or promotion decisions.
-<!-- v5_0_v4_closeout_and_v5_gate_plan:progress-entry:end -->
+
 
 <!-- v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit:progress-entry:start -->
 - Overall status: `V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY`; v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit is artifact-ready / candidate-only generalization validation-ready and XLSX table-axis repair audit-ready. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json`. v4_7_16 candidate replay digest matches recomputation=true and remains stable under poisoned target/gold/supporting/query-id fields=true, while evaluation changes after target poisoning=true. XLSX safe table-axis audit stays inconclusive: 2 target-hit gains from 310 baseline misses and 133 candidate-only axis candidates; raw XLSX parsing, direct normalized value matching, workbook/source-title shortcuts, formula exposure, target/gold locators, and row-specific hacks remain closed. official_metric_input_rows=0, silver_promoted_to_gold_count=0, promotion_evidence=false, product_success_evidence_allowed=false, live_db_index_cache_readiness=false; silver, gold, qrels, labels, expected/supporting evidence, denominator rows, source registry, indexes, cache, and production DB are not mutated.
@@ -28,7 +30,7 @@
 - Overall status: `V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY`; v4_7_13_live_retrieval_answerability_and_full_pdf_replay is V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_13/report.json`. Live silver retrieval env_enabled=true rows 0; full PDF replay env_enabled=true generated 0 of 57; silver answerability overlay rows 90 and prior claim-support pass/fail 60/30. Diagnostic-only: official_metric_input_rows=0, silver_official_metric_input_rows=0, silver_promoted_to_gold_count=0, promotion_evidence=false, product_success_evidence_allowed=false, live_db_index_cache_readiness=false.
 <!-- v4_7_13_end -->
 
-Last updated: 2026-05-31 KST.
+Last updated: 2026-06-01 KST.
 
 This is the compact status index for the current RAG ingestion and official
 answer/citation metric work. Do not append turn transcripts or create new
@@ -248,8 +250,10 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY`;
-current v4_7 closeout basis:
+Overall status: `V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY`;
+current v5 diagnostic handoff:
+`v5_0_v4_closeout_and_v5_gate_plan`;
+frozen v4 closeout basis:
 `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`;
 current latest v4_6 run remains v4_6_12:
 `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`;
@@ -985,15 +989,12 @@ python -X utf8 -m pytest ai/tests --rag-current -q
 python -X utf8 -m pytest ai/tests -m "rag_current or rag_official_metric or rag_pdf_current" -q
 ```
 
-Current verification: local results are recorded in this progress log. After
-the v3_20/v3_21 shared-helper cleanup and report-ignore policy cleanup,
-`python -X utf8 -m pytest ai/tests --rag-current -q` -> 480 passed, 0 skipped,
-0 failed, 8 warnings.
+Current verification: after v5_0 closeout/current-alias reconciliation,
+`python -X utf8 -m pytest ai/tests --rag-current -q` -> 17 passed,
+0 skipped, 0 failed, 1 warning. Older v3_20/v3_21 cleanup verification is historical.
 
-Current test surface is intentionally compact after legacy test deletion:
-`python -X utf8 -m pytest ai/tests --rag-current -q`; full `ai/tests`
-  now mirrors the current profile and no longer carries broad/nightly legacy
-  suites.
+Current test surface is nodeid-scoped for the fast current loop:
+`python -X utf8 -m pytest ai/tests --rag-current -q` runs the v5/v4-closeout handoff guardrails only; broad historical suites remain runnable outside `--rag-current`.
 
 The pre-execution smoke report is a pre-execution artifact, so
 `official_metric_execution_started=false` there is expected and must not be read

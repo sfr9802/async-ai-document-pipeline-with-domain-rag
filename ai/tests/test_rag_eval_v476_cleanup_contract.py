@@ -34,6 +34,7 @@ V4_7_15_STATUS = "V4_7_15_READ_ONLY_SEARCHINDEX_REPLAY_PROJECTION_NONPROD_READY"
 V4_7_16_STATUS = "V4_7_16_TARGET_RECALL_REPAIR_PROTOTYPE_NONPROD_READY"
 V4_7_17_STATUS = "V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY"
 V4_7_18_STATUS = "V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY"
+V5_0_STATUS = "V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY"
 V4_7_6_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_6" / "report.json"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
@@ -139,7 +140,8 @@ def test_v476_registry_resolves_current_lineage_short_paths_and_legacy_aliases()
         "v4_7_16": "ai/eval/reports/rag-ingestion/runs/v4_7_16/report.json",
         "v4_7_17": "ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json",
         "v4_7_18": "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json",
-        "current": "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json",
+        "v5_0": "ai/eval/reports/rag-ingestion/runs/v5_0/report.json",
+        "current": "ai/eval/reports/rag-ingestion/runs/v5_0/report.json",
     }
     ignored_artifact_in_memory_keys = {
         "v4_7_11",
@@ -150,6 +152,7 @@ def test_v476_registry_resolves_current_lineage_short_paths_and_legacy_aliases()
         "v4_7_16",
         "v4_7_17",
         "v4_7_18",
+        "v5_0",
         "current",
     }
     for key, rel_path in expected.items():
@@ -237,8 +240,8 @@ def test_v476_report_status_docs_and_cleanup_manifest_are_compact_and_closed() -
     assert short_report_path in current_progress
     assert short_report_path in measurements
     assert short_report_path in triage
-    assert f"Current RAG status: `{V4_7_18_STATUS}`" in readme
-    assert f"Current RAG status: `{V4_7_18_STATUS}`" in eval_readme
+    assert f"Current RAG status: `{V5_0_STATUS}`" in readme
+    assert f"Current RAG status: `{V5_0_STATUS}`" in eval_readme
 
     generated_text = "\n".join(
         [
@@ -291,11 +294,11 @@ def test_v476_protected_namespaces_and_generated_status_surfaces_stay_safe() -> 
         assert ignored.returncode == 0, path
 
 
-def test_v476_stable_runner_dispatch_and_current_profile_includes_cleanup_contract() -> None:
+def test_v476_stable_runner_dispatch_and_cleanup_contract_is_historical() -> None:
     import ai.tests.conftest as rag_conftest
 
-    assert "ai/tests/test_rag_eval_v476_cleanup_contract.py" in rag_conftest.CURRENT_RAG_TEST_FILES
-    assert rag_conftest.is_rag_current_required_nodeid(
+    assert "ai/tests/test_rag_eval_v476_cleanup_contract.py" in rag_conftest.NON_CURRENT_RAG_TEST_FILES
+    assert not rag_conftest.is_rag_current_required_nodeid(
         "ai/tests/test_rag_eval_v476_cleanup_contract.py::test_v476_report_status_docs_and_cleanup_manifest_are_compact_and_closed"
     )
 
