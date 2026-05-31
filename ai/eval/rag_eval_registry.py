@@ -136,6 +136,13 @@ V4_7_17_LONG_RUN_ID = (
     "candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit_nonprod"
 )
 V4_7_17_STATUS = "V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY"
+V4_7_18_SHORT_KEY = "v4_7_18"
+V4_7_18_SHORT_RUN_ID = "v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility"
+V4_7_18_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v4_7_18_"
+    "xlsx_candidate_only_materialization_repair_and_lineage_reproducibility_nonprod"
+)
+V4_7_18_STATUS = "V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY"
 
 
 class ReportResolutionError(RuntimeError):
@@ -326,6 +333,15 @@ RUNS: dict[str, RunMetadata] = {
         accepted_aliases=(V4_7_17_SHORT_RUN_ID, V4_7_17_LONG_RUN_ID),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
     ),
+    V4_7_18_SHORT_KEY: RunMetadata(
+        logical_key=V4_7_18_SHORT_KEY,
+        short_run_id=V4_7_18_SHORT_RUN_ID,
+        canonical_long_run_id=V4_7_18_LONG_RUN_ID,
+        status=V4_7_18_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V4_7_18_SHORT_KEY / "report.json",
+        accepted_aliases=(V4_7_18_SHORT_RUN_ID, V4_7_18_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
 }
 
 ALIAS_TO_KEY: dict[str, str] = {
@@ -333,7 +349,7 @@ ALIAS_TO_KEY: dict[str, str] = {
     for key, metadata in RUNS.items()
     for alias in (key, *metadata.accepted_aliases)
 }
-ALIAS_TO_KEY["current"] = V4_7_17_SHORT_KEY
+ALIAS_TO_KEY["current"] = V4_7_18_SHORT_KEY
 
 
 def _repo_root(root: Path | str | None = None) -> Path:

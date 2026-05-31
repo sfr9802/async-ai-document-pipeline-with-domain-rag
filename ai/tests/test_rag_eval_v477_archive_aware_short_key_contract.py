@@ -100,6 +100,16 @@ V4_7_17_STATUS = (
     "V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY"
 )
 V4_7_17_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_17" / "report.json"
+V4_7_18_SHORT_KEY = "v4_7_18"
+V4_7_18_SHORT_RUN_ID = "v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility"
+V4_7_18_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v4_7_18_"
+    "xlsx_candidate_only_materialization_repair_and_lineage_reproducibility_nonprod"
+)
+V4_7_18_STATUS = (
+    "V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY"
+)
+V4_7_18_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_18" / "report.json"
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
@@ -177,7 +187,8 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
         "v4_7_15": "ai/eval/reports/rag-ingestion/runs/v4_7_15/report.json",
         "v4_7_16": "ai/eval/reports/rag-ingestion/runs/v4_7_16/report.json",
         "v4_7_17": "ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json",
-        "current": "ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json",
+        "v4_7_18": "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json",
+        "current": "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json",
     }
     for key, rel_path in expected.items():
         resolved = registry.resolve_run(key, root=ROOT)
@@ -191,6 +202,7 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
             V4_7_15_SHORT_KEY,
             V4_7_16_SHORT_KEY,
             V4_7_17_SHORT_KEY,
+            V4_7_18_SHORT_KEY,
             "current",
         }
         if key in in_memory_keys and not resolved.report_path.exists():
@@ -204,9 +216,12 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
     assert prior["canonical_long_run_id"] == V4_7_10_LONG_RUN_ID
     assert prior["status"] == V4_7_10_STATUS
     current = runner.check_run("current")
-    assert current["short_run_id"] == V4_7_17_SHORT_RUN_ID
-    assert current["canonical_long_run_id"] == V4_7_17_LONG_RUN_ID
-    assert current["status"] == V4_7_17_STATUS
+    assert current["short_run_id"] == V4_7_18_SHORT_RUN_ID
+    assert current["canonical_long_run_id"] == V4_7_18_LONG_RUN_ID
+    assert current["status"] == V4_7_18_STATUS
+    explicit_v4717 = runner.check_run("v4_7_17")
+    assert explicit_v4717["short_run_id"] == V4_7_17_SHORT_RUN_ID
+    assert explicit_v4717["status"] == V4_7_17_STATUS
     previous_current = runner.check_run("v4_7_13")
     assert previous_current["short_run_id"] == V4_7_13_SHORT_RUN_ID
     assert previous_current["status"] == V4_7_13_STATUS
@@ -218,7 +233,7 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
 def test_v477_runner_dispatches_current_previous_and_safe_legacy_checks() -> None:
     import ai.scripts.rag_eval as runner
 
-    assert runner.DEFAULT_RUN_KEY == V4_7_17_SHORT_KEY
+    assert runner.DEFAULT_RUN_KEY == V4_7_18_SHORT_KEY
     assert "v3_18" in runner.SAFE_LEGACY_CHECK_ALIASES
     assert "v3_19" in runner.SAFE_LEGACY_CHECK_ALIASES
     assert "v3_20" in runner.SAFE_LEGACY_CHECK_ALIASES
@@ -227,8 +242,9 @@ def test_v477_runner_dispatches_current_previous_and_safe_legacy_checks() -> Non
     assert "v3_16" not in runner.SAFE_LEGACY_CHECK_ALIASES
 
     for args, expected_key, expected_status in (
-        (["--check"], V4_7_17_SHORT_KEY, V4_7_17_STATUS),
-        (["current", "--check"], V4_7_17_SHORT_KEY, V4_7_17_STATUS),
+        (["--check"], V4_7_18_SHORT_KEY, V4_7_18_STATUS),
+        (["current", "--check"], V4_7_18_SHORT_KEY, V4_7_18_STATUS),
+        (["v4_7_18", "--check"], V4_7_18_SHORT_KEY, V4_7_18_STATUS),
         (["v4_7_17", "--check"], V4_7_17_SHORT_KEY, V4_7_17_STATUS),
         (["v4_7_16", "--check"], V4_7_16_SHORT_KEY, V4_7_16_STATUS),
         (["v4_7_15", "--check"], V4_7_15_SHORT_KEY, V4_7_15_STATUS),
@@ -255,11 +271,11 @@ def test_v477_runner_dispatches_current_previous_and_safe_legacy_checks() -> Non
         assert payload["status"] == expected_status
 
 
-def test_v4712_explicit_check_builds_in_memory_and_current_uses_v4717(monkeypatch) -> None:
+def test_v4712_explicit_check_builds_in_memory_and_current_uses_v4718(monkeypatch) -> None:
     import ai.scripts.rag_eval as runner
     from ai.eval import rag_v4712_layered_retrieval_generalization_and_overfit_audit as v4712
     from ai.eval import rag_v4713_live_retrieval_answerability_and_full_pdf_replay as v4713
-    from ai.eval import rag_v4717_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit as v4717
+    from ai.eval import rag_v4718_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility as v4718
 
     missing_report = Path("ai/eval/reports/rag-ingestion/runs/v4_7_12_missing_for_test/report.json")
     monkeypatch.setattr(v4712, "SHORT_REPORT_PATH", missing_report)
@@ -267,8 +283,8 @@ def test_v4712_explicit_check_builds_in_memory_and_current_uses_v4717(monkeypatc
     current = runner.check_run("current")
     long_alias = runner.check_run(V4_7_12_LONG_RUN_ID)
 
-    v4717.check_report(current)
-    assert current["short_run_id"] == V4_7_17_SHORT_RUN_ID
+    v4718.check_report(current)
+    assert current["short_run_id"] == V4_7_18_SHORT_RUN_ID
     v4712.check_report(long_alias)
     assert long_alias["short_run_id"] == V4_7_12_SHORT_RUN_ID
     assert long_alias["artifact_paths"]["report_json"] == missing_report.as_posix()
@@ -527,8 +543,10 @@ def test_v4712_silver_llm_smoke_runs_bounded_balanced_when_enabled(monkeypatch) 
 def test_v4716_status_docs_do_not_leave_stale_current_alias_text() -> None:
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
 
-    assert "`current` resolves to `v4_7_17`" in scripts_readme
+    assert "`current` resolves to `v4_7_18`" in scripts_readme
+    assert "v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit" in scripts_readme
     assert "v4_7_16_target_recall_repair_prototype" in scripts_readme
+    assert "`current` resolves to `v4_7_17`" not in scripts_readme
     assert "`current` resolves to `v4_7_16`" not in scripts_readme
     assert "`current` resolves to `v4_7_15`" not in scripts_readme
     assert "`current` resolves to `v4_7_14`" not in scripts_readme
@@ -1029,9 +1047,10 @@ def test_v4714_written_report_status_docs_and_no_raw_payload_leakage() -> None:
     assert "target_not_in_topk 28" in triage
     assert "repeated_prefix_cluster 22" in triage
     assert "evidence_window_insufficient 16" in triage
-    assert f"Current RAG status: `{V4_7_17_STATUS}`" in root_readme
-    assert f"Current RAG status: `{V4_7_17_STATUS}`" in eval_readme
-    assert "`current` resolves to `v4_7_17`" in scripts_readme
+    assert f"Current RAG status: `{V4_7_18_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V4_7_18_STATUS}`" in eval_readme
+    assert "`current` resolves to `v4_7_18`" in scripts_readme
+    assert "v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit" in scripts_readme
     assert "v4_7_16_target_recall_repair_prototype" in scripts_readme
     assert "v4_7_15_read_only_searchindex_replay_projection" in scripts_readme
     assert V4_7_14_SHORT_RUN_ID in scripts_readme
@@ -1273,9 +1292,10 @@ def test_v4715_written_report_status_docs_and_guardrails() -> None:
     assert V4_7_15_SHORT_RUN_ID in triage
     assert "READ_ONLY_SEARCHINDEXCONTRACT_REPLAY_UNBLOCKED_ARCHIVED_TOPK_DIAGNOSTIC_ONLY" in measurements
     assert "retrieval target not in top-k 68" in triage
-    assert f"Current RAG status: `{V4_7_17_STATUS}`" in root_readme
-    assert f"Current RAG status: `{V4_7_17_STATUS}`" in eval_readme
-    assert "`current` resolves to `v4_7_17`" in scripts_readme
+    assert f"Current RAG status: `{V4_7_18_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V4_7_18_STATUS}`" in eval_readme
+    assert "`current` resolves to `v4_7_18`" in scripts_readme
+    assert "v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit" in scripts_readme
     assert "v4_7_16_target_recall_repair_prototype" in scripts_readme
     assert "v4_7_15_read_only_searchindex_replay_projection" in scripts_readme
     assert "`current` resolves to `v4_7_14`" not in scripts_readme
@@ -1479,9 +1499,10 @@ def test_v4716_written_report_status_docs_and_guardrails() -> None:
     assert "TEXT_SAFE_LEXICAL_SEARCHUNIT_SEARCHVIEW_REPAIR" in triage
     assert "DIRECT_NORMALIZED_VALUE_MATCHING" in triage
     assert "combined_target_hit_count | 514" in measurements
-    assert f"Current RAG status: `{V4_7_17_STATUS}`" in root_readme
-    assert f"Current RAG status: `{V4_7_17_STATUS}`" in eval_readme
-    assert "`current` resolves to `v4_7_17`" in scripts_readme
+    assert f"Current RAG status: `{V4_7_18_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V4_7_18_STATUS}`" in eval_readme
+    assert "`current` resolves to `v4_7_18`" in scripts_readme
+    assert "v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit" in scripts_readme
     assert "v4_7_16_target_recall_repair_prototype" in scripts_readme
     assert "`current` resolves to `v4_7_15`" not in scripts_readme
     assert "v4_7_15_read_only_searchindex_replay_projection" in scripts_readme
@@ -1662,7 +1683,7 @@ def test_v4717_written_report_status_docs_and_current_alias() -> None:
     import ai.scripts.rag_eval as runner
 
     report = registry.load_report("v4_7_17", root=ROOT)
-    current = runner.check_run("current")
+    current = runner.check_run("v4_7_17")
     v4717.check_report(report)
     v4717.check_report(current)
     latest = next(row for row in reversed(_read_jsonl(STATUS_JSONL)) if row.get("short_run_id") == V4_7_17_SHORT_RUN_ID)
@@ -1673,7 +1694,7 @@ def test_v4717_written_report_status_docs_and_current_alias() -> None:
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
 
-    assert runner.DEFAULT_RUN_KEY == V4_7_17_SHORT_KEY
+    assert runner.DEFAULT_RUN_KEY == V4_7_18_SHORT_KEY
     assert current["short_run_id"] == V4_7_17_SHORT_RUN_ID
     assert V4_7_17_REPORT.exists()
     assert latest["status"] == V4_7_17_STATUS
@@ -1691,10 +1712,12 @@ def test_v4717_written_report_status_docs_and_current_alias() -> None:
     assert "CANDIDATE_ONLY_GENERALIZATION_VALIDATED_DIAGNOSTIC_ONLY" in measurements
     assert "XLSX_TABLE_AXIS_REPAIR_AUDIT_INCONCLUSIVE_DIAGNOSTIC_ONLY" in measurements
     assert "keep_inconclusive_low_gain_candidate_only" in triage
-    assert f"Current RAG status: `{V4_7_17_STATUS}`" in root_readme
-    assert f"Current RAG status: `{V4_7_17_STATUS}`" in eval_readme
-    assert "`current` resolves to `v4_7_17`" in scripts_readme
+    assert f"Current RAG status: `{V4_7_18_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V4_7_18_STATUS}`" in eval_readme
+    assert "`current` resolves to `v4_7_18`" in scripts_readme
+    assert "v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit" in scripts_readme
     assert "v4_7_16_target_recall_repair_prototype" in scripts_readme
+    assert "`current` resolves to `v4_7_17`" not in scripts_readme
     assert "`current` resolves to `v4_7_16`" not in scripts_readme
     assert report["protected_namespaces_touched"] == []
     assert "promotion-ready" not in json.dumps(report, ensure_ascii=False)
@@ -1817,6 +1840,381 @@ def test_v4717_write_path_synthesizes_source_report_when_prior_ignored_report_is
     monkeypatch.setattr(runner, "sha256_file", lambda path: "0" * 64)
 
     assert runner.main(["v4_7_17", "--write"]) == 0
+    assert observed["used_source_report"] is True
+
+
+def test_v4718_reproduces_v4716_v4717_counter_chain_and_archive_denominator_trace() -> None:
+    from ai.eval import rag_v4718_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility as v4718
+
+    report = v4718.build_report(root=ROOT, generated_at="2026-05-31T00:00:00Z")
+    v4718.check_report(report)
+    reproduction = report["source_counter_reproduction"]
+    denominator = report["archive_denominator_trace"]
+    validation = report["candidate_only_generalization_validation_reproduction"]
+    gate_plan = report["v4_closeout_and_v5_gate_plan"]
+
+    assert report["short_run_id"] == V4_7_18_SHORT_RUN_ID
+    assert report["source_run_id"] == V4_7_17_SHORT_RUN_ID
+    assert report["SearchView_vector_payload_role"] == "candidate_only"
+    assert report["SourceAtom_EvidenceBundle_role"] == "evidence_truth"
+    assert report["completion_branch"] == "v5_0_v4_closeout_and_v5_gate_plan"
+    assert gate_plan["v4_closeout_basis_short_run_id"] == V4_7_18_SHORT_RUN_ID
+    assert gate_plan["v4_closeout_status"] == "V4_CLOSED_DIAGNOSTIC_ONLY_SOURCE_FIRST_CANDIDATE_ONLY_LINEAGE_REPRODUCIBLE"
+    assert gate_plan["ambiguous_non_gold_choices_remain_diagnostic_only"] is True
+    assert gate_plan["official_metric_opening_preconditions_documented"] is True
+    assert gate_plan["official_metric_opening_preconditions_satisfied"] is False
+    assert gate_plan["live_readiness_promotion_preconditions_documented"] is True
+    assert gate_plan["live_readiness_promotion_preconditions_satisfied"] is False
+    assert gate_plan["still_closed"]["official_metric_input_rows"] == 0
+    assert gate_plan["still_closed"]["denominator_mutation"] is False
+    assert reproduction["v4_7_16"]["baseline_target_hit_count"] == 300
+    assert reproduction["v4_7_16"]["combined_target_hit_count"] == 514
+    assert reproduction["v4_7_16"]["baseline_miss_to_hit_count"] == 214
+    assert reproduction["v4_7_16"]["baseline_hit_to_miss_count"] == 0
+    assert reproduction["v4_7_16"]["families"]["TEXT"]["baseline_miss_to_hit_count"] == 212
+    assert reproduction["v4_7_16"]["families"]["XLSX"]["baseline_miss_to_hit_count"] == 2
+    assert reproduction["v4_7_16"]["families"]["PDF"]["target_hit_regression_count"] == 0
+    assert reproduction["v4_7_17"]["xlsx_baseline_target_hit_count"] == 15
+    assert reproduction["v4_7_17"]["xlsx_combined_target_hit_count"] == 17
+    assert reproduction["v4_7_17"]["xlsx_table_axis_candidate_count"] == 133
+    assert reproduction["v4_7_17"]["xlsx_table_axis_repair_decision"] == "keep_inconclusive_low_gain_candidate_only"
+    assert validation["source_candidate_set_sha256"] == "b388d4fec10886142f8d3cee25db2eb771e7f4236e311b91c4ea175325a1bc5d"
+    assert validation["source_candidate_set_sha256_recomputed"] == "b388d4fec10886142f8d3cee25db2eb771e7f4236e311b91c4ea175325a1bc5d"
+    assert validation["source_candidate_set_sha256_source_report_claimed_match"] is True
+    assert validation["source_candidate_set_sha256_matches_recomputed"] is True
+    assert validation["poisoned_oracle_field_digest_stable"] is True
+    assert validation["poisoned_oracle_field_evaluation_changed"] is True
+    assert denominator["source_topk_sha256"] == "3a14a4908972a118606b5d2967544c278d60dd99590af3004676271a6e9ad7b3"
+    assert denominator["topk_artifact_row_count"] == 1029
+    assert denominator["filtered_replay_row_count"] == 1000
+    assert denominator["excluded_row_count"] == 29
+    assert denominator["excluded_family_counts"] == {"PDF": 4, "TEXT": 6, "XLSX": 19}
+    assert denominator["filtered_family_counts"] == {"PDF": 325, "TEXT": 350, "XLSX": 325}
+    assert denominator["duplicate_query_id_count"] == 0
+    assert denominator["missing_query_id_count"] == 0
+    assert denominator["topk_envelope_length_distribution"] == {"5": 1000}
+
+
+def test_v4718_xlsx_materialization_overlay_improves_candidate_only_recall_without_shortcuts() -> None:
+    from ai.eval import rag_v4718_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility as v4718
+
+    report = v4718.build_report(root=ROOT, generated_at="2026-05-31T00:00:00Z")
+    v4718.check_report(report)
+    repair = report["xlsx_candidate_only_materialization_repair"]
+    family = repair["archive_1000_xlsx_family_recall"]
+    overlay = repair["overlay_90_xlsx_projection"]
+    budget = repair["candidate_budget_summary"]
+    decisions = repair["rule_decisions"]
+
+    assert repair["status"] == "XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_ACCEPTED_DIAGNOSTIC_ONLY"
+    assert repair["decision"] == "accept_materialized_axis_value_overlay_diagnostic_only"
+    assert family["row_count"] == 325
+    assert family["baseline_target_hit_count"] == 15
+    assert family["v4_7_17_combined_target_hit_count"] == 17
+    assert family["v4_7_18_combined_target_hit_count"] == 26
+    assert family["v4_7_18_derived_overlay_target_hit_count"] == 12
+    assert family["v4_7_18_gain_over_v4_7_17_count"] == 9
+    assert family["v4_7_18_gain_rate_per_v4_7_17_miss"] == "9/308"
+    assert family["target_hit_regression_count"] == 0
+    assert budget["candidate_budget_per_query"] == 5
+    assert budget["XLSX"]["attempted_row_count"] == 325
+    assert budget["XLSX"]["candidate_count"] == 881
+    assert budget["XLSX"]["zero_candidate_row_count"] == 78
+    assert budget["XLSX"]["at_budget_row_count"] == 143
+    assert budget["XLSX"]["candidate_budget_exhaustion_count"] == 109
+    assert budget["XLSX"]["candidate_count_distribution"] == {"0": 78, "1": 58, "2": 31, "3": 14, "4": 1, "5": 143}
+    assert overlay["xlsx_overlay_row_count"] == 30
+    assert overlay["target_not_in_topk_total"] == 28
+    assert overlay["repeated_prefix_cluster_total"] == 22
+    assert overlay["repeated_prefix_cluster_overlap_with_target_miss"] == 20
+    assert overlay["v4_7_18_gain_over_v4_7_17_count"] == 1
+    assert overlay["v4_7_18_gain_repeated_prefix_count"] == 1
+    assert decisions["accepted"] == ["materialized_axis_value_searchunit_overlay"]
+    assert "direct_normalized_value_matching" in decisions["rejected"]
+    assert "raw_xlsx_query_time_parsing" in decisions["rejected"]
+    assert "source_title_or_workbook_shortcut" in decisions["rejected"]
+    assert "query_id_case_id_hack" in decisions["rejected"]
+    assert repair["direct_normalized_answer_value_matching"] is False
+    assert repair["raw_xlsx_query_time_parsing"] is False
+    assert repair["formula_evaluation"] is False
+    assert repair["formula_text_exposure"] is False
+    assert repair["source_file_title_shortcut_used"] is False
+    assert repair["target_or_gold_locator_used_for_candidate_construction"] is False
+    assert repair["diagnostic_target_labels_used_for_after_the_fact_evaluation"] is True
+    assert repair["diagnostic_target_labels_used_for_candidate_construction"] is False
+    assert repair["diagnostic_target_labels_used_for_candidate_scoring"] is False
+
+
+def test_v4718_lineage_reproducibility_tracks_required_runner_modules_and_regression_guards() -> None:
+    from ai.eval import rag_v4718_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility as v4718
+
+    report = v4718.build_report(root=ROOT, generated_at="2026-05-31T00:00:00Z")
+    v4718.check_report(report)
+    lineage = report["lineage_reproducibility"]
+    guards = report["regression_guards"]
+    modules = {entry["logical_key"]: entry for entry in lineage["required_runner_modules"]}
+
+    assert lineage["status"] == "LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY"
+    assert lineage["clean_checkout_risk_status"] == "NO_REQUIRED_RUNNER_MODULE_RISK_DETECTED"
+    assert lineage["required_runner_module_tracking_status"] == "REQUIRED_RUNNER_MODULES_TRACKED_AND_NOT_IGNORED"
+    assert lineage["compile_check_mode"] == "source_text_compile_no_bytecode_write"
+    assert lineage["bytecode_written_by_lineage_check"] is False
+    for key in ("v4_7_13", "v4_7_14", "v4_7_15", "v4_7_16", "v4_7_17", "v4_7_18"):
+        module = modules[key]
+        assert module["exists"] is True, key
+        assert module["tracked"] is True, key
+        assert module["ignored"] is False, key
+        assert module["py_compile_ok"] is True, key
+        assert module["resolver_checkable"] is True, key
+    assert lineage["generated_report_artifacts_ignored"] is True
+    assert guards["TEXT"]["v4_7_17_combined_target_hit_count"] == 232
+    assert guards["TEXT"]["v4_7_18_combined_target_hit_count"] == 232
+    assert guards["TEXT"]["target_hit_regression_count"] == 0
+    assert guards["PDF"]["v4_7_17_combined_target_hit_count"] == 265
+    assert guards["PDF"]["v4_7_18_combined_target_hit_count"] == 265
+    assert guards["PDF"]["target_hit_regression_count"] == 0
+    assert guards["XLSX"]["v4_7_17_combined_target_hit_count"] == 17
+    assert guards["XLSX"]["v4_7_18_combined_target_hit_count"] == 26
+    assert guards["XLSX"]["target_hit_regression_count"] == 0
+
+
+def test_v4718_written_report_status_docs_current_alias_and_explicit_historical_aliases() -> None:
+    from ai.eval import rag_eval_registry as registry
+    from ai.eval import rag_v4718_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility as v4718
+    import ai.scripts.rag_eval as runner
+
+    report = registry.load_report("v4_7_18", root=ROOT)
+    current = runner.check_run("current")
+    v4718.check_report(report)
+    v4718.check_report(current)
+    latest = next(row for row in reversed(_read_jsonl(STATUS_JSONL)) if row.get("short_run_id") == V4_7_18_SHORT_RUN_ID)
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    root_readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+
+    assert runner.DEFAULT_RUN_KEY == V4_7_18_SHORT_KEY
+    assert registry.resolve_run("current", root=ROOT).logical_key == runner.DEFAULT_RUN_KEY
+    assert current["short_run_id"] == V4_7_18_SHORT_RUN_ID
+    assert V4_7_18_REPORT.exists()
+    assert latest["status"] == V4_7_18_STATUS
+    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json"
+    assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V4_7_18_REPORT)
+    assert latest["lineage_reproducibility_status"] == "LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY"
+    assert latest["xlsx_materialization_repair_decision"] == "accept_materialized_axis_value_overlay_diagnostic_only"
+    assert latest["xlsx_v4_7_18_combined_target_hit_count"] == 26
+    assert latest["official_metric_input_rows"] == 0
+    assert latest["promotion_evidence"] is False
+    assert latest["live_db_index_cache_readiness"] is False
+    assert latest["v5_gate_plan_id"] == "v5_0_v4_closeout_and_v5_gate_plan"
+    assert latest["v4_closeout_basis_short_run_id"] == V4_7_18_SHORT_RUN_ID
+    assert latest["ambiguous_non_gold_choices_remain_diagnostic_only"] is True
+    assert latest["official_metric_opening_preconditions_documented"] is True
+    assert latest["official_metric_opening_preconditions_satisfied"] is False
+    assert latest["live_readiness_promotion_preconditions_documented"] is True
+    assert latest["live_readiness_promotion_preconditions_satisfied"] is False
+    assert V4_7_18_SHORT_RUN_ID in progress
+    assert V4_7_18_SHORT_RUN_ID in measurements
+    assert V4_7_18_SHORT_RUN_ID in triage
+    assert "v5_0_v4_closeout_and_v5_gate_plan" in progress
+    assert "v5_0 v4 closeout and v5 gate plan" in measurements
+    assert "v5_0 v4 closeout and v5 gate plan" in triage
+    assert measurements.startswith("<!-- v5_0_v4_closeout_and_v5_gate_plan:measurements-entry:start -->")
+    assert triage.startswith("<!-- v5_0_v4_closeout_and_v5_gate_plan:triage-entry:start -->")
+    assert "Overall status: `V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY`;" not in progress
+    assert "current v4_7 closeout basis:" in progress
+    assert "historical Phase 1 closure basis" in progress
+    assert "User-owned decisions" in triage
+    assert "Codex-owned work" in triage
+    assert "XLSX residual backlog" in triage
+    assert "Official metric opening preconditions" in triage
+    assert "Live-readiness and promotion preconditions" in triage
+    assert "| official_metric_opening_preconditions_satisfied | false |" in measurements
+    assert "| live_readiness_promotion_preconditions_satisfied | false |" in measurements
+    assert "v4 is closed as diagnostic-only source-first/candidate-only/lineage-reproducibility work" in root_readme
+    assert "gold/qrels/expected-evidence/relevance/answerability/denominator/promotion decisions" in eval_readme
+    assert "LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY" in measurements
+    assert "XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_ACCEPTED_DIAGNOSTIC_ONLY" in measurements
+    assert "accept_materialized_axis_value_overlay_diagnostic_only" in triage
+    assert f"Current RAG status: `{V4_7_18_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V4_7_18_STATUS}`" in eval_readme
+    assert "`current` resolves to `v4_7_18`" in scripts_readme
+    assert "v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit" in scripts_readme
+    assert "v4_7_16_target_recall_repair_prototype" in scripts_readme
+    assert report["protected_namespaces_touched"] == []
+    assert "promotion-ready" not in json.dumps(report, ensure_ascii=False)
+
+
+def test_v4718_check_report_rejects_shortcuts_opened_gates_raw_payloads_and_regression_drift() -> None:
+    from ai.eval import rag_v4718_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility as v4718
+
+    report = v4718.build_report(root=ROOT, generated_at="2026-05-31T00:00:00Z")
+    v4718.check_report(report)
+
+    for key, value, expected in (
+        ("official_metric", True, "opened forbidden gate"),
+        ("promotion_evidence", True, "opened forbidden gate"),
+        ("live_db_index_cache_readiness", True, "opened forbidden gate"),
+        ("training_dataset_created", True, "opened forbidden gate"),
+        ("fine_tuning", True, "opened forbidden gate"),
+    ):
+        mutated = json.loads(json.dumps(report))
+        mutated[key] = value
+        try:
+            v4718.check_report(mutated)
+        except ValueError as exc:
+            assert expected in str(exc)
+        else:
+            raise AssertionError(f"v4_7_18 accepted {key}={value}")
+
+    repair_mutations = [
+        ("direct_normalized_answer_value_matching", True, "normalized"),
+        ("raw_xlsx_query_time_parsing", True, "raw XLSX"),
+        ("formula_evaluation", True, "formula"),
+        ("formula_text_exposure", True, "formula"),
+        ("source_file_title_shortcut_used", True, "source title"),
+        ("target_or_gold_locator_used_for_candidate_construction", True, "target/gold"),
+        ("diagnostic_target_labels_used_for_candidate_scoring", True, "target labels"),
+        ("diagnostic_target_labels_used_for_candidate_construction", True, "target labels"),
+    ]
+    for key, value, expected in repair_mutations:
+        mutated = json.loads(json.dumps(report))
+        mutated["xlsx_candidate_only_materialization_repair"][key] = value
+        try:
+            v4718.check_report(mutated)
+        except ValueError as exc:
+            assert expected in str(exc)
+        else:
+            raise AssertionError(f"v4_7_18 accepted repair shortcut {key}={value}")
+
+    for family in ("TEXT", "PDF", "XLSX"):
+        mutated = json.loads(json.dumps(report))
+        mutated["regression_guards"][family]["target_hit_regression_count"] = 1
+        try:
+            v4718.check_report(mutated)
+        except ValueError as exc:
+            assert "regression" in str(exc)
+        else:
+            raise AssertionError(f"v4_7_18 accepted {family} regression")
+
+    for key in ("prompt_payload", "raw_prompt_payload", "raw_response_payload", "raw_response"):
+        mutated = json.loads(json.dumps(report))
+        mutated["xlsx_candidate_only_materialization_repair"][key] = "forbidden"
+        try:
+            v4718.check_report(mutated)
+        except ValueError as exc:
+            assert "raw prompt/response" in str(exc)
+        else:
+            raise AssertionError(f"v4_7_18 accepted raw payload {key}")
+
+    gate_plan_mutations = [
+        ("ambiguous_non_gold_choices_remain_diagnostic_only", False, "ambiguous non-gold"),
+        ("official_metric_opening_preconditions_satisfied", True, "official metric opening preconditions"),
+        ("live_readiness_promotion_preconditions_satisfied", True, "live-readiness/promotion preconditions"),
+        ("user_owned_decisions", [], "missing section"),
+        ("official_metric_opening_preconditions", [], "missing section"),
+    ]
+    for key, value, expected in gate_plan_mutations:
+        mutated = json.loads(json.dumps(report))
+        mutated["v4_closeout_and_v5_gate_plan"][key] = value
+        try:
+            v4718.check_report(mutated)
+        except ValueError as exc:
+            assert expected in str(exc)
+        else:
+            raise AssertionError(f"v4_7_18 accepted v5 gate plan drift {key}={value}")
+
+    validation_mutations = [
+        ("source_candidate_set_sha256_recomputed", "0" * 64, "recomputed source candidate digest"),
+        ("source_candidate_set_sha256_source_report_claimed_match", False, "source report did not claim"),
+        ("source_candidate_set_sha256_matches_recomputed", False, "did not match recomputation"),
+    ]
+    for key, value, expected in validation_mutations:
+        mutated = json.loads(json.dumps(report))
+        mutated["candidate_only_generalization_validation_reproduction"][key] = value
+        try:
+            v4718.check_report(mutated)
+        except ValueError as exc:
+            assert expected in str(exc)
+        else:
+            raise AssertionError(f"v4_7_18 accepted validation drift {key}={value}")
+
+    lineage_mutations = [
+        ("compile_check_mode", "py_compile_default_bytecode_write", "avoid bytecode"),
+        ("bytecode_written_by_lineage_check", True, "wrote bytecode"),
+    ]
+    for key, value, expected in lineage_mutations:
+        mutated = json.loads(json.dumps(report))
+        mutated["lineage_reproducibility"][key] = value
+        try:
+            v4718.check_report(mutated)
+        except ValueError as exc:
+            assert expected in str(exc)
+        else:
+            raise AssertionError(f"v4_7_18 accepted lineage side-effect drift {key}={value}")
+
+
+def test_v4718_rejects_recomputed_v4716_candidate_digest_drift(monkeypatch) -> None:
+    from ai.eval import rag_v4718_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility as v4718
+
+    original = v4718._base_v4716_candidate_sets
+
+    def fake_base_v4716_candidate_sets(**kwargs: object) -> tuple[list[list[str]], str, dict[str, object]]:
+        candidate_sets, digest, index = original(**kwargs)
+        assert digest == "b388d4fec10886142f8d3cee25db2eb771e7f4236e311b91c4ea175325a1bc5d"
+        return candidate_sets, "0" * 64, index
+
+    monkeypatch.setattr(v4718, "_base_v4716_candidate_sets", fake_base_v4716_candidate_sets)
+    report = v4718.build_report(root=ROOT, generated_at="2026-05-31T00:00:00Z", check=False)
+    validation = report["candidate_only_generalization_validation_reproduction"]
+
+    assert validation["source_candidate_set_sha256"] == "b388d4fec10886142f8d3cee25db2eb771e7f4236e311b91c4ea175325a1bc5d"
+    assert validation["source_candidate_set_sha256_recomputed"] == "0" * 64
+    assert validation["source_candidate_set_sha256_matches_recomputed"] is False
+    try:
+        v4718.check_report(report)
+    except ValueError as exc:
+        assert "recomputed source candidate digest" in str(exc)
+    else:
+        raise AssertionError("v4_7_18 accepted recomputed source candidate digest drift")
+
+
+def test_v4718_write_path_synthesizes_v4717_source_report_when_prior_ignored_report_is_missing(monkeypatch) -> None:
+    import ai.scripts.rag_eval as runner
+    from ai.eval import rag_v4717_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit as v4717
+    from ai.eval import rag_v4718_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility as v4718
+
+    source_report = v4717.build_report(root=ROOT, generated_at="2026-05-31T00:00:00Z")
+    source_report["sentinel_from_check_run"] = True
+    observed: dict[str, object] = {}
+
+    def fake_check_run(key: str) -> dict[str, object]:
+        assert key == "v4_7_17"
+        return source_report
+
+    def fake_build_report(*, root: Path, source_report: dict[str, object] | None = None, **_: object) -> dict[str, object]:
+        assert root == ROOT
+        assert source_report is not None
+        assert source_report["sentinel_from_check_run"] is True
+        observed["used_source_report"] = True
+        return {
+            "status": V4_7_18_STATUS,
+            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json"},
+            "official_metric_input_rows": 0,
+            "counters": {},
+        }
+
+    monkeypatch.setattr(runner, "check_run", fake_check_run)
+    monkeypatch.setattr(v4718, "build_report", fake_build_report)
+    monkeypatch.setattr(v4718, "write_report_bundle", lambda root, report: (report, {"report_json_sha256": "0" * 64}))
+    monkeypatch.setattr(v4718, "check_report", lambda report: None)
+    monkeypatch.setattr(v4718, "update_docs", lambda root, report: None)
+    monkeypatch.setattr(v4718, "append_status", lambda root, report, *, artifact_hashes: None)
+    monkeypatch.setattr(runner, "sha256_file", lambda path: "0" * 64)
+
+    assert runner.main(["v4_7_18", "--write"]) == 0
     assert observed["used_source_report"] is True
 
 

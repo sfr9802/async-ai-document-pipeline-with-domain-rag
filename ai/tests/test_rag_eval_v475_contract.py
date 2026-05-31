@@ -29,7 +29,7 @@ V4_7_5_LONG_RUN_ID = (
     "evidence_window_repair_and_eval_surface_compaction_nonprod"
 )
 V4_7_5_STATUS = "V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY"
-CURRENT_RUN_KEY = "v4_7_17"
+CURRENT_RUN_KEY = "v4_7_18"
 V4_7_4_REPORT = (
     ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / V4_7_4_LONG_RUN_ID / "report.json"
 )

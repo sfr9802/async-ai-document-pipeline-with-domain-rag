@@ -1,5 +1,13 @@
 # RAG Ingestion Progress
 
+<!-- v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility:progress-entry:start -->
+- Overall status: `V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY`; v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility is artifact-ready / XLSX candidate-only materialization repair-ready and lineage reproducibility-hardened. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`. v4_7_16/v4_7_17 counters reproduce before evaluation: baseline 300/1000, v4_7_17 combined 514/1000, TEXT +212, XLSX +2, PDF regression 0. The v4_7_18 XLSX materialized axis overlay uses only current query text, source family, SourceAtom raw_locator axes, and already-materialized non-numeric row-axis/header text; it improves XLSX combined target hits 17 -> 26 with 881 candidates and 109 budget-exhausted rows. Archive denominator trace is explicit: top-k rows 1029 -> filtered replay 1000, excluded 29 {'TEXT': 6, 'PDF': 4, 'XLSX': 19}. Lineage status `LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY`; runner modules v4_7_13-v4_7_18 are required source files, while report/status artifacts remain ignored. official_metric_input_rows=0, silver_promoted_to_gold_count=0, promotion_evidence=false, product_success_evidence_allowed=false, live_db_index_cache_readiness=false; no raw XLSX query-time parsing, direct normalized value matching, formula use, source-title/workbook shortcut, target/gold locator scoring, query_id hack, training, fine-tuning, or protected mutation.
+<!-- v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility:progress-entry:end -->
+
+<!-- v5_0_v4_closeout_and_v5_gate_plan:progress-entry:start -->
+- v4 closeout basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` is the current source of truth for closing v4 as `V4_CLOSED_DIAGNOSTIC_ONLY_SOURCE_FIRST_CANDIDATE_ONLY_LINEAGE_REPRODUCIBLE`. v5 remains gate-plan-only until user-owned policy inputs are explicit. User-owned decisions: gold/qrels policy, expected evidence, relevance labels, answerability labels, official denominator, and promotion policy. Codex-owned work: schema/runner/test/report plumbing, indexing-scope checks, failure-taxonomy maintenance, and docs/status synchronization after those decisions. XLSX residual backlog: 299 misses, 78 zero-candidate rows, and 109 budget-exhausted rows remain diagnostic-only. Official metric opening preconditions: approved gold/qrels/labels/denominator, documented metric definitions, protected-surface diff approval, and `official_metric_input_rows` sourced only from approved denominator rows. Live-readiness and promotion preconditions: accepted official metrics, explicit live DB/index/cache rollout evidence, leakage/redaction/latency/rollback monitoring, and user-approved promotion/product-success policy. Ambiguous non-gold choices stay diagnostic-only because v4_7_18 target checks are after-the-fact diagnostics, not relevance, answerability, denominator, or promotion decisions.
+<!-- v5_0_v4_closeout_and_v5_gate_plan:progress-entry:end -->
+
 <!-- v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit:progress-entry:start -->
 - Overall status: `V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY`; v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit is artifact-ready / candidate-only generalization validation-ready and XLSX table-axis repair audit-ready. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json`. v4_7_16 candidate replay digest matches recomputation=true and remains stable under poisoned target/gold/supporting/query-id fields=true, while evaluation changes after target poisoning=true. XLSX safe table-axis audit stays inconclusive: 2 target-hit gains from 310 baseline misses and 133 candidate-only axis candidates; raw XLSX parsing, direct normalized value matching, workbook/source-title shortcuts, formula exposure, target/gold locators, and row-specific hacks remain closed. official_metric_input_rows=0, silver_promoted_to_gold_count=0, promotion_evidence=false, product_success_evidence_allowed=false, live_db_index_cache_readiness=false; silver, gold, qrels, labels, expected/supporting evidence, denominator rows, source registry, indexes, cache, and production DB are not mutated.
 <!-- v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit:progress-entry:end -->
@@ -240,14 +248,18 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY`;
+Overall status: `V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY`;
+current v4_7 closeout basis:
+`v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`;
 current latest v4_6 run remains v4_6_12:
 `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`;
 current Phase 1 FastAPI diagnostic/internal integration marker:
 `phase1_diagnostic_contract_closure_fastapi_diagnostic_integration`;
-current v4 marker:
+historical v4 marker/backlog context:
 `v4_source_grounded_runtime_locator_and_finetune_readiness`;
-recommended v4 run family if a run is created:
+current v4_7 closeout basis:
+`v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`;
+recommended v4 run family is historical/backlog-only unless explicitly reopened:
 `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`;
 current diagnostic v4_6_12 external holdout runtime replay route parity loop:
 `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`;
@@ -293,7 +305,7 @@ current diagnostic v4_1 persisted XLSX SourceAtom display metadata loop:
 `official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod`;
 current diagnostic Phase 1 closure marker:
 `phase1_diagnostic_contract_closure_after_v3_22`;
-current diagnostic XLSX display/range rendering loop remains the closure basis:
+current diagnostic XLSX display/range rendering loop remains the historical Phase 1 closure basis; current RAG/v4_7 closeout basis is `v4_7_18`:
 `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`;
 retained prior PDF/XLSX bottleneck status:
 `pdf_xlsx_bottleneck_quality_diagnostic_v3_9_validation_ready`;

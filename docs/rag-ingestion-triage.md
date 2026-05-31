@@ -1,3 +1,14 @@
+<!-- v5_0_v4_closeout_and_v5_gate_plan:triage-entry:start -->
+### v5_0 v4 closeout and v5 gate plan
+
+- Basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` closes v4 as source-first, candidate-only, lineage-reproducible diagnostic work. All ambiguous non-gold choices remain diagnostic-only because no user-approved relevance, answerability, expected-evidence, qrels, or denominator policy exists for them yet.
+- User-owned decisions: approve gold/qrels policy; expected answer/evidence standards; relevance and answerability labels; official denominator; promotion/product-success policy; explicit official metric opening.
+- Codex-owned work: implement approved schemas, tests, runner/report/status updates, indexing-scope guardrails, protected-surface checks, and failure-taxonomy/reporting changes without opening policy gates.
+- XLSX residual backlog: 299 remaining misses, 78 zero-candidate rows, 109 budget-exhausted rows, repeated-prefix/header-axis/table-range splits, and formatted-value prototypes all stay candidate-only until user gold policy opens.
+- Official metric opening preconditions: approved gold/qrels/labels/denominator, fixed metric definitions, documented blocked/deferred metrics, explicit protected-surface diffs, and status rows that still show `official_metric_input_rows=0` until the approved opening.
+- Live-readiness and promotion preconditions: accepted official metrics, live DB/index/cache rollout evidence, redaction/leakage/latency/rollback/monitoring evidence, and user-approved promotion policy; v4_7_18 counters alone are not product-success or promotion evidence.
+<!-- v5_0_v4_closeout_and_v5_gate_plan:triage-entry:end -->
+
 <!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:triage-entry:start -->
 ### v4_7_12 Layered Retrieval Generalization Boundary
 
@@ -233,6 +244,10 @@
 <!-- official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod:triage-entry:end -->
 
 # RAG Ingestion Triage
+
+<!-- v4_7_18_triage_start -->
+- v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility accepts the diagnostic-only materialized axis-value overlay: `accept_materialized_axis_value_overlay_diagnostic_only`. It uses already-materialized SourceAtom axis/header text only and records rejected rules ['direct_normalized_value_matching', 'raw_xlsx_query_time_parsing', 'source_title_or_workbook_shortcut', 'query_id_case_id_hack', 'formula_text_or_formula_evaluation', 'target_or_gold_locator_candidate_scoring']; formatted-value and broader cell scoring remain inconclusive. XLSX improves 17 -> 26 target hits, but still has 299 misses, 78 zero-candidate rows, and 109 budget-exhausted rows. Repeated-prefix projection gains 1 row; explicit demotion/dedup stays inconclusive to avoid row-specific tuning. Lineage reproducibility is reported via `REQUIRED_RUNNER_MODULES_TRACKED_AND_NOT_IGNORED` and ignored report/status artifacts remain local-only.
+<!-- v4_7_18_triage_end -->
 
 <!-- v4_7_17_triage_start -->
 - v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit validates the v4_7_16 candidate-only generalization boundary: candidate-set digest matches recomputation and stays stable when target/gold/supporting/query-id fields are poisoned, proving those fields do not construct or score candidates; target labels remain after-the-fact diagnostic evaluation only. XLSX table-axis repair decision remains keep_inconclusive_low_gain_candidate_only: safe sheet/row/column/range axes add 2 target hits from 310 baseline misses, with overlay XLSX target_not_in_topk 28 and repeated-prefix overlap with target miss 20. No direct normalized value matching, raw XLSX query-time parsing, source-title/workbook shortcut, formula exposure, target/gold locator use, silver/gold/qrels, label, expected/supporting evidence, denominator, source registry, cache, production DB, or index mutation.

@@ -1,3 +1,31 @@
+<!-- v5_0_v4_closeout_and_v5_gate_plan:measurements-entry:start -->
+## v5_0 v4 closeout and v5 gate plan
+
+- Closeout basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`
+- Interpretation: plan/documentation only; no official metric, gold/qrels/label, denominator, training, promotion, product-success, or live-readiness gate is opened.
+
+| counter | value |
+| --- | --- |
+| v4_closeout_status | V4_CLOSED_DIAGNOSTIC_ONLY_SOURCE_FIRST_CANDIDATE_ONLY_LINEAGE_REPRODUCIBLE |
+| current_source_of_truth | v4_7_18 |
+| user_owned_decision_group_count | 6 |
+| codex_owned_work_group_count | 4 |
+| xlsx_residual_miss_count | 299 |
+| xlsx_zero_candidate_row_count | 78 |
+| xlsx_candidate_budget_exhaustion_count | 109 |
+| official_metric_opening_preconditions_documented | true |
+| official_metric_opening_preconditions_satisfied | false |
+| live_readiness_promotion_preconditions_documented | true |
+| live_readiness_promotion_preconditions_satisfied | false |
+| ambiguous_non_gold_choices_remain_diagnostic_only | true |
+| official_metric_input_rows | 0 |
+| gold_mutation | false |
+| qrels_mutation | false |
+| denominator_mutation | false |
+| promotion_evidence | false |
+| live_db_index_cache_readiness | false |
+<!-- v5_0_v4_closeout_and_v5_gate_plan:measurements-entry:end -->
+
 <!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:measurements-entry:start -->
 ### v4_7_12 Layered Retrieval Generalization And Overfit Audit
 
@@ -674,6 +702,43 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 <!-- official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod:measurements-entry:end -->
 
 # RAG Ingestion Measurements
+
+<!-- v4_7_18_measurements_start -->
+## v4_7_18 XLSX candidate-only materialization repair and lineage reproducibility
+
+- Run key: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`
+
+| counter | value |
+| --- | --- |
+| status | V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY |
+| source_run_id | v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit |
+| lineage_reproducibility_status | LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY |
+| required_runner_module_tracking_status | REQUIRED_RUNNER_MODULES_TRACKED_AND_NOT_IGNORED |
+| source_candidate_set_sha256_matches_recomputed | true |
+| poisoned_oracle_field_digest_stable | true |
+| poisoned_oracle_field_evaluation_changed | true |
+| topk_artifact_row_count | 1029 |
+| filtered_replay_row_count | 1000 |
+| excluded_row_count | 29 |
+| xlsx_materialization_repair_status | XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_ACCEPTED_DIAGNOSTIC_ONLY |
+| xlsx_materialization_repair_decision | accept_materialized_axis_value_overlay_diagnostic_only |
+| xlsx_baseline_target_hit_count | 15 |
+| xlsx_v4_7_17_combined_target_hit_count | 17 |
+| xlsx_v4_7_18_combined_target_hit_count | 26 |
+| xlsx_v4_7_18_gain_over_v4_7_17_count | 9 |
+| xlsx_gain_rate_per_v4_7_17_miss | 9/308 |
+| xlsx_target_hit_regression_count | 0 |
+| xlsx_candidate_count | 881 |
+| xlsx_zero_candidate_row_count | 78 |
+| xlsx_candidate_budget_exhaustion_count | 109 |
+| direct_normalized_answer_value_matching | false |
+| raw_xlsx_query_time_parsing | false |
+| formula_evaluation | false |
+| formula_text_exposure | false |
+| source_file_title_shortcut_used | false |
+| official_metric_input_rows | 0 |
+<!-- v4_7_18_measurements_end -->
 
 <!-- v4_7_17_measurements_start -->
 ## v4_7_17 candidate-only generalization validation and XLSX table-axis repair audit

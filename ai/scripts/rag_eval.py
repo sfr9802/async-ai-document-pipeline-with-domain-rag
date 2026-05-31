@@ -32,9 +32,10 @@ from ai.eval import rag_v4714_diagnostic_precondition_hardening as v4714
 from ai.eval import rag_v4715_read_only_searchindex_replay_projection as v4715
 from ai.eval import rag_v4716_target_recall_repair_prototype as v4716
 from ai.eval import rag_v4717_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit as v4717
+from ai.eval import rag_v4718_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility as v4718
 
 
-DEFAULT_RUN_KEY = "v4_7_17"
+DEFAULT_RUN_KEY = "v4_7_18"
 SAFE_LEGACY_CHECK_ALIASES = dict(v478.SAFE_LEGACY_CHECK_ALIASES)
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
@@ -569,6 +570,13 @@ def check_run(key: str) -> dict[str, Any]:
         )
         v4717.check_report(report)
         return report
+    if resolved_key == "v4_7_18" and not (ROOT / v4718.SHORT_REPORT_PATH).exists():
+        report = v4718.build_report(
+            root=ROOT,
+            source_report=check_run("v4_7_17"),
+        )
+        v4718.check_report(report)
+        return report
     report = registry.load_report(resolved_key, root=ROOT)
     if resolved_key == "v4_7_5":
         v475.check_report(report)
@@ -596,6 +604,8 @@ def check_run(key: str) -> dict[str, Any]:
         v4716.check_report(report)
     if resolved_key == "v4_7_17":
         v4717.check_report(report)
+    if resolved_key == "v4_7_18":
+        v4718.check_report(report)
     return report
 
 
@@ -605,7 +615,7 @@ def build_parser() -> argparse.ArgumentParser:
         "run_key",
         nargs="?",
         default=DEFAULT_RUN_KEY,
-        help="logical key such as v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
+        help="logical key such as v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
     )
     parser.add_argument("--check", action="store_true", help="validate an existing report")
     parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and sync docs/status")
@@ -694,8 +704,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             v4717.check_report(report)
             v4717.update_docs(ROOT, report)
             v4717.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v4_7_18":
+            report = v4718.build_report(root=ROOT, source_report=check_run("v4_7_17"))
+            report, artifact_hashes = v4718.write_report_bundle(ROOT, report)
+            v4718.check_report(report)
+            v4718.update_docs(ROOT, report)
+            v4718.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         else:
-            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, and v4_7_17")
+            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, and v4_7_18")
     else:
         report = check_run(run_key)
     if args.check or not args.write:
@@ -783,6 +799,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "candidate_only_generalization_validated": counters.get("candidate_only_generalization_validated"),
                 "poisoned_oracle_field_evaluation_changed": counters.get("poisoned_oracle_field_evaluation_changed"),
                 "source_v4_7_16_combined_target_hit_count": counters.get("source_v4_7_16_combined_target_hit_count"),
+                "lineage_reproducibility_status": counters.get("lineage_reproducibility_status"),
+                "xlsx_materialization_repair_decision": counters.get("xlsx_materialization_repair_decision"),
+                "xlsx_v4_7_18_combined_target_hit_count": counters.get("xlsx_v4_7_18_combined_target_hit_count"),
+                "xlsx_v4_7_18_gain_over_v4_7_17_count": counters.get("xlsx_v4_7_18_gain_over_v4_7_17_count"),
+                "xlsx_candidate_budget_exhaustion_count": counters.get("xlsx_candidate_budget_exhaustion_count"),
                 "xlsx_table_axis_repair_decision": counters.get("xlsx_table_axis_repair_decision"),
                 "xlsx_table_axis_candidate_count": counters.get("xlsx_table_axis_candidate_count"),
                 "xlsx_table_axis_target_hit_gain_count": counters.get("xlsx_table_axis_target_hit_gain_count"),
