@@ -97,6 +97,46 @@ V4_7_12_LONG_RUN_ID = (
 )
 V4_7_12_STATUS = "V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY"
 
+V4_7_13_SHORT_KEY = "v4_7_13"
+V4_7_13_SHORT_RUN_ID = "v4_7_13_live_retrieval_answerability_and_full_pdf_replay"
+V4_7_13_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v4_7_13_"
+    "live_retrieval_answerability_and_full_pdf_replay_nonprod"
+)
+V4_7_13_STATUS = "V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY"
+
+V4_7_14_SHORT_KEY = "v4_7_14"
+V4_7_14_SHORT_RUN_ID = "v4_7_14_diagnostic_precondition_hardening"
+V4_7_14_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v4_7_14_"
+    "diagnostic_precondition_hardening_nonprod"
+)
+V4_7_14_STATUS = "V4_7_14_DIAGNOSTIC_PRECONDITION_HARDENING_NONPROD_READY"
+
+V4_7_15_SHORT_KEY = "v4_7_15"
+V4_7_15_SHORT_RUN_ID = "v4_7_15_read_only_searchindex_replay_projection"
+V4_7_15_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v4_7_15_"
+    "read_only_searchindex_replay_projection_nonprod"
+)
+V4_7_15_STATUS = "V4_7_15_READ_ONLY_SEARCHINDEX_REPLAY_PROJECTION_NONPROD_READY"
+
+V4_7_16_SHORT_KEY = "v4_7_16"
+V4_7_16_SHORT_RUN_ID = "v4_7_16_target_recall_repair_prototype"
+V4_7_16_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v4_7_16_"
+    "target_recall_repair_prototype_nonprod"
+)
+V4_7_16_STATUS = "V4_7_16_TARGET_RECALL_REPAIR_PROTOTYPE_NONPROD_READY"
+
+V4_7_17_SHORT_KEY = "v4_7_17"
+V4_7_17_SHORT_RUN_ID = "v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit"
+V4_7_17_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v4_7_17_"
+    "candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit_nonprod"
+)
+V4_7_17_STATUS = "V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY"
+
 
 class ReportResolutionError(RuntimeError):
     """Raised when a diagnostic report alias cannot be resolved safely."""
@@ -241,6 +281,51 @@ RUNS: dict[str, RunMetadata] = {
         ),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
     ),
+    V4_7_13_SHORT_KEY: RunMetadata(
+        logical_key=V4_7_13_SHORT_KEY,
+        short_run_id=V4_7_13_SHORT_RUN_ID,
+        canonical_long_run_id=V4_7_13_LONG_RUN_ID,
+        status=V4_7_13_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V4_7_13_SHORT_KEY / "report.json",
+        accepted_aliases=(V4_7_13_SHORT_RUN_ID, V4_7_13_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
+    V4_7_14_SHORT_KEY: RunMetadata(
+        logical_key=V4_7_14_SHORT_KEY,
+        short_run_id=V4_7_14_SHORT_RUN_ID,
+        canonical_long_run_id=V4_7_14_LONG_RUN_ID,
+        status=V4_7_14_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V4_7_14_SHORT_KEY / "report.json",
+        accepted_aliases=(V4_7_14_SHORT_RUN_ID, V4_7_14_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
+    V4_7_15_SHORT_KEY: RunMetadata(
+        logical_key=V4_7_15_SHORT_KEY,
+        short_run_id=V4_7_15_SHORT_RUN_ID,
+        canonical_long_run_id=V4_7_15_LONG_RUN_ID,
+        status=V4_7_15_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V4_7_15_SHORT_KEY / "report.json",
+        accepted_aliases=(V4_7_15_SHORT_RUN_ID, V4_7_15_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
+    V4_7_16_SHORT_KEY: RunMetadata(
+        logical_key=V4_7_16_SHORT_KEY,
+        short_run_id=V4_7_16_SHORT_RUN_ID,
+        canonical_long_run_id=V4_7_16_LONG_RUN_ID,
+        status=V4_7_16_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V4_7_16_SHORT_KEY / "report.json",
+        accepted_aliases=(V4_7_16_SHORT_RUN_ID, V4_7_16_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
+    V4_7_17_SHORT_KEY: RunMetadata(
+        logical_key=V4_7_17_SHORT_KEY,
+        short_run_id=V4_7_17_SHORT_RUN_ID,
+        canonical_long_run_id=V4_7_17_LONG_RUN_ID,
+        status=V4_7_17_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V4_7_17_SHORT_KEY / "report.json",
+        accepted_aliases=(V4_7_17_SHORT_RUN_ID, V4_7_17_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
 }
 
 ALIAS_TO_KEY: dict[str, str] = {
@@ -248,7 +333,7 @@ ALIAS_TO_KEY: dict[str, str] = {
     for key, metadata in RUNS.items()
     for alias in (key, *metadata.accepted_aliases)
 }
-ALIAS_TO_KEY["current"] = V4_7_12_SHORT_KEY
+ALIAS_TO_KEY["current"] = V4_7_17_SHORT_KEY
 
 
 def _repo_root(root: Path | str | None = None) -> Path:

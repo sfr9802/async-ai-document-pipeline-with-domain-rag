@@ -1,3 +1,10 @@
+<!-- v4_7_17_summary_start -->
+## Current RAG Diagnostic Status
+Current RAG status: `V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY`.
+`current` resolves to `v4_7_17`: non-production candidate-only generalization validation and XLSX table-axis repair audit. The v4_7_16 candidate replay digest is recomputed and poison-field stable, while target poisoning changes only after-the-fact evaluation. v4_7_16_target_recall_repair_prototype remains explicit for historical checks: archived baseline target hits 300/1000 became diagnostic combined target hits 514/1000. XLSX remains inconclusive: safe sheet/row/column/range axes add 2 target hits from 310 baseline misses, so future work must stay candidate-only and avoid raw XLSX parsing, direct normalized value matching, source-title shortcuts, formula exposure, target/gold locators, and threshold tuning. Canonical details: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md`; prior v4_7 cleanup keys remain checkable through explicit aliases.
+Lineage breadcrumbs: v4_7 remains pre-official; it supersedes the abstract v4_7_1 Korean review packet; the hydrated packet has hydrated rows 204, PDF 100, XLSX 104 and non-empty `질의문` 204; v4_7_3 applies the user-reviewed Korean query candidate CSV and v4_7_3 applies the user-reviewed CSV decisions with 미검수=통과; PDF survivor 58 and v4_7_4 replays only the 58 user-passed PDF survivor candidates. official_metric_input_rows=0. ## Korean human review packet. The previous v4_7_1 Korean review packet was abstract; review_packet_ko_hydrated.xlsx carries actual Korean query candidates. User-owned fields remain blank/default; not official metric. fine_tuning_executed=false.
+Hard boundary: diagnostic-only, non-production, not official metric, not gold/qrels/labels, not denominator/training/fine-tuning/FT-A, not promotion evidence, not product-success evidence, and not live readiness.
+<!-- v4_7_17_summary_end -->
 # 문서 근거 기반 AI 검색·답변 파이프라인
 
 PDF, XLSX, TEXT 문서를 대상으로 질문에 답하고, 답변에 사용된 원문 근거를 함께 반환하는 AI 문서 검색·질의응답 시스템입니다.

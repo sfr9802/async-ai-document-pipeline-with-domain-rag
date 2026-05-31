@@ -234,7 +234,27 @@
 
 # RAG Ingestion Triage
 
-Last updated: 2026-05-27 KST.
+<!-- v4_7_17_triage_start -->
+- v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit validates the v4_7_16 candidate-only generalization boundary: candidate-set digest matches recomputation and stays stable when target/gold/supporting/query-id fields are poisoned, proving those fields do not construct or score candidates; target labels remain after-the-fact diagnostic evaluation only. XLSX table-axis repair decision remains keep_inconclusive_low_gain_candidate_only: safe sheet/row/column/range axes add 2 target hits from 310 baseline misses, with overlay XLSX target_not_in_topk 28 and repeated-prefix overlap with target miss 20. No direct normalized value matching, raw XLSX query-time parsing, source-title/workbook shortcut, formula exposure, target/gold locator use, silver/gold/qrels, label, expected/supporting evidence, denominator, source registry, cache, production DB, or index mutation.
+<!-- v4_7_17_triage_end -->
+
+<!-- v4_7_16_triage_start -->
+- v4_7_16_target_recall_repair_prototype diagnostic-only repair decisions: accepted TEXT_SAFE_LEXICAL_SEARCHUNIT_SEARCHVIEW_REPAIR because fixed candidate-only TEXT source-registry tokens gain 212 target hits with zero target-hit regressions; inconclusive XLSX_SAFE_TABLE_AXIS_SEARCHUNIT_SEARCHVIEW_REPAIR because safe sheet/row/column/range axes gain only 2 target hits; rejected DIRECT_NORMALIZED_VALUE_MATCHING, RAW_XLSX_QUERY_TIME_PARSING, SOURCE_FILE_TITLE_SHORTCUT, TARGET_GOLD_EXPECTED_SUPPORTING_LOCATOR_USE, and ROW_SPECIFIC_THRESHOLD_OR_QUERY_ID_HACK. The 90-row v4_7_13 overlay remains summarized as diagnostic queues only: retrieval target not in top-k 68 {'PDF': 12, 'TEXT': 28, 'XLSX': 28}. No silver/gold/qrels, label, expected/supporting evidence, denominator, source registry, cache, production DB, or index mutation.
+<!-- v4_7_16_triage_end -->
+
+<!-- v4_7_15_triage_start -->
+- v4_7_15_read_only_searchindex_replay_projection diagnostic-only repair projection: retrieval target not in top-k 68 {'TEXT': 28, 'PDF': 12, 'XLSX': 28}; target-hit evidence/context repair 14 {'TEXT': 2, 'PDF': 10, 'XLSX': 2}; query-specificity fixture review 3 {'TEXT': 0, 'PDF': 3, 'XLSX': 0}; no repair projection 5. Secondary overlap: TEXT evidence-window overlap with target miss 28; XLSX repeated-prefix total 22 with 20 target misses and 2 target-hit rows; PDF evidence-window total 16 with 10 target-hit rows, and query-too-broad primary review 3. Diagnostic-only projection; no silver/gold/qrels, label, expected/supporting evidence, denominator, source registry, cache, production DB, or index mutation.
+<!-- v4_7_15_triage_end -->
+
+<!-- v4_7_14_triage_start -->
+- v4_7_14_diagnostic_precondition_hardening diagnostic-only root-cause queues: TEXT target_not_in_topk 28 and evidence_mismatch_after_family_route 30; XLSX target_not_in_topk 28 and repeated_prefix_cluster 22; PDF evidence_window_insufficient 16, source_family_route_ok_but_evidence_mismatch 17, and query_too_broad 5. These are diagnostic-only queues; silver, gold, qrels, labels, expected/supporting evidence, denominator rows, source registry, cache, production DB, and indexes are not mutated. SearchView/vector payload remains candidate-only; SourceAtom/EvidenceBundle remains evidence truth.
+<!-- v4_7_14_triage_end -->
+
+<!-- v4_7_13_triage_start -->
+- v4_7_13 live replay status: `LIVE_SILVER_RETRIEVAL_REPLAY_UNAVAILABLE_FAIL_CLOSED`. Full PDF status: `FULL_PDF_LLM_REPLAY_UNAVAILABLE_FAIL_CLOSED`. TEXT silver explanation: TEXT smoke failures are mainly weak-likely-answerable queries whose family route survived but whose target SourceAtom was usually not in top-k, so the selected evidence did not contain enough answer-bearing context. The model therefore produced supported or unsupported insufficient_evidence despite query-level likely_unanswerable=false. SearchView/vector payload remains candidate-only; SourceAtom/EvidenceBundle remains evidence truth.
+<!-- v4_7_13_triage_end -->
+
+Last updated: 2026-05-31 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of

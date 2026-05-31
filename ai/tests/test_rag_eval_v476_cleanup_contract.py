@@ -28,6 +28,11 @@ V4_7_9_STATUS = "V4_7_9_PDF_EVIDENCE_RESIDUAL_ANSWER_QUALITY_REPLAY_NONPROD_READ
 V4_7_10_STATUS = "V4_7_10_PDF_KOREAN_EVIDENCE_NORMALIZATION_AND_ANSWER_REPLAY_READINESS_NONPROD_READY"
 V4_7_11_STATUS = "V4_7_11_ACTUAL_LLM_ANSWER_REPLAY_AND_SILVER_DIAGNOSTIC_SMOKE_NONPROD_READY"
 V4_7_12_STATUS = "V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY"
+V4_7_13_STATUS = "V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY"
+V4_7_14_STATUS = "V4_7_14_DIAGNOSTIC_PRECONDITION_HARDENING_NONPROD_READY"
+V4_7_15_STATUS = "V4_7_15_READ_ONLY_SEARCHINDEX_REPLAY_PROJECTION_NONPROD_READY"
+V4_7_16_STATUS = "V4_7_16_TARGET_RECALL_REPAIR_PROTOTYPE_NONPROD_READY"
+V4_7_17_STATUS = "V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY"
 V4_7_6_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_6" / "report.json"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
@@ -114,6 +119,7 @@ def test_v476_inventory_classification_keeps_protected_current_and_manual_hold()
 
 def test_v476_registry_resolves_current_lineage_short_paths_and_legacy_aliases() -> None:
     from ai.eval import rag_eval_registry as registry
+    from ai.scripts import rag_eval as runner
 
     expected = {
         "v4_7_preofficial": "ai/eval/reports/rag-ingestion/runs/v4_7_preofficial/report.json",
@@ -126,12 +132,31 @@ def test_v476_registry_resolves_current_lineage_short_paths_and_legacy_aliases()
         "v4_7_10": "ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json",
         "v4_7_11": "ai/eval/reports/rag-ingestion/runs/v4_7_11/report.json",
         "v4_7_12": "ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json",
-        "current": "ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json",
+        "v4_7_13": "ai/eval/reports/rag-ingestion/runs/v4_7_13/report.json",
+        "v4_7_14": "ai/eval/reports/rag-ingestion/runs/v4_7_14/report.json",
+        "v4_7_15": "ai/eval/reports/rag-ingestion/runs/v4_7_15/report.json",
+        "v4_7_16": "ai/eval/reports/rag-ingestion/runs/v4_7_16/report.json",
+        "v4_7_17": "ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json",
+        "current": "ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json",
+    }
+    ignored_artifact_in_memory_keys = {
+        "v4_7_11",
+        "v4_7_12",
+        "v4_7_13",
+        "v4_7_14",
+        "v4_7_15",
+        "v4_7_16",
+        "v4_7_17",
+        "current",
     }
     for key, rel_path in expected.items():
         resolved = registry.resolve_run(key, root=ROOT)
         assert resolved.report_path == ROOT / rel_path
-        assert resolved.report_path.exists(), key
+        if key in ignored_artifact_in_memory_keys and not resolved.report_path.exists():
+            built = runner.check_run(key)
+            assert built["artifact_paths"]["report_json"] == rel_path
+        else:
+            assert resolved.report_path.exists(), key
 
     legacy = registry.resolve_run(
         "official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod",
@@ -209,8 +234,8 @@ def test_v476_report_status_docs_and_cleanup_manifest_are_compact_and_closed() -
     assert short_report_path in current_progress
     assert short_report_path in measurements
     assert short_report_path in triage
-    assert f"Current RAG status: `{V4_7_12_STATUS}`" in readme
-    assert f"Current RAG status: `{V4_7_12_STATUS}`" in eval_readme
+    assert f"Current RAG status: `{V4_7_17_STATUS}`" in readme
+    assert f"Current RAG status: `{V4_7_17_STATUS}`" in eval_readme
 
     generated_text = "\n".join(
         [

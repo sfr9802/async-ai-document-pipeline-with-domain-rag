@@ -675,7 +675,148 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 
 # RAG Ingestion Measurements
 
-Last updated: 2026-05-27 KST.
+<!-- v4_7_17_measurements_start -->
+## v4_7_17 candidate-only generalization validation and XLSX table-axis repair audit
+
+- Run key: `v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json`
+
+| counter | value |
+| --- | --- |
+| status | V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY |
+| source_run_id | v4_7_16_target_recall_repair_prototype |
+| candidate_only_generalization_status | CANDIDATE_ONLY_GENERALIZATION_VALIDATED_DIAGNOSTIC_ONLY |
+| source_candidate_set_sha256_matches_recomputed | true |
+| poisoned_oracle_field_digest_stable | true |
+| poisoned_oracle_field_evaluation_changed | true |
+| source_v4_7_16_baseline_target_hit_count | 300 |
+| source_v4_7_16_combined_target_hit_count | 514 |
+| source_v4_7_16_baseline_miss_to_hit_count | 214 |
+| xlsx_table_axis_audit_status | XLSX_TABLE_AXIS_REPAIR_AUDIT_INCONCLUSIVE_DIAGNOSTIC_ONLY |
+| xlsx_table_axis_repair_decision | keep_inconclusive_low_gain_candidate_only |
+| xlsx_baseline_to_combined | 15 -> 17 |
+| xlsx_table_axis_candidate_count | 133 |
+| xlsx_table_axis_target_hit_gain_count | 2 |
+| xlsx_table_axis_gain_rate_per_baseline_miss | 2/310 |
+| xlsx_target_hit_regression_count | 0 |
+| xlsx_overlay_target_not_in_topk_total | 28 |
+| xlsx_repeated_prefix_cluster_overlap_with_target_miss | 20 |
+| source_topk_sha256_verified | true |
+| source_topk_resolved_via_archive | true |
+| official_metric_input_rows | 0 |
+| direct_normalized_answer_value_matching | false |
+| raw_xlsx_query_time_parsing | false |
+| source_file_title_shortcut_used | false |
+<!-- v4_7_17_measurements_end -->
+
+<!-- v4_7_16_measurements_start -->
+## v4_7_16 target recall repair prototype
+
+- Run key: `v4_7_16_target_recall_repair_prototype`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_16/report.json`
+
+| counter | value |
+| --- | --- |
+| status | V4_7_16_TARGET_RECALL_REPAIR_PROTOTYPE_NONPROD_READY |
+| source_run_id | v4_7_15_read_only_searchindex_replay_projection |
+| candidate_budget_per_query | 5 |
+| baseline_target_hit_count | 300 |
+| combined_target_hit_count | 514 |
+| baseline_miss_to_hit_count | 214 |
+| baseline_hit_to_miss_count | 0 |
+| TEXT baseline_to_combined | 20 -> 232 |
+| TEXT prototype_candidate_count | 1714 |
+| TEXT baseline_miss_to_hit_count | 212 |
+| XLSX baseline_to_combined | 15 -> 17 |
+| XLSX prototype_candidate_count | 133 |
+| XLSX baseline_miss_to_hit_count | 2 |
+| PDF baseline_to_combined | 265 -> 265 |
+| PDF target_hit_regression_count | 0 |
+| overlay_90_retrieval_target_not_in_topk | 68 |
+| source_topk_sha256_verified | true |
+| source_topk_resolved_via_archive | true |
+| official_metric_input_rows | 0 |
+| direct_normalized_answer_value_matching | false |
+| raw_xlsx_query_time_parsing | false |
+| source_file_title_shortcut_used | false |
+<!-- v4_7_16_measurements_end -->
+
+<!-- v4_7_15_measurements_start -->
+## v4_7_15 read-only SearchIndexContract replay projection
+
+- Run key: `v4_7_15_read_only_searchindex_replay_projection`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_15/report.json`
+
+| counter | value |
+| --- | --- |
+| status | V4_7_15_READ_ONLY_SEARCHINDEX_REPLAY_PROJECTION_NONPROD_READY |
+| read_only_searchindexcontract_replay_status | READ_ONLY_SEARCHINDEXCONTRACT_REPLAY_UNBLOCKED_ARCHIVED_TOPK_DIAGNOSTIC_ONLY |
+| source_topk_sha256_verified | true |
+| source_topk_resolved_via_archive | true |
+| v3_7_0_source_registry_manifest_record_count | 5 |
+| v3_7_1_index_manifest_record_count | 5 |
+| replay_input_row_count | 1000 |
+| replay_counts_by_family | {"PDF": 325, "TEXT": 350, "XLSX": 325} |
+| topk_envelope_count | 5000 |
+| sourceatom_hydration_success_envelope_count | 5000 |
+| evidencebundle_renderable_envelope_count | 5000 |
+| citation_renderable_envelope_count | 5000 |
+| vector_payload_evidence_truth_violation_count | 0 |
+| projection_input_row_count | 90 |
+| retrieval_target_not_in_topk_projection_count | 68 |
+| target_hit_evidence_context_repair_projection_count | 14 |
+| query_specificity_fixture_review_projection_count | 3 |
+| no_repair_projection_count | 5 |
+| overlay_rows_missing_from_audit_count | 0 |
+| live_retrieval_quality_failure_count | 0 |
+| claim_support_fail_count | 0 |
+| parser_failure_count | 0 |
+| official_metric_input_rows | 0 |
+<!-- v4_7_15_measurements_end -->
+
+<!-- v4_7_14_measurements_start -->
+## v4_7_14 diagnostic precondition hardening
+
+- Run key: `v4_7_14_diagnostic_precondition_hardening`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_14/report.json`
+
+| counter | value |
+| --- | --- |
+| status | V4_7_14_DIAGNOSTIC_PRECONDITION_HARDENING_NONPROD_READY |
+| live_retrieval_preflight_status | LIVE_RETRIEVAL_PRECONDITION_UNAVAILABLE_FAIL_CLOSED |
+| live_retrieval_precondition_unavailable_count | 1 |
+| live_retrieval_quality_failure_count | 0 |
+| local_llm_preflight_status | LOCAL_LLM_UNAVAILABLE_GENERATION_NOT_ATTEMPTED_FAIL_CLOSED |
+| llm_unavailable_skip_count | 57 |
+| generated_response_count | 0 |
+| parser_failure_count | 0 |
+| claim_support_fail_count | 0 |
+| citation_failure_count | 0 |
+| unsupported_answer_count | 0 |
+| claim_support_not_evaluated_due_to_no_generation_count | 57 |
+| silver_answerability_overlay_row_count | 90 |
+| official_metric_input_rows | 0 |
+<!-- v4_7_14_measurements_end -->
+
+<!-- v4_7_13_measurements_start -->
+## v4_7_13 live retrieval answerability and full PDF replay
+
+| counter | value |
+| --- | --- |
+| status | V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY |
+| live_silver_retrieval_env_enabled | true |
+| live_silver_retrieval_row_count | 0 |
+| pdf_full_replay_env_enabled | true |
+| pdf_full_replay_eligible_count | 57 |
+| pdf_generated_response_count | 0 |
+| silver_answerability_overlay_row_count | 90 |
+| silver_prior_insufficient_evidence_count | 64 |
+| silver_prior_claim_support_pass/fail | 60/30 |
+| tooling_counter_scope_mismatch_count | 0 |
+| official_metric_input_rows | 0 |
+<!-- v4_7_13_measurements_end -->
+
+Last updated: 2026-05-31 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new

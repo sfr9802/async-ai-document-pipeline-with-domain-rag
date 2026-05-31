@@ -27,9 +27,14 @@ from ai.eval import rag_v479_pdf_evidence_residual_answer_quality_replay as v479
 from ai.eval import rag_v4710_pdf_korean_evidence_normalization_and_answer_replay_readiness as v4710
 from ai.eval import rag_v4711_actual_llm_answer_replay_and_silver_diagnostic_smoke as v4711
 from ai.eval import rag_v4712_layered_retrieval_generalization_and_overfit_audit as v4712
+from ai.eval import rag_v4713_live_retrieval_answerability_and_full_pdf_replay as v4713
+from ai.eval import rag_v4714_diagnostic_precondition_hardening as v4714
+from ai.eval import rag_v4715_read_only_searchindex_replay_projection as v4715
+from ai.eval import rag_v4716_target_recall_repair_prototype as v4716
+from ai.eval import rag_v4717_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit as v4717
 
 
-DEFAULT_RUN_KEY = "v4_7_12"
+DEFAULT_RUN_KEY = "v4_7_17"
 SAFE_LEGACY_CHECK_ALIASES = dict(v478.SAFE_LEGACY_CHECK_ALIASES)
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
@@ -526,6 +531,44 @@ def check_run(key: str) -> dict[str, Any]:
         )
         v4712.check_report(report)
         return report
+    if resolved_key == "v4_7_13" and not (ROOT / v4713.SHORT_REPORT_PATH).exists():
+        report = v4713.build_report(
+            root=ROOT,
+            execute=False,
+            v4712_report=check_run("v4_7_12"),
+            v4710_report=check_run("v4_7_10"),
+            prior_v474_report=registry.load_report("v4_7_4", root=ROOT),
+        )
+        v4713.check_report(report)
+        return report
+    if resolved_key == "v4_7_14" and not (ROOT / v4714.SHORT_REPORT_PATH).exists():
+        report = v4714.build_report(
+            root=ROOT,
+            source_report=check_run("v4_7_13"),
+        )
+        v4714.check_report(report)
+        return report
+    if resolved_key == "v4_7_15" and not (ROOT / v4715.SHORT_REPORT_PATH).exists():
+        report = v4715.build_report(
+            root=ROOT,
+            source_report=check_run("v4_7_14"),
+        )
+        v4715.check_report(report)
+        return report
+    if resolved_key == "v4_7_16" and not (ROOT / v4716.SHORT_REPORT_PATH).exists():
+        report = v4716.build_report(
+            root=ROOT,
+            source_report=check_run("v4_7_15"),
+        )
+        v4716.check_report(report)
+        return report
+    if resolved_key == "v4_7_17" and not (ROOT / v4717.SHORT_REPORT_PATH).exists():
+        report = v4717.build_report(
+            root=ROOT,
+            source_report=check_run("v4_7_16"),
+        )
+        v4717.check_report(report)
+        return report
     report = registry.load_report(resolved_key, root=ROOT)
     if resolved_key == "v4_7_5":
         v475.check_report(report)
@@ -543,6 +586,16 @@ def check_run(key: str) -> dict[str, Any]:
         v4711.check_report(report)
     if resolved_key == "v4_7_12":
         v4712.check_report(report)
+    if resolved_key == "v4_7_13":
+        v4713.check_report(report)
+    if resolved_key == "v4_7_14":
+        v4714.check_report(report)
+    if resolved_key == "v4_7_15":
+        v4715.check_report(report)
+    if resolved_key == "v4_7_16":
+        v4716.check_report(report)
+    if resolved_key == "v4_7_17":
+        v4717.check_report(report)
     return report
 
 
@@ -552,7 +605,7 @@ def build_parser() -> argparse.ArgumentParser:
         "run_key",
         nargs="?",
         default=DEFAULT_RUN_KEY,
-        help="logical key such as v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
+        help="logical key such as v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
     )
     parser.add_argument("--check", action="store_true", help="validate an existing report")
     parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and sync docs/status")
@@ -611,8 +664,38 @@ def main(argv: Sequence[str] | None = None) -> int:
             v4712.check_report(report)
             v4712.update_docs(ROOT, report)
             v4712.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v4_7_13":
+            report = v4713.build_report(root=ROOT, execute=True, sync_surfaces=True)
+            report, artifact_hashes = v4713.write_report_bundle(ROOT, report)
+            v4713.check_report(report)
+            v4713.update_docs(ROOT, report)
+            v4713.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v4_7_14":
+            report = v4714.build_report(root=ROOT)
+            report, artifact_hashes = v4714.write_report_bundle(ROOT, report)
+            v4714.check_report(report)
+            v4714.update_docs(ROOT, report)
+            v4714.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v4_7_15":
+            report = v4715.build_report(root=ROOT)
+            report, artifact_hashes = v4715.write_report_bundle(ROOT, report)
+            v4715.check_report(report)
+            v4715.update_docs(ROOT, report)
+            v4715.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v4_7_16":
+            report = v4716.build_report(root=ROOT)
+            report, artifact_hashes = v4716.write_report_bundle(ROOT, report)
+            v4716.check_report(report)
+            v4716.update_docs(ROOT, report)
+            v4716.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v4_7_17":
+            report = v4717.build_report(root=ROOT, source_report=check_run("v4_7_16"))
+            report, artifact_hashes = v4717.write_report_bundle(ROOT, report)
+            v4717.check_report(report)
+            v4717.update_docs(ROOT, report)
+            v4717.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         else:
-            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, and v4_7_12")
+            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, and v4_7_17")
     else:
         report = check_run(run_key)
     if args.check or not args.write:
@@ -679,6 +762,39 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "silver_total_row_count": counters.get("silver_total_row_count"),
                 "silver_retrieval_audit_row_count": counters.get("silver_retrieval_audit_row_count"),
                 "silver_generated_response_count": counters.get("silver_generated_response_count"),
+                "live_silver_retrieval_row_count": counters.get("live_silver_retrieval_row_count"),
+                "live_silver_retrieval_env_enabled": counters.get("live_silver_retrieval_env_enabled"),
+                "silver_answerability_overlay_row_count": counters.get("silver_answerability_overlay_row_count"),
+                "silver_prior_insufficient_evidence_count": counters.get("silver_prior_insufficient_evidence_count"),
+                "pdf_llm_invoked_count": counters.get("pdf_llm_invoked_count"),
+                "pdf_claim_support_pass_count": counters.get("pdf_claim_support_pass_count"),
+                "pdf_claim_support_fail_count": counters.get("pdf_claim_support_fail_count"),
+                "live_retrieval_precondition_unavailable_count": counters.get(
+                    "live_retrieval_precondition_unavailable_count"
+                ),
+                "live_retrieval_quality_failure_count": counters.get("live_retrieval_quality_failure_count"),
+                "llm_unavailable_skip_count": counters.get("llm_unavailable_skip_count"),
+                "target_recall_baseline_target_hit_count": counters.get("baseline_target_hit_count"),
+                "target_recall_combined_target_hit_count": counters.get("combined_target_hit_count"),
+                "target_recall_baseline_miss_to_hit_count": counters.get("baseline_miss_to_hit_count"),
+                "target_recall_text_baseline_miss_to_hit_count": counters.get("text_baseline_miss_to_hit_count"),
+                "target_recall_xlsx_baseline_miss_to_hit_count": counters.get("xlsx_baseline_miss_to_hit_count"),
+                "target_recall_pdf_target_hit_regression_count": counters.get("pdf_target_hit_regression_count"),
+                "candidate_only_generalization_validated": counters.get("candidate_only_generalization_validated"),
+                "poisoned_oracle_field_evaluation_changed": counters.get("poisoned_oracle_field_evaluation_changed"),
+                "source_v4_7_16_combined_target_hit_count": counters.get("source_v4_7_16_combined_target_hit_count"),
+                "xlsx_table_axis_repair_decision": counters.get("xlsx_table_axis_repair_decision"),
+                "xlsx_table_axis_candidate_count": counters.get("xlsx_table_axis_candidate_count"),
+                "xlsx_table_axis_target_hit_gain_count": counters.get("xlsx_table_axis_target_hit_gain_count"),
+                "xlsx_table_axis_gain_rate_per_baseline_miss": counters.get(
+                    "xlsx_table_axis_gain_rate_per_baseline_miss"
+                ),
+                "claim_support_not_evaluated_due_to_no_generation_count": counters.get(
+                    "claim_support_not_evaluated_due_to_no_generation_count"
+                ),
+                "parser_failure_count": counters.get("parser_failure_count"),
+                "citation_failure_count": counters.get("citation_failure_count"),
+                "unsupported_answer_count": counters.get("unsupported_answer_count"),
             },
             ensure_ascii=False,
             sort_keys=True,
