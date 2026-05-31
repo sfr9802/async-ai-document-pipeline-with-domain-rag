@@ -17,24 +17,6 @@ TEXT, PDF, XLSX 문서에 질문했을 때 AI가 어떤 근거를 찾고, 어떤
 | 핵심 포인트 | 근거 기반 답변, citation 검증, fail-closed 처리, 한국어 검수 패킷 생성 |
 | 운영 반영 여부 | 운영 배포나 공식 성능 지표가 아닌 diagnostic-only 자료 |
 
-## 현재 상태
-
-- Current RAG status: `V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY`
-- v4_7_12 diagnostic audit: `v4_7_12_layered_retrieval_generalization_and_overfit_audit` writes `ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json` through `ai/scripts/rag_eval.py`; current resolves to v4_7_12, v4_7_11 remains checkable, full PDF eligible 57, silver retrieval rows 1000, official_metric=false and promotion_evidence=false.
-- v4_7_11 diagnostic replay: `v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke` writes `ai/eval/reports/rag-ingestion/runs/v4_7_11/report.json` and ignored answer packet `ai/eval/reports/rag-ingestion/runs/v4_7_11/answer_review_packet_ko.jsonl` through `ai/scripts/rag_eval.py`; generated 9, parsed 9, citations 9, claim-support pass/fail 5/4, silver sample 0; official_metric=false. Prior resolver context remains `v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness`, `v4_7_9_pdf_evidence_residual_answer_quality_replay`, and `v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion`.
-- v4_7_10 diagnostic replay: `v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness` writes `ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json` through `ai/scripts/rag_eval.py`; use explicit resolver key `v4_7_10` for this prior Korean normalization/readiness report and `v4_7_9` for the prior PDF residual report. weak evidence/window 3 -> 1; answer-ready evidence bundles 55 -> 57; official_metric=false; local LLM unavailable rows fail closed.
-- v4_7_9 diagnostic replay: `v4_7_9_pdf_evidence_residual_answer_quality_replay` writes `ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json` through `ai/scripts/rag_eval.py`; use explicit resolver key `v4_7_9` for this prior PDF residual report and `v4_7_8` for the prior cleanup/refactor report. official_metric=false; local LLM unavailable rows fail closed.
-- v4_7_8 cleanup/refactor: `v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion` writes `ai/eval/reports/rag-ingestion/runs/v4_7_8/report.json` through `ai/scripts/rag_eval.py`; use resolver key `v4_7_8` for this prior cleanup/refactor report and `v4_7_7` for the prior `v4_7_7_v3_legacy_archive_and_runner_consolidation` report.
-- v4_7_6 cleanup/refactor: use resolver key `v4_7_6` for this prior archive-purge report; `current` now resolves to v4_7_12.
-
-<!-- v4_7_8:korean-human-review-context:start -->
-## Korean human review packet
-
-The previous v4_7_1 Korean review packet was abstract; v4_7_2 writes review_packet_ko_hydrated.xlsx with actual Korean query candidates. User-owned fields remain blank/default; not official metric. v4_7_3 applies the user-reviewed CSV decisions and remains not gold/qrels. v4_7_4 replays only the 58 user-passed PDF survivor candidates. fine_tuning_executed=false.
-<!-- v4_7_8:korean-human-review-context:end -->
-- v4_7_8 cleanup/refactor: `v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion` writes `ai/eval/reports/rag-ingestion/runs/v4_7_8/report.json` through `ai/scripts/rag_eval.py`; use resolver key `v4_7_8` for this prior cleanup/refactor report and `v4_7_7` for the prior v3 legacy archive/runner consolidation report.
-- Boundary: diagnostic-only sample/eval material; `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, and `live_db_index_cache_readiness=false` remain closed.
-
 샘플은 기존 balanced sample 50개(TEXT 10, PDF 20, XLSX 20)에 v3_22 XLSX display-value/cell-range diagnostic sample 14개를 더한 구성입니다.
 `Response` 칸에는 저장 응답, 어댑터 응답 excerpt, 최신 diagnostic answer derivation 출력, stored residual excerpt, 또는 fail-closed 상태가 들어갈 수 있습니다.
 
