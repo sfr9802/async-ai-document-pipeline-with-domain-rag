@@ -34,9 +34,12 @@ from ai.eval import rag_v4716_target_recall_repair_prototype as v4716
 from ai.eval import rag_v4717_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit as v4717
 from ai.eval import rag_v4718_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility as v4718
 from ai.eval import rag_v500_v4_closeout_and_v5_gate_plan as v500
+from ai.eval import rag_v510_official_eval_gate_scaffolding as v510
+from ai.eval import rag_v520_xlsx_residual_candidate_only_retrieval_engineering as v520
+from ai.eval import rag_v530_pdf_text_residual_retrieval_evidence_hardening as v530
 
 
-DEFAULT_RUN_KEY = "v5_0"
+DEFAULT_RUN_KEY = "v5_3"
 SAFE_LEGACY_CHECK_ALIASES = dict(v478.SAFE_LEGACY_CHECK_ALIASES)
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
@@ -585,6 +588,27 @@ def check_run(key: str) -> dict[str, Any]:
         )
         v500.check_report(report)
         return report
+    if resolved_key == "v5_1" and not (ROOT / v510.SHORT_REPORT_PATH).exists():
+        report = v510.build_report(
+            root=ROOT,
+            source_report=check_run("v5_0"),
+        )
+        v510.check_report(report)
+        return report
+    if resolved_key == "v5_2" and not (ROOT / v520.SHORT_REPORT_PATH).exists():
+        report = v520.build_report(
+            root=ROOT,
+            source_report=check_run("v5_1"),
+        )
+        v520.check_report(report)
+        return report
+    if resolved_key == "v5_3" and not (ROOT / v530.SHORT_REPORT_PATH).exists():
+        report = v530.build_report(
+            root=ROOT,
+            source_report=check_run("v5_2"),
+        )
+        v530.check_report(report)
+        return report
     report = registry.load_report(resolved_key, root=ROOT)
     if resolved_key == "v4_7_5":
         v475.check_report(report)
@@ -616,6 +640,12 @@ def check_run(key: str) -> dict[str, Any]:
         v4718.check_report(report)
     if resolved_key == "v5_0":
         v500.check_report(report)
+    if resolved_key == "v5_1":
+        v510.check_report(report)
+    if resolved_key == "v5_2":
+        v520.check_report(report)
+    if resolved_key == "v5_3":
+        v530.check_report(report)
     return report
 
 
@@ -625,7 +655,7 @@ def build_parser() -> argparse.ArgumentParser:
         "run_key",
         nargs="?",
         default=DEFAULT_RUN_KEY,
-        help="logical key such as v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
+        help="logical key such as v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
     )
     parser.add_argument("--check", action="store_true", help="validate an existing report")
     parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and sync docs/status")
@@ -726,8 +756,27 @@ def main(argv: Sequence[str] | None = None) -> int:
             v500.check_report(report)
             v500.update_docs(ROOT, report)
             v500.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v5_1":
+            report = v510.build_report(root=ROOT, source_report=check_run("v5_0"))
+            report, artifact_hashes = v510.write_report_bundle(ROOT, report)
+            v510.check_report(report)
+            v510.update_docs(ROOT, report)
+            v510.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v5_2":
+            report = v520.build_report(root=ROOT, source_report=check_run("v5_1"))
+            report, artifact_hashes = v520.write_report_bundle(ROOT, report)
+            v520.check_report(report)
+            v520.update_docs(ROOT, report)
+            v520.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v5_3":
+            report = v530.build_report(root=ROOT, source_report=check_run("v5_2"))
+            v530.check_report(report)
+            report, artifact_hashes = v530.write_report_bundle(ROOT, report)
+            v530.check_report(report)
+            v530.update_docs(ROOT, report)
+            v530.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         else:
-            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, and v5_0")
+            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, v5_0, v5_1, v5_2, and v5_3")
     else:
         report = check_run(run_key)
     if args.check or not args.write:
@@ -743,6 +792,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "current_resolves_to": report.get("current_resolves_to") or counters.get("current_resolves_to"),
                 "v4_closeout_basis": report.get("v4_closeout_basis") or counters.get("v4_closeout_basis"),
                 "official_metric_input_rows": report.get("official_metric_input_rows"),
+                "official_metric_input_rows_created": report.get("official_metric_input_rows_created")
+                or counters.get("official_metric_input_rows_created"),
+                "official_eval_user_gate_ready": report.get("official_eval_user_gate_ready"),
+                "official_eval_approval_artifact_found": report.get("official_eval_approval_artifact_found"),
+                "blocked_by_user_owned_gold_qrels_or_denominator_gate": report.get(
+                    "official_eval_gate_scaffold", {}
+                ).get("blocked_by_user_owned_gold_qrels_or_denominator_gate"),
+                "fine_tuning_dataset_export_created": report.get("fine_tuning_dataset_export_created")
+                if "fine_tuning_dataset_export_created" in report
+                else counters.get("fine_tuning_dataset_export_created"),
+                "residual_overlap_counts_available": report.get("xlsx_residual_basis", {}).get(
+                    "residual_overlap_counts_available"
+                ),
+                "safe_repair_applied": report.get("safe_repair_applied"),
+                "safe_gain_claimed": report.get("safe_gain_claimed"),
                 "safe_legacy_alias": report.get("safe_legacy_alias"),
                 "write_supported": report.get("write_supported"),
                 "evidence_window_sufficient_proxy_count": after.get("evidence_window_sufficient_proxy_count"),
@@ -829,6 +893,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "xlsx_table_axis_gain_rate_per_baseline_miss": counters.get(
                     "xlsx_table_axis_gain_rate_per_baseline_miss"
                 ),
+                "text_v4_7_18_combined_target_miss_count": counters.get(
+                    "text_v4_7_18_combined_target_miss_count"
+                ),
+                "pdf_v4_7_18_combined_target_miss_count": counters.get(
+                    "pdf_v4_7_18_combined_target_miss_count"
+                ),
+                "pdf_text_residual_aggregate_count": counters.get("pdf_text_residual_aggregate_count"),
+                "overlay_90_text_target_not_in_topk_total": counters.get("overlay_90_text_target_not_in_topk_total"),
+                "overlay_90_pdf_target_not_in_topk_total": counters.get("overlay_90_pdf_target_not_in_topk_total"),
+                "text_candidate_budget_exhaustion_count": counters.get("text_candidate_budget_exhaustion_count"),
+                "pdf_candidate_overlay_attempted_row_count": counters.get("pdf_candidate_overlay_attempted_row_count"),
                 "claim_support_not_evaluated_due_to_no_generation_count": counters.get(
                     "claim_support_not_evaluated_due_to_no_generation_count"
                 ),

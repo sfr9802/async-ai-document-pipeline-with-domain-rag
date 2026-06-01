@@ -147,6 +147,24 @@ V5_0_SHORT_KEY = "v5_0"
 V5_0_SHORT_RUN_ID = "v5_0_v4_closeout_and_v5_gate_plan"
 V5_0_LONG_RUN_ID = "official_answer_citation_agentic_loop_run_v5_0_v4_closeout_and_v5_gate_plan_nonprod"
 V5_0_STATUS = "V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY"
+V5_1_SHORT_KEY = "v5_1"
+V5_1_SHORT_RUN_ID = "v5_1_official_eval_gate_scaffolding"
+V5_1_LONG_RUN_ID = "official_answer_citation_agentic_loop_run_v5_1_official_eval_gate_scaffolding_nonprod"
+V5_1_STATUS = "V5_1_OFFICIAL_EVAL_GATE_SCAFFOLDING_DIAGNOSTIC_NONPROD_READY"
+V5_2_SHORT_KEY = "v5_2"
+V5_2_SHORT_RUN_ID = "v5_2_xlsx_residual_candidate_only_retrieval_engineering"
+V5_2_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v5_2_"
+    "xlsx_residual_candidate_only_retrieval_engineering_nonprod"
+)
+V5_2_STATUS = "V5_2_XLSX_RESIDUAL_CANDIDATE_ONLY_RETRIEVAL_ENGINEERING_DIAGNOSTIC_NONPROD_READY"
+V5_3_SHORT_KEY = "v5_3"
+V5_3_SHORT_RUN_ID = "v5_3_pdf_text_residual_retrieval_evidence_hardening"
+V5_3_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v5_3_"
+    "pdf_text_residual_retrieval_evidence_hardening_nonprod"
+)
+V5_3_STATUS = "V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY"
 
 
 class ReportResolutionError(RuntimeError):
@@ -355,6 +373,33 @@ RUNS: dict[str, RunMetadata] = {
         accepted_aliases=(V5_0_SHORT_RUN_ID, V5_0_LONG_RUN_ID),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
     ),
+    V5_1_SHORT_KEY: RunMetadata(
+        logical_key=V5_1_SHORT_KEY,
+        short_run_id=V5_1_SHORT_RUN_ID,
+        canonical_long_run_id=V5_1_LONG_RUN_ID,
+        status=V5_1_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V5_1_SHORT_KEY / "report.json",
+        accepted_aliases=(V5_1_SHORT_RUN_ID, V5_1_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
+    V5_2_SHORT_KEY: RunMetadata(
+        logical_key=V5_2_SHORT_KEY,
+        short_run_id=V5_2_SHORT_RUN_ID,
+        canonical_long_run_id=V5_2_LONG_RUN_ID,
+        status=V5_2_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V5_2_SHORT_KEY / "report.json",
+        accepted_aliases=(V5_2_SHORT_RUN_ID, V5_2_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
+    V5_3_SHORT_KEY: RunMetadata(
+        logical_key=V5_3_SHORT_KEY,
+        short_run_id=V5_3_SHORT_RUN_ID,
+        canonical_long_run_id=V5_3_LONG_RUN_ID,
+        status=V5_3_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V5_3_SHORT_KEY / "report.json",
+        accepted_aliases=(V5_3_SHORT_RUN_ID, V5_3_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
 }
 
 ALIAS_TO_KEY: dict[str, str] = {
@@ -362,7 +407,7 @@ ALIAS_TO_KEY: dict[str, str] = {
     for key, metadata in RUNS.items()
     for alias in (key, *metadata.accepted_aliases)
 }
-ALIAS_TO_KEY["current"] = V5_0_SHORT_KEY
+ALIAS_TO_KEY["current"] = V5_3_SHORT_KEY
 
 
 def _repo_root(root: Path | str | None = None) -> Path:

@@ -489,7 +489,6 @@ def update_docs(root: Path, report: Mapping[str, Any]) -> None:
         end_marker=f"<!-- {SHORT_RUN_ID}:progress-entry:end -->",
         block=progress_block,
     )
-    progress_text = re.sub(r"Overall status: `[^`]+`;", f"Overall status: `{STATUS}`;", progress_text, count=1)
     progress_text = progress_text.replace(
         "`current` resolves to `v4_7_18`:",
         "`v4_7_18` remains the explicit v4 closeout basis; historical current before v5:",

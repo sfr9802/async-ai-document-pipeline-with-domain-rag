@@ -251,6 +251,229 @@ def test_v5_0_closeout_gate_plan_does_not_mutate_protected_or_promote_surfaces()
         assert event[key] is False, key
 
 
+def test_v5_1_official_eval_gate_scaffold_does_not_mutate_protected_or_export_training_surfaces():
+    import ai.scripts.rag_eval as runner
+
+    report = runner.check_run("v5_1")
+    generated_text = json.dumps(report, ensure_ascii=False)
+
+    for protected_path in (
+        "ai/eval/eval_queries",
+        "ai/eval/source_registry",
+        "ai/eval/indexes",
+        "ai/eval/silver",
+    ):
+        unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    assert report["diagnostic_only"] is True
+    assert report["non_production"] is True
+    assert report["official_eval_scaffold_created"] is True
+    assert report["official_eval_user_gate_ready"] is False
+    assert report["official_eval_approval_artifact_found"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["official_metric_input_rows_created"] == 0
+    assert report["official_metric_input_rows_scope"] == "v5_1_scaffold_created_rows_only"
+    assert report["protected_namespaces_touched"] == []
+    for key in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "denominator_mutation",
+        "official_qrels_created",
+        "official_relevance_labels_created",
+        "official_answerability_labels_created",
+        "official_gold_labels_created",
+        "training_dataset_created",
+        "training_manifest_jsonl_created",
+        "training_job_created",
+        "fine_tuning_dataset_export_created",
+        "fine_tuning",
+        "fine_tuning_started",
+        "fine_tuning_executed",
+        "ft_a_execution",
+        "promotion_evidence",
+        "product_success_evidence_allowed",
+        "live_db_index_cache_readiness",
+        "production_db_mutated",
+        "source_registry_mutated",
+        "silver_mutation",
+        "index_rebuilt",
+        "cache_mutated",
+    ):
+        assert report[key] is False, key
+    for token in (
+        "prompt_manifest",
+        "training_manifest.jsonl",
+        "train_preview_redacted.jsonl",
+        "validation_preview_redacted.jsonl",
+        "raw_llm_response",
+        "metric_input_v1.json",
+    ):
+        assert token not in generated_text
+
+
+def test_v5_2_xlsx_residual_taxonomy_does_not_mutate_protected_or_export_training_surfaces():
+    import ai.scripts.rag_eval as runner
+
+    report = runner.check_run("v5_2")
+    generated_text = json.dumps(report, ensure_ascii=False)
+
+    for protected_path in (
+        "ai/eval/eval_queries",
+        "ai/eval/source_registry",
+        "ai/eval/indexes",
+        "ai/eval/silver",
+    ):
+        unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    assert report["diagnostic_only"] is True
+    assert report["non_production"] is True
+    assert report["xlsx_residual_engineering"] is True
+    assert report["xlsx_residual_basis"]["residual_overlap_counts_available"] is False
+    assert report["xlsx_residual_basis"]["row_level_residual_mask_created"] is False
+    assert report["safe_repair_applied"] is False
+    assert report["safe_gain_claimed"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["official_metric_input_rows_created"] == 0
+    assert report["protected_namespaces_touched"] == []
+    for key in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "denominator_mutation",
+        "official_qrels_created",
+        "official_relevance_labels_created",
+        "official_answerability_labels_created",
+        "official_gold_labels_created",
+        "training_dataset_created",
+        "training_manifest_jsonl_created",
+        "training_job_created",
+        "fine_tuning_dataset_export_created",
+        "fine_tuning",
+        "fine_tuning_started",
+        "fine_tuning_executed",
+        "ft_a_execution",
+        "promotion_evidence",
+        "product_success_evidence_allowed",
+        "live_db_index_cache_readiness",
+        "production_db_mutated",
+        "source_registry_mutated",
+        "silver_mutation",
+        "index_rebuilt",
+        "cache_mutated",
+        "raw_xlsx_query_time_parsing",
+        "direct_normalized_answer_value_matching",
+        "formula_evaluation",
+        "formula_text_exposure",
+        "workbook_or_source_title_shortcut_used",
+        "target_or_gold_locator_used_for_candidate_construction",
+        "query_id_case_id_hack_used",
+    ):
+        assert report[key] is False, key
+    for token in (
+        "prompt_manifest",
+        "training_manifest.jsonl",
+        "train_preview_redacted.jsonl",
+        "validation_preview_redacted.jsonl",
+        "raw_llm_response",
+        "metric_input_v1.json",
+        "per_query_candidates.jsonl",
+    ):
+        assert token not in generated_text
+
+
+def test_v5_3_pdf_text_residual_hardening_does_not_mutate_protected_or_export_training_surfaces():
+    import ai.scripts.rag_eval as runner
+
+    report = runner.check_run("v5_3")
+    generated_text = json.dumps(report, ensure_ascii=False)
+
+    for protected_path in (
+        "ai/eval/eval_queries",
+        "ai/eval/source_registry",
+        "ai/eval/indexes",
+        "ai/eval/silver",
+        "ai/eval/gold",
+        "ai/eval/qrels",
+        "ai/eval/denominator",
+    ):
+        unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    assert report["diagnostic_only"] is True
+    assert report["non_production"] is True
+    assert report["pdf_text_residual_hardening"] is True
+    assert report["pdf_residual_taxonomy"]["aggregate_residual_count"] == 60
+    assert report["text_residual_taxonomy"]["aggregate_residual_count"] == 118
+    assert report["pdf_residual_taxonomy"]["candidate_state_counts_available"] is False
+    assert report["unavailable_metrics"]["per_query_candidates"] == "not_written"
+    assert report["safe_repair_applied"] is False
+    assert report["safe_gain_claimed"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["official_metric_input_rows_created"] == 0
+    assert report["protected_namespaces_touched"] == []
+    for key in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "denominator_mutation",
+        "official_qrels_created",
+        "official_relevance_labels_created",
+        "official_answerability_labels_created",
+        "official_gold_labels_created",
+        "training_dataset_created",
+        "training_manifest_jsonl_created",
+        "training_job_created",
+        "fine_tuning_dataset_export_created",
+        "fine_tuning",
+        "fine_tuning_started",
+        "fine_tuning_executed",
+        "ft_a_execution",
+        "promotion_evidence",
+        "product_success_evidence_allowed",
+        "live_db_index_cache_readiness",
+        "production_db_mutated",
+        "source_registry_mutated",
+        "silver_mutation",
+        "index_rebuilt",
+        "cache_mutated",
+        "raw_pdf_query_time_parsing",
+        "broad_pdf_scan_or_full_page_dump",
+        "expected_or_supporting_gold_text_used",
+        "target_or_gold_locator_used_for_candidate_construction",
+        "query_id_case_id_hack_used",
+    ):
+        assert report[key] is False, key
+    for token in (
+        "prompt_manifest",
+        "training_manifest.jsonl",
+        "train_preview_redacted.jsonl",
+        "validation_preview_redacted.jsonl",
+        "raw_llm_response",
+        "metric_input_v1.json",
+        "per_query_candidates.jsonl",
+        "full_page_dump.json",
+    ):
+        assert token not in generated_text
+
+
 def test_residual_audit_does_not_mutate_protected_artifacts():
     for protected_path in STRICT_PROTECTED_PATHS:
         unstaged = subprocess.run(

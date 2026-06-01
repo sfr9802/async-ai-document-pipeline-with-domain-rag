@@ -17,7 +17,7 @@ python scripts/operational/e2e_smoke.py
 
 | Script | Role |
 |---|---|
-| `rag_eval.py` | Stable short-key dispatcher for current RAG diagnostic checks and writes; `current` resolves to `v5_0`, `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` remains explicit as the frozen v4 closeout basis, `v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit` remains explicit, `v4_7_16_target_recall_repair_prototype` remains explicit, runner modules v4_7_13-v4_7_18 remain tracked and not ignored, and all official/gold/qrels/labels/denominator/training/fine-tuning/FT-A/promotion/product-success/live-readiness gates stay closed. |
+| `rag_eval.py` | Stable short-key dispatcher for current RAG diagnostic checks and writes; `current` resolves to `v5_3`, `v5_2_xlsx_residual_candidate_only_retrieval_engineering` remains explicit, `v5_1_official_eval_gate_scaffolding` remains explicit, `v5_0_v4_closeout_and_v5_gate_plan` remains explicit, `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` remains explicit as the frozen v4 closeout basis, and all official/gold/qrels/labels/denominator/training/fine-tuning/FT-A/promotion/product-success/live-readiness gates stay closed. |
 | `rag_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod.py` | Persists the v3_22 XLSX display metadata contract into SourceAtom-owned runtime-adjacent fields. |
 | `rag_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod.py` | Packages family-separated XLSX table/range/cell locator diagnostics from seen-reference v3 surfaces. |
 | `rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py` | Keeps PDF file identity confidence separate from answer-ready evidence-window diagnostics. |
@@ -45,9 +45,11 @@ python scripts/operational/e2e_smoke.py
 | `rag_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod.py` | Applies the user-reviewed v4_7_2 Korean query candidate CSV as a pass/exclusion decision ledger, interpreting `미검수` as pass per user clarification when `제외사유` is blank, while keeping official metrics, gold/qrels, labels, FT-A execution, fine-tuning, training data, promotion evidence, and live readiness closed. |
 | `rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py` | Replays only the v4_7_3 user-passed PDF survivor candidates through retrieval/evidence/answer-quality proxy diagnostics, using v4_7_2 bounded EvidenceBundle previews and optional local LLM generation while keeping official metrics, gold/qrels, labels, FT-A execution, fine-tuning, training data, promotion evidence, and live readiness closed. |
 
-v4 scripts remain diagnostic/non-production and write one ignored `report.json`
-per run. Actual fine-tuning remains closed until real disjoint splits and
-user-owned gold/qrels/denominator policy exist.
+v4 scripts remain diagnostic/non-production and write a primary ignored
+`report.json`; some runs also write contract-required ignored JSON/JSONL
+sidecars listed in their status/report artifact maps. Actual fine-tuning
+remains closed until real disjoint splits and user-owned gold/qrels/denominator
+policy exist.
 <!-- v4_diagnostic_runtime_locator_and_finetune_readiness_inventory:end -->
 
 ## Categories
@@ -104,7 +106,7 @@ XLSX display/range helpers, and FastAPI-safe service boundaries live in
 
 | Bucket | Current classification |
 |---|---|
-| `required_by_current_tests` | `status.jsonl`, current v3/v4 `report.json` artifacts, and v3_9_2 through v3_22 scripts. |
+| `required_by_current_tests` | `status.jsonl`, the current v5_3 report, the explicit v5_2, v5_1, and v5_0 basis reports, the frozen v4_7_18 source report, and v3_9_2 through v3_22 scripts. |
 | `required_by_docs_or_status_sync` | v3_22 `report.json` and the rolling docs/status entries that anchor Phase 1 closure. |
 | `ignored_diagnostic_artifact` | RAG ingestion `report.json`, `status.jsonl`, and optional review packets under `eval/reports/rag-ingestion/`. |
 | `external_archive_candidate` | Older ignored quality/perf payloads not read by current tests, after exact-stem `rg` and artifact-required gates. |

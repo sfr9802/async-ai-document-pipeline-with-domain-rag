@@ -1,7 +1,35 @@
+<!-- v5_3_pdf_text_residual_retrieval_evidence_hardening:triage-entry:start -->
+### v5_3 PDF/TEXT residual retrieval/evidence hardening
+
+- Residual basis: frozen v4_7_18 aggregate TEXT misses=118 and PDF misses=60; v5_3 does not create a row-level residual mask.
+- Overlay sample: v4_7_16 overlay-90 gives TEXT target_not_in_topk=28/30 and PDF target_not_in_topk=12/30; this is sample triage, not a full-denominator bucket claim.
+- Safe action: keep PDF/TEXT candidate/evidence hardening diagnostic-only; reject raw PDF query-time parsing, full-page dumps, expected/supporting text, locator shortcuts, and row-specific thresholds.
+- User gate reached: future official-metric dry-run remains blocked until explicit user-owned gold/qrels, expected/supporting evidence, relevance, answerability, denominator, and promotion-policy approvals exist.
+- Fail-closed status: v5_3-created official_metric_input_rows=0, official_metric_input_rows_created=0, existing registry-backed official rows remain read-only and are not opened for v5_3 scoring, training_dataset_created=false, fine_tuning_dataset_export_created=false, protected_namespaces_touched=[].
+<!-- v5_3_pdf_text_residual_retrieval_evidence_hardening:triage-entry:end -->
+
+<!-- v5_2_xlsx_residual_candidate_only_retrieval_engineering:triage-entry:start -->
+### v5_2 XLSX residual candidate-state taxonomy
+
+- Residual basis: frozen v4_7_18 aggregate XLSX result has 299 misses. v5_2 does not create a row-level residual mask.
+- Candidate-state buckets: zero_candidate_structural_gap=78, budget_exhausted_diversity_gap=109, bounded_candidate_rank_gap_upper_bound=138, unclassified_residual_overlap_aggregate=299.
+- Safe action: future work may probe already-materialized structural/header/axis aliases or deterministic candidate diversity, but v5_2 applies no repair and claims no safe gain.
+- Fail-closed status: official_metric_input_rows=0, official_metric_input_rows_created=0, training_dataset_created=false, fine_tuning_dataset_export_created=false, protected_namespaces_touched=[].
+<!-- v5_2_xlsx_residual_candidate_only_retrieval_engineering:triage-entry:end -->
+
+<!-- v5_1_official_eval_gate_scaffolding:triage-entry:start -->
+### v5_1 official eval gate scaffolding
+
+- User-owned approval artifacts: gold set creation/review, expected answer, expected/supporting evidence, relevance label, answerability label, official denominator policy, gold/qrels policy, and promotion policy. All remain `missing_required_external_input`; Codex may not infer them.
+- Codex-owned validator-name placeholders: approval-artifact schema, qrels/gold consistency, expected evidence shape, relevance/answerability labels, denominator policy, protected namespace diff, official-row builder-disabled guard, and training export guard.
+- FT readiness compatibility: schema-compatible only, no dataset export. Future examples remain blocked until official eval and user-owned approval gates exist.
+- Fail-closed status: official_metric_input_rows=0, official_metric_input_rows_created=0, official_metric_input_rows_scope=v5_1_scaffold_created_rows_only, blocked_by_user_owned_gold_qrels_or_denominator_gate=true, protected_namespaces_touched=[].
+<!-- v5_1_official_eval_gate_scaffolding:triage-entry:end -->
+
 <!-- v5_0_v4_closeout_and_v5_gate_plan:triage-entry:start -->
 ### v5_0 v4 closeout and v5 gate plan
 
-- Basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` freezes v4 as diagnostic-only source-first, candidate-only, lineage-reproducible work. `current` resolves to `v5_0`; `v4_7_18` remains explicit and checkable.
+- Basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` freezes v4 as diagnostic-only source-first, candidate-only, lineage-reproducible work. `v5_0` remains explicit after v5_1; `v4_7_18` remains explicit and checkable.
 - User-owned decisions: golden set creation/review, expected answer and expected/supporting evidence judgment, relevance and answerability labels, gold policy, official denominator policy, and promotion policy.
 - Codex-owned work: implementation, test, report, path, indexing-scope, protected-surface, and failure-taxonomy work only; ambiguous non-gold choices stay fail-closed and diagnostic-only.
 - XLSX residual backlog / engineering backlog: XLSX 299 misses, 78 zero-candidate rows, and 109 budget-exhausted rows remain visible; `accept_materialized_axis_value_overlay_diagnostic_only` remains the frozen v4_7_18 repair decision.

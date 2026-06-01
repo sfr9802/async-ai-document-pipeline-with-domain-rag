@@ -1,10 +1,10 @@
-<!-- v5_0_summary_start -->
+<!-- v5_3_summary_start -->
 ## Current RAG Diagnostic Status
-Current RAG status: `V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY`.
-`current` resolves to `v5_0`: diagnostic-only v4 closeout and v5 gate planning. `v4_7_18` remains the frozen v4 closeout basis at `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` and remains directly checkable. v4 is closed as diagnostic-only source-first/candidate-only/lineage-reproducibility work, not as official evaluation. TEXT 232/350 hit, PDF 265/325 hit, XLSX 26/325 hit; XLSX residual backlog remains 299 misses, 78 zero-candidate rows, and 109 budget-exhausted rows.
-Hard boundary: diagnostic-only, non-production, not official metric, not gold/qrels/labels, not denominator, not training/fine-tuning/FT-A, not promotion evidence, not product-success evidence, and not live readiness. Official opening still requires gold/qrels/expected-evidence/relevance/answerability/denominator/promotion decisions. official_metric_input_rows=0, fine_tuning_executed=false, and protected_namespaces_touched=[].
-Canonical rolling docs remain `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md`; production promotion remains closed. Historical compatibility breadcrumbs retained for lower-section status-sync context, not current handoff: v4_7 remains pre-official; prior v4_7 cleanup keys remain explicit; supersedes the abstract v4_7_1 Korean review packet with hydrated rows 204, PDF 100, XLSX 104; v4_7_2 supersedes the abstract v4_7_1 packet with non-empty `질의문` 204 in `review_packet_ko_hydrated.xlsx`; `## Korean human review packet`; The previous v4_7_1 Korean review packet was abstract; actual Korean query candidates; User-owned fields remain blank/default; v4_7_3 applies the user-reviewed Korean query candidate CSV and v4_7_3 applies the user-reviewed CSV decisions (`미검수=통과`), not official metric and not gold/qrels; PDF survivor 58 and v4_7_4 replays only the 58 user-passed PDF survivor candidates.
-<!-- v5_0_summary_end -->
+Current RAG status: `V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY`.
+`current` resolves to `v5_3`: diagnostic-only PDF/TEXT residual retrieval/evidence hardening. `v5_2` remains the XLSX residual candidate-state taxonomy, `v5_1` remains the official-eval gate scaffold, `v5_0` remains the v4 closeout and v5 gate-plan basis, and `v4_7_18` remains the frozen v4 closeout basis.
+v5_3 reports aggregate residuals only: TEXT 118 misses and PDF 60 misses. Separately, v4_7_16 overlay-90 sample taxonomy shows TEXT target_not_in_topk=28/30 and PDF target_not_in_topk=12/30. It does not compute row-level residual overlap, apply a repair, or claim a gain.
+Hard boundary: v5_3-created official_metric_input_rows=0, official_metric_input_rows_created=0; existing registry-backed official rows remain read-only and are not opened for v5_3 scoring; no gold/qrels/labels, no expected/supporting evidence or denominator mutation, no training dataset, no fine-tuning dataset export, no fine-tuning job, no promotion evidence, no product-success evidence, and no live-readiness claim.
+<!-- v5_3_summary_end -->
 
 ## 한눈에 보기
 
