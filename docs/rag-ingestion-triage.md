@@ -1,3 +1,12 @@
+<!-- v5_4_user_owned_official_eval_approval_packet:triage-entry:start -->
+### v5_4 user-owned official-eval approval packet
+
+- Scope: materialize only the user-owned approval schema, policy template, and 29-row review packet over the existing registry-backed official snapshot.
+- Do not fill expected answers, supporting evidence, relevance, answerability, denominator, gold/qrels, promotion, reviewer, or reviewed_at decisions; those remain user-owned and pending_user_review.
+- Machine context: `machine_*` columns are non-final review hints copied from existing source rows and are not official metric inputs, qrels, labels, expected answers, supporting evidence approvals, or denominator rows.
+- Closed gates: official_metric_dry_run_opened=false, official_metric_input_rows=0, official_metric_input_rows_created=0, training_dataset_created=false, fine_tuning_dataset_export_created=false, promotion_evidence=false, protected_namespaces_touched=[].
+<!-- v5_4_user_owned_official_eval_approval_packet:triage-entry:end -->
+
 <!-- v5_3_pdf_text_residual_retrieval_evidence_hardening:triage-entry:start -->
 ### v5_3 PDF/TEXT residual retrieval/evidence hardening
 

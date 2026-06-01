@@ -165,6 +165,13 @@ V5_3_LONG_RUN_ID = (
     "pdf_text_residual_retrieval_evidence_hardening_nonprod"
 )
 V5_3_STATUS = "V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY"
+V5_4_SHORT_KEY = "v5_4"
+V5_4_SHORT_RUN_ID = "v5_4_user_owned_official_eval_approval_packet"
+V5_4_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v5_4_"
+    "user_owned_official_eval_approval_packet_nonprod"
+)
+V5_4_STATUS = "V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY"
 
 
 class ReportResolutionError(RuntimeError):
@@ -400,6 +407,15 @@ RUNS: dict[str, RunMetadata] = {
         accepted_aliases=(V5_3_SHORT_RUN_ID, V5_3_LONG_RUN_ID),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
     ),
+    V5_4_SHORT_KEY: RunMetadata(
+        logical_key=V5_4_SHORT_KEY,
+        short_run_id=V5_4_SHORT_RUN_ID,
+        canonical_long_run_id=V5_4_LONG_RUN_ID,
+        status=V5_4_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V5_4_SHORT_KEY / "report.json",
+        accepted_aliases=(V5_4_SHORT_RUN_ID, V5_4_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
 }
 
 ALIAS_TO_KEY: dict[str, str] = {
@@ -407,7 +423,7 @@ ALIAS_TO_KEY: dict[str, str] = {
     for key, metadata in RUNS.items()
     for alias in (key, *metadata.accepted_aliases)
 }
-ALIAS_TO_KEY["current"] = V5_3_SHORT_KEY
+ALIAS_TO_KEY["current"] = V5_4_SHORT_KEY
 
 
 def _repo_root(root: Path | str | None = None) -> Path:

@@ -1,3 +1,33 @@
+<!-- v5_4_user_owned_official_eval_approval_packet:measurements-entry:start -->
+## v5_4 user-owned official-eval approval packet
+
+- Run key: `v5_4_user_owned_official_eval_approval_packet`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`
+- Interpretation: packet-only user approval materialization. No official metric dry-run, no official metric rows, and no user-owned final fields filled by Codex.
+
+| counter | value |
+| --- | --- |
+| status | V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY |
+| source_run_id | v5_3_pdf_text_residual_retrieval_evidence_hardening |
+| current_resolves_to | v5_4 |
+| review_surface_source | existing_registry_backed_29_official_snapshot |
+| user_approval_packet_created | true |
+| user_policy_template_created | true |
+| user_review_packet_created | true |
+| user_review_packet_xlsx_created | true |
+| user_review_packet_row_count | 29 |
+| user_owned_final_fields_filled_by_codex | false |
+| official_metric_input_rows | 0 |
+| official_metric_input_rows_created | 0 |
+| official_metric_dry_run_opened | false |
+| official_eval_user_gate_ready | false |
+| training_dataset_created | false |
+| fine_tuning_dataset_export_created | false |
+| promotion_evidence | false |
+| live_db_index_cache_readiness | false |
+| protected_namespaces_touched | [] |
+<!-- v5_4_user_owned_official_eval_approval_packet:measurements-entry:end -->
+
 <!-- v5_3_pdf_text_residual_retrieval_evidence_hardening:measurements-entry:start -->
 ## v5_3 PDF/TEXT residual retrieval/evidence hardening
 

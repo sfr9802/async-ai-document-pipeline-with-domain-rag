@@ -1,10 +1,10 @@
-<!-- v5_3_summary_start -->
+<!-- v5_4_summary_start -->
 ## Current RAG Diagnostic Status
-Current RAG status: `V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY`.
-`current` resolves to `v5_3`: diagnostic-only PDF/TEXT residual retrieval/evidence hardening. `v5_2` remains the XLSX residual candidate-state taxonomy, `v5_1` remains the official-eval gate scaffold, `v5_0` remains the v4 closeout and v5 gate-plan basis, and `v4_7_18` remains the frozen v4 closeout basis.
-v5_3 reports aggregate residuals only: TEXT 118 misses and PDF 60 misses. Separately, v4_7_16 overlay-90 sample taxonomy shows TEXT target_not_in_topk=28/30 and PDF target_not_in_topk=12/30. It does not compute row-level residual overlap, apply a repair, or claim a gain.
-Hard boundary: v5_3-created official_metric_input_rows=0, official_metric_input_rows_created=0; existing registry-backed official rows remain read-only and are not opened for v5_3 scoring; no gold/qrels/labels, no expected/supporting evidence or denominator mutation, no training dataset, no fine-tuning dataset export, no fine-tuning job, no promotion evidence, no product-success evidence, and no live-readiness claim.
-<!-- v5_3_summary_end -->
+Current RAG status: `V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY`.
+`current` resolves to `v5_4`: a packet-only user-owned official-eval approval materialization run. `v5_3` remains the PDF/TEXT residual retrieval/evidence hardening basis, `v5_2` remains the XLSX residual candidate-state taxonomy, `v5_1` remains the official-eval gate scaffold, `v5_0` remains the v4 closeout and v5 gate-plan basis, and `v4_7_18` remains the frozen v4 closeout basis.
+v5_4 writes `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, and `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`. All final user-owned fields remain blank, null, or pending_user_review; machine_* fields are non-final hints only.
+Hard boundary: official_metric_dry_run_opened=false, official_metric_input_rows=0, official_metric_input_rows_created=0; no gold/qrels/labels, no expected/supporting evidence or denominator mutation, no training dataset, no fine-tuning dataset export, no fine-tuning job, no promotion evidence, no product-success evidence, and no live-readiness claim.
+<!-- v5_4_summary_end -->
 
 ## 한눈에 보기
 

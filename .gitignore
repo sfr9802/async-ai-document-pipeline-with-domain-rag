@@ -143,6 +143,7 @@ archive/
 !docs/rag-ingestion-triage.md
 ai/eval/reports/rag-ingestion/**/*.json
 ai/eval/reports/rag-ingestion/**/*.jsonl
+ai/eval/reports/rag-ingestion/**/*.csv
 ai/eval/reports/rag-ingestion/**/*.xlsx
 **/datasets/
 ai/eval/artifacts/

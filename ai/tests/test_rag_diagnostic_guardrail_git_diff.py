@@ -474,6 +474,91 @@ def test_v5_3_pdf_text_residual_hardening_does_not_mutate_protected_or_export_tr
         assert token not in generated_text
 
 
+def test_v5_4_user_owned_approval_packet_does_not_mutate_protected_or_open_official_surfaces():
+    import ai.scripts.rag_eval as runner
+
+    report = runner.check_run("v5_4")
+    generated_text = json.dumps(report, ensure_ascii=False)
+
+    for protected_path in (
+        "ai/eval/eval_queries",
+        "ai/eval/source_registry",
+        "ai/eval/indexes",
+        "ai/eval/silver",
+        "ai/eval/gold",
+        "ai/eval/qrels",
+        "ai/eval/denominator",
+    ):
+        unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    assert report["diagnostic_only"] is True
+    assert report["non_production"] is True
+    assert report["approval_packet_only"] is True
+    assert report["review_surface_source"] == "existing_registry_backed_29_official_snapshot"
+    assert report["review_packet_row_count"] == 29
+    assert report["user_approval_packet_created"] is True
+    assert report["user_policy_template_created"] is True
+    assert report["user_review_packet_created"] is True
+    assert report["user_owned_final_fields_filled_by_codex"] is False
+    assert report["official_metric"] is False
+    assert report["official_metric_dry_run_opened"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["official_metric_input_rows_created"] == 0
+    assert report["official_eval_user_gate_ready"] is False
+    assert report["protected_namespaces_touched"] == []
+    for key in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "denominator_mutation",
+        "official_qrels_created",
+        "official_relevance_labels_created",
+        "official_answerability_labels_created",
+        "official_gold_labels_created",
+        "training_dataset_created",
+        "training_manifest_jsonl_created",
+        "training_job_created",
+        "fine_tuning_dataset_export_created",
+        "fine_tuning",
+        "fine_tuning_started",
+        "fine_tuning_executed",
+        "ft_a_execution",
+        "promotion_evidence",
+        "product_success_evidence_allowed",
+        "live_db_index_cache_readiness",
+        "production_db_mutated",
+        "source_registry_mutated",
+        "silver_mutation",
+        "index_rebuilt",
+        "cache_mutated",
+        "raw_prompt_payload_written",
+        "raw_response_payload_written",
+    ):
+        assert report[key] is False, key
+    for row in report["user_review_packet_preview"]:
+        assert row["expected_answer_ko"] is None
+        assert row["supporting_evidence_ids"] == []
+        assert row["gold_status"] == "pending_user_review"
+        assert row["machine_hint_status"] == "non_final_context_hint"
+        assert row["machine_packet_not_official_metric_input"] is True
+    for token in (
+        "prompt_manifest",
+        "training_manifest.jsonl",
+        "train_preview_redacted.jsonl",
+        "validation_preview_redacted.jsonl",
+        "raw_llm_response",
+        "metric_input_v1.json",
+        "per_query_candidates.jsonl",
+        "official_metric_dry_run_response",
+    ):
+        assert token not in generated_text
+
+
 def test_residual_audit_does_not_mutate_protected_artifacts():
     for protected_path in STRICT_PROTECTED_PATHS:
         unstaged = subprocess.run(

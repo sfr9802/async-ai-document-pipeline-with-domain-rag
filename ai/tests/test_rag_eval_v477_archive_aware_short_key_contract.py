@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import re
@@ -136,6 +137,32 @@ V5_3_LONG_RUN_ID = (
 )
 V5_3_STATUS = "V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY"
 V5_3_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_3" / "report.json"
+V5_4_SHORT_KEY = "v5_4"
+V5_4_SHORT_RUN_ID = "v5_4_user_owned_official_eval_approval_packet"
+V5_4_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v5_4_"
+    "user_owned_official_eval_approval_packet_nonprod"
+)
+V5_4_STATUS = "V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY"
+V5_4_RUN_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_4"
+V5_4_REPORT = V5_4_RUN_DIR / "report.json"
+V5_4_SCHEMA = V5_4_RUN_DIR / "user_owned_approval_schema.json"
+V5_4_POLICY_TEMPLATE = V5_4_RUN_DIR / "user_owned_policy_template.json"
+V5_4_PACKET_JSONL = V5_4_RUN_DIR / "user_review_packet.jsonl"
+V5_4_PACKET_CSV = V5_4_RUN_DIR / "user_review_packet.csv"
+V5_4_PACKET_XLSX = V5_4_RUN_DIR / "user_review_packet.xlsx"
+V5_4_USER_OWNED_FIELDS = (
+    "include_in_official_denominator",
+    "relevance_label",
+    "answerability_label",
+    "expected_answer_ko",
+    "supporting_evidence_ids",
+    "supporting_evidence_note",
+    "gold_status",
+    "policy_note",
+    "reviewer",
+    "reviewed_at",
+)
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
@@ -262,7 +289,8 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
         "v5_1": "ai/eval/reports/rag-ingestion/runs/v5_1/report.json",
         "v5_2": "ai/eval/reports/rag-ingestion/runs/v5_2/report.json",
         "v5_3": "ai/eval/reports/rag-ingestion/runs/v5_3/report.json",
-        "current": "ai/eval/reports/rag-ingestion/runs/v5_3/report.json",
+        "v5_4": "ai/eval/reports/rag-ingestion/runs/v5_4/report.json",
+        "current": "ai/eval/reports/rag-ingestion/runs/v5_4/report.json",
     }
     for key, rel_path in expected.items():
         resolved = registry.resolve_run(key, root=ROOT)
@@ -281,6 +309,7 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
             V5_1_SHORT_KEY,
             V5_2_SHORT_KEY,
             V5_3_SHORT_KEY,
+            V5_4_SHORT_KEY,
             "current",
         }
         if key in in_memory_keys and not resolved.report_path.exists():
@@ -294,9 +323,12 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
     assert prior["canonical_long_run_id"] == V4_7_10_LONG_RUN_ID
     assert prior["status"] == V4_7_10_STATUS
     current = runner.check_run("current")
-    assert current["short_run_id"] == V5_3_SHORT_RUN_ID
-    assert current["canonical_long_run_id"] == V5_3_LONG_RUN_ID
-    assert current["status"] == V5_3_STATUS
+    assert current["short_run_id"] == V5_4_SHORT_RUN_ID
+    assert current["canonical_long_run_id"] == V5_4_LONG_RUN_ID
+    assert current["status"] == V5_4_STATUS
+    explicit_v530 = runner.check_run("v5_3")
+    assert explicit_v530["short_run_id"] == V5_3_SHORT_RUN_ID
+    assert explicit_v530["status"] == V5_3_STATUS
     explicit_v520 = runner.check_run("v5_2")
     assert explicit_v520["short_run_id"] == V5_2_SHORT_RUN_ID
     assert explicit_v520["status"] == V5_2_STATUS
@@ -323,7 +355,7 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
 def test_v477_runner_dispatches_current_previous_and_safe_legacy_checks() -> None:
     import ai.scripts.rag_eval as runner
 
-    assert runner.DEFAULT_RUN_KEY == V5_3_SHORT_KEY
+    assert runner.DEFAULT_RUN_KEY == V5_4_SHORT_KEY
     assert "v3_18" in runner.SAFE_LEGACY_CHECK_ALIASES
     assert "v3_19" in runner.SAFE_LEGACY_CHECK_ALIASES
     assert "v3_20" in runner.SAFE_LEGACY_CHECK_ALIASES
@@ -332,8 +364,9 @@ def test_v477_runner_dispatches_current_previous_and_safe_legacy_checks() -> Non
     assert "v3_16" not in runner.SAFE_LEGACY_CHECK_ALIASES
 
     for args, expected_key, expected_status in (
-        (["--check"], V5_3_SHORT_KEY, V5_3_STATUS),
-        (["current", "--check"], V5_3_SHORT_KEY, V5_3_STATUS),
+        (["--check"], V5_4_SHORT_KEY, V5_4_STATUS),
+        (["current", "--check"], V5_4_SHORT_KEY, V5_4_STATUS),
+        (["v5_4", "--check"], V5_4_SHORT_KEY, V5_4_STATUS),
         (["v5_3", "--check"], V5_3_SHORT_KEY, V5_3_STATUS),
         (["v5_2", "--check"], V5_2_SHORT_KEY, V5_2_STATUS),
         (["v5_1", "--check"], V5_1_SHORT_KEY, V5_1_STATUS),
@@ -365,7 +398,7 @@ def test_v477_runner_dispatches_current_previous_and_safe_legacy_checks() -> Non
         assert payload["status"] == expected_status
 
 
-def test_v4712_explicit_check_builds_in_memory_and_current_uses_v530_with_v520_v510_v500_v4718_explicit(
+def test_v4712_explicit_check_builds_in_memory_and_current_uses_v540_with_v530_v520_v510_v500_v4718_explicit(
     monkeypatch,
 ) -> None:
     import ai.scripts.rag_eval as runner
@@ -376,18 +409,22 @@ def test_v4712_explicit_check_builds_in_memory_and_current_uses_v530_with_v520_v
     from ai.eval import rag_v510_official_eval_gate_scaffolding as v510
     from ai.eval import rag_v520_xlsx_residual_candidate_only_retrieval_engineering as v520
     from ai.eval import rag_v530_pdf_text_residual_retrieval_evidence_hardening as v530
+    from ai.eval import rag_v540_user_owned_official_eval_approval_packet as v540
 
     missing_report = Path("ai/eval/reports/rag-ingestion/runs/v4_7_12_missing_for_test/report.json")
     monkeypatch.setattr(v4712, "SHORT_REPORT_PATH", missing_report)
 
     current = runner.check_run("current")
+    explicit_v530 = runner.check_run("v5_3")
     explicit_v520 = runner.check_run("v5_2")
     explicit_v500 = runner.check_run("v5_0")
     explicit_v4718 = runner.check_run("v4_7_18")
     long_alias = runner.check_run(V4_7_12_LONG_RUN_ID)
 
-    v530.check_report(current)
-    assert current["short_run_id"] == V5_3_SHORT_RUN_ID
+    v540.check_report(current)
+    assert current["short_run_id"] == V5_4_SHORT_RUN_ID
+    v530.check_report(explicit_v530)
+    assert explicit_v530["short_run_id"] == V5_3_SHORT_RUN_ID
     v520.check_report(explicit_v520)
     assert explicit_v520["short_run_id"] == V5_2_SHORT_RUN_ID
     explicit_v510 = runner.check_run("v5_1")
@@ -2117,8 +2154,9 @@ def test_v4718_written_report_status_docs_current_alias_and_explicit_historical_
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
 
-    assert runner.DEFAULT_RUN_KEY == V5_3_SHORT_KEY
-    assert registry.resolve_run("current", root=ROOT).logical_key == V5_3_SHORT_KEY
+    assert runner.DEFAULT_RUN_KEY == V5_4_SHORT_KEY
+    assert registry.resolve_run("current", root=ROOT).logical_key == V5_4_SHORT_KEY
+    assert registry.resolve_run("v5_3", root=ROOT).logical_key == V5_3_SHORT_KEY
     assert registry.resolve_run("v5_1", root=ROOT).logical_key == V5_1_SHORT_KEY
     assert registry.resolve_run("v5_0", root=ROOT).logical_key == V5_0_SHORT_KEY
     assert registry.resolve_run("v4_7_18", root=ROOT).logical_key == V4_7_18_SHORT_KEY
@@ -2146,11 +2184,11 @@ def test_v4718_written_report_status_docs_current_alias_and_explicit_historical_
     assert "v5_0_v4_closeout_and_v5_gate_plan" in progress
     assert "v5_0 v4 closeout and v5 gate plan" in measurements
     assert "v5_0 v4 closeout and v5 gate plan" in triage
-    assert measurements.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:triage-entry:start -->")
+    assert measurements.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:measurements-entry:start -->")
+    assert triage.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:triage-entry:start -->")
     assert "Overall status: `V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY`;" not in progress
-    assert "frozen v4 closeout basis:" in progress
-    assert "current official-eval opening scaffold basis:" in progress
+    assert "frozen v4 closeout basis" in progress
+    assert "user-owned official-eval approval packet" in progress
     assert "User-owned decisions" in triage
     assert "Codex-owned work" in triage
     assert "XLSX residual backlog" in triage
@@ -2164,8 +2202,8 @@ def test_v4718_written_report_status_docs_current_alias_and_explicit_historical_
     assert "LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY" in measurements
     assert "XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_ACCEPTED_DIAGNOSTIC_ONLY" in measurements
     assert "accept_materialized_axis_value_overlay_diagnostic_only" in triage
-    assert f"Current RAG status: `{V5_3_STATUS}`" in root_readme
-    assert f"Current RAG status: `{V5_3_STATUS}`" in eval_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in eval_readme
     assert "`v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` remains explicit" in scripts_readme
     assert "`v5_0_v4_closeout_and_v5_gate_plan` remains explicit" in scripts_readme
     assert "`current` resolves to `v4_7_18`" not in scripts_readme
@@ -2507,15 +2545,18 @@ def test_v500_written_report_status_docs_current_alias_and_ignored_artifacts() -
     from ai.eval import rag_v500_v4_closeout_and_v5_gate_plan as v500
     from ai.eval import rag_v520_xlsx_residual_candidate_only_retrieval_engineering as v520
     from ai.eval import rag_v530_pdf_text_residual_retrieval_evidence_hardening as v530
+    from ai.eval import rag_v540_user_owned_official_eval_approval_packet as v540
     import ai.scripts.rag_eval as runner
 
     report = registry.load_report("v5_0", root=ROOT)
     current = runner.check_run("current")
+    explicit_v530 = runner.check_run("v5_3")
     explicit_v500 = runner.check_run("v5_0")
     explicit_v4718 = runner.check_run("v4_7_18")
     v500.check_report(report)
     v500.check_report(explicit_v500)
-    v530.check_report(current)
+    v540.check_report(current)
+    v530.check_report(explicit_v530)
     v4718.check_report(explicit_v4718)
     latest = next(row for row in reversed(_read_jsonl(STATUS_JSONL)) if row.get("short_run_id") == V5_0_SHORT_RUN_ID)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
@@ -2526,12 +2567,14 @@ def test_v500_written_report_status_docs_current_alias_and_ignored_artifacts() -
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
 
-    assert runner.DEFAULT_RUN_KEY == V5_3_SHORT_KEY
-    assert registry.resolve_run("current", root=ROOT).logical_key == V5_3_SHORT_KEY
+    assert runner.DEFAULT_RUN_KEY == V5_4_SHORT_KEY
+    assert registry.resolve_run("current", root=ROOT).logical_key == V5_4_SHORT_KEY
+    assert registry.resolve_run("v5_3", root=ROOT).logical_key == V5_3_SHORT_KEY
     assert registry.resolve_run("v5_1", root=ROOT).logical_key == V5_1_SHORT_KEY
     assert registry.resolve_run("v5_0", root=ROOT).logical_key == V5_0_SHORT_KEY
     assert registry.resolve_run("v4_7_18", root=ROOT).logical_key == V4_7_18_SHORT_KEY
-    assert current["short_run_id"] == V5_3_SHORT_RUN_ID
+    assert current["short_run_id"] == V5_4_SHORT_RUN_ID
+    assert explicit_v530["short_run_id"] == V5_3_SHORT_RUN_ID
     assert explicit_v500["short_run_id"] == V5_0_SHORT_RUN_ID
     assert explicit_v4718["short_run_id"] == V4_7_18_SHORT_RUN_ID
     assert V5_0_REPORT.exists()
@@ -2548,9 +2591,9 @@ def test_v500_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert V5_0_SHORT_RUN_ID in progress
     assert V5_0_SHORT_RUN_ID in measurements
     assert V5_0_SHORT_RUN_ID in triage
-    assert progress.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:progress-entry:start -->")
-    assert measurements.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:triage-entry:start -->")
+    assert progress.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:progress-entry:start -->")
+    assert measurements.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:measurements-entry:start -->")
+    assert triage.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:triage-entry:start -->")
     assert f"Overall status: `{V5_0_STATUS}`;" in progress
     assert "v4 closeout basis: `v4_7_18`" in progress
     assert "Overall status: `V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY`;" not in current_progress
@@ -2573,9 +2616,10 @@ def test_v500_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert "Codex-owned work" in triage
     assert "Official metric opening preconditions" in triage
     assert "Live-readiness and promotion preconditions" in triage
-    assert f"Current RAG status: `{V5_3_STATUS}`" in root_readme
-    assert f"Current RAG status: `{V5_3_STATUS}`" in eval_readme
-    assert "`current` resolves to `v5_3`" in scripts_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in eval_readme
+    assert "`current` resolves to `v5_4`" in scripts_readme
+    assert "`v5_3_pdf_text_residual_retrieval_evidence_hardening` remains explicit" in scripts_readme
     assert "`v5_2_xlsx_residual_candidate_only_retrieval_engineering` remains explicit" in scripts_readme
     assert "`v5_0_v4_closeout_and_v5_gate_plan` remains explicit" in scripts_readme
     assert "`v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` remains explicit" in scripts_readme
@@ -2796,15 +2840,18 @@ def test_v510_written_report_status_docs_current_alias_and_ignored_artifacts() -
     from ai.eval import rag_v510_official_eval_gate_scaffolding as v510
     from ai.eval import rag_v520_xlsx_residual_candidate_only_retrieval_engineering as v520
     from ai.eval import rag_v530_pdf_text_residual_retrieval_evidence_hardening as v530
+    from ai.eval import rag_v540_user_owned_official_eval_approval_packet as v540
     import ai.scripts.rag_eval as runner
 
     report = registry.load_report("v5_1", root=ROOT)
     current = runner.check_run("current")
+    explicit_v530 = runner.check_run("v5_3")
     explicit_v510 = runner.check_run("v5_1")
     explicit_v500 = runner.check_run("v5_0")
     v510.check_report(report)
     v510.check_report(explicit_v510)
-    v530.check_report(current)
+    v540.check_report(current)
+    v530.check_report(explicit_v530)
     v500.check_report(explicit_v500)
     latest = next(row for row in reversed(_read_jsonl(STATUS_JSONL)) if row.get("short_run_id") == V5_1_SHORT_RUN_ID)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
@@ -2816,11 +2863,13 @@ def test_v510_written_report_status_docs_current_alias_and_ignored_artifacts() -
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
 
-    assert runner.DEFAULT_RUN_KEY == V5_3_SHORT_KEY
-    assert registry.resolve_run("current", root=ROOT).logical_key == V5_3_SHORT_KEY
+    assert runner.DEFAULT_RUN_KEY == V5_4_SHORT_KEY
+    assert registry.resolve_run("current", root=ROOT).logical_key == V5_4_SHORT_KEY
+    assert registry.resolve_run("v5_3", root=ROOT).logical_key == V5_3_SHORT_KEY
     assert registry.resolve_run("v5_1", root=ROOT).logical_key == V5_1_SHORT_KEY
     assert registry.resolve_run("v5_0", root=ROOT).logical_key == V5_0_SHORT_KEY
-    assert current["short_run_id"] == V5_3_SHORT_RUN_ID
+    assert current["short_run_id"] == V5_4_SHORT_RUN_ID
+    assert explicit_v530["short_run_id"] == V5_3_SHORT_RUN_ID
     assert explicit_v510["short_run_id"] == V5_1_SHORT_RUN_ID
     assert explicit_v500["short_run_id"] == V5_0_SHORT_RUN_ID
     assert V5_1_REPORT.exists()
@@ -2844,11 +2893,11 @@ def test_v510_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert V5_1_SHORT_RUN_ID in progress
     assert V5_1_SHORT_RUN_ID in measurements
     assert V5_1_SHORT_RUN_ID in triage
-    assert progress.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:progress-entry:start -->")
-    assert measurements.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:triage-entry:start -->")
+    assert progress.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:progress-entry:start -->")
+    assert measurements.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:measurements-entry:start -->")
+    assert triage.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:triage-entry:start -->")
     assert f"Overall status: `{V5_1_STATUS}`;" in progress
-    assert "PDF/TEXT residual" in current_status_block
+    assert "user-owned approval packet" in current_status_block
     assert "official_metric_input_rows=0" in current_status_block
     assert "v4_7_12" not in current_status_block
     assert "| official_metric_input_rows | 0 |" in measurements
@@ -2859,9 +2908,10 @@ def test_v510_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert "User-owned approval artifacts" in triage
     assert "Codex-owned validator-name placeholders" in triage
     assert "FT readiness compatibility" in triage
-    assert f"Current RAG status: `{V5_3_STATUS}`" in root_readme
-    assert f"Current RAG status: `{V5_3_STATUS}`" in eval_readme
-    assert "`current` resolves to `v5_3`" in scripts_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in eval_readme
+    assert "`current` resolves to `v5_4`" in scripts_readme
+    assert "`v5_3_pdf_text_residual_retrieval_evidence_hardening` remains explicit" in scripts_readme
     assert "`v5_0_official_eval_gate_scaffolding`" not in scripts_readme
 
     for rel_path in (
@@ -3052,13 +3102,16 @@ def test_v520_written_report_status_docs_current_alias_and_ignored_artifacts() -
     from ai.eval import rag_v510_official_eval_gate_scaffolding as v510
     from ai.eval import rag_v520_xlsx_residual_candidate_only_retrieval_engineering as v520
     from ai.eval import rag_v530_pdf_text_residual_retrieval_evidence_hardening as v530
+    from ai.eval import rag_v540_user_owned_official_eval_approval_packet as v540
     import ai.scripts.rag_eval as runner
 
     report = registry.load_report("v5_2", root=ROOT)
     current = runner.check_run("current")
+    explicit_v530 = runner.check_run("v5_3")
     explicit_v510 = runner.check_run("v5_1")
     v520.check_report(report)
-    v530.check_report(current)
+    v540.check_report(current)
+    v530.check_report(explicit_v530)
     v510.check_report(explicit_v510)
     latest = next(row for row in reversed(_read_jsonl(STATUS_JSONL)) if row.get("short_run_id") == V5_2_SHORT_RUN_ID)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
@@ -3069,10 +3122,12 @@ def test_v520_written_report_status_docs_current_alias_and_ignored_artifacts() -
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
 
-    assert runner.DEFAULT_RUN_KEY == V5_3_SHORT_KEY
-    assert registry.resolve_run("current", root=ROOT).logical_key == V5_3_SHORT_KEY
+    assert runner.DEFAULT_RUN_KEY == V5_4_SHORT_KEY
+    assert registry.resolve_run("current", root=ROOT).logical_key == V5_4_SHORT_KEY
+    assert registry.resolve_run("v5_3", root=ROOT).logical_key == V5_3_SHORT_KEY
     assert registry.resolve_run("v5_1", root=ROOT).logical_key == V5_1_SHORT_KEY
-    assert current["short_run_id"] == V5_3_SHORT_RUN_ID
+    assert current["short_run_id"] == V5_4_SHORT_RUN_ID
+    assert explicit_v530["short_run_id"] == V5_3_SHORT_RUN_ID
     assert explicit_v510["short_run_id"] == V5_1_SHORT_RUN_ID
     assert V5_2_REPORT.exists()
     assert latest["status"] == V5_2_STATUS
@@ -3096,9 +3151,9 @@ def test_v520_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert V5_2_SHORT_RUN_ID in progress
     assert V5_2_SHORT_RUN_ID in measurements
     assert V5_2_SHORT_RUN_ID in triage
-    assert progress.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:progress-entry:start -->")
-    assert measurements.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:triage-entry:start -->")
+    assert progress.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:progress-entry:start -->")
+    assert measurements.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:measurements-entry:start -->")
+    assert triage.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:triage-entry:start -->")
     assert f"Overall status: `{V5_2_STATUS}`;" in progress
     assert "candidate-state taxonomy" in progress
     assert "residual_overlap_counts_available=false" in progress
@@ -3106,9 +3161,10 @@ def test_v520_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert "| budget_exhausted_diversity_gap | 109 |" in measurements
     assert "| bounded_candidate_rank_gap_upper_bound | 138 |" in measurements
     assert "row-level residual mask" in triage
-    assert f"Current RAG status: `{V5_3_STATUS}`" in root_readme
-    assert f"Current RAG status: `{V5_3_STATUS}`" in eval_readme
-    assert "`current` resolves to `v5_3`" in scripts_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in eval_readme
+    assert "`current` resolves to `v5_4`" in scripts_readme
+    assert "`v5_3_pdf_text_residual_retrieval_evidence_hardening` remains explicit" in scripts_readme
     assert "`v5_1_official_eval_gate_scaffolding` remains explicit" in scripts_readme
 
     for rel_path in (
@@ -3302,13 +3358,14 @@ def test_v530_written_report_status_docs_current_alias_and_ignored_artifacts() -
     from ai.eval import rag_eval_registry as registry
     from ai.eval import rag_v520_xlsx_residual_candidate_only_retrieval_engineering as v520
     from ai.eval import rag_v530_pdf_text_residual_retrieval_evidence_hardening as v530
+    from ai.eval import rag_v540_user_owned_official_eval_approval_packet as v540
     import ai.scripts.rag_eval as runner
 
     report = registry.load_report("v5_3", root=ROOT)
     current = runner.check_run("current")
     explicit_v520 = runner.check_run("v5_2")
     v530.check_report(report)
-    v530.check_report(current)
+    v540.check_report(current)
     v520.check_report(explicit_v520)
     latest = next(row for row in reversed(_read_jsonl(STATUS_JSONL)) if row.get("short_run_id") == V5_3_SHORT_RUN_ID)
     progress = PROGRESS_DOC.read_text(encoding="utf-8")
@@ -3319,13 +3376,14 @@ def test_v530_written_report_status_docs_current_alias_and_ignored_artifacts() -
     eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
     scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
 
-    assert runner.DEFAULT_RUN_KEY == V5_3_SHORT_KEY
-    assert registry.resolve_run("current", root=ROOT).logical_key == V5_3_SHORT_KEY
+    assert runner.DEFAULT_RUN_KEY == V5_4_SHORT_KEY
+    assert registry.resolve_run("current", root=ROOT).logical_key == V5_4_SHORT_KEY
+    assert registry.resolve_run("v5_3", root=ROOT).logical_key == V5_3_SHORT_KEY
     assert registry.resolve_run("v5_2", root=ROOT).logical_key == V5_2_SHORT_KEY
     assert registry.resolve_run("v5_1", root=ROOT).logical_key == V5_1_SHORT_KEY
     assert registry.resolve_run("v5_0", root=ROOT).logical_key == V5_0_SHORT_KEY
     assert registry.resolve_run("v4_7_18", root=ROOT).logical_key == V4_7_18_SHORT_KEY
-    assert current["short_run_id"] == V5_3_SHORT_RUN_ID
+    assert current["short_run_id"] == V5_4_SHORT_RUN_ID
     assert explicit_v520["short_run_id"] == V5_2_SHORT_RUN_ID
     assert V5_3_REPORT.exists()
     assert latest["schema_version"] == f"{V5_3_SHORT_RUN_ID}_status_event_v1"
@@ -3399,25 +3457,22 @@ def test_v530_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert latest["training_dataset_created"] is False
     assert latest["fine_tuning_dataset_export_created"] is False
 
-    assert progress.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:progress-entry:start -->")
-    assert measurements.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_3_SHORT_RUN_ID}:triage-entry:start -->")
+    assert progress.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:progress-entry:start -->")
+    assert measurements.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:measurements-entry:start -->")
+    assert triage.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:triage-entry:start -->")
     assert V5_3_SHORT_RUN_ID in current_status_block
-    assert "`current` resolves to `v5_3`" in current_status_block
-    assert "status/progress-only cleanup handoff note" in current_status_block
-    assert "v5_4 remains blocked" in current_status_block
-    assert "`v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable" in current_status_block
-    assert "TEXT residual aggregate: 118 misses" in current_status_block
-    assert "PDF residual aggregate: 60 misses" in current_status_block
-    assert "not a full residual denominator" in current_status_block
-    assert "safe_gain_claimed=false" in current_status_block
+    assert "`current` resolves to `v5_4`" in current_status_block
+    assert "`v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable" in current_status_block
+    assert "user-owned approval packet" in current_status_block
+    assert "official_metric_dry_run_opened=false" in current_status_block
     assert "| text_v4_7_18_combined_target_miss_count | 118 |" in measurements
     assert "| pdf_v4_7_18_combined_target_miss_count | 60 |" in measurements
     assert "| overlay_90_sample_scope | overlay_90_sample_not_full_pdf_text_denominator |" in measurements
     assert "raw PDF query-time parsing" in triage
-    assert f"Current RAG status: `{V5_3_STATUS}`" in root_readme
-    assert f"Current RAG status: `{V5_3_STATUS}`" in eval_readme
-    assert "`current` resolves to `v5_3`" in scripts_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in eval_readme
+    assert "`current` resolves to `v5_4`" in scripts_readme
+    assert "`v5_3_pdf_text_residual_retrieval_evidence_hardening` remains explicit" in scripts_readme
     assert "`v5_2_xlsx_residual_candidate_only_retrieval_engineering` remains explicit" in scripts_readme
 
     for rel_path in (
@@ -3543,6 +3598,297 @@ def test_v530_write_path_validates_report_before_writing_and_synthesizes_v520_so
     monkeypatch.setattr(v530, "append_status", lambda root, report, *, artifact_hashes: None)
 
     assert runner.main(["v5_3", "--write"]) == 0
+    assert observed["used_source_report"] is True
+    assert call_order == ["build", "check", "write", "check"]
+
+
+def _assert_v540_user_owned_fields_blank(row: dict[str, object]) -> None:
+    for field in V5_4_USER_OWNED_FIELDS:
+        assert field in row
+        assert row[field] in ("", None, "pending_user_review", [])
+
+
+def test_v540_user_owned_approval_packet_materializes_blank_user_fields_and_closes_metric_gate() -> None:
+    import ai.scripts.rag_eval as runner
+    from ai.eval import rag_v540_user_owned_official_eval_approval_packet as v540
+
+    source_report = runner.check_run("v5_3")
+    report = v540.build_report(root=ROOT, source_report=source_report, generated_at="2026-06-01T00:00:00Z")
+    v540.check_report(report)
+
+    assert report["logical_run_key"] == V5_4_SHORT_KEY
+    assert report["run_id"] == V5_4_SHORT_RUN_ID
+    assert report["short_run_id"] == V5_4_SHORT_RUN_ID
+    assert report["canonical_long_run_id"] == V5_4_LONG_RUN_ID
+    assert report["status"] == V5_4_STATUS
+    assert report["source_run_id"] == V5_3_SHORT_RUN_ID
+    assert report["current_resolves_to"] == V5_4_SHORT_KEY
+    assert report["review_surface_source"] == "existing_registry_backed_29_official_snapshot"
+    assert report["review_packet_row_count"] == 29
+    assert report["user_approval_packet_created"] is True
+    assert report["user_policy_template_created"] is True
+    assert report["user_review_packet_created"] is True
+    assert report["user_review_packet_xlsx_created"] is True
+    assert report["user_owned_final_fields_filled_by_codex"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["official_metric_input_rows_created"] == 0
+    assert report["official_metric_dry_run_opened"] is False
+    assert report["official_eval_user_gate_ready"] is False
+    assert report["protected_namespaces_touched"] == []
+    assert report["artifact_paths"] == {
+        "report_json": "ai/eval/reports/rag-ingestion/runs/v5_4/report.json",
+        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "source_report_json": "ai/eval/reports/rag-ingestion/runs/v5_3/report.json",
+        "user_owned_approval_schema_json": "ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json",
+        "user_owned_policy_template_json": "ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json",
+        "user_review_packet_jsonl": "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl",
+        "user_review_packet_csv": "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv",
+        "user_review_packet_xlsx": "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx",
+    }
+
+    schema = report["user_owned_approval_schema"]
+    assert tuple(schema["final_user_owned_fields"]) == V5_4_USER_OWNED_FIELDS
+    for field in V5_4_USER_OWNED_FIELDS:
+        field_policy = schema["field_policies"][field]
+        assert field_policy["owner"] == "user"
+        assert field_policy["codex_may_fill"] is False
+        assert field_policy["required_before_official_metric"] is True
+
+    policy_template = report["user_owned_policy_template"]
+    assert policy_template["owner"] == "user"
+    assert policy_template["codex_may_fill_user_owned_fields"] is False
+    assert policy_template["official_metric_dry_run_requested"] is False
+    assert policy_template["status"] == "pending_user_review"
+
+    preview = report["user_review_packet_preview"]
+    assert len(preview) == 3
+    for row in preview:
+        _assert_v540_user_owned_fields_blank(row)
+        assert all(key.startswith("machine_") or key in V5_4_USER_OWNED_FIELDS for key in row)
+    assert {row["machine_track"] for row in report["user_review_packet_rows"]} == {
+        "pdf_business_ocr_mm",
+        "text_namu_v2_1",
+        "xlsx_business_structured",
+    }
+
+
+def test_v540_written_report_status_docs_current_alias_and_packet_artifacts() -> None:
+    import openpyxl
+    import ai.scripts.rag_eval as runner
+    from ai.eval import rag_eval_registry as registry
+    from ai.eval import rag_v530_pdf_text_residual_retrieval_evidence_hardening as v530
+    from ai.eval import rag_v540_user_owned_official_eval_approval_packet as v540
+
+    report = registry.load_report("v5_4", root=ROOT)
+    current = runner.check_run("current")
+    explicit_v530 = runner.check_run("v5_3")
+    v540.check_report(report)
+    v540.check_report(current)
+    v530.check_report(explicit_v530)
+    latest = next(row for row in reversed(_read_jsonl(STATUS_JSONL)) if row.get("short_run_id") == V5_4_SHORT_RUN_ID)
+    progress = PROGRESS_DOC.read_text(encoding="utf-8")
+    current_status_block = progress.split("## Current Status", 1)[1].split("## Short History", 1)[0]
+    measurements = MEASUREMENTS_DOC.read_text(encoding="utf-8")
+    triage = TRIAGE_DOC.read_text(encoding="utf-8")
+    root_readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    eval_readme = (ROOT / "ai" / "eval" / "README.md").read_text(encoding="utf-8")
+    scripts_readme = (ROOT / "ai" / "scripts" / "README.md").read_text(encoding="utf-8")
+
+    assert runner.DEFAULT_RUN_KEY == V5_4_SHORT_KEY
+    assert registry.resolve_run("current", root=ROOT).logical_key == V5_4_SHORT_KEY
+    assert registry.resolve_run("v5_3", root=ROOT).logical_key == V5_3_SHORT_KEY
+    assert current["short_run_id"] == V5_4_SHORT_RUN_ID
+    assert explicit_v530["short_run_id"] == V5_3_SHORT_RUN_ID
+
+    for path in (V5_4_REPORT, V5_4_SCHEMA, V5_4_POLICY_TEMPLATE, V5_4_PACKET_JSONL, V5_4_PACKET_CSV, V5_4_PACKET_XLSX):
+        assert path.exists(), path
+
+    packet_rows = _read_jsonl(V5_4_PACKET_JSONL)
+    assert len(packet_rows) == 29
+    for row in packet_rows:
+        _assert_v540_user_owned_fields_blank(row)
+        assert all(key.startswith("machine_") or key in V5_4_USER_OWNED_FIELDS for key in row)
+
+    with V5_4_PACKET_CSV.open("r", encoding="utf-8-sig", newline="") as handle:
+        csv_rows = list(csv.DictReader(handle))
+    assert len(csv_rows) == 29
+    assert "검수_안내" in csv_rows[0]
+    assert "질문_확인" in csv_rows[0]
+    assert "기존_답변_참고" in csv_rows[0]
+    assert csv_rows[0]["검수_안내"].startswith("왼쪽 10개 user-owned 필드")
+    assert csv_rows[0]["질문_확인"] == csv_rows[0]["machine_question_ko_hint"]
+    for row in csv_rows:
+        _assert_v540_user_owned_fields_blank(row)
+
+    workbook = openpyxl.load_workbook(V5_4_PACKET_XLSX, read_only=True)
+    sheet = workbook.active
+    assert sheet.max_row == 30
+    xlsx_header = [cell.value for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
+    assert xlsx_header[: len(V5_4_USER_OWNED_FIELDS)] == list(V5_4_USER_OWNED_FIELDS)
+    assert "검수_안내" in xlsx_header
+    assert "기존_근거_참고" in xlsx_header
+    workbook.close()
+
+    assert latest["schema_version"] == f"{V5_4_SHORT_RUN_ID}_status_event_v1"
+    assert latest["event_type"] == "diagnostic_v5_4_user_owned_official_eval_approval_packet_nonprod"
+    assert latest["status"] == V5_4_STATUS
+    assert latest["source_run_id"] == V5_3_SHORT_RUN_ID
+    assert latest["current_resolves_to"] == V5_4_SHORT_KEY
+    assert latest["user_approval_packet_created"] is True
+    assert latest["user_policy_template_created"] is True
+    assert latest["user_review_packet_created"] is True
+    assert latest["user_owned_final_fields_filled_by_codex"] is False
+    assert latest["official_metric_input_rows"] == 0
+    assert latest["official_metric_input_rows_created"] == 0
+    assert latest["official_metric_dry_run_opened"] is False
+    assert latest["official_eval_user_gate_ready"] is False
+    assert latest["protected_namespaces_touched"] == []
+    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v5_4/report.json"
+    assert latest["artifact_paths"]["user_review_packet_csv"] == "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv"
+    assert latest["artifact_sha256"]["user_review_packet_jsonl_sha256"] == _sha256_file(V5_4_PACKET_JSONL)
+    assert latest["artifact_sha256"]["user_review_packet_csv_sha256"] == _sha256_file(V5_4_PACKET_CSV)
+    assert latest["artifact_sha256"]["user_review_packet_xlsx_sha256"] == _sha256_file(V5_4_PACKET_XLSX)
+
+    assert progress.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:progress-entry:start -->")
+    assert measurements.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:measurements-entry:start -->")
+    assert triage.startswith(f"<!-- {V5_4_SHORT_RUN_ID}:triage-entry:start -->")
+    assert V5_4_SHORT_RUN_ID in current_status_block
+    assert "`current` resolves to `v5_4`" in current_status_block
+    assert "`v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable" in current_status_block
+    assert "user-owned approval packet" in current_status_block
+    assert "official_metric_dry_run_opened=false" in current_status_block
+    assert "user-owned final fields remain blank/pending_user_review" in current_status_block
+    assert "| user_review_packet_row_count | 29 |" in measurements
+    assert "| official_metric_dry_run_opened | false |" in measurements
+    assert "Do not fill expected answers, supporting evidence, relevance, answerability, denominator" in triage
+    assert f"Current RAG status: `{V5_4_STATUS}`" in root_readme
+    assert f"Current RAG status: `{V5_4_STATUS}`" in eval_readme
+    assert "`current` resolves to `v5_4`" in scripts_readme
+
+    for rel_path in (
+        "ai/eval/reports/rag-ingestion/runs/v5_4/report.json",
+        "ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json",
+        "ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json",
+        "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl",
+        "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv",
+        "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx",
+        "ai/eval/reports/rag-ingestion/status.jsonl",
+    ):
+        assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0, rel_path
+
+
+def test_v540_check_report_rejects_filled_user_fields_official_rows_training_and_dry_run() -> None:
+    from ai.eval import rag_v540_user_owned_official_eval_approval_packet as v540
+
+    report = v540.build_report(root=ROOT, generated_at="2026-06-01T00:00:00Z")
+    v540.check_report(report)
+
+    for key in (
+        "official_metric",
+        "official_metric_denominator_usage_allowed",
+        "official_metric_dry_run_opened",
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "denominator_mutation",
+        "official_qrels_created",
+        "official_relevance_labels_created",
+        "official_answerability_labels_created",
+        "official_gold_labels_created",
+        "training_dataset_created",
+        "training_manifest_jsonl_created",
+        "training_job_created",
+        "fine_tuning_dataset_export_created",
+        "fine_tuning_started",
+        "fine_tuning_executed",
+        "promotion_evidence",
+        "product_success_evidence_allowed",
+        "live_db_index_cache_readiness",
+        "raw_prompt_payload_written",
+        "raw_response_payload_written",
+    ):
+        mutated = json.loads(json.dumps(report))
+        mutated[key] = True
+        try:
+            v540.check_report(mutated)
+        except ValueError as exc:
+            assert "v5_4" in str(exc)
+        else:
+            raise AssertionError(f"v5_4 accepted {key}=True")
+
+    for path, value, message in (
+        (("source_run_id",), V5_2_SHORT_RUN_ID, "source run"),
+        (("current_resolves_to",), V5_3_SHORT_KEY, "current"),
+        (("official_metric_input_rows",), 1, "official metric rows"),
+        (("official_metric_input_rows_created",), 1, "official metric rows"),
+        (("protected_namespaces_touched",), ["ai/eval/eval_queries"], "protected"),
+        (("review_surface_source",), "all_silver_residual_rows", "review surface"),
+        (("review_packet_row_count",), 1000, "review packet"),
+        (("user_owned_final_fields_filled_by_codex",), True, "user-owned"),
+        (("user_review_packet_preview", 0, "expected_answer_ko"), "Codex-filled answer", "user-owned"),
+        (("user_review_packet_rows", 0, "supporting_evidence_ids"), ["source_1"], "user-owned"),
+    ):
+        mutated = json.loads(json.dumps(report))
+        cursor = mutated
+        for key in path[:-1]:
+            cursor = cursor[key]
+        cursor[path[-1]] = value
+        try:
+            v540.check_report(mutated)
+        except ValueError as exc:
+            assert message in str(exc)
+        else:
+            raise AssertionError(f"v5_4 accepted drift at {path}")
+
+
+def test_v540_write_path_validates_report_before_writing_and_synthesizes_v530_source_report(monkeypatch) -> None:
+    import ai.scripts.rag_eval as runner
+    from ai.eval import rag_v540_user_owned_official_eval_approval_packet as v540
+
+    source_report = {
+        "short_run_id": V5_3_SHORT_RUN_ID,
+        "canonical_long_run_id": V5_3_LONG_RUN_ID,
+        "status": V5_3_STATUS,
+        "sentinel_from_check_run": True,
+    }
+    observed: dict[str, object] = {}
+    call_order: list[str] = []
+
+    def fake_check_run(key: str) -> dict[str, object]:
+        assert key == "v5_3"
+        return source_report
+
+    def fake_build_report(*, root: Path, source_report: dict[str, object] | None = None, **_: object) -> dict[str, object]:
+        assert root == ROOT
+        assert source_report is not None
+        assert source_report["sentinel_from_check_run"] is True
+        observed["used_source_report"] = True
+        call_order.append("build")
+        return {
+            "status": V5_4_STATUS,
+            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_4/report.json"},
+            "official_metric_input_rows": 0,
+            "counters": {},
+        }
+
+    def fake_check_report(report: dict[str, object]) -> None:
+        call_order.append("check")
+
+    def fake_write_report_bundle(root: Path, report: dict[str, object]) -> tuple[dict[str, object], dict[str, str]]:
+        assert "check" in call_order
+        call_order.append("write")
+        return report, {"report_json_sha256": "0" * 64}
+
+    monkeypatch.setattr(runner, "check_run", fake_check_run)
+    monkeypatch.setattr(v540, "build_report", fake_build_report)
+    monkeypatch.setattr(v540, "write_report_bundle", fake_write_report_bundle)
+    monkeypatch.setattr(v540, "check_report", fake_check_report)
+    monkeypatch.setattr(v540, "update_docs", lambda root, report: None)
+    monkeypatch.setattr(v540, "append_status", lambda root, report, *, artifact_hashes: None)
+
+    assert runner.main(["v5_4", "--write"]) == 0
     assert observed["used_source_report"] is True
     assert call_order == ["build", "check", "write", "check"]
 

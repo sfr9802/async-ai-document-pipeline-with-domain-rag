@@ -1,3 +1,7 @@
+<!-- v5_4_user_owned_official_eval_approval_packet:progress-entry:start -->
+- Overall status: `V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY`; v5_4_user_owned_official_eval_approval_packet creates the user-owned official-eval approval packet only. Artifact: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`. Source phase: `v5_3` / `v5_3_pdf_text_residual_retrieval_evidence_hardening`. `current` resolves to `v5_4`, while `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable. Required packet artifacts are `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, and `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`. The bounded review surface is the existing registry-backed 29-row official snapshot, not all silver/residual rows. All final user-owned row fields remain blank, null, or pending_user_review; Codex fills no user-owned final field. official_metric_dry_run_opened=false, official_metric_input_rows=0, official_metric_input_rows_created=0, official_eval_user_gate_ready=false, and no gold/qrels/label/expected/supporting/denominator/training/fine-tuning/FT-A/promotion/product-success/live-readiness gates are opened.
+<!-- v5_4_user_owned_official_eval_approval_packet:progress-entry:end -->
+
 <!-- v5_3_pdf_text_residual_retrieval_evidence_hardening:progress-entry:start -->
 - Overall status: `V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY`; v5_3_pdf_text_residual_retrieval_evidence_hardening is the diagnostic-only PDF/TEXT residual retrieval/evidence hardening run. Artifact: `ai/eval/reports/rag-ingestion/runs/v5_3/report.json`. Source phase: `v5_2` / `v5_2_xlsx_residual_candidate_only_retrieval_engineering`; frozen v4 basis `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`; overlay sample basis `v4_7_16_target_recall_repair_prototype`. `current` resolves to `v5_3`, while `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable. TEXT residual aggregate=118, PDF residual aggregate=60; overlay-90 sample buckets are TEXT target_not_in_topk=28/30 and PDF target_not_in_topk=12/30, explicitly not full residual denominator buckets. safe_repair_applied=false, safe_gain_claimed=false, row_level_residual_mask_created=false, v5_3-created official_metric_input_rows=0, official_metric_input_rows_created=0, existing registry-backed official rows remain read-only and are not opened for v5_3 scoring, no cleanup runner is created after v5_3; this is a status/progress-only cleanup handoff note and v5_4 remains blocked by user-owned gold/qrels, expected/supporting evidence, relevance, answerability, denominator, and promotion-policy approvals, no gold/qrels/label/expected/supporting/denominator/training/fine-tuning/FT-A/promotion/product-success/live-readiness gates are opened.
 <!-- v5_3_pdf_text_residual_retrieval_evidence_hardening:progress-entry:end -->
@@ -262,24 +266,24 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY`; `v5_3_pdf_text_residual_retrieval_evidence_hardening` is the current diagnostic phase. `current` resolves to `v5_3`, while `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable.
+Overall status: `V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY`; `v5_4_user_owned_official_eval_approval_packet` is the current packet-only phase. `current` resolves to `v5_4`, while `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable.
 
 Current run board:
-- current_source_of_truth: `v5_3_pdf_text_residual_retrieval_evidence_hardening`.
-- source_run: `v5_2_xlsx_residual_candidate_only_retrieval_engineering`; current official-eval opening scaffold basis: `v5_1_official_eval_gate_scaffolding`; frozen v4 closeout basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`; overlay sample basis: `v4_7_16_target_recall_repair_prototype`.
-- TEXT residual aggregate: 118 misses (232 hits / 350 rows); PDF residual aggregate: 60 misses (265 hits / 325 rows).
-- Overlay-90 sample taxonomy only: TEXT target_not_in_topk=28/30, PDF target_not_in_topk=12/30; not a full residual denominator.
-- New PDF/TEXT repair applied=false; safe_gain_claimed=false; row_level_residual_mask_created=false; per_query_candidates_written=false.
-- Repo cleanup/handoff integrity: no `v5_3_1_repo_cleanup_and_handoff_integrity` or `v5_3_cleanup_handoff_integrity` runner was created; this is a status/progress-only cleanup handoff note. `current` remains `v5_3`; v5_4 remains blocked pending user-owned gold/qrels, expected/supporting evidence, relevance, answerability, denominator, and promotion-policy approval artifacts.
-- Official/gold/qrels/labels/expected/supporting evidence/denominator/training/fine-tuning/FT-A/promotion/product-success/live-readiness gates remain closed: v5_3-created official_metric_input_rows=0; official_metric_input_rows_created=0; existing registry-backed official rows remain read-only and are not opened for v5_3 scoring; training_dataset_created=false; training_manifest_jsonl_created=false; fine_tuning_dataset_export_created=false; promotion_evidence=false; live_db_index_cache_readiness=false.
+- current_source_of_truth: `v5_4_user_owned_official_eval_approval_packet`.
+- source_run: `v5_3_pdf_text_residual_retrieval_evidence_hardening`; v5_4 materializes a user-owned approval packet over the existing registry-backed 29-row official snapshot only; it does not expand to silver or residual rows.
+- Packet artifacts: `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, and `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`.
+- user-owned final fields remain blank/pending_user_review; machine_* columns are non-final context hints only.
+- official_metric_dry_run_opened=false; official_metric_input_rows=0; official_metric_input_rows_created=0; official_eval_user_gate_ready=false.
+- Gold/qrels/labels/expected answers/supporting evidence/denominator/training/fine-tuning/FT-A/promotion/product-success/live-readiness gates remain closed, and protected_namespaces_touched=[].
 
-Current verification: after v5_3 PDF/TEXT residual taxonomy/current-alias reconciliation,
-`pytest ai/tests --rag-current -q` passed with 33 passed, 0 failed, 0 skipped, 1 warning, while historical focused runs remain directly checkable by explicit key. Generated report/status artifacts remain ignored.
+Current verification: after v5_4 user-owned approval packet materialization,
+`pytest ai/tests --rag-current -q` passed with 38 passed, 0 failed, 0 skipped, 1 warning, while historical focused runs remain directly checkable by explicit key. Generated report/status/packet artifacts remain ignored.
 
 Artifact policy:
 - `ai/eval/reports/rag-ingestion/status.jsonl` remains local/ignored status ledger.
-- Current v5_3 report: `ai/eval/reports/rag-ingestion/runs/v5_3/report.json`.
-- Prior basis reports remain explicit: `ai/eval/reports/rag-ingestion/runs/v5_2/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_1/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, and frozen v4 basis `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`.
+- Current v5_4 report: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`.
+- Current user packet paths: `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`.
+- Prior basis reports remain explicit: `ai/eval/reports/rag-ingestion/runs/v5_3/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_2/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, and frozen v4 basis `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`.
 
 ## Short History
 
