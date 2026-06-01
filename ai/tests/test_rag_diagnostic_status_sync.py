@@ -17,6 +17,17 @@ PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+V5_4_CURRENT_STATUS = "V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY"
+V5_3_CURRENT_STATUS = "V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY"
+V5_2_CURRENT_STATUS = "V5_2_XLSX_RESIDUAL_CANDIDATE_ONLY_RETRIEVAL_ENGINEERING_DIAGNOSTIC_NONPROD_READY"
+V5_1_CURRENT_STATUS = "V5_1_OFFICIAL_EVAL_GATE_SCAFFOLDING_DIAGNOSTIC_NONPROD_READY"
+V5_0_CURRENT_STATUS = "V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY"
+V4_7_18_CURRENT_STATUS = "V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY"
+V4_7_17_CURRENT_STATUS = "V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY"
+V4_7_16_CURRENT_STATUS = "V4_7_16_TARGET_RECALL_REPAIR_PROTOTYPE_NONPROD_READY"
+V4_7_15_CURRENT_STATUS = "V4_7_15_READ_ONLY_SEARCHINDEX_REPLAY_PROJECTION_NONPROD_READY"
+V4_7_14_CURRENT_STATUS = "V4_7_14_DIAGNOSTIC_PRECONDITION_HARDENING_NONPROD_READY"
+V4_7_13_CURRENT_STATUS = "V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY"
 V4_7_12_CURRENT_STATUS = "V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY"
 V4_7_11_CURRENT_STATUS = "V4_7_11_ACTUAL_LLM_ANSWER_REPLAY_AND_SILVER_DIAGNOSTIC_SMOKE_NONPROD_READY"
 V4_7_10_CURRENT_STATUS = "V4_7_10_PDF_KOREAN_EVIDENCE_NORMALIZATION_AND_ANSWER_REPLAY_READINESS_NONPROD_READY"
@@ -30,7 +41,7 @@ V4_7_3_CURRENT_STATUS = "V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLU
 V4_7_2_CURRENT_STATUS = "DIAGNOSTIC_V4_7_2_SOURCE_GROUNDED_KOREAN_QUERY_REVIEW_PACKET_HYDRATION_NONPROD_READY"
 V4_7_1_CURRENT_STATUS = "DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY"
 V4_7_CURRENT_STATUS = "V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY"
-CURRENT_RAG_STATUS = V4_7_12_CURRENT_STATUS
+CURRENT_RAG_STATUS = V5_4_CURRENT_STATUS
 V4_6_CLOSEOUT_CURRENT_STATUS = CURRENT_RAG_STATUS
 V4_6_12_CURRENT_STATUS = V4_6_CLOSEOUT_CURRENT_STATUS
 V4_6_11_CURRENT_STATUS = V4_6_12_CURRENT_STATUS
@@ -183,43 +194,43 @@ def sha256_file(path: Path) -> str:
 def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unavailable():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = text.split("## Short History", 1)[0]
+    current_flat = " ".join(current_text.split())
 
-    assert "official_denominator_source_bound_index_build_ready_load_checked" in current_text
-    assert "official_metric_execution_started=true" in current_text
-    assert "official_scoring_attempt_count=29" in current_text
-    assert "PASS=8" in current_text
-    assert "CITATION_UNSUPPORTED=11" in current_text
-    assert "PARTIAL_OR_UNSUPPORTED=10" in current_text
-    assert "XLSX runtime candidate" in current_text
-    assert "XLSX=19/19" in current_text
-    assert "PDF table/value candidate" in current_text
-    assert "PASS=29/29" in current_text
-    assert "official_answer_citation_agentic_loop_run_v1" in current_text
-    assert "scored_count=29" in current_text
-    assert "PASS=1" in current_text
-    assert "faiss_gpu_used=true" in current_text
-    assert "diagnostic_live_generation_fixture_all_index_not_official_denominator_representative" in current_text
-    assert "baseline_comparison_is_model_quality_comparable=false" in current_text
-    assert "llm_backend=noop" in current_text
-    assert "chunk-only citation locators" in current_text
-    assert "not canonical SearchUnit" in current_text
-    assert "STRUCTURED_ADAPTER_NOT_WIRED=22" in current_text
-    assert "eval/indexes/rag-data" in current_text
-    assert "Human-facing rolling docs" in current_text
-    assert "primary append-only\nhuman report file" in current_text
-    assert "append the\nshort entry here instead of creating another report" in current_text
-    assert "Per-run Markdown" in current_text
-    assert "source-bound official-denominator SearchUnit export/build is now unblocked" in current_text
-    assert "BUILD_READY_LOAD_CHECK_PASSED" in current_text
-    assert "rerun_allowed=true" in current_text
-    assert "29/29 official" in current_text
-    assert "SearchUnit citation payload wiring is implemented" in current_text
-    assert "XLSX/PDF deterministic adapter opt-in wiring is implemented" in current_text
-    assert "report-only" in current_text
+    assert V5_4_CURRENT_STATUS in current_text
+    assert "v5_4_user_owned_official_eval_approval_packet" in current_text
+    assert "`current` resolves to `v5_4`" in current_text
+    assert "`v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable" in current_text
+    assert "v5_3_pdf_text_residual_retrieval_evidence_hardening" in current_text
+    assert "v5_2_xlsx_residual_candidate_only_retrieval_engineering" in current_text
+    assert "v5_1_official_eval_gate_scaffolding" in current_text
+    assert "v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility" in current_text
+    assert "user-owned approval packet" in current_text
+    assert "existing registry-backed 29-row official snapshot" in current_text
+    assert "user-owned final fields remain blank/pending_user_review" in current_text
+    assert "official_metric_dry_run_opened=false" in current_text
+    assert "official_metric_input_rows=0" in current_text
+    assert "official_metric_input_rows_created=0" in current_text
+    assert "official_eval_user_gate_ready=false" in current_text
+    assert "protected_namespaces_touched=[]" in current_text
+    assert "Current verification: after v5_4 user-owned approval packet materialization" in current_text
     assert "pytest ai/tests --rag-current -q" in current_text
-    assert "full `ai/tests`\n  now mirrors the current profile" in current_text
-    assert "broad/nightly legacy\n  suites" in current_text
     assert "status.jsonl" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_4/report.json" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_3/report.json" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_2/report.json" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_1/report.json" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_0/report.json" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json" in current_text
+    assert "`current` resolves to `v5_2`" not in current_text
+    assert "`current` resolves to `v5_1`" not in current_text
+    assert "`current` resolves to `v5_0`" not in current_text
+    assert "official_metric_execution_started=true" not in current_text
+    assert "faiss_gpu_used=true" not in current_text
+    assert "baseline_comparison_is_model_quality_comparable=false" not in current_text
+    assert "llm_backend=noop" not in current_text
+    assert "STRUCTURED_ADAPTER_NOT_WIRED=22" not in current_text
+    assert "wire official metrics" not in current_flat
 
     assert "SCORER_BACKEND_UNAVAILABLE" not in current_text
     assert "scorer/backend is unavailable" not in current_text
@@ -229,10 +240,24 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
 
 def test_progress_doc_does_not_keep_stale_current_profile_test_count():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
+    verification_section = text.split("## Current Status", 1)[1].split("Artifact policy:", 1)[0]
 
-    assert "Current verification:" in text
-    assert "0 skipped" in text
-    assert "0 failed" in text
+    assert "Current verification:" in verification_section
+    assert "38 passed" in verification_section
+    assert "37 passed" not in verification_section
+    assert "33 passed" not in verification_section
+    assert "31 passed" not in verification_section
+    assert "26 passed" not in verification_section
+    assert "22 passed" not in verification_section
+    assert "17 passed" not in verification_section
+    assert "14 passed" not in verification_section
+    assert "13 passed" not in verification_section
+    assert "18 passed" not in verification_section
+    assert "823 passed" not in verification_section
+    assert "0 skipped" in verification_section
+    assert "0 failed" in verification_section
+    assert "1 warning" in verification_section
+    assert "8 warnings" not in verification_section
     assert "current focused profile is 61 tests" not in text
 
 

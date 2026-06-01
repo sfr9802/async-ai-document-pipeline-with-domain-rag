@@ -1,3 +1,192 @@
+<!-- v5_4_user_owned_official_eval_approval_packet:measurements-entry:start -->
+## v5_4 user-owned official-eval approval packet
+
+- Run key: `v5_4_user_owned_official_eval_approval_packet`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`
+- Interpretation: packet-only user approval materialization. No official metric dry-run, no official metric rows, and no user-owned final fields filled by Codex.
+
+| counter | value |
+| --- | --- |
+| status | V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY |
+| source_run_id | v5_3_pdf_text_residual_retrieval_evidence_hardening |
+| current_resolves_to | v5_4 |
+| review_surface_source | existing_registry_backed_29_official_snapshot |
+| user_approval_packet_created | true |
+| user_policy_template_created | true |
+| user_review_packet_created | true |
+| user_review_packet_xlsx_created | true |
+| user_review_packet_row_count | 29 |
+| user_owned_final_fields_filled_by_codex | false |
+| official_metric_input_rows | 0 |
+| official_metric_input_rows_created | 0 |
+| official_metric_dry_run_opened | false |
+| official_eval_user_gate_ready | false |
+| training_dataset_created | false |
+| fine_tuning_dataset_export_created | false |
+| promotion_evidence | false |
+| live_db_index_cache_readiness | false |
+| protected_namespaces_touched | [] |
+<!-- v5_4_user_owned_official_eval_approval_packet:measurements-entry:end -->
+
+<!-- v5_3_pdf_text_residual_retrieval_evidence_hardening:measurements-entry:start -->
+## v5_3 PDF/TEXT residual retrieval/evidence hardening
+
+- Run key: `v5_3_pdf_text_residual_retrieval_evidence_hardening`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_3/report.json`
+- Interpretation: aggregate PDF/TEXT residual taxonomy plus overlay-90 sample root-cause taxonomy. No row-level residual mask or new repair is created.
+
+| counter | value |
+| --- | --- |
+| status | V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY |
+| source_run_id | v5_2_xlsx_residual_candidate_only_retrieval_engineering |
+| current_resolves_to | v5_3 |
+| v4_closeout_basis | v4_7_18 |
+| text_v4_7_18_combined_target_hit_count | 232 |
+| text_v4_7_18_combined_target_miss_count | 118 |
+| pdf_v4_7_18_combined_target_hit_count | 265 |
+| pdf_v4_7_18_combined_target_miss_count | 60 |
+| pdf_text_residual_aggregate_count | 178 |
+| text_candidate_count | 1714 |
+| text_zero_candidate_row_count | 2 |
+| text_candidate_budget_exhaustion_count | 336 |
+| pdf_candidate_overlay_attempted_row_count | 0 |
+| overlay_90_text_sample_row_count | 30 |
+| overlay_90_pdf_sample_row_count | 30 |
+| overlay_90_text_target_not_in_topk_total | 28 |
+| overlay_90_pdf_target_not_in_topk_total | 12 |
+| overlay_90_sample_scope | overlay_90_sample_not_full_pdf_text_denominator |
+| family_target_hit_regression_count | {"PDF": 0, "TEXT": 0, "XLSX": 0} |
+| safe_repair_applied | false |
+| safe_gain_claimed | false |
+| official_metric_input_rows | 0 |
+| official_metric_input_rows_created | 0 |
+| training_dataset_created | false |
+| fine_tuning_dataset_export_created | false |
+| promotion_evidence | false |
+| live_db_index_cache_readiness | false |
+<!-- v5_3_pdf_text_residual_retrieval_evidence_hardening:measurements-entry:end -->
+
+<!-- v5_2_xlsx_residual_candidate_only_retrieval_engineering:measurements-entry:start -->
+## v5_2 XLSX residual candidate-state taxonomy
+
+- Run key: `v5_2_xlsx_residual_candidate_only_retrieval_engineering`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_2/report.json`
+- Interpretation: candidate-state taxonomy only. Exact row-level residual overlap remains unavailable without a safe non-oracle residual mask.
+
+| counter | value |
+| --- | --- |
+| status | V5_2_XLSX_RESIDUAL_CANDIDATE_ONLY_RETRIEVAL_ENGINEERING_DIAGNOSTIC_NONPROD_READY |
+| source_run_id | v5_1_official_eval_gate_scaffolding |
+| current_alias_at_write_time | v5_2 |
+| v4_closeout_basis | v4_7_18 |
+| xlsx_row_count | 325 |
+| xlsx_v4_7_18_combined_target_hit_count | 26 |
+| xlsx_v4_7_18_combined_target_miss_count | 299 |
+| residual_overlap_counts_available | false |
+| candidate_budget_per_query | 5 |
+| xlsx_candidate_count | 881 |
+| zero_candidate_structural_gap | 78 |
+| budget_exhausted_diversity_gap | 109 |
+| bounded_candidate_rank_gap_upper_bound | 138 |
+| unclassified_residual_overlap_aggregate | 299 |
+| candidate_count_distribution | {"0": 78, "1": 58, "2": 31, "3": 14, "4": 1, "5": 143} |
+| family_target_hit_regression_count | {"PDF": 0, "TEXT": 0, "XLSX": 0} |
+| safe_repair_applied | false |
+| safe_gain_claimed | false |
+| official_metric_input_rows | 0 |
+| official_metric_input_rows_created | 0 |
+| training_dataset_created | false |
+| training_manifest_jsonl_created | false |
+| fine_tuning_dataset_export_created | false |
+| promotion_evidence | false |
+| live_db_index_cache_readiness | false |
+<!-- v5_2_xlsx_residual_candidate_only_retrieval_engineering:measurements-entry:end -->
+
+<!-- v5_1_official_eval_gate_scaffolding:measurements-entry:start -->
+## v5_1 official eval gate scaffolding
+
+- Run key: `v5_1_official_eval_gate_scaffolding`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_1/report.json`
+- Interpretation: schema and validator scaffold only; no official metric input rows, gold/qrels, denominator rows, training data, or promotion surface.
+
+| counter | value |
+| --- | --- |
+| status | V5_1_OFFICIAL_EVAL_GATE_SCAFFOLDING_DIAGNOSTIC_NONPROD_READY |
+| source_run_id | v5_0_v4_closeout_and_v5_gate_plan |
+| current_alias_at_write_time | v5_1 |
+| v4_closeout_basis | v4_7_18 |
+| official_eval_scaffold_created | true |
+| official_eval_user_gate_ready | false |
+| official_eval_approval_artifact_found | false |
+| official_metric_input_rows | 0 |
+| official_metric_input_rows_created | 0 |
+| official_metric_input_rows_scope | v5_1_scaffold_created_rows_only |
+| existing_registry_backed_official_metric_input_rows_snapshot | 29 |
+| blocked_by_user_owned_gold_qrels_or_denominator_gate | true |
+| missing_user_owned_approval_artifact_count | 8 |
+| gold_mutation | false |
+| qrels_mutation | false |
+| label_mutation | false |
+| expected_answer_mutation | false |
+| supporting_evidence_mutation | false |
+| denominator_mutation | false |
+| training_dataset_created | false |
+| training_manifest_jsonl_created | false |
+| training_job_created | false |
+| fine_tuning_dataset_export_created | false |
+| fine_tuning | false |
+| fine_tuning_started | false |
+| fine_tuning_executed | false |
+| ft_a_execution | false |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+<!-- v5_1_official_eval_gate_scaffolding:measurements-entry:end -->
+
+<!-- v5_0_v4_closeout_and_v5_gate_plan:measurements-entry:start -->
+## v5_0 v4 closeout and v5 gate plan
+
+- Run key: `v5_0_v4_closeout_and_v5_gate_plan`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`
+- Interpretation: diagnostic-only closeout and gate planning; not official scoring, promotion, product-success evidence, or live readiness.
+
+| counter | value |
+| --- | --- |
+| status | V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY |
+| v4_closeout_source_of_truth | v4_7_18 |
+| v4_closeout_basis_short_run_id | v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility |
+| current_alias_at_write_time | v5_0 |
+| source_report_status | V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY |
+| source_report_sha256 | 3a682ff580ebd3e2db78c013e1b9402bd576b43d2f313b414a293118462b8b8e |
+| lineage_reproducibility_status | LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY |
+| xlsx_materialization_repair_status | XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_ACCEPTED_DIAGNOSTIC_ONLY |
+| xlsx_materialization_repair_decision | accept_materialized_axis_value_overlay_diagnostic_only |
+| text_hit_count | 232 |
+| text_miss_count | 118 |
+| pdf_hit_count | 265 |
+| pdf_miss_count | 60 |
+| xlsx_hit_count | 26 |
+| xlsx_miss_count | 299 |
+| xlsx_zero_candidate_row_count | 78 |
+| xlsx_candidate_budget_exhaustion_count | 109 |
+| family_target_hit_regression_count | {"PDF": 0, "TEXT": 0, "XLSX": 0} |
+| official_metric_opening_preconditions_satisfied | false |
+| live_readiness_promotion_preconditions_satisfied | false |
+| official_metric_input_rows | 0 |
+| silver_official_metric_input_rows | 0 |
+| silver_promoted_to_gold_count | 0 |
+| gold_mutation | false |
+| qrels_mutation | false |
+| label_mutation | false |
+| denominator_mutation | false |
+| training_dataset_created | false |
+| fine_tuning | false |
+| ft_a_execution | false |
+| promotion_evidence | false |
+| product_success_evidence_allowed | false |
+| live_db_index_cache_readiness | false |
+<!-- v5_0_v4_closeout_and_v5_gate_plan:measurements-entry:end -->
+
 <!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:measurements-entry:start -->
 ### v4_7_12 Layered Retrieval Generalization And Overfit Audit
 
@@ -675,7 +864,185 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 
 # RAG Ingestion Measurements
 
-Last updated: 2026-05-27 KST.
+<!-- v4_7_18_measurements_start -->
+## v4_7_18 XLSX candidate-only materialization repair and lineage reproducibility
+
+- Run key: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`
+
+| counter | value |
+| --- | --- |
+| status | V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY |
+| source_run_id | v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit |
+| lineage_reproducibility_status | LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY |
+| required_runner_module_tracking_status | REQUIRED_RUNNER_MODULES_TRACKED_AND_NOT_IGNORED |
+| source_candidate_set_sha256_matches_recomputed | true |
+| poisoned_oracle_field_digest_stable | true |
+| poisoned_oracle_field_evaluation_changed | true |
+| topk_artifact_row_count | 1029 |
+| filtered_replay_row_count | 1000 |
+| excluded_row_count | 29 |
+| xlsx_materialization_repair_status | XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_ACCEPTED_DIAGNOSTIC_ONLY |
+| xlsx_materialization_repair_decision | accept_materialized_axis_value_overlay_diagnostic_only |
+| xlsx_baseline_target_hit_count | 15 |
+| xlsx_v4_7_17_combined_target_hit_count | 17 |
+| xlsx_v4_7_18_combined_target_hit_count | 26 |
+| xlsx_v4_7_18_gain_over_v4_7_17_count | 9 |
+| xlsx_gain_rate_per_v4_7_17_miss | 9/308 |
+| xlsx_target_hit_regression_count | 0 |
+| xlsx_candidate_count | 881 |
+| xlsx_zero_candidate_row_count | 78 |
+| xlsx_candidate_budget_exhaustion_count | 109 |
+| direct_normalized_answer_value_matching | false |
+| raw_xlsx_query_time_parsing | false |
+| formula_evaluation | false |
+| formula_text_exposure | false |
+| source_file_title_shortcut_used | false |
+| official_metric_input_rows | 0 |
+<!-- v4_7_18_measurements_end -->
+
+<!-- v4_7_17_measurements_start -->
+## v4_7_17 candidate-only generalization validation and XLSX table-axis repair audit
+
+- Run key: `v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json`
+
+| counter | value |
+| --- | --- |
+| status | V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY |
+| source_run_id | v4_7_16_target_recall_repair_prototype |
+| candidate_only_generalization_status | CANDIDATE_ONLY_GENERALIZATION_VALIDATED_DIAGNOSTIC_ONLY |
+| source_candidate_set_sha256_matches_recomputed | true |
+| poisoned_oracle_field_digest_stable | true |
+| poisoned_oracle_field_evaluation_changed | true |
+| source_v4_7_16_baseline_target_hit_count | 300 |
+| source_v4_7_16_combined_target_hit_count | 514 |
+| source_v4_7_16_baseline_miss_to_hit_count | 214 |
+| xlsx_table_axis_audit_status | XLSX_TABLE_AXIS_REPAIR_AUDIT_INCONCLUSIVE_DIAGNOSTIC_ONLY |
+| xlsx_table_axis_repair_decision | keep_inconclusive_low_gain_candidate_only |
+| xlsx_baseline_to_combined | 15 -> 17 |
+| xlsx_table_axis_candidate_count | 133 |
+| xlsx_table_axis_target_hit_gain_count | 2 |
+| xlsx_table_axis_gain_rate_per_baseline_miss | 2/310 |
+| xlsx_target_hit_regression_count | 0 |
+| xlsx_overlay_target_not_in_topk_total | 28 |
+| xlsx_repeated_prefix_cluster_overlap_with_target_miss | 20 |
+| source_topk_sha256_verified | true |
+| source_topk_resolved_via_archive | true |
+| official_metric_input_rows | 0 |
+| direct_normalized_answer_value_matching | false |
+| raw_xlsx_query_time_parsing | false |
+| source_file_title_shortcut_used | false |
+<!-- v4_7_17_measurements_end -->
+
+<!-- v4_7_16_measurements_start -->
+## v4_7_16 target recall repair prototype
+
+- Run key: `v4_7_16_target_recall_repair_prototype`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_16/report.json`
+
+| counter | value |
+| --- | --- |
+| status | V4_7_16_TARGET_RECALL_REPAIR_PROTOTYPE_NONPROD_READY |
+| source_run_id | v4_7_15_read_only_searchindex_replay_projection |
+| candidate_budget_per_query | 5 |
+| baseline_target_hit_count | 300 |
+| combined_target_hit_count | 514 |
+| baseline_miss_to_hit_count | 214 |
+| baseline_hit_to_miss_count | 0 |
+| TEXT baseline_to_combined | 20 -> 232 |
+| TEXT prototype_candidate_count | 1714 |
+| TEXT baseline_miss_to_hit_count | 212 |
+| XLSX baseline_to_combined | 15 -> 17 |
+| XLSX prototype_candidate_count | 133 |
+| XLSX baseline_miss_to_hit_count | 2 |
+| PDF baseline_to_combined | 265 -> 265 |
+| PDF target_hit_regression_count | 0 |
+| overlay_90_retrieval_target_not_in_topk | 68 |
+| source_topk_sha256_verified | true |
+| source_topk_resolved_via_archive | true |
+| official_metric_input_rows | 0 |
+| direct_normalized_answer_value_matching | false |
+| raw_xlsx_query_time_parsing | false |
+| source_file_title_shortcut_used | false |
+<!-- v4_7_16_measurements_end -->
+
+<!-- v4_7_15_measurements_start -->
+## v4_7_15 read-only SearchIndexContract replay projection
+
+- Run key: `v4_7_15_read_only_searchindex_replay_projection`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_15/report.json`
+
+| counter | value |
+| --- | --- |
+| status | V4_7_15_READ_ONLY_SEARCHINDEX_REPLAY_PROJECTION_NONPROD_READY |
+| read_only_searchindexcontract_replay_status | READ_ONLY_SEARCHINDEXCONTRACT_REPLAY_UNBLOCKED_ARCHIVED_TOPK_DIAGNOSTIC_ONLY |
+| source_topk_sha256_verified | true |
+| source_topk_resolved_via_archive | true |
+| v3_7_0_source_registry_manifest_record_count | 5 |
+| v3_7_1_index_manifest_record_count | 5 |
+| replay_input_row_count | 1000 |
+| replay_counts_by_family | {"PDF": 325, "TEXT": 350, "XLSX": 325} |
+| topk_envelope_count | 5000 |
+| sourceatom_hydration_success_envelope_count | 5000 |
+| evidencebundle_renderable_envelope_count | 5000 |
+| citation_renderable_envelope_count | 5000 |
+| vector_payload_evidence_truth_violation_count | 0 |
+| projection_input_row_count | 90 |
+| retrieval_target_not_in_topk_projection_count | 68 |
+| target_hit_evidence_context_repair_projection_count | 14 |
+| query_specificity_fixture_review_projection_count | 3 |
+| no_repair_projection_count | 5 |
+| overlay_rows_missing_from_audit_count | 0 |
+| live_retrieval_quality_failure_count | 0 |
+| claim_support_fail_count | 0 |
+| parser_failure_count | 0 |
+| official_metric_input_rows | 0 |
+<!-- v4_7_15_measurements_end -->
+
+<!-- v4_7_14_measurements_start -->
+## v4_7_14 diagnostic precondition hardening
+
+- Run key: `v4_7_14_diagnostic_precondition_hardening`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_14/report.json`
+
+| counter | value |
+| --- | --- |
+| status | V4_7_14_DIAGNOSTIC_PRECONDITION_HARDENING_NONPROD_READY |
+| live_retrieval_preflight_status | LIVE_RETRIEVAL_PRECONDITION_UNAVAILABLE_FAIL_CLOSED |
+| live_retrieval_precondition_unavailable_count | 1 |
+| live_retrieval_quality_failure_count | 0 |
+| local_llm_preflight_status | LOCAL_LLM_UNAVAILABLE_GENERATION_NOT_ATTEMPTED_FAIL_CLOSED |
+| llm_unavailable_skip_count | 57 |
+| generated_response_count | 0 |
+| parser_failure_count | 0 |
+| claim_support_fail_count | 0 |
+| citation_failure_count | 0 |
+| unsupported_answer_count | 0 |
+| claim_support_not_evaluated_due_to_no_generation_count | 57 |
+| silver_answerability_overlay_row_count | 90 |
+| official_metric_input_rows | 0 |
+<!-- v4_7_14_measurements_end -->
+
+<!-- v4_7_13_measurements_start -->
+## v4_7_13 live retrieval answerability and full PDF replay
+
+| counter | value |
+| --- | --- |
+| status | V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY |
+| live_silver_retrieval_env_enabled | true |
+| live_silver_retrieval_row_count | 0 |
+| pdf_full_replay_env_enabled | true |
+| pdf_full_replay_eligible_count | 57 |
+| pdf_generated_response_count | 0 |
+| silver_answerability_overlay_row_count | 90 |
+| silver_prior_insufficient_evidence_count | 64 |
+| silver_prior_claim_support_pass/fail | 60/30 |
+| tooling_counter_scope_mismatch_count | 0 |
+| official_metric_input_rows | 0 |
+<!-- v4_7_13_measurements_end -->
+
+Last updated: 2026-06-01 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new

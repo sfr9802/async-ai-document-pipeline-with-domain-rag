@@ -1,10 +1,10 @@
-# AI 문서 검색 평가 샘플
-
-이 문서는 `ai/eval`에서 사용하는 **문서 검색·답변 평가 샘플 README**입니다.
-TEXT, PDF, XLSX 문서에 질문했을 때 AI가 어떤 근거를 찾고, 어떤 응답을 만들었는지 한눈에 확인할 수 있게 정리했습니다.
-
-중요한 점은 이 문서가 “성능 점수 자랑용”이 아니라는 것입니다.
-여기서는 모델이 그럴듯한 답변을 했는지보다, **답변이 실제 문서 근거에 연결되어 있는지**, 그리고 **근거가 부족할 때 답변을 막는지**를 보여줍니다.
+<!-- v5_4_summary_start -->
+## Current RAG Diagnostic Status
+Current RAG status: `V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY`.
+`current` resolves to `v5_4`: a packet-only user-owned official-eval approval materialization run. `v5_3` remains the PDF/TEXT residual retrieval/evidence hardening basis, `v5_2` remains the XLSX residual candidate-state taxonomy, `v5_1` remains the official-eval gate scaffold, `v5_0` remains the v4 closeout and v5 gate-plan basis, and `v4_7_18` remains the frozen v4 closeout basis.
+v5_4 writes `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, and `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`. All final user-owned fields remain blank, null, or pending_user_review; machine_* fields are non-final hints only.
+Hard boundary: official_metric_dry_run_opened=false, official_metric_input_rows=0, official_metric_input_rows_created=0; no gold/qrels/labels, no expected/supporting evidence or denominator mutation, no training dataset, no fine-tuning dataset export, no fine-tuning job, no promotion evidence, no product-success evidence, and no live-readiness claim.
+<!-- v5_4_summary_end -->
 
 ## 한눈에 보기
 

@@ -1,8 +1,10 @@
-# 문서 근거 기반 AI 검색·답변 파이프라인
-
-PDF, XLSX, TEXT 문서를 대상으로 질문에 답하고, 답변에 사용된 원문 근거를 함께 반환하는 AI 문서 검색·질의응답 시스템입니다.
-
-일반적인 RAG 기반 문서 QA처럼 답변만 생성하는 데 그치지 않고, 사용자가 답변을 **PDF page, XLSX sheet/cell, TEXT chunk 단위로 직접 검증할 수 있는 구조**를 목표로 구현했습니다.
+<!-- v5_4_summary_start -->
+## Current RAG Diagnostic Status
+Current RAG status: `V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY`.
+`current` resolves to `v5_4`: a packet-only user-owned official-eval approval materialization run. `v5_3` remains the PDF/TEXT residual retrieval/evidence hardening basis, `v5_2` remains the XLSX residual candidate-state taxonomy, `v5_1` remains the official-eval gate scaffold, `v5_0` remains the v4 closeout and v5 gate-plan basis, and `v4_7_18` remains the frozen v4 closeout basis.
+v5_4 writes `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, and `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`. All final user-owned fields remain blank, null, or pending_user_review; machine_* fields are non-final hints only.
+Hard boundary: official_metric_dry_run_opened=false, official_metric_input_rows=0, official_metric_input_rows_created=0; no gold/qrels/labels, no expected/supporting evidence or denominator mutation, no training dataset, no fine-tuning dataset export, no fine-tuning job, no promotion evidence, no product-success evidence, and no live-readiness claim.
+<!-- v5_4_summary_end -->
 
 ## 프로젝트 개요
 

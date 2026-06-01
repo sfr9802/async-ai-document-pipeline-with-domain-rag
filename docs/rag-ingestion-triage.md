@@ -1,3 +1,51 @@
+<!-- v5_4_user_owned_official_eval_approval_packet:triage-entry:start -->
+### v5_4 user-owned official-eval approval packet
+
+- Scope: materialize only the user-owned approval schema, policy template, and 29-row review packet over the existing registry-backed official snapshot.
+- Do not fill expected answers, supporting evidence, relevance, answerability, denominator, gold/qrels, promotion, reviewer, or reviewed_at decisions; those remain user-owned and pending_user_review.
+- Machine context: `machine_*` columns are non-final review hints copied from existing source rows and are not official metric inputs, qrels, labels, expected answers, supporting evidence approvals, or denominator rows.
+- Closed gates: official_metric_dry_run_opened=false, official_metric_input_rows=0, official_metric_input_rows_created=0, training_dataset_created=false, fine_tuning_dataset_export_created=false, promotion_evidence=false, protected_namespaces_touched=[].
+<!-- v5_4_user_owned_official_eval_approval_packet:triage-entry:end -->
+
+<!-- v5_3_pdf_text_residual_retrieval_evidence_hardening:triage-entry:start -->
+### v5_3 PDF/TEXT residual retrieval/evidence hardening
+
+- Residual basis: frozen v4_7_18 aggregate TEXT misses=118 and PDF misses=60; v5_3 does not create a row-level residual mask.
+- Overlay sample: v4_7_16 overlay-90 gives TEXT target_not_in_topk=28/30 and PDF target_not_in_topk=12/30; this is sample triage, not a full-denominator bucket claim.
+- Safe action: keep PDF/TEXT candidate/evidence hardening diagnostic-only; reject raw PDF query-time parsing, full-page dumps, expected/supporting text, locator shortcuts, and row-specific thresholds.
+- User gate reached: future official-metric dry-run remains blocked until explicit user-owned gold/qrels, expected/supporting evidence, relevance, answerability, denominator, and promotion-policy approvals exist.
+- Fail-closed status: v5_3-created official_metric_input_rows=0, official_metric_input_rows_created=0, existing registry-backed official rows remain read-only and are not opened for v5_3 scoring, training_dataset_created=false, fine_tuning_dataset_export_created=false, protected_namespaces_touched=[].
+<!-- v5_3_pdf_text_residual_retrieval_evidence_hardening:triage-entry:end -->
+
+<!-- v5_2_xlsx_residual_candidate_only_retrieval_engineering:triage-entry:start -->
+### v5_2 XLSX residual candidate-state taxonomy
+
+- Residual basis: frozen v4_7_18 aggregate XLSX result has 299 misses. v5_2 does not create a row-level residual mask.
+- Candidate-state buckets: zero_candidate_structural_gap=78, budget_exhausted_diversity_gap=109, bounded_candidate_rank_gap_upper_bound=138, unclassified_residual_overlap_aggregate=299.
+- Safe action: future work may probe already-materialized structural/header/axis aliases or deterministic candidate diversity, but v5_2 applies no repair and claims no safe gain.
+- Fail-closed status: official_metric_input_rows=0, official_metric_input_rows_created=0, training_dataset_created=false, fine_tuning_dataset_export_created=false, protected_namespaces_touched=[].
+<!-- v5_2_xlsx_residual_candidate_only_retrieval_engineering:triage-entry:end -->
+
+<!-- v5_1_official_eval_gate_scaffolding:triage-entry:start -->
+### v5_1 official eval gate scaffolding
+
+- User-owned approval artifacts: gold set creation/review, expected answer, expected/supporting evidence, relevance label, answerability label, official denominator policy, gold/qrels policy, and promotion policy. All remain `missing_required_external_input`; Codex may not infer them.
+- Codex-owned validator-name placeholders: approval-artifact schema, qrels/gold consistency, expected evidence shape, relevance/answerability labels, denominator policy, protected namespace diff, official-row builder-disabled guard, and training export guard.
+- FT readiness compatibility: schema-compatible only, no dataset export. Future examples remain blocked until official eval and user-owned approval gates exist.
+- Fail-closed status: official_metric_input_rows=0, official_metric_input_rows_created=0, official_metric_input_rows_scope=v5_1_scaffold_created_rows_only, blocked_by_user_owned_gold_qrels_or_denominator_gate=true, protected_namespaces_touched=[].
+<!-- v5_1_official_eval_gate_scaffolding:triage-entry:end -->
+
+<!-- v5_0_v4_closeout_and_v5_gate_plan:triage-entry:start -->
+### v5_0 v4 closeout and v5 gate plan
+
+- Basis: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` freezes v4 as diagnostic-only source-first, candidate-only, lineage-reproducible work. `v5_0` remains explicit after v5_1; `v4_7_18` remains explicit and checkable.
+- User-owned decisions: golden set creation/review, expected answer and expected/supporting evidence judgment, relevance and answerability labels, gold policy, official denominator policy, and promotion policy.
+- Codex-owned work: implementation, test, report, path, indexing-scope, protected-surface, and failure-taxonomy work only; ambiguous non-gold choices stay fail-closed and diagnostic-only.
+- XLSX residual backlog / engineering backlog: XLSX 299 misses, 78 zero-candidate rows, and 109 budget-exhausted rows remain visible; `accept_materialized_axis_value_overlay_diagnostic_only` remains the frozen v4_7_18 repair decision.
+- Official metric opening preconditions: user-approved gold/qrels/labels/expected evidence, frozen denominator, metric definitions, blocked/deferred metric policy, and protected-surface diffs.
+- Live-readiness and promotion preconditions: accepted official metrics, live DB/index/cache rollout evidence, redaction/leakage/latency/rollback/monitoring evidence, and user-approved promotion/product-success policy.
+<!-- v5_0_v4_closeout_and_v5_gate_plan:triage-entry:end -->
+
 <!-- v4_7_12_layered_retrieval_generalization_and_overfit_audit:triage-entry:start -->
 ### v4_7_12 Layered Retrieval Generalization Boundary
 
@@ -234,7 +282,31 @@
 
 # RAG Ingestion Triage
 
-Last updated: 2026-05-27 KST.
+<!-- v4_7_18_triage_start -->
+- v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility accepts the diagnostic-only materialized axis-value overlay: `accept_materialized_axis_value_overlay_diagnostic_only`. It uses already-materialized SourceAtom axis/header text only and records rejected rules ['direct_normalized_value_matching', 'raw_xlsx_query_time_parsing', 'source_title_or_workbook_shortcut', 'query_id_case_id_hack', 'formula_text_or_formula_evaluation', 'target_or_gold_locator_candidate_scoring']; formatted-value and broader cell scoring remain inconclusive. XLSX improves 17 -> 26 target hits, but still has 299 misses, 78 zero-candidate rows, and 109 budget-exhausted rows. Repeated-prefix projection gains 1 row; explicit demotion/dedup stays inconclusive to avoid row-specific tuning. Lineage reproducibility is reported via `REQUIRED_RUNNER_MODULES_TRACKED_AND_NOT_IGNORED` and ignored report/status artifacts remain local-only.
+<!-- v4_7_18_triage_end -->
+
+<!-- v4_7_17_triage_start -->
+- v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit validates the v4_7_16 candidate-only generalization boundary: candidate-set digest matches recomputation and stays stable when target/gold/supporting/query-id fields are poisoned, proving those fields do not construct or score candidates; target labels remain after-the-fact diagnostic evaluation only. XLSX table-axis repair decision remains keep_inconclusive_low_gain_candidate_only: safe sheet/row/column/range axes add 2 target hits from 310 baseline misses, with overlay XLSX target_not_in_topk 28 and repeated-prefix overlap with target miss 20. No direct normalized value matching, raw XLSX query-time parsing, source-title/workbook shortcut, formula exposure, target/gold locator use, silver/gold/qrels, label, expected/supporting evidence, denominator, source registry, cache, production DB, or index mutation.
+<!-- v4_7_17_triage_end -->
+
+<!-- v4_7_16_triage_start -->
+- v4_7_16_target_recall_repair_prototype diagnostic-only repair decisions: accepted TEXT_SAFE_LEXICAL_SEARCHUNIT_SEARCHVIEW_REPAIR because fixed candidate-only TEXT source-registry tokens gain 212 target hits with zero target-hit regressions; inconclusive XLSX_SAFE_TABLE_AXIS_SEARCHUNIT_SEARCHVIEW_REPAIR because safe sheet/row/column/range axes gain only 2 target hits; rejected DIRECT_NORMALIZED_VALUE_MATCHING, RAW_XLSX_QUERY_TIME_PARSING, SOURCE_FILE_TITLE_SHORTCUT, TARGET_GOLD_EXPECTED_SUPPORTING_LOCATOR_USE, and ROW_SPECIFIC_THRESHOLD_OR_QUERY_ID_HACK. The 90-row v4_7_13 overlay remains summarized as diagnostic queues only: retrieval target not in top-k 68 {'PDF': 12, 'TEXT': 28, 'XLSX': 28}. No silver/gold/qrels, label, expected/supporting evidence, denominator, source registry, cache, production DB, or index mutation.
+<!-- v4_7_16_triage_end -->
+
+<!-- v4_7_15_triage_start -->
+- v4_7_15_read_only_searchindex_replay_projection diagnostic-only repair projection: retrieval target not in top-k 68 {'TEXT': 28, 'PDF': 12, 'XLSX': 28}; target-hit evidence/context repair 14 {'TEXT': 2, 'PDF': 10, 'XLSX': 2}; query-specificity fixture review 3 {'TEXT': 0, 'PDF': 3, 'XLSX': 0}; no repair projection 5. Secondary overlap: TEXT evidence-window overlap with target miss 28; XLSX repeated-prefix total 22 with 20 target misses and 2 target-hit rows; PDF evidence-window total 16 with 10 target-hit rows, and query-too-broad primary review 3. Diagnostic-only projection; no silver/gold/qrels, label, expected/supporting evidence, denominator, source registry, cache, production DB, or index mutation.
+<!-- v4_7_15_triage_end -->
+
+<!-- v4_7_14_triage_start -->
+- v4_7_14_diagnostic_precondition_hardening diagnostic-only root-cause queues: TEXT target_not_in_topk 28 and evidence_mismatch_after_family_route 30; XLSX target_not_in_topk 28 and repeated_prefix_cluster 22; PDF evidence_window_insufficient 16, source_family_route_ok_but_evidence_mismatch 17, and query_too_broad 5. These are diagnostic-only queues; silver, gold, qrels, labels, expected/supporting evidence, denominator rows, source registry, cache, production DB, and indexes are not mutated. SearchView/vector payload remains candidate-only; SourceAtom/EvidenceBundle remains evidence truth.
+<!-- v4_7_14_triage_end -->
+
+<!-- v4_7_13_triage_start -->
+- v4_7_13 live replay status: `LIVE_SILVER_RETRIEVAL_REPLAY_UNAVAILABLE_FAIL_CLOSED`. Full PDF status: `FULL_PDF_LLM_REPLAY_UNAVAILABLE_FAIL_CLOSED`. TEXT silver explanation: TEXT smoke failures are mainly weak-likely-answerable queries whose family route survived but whose target SourceAtom was usually not in top-k, so the selected evidence did not contain enough answer-bearing context. The model therefore produced supported or unsupported insufficient_evidence despite query-level likely_unanswerable=false. SearchView/vector payload remains candidate-only; SourceAtom/EvidenceBundle remains evidence truth.
+<!-- v4_7_13_triage_end -->
+
+Last updated: 2026-06-01 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of
