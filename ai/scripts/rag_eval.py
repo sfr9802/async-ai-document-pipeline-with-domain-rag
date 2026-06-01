@@ -38,9 +38,10 @@ from ai.eval import rag_v510_official_eval_gate_scaffolding as v510
 from ai.eval import rag_v520_xlsx_residual_candidate_only_retrieval_engineering as v520
 from ai.eval import rag_v530_pdf_text_residual_retrieval_evidence_hardening as v530
 from ai.eval import rag_v540_user_owned_official_eval_approval_packet as v540
+from ai.eval import rag_v550_user_approved_gold_packet_ingestion_and_official_metric_dry_run as v550
 
 
-DEFAULT_RUN_KEY = "v5_4"
+DEFAULT_RUN_KEY = "v5_5"
 SAFE_LEGACY_CHECK_ALIASES = dict(v478.SAFE_LEGACY_CHECK_ALIASES)
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
@@ -617,6 +618,13 @@ def check_run(key: str) -> dict[str, Any]:
         )
         v540.check_report(report)
         return report
+    if resolved_key == "v5_5" and not (ROOT / v550.SHORT_REPORT_PATH).exists():
+        report = v550.build_report(
+            root=ROOT,
+            source_report=check_run("v5_4"),
+        )
+        v550.check_report(report)
+        return report
     report = registry.load_report(resolved_key, root=ROOT)
     if resolved_key == "v4_7_5":
         v475.check_report(report)
@@ -656,6 +664,8 @@ def check_run(key: str) -> dict[str, Any]:
         v530.check_report(report)
     if resolved_key == "v5_4":
         v540.check_report(report)
+    if resolved_key == "v5_5":
+        v550.check_report(report, root=ROOT)
     return report
 
 
@@ -665,7 +675,7 @@ def build_parser() -> argparse.ArgumentParser:
         "run_key",
         nargs="?",
         default=DEFAULT_RUN_KEY,
-        help="logical key such as v5_4, v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
+        help="logical key such as v5_5, v5_4, v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
     )
     parser.add_argument("--check", action="store_true", help="validate an existing report")
     parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and sync docs/status")
@@ -792,8 +802,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             v540.check_report(report)
             v540.update_docs(ROOT, report)
             v540.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v5_5":
+            report = v550.build_report(root=ROOT, source_report=check_run("v5_4"))
+            v550.check_report(report)
+            report, artifact_hashes = v550.write_report_bundle(ROOT, report)
+            v550.check_report(report, root=ROOT)
+            v550.update_docs(ROOT, report)
+            v550.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         else:
-            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, v5_0, v5_1, v5_2, v5_3, and v5_4")
+            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, v5_0, v5_1, v5_2, v5_3, v5_4, and v5_5")
     else:
         report = check_run(run_key)
     if args.check or not args.write:
@@ -819,6 +836,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "user_review_packet_row_count": report.get("review_packet_row_count"),
                 "user_owned_final_fields_filled_by_codex": report.get("user_owned_final_fields_filled_by_codex"),
                 "official_metric_dry_run_opened": report.get("official_metric_dry_run_opened"),
+                "official_metric_dry_run_executed": report.get("official_metric_dry_run_executed"),
                 "blocked_by_user_owned_gold_qrels_or_denominator_gate": report.get(
                     "official_eval_gate_scaffold", {}
                 ).get("blocked_by_user_owned_gold_qrels_or_denominator_gate"),

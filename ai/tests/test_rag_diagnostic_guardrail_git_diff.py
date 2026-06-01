@@ -559,6 +559,91 @@ def test_v5_4_user_owned_approval_packet_does_not_mutate_protected_or_open_offic
         assert token not in generated_text
 
 
+def test_v5_5_user_approved_official_metric_dry_run_does_not_mutate_protected_or_export_training_surfaces():
+    import ai.scripts.rag_eval as runner
+
+    report = runner.check_run("v5_5")
+    generated_text = json.dumps(report, ensure_ascii=False)
+
+    for protected_path in (
+        "ai/eval/eval_queries",
+        "ai/eval/source_registry",
+        "ai/eval/indexes",
+        "ai/eval/silver",
+        "ai/eval/gold",
+        "ai/eval/qrels",
+        "ai/eval/denominator",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/scorer_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/smoke_v1.json",
+    ):
+        unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    assert report["non_production"] is True
+    assert report["source_run_id"] == "v5_4_user_owned_official_eval_approval_packet"
+    assert report["approval_scope"]["row_count"] == 29
+    assert report["official_metric_input_rows"] == 29
+    assert report["official_metric_input_rows_created"] == 29
+    assert report["official_metric_dry_run_opened"] is True
+    assert report["official_metric_dry_run_executed"] is True
+    assert report["official_eval_user_gate_ready"] is True
+    assert report["official_metric_finalized"] is False
+    assert report["official_metric_dry_run_result"]["answer_quality_metric_computed"] is False
+    assert report["official_metric_dry_run_result"]["promotion_evidence"] is False
+    assert report["protected_namespaces_touched"] == []
+    for key in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "denominator_mutation",
+        "training_dataset_created",
+        "training_manifest_jsonl_created",
+        "training_job_created",
+        "fine_tuning_dataset_export_created",
+        "fine_tuning",
+        "fine_tuning_started",
+        "fine_tuning_executed",
+        "ft_a_execution",
+        "promotion_evidence",
+        "product_success_evidence_allowed",
+        "live_db_index_cache_readiness",
+        "production_db_mutated",
+        "source_registry_mutated",
+        "silver_mutation",
+        "index_rebuilt",
+        "cache_mutated",
+        "raw_prompt_payload_written",
+        "raw_response_payload_written",
+    ):
+        assert report[key] is False, key
+    for row in report["official_metric_input_rows_payload"]:
+        assert row["include_in_official_denominator"] == "INCLUDE"
+        assert row["relevance_label"] == 3
+        assert row["answerability_label"] == 3
+        assert row["source_v5_4_review_row_id"].startswith("v5_4_review_")
+        assert not any(key.startswith("machine_") for key in row)
+    for token in (
+        "prompt_manifest",
+        "training_manifest.jsonl",
+        "train_preview_redacted.jsonl",
+        "validation_preview_redacted.jsonl",
+        "raw_llm_response",
+        "metric_input_v1.json",
+        "smoke_v1.json",
+        "baseline_v1.json",
+        "scorer_v1.jsonl",
+        "promotion_artifact",
+        "live_readiness",
+    ):
+        assert token not in generated_text
+
+
 def test_residual_audit_does_not_mutate_protected_artifacts():
     for protected_path in STRICT_PROTECTED_PATHS:
         unstaged = subprocess.run(

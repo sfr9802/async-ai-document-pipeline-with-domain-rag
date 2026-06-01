@@ -1,10 +1,10 @@
-<!-- v5_4_summary_start -->
+<!-- v5_5_summary_start -->
 ## Current RAG Diagnostic Status
-Current RAG status: `V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY`.
-`current` resolves to `v5_4`: a packet-only user-owned official-eval approval materialization run. `v5_3` remains the PDF/TEXT residual retrieval/evidence hardening basis, `v5_2` remains the XLSX residual candidate-state taxonomy, `v5_1` remains the official-eval gate scaffold, `v5_0` remains the v4 closeout and v5 gate-plan basis, and `v4_7_18` remains the frozen v4 closeout basis.
-v5_4 writes `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, and `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`. All final user-owned fields remain blank, null, or pending_user_review; machine_* fields are non-final hints only.
-Hard boundary: official_metric_dry_run_opened=false, official_metric_input_rows=0, official_metric_input_rows_created=0; no gold/qrels/labels, no expected/supporting evidence or denominator mutation, no training dataset, no fine-tuning dataset export, no fine-tuning job, no promotion evidence, no product-success evidence, and no live-readiness claim.
-<!-- v5_4_summary_end -->
+Current RAG status: `V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY`.
+`current` resolves to `v5_5`: a user-approved gold packet ingestion and official metric dry-run input-contract run. `v5_4` remains the explicit user-owned approval packet source, `v5_3` remains the PDF/TEXT residual hardening basis, `v5_2` remains the XLSX residual candidate-state taxonomy, `v5_1` remains the official-eval gate scaffold, `v5_0` remains the v4 closeout and v5 gate-plan basis, and `v4_7_18` remains the frozen v4 closeout basis.
+v5_5 writes `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_gold_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_denominator.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_qrels.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_expected_answers.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl`, and `ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_dry_run_result.json` for exactly the approved 29 v5_4 packet rows.
+Hard boundary: no protected official baseline/input/qrels/gold/denominator namespace mutation, no training dataset, no fine-tuning dataset export, no fine-tuning job, no promotion evidence, no product-success evidence, and no live-readiness claim.
+<!-- v5_5_summary_end -->
 
 ## 프로젝트 개요
 

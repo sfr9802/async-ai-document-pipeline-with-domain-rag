@@ -18,6 +18,7 @@ MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
 V5_4_CURRENT_STATUS = "V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY"
+V5_5_CURRENT_STATUS = "V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY"
 V5_3_CURRENT_STATUS = "V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY"
 V5_2_CURRENT_STATUS = "V5_2_XLSX_RESIDUAL_CANDIDATE_ONLY_RETRIEVAL_ENGINEERING_DIAGNOSTIC_NONPROD_READY"
 V5_1_CURRENT_STATUS = "V5_1_OFFICIAL_EVAL_GATE_SCAFFOLDING_DIAGNOSTIC_NONPROD_READY"
@@ -41,7 +42,7 @@ V4_7_3_CURRENT_STATUS = "V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLU
 V4_7_2_CURRENT_STATUS = "DIAGNOSTIC_V4_7_2_SOURCE_GROUNDED_KOREAN_QUERY_REVIEW_PACKET_HYDRATION_NONPROD_READY"
 V4_7_1_CURRENT_STATUS = "DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY"
 V4_7_CURRENT_STATUS = "V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY"
-CURRENT_RAG_STATUS = V5_4_CURRENT_STATUS
+CURRENT_RAG_STATUS = V5_5_CURRENT_STATUS
 V4_6_CLOSEOUT_CURRENT_STATUS = CURRENT_RAG_STATUS
 V4_6_12_CURRENT_STATUS = V4_6_CLOSEOUT_CURRENT_STATUS
 V4_6_11_CURRENT_STATUS = V4_6_12_CURRENT_STATUS
@@ -196,25 +197,30 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
     current_text = text.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
 
-    assert V5_4_CURRENT_STATUS in current_text
+    assert V5_5_CURRENT_STATUS in current_text
+    assert "v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run" in current_text
+    assert "`current` resolves to `v5_5`" in current_text
+    assert "`v5_4`, `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable" in current_text
     assert "v5_4_user_owned_official_eval_approval_packet" in current_text
-    assert "`current` resolves to `v5_4`" in current_text
-    assert "`v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable" in current_text
     assert "v5_3_pdf_text_residual_retrieval_evidence_hardening" in current_text
     assert "v5_2_xlsx_residual_candidate_only_retrieval_engineering" in current_text
     assert "v5_1_official_eval_gate_scaffolding" in current_text
     assert "v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility" in current_text
-    assert "user-owned approval packet" in current_text
+    assert "user-approved gold packet ingestion" in current_text
     assert "existing registry-backed 29-row official snapshot" in current_text
-    assert "user-owned final fields remain blank/pending_user_review" in current_text
-    assert "official_metric_dry_run_opened=false" in current_text
-    assert "official_metric_input_rows=0" in current_text
-    assert "official_metric_input_rows_created=0" in current_text
-    assert "official_eval_user_gate_ready=false" in current_text
+    assert "official_metric_dry_run_opened=true" in current_text
+    assert "official_metric_dry_run_executed=true" in current_text
+    assert "official_metric_input_rows=29" in current_text
+    assert "official_metric_input_rows_created=29" in current_text
+    assert "official_eval_user_gate_ready=true" in current_text
+    assert "promotion/training/fine-tuning/live-readiness remain closed" in current_text
     assert "protected_namespaces_touched=[]" in current_text
-    assert "Current verification: after v5_4 user-owned approval packet materialization" in current_text
+    assert "Current verification: after v5_5 user-approved gold packet ingestion and official metric dry-run" in current_text
     assert "pytest ai/tests --rag-current -q" in current_text
     assert "status.jsonl" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_5/report.json" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_dry_run_result.json" in current_text
     assert "ai/eval/reports/rag-ingestion/runs/v5_4/report.json" in current_text
     assert "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv" in current_text
     assert "ai/eval/reports/rag-ingestion/runs/v5_3/report.json" in current_text
@@ -243,7 +249,9 @@ def test_progress_doc_does_not_keep_stale_current_profile_test_count():
     verification_section = text.split("## Current Status", 1)[1].split("Artifact policy:", 1)[0]
 
     assert "Current verification:" in verification_section
-    assert "38 passed" in verification_section
+    assert "44 passed" in verification_section
+    assert "43 passed" not in verification_section
+    assert "38 passed" not in verification_section
     assert "37 passed" not in verification_section
     assert "33 passed" not in verification_section
     assert "31 passed" not in verification_section

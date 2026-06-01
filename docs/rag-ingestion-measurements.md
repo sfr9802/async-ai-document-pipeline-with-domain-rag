@@ -1,3 +1,28 @@
+<!-- v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run:measurements-entry:start -->
+## v5_5 user-approved official metric dry-run input
+
+- Run key: `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_5/report.json`
+- Interpretation: user-approved 29-row v5_4 packet ingestion and official metric input-contract dry-run only. No answer-generation scorer, final official metric, training, fine-tuning, promotion, product-success, or live-readiness evidence.
+
+| Counter | Value |
+|---|---:|
+| source_v5_4_packet_rows | 29 |
+| text_namu_v2_1_rows | 6 |
+| xlsx_business_structured_rows | 19 |
+| pdf_business_ocr_mm_rows | 4 |
+| user_approved_gold_packet_rows | 29 |
+| user_approved_denominator_rows | 29 |
+| user_approved_qrels_rows | 29 |
+| user_approved_expected_answers_rows | 29 |
+| official_metric_input_rows | 29 |
+| official_metric_input_rows_created | 29 |
+| official_metric_dry_run_opened | true |
+| official_metric_dry_run_executed | true |
+| answer_quality_metric_computed | false |
+| duplicate_supporting_evidence_id_count | 1 |
+<!-- v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run:measurements-entry:end -->
+
 <!-- v5_4_user_owned_official_eval_approval_packet:measurements-entry:start -->
 ## v5_4 user-owned official-eval approval packet
 

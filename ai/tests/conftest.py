@@ -23,11 +23,12 @@ CURRENT_RAG_TEST_NODEIDS = frozenset(
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_2_xlsx_residual_taxonomy_does_not_mutate_protected_or_export_training_surfaces",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_3_pdf_text_residual_hardening_does_not_mutate_protected_or_export_training_surfaces",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_4_user_owned_approval_packet_does_not_mutate_protected_or_open_official_surfaces",
+        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_5_user_approved_official_metric_dry_run_does_not_mutate_protected_or_export_training_surfaces",
         "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unavailable",
         "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_does_not_keep_stale_current_profile_test_count",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v5_diagnostic_common_helpers_preserve_write_doc_and_payload_semantics",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v477_registry_resolves_current_and_previous_short_keys",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4712_explicit_check_builds_in_memory_and_current_uses_v540_with_v530_v520_v510_v500_v4718_explicit",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4712_explicit_check_builds_in_memory_and_current_uses_v550_with_v540_v530_v520_v510_v500_v4718_explicit",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4718_written_report_status_docs_current_alias_and_explicit_historical_aliases",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v500_current_profile_checks_frozen_v4718_basis_guardrails_without_recomputing",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v500_closeout_report_freezes_v4718_basis_and_keeps_all_gates_closed",
@@ -50,6 +51,11 @@ CURRENT_RAG_TEST_NODEIDS = frozenset(
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v540_written_report_status_docs_current_alias_and_packet_artifacts",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v540_check_report_rejects_filled_user_fields_official_rows_training_and_dry_run",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v540_write_path_validates_report_before_writing_and_synthesizes_v530_source_report",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v550_user_approved_gold_packet_ingests_only_v540_rows_and_builds_official_inputs",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v550_written_report_status_docs_current_alias_and_official_artifacts",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v550_check_report_rejects_scope_expansion_missing_user_approval_and_closed_surface_drift",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v550_check_report_rejects_written_child_artifact_hash_and_payload_drift",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v550_write_path_validates_report_before_writing_and_synthesizes_v540_source_report",
     }
 )
 

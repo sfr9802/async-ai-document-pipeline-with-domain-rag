@@ -1,3 +1,14 @@
+<!-- v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run:triage-entry:start -->
+### v5_5 user approval ingestion boundary
+
+- Run key: `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_5/report.json`
+- Scope: exactly the 29 v5_4 user review packet rows. It excludes all 1000 silver rows, v5_2/v5_3 residual rows, overlay-90, XLSX candidate-state rows, and PDF/TEXT residual taxonomy rows from denominator/label creation.
+- Evidence IDs are derived only from `machine_existing_citation_locator_hint`; TEXT uses `cited_chunk_ids`, while XLSX/PDF use `search_unit_id` with the full locator preserved for row-level precision audit.
+- Duplicate evidence IDs are recorded as diagnostic metadata, not silently collapsed. Run-local official-eval artifacts are ignored and protected namespaces remain untouched.
+- Training, fine-tuning, FT-A, promotion, product-success, and live-readiness remain closed.
+<!-- v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run:triage-entry:end -->
+
 <!-- v5_4_user_owned_official_eval_approval_packet:triage-entry:start -->
 ### v5_4 user-owned official-eval approval packet
 

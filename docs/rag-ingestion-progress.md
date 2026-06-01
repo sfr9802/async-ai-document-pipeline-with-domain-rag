@@ -1,3 +1,7 @@
+<!-- v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run:progress-entry:start -->
+- Overall status: `V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY`; v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run ingests the user-approved v5_4 packet as a run-local official-eval dry-run surface. It creates gold packet, denominator, qrels, expected-answer, official metric input, and dry-run result artifacts under `ai/eval/reports/rag-ingestion/runs/v5_5` only. Scope is exactly 29 v5_4 packet rows (TEXT 6, XLSX 19, PDF 4); no silver/residual/overlay-90 expansion. official_metric_input_rows=29, official_metric_dry_run_opened=true, official_metric_dry_run_executed=true, official_metric_execution_started=false, promotion/training/fine-tuning/product-success/live-readiness remain closed, and protected_namespaces_touched=[].
+<!-- v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run:progress-entry:end -->
+
 <!-- v5_4_user_owned_official_eval_approval_packet:progress-entry:start -->
 - Overall status: `V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY`; v5_4_user_owned_official_eval_approval_packet creates the user-owned official-eval approval packet only. Artifact: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`. Source phase: `v5_3` / `v5_3_pdf_text_residual_retrieval_evidence_hardening`. `current` resolves to `v5_4`, while `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable. Required packet artifacts are `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, and `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`. The bounded review surface is the existing registry-backed 29-row official snapshot, not all silver/residual rows. All final user-owned row fields remain blank, null, or pending_user_review; Codex fills no user-owned final field. official_metric_dry_run_opened=false, official_metric_input_rows=0, official_metric_input_rows_created=0, official_eval_user_gate_ready=false, and no gold/qrels/label/expected/supporting/denominator/training/fine-tuning/FT-A/promotion/product-success/live-readiness gates are opened.
 <!-- v5_4_user_owned_official_eval_approval_packet:progress-entry:end -->
@@ -266,24 +270,25 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY`; `v5_4_user_owned_official_eval_approval_packet` is the current packet-only phase. `current` resolves to `v5_4`, while `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable.
+Overall status: `V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY`; `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run` is the current user-approved gold packet ingestion and official metric dry-run phase. `current` resolves to `v5_5`, while `v5_4`, `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable.
 
 Current run board:
-- current_source_of_truth: `v5_4_user_owned_official_eval_approval_packet`.
-- source_run: `v5_3_pdf_text_residual_retrieval_evidence_hardening`; v5_4 materializes a user-owned approval packet over the existing registry-backed 29-row official snapshot only; it does not expand to silver or residual rows.
-- Packet artifacts: `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, and `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`.
-- user-owned final fields remain blank/pending_user_review; machine_* columns are non-final context hints only.
-- official_metric_dry_run_opened=false; official_metric_input_rows=0; official_metric_input_rows_created=0; official_eval_user_gate_ready=false.
-- Gold/qrels/labels/expected answers/supporting evidence/denominator/training/fine-tuning/FT-A/promotion/product-success/live-readiness gates remain closed, and protected_namespaces_touched=[].
+- current_source_of_truth: `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run`.
+- source_run: `v5_4_user_owned_official_eval_approval_packet`; v5_5 ingests only the existing registry-backed 29-row official snapshot from the v5_4 user-owned approval packet and does not expand to silver, residual, overlay-90, XLSX candidate-state, or PDF/TEXT residual taxonomy rows.
+- Created run-local artifacts: `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_gold_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_denominator.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_qrels.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_expected_answers.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl`, and `ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_dry_run_result.json`.
+- official_metric_dry_run_opened=true; official_metric_dry_run_executed=true; official_metric_input_rows=29; official_metric_input_rows_created=29; official_eval_user_gate_ready=true.
+- promotion/training/fine-tuning/live-readiness remain closed; protected_namespaces_touched=[].
+- Pre-execution artifact note: older official metric pre-execution artifact remains historical; official_metric_execution_started=false and must not be read
+as the latest metric execution status.
 
-Current verification: after v5_4 user-owned approval packet materialization,
-`pytest ai/tests --rag-current -q` passed with 38 passed, 0 failed, 0 skipped, 1 warning, while historical focused runs remain directly checkable by explicit key. Generated report/status/packet artifacts remain ignored.
+Current verification: after v5_5 user-approved gold packet ingestion and official metric dry-run,
+`pytest ai/tests --rag-current -q` passed with 44 passed, 0 failed, 0 skipped, 1 warning, while historical focused runs remain directly checkable by explicit key. Generated report/status/official-eval artifacts remain ignored.
 
 Artifact policy:
 - `ai/eval/reports/rag-ingestion/status.jsonl` remains local/ignored status ledger.
-- Current v5_4 report: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`.
-- Current user packet paths: `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`.
-- Prior basis reports remain explicit: `ai/eval/reports/rag-ingestion/runs/v5_3/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_2/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, and frozen v4 basis `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`.
+- Current v5_5 report: `ai/eval/reports/rag-ingestion/runs/v5_5/report.json`.
+- Source v5_4 packet paths: `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, and `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`.
+- Prior basis reports remain explicit: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_3/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_2/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_1/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, and `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`.
 
 ## Short History
 

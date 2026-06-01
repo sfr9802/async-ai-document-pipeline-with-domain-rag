@@ -172,6 +172,13 @@ V5_4_LONG_RUN_ID = (
     "user_owned_official_eval_approval_packet_nonprod"
 )
 V5_4_STATUS = "V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY"
+V5_5_SHORT_KEY = "v5_5"
+V5_5_SHORT_RUN_ID = "v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run"
+V5_5_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v5_5_"
+    "user_approved_gold_packet_ingestion_and_official_metric_dry_run_nonprod"
+)
+V5_5_STATUS = "V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY"
 
 
 class ReportResolutionError(RuntimeError):
@@ -416,6 +423,15 @@ RUNS: dict[str, RunMetadata] = {
         accepted_aliases=(V5_4_SHORT_RUN_ID, V5_4_LONG_RUN_ID),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
     ),
+    V5_5_SHORT_KEY: RunMetadata(
+        logical_key=V5_5_SHORT_KEY,
+        short_run_id=V5_5_SHORT_RUN_ID,
+        canonical_long_run_id=V5_5_LONG_RUN_ID,
+        status=V5_5_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V5_5_SHORT_KEY / "report.json",
+        accepted_aliases=(V5_5_SHORT_RUN_ID, V5_5_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
 }
 
 ALIAS_TO_KEY: dict[str, str] = {
@@ -423,7 +439,7 @@ ALIAS_TO_KEY: dict[str, str] = {
     for key, metadata in RUNS.items()
     for alias in (key, *metadata.accepted_aliases)
 }
-ALIAS_TO_KEY["current"] = V5_4_SHORT_KEY
+ALIAS_TO_KEY["current"] = V5_5_SHORT_KEY
 
 
 def _repo_root(root: Path | str | None = None) -> Path:
