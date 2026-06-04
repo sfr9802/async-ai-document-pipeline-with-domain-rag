@@ -204,6 +204,19 @@ V5_6_2_REPORT = V5_6_2_RUN_DIR / "report.json"
 V5_6_2_SCORED_RESULT = V5_6_2_RUN_DIR / "official_metric_scored_result.json"
 V5_6_2_FAILURE_ATTRIBUTION = V5_6_2_RUN_DIR / "failure_attribution.jsonl"
 V5_6_2_BACKEND_PREFLIGHT_RESULT = V5_6_2_RUN_DIR / "backend_preflight_result.json"
+V5_6_3_SHORT_KEY = "v5_6_3"
+V5_6_3_SHORT_RUN_ID = "v5_6_3_official_metric_backend_probe_and_scored_execution_nonprod"
+V5_6_3_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v5_6_3_"
+    "official_metric_backend_probe_and_scored_execution_nonprod"
+)
+V5_6_3_STATUS = "V5_6_3_OFFICIAL_METRIC_BACKEND_PROBE_FAIL_CLOSED_NONPROD_READY"
+V5_6_3_SCORED_STATUS = "V5_6_3_OFFICIAL_METRIC_BACKEND_PROBE_SCORED_EXECUTION_NONPROD_READY"
+V5_6_3_RUN_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_6_3"
+V5_6_3_REPORT = V5_6_3_RUN_DIR / "report.json"
+V5_6_3_SCORED_RESULT = V5_6_3_RUN_DIR / "official_metric_scored_result.json"
+V5_6_3_FAILURE_ATTRIBUTION = V5_6_3_RUN_DIR / "failure_attribution.jsonl"
+V5_6_3_BACKEND_PREFLIGHT_RESULT = V5_6_3_RUN_DIR / "backend_preflight_result.json"
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
@@ -346,6 +359,7 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
         "v5_5": "ai/eval/reports/rag-ingestion/runs/v5_5/report.json",
         "v5_6": "ai/eval/reports/rag-ingestion/runs/v5_6/report.json",
         "v5_6_2": "ai/eval/reports/rag-ingestion/runs/v5_6_2/report.json",
+        "v5_6_3": "ai/eval/reports/rag-ingestion/runs/v5_6_3/report.json",
         "current": "ai/eval/reports/rag-ingestion/runs/v5_6/report.json",
     }
     for key, rel_path in expected.items():
@@ -369,6 +383,7 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
             V5_5_SHORT_KEY,
             V5_6_SHORT_KEY,
             V5_6_2_SHORT_KEY,
+            V5_6_3_SHORT_KEY,
             "current",
         }
         if key in in_memory_keys and not resolved.report_path.exists():
@@ -389,6 +404,10 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
     assert explicit_v562["short_run_id"] == V5_6_2_SHORT_RUN_ID
     assert explicit_v562["canonical_long_run_id"] == V5_6_2_LONG_RUN_ID
     assert explicit_v562["status"] == V5_6_2_STATUS
+    explicit_v563 = runner.check_run("v5_6_3")
+    assert explicit_v563["short_run_id"] == V5_6_3_SHORT_RUN_ID
+    assert explicit_v563["canonical_long_run_id"] == V5_6_3_LONG_RUN_ID
+    assert explicit_v563["status"] == V5_6_3_STATUS
     explicit_v550 = runner.check_run("v5_5")
     assert explicit_v550["short_run_id"] == V5_5_SHORT_RUN_ID
     assert explicit_v550["status"] == V5_5_STATUS
@@ -437,6 +456,7 @@ def test_v477_runner_dispatches_current_previous_and_safe_legacy_checks() -> Non
         (["current", "--check"], V5_6_SHORT_KEY, V5_6_STATUS),
         (["v5_6", "--check"], V5_6_SHORT_KEY, V5_6_STATUS),
         (["v5_6_2", "--check"], V5_6_2_SHORT_KEY, V5_6_2_STATUS),
+        (["v5_6_3", "--check"], V5_6_3_SHORT_KEY, V5_6_3_STATUS),
         (["v5_5", "--check"], V5_5_SHORT_KEY, V5_5_STATUS),
         (["v5_4", "--check"], V5_4_SHORT_KEY, V5_4_STATUS),
         (["v5_3", "--check"], V5_3_SHORT_KEY, V5_3_STATUS),
@@ -2670,7 +2690,7 @@ def test_v500_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert V5_0_SHORT_RUN_ID in progress
     assert V5_0_SHORT_RUN_ID in measurements
     assert V5_0_SHORT_RUN_ID in triage
-    assert progress.startswith(f"<!-- {V5_6_2_SHORT_RUN_ID}:progress-entry:start -->")
+    assert progress.startswith(f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->")
     assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
     assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
     assert f"Overall status: `{V5_0_STATUS}`;" in progress
@@ -2973,7 +2993,7 @@ def test_v510_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert V5_1_SHORT_RUN_ID in progress
     assert V5_1_SHORT_RUN_ID in measurements
     assert V5_1_SHORT_RUN_ID in triage
-    assert progress.startswith(f"<!-- {V5_6_2_SHORT_RUN_ID}:progress-entry:start -->")
+    assert progress.startswith(f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->")
     assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
     assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
     assert f"Overall status: `{V5_1_STATUS}`;" in progress
@@ -3233,7 +3253,7 @@ def test_v520_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert V5_2_SHORT_RUN_ID in progress
     assert V5_2_SHORT_RUN_ID in measurements
     assert V5_2_SHORT_RUN_ID in triage
-    assert progress.startswith(f"<!-- {V5_6_2_SHORT_RUN_ID}:progress-entry:start -->")
+    assert progress.startswith(f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->")
     assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
     assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
     assert f"Overall status: `{V5_2_STATUS}`;" in progress
@@ -3541,7 +3561,7 @@ def test_v530_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert latest["training_dataset_created"] is False
     assert latest["fine_tuning_dataset_export_created"] is False
 
-    assert progress.startswith(f"<!-- {V5_6_2_SHORT_RUN_ID}:progress-entry:start -->")
+    assert progress.startswith(f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->")
     assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
     assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
     assert V5_5_SHORT_RUN_ID in current_status_block
@@ -4152,7 +4172,7 @@ def test_v550_written_report_status_docs_current_alias_and_official_artifacts() 
     assert latest["artifact_sha256"]["official_metric_input_jsonl_sha256"] == _sha256_file(V5_5_OFFICIAL_METRIC_INPUT)
     assert latest["artifact_sha256"]["official_metric_dry_run_result_json_sha256"] == _sha256_file(V5_5_DRY_RUN_RESULT)
 
-    assert progress.startswith(f"<!-- {V5_6_2_SHORT_RUN_ID}:progress-entry:start -->")
+    assert progress.startswith(f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->")
     assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
     assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
     assert V5_5_SHORT_RUN_ID in current_status_block
@@ -5019,6 +5039,536 @@ def test_v562_write_path_validates_report_before_writing_and_uses_v550_source(mo
     monkeypatch.setattr(v562, "append_status", lambda root, report, *, artifact_hashes: None)
 
     assert runner.main(["v5_6_2", "--write"]) == 0
+    assert observed["used_source_report"] is True
+    assert call_order == ["build", "check", "write", "check"]
+
+
+def test_v563_env_gate_disabled_records_execution_gate_disabled_without_fake_metrics() -> None:
+    from ai.eval import rag_v563_official_metric_backend_probe_and_scored_execution_nonprod as v563
+
+    report = v563.build_report(root=ROOT, execute=True, env={}, generated_at="2026-06-05T00:00:00Z")
+    v563.check_report(report)
+    result = report["official_metric_scored_result"]
+
+    assert report["logical_run_key"] == V5_6_3_SHORT_KEY
+    assert report["short_run_id"] == V5_6_3_SHORT_RUN_ID
+    assert report["canonical_long_run_id"] == V5_6_3_LONG_RUN_ID
+    assert report["status"] == V5_6_3_STATUS
+    assert report["source_run_id"] == V5_5_SHORT_RUN_ID
+    assert report["current_resolves_to"] == V5_6_SHORT_KEY
+    assert report["v5_6_baseline_run_id"] == V5_6_SHORT_RUN_ID
+    assert report["v5_6_2_preflight_run_id"] == V5_6_2_SHORT_RUN_ID
+    assert report["approval_scope"] == {
+        "source_run_id": V5_5_SHORT_RUN_ID,
+        "source_artifact_path": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "row_count": 29,
+        "scope_policy": "exact_v5_5_official_metric_input_rows_only",
+        "excluded_scopes": [
+            "silver_rows",
+            "v5_2_or_v5_3_residual_rows",
+            "overlay_90_rows",
+            "xlsx_candidate_state_buckets",
+            "pdf_text_residual_taxonomy_denominators",
+        ],
+    }
+    assert report["official_metric_input_rows"] == 29
+    assert report["official_metric_input_rows_consumed"] == 29
+    assert report["row_count_by_track"] == {
+        "text_namu_v2_1": 6,
+        "xlsx_business_structured": 19,
+        "pdf_business_ocr_mm": 4,
+    }
+    validation = report["source_artifact_validation"]
+    assert validation["source_official_metric_input_path"] == (
+        "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl"
+    )
+    assert validation["path_matches_v5_5_report"] is True
+    assert validation["sha256_matches_v5_5_report"] is True
+    assert validation["sha256_matches_v5_6_report"] is True
+    assert validation["sha256_matches_v5_6_2_report"] is True
+    assert validation["row_count_matches_v5_5_report"] is True
+    assert validation["row_count_matches_v5_6_report"] is True
+    assert validation["row_count_matches_v5_6_2_report"] is True
+    assert report["official_metric_input_row_ref_count"] == 29
+    assert len(report["official_metric_input_row_refs"]) == 29
+    assert "official_metric_input_rows_payload" not in report
+
+    assert report["backend_preflight"]["status"] == "EXECUTION_GATE_DISABLED_FAIL_CLOSED"
+    assert report["backend_preflight"]["failure_category"] == "execution_gate_disabled"
+    assert report["backend_preflight"]["available"] is False
+    assert report["backend_preflight"]["env_enabled"] is False
+    assert report["backend_preflight"]["enabled_env_var"] == "RAG_V5_6_3_ENABLE_OFFICIAL_METRIC_EXECUTION"
+    assert result["status"] == "fail_closed"
+    assert result["backend_unavailable"] is True
+    assert result["official_metric_input_rows"] == 29
+    assert result["scored_answer_rows"] == 0
+    assert result["answer_quality_metric_computed"] is False
+    assert result["official_metric_finalized"] is False
+    assert result["pass_count"] == 0
+    assert result["fail_count"] == 29
+    assert result["pass_fail_counts_interpretable_as_quality_metric"] is False
+    assert result["quality_metric_blocked_reason"] == "execution_gate_disabled"
+    assert result["failure_category_counts"] == {"execution_gate_disabled": 29}
+    assert {row["failure_category"] for row in report["failure_attribution_rows"]} == {"execution_gate_disabled"}
+    assert all(row["scoring_attempted"] is False for row in report["failure_attribution_rows"])
+    assert report["duplicate_supporting_evidence_policy"] == (
+        "recorded_for_locator_precision_audit; row-level citation_locator remains authoritative"
+    )
+    assert report["duplicate_supporting_evidence_id_count"] == 1
+    assert report["protected_namespaces_touched"] == []
+    assert set(v563.PREFLIGHT_FAILURE_CATEGORIES) == {
+        "execution_gate_disabled",
+        "answer_generation_backend_unreachable",
+        "answer_generation_model_unavailable",
+        "answer_generation_probe_failed",
+        "scorer_backend_unreachable",
+        "scorer_contract_unavailable",
+        "scorer_contract_probe_failed",
+        "scoring_runtime_failed",
+        "unknown_fail_closed",
+    }
+    for key in v563.CLOSED_FALSE_KEYS:
+        assert report[key] is False, key
+    generated_text = json.dumps(report, ensure_ascii=False)
+    for forbidden in (
+        '"raw_prompt_payload":',
+        '"raw_response_payload":',
+        '"raw_llm_response":',
+        '"official_metric_input_rows_payload":',
+        '"expected_answer_ko":',
+        '"supporting_evidence_note":',
+    ):
+        assert forbidden not in generated_text
+
+
+def test_v563_env_enabled_preflight_failure_categories_are_precise(monkeypatch) -> None:
+    from ai.eval import rag_v563_official_metric_backend_probe_and_scored_execution_nonprod as v563
+
+    unreachable = v563.build_report(
+        root=ROOT,
+        execute=True,
+        env={
+            v563.ENABLE_ENV_VAR: "1",
+            v563.BASE_URL_ENV_VAR: "http://127.0.0.1:9",
+        },
+        backend_timeout_seconds=1,
+        generated_at="2026-06-05T00:00:00Z",
+    )
+    v563.check_report(unreachable)
+    assert unreachable["backend_preflight"]["env_enabled"] is True
+    assert unreachable["backend_preflight"]["failure_category"] == "answer_generation_backend_unreachable"
+    assert unreachable["official_metric_scored_result"]["failure_category_counts"] == {
+        "answer_generation_backend_unreachable": 29
+    }
+    assert "execution_gate_disabled" not in unreachable["official_metric_scored_result"]["failure_category_counts"]
+
+    def fake_answer_catalog(url: str, *, payload: dict[str, object] | None, timeout_seconds: int) -> object:
+        assert payload is None
+        assert url.endswith("/models")
+        return {"data": [{"id": "different-model"}]}
+
+    monkeypatch.setattr(v563.local_llm, "request_json", fake_answer_catalog)
+    model_unavailable = v563.build_report(
+        root=ROOT,
+        execute=True,
+        env={
+            v563.ENABLE_ENV_VAR: "1",
+            v563.MODEL_ENV_VAR: "missing-model",
+        },
+        backend_timeout_seconds=1,
+        generated_at="2026-06-05T00:00:00Z",
+    )
+    v563.check_report(model_unavailable)
+    assert model_unavailable["backend_preflight"]["failure_category"] == "answer_generation_model_unavailable"
+    assert model_unavailable["official_metric_scored_result"]["failure_category_counts"] == {
+        "answer_generation_model_unavailable": 29
+    }
+    monkeypatch.undo()
+
+    calls = {"answer": 0, "scorer": 0}
+
+    def invalid_answer_probe(prompt: str) -> str:
+        calls["answer"] += 1
+        payload = json.loads(prompt)
+        assert payload["task"] == "v5_6_3_non_gold_answer_generation_probe"
+        return json.dumps({"unexpected": True}, sort_keys=True)
+
+    answer_probe_failed = v563.build_report(
+        root=ROOT,
+        execute=True,
+        env={v563.ENABLE_ENV_VAR: "1"},
+        answer_client=invalid_answer_probe,
+        generated_at="2026-06-05T00:00:00Z",
+    )
+    v563.check_report(answer_probe_failed)
+    assert calls == {"answer": 1, "scorer": 0}
+    assert answer_probe_failed["backend_preflight"]["failure_category"] == "answer_generation_probe_failed"
+    assert answer_probe_failed["official_metric_scored_result"]["failure_category_counts"] == {
+        "answer_generation_probe_failed": 29
+    }
+
+    def valid_answer_probe(prompt: str) -> str:
+        calls["answer"] += 1
+        payload = json.loads(prompt)
+        assert payload["task"] == "v5_6_3_non_gold_answer_generation_probe"
+        return json.dumps({"final_answer": "probe answer", "citations": [], "abstain": False}, sort_keys=True)
+
+    scorer_unreachable = v563.build_report(
+        root=ROOT,
+        execute=True,
+        env={
+            v563.ENABLE_ENV_VAR: "1",
+            v563.SCORER_BASE_URL_ENV_VAR: "http://127.0.0.1:9",
+        },
+        answer_client=valid_answer_probe,
+        backend_timeout_seconds=1,
+        generated_at="2026-06-05T00:00:00Z",
+    )
+    v563.check_report(scorer_unreachable)
+    assert calls == {"answer": 2, "scorer": 0}
+    assert scorer_unreachable["backend_preflight"]["failure_category"] == "scorer_backend_unreachable"
+    assert scorer_unreachable["official_metric_scored_result"]["failure_category_counts"] == {
+        "scorer_backend_unreachable": 29
+    }
+
+    def scorer_contract_unavailable_catalog(
+        url: str,
+        *,
+        payload: dict[str, object] | None,
+        timeout_seconds: int,
+    ) -> object:
+        assert payload is None
+        assert url.endswith("/models")
+        return {"data": [{"id": "answer-model"}]}
+
+    monkeypatch.setattr(v563.local_llm, "request_json", scorer_contract_unavailable_catalog)
+    scorer_contract_unavailable = v563.build_report(
+        root=ROOT,
+        execute=True,
+        env={
+            v563.ENABLE_ENV_VAR: "1",
+            v563.MODEL_ENV_VAR: "answer-model",
+            v563.SCORER_MODEL_ENV_VAR: "missing-scorer-contract",
+        },
+        answer_client=valid_answer_probe,
+        backend_timeout_seconds=1,
+        generated_at="2026-06-05T00:00:00Z",
+    )
+    v563.check_report(scorer_contract_unavailable)
+    assert scorer_contract_unavailable["backend_preflight"]["failure_category"] == "scorer_contract_unavailable"
+    assert scorer_contract_unavailable["official_metric_scored_result"]["failure_category_counts"] == {
+        "scorer_contract_unavailable": 29
+    }
+
+    def invalid_scorer_probe(prompt: str) -> str:
+        calls["scorer"] += 1
+        payload = json.loads(prompt)
+        assert payload["task"] == "v5_6_3_non_gold_scorer_contract_probe"
+        return json.dumps({"unexpected": True}, sort_keys=True)
+
+    scorer_probe_failed = v563.build_report(
+        root=ROOT,
+        execute=True,
+        env={v563.ENABLE_ENV_VAR: "1"},
+        answer_client=valid_answer_probe,
+        scorer_client=invalid_scorer_probe,
+        generated_at="2026-06-05T00:00:00Z",
+    )
+    v563.check_report(scorer_probe_failed)
+    assert calls["scorer"] == 1
+    assert scorer_probe_failed["backend_preflight"]["failure_category"] == "scorer_contract_probe_failed"
+    assert scorer_probe_failed["official_metric_scored_result"]["failure_category_counts"] == {
+        "scorer_contract_probe_failed": 29
+    }
+
+
+def test_v563_injected_answer_and_scorer_backends_score_all_29_rows_after_non_gold_probes() -> None:
+    from ai.eval import rag_v563_official_metric_backend_probe_and_scored_execution_nonprod as v563
+
+    calls = {"answer": 0, "scorer": 0}
+
+    def answer_client(prompt: str) -> str:
+        calls["answer"] += 1
+        payload = json.loads(prompt)
+        if payload["task"] == "v5_6_3_non_gold_answer_generation_probe":
+            return json.dumps({"final_answer": "probe answer", "citations": [], "abstain": False}, sort_keys=True)
+        prompt_text = json.dumps(payload, ensure_ascii=False)
+        for forbidden in (
+            "query_id",
+            "expected_answer_ko",
+            "supporting_evidence_note",
+            "supporting_evidence_ids",
+            "citation_locator",
+            "target_locator",
+            "gold_locator",
+        ):
+            assert forbidden not in prompt_text
+        context = payload["official_metric_row"]
+        return json.dumps(
+            {
+                "final_answer": f"synthetic answer for {context['track']}",
+                "citations": ["runtime-citation"],
+                "abstain": False,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+
+    def scorer_client(prompt: str) -> str:
+        calls["scorer"] += 1
+        payload = json.loads(prompt)
+        if payload["task"] == "v5_6_3_non_gold_scorer_contract_probe":
+            return json.dumps(
+                {
+                    "passed": True,
+                    "answer_score": 1.0,
+                    "citation_support_score": 1.0,
+                    "failure_category": "pass",
+                    "failure_detail": "probe contract ok",
+                },
+                sort_keys=True,
+            )
+        assert payload["expected_answer_ko"]
+        assert payload["supporting_evidence_note"]
+        cited = bool(payload["generated_citations"])
+        passed = cited and bool(payload["generated_answer"])
+        return json.dumps(
+            {
+                "passed": passed,
+                "answer_score": 1.0,
+                "citation_support_score": 1.0,
+                "failure_category": "pass" if passed else "unknown_fail_closed",
+                "failure_detail": "scorer used approved scoring-only expected evidence",
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+
+    report = v563.build_report(
+        root=ROOT,
+        execute=True,
+        env={v563.ENABLE_ENV_VAR: "1"},
+        answer_client=answer_client,
+        scorer_client=scorer_client,
+        generated_at="2026-06-05T00:00:00Z",
+    )
+    v563.check_report(report)
+    result = report["official_metric_scored_result"]
+
+    assert calls == {"answer": 30, "scorer": 30}
+    assert report["status"] == V5_6_3_SCORED_STATUS
+    assert report["backend_preflight"]["status"] == "BACKEND_PROBE_PASSED_NONPROD"
+    assert report["backend_preflight"]["failure_category"] == ""
+    assert result["status"] == "scored"
+    assert result["backend_unavailable"] is False
+    assert result["answer_quality_metric_computed"] is True
+    assert result["official_metric_finalized"] is True
+    assert result["scored_answer_rows"] == 29
+    assert result["pass_count"] == 29
+    assert result["fail_count"] == 0
+    assert result["pass_fail_counts_interpretable_as_quality_metric"] is True
+    assert result["failure_category_counts"] == {"pass": 29}
+    assert len(result["row_results"]) == 29
+    assert all(row["prompt_sha256"] for row in result["row_results"])
+    assert all(row["scorer_prompt_sha256"] for row in result["row_results"])
+    assert all(row["raw_answer_response_sha256"] for row in result["row_results"])
+    assert all(row["raw_scorer_response_sha256"] for row in result["row_results"])
+    generated_text = json.dumps(report, ensure_ascii=False)
+    for forbidden in ('"raw_prompt_payload":', '"raw_response_payload":', '"raw_llm_response":'):
+        assert forbidden not in generated_text
+
+
+def test_v563_scoring_runtime_failure_fails_closed_without_partial_quality_metric() -> None:
+    from ai.eval import rag_v563_official_metric_backend_probe_and_scored_execution_nonprod as v563
+
+    calls = {"answer": 0, "scorer": 0}
+
+    def answer_client(prompt: str) -> str:
+        calls["answer"] += 1
+        return json.dumps({"final_answer": "probe or row answer", "citations": [], "abstain": False}, sort_keys=True)
+
+    def scorer_client(prompt: str) -> str:
+        calls["scorer"] += 1
+        payload = json.loads(prompt)
+        if payload["task"] == "v5_6_3_non_gold_scorer_contract_probe":
+            return json.dumps(
+                {
+                    "passed": True,
+                    "answer_score": 1.0,
+                    "citation_support_score": 1.0,
+                    "failure_category": "pass",
+                },
+                sort_keys=True,
+            )
+        raise RuntimeError("runtime scorer outage")
+
+    report = v563.build_report(
+        root=ROOT,
+        execute=True,
+        env={v563.ENABLE_ENV_VAR: "1"},
+        answer_client=answer_client,
+        scorer_client=scorer_client,
+        generated_at="2026-06-05T00:00:00Z",
+    )
+    v563.check_report(report)
+    result = report["official_metric_scored_result"]
+
+    assert report["backend_preflight"]["status"] == "BACKEND_PROBE_PASSED_NONPROD"
+    assert result["status"] == "fail_closed"
+    assert result["failure_category_counts"] == {"scoring_runtime_failed": 29}
+    assert result["scored_answer_rows"] == 0
+    assert result["answer_quality_metric_computed"] is False
+    assert result["official_metric_finalized"] is False
+    assert result["pass_fail_counts_interpretable_as_quality_metric"] is False
+    assert result["quality_metric_blocked_reason"] == "scoring_runtime_failed"
+    assert {row["failure_category"] for row in report["failure_attribution_rows"]} == {"scoring_runtime_failed"}
+    assert calls == {"answer": 2, "scorer": 2}
+
+
+def test_v563_check_report_rejects_scope_expansion_fake_quality_metrics_and_prior_hash_drift() -> None:
+    from ai.eval import rag_v563_official_metric_backend_probe_and_scored_execution_nonprod as v563
+
+    report = v563.build_report(root=ROOT, execute=True, env={}, generated_at="2026-06-05T00:00:00Z")
+    v563.check_report(report)
+
+    for path, value, message in (
+        (("source_run_id",), V5_4_SHORT_RUN_ID, "source run"),
+        (("current_resolves_to",), V5_6_3_SHORT_KEY, "current"),
+        (("approval_scope", "row_count"), 30, "approval scope"),
+        (("approval_scope", "excluded_scopes"), ["silver_rows"], "approval scope"),
+        (("official_metric_input_rows",), 30, "official metric input"),
+        (("official_metric_input_rows_consumed",), 30, "official metric input"),
+        (("official_metric_input_row_ref_count",), 30, "row ref"),
+        (("row_count_by_track", "text_namu_v2_1"), 7, "row count"),
+        (("source_artifact_validation", "sha256_matches_v5_6_report"), False, "v5_6"),
+        (("source_artifact_validation", "sha256_matches_v5_6_2_report"), False, "v5_6_2"),
+        (("official_metric_scored_result", "scored_answer_rows"), 29, "scored rows"),
+        (("official_metric_scored_result", "answer_quality_metric_computed"), True, "fake metric"),
+        (("official_metric_scored_result", "official_metric_finalized"), True, "fake metric"),
+        (
+            ("official_metric_scored_result", "pass_fail_counts_interpretable_as_quality_metric"),
+            True,
+            "quality metric",
+        ),
+        (("official_metric_scored_result", "failure_category_counts", "execution_gate_disabled"), 28, "failure"),
+        (("failure_attribution_rows", 0, "failure_category"), "unknown_fail_closed", "failure attribution"),
+        (("backend_preflight", "noop_backend_used"), True, "noop"),
+        (("protected_namespaces_touched",), ["ai/eval/eval_queries"], "protected"),
+        (("duplicate_supporting_evidence_policy",), "collapse duplicate evidence ids", "duplicate"),
+    ):
+        mutated = json.loads(json.dumps(report))
+        cursor = mutated
+        for key in path[:-1]:
+            cursor = cursor[key]
+        cursor[path[-1]] = value
+        try:
+            v563.check_report(mutated)
+        except ValueError as exc:
+            assert message in str(exc)
+        else:
+            raise AssertionError(f"v5_6_3 accepted drift at {path}")
+
+
+def test_v563_write_path_writes_preflight_status_without_measurements_when_unscored(tmp_path: Path) -> None:
+    from ai.eval import rag_v563_official_metric_backend_probe_and_scored_execution_nonprod as v563
+
+    report = v563.build_report(root=ROOT, execute=True, env={}, generated_at="2026-06-05T00:00:00Z")
+    written, artifact_hashes = v563.write_report_bundle(tmp_path, report)
+    v563.check_report(written, root=tmp_path)
+    v563.append_status(tmp_path, written, artifact_hashes=artifact_hashes)
+
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir(parents=True)
+    progress_path = docs_dir / "rag-ingestion-progress.md"
+    measurements_path = docs_dir / "rag-ingestion-measurements.md"
+    progress_path.write_text("Last updated: 2026-06-04 KST.\n\n## Current Status\n\nOld\n\n## Short History\n\nOld\n", encoding="utf-8")
+    measurements_before = "Last updated: 2026-06-04 KST.\n\n## Measurements\n\nsentinel\n"
+    measurements_path.write_text(measurements_before, encoding="utf-8")
+    v563.update_docs(tmp_path, written)
+
+    paths = written["artifact_paths"]
+    assert (tmp_path / paths["report_json"]).exists()
+    assert (tmp_path / paths["backend_preflight_result_json"]).exists()
+    assert (tmp_path / paths["official_metric_scored_result_json"]).exists()
+    assert (tmp_path / paths["failure_attribution_jsonl"]).exists()
+    assert _read_json(tmp_path / paths["backend_preflight_result_json"]) == written["backend_preflight"]
+    assert _read_json(tmp_path / paths["official_metric_scored_result_json"]) == written["official_metric_scored_result"]
+    assert _read_jsonl(tmp_path / paths["failure_attribution_jsonl"]) == written["failure_attribution_rows"]
+    assert measurements_path.read_text(encoding="utf-8") == measurements_before
+
+    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    latest = status_rows[-1]
+    assert latest["short_run_id"] == V5_6_3_SHORT_RUN_ID
+    assert latest["status"] == V5_6_3_STATUS
+    assert latest["backend_preflight_failure_category"] == "execution_gate_disabled"
+    assert latest["answer_quality_metric_computed"] is False
+    assert latest["scored_answer_rows"] == 0
+    assert latest["failure_category_counts"] == {"execution_gate_disabled": 29}
+
+    progress_text = progress_path.read_text(encoding="utf-8")
+    assert V5_6_3_SHORT_RUN_ID in progress_text
+    assert "execution_gate_disabled" in progress_text
+    assert "v5_6 and v5_6_2 artifacts remain immutable" in progress_text
+    assert "pass_count=0/fail_count=29 is not an answer-quality metric" in progress_text
+    assert "RAG_V5_6_3_ENABLE_OFFICIAL_METRIC_EXECUTION" in progress_text
+
+    for rel_path in (
+        "ai/eval/reports/rag-ingestion/runs/v5_6_3/report.json",
+        "ai/eval/reports/rag-ingestion/runs/v5_6_3/backend_preflight_result.json",
+        "ai/eval/reports/rag-ingestion/runs/v5_6_3/official_metric_scored_result.json",
+        "ai/eval/reports/rag-ingestion/runs/v5_6_3/failure_attribution.jsonl",
+        "ai/eval/reports/rag-ingestion/status.jsonl",
+    ):
+        assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0, rel_path
+
+
+def test_v563_write_path_validates_report_before_writing_and_uses_v550_source(monkeypatch) -> None:
+    import ai.scripts.rag_eval as runner
+    from ai.eval import rag_v563_official_metric_backend_probe_and_scored_execution_nonprod as v563
+
+    source_report = {
+        "short_run_id": V5_5_SHORT_RUN_ID,
+        "canonical_long_run_id": V5_5_LONG_RUN_ID,
+        "status": V5_5_STATUS,
+        "sentinel_from_check_run": True,
+    }
+    observed: dict[str, object] = {}
+    call_order: list[str] = []
+
+    def fake_check_run(key: str) -> dict[str, object]:
+        assert key == "v5_5"
+        return source_report
+
+    def fake_build_report(*, root: Path, source_report: dict[str, object] | None = None, **_: object) -> dict[str, object]:
+        assert root == ROOT
+        assert source_report is not None
+        assert source_report["sentinel_from_check_run"] is True
+        observed["used_source_report"] = True
+        call_order.append("build")
+        return {
+            "status": V5_6_3_STATUS,
+            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_6_3/report.json"},
+            "official_metric_input_rows": 29,
+            "official_metric_scored_result": {"scored_answer_rows": 0},
+            "counters": {},
+        }
+
+    def fake_check_report(report: dict[str, object], **_: object) -> None:
+        call_order.append("check")
+
+    def fake_write_report_bundle(root: Path, report: dict[str, object]) -> tuple[dict[str, object], dict[str, str]]:
+        assert "check" in call_order
+        call_order.append("write")
+        return report, {"report_json_sha256": "0" * 64}
+
+    monkeypatch.setattr(runner, "check_run", fake_check_run)
+    monkeypatch.setattr(v563, "build_report", fake_build_report)
+    monkeypatch.setattr(v563, "write_report_bundle", fake_write_report_bundle)
+    monkeypatch.setattr(v563, "check_report", fake_check_report)
+    monkeypatch.setattr(v563, "update_docs", lambda root, report: None)
+    monkeypatch.setattr(v563, "append_status", lambda root, report, *, artifact_hashes: None)
+
+    assert runner.main(["v5_6_3", "--write"]) == 0
     assert observed["used_source_report"] is True
     assert call_order == ["build", "check", "write", "check"]
 

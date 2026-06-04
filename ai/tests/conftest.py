@@ -32,7 +32,8 @@ CURRENT_RAG_TEST_NODEIDS = frozenset(
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_5_user_approved_official_metric_dry_run_does_not_mutate_protected_or_export_training_surfaces",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_6_official_metric_scored_execution_fail_closed_does_not_mutate_protected_or_export_training_surfaces",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_6_2_official_metric_backend_enabled_preflight_does_not_mutate_protected_or_export_training_surfaces",
-        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_current_board_records_v562_backend_enabled_preflight_and_v560_baseline",
+        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_6_3_official_metric_backend_probe_does_not_mutate_protected_or_export_training_surfaces",
+        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_current_board_records_v563_backend_probe_v562_preflight_and_v560_baseline",
         "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_does_not_keep_stale_current_profile_test_count",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v5_diagnostic_common_helpers_preserve_write_doc_and_payload_semantics",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v477_registry_resolves_current_and_previous_short_keys",
@@ -77,6 +78,13 @@ CURRENT_RAG_TEST_NODEIDS = frozenset(
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_check_report_rejects_scope_expansion_fake_quality_metrics_and_v56_hash_drift",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_write_path_writes_preflight_status_without_measurements_when_unscored",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_write_path_validates_report_before_writing_and_uses_v550_source",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_env_gate_disabled_records_execution_gate_disabled_without_fake_metrics",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_env_enabled_preflight_failure_categories_are_precise",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_injected_answer_and_scorer_backends_score_all_29_rows_after_non_gold_probes",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_scoring_runtime_failure_fails_closed_without_partial_quality_metric",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_check_report_rejects_scope_expansion_fake_quality_metrics_and_prior_hash_drift",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_write_path_writes_preflight_status_without_measurements_when_unscored",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_write_path_validates_report_before_writing_and_uses_v550_source",
     }
 )
 

@@ -20,6 +20,7 @@ from app.capabilities.rag_orchestrator.phase1_diagnostic_runtime import (  # noq
 )
 from app.capabilities.rag_orchestrator.product_preview_runtime import (  # noqa: E402
     PRODUCT_PREVIEW_ROUTE_PATH,
+    _citation_key,
 )
 from app.core.config import WorkerSettings  # noqa: E402
 
@@ -341,6 +342,38 @@ def test_product_rag_preview_citation_and_evidence_cards_support_text_pdf_and_xl
 
 
 def test_product_rag_preview_preserves_duplicate_supporting_evidence_id_rows_by_locator() -> None:
+    first_key = _citation_key(
+        {
+            "source_family": "TEXT",
+            "source_atom_id": "same-source-atom",
+            "supporting_evidence_id": "shared-supporting-evidence",
+            "locator_fingerprint": "same-visible-locator",
+            "search_unit_id": "same-search-unit",
+            "title": "문서 발췌",
+            "section": "개요",
+            "text_span": "1:12",
+            "text_locator": {"chunk_id": "chunk-1"},
+        },
+        0,
+    )
+    second_key = _citation_key(
+        {
+            "source_family": "TEXT",
+            "source_atom_id": "same-source-atom",
+            "supporting_evidence_id": "shared-supporting-evidence",
+            "locator_fingerprint": "same-visible-locator",
+            "search_unit_id": "same-search-unit",
+            "title": "문서 발췌",
+            "section": "개요",
+            "text_span": "1:12",
+            "text_locator": {"chunk_id": "chunk-2"},
+        },
+        0,
+    )
+    assert first_key != second_key
+    assert "shared-supporting-evidence" not in first_key
+    assert "shared-supporting-evidence" not in second_key
+
     first = text_atom("text-dup-a")
     second = text_atom("text-dup-b")
     first["canonical_citation_payload"]["supporting_evidence_id"] = "shared-supporting-evidence"

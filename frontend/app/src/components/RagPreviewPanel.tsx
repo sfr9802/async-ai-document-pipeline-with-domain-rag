@@ -205,7 +205,7 @@ function AnsweredResult({ result }: { result: RagPreviewResponse }) {
     <div className="space-y-4">
       <div className="rounded-lg border border-hairline-2 bg-glass-strong p-4">
         <div className="t-eyebrow mb-2">answer</div>
-        <p className="text-[14px] leading-relaxed">{result.answer}</p>
+        <p className="text-[14px] leading-relaxed">{safePreviewText(result.answer)}</p>
       </div>
 
       {result.citations.length > 0 && (
@@ -215,7 +215,7 @@ function AnsweredResult({ result }: { result: RagPreviewResponse }) {
           </h3>
           <ul className="grid gap-2 md:grid-cols-3">
             {result.citations.map((citation, index) => (
-              <CitationRow citation={citation} key={`${citation.source_atom_id ?? index}-${citation.source_family}`} />
+              <CitationRow citation={citation} key={citationRenderKey(citation, index)} />
             ))}
           </ul>
         </section>
@@ -228,7 +228,7 @@ function AnsweredResult({ result }: { result: RagPreviewResponse }) {
           </h3>
           <ul className="grid gap-2 md:grid-cols-3">
             {result.evidence_cards.map((card, index) => (
-              <EvidenceCard card={card} key={`${card.source_atom_id ?? index}-${card.kind}`} />
+              <EvidenceCard card={card} key={evidenceCardRenderKey(card, index)} />
             ))}
           </ul>
         </section>
@@ -244,8 +244,8 @@ function FailClosedResult({ result }: { result: RagPreviewResponse }) {
         <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
         <div className="space-y-1">
           <p className="text-[13px] font-semibold">답변 가능한 근거가 부족하거나 백엔드가 준비되지 않았습니다.</p>
-          {result.diagnostics?.fail_closed_reason && (
-            <p className="font-mono text-[11.5px]">{result.diagnostics.fail_closed_reason}</p>
+          {safePreviewText(result.diagnostics?.fail_closed_reason) && (
+            <p className="font-mono text-[11.5px]">{safePreviewText(result.diagnostics?.fail_closed_reason)}</p>
           )}
         </div>
       </div>
@@ -255,6 +255,8 @@ function FailClosedResult({ result }: { result: RagPreviewResponse }) {
 
 function CitationRow({ citation }: { citation: RagPreviewCitation }) {
   const detail = citationDetail(citation);
+  const primary = safePreviewText(detail.primary);
+  const secondary = safePreviewText(detail.secondary);
   return (
     <li className="rounded-lg border border-hairline-2 bg-glass-3 p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -263,17 +265,17 @@ function CitationRow({ citation }: { citation: RagPreviewCitation }) {
         </span>
         <FileText className="h-3.5 w-3.5 text-muted-foreground" />
       </div>
-      <div className="text-[12.5px] font-medium">{detail.primary}</div>
-      {detail.secondary && (
-        <div className="mt-1 font-mono text-[10.5px] text-muted-foreground">{detail.secondary}</div>
+      <div className="text-[12.5px] font-medium">{primary}</div>
+      {secondary && (
+        <div className="mt-1 font-mono text-[10.5px] text-muted-foreground">{secondary}</div>
       )}
     </li>
   );
 }
 
 function EvidenceCard({ card }: { card: RagPreviewEvidenceCard }) {
-  const primary = card.display_value || card.matched_text || "근거 표시값 없음";
-  const meta = evidenceMeta(card);
+  const primary = safePreviewText(card.display_value || card.matched_text || "근거 표시값 없음");
+  const meta = safePreviewText(evidenceMeta(card));
   return (
     <li className="rounded-lg border border-hairline-2 bg-glass-3 p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -286,6 +288,54 @@ function EvidenceCard({ card }: { card: RagPreviewEvidenceCard }) {
       {meta && <div className="mt-1 font-mono text-[10.5px] text-muted-foreground">{meta}</div>}
     </li>
   );
+}
+
+function citationRenderKey(citation: RagPreviewCitation, index: number): string {
+  if (citation.citation_key) return citation.citation_key;
+  return [
+    "citation",
+    citation.source_family,
+    citation.source_atom_id,
+    citation.source_identity_hash,
+    citation.page,
+    jsonKeyPart(citation.bbox),
+    citation.sheet,
+    citation.table_or_range,
+    citation.title,
+    citation.section,
+    index,
+  ]
+    .filter((part) => part !== undefined && part !== null && part !== "")
+    .join(":");
+}
+
+function evidenceCardRenderKey(card: RagPreviewEvidenceCard, index: number): string {
+  return [
+    "evidence",
+    card.kind,
+    card.source_family,
+    card.source_atom_id,
+    card.sheet,
+    card.table_or_range,
+    jsonKeyPart(card.matched_cells),
+    card.page,
+    jsonKeyPart(card.bbox),
+    jsonKeyPart(card.section),
+    card.text_span,
+    card.display_value,
+    card.matched_text,
+    index,
+  ]
+    .filter((part) => part !== undefined && part !== null && part !== "")
+    .join(":");
+}
+
+function jsonKeyPart(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return JSON.stringify(value);
 }
 
 function citationDetail(citation: RagPreviewCitation): { primary: string; secondary: string } {
@@ -309,4 +359,12 @@ function evidenceMeta(card: RagPreviewEvidenceCard): string {
     return (card.section ?? []).join(" · ") || card.text_span || "";
   }
   return "";
+}
+
+const FORBIDDEN_PREVIEW_TEXT = /\b(prompt|raw_prompt|raw_response|raw_llm_response|expected_answer|expected_answer_ko|gold_label|gold_labels|gold_locator|gold_qrels|gold_status|hidden_locator|include_in_official_denominator|official_metric_input_rows_payload|citation_locator|query_id|case_id|source_identity|source_path|source_pdf_path|source_title|supporting_evidence_id|supporting_evidence_ids|supporting_evidence_note|target_locator|workbook|file_name)\b/gi;
+const LOCAL_PATH_TEXT = /(?:[A-Za-z]:[\\/][^\s"'<>]+|\/(?:data|home|mnt|private|tmp|Users)\/[^\s"'<>]+)/g;
+
+function safePreviewText(value: unknown): string {
+  const text = typeof value === "string" ? value : "";
+  return text.replace(LOCAL_PATH_TEXT, "[redacted]").replace(FORBIDDEN_PREVIEW_TEXT, "[redacted]");
 }

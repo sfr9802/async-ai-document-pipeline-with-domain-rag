@@ -261,6 +261,7 @@ def _sanitize_for_preview(value: Any) -> Any:
 
 
 def _citation_key(citation: Mapping[str, Any], index: int) -> str:
+    text_locator = _mapping(citation.get("text_locator"))
     identity = {
         "index": index,
         "source_atom_id": _clean(citation.get("source_atom_id")),
@@ -269,10 +270,12 @@ def _citation_key(citation: Mapping[str, Any], index: int) -> str:
         "search_unit_id": _clean(citation.get("search_unit_id")),
         "page": citation.get("page"),
         "bbox": citation.get("bbox") or [],
+        "chunk_id": _clean(citation.get("chunk_id") or text_locator.get("chunk_id")),
         "section": citation.get("section") or [],
         "text_span": _clean(citation.get("text_span")),
         "sheet": _clean(citation.get("sheet")),
         "table_or_range": _clean(citation.get("table_or_range")),
+        "matched_cells": list(_sequence(citation.get("matched_cells"))),
     }
     import hashlib
     import json

@@ -883,6 +883,131 @@ def test_v5_6_2_official_metric_backend_enabled_preflight_does_not_mutate_protec
         assert token not in generated_text
 
 
+def test_v5_6_3_official_metric_backend_probe_does_not_mutate_protected_or_export_training_surfaces():
+    import ai.scripts.rag_eval as runner
+
+    report = runner.check_run("v5_6_3")
+    generated_text = json.dumps(report, ensure_ascii=False)
+    result = report["official_metric_scored_result"]
+
+    for protected_path in (
+        "ai/eval/eval_queries",
+        "ai/eval/source_registry",
+        "ai/eval/indexes",
+        "ai/eval/silver",
+        "ai/eval/gold",
+        "ai/eval/qrels",
+        "ai/eval/denominator",
+        "ai/eval/reports/rag-ingestion/baseline_v1.json",
+        "ai/eval/reports/rag-ingestion/scorer_v1.jsonl",
+        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
+        "ai/eval/reports/rag-ingestion/smoke_v1.json",
+    ):
+        unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
+        assert unstaged.returncode == 0, protected_path
+        assert staged.returncode == 0, protected_path
+
+    assert report["non_production"] is True
+    assert report["diagnostic_only"] is False
+    assert report["source_run_id"] == "v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run"
+    assert report["current_resolves_to"] == "v5_6"
+    assert report["v5_6_baseline_run_id"] == "v5_6_official_metric_scored_execution_and_failure_attribution_nonprod"
+    assert report["v5_6_2_preflight_run_id"] == "v5_6_2_official_metric_backend_enabled_preflight_scored_rerun_nonprod"
+    assert report["approval_scope"] == {
+        "source_run_id": "v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run",
+        "source_artifact_path": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "row_count": 29,
+        "scope_policy": "exact_v5_5_official_metric_input_rows_only",
+        "excluded_scopes": [
+            "silver_rows",
+            "v5_2_or_v5_3_residual_rows",
+            "overlay_90_rows",
+            "xlsx_candidate_state_buckets",
+            "pdf_text_residual_taxonomy_denominators",
+        ],
+    }
+    assert report["official_metric_input_rows"] == 29
+    assert report["official_metric_input_rows_consumed"] == 29
+    assert report["row_count_by_track"] == {
+        "pdf_business_ocr_mm": 4,
+        "text_namu_v2_1": 6,
+        "xlsx_business_structured": 19,
+    }
+    validation = report["source_artifact_validation"]
+    assert validation["path_matches_v5_5_report"] is True
+    assert validation["sha256_matches_v5_5_report"] is True
+    assert validation["sha256_matches_v5_6_report"] is True
+    assert validation["sha256_matches_v5_6_2_report"] is True
+    assert report["backend_preflight"]["status"] == "EXECUTION_GATE_DISABLED_FAIL_CLOSED"
+    assert report["backend_preflight"]["available"] is False
+    assert report["backend_preflight"]["failure_category"] == "execution_gate_disabled"
+    assert result["status"] == "fail_closed"
+    assert result["backend_unavailable"] is True
+    assert result["official_metric_input_rows"] == 29
+    assert result["scored_answer_rows"] == 0
+    assert result["answer_quality_metric_computed"] is False
+    assert result["official_metric_finalized"] is False
+    assert result["pass_count"] == 0
+    assert result["fail_count"] == 29
+    assert result["pass_fail_counts_interpretable_as_quality_metric"] is False
+    assert result["failure_category_counts"] == {"execution_gate_disabled": 29}
+    assert report["failure_attribution_row_count"] == 29
+    assert {row["failure_category"] for row in report["failure_attribution_rows"]} == {"execution_gate_disabled"}
+    assert report["duplicate_supporting_evidence_id_count"] == 1
+    assert report["duplicate_supporting_evidence_policy"] == (
+        "recorded_for_locator_precision_audit; row-level citation_locator remains authoritative"
+    )
+    assert report["protected_namespaces_touched"] == []
+    assert report["official_metric"] is False
+    assert report["official_metric_finalized"] is False
+    assert report["answer_quality_metric_computed"] is False
+    assert report["scored_answer_rows"] == 0
+    for key in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "denominator_mutation",
+        "training_dataset_created",
+        "training_manifest_jsonl_created",
+        "training_job_created",
+        "fine_tuning_dataset_export_created",
+        "fine_tuning",
+        "fine_tuning_started",
+        "fine_tuning_executed",
+        "ft_a_execution",
+        "promotion_evidence",
+        "product_success_evidence_allowed",
+        "live_db_index_cache_readiness",
+        "production_db_mutated",
+        "source_registry_mutated",
+        "silver_mutation",
+        "index_rebuilt",
+        "cache_mutated",
+        "raw_prompt_payload_written",
+        "raw_response_payload_written",
+    ):
+        assert report[key] is False, key
+    for token in (
+        "prompt_manifest",
+        "training_manifest.jsonl",
+        "train_preview_redacted.jsonl",
+        "validation_preview_redacted.jsonl",
+        '"raw_prompt_payload":',
+        '"raw_response_payload":',
+        "raw_llm_response",
+        "metric_input_v1.json",
+        "smoke_v1.json",
+        "baseline_v1.json",
+        "scorer_v1.jsonl",
+        "promotion_artifact",
+        "live_readiness",
+    ):
+        assert token not in generated_text
+
+
 def test_residual_audit_does_not_mutate_protected_artifacts():
     for protected_path in STRICT_PROTECTED_PATHS:
         unstaged = subprocess.run(

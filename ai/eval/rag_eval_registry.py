@@ -194,6 +194,14 @@ V5_6_2_LONG_RUN_ID = (
 )
 V5_6_2_STATUS = "V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_FAIL_CLOSED_NONPROD_READY"
 V5_6_2_SCORED_STATUS = "V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_SCORED_RERUN_NONPROD_READY"
+V5_6_3_SHORT_KEY = "v5_6_3"
+V5_6_3_SHORT_RUN_ID = "v5_6_3_official_metric_backend_probe_and_scored_execution_nonprod"
+V5_6_3_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v5_6_3_"
+    "official_metric_backend_probe_and_scored_execution_nonprod"
+)
+V5_6_3_STATUS = "V5_6_3_OFFICIAL_METRIC_BACKEND_PROBE_FAIL_CLOSED_NONPROD_READY"
+V5_6_3_SCORED_STATUS = "V5_6_3_OFFICIAL_METRIC_BACKEND_PROBE_SCORED_EXECUTION_NONPROD_READY"
 
 
 class ReportResolutionError(RuntimeError):
@@ -466,6 +474,16 @@ RUNS: dict[str, RunMetadata] = {
         accepted_aliases=(V5_6_2_SHORT_RUN_ID, V5_6_2_LONG_RUN_ID),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
         accepted_statuses=(V5_6_2_SCORED_STATUS,),
+    ),
+    V5_6_3_SHORT_KEY: RunMetadata(
+        logical_key=V5_6_3_SHORT_KEY,
+        short_run_id=V5_6_3_SHORT_RUN_ID,
+        canonical_long_run_id=V5_6_3_LONG_RUN_ID,
+        status=V5_6_3_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V5_6_3_SHORT_KEY / "report.json",
+        accepted_aliases=(V5_6_3_SHORT_RUN_ID, V5_6_3_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+        accepted_statuses=(V5_6_3_SCORED_STATUS,),
     ),
 }
 

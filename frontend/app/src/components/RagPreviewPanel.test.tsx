@@ -4,19 +4,34 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import { RagPreviewPanel } from './RagPreviewPanel'
 
 const forbiddenStrings = [
+  'prompt',
   'raw_prompt',
+  'raw_response',
   'raw response',
   'raw_llm_response',
   'expected_answer',
   'expected answer',
   'gold_label',
+  'gold labels',
+  'gold_qrels',
   'gold locator',
+  'query_id',
+  'case_id',
+  'source_identity',
+  'source_path',
+  'source_title',
+  'citation_locator',
+  'supporting_evidence_id',
+  'supporting_evidence_ids',
+  'workbook',
+  'file_name',
+  'D:/private',
+  'C:\\private',
   'hidden locator',
   'official_metric_input_rows_payload',
   'expected_answer_ko',
   'supporting_evidence_note',
   'include_in_official_denominator',
-  'citation_locator',
 ]
 
 function mockFetch(body: unknown, status = 200) {
@@ -58,6 +73,7 @@ function successBody() {
       raw_prompt: 'raw response must never render',
       expected_answer: 'expected answer must never render',
       gold_label: 'gold label must never render',
+      source_path: 'D:/private/report.pdf',
     },
   }
 }
@@ -121,6 +137,67 @@ describe('RagPreviewPanel', () => {
     expect(screen.queryByText('근거 카드')).not.toBeInTheDocument()
   })
 
+  test('renders insufficient context and validation error preview statuses without forbidden details', async () => {
+    const user = userEvent.setup()
+    const fetchMock = mockFetch({
+      answer: '',
+      status: 'insufficient_context',
+      citations: [],
+      evidence_cards: [],
+      diagnostics: {
+        redacted: true,
+        llm_invoked: false,
+        fail_closed_reason: 'raw_prompt D:/private/report.pdf expected_answer supporting_evidence_id query_id',
+      },
+    })
+    render(<RagPreviewPanel />)
+
+    await user.type(screen.getByLabelText('RAG preview query'), '이 표 값은?')
+    await user.click(screen.getByRole('button', { name: '미리보기 실행' }))
+
+    expect(await screen.findByText('insufficient_context')).toBeInTheDocument()
+    for (const forbidden of forbiddenStrings) {
+      expect(screen.queryByText(forbidden, { exact: false })).not.toBeInTheDocument()
+    }
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          answer: '',
+          status: 'validation_error',
+          citations: [],
+          evidence_cards: [],
+          diagnostics: {
+            redacted: true,
+            llm_invoked: false,
+            fail_closed_reason: 'citation_locator source_identity source_path source_title workbook file_name gold_qrels',
+          },
+        }),
+      json: async () => ({
+        answer: '',
+        status: 'validation_error',
+        citations: [],
+        evidence_cards: [],
+        diagnostics: {
+          redacted: true,
+          llm_invoked: false,
+          fail_closed_reason: 'citation_locator source_identity source_path source_title workbook file_name gold_qrels',
+        },
+      }),
+    })
+
+    await user.clear(screen.getByLabelText('RAG preview query'))
+    await user.type(screen.getByLabelText('RAG preview query'), '검증 오류 상태')
+    await user.click(screen.getByRole('button', { name: '미리보기 실행' }))
+
+    expect(await screen.findByText('validation_error')).toBeInTheDocument()
+    for (const forbidden of forbiddenStrings) {
+      expect(screen.queryByText(forbidden, { exact: false })).not.toBeInTheDocument()
+    }
+  })
+
   test('keeps invalid empty input local and does not call backend', async () => {
     const user = userEvent.setup()
     const fetchMock = mockFetch(successBody())
@@ -168,5 +245,71 @@ describe('RagPreviewPanel', () => {
     expect(within(citations).getByText('Sheet1')).toBeInTheDocument()
     expect(within(citations).getByText('page 3')).toBeInTheDocument()
     expect(within(citations).getByText('문서 발췌')).toBeInTheDocument()
+  })
+
+  test('uses composite citation and evidence keys so duplicate supporting evidence rows render without React key collisions', async () => {
+    const user = userEvent.setup()
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    mockFetch({
+      ...successBody(),
+      citations: [
+        {
+          source_family: 'TEXT',
+          source_atom_id: 'text-dup',
+          citation_key: 'citation:query-a-row-1-text-chunk-1',
+          title: '중복 근거 A',
+          section: '개요',
+          supporting_evidence_id: 'shared-supporting-evidence',
+          source_identity: 'TEXT:secret',
+          source_path: 'D:/private/text-a.md',
+          citation_locator: 'hidden locator',
+        },
+        {
+          source_family: 'TEXT',
+          source_atom_id: 'text-dup',
+          citation_key: 'citation:query-a-row-2-text-chunk-2',
+          title: '중복 근거 B',
+          section: '개요',
+          supporting_evidence_id: 'shared-supporting-evidence',
+          source_identity: 'TEXT:secret',
+          source_path: 'D:/private/text-b.md',
+          citation_locator: 'hidden locator',
+        },
+      ],
+      evidence_cards: [
+        {
+          source_family: 'TEXT',
+          kind: 'text',
+          source_atom_id: 'text-dup',
+          matched_text: '중복 근거 A 본문',
+          section: ['개요'],
+          text_span: '1:8',
+          supporting_evidence_id: 'shared-supporting-evidence',
+        },
+        {
+          source_family: 'TEXT',
+          kind: 'text',
+          source_atom_id: 'text-dup',
+          matched_text: '중복 근거 B 본문',
+          section: ['개요'],
+          text_span: '9:16',
+          supporting_evidence_id: 'shared-supporting-evidence',
+        },
+      ],
+    })
+    render(<RagPreviewPanel />)
+
+    await user.type(screen.getByLabelText('RAG preview query'), '중복 근거 표시')
+    await user.click(screen.getByRole('button', { name: '미리보기 실행' }))
+
+    expect(await screen.findByText('중복 근거 A')).toBeInTheDocument()
+    expect(screen.getByText('중복 근거 B')).toBeInTheDocument()
+    expect(screen.getByText('중복 근거 A 본문')).toBeInTheDocument()
+    expect(screen.getByText('중복 근거 B 본문')).toBeInTheDocument()
+    expect(consoleError).not.toHaveBeenCalledWith(expect.stringContaining('Encountered two children with the same key'), expect.anything())
+    for (const forbidden of forbiddenStrings) {
+      expect(screen.queryByText(forbidden, { exact: false })).not.toBeInTheDocument()
+    }
+    consoleError.mockRestore()
   })
 })

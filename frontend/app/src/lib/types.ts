@@ -74,6 +74,7 @@ export interface RagPreviewRequest {
 
 export interface RagPreviewCitation {
   source_family: "TEXT" | "PDF" | "XLSX" | string;
+  citation_key?: string;
   source_atom_id?: string;
   title?: string;
   section?: string;
