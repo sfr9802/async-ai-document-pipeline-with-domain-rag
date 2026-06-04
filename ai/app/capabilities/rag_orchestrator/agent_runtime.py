@@ -287,7 +287,7 @@ class AgentRuntime:
         parsed_locator = parse_query_locator(request.query_text)
         active_context_ids = self._active_source_atom_ids(request)
         initial_candidate_ids = tuple(active_context_ids or request.candidate_source_atom_ids)
-        supported_family = _clean(request.source_family).upper() in {"PDF", "XLSX"}
+        supported_family = _clean(request.source_family).upper() in {"PDF", "XLSX", "TEXT"}
         rough_query_present = bool(request.rough_query_hint) or (
             bool(_clean(request.query_text)) and not parsed_locator["query_user_provided_locator"]
         )

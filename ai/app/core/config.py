@@ -343,6 +343,15 @@ class WorkerSettings(BaseSettings):
             "evidence, and not live DB/index/cache readiness."
         ),
     )
+    rag_product_preview_route_enabled: bool = Field(
+        default=False,
+        description=(
+            "Feature flag for the non-production product-preview RAG query "
+            "FastAPI route. Default false and also disabled in production "
+            "orchestrator mode; it is not official scoring, promotion "
+            "evidence, product-success evidence, or live DB/index/cache readiness."
+        ),
+    )
 
     # --- ocr capability (phase 2) ---
     ocr_enabled: bool = Field(

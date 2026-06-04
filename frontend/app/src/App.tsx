@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { JobPanel } from "@/components/JobPanel";
 import { JobSidebar } from "@/components/JobSidebar";
+import { RagPreviewPanel } from "@/components/RagPreviewPanel";
 import { SubmitForm } from "@/components/SubmitForm";
 import {
   addHistoryEntry,
@@ -73,6 +74,7 @@ function App() {
               onClear={handleClear}
             />
             <main className="flex min-w-0 flex-col gap-5 lg:gap-6">
+              <RagPreviewPanel />
               <SubmitForm onSubmitted={handleSubmitted} />
               <JobPanel jobId={activeJobId} onStatusChange={handleStatusChange} />
             </main>

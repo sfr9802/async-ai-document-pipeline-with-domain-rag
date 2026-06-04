@@ -1,3 +1,15 @@
+<!-- v5_6_2_official_metric_backend_enabled_preflight_scored_rerun_nonprod:progress-entry:start -->
+- Overall status: `V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_FAIL_CLOSED_NONPROD_READY`; v5_6_2_official_metric_backend_enabled_preflight_scored_rerun_nonprod consumes only `ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl` and performs backend-enabled preflight before any official metric scoring over exactly 29 user-approved rows (TEXT 6, XLSX 19, PDF 4). backend_preflight_failure_category=execution_gate_disabled; scored_answer_rows=0; failure_category_counts={'execution_gate_disabled': 29}. v5_6 artifacts remain immutable fail-closed baseline. No raw prompt/response payloads are written; duplicate supporting evidence remains a locator precision audit note only; promotion/product-success/training/fine-tuning/FT-A/live DB-index-cache readiness/production routing remain closed.
+<!-- v5_6_2_official_metric_backend_enabled_preflight_scored_rerun_nonprod:progress-entry:end -->
+
+<!-- v5_6_official_metric_scored_execution_and_failure_attribution_nonprod:progress-entry:start -->
+- Overall status: `V5_6_OFFICIAL_METRIC_SCORED_EXECUTION_BACKEND_UNAVAILABLE_FAIL_CLOSED_NONPROD_READY`; v5_6_official_metric_scored_execution_and_failure_attribution_nonprod consumes only `ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl` and attempts official metric scored execution over exactly 29 user-approved rows (TEXT 6, XLSX 19, PDF 4). Backend-unavailable preflight fails closed with scored_answer_rows=0 and failure_category_counts={'backend_unavailable': 29}. No raw prompt/response payloads are written; duplicate supporting evidence remains a locator precision audit note only; promotion/product-success/training/fine-tuning/FT-A/live DB-index-cache readiness/production routing remain closed.
+<!-- v5_6_official_metric_scored_execution_and_failure_attribution_nonprod:progress-entry:end -->
+
+<!-- v5_6_1_fastapi_product_runtime_bridge_and_frontend_e2e_preview_nonprod:progress-entry:start -->
+- Overall status: `V5_6_1_FASTAPI_PRODUCT_RUNTIME_BRIDGE_AND_FRONTEND_E2E_PREVIEW_NONPROD_READY`; v5_6_1 adds a default-off product-preview bridge for the current source-first RAG answer/citation logic in the main FastAPI app at `/api/rag/query`, plus a React frontend preview panel. The bridge reuses `SourceFirstRagService`, serializes only frontend-safe `answer`, `status`, `citations`, `evidence_cards`, and redacted aggregate `diagnostics`, supports TEXT/PDF/XLSX citation and evidence-card shapes, and fails closed when the route is disabled, production orchestrator mode is selected, backend/index/store dependencies are unavailable, or deictic queries lack bounded active context. This is separate from the v5_6 official metric scored-execution lane: `current` still resolves to `v5_6`; no official metric, gold/qrels/labels/expected/supporting/denominator mutation, training/fine-tuning/FT-A, promotion evidence, product-success evidence, live DB-index-cache readiness, or production routing is opened. Feature flag: `AIPIPELINE_WORKER_RAG_PRODUCT_PREVIEW_ROUTE_ENABLED` / `rag_product_preview_route_enabled`; production-disabled by `rag_query_orchestrator_mode=production`; raw prompt/response, expected/gold fields, citation_locator, source paths, and source_identity are redacted from the preview DTO.
+<!-- v5_6_1_fastapi_product_runtime_bridge_and_frontend_e2e_preview_nonprod:progress-entry:end -->
+
 <!-- v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run:progress-entry:start -->
 - Overall status: `V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY`; v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run ingests the user-approved v5_4 packet as a run-local official-eval dry-run surface. It creates gold packet, denominator, qrels, expected-answer, official metric input, and dry-run result artifacts under `ai/eval/reports/rag-ingestion/runs/v5_5` only. Scope is exactly 29 v5_4 packet rows (TEXT 6, XLSX 19, PDF 4); no silver/residual/overlay-90 expansion. official_metric_input_rows=29, official_metric_dry_run_opened=true, official_metric_dry_run_executed=true, official_metric_execution_started=false, promotion/training/fine-tuning/product-success/live-readiness remain closed, and protected_namespaces_touched=[].
 <!-- v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run:progress-entry:end -->
@@ -50,7 +62,7 @@
 - Overall status: `V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY`; v4_7_13_live_retrieval_answerability_and_full_pdf_replay is V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY. Artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_13/report.json`. Live silver retrieval env_enabled=true rows 0; full PDF replay env_enabled=true generated 0 of 57; silver answerability overlay rows 90 and prior claim-support pass/fail 60/30. Diagnostic-only: official_metric_input_rows=0, silver_official_metric_input_rows=0, silver_promoted_to_gold_count=0, promotion_evidence=false, product_success_evidence_allowed=false, live_db_index_cache_readiness=false.
 <!-- v4_7_13_end -->
 
-Last updated: 2026-06-01 KST.
+Last updated: 2026-06-04 KST.
 
 This is the compact status index for the current RAG ingestion and official
 answer/citation metric work. Do not append turn transcripts or create new
@@ -270,25 +282,32 @@ for behavior-changing runs or explicit forensic evidence requirements.
 
 ## Current Status
 
-Overall status: `V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY`; `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run` is the current user-approved gold packet ingestion and official metric dry-run phase. `current` resolves to `v5_5`, while `v5_4`, `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable.
+Overall status: `V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_FAIL_CLOSED_NONPROD_READY`; `v5_6_2_official_metric_backend_enabled_preflight_scored_rerun_nonprod` is the latest explicit non-production official metric backend-enabled preflight/scored-rerun lane over the exact v5_5 official metric input rows. `current` resolves to `v5_6` so the v5_6 artifacts remain immutable fail-closed baseline, while `v5_6_2`, `v5_5`, `v5_4`, `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable.
 
 Current run board:
-- current_source_of_truth: `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run`.
-- source_run: `v5_4_user_owned_official_eval_approval_packet`; v5_5 ingests only the existing registry-backed 29-row official snapshot from the v5_4 user-owned approval packet and does not expand to silver, residual, overlay-90, XLSX candidate-state, or PDF/TEXT residual taxonomy rows.
-- Created run-local artifacts: `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_gold_packet.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_denominator.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_qrels.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_expected_answers.jsonl`, `ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl`, and `ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_dry_run_result.json`.
-- official_metric_dry_run_opened=true; official_metric_dry_run_executed=true; official_metric_input_rows=29; official_metric_input_rows_created=29; official_eval_user_gate_ready=true.
-- promotion/training/fine-tuning/live-readiness remain closed; protected_namespaces_touched=[].
-- Pre-execution artifact note: older official metric pre-execution artifact remains historical; official_metric_execution_started=false and must not be read
-as the latest metric execution status.
+- source_of_truth: `ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl` from `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run`; user-approved gold packet ingestion from the v5_4 user-owned approval packet; source hash matches both the v5_5 report and the v5_6 recorded source hash.
+- source_v5_5_dry_run: official_metric_dry_run_opened=true; official_metric_dry_run_executed=true; official_metric_input_rows=29; official_metric_input_rows_created=29; official_eval_user_gate_ready=true.
+- immutable_v5_6_baseline: official metric scored-execution attempt; backend_unavailable=true; scored_answer_rows=0; answer_quality_metric_computed=false; failure_category_counts=`{'backend_unavailable': 29}`.
+- separate_v5_6_1_product_preview: default-off `/api/rag/query` product-preview bridge remains non-metric, uses `AIPIPELINE_WORKER_RAG_PRODUCT_PREVIEW_ROUTE_ENABLED`, and does not move `current` away from `v5_6`.
+- denominator_scope: exactly 29 user-approved v5_4 packet rows via v5_5 (TEXT 6, XLSX 19, PDF 4); no silver/residual/overlay-90/XLSX candidate-state/PDF-TEXT residual taxonomy expansion.
+- backend_preflight_status: `EXECUTION_GATE_DISABLED_FAIL_CLOSED`; failure_category=`execution_gate_disabled`; env_gate=`RAG_V5_6_2_ENABLE_OFFICIAL_METRIC_EXECUTION`; scored_answer_rows=0; answer_quality_metric_computed=false.
+- failure_category_counts: `{'execution_gate_disabled': 29}`; pass_count=0/fail_count=29 is not an answer-quality metric when answer_quality_metric_computed=false.
+- duplicate supporting_evidence_id is recorded only as a locator precision audit note; row-level citation_locator remains authoritative, and product/front-end citation DTOs must not collapse rows by supporting_evidence_id alone.
+- promotion/product-success/training/fine-tuning/FT-A/live DB-index-cache readiness and production routing remain closed; protected_namespaces_touched=[].
 
-Current verification: after v5_5 user-approved gold packet ingestion and official metric dry-run,
-`pytest ai/tests --rag-current -q` passed with 44 passed, 0 failed, 0 skipped, 1 warning, while historical focused runs remain directly checkable by explicit key. Generated report/status/official-eval artifacts remain ignored.
+Current verification: after v5_6_2 backend-enabled preflight/scored-rerun lane,
+`pytest ai/tests --rag-current -q` passed with 65 passed, 0 failed, 0 skipped, 1 warning, covering the explicit v5_6_2 checks plus the immutable v5_6 baseline. Generated report/status/official-metric artifacts remain ignored.
 
 Artifact policy:
 - `ai/eval/reports/rag-ingestion/status.jsonl` remains local/ignored status ledger.
-- Current v5_5 report: `ai/eval/reports/rag-ingestion/runs/v5_5/report.json`.
-- Source v5_4 packet paths: `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl`, and `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx`.
-- Prior basis reports remain explicit: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_3/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_2/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_1/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, and `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`.
+- Immutable v5_6 baseline report: `ai/eval/reports/rag-ingestion/runs/v5_6/report.json`.
+- Current explicit v5_6_2 report: `ai/eval/reports/rag-ingestion/runs/v5_6_2/report.json`.
+- Current explicit v5_6_2 backend preflight: `ai/eval/reports/rag-ingestion/runs/v5_6_2/backend_preflight_result.json`.
+- Current explicit v5_6_2 scored result: `ai/eval/reports/rag-ingestion/runs/v5_6_2/official_metric_scored_result.json`.
+- Current explicit v5_6_2 failure attribution: `ai/eval/reports/rag-ingestion/runs/v5_6_2/failure_attribution.jsonl`.
+- Source v5_5 report and official metric input: `ai/eval/reports/rag-ingestion/runs/v5_5/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl`.
+- Prior basis reports remain explicit: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, `ai/eval/reports/rag-ingestion/runs/v5_3/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_2/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_1/report.json`, `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, and `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`.
+
 
 ## Short History
 

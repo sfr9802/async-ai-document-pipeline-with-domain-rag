@@ -179,6 +179,21 @@ V5_5_LONG_RUN_ID = (
     "user_approved_gold_packet_ingestion_and_official_metric_dry_run_nonprod"
 )
 V5_5_STATUS = "V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY"
+V5_6_SHORT_KEY = "v5_6"
+V5_6_SHORT_RUN_ID = "v5_6_official_metric_scored_execution_and_failure_attribution_nonprod"
+V5_6_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v5_6_"
+    "official_metric_scored_execution_and_failure_attribution_nonprod"
+)
+V5_6_STATUS = "V5_6_OFFICIAL_METRIC_SCORED_EXECUTION_BACKEND_UNAVAILABLE_FAIL_CLOSED_NONPROD_READY"
+V5_6_2_SHORT_KEY = "v5_6_2"
+V5_6_2_SHORT_RUN_ID = "v5_6_2_official_metric_backend_enabled_preflight_scored_rerun_nonprod"
+V5_6_2_LONG_RUN_ID = (
+    "official_answer_citation_agentic_loop_run_v5_6_2_"
+    "official_metric_backend_enabled_preflight_scored_rerun_nonprod"
+)
+V5_6_2_STATUS = "V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_FAIL_CLOSED_NONPROD_READY"
+V5_6_2_SCORED_STATUS = "V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_SCORED_RERUN_NONPROD_READY"
 
 
 class ReportResolutionError(RuntimeError):
@@ -195,6 +210,7 @@ class RunMetadata:
     legacy_report_path: Path | None = None
     accepted_aliases: tuple[str, ...] = ()
     canonical_fields: tuple[str, ...] = ("run_id",)
+    accepted_statuses: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -432,6 +448,25 @@ RUNS: dict[str, RunMetadata] = {
         accepted_aliases=(V5_5_SHORT_RUN_ID, V5_5_LONG_RUN_ID),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
     ),
+    V5_6_SHORT_KEY: RunMetadata(
+        logical_key=V5_6_SHORT_KEY,
+        short_run_id=V5_6_SHORT_RUN_ID,
+        canonical_long_run_id=V5_6_LONG_RUN_ID,
+        status=V5_6_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V5_6_SHORT_KEY / "report.json",
+        accepted_aliases=(V5_6_SHORT_RUN_ID, V5_6_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
+    V5_6_2_SHORT_KEY: RunMetadata(
+        logical_key=V5_6_2_SHORT_KEY,
+        short_run_id=V5_6_2_SHORT_RUN_ID,
+        canonical_long_run_id=V5_6_2_LONG_RUN_ID,
+        status=V5_6_2_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V5_6_2_SHORT_KEY / "report.json",
+        accepted_aliases=(V5_6_2_SHORT_RUN_ID, V5_6_2_LONG_RUN_ID),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+        accepted_statuses=(V5_6_2_SCORED_STATUS,),
+    ),
 }
 
 ALIAS_TO_KEY: dict[str, str] = {
@@ -439,7 +474,7 @@ ALIAS_TO_KEY: dict[str, str] = {
     for key, metadata in RUNS.items()
     for alias in (key, *metadata.accepted_aliases)
 }
-ALIAS_TO_KEY["current"] = V5_5_SHORT_KEY
+ALIAS_TO_KEY["current"] = V5_6_SHORT_KEY
 
 
 def _repo_root(root: Path | str | None = None) -> Path:
@@ -516,5 +551,5 @@ def _validate_identity(resolved: ResolvedRun, report: dict[str, Any]) -> None:
     if "canonical_long_run_id" in metadata.canonical_fields:
         if report.get("canonical_long_run_id") != metadata.canonical_long_run_id:
             raise ReportResolutionError(f"{resolved.logical_key} report canonical_long_run_id mismatch")
-    if report.get("status") != metadata.status:
+    if report.get("status") != metadata.status and report.get("status") not in metadata.accepted_statuses:
         raise ReportResolutionError(f"{resolved.logical_key} report status mismatch")

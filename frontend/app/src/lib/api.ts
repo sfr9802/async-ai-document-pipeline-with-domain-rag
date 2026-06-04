@@ -1,4 +1,12 @@
-import type { Capability, ErrorBody, JobCreated, JobResult, JobView } from "./types";
+import type {
+  Capability,
+  ErrorBody,
+  JobCreated,
+  JobResult,
+  JobView,
+  RagPreviewRequest,
+  RagPreviewResponse,
+} from "./types";
 
 const STORAGE_KEY = "ai-pipeline.apiBase";
 // Empty string = same-origin: requests go to /api/... on whatever host is
@@ -63,6 +71,31 @@ export function getJob(jobId: string): Promise<JobView> {
 
 export function getJobResult(jobId: string): Promise<JobResult> {
   return request<JobResult>(`/api/v1/jobs/${encodeURIComponent(jobId)}/result`);
+}
+
+export function queryRagPreview(payload: RagPreviewRequest): Promise<RagPreviewResponse> {
+  return request<RagPreviewResponse>("/api/rag/query", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(sanitizeRagPreviewRequest(payload)),
+  });
+}
+
+function sanitizeRagPreviewRequest(payload: RagPreviewRequest): RagPreviewRequest {
+  const context = payload.active_context ?? {};
+  const active_context: RagPreviewRequest["active_context"] = {};
+  if (context.source_family) active_context.source_family = context.source_family;
+  if (context.file_id?.trim()) active_context.file_id = context.file_id.trim();
+  if (context.sheet?.trim()) active_context.sheet = context.sheet.trim();
+  if (typeof context.page === "number") active_context.page = context.page;
+  if (context.locator_text?.trim()) active_context.locator_text = context.locator_text.trim();
+  return {
+    query: payload.query,
+    locale: payload.locale,
+    language: payload.language,
+    session_id: payload.session_id,
+    ...(Object.keys(active_context).length > 0 ? { active_context } : {}),
+  };
 }
 
 export function artifactUrl(accessUrl: string): string {

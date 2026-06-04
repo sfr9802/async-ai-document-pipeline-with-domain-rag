@@ -19,6 +19,8 @@ TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
 V5_4_CURRENT_STATUS = "V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY"
 V5_5_CURRENT_STATUS = "V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY"
+V5_6_CURRENT_STATUS = "V5_6_OFFICIAL_METRIC_SCORED_EXECUTION_BACKEND_UNAVAILABLE_FAIL_CLOSED_NONPROD_READY"
+V5_6_2_CURRENT_STATUS = "V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_FAIL_CLOSED_NONPROD_READY"
 V5_3_CURRENT_STATUS = "V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY"
 V5_2_CURRENT_STATUS = "V5_2_XLSX_RESIDUAL_CANDIDATE_ONLY_RETRIEVAL_ENGINEERING_DIAGNOSTIC_NONPROD_READY"
 V5_1_CURRENT_STATUS = "V5_1_OFFICIAL_EVAL_GATE_SCAFFOLDING_DIAGNOSTIC_NONPROD_READY"
@@ -42,7 +44,7 @@ V4_7_3_CURRENT_STATUS = "V4_7_3_HUMAN_REVIEWED_KOREAN_QUERY_CANDIDATE_PASS_EXCLU
 V4_7_2_CURRENT_STATUS = "DIAGNOSTIC_V4_7_2_SOURCE_GROUNDED_KOREAN_QUERY_REVIEW_PACKET_HYDRATION_NONPROD_READY"
 V4_7_1_CURRENT_STATUS = "DIAGNOSTIC_V4_7_1_KOREAN_REVIEW_PACKET_AND_README_STATUS_SNAPSHOT_NONPROD_READY"
 V4_7_CURRENT_STATUS = "V4_7_PREOFFICIAL_EXTERNAL_HOLDOUT_CANDIDATE_MANIFEST_REGISTRATION_READY"
-CURRENT_RAG_STATUS = V5_5_CURRENT_STATUS
+CURRENT_RAG_STATUS = V5_6_CURRENT_STATUS
 V4_6_CLOSEOUT_CURRENT_STATUS = CURRENT_RAG_STATUS
 V4_6_12_CURRENT_STATUS = V4_6_CLOSEOUT_CURRENT_STATUS
 V4_6_11_CURRENT_STATUS = V4_6_12_CURRENT_STATUS
@@ -192,35 +194,55 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(resolve_report_artifact_path(path).read_bytes()).hexdigest()
 
 
-def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unavailable():
+def test_progress_doc_current_board_records_v562_backend_enabled_preflight_and_v560_baseline():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = text.split("## Short History", 1)[0]
     current_flat = " ".join(current_text.split())
 
-    assert V5_5_CURRENT_STATUS in current_text
+    assert V5_6_2_CURRENT_STATUS in current_text
+    assert V5_6_CURRENT_STATUS in current_text
+    assert "V5_6_1_FASTAPI_PRODUCT_RUNTIME_BRIDGE_AND_FRONTEND_E2E_PREVIEW_NONPROD_READY" in current_text
+    assert "v5_6_1_fastapi_product_runtime_bridge_and_frontend_e2e_preview_nonprod" in current_text
+    assert "v5_6_2_official_metric_backend_enabled_preflight_scored_rerun_nonprod" in current_text
+    assert "v5_6_official_metric_scored_execution_and_failure_attribution_nonprod" in current_text
+    assert "`current` resolves to `v5_6`" in current_text
+    assert "`v5_6_2`, `v5_5`, `v5_4`, `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable" in current_text
     assert "v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run" in current_text
-    assert "`current` resolves to `v5_5`" in current_text
-    assert "`v5_4`, `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable" in current_text
     assert "v5_4_user_owned_official_eval_approval_packet" in current_text
     assert "v5_3_pdf_text_residual_retrieval_evidence_hardening" in current_text
     assert "v5_2_xlsx_residual_candidate_only_retrieval_engineering" in current_text
     assert "v5_1_official_eval_gate_scaffolding" in current_text
     assert "v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility" in current_text
-    assert "user-approved gold packet ingestion" in current_text
-    assert "existing registry-backed 29-row official snapshot" in current_text
-    assert "official_metric_dry_run_opened=true" in current_text
-    assert "official_metric_dry_run_executed=true" in current_text
-    assert "official_metric_input_rows=29" in current_text
-    assert "official_metric_input_rows_created=29" in current_text
-    assert "official_eval_user_gate_ready=true" in current_text
-    assert "promotion/training/fine-tuning/live-readiness remain closed" in current_text
+    assert "official metric scored-execution attempt" in current_text
+    assert "default-off `/api/rag/query`" in current_text
+    assert "does not move `current` away from `v5_6`" in current_text
+    assert "AIPIPELINE_WORKER_RAG_PRODUCT_PREVIEW_ROUTE_ENABLED" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl" in current_text
+    assert "source hash matches both the v5_5 report and the v5_6 recorded source hash" in current_text
+    assert "exactly 29 user-approved v5_4 packet rows via v5_5 (TEXT 6, XLSX 19, PDF 4)" in current_text
+    assert "no silver/residual/overlay-90/XLSX candidate-state/PDF-TEXT residual taxonomy expansion" in current_text
+    assert "EXECUTION_GATE_DISABLED_FAIL_CLOSED" in current_text
+    assert "execution_gate_disabled" in current_text
+    assert "RAG_V5_6_2_ENABLE_OFFICIAL_METRIC_EXECUTION" in current_text
+    assert "scored_answer_rows=0" in current_text
+    assert "answer_quality_metric_computed=false" in current_text
+    assert "failure_category_counts" in current_text
+    assert "execution_gate_disabled': 29" in current_text
+    assert "backend_unavailable': 29" in current_text
+    assert "pass_count=0/fail_count=29 is not an answer-quality metric" in current_text
+    assert "locator precision audit note" in current_text
+    assert "row-level citation_locator remains authoritative" in current_text
+    assert "citation DTOs must not collapse rows by supporting_evidence_id alone" in current_text
+    assert "promotion/product-success/training/fine-tuning/FT-A/live DB-index-cache readiness and production routing remain closed" in current_text
     assert "protected_namespaces_touched=[]" in current_text
-    assert "Current verification: after v5_5 user-approved gold packet ingestion and official metric dry-run" in current_text
     assert "pytest ai/tests --rag-current -q" in current_text
     assert "status.jsonl" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_6/report.json" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_6_2/report.json" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_6_2/backend_preflight_result.json" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_6_2/official_metric_scored_result.json" in current_text
+    assert "ai/eval/reports/rag-ingestion/runs/v5_6_2/failure_attribution.jsonl" in current_text
     assert "ai/eval/reports/rag-ingestion/runs/v5_5/report.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_dry_run_result.json" in current_text
     assert "ai/eval/reports/rag-ingestion/runs/v5_4/report.json" in current_text
     assert "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv" in current_text
     assert "ai/eval/reports/rag-ingestion/runs/v5_3/report.json" in current_text
@@ -228,20 +250,19 @@ def test_progress_doc_current_board_uses_latest_scored_baseline_not_backend_unav
     assert "ai/eval/reports/rag-ingestion/runs/v5_1/report.json" in current_text
     assert "ai/eval/reports/rag-ingestion/runs/v5_0/report.json" in current_text
     assert "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json" in current_text
+    assert "`current` resolves to `v5_5`" not in current_text
     assert "`current` resolves to `v5_2`" not in current_text
     assert "`current` resolves to `v5_1`" not in current_text
     assert "`current` resolves to `v5_0`" not in current_text
-    assert "official_metric_execution_started=true" not in current_text
+    assert "official_metric_finalized=true" not in current_text
     assert "faiss_gpu_used=true" not in current_text
     assert "baseline_comparison_is_model_quality_comparable=false" not in current_text
     assert "llm_backend=noop" not in current_text
     assert "STRUCTURED_ADAPTER_NOT_WIRED=22" not in current_text
     assert "wire official metrics" not in current_flat
-
-    assert "SCORER_BACKEND_UNAVAILABLE" not in current_text
-    assert "scorer/backend is unavailable" not in current_text
-    assert "wire or start the official answer/citation scorer/backend" not in current_text
-    assert "Wire or start the official answer/citation scorer/backend" not in current_text
+    assert "training_manifest.jsonl" not in current_text
+    assert "fine_tuning_started=true" not in current_text
+    assert "production_routing=true" not in current_text
 
 
 def test_progress_doc_does_not_keep_stale_current_profile_test_count():
@@ -249,7 +270,10 @@ def test_progress_doc_does_not_keep_stale_current_profile_test_count():
     verification_section = text.split("## Current Status", 1)[1].split("Artifact policy:", 1)[0]
 
     assert "Current verification:" in verification_section
-    assert "44 passed" in verification_section
+    assert "65 passed" in verification_section
+    assert "55 passed" not in verification_section
+    assert "50 passed" not in verification_section
+    assert "44 passed" not in verification_section
     assert "43 passed" not in verification_section
     assert "38 passed" not in verification_section
     assert "37 passed" not in verification_section

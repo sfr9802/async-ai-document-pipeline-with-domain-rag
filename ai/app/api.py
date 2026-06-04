@@ -23,6 +23,12 @@ from app.capabilities.rag_orchestrator.phase1_diagnostic_runtime import (
     RagDiagnosticReadinessResponse,
     SourceFirstRagService,
 )
+from app.capabilities.rag_orchestrator.product_preview_runtime import (
+    PRODUCT_PREVIEW_ROUTE_PATH,
+    RagProductPreviewQueryRequest,
+    RagProductPreviewResponse,
+    run_product_preview_query,
+)
 from app.capabilities.registry import build_default_registry
 from app.clients.core_api_client import CoreApiClient
 from app.core.config import WorkerSettings, get_settings
@@ -52,11 +58,13 @@ def create_app(
     runner: Optional[TaskRunner] = None,
     settings: Optional[WorkerSettings] = None,
     rag_diagnostic_service: Optional[SourceFirstRagService] = None,
+    rag_product_preview_service: Optional[SourceFirstRagService] = None,
 ) -> FastAPI:
     app = FastAPI(title="ai", version="0.1.0")
     app.state.runner = runner
     app.state.settings = settings
     app.state.rag_diagnostic_service = rag_diagnostic_service
+    app.state.rag_product_preview_service = rag_product_preview_service
 
     @app.post(
         "/internal/tasks/ocr-extract",
@@ -112,6 +120,21 @@ def create_app(
             )
         service = app.state.rag_diagnostic_service or SourceFirstRagService()
         return service.query(body)
+
+    @app.post(PRODUCT_PREVIEW_ROUTE_PATH, response_model=RagProductPreviewResponse)
+    async def run_product_preview_rag_query(request: Request) -> RagProductPreviewResponse:
+        resolved_settings = app.state.settings or get_settings()
+        if (
+            not resolved_settings.rag_product_preview_route_enabled
+            or resolved_settings.rag_query_orchestrator_mode == "production"
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="product preview RAG route disabled",
+            )
+        body = await _parse_diagnostic_body(request, RagProductPreviewQueryRequest)
+        service = app.state.rag_product_preview_service or SourceFirstRagService()
+        return run_product_preview_query(service, body)
 
     @app.get(READINESS_ROUTE_PATH, response_model=RagDiagnosticReadinessResponse)
     def get_rag_diagnostic_readiness() -> RagDiagnosticReadinessResponse:
