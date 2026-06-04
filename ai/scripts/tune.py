@@ -36,7 +36,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
-import yaml
+try:
+    import yaml
+except ImportError as exc:  # pragma: no cover - exercised in minimal envs.
+    raise SystemExit(
+        "PyYAML is required for experiment tooling. Install experiment "
+        "dependencies with `pip install -r requirements-dev.txt` or "
+        "`pip install -e \".[experiments]\"` from ai/."
+    ) from exc
 
 log = logging.getLogger("tune")
 
@@ -392,10 +399,10 @@ def run_study(
     subprocess_timeout: Optional[float],
     n_trials_override: Optional[int],
 ) -> "optuna.Study":
-    import optuna  # local import so `--help` works without optuna installed
-
     assert_active_config_runnable(config)
     assert_tuning_sweep_allowed(config)
+
+    import optuna  # local import so disabled templates do not require optuna.
 
     study_dir = studies_root / config.experiment_id
     study_dir.mkdir(parents=True, exist_ok=True)

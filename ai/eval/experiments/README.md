@@ -3,8 +3,9 @@
 이 디렉토리는 round 기반 Optuna 튜닝의 프로젝트 측 artifact 를 들고
 있습니다. Optuna 오케스트레이션 자체 (sampler / pruner 생성, trial
 디스패치, 번들 export, 스키마 검증, markdown 렌더링) 는 설치된
-`optuna-round-refinement` skill 이 소유 —
-`C:\Users\sfr99\.claude\skills\optuna-round-refinement\SKILL.md` 참조.
+`optuna-round-refinement` skill 이 소유합니다. 이 repo 는 skill 을
+vendoring 하지 않으므로, runner 경로는 현재 Codex/agent 환경의 skill
+설치 위치에서 확인해야 합니다.
 
 프로젝트 측은 4종의 artifact 만 기여:
 
@@ -24,10 +25,9 @@
 eval/experiments/
 ├── README.md                ← 이 파일
 ├── active.yaml              ← legacy scripts/tune.py 탐색 공간 (별도 시스템)
-├── rounds/                  ← 커밋: config + 분석
-│   ├── round_01_config.json
-│   ├── round_01_analysis.md
-│   ├── round_02_config.json
+├── rounds/                  ← 커밋: config + 분석 (생성된 round_NN_*만 존재)
+│   ├── round_NN_config.json
+│   ├── round_NN_analysis.md
 │   └── ...
 ├── run_output/              ← gitignore: 실행별 skill 출력
 │   ├── .gitkeep
@@ -51,11 +51,24 @@ eval/experiments/
 
 ## Round 주도
 
-`ai/` 에서:
+먼저 experiment-only dependency 를 설치합니다. 기본 runtime install 에는
+Optuna/시각화/schema 검증 도구를 넣지 않습니다.
 
 ```bash
-python "C:/Users/sfr99/.claude/skills/optuna-round-refinement/scripts/round_runner.py" run \
-    --config eval/experiments/rounds/round_01_config.json \
+cd ai
+pip install -r requirements-dev.txt
+# or
+pip install -e ".[experiments]"
+```
+
+그 다음 `ai/` 에서 현재 설치된 skill 의 `scripts/round_runner.py` 를
+호출합니다. 아래의 `<skill-root>` 와 `round_NN_config.json` 은 예시이며,
+fresh checkout 에 round config 가 없으면 skill 이 제안한 config 를 먼저
+생성/승격해야 합니다.
+
+```bash
+python "<skill-root>/scripts/round_runner.py" run \
+    --config eval/experiments/rounds/round_NN_config.json \
     --out-bundle eval/experiments/run_output/study_bundle.json \
     --out-llm-input eval/experiments/run_output/llm_input.md \
     --evaluate-search-path .
@@ -75,3 +88,16 @@ round 의 config 는 번들만 가지고 동작하는 skill 의 분석가 prompt
 - 템플릿 — skill 소유 (`templates/llm_input.md`,
   `templates/round_report.md`).
 - Eval harness 내부 — [`ai/eval/harness/`](../harness/) 참조.
+
+## Cleanup classification (2026-06-04)
+
+| Path | Classification | Action | Evidence | Risk | Validation |
+|---|---|---|---|---|---|
+| `active.yaml` | active-diagnostic-only | Preserved. Full tuning/export gates remain closed by policy fields. | Phase 7 template has `_meta.execution_policy.allow_tuning_sweep=false`. | High if opened without human gold/eval policy. | Contract test imports `scripts.tune` and checks the disabled sweep reason. |
+| `run_output/.gitkeep` | active-supported | Added as a trackable directory keeper; generated bundles stay ignored. | `.gitignore` already had the `.gitkeep` exception but the file was absent. | Low; does not preserve generated payloads. | Gitignore contract test. |
+| `run_output/*` except `.gitkeep` | active-diagnostic-only | Ignored. Regenerated per run by the skill. | README cadence and `.gitignore` mark these as run-local outputs. | Medium if committed accidentally because bundles may contain large prompt context. | Gitignore check. |
+| `rounds/*.json`, `rounds/*.md` | active-supported | Kept trackable for reproducibility when generated. | Round configs and analyses are the durable round-to-round record. | Medium if ignored because reviewers lose search-space provenance. | Gitignore contract test. |
+| `studies/**/FINAL_BEST.json`, `STUDY_SUMMARY.md`, `summary.md` | active-diagnostic-only | Kept trackable as receipts; DBs and plots stay ignored. | These survive without SQLite study DBs. | Medium if deleted because old diagnostic conclusions lose evidence. | Gitignore contract test. |
+| `../tune_eval.py` | active-supported | Preserved as the project-side skill adapter. | `evaluate: "eval.tune_eval:evaluate"` references. | Medium; real validation should set `TUNE_EVAL_DATASETS_REQUIRED=1`. | Import/dependency smoke. |
+| `../tune_eval_offline.py` | legacy-archived | Preserved in place as historical offline replay adapter. | Module header identifies it as a sister/offline replay path. | Low if preserved; moving may break old bundle imports. | Classification only; no semantic edits. |
+| legacy-remove | legacy-remove | None. | No experiment had enough evidence for safe deletion. | N/A | Final diff review. |

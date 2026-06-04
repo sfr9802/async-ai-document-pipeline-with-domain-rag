@@ -9,8 +9,9 @@ root can invoke the smoke runner without `cd ai/` first:
     python scripts/operational/smoke_all.py --only MOCK,RAG
     python scripts/operational/smoke_all.py --report smoke-report.json
 
-All CLI flags forward verbatim. See docs/local-run.md "Pipeline closeout
-checklist" for the full workflow.
+All CLI flags forward verbatim. Use `python scripts/operational/smoke_all.py
+--help` for the current workflow and pair it with the local infrastructure
+notes in the repository README.
 
 Kept deliberately thin — the real logic (HTTP orchestration, shape
 assertions, report building) lives in the worker package so the

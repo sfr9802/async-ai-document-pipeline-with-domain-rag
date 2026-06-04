@@ -22,7 +22,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
-import yaml
+try:
+    import yaml
+except ImportError as exc:  # pragma: no cover - exercised in minimal envs.
+    raise SystemExit(
+        "PyYAML is required for experiment study summaries. Install experiment "
+        "dependencies with `pip install -r requirements-dev.txt` or "
+        "`pip install -e \".[experiments]\"` from ai/."
+    ) from exc
 
 log = logging.getLogger("summarize_study")
 

@@ -155,7 +155,8 @@ def check_postgres(dsn: str) -> CheckResult:
             remediation=(
                 "Check that PostgreSQL is running and AIPIPELINE_WORKER_RAG_DB_DSN "
                 "(or the core-api spring.datasource.url) points at the right host "
-                "and port. See docs/local-run.md for Mode A / Mode B bootstrap."
+                "and port. For the default local stack, run `docker compose up -d` "
+                "from the repository root and align DSNs with .env.example."
             ),
             duration_ms=_elapsed_ms(started),
         )

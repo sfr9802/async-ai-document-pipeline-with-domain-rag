@@ -84,6 +84,7 @@ CURRENT_RAG_TEST_FILES = frozenset(nodeid.split("::", 1)[0] for nodeid in CURREN
 
 NON_CURRENT_RAG_TEST_FILES = frozenset(
     {
+        "ai/tests/test_experiment_dependency_cleanup_contract.py",
         "ai/tests/test_fastapi_phase1_diagnostic_rag_route_v1.py",
         "ai/tests/test_rag_answer_citation_silver_manifest_v1.py",
         "ai/tests/test_rag_anti_shortcut_guardrail_audit_v1.py",

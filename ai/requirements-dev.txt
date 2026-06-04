@@ -1,18 +1,24 @@
-# Development-only dependencies.
+# Development and experiment-only dependencies.
 #
 # The test suite (pytest) is declared in pyproject.toml under
-# [project.optional-dependencies].dev; this file adds the tooling
-# needed by the Optuna tuning loop (scripts.tune / scripts.summarize_study).
+# [project.optional-dependencies].dev. The experiment tooling below is
+# mirrored in pyproject.toml under [project.optional-dependencies].experiments
+# so editable installs can keep optional experiment dependencies out of the
+# default runtime environment.
 #
 # Install alongside the runtime requirements:
 #   pip install -r requirements.txt -r requirements-dev.txt
+# Or from an editable package install:
+#   pip install -e ".[dev,experiments]"
 #
 # PyYAML is a transitive dependency of several packages already in
 # requirements.txt, but is listed explicitly here because tune.py uses
 # it directly to parse active.yaml.
+# jsonschema is used by the Optuna round-refinement readiness diagnostic.
 
 optuna==4.5.0
 optuna-dashboard>=0.15,<1.0
 matplotlib>=3.9,<4
 plotly>=5.22,<7      # optional; imported by optuna-dashboard for interactive views
 PyYAML>=6,<7
+jsonschema>=4.23,<5

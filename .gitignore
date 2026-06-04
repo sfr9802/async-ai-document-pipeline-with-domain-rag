@@ -171,8 +171,16 @@ ai/eval/legacy_agent_loop_ab/legacy-vs-graph-*/
 ai/eval/legacy_agent_loop_ab/smoke-*/
 
 # ---- Optuna tuning artifacts ----
-# Keep summary.md + config.yaml (deterministic replay), drop the
-# binary SQLite study and per-run plots. See docs/tuning.md.
+# Keep reproducibility receipts and round configs, drop the binary SQLite
+# study and per-run plots. See ai/eval/experiments/README.md.
+!ai/eval/experiments/rounds/
+!ai/eval/experiments/rounds/*.json
+!ai/eval/experiments/rounds/*.md
+!ai/eval/experiments/studies/
+!ai/eval/experiments/studies/**/
+!ai/eval/experiments/studies/**/FINAL_BEST.json
+!ai/eval/experiments/studies/**/STUDY_SUMMARY.md
+!ai/eval/experiments/studies/**/summary.md
 ai/eval/experiments/studies/**/study.db
 ai/eval/experiments/studies/**/study.db-journal
 ai/eval/experiments/studies/**/plots/
@@ -247,7 +255,7 @@ ai/eval/eval_queries/_generation_log_*.jsonl
 # study_bundle.json + llm_input.md emitted by the skill's round_runner
 # are per-run artifacts; only the .gitkeep is tracked so the directory
 # survives a fresh clone.
-ai/eval/experiments/run_output/
+ai/eval/experiments/run_output/*
 !ai/eval/experiments/run_output/.gitkeep
 
 # ---- Working notes / decision logs / personal context ----

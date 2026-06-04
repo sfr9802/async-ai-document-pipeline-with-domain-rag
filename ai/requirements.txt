@@ -18,7 +18,7 @@ numpy>=1.26,<3
 
 # OCR capability dependencies (phase 2).
 # pytesseract is a thin Python wrapper around the Tesseract CLI — you MUST
-# also install the tesseract binary separately (see docs/local-run.md).
+# also install the tesseract binary separately; pip only installs the wrapper.
 # PyMuPDF (imported as `fitz`) handles PDF page iteration + rasterization
 # in-process so we don't need poppler/pdf2image. Pillow is already pulled
 # transitively by sentence-transformers but pinned here for clarity.

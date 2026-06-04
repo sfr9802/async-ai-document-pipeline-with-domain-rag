@@ -17,7 +17,7 @@ python scripts/operational/e2e_smoke.py
 
 | Script | Role |
 |---|---|
-| `rag_eval.py` | Stable short-key dispatcher for current RAG diagnostic checks and writes; `current` resolves to `v5_5`, `v5_4_user_owned_official_eval_approval_packet` remains explicit, `v5_3_pdf_text_residual_retrieval_evidence_hardening` remains explicit, `v5_2_xlsx_residual_candidate_only_retrieval_engineering` remains explicit, `v5_1_official_eval_gate_scaffolding` remains explicit, `v5_0_v4_closeout_and_v5_gate_plan` remains explicit, `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` remains explicit as the frozen v4 closeout basis, and v5_5 creates only run-local official metric dry-run input artifacts with training/fine-tuning/promotion/product-success/live-readiness closed. |
+| `rag_eval.py` | Stable short-key dispatcher for current RAG diagnostic checks and writes; `current` resolves to `v5_6`, `v5_6_2_official_metric_backend_enabled_preflight_scored_rerun_nonprod` remains the latest explicit backend-enabled preflight lane, `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run` remains the read-only 29-row official metric input source, `v5_4_user_owned_official_eval_approval_packet` remains explicit, `v5_3_pdf_text_residual_retrieval_evidence_hardening` remains explicit, `v5_2_xlsx_residual_candidate_only_retrieval_engineering` remains explicit, `v5_1_official_eval_gate_scaffolding` remains explicit, `v5_0_v4_closeout_and_v5_gate_plan` remains explicit, `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` remains explicit as the frozen v4 closeout basis, and promotion/product-success/training/fine-tuning/live-readiness stay closed. |
 | `rag_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod.py` | Persists the v3_22 XLSX display metadata contract into SourceAtom-owned runtime-adjacent fields. |
 | `rag_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod.py` | Packages family-separated XLSX table/range/cell locator diagnostics from seen-reference v3 surfaces. |
 | `rag_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod.py` | Keeps PDF file identity confidence separate from answer-ready evidence-window diagnostics. |
@@ -106,7 +106,7 @@ XLSX display/range helpers, and FastAPI-safe service boundaries live in
 
 | Bucket | Current classification |
 |---|---|
-| `required_by_current_tests` | `status.jsonl`, the current v5_5 report and run-local official metric dry-run artifacts, the explicit v5_4 packet, v5_3, v5_2, v5_1, and v5_0 basis reports, the frozen v4_7_18 source report, and v3_9_2 through v3_22 scripts. |
+| `required_by_current_tests` | `status.jsonl`, the current v5_6 report, the explicit v5_6_2 preflight report, the v5_5 run-local official metric dry-run artifacts, the explicit v5_4 packet, v5_3, v5_2, v5_1, and v5_0 basis reports, the frozen v4_7_18 source report, and v3_9_2 through v3_22 scripts. |
 | `required_by_docs_or_status_sync` | v3_22 `report.json` and the rolling docs/status entries that anchor Phase 1 closure. |
 | `ignored_diagnostic_artifact` | RAG ingestion `report.json`, `status.jsonl`, and optional review packets under `eval/reports/rag-ingestion/`. |
 | `external_archive_candidate` | Older ignored quality/perf payloads not read by current tests, after exact-stem `rg` and artifact-required gates. |
@@ -118,3 +118,23 @@ Do not convert diagnostic scripts into production code. Keep v3_19-v3_21 as
 runtime/observability predecessors, keep v3_22 as the single-report closure
 entrypoint, and keep v4 work in persisted locator/holdout/fine-tuning
 readiness lanes only while the diagnostic boundaries remain green.
+
+## Repository Cleanup Experiment Classification (2026-06-04)
+
+This table records the cleanup classification used for the repository cleanup
+and experiment dependency repair pass. The pass did not delete or move legacy
+experiments because the current RAG docs, tests, and report artifacts still
+depend on diagnostic history, ignored evidence, and explicit short-key
+checkability.
+
+| Path or surface | Classification | Action | Evidence | Risk | Validation |
+|---|---|---|---|---|---|
+| `ai/scripts/rag_eval.py`, `ai/eval/rag_eval_registry.py`, `ai/eval/rag_v5*.py` | active-supported | Preserved; docs updated so `current` resolves to `v5_6` and `v5_6_2` remains explicit. | Registry current alias, `rag_eval.py --check`, current status/progress entries. | High if current alias, official metric input, or protected namespace semantics drift. | `rag_eval.py current --check`, `rag_eval.py v5_6_2 --check`, `pytest --rag-current`. |
+| `ai/eval/rag_v4_*.py`, `ai/eval/rag_v3_*.py`, and v3/v4 report-writing checks | active-diagnostic-only | Preserved in place as explicit diagnostic history. | v4/v3 inventory above, current tests requiring old scripts/reports, frozen v4 closeout basis. | High if cleanup removes artifacts that are ignored but still used by checks. | Current RAG focused tests and direct short-key checks. |
+| `ai/scripts/tune.py`, `ai/scripts/summarize_study.py`, `ai/eval/experiments/active.yaml` | active-diagnostic-only | Preserved; dependencies scoped to the `experiments` optional group and missing-dependency messages made explicit. | `active.yaml` keeps the Phase 7 template schema-valid but disables full tuning sweeps. | Medium; optional tooling should not become a production dependency. | Experiment dependency cleanup contract test and py_compile smoke. |
+| `ai/eval/tune_eval.py` and `ai/eval/tuning/answer_recovery_optuna_objective.py` | active-supported | Preserved as project-side adapters for the installed optuna-round-refinement skill. | Experiment README, answer-recovery readiness script, config references. | Medium; real validation must require datasets instead of silently scoring an empty bundle. | Import/dependency checks; dataset-required behavior documented. |
+| `ai/eval/tune_eval_offline.py` | legacy-archived | Preserved in place and documented as legacy replay/offline adapter rather than moved. | Self-identifies as offline sister to `tune_eval.py`; useful for old bundle replay. | Low if preserved; medium if moved because old round bundles may import it. | Classification docs only; no semantic change. |
+| `ai/scripts/confirm_*`, `ai/scripts/rerender_variant_verdict.py`, wide-MMR helper scripts | active-diagnostic-only | Preserved. | Script headers and helper imports label silver/diagnostic retrieval comparisons and optuna-winner analysis. | Medium; may read historical reports and ignored outputs. | Current tests and no path moves. |
+| `ai/scripts/run_phase7_*`, `ai/scripts/rag_*optuna*`, `ai/eval/configs/*optuna*.yaml` | active-diagnostic-only | Preserved; `jsonschema` added to experiment dependencies for readiness diagnostics. | Phase 7 and answer-recovery configs set tuning/reporting gates explicitly. | High if these were removed because they encode gold/silver policy boundaries. | py_compile and dependency import smoke. |
+| `ai/eval/reports/rag-ingestion/*`, `ai/eval/indexes/*`, `ai/eval/eval_queries/*`, `ai/eval/source_registry/*`, `ai/eval/silver/*` | unknown-preserve | No deletion or semantic edits. | Boundary guardian and guardrail tests identify these as protected or evidence-critical even when ignored. | High; deletion or denominator edits would require human gold/eval policy. | Protected diff check and RAG checks. |
+| legacy-remove | legacy-remove | None. | No experiment had enough evidence to delete without risking diagnostic or gold/eval evidence loss. | N/A | Final diff review. |
