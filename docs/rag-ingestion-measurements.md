@@ -1,3 +1,21 @@
+<!-- v5_7_vector_llm_candidate_routing_with_regression_remediation_diagnostic_nonprod:measurements-entry:start -->
+### v5_7_vector_llm_candidate_routing_with_regression_remediation_diagnostic_nonprod
+
+- Scope: diagnostic-only vector/LLM candidate routing over the v5_6 full-packet baseline; source_official_metric_input_rows=29, route_comparison_rows=29, retrieval_metric_eligible_rows=28, answer_metric_rows=0.
+- Retrieval metrics:
+
+| metric | v5_6 full-packet new baseline | v5_7 diagnostic | delta |
+| --- | ---: | ---: | ---: |
+| hit_at_1 | 1.0000 | 1.0000 | 0.0000 |
+| hit_at_3 | 1.0000 | 1.0000 | 0.0000 |
+| hit_at_5 | 1.0000 | 1.0000 | 0.0000 |
+| mrr_at_5 | 1.0000 | 1.0000 | 0.0000 |
+| ndcg_at_5 | 1.0000 | 1.0000 | 0.0000 |
+
+- Latency/cost counters: vector_candidate_adapter_invoked_count=29; vector_search_latency_ms_p50=0.0; vector_search_latency_ms_p95=0.0; llm_adjudication_invoked_count=0; llm_adjudication_latency_ms_p50=0.0; llm_adjudication_latency_ms_p95=0.0; llm_token_estimate_total=0; fail_closed_count=0.
+- Regression attribution rows: 0; fine-tuning readiness candidate rows: 0; answer quality metric remains closed.
+<!-- v5_7_vector_llm_candidate_routing_with_regression_remediation_diagnostic_nonprod:measurements-entry:end -->
+
 <!-- v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod:measurements-entry:start -->
 ### v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod
 
