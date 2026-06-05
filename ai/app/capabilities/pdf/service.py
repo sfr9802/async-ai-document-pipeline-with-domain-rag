@@ -20,8 +20,11 @@ from app.capabilities.pdf.artifact_builder import (
     build_output_artifacts,
 )
 from app.capabilities.pdf.table_parser import (
-    extract_pdf_table_records,
+    PdfTableGraphUnavailableError,
     looks_like_pdf_table_text,
+    run_table_understanding_langgraph,
+    table_candidate_node,
+    table_interpretation_node,
 )
 
 log = logging.getLogger(__name__)
@@ -351,6 +354,15 @@ class PdfExtractService:
                 "page_label": page_label,
             })
 
+        table_state = _run_table_understanding_for_page(
+            blocks=blocks,
+            page_no=page_no,
+            page_index=page_index,
+            page_label=page_label,
+            warnings=warnings,
+        )
+        table_candidates = list(table_state.get("table_candidates") or [])
+
         return {
             "physical_page_index": page_index,
             "page_no": page_no,
@@ -361,16 +373,10 @@ class PdfExtractService:
             "ocr_used": False,
             "char_count": len(page_text),
             "blocks": blocks,
-            "tables": (
-                extract_pdf_table_records(
-                    blocks,
-                    page_no=page_no,
-                    physical_page_index=page_index,
-                    page_label=page_label,
-                )
-                if _should_extract_pdf_tables(blocks)
-                else []
-            ),
+            "tables": table_candidates,
+            "table_candidates": table_candidates,
+            "table_interpretations": list(table_state.get("table_interpretations") or []),
+            "table_understanding_trace": list(table_state.get("trace") or []),
         }
 
 
@@ -431,6 +437,43 @@ def _should_extract_pdf_tables(blocks: list[dict[str, Any]]) -> bool:
     if not native_texts:
         return False
     return looks_like_pdf_table_text("\n".join(native_texts))
+
+
+def _run_table_understanding_for_page(
+    *,
+    blocks: list[dict[str, Any]],
+    page_no: int,
+    page_index: int,
+    page_label: str,
+    warnings: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if not _should_extract_pdf_tables(blocks):
+        return {"table_candidates": [], "table_interpretations": [], "trace": []}
+
+    state = {
+        "pdf_blocks": blocks,
+        "page_no": page_no,
+        "physical_page_index": page_index,
+        "page_label": page_label,
+        "trace": [],
+    }
+    try:
+        return run_table_understanding_langgraph(state)
+    except PdfTableGraphUnavailableError as ex:
+        warnings.append(
+            {
+                "code": "PDF_TABLE_LANGGRAPH_UNAVAILABLE",
+                "message": (
+                    "LangGraph table understanding unavailable; "
+                    "falling back to pure deterministic table nodes."
+                ),
+                "physical_page_index": page_index,
+                "page_no": page_no,
+                "page_label": page_label,
+                "error_type": type(ex).__name__,
+            }
+        )
+        return table_interpretation_node(table_candidate_node(state))
 
 
 def _render_pdf_page_png(content: bytes, *, page_index: int, dpi: int) -> bytes:

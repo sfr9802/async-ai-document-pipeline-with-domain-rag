@@ -38,6 +38,7 @@ from typing import List, Optional
 from app.capabilities.multimodal.vision_provider import (
     VisionDescriptionProvider,
     VisionDescriptionResult,
+    VisionEvidenceRegion,
     VisionError,
 )
 
@@ -167,10 +168,23 @@ class HeuristicVisionProvider(VisionDescriptionProvider):
         return VisionDescriptionResult(
             provider_name=self.name,
             caption=caption,
+            provider_role="ci_offline_fallback",
             details=details,
             warnings=warnings,
             latency_ms=round(elapsed_ms, 3),
             page_number=page_number,
+            evidence_regions=[
+                VisionEvidenceRegion(
+                    region_id=f"heuristic-page-{page_number}-image",
+                    page_id=str(page_number),
+                    bbox=[0.0, 0.0, float(width), float(height)],
+                    block_type="image",
+                    confidence=0.0,
+                    ocr_source="heuristic_offline_fallback",
+                    provider_version=self.name,
+                    evidence_source_ids=(),
+                )
+            ],
         )
 
 

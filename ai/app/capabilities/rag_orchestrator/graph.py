@@ -23,7 +23,19 @@ from app.capabilities.rag_orchestrator.evidence import (
     QueryPolicy,
 )
 from app.capabilities.rag_orchestrator.evidence_merge import evidence_merge_tool
-from app.capabilities.rag_orchestrator.route_policy_manifest import load_route_policy_manifest
+from app.capabilities.rag_orchestrator.route_policy_manifest import (
+    SCORE_SIGNAL_CITATION_PDF,
+    SCORE_SIGNAL_CITATION_XLSX,
+    SCORE_SIGNAL_LOCATION_PDF_LOCATOR,
+    SCORE_SIGNAL_LOCATION_XLSX_LOCATOR,
+    SCORE_SIGNAL_METADATA_PARSER_PDF,
+    SCORE_SIGNAL_METADATA_PARSER_TEXT,
+    SCORE_SIGNAL_METADATA_PARSER_XLSX,
+    SCORE_SIGNAL_METADATA_SOURCE_TYPE,
+    SCORE_SIGNAL_NOT_ALLOWED_BY_POLICY_OR_METADATA,
+    deterministic_score_signal_by_name,
+    load_route_policy_manifest,
+)
 from app.capabilities.rag_orchestrator.state import (
     QueryOrchestratorState,
     forbidden_state_keys_present,
@@ -730,22 +742,35 @@ def _score_routes(
     del policy
     scores = {route: 0.0 for route in ALL_TRACK_ROUTES}
     signals: dict[str, list[str]] = {route: [] for route in ALL_TRACK_ROUTES}
-    lowered = (query or "").lower()
+    score_signal_rules = deterministic_score_signal_by_name()
+    del query
 
-    def add(route: str, amount: float, signal: str) -> None:
-        scores[route] = min(1.0, scores[route] + amount)
+    def rule_for(signal: str):
+        try:
+            return score_signal_rules[signal]
+        except KeyError as exc:
+            raise ValueError(f"deterministic score signal is not registry-owned: {signal}") from exc
+
+    def add(route: str, signal: str) -> None:
+        rule = rule_for(signal)
+        if route not in rule.routes:
+            raise ValueError(
+                "deterministic score signal route is not registry-owned: "
+                f"{signal} -> {route}"
+            )
+        scores[route] = min(1.0, scores[route] + rule.score_delta)
         signals[route].append(signal)
 
-    for route, keyword_set, signal in (
-        (TRACK_PDF_BUSINESS_OCR_MM, _PDF_ROUTE_KEYWORDS, "query_pdf_signal"),
-        (TRACK_XLSX_BUSINESS_STRUCTURED, _XLSX_ROUTE_KEYWORDS, "query_xlsx_signal"),
-        (TRACK_TEXT_NAMUWIKI_ANIMATION, _NAMU_TEXT_KEYWORDS, "query_namuwiki_signal"),
-    ):
-        if _has_keyword(lowered, keyword_set):
-            add(route, 0.55, signal)
-
-    if _has_keyword(lowered, _AGGREGATION_KEYWORDS):
-        add(TRACK_XLSX_BUSINESS_STRUCTURED, 0.2, "query_aggregation_signal")
+    def suppress_not_allowed(route: str) -> None:
+        rule = rule_for(SCORE_SIGNAL_NOT_ALLOWED_BY_POLICY_OR_METADATA)
+        if route not in rule.routes:
+            raise ValueError(
+                "deterministic score signal route is not registry-owned: "
+                f"{rule.name} -> {route}"
+            )
+        signals[route].append(rule.name)
+        if rule.score_cap is not None:
+            scores[route] = min(scores[route], rule.score_cap)
 
     metadata = source_metadata if isinstance(source_metadata, Mapping) else {}
     metadata_routes = _routes_for_source_types(
@@ -761,32 +786,31 @@ def _score_routes(
         ]
     )
     for route in metadata_routes:
-        add(route, 0.7, "metadata_source_type_signal")
+        add(route, SCORE_SIGNAL_METADATA_SOURCE_TYPE)
 
     parser_version = _metadata_text(metadata, "parser_version", "parserVersion").lower()
     if "xlsx" in parser_version:
-        add(TRACK_XLSX_BUSINESS_STRUCTURED, 0.45, "metadata_parser_xlsx_signal")
+        add(TRACK_XLSX_BUSINESS_STRUCTURED, SCORE_SIGNAL_METADATA_PARSER_XLSX)
     if "pdf" in parser_version:
-        add(TRACK_PDF_BUSINESS_OCR_MM, 0.45, "metadata_parser_pdf_signal")
+        add(TRACK_PDF_BUSINESS_OCR_MM, SCORE_SIGNAL_METADATA_PARSER_PDF)
     if "text" in parser_version or "namu" in parser_version:
-        add(TRACK_TEXT_NAMUWIKI_ANIMATION, 0.45, "metadata_parser_text_signal")
+        add(TRACK_TEXT_NAMUWIKI_ANIMATION, SCORE_SIGNAL_METADATA_PARSER_TEXT)
 
     location = metadata.get("location_json") or metadata.get("locationJson")
     if isinstance(location, Mapping):
         if _has_any(location, ("sheetName", "sheet_name", "cellRange", "cell_range", "tableId", "table_id")):
-            add(TRACK_XLSX_BUSINESS_STRUCTURED, 0.45, "location_xlsx_locator_signal")
+            add(TRACK_XLSX_BUSINESS_STRUCTURED, SCORE_SIGNAL_LOCATION_XLSX_LOCATOR)
         if _has_any(location, ("page", "page_no", "pageNo", "bbox", "physical_page_index")):
-            add(TRACK_PDF_BUSINESS_OCR_MM, 0.45, "location_pdf_locator_signal")
+            add(TRACK_PDF_BUSINESS_OCR_MM, SCORE_SIGNAL_LOCATION_PDF_LOCATOR)
 
     citation_text = _metadata_text(metadata, "citation_text", "citationText").lower()
     if ".xlsx" in citation_text or "!" in citation_text:
-        add(TRACK_XLSX_BUSINESS_STRUCTURED, 0.35, "citation_xlsx_signal")
+        add(TRACK_XLSX_BUSINESS_STRUCTURED, SCORE_SIGNAL_CITATION_XLSX)
     if ".pdf" in citation_text or " p." in citation_text:
-        add(TRACK_PDF_BUSINESS_OCR_MM, 0.35, "citation_pdf_signal")
+        add(TRACK_PDF_BUSINESS_OCR_MM, SCORE_SIGNAL_CITATION_PDF)
 
     for route in set(ALL_TRACK_ROUTES) - set(allowed_routes):
-        signals[route].append("not_allowed_by_policy_or_metadata")
-        scores[route] = min(scores[route], 0.05)
+        suppress_not_allowed(route)
 
     ordered = sorted(
         allowed_routes,
@@ -1156,19 +1180,8 @@ def _routes_for_source_types(source_types: Iterable[str]) -> tuple[str, ...]:
 
 
 def _deterministic_route_hints(query: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    lowered = (query or "").lower()
-    routes: list[str] = []
-    hints: list[str] = []
-    if _has_keyword(lowered, _PDF_ROUTE_KEYWORDS):
-        routes.append(TRACK_PDF_BUSINESS_OCR_MM)
-        hints.append("pdf_keyword")
-    if _has_keyword(lowered, _XLSX_ROUTE_KEYWORDS):
-        routes.append(TRACK_XLSX_BUSINESS_STRUCTURED)
-        hints.append("xlsx_keyword")
-    if _has_keyword(lowered, _NAMU_TEXT_KEYWORDS):
-        routes.append(TRACK_TEXT_NAMUWIKI_ANIMATION)
-        hints.append("namuwiki_animation_keyword")
-    return _dedupe_routes(routes), tuple(hints)
+    del query
+    return (), ()
 
 
 def _clean_routes(routes: Iterable[str] | None) -> tuple[str, ...]:
@@ -1320,7 +1333,7 @@ def _metadata_bool(source_metadata: Mapping[str, Any] | None, *keys: str) -> boo
     return text.lower() in {"1", "true", "yes", "y"}
 
 
-def build_query_orchestrator_graph():
+def build_query_orchestrator_graph(*, fixture: FixtureMode = "valid"):
     """Build the optional LangGraph skeleton.
 
     LangGraph is deliberately optional. Callers that need to run without it can
@@ -1333,26 +1346,29 @@ def build_query_orchestrator_graph():
     graph = StateGraph(QueryOrchestratorState)
     graph.add_node("policy_guard", policy_guard)
     graph.add_node("normalize_query", normalize_query)
-    graph.add_node("classify_intent", classify_intent)
-    graph.add_node("route_tools", route_tools)
-    graph.add_node("run_selected_fake_tools", run_selected_fake_tools)
+    graph.add_node("route_decision_node", classify_intent)
+    graph.add_node("selected_tools_node", route_tools)
+    graph.add_node(
+        "run_selected_tools",
+        lambda state: run_selected_fake_tools(state, fixture=fixture),
+    )
     graph.add_node("evidence_merge", evidence_merge_node)
     graph.add_node("citation_verify", citation_verify_node)
-    graph.add_node("check_evidence_sufficiency", evidence_sufficiency_node)
+    graph.add_node("evidence_sufficiency_node", evidence_sufficiency_node)
     graph.add_node("maybe_xlsx_aggregation", maybe_xlsx_aggregation)
-    graph.add_node("answer_synthesis_stub", answer_synthesis_stub)
+    graph.add_node("answer_synthesis_node", answer_synthesis_stub)
 
     graph.add_edge(START, "policy_guard")
     graph.add_edge("policy_guard", "normalize_query")
-    graph.add_edge("normalize_query", "classify_intent")
-    graph.add_edge("classify_intent", "route_tools")
-    graph.add_edge("route_tools", "run_selected_fake_tools")
-    graph.add_edge("run_selected_fake_tools", "evidence_merge")
+    graph.add_edge("normalize_query", "route_decision_node")
+    graph.add_edge("route_decision_node", "selected_tools_node")
+    graph.add_edge("selected_tools_node", "run_selected_tools")
+    graph.add_edge("run_selected_tools", "evidence_merge")
     graph.add_edge("evidence_merge", "citation_verify")
-    graph.add_edge("citation_verify", "check_evidence_sufficiency")
-    graph.add_edge("check_evidence_sufficiency", "maybe_xlsx_aggregation")
-    graph.add_edge("maybe_xlsx_aggregation", "answer_synthesis_stub")
-    graph.add_edge("answer_synthesis_stub", END)
+    graph.add_edge("citation_verify", "evidence_sufficiency_node")
+    graph.add_edge("evidence_sufficiency_node", "maybe_xlsx_aggregation")
+    graph.add_edge("maybe_xlsx_aggregation", "answer_synthesis_node")
+    graph.add_edge("answer_synthesis_node", END)
     return graph.compile()
 
 
@@ -1420,6 +1436,36 @@ def run_query_orchestrator_pure(
     return state
 
 
+def run_query_orchestrator_langgraph(
+    *,
+    query: str,
+    policy: QueryPolicy,
+    request_id: str | None = None,
+    source_metadata: Mapping[str, Any] | None = None,
+    route_adjudicator: RouteAdjudicator | None = None,
+    retriever: Any | None = None,
+    fixture: FixtureMode = "valid",
+) -> QueryOrchestratorState:
+    """Run the query orchestrator through the LangGraph execution path.
+
+    The graph invokes the same bounded node functions as the pure runner, so
+    state and trace remain parity-testable while LangGraph becomes the default
+    orchestration mechanism.
+    """
+
+    state = initial_query_orchestrator_state(
+        query=query,
+        policy=policy,
+        request_id=request_id,
+        source_metadata=source_metadata,
+        route_adjudicator=route_adjudicator,
+        retriever=retriever,
+    )
+    graph = build_query_orchestrator_graph(fixture=fixture)
+    final_state = graph.invoke(state)
+    return dict(final_state)
+
+
 def policy_guard(state: QueryOrchestratorState) -> QueryOrchestratorState:
     current = _copy_state(state)
     errors = list(current.get("errors", []))
@@ -1433,6 +1479,8 @@ def policy_guard(state: QueryOrchestratorState) -> QueryOrchestratorState:
                 "fields": list(forbidden_keys),
             }
         )
+        for key in forbidden_keys:
+            current.pop(key, None)
 
     policy = current.get("policy")
     if not isinstance(policy, QueryPolicy):
@@ -1499,7 +1547,7 @@ def classify_intent(state: QueryOrchestratorState) -> QueryOrchestratorState:
     )
     return _with_trace(
         current,
-        "classify_intent",
+        "route_decision",
         {
             "route_decision": route_decision.to_dict(),
             "route_diagnostics": list(current["route_diagnostics"]),
@@ -1514,7 +1562,7 @@ def route_tools(state: QueryOrchestratorState) -> QueryOrchestratorState:
         current["selected_tools"] = []
         return _with_trace(
             current,
-            "route_tools",
+            "selected_tools",
             {
                 "route_decision": route_decision,
                 "selected_tools": [],
@@ -1529,7 +1577,7 @@ def route_tools(state: QueryOrchestratorState) -> QueryOrchestratorState:
     current["selected_tools"] = selected_tools
     return _with_trace(
         current,
-        "route_tools",
+        "selected_tools",
         {
             "route_decision": route_decision,
             "selected_tools": selected_tools,
@@ -1860,7 +1908,7 @@ def answer_synthesis_stub(state: QueryOrchestratorState) -> QueryOrchestratorSta
         current["answer"] = build_no_evidence_response(query=query).to_dict()
         if current.get("stop_reason") != "policy_guard_failed":
             current["stop_reason"] = "no_verified_evidence"
-        return _with_trace(current, "answer_synthesis_stub")
+        return _with_trace(current, "fallback")
 
     cited = [
         {
@@ -1878,7 +1926,7 @@ def answer_synthesis_stub(state: QueryOrchestratorState) -> QueryOrchestratorSta
         "llm_called": False,
     }
     current["stop_reason"] = "answered_with_verified_evidence_stub"
-    return _with_trace(current, "answer_synthesis_stub")
+    return _with_trace(current, "answer_synthesis")
 
 
 def _copy_state(state: QueryOrchestratorState) -> QueryOrchestratorState:

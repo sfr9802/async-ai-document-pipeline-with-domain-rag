@@ -29,6 +29,24 @@ from typing import List, Optional
 
 
 @dataclass(frozen=True)
+class VisionEvidenceRegion:
+    """Structured visual evidence emitted by a vision/OCR/MM provider.
+
+    Providers describe page regions and confidence only. They do not decide
+    whether an answer is correct; downstream evidence sufficiency owns that.
+    """
+
+    region_id: str
+    page_id: str
+    bbox: List[float]
+    block_type: str
+    confidence: float
+    ocr_source: str
+    provider_version: str
+    evidence_source_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class VisionDescriptionResult:
     """Result of running a vision description model on a single image.
 
@@ -54,10 +72,12 @@ class VisionDescriptionResult:
 
     provider_name: str
     caption: str
+    provider_role: str = "evidence_structure_provider"
     details: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     latency_ms: float = 0.0
     page_number: int = 1
+    evidence_regions: List[VisionEvidenceRegion] = field(default_factory=list)
 
 
 class VisionError(Exception):

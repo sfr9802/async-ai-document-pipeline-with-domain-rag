@@ -174,6 +174,7 @@ def retrieved_chunk_to_evidence(
     rank: int,
 ) -> Evidence:
     metadata = _metadata_for(chunk)
+    safe_metadata, redacted_metadata_fields = _sanitized_retriever_metadata(metadata)
     source_file_type = _source_file_type(chunk, metadata)
     location_json = _location_json(chunk, metadata, source_file_type)
     score = _float_or_none(_get_any(chunk, "score")) or 0.0
@@ -277,8 +278,11 @@ def retrieved_chunk_to_evidence(
         ),
         diagnostic_only=_bool_metadata(metadata, "diagnosticOnly", "diagnostic_only"),
         extra={
-            "retriever_metadata": dict(metadata),
             "poc_vector_wrapper": True,
+            "retriever_metadata": safe_metadata,
+            "retriever_metadata_redacted_fields": list(redacted_metadata_fields),
+            "vector_payload_candidate_only": True,
+            "vector_payload_used_as_evidence_truth": False,
         },
     )
     return _with_track_context(evidence)
@@ -362,6 +366,84 @@ def _metadata_for(chunk: Any) -> dict[str, Any]:
     if isinstance(metadata, Mapping):
         return dict(metadata)
     return {}
+
+
+def _sanitized_retriever_metadata(metadata: Mapping[str, Any]) -> tuple[dict[str, Any], tuple[str, ...]]:
+    safe: dict[str, Any] = {}
+    redacted: list[str] = []
+    for key, value in metadata.items():
+        key_text = str(key)
+        if _is_candidate_payload_metadata_key(key_text):
+            redacted.append(key_text)
+            continue
+        safe[key_text] = value
+    return safe, tuple(sorted(redacted))
+
+
+_PROTECTED_VECTOR_METADATA_KEYS = {
+    "canonicalpayload",
+    "canonicalcitationpayload",
+    "candidatecanonicalcitationpayload",
+    "embeddingtext",
+    "embeddingtextraw",
+    "expectedanswer",
+    "expectedanswerpayload",
+    "expectedanswertext",
+    "fullprompt",
+    "goldanswer",
+    "goldlabel",
+    "goldlocator",
+    "hiddentargetlocator",
+    "llmresponse",
+    "modelresponse",
+    "oraclepayload",
+    "prompt",
+    "promptmanifest",
+    "promptpayload",
+    "prompttext",
+    "qrels",
+    "qrelslabel",
+    "rawllmpayload",
+    "rawllmrequest",
+    "rawllmresponse",
+    "rawprompt",
+    "rawresponse",
+    "rawvectorpayload",
+    "responsepayload",
+    "searchpayload",
+    "supportingevidence",
+    "supportingevidencefinal",
+    "supportingevidencetext",
+    "targetlocator",
+    "vectorpayload",
+    "vectorpayloadtext",
+}
+_PROTECTED_VECTOR_METADATA_KEY_FRAGMENTS = (
+    "canonicalpayload",
+    "canonicalcitationpayload",
+    "candidatecanonicalcitationpayload",
+    "expectedanswer",
+    "goldanswer",
+    "goldlabel",
+    "goldlocator",
+    "hiddentargetlocator",
+    "oraclepayload",
+    "promptpayload",
+    "qrels",
+    "rawllmresponse",
+    "rawprompt",
+    "responsepayload",
+    "supportingevidence",
+    "targetlocator",
+    "vectorpayload",
+)
+
+
+def _is_candidate_payload_metadata_key(key: str) -> bool:
+    normalized = "".join(ch for ch in key if ch.isalnum()).lower()
+    return normalized in _PROTECTED_VECTOR_METADATA_KEYS or any(
+        fragment in normalized for fragment in _PROTECTED_VECTOR_METADATA_KEY_FRAGMENTS
+    )
 
 
 def _source_file_type(chunk: Any, metadata: Mapping[str, Any]) -> str:

@@ -57,7 +57,7 @@ def test_pdf_extract_page_skips_table_parser_without_table_like_native_rows(monk
         calls.append({"args": args, "kwargs": kwargs})
         return []
 
-    monkeypatch.setattr(pdf_service, "extract_pdf_table_records", fail_if_called)
+    monkeypatch.setattr(pdf_service, "run_table_understanding_langgraph", fail_if_called)
 
     payload = pdf_service.PdfExtractService()._extract_page(
         _FakePdfPage("일반 문단입니다. 수치와 설명은 있지만 지원되는 표 제목은 없습니다."),
@@ -67,17 +67,44 @@ def test_pdf_extract_page_skips_table_parser_without_table_like_native_rows(monk
 
     assert calls == []
     assert payload["tables"] == []
+    assert payload["table_candidates"] == []
+    assert payload["table_interpretations"] == []
+    assert payload["table_understanding_trace"] == []
     assert payload["text_layer_present"] is True
 
 
-def test_pdf_extract_page_calls_general_table_parser_for_numeric_grid_without_domain_markers(monkeypatch) -> None:
+def test_pdf_extract_page_bridges_table_graph_for_numeric_grid_without_domain_markers(monkeypatch) -> None:
     calls: list[dict[str, object]] = []
 
-    def record_call(*args, **kwargs):
-        calls.append({"args": args, "kwargs": kwargs})
-        return [{"table_type": "numeric_grid"}]
+    def record_call(state, **kwargs):
+        calls.append({"state": state, "kwargs": kwargs})
+        return {
+            **state,
+            "table_candidates": [
+                {
+                    "table_id": "table-1",
+                    "table_type": "numeric_grid",
+                    "table_semantics_success_claimed": False,
+                }
+            ],
+            "table_interpretations": [
+                {
+                    "table_id": "table-1",
+                    "semantic_status": "not_adjudicated",
+                    "table_semantics_success_claimed": False,
+                    "llm_or_mm_provider_used": False,
+                    "provider_version": "",
+                    "column_semantics": [],
+                    "row_semantics": [],
+                }
+            ],
+            "trace": [
+                {"node": "table_candidate", "candidate_count": 1, "semantic_claimed": False},
+                {"node": "table_interpretation", "interpretation_count": 1, "semantic_claimed": False},
+            ],
+        }
 
-    monkeypatch.setattr(pdf_service, "extract_pdf_table_records", record_call)
+    monkeypatch.setattr(pdf_service, "run_table_understanding_langgraph", record_call, raising=False)
 
     payload = pdf_service.PdfExtractService()._extract_page(
         _FakePdfPage("분기별 실적\n매출\n영업이익\n2023\n10\n2\n2024\n15\n3"),
@@ -86,7 +113,46 @@ def test_pdf_extract_page_calls_general_table_parser_for_numeric_grid_without_do
     )
 
     assert len(calls) == 1
-    assert payload["tables"] == [{"table_type": "numeric_grid"}]
+    assert payload["tables"] == payload["table_candidates"]
+    assert payload["tables"] == [
+        {
+            "table_id": "table-1",
+            "table_type": "numeric_grid",
+            "table_semantics_success_claimed": False,
+        }
+    ]
+    assert payload["table_interpretations"][0]["semantic_status"] == "not_adjudicated"
+    assert payload["table_interpretations"][0]["table_semantics_success_claimed"] is False
+    assert [item["node"] for item in payload["table_understanding_trace"]] == [
+        "table_candidate",
+        "table_interpretation",
+    ]
+
+
+def test_pdf_extract_page_falls_back_to_pure_table_nodes_when_langgraph_unavailable(monkeypatch) -> None:
+    def raise_langgraph_unavailable(*args, **kwargs):
+        raise pdf_table_parser.PdfTableGraphUnavailableError("langgraph is not installed")
+
+    monkeypatch.setattr(pdf_service, "run_table_understanding_langgraph", raise_langgraph_unavailable)
+
+    warnings: list[dict[str, object]] = []
+    payload = pdf_service.PdfExtractService()._extract_page(
+        _FakePdfPage("분기별 실적\n매출\n영업이익\n2023\n10\n2\n2024\n15\n3"),
+        0,
+        warnings,
+    )
+
+    assert payload["tables"] == payload["table_candidates"]
+    assert len(payload["table_candidates"]) == 1
+    assert payload["table_candidates"][0]["table_type"] == "numeric_grid"
+    assert payload["table_candidates"][0]["table_semantics_success_claimed"] is False
+    assert payload["table_interpretations"][0]["semantic_status"] == "not_adjudicated"
+    assert payload["table_interpretations"][0]["table_semantics_success_claimed"] is False
+    assert [item["node"] for item in payload["table_understanding_trace"]] == [
+        "table_candidate",
+        "table_interpretation",
+    ]
+    assert warnings[0]["code"] == "PDF_TABLE_LANGGRAPH_UNAVAILABLE"
 
 
 def test_pdf_table_parser_extracts_generic_numeric_grid_without_domain_templates() -> None:
@@ -113,6 +179,117 @@ def test_pdf_table_parser_extracts_generic_numeric_grid_without_domain_templates
     assert record["headers"] == ["row_label", "매출", "영업이익"]
     assert record["row_records"][0]["row_label_normalized"] == "2023"
     assert [cell["value_raw"] for cell in record["row_records"][0]["cells"]] == ["10", "2"]
+
+
+def test_pdf_table_candidate_and_interpretation_nodes_keep_semantics_unclaimed_by_default() -> None:
+    initial_state = {
+        "pdf_blocks": [
+            {
+                "block_id": "p0_b0",
+                "block_type": "paragraph",
+                "text": "분기별 실적\n매출\n영업이익\n2023\n10\n2\n2024\n15\n3",
+                "bbox": [10, 20, 200, 120],
+                "reading_order": 0,
+            }
+        ],
+        "page_no": 1,
+        "physical_page_index": 0,
+        "page_label": "1",
+        "trace": [],
+    }
+
+    candidate_state = pdf_table_parser.table_candidate_node(initial_state)
+    interpretation_state = pdf_table_parser.table_interpretation_node(candidate_state)
+
+    assert len(candidate_state["table_candidates"]) == 1
+    assert candidate_state["table_candidates"][0]["table_type"] == "numeric_grid"
+    assert candidate_state["table_candidates"][0]["table_semantics_success_claimed"] is False
+    assert interpretation_state["table_interpretations"][0]["semantic_status"] == "not_adjudicated"
+    assert interpretation_state["table_interpretations"][0]["table_semantics_success_claimed"] is False
+    assert interpretation_state["table_interpretations"][0]["llm_or_mm_provider_used"] is False
+    assert [item["node"] for item in interpretation_state["trace"]] == [
+        "table_candidate",
+        "table_interpretation",
+    ]
+
+
+def test_pdf_table_understanding_langgraph_runner_matches_pure_nodes_and_contracts() -> None:
+    initial_state = {
+        "pdf_blocks": [
+            {
+                "block_id": "p0_b0",
+                "block_type": "paragraph",
+                "text": "분기별 실적\n매출\n영업이익\n2023\n10\n2\n2024\n15\n3",
+                "bbox": [10, 20, 200, 120],
+                "reading_order": 0,
+            }
+        ],
+        "page_no": 1,
+        "physical_page_index": 0,
+        "page_label": "1",
+        "trace": [],
+    }
+
+    pure_state = pdf_table_parser.table_interpretation_node(
+        pdf_table_parser.table_candidate_node(initial_state)
+    )
+    langgraph_state = pdf_table_parser.run_table_understanding_langgraph(initial_state)
+
+    assert pdf_table_parser.TABLE_NODE_CONTRACT_SEQUENCE == (
+        "table_candidate",
+        "table_interpretation",
+    )
+    for contract_name in (
+        "PdfTableUnderstandingState",
+        "TableCandidateNodeInput",
+        "TableCandidateNodeOutput",
+        "TableInterpretationNodeInput",
+        "TableInterpretationNodeOutput",
+    ):
+        assert getattr(pdf_table_parser, contract_name).__annotations__
+    for key in ("table_candidates", "table_interpretations", "trace"):
+        assert langgraph_state[key] == pure_state[key]
+    assert [item["node"] for item in langgraph_state["trace"]] == [
+        "table_candidate",
+        "table_interpretation",
+    ]
+    assert langgraph_state["table_interpretations"][0]["semantic_status"] == "not_adjudicated"
+    assert langgraph_state["table_interpretations"][0]["table_semantics_success_claimed"] is False
+
+
+def test_pdf_table_interpretation_node_rejects_malformed_semantic_provider_output() -> None:
+    class MalformedProvider:
+        def interpret_table(self, candidate):
+            return {
+                "provider_version": "",
+                "column_semantics": "매출",
+                "row_semantics": [{"row": "2023"}],
+                "table_semantics_success_claimed": True,
+            }
+
+    initial_state = {
+        "table_candidates": [
+            {
+                "table_id": "table-1",
+                "table_type": "numeric_grid",
+                "table_semantics_success_claimed": False,
+            }
+        ],
+        "trace": [],
+    }
+
+    interpreted = pdf_table_parser.table_interpretation_node(
+        initial_state,
+        semantic_provider=MalformedProvider(),
+    )
+
+    interpretation = interpreted["table_interpretations"][0]
+    assert interpretation["semantic_status"] == "invalid_provider_output"
+    assert interpretation["llm_or_mm_provider_used"] is True
+    assert interpretation["table_semantics_success_claimed"] is False
+    assert interpretation["provider_version"] == ""
+    assert interpretation["column_semantics"] == []
+    assert interpretation["row_semantics"] == []
 
 
 def test_pdf_table_parser_rejects_irregular_numeric_grid_without_semantic_claim() -> None:

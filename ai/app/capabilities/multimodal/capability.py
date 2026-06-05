@@ -100,6 +100,8 @@ from app.capabilities.trace import (
 log = logging.getLogger(__name__)
 
 
+VISION_RESULT_SCHEMA_VERSION = "multimodal_vision_result_v1"
+
 # Mime + magic-byte classifications — intentionally a copy of the OCR
 # capability's set so the two stays in lockstep without crossing a
 # subclass boundary. If one ever drifts the tests in both files will
@@ -914,12 +916,27 @@ class MultimodalCapability(Capability):
             pages_list.append({
                 "pageNumber": vr.page_number,
                 "provider": vr.provider_name,
+                "providerRole": vr.provider_role,
                 "caption": vr.caption,
                 "details": list(vr.details),
                 "latencyMs": vr.latency_ms,
+                "evidenceRegions": [
+                    {
+                        "regionId": region.region_id,
+                        "pageId": region.page_id,
+                        "bbox": list(region.bbox),
+                        "blockType": region.block_type,
+                        "confidence": region.confidence,
+                        "ocrSource": region.ocr_source,
+                        "providerVersion": region.provider_version,
+                        "evidenceSourceIds": list(region.evidence_source_ids),
+                    }
+                    for region in vr.evidence_regions
+                ],
             })
 
         body = {
+            "schemaVersion": VISION_RESULT_SCHEMA_VERSION,
             "filename": filename,
             "mimeType": mime_type,
             "kind": kind,
@@ -927,6 +944,7 @@ class MultimodalCapability(Capability):
             "pages": pages_list,
             "warnings": all_warnings,
             "available": len(pages_list) > 0,
+            "answerQualityComputed": False,
         }
         return json.dumps(body, ensure_ascii=False, indent=2)
 

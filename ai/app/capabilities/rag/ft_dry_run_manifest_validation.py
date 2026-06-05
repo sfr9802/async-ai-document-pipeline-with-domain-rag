@@ -62,6 +62,25 @@ ALLOWED_MODEL_INPUT_FIELDS = (
     "fail_closed_reason_code",
 )
 LABEL_ONLY_FIELDS = ("response_policy_bucket", "fail_closed")
+FT_READINESS_OPTIONAL_FIELDS = (
+    "residual_class",
+    "split_role",
+    "leakage_group_id",
+)
+ALLOWED_FT_READINESS_RESIDUAL_CLASSES = (
+    "route_ambiguity",
+    "response_policy_classification",
+    "ocr_layout_trust",
+)
+NON_FT_PROBLEM_CLASSES = (
+    "missing_evidence",
+    "top_k_miss",
+    "xlsx_zero_candidate",
+    "pdf_stable_identity",
+    "indexing_gap",
+    "source_evidence_gap",
+)
+ALLOWED_SPLIT_ROLES = ("train_candidate", "holdout_candidate")
 FORBIDDEN_MODEL_INPUT_FIELDS = (
     "expected_answer",
     "supporting_evidence",
@@ -114,6 +133,35 @@ RAW_LOCAL_PATH_RE = re.compile(
     r"(?:[A-Za-z]:[\\/]|//|/(?:data|home|mnt|opt|private|repo|tmp|Users|var|workspace)(?:/|$))",
     re.IGNORECASE,
 )
+RAW_SOURCE_IDENTITY_RE = re.compile(
+    r"\bdocv[_-][^:\s]+:[^:\s]+\.(?:pdf|xlsx|xls|csv|tsv|docx?)(?::[^\s:]+){0,8}\b",
+    re.IGNORECASE,
+)
+FAMILY_SOURCE_IDENTITY_RE = re.compile(
+    r"\b(?:PDF|XLSX|SPREADSHEET|TEXT|CSV|TSV):docv[_-][^:\s]+(?::[^\s:]+){1,8}\b",
+    re.IGNORECASE,
+)
+BARE_SOURCE_IDENTITY_RE = re.compile(
+    r"\bdocv[_-]source(?:[_-][A-Za-z0-9]+){0,8}\b",
+    re.IGNORECASE,
+)
+FORBIDDEN_MODEL_INPUT_VALUE_MARKERS = (
+    "direct_answer_value",
+    "expected_answer",
+    "final_answer",
+    "gold_label",
+    "gold_locator",
+    "hidden_supporting_evidence",
+    "hidden_target_locator",
+    "normalized_answer_value",
+    "qrels_label",
+    "source_document_id",
+    "source_file_id",
+    "source_identity",
+    "supporting_evidence",
+    "target_locator",
+    "workbook_id",
+)
 
 
 def clean(value: Any) -> str:
@@ -129,7 +177,12 @@ def has_value(value: Any) -> bool:
 
 
 def forbidden_prompt_gold_or_output_fields_present(row: Mapping[str, Any]) -> list[str]:
-    allowed_fields = set(REQUIRED_MANIFEST_FIELDS) | set(ALLOWED_MODEL_INPUT_FIELDS) | set(LABEL_ONLY_FIELDS)
+    allowed_fields = (
+        set(REQUIRED_MANIFEST_FIELDS)
+        | set(ALLOWED_MODEL_INPUT_FIELDS)
+        | set(LABEL_ONLY_FIELDS)
+        | set(FT_READINESS_OPTIONAL_FIELDS)
+    )
     allowed_field_names = {field.casefold() for field in allowed_fields}
     forbidden: set[str] = set()
     for field in row:
@@ -141,7 +194,7 @@ def forbidden_prompt_gold_or_output_fields_present(row: Mapping[str, Any]) -> li
 
 
 def accepted_manifest_row(row: Mapping[str, Any]) -> dict[str, Any]:
-    return {
+    payload = {
         "row_id": clean(row.get("row_id")),
         "query_id": clean(row.get("query_id")),
         "source_family": clean(row.get("source_family")).upper(),
@@ -154,6 +207,49 @@ def accepted_manifest_row(row: Mapping[str, Any]) -> dict[str, Any]:
             if field in row and has_value(row.get(field))
         },
     }
+    residual_class = clean(row.get("residual_class"))
+    split_role = clean(row.get("split_role"))
+    leakage_group_id = clean(row.get("leakage_group_id"))
+    if residual_class:
+        payload["residual_class"] = residual_class
+    if split_role:
+        payload["split_role"] = split_role
+    if leakage_group_id:
+        payload["leakage_group_id"] = leakage_group_id
+    return payload
+
+
+def allowed_model_input_value_leakage_fields(row: Mapping[str, Any]) -> list[str]:
+    fields: list[str] = []
+    for field in (*ALLOWED_MODEL_INPUT_FIELDS, *FT_READINESS_OPTIONAL_FIELDS):
+        if field in row and _model_input_value_leaks_oracle_or_path(row.get(field)):
+            fields.append(field)
+    return sorted(fields)
+
+
+def _model_input_value_leaks_oracle_or_path(value: Any) -> bool:
+    if isinstance(value, Mapping):
+        return any(
+            _model_input_value_leaks_oracle_or_path(key)
+            or _model_input_value_leaks_oracle_or_path(child)
+            for key, child in value.items()
+        )
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        return any(_model_input_value_leaks_oracle_or_path(item) for item in value)
+    if not isinstance(value, str):
+        return False
+    normalized = value.replace("\\", "/")
+    if RAW_LOCAL_PATH_RE.search(normalized):
+        return True
+    if RAW_SOURCE_IDENTITY_RE.search(normalized):
+        return True
+    if FAMILY_SOURCE_IDENTITY_RE.search(normalized):
+        return True
+    if BARE_SOURCE_IDENTITY_RE.search(normalized):
+        return True
+    lowered = normalized.casefold()
+    marker_text = lowered.replace("-", "_").replace(" ", "_")
+    return any(marker in marker_text for marker in FORBIDDEN_MODEL_INPUT_VALUE_MARKERS)
 
 
 def validate_dry_run_input_manifest_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -183,6 +279,16 @@ def validate_dry_run_input_manifest_rows(rows: Sequence[Mapping[str, Any]]) -> d
                 }
             )
             continue
+        leaky_model_input_fields = allowed_model_input_value_leakage_fields(row)
+        if leaky_model_input_fields:
+            excluded.append(
+                {
+                    "row_id": _sanitize_fastapi_value(row_id),
+                    "exclusion_reason": "allowed_model_input_value_leakage_present",
+                    "leaky_model_input_fields": leaky_model_input_fields,
+                }
+            )
+            continue
         source_family = clean(row.get("source_family")).upper()
         route_lane = clean(row.get("route_lane"))
         bucket = clean(row.get("response_policy_bucket"))
@@ -201,6 +307,35 @@ def validate_dry_run_input_manifest_rows(rows: Sequence[Mapping[str, Any]]) -> d
         if prompt_policy_id not in allowed_prompt_policy_ids:
             excluded.append({"row_id": _sanitize_fastapi_value(row_id), "exclusion_reason": "unsupported_prompt_policy_id"})
             continue
+        residual_class = clean(row.get("residual_class"))
+        if residual_class in NON_FT_PROBLEM_CLASSES:
+            excluded.append(
+                {
+                    "row_id": _sanitize_fastapi_value(row_id),
+                    "exclusion_reason": "ft_readiness_residual_class_not_trainable",
+                    "residual_class": residual_class,
+                }
+            )
+            continue
+        if residual_class and residual_class not in ALLOWED_FT_READINESS_RESIDUAL_CLASSES:
+            excluded.append(
+                {
+                    "row_id": _sanitize_fastapi_value(row_id),
+                    "exclusion_reason": "unsupported_ft_readiness_residual_class",
+                    "residual_class": residual_class,
+                }
+            )
+            continue
+        split_role = clean(row.get("split_role"))
+        if split_role and split_role not in ALLOWED_SPLIT_ROLES:
+            excluded.append(
+                {
+                    "row_id": _sanitize_fastapi_value(row_id),
+                    "exclusion_reason": "unsupported_split_role",
+                    "split_role": split_role,
+                }
+            )
+            continue
         accepted.append(accepted_manifest_row(row))
     leakage_rejections = sum(
         1
@@ -216,6 +351,7 @@ def validate_dry_run_input_manifest_rows(rows: Sequence[Mapping[str, Any]]) -> d
         "accepted_manifest_row_count": len(accepted),
         "excluded_manifest_row_count": len(excluded),
         "gold_or_prompt_or_output_rejection_count": leakage_rejections,
+        "train_holdout_split_validation": train_holdout_split_validation(accepted),
         "manifest_rows_exported": False,
         "official_metric_input_rows": 0,
         "training_dataset_export_created": False,
@@ -242,6 +378,16 @@ def build_dry_run_input_manifest_contract() -> dict[str, Any]:
         "allowed_route_lanes": list(ALLOWED_ROUTE_LANES),
         "allowed_source_families": list(ALLOWED_SOURCE_FAMILIES),
         "allowed_prompt_policy_ids": list(PROMPT_POLICY_IDS),
+        "ft_readiness_manifest_schema_ready": True,
+        "allowed_ft_readiness_residual_classes": list(ALLOWED_FT_READINESS_RESIDUAL_CLASSES),
+        "non_ft_problem_classes": list(NON_FT_PROBLEM_CLASSES),
+        "optional_ft_readiness_fields": list(FT_READINESS_OPTIONAL_FIELDS),
+        "gold_expected_supporting_evidence_input_allowed": False,
+        "train_holdout_split_validator_schema_ready": True,
+        "allowed_split_roles": list(ALLOWED_SPLIT_ROLES),
+        "split_role_field": "split_role",
+        "leakage_group_id_field": "leakage_group_id",
+        "train_holdout_leakage_overlap_fails_closed": True,
         "required_future_dry_run_outputs": list(REQUIRED_FUTURE_DRY_RUN_OUTPUTS),
         "stop_condition_audit_buckets": list(STOP_CONDITION_AUDIT_BUCKETS),
         "forbidden_model_input_fields": list(FORBIDDEN_MODEL_INPUT_FIELDS),
@@ -256,6 +402,62 @@ def build_dry_run_input_manifest_contract() -> dict[str, Any]:
         "official_metric_input_rows": 0,
         "promotion_evidence": False,
         "product_success_evidence_allowed": False,
+        "live_db_index_cache_readiness": False,
+    }
+
+
+def train_holdout_split_validation(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    train_rows = [row for row in rows if clean(row.get("split_role")) == "train_candidate"]
+    holdout_rows = [row for row in rows if clean(row.get("split_role")) == "holdout_candidate"]
+    missing_split_role_count = sum(1 for row in rows if not clean(row.get("split_role")))
+    missing_leakage_group_id_count = sum(1 for row in rows if not clean(row.get("leakage_group_id")))
+    missing_residual_class_count = sum(1 for row in rows if not clean(row.get("residual_class")))
+    train_leakage_groups = {
+        clean(row.get("leakage_group_id")) for row in train_rows if clean(row.get("leakage_group_id"))
+    }
+    holdout_leakage_groups = {
+        clean(row.get("leakage_group_id")) for row in holdout_rows if clean(row.get("leakage_group_id"))
+    }
+    leakage_overlap = train_leakage_groups & holdout_leakage_groups
+    train_query_ids = {clean(row.get("query_id")) for row in train_rows if clean(row.get("query_id"))}
+    holdout_query_ids = {clean(row.get("query_id")) for row in holdout_rows if clean(row.get("query_id"))}
+    query_overlap = train_query_ids & holdout_query_ids
+    blocked_reasons: list[str] = []
+    if not rows:
+        blocked_reasons.append("no_accepted_manifest_rows")
+    if missing_split_role_count:
+        blocked_reasons.append("split_roles_missing")
+    if missing_leakage_group_id_count:
+        blocked_reasons.append("leakage_group_id_missing")
+    if missing_residual_class_count:
+        blocked_reasons.append("residual_class_missing")
+    if not train_rows:
+        blocked_reasons.append("train_split_missing")
+    if not holdout_rows:
+        blocked_reasons.append("holdout_split_missing")
+    if leakage_overlap:
+        blocked_reasons.append("train_holdout_leakage_group_overlap")
+    if query_overlap:
+        blocked_reasons.append("train_holdout_query_id_overlap")
+    return {
+        "schema_version": "ft_readiness_train_holdout_split_validation_v1",
+        "validator_only": True,
+        "input_only": True,
+        "passed": not blocked_reasons,
+        "accepted_manifest_row_count": len(rows),
+        "train_candidate_count": len(train_rows),
+        "holdout_candidate_count": len(holdout_rows),
+        "missing_split_role_count": missing_split_role_count,
+        "missing_leakage_group_id_count": missing_leakage_group_id_count,
+        "missing_residual_class_count": missing_residual_class_count,
+        "train_holdout_leakage_group_overlap_count": len(leakage_overlap),
+        "train_holdout_query_id_overlap_count": len(query_overlap),
+        "blocked_reasons": blocked_reasons,
+        "manifest_rows_exported": False,
+        "fine_tuning_dataset_export_created": False,
+        "training_job_created": False,
+        "official_metric_input_rows": 0,
+        "promotion_evidence": False,
         "live_db_index_cache_readiness": False,
     }
 
@@ -342,7 +544,7 @@ def _sanitize_validation_for_fastapi(validation: Mapping[str, Any]) -> dict[str,
 def _sanitize_accepted_manifest_row(row: Mapping[str, Any]) -> dict[str, Any]:
     model_inputs = row.get("model_input_fields")
     model_input_fields = model_inputs if isinstance(model_inputs, Mapping) else {}
-    return {
+    payload = {
         "row_id_hash": _sha256(row.get("row_id")),
         "query_id_hash": _sha256(row.get("query_id")),
         "source_family": clean(row.get("source_family")).upper(),
@@ -351,6 +553,16 @@ def _sanitize_accepted_manifest_row(row: Mapping[str, Any]) -> dict[str, Any]:
         "prompt_policy_id": clean(row.get("prompt_policy_id")),
         "model_input_field_names": sorted(str(field) for field in model_input_fields),
     }
+    residual_class = clean(row.get("residual_class"))
+    split_role = clean(row.get("split_role"))
+    leakage_group_id = clean(row.get("leakage_group_id"))
+    if residual_class:
+        payload["residual_class"] = residual_class
+    if split_role:
+        payload["split_role"] = split_role
+    if leakage_group_id:
+        payload["leakage_group_id_hash"] = _sha256(leakage_group_id)
+    return payload
 
 
 def _sanitize_excluded_manifest_row(row: Mapping[str, Any]) -> dict[str, Any]:

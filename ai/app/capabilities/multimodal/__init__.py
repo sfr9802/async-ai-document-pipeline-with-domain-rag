@@ -28,6 +28,7 @@ from app.capabilities.multimodal.heuristic_vision import HeuristicVisionProvider
 from app.capabilities.multimodal.vision_provider import (
     VisionDescriptionProvider,
     VisionDescriptionResult,
+    VisionEvidenceRegion,
     VisionError,
 )
 
@@ -36,6 +37,7 @@ __all__ = [
     "MultimodalCapabilityConfig",
     "VisionDescriptionProvider",
     "VisionDescriptionResult",
+    "VisionEvidenceRegion",
     "VisionError",
     "HeuristicVisionProvider",
     "FusionResult",

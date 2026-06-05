@@ -3727,7 +3727,7 @@ def test_rag_query_orchestrator_capability_marks_injected_retriever_backend() ->
     )
 
     payload = json.loads(output.outputs[0].content.decode("utf-8"))
-    assert payload["graph_backend"] == "pure_vector_retriever_poc"
+    assert payload["graph_backend"] == "langgraph_vector_retriever_poc"
     assert payload["runtime_endpoint"] is False
     assert payload["langchain_used"] is False
     assert "vector_retriever" not in payload["state"]
@@ -3755,6 +3755,170 @@ def test_rag_query_orchestrator_capability_marks_injected_retriever_backend() ->
             )
         )
     assert exc.value.code == "RAG_QUERY_ORCHESTRATOR_PRODUCTION_CONTEXT_REQUIRED"
+
+
+def test_rag_query_orchestrator_langgraph_vector_payload_stays_candidate_only_in_output() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+    from types import SimpleNamespace
+
+    from app.capabilities.base import CapabilityInput, CapabilityInputArtifact
+    from app.capabilities.rag.generation import RetrievedChunk
+    from app.capabilities.rag_orchestrator.capability import (
+        RagQueryOrchestratorCapability,
+        RagQueryOrchestratorCapabilityConfig,
+    )
+
+    poison = "POISONED_VECTOR_PAYLOAD_SHOULD_NOT_APPEAR"
+
+    class FakeRetriever:
+        _top_k = 1
+        _candidate_k = 1
+
+        def retrieve(self, query: str, filters: Any = None) -> Any:
+            return SimpleNamespace(
+                query=query,
+                top_k=1,
+                index_version="idx-v1",
+                embedding_model="fake-embedding",
+                results=[
+                    RetrievedChunk(
+                        chunk_id="chunk-xlsx-vector-payload",
+                        doc_id="doc-xlsx-vector-payload",
+                        section="Sheet1",
+                        text="Sheet1 A2:B2 safe evidence text",
+                        score=0.91,
+                        search_unit_id="su-xlsx-vector-payload",
+                        source_file_id="source-xlsx-vector-payload",
+                        source_file_name="book.xlsx",
+                        metadata_json={
+                            "sourceFileType": "SPREADSHEET",
+                            "parserVersion": "xlsx-extract-v2-hidden-safe",
+                            "embeddingStatus": "EMBEDDED",
+                            "indexVersion": "idx-v1",
+                            "citationText": "Sheet1 A2:B2 safe evidence text",
+                            "sheetName": "Sheet1",
+                            "cellRange": "A2:B2",
+                            "documentVersionId": "docv-xlsx-vector-payload",
+                            "vector_payload_text": poison,
+                            "canonicalPayload": {"text": poison},
+                            "canonical_citation_payload": {"text": poison},
+                            "canonicalCitationPayload": {"text": poison},
+                            "candidate_canonical_citation_payload": {"text": poison},
+                            "embeddingText": poison,
+                            "expectedAnswer": poison,
+                            "expected_answer": poison,
+                            "supporting_evidence": [poison],
+                            "supporting_evidence_text": poison,
+                            "oraclePayload": {"text": poison},
+                            "oracle_payload": {"text": poison},
+                            "target_locator": poison,
+                            "hidden_target_locator": poison,
+                            "qrels": {"answer": poison},
+                            "full_prompt": poison,
+                            "prompt": poison,
+                            "prompt_manifest": {"text": poison},
+                            "prompt_text": poison,
+                            "raw_prompt": poison,
+                            "raw_llm_payload": {"text": poison},
+                            "raw_llm_request": {"text": poison},
+                            "raw_llm_response": poison,
+                            "raw_response": poison,
+                            "llm_response": poison,
+                            "model_response": poison,
+                            "prompt_payload": {"text": poison},
+                            "response_payload": {"text": poison},
+                        },
+                    )
+                ],
+            )
+
+    capability = RagQueryOrchestratorCapability(
+        config=RagQueryOrchestratorCapabilityConfig(enabled=True),
+        retriever=FakeRetriever(),
+    )
+    request = {
+        "query": "xlsx 매출 합계",
+        "policy": {
+            "requiredIndexVersion": "idx-v1",
+            "allowedSourceFileTypes": ["SPREADSHEET"],
+            "allowedParserVersions": ["xlsx-extract-v2-hidden-safe"],
+            "topK": 1,
+        },
+    }
+
+    output = capability.run(
+        CapabilityInput(
+            job_id="job-vector-payload-candidate-only",
+            capability="RAG_QUERY_ORCHESTRATOR",
+            attempt_no=1,
+            inputs=[
+                CapabilityInputArtifact(
+                    artifact_id="input-json",
+                    type="INPUT_JSON",
+                    content=json.dumps(request).encode("utf-8"),
+                )
+            ],
+        )
+    )
+
+    serialized = output.outputs[0].content.decode("utf-8")
+    payload = json.loads(serialized)
+    extra = payload["state"]["verified_evidence"][0]["extra"]
+    backend_identity = payload["state"]["tool_results"][0]["backend_identity"]
+    assert poison not in serialized
+    assert extra["vector_payload_candidate_only"] is True
+    assert extra["vector_payload_used_as_evidence_truth"] is False
+    assert {
+        "canonicalPayload",
+        "canonicalCitationPayload",
+        "canonical_citation_payload",
+        "candidate_canonical_citation_payload",
+        "embeddingText",
+        "expectedAnswer",
+        "expected_answer",
+        "oraclePayload",
+        "oracle_payload",
+        "prompt_payload",
+        "qrels",
+        "raw_llm_response",
+        "raw_prompt",
+        "raw_response",
+        "response_payload",
+        "llm_response",
+        "model_response",
+        "full_prompt",
+        "prompt",
+        "prompt_manifest",
+        "prompt_text",
+        "raw_llm_payload",
+        "raw_llm_request",
+        "supporting_evidence",
+        "supporting_evidence_text",
+        "target_locator",
+        "hidden_target_locator",
+        "vector_payload_text",
+    } <= set(extra["retriever_metadata_redacted_fields"])
+    assert backend_identity["post_filter_applied"] is True
+    assert backend_identity["library_search_used"] is False
+    assert payload["state"]["answer"]["citations"][0]["citation_text"] == "Sheet1 A2:B2 safe evidence text"
+    assert payload["state"]["route_diagnostics"][0]["production_vector_written"] is False
+    assert payload["state"]["route_diagnostics"][0]["official_denominator_registry_changed"] is False
+
+
+def test_rag_query_orchestrator_vector_sanitizer_blocks_phase1_debug_keys() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.phase1_diagnostic_runtime import (
+        FORBIDDEN_READINESS_DEBUG_KEYS,
+    )
+    from app.capabilities.rag_orchestrator.vector_tools import (
+        _is_candidate_payload_metadata_key,
+    )
+
+    assert all(
+        _is_candidate_payload_metadata_key(key)
+        for key in FORBIDDEN_READINESS_DEBUG_KEYS
+    )
 
 
 def test_rag_query_orchestrator_retriever_path_rejects_off_track_and_policy_mismatch_chunks() -> None:
@@ -4032,6 +4196,129 @@ def test_rag_query_orchestrator_route_policy_row_exceptions_are_manifest_backed(
     assert decision.route == "xlsx_business_structured"
 
 
+def test_rag_query_orchestrator_policy_artifact_registry_classifies_decision_owners() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.route_policy_manifest import (
+        POLICY_REGISTRY_SCHEMA_VERSION,
+        policy_artifact_registry,
+    )
+
+    registry = policy_artifact_registry()
+    by_name = {item.name: item for item in registry}
+
+    assert POLICY_REGISTRY_SCHEMA_VERSION == "rag_policy_registry_v1"
+    assert "query_id_row_exception" not in by_name
+    assert by_name["xlsx_pending_evidence_query_id"].owner == "manifest"
+    assert by_name["xlsx_pending_evidence_query_id"].hard_guard is True
+    assert by_name["xlsx_pending_evidence_query_id"].enforcement_stage == "diagnostic_policy_flag"
+    assert by_name["xlsx_pending_evidence_query_id"].route_blocking is False
+    assert by_name["pdf_policy_excluded_query_id"].owner == "manifest"
+    assert by_name["pdf_policy_excluded_query_id"].hard_guard is True
+    assert by_name["pdf_policy_excluded_query_id"].enforcement_stage == "route_block"
+    assert by_name["pdf_policy_excluded_query_id"].route_blocking is True
+    assert by_name["text_namu_unresolved_query_id"].owner == "manifest"
+    assert by_name["text_namu_unresolved_query_id"].hard_guard is True
+    assert by_name["text_namu_unresolved_query_id"].enforcement_stage == "diagnostic_policy_flag"
+    assert by_name["text_namu_unresolved_query_id"].route_blocking is False
+    assert by_name["source_file_type_allowlist"].owner == "runtime_metadata_guard"
+    assert by_name["source_file_type_allowlist"].hard_guard is True
+    assert by_name["source_file_type_allowlist"].route_blocking is True
+    assert by_name["ambiguous_route_selection"].owner == "llm_adjudication"
+    assert by_name["ambiguous_route_selection"].hard_guard is False
+    assert by_name["ambiguous_route_selection"].route_blocking is False
+    assert by_name["ambiguous_route_selection"].llm_can_relax_hard_guards is False
+    assert all(item.diagnostic_only is True for item in registry)
+    assert all(item.official_metric_input_rows == 0 for item in registry)
+
+
+def test_rag_query_orchestrator_deterministic_score_signals_are_registry_owned() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.graph import (
+        TRACK_PDF_BUSINESS_OCR_MM,
+        TRACK_TEXT_NAMUWIKI_ANIMATION,
+        TRACK_XLSX_BUSINESS_STRUCTURED,
+        build_route_decision,
+    )
+    from app.capabilities.rag_orchestrator.route_policy_manifest import (
+        DETERMINISTIC_SCORE_SIGNAL_REGISTRY_SCHEMA_VERSION,
+        deterministic_score_signal_registry,
+    )
+
+    decision = build_route_decision(
+        query="xlsx 표 합계를 pdf 근거와 함께 알려줘",
+        policy=QueryPolicy(
+            request_id="req-route-score-signal-registry",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["PDF"],
+            allowed_parser_versions=["pdf-extract-v2"],
+        ),
+        source_metadata={
+            "source_file_type": "PDF",
+            "parser_version": "pdf-extract-v2",
+            "location_json": {"page_no": 3, "bbox": [0, 0, 10, 10]},
+            "citation_text": "fixture.pdf p. 3",
+        },
+    )
+
+    registry = deterministic_score_signal_registry()
+    by_name = {item.name: item for item in registry}
+    emitted = {
+        signal
+        for signals in decision.deterministic_score_signals.values()
+        for signal in signals
+    }
+
+    assert (
+        DETERMINISTIC_SCORE_SIGNAL_REGISTRY_SCHEMA_VERSION
+        == "rag_deterministic_score_signal_registry_v1"
+    )
+    assert emitted <= set(by_name)
+    assert by_name["metadata_source_type_signal"].owner == "runtime_metadata_guard"
+    assert by_name["metadata_source_type_signal"].policy_artifact == "source_file_type_allowlist"
+    assert by_name["metadata_source_type_signal"].score_delta == 0.7
+    assert by_name["metadata_parser_pdf_signal"].score_delta == 0.45
+    assert by_name["location_pdf_locator_signal"].score_delta == 0.45
+    assert by_name["citation_pdf_signal"].source == "citation_metadata"
+    assert by_name["not_allowed_by_policy_or_metadata"].hard_guard is True
+    assert (
+        by_name["not_allowed_by_policy_or_metadata"].source
+        == "provider_policy_runtime_metadata_bridge"
+    )
+    assert by_name["not_allowed_by_policy_or_metadata"].score_cap == 0.05
+    assert TRACK_PDF_BUSINESS_OCR_MM in by_name["metadata_parser_pdf_signal"].routes
+    assert {
+        route
+        for item in registry
+        for route in item.routes
+    } == {
+        TRACK_TEXT_NAMUWIKI_ANIMATION,
+        TRACK_XLSX_BUSINESS_STRUCTURED,
+        TRACK_PDF_BUSINESS_OCR_MM,
+    }
+    assert all(item.diagnostic_only is True for item in registry)
+    assert all(item.official_metric_input_rows == 0 for item in registry)
+    assert all(item.llm_can_relax_hard_guards is False for item in registry)
+
+
+def test_rag_query_orchestrator_graph_does_not_own_score_signal_literals() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.route_policy_manifest import (
+        deterministic_score_signal_registry,
+    )
+
+    graph_source = (
+        ROOT / "ai" / "app" / "capabilities" / "rag_orchestrator" / "graph.py"
+    ).read_text(encoding="utf-8")
+
+    for item in deterministic_score_signal_registry():
+        assert f'"{item.name}"' not in graph_source
+        assert f"'{item.name}'" not in graph_source
+
+
 def test_rag_query_orchestrator_route_policy_manifest_rejects_invalid_manifest(tmp_path: Path) -> None:
     sys.path.insert(0, str(ROOT / "ai"))
 
@@ -4208,6 +4495,47 @@ def test_rag_query_orchestrator_route_policy_manifest_load_error_blocks_text_suf
     assert "route_policy_manifest_unavailable" in state["evidence_sufficiency"]["reasons"]
 
 
+def test_rag_query_orchestrator_route_decision_node_manifest_unavailable_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator import graph
+
+    def _raise_manifest_error() -> None:
+        raise ValueError("route policy manifest unavailable for test")
+
+    monkeypatch.setattr(graph, "load_route_policy_manifest", _raise_manifest_error)
+
+    state = graph.classify_intent(
+        {
+            "query": "pdf 근거를 찾아줘",
+            "normalized_query": "pdf 근거를 찾아줘",
+            "policy": QueryPolicy(
+                request_id="req-route-node-manifest-unavailable",
+                required_index_version="idx-v1",
+                allowed_source_file_types=["PDF"],
+                allowed_parser_versions=["pdf-extract-v2"],
+            ),
+            "source_metadata": {"source_file_type": "PDF"},
+            "route_diagnostics": [],
+            "loop_states": [],
+            "trace": [],
+        }
+    )
+
+    assert state["route_decision"]["route"] == "policy_blocked"
+    assert state["route_decision"]["routes"] == []
+    assert "route_policy_manifest_unavailable" in state["route_decision"]["blocked_flags"]
+    assert state["route_decision"]["llm_adjudicator_called"] is False
+    assert state["trace"][-1]["node"] == "route_decision"
+    assert state["route_diagnostics"][0]["diagnostic_only"] is True
+    assert state["route_diagnostics"][0]["official_denominator_registry_changed"] is False
+    assert state["route_diagnostics"][0]["production_namespace_mutated"] is False
+    assert state["route_diagnostics"][0]["production_vector_written"] is False
+
+
 def test_rag_query_orchestrator_route_policy_manifest_blocks_pdf_excluded_rows() -> None:
     sys.path.insert(0, str(ROOT / "ai"))
 
@@ -4327,6 +4655,91 @@ def test_rag_query_orchestrator_routes_election_result_aggregation_with_llm_adju
     ]
 
 
+def test_rag_query_orchestrator_query_keywords_are_not_deterministic_route_scores() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.graph import (
+        TRACK_XLSX_BUSINESS_STRUCTURED,
+        build_route_decision,
+    )
+
+    class RecordingRouteAdjudicator:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        def adjudicate(self, payload: dict[str, Any]) -> dict[str, Any]:
+            self.calls.append(payload)
+            return {
+                "primary_route": TRACK_XLSX_BUSINESS_STRUCTURED,
+                "candidate_routes": [TRACK_XLSX_BUSINESS_STRUCTURED],
+                "route_confidence": 0.91,
+                "intent": "xlsx_aggregation",
+                "evidence_lane": "xlsx_structured_evidence",
+                "requires_multi_route": False,
+                "fallback_plan": [],
+                "policy_flags": [],
+                "blocked_flags": [],
+                "diagnostic_only": True,
+                "reason": "The query text asks for a spreadsheet-like aggregation.",
+            }
+
+    adjudicator = RecordingRouteAdjudicator()
+    decision = build_route_decision(
+        query="xlsx 표 합계를 pdf 근거와 함께 알려줘",
+        route_adjudicator=adjudicator,
+    )
+
+    assert decision.llm_adjudicator_called is True
+    assert decision.llm_decision_used is True
+    assert decision.route == TRACK_XLSX_BUSINESS_STRUCTURED
+    assert decision.deterministic_hints == ()
+    assert "query_xlsx_signal" not in decision.deterministic_score_signals[TRACK_XLSX_BUSINESS_STRUCTURED]
+    assert "query_aggregation_signal" not in decision.deterministic_score_signals[TRACK_XLSX_BUSINESS_STRUCTURED]
+    assert all(score == 0.0 for score in decision.route_scores.values())
+    assert adjudicator.calls
+    payload = adjudicator.calls[0]
+    assert payload["candidate_routes"] == [
+        "text_namuwiki_animation",
+        "xlsx_business_structured",
+        "pdf_business_ocr_mm",
+    ]
+    assert all(score == 0.0 for score in payload["route_scores"].values())
+    assert "query_xlsx_signal" not in payload["deterministic_score_signals"][TRACK_XLSX_BUSINESS_STRUCTURED]
+
+
+def test_rag_query_orchestrator_metadata_guard_survives_query_keyword_demoted() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.graph import (
+        TRACK_PDF_BUSINESS_OCR_MM,
+        TRACK_XLSX_BUSINESS_STRUCTURED,
+        build_route_decision,
+    )
+
+    decision = build_route_decision(
+        query="xlsx 표 합계를 찾아줘",
+        policy=QueryPolicy(
+            request_id="req-pdf-metadata-guard",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["PDF"],
+            allowed_parser_versions=["pdf-extract-v2"],
+        ),
+        source_metadata={
+            "source_file_type": "PDF",
+            "parser_version": "pdf-extract-v2",
+        },
+    )
+
+    assert decision.route == TRACK_PDF_BUSINESS_OCR_MM
+    assert decision.routes == (TRACK_PDF_BUSINESS_OCR_MM,)
+    assert decision.llm_adjudicator_called is False
+    assert "metadata_source_type_signal" in decision.deterministic_score_signals[TRACK_PDF_BUSINESS_OCR_MM]
+    assert "metadata_parser_pdf_signal" in decision.deterministic_score_signals[TRACK_PDF_BUSINESS_OCR_MM]
+    assert "query_xlsx_signal" not in decision.deterministic_score_signals[TRACK_XLSX_BUSINESS_STRUCTURED]
+    assert decision.deterministic_hints == ()
+
+
 def test_rag_query_orchestrator_election_result_query_runs_existing_xlsx_tool_with_guardrails() -> None:
     sys.path.insert(0, str(ROOT / "ai"))
 
@@ -4400,6 +4813,204 @@ def test_rag_query_orchestrator_route_tools_does_not_expand_empty_routes_to_all_
     assert state["selected_tools"] == []
     assert state["trace"][-1]["selected_tools"] == []
     assert state["trace"][-1]["route_decision"]["routes"] == []
+
+
+def test_rag_query_orchestrator_langgraph_runner_matches_pure_state_and_trace() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator import graph
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.state import FORBIDDEN_STATE_FIELDS
+
+    policy = QueryPolicy(
+        request_id="req-langgraph-parity",
+        required_index_version="idx-v1",
+        allowed_source_file_types=["SPREADSHEET"],
+        allowed_parser_versions=["xlsx-extract-v2-hidden-safe"],
+        top_k=3,
+    )
+    kwargs = {
+        "query": "xlsx 매출 합계",
+        "policy": policy,
+        "source_metadata": {"source_file_type": "SPREADSHEET"},
+    }
+
+    pure_state = graph.run_query_orchestrator_pure(**kwargs)
+    langgraph_state = graph.run_query_orchestrator_langgraph(**kwargs)
+
+    parity_keys = (
+        "normalized_query",
+        "intent",
+        "route_decision",
+        "route_diagnostics",
+        "selected_tools",
+        "fallback_routes_triggered",
+        "fallback_attempts",
+        "evidence_sufficiency",
+        "answer",
+        "stop_reason",
+    )
+    for key in parity_keys:
+        assert langgraph_state.get(key) == pure_state.get(key)
+    assert langgraph_state["trace"] == pure_state["trace"]
+    assert not set(langgraph_state) & FORBIDDEN_STATE_FIELDS
+    node_sequence = [item["node"] for item in langgraph_state["trace"]]
+    assert "route_decision" in node_sequence
+    assert "selected_tools" in node_sequence
+    assert "citation_verify" in node_sequence
+    assert "evidence_sufficiency" in node_sequence
+    assert node_sequence[-1] == "answer_synthesis"
+    route_diagnostic = langgraph_state["route_diagnostics"][0]
+    assert route_diagnostic["diagnostic_only"] is True
+    assert route_diagnostic["official_denominator_registry_changed"] is False
+    assert route_diagnostic["official_denominator_opened_or_frozen"] is False
+    assert route_diagnostic["production_namespace_mutated"] is False
+    assert route_diagnostic["production_vector_written"] is False
+    assert route_diagnostic["diagnostic_only_row_promoted"] is False
+    assert route_diagnostic["route_metrics_official"] is False
+
+
+def test_rag_query_orchestrator_policy_guard_strips_forbidden_state_fields() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator import graph
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.state import FORBIDDEN_STATE_FIELDS
+
+    policy = QueryPolicy(
+        request_id="req-langgraph-forbidden-state",
+        required_index_version="idx-v1",
+        allowed_source_file_types=["SPREADSHEET"],
+        allowed_parser_versions=["xlsx-extract-v2-hidden-safe"],
+        top_k=1,
+    )
+    initial_state = graph.initial_query_orchestrator_state(
+        query="xlsx 매출 합계",
+        policy=policy,
+        source_metadata={"source_file_type": "SPREADSHEET"},
+    )
+    initial_state["raw_llm_hidden_reasoning"] = "SECRET_CHAIN_OF_THOUGHT"
+    initial_state["db_password"] = "SECRET_DATABASE_PASSWORD"
+
+    final_state = graph.policy_guard(initial_state)
+
+    assert not set(final_state) & FORBIDDEN_STATE_FIELDS
+    assert "SECRET_CHAIN_OF_THOUGHT" not in json.dumps(final_state, default=str, ensure_ascii=False)
+    assert "SECRET_DATABASE_PASSWORD" not in json.dumps(final_state, default=str, ensure_ascii=False)
+    assert any(
+        error.get("reason") == "forbidden_state_fields"
+        and set(error.get("fields", [])) == {"db_password", "raw_llm_hidden_reasoning"}
+        for error in final_state["errors"]
+    )
+
+
+def test_rag_query_orchestrator_node_contract_typed_dicts_cover_decision_points() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator import state
+
+    assert state.NODE_CONTRACT_SEQUENCE == (
+        "route_decision",
+        "selected_tools",
+        "citation_verify",
+        "evidence_sufficiency",
+    )
+    assert state.TERMINAL_NODE_CONTRACTS == ("answer_synthesis", "fallback")
+    assert set(state.RouteDecisionNodeInput.__annotations__) >= {
+        "query",
+        "policy",
+        "source_metadata",
+        "route_adjudicator",
+    }
+    assert set(state.RouteDecisionNodeOutput.__annotations__) >= {
+        "intent",
+        "route_decision",
+        "route_diagnostics",
+        "loop_states",
+        "trace",
+    }
+    assert set(state.SelectedToolsNodeInput.__annotations__) >= {"route_decision"}
+    assert set(state.SelectedToolsNodeOutput.__annotations__) >= {"selected_tools", "trace"}
+    assert set(state.CitationVerifyNodeInput.__annotations__) >= {"policy", "merged_evidence"}
+    assert set(state.CitationVerifyNodeOutput.__annotations__) >= {
+        "verified_evidence",
+        "rejected_evidence",
+        "trace",
+    }
+    assert set(state.EvidenceSufficiencyNodeInput.__annotations__) >= {
+        "route_decision",
+        "verified_evidence",
+    }
+    assert set(state.EvidenceSufficiencyNodeOutput.__annotations__) >= {
+        "evidence_sufficiency",
+        "loop_states",
+        "trace",
+    }
+    assert set(state.AnswerSynthesisNodeInput.__annotations__) >= {
+        "normalized_query",
+        "verified_evidence",
+    }
+    assert set(state.AnswerSynthesisNodeOutput.__annotations__) >= {
+        "answer",
+        "stop_reason",
+        "trace",
+    }
+    assert set(state.FallbackNodeOutput.__annotations__) >= {
+        "answer",
+        "stop_reason",
+        "trace",
+    }
+
+
+def test_rag_query_orchestrator_langgraph_invalid_llm_output_fails_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator import graph
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.state import FORBIDDEN_STATE_FIELDS
+
+    class BadRouteAdjudicator:
+        def adjudicate(self, payload: dict[str, Any]) -> str:
+            return "{not-json"
+
+    class RetrieverMustNotRun:
+        def retrieve(self, query: str, filters: Any = None) -> Any:
+            raise AssertionError("invalid route adjudication must fail closed before retrieval")
+
+    state = graph.run_query_orchestrator_langgraph(
+        query="구시군의 장선거에서 정당별로 이긴 지역구 수를 알려줘",
+        policy=QueryPolicy(
+            request_id="req-langgraph-invalid-llm",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["TEXT", "SPREADSHEET", "PDF"],
+            allowed_parser_versions=["xlsx-extract-v2-hidden-safe", "pdf-extract-v2"],
+            top_k=3,
+        ),
+        route_adjudicator=BadRouteAdjudicator(),
+        retriever=RetrieverMustNotRun(),
+    )
+
+    assert state["route_decision"]["route"] == "insufficient_metadata"
+    assert state["route_decision"]["routes"] == []
+    assert state["route_decision"]["llm_adjudicator_called"] is True
+    assert state["route_decision"]["llm_validation_status"] == "invalid"
+    assert "invalid_llm_json" in state["route_decision"]["blocked_flags"]
+    assert state["selected_tools"] == []
+    assert state["verified_evidence"] == []
+    assert state["answer"]["status"] == "blocked"
+    assert state["trace"][-1]["node"] == "fallback"
+    assert not set(state) & FORBIDDEN_STATE_FIELDS
+    assert state["route_diagnostics"][0]["diagnostic_only"] is True
+    assert state["route_diagnostics"][0]["official_denominator_registry_changed"] is False
+    assert state["route_diagnostics"][0]["production_namespace_mutated"] is False
+    assert state["route_diagnostics"][0]["production_vector_written"] is False
+    assert state["route_diagnostics"][0]["diagnostic_only_row_promoted"] is False
+
+
+def test_rag_query_orchestrator_langgraph_dependency_is_declared_in_pyproject() -> None:
+    pyproject = (ROOT / "ai" / "pyproject.toml").read_text(encoding="utf-8")
+
+    assert "langgraph>=0.2.40,<0.3" in pyproject
 
 
 def test_registry_wires_query_orchestrator_to_registered_rag_retriever(
@@ -4513,7 +5124,7 @@ def test_registry_wires_query_orchestrator_to_registered_rag_retriever(
     )
 
     payload = json.loads(output.outputs[0].content.decode("utf-8"))
-    assert payload["graph_backend"] == "pure_vector_retriever_poc"
+    assert payload["graph_backend"] == "langgraph_vector_retriever_poc"
     assert payload["state"]["tool_results"][0]["tool"] == "xlsx_vector_search_tool"
     assert retriever.calls == [{"query": "xlsx 매출 합계", "filters": None}]
 

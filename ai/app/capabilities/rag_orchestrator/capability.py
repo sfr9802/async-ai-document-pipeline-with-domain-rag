@@ -15,7 +15,7 @@ from app.capabilities.base import (
     CapabilityOutputArtifact,
 )
 from app.capabilities.rag_orchestrator.evidence import QueryPolicy
-from app.capabilities.rag_orchestrator.graph import run_query_orchestrator_pure
+from app.capabilities.rag_orchestrator.graph import run_query_orchestrator_langgraph
 
 CAPABILITY_NAME = "RAG_QUERY_ORCHESTRATOR"
 RESULT_ARTIFACT_TYPE = "RAG_QUERY_ORCHESTRATOR_RESULT"
@@ -76,16 +76,16 @@ class RagQueryOrchestratorCapability(Capability):
         source_metadata = _mapping_or_empty(
             request.get("source_metadata") or request.get("sourceMetadata")
         )
-        state = run_query_orchestrator_pure(
+        state = run_query_orchestrator_langgraph(
             query=query,
             policy=policy,
             source_metadata=source_metadata,
             retriever=self._retriever,
         )
         graph_backend = (
-            "pure_vector_retriever_poc"
+            "langgraph_vector_retriever_poc"
             if self._retriever is not None
-            else "pure_fake_graph"
+            else "langgraph_fake_graph"
         )
         return _json_output(
             {

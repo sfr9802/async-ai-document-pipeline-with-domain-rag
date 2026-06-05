@@ -10,6 +10,8 @@ from typing import Any, Mapping
 
 
 ROUTE_POLICY_MANIFEST_SCHEMA_VERSION = "rag_route_policy_manifest_v1"
+POLICY_REGISTRY_SCHEMA_VERSION = "rag_policy_registry_v1"
+DETERMINISTIC_SCORE_SIGNAL_REGISTRY_SCHEMA_VERSION = "rag_deterministic_score_signal_registry_v1"
 DEFAULT_ROUTE_POLICY_MANIFEST_PATH = Path(__file__).with_name("route_policy_manifest.json")
 EXPECTED_ROUTE_POLICY_QUERY_ID_COUNTS = {
     "xlsx_pending_evidence_query_ids": 2,
@@ -17,6 +19,213 @@ EXPECTED_ROUTE_POLICY_QUERY_ID_COUNTS = {
     "pdf_stable_identity_required_query_ids": 3,
     "text_namu_unresolved_query_ids": 23,
 }
+_ROUTE_TEXT_NAMUWIKI_ANIMATION = "text_namuwiki_animation"
+_ROUTE_XLSX_BUSINESS_STRUCTURED = "xlsx_business_structured"
+_ROUTE_PDF_BUSINESS_OCR_MM = "pdf_business_ocr_mm"
+_ALL_TRACK_ROUTES = (
+    _ROUTE_TEXT_NAMUWIKI_ANIMATION,
+    _ROUTE_XLSX_BUSINESS_STRUCTURED,
+    _ROUTE_PDF_BUSINESS_OCR_MM,
+)
+SCORE_SIGNAL_METADATA_SOURCE_TYPE = "metadata_source_type_signal"
+SCORE_SIGNAL_METADATA_PARSER_XLSX = "metadata_parser_xlsx_signal"
+SCORE_SIGNAL_METADATA_PARSER_PDF = "metadata_parser_pdf_signal"
+SCORE_SIGNAL_METADATA_PARSER_TEXT = "metadata_parser_text_signal"
+SCORE_SIGNAL_LOCATION_XLSX_LOCATOR = "location_xlsx_locator_signal"
+SCORE_SIGNAL_LOCATION_PDF_LOCATOR = "location_pdf_locator_signal"
+SCORE_SIGNAL_CITATION_XLSX = "citation_xlsx_signal"
+SCORE_SIGNAL_CITATION_PDF = "citation_pdf_signal"
+SCORE_SIGNAL_NOT_ALLOWED_BY_POLICY_OR_METADATA = "not_allowed_by_policy_or_metadata"
+
+
+@dataclass(frozen=True)
+class PolicyArtifactRule:
+    name: str
+    owner: str
+    hard_guard: bool
+    enforcement_stage: str
+    route_blocking: bool
+    diagnostic_only: bool = True
+    official_metric_input_rows: int = 0
+    llm_can_relax_hard_guards: bool = False
+
+
+_POLICY_ARTIFACT_REGISTRY = (
+    PolicyArtifactRule(
+        name="xlsx_pending_evidence_query_id",
+        owner="manifest",
+        hard_guard=True,
+        enforcement_stage="diagnostic_policy_flag",
+        route_blocking=False,
+    ),
+    PolicyArtifactRule(
+        name="pdf_policy_excluded_query_id",
+        owner="manifest",
+        hard_guard=True,
+        enforcement_stage="route_block",
+        route_blocking=True,
+    ),
+    PolicyArtifactRule(
+        name="pdf_stable_identity_required_query_id",
+        owner="manifest",
+        hard_guard=True,
+        enforcement_stage="route_block",
+        route_blocking=True,
+    ),
+    PolicyArtifactRule(
+        name="text_namu_unresolved_query_id",
+        owner="manifest",
+        hard_guard=True,
+        enforcement_stage="diagnostic_policy_flag",
+        route_blocking=False,
+    ),
+    PolicyArtifactRule(
+        name="source_file_type_allowlist",
+        owner="runtime_metadata_guard",
+        hard_guard=True,
+        enforcement_stage="route_block",
+        route_blocking=True,
+    ),
+    PolicyArtifactRule(
+        name="pdf_stable_document_identity",
+        owner="runtime_metadata_guard",
+        hard_guard=True,
+        enforcement_stage="route_block",
+        route_blocking=True,
+    ),
+    PolicyArtifactRule(
+        name="hidden_or_excluded_source_guard",
+        owner="runtime_metadata_guard",
+        hard_guard=True,
+        enforcement_stage="route_block",
+        route_blocking=True,
+    ),
+    PolicyArtifactRule(
+        name="ambiguous_route_selection",
+        owner="llm_adjudication",
+        hard_guard=False,
+        enforcement_stage="route_narrowing",
+        route_blocking=False,
+    ),
+)
+
+
+def policy_artifact_registry() -> tuple[PolicyArtifactRule, ...]:
+    """Return the diagnostic policy ownership registry.
+
+    The registry classifies whether a decision is manifest-owned,
+    runtime-metadata-owned, or eligible for LLM adjudication. Every entry is
+    diagnostic-only and keeps official metric rows closed.
+    """
+
+    return _POLICY_ARTIFACT_REGISTRY
+
+
+@dataclass(frozen=True)
+class DeterministicScoreSignalRule:
+    name: str
+    owner: str
+    source: str
+    policy_artifact: str | None
+    routes: tuple[str, ...]
+    score_delta: float
+    hard_guard: bool = False
+    enforcement_stage: str = "route_scoring"
+    route_blocking: bool = False
+    score_cap: float | None = None
+    diagnostic_only: bool = True
+    official_metric_input_rows: int = 0
+    llm_can_relax_hard_guards: bool = False
+
+
+_DETERMINISTIC_SCORE_SIGNAL_REGISTRY = (
+    DeterministicScoreSignalRule(
+        name=SCORE_SIGNAL_METADATA_SOURCE_TYPE,
+        owner="runtime_metadata_guard",
+        source="source_metadata",
+        policy_artifact="source_file_type_allowlist",
+        routes=_ALL_TRACK_ROUTES,
+        score_delta=0.7,
+    ),
+    DeterministicScoreSignalRule(
+        name=SCORE_SIGNAL_METADATA_PARSER_XLSX,
+        owner="runtime_metadata_guard",
+        source="source_metadata",
+        policy_artifact=None,
+        routes=(_ROUTE_XLSX_BUSINESS_STRUCTURED,),
+        score_delta=0.45,
+    ),
+    DeterministicScoreSignalRule(
+        name=SCORE_SIGNAL_METADATA_PARSER_PDF,
+        owner="runtime_metadata_guard",
+        source="source_metadata",
+        policy_artifact=None,
+        routes=(_ROUTE_PDF_BUSINESS_OCR_MM,),
+        score_delta=0.45,
+    ),
+    DeterministicScoreSignalRule(
+        name=SCORE_SIGNAL_METADATA_PARSER_TEXT,
+        owner="runtime_metadata_guard",
+        source="source_metadata",
+        policy_artifact=None,
+        routes=(_ROUTE_TEXT_NAMUWIKI_ANIMATION,),
+        score_delta=0.45,
+    ),
+    DeterministicScoreSignalRule(
+        name=SCORE_SIGNAL_LOCATION_XLSX_LOCATOR,
+        owner="runtime_metadata_guard",
+        source="source_location_metadata",
+        policy_artifact=None,
+        routes=(_ROUTE_XLSX_BUSINESS_STRUCTURED,),
+        score_delta=0.45,
+    ),
+    DeterministicScoreSignalRule(
+        name=SCORE_SIGNAL_LOCATION_PDF_LOCATOR,
+        owner="runtime_metadata_guard",
+        source="source_location_metadata",
+        policy_artifact=None,
+        routes=(_ROUTE_PDF_BUSINESS_OCR_MM,),
+        score_delta=0.45,
+    ),
+    DeterministicScoreSignalRule(
+        name=SCORE_SIGNAL_CITATION_XLSX,
+        owner="runtime_metadata_guard",
+        source="citation_metadata",
+        policy_artifact=None,
+        routes=(_ROUTE_XLSX_BUSINESS_STRUCTURED,),
+        score_delta=0.35,
+    ),
+    DeterministicScoreSignalRule(
+        name=SCORE_SIGNAL_CITATION_PDF,
+        owner="runtime_metadata_guard",
+        source="citation_metadata",
+        policy_artifact=None,
+        routes=(_ROUTE_PDF_BUSINESS_OCR_MM,),
+        score_delta=0.35,
+    ),
+    DeterministicScoreSignalRule(
+        name=SCORE_SIGNAL_NOT_ALLOWED_BY_POLICY_OR_METADATA,
+        owner="runtime_metadata_guard",
+        source="provider_policy_runtime_metadata_bridge",
+        policy_artifact="source_file_type_allowlist",
+        routes=_ALL_TRACK_ROUTES,
+        score_delta=0.0,
+        hard_guard=True,
+        enforcement_stage="route_score_suppression",
+        route_blocking=True,
+        score_cap=0.05,
+    ),
+)
+
+
+def deterministic_score_signal_registry() -> tuple[DeterministicScoreSignalRule, ...]:
+    """Return registry-owned deterministic route score signal definitions."""
+
+    return _DETERMINISTIC_SCORE_SIGNAL_REGISTRY
+
+
+def deterministic_score_signal_by_name() -> dict[str, DeterministicScoreSignalRule]:
+    return {item.name: item for item in _DETERMINISTIC_SCORE_SIGNAL_REGISTRY}
 
 
 @dataclass(frozen=True)

@@ -1434,6 +1434,310 @@ def test_enabled_diagnostic_ft_a_dry_run_input_validation_accepts_manifest_rows_
     assert "query-ok" not in response.text
 
 
+def test_enabled_diagnostic_ft_a_dry_run_input_validation_exposes_readiness_schema_and_split_audit() -> None:
+    service = SourceFirstRagService(readiness_report=v4_6_6_holdout_gap_blocker_report())
+    client = TestClient(create_app(settings=enabled_settings(), rag_diagnostic_service=service))
+    payload = {
+        "schema_version": "v4_6_4_ft_a_dry_run_input_manifest_validation_request_v1",
+        "manifest_rows": [
+            {
+                "row_id": "row-train-route",
+                "query_id": "query-train-route",
+                "source_family": "XLSX",
+                "route_lane": "deictic",
+                "response_policy_bucket": "CONTEXT_REQUIRED",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "residual_class": "route_ambiguity",
+                "split_role": "train_candidate",
+                "leakage_group_id": "source-family-xlsx-train",
+                "raw_query_text": "이 표가 어느 파일을 가리키는지 판단해줘",
+                "active_context_available": False,
+                "candidate_search_view_count": 2,
+            },
+            {
+                "row_id": "row-holdout-policy",
+                "query_id": "query-holdout-policy",
+                "source_family": "PDF",
+                "route_lane": "rough_query",
+                "response_policy_bucket": "AMBIGUOUS_FILE_IDENTITY",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "residual_class": "response_policy_classification",
+                "split_role": "holdout_candidate",
+                "leakage_group_id": "source-family-pdf-holdout",
+                "raw_query_text": "이 파일 식별 요청을 답변 가능으로 볼 수 있는지 판단해줘",
+                "active_context_available": False,
+                "candidate_search_view_count": 1,
+            },
+        ],
+    }
+
+    response = client.post(FT_A_DRY_RUN_INPUT_VALIDATION_ROUTE, json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    contract = body["dry_run_input_manifest_contract"]
+    validation = body["dry_run_input_manifest_validation"]
+    split = validation["train_holdout_split_validation"]
+    assert contract["ft_readiness_manifest_schema_ready"] is True
+    assert contract["gold_expected_supporting_evidence_input_allowed"] is False
+    assert contract["allowed_ft_readiness_residual_classes"] == [
+        "route_ambiguity",
+        "response_policy_classification",
+        "ocr_layout_trust",
+    ]
+    assert {
+        "missing_evidence",
+        "top_k_miss",
+        "xlsx_zero_candidate",
+        "pdf_stable_identity",
+        "indexing_gap",
+        "source_evidence_gap",
+    } <= set(contract["non_ft_problem_classes"])
+    assert contract["train_holdout_split_validator_schema_ready"] is True
+    assert contract["allowed_split_roles"] == ["train_candidate", "holdout_candidate"]
+    assert contract["train_holdout_leakage_overlap_fails_closed"] is True
+    assert validation["accepted_manifest_row_count"] == 2
+    assert validation["excluded_manifest_row_count"] == 0
+    assert validation["gold_or_prompt_or_output_rejection_count"] == 0
+    assert split["passed"] is True
+    assert split["train_candidate_count"] == 1
+    assert split["holdout_candidate_count"] == 1
+    assert split["train_holdout_leakage_group_overlap_count"] == 0
+    assert body["dry_run_input_manifest_gate_passed"] is False
+    assert body["fine_tuning_dataset_export_created"] is False
+    assert body["training_job_created"] is False
+    assert body["official_metric_input_rows"] == 0
+    assert body["promotion_evidence"] is False
+    assert body["live_db_index_cache_readiness"] is False
+    assert "이 표가 어느 파일을 가리키는지" not in response.text
+    assert "row-train-route" not in response.text
+    assert "query-holdout-policy" not in response.text
+
+
+def test_enabled_diagnostic_ft_a_dry_run_input_validation_rejects_non_ft_residuals_and_split_leakage() -> None:
+    service = SourceFirstRagService(readiness_report=v4_6_6_holdout_gap_blocker_report())
+    client = TestClient(create_app(settings=enabled_settings(), rag_diagnostic_service=service))
+    payload = {
+        "schema_version": "v4_6_4_ft_a_dry_run_input_manifest_validation_request_v1",
+        "manifest_rows": [
+            {
+                "row_id": "row-train",
+                "query_id": "query-train",
+                "source_family": "XLSX",
+                "route_lane": "deictic",
+                "response_policy_bucket": "CONTEXT_REQUIRED",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "residual_class": "route_ambiguity",
+                "split_role": "train_candidate",
+                "leakage_group_id": "shared-source-family",
+                "raw_query_text": "파일을 고르는 애매한 질문",
+            },
+            {
+                "row_id": "row-holdout",
+                "query_id": "query-holdout",
+                "source_family": "PDF",
+                "route_lane": "rough_query",
+                "response_policy_bucket": "AMBIGUOUS_FILE_IDENTITY",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "residual_class": "ocr_layout_trust",
+                "split_role": "holdout_candidate",
+                "leakage_group_id": "shared-source-family",
+                "raw_query_text": "OCR layout confidence를 판단해줘",
+            },
+            {
+                "row_id": "row-indexing-gap",
+                "query_id": "query-indexing-gap",
+                "source_family": "XLSX",
+                "route_lane": "rough_query",
+                "response_policy_bucket": "INDEX_UNAVAILABLE",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "residual_class": "top_k_miss",
+                "split_role": "train_candidate",
+                "leakage_group_id": "indexing-gap",
+                "raw_query_text": "검색 후보가 없는 행",
+            },
+            {
+                "row_id": "row-gold-leak",
+                "query_id": "query-gold-leak",
+                "source_family": "PDF",
+                "route_lane": "rough_query",
+                "response_policy_bucket": "ANSWER_ALLOWED",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "residual_class": "response_policy_classification",
+                "split_role": "train_candidate",
+                "leakage_group_id": "gold-leak",
+                "expected_answer": "secret expected answer",
+                "supporting_evidence": "secret supporting evidence",
+                "hidden_target_locator": "secret hidden locator",
+                "hidden_supporting_evidence": "secret hidden evidence",
+                "target_locator": "secret target locator",
+                "gold_locator": "secret gold locator",
+                "gold_label": "secret gold label",
+                "qrels_label": "secret qrels label",
+                "final_answer": "secret final answer",
+                "normalized_answer_value": "secret normalized answer",
+                "direct_answer_value": "secret direct answer",
+                "source_file_path": "D:/private/source.pdf",
+            },
+        ],
+    }
+
+    response = client.post(FT_A_DRY_RUN_INPUT_VALIDATION_ROUTE, json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    validation = body["dry_run_input_manifest_validation"]
+    split = validation["train_holdout_split_validation"]
+    excluded = validation["excluded_manifest_rows"]
+    reasons = {row["exclusion_reason"] for row in excluded}
+    assert body["accepted_manifest_row_count"] == 2
+    assert body["excluded_manifest_row_count"] == 2
+    assert "ft_readiness_residual_class_not_trainable" in reasons
+    assert "forbidden_prompt_gold_or_output_field_present" in reasons
+    gold_leak_row = next(
+        row for row in excluded if row["exclusion_reason"] == "forbidden_prompt_gold_or_output_field_present"
+    )
+    assert {
+        "expected_answer",
+        "supporting_evidence",
+        "hidden_target_locator",
+        "hidden_supporting_evidence",
+        "target_locator",
+        "gold_locator",
+        "gold_label",
+        "qrels_label",
+        "final_answer",
+        "normalized_answer_value",
+        "direct_answer_value",
+        "source_file_path",
+    } <= set(gold_leak_row["forbidden_manifest_fields"])
+    assert body["gold_or_prompt_or_output_rejection_count"] == 1
+    assert split["passed"] is False
+    assert split["train_holdout_leakage_group_overlap_count"] == 1
+    assert "train_holdout_leakage_group_overlap" in split["blocked_reasons"]
+    assert body["dry_run_input_manifest_gate_passed"] is False
+    assert body["manifest_rows_exported"] is False
+    assert body["fine_tuning_dataset_export_created"] is False
+    assert body["training_job_created"] is False
+    assert body["official_metric_input_rows"] == 0
+    assert body["promotion_evidence"] is False
+    assert "secret expected answer" not in response.text
+    assert "secret supporting evidence" not in response.text
+    assert "secret hidden locator" not in response.text
+    assert "secret gold label" not in response.text
+    assert "D:/private" not in response.text
+    assert "row-gold-leak" not in response.text
+    assert "query-indexing-gap" not in response.text
+
+
+def test_enabled_diagnostic_ft_a_dry_run_input_validation_fails_closed_on_missing_split_inputs_and_allowed_value_leakage() -> None:
+    service = SourceFirstRagService(readiness_report=v4_6_6_holdout_gap_blocker_report())
+    client = TestClient(create_app(settings=enabled_settings(), rag_diagnostic_service=service))
+    payload = {
+        "schema_version": "v4_6_4_ft_a_dry_run_input_manifest_validation_request_v1",
+        "manifest_rows": [
+            {
+                "row_id": "row-train-missing-readiness",
+                "query_id": "query-train-missing-readiness",
+                "source_family": "XLSX",
+                "route_lane": "deictic",
+                "response_policy_bucket": "CONTEXT_REQUIRED",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "split_role": "train_candidate",
+                "raw_query_text": "파일을 고르는 애매한 질문",
+            },
+            {
+                "row_id": "row-holdout-missing-readiness",
+                "query_id": "query-holdout-missing-readiness",
+                "source_family": "PDF",
+                "route_lane": "rough_query",
+                "response_policy_bucket": "AMBIGUOUS_FILE_IDENTITY",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "split_role": "holdout_candidate",
+                "raw_query_text": "OCR layout confidence를 판단해줘",
+            },
+            {
+                "row_id": "row-value-leakage",
+                "query_id": "query-value-leakage",
+                "source_family": "PDF",
+                "route_lane": "rough_query",
+                "response_policy_bucket": "ANSWER_ALLOWED",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "residual_class": "response_policy_classification",
+                "split_role": "train_candidate",
+                "leakage_group_id": "D:/private/pdf-source-identity-train",
+                "raw_query_text": "pdf-source-identity",
+            },
+            {
+                "row_id": "row-source-identity-shape",
+                "query_id": "query-source-identity-shape",
+                "source_family": "XLSX",
+                "route_lane": "rough_query",
+                "response_policy_bucket": "ANSWER_ALLOWED",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "residual_class": "ocr_layout_trust",
+                "split_role": "holdout_candidate",
+                "leakage_group_id": "docv_secret:secret_target.xlsx:Sheet1:A1:B2:B2",
+                "raw_query_text": "docv_secret:secret_target.xlsx:Sheet1:A1:B2:B2",
+            },
+            {
+                "row_id": "row-family-source-identity-shape",
+                "query_id": "query-family-source-identity-shape",
+                "source_family": "XLSX",
+                "route_lane": "rough_query",
+                "response_policy_bucket": "ANSWER_ALLOWED",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "residual_class": "route_ambiguity",
+                "split_role": "holdout_candidate",
+                "leakage_group_id": "XLSX:docv-xlsx:su-xlsx:fp-xlsx",
+                "raw_query_text": "XLSX:docv-xlsx:su-xlsx:fp-xlsx",
+            },
+            {
+                "row_id": "row-bare-source-identity-shape",
+                "query_id": "query-bare-source-identity-shape",
+                "source_family": "PDF",
+                "route_lane": "rough_query",
+                "response_policy_bucket": "ANSWER_ALLOWED",
+                "prompt_policy_id": "prompt_only_policy_bucket_classifier_schema_v1",
+                "residual_class": "route_ambiguity",
+                "split_role": "holdout_candidate",
+                "leakage_group_id": "docv-source-train",
+                "raw_query_text": "docv-source-train",
+            },
+        ],
+    }
+
+    response = client.post(FT_A_DRY_RUN_INPUT_VALIDATION_ROUTE, json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    validation = body["dry_run_input_manifest_validation"]
+    split = validation["train_holdout_split_validation"]
+    excluded = validation["excluded_manifest_rows"]
+    assert body["accepted_manifest_row_count"] == 2
+    assert body["excluded_manifest_row_count"] == 4
+    assert {row["exclusion_reason"] for row in excluded} == {
+        "allowed_model_input_value_leakage_present",
+    }
+    for row in excluded:
+        assert row["leaky_model_input_fields"] == ["leakage_group_id", "raw_query_text"]
+    assert split["passed"] is False
+    assert split["missing_leakage_group_id_count"] == 2
+    assert split["missing_residual_class_count"] == 2
+    assert "leakage_group_id_missing" in split["blocked_reasons"]
+    assert "residual_class_missing" in split["blocked_reasons"]
+    assert body["dry_run_input_manifest_gate_passed"] is False
+    assert body["fine_tuning_dataset_export_created"] is False
+    assert body["training_job_created"] is False
+    assert body["official_metric_input_rows"] == 0
+    assert body["promotion_evidence"] is False
+    assert "secret oracle" not in response.text
+    assert "pdf-source-identity" not in response.text
+    assert "D:/private" not in response.text
+    assert "row-value-leakage" not in response.text
+    assert "query-value-leakage" not in response.text
+
+
 def test_enabled_diagnostic_ft_a_dry_run_input_validation_rejects_prompt_gold_path_and_extra_fields() -> None:
     service = SourceFirstRagService(readiness_report=v4_6_6_holdout_gap_blocker_report())
     client = TestClient(create_app(settings=enabled_settings(), rag_diagnostic_service=service))

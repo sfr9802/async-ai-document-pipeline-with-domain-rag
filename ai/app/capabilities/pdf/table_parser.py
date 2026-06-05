@@ -11,10 +11,16 @@ from __future__ import annotations
 import hashlib
 import re
 from collections import Counter
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence, TypedDict
+
+try:
+    from langgraph.graph import END, START, StateGraph
+except ImportError:  # pragma: no cover - exercised only in minimal envs
+    END = START = StateGraph = None
 
 
 PARSER_VERSION = "pdf-table-general-v1"
+TABLE_NODE_CONTRACT_SEQUENCE = ("table_candidate", "table_interpretation")
 NUMERIC_RE = re.compile(r"^[△▲-]?\d{1,3}(?:,\d{3})*(?:\.\d+)?%?$|^[△▲-]?\d+(?:\.\d+)?%?$")
 PERIOD_RE = re.compile(r"^\d{4}(?:\.\s*(?:\d{1,2}|[ⅠⅡⅢⅣIVX]+))?$")
 ROW_LABEL_WITH_DIGIT_RE = re.compile(r"^(?=.*\d)[A-Za-z가-힣0-9_.() \-]{1,80}$")
@@ -22,6 +28,47 @@ _MIN_GRID_ROWS = 2
 _MIN_GRID_VALUES = 2
 _MAX_GRID_VALUES = 12
 _MAX_ROW_LABEL_CHARS = 80
+
+
+class PdfTableUnderstandingState(TypedDict, total=False):
+    pdf_blocks: list[Mapping[str, Any]]
+    blocks: list[Mapping[str, Any]]
+    page_no: int
+    page: int
+    physical_page_index: int
+    page_label: str
+    table_candidates: list[dict[str, Any]]
+    table_interpretations: list[dict[str, Any]]
+    trace: list[dict[str, Any]]
+
+
+class TableCandidateNodeInput(TypedDict, total=False):
+    pdf_blocks: list[Mapping[str, Any]]
+    blocks: list[Mapping[str, Any]]
+    page_no: int
+    page: int
+    physical_page_index: int
+    page_label: str
+    trace: list[dict[str, Any]]
+
+
+class TableCandidateNodeOutput(TypedDict, total=False):
+    table_candidates: list[dict[str, Any]]
+    trace: list[dict[str, Any]]
+
+
+class TableInterpretationNodeInput(TypedDict, total=False):
+    table_candidates: list[dict[str, Any]]
+    trace: list[dict[str, Any]]
+
+
+class TableInterpretationNodeOutput(TypedDict, total=False):
+    table_interpretations: list[dict[str, Any]]
+    trace: list[dict[str, Any]]
+
+
+class PdfTableGraphUnavailableError(RuntimeError):
+    """Raised when LangGraph table execution is requested without LangGraph."""
 
 
 def extract_pdf_table_records(
@@ -77,6 +124,90 @@ def looks_like_pdf_table_text(text: str) -> bool:
         }
     ]
     return bool(parse_numeric_grid_tables(blocks))
+
+
+def table_candidate_node(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Extract deterministic table structure candidates from PDF blocks."""
+
+    current = dict(state)
+    candidates = extract_pdf_table_records(
+        list(current.get("pdf_blocks") or current.get("blocks") or []),
+        page_no=int_or_zero(current.get("page_no") or current.get("page")),
+        physical_page_index=int_or_zero(current.get("physical_page_index")),
+        page_label=clean(current.get("page_label")),
+    )
+    current["table_candidates"] = candidates
+    current["trace"] = append_trace(
+        current.get("trace", []),
+        "table_candidate",
+        {
+            "candidate_count": len(candidates),
+            "semantic_claimed": False,
+        },
+    )
+    return current
+
+
+def table_interpretation_node(
+    state: Mapping[str, Any],
+    *,
+    semantic_provider: Any | None = None,
+) -> dict[str, Any]:
+    """Attach optional semantic interpretations without approving evidence."""
+
+    current = dict(state)
+    interpretations: list[dict[str, Any]] = []
+    for candidate in list(current.get("table_candidates") or []):
+        base = {
+            "table_id": clean(candidate.get("table_id")),
+            "semantic_status": "not_adjudicated",
+            "table_semantics_success_claimed": False,
+            "llm_or_mm_provider_used": False,
+            "provider_version": "",
+            "column_semantics": [],
+            "row_semantics": [],
+        }
+        if semantic_provider is not None:
+            base.update(_safe_table_semantic_proposal(semantic_provider, candidate))
+        interpretations.append(base)
+    current["table_interpretations"] = interpretations
+    current["trace"] = append_trace(
+        current.get("trace", []),
+        "table_interpretation",
+        {
+            "interpretation_count": len(interpretations),
+            "semantic_claimed": False,
+        },
+    )
+    return current
+
+
+def build_table_understanding_graph(*, semantic_provider: Any | None = None):
+    """Compile the PDF table candidate/interpretation nodes as a LangGraph."""
+
+    if StateGraph is None:
+        raise PdfTableGraphUnavailableError("langgraph is not installed")
+    graph = StateGraph(PdfTableUnderstandingState)
+    graph.add_node("table_candidate_node", table_candidate_node)
+    graph.add_node(
+        "table_interpretation_node",
+        lambda state: table_interpretation_node(state, semantic_provider=semantic_provider),
+    )
+    graph.add_edge(START, "table_candidate_node")
+    graph.add_edge("table_candidate_node", "table_interpretation_node")
+    graph.add_edge("table_interpretation_node", END)
+    return graph.compile()
+
+
+def run_table_understanding_langgraph(
+    state: Mapping[str, Any],
+    *,
+    semantic_provider: Any | None = None,
+) -> dict[str, Any]:
+    """Run deterministic table candidates and optional semantic proposals via LangGraph."""
+
+    graph = build_table_understanding_graph(semantic_provider=semantic_provider)
+    return dict(graph.invoke(dict(state)))
 
 
 def parse_numeric_grid_tables(blocks: list[Mapping[str, Any]]) -> list[dict[str, Any]]:
@@ -167,6 +298,51 @@ def parse_numeric_grid_tables(blocks: list[Mapping[str, Any]]) -> list[dict[str,
             }
         )
     return tables
+
+
+def _safe_table_semantic_proposal(
+    semantic_provider: Any,
+    candidate: Mapping[str, Any],
+) -> dict[str, Any]:
+    try:
+        proposal = semantic_provider.interpret_table(candidate)
+    except Exception as ex:
+        return {
+            "semantic_status": "provider_error",
+            "llm_or_mm_provider_used": True,
+            "provider_error_type": type(ex).__name__,
+        }
+    if not isinstance(proposal, Mapping):
+        return {
+            "semantic_status": "invalid_provider_output",
+            "llm_or_mm_provider_used": True,
+        }
+    provider_version = clean(proposal.get("provider_version"))
+    column_semantics = proposal.get("column_semantics") or []
+    row_semantics = proposal.get("row_semantics") or []
+    if (
+        not provider_version
+        or not _valid_semantics_list(column_semantics)
+        or not _valid_semantics_list(row_semantics)
+    ):
+        return {
+            "semantic_status": "invalid_provider_output",
+            "llm_or_mm_provider_used": True,
+        }
+    return {
+        "semantic_status": "provider_proposed",
+        "table_semantics_success_claimed": False,
+        "llm_or_mm_provider_used": True,
+        "provider_version": provider_version,
+        "column_semantics": list(column_semantics),
+        "row_semantics": list(row_semantics),
+    }
+
+
+def _valid_semantics_list(value: Any) -> bool:
+    if isinstance(value, (str, bytes, bytearray)) or not isinstance(value, Sequence):
+        return False
+    return all(isinstance(item, Mapping) for item in value)
 
 
 def _numeric_row_groups(tokens: list[Mapping[str, Any]]) -> list[list[dict[str, Any]]]:
@@ -393,6 +569,17 @@ def int_or_none(value: Any) -> int | None:
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def append_trace(
+    trace: Any,
+    node: str,
+    extra: Mapping[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    item: dict[str, Any] = {"node": node}
+    if extra:
+        item.update(dict(extra))
+    return [*(trace or []), item]
 
 
 def clean(value: Any) -> str:

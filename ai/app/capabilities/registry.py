@@ -190,10 +190,10 @@ def build_default_registry(settings: WorkerSettings) -> CapabilityRegistry:
     if settings.rag_query_orchestrator_enabled:
         try:
             rag_query_orchestrator_retriever = None
-            rag_query_orchestrator_backend = "pure_fake_graph"
+            rag_query_orchestrator_backend = "langgraph_fake_graph"
             if rag_registered:
                 rag_query_orchestrator_retriever, _ = _get_shared_retriever_bundle(settings)
-                rag_query_orchestrator_backend = "pure_vector_retriever_poc"
+                rag_query_orchestrator_backend = "langgraph_vector_retriever_poc"
             log.info(
                 "RAG_QUERY_ORCHESTRATOR init: mode=%s backend=%s "
                 "feature_flag=true rag_registered=%s",
