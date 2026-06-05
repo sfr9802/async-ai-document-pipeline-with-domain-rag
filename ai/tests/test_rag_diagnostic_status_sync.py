@@ -277,7 +277,8 @@ def test_progress_doc_does_not_keep_stale_current_profile_test_count():
     verification_section = text.split("## Current Status", 1)[1].split("Artifact policy:", 1)[0]
 
     assert "Current verification:" in verification_section
-    assert "73 passed" in verification_section
+    assert "78 passed" in verification_section
+    assert "73 passed" not in verification_section
     assert "65 passed" not in verification_section
     assert "55 passed" not in verification_section
     assert "50 passed" not in verification_section

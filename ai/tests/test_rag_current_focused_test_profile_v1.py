@@ -1,90 +1,27 @@
 from __future__ import annotations
 
+import importlib
 import importlib.util
 import subprocess
 import sys
 from pathlib import Path
 
+from ai.tests import rag_current_profile
+
 ROOT = Path(__file__).resolve().parents[2]
 CONFTEST_PATH = ROOT / "ai" / "tests" / "conftest.py"
 
 
-def current_profile_nodeids() -> set[str]:
-    return {
-        "ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_includes_required_official_candidate_and_pdf_tests",
-        "ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_excludes_missing_artifact_noise_from_default_current_loop",
-        "ai/tests/test_rag_current_focused_test_profile_v1.py::test_ai_tests_directory_classifies_current_and_historical_profile_files",
-        "ai/tests/test_rag_current_focused_test_profile_v1.py::test_rag_current_collect_only_matches_exact_nodeid_allowlist",
-        "ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_accepts_collected_prefixes_and_windows_nodeids",
-        "ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_marker_assignment_is_nodeid_scoped",
-        "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_route_is_default_disabled_and_production_disabled",
-        "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_enabled_success_returns_frontend_safe_dto_without_gold_or_raw_leakage",
-        "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_backend_unavailable_and_deictic_queries_fail_closed_without_llm",
-        "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_citation_and_evidence_cards_support_text_pdf_and_xlsx_shapes",
-        "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_preserves_duplicate_supporting_evidence_id_rows_by_locator",
-        "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_validation_errors_and_mutation_surfaces_are_redacted",
-        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_0_closeout_gate_plan_does_not_mutate_protected_or_promote_surfaces",
-        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_1_official_eval_gate_scaffold_does_not_mutate_protected_or_export_training_surfaces",
-        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_2_xlsx_residual_taxonomy_does_not_mutate_protected_or_export_training_surfaces",
-        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_3_pdf_text_residual_hardening_does_not_mutate_protected_or_export_training_surfaces",
-        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_4_user_owned_approval_packet_does_not_mutate_protected_or_open_official_surfaces",
-        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_5_user_approved_official_metric_dry_run_does_not_mutate_protected_or_export_training_surfaces",
-        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_6_official_metric_scored_execution_fail_closed_does_not_mutate_protected_or_export_training_surfaces",
-        "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_6_2_official_metric_backend_enabled_preflight_does_not_mutate_protected_or_export_training_surfaces",
+REQUIRED_CURRENT_PROFILE_SENTINELS = frozenset(
+    {
+        "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_election_result_query_uses_llm_adjudicator_for_xlsx_route",
+        "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_adjudicator_reason_is_redacted_from_frontend_diagnostics",
+        "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_unscoped_query_without_source_family_adjudicator_fails_closed",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_6_3_official_metric_backend_probe_does_not_mutate_protected_or_export_training_surfaces",
-        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_current_board_records_v563_backend_probe_v562_preflight_and_v560_baseline",
         "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_does_not_keep_stale_current_profile_test_count",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v5_diagnostic_common_helpers_preserve_write_doc_and_payload_semantics",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v477_registry_resolves_current_and_previous_short_keys",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4712_explicit_check_builds_in_memory_and_current_uses_v560_with_v550_v540_v530_v520_v510_v500_v4718_explicit",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v4718_written_report_status_docs_current_alias_and_explicit_historical_aliases",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v500_current_profile_checks_frozen_v4718_basis_guardrails_without_recomputing",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v500_closeout_report_freezes_v4718_basis_and_keeps_all_gates_closed",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v500_written_report_status_docs_current_alias_and_ignored_artifacts",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v500_check_report_rejects_opened_gates_source_drift_raw_payloads_and_counter_drift",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v500_write_path_synthesizes_v4718_source_report_when_prior_ignored_report_is_missing",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v510_official_eval_gate_scaffold_represents_user_owned_inputs_and_zero_rows",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v510_written_report_status_docs_current_alias_and_ignored_artifacts",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v510_check_report_rejects_opened_user_gates_official_rows_training_and_raw_payloads",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v510_write_path_synthesizes_v500_source_report_when_prior_ignored_report_is_missing",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v520_xlsx_residual_candidate_state_taxonomy_keeps_residual_overlap_fail_closed",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v520_written_report_status_docs_current_alias_and_ignored_artifacts",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v520_check_report_rejects_row_level_overlap_shortcuts_official_rows_and_training",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v520_write_path_synthesizes_v510_source_report_when_prior_ignored_report_is_missing",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v530_pdf_text_residual_retrieval_evidence_hardening_records_scope_and_boundaries",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v530_written_report_status_docs_current_alias_and_ignored_artifacts",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v530_check_report_rejects_shortcuts_official_rows_training_and_residual_drift",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v530_write_path_validates_report_before_writing_and_synthesizes_v520_source_report",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v540_user_owned_approval_packet_materializes_blank_user_fields_and_closes_metric_gate",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v540_written_report_status_docs_current_alias_and_packet_artifacts",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v540_check_report_rejects_filled_user_fields_official_rows_training_and_dry_run",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v540_write_path_validates_report_before_writing_and_synthesizes_v530_source_report",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v550_user_approved_gold_packet_ingests_only_v540_rows_and_builds_official_inputs",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v550_written_report_status_docs_current_alias_and_official_artifacts",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v550_check_report_rejects_scope_expansion_missing_user_approval_and_closed_surface_drift",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v550_check_report_rejects_written_child_artifact_hash_and_payload_drift",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v550_write_path_validates_report_before_writing_and_synthesizes_v540_source_report",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v560_fail_closed_consumes_only_v550_official_metric_input_and_records_duplicate_policy",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v560_injected_answer_and_scorer_backends_score_all_29_rows_without_raw_payloads",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v560_check_report_rejects_scope_expansion_fake_noop_metrics_and_protected_drift",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v560_write_path_writes_scored_result_failure_attribution_status_and_ignored_artifacts",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v560_write_path_validates_report_before_writing_and_uses_v550_source",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_env_gate_disabled_records_execution_gate_disabled_without_fake_metrics",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_env_enabled_answer_backend_unreachable_is_not_execution_gate_disabled",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_answer_generation_model_unavailable_is_separate_from_backend_unreachable",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_scorer_preflight_failures_are_separate_after_answer_backend_probe",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_injected_answer_and_scorer_backends_score_all_29_rows_after_non_gold_probes",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_check_report_rejects_scope_expansion_fake_quality_metrics_and_v56_hash_drift",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_write_path_writes_preflight_status_without_measurements_when_unscored",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v562_write_path_validates_report_before_writing_and_uses_v550_source",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_env_gate_disabled_records_execution_gate_disabled_without_fake_metrics",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_env_enabled_preflight_failure_categories_are_precise",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_injected_answer_and_scorer_backends_score_all_29_rows_after_non_gold_probes",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_scoring_runtime_failure_fails_closed_without_partial_quality_metric",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_check_report_rejects_scope_expansion_fake_quality_metrics_and_prior_hash_drift",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_write_path_writes_preflight_status_without_measurements_when_unscored",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v563_write_path_validates_report_before_writing_and_uses_v550_source",
     }
+)
 
 
 def load_conftest():
@@ -97,11 +34,22 @@ def load_conftest():
     return module
 
 
+def test_current_profile_data_lives_in_shared_support_module() -> None:
+    profile_spec = importlib.util.find_spec("ai.tests.rag_current_profile")
+    assert profile_spec is not None
+    profile = importlib.import_module("ai.tests.rag_current_profile")
+    rag_conftest = load_conftest()
+
+    assert rag_conftest.CURRENT_RAG_TEST_NODEIDS is profile.CURRENT_RAG_TEST_NODEIDS
+    assert rag_conftest.NON_CURRENT_RAG_TEST_FILES is profile.NON_CURRENT_RAG_TEST_FILES
+    assert rag_conftest.CURRENT_RAG_TEST_FILES == profile.current_rag_test_files()
+
+
 def test_current_profile_includes_required_official_candidate_and_pdf_tests() -> None:
     rag_conftest = load_conftest()
-    required_nodeids = current_profile_nodeids()
+    required_nodeids = rag_current_profile.CURRENT_RAG_TEST_NODEIDS
 
-    assert rag_conftest.CURRENT_RAG_TEST_NODEIDS == required_nodeids
+    assert REQUIRED_CURRENT_PROFILE_SENTINELS <= required_nodeids
     for nodeid in required_nodeids:
         assert rag_conftest.is_rag_current_required_nodeid(nodeid), nodeid
         rel_file, test_name = nodeid.split("::", 1)

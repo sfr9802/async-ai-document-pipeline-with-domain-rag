@@ -526,113 +526,95 @@ def build_route_decision(
         source_metadata=source_metadata,
         allowed_routes=allowed_routes,
     )
-    deterministic_routes, deterministic_hints = _deterministic_route_hints(query)
-    llm_routes = _clean_routes(llm_suggested_routes)
-    llm_only = bool(llm_routes and not deterministic_routes)
+    _, deterministic_hints = _deterministic_route_hints(query)
+    del llm_suggested_routes
 
     reason_parts: list[str] = []
-    if deterministic_hints:
-        reason_parts.append("deterministic hints selected source track")
-    if llm_only:
-        reason_parts.append("LLM route suggestion kept inside metadata guard")
     if guard_reasons:
         reason_parts.append("metadata/source-type guard applied")
 
-    candidate_routes = deterministic_routes or llm_routes or score_result["routes"]
-    llm_used = llm_only
     policy_metadata_conflict = "policy_source_metadata_conflict" in guard_reasons
+    llm_used = False
+    llm_payload: dict[str, Any] = {}
+    llm_validation_status = "not_called"
+    llm_output: dict[str, Any] = {}
+    llm_blocked_flags: tuple[str, ...] = ()
+    llm_called = False
+    fallback_routes: tuple[str, ...] = ()
+    evidence_lane = ""
+    ambiguity_reasons: tuple[str, ...] = ()
+
     if not allowed_routes:
         routes = ()
         route = TRACK_POLICY_BLOCKED if policy_metadata_conflict else TRACK_INSUFFICIENT_METADATA
         multi_route = False
         confidence = 0.0
         reason_parts.append("metadata/source-type guard blocked retrieval")
+    elif guard["blocked_flags"]:
+        routes = allowed_routes
+        route = guard["primary_route"]
+        multi_route = False
+        confidence = 0.0
+        reason_parts.append("deterministic hard guard blocked retrieval")
+    elif len(allowed_routes) == 1 and guard_reasons:
+        routes = allowed_routes
+        route = allowed_routes[0]
+        multi_route = False
+        confidence = 0.9
+        reason_parts.append("explicit metadata/source-type guard selected source track")
     else:
-        if candidate_routes:
-            guarded_routes = _intersect_routes(candidate_routes, allowed_routes)
-            if guarded_routes:
-                routes = guarded_routes
-                if deterministic_routes and len(routes) == 1:
-                    confidence = 0.9
-                elif llm_only and len(routes) == 1:
-                    confidence = 0.52
-                elif not deterministic_routes and not llm_routes:
-                    confidence = 0.35
-                else:
-                    confidence = 0.78
-            else:
-                routes = allowed_routes
-                confidence = 0.45
-                reason_parts.append("guard overrode conflicting route signal")
-        else:
-            routes = allowed_routes
-            confidence = 0.35
-            reason_parts.append("no strong source hint; schedule guarded multi-route retrieval")
-
-        routes = _dedupe_routes(routes)
-        multi_route = len(routes) > 1
-        route = TRACK_MULTI_ROUTE if multi_route else routes[0]
-        if guard["blocked_flags"]:
-            route = guard["primary_route"]
-            routes = _dedupe_routes(routes or allowed_routes)
-            multi_route = False
-            confidence = 0.0
-            reason_parts.append("deterministic hard guard blocked retrieval")
-
-    ambiguity_reasons = (
-        ()
-        if route in NON_RETRIEVAL_PRIMARY_ROUTES
-        else _ambiguity_reasons(
+        ambiguity_reasons = _ambiguity_reasons(
             query=query,
-            routes=routes,
+            routes=allowed_routes,
             score_result=score_result,
             source_metadata=source_metadata,
             allowed_routes=allowed_routes,
-        )
-    )
-    llm_payload: dict[str, Any] = {}
-    llm_validation_status = "not_called"
-    llm_output: dict[str, Any] = {}
-    llm_blocked_flags: tuple[str, ...] = ()
-    llm_called = False
-    if route_adjudicator is not None and ambiguity_reasons and not guard["blocked_flags"]:
-        llm_payload = _llm_adjudicator_payload(
-            query=query,
-            routes=routes,
-            allowed_routes=allowed_routes,
-            score_result=score_result,
-            ambiguity_reasons=ambiguity_reasons,
-            policy_guards=guard["policy_flags"],
-            blocked_flags=guard["blocked_flags"],
-        )
-        llm_called = True
-        validation = _call_and_validate_llm_adjudicator(
-            route_adjudicator=route_adjudicator,
-            payload=llm_payload,
-            allowed_routes=allowed_routes,
-        )
-        llm_validation_status = validation["status"]
-        llm_output = validation["output"]
-        llm_blocked_flags = tuple(validation["blocked_flags"])
-        if validation["status"] == "valid":
-            llm_used = True
-            reason_parts.append("validated diagnostic LLM adjudicator narrowed ambiguous route")
-            route = validation["primary_route"]
-            routes = validation["candidate_routes"]
-            confidence = validation["route_confidence"]
-            multi_route = route == TRACK_MULTI_ROUTE
-            if route in NON_RETRIEVAL_PRIMARY_ROUTES:
-                routes = validation["candidate_routes"]
-                confidence = min(confidence, 0.0 if route == TRACK_POLICY_BLOCKED else confidence)
-            fallback_routes = validation["fallback_plan"]
-            evidence_lane = validation["evidence_lane"]
+        ) or ("llm_route_adjudication_required",)
+        if route_adjudicator is None:
+            routes = ()
+            route = TRACK_INSUFFICIENT_METADATA
+            multi_route = False
+            confidence = 0.0
+            llm_validation_status = "required"
+            llm_blocked_flags = ("llm_route_adjudicator_required",)
+            reason_parts.append("validated LLM route adjudicator required")
         else:
-            reason_parts.append("invalid LLM adjudicator output ignored")
-            fallback_routes = ()
-            evidence_lane = ""
-    else:
-        fallback_routes = ()
-        evidence_lane = ""
+            llm_payload = _llm_adjudicator_payload(
+                query=query,
+                routes=allowed_routes,
+                allowed_routes=allowed_routes,
+                score_result=score_result,
+                ambiguity_reasons=ambiguity_reasons,
+                policy_guards=guard["policy_flags"],
+                blocked_flags=guard["blocked_flags"],
+            )
+            llm_called = True
+            validation = _call_and_validate_llm_adjudicator(
+                route_adjudicator=route_adjudicator,
+                payload=llm_payload,
+                allowed_routes=allowed_routes,
+            )
+            llm_validation_status = validation["status"]
+            llm_output = validation["output"]
+            llm_blocked_flags = tuple(validation["blocked_flags"])
+            if validation["status"] == "valid":
+                llm_used = True
+                reason_parts.append("validated diagnostic LLM adjudicator selected source track")
+                route = validation["primary_route"]
+                routes = validation["candidate_routes"]
+                confidence = validation["route_confidence"]
+                multi_route = route == TRACK_MULTI_ROUTE
+                if route in NON_RETRIEVAL_PRIMARY_ROUTES:
+                    routes = validation["candidate_routes"]
+                    confidence = min(confidence, 0.0 if route == TRACK_POLICY_BLOCKED else confidence)
+                fallback_routes = validation["fallback_plan"]
+                evidence_lane = validation["evidence_lane"]
+            else:
+                routes = ()
+                route = TRACK_INSUFFICIENT_METADATA
+                multi_route = False
+                confidence = 0.0
+                reason_parts.append("invalid LLM adjudicator output failed closed")
 
     if not llm_used:
         evidence_lane = _schema_evidence_lane(
@@ -1215,14 +1197,6 @@ def _clean_routes(routes: Iterable[str] | None) -> tuple[str, ...]:
     if not routes:
         return ()
     return _dedupe_routes(route for route in routes if route in ALL_TRACK_ROUTES)
-
-
-def _intersect_routes(
-    routes: Iterable[str],
-    allowed_routes: Iterable[str],
-) -> tuple[str, ...]:
-    allowed = set(allowed_routes)
-    return _dedupe_routes(route for route in routes if route in allowed)
 
 
 def _dedupe_routes(routes: Iterable[str]) -> tuple[str, ...]:

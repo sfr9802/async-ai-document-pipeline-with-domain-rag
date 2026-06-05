@@ -55,6 +55,32 @@ class LlmRecorder:
         return f"preview answer: {payload['rendered_value']}"
 
 
+class SourceFamilyAdjudicator:
+    def __init__(
+        self,
+        source_family: str,
+        *,
+        confidence: float = 0.93,
+        candidate_source_atom_ids: list[str] | None = None,
+        reason: str = "LLM adjudicator selected the source family from candidate summaries.",
+    ) -> None:
+        self.source_family = source_family
+        self.confidence = confidence
+        self.candidate_source_atom_ids = candidate_source_atom_ids or []
+        self.reason = reason
+        self.calls: list[dict[str, object]] = []
+
+    def adjudicate(self, payload: dict[str, object]) -> dict[str, object]:
+        self.calls.append(payload)
+        return {
+            "source_family": self.source_family,
+            "candidate_source_atom_ids": list(self.candidate_source_atom_ids),
+            "confidence": self.confidence,
+            "diagnostic_only": True,
+            "reason": self.reason,
+        }
+
+
 def enabled_settings(**overrides: object) -> WorkerSettings:
     return WorkerSettings(rag_product_preview_route_enabled=True, **overrides)
 
@@ -211,6 +237,25 @@ def test_product_rag_preview_route_is_default_disabled_and_production_disabled()
     assert production.json()["detail"] == "product preview RAG route disabled"
 
 
+def test_product_rag_preview_election_query_stays_default_off_and_production_disabled() -> None:
+    payload = {
+        "query": "구시군의 장선거에서 더불어민주당이 이긴 지역구 수 알려줘",
+        "locale": "ko-KR",
+    }
+
+    disabled_client = TestClient(create_app(settings=WorkerSettings()))
+    disabled = disabled_client.post(PRODUCT_PREVIEW_ROUTE_PATH, json=payload)
+    assert disabled.status_code == 404
+    assert disabled.json()["detail"] == "product preview RAG route disabled"
+
+    production_client = TestClient(
+        create_app(settings=enabled_settings(rag_query_orchestrator_mode="production"))
+    )
+    production = production_client.post(PRODUCT_PREVIEW_ROUTE_PATH, json=payload)
+    assert production.status_code == 404
+    assert production.json()["detail"] == "product preview RAG route disabled"
+
+
 def test_product_rag_preview_enabled_success_returns_frontend_safe_dto_without_gold_or_raw_leakage() -> None:
     recorder = LlmRecorder()
     service = SourceFirstRagService(
@@ -263,6 +308,163 @@ def test_product_rag_preview_enabled_success_returns_frontend_safe_dto_without_g
     assert body["evidence_cards"][0]["formula_text_visible_to_user"] is False
     assert body["evidence_cards"][0]["formula_evaluation_at_query_time"] is False
     assert len(recorder.calls) == 1
+    assert_no_forbidden_payload_leak(response.text)
+
+
+def test_product_rag_preview_election_result_query_uses_llm_adjudicator_for_xlsx_route() -> None:
+    recorder = LlmRecorder()
+    adjudicator = SourceFamilyAdjudicator("XLSX", candidate_source_atom_ids=["xlsx-election-winner-count"])
+    election_atom = xlsx_atom(
+        "xlsx-election-winner-count",
+        workbook="nec_0020260603_VCCP09_4_구시군의_장선거_nationwide_results.xlsx",
+        sheet="national_summary",
+        cell="B2",
+        display_value="더불어민주당 116개",
+    )
+    election_atom["normalized_text_or_value_snapshot"] = (
+        "제9회 전국동시지방선거 구시군의 장선거 정당별 당선 지역구 수 "
+        "더불어민주당 116개"
+    )
+    unrelated_xlsx_atom = xlsx_atom(
+        "xlsx-a-unrelated-summary",
+        workbook="operations.xlsx",
+        sheet="summary",
+        cell="A1",
+        display_value="무관한 표",
+    )
+    unrelated_xlsx_atom["normalized_text_or_value_snapshot"] = "월간 운영 지표 요약"
+    overlapping_text_atom = text_atom("text-election-distractor")
+    overlapping_text_atom["normalized_text_or_value_snapshot"] = (
+        "구시군의 장선거에서 더불어민주당이 이긴 지역구 수를 묻는 일반 안내 문서. "
+        "정당별 당선 지역구 수 원자료는 별도 표를 보라."
+    )
+    service = SourceFirstRagService(
+        source_atoms=[
+            overlapping_text_atom,
+            unrelated_xlsx_atom,
+            pdf_atom("pdf-election-note"),
+            election_atom,
+        ],
+        llm_invoker=recorder,
+        source_family_adjudicator=adjudicator,
+        index_available=True,
+        source_atom_store_available=True,
+    )
+
+    response = post_preview(
+        service,
+        {
+            "query": "구시군의 장선거에서 더불어민주당이 이긴 지역구 수 알려줘",
+            "locale": "ko-KR",
+            "session_id": "session-election-xlsx",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "answered"
+    assert body["answer"] == "preview answer: 더불어민주당 116개"
+    assert body["route"] == PRODUCT_PREVIEW_ROUTE_PATH
+    assert body["non_production_preview"] is True
+    assert body["production_routing"] is False
+    assert body["official_metric"] is False
+    assert body["promotion_evidence"] is False
+    assert body["product_success_evidence_allowed"] is False
+    assert body["live_db_index_cache_readiness"] is False
+    assert body["diagnostics"]["official_metric_input_rows"] == 0
+    assert body["diagnostics"]["protected_namespaces_touched"] == []
+    assert body["diagnostics"]["source_family_adjudicator_called"] is True
+    assert body["diagnostics"]["source_family_adjudicator_status"] == "valid"
+    assert body["diagnostics"]["source_family_adjudicator_output"]["candidate_source_atom_count"] == 1
+    assert "candidate_source_atom_ids" not in body["diagnostics"]["source_family_adjudicator_output"]
+    assert body["citations"][0]["source_family"] == "XLSX"
+    assert all(citation["source_family"] == "XLSX" for citation in body["citations"])
+    assert body["evidence_cards"][0]["source_family"] == "XLSX"
+    assert all(card["source_family"] == "XLSX" for card in body["evidence_cards"])
+    assert body["evidence_cards"][0]["source_atom_id"] == "xlsx-election-winner-count"
+    assert recorder.calls[0]["selected_source_atom_ids"] == ["xlsx-election-winner-count"]
+    assert adjudicator.calls
+    assert adjudicator.calls[0]["safe_query_text"] == "구시군의 장선거에서 더불어민주당이 이긴 지역구 수 알려줘"
+    assert "TEXT" in adjudicator.calls[0]["candidate_source_families"]
+    assert "XLSX" in adjudicator.calls[0]["candidate_source_families"]
+    adjudicator_payload = json.dumps(adjudicator.calls[0], ensure_ascii=False)
+    assert "normalized_text_or_value_snapshot" not in adjudicator_payload
+    assert "raw_locator" not in adjudicator_payload
+    assert "canonical_citation_payload" not in adjudicator_payload
+    assert "xlsx_display_contract" not in adjudicator_payload
+    assert "xlsx_display_metadata" not in adjudicator_payload
+    assert "source_identity" not in adjudicator_payload
+    assert "workbook" not in adjudicator_payload
+    assert "더불어민주당 116개" not in adjudicator_payload
+    assert_no_forbidden_payload_leak(response.text)
+
+
+def test_product_rag_preview_adjudicator_reason_is_redacted_from_frontend_diagnostics() -> None:
+    recorder = LlmRecorder()
+    adjudicator = SourceFamilyAdjudicator(
+        "XLSX",
+        candidate_source_atom_ids=["xlsx-a1"],
+        reason=(
+            "SecretWorkbook.xlsx raw prompt raw response expected answer gold locator "
+            "supporting_evidence_id source_identity"
+        ),
+    )
+    service = SourceFirstRagService(
+        source_atoms=[xlsx_atom("xlsx-a1")],
+        llm_invoker=recorder,
+        source_family_adjudicator=adjudicator,
+        index_available=True,
+        source_atom_store_available=True,
+    )
+
+    response = post_preview(
+        service,
+        {
+            "query": "어느 표 값을 봐야 하나요?",
+            "locale": "ko-KR",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "answered"
+    assert body["diagnostics"]["source_family_adjudicator_called"] is True
+    assert body["diagnostics"]["source_family_adjudicator_status"] == "valid"
+    assert body["diagnostics"]["source_family_adjudicator_output"]["reason"] == "__redacted__"
+    assert_no_forbidden_payload_leak(response.text)
+
+
+def test_product_rag_preview_unscoped_query_without_source_family_adjudicator_fails_closed() -> None:
+    recorder = LlmRecorder()
+    service = SourceFirstRagService(
+        source_atoms=[
+            text_atom("text-election-distractor"),
+            xlsx_atom("xlsx-election-winner-count", display_value="더불어민주당 116개"),
+        ],
+        llm_invoker=recorder,
+        index_available=True,
+        source_atom_store_available=True,
+    )
+
+    response = post_preview(
+        service,
+        {
+            "query": "구시군의 장선거에서 더불어민주당이 이긴 지역구 수 알려줘",
+            "locale": "ko-KR",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "insufficient_context"
+    assert body["answer"] == ""
+    assert body["citations"] == []
+    assert body["evidence_cards"] == []
+    assert body["diagnostics"]["llm_invoked"] is False
+    assert body["diagnostics"]["source_family_adjudicator_called"] is False
+    assert body["diagnostics"]["source_family_adjudicator_status"] == "required"
+    assert body["diagnostics"]["fail_closed_reason"] == "SOURCE_FAMILY_ADJUDICATOR_REQUIRED"
+    assert recorder.calls == []
     assert_no_forbidden_payload_leak(response.text)
 
 

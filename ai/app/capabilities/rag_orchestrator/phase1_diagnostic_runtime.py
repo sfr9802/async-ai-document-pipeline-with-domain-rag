@@ -12,7 +12,7 @@ import json
 import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Callable, Literal, Mapping, Sequence
+from typing import Any, Callable, Literal, Mapping, Protocol, Sequence
 
 from pydantic import BaseModel, Field
 
@@ -48,6 +48,24 @@ DIAGNOSTIC_ROUTE_PATH = "/internal/rag/diagnostic/query"
 FEATURE_FLAG_NAME = "RAG_FASTAPI_DIAGNOSTIC_ROUTE_ENABLED"
 SETTINGS_FEATURE_FIELD = "rag_fastapi_diagnostic_route_enabled"
 DIAGNOSTIC_NAMESPACE = "rag-phase1-fastapi-diagnostic-nonprod"
+SOURCE_FAMILY_ADJUDICATOR_SCHEMA_VERSION = "rag_source_family_adjudicator_v1"
+SOURCE_FAMILY_ADJUDICATOR_MIN_CONFIDENCE = 0.55
+SUPPORTED_SOURCE_FAMILIES = frozenset({"PDF", "XLSX", "TEXT"})
+SOURCE_FAMILY_ADJUDICATOR_REASON_REDACTION_TOKENS = (
+    "expected answer",
+    "expected_answer",
+    "gold label",
+    "gold locator",
+    "gold_",
+    "raw prompt",
+    "raw response",
+    "raw_",
+    "source_identity",
+    "supporting_evidence",
+    "target locator",
+    "target_",
+    "workbook",
+)
 READINESS_ROUTE_PATH = "/internal/rag/diagnostic/readiness"
 HOLDOUT_CANDIDATE_VALIDATION_ROUTE_PATH = "/internal/rag/diagnostic/holdout-candidates/validate"
 FT_A_DRY_RUN_INPUT_VALIDATION_ROUTE_PATH = "/internal/rag/diagnostic/ft-a/dry-run-input/validate"
@@ -194,6 +212,17 @@ def _as_sequence(value: Any) -> tuple[str, ...]:
     return ()
 
 
+class SourceFamilyAdjudicator(Protocol):
+    """Validated pre-runtime source-family adjudicator.
+
+    The interface is intentionally small so the same step can move into a
+    LangGraph node without changing the runtime request contract.
+    """
+
+    def adjudicate(self, payload: Mapping[str, Any]) -> Mapping[str, Any] | str:
+        ...
+
+
 def _public_hash(value: Any) -> str:
     cleaned = _clean(value)
     return _sha256(cleaned) if cleaned else ""
@@ -218,6 +247,41 @@ def _sanitize_diagnostic_http_payload(value: Any) -> Any:
     if isinstance(value, str) and LOCAL_PATH_RE.search(value.replace("\\", "/")):
         return "__local_path_redacted__"
     return value
+
+
+def _safe_query_text(query: str, *, max_chars: int = 160) -> str:
+    text = " ".join((query or "").split())
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 3] + "..."
+
+
+def _safe_reason(value: Any, *, max_chars: int = 160) -> str:
+    text = " ".join(str(value or "").split())
+    if _reason_needs_redaction(text):
+        return "__redacted__"
+    text = text.replace("hidden", "[redacted]").replace("Hidden", "[redacted]")
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 3] + "..."
+
+
+def _reason_needs_redaction(text: str) -> bool:
+    normalized = text.replace("\\", "/")
+    lowered = normalized.lower()
+    if "://" not in normalized and (
+        ":/" in normalized
+        or normalized.startswith(("/data/", "/home/", "/mnt/", "/private/", "/tmp/", "/Users/"))
+    ):
+        return True
+    return any(token in lowered for token in SOURCE_FAMILY_ADJUDICATOR_REASON_REDACTION_TOKENS)
+
+
+def _safe_float(value: Any) -> float:
+    try:
+        return round(float(value), 4)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _readiness_report_contract_violations(report: Mapping[str, Any]) -> list[str]:
@@ -572,6 +636,10 @@ class RagDiagnosticQueryResponse(BaseModel):
     product_success_evidence_allowed: bool = False
     live_db_index_cache_readiness: bool = False
     llm_invoked: bool = False
+    source_family_adjudicator_called: bool = False
+    source_family_adjudicator_status: str = "not_required"
+    source_family_adjudicator_output: dict[str, Any] = Field(default_factory=dict)
+    resolved_source_family: str = ""
     vector_payload_used_as_evidence_truth: bool = False
     formula_text_visible_to_user: bool = False
     formula_evaluation_at_query_time: bool = False
@@ -979,6 +1047,172 @@ def build_diagnostic_xlsx_source_atom(
     }
 
 
+def _source_family_for_request(
+    request: RagDiagnosticQueryRequest,
+    *,
+    source_atoms: Mapping[str, Mapping[str, Any]],
+    adjudicator: SourceFamilyAdjudicator | None,
+) -> dict[str, Any]:
+    active_context = _as_mapping(request.active_context)
+    explicit_family = _clean(request.source_family) or _clean(active_context.get("source_family"))
+    explicit_family = explicit_family.upper()
+    if explicit_family:
+        if explicit_family not in SUPPORTED_SOURCE_FAMILIES:
+            return {
+                "status": "invalid_explicit",
+                "called": False,
+                "source_family": "",
+                "candidate_source_atom_ids": (),
+                "output": {"source_family": explicit_family},
+                "fail_closed_reason": "UNSUPPORTED_SOURCE_FAMILY",
+            }
+        return {
+            "status": "not_required",
+            "called": False,
+            "source_family": explicit_family,
+            "candidate_source_atom_ids": tuple(source_atoms),
+            "output": {},
+            "fail_closed_reason": "",
+        }
+
+    if adjudicator is None:
+        return {
+            "status": "required",
+            "called": False,
+            "source_family": "",
+            "candidate_source_atom_ids": (),
+            "output": {},
+            "fail_closed_reason": "SOURCE_FAMILY_ADJUDICATOR_REQUIRED",
+        }
+
+    payload = _source_family_adjudicator_payload(request.query, source_atoms)
+    try:
+        raw = adjudicator.adjudicate(payload)
+    except Exception as ex:
+        return {
+            "status": "invalid",
+            "called": True,
+            "source_family": "",
+            "candidate_source_atom_ids": (),
+            "output": {"error": "source_family_adjudicator_error", "type": type(ex).__name__},
+            "fail_closed_reason": "SOURCE_FAMILY_ADJUDICATOR_INVALID",
+        }
+
+    parsed, parse_error = _parse_source_family_adjudication(raw)
+    if parse_error:
+        return {
+            "status": "invalid",
+            "called": True,
+            "source_family": "",
+            "candidate_source_atom_ids": (),
+            "output": {"error": parse_error},
+            "fail_closed_reason": "SOURCE_FAMILY_ADJUDICATOR_INVALID",
+        }
+
+    validation = _validate_source_family_adjudication(parsed, source_atoms=source_atoms)
+    validation["called"] = True
+    return validation
+
+
+def _source_family_adjudicator_payload(
+    query: str,
+    source_atoms: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    candidate_atoms = []
+    for source_atom_id, atom in sorted(source_atoms.items()):
+        family = _clean(atom.get("source_family")).upper()
+        if family not in SUPPORTED_SOURCE_FAMILIES:
+            continue
+        candidate_atoms.append(
+            {
+                "source_atom_id": source_atom_id,
+                "source_family": family,
+            }
+        )
+    return {
+        "schema_version": SOURCE_FAMILY_ADJUDICATOR_SCHEMA_VERSION,
+        "diagnostic_only": True,
+        "safe_query_text": _safe_query_text(query),
+        "candidate_source_families": sorted({atom["source_family"] for atom in candidate_atoms}),
+        "candidate_source_atoms": candidate_atoms,
+        "policy": {
+            "may_choose_source_family": sorted(SUPPORTED_SOURCE_FAMILIES),
+            "may_choose_candidate_source_atom_ids": True,
+            "may_use_gold_expected_or_supporting_evidence": False,
+            "may_mutate_denominator": False,
+            "may_claim_official_metric_or_promotion": False,
+        },
+    }
+
+
+def _parse_source_family_adjudication(raw: Mapping[str, Any] | str) -> tuple[dict[str, Any], str | None]:
+    if isinstance(raw, Mapping):
+        return dict(raw), None
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            return {}, "invalid_source_family_adjudicator_json"
+        if isinstance(parsed, Mapping):
+            return dict(parsed), None
+    return {}, "invalid_source_family_adjudicator_json"
+
+
+def _validate_source_family_adjudication(
+    data: Mapping[str, Any],
+    *,
+    source_atoms: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    family = _clean(data.get("source_family")).upper()
+    confidence = _safe_float(data.get("confidence"))
+    candidate_ids = tuple(_as_sequence(data.get("candidate_source_atom_ids")))
+    errors: list[str] = []
+    if family not in SUPPORTED_SOURCE_FAMILIES:
+        errors.append("source_family_invalid")
+    if data.get("diagnostic_only") is not True:
+        errors.append("diagnostic_only_must_be_true")
+    if confidence < SOURCE_FAMILY_ADJUDICATOR_MIN_CONFIDENCE:
+        errors.append("source_family_confidence_too_low")
+    family_atom_ids = tuple(
+        source_atom_id
+        for source_atom_id, atom in source_atoms.items()
+        if _clean(atom.get("source_family")).upper() == family
+    )
+    if family and not family_atom_ids:
+        errors.append("source_family_has_no_candidates")
+    if candidate_ids:
+        for source_atom_id in candidate_ids:
+            atom = _as_mapping(source_atoms.get(source_atom_id))
+            if not atom:
+                errors.append("candidate_source_atom_id_unknown")
+            elif _clean(atom.get("source_family")).upper() != family:
+                errors.append("candidate_source_atom_family_mismatch")
+    selected_ids = candidate_ids or family_atom_ids
+    output = {
+        "source_family": family,
+        "candidate_source_atom_count": len(selected_ids),
+        "confidence": confidence,
+        "diagnostic_only": data.get("diagnostic_only"),
+        "reason": _safe_reason(data.get("reason")),
+    }
+    if errors:
+        output["errors"] = sorted(set(errors))
+        return {
+            "status": "invalid",
+            "source_family": "",
+            "candidate_source_atom_ids": (),
+            "output": output,
+            "fail_closed_reason": "SOURCE_FAMILY_ADJUDICATOR_INVALID",
+        }
+    return {
+        "status": "valid",
+        "source_family": family,
+        "candidate_source_atom_ids": selected_ids,
+        "output": output,
+        "fail_closed_reason": "",
+    }
+
+
 class SourceFirstRagService:
     """Diagnostic-only service wrapper around the existing AgentRuntime."""
 
@@ -987,6 +1221,7 @@ class SourceFirstRagService:
         *,
         source_atoms: Sequence[Mapping[str, Any]] = (),
         llm_invoker: Callable[[dict[str, object]], str] | None = None,
+        source_family_adjudicator: SourceFamilyAdjudicator | None = None,
         index_available: bool = False,
         source_atom_store_available: bool = True,
         namespace: str = DIAGNOSTIC_NAMESPACE,
@@ -999,6 +1234,7 @@ class SourceFirstRagService:
             for atom_id, atom in self.source_atoms.items()
         }
         self.llm_invoker = llm_invoker
+        self.source_family_adjudicator = source_family_adjudicator
         self.namespace = namespace
         self.readiness_report = dict(readiness_report) if readiness_report is not None else None
         self.readiness_report_path = readiness_report_path or DEFAULT_V4_READINESS_REPORT
@@ -1369,14 +1605,29 @@ class SourceFirstRagService:
                 fail_closed_reason="UNSUPPORTED_RANGE_TOO_LARGE",
                 xlsx_range_rendering_mode="UNSUPPORTED_RANGE_TOO_LARGE",
             )
+        family_resolution = _source_family_for_request(
+            request,
+            source_atoms=self.source_atoms,
+            adjudicator=self.source_family_adjudicator,
+        )
+        if not _clean(family_resolution.get("source_family")):
+            return self._fail_closed_response(
+                request_id=request_id,
+                response_policy_bucket="CONTEXT_REQUIRED",
+                fail_closed_reason=_clean(family_resolution.get("fail_closed_reason")) or "SOURCE_FAMILY_ADJUDICATOR_INVALID",
+                xlsx_range_rendering_mode=preflight_mode,
+                source_family_adjudicator_called=bool(family_resolution.get("called")),
+                source_family_adjudicator_status=_clean(family_resolution.get("status")) or "invalid",
+                source_family_adjudicator_output=_as_mapping(family_resolution.get("output")),
+            )
 
         runtime_request = AgentRuntimeRequest(
             run_id=PHASE1_V3_22_RUN_ID,
             query_id=request_id,
             query_text=_query_text_with_request_locators(request),
-            source_family=_clean(request.source_family) or _infer_source_family(self.source_atoms.values()),
+            source_family=_clean(family_resolution.get("source_family")),
             source_registry=self.source_atoms,
-            candidate_source_atom_ids=tuple(self.source_atoms),
+            candidate_source_atom_ids=tuple(family_resolution.get("candidate_source_atom_ids") or self.source_atoms),
             request_context=self._request_context(request),
             internal_replay_adapter=True,
         )
@@ -1416,6 +1667,10 @@ class SourceFirstRagService:
             warnings=_response_warnings(result),
             request_id=request_id,
             llm_invoked=llm_invoked,
+            source_family_adjudicator_called=bool(family_resolution.get("called")),
+            source_family_adjudicator_status=_clean(family_resolution.get("status")) or "not_required",
+            source_family_adjudicator_output=dict(_as_mapping(family_resolution.get("output"))),
+            resolved_source_family=_clean(family_resolution.get("source_family")),
             vector_payload_used_as_evidence_truth=False,
             formula_text_visible_to_user=False,
             formula_evaluation_at_query_time=False,
@@ -1443,6 +1698,9 @@ class SourceFirstRagService:
         response_policy_bucket: str,
         fail_closed_reason: str,
         xlsx_range_rendering_mode: str,
+        source_family_adjudicator_called: bool = False,
+        source_family_adjudicator_status: str = "not_required",
+        source_family_adjudicator_output: Mapping[str, Any] | None = None,
     ) -> RagDiagnosticQueryResponse:
         return RagDiagnosticQueryResponse(
             answer_allowed_by_policy=False,
@@ -1454,6 +1712,9 @@ class SourceFirstRagService:
             warnings=["diagnostic route failed closed before LLM invocation"],
             request_id=request_id,
             llm_invoked=False,
+            source_family_adjudicator_called=source_family_adjudicator_called,
+            source_family_adjudicator_status=source_family_adjudicator_status,
+            source_family_adjudicator_output=dict(source_family_adjudicator_output or {}),
         )
 
 
@@ -1525,14 +1786,6 @@ def _query_text_with_request_locators(request: RagDiagnosticQueryRequest) -> str
 def _first_query_range(query: str) -> str:
     match = re.search(r"\b([A-Z]{1,3}[1-9][0-9]*:[A-Z]{1,3}[1-9][0-9]*)\b", _clean(query).upper())
     return match.group(1) if match else ""
-
-
-def _infer_source_family(source_atoms: Sequence[Mapping[str, Any]]) -> str:
-    for atom in source_atoms:
-        family = _clean(atom.get("source_family")).upper()
-        if family:
-            return family
-    return "XLSX"
 
 
 def _citation_payload(atom: Mapping[str, Any]) -> dict[str, Any]:

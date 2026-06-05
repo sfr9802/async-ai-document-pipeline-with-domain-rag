@@ -215,7 +215,8 @@ class InMemorySearchIndexAdapter:
                 continue
             if not view_source_atom_ids:
                 continue
-            views.append({"search_view_id": _clean(view.get("search_view_id")) or view_id, **dict(view)})
+            rendered_view = {"search_view_id": _clean(view.get("search_view_id")) or view_id, **dict(view)}
+            views.append(rendered_view)
             source_atom_ids.extend(view_source_atom_ids)
             if len(views) >= self.max_candidates:
                 break

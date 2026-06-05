@@ -329,7 +329,7 @@ Current run board:
 - promotion/product-success/training/fine-tuning/FT-A/live DB-index-cache readiness and production routing remain closed; protected_namespaces_touched=[].
 
 Current verification: after v5_6_3 backend probe/scored-execution lane,
-`pytest ai/tests --rag-current -q` passed with 73 passed, 0 failed, 0 skipped, 1 warning, covering the explicit v5_6_3 checks plus the immutable v5_6 baseline. Generated report/status/official-metric artifacts remain ignored.
+`pytest ai/tests --rag-current -q` passed with 78 passed, 0 failed, 0 skipped, 1 warning, covering the explicit v5_6_3 checks plus the immutable v5_6 baseline. Generated report/status/official-metric artifacts remain ignored.
 
 Artifact policy:
 - `ai/eval/reports/rag-ingestion/status.jsonl` remains local/ignored status ledger.

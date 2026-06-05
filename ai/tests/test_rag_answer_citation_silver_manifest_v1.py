@@ -3964,6 +3964,121 @@ def test_rag_query_orchestrator_conflicting_policy_metadata_does_not_call_retrie
     assert state["route_diagnostics"][0]["official_denominator_registry_changed"] is False
 
 
+def test_rag_query_orchestrator_unscoped_query_without_llm_adjudicator_fails_closed() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.graph import (
+        TRACK_INSUFFICIENT_METADATA,
+        build_route_decision,
+    )
+
+    decision = build_route_decision(
+        query="구시군의 장선거에서 정당별로 이긴 지역구 수를 알려줘",
+    )
+
+    assert decision.route == TRACK_INSUFFICIENT_METADATA
+    assert decision.routes == ()
+    assert decision.llm_adjudicator_called is False
+    assert decision.llm_validation_status == "required"
+    assert "llm_route_adjudicator_required" in decision.blocked_flags
+    assert "structured_table_result_keyword" not in decision.deterministic_hints
+
+
+def test_rag_query_orchestrator_routes_election_result_aggregation_with_llm_adjudicator() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.graph import (
+        TRACK_XLSX_BUSINESS_STRUCTURED,
+        build_route_decision,
+    )
+
+    class FakeRouteAdjudicator:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        def adjudicate(self, payload: dict[str, Any]) -> dict[str, Any]:
+            self.calls.append(payload)
+            return {
+                "primary_route": TRACK_XLSX_BUSINESS_STRUCTURED,
+                "candidate_routes": [TRACK_XLSX_BUSINESS_STRUCTURED],
+                "route_confidence": 0.94,
+                "intent": "xlsx_aggregation",
+                "evidence_lane": "xlsx_structured_evidence",
+                "requires_multi_route": False,
+                "fallback_plan": [],
+                "policy_flags": [],
+                "blocked_flags": [],
+                "diagnostic_only": True,
+                "reason": "The user asks for a structured election-result aggregation.",
+            }
+
+    adjudicator = FakeRouteAdjudicator()
+    decision = build_route_decision(
+        query="구시군의 장선거에서 정당별로 이긴 지역구 수를 알려줘",
+        route_adjudicator=adjudicator,
+    )
+
+    assert decision.route == TRACK_XLSX_BUSINESS_STRUCTURED
+    assert decision.routes == (TRACK_XLSX_BUSINESS_STRUCTURED,)
+    assert decision.llm_adjudicator_called is True
+    assert decision.llm_decision_used is True
+    assert decision.llm_validation_status == "valid"
+    assert "structured_table_result_keyword" not in decision.deterministic_hints
+    assert decision.evidence_lane == "xlsx_structured_evidence"
+    assert adjudicator.calls
+    assert adjudicator.calls[0]["candidate_routes"] == [
+        "text_namuwiki_animation",
+        "xlsx_business_structured",
+        "pdf_business_ocr_mm",
+    ]
+
+
+def test_rag_query_orchestrator_election_result_query_runs_existing_xlsx_tool_with_guardrails() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.graph import run_query_orchestrator_pure
+
+    class FakeRouteAdjudicator:
+        def adjudicate(self, payload: dict[str, Any]) -> dict[str, Any]:
+            return {
+                "primary_route": "xlsx_business_structured",
+                "candidate_routes": ["xlsx_business_structured"],
+                "route_confidence": 0.92,
+                "intent": "xlsx_aggregation",
+                "evidence_lane": "xlsx_structured_evidence",
+                "requires_multi_route": False,
+                "fallback_plan": [],
+                "policy_flags": [],
+                "blocked_flags": [],
+                "diagnostic_only": True,
+                "reason": "Structured election-result aggregation should use XLSX evidence.",
+            }
+
+    state = run_query_orchestrator_pure(
+        query="구시군의 장선거에서 정당별로 이긴 지역구 수를 알려줘",
+        policy=QueryPolicy(
+            request_id="req-election-xlsx-route",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["TEXT", "SPREADSHEET", "PDF"],
+            allowed_parser_versions=["xlsx-extract-v2-hidden-safe"],
+            top_k=3,
+        ),
+        route_adjudicator=FakeRouteAdjudicator(),
+    )
+
+    assert state["route_decision"]["route"] == "xlsx_business_structured"
+    assert state["route_decision"]["routes"] == ["xlsx_business_structured"]
+    assert state["route_decision"]["llm_adjudicator_called"] is True
+    assert state["route_decision"]["llm_decision_used"] is True
+    assert state["selected_tools"] == ["xlsx"]
+    assert state["fallback_routes_triggered"] == []
+    assert state["fallback_attempts"] == []
+    assert state["route_diagnostics"][0]["primary_route"] == "xlsx_business_structured"
+    assert state["route_diagnostics"][0]["production_vector_written"] is False
+    assert state["route_diagnostics"][0]["official_denominator_registry_changed"] is False
+
+
 def test_rag_query_orchestrator_route_tools_does_not_expand_empty_routes_to_all_tools() -> None:
     sys.path.insert(0, str(ROOT / "ai"))
 

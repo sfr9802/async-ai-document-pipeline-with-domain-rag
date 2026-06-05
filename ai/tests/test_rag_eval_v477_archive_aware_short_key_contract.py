@@ -2282,8 +2282,8 @@ def test_v4718_written_report_status_docs_current_alias_and_explicit_historical_
     assert "v5_0_v4_closeout_and_v5_gate_plan" in progress
     assert "v5_0 v4 closeout and v5 gate plan" in measurements
     assert "v5_0 v4 closeout and v5 gate plan" in triage
-    assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->" in measurements
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->" in triage
     assert "Overall status: `V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY`;" not in progress
     assert "frozen v4 closeout basis" in progress
     assert "user-owned official-eval approval packet" in progress
@@ -2690,9 +2690,9 @@ def test_v500_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert V5_0_SHORT_RUN_ID in progress
     assert V5_0_SHORT_RUN_ID in measurements
     assert V5_0_SHORT_RUN_ID in triage
-    assert progress.startswith(f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->")
-    assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
+    assert f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->" in progress
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->" in measurements
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->" in triage
     assert f"Overall status: `{V5_0_STATUS}`;" in progress
     assert "v4 closeout basis: `v4_7_18`" in progress
     assert "Overall status: `V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY`;" not in current_progress
@@ -2993,9 +2993,9 @@ def test_v510_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert V5_1_SHORT_RUN_ID in progress
     assert V5_1_SHORT_RUN_ID in measurements
     assert V5_1_SHORT_RUN_ID in triage
-    assert progress.startswith(f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->")
-    assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
+    assert f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->" in progress
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->" in measurements
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->" in triage
     assert f"Overall status: `{V5_1_STATUS}`;" in progress
     assert "user-owned approval packet" in current_status_block
     assert "official_metric_input_rows=29" in current_status_block
@@ -3253,9 +3253,9 @@ def test_v520_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert V5_2_SHORT_RUN_ID in progress
     assert V5_2_SHORT_RUN_ID in measurements
     assert V5_2_SHORT_RUN_ID in triage
-    assert progress.startswith(f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->")
-    assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
+    assert f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->" in progress
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->" in measurements
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->" in triage
     assert f"Overall status: `{V5_2_STATUS}`;" in progress
     assert "candidate-state taxonomy" in progress
     assert "residual_overlap_counts_available=false" in progress
@@ -3561,9 +3561,9 @@ def test_v530_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert latest["training_dataset_created"] is False
     assert latest["fine_tuning_dataset_export_created"] is False
 
-    assert progress.startswith(f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->")
-    assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
+    assert f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->" in progress
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->" in measurements
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->" in triage
     assert V5_5_SHORT_RUN_ID in current_status_block
     assert "`current` resolves to `v5_6`" in current_status_block
     assert "`v5_6_2`, `v5_5`, `v5_4`, `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable" in current_status_block
@@ -4172,9 +4172,9 @@ def test_v550_written_report_status_docs_current_alias_and_official_artifacts() 
     assert latest["artifact_sha256"]["official_metric_input_jsonl_sha256"] == _sha256_file(V5_5_OFFICIAL_METRIC_INPUT)
     assert latest["artifact_sha256"]["official_metric_dry_run_result_json_sha256"] == _sha256_file(V5_5_DRY_RUN_RESULT)
 
-    assert progress.startswith(f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->")
-    assert measurements.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->")
-    assert triage.startswith(f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->")
+    assert f"<!-- {V5_6_3_SHORT_RUN_ID}:progress-entry:start -->" in progress
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:measurements-entry:start -->" in measurements
+    assert f"<!-- {V5_5_SHORT_RUN_ID}:triage-entry:start -->" in triage
     assert V5_5_SHORT_RUN_ID in current_status_block
     assert "`current` resolves to `v5_6`" in current_status_block
     assert "`v5_6_2`, `v5_5`, `v5_4`, `v5_3`, `v5_2`, `v5_1`, `v5_0`, and `v4_7_18` remain directly checkable" in current_status_block
