@@ -202,6 +202,12 @@ V5_6_3_LONG_RUN_ID = (
 )
 V5_6_3_STATUS = "V5_6_3_OFFICIAL_METRIC_BACKEND_PROBE_FAIL_CLOSED_NONPROD_READY"
 V5_6_3_SCORED_STATUS = "V5_6_3_OFFICIAL_METRIC_BACKEND_PROBE_SCORED_EXECUTION_NONPROD_READY"
+NEC_2026_LOCAL_ELECTION_XLSX_SHORT_KEY = "nec_2026_local_election_xlsx"
+NEC_2026_LOCAL_ELECTION_XLSX_SHORT_RUN_ID = "nec_2026_local_election_xlsx_source_collection_diagnostic_nonprod"
+NEC_2026_LOCAL_ELECTION_XLSX_LONG_RUN_ID = NEC_2026_LOCAL_ELECTION_XLSX_SHORT_RUN_ID
+NEC_2026_LOCAL_ELECTION_XLSX_STATUS = (
+    "NEC_2026_LOCAL_ELECTION_XLSX_SOURCE_COLLECTION_DIAGNOSTIC_NONPROD_READY"
+)
 
 
 class ReportResolutionError(RuntimeError):
@@ -484,6 +490,15 @@ RUNS: dict[str, RunMetadata] = {
         accepted_aliases=(V5_6_3_SHORT_RUN_ID, V5_6_3_LONG_RUN_ID),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
         accepted_statuses=(V5_6_3_SCORED_STATUS,),
+    ),
+    NEC_2026_LOCAL_ELECTION_XLSX_SHORT_KEY: RunMetadata(
+        logical_key=NEC_2026_LOCAL_ELECTION_XLSX_SHORT_KEY,
+        short_run_id=NEC_2026_LOCAL_ELECTION_XLSX_SHORT_RUN_ID,
+        canonical_long_run_id=NEC_2026_LOCAL_ELECTION_XLSX_LONG_RUN_ID,
+        status=NEC_2026_LOCAL_ELECTION_XLSX_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / NEC_2026_LOCAL_ELECTION_XLSX_SHORT_KEY / "report.json",
+        accepted_aliases=(NEC_2026_LOCAL_ELECTION_XLSX_SHORT_RUN_ID,),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
     ),
 }
 

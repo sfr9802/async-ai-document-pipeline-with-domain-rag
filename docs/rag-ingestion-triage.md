@@ -1,3 +1,12 @@
+<!-- nec_2026_local_election_xlsx_source_collection_diagnostic_nonprod:triage-entry:start -->
+### NEC 2026 local-election XLSX source collection route
+
+- Scope: `nec_2026_local_election_xlsx` is a direct diagnostic route for the newly downloaded NEC XLSX workbooks. It does not move `current` from `v5_6`.
+- Retrieval shape: parsed votes are chunked by contiguous `(request_id, contest_label)` spans (2012 preview spans), raw display rows by request block, and source requests by request id. Default candidate search views use parsed_votes/national_summary atoms only; source_requests and raw_display_rows are excluded from retrieval-default views.
+- Code-4 caution: 1 stale manifest/verification counter warning(s) are recorded; verification.json and code-4 sidecars are the authority for actual district rendering.
+- Fail-closed status: official_metric_input_rows=0, source_registry_mutated=false, index_rebuilt=false, training_dataset_created=false, fine_tuning_dataset_export_created=false, protected_namespaces_touched=[].
+<!-- nec_2026_local_election_xlsx_source_collection_diagnostic_nonprod:triage-entry:end -->
+
 <!-- v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run:triage-entry:start -->
 ### v5_5 user approval ingestion boundary
 
@@ -317,7 +326,7 @@
 - v4_7_13 live replay status: `LIVE_SILVER_RETRIEVAL_REPLAY_UNAVAILABLE_FAIL_CLOSED`. Full PDF status: `FULL_PDF_LLM_REPLAY_UNAVAILABLE_FAIL_CLOSED`. TEXT silver explanation: TEXT smoke failures are mainly weak-likely-answerable queries whose family route survived but whose target SourceAtom was usually not in top-k, so the selected evidence did not contain enough answer-bearing context. The model therefore produced supported or unsupported insufficient_evidence despite query-level likely_unanswerable=false. SearchView/vector payload remains candidate-only; SourceAtom/EvidenceBundle remains evidence truth.
 <!-- v4_7_13_triage_end -->
 
-Last updated: 2026-06-01 KST.
+Last updated: 2026-06-05 KST.
 
 This is the rolling row-level triage ledger. Keep it append-style like
 `docs/rag-ingestion-progress.md`: add new triage entries here instead of

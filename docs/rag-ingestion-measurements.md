@@ -1,3 +1,33 @@
+<!-- nec_2026_local_election_xlsx_source_collection_diagnostic_nonprod:measurements-entry:start -->
+## NEC 2026 local-election XLSX source collection route
+
+- Run key: `nec_2026_local_election_xlsx`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/nec_2026_local_election_xlsx/report.json`
+- Interpretation: direct diagnostic source-collection route only; `current` remains `v5_6`.
+
+| counter | value |
+| --- | --- |
+| status | NEC_2026_LOCAL_ELECTION_XLSX_SOURCE_COLLECTION_DIAGNOSTIC_NONPROD_READY |
+| workbook_count | 8 |
+| verified_xlsx_count | 8 |
+| visible_sheet_count | 32 |
+| native_excel_table_count | 0 |
+| source_request_chunk_count | 543 |
+| raw_display_request_block_count | 543 |
+| parsed_votes_contest_span_count | 2012 |
+| search_unit_preview_rows | 3106 |
+| source_atom_rows | 13152 |
+| search_view_rows | 13152 |
+| retrieval_default_included_sheets | ["parsed_votes", "national_summary"] |
+| retrieval_default_excluded_sheets | ["source_requests", "raw_display_rows"] |
+| code4_provenance_warning_count | 1 |
+| official_metric_input_rows | 0 |
+| official_metric_input_rows_created | 0 |
+| source_registry_mutated | false |
+| index_rebuilt | false |
+| live_db_index_cache_readiness | false |
+<!-- nec_2026_local_election_xlsx_source_collection_diagnostic_nonprod:measurements-entry:end -->
+
 <!-- v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run:measurements-entry:start -->
 ## v5_5 user-approved official metric dry-run input
 
@@ -1067,7 +1097,7 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 | official_metric_input_rows | 0 |
 <!-- v4_7_13_measurements_end -->
 
-Last updated: 2026-06-01 KST.
+Last updated: 2026-06-05 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new
