@@ -43,6 +43,7 @@ from ai.eval import rag_v550_user_approved_gold_packet_ingestion_and_official_me
 from ai.eval import rag_v560_official_metric_scored_execution_and_failure_attribution_nonprod as v560
 from ai.eval import rag_v562_official_metric_backend_enabled_preflight_scored_rerun_nonprod as v562
 from ai.eval import rag_v563_official_metric_backend_probe_and_scored_execution_nonprod as v563
+from ai.eval import rag_v56_refactor_route_comparison_packet_diagnostic_nonprod as v56compare
 from ai.eval import rag_nec_2026_local_election_xlsx_source_collection as nec2026
 
 
@@ -653,6 +654,10 @@ def check_run(key: str) -> dict[str, Any]:
         )
         v563.check_report(report)
         return report
+    if resolved_key == "v5_6_refactor_comparison" and not (ROOT / v56compare.SHORT_REPORT_PATH).exists():
+        report = v56compare.build_report(root=ROOT)
+        v56compare.check_report(report)
+        return report
     if resolved_key == "nec_2026_local_election_xlsx" and (
         os.environ.get(nec2026.SOURCE_COLLECTION_ENV_VAR) or not (ROOT / nec2026.SHORT_REPORT_PATH).exists()
     ):
@@ -706,6 +711,8 @@ def check_run(key: str) -> dict[str, Any]:
         v562.check_report(report, root=ROOT)
     if resolved_key == "v5_6_3":
         v563.check_report(report, root=ROOT)
+    if resolved_key == "v5_6_refactor_comparison":
+        v56compare.check_report(report, root=ROOT)
     if resolved_key == "nec_2026_local_election_xlsx":
         nec2026.check_report(report)
     return report
@@ -717,7 +724,7 @@ def build_parser() -> argparse.ArgumentParser:
         "run_key",
         nargs="?",
         default=DEFAULT_RUN_KEY,
-        help="logical key such as v5_6_3, v5_6_2, v5_6, v5_5, v5_4, v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
+        help="logical key such as v5_6_refactor_comparison, v5_6_3, v5_6_2, v5_6, v5_5, v5_4, v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
     )
     parser.add_argument("--check", action="store_true", help="validate an existing report")
     parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and sync docs/status")
@@ -872,6 +879,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             v563.check_report(report, root=ROOT)
             v563.update_docs(ROOT, report)
             v563.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v5_6_refactor_comparison":
+            report = v56compare.build_report(root=ROOT)
+            v56compare.check_report(report)
+            report, artifact_hashes = v56compare.write_report_bundle(ROOT, report)
+            v56compare.check_report(report, root=ROOT)
+            v56compare.update_docs(ROOT, report)
+            v56compare.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "nec_2026_local_election_xlsx":
             report = nec2026.build_report(root=ROOT)
             nec2026.check_report(report)
@@ -880,7 +894,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             nec2026.update_docs(ROOT, report)
             nec2026.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         else:
-            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, v5_0, v5_1, v5_2, v5_3, v5_4, v5_5, v5_6, v5_6_2, v5_6_3, and nec_2026_local_election_xlsx")
+            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, v5_0, v5_1, v5_2, v5_3, v5_4, v5_5, v5_6, v5_6_2, v5_6_3, v5_6_refactor_comparison, and nec_2026_local_election_xlsx")
     else:
         report = check_run(run_key)
     if args.check or not args.write:

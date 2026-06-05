@@ -217,6 +217,14 @@ V5_6_3_REPORT = V5_6_3_RUN_DIR / "report.json"
 V5_6_3_SCORED_RESULT = V5_6_3_RUN_DIR / "official_metric_scored_result.json"
 V5_6_3_FAILURE_ATTRIBUTION = V5_6_3_RUN_DIR / "failure_attribution.jsonl"
 V5_6_3_BACKEND_PREFLIGHT_RESULT = V5_6_3_RUN_DIR / "backend_preflight_result.json"
+V5_6_REFACTOR_COMPARISON_SHORT_KEY = "v5_6_refactor_comparison"
+V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID = "v5_6_refactor_route_comparison_packet_diagnostic_nonprod"
+V5_6_REFACTOR_COMPARISON_LONG_RUN_ID = V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID
+V5_6_REFACTOR_COMPARISON_STATUS = "V5_6_REFACTOR_ROUTE_COMPARISON_PACKET_DIAGNOSTIC_NONPROD_READY"
+V5_6_REFACTOR_COMPARISON_RUN_DIR = (
+    ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / V5_6_REFACTOR_COMPARISON_SHORT_KEY
+)
+V5_6_REFACTOR_COMPARISON_REPORT = V5_6_REFACTOR_COMPARISON_RUN_DIR / "report.json"
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
@@ -5570,6 +5578,218 @@ def test_v563_write_path_validates_report_before_writing_and_uses_v550_source(mo
 
     assert runner.main(["v5_6_3", "--write"]) == 0
     assert observed["used_source_report"] is True
+    assert call_order == ["build", "check", "write", "check"]
+
+
+def test_v56_refactor_comparison_packet_separates_route_replay_from_quality_subsets() -> None:
+    from ai.eval import rag_v56_refactor_route_comparison_packet_diagnostic_nonprod as comparison
+
+    report = comparison.build_report(root=ROOT, generated_at="2026-06-05T00:00:00Z")
+    comparison.check_report(report)
+
+    assert report["short_run_id"] == V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID
+    assert report["canonical_long_run_id"] == V5_6_REFACTOR_COMPARISON_LONG_RUN_ID
+    assert report["status"] == V5_6_REFACTOR_COMPARISON_STATUS
+    assert report["current_resolves_to"] == V5_6_SHORT_KEY
+    assert report["diagnostic_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["official_metric_input_rows_consumed"] == 0
+    assert report["quality_delta_claim_supported"] is False
+    assert report["retrieval_quality_delta_computed"] is False
+    assert report["answer_quality_delta_computed"] is False
+    assert report["protected_namespaces_touched"] == []
+    assert report["comparator_scope"]["fixture_row_count"] >= 6
+    assert set(report["comparator_scope"]["families"]) == {
+        "TEXT",
+        "XLSX",
+        "PDF",
+    }
+    assert report["comparator_scope"]["scope_counts"]["metadata_scoped"] >= 3
+    assert report["comparator_scope"]["scope_counts"]["query_only"] >= 3
+
+    route_rows = report["route_comparison_rows"]
+    assert len(route_rows) == report["comparator_scope"]["fixture_row_count"]
+    required_route_fields = {
+        "query_id",
+        "family",
+        "scope_type",
+        "before_route",
+        "after_route",
+        "route_changed",
+        "after_blocked_reason",
+        "llm_required",
+        "metadata_scoped",
+    }
+    assert all(required_route_fields <= set(row) for row in route_rows)
+    assert any(row["metadata_scoped"] is True and row["route_changed"] is True for row in route_rows)
+    assert any(row["metadata_scoped"] is False and row["llm_required"] is True for row in route_rows)
+    assert report["route_change_summary"]["route_changed_count"] == sum(
+        1 for row in route_rows if row["route_changed"]
+    )
+    assert report["route_change_summary"]["by_scope_type"]["metadata_scoped"]["row_count"] >= 3
+    assert report["route_change_summary"]["by_scope_type"]["query_only"]["row_count"] >= 3
+
+    retrieval_rows = report["retrieval_quality_rows"]
+    computed_retrieval = [row for row in retrieval_rows if row["retrieval_quality_delta_computed"]]
+    blocked_retrieval = [row for row in retrieval_rows if not row["retrieval_quality_delta_computed"]]
+    assert computed_retrieval
+    assert blocked_retrieval
+    assert all(row["existing_qrels_or_locator_valid"] is True for row in computed_retrieval)
+    assert all(row["retrieval_blocked_reason"] for row in blocked_retrieval)
+    assert all(
+        key in computed_retrieval[0]["before_retrieval"]
+        for key in ("hit_at_1", "hit_at_k", "target_in_candidates", "candidate_count", "evidence_sufficiency_status")
+    )
+    assert report["retrieval_quality_subset"]["computed_row_count"] == len(computed_retrieval)
+    assert report["retrieval_quality_subset"]["global_delta_claim_supported"] is False
+
+    answer_rows = report["answer_quality_rows"]
+    computed_answer = [row for row in answer_rows if row["answer_quality_delta_computed"]]
+    unavailable_answer = [row for row in answer_rows if row["answer_execution_status"] == "execution_unavailable"]
+    assert computed_answer
+    assert unavailable_answer
+    assert all(
+        row["before_answer"]["execution_status"] == "executed"
+        and row["after_answer"]["execution_status"] == "executed"
+        for row in computed_answer
+    )
+    assert all(row["answer_quality_blocked_reason"] for row in unavailable_answer)
+    assert report["answer_quality_subset"]["computed_row_count"] == len(computed_answer)
+    assert report["answer_quality_subset"]["execution_unavailable_row_count"] == len(unavailable_answer)
+    assert report["answer_quality_subset"]["global_delta_claim_supported"] is False
+
+
+def test_v56_refactor_comparison_check_report_rejects_metric_gate_and_subset_drift() -> None:
+    from ai.eval import rag_v56_refactor_route_comparison_packet_diagnostic_nonprod as comparison
+
+    report = comparison.build_report(root=ROOT, generated_at="2026-06-05T00:00:00Z")
+    comparison.check_report(report)
+
+    for path, value, message in (
+        (("current_resolves_to",), V5_6_3_SHORT_KEY, "current"),
+        (("diagnostic_only",), False, "diagnostic"),
+        (("official_metric",), True, "official"),
+        (("official_metric_input_rows",), 29, "official metric input"),
+        (("official_metric_input_rows_consumed",), 29, "official metric input"),
+        (("quality_delta_claim_supported",), True, "quality delta"),
+        (("retrieval_quality_delta_computed",), True, "retrieval quality"),
+        (("answer_quality_delta_computed",), True, "answer quality"),
+        (("protected_namespaces_touched",), ["ai/eval/eval_queries"], "protected"),
+        (("route_comparison_rows", 0, "before_route"), "", "route row"),
+        (("retrieval_quality_rows", 0, "existing_qrels_or_locator_valid"), False, "retrieval subset"),
+        (("answer_quality_rows", 0, "after_answer", "execution_status"), "execution_unavailable", "answer subset"),
+    ):
+        mutated = json.loads(json.dumps(report))
+        cursor = mutated
+        for key in path[:-1]:
+            cursor = cursor[key]
+        cursor[path[-1]] = value
+        try:
+            comparison.check_report(mutated)
+        except ValueError as exc:
+            assert message in str(exc)
+        else:
+            raise AssertionError(f"v5_6 refactor comparison accepted drift at {path}")
+
+    for key in (
+        "gold_mutation",
+        "qrels_mutation",
+        "label_mutation",
+        "expected_answer_mutation",
+        "supporting_evidence_mutation",
+        "denominator_mutation",
+        "training_dataset_created",
+        "fine_tuning",
+        "ft_a_execution",
+        "promotion_evidence",
+        "product_success_evidence_allowed",
+        "live_db_index_cache_readiness",
+        "production_db_mutated",
+        "source_registry_mutated",
+        "silver_mutation",
+        "index_rebuilt",
+        "cache_mutated",
+    ):
+        mutated = json.loads(json.dumps(report))
+        mutated[key] = True
+        try:
+            comparison.check_report(mutated)
+        except ValueError as exc:
+            assert key in str(exc) or "closed" in str(exc)
+        else:
+            raise AssertionError(f"v5_6 refactor comparison accepted {key}=True")
+
+
+def test_v56_refactor_comparison_write_status_and_runner_keep_current_v56(tmp_path: Path) -> None:
+    import ai.scripts.rag_eval as runner
+    from ai.eval import rag_v56_refactor_route_comparison_packet_diagnostic_nonprod as comparison
+
+    report = comparison.build_report(root=ROOT, generated_at="2026-06-05T00:00:00Z")
+    written, artifact_hashes = comparison.write_report_bundle(tmp_path, report)
+    comparison.check_report(written, root=tmp_path)
+    comparison.append_status(tmp_path, written, artifact_hashes=artifact_hashes)
+
+    paths = written["artifact_paths"]
+    assert paths == {
+        "report_json": "ai/eval/reports/rag-ingestion/runs/v5_6_refactor_comparison/report.json",
+        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+    }
+    assert (tmp_path / paths["report_json"]).exists()
+    assert artifact_hashes["report_json_sha256"] == _sha256_file(tmp_path / paths["report_json"])
+    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    latest = status_rows[-1]
+    assert latest["short_run_id"] == V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID
+    assert latest["current_resolves_to"] == V5_6_SHORT_KEY
+    assert latest["diagnostic_only"] is True
+    assert latest["official_metric_input_rows"] == 0
+    assert latest["quality_delta_claim_supported"] is False
+    assert latest["retrieval_quality_delta_computed"] is False
+    assert latest["answer_quality_delta_computed"] is False
+
+    checked = runner.check_run(V5_6_REFACTOR_COMPARISON_SHORT_KEY)
+    assert checked["short_run_id"] == V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID
+    assert runner.check_run("current")["short_run_id"] == V5_6_SHORT_RUN_ID
+
+    assert subprocess.run(["git", "check-ignore", "-q", paths["report_json"]], cwd=ROOT).returncode == 0
+    assert subprocess.run(["git", "check-ignore", "-q", paths["status_jsonl"]], cwd=ROOT).returncode == 0
+
+
+def test_v56_refactor_comparison_write_path_validates_report_before_writing(monkeypatch) -> None:
+    import ai.scripts.rag_eval as runner
+    from ai.eval import rag_v56_refactor_route_comparison_packet_diagnostic_nonprod as comparison
+
+    call_order: list[str] = []
+
+    def fake_build_report(*, root: Path, generated_at: str | None = None, check: bool = True) -> dict[str, object]:
+        del generated_at, check
+        call_order.append("build")
+        return {
+            "short_run_id": V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID,
+            "status": V5_6_REFACTOR_COMPARISON_STATUS,
+            "current_resolves_to": V5_6_SHORT_KEY,
+            "artifact_paths": {"report_json": V5_6_REFACTOR_COMPARISON_REPORT.relative_to(ROOT).as_posix()},
+            "route_change_summary": {},
+            "retrieval_quality_subset": {},
+            "answer_quality_subset": {},
+        }
+
+    def fake_check_report(report: dict[str, object], **_: object) -> None:
+        del report
+        call_order.append("check")
+
+    def fake_write_report_bundle(root: Path, report: dict[str, object]) -> tuple[dict[str, object], dict[str, str]]:
+        assert "check" in call_order
+        call_order.append("write")
+        return report, {"report_json_sha256": "0" * 64}
+
+    monkeypatch.setattr(comparison, "build_report", fake_build_report)
+    monkeypatch.setattr(comparison, "check_report", fake_check_report)
+    monkeypatch.setattr(comparison, "write_report_bundle", fake_write_report_bundle)
+    monkeypatch.setattr(comparison, "append_status", lambda root, report, *, artifact_hashes: None)
+    monkeypatch.setattr(comparison, "update_docs", lambda root, report: None)
+
+    assert runner.main([V5_6_REFACTOR_COMPARISON_SHORT_KEY, "--write"]) == 0
     assert call_order == ["build", "check", "write", "check"]
 
 
