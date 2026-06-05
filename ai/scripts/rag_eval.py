@@ -658,6 +658,12 @@ def check_run(key: str) -> dict[str, Any]:
         report = v56compare.build_report(root=ROOT)
         v56compare.check_report(report)
         return report
+    if resolved_key == "v5_6_full_packet_route_retrieval_comparison" and not (
+        ROOT / v56compare.FULL_PACKET_REPORT_PATH
+    ).exists():
+        report = v56compare.build_full_packet_report(root=ROOT)
+        v56compare.check_full_packet_report(report)
+        return report
     if resolved_key == "nec_2026_local_election_xlsx" and (
         os.environ.get(nec2026.SOURCE_COLLECTION_ENV_VAR) or not (ROOT / nec2026.SHORT_REPORT_PATH).exists()
     ):
@@ -713,6 +719,8 @@ def check_run(key: str) -> dict[str, Any]:
         v563.check_report(report, root=ROOT)
     if resolved_key == "v5_6_refactor_comparison":
         v56compare.check_report(report, root=ROOT)
+    if resolved_key == "v5_6_full_packet_route_retrieval_comparison":
+        v56compare.check_full_packet_report(report, root=ROOT)
     if resolved_key == "nec_2026_local_election_xlsx":
         nec2026.check_report(report)
     return report
@@ -724,7 +732,7 @@ def build_parser() -> argparse.ArgumentParser:
         "run_key",
         nargs="?",
         default=DEFAULT_RUN_KEY,
-        help="logical key such as v5_6_refactor_comparison, v5_6_3, v5_6_2, v5_6, v5_5, v5_4, v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
+        help="logical key such as v5_6_full_packet_route_retrieval_comparison, v5_6_refactor_comparison, v5_6_3, v5_6_2, v5_6, v5_5, v5_4, v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
     )
     parser.add_argument("--check", action="store_true", help="validate an existing report")
     parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and sync docs/status")
@@ -886,6 +894,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             v56compare.check_report(report, root=ROOT)
             v56compare.update_docs(ROOT, report)
             v56compare.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v5_6_full_packet_route_retrieval_comparison":
+            report = v56compare.build_full_packet_report(root=ROOT)
+            v56compare.check_full_packet_report(report)
+            report, artifact_hashes = v56compare.write_full_packet_report_bundle(ROOT, report)
+            v56compare.check_full_packet_report(report, root=ROOT)
+            v56compare.update_full_packet_docs(ROOT, report)
+            v56compare.append_full_packet_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "nec_2026_local_election_xlsx":
             report = nec2026.build_report(root=ROOT)
             nec2026.check_report(report)
@@ -894,7 +909,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             nec2026.update_docs(ROOT, report)
             nec2026.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         else:
-            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, v5_0, v5_1, v5_2, v5_3, v5_4, v5_5, v5_6, v5_6_2, v5_6_3, v5_6_refactor_comparison, and nec_2026_local_election_xlsx")
+            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, v5_0, v5_1, v5_2, v5_3, v5_4, v5_5, v5_6, v5_6_2, v5_6_3, v5_6_refactor_comparison, v5_6_full_packet_route_retrieval_comparison, and nec_2026_local_election_xlsx")
     else:
         report = check_run(run_key)
     if args.check or not args.write:
@@ -923,9 +938,19 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "official_metric_dry_run_opened": report.get("official_metric_dry_run_opened"),
                 "official_metric_dry_run_executed": report.get("official_metric_dry_run_executed"),
                 "official_metric_input_rows_consumed": report.get("official_metric_input_rows_consumed"),
-                "scored_answer_rows": scored_result.get("scored_answer_rows"),
+                "source_official_metric_input_rows": report.get("source_official_metric_input_rows"),
+                "route_comparison_rows": report.get("route_comparison_rows"),
+                "retrieval_metric_eligible_rows": report.get("retrieval_metric_eligible_rows"),
+                "answer_metric_rows": report.get("answer_metric_rows"),
+                "diagnostic_retrieval_delta_only": report.get("diagnostic_retrieval_delta_only"),
+                "retrieval_quality_delta_computed": report.get("retrieval_quality_delta_computed"),
+                "scored_answer_rows": scored_result.get("scored_answer_rows", report.get("scored_answer_rows")),
                 "backend_unavailable": scored_result.get("backend_unavailable"),
-                "answer_quality_metric_computed": scored_result.get("answer_quality_metric_computed"),
+                "answer_quality_metric_computed": scored_result.get(
+                    "answer_quality_metric_computed",
+                    report.get("answer_quality_metric_computed"),
+                ),
+                "quality_delta_claim_supported": report.get("quality_delta_claim_supported"),
                 "official_metric_finalized": scored_result.get("official_metric_finalized"),
                 "failure_category_counts": scored_result.get("failure_category_counts"),
                 "backend_preflight_status": report.get("backend_preflight", {}).get("status"),

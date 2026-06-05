@@ -225,6 +225,18 @@ V5_6_REFACTOR_COMPARISON_RUN_DIR = (
     ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / V5_6_REFACTOR_COMPARISON_SHORT_KEY
 )
 V5_6_REFACTOR_COMPARISON_REPORT = V5_6_REFACTOR_COMPARISON_RUN_DIR / "report.json"
+V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY = "v5_6_full_packet_route_retrieval_comparison"
+V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_RUN_ID = (
+    "v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod"
+)
+V5_6_FULL_PACKET_ROUTE_RETRIEVAL_STATUS = (
+    "V5_6_FULL_PACKET_ROUTE_RETRIEVAL_COMPARISON_DIAGNOSTIC_NONPROD_READY"
+)
+V5_6_FULL_PACKET_ROUTE_RETRIEVAL_RUN_DIR = (
+    ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY
+)
+V5_6_FULL_PACKET_ROUTE_RETRIEVAL_REPORT = V5_6_FULL_PACKET_ROUTE_RETRIEVAL_RUN_DIR / "report.json"
+V5_6_FULL_PACKET_ROUTE_RETRIEVAL_ROWS = V5_6_FULL_PACKET_ROUTE_RETRIEVAL_RUN_DIR / "route_diagnostics.jsonl"
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
@@ -5791,6 +5803,221 @@ def test_v56_refactor_comparison_write_path_validates_report_before_writing(monk
 
     assert runner.main([V5_6_REFACTOR_COMPARISON_SHORT_KEY, "--write"]) == 0
     assert call_order == ["build", "check", "write", "check"]
+
+
+def test_v56_full_packet_route_retrieval_comparison_uses_v55_rows_and_separates_metric_denominators() -> None:
+    from ai.eval import rag_v56_refactor_route_comparison_packet_diagnostic_nonprod as comparison
+
+    report = comparison.build_full_packet_report(root=ROOT, generated_at="2026-06-05T00:00:00Z")
+    comparison.check_full_packet_report(report)
+
+    assert report["logical_run_key"] == V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY
+    assert report["short_run_id"] == V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_RUN_ID
+    assert report["status"] == V5_6_FULL_PACKET_ROUTE_RETRIEVAL_STATUS
+    assert report["current_resolves_to"] == V5_6_SHORT_KEY
+    assert report["diagnostic_only"] is True
+    assert report["official_metric"] is False
+    assert report["official_metric_input_rows"] == 0
+    assert report["source_official_metric_input_rows"] == 29
+    assert report["scored_answer_rows"] == 0
+    assert report["answer_quality_metric_computed"] is False
+    assert report["quality_delta_claim_supported"] is False
+    assert report["retrieval_quality_delta_computed"] is True
+    assert report["diagnostic_retrieval_delta_only"] is True
+    assert report["metric_denominators"] == {
+        "route_comparison_rows": 29,
+        "retrieval_metric_eligible_rows": report["retrieval_metric_eligible_rows"],
+        "answer_metric_rows": 0,
+    }
+    assert report["route_comparison_rows"] == 29
+    assert report["retrieval_metric_eligible_rows"] == 28
+    assert report["answer_metric_rows"] == 0
+    assert report["route_change_summary"]["row_count"] == 29
+    assert report["route_change_summary"]["source_family_counts"] == {
+        "PDF": 4,
+        "TEXT": 6,
+        "XLSX": 19,
+    }
+    assert report["route_change_summary"]["hard_guard_triggered_count"] == 0
+    assert report["route_change_summary"]["llm_adjudication_abstained_count"] == 0
+
+    row_level = report["row_level_diagnostic_rows"]
+    assert len(row_level) == 29
+    required_row_fields = {
+        "old_route",
+        "new_route",
+        "route_changed",
+        "source_family",
+        "route_lane",
+        "fail_closed_reason",
+        "llm_adjudication_invoked",
+        "llm_adjudication_abstained",
+        "hard_guard_triggered",
+        "manifest_policy_id",
+        "candidate_count_old",
+        "candidate_count_new",
+        "topk_old",
+        "topk_new",
+    }
+    assert all(required_row_fields <= set(row) for row in row_level)
+    assert all(len(row["topk_old"]) <= 5 and len(row["topk_new"]) <= 5 for row in row_level)
+    assert all(row["answer_metric_eligible"] is False for row in row_level)
+    assert all(row["hard_guard_triggered"] is False for row in row_level if not row["fail_closed_reason"])
+    assert all(row["llm_adjudication_abstained"] is False for row in row_level if not row["fail_closed_reason"])
+    assert report["retrieval_metric_eligible_rows"] == sum(
+        1 for row in row_level if row["retrieval_metric_eligible"]
+    )
+    assert {
+        row["query_id"]
+        for row in row_level
+        if not row["retrieval_metric_eligible"]
+    } == {"gq_auto_010"}
+
+    retrieval = report["diagnostic_retrieval_delta_table"]
+    assert retrieval["diagnostic_retrieval_delta_only"] is True
+    assert set(retrieval["metrics"]) == {"old", "new"}
+    for side in ("old", "new"):
+        assert set(retrieval["metrics"][side]) == {
+            "hit_at_1",
+            "hit_at_3",
+            "hit_at_5",
+            "mrr_at_5",
+            "ndcg_at_5",
+        }
+
+    precision = report["citation_precision_audit"]
+    assert precision["duplicate_supporting_evidence_id_count"] == 1
+    assert precision["duplicate_supporting_evidence_row_count"] == 2
+    assert precision["row_level_precision_key_count"] == 29
+    assert precision["collapsed_by_supporting_evidence_id"] is False
+    assert precision["precision_key_uses_citation_locator_or_search_unit_id"] is True
+
+
+def test_v56_full_packet_route_retrieval_check_report_rejects_official_or_answer_metric_drift() -> None:
+    from ai.eval import rag_v56_refactor_route_comparison_packet_diagnostic_nonprod as comparison
+
+    report = comparison.build_full_packet_report(root=ROOT, generated_at="2026-06-05T00:00:00Z")
+    comparison.check_full_packet_report(report)
+
+    for path, value, message in (
+        (("current_resolves_to",), V5_6_3_SHORT_KEY, "current"),
+        (("diagnostic_only",), False, "diagnostic"),
+        (("official_metric",), True, "official"),
+        (("official_metric_input_rows",), 29, "official metric input"),
+        (("scored_answer_rows",), 1, "scored answer"),
+        (("answer_quality_metric_computed",), True, "answer quality"),
+        (("quality_delta_claim_supported",), True, "quality delta"),
+        (("diagnostic_retrieval_delta_only",), False, "diagnostic retrieval"),
+        (("protected_namespaces_touched",), ["ai/eval/eval_queries"], "protected"),
+        (("metric_denominators", "answer_metric_rows"), 1, "answer metric"),
+        (("row_level_diagnostic_rows", 0, "topk_new"), [], "retrieval"),
+        (("row_level_diagnostic_rows", 0, "old_route"), "", "route row"),
+    ):
+        mutated = json.loads(json.dumps(report))
+        cursor = mutated
+        for key in path[:-1]:
+            cursor = cursor[key]
+        cursor[path[-1]] = value
+        try:
+            comparison.check_full_packet_report(mutated)
+        except ValueError as exc:
+            assert message in str(exc)
+        else:
+            raise AssertionError(f"full-packet route comparison accepted drift at {path}")
+
+
+def test_v56_full_packet_route_retrieval_writes_row_jsonl_status_and_runner_keeps_current_v56(tmp_path: Path) -> None:
+    import ai.scripts.rag_eval as runner
+    from ai.eval import rag_v56_refactor_route_comparison_packet_diagnostic_nonprod as comparison
+
+    report = comparison.build_full_packet_report(root=ROOT, generated_at="2026-06-05T00:00:00Z")
+    written, artifact_hashes = comparison.write_full_packet_report_bundle(tmp_path, report)
+    comparison.check_full_packet_report(written, root=tmp_path)
+    comparison.append_full_packet_status(tmp_path, written, artifact_hashes=artifact_hashes)
+
+    paths = written["artifact_paths"]
+    assert paths == {
+        "report_json": "ai/eval/reports/rag-ingestion/runs/v5_6_full_packet_route_retrieval_comparison/report.json",
+        "row_level_diagnostic_jsonl": (
+            "ai/eval/reports/rag-ingestion/runs/v5_6_full_packet_route_retrieval_comparison/"
+            "route_diagnostics.jsonl"
+        ),
+        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "source_official_metric_input_jsonl": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+    }
+    assert artifact_hashes["report_json_sha256"] == _sha256_file(tmp_path / paths["report_json"])
+    assert artifact_hashes["row_level_diagnostic_jsonl_sha256"] == _sha256_file(
+        tmp_path / paths["row_level_diagnostic_jsonl"]
+    )
+    jsonl_rows = _read_jsonl(tmp_path / paths["row_level_diagnostic_jsonl"])
+    assert len(jsonl_rows) == 29
+    assert all("expected_answer_ko" not in row and "supporting_evidence_note" not in row for row in jsonl_rows)
+
+    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    latest = status_rows[-1]
+    assert latest["short_run_id"] == V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_RUN_ID
+    assert latest["current_resolves_to"] == V5_6_SHORT_KEY
+    assert latest["official_metric_input_rows"] == 0
+    assert latest["source_official_metric_input_rows"] == 29
+    assert latest["route_comparison_rows"] == 29
+    assert latest["answer_metric_rows"] == 0
+    assert latest["diagnostic_retrieval_delta_only"] is True
+    assert latest["quality_delta_claim_supported"] is False
+
+    checked = runner.check_run(V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY)
+    assert checked["short_run_id"] == V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_RUN_ID
+    assert runner.check_run("current")["short_run_id"] == V5_6_SHORT_RUN_ID
+
+
+def test_v56_full_packet_route_adjudication_cannot_relax_manifest_hard_guard() -> None:
+    from ai.eval import rag_v56_refactor_route_comparison_packet_diagnostic_nonprod as comparison
+
+    class FakeRelaxingAdjudicator:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        def adjudicate(self, payload: dict[str, object]) -> dict[str, object]:
+            self.calls.append(dict(payload))
+            return {
+                "primary_route": "pdf_business_ocr_mm",
+                "candidate_routes": ["pdf_business_ocr_mm"],
+                "route_confidence": 0.99,
+                "intent": "pdf_content_evidence",
+                "evidence_lane": "pdf_content_evidence",
+                "requires_multi_route": False,
+                "fallback_plan": [],
+                "policy_flags": [],
+                "blocked_flags": [],
+                "diagnostic_only": True,
+                "reason": "try to relax manifest guard",
+            }
+
+    adjudicator = FakeRelaxingAdjudicator()
+    row = {
+        "query_id": "pdf_file_lookup_content_anchor_004",
+        "track": "pdf_business_ocr_mm",
+        "question_ko": "pdf 내용 근거를 찾아줘",
+        "source_v5_4_review_row_id": "manifest-hard-guard-row",
+        "citation_locator": {"search_unit_id": "su-policy-excluded", "page": 4},
+        "supporting_evidence_ids": ["su-policy-excluded"],
+    }
+
+    diagnostic = comparison.build_full_packet_diagnostic_row(
+        row,
+        row_index=0,
+        route_adjudicator=adjudicator,
+    )
+
+    assert adjudicator.calls == []
+    assert diagnostic["new_route"] == "policy_blocked"
+    assert diagnostic["route_lane"] == "policy_blocked"
+    assert diagnostic["fail_closed_reason"] == "pdf_policy_excluded_row"
+    assert diagnostic["llm_adjudication_invoked"] is False
+    assert diagnostic["llm_adjudication_abstained"] is True
+    assert diagnostic["hard_guard_triggered"] is True
+    assert diagnostic["manifest_policy_id"] == "pdf_policy_excluded_query_id"
+    assert diagnostic["candidate_count_new"] == 0
+    assert diagnostic["topk_new"] == []
 
 
 def test_v4711_injected_local_llm_replays_v4710_candidates_and_records_answer_audits() -> None:

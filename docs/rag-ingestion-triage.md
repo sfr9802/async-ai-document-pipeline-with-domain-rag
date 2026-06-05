@@ -1,3 +1,7 @@
+<!-- v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod:triage-entry:start -->
+- v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod: full v5_5 packet route comparison is diagnostic-only and separate from `current=v5_6`. Row diagnostics keep duplicate supporting_evidence_id rows distinct via citation-locator/search-unit precision keys; duplicate evidence id is an audit note only. Invalid manifest, nonzero official_metric_input_rows, protected namespace touch, raw prompt/response payloads, and answer-metric opening remain fail-closed.
+<!-- v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod:triage-entry:end -->
+
 <!-- runtime_rag_heuristic_generalization_refactor:triage-entry:start -->
 ### Runtime RAG heuristic generalization refactor
 

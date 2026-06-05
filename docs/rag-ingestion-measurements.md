@@ -1,3 +1,13 @@
+<!-- v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod:measurements-entry:start -->
+### v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod
+
+- Policy: diagnostic-only route/retrieval delta over read-only v5_5 source rows; answer-quality scored execution remains closed.
+- Denominators: route_comparison_rows=29; retrieval_metric_eligible_rows=28; answer_metric_rows=0.
+- Old retrieval: Hit@1=0.4643; Hit@3=0.4643; Hit@5=0.4643; MRR@5=0.4643; nDCG@5=0.4643.
+- New retrieval: Hit@1=1.0; Hit@3=1.0; Hit@5=1.0; MRR@5=1.0; nDCG@5=1.0.
+- Interpretation: diagnostic_retrieval_delta_only=true; quality_delta_claim_supported=false; official_metric_input_rows=0; scored_answer_rows=0.
+<!-- v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod:measurements-entry:end -->
+
 <!-- nec_2026_local_election_xlsx_source_collection_diagnostic_nonprod:measurements-entry:start -->
 ## NEC 2026 local-election XLSX source collection route
 

@@ -206,6 +206,14 @@ V5_6_REFACTOR_COMPARISON_SHORT_KEY = "v5_6_refactor_comparison"
 V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID = "v5_6_refactor_route_comparison_packet_diagnostic_nonprod"
 V5_6_REFACTOR_COMPARISON_LONG_RUN_ID = V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID
 V5_6_REFACTOR_COMPARISON_STATUS = "V5_6_REFACTOR_ROUTE_COMPARISON_PACKET_DIAGNOSTIC_NONPROD_READY"
+V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY = "v5_6_full_packet_route_retrieval_comparison"
+V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_RUN_ID = (
+    "v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod"
+)
+V5_6_FULL_PACKET_ROUTE_RETRIEVAL_LONG_RUN_ID = V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_RUN_ID
+V5_6_FULL_PACKET_ROUTE_RETRIEVAL_STATUS = (
+    "V5_6_FULL_PACKET_ROUTE_RETRIEVAL_COMPARISON_DIAGNOSTIC_NONPROD_READY"
+)
 NEC_2026_LOCAL_ELECTION_XLSX_SHORT_KEY = "nec_2026_local_election_xlsx"
 NEC_2026_LOCAL_ELECTION_XLSX_SHORT_RUN_ID = "nec_2026_local_election_xlsx_source_collection_diagnostic_nonprod"
 NEC_2026_LOCAL_ELECTION_XLSX_LONG_RUN_ID = NEC_2026_LOCAL_ELECTION_XLSX_SHORT_RUN_ID
@@ -502,6 +510,15 @@ RUNS: dict[str, RunMetadata] = {
         status=V5_6_REFACTOR_COMPARISON_STATUS,
         short_report_path=REPORT_ROOT / "runs" / V5_6_REFACTOR_COMPARISON_SHORT_KEY / "report.json",
         accepted_aliases=(V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID,),
+        canonical_fields=("short_run_id", "canonical_long_run_id"),
+    ),
+    V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY: RunMetadata(
+        logical_key=V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY,
+        short_run_id=V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_RUN_ID,
+        canonical_long_run_id=V5_6_FULL_PACKET_ROUTE_RETRIEVAL_LONG_RUN_ID,
+        status=V5_6_FULL_PACKET_ROUTE_RETRIEVAL_STATUS,
+        short_report_path=REPORT_ROOT / "runs" / V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY / "report.json",
+        accepted_aliases=(V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_RUN_ID,),
         canonical_fields=("short_run_id", "canonical_long_run_id"),
     ),
     NEC_2026_LOCAL_ELECTION_XLSX_SHORT_KEY: RunMetadata(
