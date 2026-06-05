@@ -23,6 +23,7 @@ from app.capabilities.rag_orchestrator.evidence import (
     QueryPolicy,
 )
 from app.capabilities.rag_orchestrator.evidence_merge import evidence_merge_tool
+from app.capabilities.rag_orchestrator.route_policy_manifest import load_route_policy_manifest
 from app.capabilities.rag_orchestrator.state import (
     QueryOrchestratorState,
     forbidden_state_keys_present,
@@ -171,57 +172,7 @@ LLM_UNSAFE_TRUTHY_FIELDS = (
     "allowUnscoped",
     "allow_unscoped",
 )
-
-XLSX_PENDING_EVIDENCE_IDS = frozenset(
-    {
-        "gq_xlsx_date_number_format_003",
-        "gq_xlsx_aggregation_001",
-    }
-)
-PDF_POLICY_EXCLUDED_IDS = frozenset(
-    {
-        "pdf_file_lookup_content_anchor_004",
-        "pdf_file_lookup_content_anchor_012",
-        "pdf_file_lookup_content_anchor_013",
-        "pdf_file_lookup_content_anchor_014",
-        "pdf_file_lookup_content_anchor_015",
-        "pdf_file_lookup_metadata_002",
-    }
-)
-PDF_STABLE_IDENTITY_REQUIRED_IDS = frozenset(
-    {
-        "pdf_file_lookup_content_anchor_017",
-        "pdf_file_lookup_content_anchor_018",
-        "pdf_file_lookup_content_anchor_020",
-    }
-)
-TEXT_NAMU_UNRESOLVED_IDS = frozenset(
-    {
-        "text_namu_v2_0006",
-        "text_namu_v2_0010",
-        "text_namu_v2_0013",
-        "text_namu_v2_0019",
-        "text_namu_v2_0020",
-        "text_namu_v2_0023",
-        "text_namu_v2_0024",
-        "text_namu_v2_0027",
-        "text_namu_v2_0029",
-        "text_namu_v2_0031",
-        "text_namu_v2_0033",
-        "text_namu_v2_0043",
-        "text_namu_v2_0044",
-        "text_namu_v2_0066",
-        "text_namu_v2_0067",
-        "text_namu_v2_0078",
-        "text_namu_v2_0080",
-        "text_namu_v2_0082",
-        "text_namu_v2_0091",
-        "text_namu_v2_0092",
-        "text_namu_v2_0093",
-        "text_namu_v2_0094",
-        "text_namu_v2_0095",
-    }
-)
+ROUTE_POLICY_MANIFEST_UNAVAILABLE_SENTINEL = "__route_policy_manifest_unavailable__"
 
 INTENT_PDF = "pdf"
 INTENT_XLSX = "xlsx"
@@ -515,11 +466,30 @@ def build_route_decision(
         policy=policy,
         source_metadata=source_metadata,
     )
-    guard = _hard_guard_result(
-        query_id=_metadata_query_id(policy=policy, source_metadata=source_metadata),
-        source_metadata=source_metadata,
-        allowed_routes=allowed_routes,
-    )
+    route_manifest_load_error = ""
+    try:
+        load_route_policy_manifest()
+    except ValueError:
+        route_manifest_load_error = "route_policy_manifest_unavailable"
+    if route_manifest_load_error:
+        allowed_routes = ()
+        guard_reasons = (*guard_reasons, route_manifest_load_error)
+        guard = {
+            "primary_route": TRACK_POLICY_BLOCKED,
+            "policy_flags": (
+                "diagnostic_only",
+                "no_official_denominator_mutation",
+                "no_production_namespace_or_vector_mutation",
+                "no_diagnostic_only_promotion",
+            ),
+            "blocked_flags": (route_manifest_load_error,),
+        }
+    else:
+        guard = _hard_guard_result(
+            query_id=_metadata_query_id(policy=policy, source_metadata=source_metadata),
+            source_metadata=source_metadata,
+            allowed_routes=allowed_routes,
+        )
     score_result = _score_routes(
         query=query,
         policy=policy,
@@ -546,10 +516,17 @@ def build_route_decision(
 
     if not allowed_routes:
         routes = ()
-        route = TRACK_POLICY_BLOCKED if policy_metadata_conflict else TRACK_INSUFFICIENT_METADATA
+        route = (
+            TRACK_POLICY_BLOCKED
+            if policy_metadata_conflict or route_manifest_load_error
+            else TRACK_INSUFFICIENT_METADATA
+        )
         multi_route = False
         confidence = 0.0
-        reason_parts.append("metadata/source-type guard blocked retrieval")
+        if route_manifest_load_error:
+            reason_parts.append("route policy manifest unavailable")
+        else:
+            reason_parts.append("metadata/source-type guard blocked retrieval")
     elif guard["blocked_flags"]:
         routes = allowed_routes
         route = guard["primary_route"]
@@ -704,6 +681,7 @@ def _hard_guard_result(
     source_metadata: Mapping[str, Any] | None,
     allowed_routes: tuple[str, ...],
 ) -> dict[str, Any]:
+    manifest = load_route_policy_manifest()
     policy_flags = [
         "diagnostic_only",
         "no_official_denominator_mutation",
@@ -716,18 +694,18 @@ def _hard_guard_result(
     if TRACK_XLSX_BUSINESS_STRUCTURED in allowed_routes:
         if _metadata_hidden_or_excluded(source_metadata):
             blocked_flags.append("hidden_xlsx_content_blocked")
-        if query_id in XLSX_PENDING_EVIDENCE_IDS:
+        if query_id in manifest.xlsx_pending_evidence_query_ids:
             policy_flags.append("xlsx_pending_evidence_excluded_from_gold_v0_1")
 
     if TRACK_PDF_BUSINESS_OCR_MM in allowed_routes:
         if _is_pdf_file_identity_lane(source_metadata) and not _has_stable_pdf_identity(source_metadata):
             blocked_flags.append("stable_identity_required")
-        if query_id in PDF_POLICY_EXCLUDED_IDS:
+        if query_id in manifest.pdf_policy_excluded_query_ids:
             blocked_flags.append("pdf_policy_excluded_row")
-        if query_id in PDF_STABLE_IDENTITY_REQUIRED_IDS:
+        if query_id in manifest.pdf_stable_identity_required_query_ids:
             blocked_flags.append("stable_identity_required")
 
-    if TRACK_TEXT_NAMUWIKI_ANIMATION in allowed_routes and query_id in TEXT_NAMU_UNRESOLVED_IDS:
+    if TRACK_TEXT_NAMUWIKI_ANIMATION in allowed_routes and query_id in manifest.text_namu_unresolved_query_ids:
         policy_flags.append("text_namu_unresolved_carry_forward_excluded_from_gold_v0_1")
         policy_flags.append("text_namu_resolution_attempted_false")
 
@@ -1777,6 +1755,10 @@ def evidence_sufficiency_node(state: QueryOrchestratorState) -> QueryOrchestrato
     allowed_source_types = {
         expected_source_types[item] for item in expected_routes if item in expected_source_types
     }
+    text_namu_unresolved_query_ids = _text_namu_unresolved_query_ids_fail_closed()
+    text_namu_policy_unavailable = (
+        ROUTE_POLICY_MANIFEST_UNAVAILABLE_SENTINEL in text_namu_unresolved_query_ids
+    )
     if not verified:
         reasons.append("no_verified_evidence")
     for item in verified:
@@ -1794,8 +1776,14 @@ def evidence_sufficiency_node(state: QueryOrchestratorState) -> QueryOrchestrato
                 reasons.append("pdf_stable_document_identity_missing")
             if lane != "pdf_file_identity" and not _pdf_content_locator_sufficient(item.location_json):
                 reasons.append("pdf_content_locator_missing")
-        if item.source_file_type == "TEXT" and _metadata_query_id(policy=None, source_metadata=item.extra) in TEXT_NAMU_UNRESOLVED_IDS:
-            reasons.append("text_namu_unresolved_excluded_from_gold_v0_1")
+        if item.source_file_type == "TEXT":
+            if text_namu_policy_unavailable:
+                reasons.append("route_policy_manifest_unavailable")
+            elif (
+                _metadata_query_id(policy=None, source_metadata=item.extra)
+                in text_namu_unresolved_query_ids
+            ):
+                reasons.append("text_namu_unresolved_excluded_from_gold_v0_1")
 
     sufficient = not reasons
     status = "evidence_sufficient" if sufficient else "no_supported_evidence"
@@ -1819,6 +1807,13 @@ def evidence_sufficiency_node(state: QueryOrchestratorState) -> QueryOrchestrato
         evidence_sufficiency=result,
     )
     return _with_trace(current, "evidence_sufficiency", result)
+
+
+def _text_namu_unresolved_query_ids_fail_closed() -> frozenset[str]:
+    try:
+        return load_route_policy_manifest().text_namu_unresolved_query_ids
+    except ValueError:
+        return frozenset({ROUTE_POLICY_MANIFEST_UNAVAILABLE_SENTINEL})
 
 
 def maybe_xlsx_aggregation(state: QueryOrchestratorState) -> QueryOrchestratorState:

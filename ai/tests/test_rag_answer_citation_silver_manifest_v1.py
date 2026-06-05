@@ -3984,6 +3984,300 @@ def test_rag_query_orchestrator_unscoped_query_without_llm_adjudicator_fails_clo
     assert "structured_table_result_keyword" not in decision.deterministic_hints
 
 
+def test_rag_query_orchestrator_route_policy_row_exceptions_are_manifest_backed() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator import graph
+    from app.capabilities.rag_orchestrator.route_policy_manifest import (
+        load_route_policy_manifest,
+    )
+
+    graph_source = Path(graph.__file__).read_text(encoding="utf-8")
+    assert "gq_xlsx_aggregation_001" not in graph_source
+    assert "pdf_file_lookup_content_anchor_004" not in graph_source
+    assert "text_namu_v2_0006" not in graph_source
+    assert "route_policy_manifest" not in inspect.signature(
+        graph.build_route_decision
+    ).parameters
+
+    manifest = load_route_policy_manifest()
+    assert manifest.schema_version == "rag_route_policy_manifest_v1"
+    assert manifest.diagnostic_only is True
+    assert manifest.official_metric_input_rows == 0
+    assert manifest.protected_namespaces_touched == ()
+    assert len(manifest.xlsx_pending_evidence_query_ids) == 2
+    assert len(manifest.pdf_policy_excluded_query_ids) == 6
+    assert len(manifest.pdf_stable_identity_required_query_ids) == 3
+    assert len(manifest.text_namu_unresolved_query_ids) == 23
+    assert "gq_xlsx_aggregation_001" in manifest.xlsx_pending_evidence_query_ids
+    assert "pdf_file_lookup_content_anchor_004" in manifest.pdf_policy_excluded_query_ids
+    assert "text_namu_v2_0006" in manifest.text_namu_unresolved_query_ids
+
+    decision = graph.build_route_decision(
+        query="xlsx 합계",
+        policy=QueryPolicy(
+            request_id="req-route-policy-manifest",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["SPREADSHEET"],
+            allowed_parser_versions=["xlsx-extract-v2-hidden-safe"],
+        ),
+        source_metadata={
+            "source_file_type": "SPREADSHEET",
+            "query_id": "gq_xlsx_aggregation_001",
+        },
+    )
+
+    assert "xlsx_pending_evidence_excluded_from_gold_v0_1" in decision.policy_guards
+    assert decision.route == "xlsx_business_structured"
+
+
+def test_rag_query_orchestrator_route_policy_manifest_rejects_invalid_manifest(tmp_path: Path) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.route_policy_manifest import (
+        RoutePolicyManifest,
+        load_route_policy_manifest,
+    )
+
+    invalid_schema = tmp_path / "invalid-schema.json"
+    invalid_schema.write_text(
+        json.dumps(
+            {
+                "schema_version": "wrong",
+                "diagnostic_only": True,
+                "official_metric_input_rows": 0,
+                "protected_namespaces_touched": [],
+                "xlsx_pending_evidence_query_ids": [],
+                "pdf_policy_excluded_query_ids": [],
+                "pdf_stable_identity_required_query_ids": [],
+                "text_namu_unresolved_query_ids": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="schema_version"):
+        load_route_policy_manifest(invalid_schema)
+
+    duplicate = tmp_path / "duplicate.json"
+    duplicate.write_text(
+        json.dumps(
+            {
+                "schema_version": "rag_route_policy_manifest_v1",
+                "diagnostic_only": True,
+                "official_metric_input_rows": 0,
+                "protected_namespaces_touched": [],
+                "xlsx_pending_evidence_query_ids": ["row-1", "row-1"],
+                "pdf_policy_excluded_query_ids": [],
+                "pdf_stable_identity_required_query_ids": [],
+                "text_namu_unresolved_query_ids": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate"):
+        load_route_policy_manifest(duplicate)
+
+    opened_metric = tmp_path / "opened-metric.json"
+    opened_metric.write_text(
+        json.dumps(
+            {
+                "schema_version": "rag_route_policy_manifest_v1",
+                "diagnostic_only": True,
+                "official_metric_input_rows": 1,
+                "protected_namespaces_touched": [],
+                "xlsx_pending_evidence_query_ids": [],
+                "pdf_policy_excluded_query_ids": [],
+                "pdf_stable_identity_required_query_ids": [],
+                "text_namu_unresolved_query_ids": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="official_metric_input_rows=0"):
+        load_route_policy_manifest(opened_metric)
+
+    count_drift = tmp_path / "count-drift.json"
+    count_drift.write_text(
+        json.dumps(
+            {
+                "schema_version": "rag_route_policy_manifest_v1",
+                "diagnostic_only": True,
+                "official_metric_input_rows": 0,
+                "protected_namespaces_touched": [],
+                "xlsx_pending_evidence_query_ids": [],
+                "pdf_policy_excluded_query_ids": [],
+                "pdf_stable_identity_required_query_ids": [],
+                "text_namu_unresolved_query_ids": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unexpected query id count"):
+        load_route_policy_manifest(count_drift)
+
+    with pytest.raises(ValueError, match="unexpected query id count"):
+        RoutePolicyManifest(
+            schema_version="rag_route_policy_manifest_v1",
+            diagnostic_only=True,
+            official_metric_input_rows=0,
+            protected_namespaces_touched=(),
+            xlsx_pending_evidence_query_ids=frozenset(),
+            pdf_policy_excluded_query_ids=frozenset(),
+            pdf_stable_identity_required_query_ids=frozenset(),
+            text_namu_unresolved_query_ids=frozenset(),
+        )
+
+
+def test_rag_query_orchestrator_route_policy_manifest_load_error_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator import graph
+
+    def _raise_manifest_error() -> None:
+        raise ValueError("route policy manifest unavailable for test")
+
+    monkeypatch.setattr(graph, "load_route_policy_manifest", _raise_manifest_error)
+
+    decision = graph.build_route_decision(
+        query="pdf 근거를 찾아줘",
+        policy=QueryPolicy(
+            request_id="req-route-policy-manifest-unavailable",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["PDF"],
+            allowed_parser_versions=["pdf-extract-v2"],
+        ),
+        source_metadata={"source_file_type": "PDF"},
+    )
+
+    assert decision.route == "policy_blocked"
+    assert decision.routes == ()
+    assert "route_policy_manifest_unavailable" in decision.blocked_flags
+    assert decision.llm_adjudicator_called is False
+
+
+def test_rag_query_orchestrator_route_policy_manifest_load_error_blocks_text_sufficiency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import Evidence
+    from app.capabilities.rag_orchestrator import graph
+
+    def _raise_manifest_error() -> None:
+        raise ValueError("route policy manifest unavailable for test")
+
+    monkeypatch.setattr(graph, "load_route_policy_manifest", _raise_manifest_error)
+
+    state = graph.evidence_sufficiency_node(
+        {
+            "route_decision": {
+                "route": graph.TRACK_TEXT_NAMUWIKI_ANIMATION,
+                "routes": [graph.TRACK_TEXT_NAMUWIKI_ANIMATION],
+                "evidence_lane": "none",
+            },
+            "verified_evidence": [
+                Evidence(
+                    evidence_id="evidence-text-manifest-unavailable",
+                    retrieval_backend="vector",
+                    rank=1,
+                    source_file_id="source-text",
+                    source_file_type="TEXT",
+                    index_version="idx-v1",
+                    embedding_status="EMBEDDED",
+                    parser_version="text-extract-v1",
+                    citation_text="bounded text citation",
+                    location_json={"documentId": "doc-text"},
+                    search_unit_id="su-text",
+                    chunk_id="chunk-text",
+                    text="bounded text",
+                    extra={"query_id": "text_namu_v2_0006"},
+                )
+            ],
+        }
+    )
+
+    assert state["evidence_sufficiency"]["sufficient"] is False
+    assert "route_policy_manifest_unavailable" in state["evidence_sufficiency"]["reasons"]
+
+
+def test_rag_query_orchestrator_route_policy_manifest_blocks_pdf_excluded_rows() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.graph import run_query_orchestrator_pure
+
+    class FakeRetriever:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        def retrieve(self, query: str, filters: Any = None) -> Any:
+            self.calls.append({"query": query, "filters": filters})
+            raise AssertionError("policy-excluded PDF rows must not retrieve")
+
+    retriever = FakeRetriever()
+    state = run_query_orchestrator_pure(
+        query="pdf 내용 근거를 찾아줘",
+        policy=QueryPolicy(
+            request_id="req-pdf-policy-excluded",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["PDF"],
+            allowed_parser_versions=["pdf-extract-v2"],
+            top_k=1,
+        ),
+        source_metadata={
+            "source_file_type": "PDF",
+            "query_id": "pdf_file_lookup_content_anchor_004",
+        },
+        retriever=retriever,
+    )
+
+    assert retriever.calls == []
+    assert state["route_decision"]["route"] == "policy_blocked"
+    assert "pdf_policy_excluded_row" in state["route_decision"]["blocked_flags"]
+    assert state["selected_tools"] == []
+
+
+def test_rag_query_orchestrator_route_policy_manifest_requires_pdf_stable_identity() -> None:
+    sys.path.insert(0, str(ROOT / "ai"))
+
+    from app.capabilities.rag_orchestrator.evidence import QueryPolicy
+    from app.capabilities.rag_orchestrator.graph import run_query_orchestrator_pure
+
+    class FakeRetriever:
+        def retrieve(self, query: str, filters: Any = None) -> Any:
+            raise AssertionError("stable-identity-required PDF rows must not retrieve")
+
+    state = run_query_orchestrator_pure(
+        query="pdf 파일 식별 근거를 찾아줘",
+        policy=QueryPolicy(
+            request_id="req-pdf-stable-identity",
+            required_index_version="idx-v1",
+            allowed_source_file_types=["PDF"],
+            allowed_parser_versions=["pdf-extract-v2"],
+            top_k=1,
+        ),
+        source_metadata={
+            "source_file_type": "PDF",
+            "query_id": "pdf_file_lookup_content_anchor_017",
+            "requested_evidence_lane": "pdf_file_document_identity",
+            "generic_filename_identity": True,
+        },
+        retriever=FakeRetriever(),
+    )
+
+    assert state["route_decision"]["route"] == "policy_blocked"
+    assert "stable_identity_required" in state["route_decision"]["blocked_flags"]
+    assert state["selected_tools"] == []
+
+
 def test_rag_query_orchestrator_routes_election_result_aggregation_with_llm_adjudicator() -> None:
     sys.path.insert(0, str(ROOT / "ai"))
 

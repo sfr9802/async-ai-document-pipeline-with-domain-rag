@@ -1,8 +1,9 @@
-"""Deterministic PDF table extraction from native text blocks.
+"""General deterministic PDF table extraction from native text blocks.
 
-This parser is intentionally narrow and fail-closed. It only emits table
-records for layouts whose row arity and column groups are explicit in the text
-blocks. OCR fragments and chart-like labels are left out.
+The parser is intentionally conservative: it extracts only repeated numeric
+grid structures that are already explicit in native PDF text blocks. It does
+not assign domain semantics to columns, run OCR, inspect gold answers, or treat
+the extracted grid as proof of answer quality.
 """
 
 from __future__ import annotations
@@ -10,35 +11,17 @@ from __future__ import annotations
 import hashlib
 import re
 from collections import Counter
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 
-PARSER_VERSION = "pdf-table-deterministic-v1"
+PARSER_VERSION = "pdf-table-general-v1"
 NUMERIC_RE = re.compile(r"^[△▲-]?\d{1,3}(?:,\d{3})*(?:\.\d+)?%?$|^[△▲-]?\d+(?:\.\d+)?%?$")
 PERIOD_RE = re.compile(r"^\d{4}(?:\.\s*(?:\d{1,2}|[ⅠⅡⅢⅣIVX]+))?$")
-
-
-EXPORT_IMPORT_HEADERS = [
-    "period",
-    "수출(FOB) 금액",
-    "수출(FOB) 증가율",
-    "수입(CIF) 금액",
-    "수입(CIF) 증가율",
-    "수출입차 금액",
-]
-
-CURRENCY_HEADERS = [
-    "period",
-    "한국(원/달러) 기말",
-    "한국(원/달러) 절상률",
-    "한국(원/달러) 기간평균",
-    "일본(엔/달러) 기말",
-    "일본(엔/달러) 절상률",
-    "대만(NT달러/달러) 기말",
-    "대만(NT달러/달러) 절상률",
-    "유로(달러/EUR) 기말",
-    "유로(달러/EUR) 절상률",
-]
+ROW_LABEL_WITH_DIGIT_RE = re.compile(r"^(?=.*\d)[A-Za-z가-힣0-9_.() \-]{1,80}$")
+_MIN_GRID_ROWS = 2
+_MIN_GRID_VALUES = 2
+_MAX_GRID_VALUES = 12
+_MAX_ROW_LABEL_CHARS = 80
 
 
 def extract_pdf_table_records(
@@ -55,27 +38,8 @@ def extract_pdf_table_records(
     ]
     records: list[dict[str, Any]] = []
     seen: set[tuple[str, tuple[str, ...]]] = set()
-    for index, block in enumerate(native_blocks):
-        window = native_blocks[index : index + 16]
-        block_text = normalize(clean(block.get("text")))
-        parsed: dict[str, Any] | None = None
-        if export_import_like(block_text):
-            parsed = parse_fixed_arity_table(
-                window,
-                table_type="export_import",
-                headers=EXPORT_IMPORT_HEADERS,
-                value_count=5,
-                title_block=block,
-            )
-        elif currency_like(block_text):
-            parsed = parse_fixed_arity_table(
-                window,
-                table_type="currency_comparison",
-                headers=CURRENCY_HEADERS,
-                value_count=9,
-                title_block=block,
-            )
-        if not parsed or not parsed["row_records"]:
+    for parsed in parse_numeric_grid_tables(native_blocks):
+        if not parsed.get("row_records"):
             continue
         row_source_ids = unique_strings(
             source_id
@@ -93,98 +57,226 @@ def extract_pdf_table_records(
                 "physical_page_index": physical_page_index,
                 "page_label": page_label or str(page_no),
                 "parser_version": PARSER_VERSION,
-                "confidence": "HIGH",
+                "confidence": parsed.get("confidence") or "MEDIUM",
                 "ocr_used": False,
-                "table_semantics_success_claimed": True,
+                "table_semantics_success_claimed": False,
             }
         )
         records.append(parsed)
     return records
 
 
-def parse_fixed_arity_table(
-    blocks: list[Mapping[str, Any]],
-    *,
-    table_type: str,
-    headers: list[str],
-    value_count: int,
-    title_block: Mapping[str, Any],
-) -> dict[str, Any]:
+def looks_like_pdf_table_text(text: str) -> bool:
+    blocks = [
+        {
+            "block_id": "probe",
+            "block_type": "paragraph",
+            "text": clean(text),
+            "bbox": [],
+            "reading_order": 0,
+        }
+    ]
+    return bool(parse_numeric_grid_tables(blocks))
+
+
+def parse_numeric_grid_tables(blocks: list[Mapping[str, Any]]) -> list[dict[str, Any]]:
     tokens = tokenized_lines(blocks)
-    rows: list[dict[str, Any]] = []
-    index = 0
-    total_tokens_by_block = Counter(token["block_id"] for token in tokens)
-    while index < len(tokens):
-        period = normalize_period(tokens[index]["text"])
-        if period and index + value_count < len(tokens):
-            value_tokens = tokens[index + 1 : index + 1 + value_count]
-            if all(is_numeric_value(token["text"]) for token in value_tokens):
-                row_tokens = [tokens[index], *value_tokens]
-                source_blocks = unique_blocks(row_tokens)
-                row_bbox = union_bbox([token["bbox"] for token in row_tokens])
-                row_tokens_by_block = Counter(token["block_id"] for token in row_tokens)
-                bbox_granularity = (
-                    "row_only"
-                    if len(source_blocks) == 1
-                    and total_tokens_by_block[source_blocks[0]] == row_tokens_by_block[source_blocks[0]]
-                    else "table_only"
-                )
-                cells = []
-                for column_index, header in enumerate(headers[1:]):
-                    value = value_tokens[column_index]["text"]
-                    cells.append(
-                        {
-                            "column_path": header,
-                            "value_raw": value,
-                            "value_number": numeric_value(value),
-                            "unit": "",
-                            "sign_convention": sign_convention(value),
-                            "cell_bbox": None,
-                            "bbox_granularity": bbox_granularity,
-                            "source_block_id": value_tokens[column_index]["block_id"],
-                        }
-                    )
-                rows.append(
+    groups = _numeric_row_groups(tokens)
+    tables: list[dict[str, Any]] = []
+    for group_index, group in enumerate(groups):
+        if len(group) < _MIN_GRID_ROWS:
+            continue
+        value_count = len(group[0]["value_tokens"])
+        headers, title_text, header_blocks = _infer_headers_and_title(
+            tokens,
+            blocks,
+            first_row_start=int(group[0]["start"]),
+            value_count=value_count,
+        )
+        rows: list[dict[str, Any]] = []
+        total_tokens_by_block = Counter(token["block_id"] for token in tokens)
+        for row_index, row in enumerate(group):
+            row_tokens = [row["label_token"], *row["value_tokens"]]
+            source_blocks = unique_blocks(row_tokens)
+            row_bbox = union_bbox([token["bbox"] for token in row_tokens])
+            row_tokens_by_block = Counter(token["block_id"] for token in row_tokens)
+            bbox_granularity = (
+                "row_only"
+                if len(source_blocks) == 1
+                and total_tokens_by_block[source_blocks[0]] == row_tokens_by_block[source_blocks[0]]
+                else "table_only"
+            )
+            cells = []
+            for column_index, value_token in enumerate(row["value_tokens"]):
+                value = value_token["text"]
+                cells.append(
                     {
-                        "row_index": len(rows),
-                        "row_label_raw": period,
-                        "row_label_normalized": period,
-                        "row_bbox": row_bbox,
+                        "column_path": headers[column_index + 1],
+                        "value_raw": value,
+                        "value_number": numeric_value(value),
+                        "unit": "",
+                        "sign_convention": sign_convention(value),
+                        "cell_bbox": None,
                         "bbox_granularity": bbox_granularity,
-                        "source_block_ids": source_blocks,
-                        "cells": cells,
+                        "source_block_id": value_token["block_id"],
                     }
                 )
-                index += value_count + 1
+            rows.append(
+                {
+                    "row_index": row_index,
+                    "row_label_raw": row["label_token"]["text"],
+                    "row_label_normalized": row["label"],
+                    "row_bbox": row_bbox,
+                    "bbox_granularity": bbox_granularity,
+                    "source_block_ids": source_blocks,
+                    "cells": cells,
+                }
+            )
+        source_block_ids = unique_blocks(
+            token
+            for row in group
+            for token in [row["label_token"], *row["value_tokens"]]
+        )
+        source_id_set = set(source_block_ids)
+        table_blocks = [
+            block
+            for block in blocks
+            if clean(block.get("block_id")) in source_id_set
+        ]
+        if not table_blocks and blocks:
+            table_blocks = [blocks[0]]
+        tables.append(
+            {
+                "table_type": "numeric_grid",
+                "title_block_id": clean(table_blocks[0].get("block_id")) if table_blocks else "",
+                "title_text": title_text,
+                "headers": headers,
+                "header_blocks": header_blocks,
+                "source_block_ids": source_block_ids,
+                "table_bbox": union_bbox([parse_bbox(block.get("bbox")) for block in table_blocks]),
+                "bbox_granularity": "row_only"
+                if all(row["bbox_granularity"] == "row_only" for row in rows)
+                else "table_only",
+                "row_records": rows,
+                "table_structure": {
+                    "row_count": len(rows),
+                    "value_column_count": value_count,
+                    "detection_basis": "repeated_row_label_plus_numeric_values",
+                    "group_index": group_index,
+                },
+            }
+        )
+    return tables
+
+
+def _numeric_row_groups(tokens: list[Mapping[str, Any]]) -> list[list[dict[str, Any]]]:
+    candidates = _numeric_row_candidates(tokens)
+    groups: list[list[dict[str, Any]]] = []
+    current: list[dict[str, Any]] = []
+    previous_end = -1
+    previous_value_count = 0
+    for candidate in candidates:
+        value_count = len(candidate["value_tokens"])
+        if (
+            current
+            and value_count == previous_value_count
+            and int(candidate["start"]) <= previous_end + 3
+        ):
+            current.append(candidate)
+        else:
+            if current:
+                groups.append(current)
+            current = [candidate]
+        previous_end = int(candidate["end"])
+        previous_value_count = value_count
+    if current:
+        groups.append(current)
+    return [group for group in groups if len(group) >= _MIN_GRID_ROWS]
+
+
+def _numeric_row_candidates(tokens: list[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    index = 0
+    while index < len(tokens):
+        label = normalize_row_label(tokens[index]["text"])
+        if label:
+            value_tokens: list[Mapping[str, Any]] = []
+            cursor = index + 1
+            while cursor < len(tokens) and len(value_tokens) < _MAX_GRID_VALUES:
+                if not is_numeric_value(tokens[cursor]["text"]):
+                    break
+                value_tokens.append(tokens[cursor])
+                cursor += 1
+            value_count = _select_value_count(tokens, index, len(value_tokens))
+            if value_count >= _MIN_GRID_VALUES:
+                candidates.append(
+                    {
+                        "start": index,
+                        "end": index + 1 + value_count,
+                        "label": label,
+                        "label_token": tokens[index],
+                        "value_tokens": value_tokens[:value_count],
+                    }
+                )
+                index = index + 1 + value_count
                 continue
         index += 1
-    source_block_ids = unique_blocks(token for row in rows for token in row_tokens_for_source(row, tokens))
-    if not source_block_ids:
-        source_block_ids = [clean(title_block.get("block_id"))]
-    table_blocks = [block for block in blocks if clean(block.get("block_id")) in set(source_block_ids) or block is title_block]
+    return candidates
+
+
+def _select_value_count(tokens: list[Mapping[str, Any]], label_index: int, numeric_run_length: int) -> int:
+    for value_count in range(_MIN_GRID_VALUES, numeric_run_length + 1):
+        next_index = label_index + 1 + value_count
+        if next_index >= len(tokens) or normalize_row_label(tokens[next_index]["text"]):
+            return value_count
+    return 0
+
+
+def _infer_headers_and_title(
+    tokens: list[Mapping[str, Any]],
+    blocks: list[Mapping[str, Any]],
+    *,
+    first_row_start: int,
+    value_count: int,
+) -> tuple[list[str], str, list[dict[str, Any]]]:
+    prefix = [
+        token
+        for token in tokens[max(0, first_row_start - value_count - 6) : first_row_start]
+        if _header_token_text(token["text"])
+    ]
+    value_headers = [_header_token_text(token["text"]) for token in prefix[-value_count:]]
+    value_headers = [header for header in value_headers if header]
+    while len(value_headers) < value_count:
+        value_headers.append(f"value_{len(value_headers) + 1}")
+    title_tokens = prefix[: max(0, len(prefix) - value_count)]
+    title_text = " ".join(_header_token_text(token["text"]) for token in title_tokens if _header_token_text(token["text"]))
+    if not title_text and blocks:
+        title_text = _first_non_row_text(blocks)
+    header_block_ids = {token["block_id"] for token in prefix}
     header_blocks = [
         block_summary(block)
         for block in blocks
-        if clean(block.get("block_id")) not in set(source_block_ids)
-        and clean(block.get("block_id")) != clean(title_block.get("block_id"))
-        and clean(block.get("text"))
+        if clean(block.get("block_id")) in header_block_ids
     ][:4]
-    return {
-        "table_type": table_type,
-        "title_block_id": clean(title_block.get("block_id")),
-        "title_text": clean(title_block.get("text")),
-        "headers": headers if rows else [],
-        "header_blocks": header_blocks,
-        "source_block_ids": unique_strings([clean(title_block.get("block_id")), *source_block_ids]),
-        "table_bbox": union_bbox([parse_bbox(block.get("bbox")) for block in table_blocks]),
-        "bbox_granularity": "row_only" if all(row["bbox_granularity"] == "row_only" for row in rows) else "table_only",
-        "row_records": rows,
-    }
+    return ["row_label", *value_headers[:value_count]], title_text, header_blocks
 
 
-def row_tokens_for_source(row: Mapping[str, Any], tokens: list[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
-    source_ids = set(row.get("source_block_ids") or [])
-    return [token for token in tokens if token.get("block_id") in source_ids]
+def _header_token_text(value: str) -> str:
+    text = clean(value)
+    if not text or is_numeric_value(text) or normalize_row_label(text):
+        return ""
+    if len(text) > _MAX_ROW_LABEL_CHARS:
+        return ""
+    return text
+
+
+def _first_non_row_text(blocks: list[Mapping[str, Any]]) -> str:
+    for block in blocks:
+        for line in clean(block.get("text")).splitlines():
+            text = _header_token_text(line)
+            if text:
+                return text
+    return ""
 
 
 def tokenized_lines(blocks: list[Mapping[str, Any]]) -> list[dict[str, Any]]:
@@ -210,18 +302,16 @@ def block_summary(block: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def export_import_like(text: str) -> bool:
-    return "수출" in text and "수입" in text and "수출입차" in text
-
-
-def currency_like(text: str) -> bool:
-    return "주요국가의환율변동비교" in text or ("한국" in text and "유로" in text and "절상률" in text)
-
-
-def normalize_period(value: str) -> str:
+def normalize_row_label(value: str) -> str:
     text = clean(value)
+    if not text:
+        return ""
     if PERIOD_RE.match(text):
         return re.sub(r"\.\s+", ". ", text)
+    if is_numeric_value(text):
+        return ""
+    if ROW_LABEL_WITH_DIGIT_RE.match(text):
+        return text
     return ""
 
 
@@ -254,7 +344,7 @@ def table_id_for(page_no: int, table_type: str, source_block_ids: list[str]) -> 
     return f"pdf_table_{page_no}_{digest}"
 
 
-def unique_blocks(tokens: list[Mapping[str, Any]]) -> list[str]:
+def unique_blocks(tokens: Sequence[Mapping[str, Any]]) -> list[str]:
     return unique_strings(clean(token.get("block_id")) for token in tokens)
 
 

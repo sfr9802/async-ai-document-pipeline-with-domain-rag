@@ -20,10 +20,8 @@ from app.capabilities.pdf.artifact_builder import (
     build_output_artifacts,
 )
 from app.capabilities.pdf.table_parser import (
-    currency_like,
-    export_import_like,
     extract_pdf_table_records,
-    normalize as normalize_table_probe,
+    looks_like_pdf_table_text,
 )
 
 log = logging.getLogger(__name__)
@@ -432,8 +430,7 @@ def _should_extract_pdf_tables(blocks: list[dict[str, Any]]) -> bool:
             native_texts.append(text)
     if not native_texts:
         return False
-    text = normalize_table_probe("\n".join(native_texts))
-    return export_import_like(text) or currency_like(text)
+    return looks_like_pdf_table_text("\n".join(native_texts))
 
 
 def _render_pdf_page_png(content: bytes, *, page_index: int, dpi: int) -> bytes:

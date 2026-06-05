@@ -1,0 +1,48 @@
+{
+  "schema_version": "rag_route_policy_manifest_v1",
+  "diagnostic_only": true,
+  "official_metric_input_rows": 0,
+  "protected_namespaces_touched": [],
+  "xlsx_pending_evidence_query_ids": [
+    "gq_xlsx_date_number_format_003",
+    "gq_xlsx_aggregation_001"
+  ],
+  "pdf_policy_excluded_query_ids": [
+    "pdf_file_lookup_content_anchor_004",
+    "pdf_file_lookup_content_anchor_012",
+    "pdf_file_lookup_content_anchor_013",
+    "pdf_file_lookup_content_anchor_014",
+    "pdf_file_lookup_content_anchor_015",
+    "pdf_file_lookup_metadata_002"
+  ],
+  "pdf_stable_identity_required_query_ids": [
+    "pdf_file_lookup_content_anchor_017",
+    "pdf_file_lookup_content_anchor_018",
+    "pdf_file_lookup_content_anchor_020"
+  ],
+  "text_namu_unresolved_query_ids": [
+    "text_namu_v2_0006",
+    "text_namu_v2_0010",
+    "text_namu_v2_0013",
+    "text_namu_v2_0019",
+    "text_namu_v2_0020",
+    "text_namu_v2_0023",
+    "text_namu_v2_0024",
+    "text_namu_v2_0027",
+    "text_namu_v2_0029",
+    "text_namu_v2_0031",
+    "text_namu_v2_0033",
+    "text_namu_v2_0043",
+    "text_namu_v2_0044",
+    "text_namu_v2_0066",
+    "text_namu_v2_0067",
+    "text_namu_v2_0078",
+    "text_namu_v2_0080",
+    "text_namu_v2_0082",
+    "text_namu_v2_0091",
+    "text_namu_v2_0092",
+    "text_namu_v2_0093",
+    "text_namu_v2_0094",
+    "text_namu_v2_0095"
+  ]
+}

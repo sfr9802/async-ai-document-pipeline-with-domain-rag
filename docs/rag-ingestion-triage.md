@@ -1,3 +1,14 @@
+<!-- runtime_rag_heuristic_generalization_refactor:triage-entry:start -->
+### Runtime RAG heuristic generalization refactor
+
+- Scope: remove dataset-shaped runtime heuristics from the app-level PDF table parser and route graph policy layer while keeping the work diagnostic-only.
+- PDF table parser: replace the previous Korean economic-table marker/templates with a conservative native-text numeric-grid detector. It extracts explicit repeated row-label/value structures only, preserves page/block/bbox provenance, and does not claim semantic table understanding.
+- Route policy: keep row-specific diagnostic policy outside `graph.py` in `route_policy_manifest.json`; the loader rejects schema drift, duplicate IDs, nonzero `official_metric_input_rows`, or protected namespace touches.
+- Safe action: use LLM route adjudication only for ambiguous routing inside the existing diagnostic schema; deterministic hard guards and the manifest cannot be relaxed by LLM output.
+- Fine-tuning note: treat residual classes that cannot be resolved by deterministic layout parsing, OCR trust metadata, or versioned policy manifests as future fine-tuning-readiness candidates only after split, leakage, source-evidence, and user-owned gold/denominator gates are opened.
+- Closed gates: official metric, gold/qrels/labels/expected/supporting evidence, denominator mutation, source registry/index mutation, training/fine-tuning/FT-A, fine-tuning dataset export, checkpoint/job, promotion, product-success evidence, and live-readiness remain closed.
+<!-- runtime_rag_heuristic_generalization_refactor:triage-entry:end -->
+
 <!-- nec_2026_local_election_xlsx_source_collection_diagnostic_nonprod:triage-entry:start -->
 ### NEC 2026 local-election XLSX source collection route
 

@@ -122,6 +122,7 @@ archive/
 # Canonical XLSX preflight/gold guardrail artifacts are intentionally small
 # and must not be hidden by the broad generated-artifact patterns above.
 !ai/eval/eval_queries/official_denominator_registry.json
+!ai/app/capabilities/rag_orchestrator/route_policy_manifest.json
 !ai/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.csv
 !ai/eval/eval_queries/gold_queries_xlsx_human_review_normalized_v0.jsonl
 !ai/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0.csv

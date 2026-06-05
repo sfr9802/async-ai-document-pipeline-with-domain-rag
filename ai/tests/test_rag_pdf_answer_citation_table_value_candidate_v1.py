@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "ai"))
 
 from app.capabilities.pdf import service as pdf_service
+from app.capabilities.pdf import table_parser as pdf_table_parser
 
 SCRIPT_PATH = ROOT / "ai" / "scripts" / "rag_pdf_answer_citation_table_value_candidate_v1.py"
 REPAIRED_PDF_QUERY_IDS = ("gq_auto_010", "gq_auto_030", "gq_pdf_section_question_001")
@@ -49,7 +50,7 @@ class _FakePdfPage:
         return [(10.0, 10.0, 200.0, 30.0, self._text, 0, 0)]
 
 
-def test_pdf_extract_page_skips_narrow_table_parser_without_supported_markers(monkeypatch) -> None:
+def test_pdf_extract_page_skips_table_parser_without_table_like_native_rows(monkeypatch) -> None:
     calls: list[dict[str, object]] = []
 
     def fail_if_called(*args, **kwargs):
@@ -69,23 +70,77 @@ def test_pdf_extract_page_skips_narrow_table_parser_without_supported_markers(mo
     assert payload["text_layer_present"] is True
 
 
-def test_pdf_extract_page_keeps_narrow_table_parser_for_supported_markers(monkeypatch) -> None:
+def test_pdf_extract_page_calls_general_table_parser_for_numeric_grid_without_domain_markers(monkeypatch) -> None:
     calls: list[dict[str, object]] = []
 
     def record_call(*args, **kwargs):
         calls.append({"args": args, "kwargs": kwargs})
-        return [{"table_type": "currency_comparison"}]
+        return [{"table_type": "numeric_grid"}]
 
     monkeypatch.setattr(pdf_service, "extract_pdf_table_records", record_call)
 
     payload = pdf_service.PdfExtractService()._extract_page(
-        _FakePdfPage("주요국가의 환율변동 비교 한국 유로 절상률"),
+        _FakePdfPage("분기별 실적\n매출\n영업이익\n2023\n10\n2\n2024\n15\n3"),
         0,
         [],
     )
 
     assert len(calls) == 1
-    assert payload["tables"] == [{"table_type": "currency_comparison"}]
+    assert payload["tables"] == [{"table_type": "numeric_grid"}]
+
+
+def test_pdf_table_parser_extracts_generic_numeric_grid_without_domain_templates() -> None:
+    records = pdf_table_parser.extract_pdf_table_records(
+        [
+            {
+                "block_id": "p0_b0",
+                "block_type": "paragraph",
+                "text": "분기별 실적\n매출\n영업이익\n2023\n10\n2\n2024\n15\n3",
+                "bbox": [10, 20, 200, 120],
+                "reading_order": 0,
+            }
+        ],
+        page_no=1,
+        physical_page_index=0,
+        page_label="1",
+    )
+
+    assert len(records) == 1
+    record = records[0]
+    assert record["table_type"] == "numeric_grid"
+    assert record["parser_version"] == "pdf-table-general-v1"
+    assert record["table_semantics_success_claimed"] is False
+    assert record["headers"] == ["row_label", "매출", "영업이익"]
+    assert record["row_records"][0]["row_label_normalized"] == "2023"
+    assert [cell["value_raw"] for cell in record["row_records"][0]["cells"]] == ["10", "2"]
+
+
+def test_pdf_table_parser_rejects_irregular_numeric_grid_without_semantic_claim() -> None:
+    records = pdf_table_parser.extract_pdf_table_records(
+        [
+            {
+                "block_id": "p0_b0",
+                "block_type": "paragraph",
+                "text": "분기별 실적\n매출\n영업이익\n2023\n10\n2\n2024\n15\n3\n4",
+                "bbox": [10, 20, 200, 140],
+                "reading_order": 0,
+            }
+        ],
+        page_no=1,
+        physical_page_index=0,
+        page_label="1",
+    )
+
+    assert records == []
+
+
+def test_pdf_table_parser_no_longer_declares_domain_template_markers() -> None:
+    source = Path(pdf_table_parser.__file__).read_text(encoding="utf-8")
+
+    assert "EXPORT_IMPORT_HEADERS" not in source
+    assert "CURRENCY_HEADERS" not in source
+    assert "export_import_like" not in source
+    assert "currency_like" not in source
 
 
 def test_pdf_candidate_generates_table_value_answers_without_gold_generation_inputs() -> None:
