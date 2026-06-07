@@ -1,10 +1,82 @@
-<!-- v7_0_e2e_eval_architecture_closeout_nonprod:triage-entry:start -->
-- v7_0_e2e_eval_architecture_closeout_nonprod: diagnostic-only E2E evaluation architecture closeout is recorded as a premature marker only. The missing referenced v6_4-v6_9 predecessor checkpoints are audited, v6_3 is preserved as rollback and source evidence, and remaining gold/qrels/expected evidence/relevance/answerability/official denominator/promotion decisions stay human-owned. current resolves to `v6_4_e2e_coverage_and_failure_taxonomy_nonprod`. Its earlier current movement is superseded by v6_4 recovery; historical movement was from `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` to `v7_0_e2e_eval_architecture_closeout_nonprod`; current moved from `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` to `v7_0_e2e_eval_architecture_closeout_nonprod` historically; rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. no official/product/promotion/live-readiness claim is opened.
-<!-- v7_0_e2e_eval_architecture_closeout_nonprod:triage-entry:end -->
+<!-- v6_9_answer_quality_gate_packet_nonprod:triage-entry:start -->
+- v6_9_answer_quality_gate_packet_nonprod: answer-quality review preparation is embedded in primary report.json only with hashes for generated answers, citations, expected answers, supporting evidence, and qrels payloads. human-owned pass/fail, relevance, answerability, official denominator, and promotion fields are blank. no official/product/promotion/live-readiness claim is opened.
+<!-- v6_9_answer_quality_gate_packet_nonprod:triage-entry:end -->
+
+<!-- v6_8_metric_gated_retrieval_quality_engineering_nonprod:triage-entry:start -->
+- v6_8_metric_gated_retrieval_quality_engineering_nonprod: v6_5 bridgeable_rows=0 keeps true RAG retrieval metrics closed; computed_only_denominator=0 with blocked_reason=no_safe_read_only_label_qrels_bridge_available. Engineering diagnostics summarize candidate availability, hydration, and fail-closed counters without scoring Hit@k, MRR, nDCG, tool quality, or answer quality. no official/product/promotion/live-readiness claim is opened.
+<!-- v6_8_metric_gated_retrieval_quality_engineering_nonprod:triage-entry:end -->
+
+<!-- v6_7_agentic_retry_fail_closed_policy_nonprod:triage-entry:start -->
+- v6_7_agentic_retry_fail_closed_policy_nonprod: RAG/tool path selection, verification, retry count, and fail-closed reasons are embedded in primary report.json only. Retries require a new allowed signal and may not use expected answers, supporting evidence, or qrels. no official/product/promotion/live-readiness claim is opened.
+<!-- v6_7_agentic_retry_fail_closed_policy_nonprod:triage-entry:end -->
+
+<!-- v6_6_structured_tool_operation_taxonomy_nonprod:triage-entry:start -->
+- v6_6_structured_tool_operation_taxonomy_nonprod: PDF/TEXT/XLSX structured operation states are recorded in primary report.json only. Tool surfaces are unavailable in this diagnostic packet, so tool execution and hydration fail closed without raw tool/prompt/response payloads. SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only; tool outputs are excluded from Hit@k/MRR/nDCG. no official/product/promotion/live-readiness claim is opened.
+<!-- v6_6_structured_tool_operation_taxonomy_nonprod:triage-entry:end -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- v6_5_1_gold29_actual_response_smoke_nonprod:triage-entry:start -->
+- v6_5_1_gold29_actual_response_smoke_nonprod: actual response review packet is embedded in primary report.json only. v5_5 gold/qrels/expected/supporting/relevance/answerability artifacts remain read-only; qrels/expected/supporting are hash-only post-render review metadata and never candidate-generation inputs. SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only. v7_0 remains a premature marker; v6_6-v6_9 remain missing/unskipped. no official/product/promotion/live-readiness claim is opened.
+<!-- v6_5_1_gold29_actual_response_smoke_nonprod:triage-entry:end -->
+
+<!-- v6_5_retrieval_metric_unlock_packet_nonprod:triage-entry:start -->
+- v6_5_retrieval_metric_unlock_packet_nonprod: read-only bridge audit for v5_5 keeps approved gold/qrels/expected/supporting/relevance/answerability artifacts immutable and uses them only after sanitized v6_4 candidate generation for bridge eligibility. Non-bridge/ambiguous rows=29 are preserved in the compact in-report human review packet with hashes only. v7_0 remains a premature marker; v6_6-v6_9 remain missing/unskipped, so no v7 completion is claimed. no official/product/promotion/live-readiness claim is opened.
+<!-- v6_5_retrieval_metric_unlock_packet_nonprod:triage-entry:end -->
 
 <!-- v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod:triage-entry:start -->
-- v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod: `v7_0_e2e_eval_architecture_closeout_nonprod` is preserved and classified as a premature closeout marker. Required v6_5-v6_9 predecessors remain missing and unskipped, so no v7 completion is claimed from v7_0. `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` is the recovered diagnostic current after 300-row coverage and failure taxonomy checks. current moved from `v7_0_e2e_eval_architecture_closeout_nonprod` to `v6_4_e2e_coverage_and_failure_taxonomy_nonprod`. no official/product/promotion/live-readiness claim is opened.
+- v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod: `v7_0_e2e_eval_architecture_closeout_nonprod` is preserved and classified as a premature closeout marker. Missing/unskipped required predecessors: none; no v7 completion is claimed from v7_0. `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` is preserved as the historical recovered diagnostic current after 300-row coverage and failure taxonomy checks. v7_0_1 does not move current; live current resolves to `v6_9_answer_quality_gate_packet_nonprod`. Historical recovery movement from `v7_0_e2e_eval_architecture_closeout_nonprod` to `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` is audit context only. no official/product/promotion/live-readiness claim is opened.
 <!-- v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod:triage-entry:end -->
+
+<!-- v7_0_e2e_eval_architecture_closeout_nonprod:triage-entry:start -->
+- v7_0_e2e_eval_architecture_closeout_nonprod: diagnostic-only E2E evaluation architecture closeout is recorded as a premature marker only. The required predecessor checkpoint gaps are audited, v6_3 is preserved as rollback and source evidence, and remaining gold/qrels/expected evidence/relevance/answerability/official denominator/promotion decisions stay human-owned. current resolves to `v6_9_answer_quality_gate_packet_nonprod`. Its earlier current movement is superseded by the recovered diagnostic current; historical movement was from `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` to `v7_0_e2e_eval_architecture_closeout_nonprod`; current moved from `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` to `v7_0_e2e_eval_architecture_closeout_nonprod` historically; rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. no official/product/promotion/live-readiness claim is opened.
+<!-- v7_0_e2e_eval_architecture_closeout_nonprod:triage-entry:end -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

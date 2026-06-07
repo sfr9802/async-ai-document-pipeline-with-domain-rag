@@ -12,6 +12,12 @@ ROOT = Path(__file__).resolve().parents[2]
 RUN_KEY = "v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report"
 V7_0_RUN_KEY = "v7_0_e2e_eval_architecture_closeout_nonprod"
 V6_4_RUN_KEY = "v6_4_e2e_coverage_and_failure_taxonomy_nonprod"
+V6_5_RUN_KEY = "v6_5_retrieval_metric_unlock_packet_nonprod"
+V6_5_1_RUN_KEY = "v6_5_1_gold29_actual_response_smoke_nonprod"
+V6_6_RUN_KEY = "v6_6_structured_tool_operation_taxonomy_nonprod"
+V6_7_RUN_KEY = "v6_7_agentic_retry_fail_closed_policy_nonprod"
+V6_8_RUN_KEY = "v6_8_metric_gated_retrieval_quality_engineering_nonprod"
+V6_9_RUN_KEY = "v6_9_answer_quality_gate_packet_nonprod"
 ROLLBACK_KEY = "v6_2_source_derived_materialization_scaleout_and_denominator_reality_check"
 STATUS = "V6_3_E2E_BGE_M3_FAISS_AGENTIC_RAG_SMOKE_SINGLE_REPORT_NONPROD_READY"
 
@@ -117,15 +123,15 @@ def test_v63_registers_current_and_keeps_v62_rollback(report: dict[str, object])
     from ai.eval import rag_eval_registry as registry
 
     assert registry.resolve_run(RUN_KEY, root=ROOT).logical_key == RUN_KEY
-    assert registry.resolve_run("current", root=ROOT).logical_key in {RUN_KEY, V7_0_RUN_KEY, V6_4_RUN_KEY}
-    assert runner.DEFAULT_RUN_KEY in {RUN_KEY, V7_0_RUN_KEY, V6_4_RUN_KEY}
+    assert registry.resolve_run("current", root=ROOT).logical_key in {RUN_KEY, V7_0_RUN_KEY, V6_4_RUN_KEY, V6_5_RUN_KEY, V6_5_1_RUN_KEY, V6_6_RUN_KEY, V6_7_RUN_KEY, V6_8_RUN_KEY, V6_9_RUN_KEY}
+    assert runner.DEFAULT_RUN_KEY in {RUN_KEY, V7_0_RUN_KEY, V6_4_RUN_KEY, V6_5_RUN_KEY, V6_5_1_RUN_KEY, V6_6_RUN_KEY, V6_7_RUN_KEY, V6_8_RUN_KEY, V6_9_RUN_KEY}
     assert report["status"] == STATUS
     assert report["current_resolves_to"] == RUN_KEY
     assert report["current_alias_policy"]["current_moved_from"] == ROLLBACK_KEY
     assert report["current_alias_policy"]["current_moved_to"] == RUN_KEY
     assert report["rollback_key"] == ROLLBACK_KEY
     assert runner.check_run(RUN_KEY)["logical_run_key"] == RUN_KEY
-    assert runner.check_run("current")["logical_run_key"] in {RUN_KEY, V7_0_RUN_KEY, V6_4_RUN_KEY}
+    assert runner.check_run("current")["logical_run_key"] in {RUN_KEY, V7_0_RUN_KEY, V6_4_RUN_KEY, V6_5_RUN_KEY, V6_5_1_RUN_KEY, V6_6_RUN_KEY, V6_7_RUN_KEY, V6_8_RUN_KEY, V6_9_RUN_KEY}
     assert runner.check_run(ROLLBACK_KEY)["logical_run_key"] == ROLLBACK_KEY
 
 

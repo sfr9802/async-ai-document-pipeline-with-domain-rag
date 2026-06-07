@@ -15,7 +15,7 @@ SHORT_RUN_ID = LOGICAL_RUN_KEY
 CANONICAL_LONG_RUN_ID = LOGICAL_RUN_KEY
 STATUS = "V7_0_E2E_EVAL_ARCHITECTURE_CLOSEOUT_NONPROD_READY"
 PREVIOUS_CURRENT = v63.LOGICAL_RUN_KEY
-RECOVERED_CURRENT = "v6_4_e2e_coverage_and_failure_taxonomy_nonprod"
+RECOVERED_CURRENT = "v6_9_answer_quality_gate_packet_nonprod"
 CURRENT_RESOLVES_TO = RECOVERED_CURRENT
 ROLLBACK_KEY = PREVIOUS_CURRENT
 KST_DOC_DATE = "2026-06-07"
@@ -260,7 +260,7 @@ def build_report(
             "historical_marker_current_moved_from": PREVIOUS_CURRENT,
             "historical_marker_current_moved_to": LOGICAL_RUN_KEY,
             "rollback_key": ROLLBACK_KEY,
-            "movement_condition": "v7_0 is explicit-only marker evidence; recovered current remains v6_4",
+            "movement_condition": "v7_0 is explicit-only marker evidence; recovered current follows the latest diagnostic recovery packet",
             "official_product_promotion_live_readiness_claim": False,
         },
         "artifact_paths": dict(ARTIFACT_PATHS),
@@ -444,13 +444,16 @@ def _require_architecture(report: Mapping[str, Any]) -> None:
     if closed is True:
         if missing_or_unskipped:
             raise ValueError("v7_0 required predecessor checkpoints missing or unskipped")
+        if summary.get("remaining_human_owned_decision_gates"):
+            raise ValueError("v7_0 cannot pass closeout: human-owned decision gates remain open")
     elif closed is False:
         if summary.get("premature_closeout_marker_only") is not True:
             raise ValueError("v7_0 premature marker flag missing")
         if summary.get("v7_completion_claim") is not False:
             raise ValueError("v7_0 completion claim opened")
-        if summary.get("required_predecessor_checkpoints_exist_or_skipped") is not False:
-            raise ValueError("v7_0 predecessor guard unexpectedly open")
+        if summary.get("required_predecessor_checkpoints_exist_or_skipped") is True:
+            if summary.get("remaining_human_owned_decision_gates") != HUMAN_OWNED_DECISION_GATES:
+                raise ValueError("v7_0 predecessor satisfaction missing human-owned gate blockers")
     else:
         raise ValueError("v7_0 checkpoint closeout flag drift")
     if summary.get("quality_or_promotion_gate_opened") is not False:
@@ -561,7 +564,7 @@ def _doc_fragments(report: Mapping[str, Any]) -> tuple[str, str, str]:
     progress = (
         f"- Overall status: `{STATUS}`; `{SHORT_RUN_ID}` is diagnostic-only explicit marker evidence and current "
         f"resolves to `{RECOVERED_CURRENT}`. The historical v7_0 movement from `{ROLLBACK_KEY}` to `{SHORT_RUN_ID}` "
-        "is preserved only as audit context and is superseded by the v6_4 recovery current. The run "
+        "is preserved only as audit context and is superseded by the recovered diagnostic current. The run "
         f"hash-locks `{PREVIOUS_CURRENT}` as the source bge-m3 + FAISS E2E evidence, records checkpoint by "
         "checkpoint audit decisions, writes one primary report.json, and keeps retrieval quality, answer "
         "quality, official denominator, promotion, product-success, and live-readiness gates closed. "
@@ -577,10 +580,10 @@ def _doc_fragments(report: Mapping[str, Any]) -> tuple[str, str, str]:
         "There is no official/product/promotion/live-readiness claim."
     )
     triage = (
-        f"- {SHORT_RUN_ID}: diagnostic-only E2E evaluation architecture closeout is recorded as a premature marker only. The missing "
-        "referenced v6_4-v6_9 predecessor checkpoints are audited, v6_3 is preserved as rollback and source evidence, "
+        f"- {SHORT_RUN_ID}: diagnostic-only E2E evaluation architecture closeout is recorded as a premature marker only. The required "
+        "predecessor checkpoint gaps are audited, v6_3 is preserved as rollback and source evidence, "
         "and remaining gold/qrels/expected evidence/relevance/answerability/official denominator/promotion "
-        f"decisions stay human-owned. current resolves to `{RECOVERED_CURRENT}`. Its earlier current movement is superseded by v6_4 recovery; historical movement was from "
+        f"decisions stay human-owned. current resolves to `{RECOVERED_CURRENT}`. Its earlier current movement is superseded by the recovered diagnostic current; historical movement was from "
         f"`{ROLLBACK_KEY}` to `{SHORT_RUN_ID}`; current moved from `{ROLLBACK_KEY}` to `{SHORT_RUN_ID}` historically; rollback key is `{ROLLBACK_KEY}`. "
         "no official/product/promotion/live-readiness claim is opened."
     )
@@ -603,7 +606,7 @@ def _plan_doc(report: Mapping[str, Any]) -> str:
 
 ## Objective
 
-Implement `v7_0_e2e_eval_architecture_closeout_nonprod` checkpoint by checkpoint as a diagnostic-only marker after `{PREVIOUS_CURRENT}`. It is not a completed v7 closeout unless the required v6_4-v6_9 predecessors exist or are explicitly skipped with diagnostic-only reasons.
+Implement `v7_0_e2e_eval_architecture_closeout_nonprod` checkpoint by checkpoint as a diagnostic-only marker after `{PREVIOUS_CURRENT}`. It is not a completed v7 closeout unless the required v6_4-v6_9 predecessors exist or are explicitly skipped with diagnostic-only reasons and the remaining human-owned quality, denominator, promotion, and live-readiness gates are explicitly resolved.
 
 ## Non-Goals
 
@@ -622,7 +625,7 @@ Implement `v7_0_e2e_eval_architecture_closeout_nonprod` checkpoint by checkpoint
 
 {checkpoints}
 
-- [ ] predecessor_checkpoint_guard: v6_4-v6_9 predecessor checkpoints are not all present or explicitly skipped, so v7_0 remains a premature closeout marker only.
+- [ ] closeout_gate_guard: v6_4-v6_9 predecessor checkpoints are present or explicitly skipped, but human-owned quality, denominator, promotion, and live-readiness gates remain open; v7_0 remains a premature closeout marker only.
 
 ## Protected Surfaces
 

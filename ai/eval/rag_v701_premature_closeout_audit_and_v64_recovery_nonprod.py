@@ -17,7 +17,8 @@ CANONICAL_LONG_RUN_ID = LOGICAL_RUN_KEY
 STATUS = "V7_0_1_PREMATURE_CLOSEOUT_AUDIT_AND_V6_4_RECOVERY_NONPROD_READY"
 V7_0_RUN_KEY = v70.LOGICAL_RUN_KEY
 V6_4_RUN_KEY = v64.LOGICAL_RUN_KEY
-CURRENT_RESOLVES_TO = V6_4_RUN_KEY
+HISTORICAL_RECOVERY_CURRENT = V6_4_RUN_KEY
+CURRENT_RESOLVES_TO = v70.RECOVERED_CURRENT
 PREVIOUS_CURRENT = V7_0_RUN_KEY
 ROLLBACK_KEY = v64.ROLLBACK_KEY
 KST_DOC_DATE = "2026-06-07"
@@ -206,6 +207,8 @@ def validate_v7_closeout_predecessor_guard(
     claims_closed = architecture.get("codex_owned_architecture_checkpoints_closed") is True
     if claims_closed and predecessor_audit.get("all_required_predecessors_satisfied_or_skipped") is not True:
         raise ValueError("v7_0 cannot pass closeout: required predecessor checkpoints are missing or unskipped")
+    if claims_closed and architecture.get("remaining_human_owned_decision_gates"):
+        raise ValueError("v7_0 cannot pass closeout: human-owned decision gates remain open")
 
 
 def _v7_audit(root: Path, v7_0_report: Mapping[str, Any], v6_4_report: Mapping[str, Any]) -> dict[str, Any]:
@@ -276,14 +279,17 @@ def build_report(
         "non_production": True,
         "audit_run_does_not_move_current": True,
         "current_resolves_to": CURRENT_RESOLVES_TO,
-        "current_moved_from": PREVIOUS_CURRENT,
-        "current_moved_to": CURRENT_RESOLVES_TO,
+        "current_moved_from": "",
+        "current_moved_to": "",
         "rollback_key": ROLLBACK_KEY,
         "current_alias_policy": {
-            "current_moved_from": PREVIOUS_CURRENT,
-            "current_moved_to": CURRENT_RESOLVES_TO,
+            "current_moved_from": "",
+            "current_moved_to": "",
+            "historical_recovery_current_moved_from": PREVIOUS_CURRENT,
+            "historical_recovery_current_moved_to": HISTORICAL_RECOVERY_CURRENT,
+            "live_current_resolves_to": CURRENT_RESOLVES_TO,
             "rollback_key": ROLLBACK_KEY,
-            "movement_condition": "v6_4 checks pass; v7_0_1 records audit evidence only",
+            "movement_condition": "historical v6_4 recovery is preserved; v7_0_1 records audit evidence only and live current remains v6_9",
             "audit_run_does_not_become_current": True,
             "official_product_promotion_live_readiness_claim": False,
         },
@@ -432,8 +438,10 @@ def status_event(report: Mapping[str, Any], *, artifact_hashes: Mapping[str, str
         "status": STATUS,
         "generated_at": report["generated_at"],
         "current_resolves_to": CURRENT_RESOLVES_TO,
-        "current_moved_from": PREVIOUS_CURRENT,
-        "current_moved_to": CURRENT_RESOLVES_TO,
+        "current_moved_from": "",
+        "current_moved_to": "",
+        "historical_recovery_current_moved_from": PREVIOUS_CURRENT,
+        "historical_recovery_current_moved_to": HISTORICAL_RECOVERY_CURRENT,
         "rollback_key": ROLLBACK_KEY,
         "diagnostic_only": True,
         "official_metric": False,
@@ -483,10 +491,17 @@ def _doc_fragments(report: Mapping[str, Any]) -> tuple[str, str, str]:
     audit = report["v7_0_premature_closeout_audit"]
     summary = audit["summary"]
     recovery = report["v6_4_recovery_summary"]
+    missing_keys = [
+        row["checkpoint_key"]
+        for row in audit["predecessor_checkpoint_audit"]
+        if row["status"] == "missing"
+    ]
+    missing_label = ", ".join(f"`{key}`" for key in missing_keys) if missing_keys else "none"
     progress = (
         f"- Overall status: `{STATUS}`; `{SHORT_RUN_ID}` records `{V7_0_RUN_KEY}` as a premature closeout marker "
-        f"only and preserves it as diagnostic audit evidence. current moved from `{V7_0_RUN_KEY}` to `{V6_4_RUN_KEY}` "
-        "because v6_4 recovery checks passed; the audit run itself does not become current. "
+        f"only and preserves historical `{V6_4_RUN_KEY}` recovery evidence. The audit run does not move current; "
+        f"live current resolves to `{CURRENT_RESOLVES_TO}`. Historical recovery movement from `{V7_0_RUN_KEY}` to "
+        f"`{HISTORICAL_RECOVERY_CURRENT}` is retained as audit context only. "
         "There is no official/product/promotion/live-readiness claim."
     )
     measurements = (
@@ -498,14 +513,17 @@ def _doc_fragments(report: Mapping[str, Any]) -> tuple[str, str, str]:
         f"family_breakdown={recovery['family_breakdown']}; bounded_e2e_rows={recovery['bounded_e2e_expanded_rows']}; "
         f"computed_only_denominator={recovery['computed_only_denominator']}; "
         f"coverage_adjusted_denominator={recovery['coverage_adjusted_denominator']}.\n"
-        f"- Current alias: current moved from `{V7_0_RUN_KEY}` to `{V6_4_RUN_KEY}`; rollback key is `{ROLLBACK_KEY}`. "
+        f"- Current alias: v7_0_1 does not move current; live current resolves to `{CURRENT_RESOLVES_TO}`. "
+        f"Historical recovery movement from `{V7_0_RUN_KEY}` to `{HISTORICAL_RECOVERY_CURRENT}` is audit context only; "
+        f"rollback key is `{ROLLBACK_KEY}`. "
         "No official/product/promotion/live-readiness claim is opened."
     )
     triage = (
         f"- {SHORT_RUN_ID}: `{V7_0_RUN_KEY}` is preserved and classified as a premature closeout marker. "
-        "Required v6_5-v6_9 predecessors remain missing and unskipped, so no v7 completion is claimed from v7_0. "
-        f"`{V6_4_RUN_KEY}` is the recovered diagnostic current after 300-row coverage and failure taxonomy checks. "
-        f"current moved from `{V7_0_RUN_KEY}` to `{V6_4_RUN_KEY}`. "
+        f"Missing/unskipped required predecessors: {missing_label}; no v7 completion is claimed from v7_0. "
+        f"`{V6_4_RUN_KEY}` is preserved as the historical recovered diagnostic current after 300-row coverage and failure taxonomy checks. "
+        f"v7_0_1 does not move current; live current resolves to `{CURRENT_RESOLVES_TO}`. "
+        f"Historical recovery movement from `{V7_0_RUN_KEY}` to `{HISTORICAL_RECOVERY_CURRENT}` is audit context only. "
         "no official/product/promotion/live-readiness claim is opened."
     )
     return progress, measurements, triage
@@ -542,7 +560,7 @@ Recover from the premature `v7_0_e2e_eval_architecture_closeout_nonprod` closeou
 
 - v7_0 is preserved as diagnostic audit evidence only.
 - v7_0 is recorded as a premature closeout marker, not a completed v7 architecture milestone.
-- current moves to `{V6_4_RUN_KEY}` only after v6_4 recovery checks pass.
+- historical v6_4 recovery evidence is preserved, but v7_0_1 does not move current; live current remains `{CURRENT_RESOLVES_TO}`.
 
 ## Required Predecessor Checkpoints
 

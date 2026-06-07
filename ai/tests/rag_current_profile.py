@@ -119,11 +119,12 @@ NON_CURRENT_RAG_TEST_FILES = frozenset(
     }
 )
 
-# v6_4 moves `current` back from the premature v7_0 closeout marker to the
-# recovered E2E coverage/failure-taxonomy profile. Keep this current surface
-# focused on the recovery contract plus still-relevant preview, guardrail, and rollback checks;
-# historical resolver/status files remain directly checkable outside
-# `--rag-current`.
+# v6_9 moves `current` from the v6_8 metric-gated retrieval-quality packet to
+# the answer-quality gate packet. Keep this current
+# surface focused on the recovery, bridge-audit, response-smoke, and
+# tool/RAG-separation/agentic-policy contracts plus still-relevant preview,
+# guardrail, and rollback checks; historical resolver/status files remain
+# directly checkable outside `--rag-current`.
 CURRENT_RAG_TEST_NODEIDS = frozenset(
     {
         "ai/tests/test_rag_current_focused_test_profile_v1.py::test_current_profile_data_lives_in_shared_support_module",
@@ -171,11 +172,61 @@ CURRENT_RAG_TEST_NODEIDS = frozenset(
         "ai/tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::test_bounded_e2e_render_hydrates_only_source_atom_evidence_bundle",
         "ai/tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::test_report_leakage_guard_answer_quality_and_protected_surfaces_are_closed",
         "ai/tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::test_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_v65_report_schema_current_resolver_and_v64_rollback",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_v65_reads_and_verifies_v64_recovery_contract_before_bridge",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_v65_reads_v55_approved_artifacts_immutably",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_bridge_states_are_exhaustive_mutually_exclusive_and_no_rows_drop",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_retrieval_metrics_stay_closed_without_explicit_user_denominator_gate",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_no_gold_qrels_expected_or_baseline_leakage_into_candidate_generation",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_human_review_packet_is_compact_no_decisions_and_no_raw_payloads",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_tool_outputs_answer_quality_official_and_protected_surfaces_stay_closed",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_v70_marker_and_v701_audit_identity_guards",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_protected_namespace_git_status_is_clean_for_v65",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_report_schema_current_resolver_and_v65_rollback",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_reads_and_respects_v65_bridge_audit",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_reads_v55_gold29_read_only_and_attempts_all_rows",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_response_diagnostics_are_compact_and_never_drop_rows",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_candidate_generation_leakage_and_shortcut_guards",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_human_review_packet_contains_actual_answers_but_no_decisions",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_metrics_tools_evidence_truth_and_protected_surfaces_stay_closed",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_v7_marker_guard_remains_active",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_protected_namespace_git_status_is_clean_for_v651",
+        "ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py::test_v66_schema_current_and_rollback",
+        "ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py::test_v66_reads_v651_actual_response_smoke_as_rollback",
+        "ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py::test_v66_tool_and_rag_metrics_are_separate",
+        "ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py::test_v66_tool_taxonomy_is_exhaustive",
+        "ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py::test_v66_structured_tool_family_coverage_is_diagnostic_only",
+        "ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py::test_v66_protected_boundaries_stay_closed",
+        "ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py::test_v66_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py::test_protected_namespace_git_status_is_clean_for_v66",
+        "ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py::test_v67_schema_current_and_rollback",
+        "ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py::test_v67_agentic_policy_separates_choices_from_quality",
+        "ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py::test_v67_retry_policy_is_fail_closed",
+        "ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py::test_v67_agentic_rows_never_drop_and_remain_compact",
+        "ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py::test_v67_boundaries_and_protected_surfaces_stay_closed",
+        "ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py::test_v67_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py::test_protected_namespace_git_status_is_clean_for_v67",
+        "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_v68_schema_current_and_rollback",
+        "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_v68_retrieval_metric_gate_is_closed_without_safe_bridge",
+        "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_v68_metric_denominators_are_separate",
+        "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_v68_engineering_diagnostics_do_not_score_quality",
+        "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_v68_boundaries_and_protected_surfaces_stay_closed",
+        "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_v68_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_protected_namespace_git_status_is_clean_for_v68",
+        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_schema_current_and_rollback",
+        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_answer_quality_gate_is_review_packet_not_metric",
+        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_no_raw_prompt_response_payloads",
+        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_gate_rows_join_response_tool_agentic_and_retrieval_gate",
+        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_boundaries_and_protected_surfaces_stay_closed",
+        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_protected_namespace_git_status_is_clean_for_v69",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_v70_registers_explicitly_and_v64_recovery_is_current",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_source_v63_e2e_architecture_is_hash_locked_and_closed",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_report_bundle_writes_single_report_status_docs_and_plan",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_required_fields_and_protected_surfaces_stay_closed",
-        "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_v701_registers_explicitly_and_current_resolves_to_v64",
+        "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_v701_registers_explicitly_and_preserves_live_current_v69",
         "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_v701_records_v70_as_premature_closeout_marker_only",
         "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_predecessor_closeout_guard_rejects_missing_without_skip_reason",
         "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_v701_links_v64_recovery_and_preserves_diagnostic_boundaries",

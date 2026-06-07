@@ -12,6 +12,12 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 RUN_KEY = "v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod"
 V6_4_RUN_KEY = "v6_4_e2e_coverage_and_failure_taxonomy_nonprod"
+V6_5_RUN_KEY = "v6_5_retrieval_metric_unlock_packet_nonprod"
+V6_5_1_RUN_KEY = "v6_5_1_gold29_actual_response_smoke_nonprod"
+V6_6_RUN_KEY = "v6_6_structured_tool_operation_taxonomy_nonprod"
+V6_7_RUN_KEY = "v6_7_agentic_retry_fail_closed_policy_nonprod"
+V6_8_RUN_KEY = "v6_8_metric_gated_retrieval_quality_engineering_nonprod"
+V6_9_RUN_KEY = "v6_9_answer_quality_gate_packet_nonprod"
 V7_0_RUN_KEY = "v7_0_e2e_eval_architecture_closeout_nonprod"
 ROLLBACK_KEY = "v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report"
 STATUS = "V7_0_1_PREMATURE_CLOSEOUT_AUDIT_AND_V6_4_RECOVERY_NONPROD_READY"
@@ -146,24 +152,27 @@ def report(
     return built
 
 
-def test_v701_registers_explicitly_and_current_resolves_to_v64(report: dict[str, object]) -> None:
+def test_v701_registers_explicitly_and_preserves_live_current_v69(report: dict[str, object]) -> None:
     import ai.scripts.rag_eval as runner
     from ai.eval import rag_eval_registry as registry
 
     assert registry.resolve_run(RUN_KEY, root=ROOT).logical_key == RUN_KEY
     assert registry.resolve_run(V6_4_RUN_KEY, root=ROOT).logical_key == V6_4_RUN_KEY
-    assert registry.resolve_run("current", root=ROOT).logical_key == V6_4_RUN_KEY
-    assert runner.DEFAULT_RUN_KEY == V6_4_RUN_KEY
+    assert registry.resolve_run("current", root=ROOT).logical_key == V6_9_RUN_KEY
+    assert runner.DEFAULT_RUN_KEY == V6_9_RUN_KEY
     assert runner.check_run(RUN_KEY)["logical_run_key"] == RUN_KEY
     assert runner.check_run(V6_4_RUN_KEY)["logical_run_key"] == V6_4_RUN_KEY
-    assert runner.check_run("current")["logical_run_key"] == V6_4_RUN_KEY
+    assert runner.check_run("current")["logical_run_key"] == V6_9_RUN_KEY
     assert runner.check_run(ROLLBACK_KEY)["logical_run_key"] == ROLLBACK_KEY
 
     assert report["status"] == STATUS
-    assert report["current_resolves_to"] == V6_4_RUN_KEY
+    assert report["current_resolves_to"] == V6_9_RUN_KEY
     assert report["audit_run_does_not_move_current"] is True
-    assert report["current_alias_policy"]["current_moved_from"] == V7_0_RUN_KEY
-    assert report["current_alias_policy"]["current_moved_to"] == V6_4_RUN_KEY
+    assert report["current_alias_policy"]["current_moved_from"] == ""
+    assert report["current_alias_policy"]["current_moved_to"] == ""
+    assert report["current_alias_policy"]["historical_recovery_current_moved_from"] == V7_0_RUN_KEY
+    assert report["current_alias_policy"]["historical_recovery_current_moved_to"] == V6_4_RUN_KEY
+    assert report["current_alias_policy"]["live_current_resolves_to"] == V6_9_RUN_KEY
     assert report["rollback_key"] == ROLLBACK_KEY
 
 
@@ -179,18 +188,23 @@ def test_v701_records_v70_as_premature_closeout_marker_only(report: dict[str, ob
     assert summary["v7_0_recorded_as_premature_closeout_marker_only"] is True
     assert summary["v7_completion_claim_from_v7_0"] is False
     assert summary["predecessor_required_count"] == 6
-    assert summary["predecessor_present_count"] == 1
-    assert summary["predecessor_missing_count"] == 5
-    assert summary["all_required_predecessors_satisfied_or_skipped"] is False
+    assert summary["predecessor_present_count"] == 6
+    assert summary["predecessor_missing_count"] == 0
+    assert summary["all_required_predecessors_satisfied_or_skipped"] is True
 
     assert set(by_key) == EXPECTED_PREDECESSORS
     assert by_key[V6_4_RUN_KEY]["artifact_status"] == "present"
     assert by_key[V6_4_RUN_KEY]["status"] == "present"
-    for key in EXPECTED_PREDECESSORS - {V6_4_RUN_KEY}:
-        assert by_key[key]["artifact_status"] == "missing"
-        assert by_key[key]["status"] == "missing"
-        assert by_key[key]["skip_reason"] == ""
-        assert by_key[key]["diagnostic_only_skip"] is False
+    assert by_key[V6_5_RUN_KEY]["artifact_status"] == "present"
+    assert by_key[V6_5_RUN_KEY]["status"] == "present"
+    assert by_key[V6_6_RUN_KEY]["artifact_status"] == "present"
+    assert by_key[V6_6_RUN_KEY]["status"] == "present"
+    assert by_key[V6_7_RUN_KEY]["artifact_status"] == "present"
+    assert by_key[V6_7_RUN_KEY]["status"] == "present"
+    assert by_key[V6_8_RUN_KEY]["artifact_status"] == "present"
+    assert by_key[V6_8_RUN_KEY]["status"] == "present"
+    assert by_key[V6_9_RUN_KEY]["artifact_status"] == "present"
+    assert by_key[V6_9_RUN_KEY]["status"] == "present"
 
 
 def test_predecessor_closeout_guard_rejects_missing_without_skip_reason(
@@ -199,25 +213,13 @@ def test_predecessor_closeout_guard_rejects_missing_without_skip_reason(
     v64_report: dict[str, object],
 ) -> None:
     audit = v701_module.audit_predecessor_checkpoints(root=ROOT, v6_4_report=v64_report)
-    assert audit["all_required_predecessors_satisfied_or_skipped"] is False
+    assert audit["all_required_predecessors_satisfied_or_skipped"] is True
 
     poisoned_v70 = json.loads(json.dumps(v70_report))
     poisoned_v70["architecture_closeout_summary"]["codex_owned_architecture_checkpoints_closed"] = True
 
-    with pytest.raises(ValueError, match="required predecessor checkpoints"):
+    with pytest.raises(ValueError, match="human-owned decision gates"):
         v701_module.validate_v7_closeout_predecessor_guard(poisoned_v70, predecessor_audit=audit)
-
-    skip_reasons = {
-        key: "diagnostic_only_not_in_scope_for_v7_0_1_recovery"
-        for key in EXPECTED_PREDECESSORS
-        if key != V6_4_RUN_KEY
-    }
-    skipped = v701_module.audit_predecessor_checkpoints(
-        root=ROOT,
-        v6_4_report=v64_report,
-        explicit_skip_reasons=skip_reasons,
-    )
-    v701_module.validate_v7_closeout_predecessor_guard(poisoned_v70, predecessor_audit=skipped)
 
 
 def test_v701_links_v64_recovery_and_preserves_diagnostic_boundaries(report: dict[str, object]) -> None:
@@ -283,7 +285,9 @@ def test_report_bundle_writes_one_primary_report_status_docs_and_plan(
         if line.strip()
     ]
     assert status_rows[-1]["logical_run_key"] == RUN_KEY
-    assert status_rows[-1]["current_resolves_to"] == V6_4_RUN_KEY
+    assert status_rows[-1]["current_resolves_to"] == V6_9_RUN_KEY
+    assert status_rows[-1]["current_moved_to"] == ""
+    assert status_rows[-1]["historical_recovery_current_moved_to"] == V6_4_RUN_KEY
     assert status_rows[-1]["artifact_sha256"]["report_json_sha256"] == written["artifact_sha256"]["report_json_sha256"]
 
     plan_text = (tmp_path / "docs/codex-goals/rag-v7-e2e-evaluation-plan.md").read_text(encoding="utf-8")
@@ -297,7 +301,8 @@ def test_report_bundle_writes_one_primary_report_status_docs_and_plan(
         text = (tmp_path / "docs" / doc_name).read_text(encoding="utf-8")
         assert RUN_KEY in text
         assert "premature closeout marker" in text
-        assert f"current moved from `{V7_0_RUN_KEY}` to `{V6_4_RUN_KEY}`" in text
+        assert f"live current resolves to `{V6_9_RUN_KEY}`" in text
+        assert f"Historical recovery movement from `{V7_0_RUN_KEY}` to `{V6_4_RUN_KEY}`" in text
         assert "no official/product/promotion/live-readiness claim" in text.lower()
 
 

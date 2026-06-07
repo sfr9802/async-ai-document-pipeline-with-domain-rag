@@ -1,10 +1,82 @@
-<!-- v7_0_e2e_eval_architecture_closeout_nonprod:progress-entry:start -->
-- Overall status: `V7_0_E2E_EVAL_ARCHITECTURE_CLOSEOUT_NONPROD_READY`; `v7_0_e2e_eval_architecture_closeout_nonprod` is diagnostic-only explicit marker evidence and current resolves to `v6_4_e2e_coverage_and_failure_taxonomy_nonprod`. The historical v7_0 movement from `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` to `v7_0_e2e_eval_architecture_closeout_nonprod` is preserved only as audit context and is superseded by the v6_4 recovery current. The run hash-locks `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` as the source bge-m3 + FAISS E2E evidence, records checkpoint by checkpoint audit decisions, writes one primary report.json, and keeps retrieval quality, answer quality, official denominator, promotion, product-success, and live-readiness gates closed. rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. There is no official/product/promotion/live-readiness claim.
-<!-- v7_0_e2e_eval_architecture_closeout_nonprod:progress-entry:end -->
+<!-- v6_9_answer_quality_gate_packet_nonprod:progress-entry:start -->
+- Overall status: `V6_9_ANSWER_QUALITY_GATE_PACKET_NONPROD_READY`; `v6_9_answer_quality_gate_packet_nonprod` is a diagnostic-only answer-quality gate packet over v6_5_1/v6_6/v6_7/v6_8. current moved from `v6_8_metric_gated_retrieval_quality_engineering_nonprod` to `v6_9_answer_quality_gate_packet_nonprod` after v6_9 checks; rollback key is `v6_8_metric_gated_retrieval_quality_engineering_nonprod`. packet_rows=29; human-owned review fields remain blank; answer_quality_metric_computed=false. There is no official/product/promotion/live-readiness claim.
+<!-- v6_9_answer_quality_gate_packet_nonprod:progress-entry:end -->
+
+<!-- v6_8_metric_gated_retrieval_quality_engineering_nonprod:progress-entry:start -->
+- Overall status: `V6_8_METRIC_GATED_RETRIEVAL_QUALITY_ENGINEERING_NONPROD_READY`; `v6_8_metric_gated_retrieval_quality_engineering_nonprod` is a diagnostic-only retrieval-quality engineering gate over v6_4/v6_5/v6_6/v6_7. current moved from `v6_7_agentic_retry_fail_closed_policy_nonprod` to `v6_8_metric_gated_retrieval_quality_engineering_nonprod` after v6_8 checks; rollback key is `v6_7_agentic_retry_fail_closed_policy_nonprod`. safe_read_only_denominator_available=false; computed_only_denominator=0; blocked_reason=no_safe_read_only_label_qrels_bridge_available. There is no official/product/promotion/live-readiness claim.
+<!-- v6_8_metric_gated_retrieval_quality_engineering_nonprod:progress-entry:end -->
+
+<!-- v6_7_agentic_retry_fail_closed_policy_nonprod:progress-entry:start -->
+- Overall status: `V6_7_AGENTIC_RETRY_FAIL_CLOSED_POLICY_NONPROD_READY`; `v6_7_agentic_retry_fail_closed_policy_nonprod` is a diagnostic-only agentic selection/retry fail-closed policy packet over v6_6. current moved from `v6_6_structured_tool_operation_taxonomy_nonprod` to `v6_7_agentic_retry_fail_closed_policy_nonprod` after v6_7 checks; rollback key is `v6_6_structured_tool_operation_taxonomy_nonprod`. agentic_rows=29; retry_attempted_rows=0; answer_quality_metric_computed=false. There is no official/product/promotion/live-readiness claim.
+<!-- v6_7_agentic_retry_fail_closed_policy_nonprod:progress-entry:end -->
+
+<!-- v6_6_structured_tool_operation_taxonomy_nonprod:progress-entry:start -->
+- Overall status: `V6_6_STRUCTURED_TOOL_OPERATION_TAXONOMY_NONPROD_READY`; `v6_6_structured_tool_operation_taxonomy_nonprod` is a diagnostic-only structured tool operation taxonomy over the v6_5_1 gold29 actual-response smoke rows. current moved from `v6_5_1_gold29_actual_response_smoke_nonprod` to `v6_6_structured_tool_operation_taxonomy_nonprod` after v6_6 checks; rollback key is `v6_5_1_gold29_actual_response_smoke_nonprod`. tool rows=29; tool_supported_rows=0; tool_executed_rows=0; tool outputs are excluded from Hit@k/MRR/nDCG. There is no official/product/promotion/live-readiness claim.
+<!-- v6_6_structured_tool_operation_taxonomy_nonprod:progress-entry:end -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- v6_5_1_gold29_actual_response_smoke_nonprod:progress-entry:start -->
+- Overall status: `V6_5_1_GOLD29_ACTUAL_RESPONSE_SMOKE_NONPROD_READY`; `v6_5_1_gold29_actual_response_smoke_nonprod` is a diagnostic-only actual response smoke over the read-only v5_5 approved 29-row gold query set. current moved from `v6_5_retrieval_metric_unlock_packet_nonprod` to `v6_5_1_gold29_actual_response_smoke_nonprod` after v6_5_1 checks; rollback key is `v6_5_retrieval_metric_unlock_packet_nonprod`. attempted=29; rendered=10; citation_verified=10; fail_closed=19. There is no official/product/promotion/live-readiness claim.
+<!-- v6_5_1_gold29_actual_response_smoke_nonprod:progress-entry:end -->
+
+<!-- v6_5_retrieval_metric_unlock_packet_nonprod:progress-entry:start -->
+- Overall status: `V6_5_RETRIEVAL_METRIC_UNLOCK_PACKET_NONPROD_READY`; `v6_5_retrieval_metric_unlock_packet_nonprod` is a diagnostic-only read-only bridge audit from the v5_5 approved 29-row dry-run packet to the current v6_4 SearchUnit/SearchView/SourceAtom/EvidenceBundle surface. current moved from `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` to `v6_5_retrieval_metric_unlock_packet_nonprod` after v6_5 checks; rollback key is `v6_4_e2e_coverage_and_failure_taxonomy_nonprod`. Bridgeable rows=0; no-bridge/ambiguous rows=29; bridged retrieval metric computed=false; explicit user-owned retrieval qrels/denominator approval is still required. There is no official/product/promotion/live-readiness claim.
+<!-- v6_5_retrieval_metric_unlock_packet_nonprod:progress-entry:end -->
 
 <!-- v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod:progress-entry:start -->
-- Overall status: `V7_0_1_PREMATURE_CLOSEOUT_AUDIT_AND_V6_4_RECOVERY_NONPROD_READY`; `v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod` records `v7_0_e2e_eval_architecture_closeout_nonprod` as a premature closeout marker only and preserves it as diagnostic audit evidence. current moved from `v7_0_e2e_eval_architecture_closeout_nonprod` to `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` because v6_4 recovery checks passed; the audit run itself does not become current. There is no official/product/promotion/live-readiness claim.
+- Overall status: `V7_0_1_PREMATURE_CLOSEOUT_AUDIT_AND_V6_4_RECOVERY_NONPROD_READY`; `v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod` records `v7_0_e2e_eval_architecture_closeout_nonprod` as a premature closeout marker only and preserves historical `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` recovery evidence. The audit run does not move current; live current resolves to `v6_9_answer_quality_gate_packet_nonprod`. Historical recovery movement from `v7_0_e2e_eval_architecture_closeout_nonprod` to `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` is retained as audit context only. There is no official/product/promotion/live-readiness claim.
 <!-- v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod:progress-entry:end -->
+
+<!-- v7_0_e2e_eval_architecture_closeout_nonprod:progress-entry:start -->
+- Overall status: `V7_0_E2E_EVAL_ARCHITECTURE_CLOSEOUT_NONPROD_READY`; `v7_0_e2e_eval_architecture_closeout_nonprod` is diagnostic-only explicit marker evidence and current resolves to `v6_9_answer_quality_gate_packet_nonprod`. The historical v7_0 movement from `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` to `v7_0_e2e_eval_architecture_closeout_nonprod` is preserved only as audit context and is superseded by the recovered diagnostic current. The run hash-locks `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` as the source bge-m3 + FAISS E2E evidence, records checkpoint by checkpoint audit decisions, writes one primary report.json, and keeps retrieval quality, answer quality, official denominator, promotion, product-success, and live-readiness gates closed. rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. There is no official/product/promotion/live-readiness claim.
+<!-- v7_0_e2e_eval_architecture_closeout_nonprod:progress-entry:end -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

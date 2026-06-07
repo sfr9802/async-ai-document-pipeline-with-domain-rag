@@ -24,9 +24,21 @@ REQUIRED_CURRENT_PROFILE_SENTINELS = frozenset(
         "ai/tests/test_rag_v63_e2e_bge_m3_faiss_agentic_rag_smoke_single_report_contract.py::test_single_report_policy_and_artifact_hashes",
         "ai/tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::test_v64_registers_current_and_keeps_v63_as_rollback",
         "ai/tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::test_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_v65_report_schema_current_resolver_and_v64_rollback",
+        "ai/tests/test_rag_v65_retrieval_metric_unlock_packet_nonprod_contract.py::test_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_report_schema_current_resolver_and_v65_rollback",
+        "ai/tests/test_rag_v651_gold29_actual_response_smoke_nonprod_contract.py::test_v651_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py::test_v66_schema_current_and_rollback",
+        "ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py::test_v66_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py::test_v67_schema_current_and_rollback",
+        "ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py::test_v67_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_v68_schema_current_and_rollback",
+        "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_v68_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_schema_current_and_rollback",
+        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_single_primary_report_status_docs_and_hash_contract",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_v70_registers_explicitly_and_v64_recovery_is_current",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_required_fields_and_protected_surfaces_stay_closed",
-        "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_v701_registers_explicitly_and_current_resolves_to_v64",
+        "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_v701_registers_explicitly_and_preserves_live_current_v69",
         "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_v701_records_v70_as_premature_closeout_marker_only",
         "ai/tests/test_rag_v60_agentic_true_rag_and_tool_loop_rewrite_contract.py::test_guardrail_cleanup_current_alias_and_runner_are_relaxed_but_leakage_guards_stay",
         "ai/tests/test_rag_v60_agentic_true_rag_and_tool_loop_rewrite_contract.py::test_real_repo_local_hybrid_backend_builds_index_queries_and_rejects_replay_backend",
@@ -135,12 +147,12 @@ def test_rag_current_collect_only_matches_exact_nodeid_allowlist() -> None:
 def test_current_profile_accepts_collected_prefixes_and_windows_nodeids() -> None:
     rag_conftest = load_conftest()
     selected = (
-        "tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::"
-        "test_v64_registers_current_and_keeps_v63_as_rollback"
+        "tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::"
+        "test_v69_schema_current_and_rollback"
     )
     windows_selected = selected.replace("/", "\\")
     nonselected_same_file = (
-        "tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::"
+        "tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::"
         "test_nonexistent_historical_current_alias_assertion"
     )
 
@@ -152,11 +164,11 @@ def test_current_profile_accepts_collected_prefixes_and_windows_nodeids() -> Non
 def test_current_profile_marker_assignment_is_nodeid_scoped() -> None:
     rag_conftest = load_conftest()
     selected = (
-        "tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::"
-        "test_v64_registers_current_and_keeps_v63_as_rollback"
+        "tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::"
+        "test_v69_schema_current_and_rollback"
     )
     nonselected_same_file = (
-        "tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::"
+        "tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::"
         "test_nonexistent_historical_current_alias_assertion"
     )
 

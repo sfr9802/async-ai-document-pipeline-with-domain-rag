@@ -1,16 +1,110 @@
-<!-- v7_0_e2e_eval_architecture_closeout_nonprod:measurements-entry:start -->
-- v7_0 premature closeout marker: source_run=`v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`; source_payload_sha256=e315b2c0fa90e8977b00b3029feab47604d86a52e0ba039c2bedbbc8fbde4054; source_artifact_report_sha256=8b21adb1be596a22b7ba824ef0bd95848c453b4d19547d444b8de893a3f35634.
-- Metrics: no new retrieval-quality, answer-quality, official, product, promotion, or live-readiness metric is computed; v6_3 vector/BM25/hybrid/tool/E2E lanes remain diagnostic-only and separated.
-- Current alias: current moved from `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` to `v7_0_e2e_eval_architecture_closeout_nonprod` historically, but `v7_0_e2e_eval_architecture_closeout_nonprod` is preserved as a premature closeout marker and `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` supersedes it as current; rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. There is no official/product/promotion/live-readiness claim.
-<!-- v7_0_e2e_eval_architecture_closeout_nonprod:measurements-entry:end -->
+<!-- v6_9_answer_quality_gate_packet_nonprod:measurements-entry:start -->
+### v6_9_answer_quality_gate_packet_nonprod
+
+- Answer-quality gate packet: rows=29; rows_by_family={'PDF': 4, 'TEXT': 6, 'XLSX': 19}; human_owned_blank_rows=29; agentic_verification_state_counts={'passed': 10, 'failed': 0, 'skipped_no_answer': 19, 'not_applicable': 0}.
+- Metrics policy: answer_quality_metric_computed=false; agentic_answer_metric_computed=false; expected/supporting text is excluded, generated answers are redacted to hashes, and human-owned decisions are blank. No official/product/promotion/live-readiness claim is opened.
+<!-- v6_9_answer_quality_gate_packet_nonprod:measurements-entry:end -->
+
+<!-- v6_8_metric_gated_retrieval_quality_engineering_nonprod:measurements-entry:start -->
+### v6_8_metric_gated_retrieval_quality_engineering_nonprod
+
+- Retrieval-quality gate: safe_read_only_denominator_available=false; retrieval_quality_metric_computed=false; computed_only_denominator=0; coverage_adjusted_denominator=300; blocked_reason=no_safe_read_only_label_qrels_bridge_available; Hit@k/MRR/nDCG remain uncomputed.
+- Denominator separation: v6_4 coverage_adjusted_denominator=300; metric_denominator_separate_from_v6_4_coverage_denominator=true; official_denominator_mutation=false.
+- Engineering diagnostics only: backend counters={'vector': {'attempted_rows': 300, 'with_candidates_rows': 299, 'no_candidate_rows': 1, 'hydrated_rows': 299, 'hydration_failed_rows': 0, 'computed_only_denominator': 0, 'retrieval_quality_metric_computed': False, 'backend_latency_ms_available': False, 'backend_latency_ms_p50': None, 'backend_latency_ms_p95': None, 'tool_outputs_counted_as_rag_hit': False}, 'bm25': {'attempted_rows': 300, 'with_candidates_rows': 300, 'no_candidate_rows': 0, 'hydrated_rows': 300, 'hydration_failed_rows': 0, 'computed_only_denominator': 0, 'retrieval_quality_metric_computed': False, 'backend_latency_ms_available': False, 'backend_latency_ms_p50': None, 'backend_latency_ms_p95': None, 'tool_outputs_counted_as_rag_hit': False}, 'hybrid': {'attempted_rows': 300, 'with_candidates_rows': 300, 'no_candidate_rows': 0, 'hydrated_rows': 300, 'hydration_failed_rows': 0, 'computed_only_denominator': 0, 'retrieval_quality_metric_computed': False, 'backend_latency_ms_available': False, 'backend_latency_ms_p50': None, 'backend_latency_ms_p95': None, 'tool_outputs_counted_as_rag_hit': False}}; family counters={'PDF': {'gold29_rows': 4, 'v6_4_coverage_rows': 100, 'tool_operation_rows': 4, 'tool_result_available_rows': 0, 'final_answer_rendered_rows': 4, 'final_citation_verified_rows': 4, 'fail_closed_rows': 0, 'retrieval_quality_metric_computed': False}, 'TEXT': {'gold29_rows': 6, 'v6_4_coverage_rows': 100, 'tool_operation_rows': 6, 'tool_result_available_rows': 0, 'final_answer_rendered_rows': 6, 'final_citation_verified_rows': 6, 'fail_closed_rows': 0, 'retrieval_quality_metric_computed': False}, 'XLSX': {'gold29_rows': 19, 'v6_4_coverage_rows': 100, 'tool_operation_rows': 19, 'tool_result_available_rows': 0, 'final_answer_rendered_rows': 0, 'final_citation_verified_rows': 0, 'fail_closed_rows': 19, 'retrieval_quality_metric_computed': False}}. Availability, latency, and fail-closed counters are not quality metrics. No official/product/promotion/live-readiness claim is opened.
+<!-- v6_8_metric_gated_retrieval_quality_engineering_nonprod:measurements-entry:end -->
+
+<!-- v6_7_agentic_retry_fail_closed_policy_nonprod:measurements-entry:start -->
+### v6_7_agentic_retry_fail_closed_policy_nonprod
+
+- Agentic loop diagnostics: rows=29; selected_path_counts={'rag_only': 10, 'tool_only': 0, 'rag_then_tool': 0, 'tool_then_rag': 0, 'none_fail_closed': 19}; verification_state_counts={'passed': 10, 'failed': 0, 'skipped_no_answer': 19, 'not_applicable': 0}; retry_attempted_rows=0.
+- Metrics policy: agentic_loop_metric_computed=false; answer_quality_metric_computed=false; expected/qrels/supporting evidence are not used for selection or retry. No official/product/promotion/live-readiness claim is opened.
+<!-- v6_7_agentic_retry_fail_closed_policy_nonprod:measurements-entry:end -->
+
+<!-- v6_6_structured_tool_operation_taxonomy_nonprod:measurements-entry:start -->
+### v6_6_structured_tool_operation_taxonomy_nonprod
+
+- Source check: v6_5_1 attempted_rows=29; rendered=10; citation_verified=10; fail_closed=19.
+- Structured tool taxonomy: rows=29; rows_by_family={'PDF': 4, 'TEXT': 6, 'XLSX': 19}; operation_state_counts={'pdf_page_span_extract': 0, 'pdf_locator_lookup': 4, 'text_span_lookup': 6, 'xlsx_table_slice': 0, 'xlsx_cell_lookup': 19, 'xlsx_filter': 0, 'xlsx_aggregate': 0, 'no_tool_required': 0, 'unsupported_tool_request': 0, 'tool_surface_unavailable': 0, 'tool_execution_failed': 0, 'tool_result_empty': 0, 'tool_result_hydration_failed': 0}.
+- Metric policy: tool_metric_official=false; retrieval_quality_metric_computed=false; answer_quality_metric_computed=false; tool outputs are excluded from Hit@k/MRR/nDCG. No official/product/promotion/live-readiness claim is opened.
+<!-- v6_6_structured_tool_operation_taxonomy_nonprod:measurements-entry:end -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- v6_5_1_gold29_actual_response_smoke_nonprod:measurements-entry:start -->
+### v6_5_1_gold29_actual_response_smoke_nonprod
+
+- v6_5 source check: audited_rows=29; bridgeable_rows=0; bridged retrieval metric computed=false; coverage_adjusted_denominator remains 300 from v6_4.
+- v5_5 actual response smoke: attempted=29; rendered=10; citation_verified=10; fail_closed=19; families={'PDF': 4, 'TEXT': 6, 'XLSX': 19}.
+- Metrics policy: retrieval_quality_metric_computed=false; answer_quality_metric_computed=false; Hit@k/MRR/nDCG not computed because v6_5 bridgeable_rows=0. No official/product/promotion/live-readiness claim is opened.
+<!-- v6_5_1_gold29_actual_response_smoke_nonprod:measurements-entry:end -->
+
+<!-- v6_5_retrieval_metric_unlock_packet_nonprod:measurements-entry:start -->
+### v6_5_retrieval_metric_unlock_packet_nonprod
+
+- Source checks: v6_4 attempted_rows=300, family_breakdown={'PDF': 100, 'TEXT': 100, 'XLSX': 100}, computed_only_denominator_before_bridge=0, answer_quality_metric_computed=false.
+- v5_5 read-only bridge: approved_items=29; audited_rows=29; bridgeable_rows=0; state_counts={'exact_search_unit_bridge': 0, 'exact_source_atom_bridge': 0, 'locator_precision_bridge': 0, 'duplicate_evidence_ambiguous': 2, 'stale_locator_no_bridge': 10, 'family_mismatch_no_bridge': 0, 'source_identity_mismatch_no_bridge': 0, 'no_current_v6_4_candidate_surface': 17, 'unsupported_tool_only_row': 0}.
+- Bridged diagnostic metric: computed=false; bridged_metric_denominator=0; bridgeable_rows_preserved_for_human_review=0; coverage_adjusted_denominator remains 300 from `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` and is not replaced by the bridged read-only metric denominator. Explicit user-owned retrieval qrels/denominator approval is required before Hit@k/MRR/nDCG can be computed. No official/product/promotion/live-readiness claim is opened.
+<!-- v6_5_retrieval_metric_unlock_packet_nonprod:measurements-entry:end -->
 
 <!-- v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod:measurements-entry:start -->
 ### v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod
 
-- v7_0 audit: premature closeout marker; v7_0_preserved=True; completion_claim_allowed=False; missing_predecessors=5.
+- v7_0 audit: premature closeout marker; v7_0_preserved=True; completion_claim_allowed=False; missing_predecessors=0.
 - v6_4 recovery: run=v6_4_e2e_coverage_and_failure_taxonomy_nonprod; attempted_rows=300; family_breakdown={'PDF': 100, 'TEXT': 100, 'XLSX': 100}; bounded_e2e_rows=30; computed_only_denominator=0; coverage_adjusted_denominator=300.
-- Current alias: current moved from `v7_0_e2e_eval_architecture_closeout_nonprod` to `v6_4_e2e_coverage_and_failure_taxonomy_nonprod`; rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. No official/product/promotion/live-readiness claim is opened.
+- Current alias: v7_0_1 does not move current; live current resolves to `v6_9_answer_quality_gate_packet_nonprod`. Historical recovery movement from `v7_0_e2e_eval_architecture_closeout_nonprod` to `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` is audit context only; rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. No official/product/promotion/live-readiness claim is opened.
 <!-- v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod:measurements-entry:end -->
+
+<!-- v7_0_e2e_eval_architecture_closeout_nonprod:measurements-entry:start -->
+- v7_0 premature closeout marker: source_run=`v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`; source_payload_sha256=e315b2c0fa90e8977b00b3029feab47604d86a52e0ba039c2bedbbc8fbde4054; source_artifact_report_sha256=8b21adb1be596a22b7ba824ef0bd95848c453b4d19547d444b8de893a3f35634.
+- Metrics: no new retrieval-quality, answer-quality, official, product, promotion, or live-readiness metric is computed; v6_3 vector/BM25/hybrid/tool/E2E lanes remain diagnostic-only and separated.
+- Current alias: current moved from `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` to `v7_0_e2e_eval_architecture_closeout_nonprod` historically, but `v7_0_e2e_eval_architecture_closeout_nonprod` is preserved as a premature closeout marker and `v6_9_answer_quality_gate_packet_nonprod` supersedes it as current; rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. There is no official/product/promotion/live-readiness claim.
+<!-- v7_0_e2e_eval_architecture_closeout_nonprod:measurements-entry:end -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -2,31 +2,42 @@
 
 ## Objective
 
-Implement `v7_0_e2e_eval_architecture_closeout_nonprod` checkpoint by checkpoint as a diagnostic-only marker after `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. It is not a completed v7 closeout unless the required v6_4-v6_9 predecessors exist or are explicitly skipped with diagnostic-only reasons.
+Recover from the premature `v7_0_e2e_eval_architecture_closeout_nonprod` closeout by preserving v7_0 as diagnostic audit evidence only, implementing `v6_4_e2e_coverage_and_failure_taxonomy_nonprod`, and keeping v7 completion closed until required predecessor checkpoints exist or are explicitly skipped with diagnostic-only reasons.
 
 ## Non-Goals
 
 - No gold, qrels, expected evidence, supporting evidence, relevance, answerability, or official denominator creation or mutation.
 - No production index, production namespace, production DB/cache, source registry, training dataset, fine-tuning dataset/job/checkpoint, promotion, product-success, or live-readiness mutation or claim.
 - No retrieval-quality or answer-quality metric opening without user-owned labels, evidence, denominator, and promotion policy.
+- Do not claim v7 completion from v7_0.
 
-## Baseline
+## Corrective Finding
 
-- Source run: `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`.
-- Source status: `V6_3_E2E_BGE_M3_FAISS_AGENTIC_RAG_SMOKE_SINGLE_REPORT_NONPROD_READY`.
-- Source report payload SHA256: `e315b2c0fa90e8977b00b3029feab47604d86a52e0ba039c2bedbbc8fbde4054`.
-- Rollback key target: `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`.
+- v7_0 is preserved as diagnostic audit evidence only.
+- v7_0 is recorded as a premature closeout marker, not a completed v7 architecture milestone.
+- historical v6_4 recovery evidence is preserved, but v7_0_1 does not move current; live current remains `v6_9_answer_quality_gate_packet_nonprod`.
 
-## Checkpoints
+## Required Predecessor Checkpoints
 
-- [x] plan_recovery: Create and maintain the missing referenced v7 plan file in place.
-- [x] source_v6_3_evidence_lock: Use the v6_3 report as the source E2E architecture evidence and hash-lock it.
-- [x] metric_boundary_closeout: Keep retrieval quality, answer quality, and product success metrics closed.
-- [x] rollback_current_contract: Move current to v7_0 only after preserving v6_3 as rollback.
-- [x] protected_surface_audit: Record protected surfaces as clean without mutating them.
-- [x] human_owned_gate_boundary: Record all remaining quality, denominator, and promotion gates as human-owned.
+- [x] v6_4_e2e_coverage_and_failure_taxonomy_nonprod: present
+- [x] v6_5_retrieval_metric_unlock_packet_nonprod: present
+- [x] v6_6_structured_tool_operation_taxonomy_nonprod: present
+- [x] v6_7_agentic_retry_fail_closed_policy_nonprod: present
+- [x] v6_8_metric_gated_retrieval_quality_engineering_nonprod: present
+- [x] v6_9_answer_quality_gate_packet_nonprod: present
 
-- [ ] predecessor_checkpoint_guard: v6_4-v6_9 predecessor checkpoints are not all present or explicitly skipped, so v7_0 remains a premature closeout marker only.
+## v6_4 Recovery Scope
+
+- Reuse v6_3 source-derived SearchUnit/SearchView materialization.
+- Reuse bge-m3, FAISS, BM25, and fixed-weight hybrid retrieval paths.
+- Attempt candidate coverage over all 300 rows.
+- Preserve PDF/TEXT/XLSX 100/100/100 family breakdown.
+- Report vector/BM25/hybrid candidate availability separately.
+- Hydrate candidates through SourceAtom/EvidenceBundle only.
+- Expand evidence-only E2E render coverage beyond the 3-row smoke using a bounded diagnostic.
+- Keep retrieval computed-only denominator at 0 and coverage-adjusted denominator at 300 because labels/qrels remain unavailable.
+- Keep tool outputs excluded from Hit@k, MRR, and nDCG.
+- Keep answer_quality_metric_computed=false.
 
 ## Protected Surfaces
 
@@ -41,8 +52,9 @@ Implement `v7_0_e2e_eval_architecture_closeout_nonprod` checkpoint by checkpoint
 
 ## Verification Commands
 
-- `python -X utf8 -m pytest ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py -q`
-- `python -X utf8 ai/scripts/rag_eval.py v7_0_e2e_eval_architecture_closeout_nonprod --check`
+- `python -X utf8 -m pytest ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py -q`
+- `python -X utf8 ai/scripts/rag_eval.py v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod --check`
+- `python -X utf8 ai/scripts/rag_eval.py v6_4_e2e_coverage_and_failure_taxonomy_nonprod --check`
 - `python -X utf8 ai/scripts/rag_eval.py current --check`
 - `python -X utf8 ai/scripts/rag_eval.py v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report --check`
 - `python -X utf8 -m pytest ai/tests/test_rag_current_focused_test_profile_v1.py -q`

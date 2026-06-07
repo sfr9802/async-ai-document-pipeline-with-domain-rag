@@ -12,6 +12,12 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 RUN_KEY = "v7_0_e2e_eval_architecture_closeout_nonprod"
 V6_4_RUN_KEY = "v6_4_e2e_coverage_and_failure_taxonomy_nonprod"
+V6_5_RUN_KEY = "v6_5_retrieval_metric_unlock_packet_nonprod"
+V6_5_1_RUN_KEY = "v6_5_1_gold29_actual_response_smoke_nonprod"
+V6_6_RUN_KEY = "v6_6_structured_tool_operation_taxonomy_nonprod"
+V6_7_RUN_KEY = "v6_7_agentic_retry_fail_closed_policy_nonprod"
+V6_8_RUN_KEY = "v6_8_metric_gated_retrieval_quality_engineering_nonprod"
+V6_9_RUN_KEY = "v6_9_answer_quality_gate_packet_nonprod"
 ROLLBACK_KEY = "v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report"
 STATUS = "V7_0_E2E_EVAL_ARCHITECTURE_CLOSEOUT_NONPROD_READY"
 PROTECTED_PATHS = (
@@ -122,18 +128,18 @@ def test_v70_registers_explicitly_and_v64_recovery_is_current(
     monkeypatch.setattr(v63, "SentenceTransformerEmbedder", StubBgeM3Embedder)
 
     assert registry.resolve_run(RUN_KEY, root=ROOT).logical_key == RUN_KEY
-    assert registry.resolve_run("current", root=ROOT).logical_key == V6_4_RUN_KEY
-    assert runner.DEFAULT_RUN_KEY == V6_4_RUN_KEY
+    assert registry.resolve_run("current", root=ROOT).logical_key == V6_9_RUN_KEY
+    assert runner.DEFAULT_RUN_KEY == V6_9_RUN_KEY
 
     checked = runner.check_run(RUN_KEY)
     assert checked["logical_run_key"] == RUN_KEY
     assert checked["status"] == STATUS
-    assert runner.check_run("current")["logical_run_key"] == V6_4_RUN_KEY
+    assert runner.check_run("current")["logical_run_key"] == V6_9_RUN_KEY
     assert runner.check_run(ROLLBACK_KEY)["logical_run_key"] == ROLLBACK_KEY
 
-    assert report["current_resolves_to"] == V6_4_RUN_KEY
+    assert report["current_resolves_to"] == V6_9_RUN_KEY
     assert report["current_alias_policy"]["current_moved_from"] == RUN_KEY
-    assert report["current_alias_policy"]["current_moved_to"] == V6_4_RUN_KEY
+    assert report["current_alias_policy"]["current_moved_to"] == V6_9_RUN_KEY
     assert report["current_alias_policy"]["historical_marker_current_moved_from"] == ROLLBACK_KEY
     assert report["current_alias_policy"]["historical_marker_current_moved_to"] == RUN_KEY
     assert report["rollback_key"] == ROLLBACK_KEY
@@ -159,8 +165,8 @@ def test_source_v63_e2e_architecture_is_hash_locked_and_closed(report: dict[str,
     assert architecture["codex_owned_architecture_checkpoints_closed"] is False
     assert architecture["premature_closeout_marker_only"] is True
     assert architecture["v7_completion_claim"] is False
-    assert architecture["required_predecessor_checkpoints_exist_or_skipped"] is False
-    assert "v6_5_retrieval_metric_unlock_packet_nonprod" in architecture["missing_required_predecessor_checkpoints"]
+    assert architecture["required_predecessor_checkpoints_exist_or_skipped"] is True
+    assert architecture["missing_required_predecessor_checkpoints"] == []
     assert architecture["quality_or_promotion_gate_opened"] is False
     assert architecture["remaining_human_owned_decision_gates"] == [
         "gold",
@@ -190,7 +196,7 @@ def test_source_v63_e2e_architecture_is_hash_locked_and_closed(report: dict[str,
         "v6_8_metric_gated_retrieval_quality_engineering_nonprod",
         "v6_9_answer_quality_gate_packet_nonprod",
     }
-    assert any(row["status"] == "missing" for row in predecessor_rows)
+    assert all(row["status"] == "present" for row in predecessor_rows)
 
 
 def test_build_report_fails_closed_when_v63_rollback_artifact_is_missing(
@@ -237,9 +243,9 @@ def test_report_bundle_writes_single_report_status_docs_and_plan(
         for line in (tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl").read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
-    assert status_rows[-1]["current_resolves_to"] == V6_4_RUN_KEY
+    assert status_rows[-1]["current_resolves_to"] == V6_9_RUN_KEY
     assert status_rows[-1]["current_moved_from"] == RUN_KEY
-    assert status_rows[-1]["current_moved_to"] == V6_4_RUN_KEY
+    assert status_rows[-1]["current_moved_to"] == V6_9_RUN_KEY
     assert status_rows[-1]["rollback_key"] == ROLLBACK_KEY
     assert status_rows[-1]["artifact_sha256"]["report_json_sha256"] == written["artifact_sha256"]["report_json_sha256"]
 
@@ -251,7 +257,7 @@ def test_report_bundle_writes_single_report_status_docs_and_plan(
     for doc_name in ("rag-ingestion-progress.md", "rag-ingestion-measurements.md", "rag-ingestion-triage.md"):
         text = (tmp_path / "docs" / doc_name).read_text(encoding="utf-8")
         assert RUN_KEY in text
-        assert f"current resolves to `{V6_4_RUN_KEY}`" in text or f"`{V6_4_RUN_KEY}` supersedes it as current" in text
+        assert f"current resolves to `{V6_9_RUN_KEY}`" in text or f"`{V6_9_RUN_KEY}` supersedes it as current" in text
         assert f"`{ROLLBACK_KEY}` to `{RUN_KEY}`" in text
         assert f"rollback key is `{ROLLBACK_KEY}`" in text
         assert "diagnostic-only" in text
@@ -323,12 +329,24 @@ def test_check_report_rejects_nested_protected_surface_drift(
         v70_module.check_report(poisoned)
 
 
-def test_check_report_rejects_closeout_claim_when_predecessors_are_missing(
+def test_check_report_rejects_closeout_claim_when_human_owned_gates_remain(
     report: dict[str, object],
     v70_module,
 ) -> None:
     poisoned = json.loads(json.dumps(report))
     poisoned["architecture_closeout_summary"]["codex_owned_architecture_checkpoints_closed"] = True
+
+    with pytest.raises(ValueError, match="human-owned decision gates"):
+        v70_module.check_report(poisoned)
+
+
+def test_check_report_rejects_closeout_claim_when_predecessor_audit_is_poisoned(
+    report: dict[str, object],
+    v70_module,
+) -> None:
+    poisoned = json.loads(json.dumps(report))
+    poisoned["architecture_closeout_summary"]["codex_owned_architecture_checkpoints_closed"] = True
+    poisoned["predecessor_checkpoint_audit"][0]["status"] = "missing"
 
     with pytest.raises(ValueError, match="required predecessor checkpoints"):
         v70_module.check_report(poisoned)

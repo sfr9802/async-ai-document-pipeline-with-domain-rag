@@ -243,8 +243,14 @@ def test_guardrail_cleanup_current_alias_and_runner_are_relaxed_but_leakage_guar
         "v6_2_source_derived_materialization_scaleout_and_denominator_reality_check",
         "v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report",
         "v6_4_e2e_coverage_and_failure_taxonomy_nonprod",
-        "v7_0_e2e_eval_architecture_closeout_nonprod",
-    }
+            "v6_5_retrieval_metric_unlock_packet_nonprod",
+            "v6_5_1_gold29_actual_response_smoke_nonprod",
+            "v6_6_structured_tool_operation_taxonomy_nonprod",
+            "v6_7_agentic_retry_fail_closed_policy_nonprod",
+            "v6_8_metric_gated_retrieval_quality_engineering_nonprod",
+            "v6_9_answer_quality_gate_packet_nonprod",
+            "v7_0_e2e_eval_architecture_closeout_nonprod",
+        }
     checked = runner.check_run(RUN_KEY)
     assert checked["logical_run_key"] == RUN_KEY
     assert checked["status"] == STATUS

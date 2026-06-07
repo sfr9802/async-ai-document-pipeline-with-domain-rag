@@ -11,6 +11,12 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 RUN_KEY = "v6_4_e2e_coverage_and_failure_taxonomy_nonprod"
+V6_5_RUN_KEY = "v6_5_retrieval_metric_unlock_packet_nonprod"
+V6_5_1_RUN_KEY = "v6_5_1_gold29_actual_response_smoke_nonprod"
+V6_6_RUN_KEY = "v6_6_structured_tool_operation_taxonomy_nonprod"
+V6_7_RUN_KEY = "v6_7_agentic_retry_fail_closed_policy_nonprod"
+V6_8_RUN_KEY = "v6_8_metric_gated_retrieval_quality_engineering_nonprod"
+V6_9_RUN_KEY = "v6_9_answer_quality_gate_packet_nonprod"
 ROLLBACK_KEY = "v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report"
 STATUS = "V6_4_E2E_COVERAGE_AND_FAILURE_TAXONOMY_NONPROD_READY"
 EXPECTED_FAMILIES = {"PDF": 100, "TEXT": 100, "XLSX": 100}
@@ -132,10 +138,10 @@ def test_v64_registers_current_and_keeps_v63_as_rollback(report: dict[str, objec
     from ai.eval import rag_eval_registry as registry
 
     assert registry.resolve_run(RUN_KEY, root=ROOT).logical_key == RUN_KEY
-    assert registry.resolve_run("current", root=ROOT).logical_key == RUN_KEY
-    assert runner.DEFAULT_RUN_KEY == RUN_KEY
+    assert registry.resolve_run("current", root=ROOT).logical_key == V6_9_RUN_KEY
+    assert runner.DEFAULT_RUN_KEY == V6_9_RUN_KEY
     assert runner.check_run(RUN_KEY)["logical_run_key"] == RUN_KEY
-    assert runner.check_run("current")["logical_run_key"] == RUN_KEY
+    assert runner.check_run("current")["logical_run_key"] == V6_9_RUN_KEY
     assert runner.check_run(ROLLBACK_KEY)["logical_run_key"] == ROLLBACK_KEY
 
     assert report["status"] == STATUS
