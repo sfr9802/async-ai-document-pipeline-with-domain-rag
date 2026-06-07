@@ -1,3 +1,108 @@
+<!-- v7_0_e2e_eval_architecture_closeout_nonprod:measurements-entry:start -->
+- v7_0 premature closeout marker: source_run=`v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`; source_payload_sha256=e315b2c0fa90e8977b00b3029feab47604d86a52e0ba039c2bedbbc8fbde4054; source_artifact_report_sha256=8b21adb1be596a22b7ba824ef0bd95848c453b4d19547d444b8de893a3f35634.
+- Metrics: no new retrieval-quality, answer-quality, official, product, promotion, or live-readiness metric is computed; v6_3 vector/BM25/hybrid/tool/E2E lanes remain diagnostic-only and separated.
+- Current alias: current moved from `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` to `v7_0_e2e_eval_architecture_closeout_nonprod` historically, but `v7_0_e2e_eval_architecture_closeout_nonprod` is preserved as a premature closeout marker and `v6_4_e2e_coverage_and_failure_taxonomy_nonprod` supersedes it as current; rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. There is no official/product/promotion/live-readiness claim.
+<!-- v7_0_e2e_eval_architecture_closeout_nonprod:measurements-entry:end -->
+
+<!-- v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod:measurements-entry:start -->
+### v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod
+
+- v7_0 audit: premature closeout marker; v7_0_preserved=True; completion_claim_allowed=False; missing_predecessors=5.
+- v6_4 recovery: run=v6_4_e2e_coverage_and_failure_taxonomy_nonprod; attempted_rows=300; family_breakdown={'PDF': 100, 'TEXT': 100, 'XLSX': 100}; bounded_e2e_rows=30; computed_only_denominator=0; coverage_adjusted_denominator=300.
+- Current alias: current moved from `v7_0_e2e_eval_architecture_closeout_nonprod` to `v6_4_e2e_coverage_and_failure_taxonomy_nonprod`; rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`. No official/product/promotion/live-readiness claim is opened.
+<!-- v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod:measurements-entry:end -->
+
+
+
+
+
+<!-- v6_4_e2e_coverage_and_failure_taxonomy_nonprod:measurements-entry:start -->
+### v6_4_e2e_coverage_and_failure_taxonomy_nonprod
+
+- Boundary: diagnostic-only, non-production; no official/product/promotion/live-readiness claim is opened.
+- 300-row coverage: attempted=300; family_breakdown={'PDF': 100, 'TEXT': 100, 'XLSX': 100}; coverage_adjusted_denominator=300; computed_only_denominator=0; exclusion_reason=no_authorized_after_fact_label_available.
+- Candidate availability: vector={'attempted_rows': 300, 'with_candidates_rows': 299, 'no_candidate_rows': 1, 'hydrated_rows': 299, 'hydration_failed_rows': 0, 'coverage_adjusted_denominator': 300, 'computed_only_denominator': 0, 'retrieval_metric_computed_count': 0, 'coverage_limited_reason': 'no_authorized_after_fact_label_available', 'tool_outputs_counted_as_rag_hit': False, 'tool_success_contributed_to_hit_at_k': False, 'tool_success_contributed_to_mrr': False, 'tool_success_contributed_to_ndcg': False}; bm25={'attempted_rows': 300, 'with_candidates_rows': 300, 'no_candidate_rows': 0, 'hydrated_rows': 300, 'hydration_failed_rows': 0, 'coverage_adjusted_denominator': 300, 'computed_only_denominator': 0, 'retrieval_metric_computed_count': 0, 'coverage_limited_reason': 'no_authorized_after_fact_label_available', 'tool_outputs_counted_as_rag_hit': False, 'tool_success_contributed_to_hit_at_k': False, 'tool_success_contributed_to_mrr': False, 'tool_success_contributed_to_ndcg': False}; hybrid={'attempted_rows': 300, 'with_candidates_rows': 300, 'no_candidate_rows': 0, 'hydrated_rows': 300, 'hydration_failed_rows': 0, 'coverage_adjusted_denominator': 300, 'computed_only_denominator': 0, 'retrieval_metric_computed_count': 0, 'coverage_limited_reason': 'no_authorized_after_fact_label_available', 'tool_outputs_counted_as_rag_hit': False, 'tool_success_contributed_to_hit_at_k': False, 'tool_success_contributed_to_mrr': False, 'tool_success_contributed_to_ndcg': False}.
+- Bounded E2E expansion: source_rows=3; expanded_rows=30; rows_by_family={'PDF': 10, 'TEXT': 10, 'XLSX': 10}; hydration_source=SourceAtom/EvidenceBundle; answer_quality_metric_computed=false.
+- failure taxonomy: {'no_candidate': 1, 'vector_no_candidate': 1, 'bm25_no_candidate': 0, 'hybrid_no_candidate': 0, 'hydration_failed': 0, 'citation_verification_failed': 0, 'tool_required': 100, 'tool_unsupported': 0, 'context_required': 100, 'local_llm_disabled': 30, 'label_unavailable': 300, 'answer_quality_gate_closed': 300, 'protected_surface_blocked': 0}.
+- Current alias: current moved from `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report` to `v6_4_e2e_coverage_and_failure_taxonomy_nonprod`; rollback key is `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`.
+<!-- v6_4_e2e_coverage_and_failure_taxonomy_nonprod:measurements-entry:end -->
+
+
+
+<!-- v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report:measurements-entry:start -->
+### v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report
+
+- Boundary: diagnostic-only, non-production; no official/product/promotion/live-readiness claim is opened.
+- Materialization: source_derived_search_view_count=300; family_counts={'PDF': 100, 'TEXT': 100, 'XLSX': 100}.
+- bge-m3: model_ready=True; embedding_dim=1024; embedding_count=300; device=cpu; gpu_used=False.
+- FAISS: index_type=IndexFlatIP; vector_count=300; query_count=300; query_latency_ms={'min': 0.0121, 'p50': 0.0131, 'p95': 0.0144, 'max': 9.7694}.
+- E2E smoke: attempted=3; retrieved=3; hydrated=3; answer_rendered=3; citation_verified=3; answer_quality_metric_computed=false.
+- Denominator reality: attempted=300; computed-only=0; coverage-adjusted=300; label_limited=True.
+- Current alias: current moved from `v6_2_source_derived_materialization_scaleout_and_denominator_reality_check` to `v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report`; rollback key is `v6_2_source_derived_materialization_scaleout_and_denominator_reality_check`. Report consolidation keeps one primary report.json; deprecated separate JSON/JSONL report files are not emitted.
+<!-- v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report:measurements-entry:end -->
+
+<!-- v6_2_source_derived_materialization_scaleout_and_denominator_reality_check:measurements-entry:start -->
+### v6_2_source_derived_materialization_scaleout_and_denominator_reality_check
+
+- Boundary: diagnostic-only, non-production; no official/product/promotion/live-readiness claim is opened.
+- Materialization: indexed_search_unit_count=300; indexed_search_view_count=300; meaningful_text_count=300; family_counts={'PDF': 100, 'TEXT': 100, 'XLSX': 100}.
+- Denominator reality: attempted=300; computed-only and coverage-adjusted rows=0/300; excluded=300; exclusion_breakdown={'no_authorized_after_fact_label_available': 300}.
+- true_rag_retrieval_metric: attempted=300; computed=0; coverage_limited=True; coverage_adjusted_denominator=300.
+- Backend: namespace `v6_2_true_rag_nonprod_materialization_scaleout_denominator_reality`; backend_kind=repo_local_sqlite_bm25; query_count=300; candidate_distribution={'min': 5, 'p50': 5.0, 'p95': 5, 'max': 5}; query_latency_ms={'min': 0.7151, 'p50': 0.9044, 'p95': 2.0578, 'max': 2.739}; build_latency_ms=632.9212.
+- Current alias: current moved from `v6_1_true_rag_corpus_expansion_and_metric_split_hardening` to `v6_2_source_derived_materialization_scaleout_and_denominator_reality_check`; rollback key is `v6_1_true_rag_corpus_expansion_and_metric_split_hardening`. local LLM/GPU usage is optional and env-gated; no raw prompt/response payloads are written.
+<!-- v6_2_source_derived_materialization_scaleout_and_denominator_reality_check:measurements-entry:end -->
+
+<!-- v6_1_true_rag_corpus_expansion_and_metric_split_hardening:measurements-entry:start -->
+### v6_1_true_rag_corpus_expansion_and_metric_split_hardening
+
+- Boundary: diagnostic-only, non-production; no official/product/promotion/live-readiness claim is opened.
+- Backend: namespace `v6_1_true_rag_nonprod_corpus_expansion_metric_split`; indexed_search_unit_count=11; indexed_search_view_count=11; query_count=7; candidate_distribution={'p50': 3.0, 'p95': 4.0, 'max': 4.0}; query_latency_ms={'p50': 0.1268, 'p95': 0.6616, 'max': 0.6616}; build_latency_ms=505.398.
+- Metric split: true RAG retrieval, structured tool, and agentic answer metrics are separated; structured tool outputs are excluded from Hit@k/MRR/nDCG.
+- true_rag_retrieval_metric={'hit_at_1': 1.0, 'hit_at_3': 1.0, 'hit_at_5': 1.0, 'mrr_at_5': 1.0, 'ndcg_at_5': 1.0}; structured_tool_metric_rows=3; agentic_answer_metric_computed=False.
+- Current alias: current moved from `v6_0_agentic_true_rag_and_tool_loop_rewrite` to `v6_1_true_rag_corpus_expansion_and_metric_split_hardening`; rollback key is `v6_0_agentic_true_rag_and_tool_loop_rewrite`.
+- local LLM/GPU usage is optional and env-gated; baseline checks pass without requiring local LLM or GPU. No raw prompt/response payloads are written.
+<!-- v6_1_true_rag_corpus_expansion_and_metric_split_hardening:measurements-entry:end -->
+
+<!-- v6_0_agentic_true_rag_and_tool_loop_rewrite:measurements-entry:start -->
+### v6_0_agentic_true_rag_and_tool_loop_rewrite
+
+- Boundary: legacy non-RAG/tool/extraction path is isolated; true RAG uses pre-materialized SearchUnit/SearchView over the repo-local SQLite/BM25 hybrid backend.
+- Backend: repo-local SQLite/BM25 hybrid; namespace `v6_0_true_rag_nonprod_agentic_tool_loop`; indexed_search_unit_count=10; query_count=5; p50_latency_ms=0.1658; p95_latency_ms=0.4867.
+- true RAG metrics: gold_29 rows=29; silver_1000 rows=1000; family_breakdown={"PDF": {"hit_at_1": 1.0, "indexed_units": 5, "query_count": 1}, "TEXT": {"hit_at_1": 1.0, "indexed_units": 3, "query_count": 2}, "XLSX": {"hit_at_1": 1.0, "indexed_units": 6, "query_count": 2}}; tool_outputs_excluded=true.
+- Tool lane: tool_required_row_ratio=0.4; tool metrics stay separate from true RAG retrieval metrics.
+- Current alias: current moved from `v5_6` to `v6_0_agentic_true_rag_and_tool_loop_rewrite`; rollback key is `v5_6`.
+- Agentic answer quality: gold_29 answer_quality_metric_computed=true; raw prompt/response storage remains disabled.
+<!-- v6_0_agentic_true_rag_and_tool_loop_rewrite:measurements-entry:end -->
+
+<!-- v6_0_true_rag_retrieval_rewrite:measurements-entry:start -->
+### v6_0_true_rag_retrieval_rewrite
+
+- Boundary: legacy non-RAG paths remain isolated; current remains `v5_6`; this is diagnostic-only.
+- true_rag_retrieval_metric: attempted=3, computed=0, no_candidate_count=3, family_breakdown={"PDF": {"attempted_rows": 1, "computed_rows": 0, "metric_computed": false, "no_candidate_count": 1}, "TEXT": {"attempted_rows": 1, "computed_rows": 0, "metric_computed": false, "no_candidate_count": 1}, "XLSX": {"attempted_rows": 1, "computed_rows": 0, "metric_computed": false, "no_candidate_count": 1}}.
+- real nonprod backend invoked: false; real_vectordb_metric=false; latency_unavailable_reason=nonprod_backend_url_missing; cost_unavailable_reason=backend unavailable or did not return cost counters.
+- structured tool lane remains separate from the RAG lane; XLSX calculation, aggregation, and filtering questions are classified as `structured_tool_required` and excluded from the true RAG retrieval denominator.
+<!-- v6_0_true_rag_retrieval_rewrite:measurements-entry:end -->
+
+<!-- v5_8_retrieval_metric_evaluation_framework_diagnostic_nonprod:measurements-entry:start -->
+### v5_8_retrieval_metric_evaluation_framework_diagnostic_nonprod
+
+- valid_live_retrieval_metric: attempted=29, computed=18, coverage_adjusted_denominator=29, coverage_adjusted_metrics={"hit_at_1": 0.172414, "hit_at_3": 0.172414, "hit_at_5": 0.172414, "mrr_at_5": 0.172414, "ndcg_at_5": 0.172414}.
+- balanced_diagnostic_retrieval_metric: rows=300, family_split={'PDF': 100, 'TEXT': 100, 'XLSX': 100}, computed_only_metrics={"hit_at_1": 0.233333, "hit_at_3": 0.3, "hit_at_5": 0.303333, "mrr_at_5": 0.264167, "ndcg_at_5": 0.274212}, not_official_qrels=true, promotion_evidence=false, product_success_evidence_allowed=false.
+- Backend adapter: run_local_sanitized_projection_adapter; nonprod_vector_backend_available=false; real_vectordb_metric=false; answer-quality metric remains closed; current remains `v5_6`.
+<!-- v5_8_retrieval_metric_evaluation_framework_diagnostic_nonprod:measurements-entry:end -->
+
+<!-- v5_7_2_live_retrieval_denominator_and_row_expansion_diagnostic_nonprod:measurements-entry:start -->
+- v5_7_2 restatement: `v5_7_prior_baseline_parity_metric` denominator=28 keeps the old 1.0000 replay/parity values; `v5_7_2_valid_live_retrieval_metric` denominator=18 and computed=true with metrics={"hit_at_1": 0.222222, "hit_at_3": 0.222222, "hit_at_5": 0.222222, "mrr_at_5": 0.222222, "ndcg_at_5": 0.222222}. Leakage failures: target/qrels/baseline=0, identity=0, source_shortcut=0. Expanded diagnostic denominator=89 over family_breakdown={'XLSX': 90}; answer-quality deltas remain closed.
+<!-- v5_7_2_live_retrieval_denominator_and_row_expansion_diagnostic_nonprod:measurements-entry:end -->
+
+<!-- v5_7_1_retrieval_metric_integrity_audit_diagnostic_nonprod:measurements-entry:start -->
+### v5_7_1_retrieval_metric_integrity_audit_diagnostic_nonprod
+
+- Scope: diagnostic-only metric integrity audit over `v5_7_vector_llm_candidate_routing` using the v5_6 full-packet new retrieval metric as prior baseline; no answer-quality metric is computed.
+- Restatement: `v5_7_baseline_parity_metric` denominator=28 with the prior 1.0000 values; `v5_7_valid_live_retrieval_metric` denominator=0 and computed=false; `v5_7_oracle_seeded_or_synthetic_candidate_metric` denominator=0.
+- Origin/probe counters: candidate_list_identical_to_baseline_topk_new_count=29; top1_equals_target_search_unit_id_count=29; baseline_topk_replay_count=145; synthetic_candidate_count=116; real_non_target_candidate_count=0; leakage_probe_failed_count=29.
+<!-- v5_7_1_retrieval_metric_integrity_audit_diagnostic_nonprod:measurements-entry:end -->
+
 <!-- v5_7_vector_llm_candidate_routing_with_regression_remediation_diagnostic_nonprod:measurements-entry:start -->
 ### v5_7_vector_llm_candidate_routing_with_regression_remediation_diagnostic_nonprod
 
@@ -1125,7 +1230,7 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 | official_metric_input_rows | 0 |
 <!-- v4_7_13_measurements_end -->
 
-Last updated: 2026-06-05 KST.
+Last updated: 2026-06-06 KST.
 
 This is the rolling human-readable measurement ledger for RAG ingestion and
 official answer/citation diagnostics. Keep this file append-style: add new

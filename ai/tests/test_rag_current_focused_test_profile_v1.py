@@ -18,8 +18,18 @@ REQUIRED_CURRENT_PROFILE_SENTINELS = frozenset(
         "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_adjudicator_reason_is_redacted_from_frontend_diagnostics",
         "ai/tests/test_fastapi_product_rag_preview_route_v1.py::test_product_rag_preview_unscoped_query_without_source_family_adjudicator_fails_closed",
         "ai/tests/test_rag_diagnostic_guardrail_git_diff.py::test_v5_6_3_official_metric_backend_probe_does_not_mutate_protected_or_export_training_surfaces",
-        "ai/tests/test_rag_diagnostic_status_sync.py::test_progress_doc_does_not_keep_stale_current_profile_test_count",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py::test_v560_fail_closed_consumes_only_v550_official_metric_input_and_records_duplicate_policy",
+        "ai/tests/test_rag_v62_source_derived_materialization_scaleout_and_denominator_reality_check_contract.py::test_v62_registers_resolves_current_and_keeps_v61_as_rollback",
+        "ai/tests/test_rag_v62_source_derived_materialization_scaleout_and_denominator_reality_check_contract.py::test_denominator_reality_ledgers_and_metric_lanes_expose_coverage_limits",
+        "ai/tests/test_rag_v63_e2e_bge_m3_faiss_agentic_rag_smoke_single_report_contract.py::test_v63_registers_current_and_keeps_v62_rollback",
+        "ai/tests/test_rag_v63_e2e_bge_m3_faiss_agentic_rag_smoke_single_report_contract.py::test_single_report_policy_and_artifact_hashes",
+        "ai/tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::test_v64_registers_current_and_keeps_v63_as_rollback",
+        "ai/tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::test_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_v70_registers_explicitly_and_v64_recovery_is_current",
+        "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_required_fields_and_protected_surfaces_stay_closed",
+        "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_v701_registers_explicitly_and_current_resolves_to_v64",
+        "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_v701_records_v70_as_premature_closeout_marker_only",
+        "ai/tests/test_rag_v60_agentic_true_rag_and_tool_loop_rewrite_contract.py::test_guardrail_cleanup_current_alias_and_runner_are_relaxed_but_leakage_guards_stay",
+        "ai/tests/test_rag_v60_agentic_true_rag_and_tool_loop_rewrite_contract.py::test_real_repo_local_hybrid_backend_builds_index_queries_and_rejects_replay_backend",
     }
 )
 
@@ -86,8 +96,11 @@ def test_ai_tests_directory_classifies_current_and_historical_profile_files() ->
     assert {
         "ai/tests/test_rag_eval_v475_contract.py",
         "ai/tests/test_rag_eval_v476_cleanup_contract.py",
+        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py",
+        "ai/tests/test_rag_diagnostic_status_sync.py",
         "ai/tests/test_rag_answer_citation_silver_manifest_v1.py",
         "ai/tests/test_fastapi_phase1_diagnostic_rag_route_v1.py",
+        "ai/tests/test_rag_v61_true_rag_corpus_expansion_and_metric_split_hardening_contract.py",
     } <= rag_conftest.NON_CURRENT_RAG_TEST_FILES
     assert not [
         rel_path
@@ -122,13 +135,13 @@ def test_rag_current_collect_only_matches_exact_nodeid_allowlist() -> None:
 def test_current_profile_accepts_collected_prefixes_and_windows_nodeids() -> None:
     rag_conftest = load_conftest()
     selected = (
-        "tests/test_rag_eval_v477_archive_aware_short_key_contract.py::"
-        "test_v510_official_eval_gate_scaffold_represents_user_owned_inputs_and_zero_rows"
+        "tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::"
+        "test_v64_registers_current_and_keeps_v63_as_rollback"
     )
     windows_selected = selected.replace("/", "\\")
     nonselected_same_file = (
-        "tests/test_rag_eval_v477_archive_aware_short_key_contract.py::"
-        "test_v4718_check_report_rejects_shortcuts_opened_gates_raw_payloads_and_regression_drift"
+        "tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::"
+        "test_nonexistent_historical_current_alias_assertion"
     )
 
     assert rag_conftest.is_rag_current_required_nodeid(selected)
@@ -139,12 +152,12 @@ def test_current_profile_accepts_collected_prefixes_and_windows_nodeids() -> Non
 def test_current_profile_marker_assignment_is_nodeid_scoped() -> None:
     rag_conftest = load_conftest()
     selected = (
-        "tests/test_rag_eval_v477_archive_aware_short_key_contract.py::"
-        "test_v510_official_eval_gate_scaffold_represents_user_owned_inputs_and_zero_rows"
+        "tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::"
+        "test_v64_registers_current_and_keeps_v63_as_rollback"
     )
     nonselected_same_file = (
-        "tests/test_rag_eval_v477_archive_aware_short_key_contract.py::"
-        "test_v4718_check_report_rejects_shortcuts_opened_gates_raw_payloads_and_regression_drift"
+        "tests/test_rag_v64_e2e_coverage_and_failure_taxonomy_nonprod_contract.py::"
+        "test_nonexistent_historical_current_alias_assertion"
     )
 
     assert "rag_current" in rag_conftest.current_marker_names_for_nodeid(selected)

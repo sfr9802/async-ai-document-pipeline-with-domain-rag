@@ -45,10 +45,21 @@ from ai.eval import rag_v562_official_metric_backend_enabled_preflight_scored_re
 from ai.eval import rag_v563_official_metric_backend_probe_and_scored_execution_nonprod as v563
 from ai.eval import rag_v56_refactor_route_comparison_packet_diagnostic_nonprod as v56compare
 from ai.eval import rag_v57_vector_llm_candidate_routing_with_regression_remediation_diagnostic_nonprod as v57
+from ai.eval import rag_v571_retrieval_metric_integrity_audit_diagnostic_nonprod as v571
+from ai.eval import rag_v572_live_retrieval_denominator_and_row_expansion_diagnostic_nonprod as v572
+from ai.eval import rag_v58_retrieval_metric_evaluation_framework_diagnostic_nonprod as v58
+from ai.eval import rag_v60_true_rag_retrieval_rewrite as v60
+from ai.eval import rag_v60_agentic_true_rag_and_tool_loop_rewrite as v60a
+from ai.eval import rag_v61_true_rag_corpus_expansion_and_metric_split_hardening as v61
+from ai.eval import rag_v62_source_derived_materialization_scaleout_and_denominator_reality_check as v62
+from ai.eval import rag_v63_e2e_bge_m3_faiss_agentic_rag_smoke_single_report as v63
+from ai.eval import rag_v64_e2e_coverage_and_failure_taxonomy_nonprod as v64
+from ai.eval import rag_v70_e2e_eval_architecture_closeout_nonprod as v70
+from ai.eval import rag_v701_premature_closeout_audit_and_v64_recovery_nonprod as v701
 from ai.eval import rag_nec_2026_local_election_xlsx_source_collection as nec2026
 
 
-DEFAULT_RUN_KEY = "v5_6"
+DEFAULT_RUN_KEY = "v6_4_e2e_coverage_and_failure_taxonomy_nonprod"
 SAFE_LEGACY_CHECK_ALIASES = dict(v478.SAFE_LEGACY_CHECK_ALIASES)
 REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
@@ -669,6 +680,86 @@ def check_run(key: str) -> dict[str, Any]:
         report = v57.build_report(root=ROOT)
         v57.check_report(report)
         return report
+    if resolved_key == "v5_7_1_retrieval_metric_integrity_audit" and not (ROOT / v571.REPORT_PATH).exists():
+        report = v571.build_report(root=ROOT)
+        v571.check_report(report)
+        return report
+    if resolved_key == "v5_7_2_live_retrieval_denominator_and_row_expansion" and not (
+        ROOT / v572.REPORT_PATH
+    ).exists():
+        report = v572.build_report(root=ROOT)
+        v572.check_report(report)
+        return report
+    if resolved_key == "v5_8_retrieval_metric_evaluation_framework" and not (ROOT / v58.REPORT_PATH).exists():
+        report = v58.build_report(root=ROOT)
+        v58.check_report(report)
+        return report
+    if resolved_key == "v6_0_true_rag_retrieval_rewrite" and not (ROOT / v60.REPORT_PATH).exists():
+        report = v60.build_report(root=ROOT)
+        v60.check_report(report)
+        return report
+    if resolved_key == "v6_0_agentic_true_rag_and_tool_loop_rewrite" and not (ROOT / v60a.REPORT_PATH).exists():
+        report = v60a.build_report(root=ROOT)
+        v60a.check_report(report, root=ROOT)
+        return report
+    if resolved_key == "v6_1_true_rag_corpus_expansion_and_metric_split_hardening":
+        if (ROOT / v61.REPORT_PATH).exists():
+            report = registry.load_report(resolved_key, root=ROOT)
+            v61.check_report(report, root=ROOT)
+            v61.require_status_report_hash(ROOT, report)
+            return report
+        report = v61.build_report(root=ROOT)
+        v61.check_report(report, root=ROOT)
+        return report
+    if resolved_key == "v6_2_source_derived_materialization_scaleout_and_denominator_reality_check":
+        if (ROOT / v62.REPORT_PATH).exists():
+            report = registry.load_report(resolved_key, root=ROOT)
+            v62.check_report(report, root=ROOT)
+            v62.require_status_report_hash(ROOT, report)
+            return report
+        report = v62.build_report(root=ROOT)
+        v62.check_report(report, root=ROOT)
+        return report
+    if resolved_key == "v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report":
+        if (ROOT / v63.REPORT_PATH).exists():
+            report = registry.load_report(resolved_key, root=ROOT)
+            v63.check_report(report, root=ROOT)
+            v63.require_status_report_hash(ROOT, report)
+            return report
+        report = v63.build_report(root=ROOT)
+        v63.check_report(report, root=ROOT)
+        return report
+    if resolved_key == "v6_4_e2e_coverage_and_failure_taxonomy_nonprod":
+        if (ROOT / v64.REPORT_PATH).exists():
+            report = registry.load_report(resolved_key, root=ROOT)
+            v64.check_report(report, root=ROOT)
+            v64.require_status_report_hash(ROOT, report)
+            return report
+        report = v64.build_report(root=ROOT)
+        v64.check_report(report, root=ROOT)
+        return report
+    if resolved_key == "v7_0_e2e_eval_architecture_closeout_nonprod":
+        if (ROOT / v70.REPORT_PATH).exists():
+            report = registry.load_report(resolved_key, root=ROOT)
+            v70.check_report(report, root=ROOT)
+            v70.require_status_report_hash(ROOT, report)
+            return report
+        report = v70.build_report(root=ROOT)
+        v70.check_report(report, root=ROOT)
+        return report
+    if resolved_key == "v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod":
+        if (ROOT / v701.REPORT_PATH).exists():
+            report = registry.load_report(resolved_key, root=ROOT)
+            v701.check_report(report, root=ROOT)
+            v701.require_status_report_hash(ROOT, report)
+            return report
+        report = v701.build_report(
+            root=ROOT,
+            v7_0_report=check_run("v7_0_e2e_eval_architecture_closeout_nonprod"),
+            v6_4_report=check_run("v6_4_e2e_coverage_and_failure_taxonomy_nonprod"),
+        )
+        v701.check_report(report, root=ROOT)
+        return report
     if resolved_key == "nec_2026_local_election_xlsx" and (
         os.environ.get(nec2026.SOURCE_COLLECTION_ENV_VAR) or not (ROOT / nec2026.SHORT_REPORT_PATH).exists()
     ):
@@ -728,6 +819,28 @@ def check_run(key: str) -> dict[str, Any]:
         v56compare.check_full_packet_report(report, root=ROOT)
     if resolved_key == "v5_7_vector_llm_candidate_routing":
         v57.check_report(report, root=ROOT)
+    if resolved_key == "v5_7_1_retrieval_metric_integrity_audit":
+        v571.check_report(report, root=ROOT)
+    if resolved_key == "v5_7_2_live_retrieval_denominator_and_row_expansion":
+        v572.check_report(report, root=ROOT)
+    if resolved_key == "v5_8_retrieval_metric_evaluation_framework":
+        v58.check_report(report, root=ROOT)
+    if resolved_key == "v6_0_true_rag_retrieval_rewrite":
+        v60.check_report(report, root=ROOT)
+    if resolved_key == "v6_0_agentic_true_rag_and_tool_loop_rewrite":
+        v60a.check_report(report, root=ROOT)
+    if resolved_key == "v6_1_true_rag_corpus_expansion_and_metric_split_hardening":
+        v61.check_report(report, root=ROOT)
+    if resolved_key == "v6_2_source_derived_materialization_scaleout_and_denominator_reality_check":
+        v62.check_report(report, root=ROOT)
+    if resolved_key == "v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report":
+        v63.check_report(report, root=ROOT)
+    if resolved_key == "v6_4_e2e_coverage_and_failure_taxonomy_nonprod":
+        v64.check_report(report, root=ROOT)
+    if resolved_key == "v7_0_e2e_eval_architecture_closeout_nonprod":
+        v70.check_report(report, root=ROOT)
+    if resolved_key == "v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod":
+        v701.check_report(report, root=ROOT)
     if resolved_key == "nec_2026_local_election_xlsx":
         nec2026.check_report(report)
     return report
@@ -739,7 +852,7 @@ def build_parser() -> argparse.ArgumentParser:
         "run_key",
         nargs="?",
         default=DEFAULT_RUN_KEY,
-        help="logical key such as v5_7_vector_llm_candidate_routing, v5_6_full_packet_route_retrieval_comparison, v5_6_refactor_comparison, v5_6_3, v5_6_2, v5_6, v5_5, v5_4, v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
+        help="logical key such as v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod, v6_4_e2e_coverage_and_failure_taxonomy_nonprod, v7_0_e2e_eval_architecture_closeout_nonprod, v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report, v6_2_source_derived_materialization_scaleout_and_denominator_reality_check, v6_1_true_rag_corpus_expansion_and_metric_split_hardening, v6_0_agentic_true_rag_and_tool_loop_rewrite, v6_0_true_rag_retrieval_rewrite, v5_8_retrieval_metric_evaluation_framework, v5_7_2_live_retrieval_denominator_and_row_expansion, v5_7_1_retrieval_metric_integrity_audit, v5_7_vector_llm_candidate_routing, v5_6_full_packet_route_retrieval_comparison, v5_6_refactor_comparison, v5_6_3, v5_6_2, v5_6, v5_5, v5_4, v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
     )
     parser.add_argument("--check", action="store_true", help="validate an existing report")
     parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and sync docs/status")
@@ -915,6 +1028,87 @@ def main(argv: Sequence[str] | None = None) -> int:
             v57.check_report(report, root=ROOT)
             v57.update_docs(ROOT, report)
             v57.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v5_7_1_retrieval_metric_integrity_audit":
+            report = v571.build_report(root=ROOT)
+            v571.check_report(report)
+            report, artifact_hashes = v571.write_report_bundle(ROOT, report)
+            v571.check_report(report, root=ROOT)
+            v571.update_docs(ROOT, report)
+            v571.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v5_7_2_live_retrieval_denominator_and_row_expansion":
+            report = v572.build_report(root=ROOT)
+            v572.check_report(report)
+            report, artifact_hashes = v572.write_report_bundle(ROOT, report)
+            v572.check_report(report, root=ROOT)
+            v572.update_docs(ROOT, report)
+            v572.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v5_8_retrieval_metric_evaluation_framework":
+            report = v58.build_report(root=ROOT)
+            v58.check_report(report)
+            report, artifact_hashes = v58.write_report_bundle(ROOT, report)
+            v58.check_report(report, root=ROOT)
+            v58.update_docs(ROOT, report)
+            v58.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v6_0_true_rag_retrieval_rewrite":
+            report = v60.build_report(root=ROOT)
+            v60.check_report(report)
+            report, artifact_hashes = v60.write_report_bundle(ROOT, report)
+            v60.check_report(report, root=ROOT)
+            v60.update_docs(ROOT, report)
+            v60.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v6_0_agentic_true_rag_and_tool_loop_rewrite":
+            report = v60a.build_report(root=ROOT)
+            v60a.check_report(report, root=ROOT)
+            report, artifact_hashes = v60a.write_report_bundle(ROOT, report)
+            v60a.check_report(report, root=ROOT)
+            v60a.update_docs(ROOT, report)
+            v60a.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v6_1_true_rag_corpus_expansion_and_metric_split_hardening":
+            report = v61.build_report(root=ROOT)
+            v61.check_report(report, root=ROOT)
+            report, artifact_hashes = v61.write_report_bundle(ROOT, report)
+            v61.check_report(report, root=ROOT)
+            v61.update_docs(ROOT, report)
+            v61.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v6_2_source_derived_materialization_scaleout_and_denominator_reality_check":
+            report = v62.build_report(root=ROOT)
+            v62.check_report(report, root=ROOT)
+            report, artifact_hashes = v62.write_report_bundle(ROOT, report)
+            v62.check_report(report, root=ROOT)
+            v62.update_docs(ROOT, report)
+            v62.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report":
+            report = v63.build_report(root=ROOT)
+            v63.check_report(report, root=ROOT)
+            report, artifact_hashes = v63.write_report_bundle(ROOT, report)
+            v63.check_report(report, root=ROOT)
+            v63.update_docs(ROOT, report)
+            v63.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v6_4_e2e_coverage_and_failure_taxonomy_nonprod":
+            report = v64.build_report(root=ROOT)
+            v64.check_report(report, root=ROOT)
+            report, artifact_hashes = v64.write_report_bundle(ROOT, report)
+            v64.check_report(report, root=ROOT)
+            v64.update_docs(ROOT, report)
+            v64.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v7_0_e2e_eval_architecture_closeout_nonprod":
+            report = v70.build_report(root=ROOT, source_report=check_run("v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report"))
+            v70.check_report(report, root=ROOT)
+            report, artifact_hashes = v70.write_report_bundle(ROOT, report)
+            v70.check_report(report, root=ROOT)
+            v70.update_docs(ROOT, report)
+            v70.append_status(ROOT, report, artifact_hashes=artifact_hashes)
+        elif run_key == "v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod":
+            report = v701.build_report(
+                root=ROOT,
+                v7_0_report=check_run("v7_0_e2e_eval_architecture_closeout_nonprod"),
+                v6_4_report=check_run("v6_4_e2e_coverage_and_failure_taxonomy_nonprod"),
+            )
+            v701.check_report(report, root=ROOT)
+            report, artifact_hashes = v701.write_report_bundle(ROOT, report)
+            v701.check_report(report, root=ROOT)
+            v701.update_docs(ROOT, report)
+            v701.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "nec_2026_local_election_xlsx":
             report = nec2026.build_report(root=ROOT)
             nec2026.check_report(report)
@@ -923,7 +1117,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             nec2026.update_docs(ROOT, report)
             nec2026.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         else:
-            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, v5_0, v5_1, v5_2, v5_3, v5_4, v5_5, v5_6, v5_6_2, v5_6_3, v5_6_refactor_comparison, v5_6_full_packet_route_retrieval_comparison, v5_7_vector_llm_candidate_routing, and nec_2026_local_election_xlsx")
+            raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, v5_0, v5_1, v5_2, v5_3, v5_4, v5_5, v5_6, v5_6_2, v5_6_3, v5_6_refactor_comparison, v5_6_full_packet_route_retrieval_comparison, v5_7_vector_llm_candidate_routing, v5_7_1_retrieval_metric_integrity_audit, v5_7_2_live_retrieval_denominator_and_row_expansion, v5_8_retrieval_metric_evaluation_framework, v6_0_true_rag_retrieval_rewrite, v6_0_agentic_true_rag_and_tool_loop_rewrite, v6_1_true_rag_corpus_expansion_and_metric_split_hardening, v6_2_source_derived_materialization_scaleout_and_denominator_reality_check, v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report, v6_4_e2e_coverage_and_failure_taxonomy_nonprod, v7_0_e2e_eval_architecture_closeout_nonprod, v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod, and nec_2026_local_election_xlsx")
     else:
         report = check_run(run_key)
     if args.check or not args.write:
@@ -955,6 +1149,58 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "source_official_metric_input_rows": report.get("source_official_metric_input_rows"),
                 "route_comparison_rows": report.get("route_comparison_rows"),
                 "retrieval_metric_eligible_rows": report.get("retrieval_metric_eligible_rows"),
+                "retrieval_metric_eligible_rows_prior": report.get("retrieval_metric_eligible_rows_prior"),
+                "valid_live_retrieval_metric_rows": report.get("valid_live_retrieval_metric_rows"),
+                "valid_live_retrieval_metric": report.get("valid_live_retrieval_metric"),
+                "baseline_parity_only_rows": report.get("baseline_parity_only_rows"),
+                "oracle_or_target_seeded_rows": report.get("oracle_or_target_seeded_rows"),
+                "synthetic_distractor_only_rows": report.get("synthetic_distractor_only_rows"),
+                "leakage_probe_failed_count": report.get("leakage_probe_failed_count"),
+                "identity_leakage_failed_count": report.get("identity_leakage_failed_count"),
+                "source_shortcut_dependency_failed_count": report.get("source_shortcut_dependency_failed_count"),
+                "valid_live_retrieval_metric_computed": report.get("valid_live_retrieval_metric_computed"),
+                "candidate_generation_fence_verified": report.get("candidate_generation_fence_verified"),
+                "row_expansion_rows": report.get("row_expansion_rows"),
+                "row_expansion_metric_rows": report.get("row_expansion_metric_rows"),
+                "expanded_diagnostic_live_retrieval_metric_computed": report.get(
+                    "expanded_diagnostic_live_retrieval_metric_computed"
+                ),
+                "retrieval_metric_tier_count": len(report.get("metric_tiers", {}))
+                if "metric_tiers" in report
+                else None,
+                "official_gold_smoke_metric_rows": (
+                    report.get("metric_tiers", {}).get("official_gold_smoke_metric", {}).get("attempted_rows")
+                ),
+                "valid_live_retrieval_computed_rows": (
+                    report.get("metric_tiers", {}).get("valid_live_retrieval_metric", {}).get("computed_rows")
+                ),
+                "valid_live_retrieval_coverage_adjusted_denominator": (
+                    report.get("metric_tiers", {})
+                    .get("valid_live_retrieval_metric", {})
+                    .get("coverage_adjusted_denominator")
+                ),
+                "balanced_diagnostic_retrieval_metric_rows": (
+                    report.get("metric_tiers", {})
+                    .get("balanced_diagnostic_retrieval_metric", {})
+                    .get("attempted_rows")
+                ),
+                "stress_diagnostic_metric_rows": (
+                    report.get("metric_tiers", {}).get("stress_diagnostic_metric", {}).get("attempted_rows")
+                ),
+                "real_vectordb_metric": report.get("backend_adapter", {}).get("real_vectordb_metric"),
+                "real_vectordb_or_hybrid_backend_invoked": report.get("real_nonprod_backend", {}).get(
+                    "real_vectordb_or_hybrid_backend_invoked"
+                ),
+                "real_nonprod_backend_kind": report.get("real_nonprod_backend", {}).get("backend_kind"),
+                "real_nonprod_indexed_search_unit_count": report.get("real_nonprod_backend", {}).get(
+                    "indexed_search_unit_count"
+                ),
+                "real_nonprod_query_count": report.get("real_nonprod_backend", {}).get("query_count"),
+                "nonprod_vector_backend_available": report.get("backend_adapter", {}).get(
+                    "nonprod_vector_backend_available"
+                ),
+                "metric_restatement_required": report.get("metric_restatement_required"),
+                "v5_7_prior_metric_interpretation": report.get("v5_7_prior_metric_interpretation"),
                 "answer_metric_rows": report.get("answer_metric_rows"),
                 "diagnostic_retrieval_delta_only": report.get("diagnostic_retrieval_delta_only"),
                 "retrieval_quality_delta_computed": report.get("retrieval_quality_delta_computed"),

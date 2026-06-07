@@ -142,10 +142,13 @@ archive/
 !docs/rag-ingestion-progress.md
 !docs/rag-ingestion-measurements.md
 !docs/rag-ingestion-triage.md
+!docs/codex-goals/rag-v7-e2e-evaluation-plan.md
 ai/eval/reports/rag-ingestion/**/*.json
 ai/eval/reports/rag-ingestion/**/*.jsonl
 ai/eval/reports/rag-ingestion/**/*.csv
 ai/eval/reports/rag-ingestion/**/*.xlsx
+ai/eval/reports/rag-ingestion/**/*.sqlite
+ai/eval/reports/rag-ingestion/**/*.index
 **/datasets/
 ai/eval/artifacts/
 !ai/eval/artifacts/
