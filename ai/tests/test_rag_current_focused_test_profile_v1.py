@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -65,6 +66,26 @@ def test_current_profile_data_lives_in_shared_support_module() -> None:
     assert rag_conftest.CURRENT_RAG_TEST_NODEIDS is profile.CURRENT_RAG_TEST_NODEIDS
     assert rag_conftest.NON_CURRENT_RAG_TEST_FILES is profile.NON_CURRENT_RAG_TEST_FILES
     assert rag_conftest.CURRENT_RAG_TEST_FILES == profile.current_rag_test_files()
+
+
+def test_current_profile_has_single_canonical_nodeid_definition() -> None:
+    source = (ROOT / "ai" / "tests" / "rag_current_profile.py").read_text(encoding="utf-8")
+
+    assert len(re.findall(r"^CURRENT_RAG_TEST_NODEIDS = frozenset\(", source, flags=re.MULTILINE)) == 1
+    assert len(re.findall(r"^CURRENT_RAG_TEST_FILES = frozenset\(", source, flags=re.MULTILINE)) == 1
+    assert len(re.findall(r"^NON_CURRENT_RAG_TEST_FILES =", source, flags=re.MULTILINE)) == 1
+
+
+def test_agentops_portfolio_contract_stays_outside_rag_current_profile() -> None:
+    rag_conftest = load_conftest()
+    agentops_file = "ai/tests/test_agentops_portfolio_runtime_contract.py"
+
+    assert agentops_file in rag_conftest.NON_CURRENT_RAG_TEST_FILES
+    assert agentops_file not in rag_conftest.CURRENT_RAG_TEST_FILES
+    assert not any(
+        nodeid.startswith(f"{agentops_file}::")
+        for nodeid in rag_conftest.CURRENT_RAG_TEST_NODEIDS
+    )
 
 
 def test_current_profile_includes_required_official_candidate_and_pdf_tests() -> None:

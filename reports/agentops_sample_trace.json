@@ -1,0 +1,52 @@
+{
+  "schema_version": "agentops_run_trace_v1",
+  "run_id": "agentops-portfolio-smoke",
+  "query": "query_ref:8a3fa83080fc7cb5",
+  "request_context": {
+    "source_family": "XLSX",
+    "namespace": "rag-data-all-source-citable-nonprod-v1",
+    "indexing_scope": "nonprod_source_derived_read_only",
+    "answer_format_requirement": "answer_with_citations_or_abstain",
+    "official_requested": false
+  },
+  "selected_tools": [
+    "retrieve_xlsx_table",
+    "validate_evidence",
+    "classify_answerability"
+  ],
+  "tools_called": [
+    "rag.l0.query_routing",
+    "rag.l1.coarse_candidate_generation",
+    "rag.l2.file_workbook_identity",
+    "rag.l3.structural_locator",
+    "rag.l4.sourceatom_hydration",
+    "rag.l5.evidence_bundle_assembly",
+    "rag.l6.evidence_selector",
+    "rag.l7.answer_ready_context",
+    "rag.l8.final_llm_answer_generation"
+  ],
+  "retrieval_namespace": "rag-data-all-source-citable-nonprod-v1",
+  "indexing_scope": "nonprod_source_derived_read_only",
+  "evidence_ids": [
+    "evidence_ref:01"
+  ],
+  "answerability_label": "diagnostic_answerable_from_bounds",
+  "answerability_label_source": "machine_policy_not_gold",
+  "relevance_label": "",
+  "relevance_label_source": "not_evaluated_without_user_gold",
+  "policy_decision": "allow_diagnostic",
+  "diagnostic_only": true,
+  "retry_repair_fallback": {
+    "max_retry_count": 1,
+    "retry_attempted": false,
+    "retry_requires_new_allowed_signal": true,
+    "repair_attempted": false,
+    "fallback_decision": "not_needed",
+    "diagnostic_only_on_ambiguous_answerability": true,
+    "unbounded_retry_allowed": false,
+    "failure_category": ""
+  },
+  "failure_category": "",
+  "final_decision": "diagnostic_only_answer",
+  "report_artifact_path": "reports/portfolio_agentops_report.md"
+}

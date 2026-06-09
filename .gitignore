@@ -108,6 +108,7 @@ ai/eval/datasets/samples/
 *.json
 *.md
 !README.md
+!AGENTS.md
 !**/README.md
 !docs/THIRD_PARTY_DATA_LICENSES.md
 !frontend/app/package.json
@@ -115,6 +116,11 @@ ai/eval/datasets/samples/
 !frontend/app/tsconfig.json
 !frontend/app/tsconfig.app.json
 !frontend/app/tsconfig.node.json
+!docs/agentops_trace_schema.json
+!reports/
+/reports/*
+!reports/portfolio_agentops_report.md
+!reports/agentops_sample_trace.json
 # Repo-local archives are externalized under D:\_external_workspace_archive
 # and D:\_external_runtime_artifacts; keep future archive bundles out of git.
 archive/

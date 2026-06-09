@@ -1,3 +1,14 @@
+# Verifiable Document RAG Backend
+
+This repository centers on evidence-grounded document answering: retrieval scope
+is explicit, SearchView rows remain candidate-only, SourceAtom/EvidenceBundle
+objects remain answer-evidence truth, and unsafe paths fail closed.
+
+The AgentOps surface is intentionally thin. It maps the existing deterministic
+RAG runtime into tool-style policy and trace records for technical analysis; it
+does not create an autonomous agent framework, mutate gold labels, or claim
+production readiness.
+
 ## 프로젝트 개요
 
 | 항목 | 내용 |
