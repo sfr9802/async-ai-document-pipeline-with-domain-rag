@@ -24,10 +24,33 @@ OUT_DIR = ROOT / "docs" / "portfolio"
 PDF_PATH = OUT_DIR / "choi_byungchan_evidence_grounded_ai_document_qa_backend_portfolio.pdf"
 LEGACY_PDF_PATH = OUT_DIR / "choi_byungchan_ai_document_qa_backend_portfolio.pdf"
 VERSION_PDF_PATH = OUT_DIR / "choi_byungchan_ai_document_qa_backend_portfolio_result_first_v2.pdf"
-PROJECT_TITLE = "검증 가능한 문서 RAG 백엔드"
-PROJECT_SUBTITLE = "후보 검색 · 원문 근거 · 답변 제어 · 실행 Trace"
-PROJECT_LABEL = "Verifiable Document RAG Backend"
+PROJECT_TITLE = "Evidence-Grounded Document QA Backend"
+PROJECT_SUBTITLE = "근거 검증형 AI 문서 QA 백엔드 · 후보 검색 · 원문 근거 · 답변 제어 · 실행 Trace"
+PROJECT_LABEL = "AI Backend / LLM-RAG / Agent Runtime"
 PROJECT_SECTION = "AI 백엔드 / 문서 RAG / 실행 Trace"
+ACTIVE_TITLE = PROJECT_TITLE
+ACTIVE_SUBTITLE = PROJECT_SUBTITLE
+ACTIVE_LABEL = PROJECT_LABEL
+TITLE_VARIANTS = [
+    (
+        OUT_DIR / "choi_byungchan_portfolio_evidence_grounded_document_qa_backend.pdf",
+        "Evidence-Grounded Document QA Backend",
+        "근거 검증형 AI 문서 QA 백엔드 · 후보 검색 · 원문 근거 · 답변 제어 · 실행 Trace",
+        "AI Backend / LLM-RAG / Agent Runtime",
+    ),
+    (
+        OUT_DIR / "choi_byungchan_portfolio_agent_runtime_document_qa_backend.pdf",
+        "Agent Runtime 기반 문서 QA 백엔드",
+        "Tool 선택 · 원문 근거 확인 · 답변 가능 판단 · 실행 Trace",
+        "AI Backend / Agent Runtime / Document QA",
+    ),
+    (
+        OUT_DIR / "choi_byungchan_portfolio_citation_document_qa_backend.pdf",
+        "Citation 기반 문서 QA 백엔드",
+        "원문 위치 확인 · citation 검증 · 답변 또는 중단 제어",
+        "AI Backend / Citation / Evidence Validation",
+    ),
+]
 
 PAGE_W = 960
 PAGE_H = 540
@@ -146,7 +169,7 @@ def draw_footer(c: canvas.Canvas, page_num: int, section: str = "") -> None:
     c.roundRect(MARGIN_X, PAGE_H - 42, 66, 4, 2, fill=1, stroke=0)
     c.setFillColor(MUTED)
     c.setFont(FONT_BOLD, 9)
-    c.drawString(MARGIN_X, PAGE_H - 25, PROJECT_TITLE)
+    c.drawString(MARGIN_X, PAGE_H - 25, ACTIVE_TITLE)
     if section:
         c.setFont(FONT_REGULAR, 10)
         c.drawRightString(PAGE_W - MARGIN_X, PAGE_H - 25, section)
@@ -482,13 +505,13 @@ def cover(c: canvas.Canvas) -> None:
     c.rect(0, PAGE_H - 7, PAGE_W, 7, fill=1, stroke=0)
     c.setFillColor(INK)
     c.setFont(FONT_BOLD, 38)
-    c.drawString(MARGIN_X, 360, PROJECT_TITLE)
+    c.drawString(MARGIN_X, 360, ACTIVE_TITLE)
     c.setFillColor(TEAL)
     c.setFont(FONT_BOLD, 16)
-    draw_wrapped(c, PROJECT_SUBTITLE, MARGIN_X, 314, 820, font=FONT_BOLD, size=16, leading=22, color=TEAL)
+    draw_wrapped(c, ACTIVE_SUBTITLE, MARGIN_X, 314, 820, font=FONT_BOLD, size=16, leading=22, color=TEAL)
     c.setFillColor(MUTED)
     c.setFont(FONT_BOLD, 10.5)
-    c.drawString(MARGIN_X, 266, PROJECT_LABEL)
+    c.drawString(MARGIN_X, 266, ACTIVE_LABEL)
     cover_rows = [
         ("Input", "PDF · XLSX · Text"),
         ("Backend", "Job API · Worker · Retrieval"),
@@ -521,7 +544,7 @@ def cover(c: canvas.Canvas) -> None:
 
 def result_examples(c: canvas.Canvas) -> None:
     y = draw_page_title(c, 2, "실제 실행 결과", section="결과물")
-    intro = "Question · Evidence · Answer · Citation"
+    intro = "User Query · Retrieved Evidence · Final Answer · Citation · API Response"
     draw_wrapped(c, intro, MARGIN_X, y + 4, 840, size=15, leading=22, color=MUTED)
 
     panel_x = MARGIN_X
@@ -552,41 +575,41 @@ def result_examples(c: canvas.Canvas) -> None:
         content_x,
         content_y,
         content_w,
-        "Question",
-        "2019년 2월 5호선의 승차총승객수는 몇 명입니까?",
+        "User Query",
+        "2019년 2월 5호선의 승차총승객수는?",
         label_color=ACCENT,
         value_size=13,
     )
-    content_y -= 12
+    content_y -= 10
     content_y = draw_kv_result(
         c,
         content_x,
         content_y,
         content_w,
-        "Evidence",
-        "철도 sheet / range A352:D401 / cell D352 / display value 15,446,522",
+        "Retrieved Evidence",
+        "철도\nrange A352:D401\ncell D352\nvalue 15,446,522",
         label_color=TEAL,
-        value_size=12.4,
+        value_size=11.8,
     )
-    content_y -= 12
+    content_y -= 8
     content_y = draw_kv_result(
         c,
         content_x,
         content_y,
         content_w,
-        "Answer",
+        "Final Answer",
         "15,446,522명",
         label_color=GREEN,
         value_size=13,
     )
-    content_y -= 12
+    content_y -= 10
     draw_kv_result(
         c,
         content_x,
         content_y,
         content_w,
         "Citation",
-        "철도!D352, range A352:D401",
+        "철도!D352",
         label_color=AMBER,
         value_size=12.4,
     )
@@ -631,7 +654,7 @@ def problem(c: canvas.Canvas) -> None:
     y = draw_page_title(c, 7, "배경", section="배경")
     items = [
         "PDF 표 / Excel 셀 / Text chunk 위치 손실",
-        "Vector 후보와 답변 근거 구분",
+        "검색 후보와 답변 근거 구분",
         "파싱 / 인덱싱 / 검색 / 답변 실패 지점 분리",
         "근거 부족 답변 차단",
     ]
@@ -736,7 +759,7 @@ def evidence_split(c: canvas.Canvas) -> None:
     y = draw_page_title(
         c,
         5,
-        "후보 -> 근거 -> 답변",
+        "후보 · 근거 · 답변",
         section="문제 및 해결방안",
     )
     c.setFillColor(TEAL)
@@ -744,10 +767,10 @@ def evidence_split(c: canvas.Canvas) -> None:
     c.drawString(MARGIN_X, y, "검색 후보와 답변 근거 분리")
     flow_y = y - 58
     cards = [
-        ("1", "검색 후보", "관련 문서 조각", ACCENT),
-        ("2", "원문 근거", "PDF page / Excel cell / Text chunk", TEAL),
-        ("3", "답변 가능 여부", "필요 값 · 범위 · locator", GREEN),
-        ("4", "답변 또는 중단", "answer + citation · stopped", AMBER),
+        ("1", "검색 후보", "가능성 있는 자료", ACCENT),
+        ("2", "원문 근거", "사용자가 확인할 위치", TEAL),
+        ("3", "답변 판단", "충분하면 답변", GREEN),
+        ("4", "답변 또는 중단", "근거 부족이면 중단", AMBER),
     ]
     card_w = 188
     card_h = 108
@@ -774,10 +797,10 @@ def evidence_split(c: canvas.Canvas) -> None:
         flow_y - 134,
         [210, 300, 330],
         [
-            ["단계", "화면 결과", "구현 포인트"],
-            ["검색 후보", "문서 후보 목록", "vector · keyword · table"],
-            ["원문 근거", "page · sheet/range/cell · chunk", "locator 재확인"],
-            ["답변 판단", "answered / stopped", "근거 부족 -> 중단"],
+            ["단계", "왜 필요한가", "사용자에게 보이는 결과"],
+            ["검색 후보", "관련 자료를 먼저 좁힘", "후보 목록"],
+            ["원문 근거", "실제 위치와 값을 다시 확인", "page / cell / chunk"],
+            ["답변 판단", "근거 부족 답변 방지", "answered / stopped"],
         ],
         font_size=11.2,
         header_size=12,
@@ -851,15 +874,15 @@ def verified_scope(c: canvas.Canvas) -> None:
     draw_wrapped(c, intro, MARGIN_X, y + 4, 840, size=15, leading=22, color=MUTED)
 
     card_w = 410
-    card_h = 78
+    card_h = 88
     gap_x = 22
     gap_y = 18
     start_y = y - 42
     proofs = [
-        ("문서 유형", "3 types", "PDF / XLSX / TEXT", ACCENT),
-        ("검색 후보", "300 rows", "PDF 100 / TEXT 100 / XLSX 100", TEAL),
-        ("응답 스모크", "29 rows", "10 answered · 10 citation verified · 19 stopped", GREEN),
-        ("계약 테스트", "51 passed", "runtime · retrieval · trace contracts", AMBER),
+        ("문서 유형", "3종", "PDF / XLSX / TEXT", ACCENT),
+        ("검색 후보 평가", "300개 질의", "PDF 100 / XLSX 100 / TEXT 100", TEAL),
+        ("응답 스모크", "29개 검증 질의", "10 answered · 10 citation verified · 19 stopped", GREEN),
+        ("계약 테스트", "53개 통과", "runtime / retrieval / trace", AMBER),
     ]
     for idx, (label, value, desc, color) in enumerate(proofs):
         col = idx % 2
@@ -873,11 +896,20 @@ def verified_scope(c: canvas.Canvas) -> None:
         c.setFont(FONT_BOLD, 10.5)
         c.drawString(x + 22, top - 24, label)
         c.setFillColor(INK)
-        c.setFont(FONT_BOLD, 20)
+        c.setFont(FONT_BOLD, 19)
         c.drawString(x + 22, top - 50, value)
-        c.setFillColor(MUTED)
-        c.setFont(FONT_BOLD, 11.2)
-        c.drawRightString(x + card_w - 22, top - 50, desc)
+        draw_wrapped(
+            c,
+            desc,
+            x + 22,
+            top - 68,
+            card_w - 44,
+            font=FONT_BOLD,
+            size=10.8,
+            leading=14,
+            color=MUTED,
+            max_lines=2,
+        )
 
     scope_y = start_y - card_h * 2 - gap_y - 42
     c.setFillColor(INK)
@@ -885,9 +917,9 @@ def verified_scope(c: canvas.Canvas) -> None:
     c.drawString(MARGIN_X, scope_y, "구현한 흐름")
     flow = [
         ("문서 구조 보존", "page · cell/range · chunk"),
-        ("후보 검색", "vector · keyword · table"),
-        ("근거 확인", "citation verified"),
-        ("Trace / Test", "JSON report · contract"),
+        ("후보 검색", "문서 후보 좁히기"),
+        ("근거 확인", "citation 확인"),
+        ("Trace / Test", "report · contract"),
     ]
     flow_w = 196
     flow_gap = 16
@@ -904,12 +936,12 @@ def verified_scope(c: canvas.Canvas) -> None:
 
 def closing(c: canvas.Canvas) -> None:
     y = draw_page_title(c, 8, "마무리", section="마무리")
-    intro = "Result-first · Evidence-grounded · Backend-focused"
+    intro = "핵심 구현 · 결과물 중심 · 계약 테스트"
     draw_wrapped(c, intro, MARGIN_X, y + 4, 840, size=15, leading=22, color=MUTED)
     cards = [
-        ("핵심 결과", "Q -> Evidence -> Answer -> API"),
+        ("핵심 결과", "질문 · 근거 · 답변 · API 응답"),
         ("백엔드 초점", "Job API · Worker · Retrieval · Trace"),
-        ("검증 방식", "citation · stop · contract"),
+        ("검증 방식", "citation verified · stopped · contract"),
     ]
     card_w = 264
     gap = 24
@@ -926,22 +958,36 @@ def closing(c: canvas.Canvas) -> None:
         c.setFont(FONT_BOLD, 17)
         c.drawString(x + 22, top - 58, title)
         draw_wrapped(c, body, x + 22, top - 86, card_w - 44, size=11.6, leading=16, color=MUTED, font=FONT_BOLD)
-    draw_table(
-        c,
-        MARGIN_X,
-        top - 176,
-        [176, 664],
-        [
-            ["구분", "요약"],
-            ["Portfolio", "실제 실행 결과와 산출물 숫자 우선"],
-            ["Repository", REPO_URL],
-            ["Next", "권한 검색 · 문서 버전 · 장기 regression · 운영 모니터링"],
-        ],
-        font_size=11.4,
-        header_size=12.2,
-        leading=16,
-        pad_y=8,
-    )
+    c.setFillColor(INK)
+    c.setFont(FONT_BOLD, 17)
+    c.drawString(MARGIN_X, top - 166, "핵심 구현")
+    checklist = [
+        ("PDF/XLSX/TEXT 처리", ACCENT),
+        ("Retrieval", TEAL),
+        ("Evidence Validation", GREEN),
+        ("Agent Runtime", AMBER),
+        ("Trace", TEAL),
+        ("Contract Test", ACCENT),
+    ]
+    item_w = 264
+    item_h = 44
+    item_top = top - 194
+    for idx, (label, color) in enumerate(checklist):
+        col = idx % 3
+        row = idx // 3
+        x = MARGIN_X + col * (item_w + gap)
+        yy = item_top - row * 56
+        c.setFillColor(WHITE)
+        c.setStrokeColor(HexColor("#D7E1EA"))
+        c.roundRect(x, yy - item_h, item_w, item_h, 7, fill=1, stroke=1)
+        c.setFillColor(color)
+        c.circle(x + 24, yy - item_h / 2, 6, fill=1, stroke=0)
+        c.setFillColor(INK)
+        c.setFont(FONT_BOLD, 13.5)
+        c.drawString(x + 42, yy - item_h / 2 - 4, label)
+    c.setFillColor(MUTED)
+    c.setFont(FONT_REGULAR, 11)
+    c.drawString(MARGIN_X, 54, REPO_URL)
 
 
 SLIDES = [
@@ -956,17 +1002,36 @@ SLIDES = [
 ]
 
 
-def build_pdf(path: Path = PDF_PATH) -> Path:
+def build_pdf(
+    path: Path = PDF_PATH,
+    *,
+    title: str | None = None,
+    subtitle: str | None = None,
+    label: str | None = None,
+) -> Path:
+    global ACTIVE_LABEL, ACTIVE_SUBTITLE, ACTIVE_TITLE
+
     register_fonts()
+    previous_title = ACTIVE_TITLE
+    previous_subtitle = ACTIVE_SUBTITLE
+    previous_label = ACTIVE_LABEL
+    ACTIVE_TITLE = title or PROJECT_TITLE
+    ACTIVE_SUBTITLE = subtitle or PROJECT_SUBTITLE
+    ACTIVE_LABEL = label or PROJECT_LABEL
     path.parent.mkdir(parents=True, exist_ok=True)
     c = canvas.Canvas(str(path), pagesize=(PAGE_W, PAGE_H), pageCompression=1)
-    c.setTitle(PROJECT_TITLE)
+    c.setTitle(ACTIVE_TITLE)
     c.setAuthor("Choi Byungchan")
-    c.setSubject(PROJECT_LABEL)
-    for slide in SLIDES:
-        slide(c)
-        c.showPage()
-    c.save()
+    c.setSubject(ACTIVE_LABEL)
+    try:
+        for slide in SLIDES:
+            slide(c)
+            c.showPage()
+        c.save()
+    finally:
+        ACTIVE_TITLE = previous_title
+        ACTIVE_SUBTITLE = previous_subtitle
+        ACTIVE_LABEL = previous_label
     return path
 
 
@@ -978,6 +1043,13 @@ if __name__ == "__main__":
     same_version_output = VERSION_PDF_PATH == built
     if not same_version_output:
         shutil.copyfile(built, VERSION_PDF_PATH)
+    variant_paths = []
+    for variant_path, title, subtitle, label in TITLE_VARIANTS:
+        variant_paths.append(
+            build_pdf(variant_path, title=title, subtitle=subtitle, label=label)
+        )
     print(built)
     print(LEGACY_PDF_PATH)
     print(VERSION_PDF_PATH)
+    for variant_path in variant_paths:
+        print(variant_path)

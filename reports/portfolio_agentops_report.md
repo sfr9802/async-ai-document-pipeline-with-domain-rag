@@ -147,17 +147,20 @@ uses fixed two-digit `evidence_ref:NN` handles; larger runtime evidence sets fai
 closed rather than emitting schema-invalid refs.
 Unsupported-tool requests fail closed and emit empty trace `selected_tools`, even
 when the request mixes known and unknown tool names. Runtime `tools_called`
-entries are limited to schema-known L0-L8 runtime call names, so unknown runtime
-names such as `rag.raw_prompt_dump` are not valid persistent traces.
+entries are limited to unique schema-known L0-L8 runtime call names, so unknown,
+repeated, or overlong runtime tool-name traces are not valid persistent traces.
 Runtime fail-closed categories are also constrained to schema-known buckets;
 raw path-like failure reasons collapse to `runtime_fail_closed` before
 persistence.
-If runtime instrumentation emits an unknown `tools_called` name, the adapter
+If runtime instrumentation emits an unknown or repeated `tools_called` name, the adapter
 fails closed with `runtime_tool_call_drift` and persists only schema-known call
 names.
 If the underlying runtime reports `runtime_contract_violation=true`, the
 adapter fails closed even when the runtime also reports answer-allowed evidence,
 and it does not persist raw contract guard names or raw failure paths.
+If a runtime answer result returns source atoms or evidence bundles outside the
+explicit candidate scope, the adapter treats the result as a runtime contract
+violation and emits empty evidence refs.
 If runtime invocation raises before returning a bounded result, the adapter
 still emits a schema-valid `runtime_fail_closed` trace without persisting the
 raw exception message or source identity.
@@ -184,6 +187,8 @@ The portfolio layer uses conservative categories:
 | malformed source registry | fail closed |
 | runtime contract violation | fail closed |
 | runtime invocation exception | fail closed |
+| repeated or overlong runtime tool-call trace | fail closed |
+| post-runtime candidate/evidence scope drift | fail closed |
 | evidence reference count over trace schema bound | fail closed |
 | insufficient evidence | fail closed |
 | official request without user approval | fail closed |
@@ -195,7 +200,7 @@ Current verification run:
 
 | Command | Result |
 |---|---|
-| `python -X utf8 -m pytest ai/tests/test_agentops_portfolio_runtime_contract.py -q` | 26 passed, 1 warning |
+| `python -X utf8 -m pytest ai/tests/test_agentops_portfolio_runtime_contract.py -q` | 28 passed, 1 warning |
 | `python -X utf8 -m py_compile ai/app/capabilities/rag_orchestrator/agentops_runtime.py` | passed |
 | `python -X utf8 -m json.tool docs/agentops_trace_schema.json` and `python -X utf8 -m json.tool reports/agentops_sample_trace.json` | passed |
 | success and fail-closed trace drift guards against `docs/agentops_trace_schema.json` and `run_agentops_diagnostic(...)` | covered by `test_agentops_trace_schema_and_sample_match_runtime_contract` |
@@ -207,13 +212,14 @@ Current verification run:
 | runtime contract-violation flag fail-closed guard | covered by `test_agentops_runtime_contract_violation_forces_fail_closed_trace` |
 | runtime exception fail-closed trace guard | covered by `test_agentops_runtime_exception_fails_closed_without_raw_exception_leak` |
 | evidence reference count schema-bound guard | covered by `test_agentops_trace_fails_closed_when_evidence_reference_count_exceeds_schema_bound` |
-| runtime tool-call drift fail-closed guard | covered by `test_agentops_trace_fails_closed_for_unknown_runtime_tool_call_names` |
+| runtime tool-call drift fail-closed guard | covered by `test_agentops_trace_fails_closed_for_unknown_runtime_tool_call_names` and `test_agentops_trace_fails_closed_for_repeated_runtime_tool_call_names` |
+| post-runtime candidate/evidence scope drift guard | covered by `test_agentops_trace_fails_closed_for_post_runtime_candidate_scope_drift` |
 | unsafe report artifact path leakage guard | covered by `test_agentops_trace_blocks_unsafe_report_artifact_paths` |
 | invalid candidate scope pre-runtime guard, including malformed candidate records and missing candidate `source_family` metadata | covered by `test_agentops_runtime_blocks_invalid_candidate_scope_before_tool_calls` |
 | malformed top-level source registry pre-runtime guard | covered by `test_agentops_runtime_blocks_malformed_source_registry_before_tool_calls` |
 | portfolio/resume rendered PDF text contract | covered by `test_portfolio_and_resume_pdf_builders_render_artifact_text_contract` |
 | `python -X utf8 ai/scripts/rag_eval.py current --check` | passed; `current_resolves_to=v6_9_answer_quality_gate_packet_nonprod`, official input counters remain `0`, answer/retrieval quality metrics remain false |
-| `python -X utf8 -m pytest ai/tests/test_agentops_portfolio_runtime_contract.py ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py -q` | 51 passed, 8 warnings |
+| `python -X utf8 -m pytest ai/tests/test_agentops_portfolio_runtime_contract.py ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py -q` | 53 passed, 8 warnings |
 | `git status --short -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver ai/eval/reports/rag-ingestion/status.jsonl` | no protected-surface changes |
 
 Warnings were FAISS/Numpy, pydantic, requests, and pytest-asyncio environment

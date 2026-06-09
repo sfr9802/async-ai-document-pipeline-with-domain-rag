@@ -76,6 +76,8 @@
     },
     "selected_tools": {
       "type": "array",
+      "maxItems": 6,
+      "uniqueItems": true,
       "description": "Schema-known AgentOps tools selected for the trace; unsupported-tool fail-closed traces clear this list instead of persisting requested tool names.",
       "items": {
         "enum": [
@@ -90,6 +92,8 @@
     },
     "tools_called": {
       "type": "array",
+      "maxItems": 9,
+      "uniqueItems": true,
       "items": {
         "enum": [
           "rag.l0.query_routing",

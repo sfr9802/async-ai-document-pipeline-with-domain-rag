@@ -75,6 +75,7 @@ TRACE_RUNTIME_TOOL_CALLS = (
     "rag.l7.answer_ready_context",
     "rag.l8.final_llm_answer_generation",
 )
+MAX_TRACE_TOOL_CALLS = len(TRACE_RUNTIME_TOOL_CALLS)
 
 ALLOWED_INDEXING_SCOPES = (DEFAULT_INDEXING_SCOPE,)
 ALLOWED_ANSWER_FORMAT_REQUIREMENTS = ("answer_with_citations_or_abstain",)
@@ -156,14 +157,18 @@ def _trace_failure_category(value: Any) -> str:
 def _trace_tools_called(values: Sequence[str]) -> tuple[tuple[str, ...], bool]:
     allowed = set(TRACE_RUNTIME_TOOL_CALLS)
     safe_calls: list[str] = []
-    unknown_seen = False
+    drift_seen = False
     for value in values:
         call = _clean(value)
-        if call in allowed:
+        if call in allowed and call not in safe_calls:
             safe_calls.append(call)
+        elif call in allowed:
+            drift_seen = True
         elif call:
-            unknown_seen = True
-    return tuple(safe_calls), unknown_seen
+            drift_seen = True
+    if len(values) > MAX_TRACE_TOOL_CALLS:
+        drift_seen = True
+    return tuple(safe_calls), drift_seen
 
 
 def _trace_source_family(value: Any) -> str:
@@ -290,7 +295,11 @@ def _trace_selected_tools(values: Sequence[str], *, failure_category: str = "") 
     if failure_category == "unsupported_tool":
         return ()
     allowed = _tool_specs_by_name()
-    return tuple(name for name in values if name in allowed)
+    selected: list[str] = []
+    for name in values:
+        if name in allowed and name not in selected:
+            selected.append(name)
+    return tuple(selected)
 
 
 def _default_tools_for_family(source_family: str) -> tuple[str, ...]:
@@ -635,6 +644,20 @@ def _candidate_scope_block_decision(
     return None
 
 
+def _runtime_result_violates_candidate_scope(context: AgentOpsRequestContext, result: AgentRuntimeResult) -> bool:
+    if not (result.answer_allowed_by_policy and result.evidence_bundle_ids):
+        return False
+    selected_ids = _as_tuple(result.selected_source_atom_ids)
+    if not selected_ids:
+        return True
+    candidate_ids = set(context.candidate_source_atom_ids)
+    if any(source_atom_id not in candidate_ids for source_atom_id in selected_ids):
+        return True
+    selected_id_set = set(selected_ids)
+    evidence_bundle_ids = _as_tuple(result.evidence_bundle_ids)
+    return any(bundle_id.removeprefix("bundle:") not in selected_id_set for bundle_id in evidence_bundle_ids)
+
+
 def _trace_from_policy_block(
     context: AgentOpsRequestContext,
     decision: AgentOpsPolicyDecision,
@@ -717,6 +740,11 @@ def _trace_from_runtime_result(
         failure_category = _trace_failure_category(result.fail_closed_reason or "runtime_contract_violation")
         evidence_ids = ()
     elif len(result.evidence_bundle_ids) > MAX_TRACE_EVIDENCE_REFS:
+        answerability = "diagnostic_unanswerable_from_bounds"
+        final_decision = "fail_closed"
+        failure_category = "runtime_contract_violation"
+        evidence_ids = ()
+    elif _runtime_result_violates_candidate_scope(context, result):
         answerability = "diagnostic_unanswerable_from_bounds"
         final_decision = "fail_closed"
         failure_category = "runtime_contract_violation"

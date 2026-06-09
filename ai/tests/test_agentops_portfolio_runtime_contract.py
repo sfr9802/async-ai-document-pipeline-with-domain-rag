@@ -44,6 +44,51 @@ def _agentops_portfolio_smoke_trace_payload() -> dict[str, object]:
     return trace.to_dict()
 
 
+def _agentops_runtime_result(
+    request,
+    *,
+    selected_source_atom_ids: tuple[str, ...] = ("atom-xlsx-a1",),
+    evidence_bundle_ids: tuple[str, ...] = ("bundle:atom-xlsx-a1",),
+    tool_call_sequence: tuple[str, ...] = ("rag.l0.query_routing", "rag.l4.sourceatom_hydration"),
+    runtime_contract_violation: bool = False,
+    answer_allowed_by_policy: bool = True,
+    fail_closed_reason: str = "",
+    blocked_reason: str = "",
+    response_policy_bucket: str = "ANSWER_ALLOWED",
+):
+    from app.capabilities.rag_orchestrator.agent_runtime import AgentRuntimeResult
+
+    return AgentRuntimeResult(
+        run_id=request.run_id,
+        query_id=request.query_id,
+        diagnostic_case_id="",
+        route_lane="USER_LOCATOR",
+        agent_route="tool_registry",
+        final_answer="unsafe raw answer should not be persisted",
+        selected_source_atom_ids=selected_source_atom_ids,
+        evidence_bundle_ids=evidence_bundle_ids,
+        trace_rows=(),
+        tool_call_sequence=list(tool_call_sequence),
+        runtime_contract_violation=runtime_contract_violation,
+        fail_closed_reason=fail_closed_reason,
+        blocked_reason=blocked_reason,
+        locator_resolution_bucket="LOCATION_FOUND",
+        locator_bounds_answerability="answerable",
+        response_policy_bucket=response_policy_bucket,
+        answer_allowed_by_policy=answer_allowed_by_policy,
+        user_clarification_required=False,
+        ambiguity_requires_clarification=False,
+        active_context_required=False,
+        active_context_present=True,
+        deictic_query=False,
+        page_only_locator=False,
+        sheet_only_locator=False,
+        final_answer_policy="answer_allowed" if answer_allowed_by_policy else "fail_closed",
+        evidence_truth_source="source_atom_evidence_bundle" if evidence_bundle_ids else "none",
+        abstained=not answer_allowed_by_policy,
+    )
+
+
 def test_agentops_tool_registry_maps_existing_capabilities_and_boundaries() -> None:
     from app.capabilities.rag_orchestrator.agentops_runtime import build_agentops_tool_registry
 
@@ -582,6 +627,19 @@ def test_agentops_trace_schema_rejects_unknown_runtime_tool_names() -> None:
         for error in errors
     )
 
+    repeated_tool_payload = deepcopy(payload)
+    repeated_tool_payload["selected_tools"] = ["retrieve_xlsx_table"] * 10
+    repeated_tool_payload["tools_called"] = ["rag.l0.query_routing"] * 10
+    repeated_errors = sorted(validator.iter_errors(repeated_tool_payload), key=lambda error: error.path)
+
+    assert schema["properties"]["selected_tools"]["maxItems"] == 6
+    assert schema["properties"]["selected_tools"]["uniqueItems"] is True
+    assert schema["properties"]["tools_called"]["maxItems"] == 9
+    assert schema["properties"]["tools_called"]["uniqueItems"] is True
+    assert repeated_errors
+    assert any(list(error.path) == ["selected_tools"] for error in repeated_errors)
+    assert any(list(error.path) == ["tools_called"] for error in repeated_errors)
+
 
 def test_agentops_trace_sanitizes_runtime_failure_category_before_persistence() -> None:
     from jsonschema import Draft202012Validator
@@ -905,6 +963,91 @@ def test_agentops_trace_fails_closed_for_unknown_runtime_tool_call_names() -> No
     assert sorted(validator.iter_errors(trace), key=lambda error: error.path) == []
 
 
+def test_agentops_trace_fails_closed_for_repeated_runtime_tool_call_names() -> None:
+    from jsonschema import Draft202012Validator
+    from app.capabilities.rag_orchestrator.agentops_runtime import AgentOpsRequestContext, run_agentops_diagnostic
+
+    class RepeatedToolRuntime:
+        def invoke(self, request):  # type: ignore[no-untyped-def]
+            return _agentops_runtime_result(
+                request,
+                tool_call_sequence=("rag.l0.query_routing",) * 10,
+            )
+
+    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema)
+    trace = run_agentops_diagnostic(
+        AgentOpsRequestContext(
+            run_id="agentops-runtime-repeated-tool-drift",
+            query="Book.xlsx 시트 Sheet1 셀 A1 값 알려줘",
+            source_family="XLSX",
+            namespace="rag-data-all-source-citable-nonprod-v1",
+            candidate_source_atom_ids=("atom-xlsx-a1",),
+        ),
+        source_registry={
+            "atom-xlsx-a1": {
+                "source_atom_id": "atom-xlsx-a1",
+                "mock_source_atom": True,
+                "source_family": "XLSX",
+            }
+        },
+        runtime=RepeatedToolRuntime(),
+    ).to_dict()
+
+    assert trace["final_decision"] == "fail_closed"
+    assert trace["failure_category"] == "runtime_tool_call_drift"
+    assert trace["retry_repair_fallback"]["failure_category"] == "runtime_tool_call_drift"
+    assert trace["tools_called"] == ["rag.l0.query_routing"]
+    assert trace["evidence_ids"] == []
+    assert sorted(validator.iter_errors(trace), key=lambda error: error.path) == []
+
+
+def test_agentops_trace_fails_closed_for_post_runtime_candidate_scope_drift() -> None:
+    from jsonschema import Draft202012Validator
+    from app.capabilities.rag_orchestrator.agentops_runtime import AgentOpsRequestContext, run_agentops_diagnostic
+
+    class OutOfScopeRuntime:
+        def invoke(self, request):  # type: ignore[no-untyped-def]
+            return _agentops_runtime_result(
+                request,
+                selected_source_atom_ids=("secret-atom",),
+                evidence_bundle_ids=("bundle:secret-atom",),
+                tool_call_sequence=("rag.l0.query_routing", "rag.l4.sourceatom_hydration"),
+            )
+
+    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema)
+    trace = run_agentops_diagnostic(
+        AgentOpsRequestContext(
+            run_id="agentops-post-runtime-scope-drift",
+            query="Book.xlsx 시트 Sheet1 셀 A1 값 알려줘",
+            source_family="XLSX",
+            namespace="rag-data-all-source-citable-nonprod-v1",
+            candidate_source_atom_ids=("atom-xlsx-a1",),
+        ),
+        source_registry={
+            "atom-xlsx-a1": {
+                "source_atom_id": "atom-xlsx-a1",
+                "mock_source_atom": True,
+                "source_family": "XLSX",
+                "source_identity": "XLSX:Allowed.xlsx:Sheet1:A1",
+            }
+        },
+        runtime=OutOfScopeRuntime(),
+    ).to_dict()
+    serialized = json.dumps(trace, ensure_ascii=False)
+
+    assert trace["final_decision"] == "fail_closed"
+    assert trace["failure_category"] == "runtime_contract_violation"
+    assert trace["retry_repair_fallback"]["failure_category"] == "runtime_contract_violation"
+    assert trace["answerability_label"] == "diagnostic_unanswerable_from_bounds"
+    assert trace["evidence_ids"] == []
+    assert "secret-atom" not in serialized
+    assert "unsafe raw answer" not in serialized
+    assert "XLSX:Allowed" not in serialized
+    assert sorted(validator.iter_errors(trace), key=lambda error: error.path) == []
+
+
 def test_agentops_trace_blocks_unsafe_report_artifact_paths() -> None:
     from jsonschema import Draft202012Validator
     from app.capabilities.rag_orchestrator.agentops_runtime import (
@@ -978,11 +1121,12 @@ def test_portfolio_pdf_copy_tracks_opaque_agentops_trace_contract() -> None:
     assert "sha256" not in source
     assert "hash 기반" not in source
     assert "hash로 기록" not in source
-    for stale_count in range(36, 51):
+    for stale_count in range(36, 53):
         assert f"{stale_count} passed" not in source
+        assert f"{stale_count}개 통과" not in source
     assert '"query": "query_ref:8a3fa83080fc7cb5"' in source
     assert '"evidence_ids": ["evidence_ref:01"]' in source
-    assert '("계약 테스트", "51 passed"' in source
+    assert '("계약 테스트", "53개 통과"' in source
 
 
 def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_path: Path) -> None:
@@ -1000,10 +1144,10 @@ def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_pat
 
     assert portfolio_doc.page_count == 8
     assert resume_doc.page_count == 2
-    assert "검증 가능한 문서 RAG 백엔드" in portfolio_text
+    assert "Evidence-Grounded Document QA Backend" in portfolio_text
     assert "query_ref:8a3fa83080fc7cb5" in portfolio_text
     assert "evidence_ref:01" in portfolio_text
-    assert "51 passed" in portfolio_text
+    assert "53개 통과" in portfolio_text
     assert "AI 백엔드 엔지니어" in resume_text
     assert "Evidence-Grounded RAG Backend with Execution Trace" in resume_text
     assert "reports/agentops_sample_trace.json" in resume_text
@@ -1021,8 +1165,9 @@ def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_pat
     )
     for term in forbidden_terms:
         assert term not in combined_text
-    for stale_count in range(36, 51):
+    for stale_count in range(36, 53):
         assert f"{stale_count} passed" not in combined_text
+        assert f"{stale_count}개 통과" not in combined_text
 
 
 def test_agentops_runtime_fails_closed_for_unsupported_or_empty_evidence_path() -> None:
