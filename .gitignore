@@ -6,6 +6,68 @@ Thumbs.db
 .obsidian/
 *.iml
 *.swp
+*.code-workspace
+
+# ---- Local outputs / exports ----
+# Repo-local exports are personal/generated artifacts. Keep canonical source
+# and docs tracked elsewhere; output bundles stay local.
+/output/
+/outputs/
+/exports/
+/tmp/
+/temp/
+
+# ---- Local security material ----
+# Keep examples tracked, but never commit real environment files, local cloud
+# credentials, SSH keys, private keys, terraform state, or secret bundles.
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+.envrc
+.direnv/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.kdbx
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+secrets/
+.secret/
+*.secret
+*.secrets
+*.token
+*.credentials
+credentials/
+credentials.*
+.aws/
+.azure/
+.gcp/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.auto.tfvars
+
+# ---- Personal AI/editor workflow state ----
+.codex/
+.cursor/
+.continue/
+.windsurf/
+.roo/
+.aider*
+AGENTS.local.md
+CLAUDE.local.md
+GEMINI.local.md
 
 # ---- Frontend Vite/React source (bundle output is committed) ----
 # frontend/index.html is the bundled artifact (committed). The Vite source
