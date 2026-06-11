@@ -1,3 +1,79 @@
+<!-- actual_rag_eval_source_native_surface_nonprod:measurements-entry:start -->
+### actual_rag_eval_source_native_surface_nonprod
+
+- Scope: source-native actual-RAG retrieval surface wiring and comparison. Retrieval surface is now separate from retrieval backend: `--retrieval-surface auto` prefers SourceAtom/EvidenceBundle-backed source-native units, while SearchUnit/SearchView is retained as a legacy baseline inside the same `report.json`. Expected evidence is used only after retrieval for diagnostics and source-presence probes. No gold/qrels/labels/answerability/expected fields, strict denominator policy, current alias, official metric, product-success, production routing, or live-readiness surface changed.
+- Fixture report: `reports/rag_eval/actual_rag_eval_fixture_source_native_surface_final_20260611_v3/report.json`; directory files=`report.json` only; selected_surface=`source_native`; selected_backend=`hybrid`; vector_index_kind=`faiss`; embedding_model=`codex-diagnostic-hashing-vector-v1`; embedding_device=`cpu_existing_nonprod_index`; gpu_used_for_embedding=false; indexed_unit_count=136280; vector_dim=128; fallback_reason=`existing_source_native_index_uses_diagnostic_hash_vectors_not_gpu_bge_m3`. GPU preflight itself found CUDA available on `NVIDIA GeForce RTX 5080`.
+- Fixture surface comparison: source_native_expected_evidence_text_presence_rate=0.5, searchunit_expected_evidence_text_presence_rate=0.0, expected_evidence_normalized_present_in_source_native_count=1, source_native_target_span_absent_count=1, searchunit_target_span_absent_count=2, source_native_beats_searchunit_count=1, searchunit_beats_source_native_count=0, both_surfaces_fail_count=1.
+- Text-golden report: `reports/rag_eval/actual_rag_eval_text_gold_source_native_surface_final_20260611_v2/report.json`; compared_to=`actual_rag_eval_text_gold_source_native_surface_final_20260611`; directory files=`report.json` only; selected_surface=`source_native`; selected_backend=`hybrid`; vector_index_kind=`faiss`; indexed_unit_count=136280; gpu_used_for_embedding=false with the same explicit diagnostic-hash-index fallback reason.
+- Text-golden surface comparison: source_native_expected_evidence_text_presence_rate=1.0, searchunit_expected_evidence_text_presence_rate=0.0, expected_evidence_exact_present_in_source_native_count=1, expected_evidence_normalized_present_in_source_native_count=6, expected_anchor_present_in_source_native_count=6, expected_anchor_present_in_searchunit_count=5, source_native_target_span_present_but_not_retrieved_count=4, source_native_target_span_absent_count=0, searchunit_target_span_absent_count=6, source_native_beats_searchunit_count=2, searchunit_beats_source_native_count=0, both_surfaces_fail_count=4. This demotes SearchUnit/SearchView as the default actual-RAG surface and points the next repair target at source-native retrieval ranking/query formulation rather than corpus coverage.
+- Text-golden backend comparison: bm25/vector/hybrid candidate_count_avg=10.0/10.0/10.0, bm25/vector/hybrid retrieval_empty_rate=0.0/0.0/0.0, vector_latency_ms_p50=2.0191, vector_latency_ms_p95=2.3071, bm25_latency_ms_p50=558.00555, bm25_latency_ms_p95=6652.7183, hybrid_latency_ms_p50=560.1265, hybrid_latency_ms_p95=6654.702, vector_index_available=true, gpu_used_for_embedding_count=0.
+<!-- actual_rag_eval_source_native_surface_nonprod:measurements-entry:end -->
+
+<!-- actual_rag_eval_evidence_mapping_packet_nonprod:measurements-entry:start -->
+### actual_rag_eval_evidence_mapping_packet_nonprod
+
+- Scope: deterministic human-reviewable evidence mapping packet for actual RAG eval expected-evidence candidates. The packet is built from resolver candidates, retrieved contexts, and current source/index metadata for diagnostic review only. It does not mutate gold/qrels/labels, add answerability labels, alter strict denominator policy, change normal RAG retrieval inputs, tune retriever ranking, move `current`, or promote official/product/live-readiness metrics.
+- New sidecars: `reports/rag_eval/<run_id>/evidence_mapping_review_packet.csv`, `evidence_mapping_review_packet.jsonl`, `evidence_mapping_review_packet.md`, and `evidence_mapping_packet_summary.json`. Human-owned fields remain blank; machine recommendations are not gold mappings.
+- Fixture packet run: `reports/rag_eval/actual_rag_eval_fixture_20260611_034228/rag_eval_summary.json`; packet candidates=2, likely_accept=1, possible_match=1, review_needed=0, likely_reject=0, priorities P0/P1/P2/P3/P4=0/0/0/0/2, source_metadata_resolved_candidate_count=2, source_metadata_unresolved_candidate_count=0, source_metadata_redacted_path_count=1, human_decision_fields_filled_by_codex=false. This is controlled fixture evidence only.
+- Text-golden packet run: `reports/rag_eval/actual_rag_eval_text_gold_20260611_034237/rag_eval_summary.json`; compared_to=`actual_rag_eval_text_gold_20260610_152153`; evidence rows=6, expected_evidence_id_missing_count=6, expected_evidence_id_unresolved_count=6, expected_evidence_resolution_candidate_count=14, packet candidates=14, likely_accept=0, possible_match=0, review_needed=9, likely_reject=5, priorities P0/P1/P2/P3/P4=0/11/0/3/0, source_metadata_resolved_candidate_count=14, source_metadata_unresolved_candidate_count=0, source_metadata_redacted_path_count=0, human_decision_fields_filled_by_codex=false.
+- Text-golden comparison: expected_evidence_id_missing_count stayed 6->6, expected_evidence_id_unresolved_count stayed 6->6, expected_evidence_id_resolved_candidate_count stayed 0->0, expected_evidence_resolution_candidate_count stayed 14->14, resolved_evidence_available_rate stayed 0/6. Packet metrics are new relative to the previous run, so comparison marks packet candidate/recommendation/source-metadata rows as unavailable/new rather than improvement.
+- Review packet examples: likely_reject rows include the `자동판매기 미궁 방랑` evidence where a PDF candidate has source-family mismatch and retrieved TEXT candidates miss required `2026년`/`4월` anchors; review_needed rows include the `유우야키` birthday candidate with `9월` overlap but missing required `16`/`29일`, and `엑스맨 구십칠` rows with weak/rare-entity overlap but no accepted source-owned mapping.
+<!-- actual_rag_eval_evidence_mapping_packet_nonprod:measurements-entry:end -->
+
+<!-- actual_rag_eval_expected_evidence_resolution_bridge_nonprod:measurements-entry:start -->
+### actual_rag_eval_expected_evidence_resolution_bridge_nonprod
+
+- Scope: deterministic expected-evidence resolution bridge for actual RAG eval reports. It maps expected evidence rows to retrieved-context or current-index candidates for diagnostics only. It does not mutate gold/qrels/labels, alter strict denominator policy, change RAG generation inputs, tune retriever ranking, move `current`, or promote official/product/live-readiness metrics.
+- New sidecars: `reports/rag_eval/<run_id>/evidence_resolution_candidates.jsonl` and `reports/rag_eval/<run_id>/evidence_resolution_review.md`. Per-item rows include `expected_evidence_resolution`; summaries include diagnostic counts and provisional resolved-evidence metrics. Registry/latest/status/index surfaces continue under `reports/rag_eval/` plus `ai/eval/reports/rag-ingestion/status.jsonl`.
+- Fixture bridge run: `reports/rag_eval/actual_rag_eval_fixture_20260610_152143/rag_eval_summary.json`; evidence rows=1, missing IDs=1, exact resolved=0, candidate resolved=1, unresolved=0, candidates=1, high/medium/low=1/0/0, resolved_evidence_available_rate=1/1, resolved_evidence_recall@3_provisional=1/1, citation_matches_resolved_evidence_precision_provisional=1/1, citation_matches_resolved_evidence_recall_provisional=1/1, e2e_rag_success_resolved_evidence_provisional=1/1. This is controlled fixture evidence only.
+- Text-golden bridge run: `reports/rag_eval/actual_rag_eval_text_gold_20260610_152153/rag_eval_summary.json`; compared_to=`actual_rag_eval_text_gold_20260610_142731`; evidence rows=6, missing IDs=6, exact resolved=0, candidate resolved=0, unresolved=6, candidates=14, high/medium/low=0/0/6, review_only=6, resolved_evidence_available_rate=0/6, resolved_evidence_recall@10_provisional=0/0 unavailable, citation_matches_resolved_evidence_precision_provisional=0/0 unavailable, citation_matches_resolved_evidence_recall_provisional=0/0 unavailable, e2e_rag_success_resolved_evidence_provisional=0/0 unavailable.
+- Text-golden before/after evidence-resolution comparison: previous run lacked new evidence-resolution candidate/provisional fields; expected_evidence_id_missing_count stayed 6->6, expected_evidence_id_unresolved_count stayed 6->6, expected_evidence_id_resolved_candidate_count is new current 0, expected_evidence_resolution_candidate_count is new current 14, resolved_evidence_available_rate is new current 0/6. No strict metric became available.
+- Unresolved reason summary: current-index diagnostic lookup produced only low-confidence review candidates. Examples include missing `2026년` for the `2026년 4월` evidence row, missing `16`/`29일` for the birthday row, and generic `등장인물` overlap for the X-Men row. Low-confidence candidates are review-only and do not count as resolved.
+<!-- actual_rag_eval_expected_evidence_resolution_bridge_nonprod:measurements-entry:end -->
+
+<!-- actual_rag_eval_run_accumulation_comparison_nonprod:measurements-entry:start -->
+### actual_rag_eval_run_accumulation_comparison_nonprod
+
+- Scope: focused run-accumulation and comparison support for `ai/eval/actual_rag_eval.py`, `ai/scripts/rag_actual_eval.py`, `ai/tests/test_actual_rag_eval_metric_generation.py`, generated `reports/rag_eval/` artifacts, latest pointers, and compact `ai/eval/reports/rag-ingestion/status.jsonl` events. No retriever-ranking improvement, gold/qrels/label mutation, denominator mutation, official metric promotion, current alias movement, production routing, product-success claim, or live-readiness claim was made.
+- Registry/latest artifacts: `reports/rag_eval/runs.jsonl`, `reports/rag_eval/latest.json`, `reports/rag_eval/latest_fixture.json`, `reports/rag_eval/latest_text_gold.json`, and generated index `reports/rag_eval/README.md`.
+- Fixture baseline: `reports/rag_eval/actual_rag_eval_fixture_20260610_142701/rag_eval_summary.json`; items=2; exact_or_alias_answer_correctness=0/1, evidence_recall@3=0/1, citation_precision=0/1, citation_recall=0/1, judged_answer_correctness_provisional=0/1, weak_evidence_match_recall@3=0/1, e2e_rag_success_provisional=0/1, retrieval_empty_rate=0.5, pipeline_error_count=0.
+- Fixture comparison run: `reports/rag_eval/actual_rag_eval_fixture_20260610_142714/rag_eval_summary.json`; compared_to=`actual_rag_eval_fixture_20260610_142701`; exact_or_alias_answer_correctness=1/1 (delta +1.0), evidence_recall@3=1/1 (+1.0), citation_precision=1/1 (+1.0), citation_recall=1/1 (+1.0), judged_answer_correctness_provisional=1/1 (+1.0), weak_evidence_match_recall@3=1/1 (+1.0), e2e_rag_success_provisional=1/1 (+1.0), retrieval_empty_rate=0.5 (unchanged), pipeline_error_count=0 (unchanged). These fixture deltas are controlled-context smoke evidence only.
+- Text-golden baseline: `reports/rag_eval/actual_rag_eval_text_gold_20260610_142724/rag_eval_summary.json`; items=6; exact_or_alias_answer_correctness=0/0 unavailable; evidence_recall@10=0/0 unavailable; citation_precision=0/13; citation_recall=0/3; judged_answer_correctness_provisional=0/6; weak_evidence_match_recall@10=0/6; e2e_rag_success_provisional=0/3; retrieval_empty_rate=0.5; pipeline_error_count=0; schema_warning_count=12; gold_missing_count=6; expected_evidence_id_missing_count=6; expected_evidence_id_unresolved_count=6.
+- Text-golden comparison run: `reports/rag_eval/actual_rag_eval_text_gold_20260610_142731/rag_eval_summary.json`; compared_to=`actual_rag_eval_text_gold_20260610_142724`; all comparable metrics were unchanged: judged_answer_correctness_provisional=0/6, weak_evidence_match_recall@10=0/6, e2e_rag_success_provisional=0/3, citation_precision=0/13, citation_recall=0/3, retrieval_empty_rate=0.5, pipeline_error_count=0, gold_missing_count=6, expected_evidence_id_unresolved_count=6. Strict exact/evidence/E2E denominators remain unavailable because the text CSV lacks answerability labels.
+- Guardrail fields now persist in the new accumulated summaries, registry events, latest pointers, and compact status events: official_metric_input_rows=0, official_metric_input_rows_created=0, official_metric_input_rows_consumed=0, protected_namespaces_touched=[], raw_prompt_payload_written=false, raw_response_payload_written=false, official_metric=false, promotion_evidence=false, product_success_evidence_allowed=false, live_readiness_claim=false.
+<!-- actual_rag_eval_run_accumulation_comparison_nonprod:measurements-entry:end -->
+
+<!-- actual_rag_eval_metric_semantics_repair_nonprod:measurements-entry:start -->
+### actual_rag_eval_metric_semantics_repair_nonprod
+
+- Scope: focused metric-semantics repair for `ai/eval/actual_rag_eval.py`, `ai/scripts/rag_actual_eval.py`, tests, generated report formatting, and docs/progress. No retriever-ranking improvement, gold/qrels mutation, official metric promotion, current alias movement, production routing, or product-success claim was made.
+- Repaired text-golden run: `reports/rag_eval/actual_rag_eval_text_gold_20260610/rag_eval_summary.json`; items=6; answerability_distribution={'answerable': 0, 'unanswerable': 0, 'unknown': 6}; pipeline_error_count=0. Before repair: judged_answer_correctness_provisional=0/6, weak_evidence_match_recall@10=1/6, e2e_rag_success_provisional=1/6, answer_supported_by_retrieved_context_provisional=3/3, citation_overlap_provisional=13/13. After repair: judged_answer_correctness_provisional=0/6, weak_evidence_match_recall@10=0/6, e2e_rag_success_provisional=0/3, answer_extracted_from_retrieved_context_rate=3/3 diagnostic, citation_points_to_retrieved_context_rate=13/13 diagnostic.
+- Evidence ID diagnostics for the repaired text-golden run: expected_evidence_id_missing_count=6, expected_evidence_id_unresolved_count=6, expected_evidence_text_match_candidate_count=0. Per-item `evidence_id_diagnostics` are written to `rag_eval_items.jsonl`; unresolved IDs do not block the run and do not mutate qrels/gold.
+- Inferred-answerable metrics for the repaired text-golden run are separate from strict metrics because answerability labels are missing: exact_or_alias_answer_correctness_inferred_answerable=0/6, evidence_recall@10_inferred_answerable=0/6, e2e_rag_success_inferred_answerable=0/6. No gold answerability label was mutated.
+- Repaired fixture run: `reports/rag_eval/actual_rag_eval_pragmatic_smoke_20260610/rag_eval_summary.json`; judged_answer_correctness_provisional=2/2, weak_evidence_match_recall@3=2/2, e2e_rag_success_provisional=2/2, e2e_rag_success_inferred_answerable=1/1, answer_extracted_from_retrieved_context_rate=2/2 diagnostic, citation_points_to_retrieved_context_rate=2/2 diagnostic.
+- False-positive repairs: provisional E2E now fails if the answer judge fails; weak evidence text-only matches require a non-generic anchor and all numeric/date anchors from the expected answer/evidence; the deterministic provisional judge also fails when expected numeric/date answer anchors are missing from the generated answer.
+<!-- actual_rag_eval_metric_semantics_repair_nonprod:measurements-entry:end -->
+
+<!-- actual_rag_eval_pragmatic_metric_generation_nonprod:measurements-entry:start -->
+### actual_rag_eval_pragmatic_metric_generation_nonprod
+
+- Superseded for current semantics by `actual_rag_eval_metric_semantics_repair_nonprod`; values below are retained as the first-loop baseline.
+- Example run: `reports/rag_eval/actual_rag_eval_pragmatic_smoke_20260610/rag_eval_summary.json`; items=3; answerability_distribution={'answerable': 2, 'unanswerable': 1, 'unknown': 0}; pipeline_error_count=0.
+- Strict metrics: exact_or_alias_answer_correctness=1/1, evidence_recall@1=2/2, evidence_recall@3=2/2, citation_precision=1/1, citation_recall=1/1, abstention_accuracy=1/1, e2e_rag_success_strict=1/1. These denominators include only rows with the specific required gold signal.
+- Provisional metrics: judged_answer_correctness_provisional=2/2, weak_evidence_match_recall@1=2/2, weak_evidence_match_recall@3=2/2, answer_supported_by_retrieved_context_provisional=1/2, citation_overlap_provisional=1/1, e2e_rag_success_provisional=2/2. These are computed with weak assumptions and are not a replacement for strict metrics.
+- Diagnostics: retrieval_empty_rate=0.333333, generation_empty_rate=0.0, citation_empty_rate=0.666667, average_context_count=0.666667, average_context_chars=28.5, schema_warning_count=5, gold_missing_count=1, missing_expected_answer_count=2, missing_expected_evidence_count=1, missing_answerability_label_count=0.
+- Judge: default `heuristic_overlap_v1` deterministic provisional judge, external_api_calls=false. Optional local LLM judge is configured by `--judge-mode local-llm` and remains report-versioned.
+- Existing text golden CSV run: `reports/rag_eval/actual_rag_eval_text_gold_20260610/rag_eval_summary.json`; items=6; answerability_distribution={'answerable': 0, 'unanswerable': 0, 'unknown': 6}; pipeline_error_count=0. Because the CSV lacks answerability labels, strict exact/evidence/E2E denominators are unavailable; strict citation_precision=0/13 and citation_recall=0/3 still run where citations and expected evidence are present. Provisional metrics include judged_answer_correctness_provisional=0/6, weak_evidence_match_recall@10=1/6, answer_supported_by_retrieved_context_provisional=3/3, citation_overlap_provisional=13/13, and e2e_rag_success_provisional=1/6. Diagnostics: retrieval_empty_count=3, generation_empty_count=0, citation_empty_count=3, schema_warning_count=12, gold_missing_count=6, missing_answerability_label_count=6.
+<!-- actual_rag_eval_pragmatic_metric_generation_nonprod:measurements-entry:end -->
+
+<!-- v6_9_1_retrieval_smoke_pre_review_packet_nonprod:measurements-entry:start -->
+### v6_9_1_retrieval_smoke_pre_review_packet_nonprod
+
+- Review packet: selected_queries=9; selected_queries_by_family={'PDF': 3, 'TEXT': 3, 'XLSX': 3}; candidate_rows_by_backend={'vector': 45, 'bm25': 45, 'hybrid': 45}; candidate_rows_by_family={'PDF': 45, 'TEXT': 45, 'XLSX': 45}.
+- Metric gate: retrieval_quality_metric_computed=false; answer_quality_metric_computed=false; computed_only_denominator=0; coverage_adjusted_denominator=300; blocked_reason=pending_user_owned_qrels_denominator_review_for_current_searchunit_searchview_surface; Hit@K/MRR/nDCG remain uncomputed until user-approved current qrels/denominator exists.
+- Boundary: SearchView/vector payload is candidate-only; SourceAtom/EvidenceBundle is evidence truth; tool-output rows are excluded from retrieval ranking metrics. human-owned relevance, answerability, qrels, denominator, and expected-evidence fields remain blank.
+<!-- v6_9_1_retrieval_smoke_pre_review_packet_nonprod:measurements-entry:end -->
+
 <!-- v6_9_answer_quality_gate_packet_nonprod:measurements-entry:start -->
 ### v6_9_answer_quality_gate_packet_nonprod
 
@@ -4191,6 +4267,35 @@ Minimum artifact set proposal for future classification-only runs:
 - Do not delete current v3_1_2/v3_1_3/v3_1_4 artifacts yet: the current test
   contract lists the durable JSON/JSONL families as expected report artifacts
   and asserts their guardrails.
+
+<!-- repo_cleanup_20260609_diagnostic_inventory:measurements-entry:start -->
+### 2026-06-09 Repo Cleanup Diagnostic Inventory
+
+- Run key: `repo_cleanup_20260609_diagnostic_inventory`
+- Primary artifact: `ai/eval/reports/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json`
+- Interpretation: repository hygiene counters only. These are not retrieval, answer-quality, official metric, promotion, product-success, or live-readiness metrics.
+
+| Counter | Value |
+|---|---:|
+| active tracked files before cleanup | 870 |
+| initial repo-local transient directories removed | 20 |
+| initial repo-local transient files removed | 357 |
+| initial transient bytes removed | 6,825,734 |
+| post-verification cache directories removed | 16 |
+| post-verification cache files removed | 178 |
+| post-verification cache bytes removed | 9,122,698 |
+| no-cache verification prep cache directories removed | 8 |
+| no-cache verification prep cache files removed | 72 |
+| no-cache verification prep cache bytes removed | 3,747,180 |
+| final broad-profile cache directories removed | 9 |
+| final broad-profile cache files removed | 123 |
+| final broad-profile cache bytes removed | 3,652,483 |
+| diagnostic report artifacts deleted | 0 |
+| protected gold/qrels/denominator/source/index/silver surfaces mutated | 0 |
+| ambiguous generated or diagnostic surfaces held | all ambiguous surfaces |
+
+<!-- repo_cleanup_20260609_diagnostic_inventory:measurements-entry:end -->
+
 - Do not create per-run Markdown for routine classification-only runs.
 
 ## 2026-05-18 - v3_1_1 Post Strict JSON / Locator Triage Measurement
@@ -4350,3 +4455,16 @@ smallest durable JSON/JSONL set required by the run contract plus the
 append-only status ledger; do not emit full `results.jsonl`, failure
 attribution, or response audit payloads unless behavior changed or a
 test-backed forensic contract requires them.
+<!-- actual_rag_eval_single_artifact_vector_hybrid_nonprod:measurement-entry:start -->
+## actual_rag_eval_single_artifact_vector_hybrid_nonprod - 2026-06-11
+
+- Policy: non-production diagnostic actual-RAG eval only; no official metric, promotion evidence, product-success evidence, live-readiness claim, gold/qrels/label mutation, denominator mutation, or source registry mutation.
+- Fixture primary artifact: `reports/rag_eval/actual_rag_eval_fixture_single_vector_final_20260611/report.json`; directory file count: `1` (`report.json` only).
+- Text-golden primary artifact: `reports/rag_eval/actual_rag_eval_text_gold_single_vector_final_20260611/report.json`; directory file count: `1` (`report.json` only); comparison target: `actual_rag_eval_text_gold_single_vector_20260611`.
+- Human-review exception proof: `reports/rag_eval/actual_rag_eval_fixture_review_packet_final_20260611/` contains `report.json` and `human_review_packet.csv` only, with `3` rows and blank human-owned fields.
+- Retrieval backend for fixture/text-golden: requested `auto`, selected `hybrid`; BM25 enabled `true`, vector enabled `true`, hybrid enabled `true`; embedding model `BAAI/bge-m3`; embedding device `cuda:0`; gpu_used_for_embedding `true`; vector index kind `faiss`; vector index type `IndexFlatIP`; vector_dim `1024`; indexed_unit_count `300`.
+- GPU preflight: `gpu_available=true`, `cuda_available=true`, `nvidia_smi_available=true`, `torch_available=true`, `torch_cuda_available=true`, device `cuda:0`, device_name `NVIDIA GeForce RTX 5080`.
+- Fixture backend comparison: bm25/vector/hybrid empty rates `0.0/0.0/0.0`; candidate averages `3.5/5.0/5.0`; BM25-vector overlap avg `0.5`; p50 latency ms BM25/vector/hybrid `4.37135/22.85195/27.285`; embedding_build_latency_ms `11841.3546`; index_load_or_build_latency_ms `0.2383`; gpu_used_for_embedding_count `2`.
+- Text-golden backend comparison: bm25/vector/hybrid empty rates `0.5/0.0/0.0`; candidate averages `2.166667/10.0/10.0`; BM25-vector overlap avg `0.5`; p50 latency ms BM25/vector/hybrid `4.528/8.5211/13.1208`; embedding_build_latency_ms `12049.0907`; index_load_or_build_latency_ms `0.3386`; gpu_used_for_embedding_count `6`.
+- External VectorDB: not configured/invoked; local FAISS is non-production local vector index proof, not production VectorDB parity.
+<!-- actual_rag_eval_single_artifact_vector_hybrid_nonprod:measurement-entry:end -->

@@ -1126,7 +1126,19 @@ def test_portfolio_pdf_copy_tracks_opaque_agentops_trace_contract() -> None:
         assert f"{stale_count}개 통과" not in source
     assert '"query": "query_ref:8a3fa83080fc7cb5"' in source
     assert '"evidence_ids": ["evidence_ref:01"]' in source
-    assert '("계약 테스트", "53개 통과"' in source
+    assert "계약 테스트: 53개 통과" in source
+    assert "Dense / Sparse / Hybrid 검색 실험" in source
+    assert "SearchUnit/SearchView 구축" in source
+    assert "Dense Retrieval" in source
+    assert "Sparse Retrieval" in source
+    assert "Hybrid Retrieval" in source
+    assert "XLSX 예시" in source
+    assert "PDF 예시" in source
+    assert "TEXT 예시" in source
+    assert "추가 질의 예시(PDF/XLSX/TEXT) 및 평가 관련 문서는 GitHub README에서 확인할 수 있습니다." in source
+    assert "https://github.com/sfr9802/async-ai-document-pipeline-with-domain-rag/blob/main/ai/eval/README.md" in source
+    assert "Actual Response Smoke" in source
+    assert "answer quality metric이 아니라 response policy smoke" in source
 
 
 def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_path: Path) -> None:
@@ -1138,16 +1150,41 @@ def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_pat
 
     portfolio_doc = fitz.open(portfolio_path)
     resume_doc = fitz.open(resume_path)
-    portfolio_text = "\n".join(page.get_text() for page in portfolio_doc)
+    portfolio_page_texts = [page.get_text() for page in portfolio_doc]
+    portfolio_text = "\n".join(portfolio_page_texts)
     resume_text = "\n".join(page.get_text() for page in resume_doc)
     combined_text = f"{portfolio_text}\n{resume_text}"
 
-    assert portfolio_doc.page_count == 8
+    assert portfolio_doc.page_count == 10
     assert resume_doc.page_count == 2
-    assert "Evidence-Grounded Document QA Backend" in portfolio_text
-    assert "query_ref:8a3fa83080fc7cb5" in portfolio_text
-    assert "evidence_ref:01" in portfolio_text
+    assert "Evidence-Grounded RAG Backend" in portfolio_text
+    assert "Evidence-Grounded Document QA Backend" not in portfolio_text
+    assert "XLSX 예시" in portfolio_page_texts[1]
+    assert "PDF 예시" in portfolio_page_texts[2]
+    assert "TEXT 예시" in portfolio_page_texts[3]
+    assert "2020년 한국 원달러 기말 환율" in portfolio_text
+    assert "유우야키의 나이는 16세이고 생일은 9월 29일" in portfolio_text
+    assert "추가 질의 예시(PDF/XLSX/TEXT) 및 평가 관련 문서는 GitHub README에서 확인할 수 있습니다." in portfolio_text
+    assert "https://github.com/sfr9802/async-ai-document-pipeline-with-domain-rag/blob/main/ai/eval/README.md" in portfolio_text
+    assert "Dense / Sparse / Hybrid 검색 실험" in portfolio_text
+    assert "SearchUnit/SearchView 구축" in portfolio_text
+    assert "Dense Retrieval" in portfolio_text
+    assert "Sparse Retrieval" in portfolio_text
+    assert "Hybrid Retrieval" in portfolio_text
+    assert "Actual Response Smoke" in portfolio_text
+    assert "answer quality metric이 아니라 response policy smoke" in portfolio_text
+    assert "29개 승인 질의" in portfolio_text
+    assert "stopped / fail_closed" in portfolio_text
     assert "53개 통과" in portfolio_text
+    assert "Actual Response Smoke" in portfolio_page_texts[7]
+    assert "검색 설계 포인트" in portfolio_page_texts[8]
+    assert "회고" in portfolio_page_texts[9]
+    assert "프로젝트를 진행하며 배운 점" in portfolio_page_texts[9]
+    assert "검색 후보와 답변 근거는 다르다" in portfolio_page_texts[9]
+    assert "Retrieval 성능과 Answer Quality는 별개다" in portfolio_page_texts[9]
+    assert "PDF/XLSX는 일반 텍스트 검색과 다르다" in portfolio_page_texts[9]
+    assert "근거 부족 시 답변 중단 정책이 중요하다" in portfolio_page_texts[9]
+    assert "이번 프로젝트에서는 검색 후보, 근거 검증, 중단 정책을 분리해 설계하는 부분의 중요성을 크게 체감했습니다." in portfolio_page_texts[9]
     assert "AI 백엔드 엔지니어" in resume_text
     assert "Evidence-Grounded RAG Backend with Execution Trace" in resume_text
     assert "reports/agentops_sample_trace.json" in resume_text
@@ -1162,6 +1199,10 @@ def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_pat
         "product-success",
         "live-ready claim",
         "official quality metric",
+        "AgentOps Platform",
+        "공식 답변 품질 지표",
+        "실서비스 준비 완료",
+        "운영 준비 완료",
     )
     for term in forbidden_terms:
         assert term not in combined_text

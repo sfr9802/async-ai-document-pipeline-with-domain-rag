@@ -12,12 +12,114 @@ python -m scripts.rag_retrieval_eval --help
 python scripts/operational/e2e_smoke.py
 ```
 
+## Actual RAG Eval CLI
+
+`rag_actual_eval.py` runs the pragmatic actual-RAG evaluation loop:
+
+```bash
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset <eval-items.jsonl> \
+  --index current \
+  --output-dir reports/rag_eval/<run_id> \
+  --top-k 10 \
+  --retrieval-surface auto \
+  --retrieval-backend auto \
+  --output-mode single \
+  --judge-mode heuristic \
+  --resolve-expected-evidence \
+  --evidence-resolution-scope both \
+  --append-registry \
+  --write-latest \
+  --compare-to previous
+```
+
+It loads incomplete eval items with warnings, selects a retrieval surface,
+runs retrieval/context assembly, generates answers through the current
+extractive adapter, captures citations when present, and writes one primary
+routine artifact:
+
+- `report.json`
+
+Use `--output-mode legacy` only for compatibility/debugging when the older
+`rag_eval_items.jsonl`, `rag_eval_summary.json`, Markdown, and diagnostic
+sidecar set is explicitly needed. `--output-mode both` is transition-only.
+
+Use `--retrieval-surface auto` for the current diagnostic lane. Auto prefers
+SourceAtom/EvidenceBundle-backed source-native units and keeps
+SearchUnit/SearchView as a legacy baseline for comparison. `report.json`
+contains the selected surface, fallback reason, source-native vs
+SearchUnit/SearchView comparison, source presence probes, GPU/vector
+diagnostics, and BM25/vector/hybrid backend comparison in the same file.
+Expected answers, expected evidence, qrels, row IDs, query IDs, target IDs, and
+baseline top-k are excluded from candidate generation; expected evidence is used
+only after retrieval for diagnostics.
+
+Use `--write-human-review-packet` when a human review packet is explicitly
+needed. Single mode then writes exactly one extra file:
+
+- `human_review_packet.csv`
+
+Expected-evidence resolution is deterministic and non-mutating. Retrieved-only
+resolution is enabled by default; `--evidence-resolution-scope both` adds
+repo-local current-index candidate lookup when available. That lookup is
+query-text-only and must not use expected answers, expected evidence, aliases,
+qrels, row IDs, query IDs, target IDs, or baseline top-k as candidate-generation
+input. It is recorded as diagnostic candidate lookup only and must not alter
+the RAG retrieval results, answer generation inputs, gold files, qrels, or
+official denominators. Medium-confidence mappings count as resolved only with
+`--count-medium-evidence-resolution`; low-confidence candidates are written for
+review inside `report.json` but do not count as resolved.
+
+`--write-human-review-packet` turns resolver candidates into a source-owned
+human review CSV. Packet rows include current source metadata when available,
+redacted local-path diagnostics, deterministic machine recommendations, review
+priorities, and blank human-owned decision fields. The machine recommendation
+fields are not gold mappings, qrels, answerability labels, or official metrics.
+This packet is only for diagnostic review and must not be used to tune retriever
+ranking or claim product/live readiness.
+
+`--append-registry` appends `reports/rag_eval/runs.jsonl` and a compact
+`actual_rag_eval_run` event to `ai/eval/reports/rag-ingestion/status.jsonl`.
+`--write-latest` updates `reports/rag_eval/latest.json`,
+dataset-specific latest pointers such as `latest_text_gold.json` or
+`latest_fixture.json`, and the generated `reports/rag_eval/README.md` index.
+`--compare-to previous`, `--compare-to latest`, or `--compare-to <summary-or-run-dir>`
+adds non-production comparison rows to `report.json`. Use fresh run IDs for
+canonical evidence; an explicit `--output-dir` is treated as the caller-owned
+destination.
+
+The report separates strict headline metrics, provisional RAG metrics,
+inferred-answerable metrics, diagnostic consistency metrics, and scalar
+diagnostics. Provisional E2E requires the provisional answer judge to pass and
+weak/strict evidence at the configured top-k; text-only weak evidence matching
+requires non-generic anchors and all numeric/date anchors from the gold signal.
+The separate `e2e_rag_success_resolved_evidence_provisional` variant also
+requires the answer judge to pass and resolved evidence at the configured top-k.
+`answer_extracted_from_retrieved_context_rate` and
+`citation_points_to_retrieved_context_rate` are diagnostic consistency checks,
+not answer correctness or citation correctness. `--context-jsonl` can feed
+deterministic precomputed RAG outputs for smoke tests. `--judge-mode local-llm`
+is an opt-in localhost-only semantic judge path that reuses the existing
+llama.cpp/Ollama/openai-compatible helper; tests must continue to use
+deterministic fixtures and must not require model calls. Use
+`--provisional-require-citations` only when the provisional E2E variant should
+also require strict citation pass.
+
+Retrieval backends are selected with `--retrieval-backend bm25|vector|hybrid|auto`.
+`auto` prefers hybrid when the local vector path is available. The current
+local vector path embeds source-derived SearchUnit/SearchView text with
+`BAAI/bge-m3`, uses CUDA for embedding when available, builds a non-production
+in-memory FAISS `IndexFlatIP`, and records GPU/vector proof or fallback reason
+inside `report.json`. This local FAISS path is not an external production
+VectorDB. External VectorDB use remains optional and must be explicitly
+non-production.
+
 <!-- v4_diagnostic_runtime_locator_and_finetune_readiness_inventory:start -->
 ## v4 RAG Diagnostic Runtime/Locator/Fine-Tuning Readiness Inventory
 
 | Script | Role |
 |---|---|
-| `rag_eval.py` | Stable short-key dispatcher for current RAG diagnostic checks and writes; `current` resolves to `v5_6`, `v5_6_2_official_metric_backend_enabled_preflight_scored_rerun_nonprod` remains the latest explicit backend-enabled preflight lane, `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run` remains the read-only 29-row official metric input source, `v5_4_user_owned_official_eval_approval_packet` remains explicit, `v5_3_pdf_text_residual_retrieval_evidence_hardening` remains explicit, `v5_2_xlsx_residual_candidate_only_retrieval_engineering` remains explicit, `v5_1_official_eval_gate_scaffolding` remains explicit, `v5_0_v4_closeout_and_v5_gate_plan` remains explicit, `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility` remains explicit as the frozen v4 closeout basis, and promotion/product-success/training/fine-tuning/live-readiness stay closed. |
+| `rag_eval.py` | Stable short-key dispatcher for current RAG diagnostic checks and writes; `current` resolves to `v6_9_answer_quality_gate_packet_nonprod`. The v6 chain remains diagnostic-only, v5_5 keeps the read-only 29-row user-approved official input source, v5_6/v5_6_2/v5_6_3 remain fail-closed official-metric backend probes, and promotion/product-success/training/fine-tuning/live-readiness stay closed. |
 | `rag_eval.py nec_2026_local_election_xlsx` | Direct 2026 NEC local-election XLSX diagnostic route; verifies the external source collection and writes preview-only source manifest, workbook artifact, and synthetic search-unit/source-atom/search-view artifacts while leaving `current`, official/gold/qrels/denominator/training/promotion/live gates closed. |
 | `rag_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod.py` | Persists the v3_22 XLSX display metadata contract into SourceAtom-owned runtime-adjacent fields. |
 | `rag_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod.py` | Packages family-separated XLSX table/range/cell locator diagnostics from seen-reference v3 surfaces. |
@@ -107,7 +209,7 @@ XLSX display/range helpers, and FastAPI-safe service boundaries live in
 
 | Bucket | Current classification |
 |---|---|
-| `required_by_current_tests` | `status.jsonl`, the current v5_6 report, the explicit v5_6_2 preflight report, the v5_5 run-local official metric dry-run artifacts, the explicit v5_4 packet, v5_3, v5_2, v5_1, and v5_0 basis reports, the frozen v4_7_18 source report, and v3_9_2 through v3_22 scripts. |
+| `required_by_current_tests` | `status.jsonl`, the current v6_9 report, v6_0 through v6_8 rollback/source reports and required sidecars, v7_0/v7_0_1 audit reports, v5_6/v5_6_2/v5_6_3 fail-closed official-metric probe reports, the v5_5 run-local official metric dry-run artifacts, the explicit v5_4 packet, v5_3 through v5_0 basis reports, v4_7 lineage reports, and v3_9_2 through v3_22 scripts. |
 | `required_by_docs_or_status_sync` | v3_22 `report.json` and the rolling docs/status entries that anchor Phase 1 closure. |
 | `ignored_diagnostic_artifact` | RAG ingestion `report.json`, `status.jsonl`, and optional review packets under `eval/reports/rag-ingestion/`. |
 | `external_archive_candidate` | Older ignored quality/perf payloads not read by current tests, after exact-stem `rg` and artifact-required gates. |
@@ -130,7 +232,7 @@ checkability.
 
 | Path or surface | Classification | Action | Evidence | Risk | Validation |
 |---|---|---|---|---|---|
-| `ai/scripts/rag_eval.py`, `ai/eval/rag_eval_registry.py`, `ai/eval/rag_v5*.py` | active-supported | Preserved; docs updated so `current` resolves to `v5_6` and `v5_6_2` remains explicit. | Registry current alias, `rag_eval.py --check`, current status/progress entries. | High if current alias, official metric input, or protected namespace semantics drift. | `rag_eval.py current --check`, `rag_eval.py v5_6_2 --check`, `pytest --rag-current`. |
+| `ai/scripts/rag_eval.py`, `ai/eval/rag_eval_registry.py`, `ai/eval/rag_v5*.py`, `ai/eval/rag_v6*.py`, `ai/eval/rag_v70*.py` | active-supported | Preserved; docs updated so `current` resolves to `v6_9_answer_quality_gate_packet_nonprod` while v5 official-metric probe lanes remain explicit fail-closed history. | Registry current alias, `rag_eval.py current --check`, current status/progress entries. | High if current alias, official metric input, or protected namespace semantics drift. | `rag_eval.py current --check`, `rag_eval.py v6_9_answer_quality_gate_packet_nonprod --check`, `pytest --rag-current`. |
 | `ai/eval/rag_v4_*.py`, `ai/eval/rag_v3_*.py`, and v3/v4 report-writing checks | active-diagnostic-only | Preserved in place as explicit diagnostic history. | v4/v3 inventory above, current tests requiring old scripts/reports, frozen v4 closeout basis. | High if cleanup removes artifacts that are ignored but still used by checks. | Current RAG focused tests and direct short-key checks. |
 | `ai/scripts/tune.py`, `ai/scripts/summarize_study.py`, `ai/eval/experiments/active.yaml` | active-diagnostic-only | Preserved; dependencies scoped to the `experiments` optional group and missing-dependency messages made explicit. | `active.yaml` keeps the Phase 7 template schema-valid but disables full tuning sweeps. | Medium; optional tooling should not become a production dependency. | Experiment dependency cleanup contract test and py_compile smoke. |
 | `ai/eval/tune_eval.py` and `ai/eval/tuning/answer_recovery_optuna_objective.py` | active-supported | Preserved as project-side adapters for the installed optuna-round-refinement skill. | Experiment README, answer-recovery readiness script, config references. | Medium; real validation must require datasets instead of silently scoring an empty bundle. | Import/dependency checks; dataset-required behavior documented. |
@@ -138,4 +240,5 @@ checkability.
 | `ai/scripts/confirm_*`, `ai/scripts/rerender_variant_verdict.py`, wide-MMR helper scripts | active-diagnostic-only | Preserved. | Script headers and helper imports label silver/diagnostic retrieval comparisons and optuna-winner analysis. | Medium; may read historical reports and ignored outputs. | Current tests and no path moves. |
 | `ai/scripts/run_phase7_*`, `ai/scripts/rag_*optuna*`, `ai/eval/configs/*optuna*.yaml` | active-diagnostic-only | Preserved; `jsonschema` added to experiment dependencies for readiness diagnostics. | Phase 7 and answer-recovery configs set tuning/reporting gates explicitly. | High if these were removed because they encode gold/silver policy boundaries. | py_compile and dependency import smoke. |
 | `ai/eval/reports/rag-ingestion/*`, `ai/eval/indexes/*`, `ai/eval/eval_queries/*`, `ai/eval/source_registry/*`, `ai/eval/silver/*` | unknown-preserve | No deletion or semantic edits. | Boundary guardian and guardrail tests identify these as protected or evidence-critical even when ignored. | High; deletion or denominator edits would require human gold/eval policy. | Protected diff check and RAG checks. |
+| `__pycache__`, `.pytest_cache`, `core-api/target`, `frontend/app/dist` | safe-transient-delete | Removed in the 2026-06-09 cleanup inventory only after path resolution proved every target stayed inside the repo. | `.gitignore` and `frontend/app/.gitignore` classify these as cache/build output; generated report `repo_cleanup_20260609_diagnostic_inventory` records the counters. | Low; they regenerate on test/build. | Re-run current RAG checks and targeted tests after cleanup. |
 | legacy-remove | legacy-remove | None. | No experiment had enough evidence to delete without risking diagnostic or gold/eval evidence loss. | N/A | Final diff review. |

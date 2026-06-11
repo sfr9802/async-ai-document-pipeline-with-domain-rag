@@ -41,6 +41,17 @@ STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.json
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
+REPO_CLEANUP_RUN_ID = "repo_cleanup_20260609_diagnostic_inventory"
+REPO_CLEANUP_REPORT = (
+    ROOT
+    / "ai"
+    / "eval"
+    / "reports"
+    / "rag-ingestion"
+    / "runs"
+    / REPO_CLEANUP_RUN_ID
+    / "report.json"
+)
 
 
 def _read_json(path: Path) -> dict[str, object]:
@@ -247,8 +258,10 @@ def test_v476_report_status_docs_and_cleanup_manifest_are_compact_and_closed() -
     assert short_report_path in current_progress
     assert short_report_path in measurements
     assert short_report_path in triage
-    assert f"Current RAG status: `{V5_3_STATUS}`" in readme
-    assert f"Current RAG status: `{V5_3_STATUS}`" in eval_readme
+    assert "v6_9_answer_quality_gate_packet_nonprod" in readme
+    assert "docs/rag-ingestion-progress.md" in readme
+    assert "v6_9_answer_quality_gate_packet_nonprod" in eval_readme
+    assert "docs/rag-ingestion-progress.md" in eval_readme
 
     generated_text = "\n".join(
         [
@@ -272,6 +285,42 @@ def test_v476_report_status_docs_and_cleanup_manifest_are_compact_and_closed() -
         r"promotion-ready",
     ):
         assert not re.search(pattern, generated_text), pattern
+
+
+def test_repo_cleanup_inventory_report_and_status_hash_stay_in_sync() -> None:
+    report = _read_json(REPO_CLEANUP_REPORT)
+    latest = next(row for row in reversed(_read_jsonl(STATUS_JSONL)) if row.get("run_id") == REPO_CLEANUP_RUN_ID)
+
+    assert report["run_id"] == REPO_CLEANUP_RUN_ID
+    assert latest["run_id"] == REPO_CLEANUP_RUN_ID
+    assert latest["artifact_paths"]["report_json"] == (
+        "ai/eval/reports/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json"
+    )
+    assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(REPO_CLEANUP_REPORT)
+    assert latest["artifact_sha256"]["report_json_sha256"] != "329549c5e51895ff54afe40b631565c24087e154d8379429e35486d118123b67"
+    assert latest["current_resolves_to"] == "v6_9_answer_quality_gate_packet_nonprod"
+    assert latest["official_metric_input_rows"] == 0
+    assert latest["protected_namespaces_touched"] == []
+    assert latest["safe_transient_deleted_directory_count"] == report["safe_transient_delete"]["total_removal_events"][
+        "directory_count"
+    ]
+    assert latest["safe_transient_deleted_file_count"] == report["safe_transient_delete"]["total_removal_events"][
+        "file_count"
+    ]
+    assert latest["safe_transient_deleted_bytes"] == report["safe_transient_delete"]["total_removal_events"]["bytes"]
+    for key in (
+        "diagnostic_only",
+        "cleanup_only",
+        "ambiguous_surfaces_held",
+    ):
+        assert latest[key] is True, key
+    for key in (
+        "official_metric",
+        "promotion_evidence",
+        "product_success_evidence_allowed",
+        "live_db_index_cache_readiness",
+    ):
+        assert latest[key] is False, key
 
 
 def test_v476_protected_namespaces_and_generated_status_surfaces_stay_safe() -> None:

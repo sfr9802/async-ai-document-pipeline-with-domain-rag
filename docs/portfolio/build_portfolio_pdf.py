@@ -24,29 +24,29 @@ OUT_DIR = ROOT / "docs" / "portfolio"
 PDF_PATH = OUT_DIR / "choi_byungchan_evidence_grounded_ai_document_qa_backend_portfolio.pdf"
 LEGACY_PDF_PATH = OUT_DIR / "choi_byungchan_ai_document_qa_backend_portfolio.pdf"
 VERSION_PDF_PATH = OUT_DIR / "choi_byungchan_ai_document_qa_backend_portfolio_result_first_v2.pdf"
-PROJECT_TITLE = "Evidence-Grounded Document QA Backend"
-PROJECT_SUBTITLE = "근거 검증형 AI 문서 QA 백엔드 · 후보 검색 · 원문 근거 · 답변 제어 · 실행 Trace"
-PROJECT_LABEL = "AI Backend / LLM-RAG / Agent Runtime"
-PROJECT_SECTION = "AI 백엔드 / 문서 RAG / 실행 Trace"
+PROJECT_TITLE = "Evidence-Grounded RAG Backend"
+PROJECT_SUBTITLE = "Dense/Sparse/Hybrid 검색 실험 · bge-m3 + FAISS · BM25 · 근거 검증 · 답변 중단 정책"
+PROJECT_LABEL = "AI Backend / Document RAG / Retrieval Quality Engineering"
+PROJECT_SECTION = "AI 백엔드 / 문서 RAG / 검색 실험"
 ACTIVE_TITLE = PROJECT_TITLE
 ACTIVE_SUBTITLE = PROJECT_SUBTITLE
 ACTIVE_LABEL = PROJECT_LABEL
 TITLE_VARIANTS = [
     (
         OUT_DIR / "choi_byungchan_portfolio_evidence_grounded_document_qa_backend.pdf",
-        "Evidence-Grounded Document QA Backend",
-        "근거 검증형 AI 문서 QA 백엔드 · 후보 검색 · 원문 근거 · 답변 제어 · 실행 Trace",
-        "AI Backend / LLM-RAG / Agent Runtime",
+        "Evidence-Grounded RAG Backend",
+        "Dense/Sparse/Hybrid 검색 실험 · SearchUnit/SearchView · 근거 검증 · 응답 제어",
+        "AI Backend / Document RAG / Retrieval",
     ),
     (
         OUT_DIR / "choi_byungchan_portfolio_agent_runtime_document_qa_backend.pdf",
-        "Agent Runtime 기반 문서 QA 백엔드",
-        "Tool 선택 · 원문 근거 확인 · 답변 가능 판단 · 실행 Trace",
-        "AI Backend / Agent Runtime / Document QA",
+        "Document Retrieval & QA Backend",
+        "검색 후보 · 원문 근거 · citation 검증 · 답변 가능 판단",
+        "AI Backend / RAG Retrieval / QA",
     ),
     (
         OUT_DIR / "choi_byungchan_portfolio_citation_document_qa_backend.pdf",
-        "Citation 기반 문서 QA 백엔드",
+        "Citation 기반 문서 RAG 백엔드",
         "원문 위치 확인 · citation 검증 · 답변 또는 중단 제어",
         "AI Backend / Citation / Evidence Validation",
     ),
@@ -76,7 +76,9 @@ DARK = HexColor("#111A24")
 WHITE = HexColor("#FFFFFF")
 
 REPO_URL = "https://github.com/sfr9802/async-ai-document-pipeline-with-domain-rag"
-TOTAL_PAGES = 8
+EVAL_README_URL = "https://github.com/sfr9802/async-ai-document-pipeline-with-domain-rag/blob/main/ai/eval/README.md"
+EVAL_README_NOTE = "추가 질의 예시(PDF/XLSX/TEXT) 및 평가 관련 문서는 GitHub README에서 확인할 수 있습니다."
+TOTAL_PAGES = 10
 CARD_TEXT_X = 24
 CARD_RIGHT_PAD = 24
 
@@ -416,6 +418,25 @@ def draw_kv_result(
     return draw_wrapped(c, value, x, y - 20, w, size=value_size, leading=value_size + 5, color=value_color)
 
 
+def draw_eval_readme_note(c: canvas.Canvas, y: float = 72) -> None:
+    draw_wrapped(
+        c,
+        EVAL_README_NOTE,
+        MARGIN_X,
+        y,
+        840,
+        font=FONT_BOLD,
+        size=10.8,
+        leading=15,
+        color=TEAL,
+        max_lines=1,
+    )
+    c.setFillColor(ACCENT)
+    c.setFont(FONT_REGULAR, 9.4)
+    c.drawString(MARGIN_X, y - 18, EVAL_README_URL)
+    c.linkURL(EVAL_README_URL, (MARGIN_X, y - 22, MARGIN_X + 620, y - 8), relative=0)
+
+
 def draw_table(
     c: canvas.Canvas,
     x: float,
@@ -513,9 +534,9 @@ def cover(c: canvas.Canvas) -> None:
     c.setFont(FONT_BOLD, 10.5)
     c.drawString(MARGIN_X, 266, ACTIVE_LABEL)
     cover_rows = [
-        ("Input", "PDF · XLSX · Text"),
-        ("Backend", "Job API · Worker · Retrieval"),
-        ("Guard", "Citation · Stop · Trace"),
+        ("Input", "PDF · TEXT · XLSX"),
+        ("Retrieval", "Dense · Sparse · Hybrid"),
+        ("Guard", "Evidence · Citation · Stop"),
     ]
     card_w = 260
     for idx, (label, value) in enumerate(cover_rows):
@@ -523,12 +544,12 @@ def cover(c: canvas.Canvas) -> None:
         draw_metric_box(c, x, 232, card_w, 76, label, value, accent=[ACCENT, TEAL, GREEN][idx], value_size=13.2)
     x = MARGIN_X
     for chip, color in [
-        ("PDF/XLSX/Text", TEAL),
-        ("Retrieval", ACCENT),
-        ("Evidence Validation", GREEN),
-        ("Agent Runtime", AMBER),
-        ("Trace", TEAL),
-        ("Contract Test", ACCENT),
+        ("SearchUnit/View", TEAL),
+        ("bge-m3 + FAISS", ACCENT),
+        ("BM25", GREEN),
+        ("Hybrid", AMBER),
+        ("EvidenceBundle", TEAL),
+        ("Stop Policy", RED),
     ]:
         x = draw_chip(c, chip, x, 148, color=color)
     c.setFillColor(INK)
@@ -542,15 +563,27 @@ def cover(c: canvas.Canvas) -> None:
     c.drawString(MARGIN_X, 48, PROJECT_SECTION)
 
 
-def result_examples(c: canvas.Canvas) -> None:
-    y = draw_page_title(c, 2, "실제 실행 결과", section="결과물")
-    intro = "User Query · Retrieved Evidence · Final Answer · Citation · API Response"
+def document_example_page(
+    c: canvas.Canvas,
+    *,
+    page_num: int,
+    title: str,
+    source_family: str,
+    query: str,
+    evidence: str,
+    answer: str,
+    citation: str,
+    code_lines: Sequence[str],
+    accent=ACCENT,
+) -> None:
+    y = draw_page_title(c, page_num, title, section="질의 예시")
+    intro = "User Query · Evidence Surface · Response · Citation · API Response"
     draw_wrapped(c, intro, MARGIN_X, y + 4, 840, size=15, leading=22, color=MUTED)
 
     panel_x = MARGIN_X
-    panel_y = y - 44
+    panel_y = y - 38
     panel_w = 540
-    panel_h = 276
+    panel_h = 286
     c.setFillColor(HexColor("#EEF2F6"))
     c.roundRect(panel_x + 3, panel_y - panel_h - 3, panel_w, panel_h, 10, fill=1, stroke=0)
     c.setFillColor(WHITE)
@@ -560,12 +593,12 @@ def result_examples(c: canvas.Canvas) -> None:
     c.roundRect(panel_x, panel_y - 36, panel_w, 36, 10, fill=1, stroke=0)
     c.setFillColor(INK)
     c.setFont(FONT_BOLD, 12.5)
-    c.drawString(panel_x + 18, panel_y - 23, "Document QA Preview")
-    c.setFillColor(GREEN)
-    c.roundRect(panel_x + panel_w - 128, panel_y - 27, 108, 18, 4, fill=1, stroke=0)
+    c.drawString(panel_x + 18, panel_y - 23, f"{source_family} Evidence Preview")
+    c.setFillColor(accent)
+    c.roundRect(panel_x + panel_w - 136, panel_y - 27, 116, 18, 4, fill=1, stroke=0)
     c.setFillColor(WHITE)
     c.setFont(FONT_BOLD, 8.8)
-    c.drawCentredString(panel_x + panel_w - 74, panel_y - 22, "citation verified")
+    c.drawCentredString(panel_x + panel_w - 78, panel_y - 22, "README sample")
 
     content_x = panel_x + 22
     content_y = panel_y - 62
@@ -576,9 +609,9 @@ def result_examples(c: canvas.Canvas) -> None:
         content_y,
         content_w,
         "User Query",
-        "2019년 2월 5호선의 승차총승객수는?",
+        query,
         label_color=ACCENT,
-        value_size=13,
+        value_size=12.4,
     )
     content_y -= 10
     content_y = draw_kv_result(
@@ -586,10 +619,10 @@ def result_examples(c: canvas.Canvas) -> None:
         content_x,
         content_y,
         content_w,
-        "Retrieved Evidence",
-        "철도\nrange A352:D401\ncell D352\nvalue 15,446,522",
+        "Evidence Surface",
+        evidence,
         label_color=TEAL,
-        value_size=11.8,
+        value_size=11.2,
     )
     content_y -= 8
     content_y = draw_kv_result(
@@ -597,10 +630,10 @@ def result_examples(c: canvas.Canvas) -> None:
         content_x,
         content_y,
         content_w,
-        "Final Answer",
-        "15,446,522명",
+        "Response",
+        answer,
         label_color=GREEN,
-        value_size=13,
+        value_size=12.4,
     )
     content_y -= 10
     draw_kv_result(
@@ -609,9 +642,9 @@ def result_examples(c: canvas.Canvas) -> None:
         content_y,
         content_w,
         "Citation",
-        "철도!D352",
+        citation,
         label_color=AMBER,
-        value_size=12.4,
+        value_size=11.8,
     )
 
     draw_code_panel(
@@ -619,11 +652,28 @@ def result_examples(c: canvas.Canvas) -> None:
         MARGIN_X + 568,
         panel_y,
         274,
-        276,
+        286,
         "API RESPONSE",
-        [
+        code_lines,
+        font_size=8.2,
+        leading=12.0,
+    )
+    draw_eval_readme_note(c)
+
+
+def xlsx_example(c: canvas.Canvas) -> None:
+    document_example_page(
+        c,
+        page_num=2,
+        title="XLSX 예시",
+        source_family="XLSX",
+        query="2019년 2월 5호선의 승차총승객수는 몇 명입니까?",
+        evidence="서울시 대중교통 수단별 이용 현황(2017.11~2019.5).xlsx\n철도 A352:D401 · cell D352",
+        answer="2019년 2월 5호선의 승차총승객수는 15,446,522명입니다.",
+        citation="철도!D352",
+        code_lines=[
             "{",
-            '  "status": "answered",',
+            '  "mode": "readme_sample",',
             '  "source_family": "XLSX",',
             '  "answer": "15,446,522명",',
             '  "citation": {',
@@ -631,50 +681,135 @@ def result_examples(c: canvas.Canvas) -> None:
             '    "range": "A352:D401",',
             '    "cell": "D352"',
             "  },",
-            '  "citation_verified": true',
+            '  "citation_verified": true,',
+            '  "not_quality_metric": true',
             "}",
         ],
-        font_size=8.2,
-        leading=12.0,
+        accent=GREEN,
     )
+
+
+def pdf_example(c: canvas.Canvas) -> None:
+    document_example_page(
+        c,
+        page_num=3,
+        title="PDF 예시",
+        source_family="PDF",
+        query="2020년 한국 원달러 기말 환율은 얼마인가요?",
+        evidence="2021_03_recent_economic_trends.pdf\np.65 · table_body",
+        answer="2020년 한국 원달러 기말 환율은 1,088.0입니다.",
+        citation="2021_03_recent_economic_trends.pdf p.65",
+        code_lines=[
+            "{",
+            '  "mode": "readme_sample",',
+            '  "source_family": "PDF",',
+            '  "answer": "1,088.0",',
+            '  "citation": {',
+            '    "file": "2021_03_recent_economic_trends.pdf",',
+            '    "page": 65,',
+            '    "surface": "table_body"',
+            "  },",
+            '  "citation_verified": true,',
+            '  "not_quality_metric": true',
+            "}",
+        ],
+        accent=TEAL,
+    )
+
+
+def text_example(c: canvas.Canvas) -> None:
+    document_example_page(
+        c,
+        page_num=4,
+        title="TEXT 예시",
+        source_family="TEXT",
+        query="유우야키의 나이와 생일은 어떻게 적혀 있어",
+        evidence="TEXT chunk/source context\ntext_namu_v2_1 · 7be08880",
+        answer="유우야키의 나이는 16세이고 생일은 9월 29일입니다.",
+        citation="TEXT chunk/source context",
+        code_lines=[
+            "{",
+            '  "mode": "readme_sample",',
+            '  "source_family": "TEXT",',
+            '  "answer": "16세, 9월 29일",',
+            '  "citation": {',
+            '    "track": "TEXT",',
+            '    "source": "text_namu_v2_1",',
+            '    "chunk": "7be08880"',
+            "  },",
+            '  "citation_verified": true,',
+            '  "not_quality_metric": true',
+            "}",
+        ],
+        accent=ACCENT,
+    )
+
+
+def actual_response_smoke(c: canvas.Canvas) -> None:
+    y = draw_page_title(
+        c,
+        8,
+        "Actual Response Smoke",
+        section="응답 정책",
+        subtitle="29개 승인 질의에서 답변/중단 정책과 citation verification을 확인했습니다.",
+    )
+
+    card_w = 196
+    card_h = 92
+    gap = 18
+    top = y - 16
+    cards = [
+        ("Approved Queries", "29", "PDF 4 · TEXT 6 · XLSX 19", ACCENT),
+        ("Answered", "10", "PDF 4 · TEXT 6", GREEN),
+        ("Citation Verified", "10", "answered rows only", TEAL),
+        ("Stopped", "19", "stopped / fail_closed", AMBER),
+    ]
+    for idx, (label, value, desc, color) in enumerate(cards):
+        x = MARGIN_X + idx * (card_w + gap)
+        c.setFillColor(WHITE)
+        c.setStrokeColor(HexColor("#D7E1EA"))
+        c.roundRect(x, top - card_h, card_w, card_h, 7, fill=1, stroke=1)
+        c.setFillColor(color)
+        c.setFont(FONT_BOLD, 10)
+        c.drawString(x + 18, top - 24, label)
+        c.setFillColor(INK)
+        c.setFont(FONT_BOLD, 21)
+        c.drawString(x + 18, top - 52, value)
+        draw_wrapped(c, desc, x + 18, top - 72, card_w - 36, size=9.8, leading=13, color=MUTED)
+
+    table_y = top - card_h - 40
+    draw_table(
+        c,
+        MARGIN_X,
+        table_y,
+        [150, 170, 190, 260],
+        [
+            ["Family", "Answered", "Citation verified", "Policy outcome"],
+            ["PDF", "4 / 4", "4", "answered via RAG evidence"],
+            ["TEXT", "6 / 6", "6", "answered via RAG evidence"],
+            ["XLSX", "0 / 19", "0", "19 fail_closed, no XLSX-wide success claim"],
+        ],
+        font_size=11.2,
+        header_size=12,
+        leading=15,
+        pad_y=8,
+    )
+
     draw_wrapped(
         c,
-        "근거: README · XLSX 예시 · 계약 테스트",
+        "해석 경계: answer quality metric이 아니라 response policy smoke입니다. 10개 answered + citation verified, 19개 stopped / fail_closed.",
         MARGIN_X,
-        74,
+        72,
         840,
-        size=12.8,
-        leading=18,
-        color=TEAL,
         font=FONT_BOLD,
+        size=11.4,
+        leading=16,
+        color=TEAL,
     )
-
-
-def problem(c: canvas.Canvas) -> None:
-    y = draw_page_title(c, 7, "배경", section="배경")
-    items = [
-        "PDF 표 / Excel 셀 / Text chunk 위치 손실",
-        "검색 후보와 답변 근거 구분",
-        "파싱 / 인덱싱 / 검색 / 답변 실패 지점 분리",
-        "근거 부족 답변 차단",
-    ]
-    for idx, item in enumerate(items, 1):
-        box_y = y - idx * 64 + 34
-        c.setFillColor(SOFT if idx % 2 else WHITE)
-        c.setStrokeColor(HexColor("#DCE4EC"))
-        c.roundRect(MARGIN_X, box_y - 44, 820, 44, 6, fill=1, stroke=1)
-        c.setFillColor(ACCENT)
-        c.setFont(FONT_BOLD, 16)
-        c.drawString(MARGIN_X + 16, box_y - 28, f"{idx}.")
-        c.setFillColor(INK)
-        c.setFont(FONT_BOLD, 16)
-        c.drawString(MARGIN_X + 54, box_y - 28, item)
-    footer = "문서 구조 · 비동기 처리 · 근거 판단 · 실패 추적"
-    draw_wrapped(c, footer, MARGIN_X, 84, 820, size=16, leading=24, color=TEAL)
 
 
 def system_structure(c: canvas.Canvas) -> None:
-    y = draw_page_title(c, 4, "시스템 구조", section="구조")
+    y = draw_page_title(c, 6, "시스템 구조", section="구조")
     intro = "Request · Job · Worker · Search · Evidence · Trace"
     draw_wrapped(c, intro, MARGIN_X, y + 4, 840, size=15, leading=22, color=MUTED)
     flow_y = y - 52
@@ -758,19 +893,19 @@ def system_structure(c: canvas.Canvas) -> None:
 def evidence_split(c: canvas.Canvas) -> None:
     y = draw_page_title(
         c,
-        5,
-        "후보 · 근거 · 답변",
+        7,
+        "후보 · 근거 · 응답 제어",
         section="문제 및 해결방안",
     )
     c.setFillColor(TEAL)
     c.setFont(FONT_BOLD, 21)
-    c.drawString(MARGIN_X, y, "검색 후보와 답변 근거 분리")
+    c.drawString(MARGIN_X, y, "SearchView 후보와 SourceAtom/EvidenceBundle 근거 분리")
     flow_y = y - 58
     cards = [
-        ("1", "검색 후보", "가능성 있는 자료", ACCENT),
-        ("2", "원문 근거", "사용자가 확인할 위치", TEAL),
-        ("3", "답변 판단", "충분하면 답변", GREEN),
-        ("4", "답변 또는 중단", "근거 부족이면 중단", AMBER),
+        ("1", "검색 후보", "SearchUnit/SearchView", ACCENT),
+        ("2", "원문 근거", "SourceAtom\nEvidenceBundle", TEAL),
+        ("3", "Citation 검증", "근거 위치 확인", GREEN),
+        ("4", "답변 또는 중단", "근거 부족이면 fail_closed", AMBER),
     ]
     card_w = 188
     card_h = 108
@@ -798,9 +933,9 @@ def evidence_split(c: canvas.Canvas) -> None:
         [210, 300, 330],
         [
             ["단계", "왜 필요한가", "사용자에게 보이는 결과"],
-            ["검색 후보", "관련 자료를 먼저 좁힘", "후보 목록"],
-            ["원문 근거", "실제 위치와 값을 다시 확인", "page / cell / chunk"],
-            ["답변 판단", "근거 부족 답변 방지", "answered / stopped"],
+            ["검색 후보", "관련 자료를 먼저 좁힘", "candidate-only SearchView"],
+            ["원문 근거", "실제 위치와 값을 다시 확인", "SourceAtom/EvidenceBundle"],
+            ["응답 제어", "근거 부족 답변 방지", "answered / stopped / fail_closed"],
         ],
         font_size=11.2,
         header_size=12,
@@ -809,12 +944,12 @@ def evidence_split(c: canvas.Canvas) -> None:
     )
 
 def trace_layer(c: canvas.Canvas) -> None:
-    y = draw_page_title(c, 6, "Trace / API", section="Trace")
-    intro = "Tool · Evidence · Decision · Redacted refs"
+    y = draw_page_title(c, 6, "실행 Trace / Guard", section="Trace Guard")
+    intro = "Thin execution sidecar · schema-bound tools · redacted refs · fail-closed guards"
     draw_wrapped(c, intro, MARGIN_X, y + 4, 840, size=14.5, leading=21, color=INK)
     flow_y = y - 72
-    flow = ["Request", "Policy", "Tools", "Evidence", "Decision", "Trace"]
-    widths = [84, 86, 82, 104, 98, 82]
+    flow = ["Request", "Policy Guard", "Tools", "Evidence", "Decision", "Redacted Trace"]
+    widths = [84, 112, 82, 104, 98, 120]
     x = MARGIN_X
     for idx, (label, w) in enumerate(zip(flow, widths)):
         draw_flow_box(c, x, flow_y, w, 42, label, fill=WHITE, title_size=9.8)
@@ -827,13 +962,13 @@ def trace_layer(c: canvas.Canvas) -> None:
         flow_y - 78,
         300,
         242,
-        "Trace 확인",
+        "Trace / Guard contract",
         [
-            "tool: retrieve_xlsx_table",
-            "flow: request -> tools -> evidence -> decision",
-            "refs: query_ref / evidence_ref",
-            "decision: answered / stopped",
-            "hidden: raw question · evidence · local path",
+            "query_ref / evidence_ref only",
+            "selected_tools / tools_called schema bound",
+            "out-of-scope evidence drift blocks answer",
+            "runtime_contract_violation -> fail_closed",
+            "raw question · raw evidence · local path not stored",
         ],
         accent=GREEN,
         body_size=10.9,
@@ -850,16 +985,17 @@ def trace_layer(c: canvas.Canvas) -> None:
             '  "schema_version": "agentops_run_trace_v1",',
             '  "run_id": "agentops-portfolio-smoke",',
             '  "query": "query_ref:8a3fa83080fc7cb5",',
-            '  "request_context": {',
-            '    "source_family": "XLSX",',
-            '    "answer_format_requirement": "answer_with_citations_or_abstain"',
-            "  },",
             '  "selected_tools": [',
             '    "retrieve_xlsx_table", "validate_evidence",',
             '    "classify_answerability"',
             "  ],",
+            '  "tools_called": [',
+            '    "rag.l0.query_routing",',
+            '    "rag.l4.sourceatom_hydration"',
+            "  ],",
             '  "evidence_ids": ["evidence_ref:01"],',
             '  "policy_decision": "allow_diagnostic",',
+            '  "failure_category": "",',
             '  "final_decision": "diagnostic_only_answer"',
             "}",
         ],
@@ -869,26 +1005,29 @@ def trace_layer(c: canvas.Canvas) -> None:
 
 
 def verified_scope(c: canvas.Canvas) -> None:
-    y = draw_page_title(c, 3, "숫자로 보는 결과", section="결과")
-    intro = "산출물 기준 · 숫자 · 계약 테스트"
+    y = draw_page_title(
+        c,
+        5,
+        "Dense / Sparse / Hybrid 검색 실험",
+        section="검색",
+        subtitle="Source-derived SearchUnit/SearchView 300개 후보 가용성 진단",
+    )
+    intro = "PDF 100 · TEXT 100 · XLSX 100"
     draw_wrapped(c, intro, MARGIN_X, y + 4, 840, size=15, leading=22, color=MUTED)
 
-    card_w = 410
-    card_h = 88
-    gap_x = 22
-    gap_y = 18
-    start_y = y - 42
+    card_w = 196
+    card_h = 118
+    gap_x = 18
+    start_y = y - 34
     proofs = [
-        ("문서 유형", "3종", "PDF / XLSX / TEXT", ACCENT),
-        ("검색 후보 평가", "300개 질의", "PDF 100 / XLSX 100 / TEXT 100", TEAL),
-        ("응답 스모크", "29개 검증 질의", "10 answered · 10 citation verified · 19 stopped", GREEN),
-        ("계약 테스트", "53개 통과", "runtime / retrieval / trace", AMBER),
+        ("SearchUnit/SearchView 구축", "300", "PDF/TEXT/XLSX 각 100개 · source-derived", ACCENT),
+        ("Dense Retrieval", "299 / 300", "BAAI/bge-m3 + FAISS IndexFlatIP", TEAL),
+        ("Sparse Retrieval", "300 / 300", "BM25 candidate availability", GREEN),
+        ("Hybrid Retrieval", "300 / 300", "Dense + Sparse merge", AMBER),
     ]
     for idx, (label, value, desc, color) in enumerate(proofs):
-        col = idx % 2
-        row = idx // 2
-        x = MARGIN_X + col * (card_w + gap_x)
-        top = start_y - row * (card_h + gap_y)
+        x = MARGIN_X + idx * (card_w + gap_x)
+        top = start_y
         c.setFillColor(WHITE)
         c.setStrokeColor(HexColor("#D7E1EA"))
         c.roundRect(x, top - card_h, card_w, card_h, 7, fill=1, stroke=1)
@@ -908,96 +1047,207 @@ def verified_scope(c: canvas.Canvas) -> None:
             size=10.8,
             leading=14,
             color=MUTED,
-            max_lines=2,
+            max_lines=3,
         )
 
-    scope_y = start_y - card_h * 2 - gap_y - 42
-    c.setFillColor(INK)
-    c.setFont(FONT_BOLD, 16)
-    c.drawString(MARGIN_X, scope_y, "구현한 흐름")
-    flow = [
-        ("문서 구조 보존", "page · cell/range · chunk"),
-        ("후보 검색", "문서 후보 좁히기"),
-        ("근거 확인", "citation 확인"),
-        ("Trace / Test", "report · contract"),
+    metric_y = start_y - card_h - 36
+    draw_table(
+        c,
+        MARGIN_X,
+        metric_y,
+        [170, 170, 430],
+        [
+            ["구분", "구현", "현재 포트폴리오에서 말하는 것"],
+            ["Dense", "bge-m3 + FAISS", "vector 후보 가용성 299/300"],
+            ["Sparse", "BM25", "lexical 후보 가용성 300/300"],
+            ["Hybrid", "Dense + Sparse", "merged 후보 가용성 300/300"],
+        ],
+        font_size=11.2,
+        header_size=12,
+        leading=15,
+        pad_y=8,
+    )
+    draw_wrapped(
+        c,
+        "계약 테스트: 53개 통과 · Hit@K/MRR/nDCG는 qrels gate 전까지 미계산 · 이 페이지는 검색 품질 점수가 아니라 후보 가용성 진단입니다.",
+        MARGIN_X,
+        74,
+        840,
+        font=FONT_BOLD,
+        size=11.4,
+        leading=16,
+        color=TEAL,
+    )
+
+
+def retrieval_design_notes(c: canvas.Canvas) -> None:
+    y = draw_page_title(
+        c,
+        9,
+        "검색 설계 포인트",
+        section="설계 선택",
+        subtitle="RAG 검색 실험을 구현하면서 후보, 근거, 응답 정책을 분리했습니다.",
+    )
+    card_w = 410
+    card_h = 116
+    gap_x = 22
+    gap_y = 24
+    top = y - 38
+    cards = [
+        (
+            "Dense / Sparse / Hybrid 비교",
+            [
+                "Dense: bge-m3 + FAISS로 의미 기반 후보 검색",
+                "Sparse: BM25로 키워드/표현 일치 후보 검색",
+                "Hybrid: 두 후보군을 병합해 후보 가용성 확인",
+            ],
+            ACCENT,
+        ),
+        (
+            "SearchUnit / SearchView 분리",
+            [
+                "SearchUnit은 source-derived 검색 단위",
+                "SearchView는 candidate-only retrieval view",
+                "후보 표면과 근거 truth를 섞지 않음",
+            ],
+            TEAL,
+        ),
+        (
+            "SourceAtom / EvidenceBundle 분리",
+            [
+                "SourceAtom은 원문 위치와 값의 근거 atom",
+                "EvidenceBundle은 답변과 citation 검증 단위",
+                "검색 후보가 곧 답변 근거가 되지 않게 설계",
+            ],
+            GREEN,
+        ),
+        (
+            "근거 부족 시 답변 중단",
+            [
+                "citation이 확인된 10건만 answered",
+                "근거가 부족한 19건은 stopped / fail_closed",
+                "실패 지점은 실행 Trace로 확인 가능",
+            ],
+            AMBER,
+        ),
     ]
-    flow_w = 196
-    flow_gap = 16
-    flow_top = scope_y - 28
-    for idx, (title, body) in enumerate(flow):
-        x = MARGIN_X + idx * (flow_w + flow_gap)
-        draw_flow_box(c, x, flow_top, flow_w, 48, title, fill=WHITE, title_size=10.6)
-        c.setFillColor(MUTED)
-        c.setFont(FONT_REGULAR, 9.6)
-        c.drawCentredString(x + flow_w / 2, flow_top - 38, body)
-        if idx < len(flow) - 1:
-            draw_arrow(c, x + flow_w + 4, flow_top - 24, x + flow_w + flow_gap - 8, flow_top - 24, color=ACCENT)
+    for idx, (title, body, color) in enumerate(cards):
+        col = idx % 2
+        row = idx // 2
+        x = MARGIN_X + col * (card_w + gap_x)
+        yy = top - row * (card_h + gap_y)
+        draw_text_card(
+            c,
+            x,
+            yy,
+            card_w,
+            card_h,
+            title,
+            body,
+            accent=color,
+            body_size=10.7,
+        )
+    draw_wrapped(
+        c,
+        "요약: 검색 실험 -> 근거 검증 -> 답변 중단 정책 -> 실행 Trace",
+        MARGIN_X,
+        70,
+        840,
+        size=14,
+        leading=20,
+        color=TEAL,
+        font=FONT_BOLD,
+    )
 
 
 def closing(c: canvas.Canvas) -> None:
-    y = draw_page_title(c, 8, "마무리", section="마무리")
-    intro = "핵심 구현 · 결과물 중심 · 계약 테스트"
+    y = draw_page_title(c, 10, "회고", section="회고")
+    intro = "프로젝트를 진행하며 배운 점"
     draw_wrapped(c, intro, MARGIN_X, y + 4, 840, size=15, leading=22, color=MUTED)
+
     cards = [
-        ("핵심 결과", "질문 · 근거 · 답변 · API 응답"),
-        ("백엔드 초점", "Job API · Worker · Retrieval · Trace"),
-        ("검증 방식", "citation verified · stopped · contract"),
+        (
+            "검색 후보와 답변 근거는 다르다",
+            [
+                "SearchView는 candidate-only 표면입니다.",
+                "최종 citation은 SourceAtom/EvidenceBundle에서 다시 확인해야 합니다.",
+            ],
+            ACCENT,
+        ),
+        (
+            "Retrieval 성능과 Answer Quality는 별개다",
+            [
+                "후보 가용성이 좋아도 답변 품질을 자동으로 보장하지 않습니다.",
+                "Hit@K/MRR/nDCG와 response smoke를 분리해 봐야 했습니다.",
+            ],
+            TEAL,
+        ),
+        (
+            "PDF/XLSX는 일반 텍스트 검색과 다르다",
+            [
+                "PDF는 page/table context, XLSX는 sheet/range/cell이 중요합니다.",
+                "문서 유형별 citation 단위를 다르게 다뤄야 했습니다.",
+            ],
+            GREEN,
+        ),
+        (
+            "근거 부족 시 답변 중단 정책이 중요하다",
+            [
+                "그럴듯한 답변보다 검증 가능한 중단이 더 안전합니다.",
+                "answered와 stopped/fail_closed를 함께 기록해야 운영 판단이 쉬워집니다.",
+            ],
+            AMBER,
+        ),
     ]
-    card_w = 264
-    gap = 24
-    top = y - 60
-    for idx, (title, body) in enumerate(cards):
-        x = MARGIN_X + idx * (card_w + gap)
-        c.setFillColor(WHITE)
-        c.setStrokeColor(HexColor("#D7E1EA"))
-        c.roundRect(x, top - 126, card_w, 126, 8, fill=1, stroke=1)
-        c.setFillColor([ACCENT, TEAL, GREEN][idx])
-        c.setFont(FONT_BOLD, 11)
-        c.drawString(x + 22, top - 30, f"0{idx + 1}")
-        c.setFillColor(INK)
-        c.setFont(FONT_BOLD, 17)
-        c.drawString(x + 22, top - 58, title)
-        draw_wrapped(c, body, x + 22, top - 86, card_w - 44, size=11.6, leading=16, color=MUTED, font=FONT_BOLD)
-    c.setFillColor(INK)
-    c.setFont(FONT_BOLD, 17)
-    c.drawString(MARGIN_X, top - 166, "핵심 구현")
-    checklist = [
-        ("PDF/XLSX/TEXT 처리", ACCENT),
-        ("Retrieval", TEAL),
-        ("Evidence Validation", GREEN),
-        ("Agent Runtime", AMBER),
-        ("Trace", TEAL),
-        ("Contract Test", ACCENT),
-    ]
-    item_w = 264
-    item_h = 44
-    item_top = top - 194
-    for idx, (label, color) in enumerate(checklist):
-        col = idx % 3
-        row = idx // 3
-        x = MARGIN_X + col * (item_w + gap)
-        yy = item_top - row * 56
-        c.setFillColor(WHITE)
-        c.setStrokeColor(HexColor("#D7E1EA"))
-        c.roundRect(x, yy - item_h, item_w, item_h, 7, fill=1, stroke=1)
-        c.setFillColor(color)
-        c.circle(x + 24, yy - item_h / 2, 6, fill=1, stroke=0)
-        c.setFillColor(INK)
-        c.setFont(FONT_BOLD, 13.5)
-        c.drawString(x + 42, yy - item_h / 2 - 4, label)
+    card_w = 410
+    card_h = 116
+    gap_x = 22
+    gap_y = 24
+    top = y - 44
+    for idx, (title, body, color) in enumerate(cards):
+        col = idx % 2
+        row = idx // 2
+        x = MARGIN_X + col * (card_w + gap_x)
+        yy = top - row * (card_h + gap_y)
+        draw_text_card(
+            c,
+            x,
+            yy,
+            card_w,
+            card_h,
+            title,
+            body,
+            accent=color,
+            title_size=14.3,
+            body_size=10.8,
+        )
+
+    draw_wrapped(
+        c,
+        "이번 프로젝트에서는 검색 후보, 근거 검증, 중단 정책을 분리해 설계하는 부분의 중요성을 크게 체감했습니다.",
+        MARGIN_X,
+        78,
+        840,
+        font=FONT_BOLD,
+        size=12.8,
+        leading=18,
+        color=TEAL,
+    )
     c.setFillColor(MUTED)
-    c.setFont(FONT_REGULAR, 11)
-    c.drawString(MARGIN_X, 54, REPO_URL)
+    c.setFont(FONT_REGULAR, 10)
+    c.drawString(MARGIN_X, 52, REPO_URL)
 
 
 SLIDES = [
     cover,
-    result_examples,
+    xlsx_example,
+    pdf_example,
+    text_example,
     verified_scope,
     system_structure,
     evidence_split,
-    trace_layer,
-    problem,
+    actual_response_smoke,
+    retrieval_design_notes,
     closing,
 ]
 

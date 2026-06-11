@@ -1,5 +1,46 @@
 # RAG v7 E2E Evaluation Plan
 
+## 2026-06-10 Direction Update
+
+This plan now has an additive pragmatic actual-RAG evaluation lane:
+`actual_rag_eval_metric_generation_nonprod`. The lane intentionally moves from
+"wait for perfect gold policy" to "build first, measure first, repair later."
+
+The older conservative v7 closeout boundaries still apply to official metrics,
+promotion evidence, production routing, and gold/qrels mutation. They no longer
+block non-official actual RAG evaluation outputs. Incomplete gold rows are
+loaded with warnings; strict metrics keep clean denominators; provisional metrics
+use broader partial signals; diagnostic metrics always run when the row is
+executable.
+
+Metric-semantics repair note: `actual_rag_eval_metric_semantics_repair_nonprod`
+tightened the first loop without changing retriever ranking or gold/qrels. The
+provisional E2E metric now requires the provisional answer judge to pass, requires
+weak or strict evidence at the configured top-k, and keeps answer/context
+consistency as a diagnostic standalone metric that can only act as a conservative
+E2E support guard. Weak evidence text matching now requires non-generic anchors,
+including all numeric/date anchors from the gold signal. The old context/citation
+overlap names are kept only as legacy aliases; reports use
+`answer_extracted_from_retrieved_context_rate` and
+`citation_points_to_retrieved_context_rate` as diagnostic consistency checks.
+Unknown-answerability rows with expected answer/evidence are reported in an
+inferred-answerable tier without mutating gold labels.
+
+The concrete entrypoint is:
+
+```bash
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset <path-to-json-or-jsonl> \
+  --index current \
+  --output-dir reports/rag_eval/<run_id> \
+  --top-k 10 \
+  --judge-mode heuristic
+```
+
+`--judge-mode local-llm` is available as an opt-in localhost-only semantic judge
+path using the repo's existing llama.cpp/Ollama/openai-compatible helper. It is
+not required for automated tests.
+
 ## Objective
 
 Recover from the premature `v7_0_e2e_eval_architecture_closeout_nonprod` closeout by preserving v7_0 as diagnostic audit evidence only, implementing `v6_4_e2e_coverage_and_failure_taxonomy_nonprod`, and keeping v7 completion closed until required predecessor checkpoints exist or are explicitly skipped with diagnostic-only reasons.

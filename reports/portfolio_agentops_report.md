@@ -1,12 +1,13 @@
-# Verifiable Document RAG Backend - AgentOps Technical Sidecar
+# Evidence-Grounded RAG Backend - Execution Trace / Guard Sidecar
 
 ## Project Goal
 
-Document the thin AgentOps control layer behind the current Verifiable Document
-RAG Backend portfolio. The primary portfolio narrative stays centered on
-evidence-grounded document RAG; this sidecar explains the auditable tool/policy
+Document the thin execution Trace/Guard layer behind the current Evidence-Grounded
+RAG Backend portfolio. The primary portfolio narrative stays centered
+on source-derived retrieval candidates, evidence truth, citation verification,
+and fail-closed response policy; this sidecar explains the auditable tool/policy
 trace layer over the existing RAG/evaluation pipeline, not a large autonomous
-agent framework.
+agent framework or AgentOps platform.
 
 This report is portfolio-facing. It does not open official metrics, mutate
 gold/qrels/labels, approve expected answers, approve supporting evidence, move
@@ -36,6 +37,23 @@ Existing repo foundations:
 | L0-L8 tool specs | `ai/app/capabilities/rag_orchestrator/tool_registry.py` |
 | Portfolio AgentOps adapter | `ai/app/capabilities/rag_orchestrator/agentops_runtime.py` |
 | Evaluation/report governance | `ai/eval/rag_eval_registry.py`, `ai/scripts/rag_eval.py`, `docs/rag-ingestion-*.md` |
+
+## Portfolio Snapshot
+
+Current hiring-portfolio copy is anchored to diagnostic evidence only:
+
+| Surface | Portfolio wording |
+|---|---|
+| Source-derived materialization | 300 SearchUnit/SearchView rows: PDF 100, TEXT 100, XLSX 100 |
+| Dense search | BAAI/bge-m3 + FAISS IndexFlatIP; vector candidates available for 299/300 rows |
+| Sparse search | SQLite/BM25 candidates available for 300/300 rows |
+| Hybrid search | fixed-weight vector + BM25 merge candidates available for 300/300 rows |
+| Retrieval quality metrics | Hit@K/MRR/nDCG are not computed until current qrels/denominator review is approved |
+| Retrieval review packet | `v6_9_1_retrieval_smoke_pre_review_packet_nonprod`; 135 current candidate rows, user-owned fields blank |
+| Actual Response Smoke | 29 approved queries; 10 answered + citation verified, 19 stopped/fail_closed |
+| Family response split | PDF 4 answered, TEXT 6 answered, XLSX 19 fail_closed |
+| README query examples | pages 2-4 show XLSX, PDF, and TEXT examples sourced from `ai/eval/README.md` |
+| Example boundary | examples are README samples, not benchmark scores or official quality metrics |
 
 ## Agentic Runtime Loop
 
@@ -111,9 +129,10 @@ The current diagnostic line keeps official quality claims closed:
 | denominator policy | not mutated |
 | production/live readiness | closed |
 
-Existing v6 packets provide the governance ladder: structured tool taxonomy
-(`v6_6`), agentic retry/fail-closed policy (`v6_7`), metric-gated retrieval
-quality engineering (`v6_8`), and answer-quality gate packet (`v6_9`).
+Existing v6 packets provide the governance ladder: structured tool taxonomy,
+agentic retry/fail-closed policy, metric-gated retrieval quality engineering,
+and answer-quality gate packet. The portfolio avoids exposing these internal
+version names as the main reader-facing message.
 
 ## Trace Schema
 
@@ -219,6 +238,8 @@ Current verification run:
 | malformed top-level source registry pre-runtime guard | covered by `test_agentops_runtime_blocks_malformed_source_registry_before_tool_calls` |
 | portfolio/resume rendered PDF text contract | covered by `test_portfolio_and_resume_pdf_builders_render_artifact_text_contract` |
 | `python -X utf8 ai/scripts/rag_eval.py current --check` | passed; `current_resolves_to=v6_9_answer_quality_gate_packet_nonprod`, official input counters remain `0`, answer/retrieval quality metrics remain false |
+| `python -X utf8 ai/scripts/rag_eval.py v6_9_1_retrieval_smoke_pre_review_packet_nonprod --check` | passed; review packet exists, metric gate remains closed |
+| `python -X utf8 -m pytest ai/tests/test_rag_v691_retrieval_smoke_pre_review_packet_nonprod_contract.py -q -p no:cacheprovider` | 14 passed |
 | `python -X utf8 -m pytest ai/tests/test_agentops_portfolio_runtime_contract.py ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py -q` | 53 passed, 8 warnings |
 | `git status --short -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver ai/eval/reports/rag-ingestion/status.jsonl` | no protected-surface changes |
 
@@ -261,6 +282,7 @@ Documented architecture:
 ## Known Limitations
 
 - No official answer-quality metric is opened in this task.
+- No retrieval Hit@K/MRR/nDCG metric is opened before current qrels/denominator review.
 - No gold, qrels, expected answer, supporting evidence, relevance, or
   answerability labels were created or changed.
 - The runtime remains non-production and diagnostic-only.

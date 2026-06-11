@@ -189,6 +189,14 @@ PDF 문서에서는 본문 텍스트뿐 아니라 표 안의 값이 답변 근�
 | [`.env.example`](.env.example) | 로컬 실행 환경 변수 예시 |
 | [`docs/THIRD_PARTY_DATA_LICENSES.md`](docs/THIRD_PARTY_DATA_LICENSES.md) | 외부 데이터 및 라이선스 고지 |
 
+## 저장소 artifact 관리
+
+이 저장소는 코드와 진단 evidence를 의도적으로 분리합니다. 현재 RAG 진단 `current`는 `v6_9_answer_quality_gate_packet_nonprod`이며, `ai/eval/reports/rag-ingestion/**` 아래의 `report.json`, `status.jsonl`, run sidecar는 대부분 generated/local-only diagnostic artifact입니다.
+
+정리 기준은 보수적입니다. active source, 테스트, README/docs, registry/runner, gold/qrels/official denominator/eval query/source registry/index/silver 표면은 보존합니다. 삭제가 애매한 legacy 또는 diagnostic bundle은 hold로 남기며, 해시 검증된 외부 archive 없이 bulk-delete하지 않습니다. 안전 삭제 대상은 `.pytest_cache`, `__pycache__`, bytecode, `core-api/target`, `frontend/app/dist`처럼 재생성 가능한 transient cache/build output으로 제한합니다.
+
+최신 정리 근거는 [`docs/rag-ingestion-progress.md`](docs/rag-ingestion-progress.md), [`docs/rag-ingestion-measurements.md`](docs/rag-ingestion-measurements.md), [`docs/rag-ingestion-triage.md`](docs/rag-ingestion-triage.md), 그리고 generated report `ai/eval/reports/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json`에 남깁니다.
+
 ## 라이선스와 외부 데이터
 
 이 저장소의 직접 작성 코드와 문서는 [Apache License 2.0](LICENSE)을 따릅니다.

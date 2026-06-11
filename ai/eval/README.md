@@ -15,6 +15,103 @@
 PDF에서 목차 점선, 단독 섹션 번호, 페이지 번호, 숫자축처럼 실제 답변 근거로 보기 어려운 content window는 답변처럼 노출하지 않고 `PDF_CONTENT_WINDOW_TOO_THIN`으로 표시합니다.
 이런 처리는 성능을 좋아 보이게 만들기 위한 장치가 아니라, 근거가 약한 답변을 막기 위한 방어선입니다.
 
+## Actual RAG Eval Infrastructure
+
+`ai/eval/actual_rag_eval.py` and `python -m ai.scripts.rag_actual_eval`
+implement the current pragmatic actual-RAG evaluation loop:
+
+```text
+eval dataset -> retrieval surface selection -> BM25/vector/hybrid retrieval -> context assembly -> answer generation -> citation capture -> metrics -> report.json
+```
+
+Retrieval backend and retrieval surface are separate. `--retrieval-backend auto`
+selects hybrid when vector retrieval is available, while
+`--retrieval-surface auto` prefers a SourceAtom/EvidenceBundle-backed
+source-native corpus and treats SearchUnit/SearchView as a legacy baseline when
+source-native units can be loaded. Source-native retrieval reads source-owned
+units only, redacts raw local paths in reports, uses the existing non-production
+FAISS/vector path when available, and records any GPU/BGE-M3 fallback reason
+instead of silently downgrading to CPU, BM25, or legacy SearchUnit/SearchView.
+SearchUnit/SearchView remains candidate-only and disposable; SourceAtom and
+EvidenceBundle remain the evidence-truth surfaces.
+
+Dataset rows may be incomplete. Fatal schema errors are limited to unusable
+items such as missing `id`, missing `query`, invalid JSON/JSONL, or malformed
+field types. Missing `answerability`, `expected_answer`, aliases,
+`expected_evidence`, or citation gold are non-fatal warnings.
+
+Metrics are intentionally separated:
+
+| Tier | Purpose |
+|---|---|
+| strict | Clean-denominator metrics such as exact/alias correctness, evidence recall@k, citation precision/recall, abstention accuracy, and strict E2E success. |
+| provisional | Broader best-effort RAG signals such as judged answer correctness, anchor-gated weak evidence recall, resolved-evidence recall, citation matches to resolved evidence, and provisional E2E success. Provisional E2E requires the provisional answer judge to pass; weak evidence or resolved evidence alone is insufficient. Text-only weak evidence and expected-evidence resolution require non-generic anchors and all numeric/date anchors from the expected answer/evidence for high-confidence matches. |
+| inferred-answerable | Unknown-answerability rows with expected answer and expected evidence can be scored in a separate inferred tier for iteration only. The gold answerability label is not mutated. |
+| diagnostic | Pipeline and data-quality signals such as empty retrieval/generation/citations, schema warnings, evidence ID resolution counts, gold missing counts, failure labels, answer/context consistency, and citation/retrieved-context consistency. These consistency metrics are not answer correctness or citation correctness. |
+
+Default runs use a deterministic heuristic provisional judge. An opt-in
+localhost-only local LLM judge is available with `--judge-mode local-llm`, but
+automated tests use deterministic fixtures and do not require external model
+calls.
+
+Routine runs now default to a single primary artifact:
+`reports/rag_eval/<run_id>/report.json`. That one file embeds run metadata,
+items, metrics, comparison rows, evidence-resolution diagnostics, backend
+comparison metrics, GPU/vector preflight, guardrails, assumptions,
+limitations, and next repair targets. Legacy output mode can still emit the
+older `rag_eval_items.jsonl`, `rag_eval_summary.json`, Markdown, and evidence
+sidecars for compatibility/debugging, but it is not the default.
+
+Expected-evidence resolution is enabled in cheap retrieved-context mode by
+default and can be expanded with `--evidence-resolution-scope both`. Any index
+candidate lookup is query-text-only; expected answers, aliases, expected
+evidence, qrels, row IDs, query IDs, target IDs, and baseline top-k are not
+candidate-generation inputs. Resolution scoring remains diagnostic and
+non-mutating.
+
+Human review output is opt-in with `--write-human-review-packet`. When set,
+the runner writes exactly one additional CSV packet,
+`reports/rag_eval/<run_id>/human_review_packet.csv`, with blank human-owned
+decision fields. It does not write CSV+JSONL+Markdown+summary sidecars in
+single mode and does not create gold mappings, qrels, answerability labels,
+official metrics, retriever-ranking claims, product-success evidence, or
+live-readiness claims.
+
+Accumulated runs stay under `reports/rag_eval/<run_id>/` and can now append a
+machine-readable run registry plus latest pointers:
+
+```bash
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv \
+  --top-k 10 \
+  --retrieval-surface auto \
+  --retrieval-backend auto \
+  --output-mode single \
+  --resolve-expected-evidence \
+  --evidence-resolution-scope both \
+  --append-registry \
+  --write-latest \
+  --compare-to previous
+```
+
+The current registry/index surfaces are `reports/rag_eval/runs.jsonl`,
+`reports/rag_eval/latest.json`, dataset-specific pointers such as
+`reports/rag_eval/latest_text_gold.json`, and `reports/rag_eval/README.md`.
+Actual eval now supports `--retrieval-backend bm25|vector|hybrid|auto`.
+`auto` prefers hybrid when the local vector backend is available; otherwise it
+records the vector/GPU failover reason and falls back without silence. The
+local vector path uses source-derived SearchUnit/SearchView text with
+`BAAI/bge-m3` embeddings and a non-production in-memory FAISS `IndexFlatIP`.
+CUDA is used for embeddings when available and recorded in `gpu_preflight` and
+`retrieval_backend`. Local FAISS is not an external production VectorDB.
+External VectorDB remains optional, must be explicitly non-production, and is
+recorded separately from the local FAISS path.
+
+Comparison sections and backend comparison metrics are non-production
+diagnostics only. They do not promote strict, provisional, inferred-answerable,
+retrieval, vector, hybrid, or diagnostic metrics to official metric,
+product-success, promotion, or live-readiness evidence.
+
 ## 실제 질문·근거·응답 샘플
 
 아래 표는 실제 query → evidence → response 흐름을 빠르게 확인하기 위한 샘플입니다.
@@ -104,3 +201,9 @@ PDF에서 목차 점선, 단독 섹션 번호, 페이지 번호, 숫자축처럼
 | fine-tuning 실행 여부 | 실행하지 않음 |
 | live DB index cache readiness | `false` |
 | TEXT/PDF/XLSX metric 통합 | 하나의 headline score로 합치지 않음 |
+
+## 정리와 보고 표면
+
+현재 RAG diagnostic `current`는 `v6_9_answer_quality_gate_packet_nonprod`입니다. `ai/eval/reports/rag-ingestion/**`의 machine report/status/run sidecar는 generated/local-only diagnostic evidence로 취급하고, 사람이 읽는 최신 상태와 정리 근거는 `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, `docs/rag-ingestion-triage.md`에 둡니다.
+
+삭제가 애매한 legacy 또는 generated diagnostic artifact는 hold가 기본입니다. 안전 삭제는 `.pytest_cache`, `__pycache__`, bytecode, `core-api/target`, `frontend/app/dist` 같은 transient cache/build output으로 제한하며, gold/qrels/official denominator/eval query/source registry/index/silver/current report/status 표면은 정리 대상이 아닙니다.
