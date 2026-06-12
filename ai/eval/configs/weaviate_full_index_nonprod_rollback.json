@@ -1,0 +1,20 @@
+{
+  "selection": "weaviate_full_index_nonprod_rollback",
+  "rollback_key": "weaviate_full_index_nonprod_rollback",
+  "vector_db": "weaviate",
+  "url": "http://localhost:8080",
+  "grpc_port": 50051,
+  "collection": "SourceAtomNonprod",
+  "namespace": "actual_rag_eval_nonprod",
+  "visibility": "nonprod",
+  "schema_version_source_atom": "weaviate_source_atom_v1",
+  "index_manifest_path": "reports/rag_eval/weaviate_source_atom_index_manifest_nonprod/index_manifest.json",
+  "retrieval_route_mode": "full_index",
+  "route_planner_version": "weaviate_route_planner_v1",
+  "embedding_model": "BAAI/bge-m3",
+  "embedding_device": "auto",
+  "hybrid_alpha": 0.5,
+  "use_local_docker": true,
+  "fallback_used": false,
+  "fail_closed_on_unavailable": true
+}

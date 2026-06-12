@@ -31,7 +31,6 @@ python -X utf8 -m ai.scripts.rag_actual_eval \
   --judge-mode heuristic \
   --resolve-expected-evidence \
   --evidence-resolution-scope full-corpus-review-only \
-  --quality-gate-baseline auto \
   --append-registry \
   --write-latest \
   --compare-to previous
@@ -117,6 +116,39 @@ mode abstains with `제공된 근거만으로는 답할 수 없습니다.` when 
 SourceAtom/EvidenceBundle evidence or citation support is insufficient. The gate
 does not read expected answers, expected evidence, qrels, labels, legacy output,
 row IDs, or target IDs for enforcement, and it never starts a retrieval loop.
+
+Use `--answer-composer selected-evidence-deterministic-v1` only for the
+non-production selected-evidence composer experiment. The default is
+`extractive-v1`. The deterministic composer runs after retrieval and before the
+evidence gate, reads only query text plus selected SourceAtom/EvidenceBundle
+evidence, and narrows final citations to selected evidence. It must be paired
+with normal guardrail checks; retrieved-context-only citations remain
+diagnostic-only.
+
+Use `--selected-evidence-citation-format compact|evidence-id|source-locator|markdown-portfolio`
+to format selected-evidence citations for that composer. The formatter is
+display-only: final structured citations are still selected-evidence-only and
+the evidence gate remains authoritative. Markdown portfolio formatting writes no
+extra sidecar by itself.
+
+The deterministic composer includes the Checkpoint H query-focus repair behavior:
+it can use a full selected SourceAtom/EvidenceBundle passage when query anchors
+are split across lines, and the gate can match compact Korean query anchors
+against spaced Korean title text. The repair keeps the same CLI flags and
+report-only contract; no new gold/qrels/label, denominator, source-registry, or
+current alias mutation is required.
+
+For Weaviate `route_selected` runs, Checkpoint I also records bounded query-only
+alias variants under `weaviate_query_reformulation`. These variants are derived
+only from the query text, capped at 8, and merged before the existing
+route-selected duplicate/safety filters. Full-index rollback remains available
+through its separate config and does not use the route-selected variant path.
+
+Checkpoint J records bounded same-document residual probes under
+`weaviate_post_processing.same_doc_residual_*`. This path uses only SourceAtom
+`doc_id` values already returned by Weaviate plus the query variants; it does
+not scan the local corpus, use FAISS, call SearchUnit/SearchView, or read
+gold/expected/qrels/labels/IDs.
 
 `--append-registry` appends `reports/rag_eval/runs.jsonl` and a compact
 `actual_rag_eval_run` event to `ai/eval/reports/rag-ingestion/status.jsonl`.
@@ -220,15 +252,15 @@ metadata is stored as filterable context, not blindly treated as semantic
 evidence text. Existing v1 indexes are historical full-index baselines; do not
 rewrite them to make v2 claims.
 
-The active Weaviate eval backend is:
+The active Weaviate eval backend is the explicit route-selected non-production
+default config path:
 
 ```bash
 RAG_VECTOR_DB=weaviate \
 WEAVIATE_URL=http://localhost:8080 \
 WEAVIATE_GRPC_PORT=50051 \
-WEAVIATE_COLLECTION_SOURCE_ATOM=SourceAtomNonprod \
 WEAVIATE_NAMESPACE=actual_rag_eval_nonprod \
-WEAVIATE_INDEX_MANIFEST_PATH=reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_streaming_full/index_manifest.json \
+ACTUAL_RAG_EVAL_WEAVIATE_CONFIG_PATH=ai/eval/configs/weaviate_route_selected_nonprod_default.json \
 EMBEDDING_MODEL=BAAI/bge-m3 \
 EMBEDDING_DEVICE=auto \
 python -X utf8 -m ai.scripts.rag_actual_eval \
@@ -237,31 +269,188 @@ python -X utf8 -m ai.scripts.rag_actual_eval \
   --retrieval-backend weaviate-hybrid \
   --output-mode single \
   --evidence-resolution-scope full-corpus-review-only \
-  --quality-gate-baseline auto \
-  --run-id actual_rag_eval_text_gold_weaviate_hybrid_streaming_bge_m3_nonprod_20260612 \
+  --run-id actual_rag_eval_weaviate_route_selected_nonprod_default_report_only_20260612_v2 \
   --append-registry \
   --write-latest
 ```
 
-In this lane, metadata filters are sent to Weaviate, candidates are hydrated
-from Weaviate result payloads, and local source-native layered retrieval,
-diagnostic hash vectors, FAISS, local corpus scans, and SearchUnit/SearchView
-candidate surfaces are forbidden. If Weaviate is unavailable or a query fails,
-the run fails or is invalid with an explicit fallback reason; it must not
-complete by falling back to the local Python retrieval path.
+This routine command writes `report.json` only. The report must show
+active_retrieval_backend=`weaviate_hybrid`,
+active_retrieval_service_boundary=`weaviate`,
+collection=`SourceAtomNonprodRouteSelectedV2`,
+schema_version_source_atom=`weaviate_source_atom_v2`,
+route_planner_version=`weaviate_route_planner_v1`, route filters sent to
+Weaviate, fallback_used=false, fail_closed_on_unavailable=true, and
+rollback_key=`weaviate_full_index_nonprod_rollback`. In this lane, metadata
+filters are sent to Weaviate, candidates are hydrated from Weaviate result
+payloads, and local source-native layered retrieval, diagnostic hash vectors,
+FAISS, local corpus scans, and SearchUnit/SearchView candidate surfaces are
+forbidden. If Weaviate is unavailable or a query fails, the run fails or is
+invalid with an explicit fallback reason; it must not complete by falling back
+to the local Python retrieval path.
 
-For route-selected non-production A/B comparison, keep the default path
-unchanged and select the v2 non-production collection only for the explicit
-A/B run:
+For the selected-evidence citation-formatter portfolio checkpoint, keep the same
+route-selected Weaviate config and add the explicit composer, formatter, and evidence gate:
+
+```bash
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv \
+  --retrieval-surface source-native \
+  --retrieval-backend weaviate-hybrid \
+  --output-mode single \
+  --evidence-resolution-scope full-corpus-review-only \
+  --evidence-gate-mode enforce \
+  --answer-composer selected-evidence-deterministic-v1 \
+  --selected-evidence-citation-format markdown-portfolio \
+  --run-id actual_rag_eval_selected_evidence_citation_formatter_checkpoint_c_nonprod_20260612 \
+  --append-registry \
+  --write-latest
+```
+
+This checkpoint command also writes only `report.json`; portfolio markdown
+sidecars remain closed unless `--write-portfolio-experiment-summary` is used
+with explicit comparison reports.
+
+For the query-focus repair follow-on checkpoint, rerun the deterministic
+selected-evidence composer with the same route-selected Weaviate boundary:
+
+```bash
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv \
+  --retrieval-surface source-native \
+  --retrieval-backend weaviate-hybrid \
+  --output-mode single \
+  --evidence-resolution-scope full-corpus-review-only \
+  --evidence-gate-mode enforce \
+  --answer-composer selected-evidence-deterministic-v1 \
+  --selected-evidence-citation-format markdown-portfolio \
+  --run-id actual_rag_eval_selected_evidence_query_focus_repair_checkpoint_h_nonprod_20260612 \
+  --append-registry \
+  --write-latest
+```
+
+The first Checkpoint H report improved deterministic enforce allowed/blocked
+from `3/3` to `5/1`, kept retrieved-context-only citations at `0`, and kept
+unsupported-after-gate at `0.0`.
+
+For the optional local LLM selected-evidence composer checkpoint, keep the same
+route-selected Weaviate config and select the localhost-only composer explicitly:
+
+```bash
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv \
+  --retrieval-surface source-native \
+  --retrieval-backend weaviate-hybrid \
+  --output-mode single \
+  --evidence-resolution-scope full-corpus-review-only \
+  --evidence-gate-mode enforce \
+  --answer-composer selected-evidence-local-llm-v1 \
+  --selected-evidence-citation-format markdown-portfolio \
+  --run-id actual_rag_eval_selected_evidence_local_llm_checkpoint_d_nonprod_20260612 \
+  --append-registry \
+  --write-latest
+```
+
+This path reuses the existing local helper, rejects non-local endpoints, stores
+only hashes/bounded previews/backend metadata for prompt/response surfaces, and
+falls back deterministically when the helper is unavailable or unsupported. The
+first Checkpoint D report proved artifact hygiene but did not beat the
+deterministic composer under the evidence gate: allowed rows changed `3 -> 1`
+and blocked rows changed `3 -> 5` versus Checkpoint C, while
+unsupported-after-gate stayed `0.0`.
+
+For the bounded retry checkpoint, keep the local selected-evidence composer and
+enable a single evidence-gate-triggered retry explicitly:
+
+```bash
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv \
+  --retrieval-surface source-native \
+  --retrieval-backend weaviate-hybrid \
+  --output-mode single \
+  --evidence-resolution-scope full-corpus-review-only \
+  --evidence-gate-mode enforce \
+  --answer-composer selected-evidence-local-llm-v1 \
+  --selected-evidence-citation-format markdown-portfolio \
+  --selected-evidence-composer-retry-mode bounded-once \
+  --run-id actual_rag_eval_selected_evidence_retry_checkpoint_e_nonprod_20260612 \
+  --append-registry \
+  --write-latest
+```
+
+Retry input is limited to query text, selected evidence, missing query-focus
+anchors when present, and the previous bounded answer preview. Retry output is
+accepted only if the evidence gate allows it, and reports store hashes, bounded
+previews, status counts, and backend metadata rather than raw prompt/response
+payloads. The first Checkpoint E run attempted four retries, accepted none, and
+kept unsupported-after-gate at `0.0`, so it is fail-closed experiment evidence
+rather than an answer-quality improvement.
+
+For the report-only portfolio comparison checkpoint, first generate the selected
+matrix lanes, then run a final deterministic markdown portfolio report with
+explicit comparison inputs:
+
+```bash
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv \
+  --retrieval-surface source-native \
+  --retrieval-backend weaviate-hybrid \
+  --output-mode single \
+  --evidence-resolution-scope full-corpus-review-only \
+  --evidence-gate-mode enforce \
+  --answer-composer selected-evidence-deterministic-v1 \
+  --selected-evidence-citation-format markdown-portfolio \
+  --portfolio-comparison-report extractive_diagnostic=reports/rag_eval/<extractive_diagnostic_run>/report.json \
+  --portfolio-comparison-report extractive_enforce=reports/rag_eval/<extractive_enforce_run>/report.json \
+  --portfolio-comparison-report deterministic_diagnostic=reports/rag_eval/<deterministic_diagnostic_run>/report.json \
+  --portfolio-comparison-report local_llm_enforce=reports/rag_eval/<local_llm_run>/report.json \
+  --run-id actual_rag_eval_selected_evidence_comparison_checkpoint_f_report_nonprod_20260612 \
+  --append-registry \
+  --write-latest
+```
+
+This embeds `portfolio_experiment_comparison` in `report.json` only. Compared
+reports are post-run evidence, not generation inputs. The Checkpoint F report
+must keep `portfolio_experiment_sidecar_written=false`; the Markdown portfolio
+sidecar remains closed until a future explicit sidecar flag.
+
+To emit the portfolio sidecar explicitly, add
+`--write-portfolio-experiment-summary` to the same comparison command. The
+sidecar path is `reports/rag_eval/<run_id>/portfolio_experiment_summary.md`;
+the flag requires at least one `--portfolio-comparison-report` and renders from
+bounded comparison data only, without raw prompt/response payloads.
+
+Use the preserved full-index rollback config only when explicitly rolling back
+or comparing the baseline:
 
 ```bash
 RAG_VECTOR_DB=weaviate \
 WEAVIATE_URL=http://localhost:8080 \
 WEAVIATE_GRPC_PORT=50051 \
-WEAVIATE_COLLECTION_SOURCE_ATOM=SourceAtomNonprodRouteSelectedV2 \
 WEAVIATE_NAMESPACE=actual_rag_eval_nonprod \
-WEAVIATE_SCHEMA_VERSION=weaviate_source_atom_v2 \
-WEAVIATE_INDEX_MANIFEST_PATH=reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_route_selected_v2/index_manifest.json \
+ACTUAL_RAG_EVAL_WEAVIATE_CONFIG_PATH=ai/eval/configs/weaviate_full_index_nonprod_rollback.json \
+EMBEDDING_MODEL=BAAI/bge-m3 \
+EMBEDDING_DEVICE=auto \
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv \
+  --retrieval-surface source-native \
+  --retrieval-backend weaviate-hybrid \
+  --output-mode single \
+  --evidence-resolution-scope full-corpus-review-only \
+  --run-id actual_rag_eval_weaviate_full_index_nonprod_rollback_<date>
+```
+
+For route-selected non-production A/B comparison, use the route-selected default
+config and add `--weaviate-route-ab-mode text,mixed,routed` explicitly:
+
+```bash
+RAG_VECTOR_DB=weaviate \
+WEAVIATE_URL=http://localhost:8080 \
+WEAVIATE_GRPC_PORT=50051 \
+WEAVIATE_NAMESPACE=actual_rag_eval_nonprod \
+ACTUAL_RAG_EVAL_WEAVIATE_CONFIG_PATH=ai/eval/configs/weaviate_route_selected_nonprod_default.json \
+EMBEDDING_MODEL=BAAI/bge-m3 \
+EMBEDDING_DEVICE=auto \
 python -X utf8 -m ai.scripts.rag_actual_eval \
   --dataset ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv \
   --retrieval-surface source-native \
@@ -269,8 +458,7 @@ python -X utf8 -m ai.scripts.rag_actual_eval \
   --weaviate-route-ab-mode text,mixed,routed \
   --output-mode single \
   --evidence-resolution-scope full-corpus-review-only \
-  --quality-gate-baseline auto \
-  --run-id actual_rag_eval_weaviate_route_selected_hybrid_store_ab_nonprod_route_v2_cellcap_sanitized_20260612 \
+  --run-id actual_rag_eval_weaviate_route_selected_nonprod_default_ab_20260612_v2 \
   --append-registry \
   --write-latest
 ```

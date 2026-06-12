@@ -29,6 +29,12 @@ WEAVIATE_SOURCE_ATOM_SCHEMA_VERSIONS = frozenset(
 WEAVIATE_SOURCE_ATOM_INDEX_CHECKPOINT_VERSION = "weaviate_source_atom_index_checkpoint_v1"
 WEAVIATE_STREAMING_BGE_M3_VECTOR_SOURCE = "streaming-bge-m3"
 WEAVIATE_CANDIDATE_INPUT_POLICY = "query_text_and_query_embedding_only_no_gold_qrels_labels_ids_or_baseline"
+WEAVIATE_ROUTE_SELECTED_NONPROD_DEFAULT_CONFIG_PATH = (
+    "ai/eval/configs/weaviate_route_selected_nonprod_default.json"
+)
+WEAVIATE_FULL_INDEX_NONPROD_ROLLBACK_CONFIG_PATH = "ai/eval/configs/weaviate_full_index_nonprod_rollback.json"
+WEAVIATE_ROUTE_SELECTED_NONPROD_DEFAULT_KEY = "route_selected_nonprod_default"
+WEAVIATE_FULL_INDEX_NONPROD_ROLLBACK_KEY = "weaviate_full_index_nonprod_rollback"
 WEAVIATE_SOURCE_ATOM_REQUIRED_PROPERTIES = (
     "source_atom_id",
     "evidence_bundle_id",
@@ -185,6 +191,15 @@ WEAVIATE_RETRIEVAL_ROUTES = frozenset(
 )
 WEAVIATE_ROUTE_PLANNER_VERSION = "weaviate_route_planner_v1"
 WEAVIATE_ROUTE_TAXONOMY_VERSION = "weaviate_route_taxonomy_v1"
+WEAVIATE_QUERY_REFORMULATION_VERSION = "weaviate_query_reformulation_v1"
+WEAVIATE_QUERY_REFORMULATION_INPUT_POLICY = (
+    "query_text_only_bounded_alias_variants_no_gold_qrels_labels_ids_or_baseline"
+)
+WEAVIATE_QUERY_VARIANT_MERGE_POLICY = "bounded_round_robin_query_variant_rank_v1"
+WEAVIATE_MAX_QUERY_VARIANTS = 8
+WEAVIATE_SAME_DOC_RESIDUAL_RETRIEVAL_POLICY = "bounded_query_variant_same_doc_weaviate_v1"
+WEAVIATE_SAME_DOC_RESIDUAL_MAX_DOCS = 2
+WEAVIATE_SAME_DOC_RESIDUAL_TOP_K_PER_DOC = 3
 WEAVIATE_VECTORIZED_GRANULARITIES = frozenset(
     {
         "paragraph",
@@ -239,6 +254,95 @@ def _nonprod_namespace(value: str) -> bool:
 
 class WeaviateUnavailableError(RuntimeError):
     """Raised when the Weaviate lane cannot query Weaviate and must not fall back."""
+
+
+def _repo_relative_posix(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _resolve_repo_path(path_text: str) -> Path:
+    path = Path(path_text)
+    return path if path.is_absolute() else ROOT / path
+
+
+def _read_json_mapping(path: Path) -> dict[str, Any]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise WeaviateUnavailableError(f"weaviate_unavailable: config_path_missing:{path.as_posix()}") from exc
+    except json.JSONDecodeError as exc:
+        raise WeaviateUnavailableError(f"weaviate_unavailable: config_path_invalid_json:{path.as_posix()}") from exc
+    if not isinstance(data, Mapping):
+        raise WeaviateUnavailableError(f"weaviate_unavailable: config_path_not_object:{path.as_posix()}")
+    return dict(data)
+
+
+def _config_path_from_env(env: Mapping[str, str]) -> str:
+    return _clean(
+        env.get("ACTUAL_RAG_EVAL_WEAVIATE_CONFIG_PATH")
+        or env.get("WEAVIATE_SOURCE_ATOM_CONFIG_PATH")
+        or env.get("WEAVIATE_CONFIG_PATH")
+    )
+
+
+def _default_config_path_for_route_mode(route_mode: str | None) -> str:
+    normalized = _clean(route_mode).replace("-", "_").casefold()
+    if normalized == "full_index":
+        return WEAVIATE_FULL_INDEX_NONPROD_ROLLBACK_CONFIG_PATH
+    return WEAVIATE_ROUTE_SELECTED_NONPROD_DEFAULT_CONFIG_PATH
+
+
+def _rollback_report_from_config(data: Mapping[str, Any]) -> dict[str, Any]:
+    rollback = data.get("rollback") if isinstance(data.get("rollback"), Mapping) else {}
+    if rollback:
+        return {
+            "rollback_key": _clean(rollback.get("rollback_key")) or WEAVIATE_FULL_INDEX_NONPROD_ROLLBACK_KEY,
+            "config_path": _clean(rollback.get("config_path")) or WEAVIATE_FULL_INDEX_NONPROD_ROLLBACK_CONFIG_PATH,
+            "retrieval_route_mode": _clean(rollback.get("retrieval_route_mode")) or "full_index",
+            "collection": _clean(rollback.get("collection")) or "SourceAtomNonprod",
+            "schema_version_source_atom": _clean(rollback.get("schema_version_source_atom"))
+            or WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V1,
+            "index_manifest_path": _clean(rollback.get("index_manifest_path"))
+            or "reports/rag_eval/weaviate_source_atom_index_manifest_nonprod/index_manifest.json",
+        }
+    return {
+        "rollback_key": _clean(data.get("rollback_key")) or WEAVIATE_FULL_INDEX_NONPROD_ROLLBACK_KEY,
+        "config_path": _clean(data.get("config_path")) or WEAVIATE_FULL_INDEX_NONPROD_ROLLBACK_CONFIG_PATH,
+        "retrieval_route_mode": _clean(data.get("retrieval_route_mode")) or "full_index",
+        "collection": _clean(data.get("collection")) or "SourceAtomNonprod",
+        "schema_version_source_atom": _clean(data.get("schema_version_source_atom"))
+        or WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V1,
+        "index_manifest_path": _clean(data.get("index_manifest_path"))
+        or "reports/rag_eval/weaviate_source_atom_index_manifest_nonprod/index_manifest.json",
+    }
+
+
+def _implicit_weaviate_config_report(config: "WeaviateSourceAtomConfig", route_mode: str) -> dict[str, Any]:
+    rollback = {
+        "rollback_key": WEAVIATE_FULL_INDEX_NONPROD_ROLLBACK_KEY,
+        "config_path": WEAVIATE_FULL_INDEX_NONPROD_ROLLBACK_CONFIG_PATH,
+        "retrieval_route_mode": "full_index",
+        "collection": "SourceAtomNonprod",
+        "schema_version_source_atom": WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V1,
+        "index_manifest_path": "reports/rag_eval/weaviate_source_atom_index_manifest_nonprod/index_manifest.json",
+    }
+    return {
+        "selection": "manual_weaviate_adapter_config",
+        "config_path": "",
+        "explicit_nonprod_config_path": False,
+        "retrieval_route_mode": route_mode,
+        "active_retrieval_service_boundary": "weaviate",
+        "collection": config.collection_name,
+        "schema_version_source_atom": config.schema_version,
+        "index_manifest_path": config.index_manifest_path,
+        "fallback_used": False,
+        "fail_closed_on_unavailable": True,
+        "rollback_key": rollback["rollback_key"],
+        "rollback": rollback,
+    }
 
 
 class WeaviateSourceAtomClientProtocol(Protocol):
@@ -417,6 +521,75 @@ class WeaviateSourceAtomConfig:
                 else "weaviate_not_invoked"
             ),
         }
+
+
+def load_weaviate_adapter_config_path(
+    *,
+    requested_route_mode: str | None = None,
+    config_path: str | None = None,
+    env: Mapping[str, str] | None = None,
+) -> tuple[WeaviateSourceAtomConfig, str, dict[str, Any]]:
+    source = env if env is not None else os.environ
+    requested_route_mode_normalized = _clean(requested_route_mode).replace("-", "_").casefold()
+    requested_path = _clean(config_path)
+    env_config_path = "" if requested_route_mode_normalized else _config_path_from_env(source)
+    selected_path_text = (
+        requested_path
+        or env_config_path
+        or _default_config_path_for_route_mode(requested_route_mode_normalized or None)
+    )
+    selected_path = _resolve_repo_path(selected_path_text)
+    data = _read_json_mapping(selected_path)
+    selection = _clean(data.get("selection") or data.get("config_key")) or WEAVIATE_ROUTE_SELECTED_NONPROD_DEFAULT_KEY
+    configured_route_mode = _clean(data.get("retrieval_route_mode")).replace("-", "_").casefold()
+    route_mode = requested_route_mode_normalized or configured_route_mode
+    if route_mode not in WEAVIATE_RETRIEVAL_ROUTE_MODES:
+        raise WeaviateUnavailableError(f"weaviate_unavailable: unsupported_route_mode:{route_mode}")
+    fallback_used = bool(data.get("fallback_used"))
+    fail_closed_on_unavailable = data.get("fail_closed_on_unavailable") is not False
+    if fallback_used:
+        raise WeaviateUnavailableError(f"weaviate_unavailable: config_enables_fallback:{selected_path.as_posix()}")
+    if not fail_closed_on_unavailable:
+        raise WeaviateUnavailableError(f"weaviate_unavailable: config_not_fail_closed:{selected_path.as_posix()}")
+
+    env_for_config = dict(source)
+    config_overrides = {
+        "RAG_VECTOR_DB": _clean(data.get("vector_db")) or "weaviate",
+        "WEAVIATE_URL": _clean(data.get("url")) or _clean(source.get("WEAVIATE_URL")) or "http://localhost:8080",
+        "WEAVIATE_GRPC_PORT": _clean(data.get("grpc_port")) or _clean(source.get("WEAVIATE_GRPC_PORT")) or "50051",
+        "WEAVIATE_COLLECTION_SOURCE_ATOM": _clean(data.get("collection")) or _clean(data.get("collection_name")),
+        "WEAVIATE_NAMESPACE": _clean(data.get("namespace")) or "actual_rag_eval_nonprod",
+        "WEAVIATE_VISIBILITY": _clean(data.get("visibility")) or "nonprod",
+        "WEAVIATE_SCHEMA_VERSION": _clean(data.get("schema_version_source_atom")) or _clean(data.get("schema_version")),
+        "WEAVIATE_INDEX_MANIFEST_PATH": _clean(data.get("index_manifest_path")),
+        "WEAVIATE_HYBRID_ALPHA": _clean(data.get("hybrid_alpha")) or "0.5",
+        "WEAVIATE_USE_LOCAL_DOCKER": _clean(data.get("use_local_docker")) or "true",
+        "EMBEDDING_MODEL": _clean(data.get("embedding_model")) or "BAAI/bge-m3",
+        "EMBEDDING_DEVICE": _clean(data.get("embedding_device")) or _clean(source.get("EMBEDDING_DEVICE")) or "auto",
+    }
+    env_for_config.update({key: value for key, value in config_overrides.items() if value})
+    config = WeaviateSourceAtomConfig.from_env(env_for_config)
+    config.validate_for_nonprod()
+    rollback_report = _rollback_report_from_config(data)
+    selection_report = {
+        "selection": selection,
+        "config_path": _repo_relative_posix(selected_path),
+        "explicit_nonprod_config_path": True,
+        "retrieval_route_mode": route_mode,
+        "active_retrieval_backend": "weaviate_hybrid",
+        "active_retrieval_service_boundary": "weaviate",
+        "collection": config.collection_name,
+        "schema_version_source_atom": config.schema_version,
+        "route_planner_version": WEAVIATE_ROUTE_PLANNER_VERSION,
+        "index_manifest_path": config.index_manifest_path,
+        "namespace": config.namespace,
+        "visibility": config.visibility,
+        "fallback_used": False,
+        "fail_closed_on_unavailable": True,
+        "rollback_key": rollback_report["rollback_key"],
+        "rollback": rollback_report,
+    }
+    return config, route_mode, selection_report
 
 
 def build_weaviate_source_atom_schema(config: WeaviateSourceAtomConfig) -> dict[str, Any]:
@@ -689,6 +862,98 @@ def plan_weaviate_retrieval_route(query_text: str) -> dict[str, Any]:
         reasons=["ambiguous_or_cross_family_query"],
         confidence=0.42,
     )
+
+
+def _apply_query_alias_replacements(query: str, replacements: Mapping[str, str]) -> str:
+    variant = query
+    for source, replacement in replacements.items():
+        variant = variant.replace(source, replacement)
+    return " ".join(variant.split())
+
+
+def plan_weaviate_query_variants(query_text: str) -> dict[str, Any]:
+    query = _clean(query_text)
+    variants: list[str] = []
+    reasons: list[str] = []
+
+    def add_variant(variant: str, reason: str) -> None:
+        cleaned = _clean(variant)
+        if not cleaned or cleaned in variants or len(variants) >= WEAVIATE_MAX_QUERY_VARIANTS:
+            return
+        variants.append(cleaned)
+        if reason not in reasons:
+            reasons.append(reason)
+
+    add_variant(query, "original_query")
+    if not query:
+        return {
+            "version": WEAVIATE_QUERY_REFORMULATION_VERSION,
+            "enabled": False,
+            "query_variants": variants,
+            "query_variant_count": len(variants),
+            "max_query_variants": WEAVIATE_MAX_QUERY_VARIANTS,
+            "query_variant_merge_policy": WEAVIATE_QUERY_VARIANT_MERGE_POLICY,
+            "input_policy": WEAVIATE_QUERY_REFORMULATION_INPUT_POLICY,
+            "candidate_generation_input_policy": WEAVIATE_CANDIDATE_INPUT_POLICY,
+            "uses_gold_fields": False,
+            "uses_expected_fields": False,
+            "uses_qrels": False,
+            "uses_labels": False,
+            "uses_ids": False,
+            "uses_baseline_topk": False,
+            "uses_legacy_outputs": False,
+            "reasons": reasons,
+        }
+
+    alias_replacements: dict[str, tuple[str, ...]] = {
+        "엑스맨": ("X-Men",),
+        "구십칠": ("97", "'97"),
+        "애드버서리": ("Adversary", "어드버서리"),
+    }
+    active_aliases = {
+        source: replacements for source, replacements in alias_replacements.items() if source in query
+    }
+    if active_aliases:
+        primary_replacements = {source: replacements[0] for source, replacements in active_aliases.items()}
+        add_variant(_apply_query_alias_replacements(query, primary_replacements), "primary_query_alias_expansion")
+
+    if "엑스맨" in active_aliases and "구십칠" in active_aliases:
+        title_replacements = {"엑스맨": "X-Men", "구십칠": "'97"}
+        if "애드버서리" in active_aliases:
+            title_replacements["애드버서리"] = "Adversary"
+        add_variant(_apply_query_alias_replacements(query, title_replacements), "title_number_entity_alias_expansion")
+
+    for source, replacements in active_aliases.items():
+        for replacement in replacements:
+            add_variant(
+                _apply_query_alias_replacements(query, {source: replacement}),
+                f"single_query_alias:{source}",
+            )
+
+    if "엑스맨" in active_aliases and "구십칠" in active_aliases:
+        add_variant(
+            _apply_query_alias_replacements(query, {"엑스맨": "X-Men", "구십칠": "97"}),
+            "title_number_alias_expansion",
+        )
+
+    return {
+        "version": WEAVIATE_QUERY_REFORMULATION_VERSION,
+        "enabled": len(variants) > 1,
+        "query_variants": variants,
+        "query_variant_count": len(variants),
+        "max_query_variants": WEAVIATE_MAX_QUERY_VARIANTS,
+        "query_variant_merge_policy": WEAVIATE_QUERY_VARIANT_MERGE_POLICY,
+        "input_policy": WEAVIATE_QUERY_REFORMULATION_INPUT_POLICY,
+        "candidate_generation_input_policy": WEAVIATE_CANDIDATE_INPUT_POLICY,
+        "uses_gold_fields": False,
+        "uses_expected_fields": False,
+        "uses_qrels": False,
+        "uses_labels": False,
+        "uses_ids": False,
+        "uses_baseline_topk": False,
+        "uses_legacy_outputs": False,
+        "reasons": reasons,
+    }
 
 
 def _require_source_atom_record(record: Mapping[str, Any]) -> None:
@@ -2181,6 +2446,7 @@ class WeaviateSourceAtomAdapter:
         requested_backend: str = "weaviate-hybrid",
         retrieval_route_mode: str = "full_index",
         route_filter_fields_available: Mapping[str, bool] | None = None,
+        default_config_report: Mapping[str, Any] | None = None,
     ) -> None:
         normalized = WEAVIATE_BACKEND_ALIASES.get(_clean(requested_backend).casefold())
         if normalized is None:
@@ -2198,6 +2464,11 @@ class WeaviateSourceAtomAdapter:
         self.requested_backend = _clean(requested_backend)
         self.selected_backend = normalized
         self.retrieval_route_mode = normalized_route_mode
+        self.default_config_report = (
+            dict(default_config_report)
+            if isinstance(default_config_report, Mapping)
+            else _implicit_weaviate_config_report(config, normalized_route_mode)
+        )
         self._route_filter_fields_available_override = dict(route_filter_fields_available or {})
         self.generator = ExtractiveGenerator()
         self._reachable = False
@@ -2210,8 +2481,15 @@ class WeaviateSourceAtomAdapter:
         self._neighbor_expansion_added_count = 0
         self._neighbor_expansion_query_count = 0
         self._neighbor_expansion_latency_ms: list[float] = []
+        self._same_doc_residual_query_count = 0
+        self._same_doc_residual_added_count = 0
+        self._same_doc_residual_expanded_item_count = 0
+        self._same_doc_residual_latency_ms: list[float] = []
         self._candidate_counts: dict[str, list[int]] = {"bm25": [], "vector": [], "hybrid": []}
         self._latencies: dict[str, list[float]] = {"bm25": [], "vector": [], "hybrid": []}
+        self._query_variant_counts: list[int] = []
+        self._query_variant_expanded_item_count = 0
+        self._last_query_variant_plan: dict[str, Any] = {}
         self._vector_dim = 0
         self._index_manifest: dict[str, Any] | None = None
 
@@ -2355,6 +2633,7 @@ class WeaviateSourceAtomAdapter:
 
     @property
     def config(self) -> dict[str, Any]:
+        default_config = dict(self.default_config_report)
         return {
             "adapter": "weaviate_source_atom_retrieval",
             "surface": "source_native",
@@ -2369,6 +2648,11 @@ class WeaviateSourceAtomAdapter:
             "external_api_calls": True,
             "weaviate_collection_name": self.config_obj.collection_name,
             "weaviate_schema_version": self.config_obj.schema_version,
+            "weaviate_default_config": default_config,
+            "rollback_key": _clean(default_config.get("rollback_key")),
+            "rollback_config": dict(default_config.get("rollback") or {}),
+            "fallback_used": bool(default_config.get("fallback_used", False)),
+            "fail_closed_on_unavailable": bool(default_config.get("fail_closed_on_unavailable", True)),
         }
 
     @property
@@ -2376,6 +2660,20 @@ class WeaviateSourceAtomAdapter:
         latency_hybrid = _latency_distribution_ms(self._latencies["hybrid"])
         indexed_object_count = self._indexed_object_count()
         manifest = self._load_index_manifest()
+        default_config = dict(self.default_config_report)
+        rollback_config = dict(default_config.get("rollback") or {})
+        route_filters_sent = dict(self._last_filter_policy.get("filters") or self._base_filters())
+        promotion_blockers: list[str] = []
+        if self.retrieval_route_mode != "route_selected":
+            promotion_blockers.append("route_selected_default_not_active")
+        if self._query_count <= 0:
+            promotion_blockers.append("weaviate_not_invoked")
+        if self.retrieval_route_mode == "route_selected" and not self._last_filter_policy.get("route_filter_sent"):
+            promotion_blockers.append("route_selected_weaviate_route_filters_not_sent")
+        if self._post_filter_removed_count > 0:
+            promotion_blockers.append("route_filter_safety_post_filter_removed_contexts")
+        promotion_blockers.append("route_ab_comparative_gate_not_run_in_routine_single_mode")
+        promotion_decision = "blocked_keep_full_index_rollback" if promotion_blockers else "promote_route_selected_nonprod_default"
         raw_vectorized_count = manifest.get("vectorized_object_count")
         vectorized_object_count = (
             max(0, int(raw_vectorized_count)) if isinstance(raw_vectorized_count, int) else indexed_object_count
@@ -2426,6 +2724,7 @@ class WeaviateSourceAtomAdapter:
         return {
             "active_retrieval_backend": self.selected_backend,
             "active_retrieval_service_boundary": "weaviate",
+            "collection": self.config_obj.collection_name,
             "python_local_corpus_scan_used_for_candidate_generation": False,
             "source_native_layered_retrieval_used_for_candidate_generation": False,
             "diagnostic_hash_vector_used": False,
@@ -2437,6 +2736,23 @@ class WeaviateSourceAtomAdapter:
             "weaviate_index_manifest_path": self.config_obj.index_manifest_path,
             "weaviate_indexed_object_count": indexed_object_count,
             "index_object_count": indexed_object_count,
+            "route_planner_version": WEAVIATE_ROUTE_PLANNER_VERSION,
+            "route_filters_sent_to_weaviate": route_filters_sent,
+            "fallback_used": bool(default_config.get("fallback_used", False)),
+            "fail_closed_on_unavailable": bool(default_config.get("fail_closed_on_unavailable", True)),
+            "weaviate_default_config": default_config,
+            "rollback_key": _clean(default_config.get("rollback_key")),
+            "rollback_config": rollback_config,
+            "promotion_decision": promotion_decision,
+            "promotion_blockers": promotion_blockers,
+            "weaviate_invoked": self._query_count > 0,
+            "local_fallback_surfaces": False,
+            "residual_risks": [
+                "route-selected default remains non-production diagnostic until fresh text and mixed diagnostic runs are reviewed",
+                "full-index Weaviate rollback must remain available through rollback_config",
+                "answer composition is still extractive-v1; selected EvidenceBundle-only citation formatting is the next lane",
+            ],
+            "next_recommended_goal": "selected_evidence_answer_composer_citation_formatter_nonprod",
             "vectorized_object_count": vectorized_object_count,
             "metadata_only_object_count": metadata_only_object_count,
             "vectorized_object_ratio": round(vectorized_object_ratio, 6),
@@ -2455,6 +2771,29 @@ class WeaviateSourceAtomAdapter:
             )
             if self._query_count
             else 0.0,
+            "weaviate_query_reformulation": {
+                "version": WEAVIATE_QUERY_REFORMULATION_VERSION,
+                "enabled": self._query_variant_expanded_item_count > 0,
+                "expanded_item_count": self._query_variant_expanded_item_count,
+                "item_count": self._query_count,
+                "query_variant_count_avg": round(
+                    sum(self._query_variant_counts) / float(len(self._query_variant_counts)), 6
+                )
+                if self._query_variant_counts
+                else 0.0,
+                "last_query_variant_count": int(self._last_query_variant_plan.get("query_variant_count") or 0),
+                "max_query_variants": WEAVIATE_MAX_QUERY_VARIANTS,
+                "query_variant_merge_policy": WEAVIATE_QUERY_VARIANT_MERGE_POLICY,
+                "input_policy": WEAVIATE_QUERY_REFORMULATION_INPUT_POLICY,
+                "candidate_generation_input_policy": WEAVIATE_CANDIDATE_INPUT_POLICY,
+                "uses_gold_fields": False,
+                "uses_expected_fields": False,
+                "uses_qrels": False,
+                "uses_labels": False,
+                "uses_ids": False,
+                "uses_baseline_topk": False,
+                "uses_legacy_outputs": False,
+            },
             "weaviate_hybrid_alpha": self.config_obj.hybrid_alpha if self.selected_backend == "weaviate_hybrid" else None,
             "weaviate_filter_sent": bool(self._last_filter_policy.get("weaviate_filter_sent", True)),
             "weaviate_filter_policy": dict(self._last_filter_policy)
@@ -2478,6 +2817,7 @@ class WeaviateSourceAtomAdapter:
     @property
     def weaviate_post_processing_report(self) -> dict[str, Any]:
         latency = _latency_distribution_ms(self._neighbor_expansion_latency_ms)
+        same_doc_latency = _latency_distribution_ms(self._same_doc_residual_latency_ms)
         return {
             "duplicate_collapse_enabled": True,
             "duplicate_collapse_policy": "route_selected_structural_diversity_doc_cap_v2",
@@ -2492,6 +2832,21 @@ class WeaviateSourceAtomAdapter:
             "python_local_corpus_scan_used_for_neighbor_expansion": False,
             "faiss_used_for_neighbor_expansion": False,
             "searchunit_searchview_used_for_neighbor_expansion": False,
+            "same_doc_residual_retrieval_enabled": self._same_doc_residual_query_count > 0,
+            "same_doc_residual_expanded_item_count": self._same_doc_residual_expanded_item_count,
+            "same_doc_residual_query_count": self._same_doc_residual_query_count,
+            "same_doc_residual_added_count": self._same_doc_residual_added_count,
+            "same_doc_residual_policy": WEAVIATE_SAME_DOC_RESIDUAL_RETRIEVAL_POLICY,
+            "same_doc_residual_max_docs": WEAVIATE_SAME_DOC_RESIDUAL_MAX_DOCS,
+            "same_doc_residual_top_k_per_doc": WEAVIATE_SAME_DOC_RESIDUAL_TOP_K_PER_DOC,
+            "same_doc_residual_latency_ms_p50": same_doc_latency["p50"],
+            "same_doc_residual_latency_ms_p95": same_doc_latency["p95"],
+            "same_doc_residual_candidate_generation": (
+                "weaviate_doc_id_filter_plus_query_variants_no_gold_qrels_labels_ids_or_baseline"
+            ),
+            "python_local_corpus_scan_used_for_same_doc_residual": False,
+            "faiss_used_for_same_doc_residual": False,
+            "searchunit_searchview_used_for_same_doc_residual": False,
         }
 
     @property
@@ -2644,6 +2999,135 @@ class WeaviateSourceAtomAdapter:
         self._candidate_counts[mode].append(len(contexts))
         self._latencies[mode].append(latency)
         return contexts, latency
+
+    def _query_variant_plan(self, query: str) -> dict[str, Any]:
+        plan = plan_weaviate_query_variants(query)
+        if self.retrieval_route_mode != "route_selected":
+            variants = [_clean(query)] if _clean(query) else []
+            return {
+                **plan,
+                "enabled": False,
+                "query_variants": variants,
+                "query_variant_count": len(variants),
+                "disabled_reason": f"route_mode_{self.retrieval_route_mode}_uses_single_query",
+            }
+        return plan
+
+    def _round_robin_query_variant_contexts(
+        self,
+        variant_contexts: Sequence[Sequence[Mapping[str, Any]]],
+        *,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
+        merged: list[dict[str, Any]] = []
+        limit = max(0, int(top_k))
+        if limit <= 0:
+            return merged
+        for rank_index in range(limit):
+            for contexts in variant_contexts:
+                if rank_index >= len(contexts):
+                    continue
+                merged.append(dict(contexts[rank_index]))
+        return merged
+
+    def _query_mode_with_variants(
+        self,
+        mode: str,
+        query_variant_plan: Mapping[str, Any],
+        *,
+        top_k: int,
+        filters: Mapping[str, Any],
+    ) -> tuple[list[dict[str, Any]], float]:
+        variants = [_clean(variant) for variant in query_variant_plan.get("query_variants") or [] if _clean(variant)]
+        if not variants:
+            return [], 0.0
+        variant_contexts: list[list[dict[str, Any]]] = []
+        total_latency = 0.0
+        for variant_index, variant in enumerate(variants, start=1):
+            query_vector = self._query_vector(variant) if mode in {"vector", "hybrid"} else []
+            contexts, latency = self._query_mode(
+                mode,
+                variant,
+                query_vector,
+                top_k=top_k,
+                filters=filters,
+            )
+            for context in contexts:
+                context["query_variant_provenance"] = [variant]
+                context["query_variant_rank"] = variant_index
+                context["query_variant_planner_version"] = WEAVIATE_QUERY_REFORMULATION_VERSION
+            variant_contexts.append(contexts)
+            total_latency += latency
+        return self._round_robin_query_variant_contexts(variant_contexts, top_k=top_k), round(total_latency, 6)
+
+    def _same_doc_residual_doc_ids(self, contexts: Sequence[Mapping[str, Any]]) -> list[str]:
+        doc_ids: list[str] = []
+        for context in contexts:
+            if _clean(context.get("source_family")) != "TEXT":
+                continue
+            doc_id = _clean(context.get("doc_id"))
+            if doc_id and doc_id not in doc_ids:
+                doc_ids.append(doc_id)
+            if len(doc_ids) >= WEAVIATE_SAME_DOC_RESIDUAL_MAX_DOCS:
+                break
+        return doc_ids
+
+    def _query_same_doc_residual_contexts(
+        self,
+        mode: str,
+        query_variant_plan: Mapping[str, Any],
+        contexts: Sequence[Mapping[str, Any]],
+        *,
+        filters: Mapping[str, Any],
+    ) -> list[dict[str, Any]]:
+        if self.retrieval_route_mode != "route_selected":
+            return []
+        if int(query_variant_plan.get("query_variant_count") or 0) <= 1:
+            return []
+        doc_ids = self._same_doc_residual_doc_ids(contexts)
+        if not doc_ids:
+            return []
+        existing_ids = {_clean(context.get("source_atom_id")) for context in contexts if _clean(context.get("source_atom_id"))}
+        added: list[dict[str, Any]] = []
+        queries_before = self._weaviate_query_call_count
+        for doc_id in doc_ids:
+            residual_filters = dict(filters)
+            residual_filters["doc_id"] = doc_id
+            started = time.perf_counter()
+            candidates, _latency = self._query_mode_with_variants(
+                mode,
+                query_variant_plan,
+                top_k=WEAVIATE_SAME_DOC_RESIDUAL_TOP_K_PER_DOC,
+                filters=residual_filters,
+            )
+            self._same_doc_residual_latency_ms.append(round((time.perf_counter() - started) * 1000, 6))
+            candidates, removed = self._safety_filter_contexts(candidates, filters=filters)
+            self._post_filter_removed_count += removed
+            for candidate in candidates:
+                source_atom_id = _clean(candidate.get("source_atom_id"))
+                if source_atom_id and source_atom_id in existing_ids:
+                    continue
+                if _clean(candidate.get("doc_id")) != doc_id:
+                    continue
+                row = dict(candidate)
+                row["same_doc_residual_expansion_policy"] = WEAVIATE_SAME_DOC_RESIDUAL_RETRIEVAL_POLICY
+                row["same_doc_residual_source_doc_id"] = doc_id
+                row["same_doc_residual_candidate_generation"] = (
+                    "weaviate_doc_id_filter_plus_query_variants_no_gold_qrels_labels_ids_or_baseline"
+                )
+                added.append(row)
+                if source_atom_id:
+                    existing_ids.add(source_atom_id)
+                if len(added) >= WEAVIATE_SAME_DOC_RESIDUAL_TOP_K_PER_DOC:
+                    break
+            if len(added) >= WEAVIATE_SAME_DOC_RESIDUAL_TOP_K_PER_DOC:
+                break
+        query_delta = self._weaviate_query_call_count - queries_before
+        self._same_doc_residual_query_count += max(0, query_delta)
+        if added:
+            self._same_doc_residual_added_count += len(added)
+            self._same_doc_residual_expanded_item_count += 1
+        return added
 
     def _structural_key(self, context: Mapping[str, Any]) -> str:
         source_family = _clean(context.get("source_family"))
@@ -2827,17 +3311,29 @@ class WeaviateSourceAtomAdapter:
         query = _clean(getattr(item, "query", ""))
         filters, route_plan = self._lane_filter_plan(query)
         self._last_filter_policy = dict(route_plan.get("weaviate_filter_policy") or {})
-        query_vector = self._query_vector(query)
+        query_variant_plan = self._query_variant_plan(query)
+        query_variant_count = int(query_variant_plan.get("query_variant_count") or 0)
+        self._query_variant_counts.append(query_variant_count)
+        self._last_query_variant_plan = dict(query_variant_plan)
+        if query_variant_count > 1:
+            self._query_variant_expanded_item_count += 1
         selected_mode = WEAVIATE_QUERY_MODES[self.selected_backend]
-        selected_contexts, selected_latency = self._query_mode(
+        selected_contexts, selected_latency = self._query_mode_with_variants(
             selected_mode,
-            query,
-            query_vector,
+            query_variant_plan,
             top_k=top_k,
             filters=filters,
         )
         selected_contexts, post_filter_removed_count = self._safety_filter_contexts(selected_contexts, filters=filters)
         self._post_filter_removed_count += post_filter_removed_count
+        same_doc_residual_contexts = self._query_same_doc_residual_contexts(
+            selected_mode,
+            query_variant_plan,
+            selected_contexts,
+            filters=filters,
+        )
+        if same_doc_residual_contexts:
+            selected_contexts = [*same_doc_residual_contexts, *selected_contexts]
         selected_contexts = self._post_process_selected_contexts(
             selected_contexts,
             filters=filters,
@@ -2855,6 +3351,7 @@ class WeaviateSourceAtomAdapter:
             vector_contexts, vector_latency = selected_contexts, selected_latency
         else:
             hybrid_contexts, hybrid_latency = selected_contexts, selected_latency
+            query_vector = self._query_vector(query)
             vector_contexts, vector_latency = self._query_mode("vector", query, query_vector, top_k=top_k, filters=filters)
             vector_contexts, removed = self._safety_filter_contexts(vector_contexts, filters=filters)
             self._post_filter_removed_count += removed
@@ -2875,6 +3372,21 @@ class WeaviateSourceAtomAdapter:
             },
             "weaviate_filter_policy": dict(route_plan.get("weaviate_filter_policy") or {}),
             "weaviate_filter_sent": bool((route_plan.get("weaviate_filter_policy") or {}).get("weaviate_filter_sent")),
+            "weaviate_query_reformulation": dict(query_variant_plan),
+            "weaviate_same_doc_residual_retrieval": {
+                "enabled": bool(same_doc_residual_contexts),
+                "policy": WEAVIATE_SAME_DOC_RESIDUAL_RETRIEVAL_POLICY,
+                "query_count": self._same_doc_residual_query_count,
+                "added_count": len(same_doc_residual_contexts),
+                "candidate_generation": "weaviate_doc_id_filter_plus_query_variants_no_gold_qrels_labels_ids_or_baseline",
+                "uses_gold_fields": False,
+                "uses_expected_fields": False,
+                "uses_qrels": False,
+                "uses_labels": False,
+                "uses_ids": False,
+                "uses_baseline_topk": False,
+                "uses_legacy_outputs": False,
+            },
             "python_post_filter_only_safety_validation": True,
             "post_filter_removed_count": post_filter_removed_count,
             "weaviate_post_processing": self.weaviate_post_processing_report,
@@ -2925,12 +3437,11 @@ class WeaviateSourceAtomAdapter:
     def evidence_candidates(self, query: str, *, top_k: int) -> list[dict[str, Any]]:
         if not self._validated:
             self.validate_ready_for_run()
-        query_vector = self._query_vector(query)
         filters, _route_plan = self._lane_filter_plan(query)
-        contexts, _latency = self._query_mode(
+        query_variant_plan = self._query_variant_plan(query)
+        contexts, _latency = self._query_mode_with_variants(
             WEAVIATE_QUERY_MODES[self.selected_backend],
-            query,
-            query_vector,
+            query_variant_plan,
             top_k=top_k,
             filters=filters,
         )
@@ -2947,11 +3458,20 @@ class WeaviateSourceAtomAdapter:
 def build_default_weaviate_adapter(
     *,
     requested_backend: str,
-    retrieval_route_mode: str = "full_index",
+    retrieval_route_mode: str | None = None,
+    config_path: str | None = None,
+    client: WeaviateSourceAtomClientProtocol | None = None,
+    embedding_provider: Any | None = None,
 ) -> WeaviateSourceAtomAdapter:
-    config = WeaviateSourceAtomConfig.from_env()
+    config, selected_route_mode, config_report = load_weaviate_adapter_config_path(
+        requested_route_mode=retrieval_route_mode,
+        config_path=config_path,
+    )
     return WeaviateSourceAtomAdapter(
         config=config,
+        client=client,
+        embedding_provider=embedding_provider,
         requested_backend=requested_backend,
-        retrieval_route_mode=retrieval_route_mode,
+        retrieval_route_mode=selected_route_mode,
+        default_config_report=config_report,
     )

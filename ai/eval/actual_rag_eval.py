@@ -33,6 +33,7 @@ from ai.eval.weaviate_source_atom import (
     build_default_weaviate_adapter,
     plan_weaviate_retrieval_route,
 )
+from scripts import rag_local_llm_expected_answer_generation_v1 as LOCAL_LLM_HELPER
 
 
 ANSWERABILITY_VALUES = {"answerable", "unanswerable", "unknown"}
@@ -42,10 +43,18 @@ SCHEMA_VERSION = "actual_rag_eval.v1"
 REGISTRY_SCHEMA_VERSION = "actual_rag_eval.run_registry.v1"
 LATEST_POINTER_SCHEMA_VERSION = "actual_rag_eval.latest_pointer.v1"
 STATUS_EVENT_SCHEMA_VERSION = "actual_rag_eval.run_status_event.v1"
+PORTFOLIO_COMPARISON_SCHEMA_VERSION = "actual_rag_eval.portfolio_experiment_comparison.v1"
+CORPUS_COVERAGE_AUDIT_SCHEMA_VERSION = "actual_rag_eval.corpus_coverage_audit.v1"
 REPORT_ROOT = ROOT / "reports" / "rag_eval"
 STATUS_JSONL_PATH = AI_DIR / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
 SOURCE_NATIVE_DIAGNOSTIC_INDEX_DIR = AI_DIR / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-v1"
 SOURCE_NATIVE_BGE_M3_INDEX_DIR = AI_DIR / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-bge-m3-v1"
+TEXT_NAMU_V2_0014_ADVERSARY_AUDIT_ANCHORS = (
+    "Adversary",
+    "Alison Sealy-Smith",
+    "애드버서리",
+    "앨리슨 실리스미스",
+)
 
 
 def _source_native_index_has_bge_m3_artifacts(index_dir: Path) -> bool:
@@ -1248,7 +1257,20 @@ def _evidence_resolution_anchors(item: EvalItem, evidence: ExpectedEvidence) -> 
 def _anchor_in_text(anchors: Iterable[str], text: str) -> bool:
     normalized = normalize_answer_text(text)
     token_set = set(normalized.split())
-    return any(anchor and (anchor in token_set or anchor in normalized) for anchor in anchors)
+    compact_korean = re.sub(r"\s+", "", normalized) if re.search(r"[가-힣]", normalized) else ""
+    for anchor in anchors:
+        if not anchor:
+            continue
+        if anchor in token_set or anchor in normalized:
+            return True
+        if (
+            compact_korean
+            and len(anchor) >= 3
+            and re.fullmatch(r"[가-힣]+", anchor)
+            and anchor in compact_korean
+        ):
+            return True
+    return False
 
 
 def _numeric_or_date_anchors(anchors: Iterable[str]) -> set[str]:
@@ -6153,6 +6175,548 @@ def build_run_comparison(
     }
 
 
+def _portfolio_comparison_ref(value: str) -> tuple[str, Path]:
+    raw = _clean(value)
+    if not raw:
+        raise DatasetSchemaError("portfolio comparison report reference cannot be empty")
+    if "=" in raw:
+        label, path_text = raw.split("=", 1)
+        label = _clean(label)
+        path_text = _clean(path_text)
+        if not label:
+            raise DatasetSchemaError(f"portfolio comparison report label is empty: {value!r}")
+    else:
+        path_text = raw
+        label = _clean(Path(path_text).parent.name or Path(path_text).stem)
+    if not path_text:
+        raise DatasetSchemaError(f"portfolio comparison report path is empty: {value!r}")
+    return label, Path(path_text)
+
+
+def _load_portfolio_comparison_reports(report_refs: Sequence[str] | None) -> list[dict[str, Any]]:
+    loaded: list[dict[str, Any]] = []
+    seen_labels: set[str] = set()
+    for ref in report_refs or []:
+        label, path = _portfolio_comparison_ref(ref)
+        if label in seen_labels:
+            raise DatasetSchemaError(f"duplicate portfolio comparison report label: {label}")
+        seen_labels.add(label)
+        summary = _load_summary_from_pointer_or_path(path)
+        validate_actual_rag_guardrails(summary)
+        loaded.append(
+            {
+                "label": label,
+                "path": _report_path_value(path),
+                "summary": summary,
+            }
+        )
+    return loaded
+
+
+def _portfolio_report_items(summary: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        _query_id(row): dict(row)
+        for row in _as_list(summary.get("items"))
+        if isinstance(row, Mapping) and _query_id(row)
+    }
+
+
+def _portfolio_answer_preview(row: Mapping[str, Any]) -> dict[str, Any]:
+    answer = _clean(row.get("generated_answer"))
+    before_gate = _clean(row.get(INTERNAL_PRE_GATE_ANSWER_KEY))
+    return {
+        "answer_sha256": f"sha256:{_sha256_text(answer)}" if answer else "",
+        "answer_preview": _bounded_text_preview(answer, 220),
+        "pre_gate_answer_sha256": f"sha256:{_sha256_text(before_gate)}" if before_gate else "",
+        "pre_gate_answer_preview": _bounded_text_preview(before_gate, 220),
+        "abstained": abstains(answer),
+    }
+
+
+def _portfolio_citation_identity(citation: Mapping[str, Any]) -> str:
+    bundle_id = _clean(citation.get("evidence_bundle_id"))
+    atom_id = _clean(citation.get("source_atom_id"))
+    doc_id = _clean(citation.get("doc_id"))
+    chunk_id = _clean(citation.get("chunk_id"))
+    text_hash = _clean(citation.get("source_text_sha256") or citation.get("text_sha256")) or _sha256_text(
+        citation.get("text")
+    )
+    if bundle_id:
+        return f"evidence_bundle_id:{bundle_id}"
+    if atom_id:
+        return f"source_atom_id:{atom_id}"
+    if doc_id or chunk_id:
+        return f"doc_chunk:{doc_id}#{chunk_id}"
+    return f"text_sha256:{text_hash}" if text_hash else ""
+
+
+def _portfolio_citation_snapshot(row: Mapping[str, Any]) -> dict[str, Any]:
+    citations = [dict(citation) for citation in _as_list(row.get("citations")) if isinstance(citation, Mapping)]
+    identities = sorted({identity for citation in citations if (identity := _portfolio_citation_identity(citation))})
+    composer = row.get("answer_composer") if isinstance(row.get("answer_composer"), Mapping) else {}
+    formatted = [str(value) for value in _as_list(composer.get("formatted_citations"))]
+    gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+    return {
+        "citation_count": len(citations),
+        "citation_identity_count": len(identities),
+        "citation_identities": identities[:12],
+        "citation_identities_truncated": len(identities) > 12,
+        "citation_identity_hash": f"sha256:{_sha256_text(json.dumps(identities, ensure_ascii=False, sort_keys=True))}",
+        "formatted_citation_count": len(formatted),
+        "formatted_citation_preview": [_bounded_text_preview(value, 160) for value in formatted[:4]],
+        "formatted_citation_hash": f"sha256:{_sha256_text(json.dumps(formatted, ensure_ascii=False, sort_keys=True))}"
+        if formatted
+        else "",
+        "citation_supported_count": int(gate.get("citation_supported_count") or 0),
+        "citation_retrieved_context_only_diagnostic_count": int(
+            gate.get("citation_retrieved_context_only_diagnostic_count") or 0
+        ),
+        "citation_wrong_target_count": int(gate.get("citation_wrong_target_count") or 0),
+        "citation_missing_target_count": int(gate.get("citation_missing_target_count") or 0),
+        "citation_unsupported_text_count": int(gate.get("citation_unsupported_text_count") or 0),
+    }
+
+
+def _portfolio_gate_summary(summary: Mapping[str, Any]) -> dict[str, Any]:
+    gate = summary.get("evidence_gate") if isinstance(summary.get("evidence_gate"), Mapping) else {}
+    return {
+        "evidence_gate_mode": _clean(gate.get("evidence_gate_mode") or summary.get("evidence_gate_mode")),
+        "unsupported_answer_rate_before_gate": gate.get("unsupported_answer_rate_before_gate"),
+        "unsupported_answer_rate_after_gate": gate.get("unsupported_answer_rate_after_gate"),
+        "allowed_answer_count": int(gate.get("allowed_answer_count") or 0),
+        "abstained_count": int(gate.get("abstained_count") or 0),
+        "unsupported_answer_blocked_count": int(gate.get("unsupported_answer_blocked_count") or 0),
+        "would_abstain_count": int(gate.get("would_abstain_count") or 0),
+        "would_block_unsupported_answer_count": int(gate.get("would_block_unsupported_answer_count") or 0),
+        "sufficient_evidence_package_count": int(gate.get("sufficient_evidence_package_count") or 0),
+        "insufficient_evidence_package_count": int(gate.get("insufficient_evidence_package_count") or 0),
+        "citation_supported_count": int(gate.get("citation_supported_count") or 0),
+        "citation_retrieved_context_only_diagnostic_count": int(
+            gate.get("citation_retrieved_context_only_diagnostic_count") or 0
+        ),
+        "citation_wrong_target_count": int(gate.get("citation_wrong_target_count") or 0),
+        "citation_missing_target_count": int(gate.get("citation_missing_target_count") or 0),
+        "citation_unsupported_text_count": int(gate.get("citation_unsupported_text_count") or 0),
+    }
+
+
+def _portfolio_selected_evidence_citation_precision(gate: Mapping[str, Any]) -> float | None:
+    supported = int(gate.get("citation_supported_count") or 0)
+    total = sum(
+        int(gate.get(key) or 0)
+        for key in (
+            "citation_supported_count",
+            "citation_retrieved_context_only_diagnostic_count",
+            "citation_wrong_target_count",
+            "citation_missing_target_count",
+            "citation_unsupported_text_count",
+        )
+    )
+    return round(float(supported) / float(total), 6) if total else None
+
+
+def _portfolio_residual_taxonomy(summary: Mapping[str, Any]) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for row in _as_list(summary.get("items")):
+        if not isinstance(row, Mapping):
+            continue
+        gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+        decision = _clean(row.get("answer_gate_decision"))
+        if decision == "allow_answer":
+            counts["allowed"] += 1
+            continue
+        reason = _clean(gate.get("abstention_reason")) or _clean(gate.get("evidence_package_status")) or decision
+        counts[reason or "unknown"] += 1
+    return dict(sorted(counts.items()))
+
+
+def _portfolio_lane_summary(label: str, path: str, summary: Mapping[str, Any]) -> dict[str, Any]:
+    config = summary.get("generator_config") if isinstance(summary.get("generator_config"), Mapping) else {}
+    artifact = summary.get("artifact_contract") if isinstance(summary.get("artifact_contract"), Mapping) else {}
+    index = summary.get("index_retrieval_config") if isinstance(summary.get("index_retrieval_config"), Mapping) else {}
+    gate = _portfolio_gate_summary(summary)
+    return {
+        "label": label,
+        "run_id": _clean(summary.get("run_id")),
+        "report_path": path,
+        "provider": _clean(config.get("answer_composer_provider") or config.get("generator_provider") or config.get("provider")),
+        "selected_evidence_composer_invoked": bool(config.get("selected_evidence_composer_invoked")),
+        "selected_evidence_citation_format": _clean(config.get("selected_evidence_citation_format")),
+        "selected_evidence_composer_retry_mode": _clean(config.get("selected_evidence_composer_retry_mode")) or "off",
+        "local_llm_generation_available": bool(config.get("local_llm_generation_available")),
+        "local_llm_status_counts": dict(config.get("local_llm_status_counts") or {}),
+        "retry_status_counts": dict(config.get("selected_evidence_composer_retry_status_counts") or {}),
+        "active_retrieval_service_boundary": _clean(index.get("active_retrieval_service_boundary")),
+        "retrieval_route_mode": _clean(index.get("retrieval_route_mode")),
+        "rollback_key": _clean(index.get("rollback_key")),
+        "emitted_files_report_only": bool(artifact.get("single_artifact_default")),
+        "portfolio_sidecar_written": bool(artifact.get("portfolio_experiment_sidecar_written")),
+        "raw_prompt_payload_written": bool(summary.get("raw_prompt_payload_written")),
+        "raw_response_payload_written": bool(summary.get("raw_response_payload_written")),
+        "gate": gate,
+        "citation_precision_against_selected_evidence": _portfolio_selected_evidence_citation_precision(gate),
+        "residual_failure_taxonomy": _portfolio_residual_taxonomy(summary),
+    }
+
+
+def _portfolio_answer_diff_rows(
+    baseline_label: str,
+    baseline_summary: Mapping[str, Any],
+    current_label: str,
+    current_summary: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    baseline_items = _portfolio_report_items(baseline_summary)
+    current_items = _portfolio_report_items(current_summary)
+    rows: list[dict[str, Any]] = []
+    for item_id in sorted(set(baseline_items) | set(current_items)):
+        before = baseline_items.get(item_id, {})
+        after = current_items.get(item_id, {})
+        before_answer = _portfolio_answer_preview(before)
+        after_answer = _portfolio_answer_preview(after)
+        before_citations = _portfolio_citation_snapshot(before)
+        after_citations = _portfolio_citation_snapshot(after)
+        rows.append(
+            {
+                "id": item_id,
+                "baseline_label": baseline_label,
+                "current_label": current_label,
+                "answer_changed": before_answer["answer_sha256"] != after_answer["answer_sha256"],
+                "baseline_answer": before_answer,
+                "current_answer": after_answer,
+                "citation_changed": before_citations["citation_identity_hash"]
+                != after_citations["citation_identity_hash"]
+                or before_citations["formatted_citation_hash"] != after_citations["formatted_citation_hash"],
+                "baseline_citations": before_citations,
+                "current_citations": after_citations,
+                "baseline_gate_decision": _clean(before.get("answer_gate_decision")),
+                "current_gate_decision": _clean(after.get("answer_gate_decision")),
+                "baseline_abstention_reason": _clean(
+                    (before.get("evidence_gate") if isinstance(before.get("evidence_gate"), Mapping) else {}).get(
+                        "abstention_reason"
+                    )
+                ),
+                "current_abstention_reason": _clean(
+                    (after.get("evidence_gate") if isinstance(after.get("evidence_gate"), Mapping) else {}).get(
+                        "abstention_reason"
+                    )
+                ),
+            }
+        )
+    return rows
+
+
+def _portfolio_gate_delta(before: Mapping[str, Any], after: Mapping[str, Any]) -> dict[str, Any]:
+    before_gate = _portfolio_gate_summary(before)
+    after_gate = _portfolio_gate_summary(after)
+    fields = (
+        "allowed_answer_count",
+        "abstained_count",
+        "unsupported_answer_blocked_count",
+        "would_abstain_count",
+        "would_block_unsupported_answer_count",
+        "citation_supported_count",
+        "citation_retrieved_context_only_diagnostic_count",
+    )
+    return {
+        "before": before_gate,
+        "after": after_gate,
+        "delta": {
+            field: int(after_gate.get(field) or 0) - int(before_gate.get(field) or 0)
+            for field in fields
+        },
+        "unsupported_answer_rate_after_gate_delta": (
+            round(float(after_gate["unsupported_answer_rate_after_gate"]) - float(before_gate["unsupported_answer_rate_after_gate"]), 6)
+            if isinstance(after_gate.get("unsupported_answer_rate_after_gate"), (int, float))
+            and isinstance(before_gate.get("unsupported_answer_rate_after_gate"), (int, float))
+            else None
+        ),
+    }
+
+
+def _portfolio_lane_mode_key(lane: Mapping[str, Any]) -> str:
+    return "|".join(
+        [
+            _clean(lane.get("provider")),
+            _clean(lane.get("selected_evidence_citation_format")),
+            _clean(lane.get("selected_evidence_composer_retry_mode")) or "off",
+        ]
+    )
+
+
+def _portfolio_diagnostic_enforce_pairs(lanes: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[str, dict[str, Mapping[str, Any]]] = {}
+    for lane in lanes:
+        mode = _clean((lane.get("gate") or {}).get("evidence_gate_mode"))
+        if mode not in {"diagnostic", "enforce"}:
+            continue
+        grouped.setdefault(_portfolio_lane_mode_key(lane), {})[mode] = lane
+    pairs: list[dict[str, Any]] = []
+    for key, by_mode in sorted(grouped.items()):
+        diagnostic = by_mode.get("diagnostic")
+        enforce = by_mode.get("enforce")
+        if not diagnostic or not enforce:
+            continue
+        diagnostic_gate = diagnostic.get("gate") if isinstance(diagnostic.get("gate"), Mapping) else {}
+        enforce_gate = enforce.get("gate") if isinstance(enforce.get("gate"), Mapping) else {}
+        pairs.append(
+            {
+                "lane_key": key,
+                "diagnostic_label": diagnostic.get("label"),
+                "enforce_label": enforce.get("label"),
+                "diagnostic_after_gate_rate": diagnostic_gate.get("unsupported_answer_rate_after_gate"),
+                "enforce_after_gate_rate": enforce_gate.get("unsupported_answer_rate_after_gate"),
+                "unsupported_after_gate_delta": (
+                    round(
+                        float(enforce_gate["unsupported_answer_rate_after_gate"])
+                        - float(diagnostic_gate["unsupported_answer_rate_after_gate"]),
+                        6,
+                    )
+                    if isinstance(enforce_gate.get("unsupported_answer_rate_after_gate"), (int, float))
+                    and isinstance(diagnostic_gate.get("unsupported_answer_rate_after_gate"), (int, float))
+                    else None
+                ),
+                "blocked_delta": int(enforce_gate.get("unsupported_answer_blocked_count") or 0)
+                - int(diagnostic_gate.get("unsupported_answer_blocked_count") or 0),
+                "abstained_delta": int(enforce_gate.get("abstained_count") or 0)
+                - int(diagnostic_gate.get("abstained_count") or 0),
+            }
+        )
+    return pairs
+
+
+def build_portfolio_experiment_comparison(
+    *,
+    comparison_reports: Sequence[Mapping[str, Any]],
+    current_summary: Mapping[str, Any],
+) -> dict[str, Any]:
+    current_label = "current"
+    all_reports: list[dict[str, Any]] = [dict(report) for report in comparison_reports]
+    all_reports.append(
+        {
+            "label": current_label,
+            "path": _report_path_value(current_summary.get("artifact_paths", {}).get("report_json"))
+            if isinstance(current_summary.get("artifact_paths"), Mapping)
+            else "",
+            "summary": current_summary,
+        }
+    )
+    lanes = [
+        _portfolio_lane_summary(_clean(report.get("label")), _clean(report.get("path")), report.get("summary") or {})
+        for report in all_reports
+        if isinstance(report.get("summary"), Mapping)
+    ]
+    baseline = all_reports[0] if all_reports else {"label": current_label, "summary": current_summary}
+    baseline_label = _clean(baseline.get("label")) or "baseline"
+    baseline_summary = baseline.get("summary") if isinstance(baseline.get("summary"), Mapping) else {}
+    pairwise_diffs: list[dict[str, Any]] = []
+    for report in all_reports[1:]:
+        summary = report.get("summary") if isinstance(report.get("summary"), Mapping) else {}
+        label = _clean(report.get("label")) or "comparison"
+        pairwise_diffs.append(
+            {
+                "baseline_label": baseline_label,
+                "current_label": label,
+                "gate_delta": _portfolio_gate_delta(baseline_summary, summary),
+                "answer_diffs": _portfolio_answer_diff_rows(baseline_label, baseline_summary, label, summary),
+            }
+        )
+    return {
+        "schema_version": PORTFOLIO_COMPARISON_SCHEMA_VERSION,
+        "enabled": True,
+        "non_production": True,
+        "report_only_contract": "embedded_in_report_json_no_portfolio_sidecar",
+        "portfolio_experiment_sidecar_written": False,
+        "comparison_input_policy": "post_run_report_json_only_not_generation_input_no_gold_qrels_labels_or_denominator_mutation",
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "baseline_label": baseline_label,
+        "current_run_id": current_summary.get("run_id"),
+        "lane_count": len(lanes),
+        "lanes": lanes,
+        "diagnostic_vs_enforce_pairs": _portfolio_diagnostic_enforce_pairs(lanes),
+        "pairwise_diffs": pairwise_diffs,
+        "residual_failure_taxonomy_by_lane": {
+            _clean(lane.get("label")): dict(lane.get("residual_failure_taxonomy") or {}) for lane in lanes
+        },
+        "next_experiment_recommendations": [
+            "prefer deterministic selected-evidence composer while local LLM remains less gate-compatible",
+            "use comparison evidence to design the explicit portfolio sidecar behind a future flag",
+            "do not mutate gold, qrels, labels, answerability, expected fields, denominator, source registry, or current",
+        ],
+    }
+
+
+def _portfolio_md_value(value: Any) -> str:
+    if value is None:
+        return ""
+    text = _clean(value)
+    return text.replace("|", "\\|")
+
+
+def render_portfolio_experiment_summary(comparison: Mapping[str, Any]) -> str:
+    lanes = [lane for lane in _as_list(comparison.get("lanes")) if isinstance(lane, Mapping)]
+    diffs = [diff for diff in _as_list(comparison.get("pairwise_diffs")) if isinstance(diff, Mapping)]
+    lines = [
+        "# Non-Production Selected-Evidence Portfolio Experiment",
+        "",
+        "This sidecar is an explicit non-production portfolio experiment artifact. It is not production readiness, not an official metric, and not promotion evidence.",
+        "",
+        f"- Comparison schema: `{comparison.get('schema_version')}`",
+        f"- Current run: `{comparison.get('current_run_id')}`",
+        f"- Lane count: `{comparison.get('lane_count')}`",
+        "- Sidecar policy: `explicit_flag_required_sidecar_from_embedded_comparison`",
+        f"- Comparison source policy: `{comparison.get('report_only_contract')}`",
+        f"- Raw prompt payload written: `{comparison.get('raw_prompt_payload_written')}`",
+        f"- Raw response payload written: `{comparison.get('raw_response_payload_written')}`",
+        "",
+        "## Gate Before/After",
+        "",
+        "| Lane | Provider | Mode | Unsupported before | Unsupported after | Unsupported answer blocked count | Abstain count | Citation precision against selected evidence | Retrieved-context-only citation count |",
+        "|---|---|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for lane in lanes:
+        gate = lane.get("gate") if isinstance(lane.get("gate"), Mapping) else {}
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    _portfolio_md_value(lane.get("label")),
+                    _portfolio_md_value(lane.get("provider")),
+                    _portfolio_md_value(gate.get("evidence_gate_mode")),
+                    _portfolio_md_value(gate.get("unsupported_answer_rate_before_gate")),
+                    _portfolio_md_value(gate.get("unsupported_answer_rate_after_gate")),
+                    _portfolio_md_value(gate.get("unsupported_answer_blocked_count")),
+                    _portfolio_md_value(gate.get("abstained_count")),
+                    _portfolio_md_value(lane.get("citation_precision_against_selected_evidence")),
+                    _portfolio_md_value(gate.get("citation_retrieved_context_only_diagnostic_count")),
+                ]
+            )
+            + " |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Answer Diff",
+            "",
+            "| Baseline | Current | Changed answers | Example changed item | Baseline answer preview | Current answer preview |",
+            "|---|---|---:|---|---|---|",
+        ]
+    )
+    for diff in diffs:
+        answer_diffs = [row for row in _as_list(diff.get("answer_diffs")) if isinstance(row, Mapping)]
+        changed = [row for row in answer_diffs if row.get("answer_changed")]
+        example = changed[0] if changed else (answer_diffs[0] if answer_diffs else {})
+        baseline_answer = example.get("baseline_answer") if isinstance(example.get("baseline_answer"), Mapping) else {}
+        current_answer = example.get("current_answer") if isinstance(example.get("current_answer"), Mapping) else {}
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    _portfolio_md_value(diff.get("baseline_label")),
+                    _portfolio_md_value(diff.get("current_label")),
+                    str(len(changed)),
+                    _portfolio_md_value(example.get("id")),
+                    _portfolio_md_value(baseline_answer.get("answer_preview")),
+                    _portfolio_md_value(current_answer.get("answer_preview")),
+                ]
+            )
+            + " |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Citation Diff",
+            "",
+            "| Baseline | Current | Changed citations | Retrieved-context-only delta | Supported citation delta |",
+            "|---|---|---:|---:|---:|",
+        ]
+    )
+    for diff in diffs:
+        answer_diffs = [row for row in _as_list(diff.get("answer_diffs")) if isinstance(row, Mapping)]
+        changed_citations = sum(1 for row in answer_diffs if isinstance(row, Mapping) and row.get("citation_changed"))
+        gate_delta = diff.get("gate_delta") if isinstance(diff.get("gate_delta"), Mapping) else {}
+        delta = gate_delta.get("delta") if isinstance(gate_delta.get("delta"), Mapping) else {}
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    _portfolio_md_value(diff.get("baseline_label")),
+                    _portfolio_md_value(diff.get("current_label")),
+                    str(changed_citations),
+                    _portfolio_md_value(delta.get("citation_retrieved_context_only_diagnostic_count")),
+                    _portfolio_md_value(delta.get("citation_supported_count")),
+                ]
+            )
+            + " |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Residual Failure Taxonomy",
+            "",
+            "| Lane | Residual taxonomy |",
+            "|---|---|",
+        ]
+    )
+    taxonomy = comparison.get("residual_failure_taxonomy_by_lane") if isinstance(
+        comparison.get("residual_failure_taxonomy_by_lane"), Mapping
+    ) else {}
+    for lane_label, lane_taxonomy in taxonomy.items():
+        if isinstance(lane_taxonomy, Mapping):
+            rendered = ", ".join(f"{key}={value}" for key, value in sorted(lane_taxonomy.items()))
+        else:
+            rendered = ""
+        lines.append(f"| {_portfolio_md_value(lane_label)} | {_portfolio_md_value(rendered)} |")
+
+    lines.extend(
+        [
+            "",
+            "## Diagnostic/Enforce Pairs",
+            "",
+            "| Lane key | Diagnostic | Enforce | Unsupported after delta | Blocked delta | Abstain delta |",
+            "|---|---|---|---:|---:|---:|",
+        ]
+    )
+    for pair in _as_list(comparison.get("diagnostic_vs_enforce_pairs")):
+        if not isinstance(pair, Mapping):
+            continue
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    _portfolio_md_value(pair.get("lane_key")),
+                    _portfolio_md_value(pair.get("diagnostic_label")),
+                    _portfolio_md_value(pair.get("enforce_label")),
+                    _portfolio_md_value(pair.get("unsupported_after_gate_delta")),
+                    _portfolio_md_value(pair.get("blocked_delta")),
+                    _portfolio_md_value(pair.get("abstained_delta")),
+                ]
+            )
+            + " |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Next Experiment Recommendations",
+            "",
+        ]
+    )
+    for recommendation in _as_list(comparison.get("next_experiment_recommendations")):
+        if _clean(recommendation):
+            lines.append(f"- {_clean(recommendation)}")
+    lines.extend(
+        [
+            "",
+            "Guardrails: no gold/qrels/labels/answerability/expected/denominator/source-registry/current mutation, no production claim, no official metric claim, and no raw prompt/response payload artifacts.",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
 def _git_marker() -> dict[str, Any]:
     try:
         commit = subprocess.run(
@@ -8860,6 +9424,40 @@ def write_source_native_legacy_cleanup_report(
 
 
 QUALITY_GATE_REPORT_SCHEMA_VERSION = "actual_rag_eval.legacy_real_rag_quality_gate.v1"
+SELECTED_EVIDENCE_COMPOSER_PROVIDER = "selected-evidence-deterministic-v1"
+SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER = "selected-evidence-local-llm-v1"
+SELECTED_EVIDENCE_COMPOSER_INPUT_POLICY = (
+    "query_text_and_selected_sourceatom_evidence_only_no_gold_qrels_labels_ids_or_baseline"
+)
+SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROMPT_VERSION = "selected_evidence_local_llm_composer_v1"
+SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROMPT_TEMPLATE = """You are a non-production selected-evidence answer composer.
+Return exactly one JSON object with keys: answer (string) and citation_evidence_ids (array of strings).
+Use only the selected SourceAtom/EvidenceBundle evidence in the payload. Do not use outside knowledge.
+If the selected evidence is insufficient, return an empty answer and an empty citation_evidence_ids array.
+
+Payload:
+{payload}
+"""
+SELECTED_EVIDENCE_COMPOSER_RETRY_MODES = frozenset({"off", "bounded-once"})
+SELECTED_EVIDENCE_COMPOSER_RETRY_INPUT_POLICY = (
+    "query_text_selected_evidence_missing_query_focus_anchors_previous_bounded_answer_preview_only_no_gold_qrels_labels_ids_or_baseline"
+)
+SELECTED_EVIDENCE_LOCAL_LLM_RETRY_PROMPT_VERSION = "selected_evidence_local_llm_composer_retry_v1"
+SELECTED_EVIDENCE_LOCAL_LLM_RETRY_PROMPT_TEMPLATE = """You are a non-production selected-evidence answer composer retry.
+Return exactly one JSON object with keys: answer (string) and citation_evidence_ids (array of strings).
+Use only the query, selected SourceAtom/EvidenceBundle evidence, missing query-focus anchors, and previous bounded answer preview in the payload.
+Do not use outside knowledge. Do not use any hidden gold, labels, qrels, row ids, target ids, baseline top-k, or legacy outputs.
+If the selected evidence is insufficient, return an empty answer and an empty citation_evidence_ids array.
+
+Payload:
+{payload}
+"""
+ANSWER_COMPOSER_PROVIDERS = frozenset(
+    {"extractive-v1", SELECTED_EVIDENCE_COMPOSER_PROVIDER, SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER}
+)
+SELECTED_EVIDENCE_CITATION_FORMATS = frozenset(
+    {"compact", "evidence-id", "source-locator", "markdown-portfolio"}
+)
 
 
 def _query_id(row: Mapping[str, Any]) -> str:
@@ -9096,6 +9694,904 @@ def _gate_select_evidence(
                 selected.append(dict(context))
                 seen.add(identity)
     return selected
+
+
+def _has_sourceatom_evidence_identity(row: Mapping[str, Any]) -> bool:
+    return bool(_clean(row.get("source_atom_id")) or _clean(row.get("evidence_bundle_id")))
+
+
+def _safe_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _query_requires_numeric_or_date_answer(query: str) -> bool:
+    normalized = normalize_answer_text(query)
+    markers = {
+        "when",
+        "date",
+        "year",
+        "month",
+        "day",
+        "how many",
+        "number",
+        "언제",
+        "몇",
+        "몇년",
+        "몇월",
+        "날짜",
+        "년도",
+        "연도",
+        "시기",
+    }
+    return any(marker in normalized for marker in markers)
+
+
+def _text_has_numeric_or_date_value(text: str) -> bool:
+    normalized = normalize_answer_text(text)
+    if re.search(r"\d", normalized):
+        return True
+    if re.search(r"\b(january|february|march|april|may|june|july|august|september|october|november|december)\b", normalized):
+        return True
+    return bool(re.search(r"[일월년]", normalized) and re.search(r"[0-9영일이삼사오육칠팔구십]", normalized))
+
+
+def select_composer_evidence(
+    query: str,
+    contexts: Sequence[Mapping[str, Any]],
+    *,
+    max_evidence: int = 3,
+) -> list[dict[str, Any]]:
+    query_anchors = _gate_query_focus_anchors(query)
+    selected: list[tuple[float, int, dict[str, Any]]] = []
+    seen: set[str] = set()
+    for index, context in enumerate(contexts, start=1):
+        if not _has_sourceatom_evidence_identity(context):
+            continue
+        text = _gate_row_text(context)
+        if not text:
+            continue
+        identity = _context_identity(context)
+        if not identity or identity in seen:
+            continue
+        anchor_hits = _gate_anchor_hits(query_anchors, [text])
+        query_overlap = _token_overlap_ratio(query, text)
+        if query_anchors:
+            if not anchor_hits and query_overlap < 0.2:
+                continue
+        elif query_overlap < 0.2:
+            continue
+        score = (len(anchor_hits) * 10.0) + query_overlap + _safe_float(
+            context.get("score") or context.get("fusion_score")
+        )
+        row = dict(context)
+        row["composer_query_anchor_hits"] = sorted(anchor_hits)
+        row["composer_query_overlap"] = round(query_overlap, 6)
+        selected.append((score, index, row))
+        seen.add(identity)
+    selected.sort(key=lambda item: (-item[0], item[1]))
+    return [row for _, _, row in selected[: max(1, int(max_evidence))]]
+
+
+def _selected_evidence_sentence(query: str, selected_evidence: Sequence[Mapping[str, Any]]) -> str:
+    query_anchors = _gate_query_focus_anchors(query)
+    best_sentence = ""
+    best_score = -1.0
+    for context in selected_evidence:
+        text = _gate_row_text(context)
+        if not text:
+            continue
+        sentences = [part.strip() for part in re.split(r"(?<=[.!?。！？])\s+|\n+", text) if part.strip()]
+        if not sentences:
+            sentences = [text.strip()]
+        candidates = [text.strip(), *sentences] if len(sentences) > 1 else sentences
+        for sentence in candidates:
+            anchor_hits = _gate_anchor_hits(query_anchors, [sentence])
+            score = (len(anchor_hits) * 10.0) + _token_overlap_ratio(query, sentence)
+            if score > best_score:
+                best_score = score
+                best_sentence = sentence
+    answer = _clean(best_sentence)
+    if len(answer) > 240:
+        answer = answer[:237] + "..."
+    if answer and not answer.endswith((".", "!", "?", "。", "！", "？")):
+        answer += "."
+    return answer
+
+
+def _selected_evidence_abstention_reason(query: str, selected_evidence: Sequence[Mapping[str, Any]]) -> str:
+    if not selected_evidence:
+        return "no_selected_sourceatom_evidence"
+    selected_text = " ".join(_gate_row_text(row) for row in selected_evidence if _gate_row_text(row))
+    if _query_requires_numeric_or_date_answer(query) and not _text_has_numeric_or_date_value(selected_text):
+        return "insufficient_selected_evidence"
+    if not _selected_evidence_sentence(query, selected_evidence):
+        return "insufficient_selected_evidence"
+    return ""
+
+
+def _selected_evidence_answer(
+    *,
+    query: str,
+    selected_evidence: Sequence[Mapping[str, Any]],
+    citation_format: str = "compact",
+    formatted_citations: Sequence[str] | None = None,
+    short_answer_override: str = "",
+) -> str:
+    short_answer = _clean(short_answer_override) or _selected_evidence_sentence(query, selected_evidence)
+    if not short_answer:
+        return BOUNDED_EVIDENCE_ABSTENTION_ANSWER
+    lines = [
+        f"**Query:** {query}",
+        "",
+        f"**Short answer:** {short_answer}",
+        "",
+        "**Supporting passages:**",
+    ]
+    for index, evidence in enumerate(selected_evidence, start=1):
+        citation = _normalize_citation(evidence)
+        locator = "#".join(
+            part
+            for part in (
+                _clean(citation.get("doc_id")),
+                _clean(citation.get("chunk_id")),
+                _clean(citation.get("source_atom_id")),
+                _clean(citation.get("evidence_bundle_id")),
+            )
+            if part
+        )
+        excerpt = _gate_row_text(evidence).replace("\n", " ").strip()
+        if len(excerpt) > 220:
+            excerpt = excerpt[:217] + "..."
+        lines.append(f"{index}. [{locator}] {excerpt}")
+    if citation_format == "markdown-portfolio" and formatted_citations:
+        lines.extend(["", "## Selected Evidence Citations"])
+        lines.extend(formatted_citations)
+    return "\n".join(lines)
+
+
+def _selected_evidence_ids(rows: Sequence[Mapping[str, Any]]) -> list[str]:
+    ids: list[str] = []
+    for row in rows:
+        identity = _clean(row.get("evidence_bundle_id")) or _clean(row.get("source_atom_id")) or _context_identity(row)
+        if identity and identity not in ids:
+            ids.append(identity)
+    return ids
+
+
+def _normalize_selected_evidence_citation_format(citation_format: str) -> str:
+    normalized = _clean(citation_format).replace("_", "-").lower() or "compact"
+    if normalized not in SELECTED_EVIDENCE_CITATION_FORMATS:
+        raise DatasetSchemaError(f"unsupported selected evidence citation format: {citation_format}")
+    return normalized
+
+
+def _normalize_selected_evidence_composer_retry_mode(retry_mode: str) -> str:
+    normalized = _clean(retry_mode).replace("_", "-").lower() or "off"
+    if normalized not in SELECTED_EVIDENCE_COMPOSER_RETRY_MODES:
+        raise DatasetSchemaError(f"unsupported selected evidence composer retry mode: {retry_mode}")
+    return normalized
+
+
+def _selected_citation_locator(row: Mapping[str, Any]) -> str:
+    doc_id = _clean(row.get("doc_id") or row.get("docId") or row.get("document_id"))
+    chunk_id = _clean(row.get("chunk_id") or row.get("chunkId") or row.get("search_unit_id"))
+    if doc_id and chunk_id:
+        return f"{doc_id}#{chunk_id}"
+    for key in ("evidence_bundle_id", "source_atom_id", "text_sha256", "source_text_sha256"):
+        value = _clean(row.get(key))
+        if value:
+            return value
+    return "selected-evidence"
+
+
+def _selected_citation_identity_parts(row: Mapping[str, Any]) -> list[str]:
+    parts: list[str] = []
+    evidence_bundle_id = _clean(row.get("evidence_bundle_id"))
+    source_atom_id = _clean(row.get("source_atom_id"))
+    if evidence_bundle_id:
+        parts.append(f"evidence_bundle_id={evidence_bundle_id}")
+    if source_atom_id:
+        parts.append(f"source_atom_id={source_atom_id}")
+    return parts
+
+
+def format_selected_evidence_citations(
+    selected_evidence: Sequence[Mapping[str, Any]],
+    *,
+    citation_format: str = "compact",
+) -> list[str]:
+    normalized_format = _normalize_selected_evidence_citation_format(citation_format)
+    formatted: list[str] = []
+    for index, evidence in enumerate(selected_evidence, start=1):
+        locator = _selected_citation_locator(evidence)
+        if normalized_format == "compact":
+            formatted.append(f"[{index}] {locator}")
+            continue
+        identity_parts = _selected_citation_identity_parts(evidence)
+        identity = "; ".join(identity_parts) if identity_parts else locator
+        if normalized_format == "evidence-id":
+            formatted.append(f"[{index}] {identity}")
+            continue
+        source_family = _clean(evidence.get("source_family")) or "UNKNOWN"
+        granularity = _clean(evidence.get("granularity")) or "unknown"
+        locator_parts = [source_family, granularity, locator]
+        for label, key in (
+            ("page", "page_number"),
+            ("sheet", "sheet"),
+            ("cell_range", "cell_range"),
+            ("locator", "locator_fingerprint"),
+        ):
+            value = _clean(evidence.get(key))
+            if value:
+                locator_parts.append(f"{label}={value}")
+        if normalized_format == "source-locator":
+            formatted.append(f"[{index}] {' '.join(locator_parts)}")
+            continue
+        formatted.append(f"- [{index}] **{source_family} {granularity}** {locator} ({identity})")
+    return formatted
+
+
+def _bounded_text_preview(value: Any, limit: int = 240) -> str:
+    text = _clean(value).replace("\n", " ").strip()
+    if len(text) <= limit:
+        return text
+    return text[: max(0, limit - 3)] + "..."
+
+
+def _local_llm_composer_config(
+    *,
+    backend: str = "",
+    base_url: str = "",
+    model: str = "",
+    timeout_seconds: int = 60,
+    max_tokens: int = 360,
+    check_endpoint: bool = True,
+) -> dict[str, Any]:
+    resolved_backend = _clean(backend) or LOCAL_LLM_HELPER.DEFAULT_BACKEND
+    resolved_base_url = LOCAL_LLM_HELPER.resolve_base_url(resolved_backend, _clean(base_url))
+    resolved_model = _clean(model) or LOCAL_LLM_HELPER.DEFAULT_MODEL
+    blockers = LOCAL_LLM_HELPER.local_llm_entry_blockers(
+        backend=resolved_backend,
+        base_url=resolved_base_url,
+        model=resolved_model,
+        check_endpoint=check_endpoint,
+        timeout_seconds=min(int(timeout_seconds), 10),
+    )
+    return {
+        "backend": resolved_backend,
+        "base_url": resolved_base_url,
+        "model": resolved_model,
+        "timeout_seconds": int(timeout_seconds),
+        "max_tokens": int(max_tokens),
+        "check_endpoint": bool(check_endpoint),
+        "available": not blockers,
+        "blockers": list(blockers),
+        "prompt_template_id": SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROMPT_VERSION,
+        "strict_json_required": True,
+        "external_api_calls": False,
+    }
+
+
+def _selected_evidence_local_llm_prompt(
+    *,
+    query: str,
+    selected_evidence: Sequence[Mapping[str, Any]],
+) -> str:
+    evidence_payload: list[dict[str, Any]] = []
+    for evidence in selected_evidence:
+        citation = _normalize_citation(evidence)
+        evidence_payload.append(
+            {
+                "evidence_id": _clean(evidence.get("evidence_bundle_id"))
+                or _clean(evidence.get("source_atom_id"))
+                or _context_identity(evidence),
+                "source_atom_id": _clean(evidence.get("source_atom_id")),
+                "evidence_bundle_id": _clean(evidence.get("evidence_bundle_id")),
+                "doc_id": _clean(citation.get("doc_id")),
+                "chunk_id": _clean(citation.get("chunk_id")),
+                "source_family": _clean(evidence.get("source_family")) or "UNKNOWN",
+                "granularity": _clean(evidence.get("granularity")) or "unknown",
+                "text_sha256": _gate_row_hash(evidence),
+                "text_preview": _bounded_text_preview(_gate_row_text(evidence), 1000),
+            }
+        )
+    payload = {
+        "query": query,
+        "input_policy": SELECTED_EVIDENCE_COMPOSER_INPUT_POLICY,
+        "selected_evidence": evidence_payload,
+        "citation_policy": "citation_evidence_ids must be selected evidence_id, evidence_bundle_id, or source_atom_id values only",
+    }
+    return SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROMPT_TEMPLATE.format(
+        payload=json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    )
+
+
+def _selected_evidence_local_llm_retry_prompt(
+    *,
+    query: str,
+    selected_evidence: Sequence[Mapping[str, Any]],
+    missing_query_focus_anchors: Sequence[str],
+    previous_answer_preview: str,
+) -> str:
+    evidence_payload: list[dict[str, Any]] = []
+    for evidence in selected_evidence:
+        citation = _normalize_citation(evidence)
+        evidence_payload.append(
+            {
+                "evidence_id": _clean(evidence.get("evidence_bundle_id"))
+                or _clean(evidence.get("source_atom_id"))
+                or _context_identity(evidence),
+                "source_atom_id": _clean(evidence.get("source_atom_id")),
+                "evidence_bundle_id": _clean(evidence.get("evidence_bundle_id")),
+                "doc_id": _clean(citation.get("doc_id")),
+                "chunk_id": _clean(citation.get("chunk_id")),
+                "source_family": _clean(evidence.get("source_family")) or "UNKNOWN",
+                "granularity": _clean(evidence.get("granularity")) or "unknown",
+                "text_sha256": _gate_row_hash(evidence),
+                "text_preview": _bounded_text_preview(_gate_row_text(evidence), 1000),
+            }
+        )
+    payload = {
+        "query": query,
+        "input_policy": SELECTED_EVIDENCE_COMPOSER_RETRY_INPUT_POLICY,
+        "selected_evidence": evidence_payload,
+        "missing_query_focus_anchors": [_clean(anchor) for anchor in missing_query_focus_anchors if _clean(anchor)],
+        "previous_answer_preview": _bounded_text_preview(previous_answer_preview),
+        "citation_policy": "citation_evidence_ids must be selected evidence_id, evidence_bundle_id, or source_atom_id values only",
+        "max_retry_count": 1,
+    }
+    return SELECTED_EVIDENCE_LOCAL_LLM_RETRY_PROMPT_TEMPLATE.format(
+        payload=json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    )
+
+
+def _ids_from_local_llm_citation_field(value: Any) -> list[str]:
+    if isinstance(value, str):
+        values = [value]
+    elif isinstance(value, Sequence) and not isinstance(value, (bytes, bytearray)):
+        values = [item for item in value if isinstance(item, str)]
+    else:
+        values = []
+    ids: list[str] = []
+    for item in values:
+        identity = _clean(item)
+        if identity and identity not in ids:
+            ids.append(identity)
+    return ids
+
+
+def _selected_evidence_matching_ids(
+    selected_evidence: Sequence[Mapping[str, Any]],
+    citation_ids: Sequence[str],
+) -> list[dict[str, Any]]:
+    wanted = {_clean(value) for value in citation_ids if _clean(value)}
+    if not wanted:
+        return []
+    matched: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for evidence in selected_evidence:
+        candidate_ids = {
+            _clean(evidence.get("evidence_bundle_id")),
+            _clean(evidence.get("source_atom_id")),
+            _context_identity(evidence),
+        }
+        if wanted & {value for value in candidate_ids if value}:
+            identity = _context_identity(evidence)
+            if identity and identity not in seen:
+                matched.append(dict(evidence))
+                seen.add(identity)
+    return matched
+
+
+def _local_llm_meta(
+    *,
+    config: Mapping[str, Any],
+    status: str,
+    prompt_sha256: str = "",
+    raw_response_sha256: str = "",
+    answer_preview: str = "",
+    blockers: Sequence[str] = (),
+    fallback_provider: str = "",
+) -> dict[str, Any]:
+    meta = {
+        "status": status,
+        "backend": config.get("backend"),
+        "base_url": config.get("base_url"),
+        "model": config.get("model"),
+        "available": bool(config.get("available")),
+        "prompt_template_id": SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROMPT_VERSION,
+        "strict_json_required": True,
+        "external_api_calls": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+    }
+    if prompt_sha256:
+        meta["prompt_sha256"] = prompt_sha256
+    if raw_response_sha256:
+        meta["raw_response_sha256"] = raw_response_sha256
+    if answer_preview:
+        meta["answer_preview"] = _bounded_text_preview(answer_preview)
+    if blockers:
+        meta["blockers"] = list(blockers)
+    elif config.get("blockers"):
+        meta["blockers"] = list(config.get("blockers") or [])
+    if fallback_provider:
+        meta["fallback_provider"] = fallback_provider
+    return meta
+
+
+def _selected_evidence_retry_not_triggered_meta(reason: str) -> dict[str, Any]:
+    return {
+        "enabled": True,
+        "attempted": False,
+        "attempt_count": 0,
+        "max_retry_count": 1,
+        "mode": "bounded-once",
+        "status": "not_triggered",
+        "reason": reason,
+        "input_policy": SELECTED_EVIDENCE_COMPOSER_RETRY_INPUT_POLICY,
+    }
+
+
+def _selected_evidence_retry_trigger(validation: Mapping[str, Any], decision: str) -> str:
+    status = _clean(validation.get("evidence_package_status"))
+    reasons = {_clean(reason) for reason in _as_list(validation.get("validation_reasons")) if _clean(reason)}
+    missing_query = [_clean(anchor) for anchor in _as_list(validation.get("missing_query_anchors")) if _clean(anchor)]
+    if status == "insufficient":
+        return "evidence_gate_insufficient"
+    if missing_query or "missing_query_anchor" in reasons:
+        return "missing_query_focus_anchor"
+    if decision == "block_unsupported_answer":
+        return "evidence_gate_blocked_answer"
+    return ""
+
+
+def _selected_evidence_local_llm_output_from_answer(
+    *,
+    row: Mapping[str, Any],
+    query: str,
+    query_selected: Sequence[Mapping[str, Any]],
+    answer: str,
+    citation_ids: Sequence[str],
+    normalized_citation_format: str,
+    config: Mapping[str, Any],
+    prompt_sha256: str,
+    raw_response_sha256: str,
+    retry_meta: Mapping[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    cited_selected = _selected_evidence_matching_ids(query_selected, citation_ids)
+    candidate_selected = cited_selected or query_selected
+    final_selected = _gate_select_evidence(
+        query=query,
+        answer=_gate_answer_surface(answer),
+        contexts=candidate_selected,
+        citations=[],
+    )
+    if not answer or not final_selected:
+        return None
+    formatted_citations = format_selected_evidence_citations(
+        final_selected,
+        citation_format=normalized_citation_format,
+    )
+    output = dict(row)
+    output["generated_answer"] = _selected_evidence_answer(
+        query=query,
+        selected_evidence=final_selected,
+        citation_format=normalized_citation_format,
+        formatted_citations=formatted_citations,
+        short_answer_override=answer,
+    )
+    output["citations"] = [_normalize_citation(context) for context in final_selected]
+    composer = {
+        "provider": SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER,
+        "input_policy": SELECTED_EVIDENCE_COMPOSER_INPUT_POLICY,
+        "citation_format": normalized_citation_format,
+        "formatted_citations": formatted_citations,
+        "retrieved_context_only_citations_diagnostic_only": True,
+        "query_selected_evidence_count": len(query_selected),
+        "query_selected_evidence_ids": _selected_evidence_ids(query_selected),
+        "selected_evidence_count": len(final_selected),
+        "selected_evidence_ids": _selected_evidence_ids(final_selected),
+        "selected_source_atom_ids": [
+            _clean(context.get("source_atom_id")) for context in final_selected if _clean(context.get("source_atom_id"))
+        ],
+        "selected_evidence_text_hashes": _text_hashes(final_selected),
+        "abstained": False,
+        "abstention_reason": "",
+        "previous_answer_hash": _sha256_text(_clean(row.get("generated_answer"))),
+        "uses_expected_answer": False,
+        "uses_expected_evidence": False,
+        "uses_gold_fields": False,
+        "uses_qrels": False,
+        "uses_labels": False,
+        "uses_answerability": False,
+        "uses_query_or_row_or_target_ids": False,
+        "uses_baseline_topk_or_legacy_outputs": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "local_llm_fallback_used": False,
+        "local_llm": _local_llm_meta(
+            config=config,
+            status="generated",
+            prompt_sha256=prompt_sha256,
+            raw_response_sha256=raw_response_sha256,
+            answer_preview=answer,
+        ),
+    }
+    if retry_meta is not None:
+        composer["retry"] = dict(retry_meta)
+    output["answer_composer"] = composer
+    return output
+
+
+def _maybe_retry_selected_evidence_local_llm_output(
+    output: dict[str, Any],
+    *,
+    original_row: Mapping[str, Any],
+    query: str,
+    query_selected: Sequence[Mapping[str, Any]],
+    normalized_citation_format: str,
+    config: Mapping[str, Any],
+    retry_mode: str,
+) -> dict[str, Any]:
+    composer = dict(output.get("answer_composer") or {})
+    if retry_mode != "bounded-once":
+        return output
+    validation = validate_evidence_package_for_gate(output)
+    decision, reason = _evidence_gate_decision(validation, answer=_gate_answer_surface(_clean(output.get("generated_answer"))))
+    trigger = _selected_evidence_retry_trigger(validation, decision)
+    if not trigger:
+        composer["retry"] = _selected_evidence_retry_not_triggered_meta("evidence_gate_allows_answer")
+        output["answer_composer"] = composer
+        return output
+
+    previous_answer_preview = _bounded_text_preview(_gate_answer_surface(_clean(output.get("generated_answer"))))
+    missing_query_focus_anchors = [
+        _clean(anchor) for anchor in _as_list(validation.get("missing_query_anchors")) if _clean(anchor)
+    ]
+    prompt = _selected_evidence_local_llm_retry_prompt(
+        query=query,
+        selected_evidence=query_selected,
+        missing_query_focus_anchors=missing_query_focus_anchors,
+        previous_answer_preview=previous_answer_preview,
+    )
+    prompt_sha256 = f"sha256:{_sha256_text(prompt)}"
+    retry_base = {
+        "enabled": True,
+        "attempted": True,
+        "attempt_count": 1,
+        "max_retry_count": 1,
+        "mode": "bounded-once",
+        "input_policy": SELECTED_EVIDENCE_COMPOSER_RETRY_INPUT_POLICY,
+        "trigger": trigger,
+        "initial_evidence_package_status": _clean(validation.get("evidence_package_status")),
+        "initial_answer_gate_decision": decision,
+        "initial_abstention_reason": reason,
+        "missing_query_focus_anchors": missing_query_focus_anchors,
+        "previous_answer_preview": previous_answer_preview,
+        "previous_answer_preview_sha256": f"sha256:{_sha256_text(previous_answer_preview)}",
+        "retry_prompt_sha256": prompt_sha256,
+    }
+    try:
+        parsed, meta = LOCAL_LLM_HELPER.call_local_llm_strict_json(
+            backend=_clean(config.get("backend")),
+            base_url=_clean(config.get("base_url")),
+            model=_clean(config.get("model")),
+            prompt=prompt,
+            temperature=0.0,
+            max_tokens=int(config.get("max_tokens") or 360),
+            timeout_seconds=int(config.get("timeout_seconds") or 60),
+        )
+    except Exception as exc:
+        composer["retry"] = {
+            **retry_base,
+            "status": "error",
+            "error": f"LOCAL_LLM_RETRY_ERROR: {type(exc).__name__}: {exc}",
+        }
+        output["answer_composer"] = composer
+        return output
+
+    retry_answer = _clean(parsed.get("answer") or parsed.get("short_answer"))
+    retry_citation_ids = _ids_from_local_llm_citation_field(
+        parsed.get("citation_evidence_ids") or parsed.get("citations") or parsed.get("evidence_ids")
+    )
+    retry_raw_sha = _clean((meta or {}).get("raw_response_sha256"))
+    retry_output = _selected_evidence_local_llm_output_from_answer(
+        row=original_row,
+        query=query,
+        query_selected=query_selected,
+        answer=retry_answer,
+        citation_ids=retry_citation_ids,
+        normalized_citation_format=normalized_citation_format,
+        config=config,
+        prompt_sha256=prompt_sha256,
+        raw_response_sha256=retry_raw_sha,
+        retry_meta={
+            **retry_base,
+            "status": "accepted",
+            "retry_raw_response_sha256": retry_raw_sha,
+            "retry_answer_preview": _bounded_text_preview(retry_answer),
+        },
+    )
+    if retry_output is None:
+        composer["retry"] = {
+            **retry_base,
+            "status": "rejected_gate_insufficient",
+            "retry_raw_response_sha256": retry_raw_sha,
+            "retry_answer_preview": _bounded_text_preview(retry_answer),
+        }
+        output["answer_composer"] = composer
+        return output
+    retry_validation = validate_evidence_package_for_gate(retry_output)
+    retry_decision, retry_reason = _evidence_gate_decision(
+        retry_validation,
+        answer=_gate_answer_surface(_clean(retry_output.get("generated_answer"))),
+    )
+    if retry_decision != "allow_answer":
+        composer["retry"] = {
+            **retry_base,
+            "status": "rejected_gate_insufficient",
+            "retry_raw_response_sha256": retry_raw_sha,
+            "retry_answer_preview": _bounded_text_preview(retry_answer),
+            "retry_evidence_package_status": _clean(retry_validation.get("evidence_package_status")),
+            "retry_answer_gate_decision": retry_decision,
+            "retry_abstention_reason": retry_reason,
+        }
+        output["answer_composer"] = composer
+        return output
+    retry_composer = dict(retry_output.get("answer_composer") or {})
+    retry_meta = dict(retry_composer.get("retry") or {})
+    retry_meta.update(
+        {
+            "retry_evidence_package_status": _clean(retry_validation.get("evidence_package_status")),
+            "retry_answer_gate_decision": retry_decision,
+            "retry_abstention_reason": retry_reason,
+        }
+    )
+    retry_composer["retry"] = retry_meta
+    retry_output["answer_composer"] = retry_composer
+    return retry_output
+
+
+def apply_selected_evidence_composer_to_outputs(
+    raw_outputs: Sequence[Mapping[str, Any]],
+    *,
+    max_evidence: int = 3,
+    citation_format: str = "compact",
+    composer_provider: str = SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+    local_llm_backend: str = "",
+    local_llm_base_url: str = "",
+    local_llm_model: str = "",
+    local_llm_timeout_seconds: int = 60,
+    local_llm_max_tokens: int = 360,
+    skip_local_llm_endpoint_check: bool = False,
+    retry_mode: str = "off",
+) -> list[dict[str, Any]]:
+    normalized_provider = _clean(composer_provider).replace("_", "-").lower() or SELECTED_EVIDENCE_COMPOSER_PROVIDER
+    if normalized_provider == SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER:
+        return _apply_selected_evidence_local_llm_composer_to_outputs(
+            raw_outputs,
+            max_evidence=max_evidence,
+            citation_format=citation_format,
+            local_llm_backend=local_llm_backend,
+            local_llm_base_url=local_llm_base_url,
+            local_llm_model=local_llm_model,
+            local_llm_timeout_seconds=local_llm_timeout_seconds,
+            local_llm_max_tokens=local_llm_max_tokens,
+            skip_local_llm_endpoint_check=skip_local_llm_endpoint_check,
+            retry_mode=retry_mode,
+        )
+    if normalized_provider != SELECTED_EVIDENCE_COMPOSER_PROVIDER:
+        raise DatasetSchemaError(f"unsupported selected evidence composer provider: {composer_provider}")
+    normalized_citation_format = _normalize_selected_evidence_citation_format(citation_format)
+    composed_rows: list[dict[str, Any]] = []
+    for row in raw_outputs:
+        output = dict(row)
+        contexts = _contexts_from_row(output)
+        query = _clean(output.get("query"))
+        query_selected = select_composer_evidence(query, contexts, max_evidence=max_evidence)
+        abstention_reason = _selected_evidence_abstention_reason(query, query_selected)
+        final_selected: list[dict[str, Any]] = []
+        if not abstention_reason:
+            draft_answer = _selected_evidence_answer(query=query, selected_evidence=query_selected)
+            final_selected = _gate_select_evidence(
+                query=query,
+                answer=_gate_answer_surface(draft_answer),
+                contexts=query_selected,
+                citations=[],
+            )
+            if not final_selected:
+                abstention_reason = "insufficient_selected_evidence"
+        abstained = bool(abstention_reason)
+        formatted_citations = [] if abstained else format_selected_evidence_citations(
+            final_selected,
+            citation_format=normalized_citation_format,
+        )
+        output["generated_answer"] = (
+            BOUNDED_EVIDENCE_ABSTENTION_ANSWER
+            if abstained
+            else _selected_evidence_answer(
+                query=query,
+                selected_evidence=final_selected,
+                citation_format=normalized_citation_format,
+                formatted_citations=formatted_citations,
+            )
+        )
+        output["citations"] = [] if abstained else [_normalize_citation(context) for context in final_selected]
+        output["answer_composer"] = {
+            "provider": SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+            "input_policy": SELECTED_EVIDENCE_COMPOSER_INPUT_POLICY,
+            "citation_format": normalized_citation_format,
+            "formatted_citations": formatted_citations,
+            "retrieved_context_only_citations_diagnostic_only": True,
+            "query_selected_evidence_count": len(query_selected),
+            "query_selected_evidence_ids": _selected_evidence_ids(query_selected),
+            "selected_evidence_count": len(final_selected),
+            "selected_evidence_ids": _selected_evidence_ids(final_selected),
+            "selected_source_atom_ids": [
+                _clean(context.get("source_atom_id")) for context in final_selected if _clean(context.get("source_atom_id"))
+            ],
+            "selected_evidence_text_hashes": _text_hashes(final_selected),
+            "abstained": abstained,
+            "abstention_reason": abstention_reason,
+            "previous_answer_hash": _sha256_text(_clean(row.get("generated_answer"))),
+            "uses_expected_answer": False,
+            "uses_expected_evidence": False,
+            "uses_gold_fields": False,
+            "uses_qrels": False,
+            "uses_labels": False,
+            "uses_answerability": False,
+            "uses_query_or_row_or_target_ids": False,
+            "uses_baseline_topk_or_legacy_outputs": False,
+            "raw_prompt_payload_written": False,
+            "raw_response_payload_written": False,
+        }
+        composed_rows.append(output)
+    return composed_rows
+
+
+def _apply_selected_evidence_local_llm_composer_to_outputs(
+    raw_outputs: Sequence[Mapping[str, Any]],
+    *,
+    max_evidence: int = 3,
+    citation_format: str = "compact",
+    local_llm_backend: str = "",
+    local_llm_base_url: str = "",
+    local_llm_model: str = "",
+    local_llm_timeout_seconds: int = 60,
+    local_llm_max_tokens: int = 360,
+    skip_local_llm_endpoint_check: bool = False,
+    retry_mode: str = "off",
+) -> list[dict[str, Any]]:
+    normalized_citation_format = _normalize_selected_evidence_citation_format(citation_format)
+    normalized_retry_mode = _normalize_selected_evidence_composer_retry_mode(retry_mode)
+    config = _local_llm_composer_config(
+        backend=local_llm_backend,
+        base_url=local_llm_base_url,
+        model=local_llm_model,
+        timeout_seconds=local_llm_timeout_seconds,
+        max_tokens=local_llm_max_tokens,
+        check_endpoint=not skip_local_llm_endpoint_check,
+    )
+    composed_rows: list[dict[str, Any]] = []
+    for row in raw_outputs:
+        deterministic = apply_selected_evidence_composer_to_outputs(
+            [row],
+            max_evidence=max_evidence,
+            citation_format=normalized_citation_format,
+            composer_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+        )[0]
+        deterministic_composer = dict(deterministic.get("answer_composer") or {})
+        deterministic_composer["provider"] = SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER
+        deterministic_composer["fallback_provider"] = SELECTED_EVIDENCE_COMPOSER_PROVIDER
+        deterministic_composer["local_llm_fallback_used"] = True
+        query = _clean(row.get("query"))
+        contexts = _contexts_from_row(row)
+        query_selected = select_composer_evidence(query, contexts, max_evidence=max_evidence)
+
+        if deterministic_composer.get("abstained"):
+            if normalized_retry_mode == "bounded-once":
+                deterministic_composer["retry"] = _selected_evidence_retry_not_triggered_meta(
+                    "no_initial_selected_evidence_answer"
+                )
+            deterministic_composer["local_llm"] = _local_llm_meta(
+                config=config,
+                status="skipped_insufficient_selected_evidence",
+                blockers=[_clean(deterministic_composer.get("abstention_reason")) or "insufficient_selected_evidence"],
+                fallback_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+            )
+            deterministic["answer_composer"] = deterministic_composer
+            composed_rows.append(deterministic)
+            continue
+
+        if not config.get("available"):
+            if normalized_retry_mode == "bounded-once":
+                deterministic_composer["retry"] = _selected_evidence_retry_not_triggered_meta(
+                    "local_llm_unavailable"
+                )
+            deterministic_composer["local_llm"] = _local_llm_meta(
+                config=config,
+                status="unavailable_deterministic_fallback",
+                blockers=list(config.get("blockers") or []),
+                fallback_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+            )
+            deterministic["answer_composer"] = deterministic_composer
+            composed_rows.append(deterministic)
+            continue
+
+        prompt = _selected_evidence_local_llm_prompt(query=query, selected_evidence=query_selected)
+        prompt_sha256 = f"sha256:{_sha256_text(prompt)}"
+        try:
+            parsed, meta = LOCAL_LLM_HELPER.call_local_llm_strict_json(
+                backend=_clean(config.get("backend")),
+                base_url=_clean(config.get("base_url")),
+                model=_clean(config.get("model")),
+                prompt=prompt,
+                temperature=0.0,
+                max_tokens=int(config.get("max_tokens") or local_llm_max_tokens),
+                timeout_seconds=int(config.get("timeout_seconds") or local_llm_timeout_seconds),
+            )
+        except Exception as exc:
+            if normalized_retry_mode == "bounded-once":
+                deterministic_composer["retry"] = _selected_evidence_retry_not_triggered_meta(
+                    "initial_local_llm_error"
+                )
+            deterministic_composer["local_llm"] = _local_llm_meta(
+                config=config,
+                status="error_deterministic_fallback",
+                prompt_sha256=prompt_sha256,
+                blockers=[f"LOCAL_LLM_COMPOSER_ERROR: {type(exc).__name__}: {exc}"],
+                fallback_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+            )
+            deterministic["answer_composer"] = deterministic_composer
+            composed_rows.append(deterministic)
+            continue
+
+        answer = _clean(parsed.get("answer") or parsed.get("short_answer"))
+        citation_ids = _ids_from_local_llm_citation_field(
+            parsed.get("citation_evidence_ids") or parsed.get("citations") or parsed.get("evidence_ids")
+        )
+        output = _selected_evidence_local_llm_output_from_answer(
+            row=row,
+            query=query,
+            query_selected=query_selected,
+            answer=answer,
+            citation_ids=citation_ids,
+            normalized_citation_format=normalized_citation_format,
+            config=config,
+            prompt_sha256=prompt_sha256,
+            raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+        )
+        if output is None:
+            if normalized_retry_mode == "bounded-once":
+                deterministic_composer["retry"] = _selected_evidence_retry_not_triggered_meta(
+                    "initial_local_llm_answer_unsupported_or_empty"
+                )
+            deterministic_composer["local_llm"] = _local_llm_meta(
+                config=config,
+                status="unsupported_or_empty_deterministic_fallback",
+                prompt_sha256=prompt_sha256,
+                raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+                answer_preview=answer,
+                fallback_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+            )
+            deterministic["answer_composer"] = deterministic_composer
+            composed_rows.append(deterministic)
+            continue
+        output = _maybe_retry_selected_evidence_local_llm_output(
+            output,
+            original_row=row,
+            query=query,
+            query_selected=query_selected,
+            normalized_citation_format=normalized_citation_format,
+            config=config,
+            retry_mode=normalized_retry_mode,
+        )
+        composed_rows.append(output)
+    return composed_rows
 
 
 def _gate_citation_validation(
@@ -10330,6 +11826,533 @@ def _wrong_route_counts(rows: Sequence[Mapping[str, Any]]) -> tuple[int, int, in
     return wrong_family, wrong_granularity, pollution
 
 
+def _normalize_audit_query_ids(value: str | Sequence[str] | None) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        raw_values = re.split(r"[,;\s]+", value)
+    else:
+        raw_values = []
+        for entry in value:
+            raw_values.extend(re.split(r"[,;\s]+", _clean(entry)))
+    ids: list[str] = []
+    for raw in raw_values:
+        query_id = _clean(raw)
+        if query_id and query_id not in ids:
+            ids.append(query_id)
+    return ids
+
+
+def _dedupe_clean(values: Iterable[Any]) -> list[str]:
+    result: list[str] = []
+    for value in values:
+        text = _clean(value)
+        if text and text not in result:
+            result.append(text)
+    return result
+
+
+def _corpus_coverage_target_anchors(item: EvalItem, explicit_anchors: Sequence[str] | None) -> list[str]:
+    explicit = _dedupe_clean(explicit_anchors or [])
+    if explicit:
+        return explicit
+    if item.id == "text_namu_v2_0014":
+        return list(TEXT_NAMU_V2_0014_ADVERSARY_AUDIT_ANCHORS)
+    evidence_texts = [evidence.text for evidence in item.expected_evidence]
+    anchors = sorted(_candidate_anchors(item.query, item.expected_answer, *item.expected_answer_aliases, *evidence_texts))
+    return anchors[:8]
+
+
+def _anchor_hit_count(rows: Sequence[Mapping[str, Any]], anchors: Sequence[str]) -> int:
+    normalized = [normalize_answer_text(anchor) for anchor in anchors if normalize_answer_text(anchor)]
+    count = 0
+    for row in rows:
+        text = " ".join(
+            _clean(value)
+            for value in (
+                row.get("title"),
+                row.get("section"),
+                _gate_row_text(row),
+            )
+            if _clean(value)
+        )
+        if _anchor_in_text(normalized, text):
+            count += 1
+    return count
+
+
+def _query_collision_count(rows: Sequence[Mapping[str, Any]], query: str, anchors: Sequence[str]) -> int:
+    query_anchors = sorted(_candidate_anchors(query))
+    if not query_anchors:
+        return 0
+    collision_count = 0
+    for row in rows:
+        text = " ".join(
+            _clean(value)
+            for value in (
+                row.get("title"),
+                row.get("section"),
+                _gate_row_text(row),
+            )
+            if _clean(value)
+        )
+        if _anchor_hit_count([row], anchors):
+            continue
+        if _anchor_in_text(query_anchors, text):
+            collision_count += 1
+    return collision_count
+
+
+def _probe_context_summary(rows: Sequence[Mapping[str, Any]], *, query: str, anchors: Sequence[str]) -> dict[str, Any]:
+    contexts = [dict(row) for row in rows if isinstance(row, Mapping)]
+    hit_count = _anchor_hit_count(contexts, anchors)
+    return {
+        "available": True,
+        "context_count": len(contexts),
+        "target_anchor_hit": hit_count > 0,
+        "target_anchor_hit_count": hit_count,
+        "collision_count": _query_collision_count(contexts, query, anchors),
+        "source_atom_ids": _dedupe_clean(
+            _clean(row.get("source_atom_id")) for row in contexts if _clean(row.get("source_atom_id"))
+        )[:5],
+        "doc_ids": _dedupe_clean(_clean(row.get("doc_id")) for row in contexts if _clean(row.get("doc_id")))[:5],
+        "granularities": sorted({_clean(row.get("granularity")) for row in contexts if _clean(row.get("granularity"))}),
+        "retrieval_routes": sorted({_clean(row.get("retrieval_route")) for row in contexts if _clean(row.get("retrieval_route"))}),
+    }
+
+
+def _matched_audit_anchors(text: str, anchors: Sequence[str]) -> list[str]:
+    matched: list[str] = []
+    for anchor in anchors:
+        normalized = normalize_answer_text(anchor)
+        if normalized and _anchor_in_text([normalized], text):
+            matched.append(anchor)
+    return matched
+
+
+def _source_registry_context_text(row: Mapping[str, Any]) -> str:
+    raw_locator = row.get("raw_locator") if isinstance(row.get("raw_locator"), Mapping) else {}
+    canonical = (
+        row.get("canonical_citation_payload")
+        if isinstance(row.get("canonical_citation_payload"), Mapping)
+        else {}
+    )
+    canonical_locator = (
+        canonical.get("text_locator")
+        if isinstance(canonical.get("text_locator"), Mapping)
+        else {}
+    )
+    return " ".join(
+        _clean(value)
+        for value in (
+            row.get("normalized_text_or_value_snapshot"),
+            row.get("source_atom_id"),
+            row.get("document_id"),
+            row.get("source_identity"),
+            raw_locator.get("title"),
+            raw_locator.get("chunk_id"),
+            raw_locator.get("search_unit_id"),
+            canonical_locator.get("title"),
+            canonical_locator.get("chunk_id"),
+            canonical_locator.get("search_unit_id"),
+        )
+        if _clean(value)
+    )
+
+
+def _source_registry_audit_presence(
+    *,
+    source_registry_path: Path | str | None,
+    query_id: str,
+    anchors: Sequence[str],
+    max_rows: int = 8,
+) -> dict[str, Any]:
+    path = Path(source_registry_path) if source_registry_path else SOURCE_NATIVE_SOURCE_REGISTRY_PATH
+    result: dict[str, Any] = {
+        "available": False,
+        "report_only_diagnostic": True,
+        "path": str(path),
+        "target_anchor_hit": False,
+        "target_anchor_hit_count": 0,
+        "strong_target_anchor_hit_count": 0,
+        "query_id_match_count": 0,
+        "matching_source_atom_count": 0,
+        "source_atom_ids": [],
+        "content_hashes": [],
+        "doc_ids": [],
+        "rows": [],
+    }
+    if not path.exists():
+        result["unavailable_reason"] = "source_registry_path_missing"
+        return result
+
+    rows: list[dict[str, Any]] = []
+    source_atom_ids: list[str] = []
+    content_hashes: list[str] = []
+    doc_ids: list[str] = []
+    target_hit_count = 0
+    strong_hit_count = 0
+    query_id_match_count = 0
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(row, Mapping):
+                    continue
+                parent = row.get("parent_pointers") if isinstance(row.get("parent_pointers"), Mapping) else {}
+                raw_locator = row.get("raw_locator") if isinstance(row.get("raw_locator"), Mapping) else {}
+                source_unit_id = _clean(parent.get("source_unit_id") or row.get("source_unit_id"))
+                search_unit_id = _clean(parent.get("search_unit_id") or raw_locator.get("search_unit_id"))
+                query_id_match = query_id in {source_unit_id, search_unit_id}
+                matched_anchors = _matched_audit_anchors(_source_registry_context_text(row), anchors)
+                if not query_id_match and not matched_anchors:
+                    continue
+                target_hit = bool(matched_anchors)
+                target_hit_count += int(target_hit)
+                strong_hit_count += int(len(matched_anchors) >= 2)
+                query_id_match_count += int(query_id_match)
+                source_atom_id = _clean(row.get("source_atom_id"))
+                content_hash = _clean(row.get("content_hash"))
+                doc_id = _clean(row.get("document_id") or raw_locator.get("document_id") or raw_locator.get("doc_id"))
+                if source_atom_id:
+                    source_atom_ids.append(source_atom_id)
+                if content_hash:
+                    content_hashes.append(content_hash)
+                if doc_id:
+                    doc_ids.append(doc_id)
+                if len(rows) < max_rows:
+                    rows.append(
+                        {
+                            "line_number": line_number,
+                            "source_atom_id": source_atom_id,
+                            "document_id": doc_id,
+                            "chunk_id": _clean(raw_locator.get("chunk_id")),
+                            "search_unit_id": search_unit_id,
+                            "source_unit_id": source_unit_id,
+                            "content_hash": content_hash,
+                            "source_family": _clean(row.get("source_family")),
+                            "matched_anchors": matched_anchors,
+                            "matched_anchor_count": len(matched_anchors),
+                            "query_id_match": query_id_match,
+                            "official_denominator_overlap": bool(row.get("official_denominator_overlap")),
+                        }
+                    )
+    except OSError as exc:
+        result["unavailable_reason"] = f"{type(exc).__name__}:{exc}"
+        return result
+
+    result.update(
+        {
+            "available": True,
+            "target_anchor_hit": target_hit_count > 0,
+            "target_anchor_hit_count": target_hit_count,
+            "strong_target_anchor_hit_count": strong_hit_count,
+            "query_id_match_count": query_id_match_count,
+            "matching_source_atom_count": len(_dedupe_clean(source_atom_ids)),
+            "source_atom_ids": _dedupe_clean(source_atom_ids)[:max_rows],
+            "content_hashes": _dedupe_clean(content_hashes)[:max_rows],
+            "doc_ids": _dedupe_clean(doc_ids)[:max_rows],
+            "rows": rows,
+        }
+    )
+    return result
+
+
+def _index_checkpoint_audit_presence(
+    *,
+    index_checkpoint_path: Path | str | None,
+    index_manifest_path: Path | str | None,
+    source_atom_ids: Sequence[str],
+) -> dict[str, Any]:
+    manifest_path_text = _clean(index_manifest_path)
+    checkpoint_path = Path(index_checkpoint_path) if index_checkpoint_path else None
+    if checkpoint_path is None and manifest_path_text:
+        checkpoint_path = Path(manifest_path_text).with_name("index_checkpoint.json")
+    result: dict[str, Any] = {
+        "available": False,
+        "report_only_diagnostic": True,
+        "index_manifest_path": manifest_path_text,
+        "index_checkpoint_path": str(checkpoint_path) if checkpoint_path else "",
+        "target_source_atom_indexed": False,
+        "source_atom_id_match_count": 0,
+        "indexed_source_atom_ids": [],
+    }
+    if checkpoint_path is None:
+        result["unavailable_reason"] = "index_checkpoint_path_unavailable"
+        return result
+    if not checkpoint_path.exists():
+        result["unavailable_reason"] = "index_checkpoint_path_missing"
+        return result
+    ids = _dedupe_clean(source_atom_ids)
+    if not ids:
+        result["available"] = True
+        result["unavailable_reason"] = "source_registry_source_atom_ids_unavailable"
+        return result
+    try:
+        raw = checkpoint_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        result["unavailable_reason"] = f"{type(exc).__name__}:{exc}"
+        return result
+    matched = [source_atom_id for source_atom_id in ids if source_atom_id in raw]
+    result.update(
+        {
+            "available": True,
+            "target_source_atom_indexed": bool(matched),
+            "source_atom_id_match_count": len(matched),
+            "indexed_source_atom_ids": matched[:8],
+        }
+    )
+    return result
+
+
+def _probe_unavailable(reason: str) -> dict[str, Any]:
+    return {
+        "available": False,
+        "unavailable_reason": reason,
+        "context_count": 0,
+        "target_anchor_hit": False,
+        "target_anchor_hit_count": 0,
+        "collision_count": 0,
+        "source_atom_ids": [],
+        "doc_ids": [],
+        "granularities": [],
+        "retrieval_routes": [],
+    }
+
+
+def _run_corpus_coverage_probe(
+    *,
+    route_mode: str,
+    lane_factory: Callable[[str], Any],
+    item: EvalItem,
+    audit_query: str,
+    target_anchors: Sequence[str],
+    top_k: int,
+) -> dict[str, Any]:
+    adapter = None
+    try:
+        adapter = lane_factory(route_mode)
+        probe_item = replace(
+            item,
+            query=audit_query,
+            expected_answer="",
+            expected_answer_aliases=(),
+            expected_evidence=(),
+            source_row={},
+        )
+        output = adapter.run_item(probe_item, top_k=top_k)
+        contexts = _retrieved_contexts(output)
+        probe = _probe_context_summary(contexts, query=item.query, anchors=target_anchors)
+        filter_policy = output.get("weaviate_filter_policy")
+        if isinstance(filter_policy, Mapping):
+            probe["weaviate_filter_policy"] = dict(filter_policy)
+        route_plan = output.get("weaviate_route_plan")
+        if isinstance(route_plan, Mapping):
+            probe["weaviate_route_plan"] = dict(route_plan)
+        probe["audit_query_sha256"] = _sha256_text(audit_query)
+        probe["route_mode"] = route_mode
+        return probe
+    except Exception as exc:
+        return _probe_unavailable(f"{type(exc).__name__}:{exc}")
+    finally:
+        close = getattr(adapter, "close", None)
+        if callable(close):
+            close()
+
+
+def _classify_corpus_coverage_row(
+    *,
+    active_probe: Mapping[str, Any],
+    full_index_probe: Mapping[str, Any],
+    route_selected_probe: Mapping[str, Any],
+) -> tuple[str, str, list[str], str]:
+    active_hit = bool(active_probe.get("target_anchor_hit"))
+    full_hit = bool(full_index_probe.get("target_anchor_hit"))
+    routed_hit = bool(route_selected_probe.get("target_anchor_hit"))
+    full_available = bool(full_index_probe.get("available"))
+    route_available = bool(route_selected_probe.get("available"))
+    collision_count = int(active_probe.get("collision_count") or 0)
+
+    def with_collision(modes: Sequence[str]) -> list[str]:
+        result = list(modes)
+        if collision_count and "collision" not in result:
+            result.append("collision")
+        return result
+
+    if active_hit:
+        return "corpus_present", "corpus_present", [], "active retrieval already contains a target anchor"
+    if full_hit and not routed_hit and route_available:
+        return (
+            "route_filter_failure",
+            "corpus_present",
+            with_collision(["route_filter_failure"]),
+            "full-index target probe found the anchor while route-selected target probe did not",
+        )
+    if routed_hit:
+        return (
+            "tokenization_alias_failure",
+            "corpus_present",
+            with_collision(["tokenization_alias_failure"]),
+            "route-selected target probe found the anchor but the main query path did not",
+        )
+    if full_available and not full_hit:
+        if collision_count:
+            return (
+                "collision",
+                "corpus_absent",
+                ["collision", "corpus_absent"],
+                "target anchor was absent in full-index probe while active retrieval had query-anchor collisions",
+            )
+        return "corpus_absent", "corpus_absent", ["corpus_absent"], "target anchor was absent in full-index probe"
+    if collision_count:
+        return "collision", "unknown", ["collision"], "audit probes were unavailable but active retrieval had query-anchor collisions"
+    return "corpus_absent", "unknown", ["corpus_absent"], "audit probes were unavailable and active retrieval had no target anchor"
+
+
+def build_corpus_coverage_audit_report(
+    *,
+    items: Sequence[EvalItem],
+    rows: Sequence[Mapping[str, Any]],
+    query_ids: str | Sequence[str] | None,
+    target_anchors: Sequence[str] | None = None,
+    top_k: int = 10,
+    lane_factory: Callable[[str], Any] | None = None,
+    source_registry_path: Path | str | None = SOURCE_NATIVE_SOURCE_REGISTRY_PATH,
+    active_index_checkpoint_path: Path | str | None = None,
+    active_index_manifest_path: Path | str | None = None,
+) -> dict[str, Any]:
+    target_ids = _normalize_audit_query_ids(query_ids)
+    if not target_ids:
+        return {
+            "enabled": False,
+            "schema_version": CORPUS_COVERAGE_AUDIT_SCHEMA_VERSION,
+            "report_only_diagnostic": True,
+            "rows": [],
+            "classification_counts": {},
+            "gold_or_qrels_mutation": False,
+            "official_metric_input_rows": 0,
+        }
+
+    item_by_id = {item.id: item for item in items}
+    row_by_id = {_query_id(row): dict(row) for row in rows if _query_id(row)}
+    audit_rows: list[dict[str, Any]] = []
+    for query_id in target_ids:
+        item = item_by_id.get(query_id)
+        if item is None:
+            audit_rows.append(
+                {
+                    "query_id": query_id,
+                    "primary_classification": "corpus_absent",
+                    "corpus_presence": "unknown",
+                    "failure_modes": ["corpus_absent"],
+                    "classification_reason": "query_id not present in loaded dataset",
+                    "target_anchors": _dedupe_clean(target_anchors or []),
+                    "audit_uses_expected_fields_for_candidate_generation": False,
+                    "audit_uses_gold_fields_for_candidate_generation": False,
+                }
+            )
+            continue
+        anchors = _corpus_coverage_target_anchors(item, target_anchors)
+        active_row = row_by_id.get(query_id, {})
+        active_contexts = _retrieved_contexts(active_row)
+        active_probe = _probe_context_summary(active_contexts, query=item.query, anchors=anchors)
+        source_registry_presence = _source_registry_audit_presence(
+            source_registry_path=source_registry_path,
+            query_id=query_id,
+            anchors=anchors,
+        )
+        active_index_presence = _index_checkpoint_audit_presence(
+            index_checkpoint_path=active_index_checkpoint_path,
+            index_manifest_path=active_index_manifest_path,
+            source_atom_ids=source_registry_presence.get("source_atom_ids") or [],
+        )
+        audit_query = " ".join([item.query, *anchors]).strip()
+        if lane_factory is None:
+            full_index_probe = _probe_unavailable("weaviate_lane_factory_unavailable")
+            route_selected_probe = _probe_unavailable("weaviate_lane_factory_unavailable")
+        else:
+            full_index_probe = _run_corpus_coverage_probe(
+                route_mode="full_index",
+                lane_factory=lane_factory,
+                item=item,
+                audit_query=audit_query,
+                target_anchors=anchors,
+                top_k=top_k,
+            )
+            route_selected_probe = _run_corpus_coverage_probe(
+                route_mode="route_selected",
+                lane_factory=lane_factory,
+                item=item,
+                audit_query=audit_query,
+                target_anchors=anchors,
+                top_k=top_k,
+            )
+        primary, presence, failure_modes, reason = _classify_corpus_coverage_row(
+            active_probe=active_probe,
+            full_index_probe=full_index_probe,
+            route_selected_probe=route_selected_probe,
+        )
+        audit_rows.append(
+            {
+                "query_id": query_id,
+                "query": item.query,
+                "target_anchors": anchors,
+                "target_anchor_count": len(anchors),
+                "primary_classification": primary,
+                "corpus_presence": presence,
+                "failure_modes": failure_modes,
+                "classification_reason": reason,
+                "active_retrieval_probe": active_probe,
+                "source_registry_presence": source_registry_presence,
+                "active_index_presence": active_index_presence,
+                "full_index_probe": full_index_probe,
+                "route_selected_probe": route_selected_probe,
+                "corpus_present": presence == "corpus_present",
+                "corpus_absent": presence == "corpus_absent",
+                "collision": "collision" in failure_modes,
+                "tokenization_or_alias_failure": "tokenization_alias_failure" in failure_modes,
+                "route_selected_filter_failure": "route_filter_failure" in failure_modes,
+                "audit_query_sha256": _sha256_text(audit_query),
+                "audit_query_policy": "query_text_plus_explicit_target_anchors_report_only_after_main_run",
+                "audit_uses_expected_fields_for_candidate_generation": False,
+                "audit_uses_gold_fields_for_candidate_generation": False,
+                "audit_uses_qrels_for_candidate_generation": False,
+                "audit_uses_labels_for_candidate_generation": False,
+                "gold_or_qrels_mutation": False,
+                "official_metric_input_rows": 0,
+            }
+        )
+
+    counts = Counter(_clean(row.get("primary_classification")) or "unknown" for row in audit_rows)
+    return {
+        "enabled": True,
+        "schema_version": CORPUS_COVERAGE_AUDIT_SCHEMA_VERSION,
+        "report_only_diagnostic": True,
+        "scope": "target_query_corpus_coverage_failure_mode_audit",
+        "target_query_ids": target_ids,
+        "rows": audit_rows,
+        "row_count": len(audit_rows),
+        "classification_counts": dict(sorted(counts.items())),
+        "candidate_generation_input_policy": "main_eval_unchanged; audit probes are explicit report-only post-main-run diagnostics",
+        "audit_probe_policy": "target_anchor_queries_are_not_answer_generation_not_metric_inputs_not_registry_mutation",
+        "gold_or_qrels_mutation": False,
+        "source_registry_mutation": False,
+        "active_index_mutation": False,
+        "label_or_denominator_mutation": False,
+        "official_metric_input_rows": 0,
+        "official_metric": False,
+        "promotion_evidence": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "artifact_sidecar_written": False,
+    }
+
+
 def _row_metric_passed(row: Mapping[str, Any], metric_name: str) -> bool | None:
     metrics = row.get("metric_results") if isinstance(row.get("metric_results"), Mapping) else {}
     value = metrics.get(metric_name)
@@ -10430,6 +12453,11 @@ def _weaviate_ab_lane_summary(
         "dataset_source": dataset_source,
         "item_count": int(summary.get("total_item_count") or len(rows)),
         "active_retrieval_service_boundary": summary.get("active_retrieval_service_boundary"),
+        "active_retrieval_backend": summary.get("active_retrieval_backend"),
+        "collection": summary.get("collection") or summary.get("weaviate_collection_name"),
+        "rollback_key": summary.get("rollback_key"),
+        "fallback_used": bool(summary.get("fallback_used")),
+        "fail_closed_on_unavailable": bool(summary.get("fail_closed_on_unavailable", True)),
         "external_vector_db": dict(summary.get("external_vector_db") or {}),
         "weaviate_filter_sent": bool(summary.get("weaviate_filter_sent")),
         "weaviate_filter_policy": dict(filter_policy),
@@ -10706,13 +12734,31 @@ def write_weaviate_route_ab_artifacts(
     lanes: dict[str, dict[str, Any]] = {}
     lane_public_rows: dict[str, list[dict[str, Any]]] = {}
     item_rows: list[dict[str, Any]] = []
-    public_baseline_rows = [_public_report_row(row) for row in baseline_rows]
+    baseline_filter_policy = (
+        baseline_summary.get("weaviate_filter_policy")
+        if isinstance(baseline_summary.get("weaviate_filter_policy"), Mapping)
+        else {}
+    )
+    if _clean(baseline_filter_policy.get("route_mode")) == "full_index":
+        lane_a_summary = dict(baseline_summary)
+        public_baseline_rows = [_public_report_row(row) for row in baseline_rows]
+    else:
+        lane_a_summary, public_baseline_rows = _run_weaviate_route_ab_lane(
+            lane_run_id=f"{suite_run_id}_full_index",
+            route_mode="full_index",
+            items=items,
+            top_k=top_k,
+            judge_adapter=judge_adapter,
+            provisional_require_citations=provisional_require_citations,
+            evidence_gate_mode=evidence_gate_mode,
+            lane_factory=lane_factory,
+        )
     lane_public_rows["lane_a_full_index"] = public_baseline_rows
     lanes["lane_a_full_index"] = _weaviate_ab_lane_summary(
         lane_id="lane_a_full_index",
         route_mode="full_index",
         dataset_source=dataset_path.as_posix(),
-        summary=baseline_summary,
+        summary=lane_a_summary,
         rows=public_baseline_rows,
     )
     item_rows.extend(_ab_item_rows(lane_id="lane_a_full_index", rows=public_baseline_rows))
@@ -11071,6 +13117,8 @@ def run_eval_from_paths(
     generated_at: str | None = None,
     comparison_summary: Mapping[str, Any] | None = None,
     comparison_target: str = "",
+    portfolio_comparison_reports: Sequence[str] | None = None,
+    write_portfolio_experiment_summary: bool = False,
     report_root: Path | str = REPORT_ROOT,
     registry_path: Path | str | None = None,
     status_jsonl_path: Path | str = STATUS_JSONL_PATH,
@@ -11096,8 +13144,23 @@ def run_eval_from_paths(
     source_native_index_build: Mapping[str, Any] | None = None,
     quality_gate_baseline_path: Path | str | None = None,
     evidence_gate_mode: str = "off",
+    answer_composer: str = "extractive-v1",
+    selected_evidence_citation_format: str = "compact",
+    selected_evidence_composer_retry_mode: str = "off",
+    local_llm_composer_backend: str = "",
+    local_llm_composer_base_url: str = "",
+    local_llm_composer_model: str = "",
+    local_llm_composer_timeout_seconds: int = 60,
+    local_llm_composer_max_tokens: int = 360,
+    skip_local_llm_composer_endpoint_check: bool = False,
     weaviate_route_ab_mode: str | Sequence[str] | None = None,
     weaviate_route_ab_lane_factory: Callable[[str], Any] | None = None,
+    corpus_coverage_audit_query_ids: str | Sequence[str] | None = None,
+    corpus_coverage_audit_target_anchors: Sequence[str] | None = None,
+    corpus_coverage_audit_lane_factory: Callable[[str], Any] | None = None,
+    corpus_coverage_audit_source_registry_path: Path | str | None = SOURCE_NATIVE_SOURCE_REGISTRY_PATH,
+    corpus_coverage_audit_index_checkpoint_path: Path | str | None = None,
+    corpus_coverage_audit_index_manifest_path: Path | str | None = None,
 ) -> RagEvalBundle:
     dataset = Path(dataset_path)
     output = Path(output_dir)
@@ -11114,6 +13177,15 @@ def run_eval_from_paths(
     normalized_evidence_gate_mode = _clean(evidence_gate_mode).lower() or "off"
     if normalized_evidence_gate_mode not in {"off", "diagnostic", "enforce"}:
         raise DatasetSchemaError(f"unsupported evidence gate mode: {evidence_gate_mode}")
+    normalized_answer_composer = _clean(answer_composer).replace("_", "-").lower() or "extractive-v1"
+    if normalized_answer_composer not in ANSWER_COMPOSER_PROVIDERS:
+        raise DatasetSchemaError(f"unsupported answer composer: {answer_composer}")
+    normalized_selected_evidence_citation_format = _normalize_selected_evidence_citation_format(
+        selected_evidence_citation_format
+    )
+    normalized_selected_evidence_composer_retry_mode = _normalize_selected_evidence_composer_retry_mode(
+        selected_evidence_composer_retry_mode
+    )
     if normalized_retrieval_surface == "searchunit-searchview" and not legacy_surface_comparison:
         raise DatasetSchemaError(
             "retrieval_surface=searchunit-searchview is legacy/debug only; pass --legacy-surface-comparison"
@@ -11210,6 +13282,23 @@ def run_eval_from_paths(
                     close_adapter()
                 raise
             raw_outputs.append(_pipeline_error_output(item, f"{type(exc).__name__}: {exc}"))
+    composer_applied = normalized_answer_composer in {
+        SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+        SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER,
+    }
+    if composer_applied:
+        raw_outputs = apply_selected_evidence_composer_to_outputs(
+            raw_outputs,
+            citation_format=normalized_selected_evidence_citation_format,
+            composer_provider=normalized_answer_composer,
+            local_llm_backend=local_llm_composer_backend,
+            local_llm_base_url=local_llm_composer_base_url,
+            local_llm_model=local_llm_composer_model,
+            local_llm_timeout_seconds=local_llm_composer_timeout_seconds,
+            local_llm_max_tokens=local_llm_composer_max_tokens,
+            skip_local_llm_endpoint_check=skip_local_llm_composer_endpoint_check,
+            retry_mode=normalized_selected_evidence_composer_retry_mode,
+        )
     raw_outputs, evidence_gate_summary = apply_evidence_gate_to_outputs(
         raw_outputs,
         mode=normalized_evidence_gate_mode,
@@ -11340,13 +13429,126 @@ def run_eval_from_paths(
         for metric_name, metric_value in ranking_metrics.items():
             if metric_name.startswith(("hit@", "ndcg@")):
                 summary["diagnostic_metrics"][f"{ranking_name}_{metric_name}_diagnostic"] = metric_value
+    normalized_corpus_audit_query_ids = _normalize_audit_query_ids(corpus_coverage_audit_query_ids)
+    corpus_coverage_lane_factory: Callable[[str], Any] | None = None
+    if normalized_corpus_audit_query_ids:
+        if corpus_coverage_audit_lane_factory is not None:
+            corpus_coverage_lane_factory = corpus_coverage_audit_lane_factory
+        elif adapter_is_weaviate_lane:
+            def default_corpus_coverage_lane_factory(route_mode: str) -> WeaviateSourceAtomAdapter:
+                return build_default_weaviate_adapter(
+                    requested_backend=normalized_retrieval_backend,
+                    retrieval_route_mode=route_mode,
+                )
+
+            corpus_coverage_lane_factory = default_corpus_coverage_lane_factory
+    active_index_manifest_path = _clean(corpus_coverage_audit_index_manifest_path)
+    if not active_index_manifest_path:
+        active_config = getattr(adapter, "config_obj", None)
+        active_index_manifest_path = _clean(getattr(active_config, "index_manifest_path", ""))
+    corpus_coverage_audit = build_corpus_coverage_audit_report(
+        items=items,
+        rows=raw_outputs,
+        query_ids=normalized_corpus_audit_query_ids,
+        target_anchors=corpus_coverage_audit_target_anchors,
+        top_k=top_k,
+        lane_factory=corpus_coverage_lane_factory,
+        source_registry_path=corpus_coverage_audit_source_registry_path,
+        active_index_checkpoint_path=corpus_coverage_audit_index_checkpoint_path,
+        active_index_manifest_path=active_index_manifest_path,
+    )
+    summary["diagnostic_metrics"].update(
+        {
+            "corpus_coverage_audit_enabled": bool(corpus_coverage_audit.get("enabled")),
+            "corpus_coverage_audit_row_count": int(corpus_coverage_audit.get("row_count") or 0),
+            "corpus_coverage_audit_route_filter_failure_count": int(
+                (corpus_coverage_audit.get("classification_counts") or {}).get("route_filter_failure", 0)
+            )
+            if isinstance(corpus_coverage_audit.get("classification_counts"), Mapping)
+            else 0,
+        }
+    )
+    composer_rows = [
+        row.get("answer_composer") if isinstance(row.get("answer_composer"), Mapping) else {}
+        for row in raw_outputs
+    ]
+    composer_selected_counts = [int(row.get("selected_evidence_count") or 0) for row in composer_rows]
+    local_llm_requested = normalized_answer_composer == SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER
+    local_llm_rows = [
+        row.get("local_llm") if isinstance(row.get("local_llm"), Mapping) else {}
+        for row in composer_rows
+        if isinstance(row.get("local_llm"), Mapping)
+    ]
+    retry_rows = [
+        row.get("retry") if isinstance(row.get("retry"), Mapping) else {}
+        for row in composer_rows
+        if isinstance(row.get("retry"), Mapping)
+    ]
+    local_llm_status_counts = Counter(_clean(row.get("status")) or "unknown" for row in local_llm_rows)
+    retry_status_counts = Counter(_clean(row.get("status")) or "unknown" for row in retry_rows)
+    local_llm_blockers = sorted(
+        {
+            _clean(blocker)
+            for row in local_llm_rows
+            for blocker in _as_list(row.get("blockers"))
+            if _clean(blocker)
+        }
+    )
+    local_llm_generated_count = local_llm_status_counts.get("generated", 0)
+    local_llm_fallback_used = local_llm_requested and (
+        any(bool(row.get("local_llm_fallback_used")) for row in composer_rows)
+        or any(_clean(row.get("status")) != "generated" for row in local_llm_rows)
+    )
+    if not local_llm_requested:
+        local_llm_not_used_reason = "local_llm_generator_not_wired_for_this_pass"
+    elif local_llm_generated_count:
+        local_llm_not_used_reason = ""
+    elif local_llm_status_counts.get("unavailable_deterministic_fallback"):
+        local_llm_not_used_reason = "local_llm_unavailable_deterministic_fallback"
+    elif local_llm_status_counts.get("skipped_insufficient_selected_evidence"):
+        local_llm_not_used_reason = "selected_evidence_insufficient_before_local_llm"
+    else:
+        local_llm_not_used_reason = "local_llm_not_generated_deterministic_fallback"
     generator_config = {
-        "provider": "extractive-v1",
-        "generator_provider": "extractive-v1",
-        "extractive_only": True,
-        "actual_generation_model_used": False,
-        "local_llm_generation_available": False,
-        "local_llm_not_used_reason": "local_llm_generator_not_wired_for_this_pass",
+        "provider": normalized_answer_composer,
+        "generator_provider": normalized_answer_composer,
+        "extractive_only": not composer_applied,
+        "answer_composer_provider": normalized_answer_composer,
+        "selected_evidence_composer_invoked": composer_applied,
+        "selected_evidence_composer_item_count": len(composer_rows) if composer_applied else 0,
+        "selected_evidence_composer_abstained_count": sum(1 for row in composer_rows if row.get("abstained")) if composer_applied else 0,
+        "selected_evidence_composer_selected_evidence_count": sum(composer_selected_counts) if composer_applied else 0,
+        "selected_evidence_composer_input_policy": SELECTED_EVIDENCE_COMPOSER_INPUT_POLICY if composer_applied else "",
+        "selected_evidence_citation_formatter_invoked": composer_applied,
+        "selected_evidence_citation_format": normalized_selected_evidence_citation_format if composer_applied else "",
+        "selected_evidence_citation_formatter_variants_available": sorted(SELECTED_EVIDENCE_CITATION_FORMATS),
+        "selected_evidence_composer_retry_mode": normalized_selected_evidence_composer_retry_mode if composer_applied else "off",
+        "selected_evidence_composer_retry_enabled": bool(composer_applied and normalized_selected_evidence_composer_retry_mode != "off"),
+        "selected_evidence_composer_retry_max_count_per_item": 1,
+        "selected_evidence_composer_retry_attempt_count": sum(int(row.get("attempt_count") or 0) for row in retry_rows),
+        "selected_evidence_composer_retry_accepted_count": retry_status_counts.get("accepted", 0),
+        "selected_evidence_composer_retry_rejected_count": retry_status_counts.get("rejected_gate_insufficient", 0),
+        "selected_evidence_composer_retry_error_count": retry_status_counts.get("error", 0),
+        "selected_evidence_composer_retry_status_counts": dict(retry_status_counts),
+        "selected_evidence_composer_retry_input_policy": (
+            SELECTED_EVIDENCE_COMPOSER_RETRY_INPUT_POLICY
+            if composer_applied and normalized_selected_evidence_composer_retry_mode != "off"
+            else ""
+        ),
+        "selected_evidence_composer_retry_raw_prompt_payload_written": False,
+        "selected_evidence_composer_retry_raw_response_payload_written": False,
+        "retrieved_context_only_citations_diagnostic_only": True,
+        "extractive_v1_baseline_preserved_for_comparison": composer_applied,
+        "actual_generation_model_used": bool(local_llm_generated_count),
+        "local_llm_generation_available": bool(local_llm_generated_count),
+        "local_llm_not_used_reason": local_llm_not_used_reason,
+        "local_llm_composer_requested": local_llm_requested,
+        "local_llm_composer_fallback_used": bool(local_llm_fallback_used),
+        "local_llm_composer_generated_count": int(local_llm_generated_count),
+        "local_llm_status_counts": dict(local_llm_status_counts),
+        "local_llm_blockers": local_llm_blockers,
+        "local_llm_prompt_payload_written": False,
+        "local_llm_raw_response_payload_written": False,
         "external_api_calls": False,
         "expected_answer_used_for_generation": False,
         "expected_evidence_used_for_generation": False,
@@ -11394,6 +13596,7 @@ def run_eval_from_paths(
             "surface_comparison": surface_comparison,
             "diagnostic_retrieval_metrics": diagnostic_retrieval_metrics,
             "semantic_quality_samples": semantic_quality_samples,
+            "corpus_coverage_audit": corpus_coverage_audit,
             "source_native_index_build": dict(source_native_index_build or {}),
             "generator_config": generator_config,
             "generator_model_config": generator_config,
@@ -11544,6 +13747,7 @@ def run_eval_from_paths(
         else "",
         "human_review_packet_csv": (output / "human_review_packet.csv").as_posix() if human_packet_requested else "",
         "reviewed_evidence_mapping_patch_json": reviewed_mapping_patch_path.as_posix() if reviewed_mapping_patch_path else "",
+        "corpus_coverage_audit_jsonl": "",
     }
     packet_rows, packet_summary = build_evidence_mapping_packet(
         summary=summary,
@@ -11590,6 +13794,8 @@ def run_eval_from_paths(
         human_review_packet_path=human_review_packet_path,
         reviewed_mapping_patch_path=reviewed_mapping_patch_path,
     )
+    summary["artifact_contract"]["portfolio_experiment_sidecar_written"] = False
+    summary["artifact_contract"]["portfolio_experiment_sidecars_allowed_only_by_explicit_flag"] = True
     route_ab_modes = _parse_weaviate_route_ab_modes(weaviate_route_ab_mode)
     if route_ab_modes:
         if not adapter_is_weaviate_lane:
@@ -11618,6 +13824,25 @@ def run_eval_from_paths(
         summary["artifact_paths"].update(route_ab_paths)
         summary["artifact_contract"]["route_ab_sidecar_exception"] = True
         summary["artifact_contract"]["route_ab_artifacts_allowed_only_by_weaviate_route_ab_mode"] = True
+        route_ab_report_path = Path(_clean(route_ab_paths.get("route_selected_hybrid_evidence_store_ab_report_json")))
+        try:
+            route_ab_report = json.loads(route_ab_report_path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError):
+            route_ab_report = {}
+        if isinstance(route_ab_report, Mapping):
+            summary["promotion_decision"] = _clean(route_ab_report.get("recommendation")) or summary.get(
+                "promotion_decision",
+                "blocked_keep_full_index_rollback",
+            )
+            summary["promotion_blockers"] = list(route_ab_report.get("promotion_blockers") or [])
+            summary["weaviate_route_ab_report_path"] = route_ab_report_path.as_posix()
+            summary["weaviate_route_ab_guardrail_status"] = dict(route_ab_report.get("guardrail_status") or {})
+            summary["residual_risks"] = [
+                "promotion decision is non-production diagnostic and not an official metric or readiness gate",
+                "full-index Weaviate rollback remains the configured fallback path",
+                "answer composer/citation formatter must cite selected EvidenceBundle only in the next lane",
+            ]
+            summary["next_recommended_goal"] = "selected_evidence_answer_composer_citation_formatter_nonprod"
     else:
         summary["artifact_paths"].update(
             {
@@ -11683,8 +13908,36 @@ def run_eval_from_paths(
     public_scored_rows = [_public_report_row(row) for row in scored_rows]
     summary["items"] = public_scored_rows
     refresh_metric_tiers(summary)
+    portfolio_comparison_inputs = _load_portfolio_comparison_reports(portfolio_comparison_reports)
+    if portfolio_comparison_inputs:
+        summary["portfolio_experiment_comparison"] = build_portfolio_experiment_comparison(
+            comparison_reports=portfolio_comparison_inputs,
+            current_summary=summary,
+        )
+    elif write_portfolio_experiment_summary:
+        raise DatasetSchemaError("--write-portfolio-experiment-summary requires at least one --portfolio-comparison-report")
+    portfolio_experiment_summary_path: Path | None = None
+    if write_portfolio_experiment_summary:
+        comparison = summary.get("portfolio_experiment_comparison")
+        if not isinstance(comparison, Mapping) or not comparison.get("enabled"):
+            raise DatasetSchemaError("--write-portfolio-experiment-summary requires an enabled portfolio comparison")
+        portfolio_experiment_summary_path = output / "portfolio_experiment_summary.md"
+        summary.setdefault("artifact_paths", {})
+        if isinstance(summary["artifact_paths"], MutableMapping):
+            summary["artifact_paths"]["portfolio_experiment_summary_md"] = portfolio_experiment_summary_path.as_posix()
+        artifact_contract = summary.get("artifact_contract")
+        if isinstance(artifact_contract, MutableMapping):
+            artifact_contract["portfolio_experiment_sidecar_written"] = True
+            artifact_contract["portfolio_experiment_sidecar_path"] = portfolio_experiment_summary_path.as_posix()
     validate_actual_rag_guardrails(summary)
     output.mkdir(parents=True, exist_ok=True)
+    if portfolio_experiment_summary_path is not None:
+        comparison = summary.get("portfolio_experiment_comparison")
+        if isinstance(comparison, Mapping):
+            portfolio_experiment_summary_path.write_text(
+                render_portfolio_experiment_summary(comparison),
+                encoding="utf-8",
+            )
     if reviewed_mapping_patch_path is not None:
         reviewed_mapping_patch_path = write_reviewed_mapping_patch_artifact(output, reviewed_mapping)
         summary["reviewed_mapping"]["patch_path"] = reviewed_mapping_patch_path.as_posix()
@@ -12164,6 +14417,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Compare this run to a summary JSON/run directory, or to 'latest'/'previous'.",
     )
     parser.add_argument(
+        "--portfolio-comparison-report",
+        action="append",
+        default=[],
+        metavar="LABEL=PATH",
+        help=(
+            "Embed a non-production portfolio comparison against another report.json in this run's report.json. "
+            "May be repeated; compared reports are post-run evidence only and never generation inputs."
+        ),
+    )
+    parser.add_argument(
+        "--write-portfolio-experiment-summary",
+        action="store_true",
+        help=(
+            "Write portfolio_experiment_summary.md from the embedded portfolio comparison. "
+            "Requires at least one --portfolio-comparison-report."
+        ),
+    )
+    parser.add_argument(
         "--quality-gate-baseline",
         default="",
         help="Frozen legacy SearchUnit/SearchView report path, run directory, or 'auto' for post-run quality-gate parity artifacts.",
@@ -12175,11 +14446,66 @@ def build_parser() -> argparse.ArgumentParser:
         help="Bounded SourceAtom/EvidenceBundle evidence gate: off preserves answers, diagnostic reports decisions, enforce abstains unsupported answers.",
     )
     parser.add_argument(
+        "--answer-composer",
+        default="extractive-v1",
+        choices=sorted(ANSWER_COMPOSER_PROVIDERS),
+        help="Answer composer for explicit non-production experiments; selected-evidence mode rewrites answers/citations from selected SourceAtom/EvidenceBundle evidence only.",
+    )
+    parser.add_argument(
+        "--selected-evidence-citation-format",
+        default="compact",
+        choices=sorted(SELECTED_EVIDENCE_CITATION_FORMATS),
+        help="Citation formatter variant for the selected-evidence composer; display-only and still validated by the evidence gate.",
+    )
+    parser.add_argument(
+        "--selected-evidence-composer-retry-mode",
+        default="off",
+        choices=sorted(SELECTED_EVIDENCE_COMPOSER_RETRY_MODES),
+        help="Optional bounded retry for selected-evidence local composer; bounded-once retries only after evidence-gate insufficiency.",
+    )
+    parser.add_argument(
+        "--local-llm-composer-backend",
+        default="",
+        choices=["", "llamacpp", "openai-compatible", "ollama"],
+        help="Optional localhost-only backend for selected-evidence-local-llm-v1.",
+    )
+    parser.add_argument(
+        "--local-llm-composer-base-url",
+        default="",
+        help="Optional localhost-only base URL for selected-evidence-local-llm-v1; external endpoints are rejected.",
+    )
+    parser.add_argument(
+        "--local-llm-composer-model",
+        default="",
+        help="Optional local model name for selected-evidence-local-llm-v1.",
+    )
+    parser.add_argument("--local-llm-composer-timeout-seconds", type=int, default=60)
+    parser.add_argument("--local-llm-composer-max-tokens", type=int, default=360)
+    parser.add_argument("--skip-local-llm-composer-endpoint-check", action="store_true")
+    parser.add_argument(
         "--weaviate-route-ab-mode",
         default="",
         help=(
             "Explicit non-production Weaviate route A/B comparison modes, comma-separated: "
             "text,mixed,routed. Writes route-selected comparison sidecars only when set."
+        ),
+    )
+    parser.add_argument(
+        "--corpus-coverage-audit-query-id",
+        action="append",
+        default=[],
+        help=(
+            "Embed a report-only corpus coverage audit for a target query id. "
+            "May be repeated; does not mutate gold/qrels/labels or write sidecars."
+        ),
+    )
+    parser.add_argument(
+        "--corpus-coverage-audit-target-anchor",
+        action="append",
+        default=[],
+        help=(
+            "Target anchor for the report-only corpus coverage audit. "
+            "May be repeated; text_namu_v2_0014 defaults to the Adversary/Alison Sealy-Smith aliases."
         ),
     )
     parser.add_argument(
@@ -12289,6 +14615,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             generated_at=generated_at,
             comparison_summary=comparison_summary,
             comparison_target=comparison_target or args.compare_to,
+            portfolio_comparison_reports=args.portfolio_comparison_report,
+            write_portfolio_experiment_summary=args.write_portfolio_experiment_summary,
             report_root=report_root,
             status_jsonl_path=Path(args.status_jsonl),
             append_registry=args.append_registry,
@@ -12314,7 +14642,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             source_native_index_build=source_native_index_build,
             quality_gate_baseline_path=args.quality_gate_baseline,
             evidence_gate_mode=args.evidence_gate_mode,
+            answer_composer=args.answer_composer,
+            selected_evidence_citation_format=args.selected_evidence_citation_format,
+            selected_evidence_composer_retry_mode=args.selected_evidence_composer_retry_mode,
+            local_llm_composer_backend=args.local_llm_composer_backend,
+            local_llm_composer_base_url=args.local_llm_composer_base_url,
+            local_llm_composer_model=args.local_llm_composer_model,
+            local_llm_composer_timeout_seconds=args.local_llm_composer_timeout_seconds,
+            local_llm_composer_max_tokens=args.local_llm_composer_max_tokens,
+            skip_local_llm_composer_endpoint_check=args.skip_local_llm_composer_endpoint_check,
             weaviate_route_ab_mode=args.weaviate_route_ab_mode,
+            corpus_coverage_audit_query_ids=args.corpus_coverage_audit_query_id,
+            corpus_coverage_audit_target_anchors=args.corpus_coverage_audit_target_anchor,
             retrieval_adapter=FakeVectorAdapter(requested_backend=args.retrieval_backend)
             if args.use_fake_vector_adapter
             else None,
@@ -12339,6 +14678,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "evidence_mapping_review_packet_jsonl": _artifact_path(bundle.summary, "evidence_mapping_review_packet_jsonl"),
                 "evidence_mapping_review_packet_md": _artifact_path(bundle.summary, "evidence_mapping_review_packet_md"),
                 "evidence_mapping_packet_summary_json": _artifact_path(bundle.summary, "evidence_mapping_packet_summary_json"),
+                "portfolio_experiment_summary_md": _artifact_path(bundle.summary, "portfolio_experiment_summary_md"),
                 "retrieval_backend": bundle.summary.get("retrieval_backend"),
                 "retrieval_surface": bundle.summary.get("retrieval_surface"),
                 "retrieval_surface_decision": bundle.summary.get("retrieval_surface_decision"),

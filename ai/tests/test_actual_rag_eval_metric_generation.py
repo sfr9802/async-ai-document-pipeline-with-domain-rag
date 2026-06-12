@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from ai.eval import actual_rag_eval
 from ai.eval.actual_rag_eval import (
     DatasetSchemaError,
     ExpectedEvidenceResolver,
@@ -22,9 +23,11 @@ from ai.eval.actual_rag_eval import (
     append_actual_rag_status_event,
     build_backend_comparison_metrics,
     build_parser,
+    build_corpus_coverage_audit_report,
     build_legacy_real_rag_quality_gate_report,
     build_evidence_gate_summary,
     build_source_native_legacy_cleanup_report,
+    apply_selected_evidence_composer_to_outputs,
     apply_evidence_gate_to_outputs,
     build_source_native_bge_m3_index_artifact,
     build_run_comparison,
@@ -39,6 +42,8 @@ from ai.eval.actual_rag_eval import (
     resolve_quality_gate_baseline_report,
     run_eval_from_paths,
     score_rag_eval_items,
+    select_composer_evidence,
+    validate_evidence_package_for_gate,
     validate_actual_rag_guardrails,
     write_source_native_legacy_cleanup_report,
     write_latest_pointers,
@@ -53,6 +58,7 @@ from ai.eval.weaviate_source_atom import (
     WeaviateSourceAtomIndexer,
     WeaviateUnavailableError,
     _write_json_atomic,
+    build_default_weaviate_adapter,
     build_weaviate_source_atom_schema,
     derive_weaviate_route_taxonomy,
     plan_weaviate_retrieval_route,
@@ -651,6 +657,435 @@ def test_weaviate_route_selected_lane_sends_planner_filters_to_weaviate(tmp_path
     assert report["items"][0]["retrieved_contexts"][0]["source_family"] == "XLSX"
 
 
+def test_weaviate_route_selected_text_query_uses_query_only_alias_variants(tmp_path: Path) -> None:
+    class AliasSensitiveWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            query_text = str(kwargs["query_text"])
+            filters = kwargs["filters"]
+
+            def matches(obj: dict, key: str, value: object) -> bool:
+                if not value:
+                    return True
+                if isinstance(value, list):
+                    return obj.get(key) in value
+                return obj.get(key) == value
+
+            alias_query = "X-Men" in query_text and "97" in query_text and "Adversary" in query_text
+            rows: list[dict] = []
+            for obj in self.objects:
+                if not all(matches(obj, key, value) for key, value in dict(filters).items()):
+                    continue
+                if alias_query and obj.get("source_atom_id") == "srcatom-xmen-97-adversary":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "weaviate_route_selected_alias_variants"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "q1",
+                "query": "엑스맨 구십칠 등장인물 목록에 애드버서리는 어떤 식으로 올라와",
+                "answerability": "unknown",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprod",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    client = AliasSensitiveWeaviateClient(
+        objects=[
+            {
+                **weaviate_source_atom_record(
+                    97,
+                    text="X-Men '97 등장인물 목록에는 Adversary - Alison Sealy-Smith [카메오] 항목이 있다.",
+                ),
+                "source_atom_id": "srcatom-xmen-97-adversary",
+                "evidence_bundle_id": "bundle-xmen-97-adversary",
+                "doc_id": "text_namu_v2_1",
+                "chunk_id": "98f5315b62c0282c",
+                "title": "X-Men '97 등장인물",
+                "granularity": "paragraph",
+                "retrieval_route": "text_general",
+            }
+        ]
+    )
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="weaviate_route_selected_alias_variants",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    alias_queries = [
+        query["query_text"]
+        for query in client.query_log
+        if "X-Men" in query["query_text"] and "97" in query["query_text"] and "Adversary" in query["query_text"]
+    ]
+    assert alias_queries
+    assert report["items"][0]["retrieved_contexts"][0]["source_atom_id"] == "srcatom-xmen-97-adversary"
+    assert report["items"][0]["retrieved_contexts"][0]["query_variant_provenance"] == [alias_queries[0]]
+    assert report["items"][0]["weaviate_query_reformulation"]["uses_expected_fields"] is False
+    assert report["items"][0]["weaviate_query_reformulation"]["uses_gold_fields"] is False
+    assert report["items"][0]["weaviate_query_reformulation"]["uses_ids"] is False
+    assert report["candidate_generation_input_policy"] == "query_text_and_query_embedding_only_no_gold_qrels_labels_ids_or_baseline"
+    for query_payload in client.query_log:
+        assert "expected_answer" not in query_payload
+        assert "expected_evidence" not in query_payload
+        assert "row_id" not in query_payload
+
+
+def test_weaviate_route_selected_query_variants_probe_same_doc_without_gold_ids(tmp_path: Path) -> None:
+    class SameDocSensitiveWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            query_text = str(kwargs["query_text"])
+            filters = dict(kwargs["filters"])
+            doc_filter = filters.get("doc_id")
+            alias_title_query = "X-Men" in query_text and "97" in query_text
+            alias_entity_query = alias_title_query and "Adversary" in query_text
+            rows: list[dict] = []
+            for obj in self.objects:
+                if _filter_mismatch(obj, filters):
+                    continue
+                if doc_filter:
+                    if alias_entity_query and obj.get("source_atom_id") == "srcatom-xmen-97-adversary":
+                        row = dict(obj)
+                        row["_score"] = 1.0
+                        row["_backend"] = kwargs["mode"]
+                        rows.append(row)
+                    continue
+                if alias_title_query and obj.get("source_atom_id") == "srcatom-xmen-97-overview":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_mismatch(obj: dict, filters: dict) -> bool:
+        for key, value in filters.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                if obj.get(key) not in value:
+                    return True
+            elif obj.get(key) != value:
+                return True
+        return False
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "weaviate_route_selected_same_doc_variants"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "q1",
+                "query": "엑스맨 구십칠 등장인물 목록에 애드버서리는 어떤 식으로 올라와",
+                "answerability": "unknown",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprod",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    client = SameDocSensitiveWeaviateClient(
+        objects=[
+            {
+                **weaviate_source_atom_record(
+                    971,
+                    text="TV 애니메이션 시리즈 〈 엑스맨 '97 〉의 첫 번째 시즌이다.",
+                ),
+                "source_atom_id": "srcatom-xmen-97-overview",
+                "evidence_bundle_id": "bundle-xmen-97-overview",
+                "doc_id": "doc-xmen-97",
+                "chunk_id": "chunk-xmen-97-overview",
+                "title": "X-Men '97",
+                "granularity": "paragraph",
+                "retrieval_route": "text_general",
+            },
+            {
+                **weaviate_source_atom_record(
+                    972,
+                    text="X-Men '97 등장인물 목록에는 Adversary - Alison Sealy-Smith [카메오] 항목이 있다.",
+                ),
+                "source_atom_id": "srcatom-xmen-97-adversary",
+                "evidence_bundle_id": "bundle-xmen-97-adversary",
+                "doc_id": "doc-xmen-97",
+                "chunk_id": "chunk-xmen-97-adversary",
+                "title": "X-Men '97 등장인물",
+                "granularity": "paragraph",
+                "retrieval_route": "text_general",
+            },
+        ]
+    )
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="weaviate_route_selected_same_doc_variants",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    contexts = report["items"][0]["retrieved_contexts"]
+    same_doc_queries = [query for query in client.query_log if query["filters"].get("doc_id") == "doc-xmen-97"]
+    assert same_doc_queries
+    assert any("Adversary" in query["query_text"] for query in same_doc_queries)
+    assert contexts[0]["source_atom_id"] == "srcatom-xmen-97-adversary"
+    assert contexts[0]["same_doc_residual_expansion_policy"] == "bounded_query_variant_same_doc_weaviate_v1"
+    assert report["weaviate_post_processing"]["same_doc_residual_query_count"] >= 1
+    assert report["weaviate_post_processing"]["same_doc_residual_added_count"] == 1
+    for query_payload in client.query_log:
+        assert "expected_answer" not in query_payload
+        assert "expected_evidence" not in query_payload
+        assert "row_id" not in query_payload
+        assert "target_id" not in query_payload
+
+
+def test_corpus_coverage_audit_classifies_route_filter_failure_report_only(tmp_path: Path) -> None:
+    class CoverageAuditWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                }
+            )
+            query_text = str(kwargs["query_text"])
+            filters = dict(kwargs["filters"])
+            rows: list[dict] = []
+            for obj in self.objects:
+                if _filter_mismatch(obj, filters):
+                    continue
+                target_query = "Adversary" in query_text and "Alison Sealy-Smith" in query_text
+                if target_query and obj.get("source_atom_id") == "srcatom-xmen-97-adversary":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+                elif "X-Men" in query_text and obj.get("source_atom_id") == "srcatom-xmen-97-overview":
+                    row = dict(obj)
+                    row["_score"] = 0.5
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_mismatch(obj: dict, filters: dict) -> bool:
+        for key, value in filters.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                if obj.get(key) not in value:
+                    return True
+            elif obj.get(key) != value:
+                return True
+        return False
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "corpus_coverage_audit"
+    source_registry_path = tmp_path / "source_atom_registry_v1.jsonl"
+    index_checkpoint_path = tmp_path / "index_checkpoint.json"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "text_namu_v2_0014",
+                "query": "엑스맨 구십칠 등장인물 목록에 애드버서리는 어떤 식으로 올라와",
+                "expected_answer": "애드버서리 - 앨리슨 실리스미스 [카메오]",
+                "expected_evidence": [{"text": "애드버서리 - 앨리슨 실리스미스 [카메오]"}],
+            }
+        ],
+    )
+    write_jsonl(
+        source_registry_path,
+        [
+            {
+                "source_atom_id": "srcatom-xmen-97-adversary",
+                "document_id": "doc-xmen-97",
+                "content_hash": "hash-xmen-97-adversary",
+                "source_family": "TEXT",
+                "normalized_text_or_value_snapshot": (
+                    "X-Men '97 등장인물 목록에는 Adversary - Alison Sealy-Smith [카메오] 항목이 있다."
+                ),
+                "parent_pointers": {
+                    "source_unit_id": "text_namu_v2_0014",
+                    "search_unit_id": "su-text-namu-v2-0014",
+                },
+                "raw_locator": {
+                    "chunk_id": "chunk-xmen-97-adversary",
+                    "search_unit_id": "su-text-namu-v2-0014",
+                    "title": "X-Men '97 등장인물",
+                },
+            }
+        ],
+    )
+    index_checkpoint_path.write_text(
+        json.dumps({"completed_source_atom_ids": ["srcatom-xmen-97-adversary"]}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprod",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    objects = [
+        {
+            **weaviate_source_atom_record(
+                971,
+                text="TV 애니메이션 시리즈 〈 엑스맨 '97 〉의 첫 번째 시즌이다.",
+            ),
+            "source_atom_id": "srcatom-xmen-97-overview",
+            "doc_id": "doc-xmen-97",
+            "chunk_id": "chunk-xmen-97-overview",
+            "title": "X-Men '97",
+            "granularity": "paragraph",
+            "retrieval_route": "text_general",
+        },
+        {
+            **weaviate_source_atom_record(
+                972,
+                text="X-Men '97 등장인물 목록에는 Adversary - Alison Sealy-Smith [카메오] 항목이 있다.",
+            ),
+            "source_atom_id": "srcatom-xmen-97-adversary",
+            "evidence_bundle_id": "bundle-xmen-97-adversary",
+            "doc_id": "doc-xmen-97",
+            "chunk_id": "chunk-xmen-97-adversary",
+            "title": "X-Men '97 등장인물",
+            "granularity": "metadata_only",
+            "retrieval_route": "text_general",
+        },
+    ]
+    active_client = CoverageAuditWeaviateClient(objects=objects)
+
+    def lane_factory(route_mode: str) -> WeaviateSourceAtomAdapter:
+        return WeaviateSourceAtomAdapter(
+            config=config,
+            client=CoverageAuditWeaviateClient(objects=objects),
+            embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+            requested_backend="weaviate-hybrid",
+            retrieval_route_mode=route_mode,
+            route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+        )
+
+    active_adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=active_client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="corpus_coverage_audit",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=active_adapter,
+        corpus_coverage_audit_query_ids=["text_namu_v2_0014"],
+        corpus_coverage_audit_target_anchors=["Adversary", "Alison Sealy-Smith", "애드버서리", "앨리슨 실리스미스"],
+        corpus_coverage_audit_lane_factory=lane_factory,
+        corpus_coverage_audit_source_registry_path=source_registry_path,
+        corpus_coverage_audit_index_checkpoint_path=index_checkpoint_path,
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    audit = report["corpus_coverage_audit"]
+    row = audit["rows"][0]
+    assert audit["enabled"] is True
+    assert audit["report_only_diagnostic"] is True
+    assert audit["gold_or_qrels_mutation"] is False
+    assert audit["official_metric_input_rows"] == 0
+    assert audit["classification_counts"] == {"route_filter_failure": 1}
+    assert row["query_id"] == "text_namu_v2_0014"
+    assert row["primary_classification"] == "route_filter_failure"
+    assert row["corpus_presence"] == "corpus_present"
+    assert row["source_registry_presence"]["target_anchor_hit"] is True
+    assert row["source_registry_presence"]["matching_source_atom_count"] == 1
+    assert row["source_registry_presence"]["source_atom_ids"] == ["srcatom-xmen-97-adversary"]
+    assert row["active_index_presence"]["target_source_atom_indexed"] is True
+    assert row["active_index_presence"]["source_atom_id_match_count"] == 1
+    assert row["full_index_probe"]["target_anchor_hit"] is True
+    assert row["route_selected_probe"]["target_anchor_hit"] is False
+    assert row["route_selected_filter_failure"] is True
+    assert row["target_anchors"] == ["Adversary", "Alison Sealy-Smith", "애드버서리", "앨리슨 실리스미스"]
+    assert row["audit_uses_expected_fields_for_candidate_generation"] is False
+    assert row["audit_uses_gold_fields_for_candidate_generation"] is False
+    assert report["artifact_paths"]["corpus_coverage_audit_jsonl"] == ""
+    assert output_file_names(output_dir) == ["report.json"]
+    for query_payload in active_client.query_log:
+        assert "expected_answer" not in query_payload
+        assert "expected_evidence" not in query_payload
+        assert "row_id" not in query_payload
+
+
 def test_weaviate_route_selected_collapses_same_doc_duplicates_and_fetches_bounded_neighbors_by_id(tmp_path: Path) -> None:
     dataset = tmp_path / "fixture_gold.jsonl"
     output_dir = tmp_path / "reports" / "rag_eval" / "weaviate_route_selected_neighbors"
@@ -907,7 +1342,7 @@ def test_weaviate_route_ab_mode_writes_explicit_comparison_artifacts_only_when_r
         run_id="weaviate_route_ab",
         retrieval_surface="source-native",
         retrieval_backend="weaviate-hybrid",
-        retrieval_adapter=lane_factory("full_index"),
+        retrieval_adapter=lane_factory("route_selected"),
         weaviate_route_ab_mode="text,mixed,routed",
         weaviate_route_ab_lane_factory=lane_factory,
     )
@@ -925,6 +1360,10 @@ def test_weaviate_route_ab_mode_writes_explicit_comparison_artifacts_only_when_r
     ]
     assert report["artifact_contract"]["route_ab_sidecar_exception"] is True
     assert report["artifact_paths"]["route_selected_hybrid_evidence_store_ab_report_json"] == ab_report_path.as_posix()
+    assert report["promotion_decision"] == ab_report["recommendation"]
+    assert report["promotion_blockers"] == ab_report["promotion_blockers"]
+    assert report["weaviate_route_ab_report_path"] == ab_report_path.as_posix()
+    assert report["next_recommended_goal"] == "selected_evidence_answer_composer_citation_formatter_nonprod"
     assert set(ab_report["lanes"]) == {
         "lane_a_full_index",
         "lane_b_text_only",
@@ -932,6 +1371,8 @@ def test_weaviate_route_ab_mode_writes_explicit_comparison_artifacts_only_when_r
         "lane_d_route_selected",
     }
     assert ab_report["lanes"]["lane_a_full_index"]["active_retrieval_service_boundary"] == "weaviate"
+    assert ab_report["lanes"]["lane_a_full_index"]["weaviate_filter_policy"]["route_mode"] == "full_index"
+    assert ab_report["lanes"]["lane_a_full_index"]["weaviate_filter_policy"]["route_filter_sent"] is False
     assert ab_report["lanes"]["lane_b_text_only"]["weaviate_filter_policy"]["source_family_filter_sent"] is True
     assert ab_report["lanes"]["lane_c_mixed_pool"]["mixed_pool_diagnostic_only"] is True
     assert ab_report["lanes"]["lane_d_route_selected"]["route_planner_version"] == "weaviate_route_planner_v1"
@@ -1522,6 +1963,144 @@ def test_weaviate_v2_config_uses_explicit_nonprod_schema_and_collection() -> Non
     assert schema["schema_version"] == "weaviate_source_atom_v2"
     assert schema["metadata_vector_policy"]["index_time_metadata_only_supported"] is True
     assert "cell" in schema["metadata_vector_policy"]["metadata_only_by_default"]
+
+
+def test_weaviate_default_backend_uses_explicit_route_selected_nonprod_config_path() -> None:
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    config_report = adapter.config["weaviate_default_config"]
+    rollback = config_report["rollback"]
+
+    assert adapter.retrieval_route_mode == "route_selected"
+    assert adapter.config_obj.collection_name == "SourceAtomNonprodRouteSelectedV2"
+    assert adapter.config_obj.schema_version == "weaviate_source_atom_v2"
+    assert adapter.config_obj.production_namespace is False
+    assert config_report["selection"] == "route_selected_nonprod_default"
+    assert config_report["explicit_nonprod_config_path"] is True
+    assert config_report["config_path"].endswith("ai/eval/configs/weaviate_route_selected_nonprod_default.json")
+    assert config_report["fallback_used"] is False
+    assert config_report["fail_closed_on_unavailable"] is True
+    assert rollback["rollback_key"] == "weaviate_full_index_nonprod_rollback"
+    assert rollback["retrieval_route_mode"] == "full_index"
+    assert rollback["collection"] == "SourceAtomNonprod"
+    assert rollback["schema_version_source_atom"] == "weaviate_source_atom_v1"
+
+
+def test_weaviate_full_index_rollback_config_path_is_preserved() -> None:
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path="ai/eval/configs/weaviate_full_index_nonprod_rollback.json",
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    config_report = adapter.config["weaviate_default_config"]
+
+    assert adapter.retrieval_route_mode == "full_index"
+    assert adapter.config_obj.collection_name == "SourceAtomNonprod"
+    assert adapter.config_obj.schema_version == "weaviate_source_atom_v1"
+    assert config_report["selection"] == "weaviate_full_index_nonprod_rollback"
+    assert config_report["rollback_key"] == "weaviate_full_index_nonprod_rollback"
+    assert config_report["fallback_used"] is False
+    assert config_report["fail_closed_on_unavailable"] is True
+
+
+def test_weaviate_full_index_route_mode_uses_rollback_even_when_default_config_env_is_route_selected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "ACTUAL_RAG_EVAL_WEAVIATE_CONFIG_PATH",
+        "ai/eval/configs/weaviate_route_selected_nonprod_default.json",
+    )
+
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="full_index",
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    config_report = adapter.config["weaviate_default_config"]
+
+    assert adapter.retrieval_route_mode == "full_index"
+    assert adapter.config_obj.collection_name == "SourceAtomNonprod"
+    assert adapter.config_obj.schema_version == "weaviate_source_atom_v1"
+    assert config_report["selection"] == "weaviate_full_index_nonprod_rollback"
+    assert config_report["config_path"].endswith("ai/eval/configs/weaviate_full_index_nonprod_rollback.json")
+    assert config_report["fallback_used"] is False
+    assert config_report["fail_closed_on_unavailable"] is True
+
+
+def test_weaviate_route_selected_default_report_records_config_path_filters_and_no_fallback(tmp_path: Path) -> None:
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "weaviate_route_selected_default"
+    write_jsonl(dataset, [{"id": "q1", "query": "2020년 11월 sheet cell row amount 승인 금액은?", "answerability": "unknown"}])
+    client = FakeWeaviateSourceAtomClient(
+        objects=[
+            {
+                **weaviate_source_atom_record(1, text="TEXT Project Orion launch is scheduled for April 2026."),
+                "granularity": "paragraph",
+                "retrieval_route": "text_general",
+            },
+            {
+                **weaviate_source_atom_record(2, text="XLSX approved amount cell is 15446522."),
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "retrieval_route": "xlsx_table",
+            },
+        ]
+    )
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="weaviate_route_selected_default",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    assert output_file_names(output_dir) == ["report.json"]
+    assert report["active_retrieval_backend"] == "weaviate_hybrid"
+    assert report["active_retrieval_service_boundary"] == "weaviate"
+    assert report["collection"] == "SourceAtomNonprodRouteSelectedV2"
+    assert report["schema_version_source_atom"] == "weaviate_source_atom_v2"
+    assert report["route_planner_version"] == "weaviate_route_planner_v1"
+    assert report["fallback_used"] is False
+    assert report["fail_closed_on_unavailable"] is True
+    assert report["route_filters_sent_to_weaviate"]["source_family"] == "XLSX"
+    assert report["route_filters_sent_to_weaviate"]["granularity"] == ["table_summary", "table_row", "cell"]
+    assert report["route_filters_sent_to_weaviate"]["retrieval_route"] == "xlsx_table"
+    assert report["weaviate_filter_policy"]["python_post_filtering"] == "safety_validation_only"
+    assert report["weaviate_default_config"]["selection"] == "route_selected_nonprod_default"
+    assert report["weaviate_default_config"]["explicit_nonprod_config_path"] is True
+    assert report["rollback_key"] == "weaviate_full_index_nonprod_rollback"
+    assert report["rollback_config"]["collection"] == "SourceAtomNonprod"
+    assert report["promotion_decision"] in {"promote_route_selected_nonprod_default", "blocked_keep_full_index_rollback"}
+    assert isinstance(report["promotion_blockers"], list)
+    assert report["residual_risks"]
+    assert report["next_recommended_goal"] == "selected_evidence_answer_composer_citation_formatter_nonprod"
+    assert report["python_local_corpus_scan_used_for_candidate_generation"] is False
+    assert report["source_native_layered_retrieval_used_for_candidate_generation"] is False
+    assert report["diagnostic_hash_vector_used"] is False
+    assert report["faiss_used_for_active_retrieval"] is False
+    assert report["searchunit_searchview_used_as_candidate_surface"] is False
+    assert report["external_vector_db"]["invoked"] is True
+    assert report["external_vector_db"]["production_namespace"] is False
+    assert all(query["filters"]["source_family"] == "XLSX" for query in client.query_log)
+    assert all(query["filters"]["granularity"] == ["table_summary", "table_row", "cell"] for query in client.query_log)
+    assert all(query["filters"]["retrieval_route"] == "xlsx_table" for query in client.query_log)
 
 
 def test_weaviate_v2_indexer_keeps_cells_metadata_only_without_embedding() -> None:
@@ -4813,6 +5392,1068 @@ def test_citation_validator_requires_selected_evidence_not_retrieved_context_onl
     assert summary["citation_retrieved_context_only_diagnostic_count"] == 1
     assert summary["unsupported_answer_blocked_count"] == 0
     assert summary["would_block_unsupported_answer_count"] == 1
+
+
+def test_selected_evidence_composer_uses_only_query_selected_sourceatom_evidence() -> None:
+    raw_outputs = [
+        {
+            "id": "q-composer",
+            "query": "Where is Apollo HQ?",
+            "generated_answer": "extractive-v1 broad answer from all retrieved contexts",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-hq",
+                    "chunk_id": "chunk-hq",
+                    "source_atom_id": "src-hq",
+                    "evidence_bundle_id": "bundle-hq",
+                    "source_family": "TEXT",
+                    "text": "Apollo HQ is in Seoul.",
+                    "text_sha256": "hash-hq",
+                },
+                {
+                    "doc_id": "doc-noise",
+                    "chunk_id": "chunk-noise",
+                    "source_atom_id": "src-noise",
+                    "evidence_bundle_id": "bundle-noise",
+                    "source_family": "TEXT",
+                    "text": "The cafeteria menu changed in Busan.",
+                    "text_sha256": "hash-noise",
+                },
+            ],
+            "citations": [
+                {
+                    "doc_id": "doc-noise",
+                    "chunk_id": "chunk-noise",
+                    "source_atom_id": "src-noise",
+                    "evidence_bundle_id": "bundle-noise",
+                    "text": "The cafeteria menu changed in Busan.",
+                    "text_sha256": "hash-noise",
+                }
+            ],
+        }
+    ]
+
+    selected = select_composer_evidence(raw_outputs[0]["query"], raw_outputs[0]["retrieved_contexts"])
+    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
+    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="diagnostic")
+
+    assert [row["evidence_bundle_id"] for row in selected] == ["bundle-hq"]
+    assert composed["answer_composer"]["provider"] == "selected-evidence-deterministic-v1"
+    assert composed["answer_composer"]["input_policy"] == (
+        "query_text_and_selected_sourceatom_evidence_only_no_gold_qrels_labels_ids_or_baseline"
+    )
+    assert composed["answer_composer"]["query_selected_evidence_count"] == 1
+    assert composed["answer_composer"]["selected_evidence_count"] == 1
+    assert composed["answer_composer"]["selected_evidence_ids"] == ["bundle-hq"]
+    assert "Seoul" in composed["generated_answer"]
+    assert "Busan" not in composed["generated_answer"]
+    assert [citation["evidence_bundle_id"] for citation in composed["citations"]] == ["bundle-hq"]
+    assert gated_outputs[0]["evidence_gate"]["citation_supported_count"] == 1
+    assert gated_outputs[0]["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
+    assert gated_outputs[0]["answer_gate_decision"] == "allow_answer"
+    assert summary["citation_retrieved_context_only_diagnostic_count"] == 0
+
+
+def test_selected_evidence_composer_abstains_without_selected_sourceatom_evidence() -> None:
+    raw_outputs = [
+        {
+            "id": "q-composer-empty",
+            "query": "Where is Apollo HQ?",
+            "generated_answer": "extractive-v1 broad answer from an unrelated retrieved context",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-noise",
+                    "chunk_id": "chunk-noise",
+                    "source_atom_id": "src-noise",
+                    "evidence_bundle_id": "bundle-noise",
+                    "source_family": "TEXT",
+                    "text": "The cafeteria menu changed in Busan.",
+                    "text_sha256": "hash-noise",
+                }
+            ],
+            "citations": [
+                {
+                    "doc_id": "doc-noise",
+                    "chunk_id": "chunk-noise",
+                    "source_atom_id": "src-noise",
+                    "evidence_bundle_id": "bundle-noise",
+                    "text": "The cafeteria menu changed in Busan.",
+                    "text_sha256": "hash-noise",
+                }
+            ],
+        }
+    ]
+
+    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
+    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="enforce")
+
+    assert composed["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
+    assert composed["citations"] == []
+    assert composed["answer_composer"]["selected_evidence_count"] == 0
+    assert composed["answer_composer"]["abstained"] is True
+    assert composed["answer_composer"]["abstention_reason"] == "no_selected_sourceatom_evidence"
+    assert gated_outputs[0]["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
+    assert summary["unsupported_answer_rate_after_gate"] == 0.0
+
+
+def test_selected_evidence_composer_abstains_when_selected_evidence_is_insufficient() -> None:
+    raw_outputs = [
+        {
+            "id": "q-composer-insufficient",
+            "query": "When did Apollo HQ open?",
+            "generated_answer": "extractive-v1 broad answer from a query-overlapping context",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-hq",
+                    "chunk_id": "chunk-hq",
+                    "source_atom_id": "src-hq",
+                    "evidence_bundle_id": "bundle-hq",
+                    "source_family": "TEXT",
+                    "text": "Apollo HQ opening is described here, but the opening date is omitted.",
+                    "text_sha256": "hash-hq-no-date",
+                }
+            ],
+            "citations": [],
+        }
+    ]
+
+    selected = select_composer_evidence(raw_outputs[0]["query"], raw_outputs[0]["retrieved_contexts"])
+    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
+    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="enforce")
+
+    assert [row["evidence_bundle_id"] for row in selected] == ["bundle-hq"]
+    assert composed["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
+    assert composed["citations"] == []
+    assert composed["answer_composer"]["query_selected_evidence_count"] == 1
+    assert composed["answer_composer"]["selected_evidence_count"] == 0
+    assert composed["answer_composer"]["abstained"] is True
+    assert composed["answer_composer"]["abstention_reason"] == "insufficient_selected_evidence"
+    assert gated_outputs[0]["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
+    assert summary["unsupported_answer_rate_after_gate"] == 0.0
+
+
+def test_selected_evidence_composer_ignores_doc_chunk_only_contexts() -> None:
+    raw_outputs = [
+        {
+            "id": "q-composer-doc-only",
+            "query": "Where is Apollo HQ?",
+            "generated_answer": "extractive-v1 broad answer",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-hq",
+                    "chunk_id": "chunk-hq",
+                    "source_family": "TEXT",
+                    "text": "Apollo HQ is in Seoul.",
+                    "text_sha256": "hash-doc-only",
+                },
+                {
+                    "doc_id": "doc-hq-2",
+                    "chunk_id": "chunk-hq-2",
+                    "source_atom_id": "src-hq-2",
+                    "evidence_bundle_id": "bundle-hq-2",
+                    "source_family": "TEXT",
+                    "text": "Apollo HQ is in Seoul.",
+                    "text_sha256": "hash-sourceatom",
+                },
+            ],
+            "citations": [],
+        }
+    ]
+
+    selected = select_composer_evidence(raw_outputs[0]["query"], raw_outputs[0]["retrieved_contexts"])
+    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
+
+    assert [row["evidence_bundle_id"] for row in selected] == ["bundle-hq-2"]
+    assert [citation["evidence_bundle_id"] for citation in composed["citations"]] == ["bundle-hq-2"]
+    assert all(citation.get("doc_id") != "doc-hq" for citation in composed["citations"])
+
+
+def test_selected_evidence_composer_accepts_source_atom_without_bundle_id() -> None:
+    raw_outputs = [
+        {
+            "id": "q-composer-sourceatom-only",
+            "query": "When is Apollo HQ opening?",
+            "generated_answer": "extractive-v1 broad answer",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-hq",
+                    "chunk_id": "chunk-hq",
+                    "source_atom_id": "src-hq",
+                    "evidence_bundle_id": "",
+                    "source_family": "TEXT",
+                    "text": "Apollo HQ opening is scheduled for 2026년 4월.",
+                    "text_sha256": "hash-hq",
+                }
+            ],
+            "citations": [],
+        }
+    ]
+
+    selected = select_composer_evidence(raw_outputs[0]["query"], raw_outputs[0]["retrieved_contexts"])
+    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
+    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="diagnostic")
+
+    assert [row["source_atom_id"] for row in selected] == ["src-hq"]
+    assert composed["answer_composer"]["selected_evidence_ids"] == ["src-hq"]
+    assert composed["answer_composer"]["abstained"] is False
+    assert [citation["source_atom_id"] for citation in composed["citations"]] == ["src-hq"]
+    assert gated_outputs[0]["evidence_gate"]["citation_supported_count"] == 1
+    assert summary["citation_retrieved_context_only_diagnostic_count"] == 0
+
+
+def test_selected_evidence_composer_cites_only_answer_supporting_selected_evidence() -> None:
+    raw_outputs = [
+        {
+            "id": "q-composer-citation-subset",
+            "query": "Where is Apollo HQ?",
+            "generated_answer": "extractive-v1 broad answer",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-seoul",
+                    "chunk_id": "chunk-seoul",
+                    "source_atom_id": "src-seoul",
+                    "source_family": "TEXT",
+                    "text": "Apollo HQ is in Seoul.",
+                    "text_sha256": "hash-seoul",
+                },
+                {
+                    "doc_id": "doc-cafe",
+                    "chunk_id": "chunk-cafe",
+                    "source_atom_id": "src-cafe",
+                    "source_family": "TEXT",
+                    "text": "Apollo HQ cafeteria moved from Busan.",
+                    "text_sha256": "hash-cafe",
+                },
+            ],
+            "citations": [],
+        }
+    ]
+
+    selected = select_composer_evidence(raw_outputs[0]["query"], raw_outputs[0]["retrieved_contexts"])
+    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
+    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="diagnostic")
+
+    assert [row["source_atom_id"] for row in selected] == ["src-seoul", "src-cafe"]
+    assert [citation["source_atom_id"] for citation in composed["citations"]] == ["src-seoul"]
+    assert gated_outputs[0]["evidence_gate"]["citation_supported_count"] == 1
+    assert summary["citation_retrieved_context_only_diagnostic_count"] == 0
+
+
+def test_selected_evidence_composer_prefers_context_when_query_anchors_span_lines() -> None:
+    raw_outputs = [
+        {
+            "id": "q-composer-line-anchors",
+            "query": "유우야키의 나이와 생일은 어떻게 적혀 있어",
+            "generated_answer": "extractive-v1 broad answer",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-yuyaki",
+                    "chunk_id": "chunk-yuyaki",
+                    "source_atom_id": "src-yuyaki",
+                    "evidence_bundle_id": "bundle-yuyaki",
+                    "source_family": "TEXT",
+                    "text": "夕焼(ユウヤキ)\n나이\n16세\n생일\n9월 29일\n유우야키 항목 참조.",
+                    "text_sha256": "hash-yuyaki",
+                    "score": 0.5,
+                },
+                {
+                    "doc_id": "doc-shiro",
+                    "chunk_id": "chunk-shiro",
+                    "source_atom_id": "src-shiro",
+                    "evidence_bundle_id": "bundle-shiro",
+                    "source_family": "TEXT",
+                    "text": "시로의 나이와 생일은 공식적으로 밝혀지지 않았고 외관은 대략 30대 중후반으로 추정된다.",
+                    "text_sha256": "hash-shiro",
+                    "score": 0.5,
+                },
+            ],
+            "citations": [],
+        }
+    ]
+
+    composed = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="evidence-id")[0]
+    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="diagnostic")
+
+    assert composed["answer_composer"]["query_selected_evidence_ids"][0] == "bundle-yuyaki"
+    assert composed["answer_composer"]["selected_evidence_ids"] == ["bundle-yuyaki"]
+    assert "유우야키" in composed["generated_answer"]
+    assert "16세" in composed["generated_answer"]
+    assert "9월 29일" in composed["generated_answer"]
+    assert "시로" not in composed["generated_answer"]
+    assert gated_outputs[0]["answer_gate_decision"] == "allow_answer"
+    assert gated_outputs[0]["evidence_gate"]["missing_query_anchors"] == []
+    assert summary["unsupported_answer_rate_after_gate"] == 0.0
+
+
+def test_evidence_gate_matches_compact_korean_query_anchor_to_spaced_title() -> None:
+    validation = validate_evidence_package_for_gate(
+        {
+            "id": "q-spaced-title",
+            "query": "소드아트 오디널 스케일은 어떤 극장판을 가리켜",
+            "generated_answer": "소드 아트 온라인 -오디널 스케일-.",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-sao",
+                    "chunk_id": "chunk-os",
+                    "source_atom_id": "src-sao-os",
+                    "evidence_bundle_id": "bundle-sao-os",
+                    "source_family": "TEXT",
+                    "text": "극장판 소드 아트 온라인 -오디널 스케일- 과 같은 세계관이라는 것을 보여준다.",
+                    "text_sha256": "hash-sao-os",
+                }
+            ],
+            "citations": [
+                {
+                    "doc_id": "doc-sao",
+                    "chunk_id": "chunk-os",
+                    "source_atom_id": "src-sao-os",
+                    "evidence_bundle_id": "bundle-sao-os",
+                    "text": "극장판 소드 아트 온라인 -오디널 스케일- 과 같은 세계관이라는 것을 보여준다.",
+                    "text_sha256": "hash-sao-os",
+                }
+            ],
+        }
+    )
+
+    assert validation["evidence_package_status"] == "sufficient"
+    assert "소드아트" not in validation["missing_query_anchors"]
+    assert validation["query_anchor_coverage"] == 1.0
+    assert validation["citation_supported_count"] == 1
+
+
+def test_selected_evidence_composer_tolerates_invalid_scores_and_deduplicates() -> None:
+    contexts = [
+        {
+            "rank": 1,
+            "doc_id": "doc-low",
+            "chunk_id": "chunk-low",
+            "source_atom_id": "src-low",
+            "evidence_bundle_id": "bundle-low",
+            "text": "Apollo is mentioned, but HQ is not.",
+            "score": "not-a-number",
+        },
+        {
+            "rank": 2,
+            "doc_id": "doc-hq",
+            "chunk_id": "chunk-hq",
+            "source_atom_id": "src-hq",
+            "evidence_bundle_id": "bundle-hq",
+            "text": "Apollo HQ is in Seoul.",
+            "score": 0.1,
+        },
+        {
+            "rank": 3,
+            "doc_id": "doc-hq-duplicate",
+            "chunk_id": "chunk-hq-duplicate",
+            "source_atom_id": "src-hq",
+            "evidence_bundle_id": "bundle-hq",
+            "text": "Apollo HQ is in Seoul again.",
+            "score": 0.9,
+        },
+    ]
+
+    selected = select_composer_evidence("Where is Apollo HQ?", contexts, max_evidence=2)
+
+    assert [row["evidence_bundle_id"] for row in selected] == ["bundle-hq", "bundle-low"]
+
+
+def test_selected_evidence_composer_formats_selected_citations_by_variant() -> None:
+    raw_outputs = [
+        {
+            "id": "q-composer-citation-format",
+            "query": "Where is Apollo HQ?",
+            "generated_answer": "extractive-v1 broad answer",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-hq",
+                    "chunk_id": "chunk-hq",
+                    "source_atom_id": "src-hq",
+                    "evidence_bundle_id": "bundle-hq",
+                    "source_family": "TEXT",
+                    "granularity": "paragraph",
+                    "page_number": "12",
+                    "locator_fingerprint": "loc-hq",
+                    "text": "Apollo HQ is in Seoul.",
+                    "text_sha256": "hash-hq",
+                }
+            ],
+            "citations": [],
+        }
+    ]
+
+    compact = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="compact")[0]
+    evidence_id = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="evidence-id")[0]
+    source_locator = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="source-locator")[0]
+
+    assert compact["answer_composer"]["citation_format"] == "compact"
+    assert compact["answer_composer"]["formatted_citations"] == ["[1] doc-hq#chunk-hq"]
+    assert evidence_id["answer_composer"]["formatted_citations"] == [
+        "[1] evidence_bundle_id=bundle-hq; source_atom_id=src-hq"
+    ]
+    assert source_locator["answer_composer"]["formatted_citations"] == [
+        "[1] TEXT paragraph doc-hq#chunk-hq page=12 locator=loc-hq"
+    ]
+    assert [citation["evidence_bundle_id"] for citation in source_locator["citations"]] == ["bundle-hq"]
+
+
+def test_selected_evidence_composer_markdown_portfolio_format_is_reader_facing() -> None:
+    raw_outputs = [
+        {
+            "id": "q-composer-markdown-format",
+            "query": "Where is Apollo HQ?",
+            "generated_answer": "extractive-v1 broad answer",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-hq",
+                    "chunk_id": "chunk-hq",
+                    "source_atom_id": "src-hq",
+                    "evidence_bundle_id": "bundle-hq",
+                    "source_family": "TEXT",
+                    "granularity": "paragraph",
+                    "text": "Apollo HQ is in Seoul.",
+                    "text_sha256": "hash-hq",
+                }
+            ],
+            "citations": [],
+        }
+    ]
+
+    composed = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="markdown-portfolio")[0]
+    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="diagnostic")
+
+    assert composed["answer_composer"]["citation_format"] == "markdown-portfolio"
+    assert composed["answer_composer"]["formatted_citations"] == [
+        "- [1] **TEXT paragraph** doc-hq#chunk-hq (evidence_bundle_id=bundle-hq; source_atom_id=src-hq)"
+    ]
+    assert "## Selected Evidence Citations" in composed["generated_answer"]
+    assert "- [1] **TEXT paragraph** doc-hq#chunk-hq" in composed["generated_answer"]
+    assert "Apollo HQ is in Seoul." in composed["generated_answer"]
+    assert gated_outputs[0]["evidence_gate"]["citation_supported_count"] == 1
+    assert summary["citation_retrieved_context_only_diagnostic_count"] == 0
+
+
+def test_run_eval_selected_evidence_composer_is_explicit_and_report_only(tmp_path: Path) -> None:
+    dataset = tmp_path / "selected_composer_gold.jsonl"
+    context = tmp_path / "selected_composer_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "selected_composer"
+    write_jsonl(
+        dataset,
+        [{"id": "q-composer", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-composer",
+                "generated_answer": "extractive-v1 broad answer from every context",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-hq",
+                        "chunk_id": "chunk-hq",
+                        "source_atom_id": "src-hq",
+                        "evidence_bundle_id": "bundle-hq",
+                        "source_family": "TEXT",
+                        "text": "Apollo HQ is in Seoul.",
+                        "text_sha256": "hash-hq",
+                    },
+                    {
+                        "doc_id": "doc-noise",
+                        "chunk_id": "chunk-noise",
+                        "source_atom_id": "src-noise",
+                        "evidence_bundle_id": "bundle-noise",
+                        "source_family": "TEXT",
+                        "text": "The cafeteria menu changed in Busan.",
+                        "text_sha256": "hash-noise",
+                    },
+                ],
+                "citations": [
+                    {
+                        "doc_id": "doc-noise",
+                        "chunk_id": "chunk-noise",
+                        "source_atom_id": "src-noise",
+                        "evidence_bundle_id": "bundle-noise",
+                        "text": "The cafeteria menu changed in Busan.",
+                        "text_sha256": "hash-noise",
+                    }
+                ],
+            }
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=2,
+        run_id="selected_composer",
+        output_mode="single",
+        evidence_gate_mode="diagnostic",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+    )
+
+    assert output_file_names(output_dir) == ["report.json"]
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    assert report["generator_config"]["provider"] == "selected-evidence-deterministic-v1"
+    assert report["generator_config"]["extractive_v1_baseline_preserved_for_comparison"] is True
+    assert report["generator_config"]["selected_evidence_citation_formatter_invoked"] is True
+    assert report["generator_config"]["selected_evidence_citation_format"] == "evidence-id"
+    assert "markdown-portfolio" in report["generator_config"]["selected_evidence_citation_formatter_variants_available"]
+    assert report["generator_config"]["expected_answer_used_for_generation"] is False
+    assert report["generator_config"]["expected_evidence_used_for_generation"] is False
+    assert report["raw_prompt_payload_written"] is False
+    assert report["raw_response_payload_written"] is False
+    assert report["artifact_contract"]["portfolio_experiment_sidecar_written"] is False
+    assert "Seoul" in row["generated_answer"]
+    assert "Busan" not in row["generated_answer"]
+    assert [citation["evidence_bundle_id"] for citation in row["citations"]] == ["bundle-hq"]
+    assert row["answer_composer"]["selected_evidence_ids"] == ["bundle-hq"]
+    assert row["answer_composer"]["formatted_citations"] == [
+        "[1] evidence_bundle_id=bundle-hq; source_atom_id=src-hq"
+    ]
+    assert row["answer_composer"]["uses_gold_fields"] is False
+    assert row["answer_composer"]["uses_qrels"] is False
+    assert row["answer_composer"]["uses_labels"] is False
+    assert row["answer_composer"]["uses_answerability"] is False
+    assert row["answer_composer"]["uses_expected_answer"] is False
+    assert row["answer_composer"]["uses_expected_evidence"] is False
+    assert row["answer_composer"]["uses_query_or_row_or_target_ids"] is False
+    assert row["answer_composer"]["uses_baseline_topk_or_legacy_outputs"] is False
+    assert "raw_prompt_payload_written" not in row["answer_composer"]
+    assert "raw_response_payload_written" not in row["answer_composer"]
+    assert row["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
+
+
+def test_run_eval_selected_evidence_local_llm_composer_unavailable_falls_back_without_raw_payloads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = tmp_path / "selected_local_llm_gold.jsonl"
+    context = tmp_path / "selected_local_llm_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_unavailable"
+    write_jsonl(
+        dataset,
+        [{"id": "q-local-llm", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-local-llm",
+                "generated_answer": "extractive-v1 broad answer from every context",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-hq",
+                        "chunk_id": "chunk-hq",
+                        "source_atom_id": "src-hq",
+                        "evidence_bundle_id": "bundle-hq",
+                        "source_family": "TEXT",
+                        "text": "Apollo HQ is in Seoul.",
+                        "text_sha256": "hash-hq",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return ["LOCAL_LLM_UNAVAILABLE: connection refused"]
+
+    def unexpected_call(**_kwargs: object) -> tuple[dict, dict]:
+        raise AssertionError("local LLM should not be called when availability check fails")
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", unexpected_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="selected_local_llm_unavailable",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-local-llm-v1",
+    )
+
+    assert output_file_names(output_dir) == ["report.json"]
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    config = report["generator_config"]
+    local_meta = row["answer_composer"]["local_llm"]
+    assert config["provider"] == "selected-evidence-local-llm-v1"
+    assert config["local_llm_generation_available"] is False
+    assert config["local_llm_composer_fallback_used"] is True
+    assert config["local_llm_not_used_reason"] == "local_llm_unavailable_deterministic_fallback"
+    assert config["local_llm_blockers"] == ["LOCAL_LLM_UNAVAILABLE: connection refused"]
+    assert config["actual_generation_model_used"] is False
+    assert config["external_api_calls"] is False
+    assert "Seoul" in row["generated_answer"]
+    assert row["answer_composer"]["provider"] == "selected-evidence-local-llm-v1"
+    assert local_meta["status"] == "unavailable_deterministic_fallback"
+    assert local_meta["fallback_provider"] == "selected-evidence-deterministic-v1"
+    assert local_meta["blockers"] == ["LOCAL_LLM_UNAVAILABLE: connection refused"]
+    assert "prompt" not in local_meta
+    assert "raw_response" not in local_meta
+    assert "raw_prompt_payload_written" not in local_meta
+    assert "raw_response_payload_written" not in local_meta
+    assert report["raw_prompt_payload_written"] is False
+    assert report["raw_response_payload_written"] is False
+    assert row["evidence_gate"]["unsupported_answer_blocked"] is False
+
+
+def test_run_eval_selected_evidence_local_llm_composer_available_stores_hashes_and_preview_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = tmp_path / "selected_local_llm_gold.jsonl"
+    context = tmp_path / "selected_local_llm_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_available"
+    write_jsonl(
+        dataset,
+        [{"id": "q-local-llm", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-local-llm",
+                "generated_answer": "extractive-v1 broad answer from every context",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-hq",
+                        "chunk_id": "chunk-hq",
+                        "source_atom_id": "src-hq",
+                        "evidence_bundle_id": "bundle-hq",
+                        "source_family": "TEXT",
+                        "text": "Apollo HQ is in Seoul.",
+                        "text_sha256": "hash-hq",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+    captured: dict[str, str] = {}
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        prompt = str(kwargs["prompt"])
+        captured["prompt"] = prompt
+        assert "Apollo HQ is in Seoul." in prompt
+        assert "extractive-v1 broad answer" not in prompt
+        return (
+            {
+                "answer": "Apollo HQ is in Seoul.",
+                "citation_evidence_ids": ["bundle-hq"],
+            },
+            {
+                "raw_response_sha256": "sha256:raw-local-response",
+                "strict_json": True,
+            },
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="selected_local_llm_available",
+        output_mode="single",
+        evidence_gate_mode="diagnostic",
+        answer_composer="selected-evidence-local-llm-v1",
+        selected_evidence_citation_format="evidence-id",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    config = report["generator_config"]
+    local_meta = row["answer_composer"]["local_llm"]
+    assert config["provider"] == "selected-evidence-local-llm-v1"
+    assert config["actual_generation_model_used"] is True
+    assert config["local_llm_generation_available"] is True
+    assert config["local_llm_composer_fallback_used"] is False
+    assert config["local_llm_composer_generated_count"] == 1
+    assert config["local_llm_prompt_payload_written"] is False
+    assert config["local_llm_raw_response_payload_written"] is False
+    assert row["generated_answer"].startswith("**Query:** Where is Apollo HQ?")
+    assert "**Short answer:** Apollo HQ is in Seoul." in row["generated_answer"]
+    assert row["citations"][0]["evidence_bundle_id"] == "bundle-hq"
+    assert row["answer_composer"]["formatted_citations"] == [
+        "[1] evidence_bundle_id=bundle-hq; source_atom_id=src-hq"
+    ]
+    assert local_meta["status"] == "generated"
+    assert local_meta["prompt_sha256"].startswith("sha256:")
+    assert local_meta["raw_response_sha256"] == "sha256:raw-local-response"
+    assert local_meta["answer_preview"] == "Apollo HQ is in Seoul."
+    assert "prompt" not in local_meta
+    assert "raw_response" not in local_meta
+    assert "raw_prompt_payload_written" not in local_meta
+    assert "raw_response_payload_written" not in local_meta
+    assert captured["prompt"]
+    assert report["raw_prompt_payload_written"] is False
+    assert report["raw_response_payload_written"] is False
+    assert row["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
+
+
+def test_run_eval_selected_evidence_local_llm_composer_retries_once_after_gate_insufficient(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = tmp_path / "selected_local_llm_retry_gold.jsonl"
+    context = tmp_path / "selected_local_llm_retry_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_retry"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "q-local-retry",
+                "query": "Where is Apollo HQ?",
+                "answerability": "answerable",
+                "expected_answer": "Forbidden gold answer",
+                "expected_evidence": [{"text": "Forbidden expected evidence"}],
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-local-retry",
+                "generated_answer": "legacy extractive answer must not become retry input",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-hq",
+                        "chunk_id": "chunk-hq",
+                        "source_atom_id": "src-hq",
+                        "evidence_bundle_id": "bundle-hq",
+                        "source_family": "TEXT",
+                        "text": "Apollo HQ is in Seoul.",
+                        "text_sha256": "hash-hq",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+    captured_prompts: list[str] = []
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        prompt = str(kwargs["prompt"])
+        captured_prompts.append(prompt)
+        assert "q-local-retry" not in prompt
+        assert "Forbidden gold answer" not in prompt
+        assert "Forbidden expected evidence" not in prompt
+        assert "legacy extractive answer" not in prompt
+        if len(captured_prompts) == 1:
+            return (
+                {"answer": "Apollo HQ is in Seoul and Busan.", "citation_evidence_ids": ["bundle-hq"]},
+                {"raw_response_sha256": "sha256:first"},
+            )
+        return (
+            {"answer": "Apollo HQ is in Seoul.", "citation_evidence_ids": ["bundle-hq"]},
+            {"raw_response_sha256": "sha256:retry"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="selected_local_llm_retry",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-local-llm-v1",
+        selected_evidence_citation_format="evidence-id",
+        selected_evidence_composer_retry_mode="bounded-once",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    config = report["generator_config"]
+    retry = row["answer_composer"]["retry"]
+    assert len(captured_prompts) == 2
+    assert "previous_answer_preview" not in captured_prompts[0]
+    assert "Apollo HQ is in Seoul and Busan." in captured_prompts[1]
+    assert config["selected_evidence_composer_retry_mode"] == "bounded-once"
+    assert config["selected_evidence_composer_retry_attempt_count"] == 1
+    assert config["selected_evidence_composer_retry_accepted_count"] == 1
+    assert config["selected_evidence_composer_retry_rejected_count"] == 0
+    assert config["selected_evidence_composer_retry_max_count_per_item"] == 1
+    assert config["selected_evidence_composer_retry_raw_prompt_payload_written"] is False
+    assert config["selected_evidence_composer_retry_raw_response_payload_written"] is False
+    assert retry["enabled"] is True
+    assert retry["attempted"] is True
+    assert retry["attempt_count"] == 1
+    assert retry["status"] == "accepted"
+    assert retry["trigger"] == "evidence_gate_insufficient"
+    assert retry["previous_answer_preview"] == "Apollo HQ is in Seoul and Busan."
+    assert retry["retry_prompt_sha256"].startswith("sha256:")
+    assert retry["retry_raw_response_sha256"] == "sha256:retry"
+    assert "prompt" not in retry
+    assert "raw_response" not in retry
+    assert "**Short answer:** Apollo HQ is in Seoul." in row["generated_answer"]
+    assert row["answer_gate_decision"] == "allow_answer"
+    assert row["evidence_gate"]["unsupported_answer_blocked"] is False
+    assert row["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
+    assert report["raw_prompt_payload_written"] is False
+    assert report["raw_response_payload_written"] is False
+
+
+def test_run_eval_selected_evidence_local_llm_composer_does_not_retry_when_gate_allows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = tmp_path / "selected_local_llm_no_retry_gold.jsonl"
+    context = tmp_path / "selected_local_llm_no_retry_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_no_retry"
+    write_jsonl(
+        dataset,
+        [{"id": "q-local-no-retry", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-local-no-retry",
+                "generated_answer": "legacy extractive answer",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-hq",
+                        "chunk_id": "chunk-hq",
+                        "source_atom_id": "src-hq",
+                        "evidence_bundle_id": "bundle-hq",
+                        "source_family": "TEXT",
+                        "text": "Apollo HQ is in Seoul.",
+                        "text_sha256": "hash-hq",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+    call_count = 0
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        nonlocal call_count
+        call_count += 1
+        return (
+            {"answer": "Apollo HQ is in Seoul.", "citation_evidence_ids": ["bundle-hq"]},
+            {"raw_response_sha256": "sha256:first"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="selected_local_llm_no_retry",
+        output_mode="single",
+        evidence_gate_mode="diagnostic",
+        answer_composer="selected-evidence-local-llm-v1",
+        selected_evidence_composer_retry_mode="bounded-once",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    retry = row["answer_composer"]["retry"]
+    assert call_count == 1
+    assert report["generator_config"]["selected_evidence_composer_retry_attempt_count"] == 0
+    assert retry["enabled"] is True
+    assert retry["attempted"] is False
+    assert retry["status"] == "not_triggered"
+    assert retry["reason"] == "evidence_gate_allows_answer"
+    assert row["answer_gate_decision"] == "allow_answer"
+
+
+def test_run_eval_embeds_portfolio_comparison_report_only(tmp_path: Path) -> None:
+    dataset = tmp_path / "portfolio_compare_gold.jsonl"
+    context = tmp_path / "portfolio_compare_context.jsonl"
+    baseline_dir = tmp_path / "reports" / "rag_eval" / "portfolio_compare_extractive"
+    current_dir = tmp_path / "reports" / "rag_eval" / "portfolio_compare_selected"
+    write_jsonl(
+        dataset,
+        [{"id": "q-portfolio", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-portfolio",
+                "generated_answer": "Apollo HQ is somewhere in Korea.",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-hq",
+                        "chunk_id": "chunk-hq",
+                        "source_atom_id": "src-hq",
+                        "evidence_bundle_id": "bundle-hq",
+                        "source_family": "TEXT",
+                        "granularity": "paragraph",
+                        "text": "Apollo HQ is in Seoul.",
+                        "text_sha256": "hash-hq",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    baseline = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=baseline_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="portfolio_compare_extractive",
+        output_mode="single",
+        evidence_gate_mode="diagnostic",
+    )
+    current = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=current_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="portfolio_compare_selected",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+        portfolio_comparison_reports=[f"extractive={baseline.report_path}"],
+    )
+
+    report = json.loads(current.report_path.read_text(encoding="utf-8"))
+    comparison = report["portfolio_experiment_comparison"]
+    assert output_file_names(current_dir) == ["report.json"]
+    assert report["artifact_contract"]["portfolio_experiment_sidecar_written"] is False
+    assert comparison["schema_version"] == "actual_rag_eval.portfolio_experiment_comparison.v1"
+    assert comparison["enabled"] is True
+    assert comparison["report_only_contract"] == "embedded_in_report_json_no_portfolio_sidecar"
+    assert comparison["portfolio_experiment_sidecar_written"] is False
+    assert comparison["comparison_input_policy"].startswith("post_run_report_json_only")
+    assert comparison["raw_prompt_payload_written"] is False
+    assert comparison["raw_response_payload_written"] is False
+    assert comparison["lane_count"] == 2
+    assert comparison["lanes"][0]["label"] == "extractive"
+    assert comparison["lanes"][1]["label"] == "current"
+    assert comparison["lanes"][0]["provider"] == "extractive-v1"
+    assert comparison["lanes"][1]["provider"] == "selected-evidence-deterministic-v1"
+    assert comparison["lanes"][1]["citation_precision_against_selected_evidence"] == 1.0
+    diff = comparison["pairwise_diffs"][0]
+    assert diff["gate_delta"]["after"]["unsupported_answer_rate_after_gate"] == 0.0
+    item_diff = diff["answer_diffs"][0]
+    assert item_diff["id"] == "q-portfolio"
+    assert item_diff["answer_changed"] is True
+    assert item_diff["citation_changed"] is True
+    assert item_diff["baseline_answer"]["answer_sha256"].startswith("sha256:")
+    assert item_diff["current_answer"]["answer_sha256"].startswith("sha256:")
+    assert "Apollo HQ is somewhere" in item_diff["baseline_answer"]["answer_preview"]
+    assert "Apollo HQ is in Seoul" in item_diff["current_answer"]["answer_preview"]
+    serialized = json.dumps(comparison)
+    assert '"prompt":' not in serialized
+    assert '"raw_response":' not in serialized
+
+
+def test_run_eval_writes_portfolio_summary_only_with_explicit_flag(tmp_path: Path) -> None:
+    dataset = tmp_path / "portfolio_sidecar_gold.jsonl"
+    context = tmp_path / "portfolio_sidecar_context.jsonl"
+    baseline_dir = tmp_path / "reports" / "rag_eval" / "portfolio_sidecar_extractive"
+    current_dir = tmp_path / "reports" / "rag_eval" / "portfolio_sidecar_selected"
+    missing_comparison_dir = tmp_path / "reports" / "rag_eval" / "portfolio_sidecar_missing_comparison"
+    write_jsonl(
+        dataset,
+        [{"id": "q-sidecar", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-sidecar",
+                "generated_answer": "Apollo HQ is somewhere in Korea.",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-hq",
+                        "chunk_id": "chunk-hq",
+                        "source_atom_id": "src-hq",
+                        "evidence_bundle_id": "bundle-hq",
+                        "source_family": "TEXT",
+                        "granularity": "paragraph",
+                        "text": "Apollo HQ is in Seoul.",
+                        "text_sha256": "hash-hq",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    baseline = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=baseline_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="portfolio_sidecar_extractive",
+        output_mode="single",
+        evidence_gate_mode="diagnostic",
+    )
+    current = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=current_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="portfolio_sidecar_selected",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+        portfolio_comparison_reports=[f"extractive={baseline.report_path}"],
+        write_portfolio_experiment_summary=True,
+    )
+
+    assert output_file_names(current_dir) == ["portfolio_experiment_summary.md", "report.json"]
+    report = json.loads(current.report_path.read_text(encoding="utf-8"))
+    sidecar_path = current_dir / "portfolio_experiment_summary.md"
+    text = sidecar_path.read_text(encoding="utf-8")
+    assert report["artifact_contract"]["portfolio_experiment_sidecar_written"] is True
+    assert report["artifact_paths"]["portfolio_experiment_summary_md"] == sidecar_path.as_posix()
+    assert "# Non-Production Selected-Evidence Portfolio Experiment" in text
+    assert "## Answer Diff" in text
+    assert "## Citation Diff" in text
+    assert "## Gate Before/After" in text
+    assert "Unsupported answer blocked count" in text
+    assert "Abstain count" in text
+    assert "Citation precision against selected evidence" in text
+    assert "Retrieved-context-only citation count" in text
+    assert "## Residual Failure Taxonomy" in text
+    assert "Apollo HQ is somewhere" in text
+    assert "Apollo HQ is in Seoul" in text
+    assert '"prompt":' not in text
+    assert '"raw_response":' not in text
+
+    with pytest.raises(DatasetSchemaError, match="requires at least one --portfolio-comparison-report"):
+        run_eval_from_paths(
+            dataset_path=dataset,
+            output_dir=missing_comparison_dir,
+            context_jsonl_path=context,
+            top_k=1,
+            run_id="portfolio_sidecar_missing_comparison",
+            output_mode="single",
+            evidence_gate_mode="enforce",
+            write_portfolio_experiment_summary=True,
+        )
 
 
 def test_citation_validator_rejects_same_doc_chunk_with_different_source_identity() -> None:

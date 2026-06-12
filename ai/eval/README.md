@@ -43,8 +43,15 @@ EvidenceBundle remain the evidence-truth surfaces.
 The active service-boundary lane is Weaviate, not Chroma. Use
 `--retrieval-backend weaviate-vector|weaviate-bm25|weaviate-hybrid` with
 `RAG_VECTOR_DB=weaviate`, `WEAVIATE_URL`, `WEAVIATE_GRPC_PORT`,
-`WEAVIATE_COLLECTION_SOURCE_ATOM`, `WEAVIATE_NAMESPACE`, and
-`EMBEDDING_MODEL=BAAI/bge-m3`. The Weaviate lane embeds queries locally with
+`WEAVIATE_NAMESPACE`, and `EMBEDDING_MODEL=BAAI/bge-m3`. The default
+non-production config path is
+`ai/eval/configs/weaviate_route_selected_nonprod_default.json`, which selects
+collection `SourceAtomNonprodRouteSelectedV2`, schema
+`weaviate_source_atom_v2`, route mode `route_selected`, and route planner
+`weaviate_route_planner_v1`. The rollback config path is
+`ai/eval/configs/weaviate_full_index_nonprod_rollback.json`, which preserves
+the full-index collection `SourceAtomNonprod` and schema
+`weaviate_source_atom_v1`. The Weaviate lane embeds queries locally with
 BAAI/bge-m3, sends vector, BM25, or hybrid search requests to Weaviate, and
 hydrates candidates only from Weaviate result payloads. It must not invoke the
 Python source-native layered retrieval path, local corpus scans, FAISS,
@@ -60,11 +67,13 @@ sentence-transformers BGE-M3 embedding and batch upsert checkpoints, not by
 transferring vectors out of the local source-native FAISS artifact. Resume runs
 skip checkpointed SourceAtom IDs before embedding or upserting them again.
 
-Route-selected Weaviate A/B comparison is explicit non-production mode only:
-`--weaviate-route-ab-mode text,mixed,routed`. It writes the explicit sidecars
-`route_selected_hybrid_evidence_store_ab_report.json` and
+Route-selected Weaviate is now the explicit non-production default path, but
+comparative route A/B artifacts remain opt-in only:
+`--weaviate-route-ab-mode text,mixed,routed`. Routine `--output-mode single`
+runs without that flag write only `report.json`; the route A/B flag writes the
+explicit sidecars `route_selected_hybrid_evidence_store_ab_report.json` and
 `route_selected_hybrid_evidence_store_ab_items.jsonl` beside the normal
-`report.json`. Lane A is current full-index hybrid retrieval, Lane B is
+`report.json`. Lane A is full-index rollback hybrid retrieval, Lane B is
 TEXT-only retrieval, Lane C is mixed-pool diagnostic retrieval, and Lane D is
 deterministic route-selected retrieval. The route taxonomy is conservative:
 `source_family` is `TEXT|PDF|XLSX|UNKNOWN`, `granularity` is one of
@@ -86,9 +95,81 @@ individual XLSX cells are metadata-only by default while paragraphs,
 heading-context blocks, and table rows remain vectorized. The current
 route-selected A/B report is guardrail-clean, shows no TEXT degradation, removes
 mixed-route source-family pollution, reduces same-document duplicate pressure
-after bounded duplicate collapse, and recommends
-`promote_route_selected_nonprod_default` as the next non-production step. The
-default active path is still unchanged until that promotion is explicitly wired.
+after bounded duplicate collapse, and records
+`promotion_decision=promote_route_selected_nonprod_default` with
+`promotion_blockers=[]`. The primary report also records
+`fallback_used=false`, `fail_closed_on_unavailable=true`, the collection,
+schema, route planner version, route filters sent to Weaviate, rollback key,
+residual risks, and next recommended goal.
+
+Selected-evidence answer composition is opt-in with
+`--answer-composer selected-evidence-deterministic-v1`. The default remains
+`extractive-v1` so reports can compare before/after behavior. The deterministic
+composer runs after retrieval and before the evidence gate, using only query text
+plus selected SourceAtom/EvidenceBundle evidence; expected answers, expected
+evidence, qrels, labels, row IDs, query IDs, target IDs, baseline top-k, and
+legacy outputs are not composer inputs. Its first route-selected Checkpoint B
+run is report-only, records `selected_evidence_composer_invoked=true`, keeps
+retrieved-context-only citations diagnostic-only, and narrows final citations to
+selected evidence before evidence-gate validation.
+
+The deterministic composer also handles the follow-on query-focus repair lane:
+line-broken selected contexts are scored as full evidence passages as well as
+sentence fragments, and the evidence gate matches compact Korean query anchors
+to spaced Korean title text for longer Hangul anchors. The Checkpoint H run
+keeps the same report-only Weaviate route-selected boundary and improves the
+six-row deterministic enforce result from allowed/blocked `3/3` to `5/1` while
+holding retrieved-context-only citations at `0` and unsupported-after-gate at
+`0.0`.
+
+Selected-evidence citation formatting is opt-in through
+`--selected-evidence-citation-format compact|evidence-id|source-locator|markdown-portfolio`.
+Formatter output is display-only under `answer_composer.formatted_citations`;
+structured citation targets remain selected-evidence-only and still pass through
+the evidence gate. The markdown portfolio format may add reader-facing citation
+blocks to `generated_answer`, but it does not write a portfolio sidecar unless a
+sidecar flag is explicitly provided.
+
+Optional local selected-evidence composition is opt-in with
+`--answer-composer selected-evidence-local-llm-v1`. It reuses the existing
+localhost-only helper and must pass the helper's local endpoint blocker check
+before model calls are made. The prompt input is limited to query text plus
+selected SourceAtom/EvidenceBundle evidence; gold, expected answers/evidence,
+qrels, labels, IDs, baseline top-k, and legacy outputs are excluded. Reports
+persist only `prompt_sha256`, `raw_response_sha256`, bounded answer previews,
+backend availability metadata, and status counts. If the helper is unavailable
+or returns an unsupported/empty answer, the row records deterministic fallback
+explicitly and still goes through the evidence gate. The first Checkpoint D run
+proved artifact hygiene but regressed gate compatibility versus the deterministic
+composer, so this remains experimental and non-production.
+
+Bounded retry for the local selected-evidence composer is opt-in with
+`--selected-evidence-composer-retry-mode bounded-once`. The retry is max one
+attempt per item and is considered only after evidence-gate insufficiency or
+query-focus anchor feedback. Retry input is limited to query text, selected
+SourceAtom/EvidenceBundle evidence, missing query-focus anchors when present,
+and the previous bounded answer preview; gold, expected answers/evidence,
+qrels, labels, IDs, baseline top-k, and legacy outputs remain excluded. Retry
+answers are accepted only if the evidence gate allows them. Reports persist only
+retry hashes, bounded previews, status counts, and backend metadata, never raw
+prompt or raw response payloads. The first Checkpoint E run was artifact-safe
+but accepted no retries, so it is diagnostic portfolio evidence rather than a
+quality claim.
+
+Portfolio comparison for the selected-evidence experiment is report-only with
+repeated `--portfolio-comparison-report LABEL=PATH`. The compared reports are
+post-run evidence only and are never generation inputs. The comparison is
+embedded in `report.json` as `portfolio_experiment_comparison` with bounded
+answer previews, answer hashes, citation identity hashes/previews, gate deltas,
+selected-evidence citation precision, and residual failure taxonomy. It does
+not write `portfolio_experiment_summary.md`; a Markdown portfolio sidecar stays
+closed until an explicit future sidecar flag.
+
+The Markdown portfolio sidecar is enabled only with
+`--write-portfolio-experiment-summary`, and that flag requires at least one
+`--portfolio-comparison-report`. The sidecar is rendered from the bounded
+comparison block, writes `portfolio_experiment_summary.md` beside `report.json`,
+and preserves the no raw prompt/response payload contract.
 
 Dataset rows may be incomplete. Fatal schema errors are limited to unusable
 items such as missing `id`, missing `query`, invalid JSON/JSONL, or malformed
@@ -175,7 +256,6 @@ python -X utf8 -m ai.scripts.rag_actual_eval \
   --output-mode single \
   --resolve-expected-evidence \
   --evidence-resolution-scope full-corpus-review-only \
-  --quality-gate-baseline auto \
   --append-registry \
   --write-latest \
   --compare-to previous
@@ -198,6 +278,21 @@ schema, metadata filtering, and BM25/vector hybrid search contract needed for
 Agentic RAG scale-out. External VectorDB use must be explicitly
 non-production, must report `external_vector_db.invoked=true`, and is recorded
 separately from the local FAISS path.
+
+For the active Weaviate route-selected nonproduction lane, Checkpoint I adds
+bounded query-only alias variants inside the Weaviate adapter. The report field
+`weaviate_query_reformulation` records `weaviate_query_reformulation_v1`, max
+variant count, merge policy, and guardrail booleans proving that gold,
+expected evidence/answers, qrels, labels, row IDs, target IDs, baseline top-k,
+and legacy outputs were not retrieval inputs. This is diagnostic retrieval
+formulation evidence only; it is not an official metric or production
+readiness signal.
+
+Checkpoint J adds `bounded_query_variant_same_doc_weaviate_v1`, a route-selected
+same-document residual probe that uses only Weaviate-returned SourceAtom `doc_id`
+values plus the query-only variants. The report records same-doc residual query
+and added counts under `weaviate_post_processing`; local corpus scan, FAISS, and
+SearchUnit/SearchView remain false for that path.
 
 Comparison sections and backend comparison metrics are non-production
 diagnostics only. They do not promote strict, provisional, inferred-answerable,
