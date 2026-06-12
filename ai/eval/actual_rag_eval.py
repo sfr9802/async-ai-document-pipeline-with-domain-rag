@@ -13,10 +13,10 @@ import subprocess
 import sys
 import time
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, MutableMapping, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -25,6 +25,14 @@ if str(AI_DIR) not in sys.path:
     sys.path.insert(0, str(AI_DIR))
 
 from app.capabilities.rag.generation import ExtractiveGenerator, RetrievedChunk
+from ai.eval.weaviate_source_atom import (
+    WEAVIATE_BACKEND_ALIASES,
+    WEAVIATE_CANDIDATE_INPUT_POLICY,
+    WeaviateSourceAtomAdapter,
+    WeaviateSourceAtomConfig,
+    build_default_weaviate_adapter,
+    plan_weaviate_retrieval_route,
+)
 
 
 ANSWERABILITY_VALUES = {"answerable", "unanswerable", "unknown"}
@@ -36,9 +44,42 @@ LATEST_POINTER_SCHEMA_VERSION = "actual_rag_eval.latest_pointer.v1"
 STATUS_EVENT_SCHEMA_VERSION = "actual_rag_eval.run_status_event.v1"
 REPORT_ROOT = ROOT / "reports" / "rag_eval"
 STATUS_JSONL_PATH = AI_DIR / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
-SOURCE_NATIVE_INDEX_DIR = AI_DIR / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-v1"
+SOURCE_NATIVE_DIAGNOSTIC_INDEX_DIR = AI_DIR / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-v1"
+SOURCE_NATIVE_BGE_M3_INDEX_DIR = AI_DIR / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-bge-m3-v1"
+
+
+def _source_native_index_has_bge_m3_artifacts(index_dir: Path) -> bool:
+    build_path = index_dir / "build.json"
+    index_path = index_dir / "faiss.index"
+    manifest_path = index_dir / "search_view_manifest.jsonl"
+    if not (build_path.exists() and index_path.exists() and manifest_path.exists()):
+        return False
+    try:
+        build = json.loads(build_path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    if not isinstance(build, Mapping):
+        return False
+    return "bge-m3" in str(build.get("embedding_model") or "").strip().casefold()
+
+
+def select_source_native_index_dir() -> Path:
+    explicit = str(os.environ.get("ACTUAL_RAG_EVAL_SOURCE_NATIVE_INDEX_DIR") or "").strip()
+    if explicit:
+        return Path(explicit)
+    if _source_native_index_has_bge_m3_artifacts(SOURCE_NATIVE_BGE_M3_INDEX_DIR):
+        return SOURCE_NATIVE_BGE_M3_INDEX_DIR
+    return SOURCE_NATIVE_DIAGNOSTIC_INDEX_DIR
+
+
+SOURCE_NATIVE_INDEX_DIR = select_source_native_index_dir()
 SOURCE_NATIVE_SEARCH_VIEW_MANIFEST_PATH = SOURCE_NATIVE_INDEX_DIR / "search_view_manifest.jsonl"
 SOURCE_NATIVE_SOURCE_REGISTRY_PATH = AI_DIR / "eval" / "source_registry" / "source_atom_registry_v1.jsonl"
+SOURCE_NATIVE_MMR_DIAGNOSTIC_LAMBDA = 0.65
+SOURCE_NATIVE_LEGACY_CLEANUP_RUN_ID = "actual_rag_eval_source_native_legacy_cleanup_nonprod"
+SOURCE_NATIVE_LEGACY_CLEANUP_REPORT_PATH = (
+    AI_DIR / "eval" / "reports" / "rag-ingestion" / "runs" / SOURCE_NATIVE_LEGACY_CLEANUP_RUN_ID / "report.json"
+)
 REGISTRY_FILENAME = "runs.jsonl"
 SAFE_RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 REPORT_ARTIFACT_FILENAMES = (
@@ -53,6 +94,17 @@ REPORT_ARTIFACT_FILENAMES = (
     "evidence_mapping_review_packet.jsonl",
     "evidence_mapping_review_packet.md",
     "evidence_mapping_packet_summary.json",
+)
+SOURCE_NATIVE_LEGACY_CLEANUP_CLASSIFICATIONS = (
+    "ACTIVE_SOURCE_NATIVE_KEEP",
+    "EXPLICIT_LEGACY_DEBUG_KEEP",
+    "EXPLICIT_LEGACY_COMPARISON_KEEP",
+    "PROTECTED_HOLD",
+    "DOCS_ONLY_UPDATE",
+    "SAFE_TRANSIENT_DELETE",
+    "SAFE_GENERATED_DELETE",
+    "DEPRECATE_FAIL_CLOSED",
+    "REVIEW_MANUAL_HOLD",
 )
 LOWER_IS_BETTER_COMPARISON_METRICS = {
     "retrieval_empty_rate",
@@ -128,6 +180,83 @@ SURFACE_COMPARISON_METRICS = {
     "searchunit_beats_source_native_count",
     "both_surfaces_fail_count",
 }
+SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS = (
+    "L0_query_normalization",
+    "L1_lexical_anchor_search",
+    "L2_semantic_vector_search",
+    "L3_query_variant_search",
+    "L4_structure_aware_source_native_search",
+    "L5_merge_dedupe",
+    "L6_source_neighbor_expansion",
+    "L7_anchor_aware_reranking_diagnostics",
+)
+SOURCE_NATIVE_LAYERED_RETRIEVAL_BOUNDS = {
+    "max_query_variants": 8,
+    "max_backend_calls_per_item": 16,
+    "max_candidates_per_layer": 50,
+    "max_merged_candidates": 100,
+    "max_neighbor_expansion_windows": 1,
+}
+RAG_RETRIEVAL_BACKEND_CHOICES = (
+    "bm25",
+    "vector",
+    "hybrid",
+    "auto",
+    "weaviate-vector",
+    "weaviate-bm25",
+    "weaviate-hybrid",
+    "weaviate-auto",
+)
+SOURCE_NATIVE_FORBIDDEN_CANDIDATE_FIELD_NAMES = frozenset(
+    {
+        "answerability",
+        "answerability_label",
+        "answerability_labels",
+        "baseline_topk",
+        "baseline_top_k",
+        "baseline_topk_candidate_ids",
+        "expected_answer",
+        "expected_answer_aliases",
+        "expected_answer_text",
+        "expected_chunk_id",
+        "expected_doc_id",
+        "expected_evidence",
+        "expected_evidence_text",
+        "gold",
+        "gold_label",
+        "gold_labels",
+        "gold_locator",
+        "label",
+        "labels",
+        "previous_winning_candidate",
+        "qrels",
+        "qrels_positive_id",
+        "qrels_positive_ids",
+        "raw_prompt_payload",
+        "raw_response_payload",
+        "relevance",
+        "relevance_label",
+        "relevance_labels",
+        "row_id",
+        "supporting_evidence",
+        "target_chunk_id",
+        "target_doc_id",
+        "target_id",
+        "target_locator",
+    }
+)
+SOURCE_NATIVE_FORBIDDEN_CANDIDATE_TEXT_MARKERS = (
+    "expected_answer",
+    "expected_evidence",
+    "qrels",
+    "gold_label",
+    "answerability_label",
+    "relevance_label",
+    "baseline_topk",
+    "previous_winning_candidate",
+    "raw_prompt_payload",
+    "raw_response_payload",
+)
 DIAGNOSTIC_ONLY_COMPARISON_METRICS = {
     "answer_extracted_from_retrieved_context_rate",
     "citation_points_to_retrieved_context_rate",
@@ -138,6 +267,7 @@ DEFAULT_ABSTENTION_PHRASES = (
     "문서에서 관련 정보를 찾을 수 없습니다",
     "제공된 context에 답이 없습니다",
     "제공된 문맥에 답이 없습니다",
+    "제공된 근거만으로는 답할 수 없습니다",
     "답변할 수 없습니다",
     "근거가 없습니다",
     "not available from the provided context",
@@ -146,8 +276,66 @@ DEFAULT_ABSTENTION_PHRASES = (
     "no relevant passages were retrieved",
     "not enough information",
 )
+BOUNDED_EVIDENCE_ABSTENTION_ANSWER = "제공된 근거만으로는 답할 수 없습니다."
+EVIDENCE_GATE_VALIDATOR_VERSION = "bounded_evidence_gate_v1"
+EVIDENCE_GATE_MIN_QUERY_ANCHOR_COVERAGE = 0.67
+INTERNAL_PRE_GATE_ANSWER_KEY = "_generated_answer_before_evidence_gate"
+INTERNAL_REPORT_ROW_KEYS = frozenset({INTERNAL_PRE_GATE_ANSWER_KEY})
+PUBLIC_REPORT_FORBIDDEN_PAYLOAD_KEYS = frozenset(
+    {
+        "llm_prompt",
+        "llm_response",
+        "prompt_payload",
+        "prompt_text",
+        "raw_prompt",
+        "raw_prompt_payload",
+        "raw_prompt_text",
+        "raw_response",
+        "raw_response_payload",
+        "raw_response_text",
+        "response_payload",
+        "response_text",
+    }
+)
+PUBLIC_REPORT_FORBIDDEN_PAYLOAD_CANONICAL_KEYS = frozenset(
+    re.sub(r"[^a-z0-9]", "", key.lower()) for key in PUBLIC_REPORT_FORBIDDEN_PAYLOAD_KEYS
+)
 
 INFORMATIONAL_LABELS = {"provisional_metric_used", "inferred_answerable_metric_used"}
+CANONICAL_FAILURE_LABELS = frozenset(
+    {
+        "gold_missing_answerability",
+        "expected_evidence_id_unresolved",
+        "corpus_absent",
+        "present_not_retrieved",
+        "retrieved_not_validated",
+        "answer_judge_fail",
+        "citation_wrong",
+        "should_abstain_but_answered",
+        "should_answer_but_abstained",
+        "metric_not_applicable",
+        "schema_warning",
+        "guardrail_violation",
+        "evidence_package_insufficient",
+        "evidence_package_conflicting",
+        "evidence_package_unresolved",
+        "answer_unsupported_by_evidence",
+        "citation_unsupported_by_evidence",
+        "citation_retrieved_context_only_diagnostic",
+        "abstained_due_to_insufficient_evidence",
+        "supported_answer_allowed",
+        "sufficient_evidence_over_abstain",
+        "gate_policy_not_applicable",
+    }
+)
+FAILURE_LABEL_CANONICAL_ALIASES = {
+    "strict_metric_not_applicable": "metric_not_applicable",
+    "expected_evidence_resolution_unresolved": "expected_evidence_id_unresolved",
+    "evidence_not_retrieved": "present_not_retrieved",
+    "citation_missing": "citation_wrong",
+    "answered_unanswerable": "should_abstain_but_answered",
+    "abstention_failed": "should_abstain_but_answered",
+}
 
 GENERIC_ANCHOR_STOPWORDS = {
     "a",
@@ -183,6 +371,49 @@ GENERIC_ANCHOR_STOPWORDS = {
 }
 
 KOREAN_GENERIC_SUFFIXES = ("은", "는", "이", "가", "을", "를", "의", "에", "에서", "으로", "로", "와", "과", "도", "만")
+EVIDENCE_GATE_QUERY_INTENT_STOPWORDS = {
+    "did",
+    "가리켜",
+    "기록",
+    "기록돼",
+    "극장판",
+    "극장판을",
+    "how",
+    "location",
+    "나와",
+    "나오는",
+    "목록",
+    "목록에",
+    "말해",
+    "만나려고",
+    "문서",
+    "문서에",
+    "방영",
+    "설명",
+    "설명은",
+    "성격",
+    "성격과",
+    "식으로",
+    "시기",
+    "시기는",
+    "어디",
+    "어디로",
+    "어떤",
+    "어떻게",
+    "역할",
+    "역할을",
+    "올라와",
+    "what",
+    "when",
+    "where",
+    "which",
+    "who",
+    "의미",
+    "적혀",
+    "적혀있어",
+    "있어",
+    "향했어",
+}
 
 
 class DatasetSchemaError(ValueError):
@@ -241,7 +472,7 @@ class RagEvalBundle:
 @dataclass(frozen=True)
 class EvidenceResolutionConfig:
     enabled: bool = True
-    scope: str = "retrieved-only"
+    scope: str = "full-corpus"
     max_candidates: int = 5
     min_score: float = 0.35
     count_medium: bool = False
@@ -251,8 +482,9 @@ class ExpectedEvidenceResolver:
     """Diagnostic-only expected-evidence mapper.
 
     The resolver never mutates gold/qrels and never changes retrieval results.
-    It only maps expected evidence rows onto retrieved or candidate index rows
-    so reports can show whether evidence IDs are missing, exact, or resolvable.
+    It only maps expected evidence rows onto retrieved or review-only
+    source-native corpus rows after retrieval has completed, so reports can
+    show whether evidence IDs are missing, exact, or resolvable.
     """
 
     def __init__(self, config: EvidenceResolutionConfig | None = None) -> None:
@@ -306,6 +538,25 @@ class ExpectedEvidenceResolver:
             "unresolved_count": unresolved_count,
             "missing_id_count": missing_id_count,
             "candidate_count": total_candidate_count,
+            "full_corpus_candidate_count": sum(
+                1
+                for row in rows
+                for candidate in row.get("candidates", [])
+                if isinstance(candidate, Mapping) and candidate.get("source") == "full_corpus_source_native"
+            ),
+            "full_corpus_resolved_candidate_count": sum(
+                1
+                for row in rows
+                if row.get("resolved")
+                and isinstance(row.get("selected_candidate"), Mapping)
+                and row["selected_candidate"].get("source") == "full_corpus_source_native"
+            ),
+            "full_corpus_collision_count": sum(
+                1
+                for row in rows
+                for candidate in row.get("candidates", [])
+                if isinstance(candidate, Mapping) and _clean(candidate.get("collision_warning"))
+            ),
             "selected_candidates": selected_candidates,
             "confidence_counts": dict(sorted(confidence_counts.items())),
             "rows": rows,
@@ -342,6 +593,35 @@ class ExpectedEvidenceResolver:
             )
         )
         candidates = candidates[: max(1, int(self.config.max_candidates))]
+        if candidates:
+            collision_candidates = [
+                candidate
+                for candidate in candidates
+                if candidate.get("source") == "full_corpus_source_native"
+                and candidate.get("confidence") in {"high", "medium"}
+                and candidate.get("match_type") == candidates[0].get("match_type")
+                and abs(float(candidate.get("score") or 0.0) - float(candidates[0].get("score") or 0.0)) <= 0.000001
+            ]
+            if len(collision_candidates) > 1:
+                warning = f"collision:{len(collision_candidates)}_same_confidence_score_match_type"
+                warnings.append(warning)
+                collision_keys = {
+                    (
+                        _clean(candidate.get("doc_id")),
+                        _clean(candidate.get("chunk_id")),
+                        _clean(candidate.get("candidate_text_hash")),
+                    )
+                    for candidate in collision_candidates
+                }
+                for candidate in candidates:
+                    key = (
+                        _clean(candidate.get("doc_id")),
+                        _clean(candidate.get("chunk_id")),
+                        _clean(candidate.get("candidate_text_hash")),
+                    )
+                    if key in collision_keys:
+                        candidate["collision_warning"] = warning
+                        candidate["match_reasons"] = sorted({*candidate.get("match_reasons", []), "collision"})
         if not candidates:
             anchors = _evidence_resolution_anchors(item, evidence)
             if not anchors:
@@ -392,7 +672,7 @@ class ExpectedEvidenceResolver:
     ) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
         seen: set[tuple[str, str, str]] = set()
-        if self.config.scope in {"retrieved-only", "both"}:
+        if self.config.scope in {"retrieved-only", "both", "full-corpus"}:
             for context in retrieved_contexts:
                 row = dict(context)
                 row["_resolution_source"] = "retrieved_contexts"
@@ -400,10 +680,10 @@ class ExpectedEvidenceResolver:
                 if key not in seen:
                     rows.append(row)
                     seen.add(key)
-        if self.config.scope in {"index-candidate-lookup", "both"}:
+        if self.config.scope in {"index-candidate-lookup", "both", "full-corpus", "full-corpus-review-only"}:
             for candidate in index_candidates:
                 row = dict(candidate)
-                row["_resolution_source"] = "index_candidate_lookup"
+                row["_resolution_source"] = _clean(candidate.get("_resolution_source")) or "index_candidate_lookup"
                 key = _context_key(row)
                 if key not in seen:
                     rows.append(row)
@@ -421,9 +701,17 @@ class ExpectedEvidenceResolver:
         reasons: list[str] = []
         text = _clean(row.get("text"))
         text_norm = normalize_answer_text(text)
+        expected_text = _clean(evidence.text)
+        expected_text_norm = normalize_answer_text(expected_text)
         exact_id = bool((evidence.doc_id or evidence.chunk_id) and _evidence_id_matches_row(evidence, row))
         if exact_id:
             reasons.append("exact_id_match")
+        exact_text = bool(expected_text and expected_text in text)
+        normalized_text_match = bool(expected_text_norm and expected_text_norm in text_norm)
+        if exact_text:
+            reasons.append("exact_text_match")
+        elif normalized_text_match:
+            reasons.append("normalized_text_match")
 
         anchors = _evidence_resolution_anchors(item, evidence)
         anchor_hits = sorted(anchor for anchor in anchors if _anchor_in_text([anchor], text))
@@ -453,31 +741,62 @@ class ExpectedEvidenceResolver:
         numeric_ok = not missing_numeric
         anchor_score = len(anchor_hits) / max(1, len(anchors))
         score = max(float(row.get("score") or 0.0), round((anchor_score + overlap) / 2, 6))
+        match_type = "unresolved"
         confidence = "low"
         if exact_id:
+            match_type = "exact_id_match"
             confidence = "high"
             score = max(score, 1.0)
+        elif exact_text:
+            match_type = "exact_match"
+            confidence = "high" if required_numeric and numeric_ok else "medium" if numeric_ok else "low"
+            score = max(score, 0.98 if confidence == "high" else 0.7 if confidence == "medium" else 0.45)
+        elif normalized_text_match:
+            match_type = "normalized_match"
+            confidence = "high" if required_numeric and numeric_ok else "medium" if numeric_ok else "low"
+            score = max(score, 0.92 if confidence == "high" else 0.68 if confidence == "medium" else 0.45)
         elif anchor_hits and numeric_ok and (len(anchor_hits) >= 2 or overlap >= 0.55):
+            match_type = "anchor_only_match" if overlap < self.config.min_score else "weak_match"
             confidence = "high" if required_numeric else "medium"
         elif anchor_hits and overlap >= self.config.min_score and numeric_ok:
+            match_type = "weak_match"
             confidence = "medium"
 
-        if not exact_id and not anchor_hits and overlap < self.config.min_score:
+        if not exact_id and not exact_text and not normalized_text_match and not anchor_hits and overlap < self.config.min_score:
             return None
+        text_hash = _sha256_text(text)
         return {
             "rank": int(row.get("rank") or rank),
             "doc_id": _clean(row.get("doc_id")),
             "chunk_id": _clean(row.get("chunk_id")),
+            "candidate_doc_id": _clean(row.get("doc_id")),
+            "candidate_chunk_id": _clean(row.get("chunk_id")),
+            "source_atom_id": _clean(row.get("source_atom_id")),
+            "evidence_bundle_id": _clean(row.get("evidence_bundle_id")),
+            "candidate_source_atom_id": _clean(row.get("source_atom_id")),
+            "candidate_evidence_bundle_id": _clean(row.get("evidence_bundle_id")),
             "score": round(float(score), 6),
             "confidence": confidence,
             "source": _clean(row.get("_resolution_source")) or "retrieved_contexts",
+            "match_type": match_type,
             "match_reasons": sorted(set(reasons)),
             "text_preview": text[:240],
-            "candidate_full_text_hash": _sha256_text(text),
+            "candidate_text_preview": text[:240],
+            "candidate_full_text_hash": text_hash,
+            "candidate_text_hash": text_hash,
+            "full_text_hash": text_hash,
+            "normalized_match_info": {
+                "normalized_expected_text_sha256": _sha256_text(expected_text_norm),
+                "normalized_candidate_text_sha256": _sha256_text(text_norm),
+                "normalized_expected_in_candidate": normalized_text_match,
+                "exact_expected_in_candidate": exact_text,
+                "token_overlap": round(overlap, 6),
+            },
             "anchor_hits": anchor_hits[:12],
             "missing_numeric_or_date_anchors": missing_numeric,
             "candidate_generic_overlap_terms": generic_overlap_terms[:12],
             "candidate_non_generic_anchor_overlap_terms": non_generic_overlap_terms[:12],
+            "collision_warning": "",
             "text_overlap": round(overlap, 6),
         }
 
@@ -556,6 +875,38 @@ def _redact_pathish_metadata(value: Any) -> tuple[str, bool]:
     return text, False
 
 
+_ABSOLUTE_LOCAL_PATH_RE = re.compile(r"(?P<path>(?:[A-Za-z]:[\\/]|\\\\)[^\s`\"']+)")
+
+
+def _redact_absolute_local_paths(value: Any) -> str:
+    text = _clean(value)
+    if not text:
+        return ""
+
+    def replace(match: re.Match[str]) -> str:
+        path_text = match.group("path").rstrip(".,;)")
+        suffix = match.group("path")[len(path_text) :]
+        return f"redacted_path_sha256:{_sha256_text(path_text)[:16]}{suffix}"
+
+    return _ABSOLUTE_LOCAL_PATH_RE.sub(replace, text)
+
+
+def _report_path_value(path: Path | str) -> str:
+    path_obj = Path(path)
+    try:
+        if path_obj.is_absolute():
+            resolved = path_obj.resolve()
+            try:
+                return resolved.relative_to(ROOT).as_posix()
+            except ValueError:
+                name = _clean(path_obj.name)
+                suffix = f"__{name}" if name else ""
+                return f"redacted_path_sha256:{_sha256_text(resolved.as_posix())[:16]}{suffix}"
+    except OSError:
+        return _redact_absolute_local_paths(path_obj.as_posix())
+    return path_obj.as_posix()
+
+
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
@@ -582,6 +933,57 @@ def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
         "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows),
         encoding="utf-8",
     )
+
+
+def _is_forbidden_public_payload_key(key: Any) -> bool:
+    normalized = str(key).strip().lower()
+    if not normalized:
+        return False
+    canonical = re.sub(r"[^a-z0-9]", "", normalized)
+    if (
+        "sha256" in normalized
+        or "sha256" in canonical
+        or normalized.endswith("_hash")
+        or normalized.endswith("_digest")
+        or canonical.endswith("hash")
+        or canonical.endswith("digest")
+    ):
+        return False
+    if normalized in PUBLIC_REPORT_FORBIDDEN_PAYLOAD_KEYS or canonical in PUBLIC_REPORT_FORBIDDEN_PAYLOAD_CANONICAL_KEYS:
+        return True
+    if ("payload" in normalized or "payload" in canonical) and (
+        "prompt" in normalized or "response" in normalized or "prompt" in canonical or "response" in canonical
+    ):
+        return True
+    if (normalized.startswith("raw_") or canonical.startswith("raw")) and (
+        "prompt" in normalized or "response" in normalized or "prompt" in canonical or "response" in canonical
+    ):
+        return True
+    return False
+
+
+def _sanitize_public_report_value(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        sanitized: dict[str, Any] = {}
+        for key, nested_value in value.items():
+            if _is_forbidden_public_payload_key(key):
+                continue
+            sanitized[str(key)] = _sanitize_public_report_value(nested_value)
+        return sanitized
+    if isinstance(value, list):
+        return [_sanitize_public_report_value(item) for item in value]
+    if isinstance(value, tuple):
+        return [_sanitize_public_report_value(item) for item in value]
+    return value
+
+
+def _public_report_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    public: dict[str, Any] = {}
+    for key, value in dict(row).items():
+        if key in INTERNAL_REPORT_ROW_KEYS or _is_forbidden_public_payload_key(key):
+            continue
+        public[str(key)] = _sanitize_public_report_value(value)
+    return public
 
 
 def _load_dataset_rows(path: Path) -> list[dict[str, Any]]:
@@ -1128,6 +1530,16 @@ class LocalLLMJudgeAdapter:
         }
 
 
+def sanitized_judge_config(config: Mapping[str, Any]) -> dict[str, Any]:
+    sanitized = dict(config)
+    prompt = _clean(sanitized.pop("prompt", ""))
+    if prompt:
+        sanitized["prompt_sha256"] = f"sha256:{_sha256_text(prompt)}"
+        sanitized["prompt_template_persisted"] = False
+        sanitized.setdefault("prompt_template_id", _clean(sanitized.get("judge_version")) or "unknown")
+    return sanitized
+
+
 def _context_key(row: Mapping[str, Any]) -> tuple[str, str, str]:
     return (
         _clean(row.get("doc_id") or row.get("docId") or row.get("document_id") or row.get("documentId")),
@@ -1311,6 +1723,24 @@ def _finish_metric(metric: dict[str, Any]) -> dict[str, Any]:
     return metric
 
 
+def _canonical_failure_labels(labels: Iterable[str]) -> list[str]:
+    canonical: set[str] = set()
+    non_informational_seen = False
+    for label in labels:
+        cleaned = _clean(label)
+        if not cleaned or cleaned in INFORMATIONAL_LABELS:
+            continue
+        non_informational_seen = True
+        if cleaned in CANONICAL_FAILURE_LABELS:
+            canonical.add(cleaned)
+        alias = FAILURE_LABEL_CANONICAL_ALIASES.get(cleaned)
+        if alias:
+            canonical.add(alias)
+    if not canonical and non_informational_seen:
+        canonical.add("metric_not_applicable")
+    return sorted(canonical)
+
+
 def score_rag_eval_items(
     items: Sequence[EvalItem],
     item_outputs: Sequence[Mapping[str, Any]],
@@ -1332,11 +1762,11 @@ def score_rag_eval_items(
     abstention_metric = _metric_template("abstention_accuracy", "unanswerable items only")
     citation_precision = _metric_template(
         "citation_precision",
-        "generated citation rows for items with citations and expected evidence",
+        "generated citation rows for answerable items with citations and expected evidence",
     )
     citation_recall = _metric_template(
         "citation_recall",
-        "required expected evidence rows for items with citations and expected evidence",
+        "required expected evidence rows for answerable items with citations and expected evidence",
     )
     e2e_metric = _metric_template(
         "e2e_rag_success_strict",
@@ -1452,6 +1882,16 @@ def score_rag_eval_items(
         "expected_evidence_resolution_medium_confidence_count": 0,
         "expected_evidence_resolution_low_confidence_count": 0,
         "expected_evidence_resolution_review_only_count": 0,
+        "expected_evidence_full_corpus_candidate_count": 0,
+        "expected_evidence_full_corpus_high_confidence_count": 0,
+        "expected_evidence_full_corpus_medium_confidence_count": 0,
+        "expected_evidence_full_corpus_low_confidence_count": 0,
+        "expected_evidence_full_corpus_review_only_count": 0,
+        "expected_evidence_full_corpus_resolved_candidate_count": 0,
+        "expected_evidence_full_corpus_collision_count": 0,
+        "expected_evidence_full_corpus_unresolved_count": 0,
+        "gold_or_qrels_mutation": False,
+        "human_decision_fields_filled_by_codex": False,
         "schema_warning_count": 0,
         "pipeline_error_count": 0,
         "answerable_count": 0,
@@ -1470,6 +1910,7 @@ def score_rag_eval_items(
         contexts = [dict(row) for row in _as_list(output.get("retrieved_contexts")) if isinstance(row, Mapping)]
         citations = [dict(row) for row in _as_list(output.get("citations")) if isinstance(row, Mapping)]
         generated_answer = _clean(output.get("generated_answer"))
+        pre_gate_generated_answer = _clean(output.get(INTERNAL_PRE_GATE_ANSWER_KEY)) or generated_answer
         answerability = item.answerability
         failure_labels: set[str] = set(output.get("failure_labels") or [])
         metric_results: dict[str, Any] = {}
@@ -1493,6 +1934,8 @@ def score_rag_eval_items(
         if not citations:
             diagnostics["citation_empty_count"] += 1
 
+        if answerability == "unknown":
+            failure_labels.add("gold_missing_answerability")
         if not item.has_answerability_label:
             diagnostics["missing_answerability_label_count"] += 1
             failure_labels.add("gold_missing_answerability")
@@ -1505,6 +1948,8 @@ def score_rag_eval_items(
             if answerability == "answerable":
                 failure_labels.add("gold_missing_expected_evidence")
         diagnostics["schema_warning_count"] += len(item.validation_warnings)
+        if item.validation_warnings:
+            failure_labels.add("schema_warning")
 
         for evidence in item.expected_evidence:
             evidence_anchors = _evidence_match_anchors(item, evidence)
@@ -1557,6 +2002,31 @@ def score_rag_eval_items(
                 diagnostics["expected_evidence_resolution_candidate_count"] += len(
                     _as_list(resolution_row.get("candidates"))
                 )
+                full_corpus_candidates = [
+                    candidate
+                    for candidate in _as_list(resolution_row.get("candidates"))
+                    if isinstance(candidate, Mapping) and candidate.get("source") == "full_corpus_source_native"
+                ]
+                diagnostics["expected_evidence_full_corpus_candidate_count"] += len(full_corpus_candidates)
+                diagnostics["expected_evidence_full_corpus_review_only_count"] += len(full_corpus_candidates)
+                if (
+                    resolution_row.get("resolved")
+                    and isinstance(selected, Mapping)
+                    and selected.get("source") == "full_corpus_source_native"
+                ):
+                    diagnostics["expected_evidence_full_corpus_resolved_candidate_count"] += 1
+                elif _clean(evidence_resolution.get("scope")) in {"full-corpus", "full-corpus-review-only"}:
+                    diagnostics["expected_evidence_full_corpus_unresolved_count"] += 1
+                for full_candidate in full_corpus_candidates:
+                    full_confidence = _clean(full_candidate.get("confidence"))
+                    if full_confidence == "high":
+                        diagnostics["expected_evidence_full_corpus_high_confidence_count"] += 1
+                    elif full_confidence == "medium":
+                        diagnostics["expected_evidence_full_corpus_medium_confidence_count"] += 1
+                    elif full_confidence == "low":
+                        diagnostics["expected_evidence_full_corpus_low_confidence_count"] += 1
+                    if _clean(full_candidate.get("collision_warning")):
+                        diagnostics["expected_evidence_full_corpus_collision_count"] += 1
                 if confidence == "high":
                     diagnostics["expected_evidence_resolution_high_confidence_count"] += 1
                 elif confidence == "medium":
@@ -1689,7 +2159,7 @@ def score_rag_eval_items(
                 diagnostic_only=True,
             )
 
-        if citations and item.has_expected_evidence:
+        if citations and item.has_expected_evidence and answerability == "answerable":
             matching_citations = _count_matching_citations(item, citations)
             citation_precision["denominator"] += len(citations)
             citation_precision["numerator"] += matching_citations
@@ -1706,7 +2176,10 @@ def score_rag_eval_items(
                 failure_labels.add("citation_wrong")
             citation_check_pass = matching_citations == len(citations) and cited_required_count == required_count
         else:
-            reason = "missing_citations" if item.has_expected_evidence else "missing_expected_evidence"
+            if answerability != "answerable":
+                reason = f"answerability_{answerability}_not_in_citation_denominator"
+            else:
+                reason = "missing_citations" if item.has_expected_evidence else "missing_expected_evidence"
             _exclude(citation_precision, reason, diagnostic_only=gold_incomplete)
             _exclude(citation_recall, reason, diagnostic_only=gold_incomplete)
             citation_check_pass = False
@@ -1896,17 +2369,81 @@ def score_rag_eval_items(
             failure_labels.add("pipeline_error")
             diagnostics["pipeline_error_count"] += 1
 
+        surface_comparison = (
+            output.get("retrieval_surface_comparison")
+            if isinstance(output.get("retrieval_surface_comparison"), Mapping)
+            else {}
+        )
+        source_native_surface = (
+            surface_comparison.get("source_native")
+            if isinstance(surface_comparison.get("source_native"), Mapping)
+            else {}
+        )
+        if item.has_expected_evidence and source_native_surface:
+            if source_native_surface.get("expected_evidence_in_corpus_normalized") is False:
+                failure_labels.add("corpus_absent")
+            elif source_native_surface.get("expected_evidence_retrieved") is False:
+                failure_labels.add("present_not_retrieved")
+        if item.has_expected_evidence and contexts and not citation_check_pass:
+            failure_labels.add("retrieved_not_validated")
+        if answerability == "unanswerable" and generated_answer and not abstains(generated_answer):
+            failure_labels.add("should_abstain_but_answered")
+        if answerability == "answerable" and abstains(generated_answer):
+            failure_labels.add("should_answer_but_abstained")
+
+        expected_answer_match_before_gate = (
+            _answer_matches_expected_deterministic(pre_gate_generated_answer, item)
+            if item.has_expected_answer
+            else None
+        )
+        expected_answer_match_after_gate = (
+            _answer_matches_expected_deterministic(generated_answer, item)
+            if item.has_expected_answer
+            else None
+        )
+        expected_evidence_match_after_gate = (
+            _all_required_evidence_present(item, _contexts_top_k(contexts, primary_k))
+            if item.has_expected_evidence
+            else None
+        )
+        expected_evidence_match_before_gate = expected_evidence_match_after_gate
+        gate_payload = output.get("evidence_gate") if isinstance(output.get("evidence_gate"), Mapping) else {}
+        gate_status = _clean(gate_payload.get("evidence_package_status"))
+        real_rag_supported_before_gate = bool(gate_status == "sufficient" and not abstains(pre_gate_generated_answer))
+        real_rag_supported_after_gate = bool(gate_status == "sufficient" and not abstains(generated_answer))
+        if not gate_payload:
+            real_rag_supported_before_gate = False
+            real_rag_supported_after_gate = False
+        abstention_correctness = (
+            abstains(generated_answer)
+            if answerability == "unanswerable"
+            else (not abstains(generated_answer) if answerability == "answerable" else "diagnostic_only_unknown_answerability")
+        )
+
         scored = dict(output)
         scored["answerability"] = item.answerability
         scored["expected_answer"] = item.expected_answer
         scored["expected_answer_aliases"] = list(item.expected_answer_aliases)
         scored["expected_evidence"] = [evidence.to_dict() for evidence in item.expected_evidence]
         scored["source_track"] = _clean(item.source_row.get("track") or item.source_row.get("source_family"))
+        scored["reviewed_mapping_applied"] = bool(item.source_row.get("reviewed_mapping_applied"))
+        scored["reviewed_mapping_change_types"] = list(item.source_row.get("reviewed_mapping_change_types") or [])
         scored["evidence_id_diagnostics"] = evidence_id_diagnostics
         scored["expected_evidence_resolution"] = dict(evidence_resolution)
         scored["schema_warnings"] = list(item.validation_warnings)
         scored["metric_results"] = metric_results
+        scored["expected_answer_match_before_gate"] = expected_answer_match_before_gate
+        scored["expected_answer_match_after_gate"] = expected_answer_match_after_gate
+        scored["expected_evidence_match_before_gate"] = expected_evidence_match_before_gate
+        scored["expected_evidence_match_after_gate"] = expected_evidence_match_after_gate
+        scored["legacy_real_answer_delta_before_gate"] = ""
+        scored["legacy_real_answer_delta_after_gate"] = ""
+        scored["real_rag_supported_before_gate"] = real_rag_supported_before_gate
+        scored["real_rag_supported_after_gate"] = real_rag_supported_after_gate
+        scored["e2e_success_after_gate_provisional"] = metric_results.get("e2e_rag_success_provisional")
+        scored["abstention_correctness_diagnostic_or_strict_when_labels_available"] = abstention_correctness
         scored["failure_labels"] = sorted(failure_labels)
+        scored["canonical_failure_labels"] = _canonical_failure_labels(failure_labels)
         scored_rows.append(scored)
 
     item_count = len(items)
@@ -1936,6 +2473,13 @@ def score_rag_eval_items(
     )
     diagnostics["failure_category_counts"] = dict(sorted(failure_counts.items()))
     diagnostics["informational_label_counts"] = dict(sorted(informational_counts.items()))
+    canonical_failure_counts = Counter(
+        label
+        for row in scored_rows
+        for label in row.get("canonical_failure_labels", [])
+    )
+    diagnostics["canonical_failure_category_counts"] = dict(sorted(canonical_failure_counts.items()))
+    diagnostics["canonical_failure_labels"] = sorted(CANONICAL_FAILURE_LABELS)
 
     strict_metrics = {
         "exact_or_alias_answer_correctness": _finish_metric(answer_metric),
@@ -1991,7 +2535,7 @@ def score_rag_eval_items(
         "diagnostic_metrics": diagnostics,
         "denominator_policy": denominator_policy_text(primary_k),
         "diagnostic_only_decisions": diagnostic_only_decisions(),
-        "judge_config": dict(judge_adapter.config),
+        "judge_config": sanitized_judge_config(judge_adapter.config),
         "metric_tiers": {
             "strict": list(strict_metrics),
             "provisional": list(provisional_metrics),
@@ -2020,7 +2564,7 @@ def denominator_policy_text(primary_k: int) -> str:
         "This run reports strict, provisional, and diagnostic tiers. Strict denominators include only rows with "
         "sufficient human-owned gold for the specific metric: exact/alias answer correctness requires answerable "
         "rows with expected answers or aliases; evidence recall requires answerable rows with expected evidence; "
-        "citation precision/recall require generated citations plus expected evidence; abstention accuracy requires "
+        "citation precision/recall require answerable rows with generated citations plus expected evidence; abstention accuracy requires "
         "unanswerable labels; strict E2E success requires answerable rows with both expected answer and expected "
         f"evidence and uses evidence recall@{primary_k}. Provisional denominators are broader and keep rows with "
         "usable partial signal, such as generated answers plus expected evidence, notes, aliases, or retrieved "
@@ -2139,6 +2683,7 @@ def _normalize_context(row: Mapping[str, Any], rank: int) -> dict[str, Any]:
         ("source_title", "source_title"),
         ("source_safe_id", "source_safe_id"),
         ("source_atom_id", "source_atom_id"),
+        ("evidence_bundle_id", "evidence_bundle_id"),
         ("search_unit_id", "search_unit_id"),
         ("search_view_id", "search_view_id"),
         ("provenance_hash", "provenance_hash"),
@@ -2160,11 +2705,23 @@ def _normalize_context(row: Mapping[str, Any], rank: int) -> dict[str, Any]:
 
 
 def _normalize_citation(row: Mapping[str, Any]) -> dict[str, Any]:
-    return {
+    normalized = {
         "doc_id": _clean(row.get("doc_id") or row.get("docId") or row.get("document_id") or row.get("documentId")),
         "chunk_id": _clean(row.get("chunk_id") or row.get("chunkId") or row.get("search_unit_id") or row.get("searchUnitId")),
         "text": _clean(row.get("text") or row.get("snippet") or row.get("textPreview")),
     }
+    for source_key, target_key in [
+        ("source_atom_id", "source_atom_id"),
+        ("evidence_bundle_id", "evidence_bundle_id"),
+        ("search_unit_id", "search_unit_id"),
+        ("search_view_id", "search_view_id"),
+        ("source_text_sha256", "source_text_sha256"),
+        ("text_sha256", "text_sha256"),
+    ]:
+        value = _clean(row.get(source_key))
+        if value:
+            normalized[target_key] = value
+    return normalized
 
 
 def _latency_distribution_ms(values: Sequence[float | int]) -> dict[str, float]:
@@ -2254,6 +2811,34 @@ def _retrieval_backend_comparison(
 ) -> dict[str, Any]:
     bm25_keys = {_context_backend_key(row) for row in bm25_contexts}
     vector_keys = {_context_backend_key(row) for row in vector_contexts}
+    hybrid_keys = {_context_backend_key(row) for row in hybrid_contexts}
+    bm25_only_keys = bm25_keys - vector_keys
+    vector_only_keys = vector_keys - bm25_keys
+    hybrid_sources = [
+        set(str(source) for source in (row.get("hybrid_sources") or []))
+        for row in hybrid_contexts
+        if isinstance(row, Mapping)
+    ]
+    selected_layer_counts = Counter(
+        str(layer)
+        for row in selected_contexts
+        for layer in (row.get("layer_provenance") or [])
+    )
+    selected_vector_contribution_count = sum(
+        1
+        for row in selected_contexts
+        if "vector" in set(str(source) for source in (row.get("hybrid_sources") or []))
+        or "L2_semantic_vector_search" in set(str(layer) for layer in (row.get("layer_provenance") or []))
+    )
+    selected_bm25_contribution_count = sum(
+        1
+        for row in selected_contexts
+        if "bm25" in set(str(source) for source in (row.get("hybrid_sources") or []))
+        or bool(
+            {"L1_lexical_anchor_search", "L3_query_variant_search"}
+            & set(str(layer) for layer in (row.get("layer_provenance") or []))
+        )
+    )
     return {
         "requested_backend": requested_backend,
         "selected_backend": selected_backend,
@@ -2266,6 +2851,20 @@ def _retrieval_backend_comparison(
             "vector": round(float(vector_latency_ms), 6),
             "hybrid": round(float(hybrid_latency_ms), 6),
         },
+        "bm25_top_k_count": len(bm25_contexts),
+        "vector_top_k_count": len(vector_contexts),
+        "hybrid_top_k_count": len(hybrid_contexts),
+        "bm25_vector_topk_overlap_count": len(bm25_keys & vector_keys),
+        "bm25_only_candidate_count": len(bm25_only_keys),
+        "vector_only_candidate_count": len(vector_only_keys),
+        "hybrid_contains_vector_only_candidate_count": len(hybrid_keys & vector_only_keys),
+        "hybrid_contains_bm25_only_candidate_count": len(hybrid_keys & bm25_only_keys),
+        "vector_contribution_to_hybrid_topk_count": sum(1 for sources in hybrid_sources if "vector" in sources),
+        "bm25_contribution_to_hybrid_topk_count": sum(1 for sources in hybrid_sources if "bm25" in sources),
+        "selected_topk_layer_provenance_counts": dict(sorted(selected_layer_counts.items())),
+        "vector_contribution_to_selected_topk_count": selected_vector_contribution_count,
+        "bm25_contribution_to_selected_topk_count": selected_bm25_contribution_count,
+        "merge_policy": "rrf_v1" if hybrid_contexts else "",
         "candidate_counts": {
             "bm25": len(bm25_contexts),
             "vector": len(vector_contexts),
@@ -2300,6 +2899,176 @@ def _unavailable_retrieval_comparison(
         vector_available=False,
         vector_fallback_reason="vector_backend_not_invoked_for_precomputed_contexts",
     )
+
+
+def _source_native_normalized_query(query: str) -> str:
+    return re.sub(r"\s+", " ", _clean(query).replace("?", " ").replace("!", " ")).strip()
+
+
+def _source_native_query_terms(query: str) -> list[str]:
+    normalized = _source_native_normalized_query(query)
+    return re.findall(r"\d+(?:[./:-]\d+)*|[A-Za-z][A-Za-z0-9_-]*|[가-힣]{2,}", normalized)
+
+
+def _source_native_query_anchor_sets(query: str) -> dict[str, list[str]]:
+    terms = _source_native_query_terms(query)
+    numeric_or_date = [term for term in terms if any(ch.isdigit() for ch in term)]
+    entities = [
+        term
+        for term in terms
+        if (re.search(r"[가-힣]", term) and len(term) >= 2) or (term[:1].isupper() and len(term) > 1)
+    ]
+    rare = [
+        term
+        for term in terms
+        if len(term) >= 4
+        and term.casefold() not in GENERIC_ANCHOR_STOPWORDS
+        and term not in numeric_or_date
+    ]
+    korean = [term for term in terms if re.search(r"[가-힣]", term)]
+    return {
+        "entities": _unique_preserving_order(entities),
+        "numeric_or_date": _unique_preserving_order(numeric_or_date),
+        "rare": _unique_preserving_order(rare),
+        "korean": _unique_preserving_order(korean),
+    }
+
+
+def _unique_preserving_order(values: Iterable[str]) -> list[str]:
+    seen: set[str] = set()
+    unique: list[str] = []
+    for value in values:
+        cleaned = _clean(value)
+        key = cleaned.casefold()
+        if not cleaned or key in seen:
+            continue
+        seen.add(key)
+        unique.append(cleaned)
+    return unique
+
+
+def _bounded_source_native_query_variants(query: str) -> list[str]:
+    anchors = _source_native_query_anchor_sets(query)
+    normalized = _source_native_normalized_query(query)
+    candidates = [
+        normalized,
+        " ".join(anchors["entities"][:6]),
+        " ".join([*anchors["entities"][:4], *anchors["numeric_or_date"][:4]]),
+        " ".join(anchors["rare"][:6]),
+        " ".join([*anchors["numeric_or_date"][:4], *anchors["rare"][:4]]),
+        " ".join(anchors["korean"][:6]),
+    ]
+    if anchors["entities"] and anchors["rare"]:
+        candidates.append(" ".join([anchors["entities"][0], *anchors["rare"][:4]]))
+    if anchors["entities"] and anchors["numeric_or_date"]:
+        candidates.append(" ".join([anchors["entities"][0], *anchors["numeric_or_date"][:4], "status"]))
+    variants = _unique_preserving_order(candidates)
+    return variants[: int(SOURCE_NATIVE_LAYERED_RETRIEVAL_BOUNDS["max_query_variants"])]
+
+
+def _layered_context_key(row: Mapping[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        _clean(row.get("doc_id")),
+        _clean(row.get("chunk_id")),
+        _clean(row.get("source_atom_id") or row.get("evidence_bundle_id")),
+        _sha256_text(row.get("text")),
+    )
+
+
+def _annotate_source_native_layer_context(
+    row: Mapping[str, Any],
+    *,
+    layer: str,
+    query_variant: str,
+    backend: str | None = None,
+) -> dict[str, Any]:
+    context = dict(row)
+    context["retrieval_surface"] = "source_native"
+    if backend:
+        context["retrieval_backend"] = backend
+    provenance = list(context.get("layer_provenance") or [])
+    if layer not in provenance:
+        provenance.append(layer)
+    context["layer_provenance"] = provenance
+    variants = list(context.get("query_variant_provenance") or [])
+    if query_variant and query_variant not in variants:
+        variants.append(query_variant)
+    context["query_variant_provenance"] = variants
+    return context
+
+
+def _source_native_anchor_rerank_score(
+    row: Mapping[str, Any],
+    *,
+    query: str,
+    anchors: Mapping[str, Sequence[str]],
+) -> tuple[float, dict[str, Any]]:
+    text = _clean(row.get("text"))
+    normalized_text = normalize_answer_text(text)
+    numeric_hits = [
+        anchor
+        for anchor in anchors.get("numeric_or_date", [])
+        if normalize_answer_text(anchor) and normalize_answer_text(anchor) in normalized_text
+    ]
+    rare_hits = [
+        anchor
+        for anchor in anchors.get("rare", [])
+        if normalize_answer_text(anchor) and normalize_answer_text(anchor) in normalized_text
+    ]
+    entity_hits = [
+        anchor
+        for anchor in anchors.get("entities", [])
+        if normalize_answer_text(anchor) and normalize_answer_text(anchor) in normalized_text
+    ]
+    query_terms = set(term.casefold() for term in _source_native_query_terms(query))
+    text_terms = set(term.casefold() for term in _source_native_query_terms(text))
+    generic_overlap = sorted((query_terms & text_terms) & GENERIC_ANCHOR_STOPWORDS)
+    base = float(row.get("fusion_score") or row.get("score") or 0.0)
+    bonus = (len(numeric_hits) * 0.08) + (len(rare_hits) * 0.05) + (len(entity_hits) * 0.03)
+    penalty = len(generic_overlap) * 0.01
+    diagnostics = {
+        "numeric_or_date_anchor_hits": numeric_hits[:8],
+        "rare_anchor_hits": rare_hits[:8],
+        "entity_anchor_hits": entity_hits[:8],
+        "generic_overlap_penalty_terms": generic_overlap[:8],
+        "source_family_mismatch": False,
+    }
+    return base + bonus - penalty, diagnostics
+
+
+def _empty_source_native_layered_retrieval_report(
+    *,
+    selected_surface: str,
+    selected_backend: str,
+    legacy_surface_comparison: bool = False,
+    fallback_reason: str = "",
+) -> dict[str, Any]:
+    return {
+        "enabled": False,
+        "planner": "bounded_deterministic_source_native_layered_retrieval_v1",
+        "selected_surface": selected_surface,
+        "selected_backend": selected_backend,
+        "layers": list(SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS),
+        "query_variants": [],
+        "query_variant_count": 0,
+        "backend_call_count": 0,
+        "per_layer_candidate_counts": {layer: 0 for layer in SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS},
+        "per_layer_latency_ms": {layer: 0.0 for layer in SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS},
+        "merge_policy": "rrf_v1",
+        "rerank_policy": "anchor_aware_diagnostic_rerank_v1",
+        "final_candidate_count": 0,
+        "bounds": dict(SOURCE_NATIVE_LAYERED_RETRIEVAL_BOUNDS),
+        "gold_fields_used_for_candidate_generation": False,
+        "expected_fields_used_for_candidate_generation": False,
+        "qrels_used_for_candidate_generation": False,
+        "answerability_labels_used_for_candidate_generation": False,
+        "ids_used_for_candidate_generation": False,
+        "baseline_topk_used_for_candidate_generation": False,
+        "searchunit_searchview_used_as_candidate_surface": False,
+        "legacy_searchunit_comparison_enabled": bool(legacy_surface_comparison),
+        "source_native_units_only": selected_surface == "source_native",
+        "fallback_reason": fallback_reason,
+    }
 
 
 class JsonlContextAdapter:
@@ -2367,6 +3136,15 @@ class JsonlContextAdapter:
         return output
 
     def evidence_candidates(self, query: str, *, top_k: int) -> list[dict[str, Any]]:
+        return []
+
+    def full_corpus_evidence_candidates(
+        self,
+        item: EvalItem,
+        evidence: ExpectedEvidence,
+        *,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
         return []
 
 
@@ -2458,6 +3236,15 @@ class RepoCurrentBm25Adapter:
         if not _clean(query):
             return []
         return self._bm25_contexts(query, self._load_payloads(), top_k=top_k)
+
+    def full_corpus_evidence_candidates(
+        self,
+        item: EvalItem,
+        evidence: ExpectedEvidence,
+        *,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
+        return []
 
     @staticmethod
     def _tokenize(value: str) -> list[str]:
@@ -2563,7 +3350,8 @@ class RepoCurrentHybridAdapter(RepoCurrentBm25Adapter):
 
     @property
     def retrieval_backend_report(self) -> dict[str, Any]:
-        self._ensure_vector_ready()
+        if self.requested_backend != "bm25":
+            self._ensure_vector_ready()
         selected = self._selected_backend_name()
         return {
             "requested": self.requested_backend,
@@ -2702,10 +3490,18 @@ class RepoCurrentHybridAdapter(RepoCurrentBm25Adapter):
         bm25_started = time.perf_counter()
         bm25_contexts = self._bm25_contexts(item.query, payloads, top_k=top_k)
         bm25_latency = round((time.perf_counter() - bm25_started) * 1000, 6)
-        vector_contexts, vector_latency = self._vector_contexts(item.query, top_k=top_k)
-        hybrid_started = time.perf_counter()
-        hybrid_contexts = fuse_hybrid_contexts(bm25_contexts, vector_contexts, top_k=top_k)
-        hybrid_latency = round((time.perf_counter() - hybrid_started) * 1000, 6) + bm25_latency + vector_latency
+        if self.requested_backend == "bm25":
+            vector_contexts: list[dict[str, Any]] = []
+            vector_latency = 0.0
+            hybrid_contexts = []
+            hybrid_latency = 0.0
+            if not self._vector_fallback_reason:
+                self._vector_fallback_reason = "vector_backend_not_requested_for_bm25_surface"
+        else:
+            vector_contexts, vector_latency = self._vector_contexts(item.query, top_k=top_k)
+            hybrid_started = time.perf_counter()
+            hybrid_contexts = fuse_hybrid_contexts(bm25_contexts, vector_contexts, top_k=top_k)
+            hybrid_latency = round((time.perf_counter() - hybrid_started) * 1000, 6) + bm25_latency + vector_latency
         selected_backend = self._selected_backend_name()
         selected_contexts = {
             "bm25": bm25_contexts,
@@ -2734,6 +3530,8 @@ class RepoCurrentHybridAdapter(RepoCurrentBm25Adapter):
     def evidence_candidates(self, query: str, *, top_k: int) -> list[dict[str, Any]]:
         selected_backend = self._selected_backend_name()
         bm25_contexts = self._bm25_contexts(query, self._load_payloads(), top_k=top_k)
+        if selected_backend == "bm25":
+            return bm25_contexts
         vector_contexts, _latency = self._vector_contexts(query, top_k=top_k)
         if selected_backend == "vector":
             return vector_contexts
@@ -2853,6 +3651,43 @@ def _sanitize_source_native_text(value: Any) -> str:
     return text
 
 
+def _canonical_candidate_field_name(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", "", _clean(value).casefold())
+
+
+SOURCE_NATIVE_FORBIDDEN_CANDIDATE_CANONICAL_FIELDS = frozenset(
+    _canonical_candidate_field_name(field) for field in SOURCE_NATIVE_FORBIDDEN_CANDIDATE_FIELD_NAMES
+)
+
+
+def _source_native_forbidden_field_paths(value: Any, *, prefix: str = "") -> list[str]:
+    paths: list[str] = []
+    if isinstance(value, Mapping):
+        for key, child in value.items():
+            key_text = str(key)
+            path = f"{prefix}.{key_text}" if prefix else key_text
+            if _canonical_candidate_field_name(key_text) in SOURCE_NATIVE_FORBIDDEN_CANDIDATE_CANONICAL_FIELDS:
+                paths.append(path)
+            paths.extend(_source_native_forbidden_field_paths(child, prefix=path))
+    elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        for index, child in enumerate(value):
+            paths.extend(_source_native_forbidden_field_paths(child, prefix=f"{prefix}[{index}]"))
+    return paths
+
+
+def _require_no_source_native_forbidden_fields(value: Mapping[str, Any], *, context: str) -> None:
+    paths = _source_native_forbidden_field_paths(value)
+    if paths:
+        raise DatasetSchemaError(f"{context} contains forbidden source-native candidate fields: {paths}")
+
+
+def _require_no_source_native_forbidden_candidate_text(value: str, *, context: str) -> None:
+    lowered = _clean(value).casefold()
+    found = [marker for marker in SOURCE_NATIVE_FORBIDDEN_CANDIDATE_TEXT_MARKERS if marker in lowered]
+    if found:
+        raise DatasetSchemaError(f"{context} contains forbidden candidate text markers: {found}")
+
+
 def _diagnostic_hash_vectors(texts: Sequence[str], *, dimension: int = 128) -> Any:
     import numpy as np  # type: ignore
 
@@ -2877,6 +3712,7 @@ class FakeDeterministicEmbeddingProvider:
     """Small deterministic embedder for source-native vector tests."""
 
     model_name = "deterministic-test-source-native-vector"
+    python_only_vector_search = True
 
     def embed_passages(self, texts: Sequence[str]) -> Any:
         return _diagnostic_hash_vectors(list(texts), dimension=16)
@@ -2896,6 +3732,7 @@ class SourceNativeCorpusLoader:
     ) -> None:
         self.search_view_manifest_path = Path(search_view_manifest_path)
         self.source_atom_registry_path = Path(source_atom_registry_path)
+        self._source_atom_registry_structural_metadata: dict[str, dict[str, str]] | None = None
 
     @property
     def available(self) -> bool:
@@ -2908,7 +3745,7 @@ class SourceNativeCorpusLoader:
                 "source_atom",
                 "source_registry_materialized_text",
                 "raw_source_derived_chunks",
-                "searchunit_searchview_fallback",
+                "source_native_manifest_materialized_text",
             ],
             "selected_source": "source_atom" if self.available else "unavailable",
             "search_view_manifest_path_hash": f"sha256:{_sha256_text(self.search_view_manifest_path.as_posix())}",
@@ -2940,6 +3777,7 @@ class SourceNativeCorpusLoader:
         return units
 
     def _unit_from_row(self, row: Mapping[str, Any]) -> dict[str, Any]:
+        _require_no_source_native_forbidden_fields(row, context="SourceNativeCorpusLoader row")
         source_atom_id = _clean(row.get("source_atom_id") or row.get("sourceAtomId"))
         evidence_bundle_id = _clean(row.get("evidence_bundle_id") or row.get("evidenceBundleId"))
         search_view_id = _clean(row.get("search_view_id") or row.get("searchViewId"))
@@ -2947,6 +3785,7 @@ class SourceNativeCorpusLoader:
         text = _sanitize_source_native_text(
             row.get("bm25_text") or row.get("display_text") or row.get("embedding_text")
         )
+        _require_no_source_native_forbidden_candidate_text(text, context="SourceNativeCorpusLoader text")
         family = _clean(row.get("source_family") or row.get("sourceFamily") or "unknown").upper() or "unknown"
         if family not in {"TEXT", "PDF", "XLSX"}:
             family = "unknown"
@@ -2961,6 +3800,9 @@ class SourceNativeCorpusLoader:
             "faiss_row_id": int(row.get("faiss_row_id")) if str(row.get("faiss_row_id", "")).isdigit() else None,
             "raw_local_paths_exposed": False,
         }
+        structural_source = {**self._registry_structural_metadata_for_source_atom(source_atom_id), **dict(row)}
+        structural_metadata = self._structural_metadata_from_row(structural_source)
+        metadata.update(structural_metadata)
         return {
             "unit_id": unit_id,
             "source_atom_id": source_atom_id,
@@ -2978,8 +3820,144 @@ class SourceNativeCorpusLoader:
             "faiss_row_id": metadata["faiss_row_id"],
         }
 
+    def _registry_structural_metadata_for_source_atom(self, source_atom_id: str) -> dict[str, str]:
+        if self._source_atom_registry_structural_metadata is None:
+            self._source_atom_registry_structural_metadata = self._load_source_atom_registry_structural_metadata()
+        return dict(self._source_atom_registry_structural_metadata.get(_clean(source_atom_id)) or {})
+
+    def _load_source_atom_registry_structural_metadata(self) -> dict[str, dict[str, str]]:
+        if not self.source_atom_registry_path.exists():
+            return {}
+        records: dict[str, dict[str, str]] = {}
+        with self.source_atom_registry_path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(row, Mapping):
+                    continue
+                source_atom_id = _clean(row.get("source_atom_id") or row.get("sourceAtomId"))
+                if not source_atom_id:
+                    continue
+                structural = self._source_owned_structural_metadata_from_registry_row(row)
+                if structural:
+                    records[source_atom_id] = structural
+        return records
+
+    def _source_owned_structural_metadata_from_registry_row(self, row: Mapping[str, Any]) -> dict[str, str]:
+        raw_locator = row.get("raw_locator") if isinstance(row.get("raw_locator"), Mapping) else {}
+        citation = (
+            row.get("canonical_citation_payload")
+            if isinstance(row.get("canonical_citation_payload"), Mapping)
+            else {}
+        )
+        track_locator = (
+            citation.get("track_locator_payload")
+            if isinstance(citation.get("track_locator_payload"), Mapping)
+            else {}
+        )
+
+        def first(*values: Any) -> str:
+            for value in values:
+                if isinstance(value, (list, tuple)):
+                    text = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+                else:
+                    text = _clean(value)
+                if text:
+                    return text
+            return ""
+
+        structural = {
+            "workbook_id": first(row.get("workbook_id"), raw_locator.get("workbook"), citation.get("workbook")),
+            "workbook_version_id": first(
+                row.get("workbook_version_id"),
+                raw_locator.get("document_version_id"),
+                citation.get("document_version_id"),
+            ),
+            "sheet": first(raw_locator.get("sheet"), citation.get("sheet"), track_locator.get("sheet")),
+            "cell_range": first(raw_locator.get("range"), citation.get("range"), track_locator.get("range")),
+            "cell": first(raw_locator.get("cell"), citation.get("cell"), track_locator.get("cell")),
+            "page_number": first(raw_locator.get("page"), citation.get("page"), track_locator.get("page")),
+            "physical_page_index": first(
+                raw_locator.get("physical_page_index"),
+                citation.get("physical_page_index"),
+                track_locator.get("physical_page_index"),
+            ),
+            "bbox": first(raw_locator.get("bbox"), citation.get("bbox"), track_locator.get("bbox")),
+            "region_type": first(raw_locator.get("region_type"), citation.get("region_type"), track_locator.get("region_type")),
+            "locator_fingerprint": first(
+                raw_locator.get("stable_locator_fingerprint"),
+                raw_locator.get("locator_fingerprint"),
+                citation.get("locator_fingerprint"),
+                citation.get("locatorFingerprint"),
+                row.get("locator_fingerprint"),
+            ),
+            "parent_source_unit_id": first(
+                row.get("parent_source_unit_id"),
+                row.get("parent_pointers", {}).get("source_unit_id") if isinstance(row.get("parent_pointers"), Mapping) else "",
+            ),
+        }
+        return {key: value for key, value in structural.items() if value}
+
+    def _structural_metadata_from_row(self, row: Mapping[str, Any]) -> dict[str, str]:
+        source_identity = _clean(row.get("source_identity") or row.get("sourceIdentity"))
+        display_text = _clean(row.get("display_text") or row.get("bm25_text") or row.get("embedding_text"))
+
+        def first(*values: Any) -> str:
+            for value in values:
+                text = _clean(value)
+                if text:
+                    return text
+            return ""
+
+        def regex(pattern: str, text: str) -> str:
+            match = re.search(pattern, text)
+            return _clean(match.group(1)) if match else ""
+
+        page_number = first(
+            row.get("page"),
+            row.get("page_number"),
+            row.get("pageNumber"),
+            row.get("page_candidate"),
+            regex(r"\bpage[=:\s]+(\d+)\b", display_text),
+            regex(r":(\d+):\[[^\]]+\]$", source_identity),
+        )
+        bbox = first(
+            row.get("bbox"),
+            row.get("bounding_box"),
+            regex(r"\bbbox=([^|)]+)", display_text),
+            regex(r":(\[[^\]]+\])$", source_identity),
+        )
+        row_index_1based = first(
+            row.get("row_index_1based"),
+            row.get("row_number"),
+            row.get("row"),
+            regex(r"\bcell=[A-Z]{1,3}(\d+)\b", display_text),
+            regex(r":[A-Z]{1,3}(\d+)$", source_identity),
+        )
+        structural = {
+            "workbook_id": first(row.get("workbook_id"), row.get("workbookId")),
+            "workbook_version_id": first(row.get("workbook_version_id"), row.get("workbookVersionId")),
+            "sheet": first(row.get("sheet"), row.get("sheet_name"), regex(r"\bsheet=([^|]+)", display_text)),
+            "cell_range": first(row.get("cell_range"), row.get("range"), regex(r"\brange=([^|]+)", display_text)),
+            "cell": first(row.get("cell"), regex(r"\bcell=([A-Z]{1,3}\d+)\b", display_text)),
+            "row_index_1based": row_index_1based,
+            "page_number": page_number,
+            "physical_page_index": first(row.get("physical_page_index"), regex(r"\bphysical_page_index=([^|]+)", display_text)),
+            "bbox": bbox,
+            "region_type": first(row.get("region_type"), regex(r"\bregion_type=([^|]+)", display_text)),
+            "locator_fingerprint": first(row.get("locator_fingerprint")),
+            "parent_source_unit_id": first(row.get("parent_source_unit_id"), row.get("parent_search_unit_id")),
+        }
+        return {key: value for key, value in structural.items() if value}
+
 
 def _unit_to_payload(unit: Mapping[str, Any]) -> dict[str, Any]:
+    _require_no_source_native_forbidden_fields(unit, context="source-native retrieval unit")
+    _require_no_source_native_forbidden_candidate_text(_clean(unit.get("text")), context="source-native retrieval unit text")
     metadata = dict(unit.get("metadata") if isinstance(unit.get("metadata"), Mapping) else {})
     metadata.update(
         {
@@ -3005,7 +3983,110 @@ def _unit_to_payload(unit: Mapping[str, Any]) -> dict[str, Any]:
         "retrieval_surface": _clean(unit.get("surface")) or "source_native",
         "title": _clean(unit.get("title")),
         "section": _clean(unit.get("section")),
+        "faiss_row_id": unit.get("faiss_row_id"),
     }
+
+
+def build_source_native_bge_m3_index_artifact(
+    *,
+    index_dir: Path | str = SOURCE_NATIVE_BGE_M3_INDEX_DIR,
+    loader: SourceNativeCorpusLoader | None = None,
+    embedding_provider: Any | None = None,
+    force: bool = False,
+    gpu_preflight: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a persisted non-production source-native BGE-M3 FAISS index."""
+
+    target = Path(index_dir)
+    build_path = target / "build.json"
+    index_path = target / "faiss.index"
+    manifest_path = target / "search_view_manifest.jsonl"
+    if not force and _source_native_index_has_bge_m3_artifacts(target):
+        existing = json.loads(build_path.read_text(encoding="utf-8"))
+        if isinstance(existing, Mapping):
+            return dict(existing)
+    source_loader = loader or SourceNativeCorpusLoader(
+        search_view_manifest_path=SOURCE_NATIVE_DIAGNOSTIC_INDEX_DIR / "search_view_manifest.jsonl",
+        source_atom_registry_path=SOURCE_NATIVE_SOURCE_REGISTRY_PATH,
+    )
+    units = source_loader.load_units()
+    if not units:
+        raise DatasetSchemaError("source-native BGE-M3 index build requires at least one source-native unit")
+    payloads = [_unit_to_payload(unit) for unit in units]
+    texts = [_clean(payload.get("embedding_text") or payload.get("bm25_text")) for payload in payloads]
+    text_hashes = [_sha256_text(text) for text in texts]
+    try:
+        import numpy as np  # type: ignore
+        import faiss  # type: ignore
+    except Exception as exc:
+        raise DatasetSchemaError(f"source-native BGE-M3 index build requires numpy/faiss: {type(exc).__name__}: {exc}") from exc
+    embedder = embedding_provider
+    if embedder is None:
+        from app.capabilities.rag.embeddings import SentenceTransformerEmbedder, resolve_max_seq_length
+
+        embedder = SentenceTransformerEmbedder(
+            model_name="BAAI/bge-m3",
+            max_seq_length=resolve_max_seq_length(
+                int(os.environ.get("ACTUAL_RAG_EVAL_BGE_M3_MAX_SEQ_LENGTH", "1024"))
+            ),
+            batch_size=int(os.environ.get("ACTUAL_RAG_EVAL_BGE_M3_BATCH_SIZE", "32")),
+            show_progress_bar=True,
+        )
+    started = time.perf_counter()
+    vectors = embedder.embed_passages(texts)
+    embedding_build_latency_ms = round((time.perf_counter() - started) * 1000, 6)
+    vectors = np.ascontiguousarray(vectors, dtype=np.float32)
+    if vectors.ndim != 2 or vectors.shape[0] != len(payloads) or vectors.shape[1] <= 0:
+        raise DatasetSchemaError("source-native BGE-M3 embedding matrix shape is invalid")
+    build_started = time.perf_counter()
+    index = faiss.IndexFlatIP(int(vectors.shape[1]))
+    index.add(vectors)
+    index_build_latency_ms = round((time.perf_counter() - build_started) * 1000, 6)
+    target.mkdir(parents=True, exist_ok=True)
+    faiss.write_index(index, str(index_path))
+    source_manifest = source_loader.search_view_manifest_path
+    if not source_manifest.exists():
+        raise DatasetSchemaError(f"source-native manifest does not exist: {source_manifest}")
+    if source_manifest.resolve() != manifest_path.resolve():
+        manifest_path.write_bytes(source_manifest.read_bytes())
+    model = getattr(embedder, "_model", None)
+    model_device = _clean(getattr(model, "device", ""))
+    preflight = dict(gpu_preflight or {})
+    embedding_device = model_device or ("cuda:0" if bool(preflight.get("torch_cuda_available")) else "cpu")
+    gpu_used = "cuda" in embedding_device.casefold()
+    build = {
+        "schema_version": "actual_rag_eval.source_native_bge_m3_index_build.v1",
+        "index_version": "actual-rag-source-native-bge-m3-nonprod-v1",
+        "embedding_model": _clean(getattr(embedder, "model_name", "")) or "BAAI/bge-m3",
+        "embedding_model_revision": _clean(getattr(embedder, "model_revision", "")) or "unavailable",
+        "dimension": int(vectors.shape[1]),
+        "chunk_count": int(vectors.shape[0]),
+        "source_native_unit_count": len(payloads),
+        "text_hash_count": len(text_hashes),
+        "corpus_fingerprint_sha256": f"sha256:{_sha256_text(json.dumps(text_hashes, sort_keys=True))}",
+        "faiss_index_ntotal": int(index.ntotal),
+        "faiss_index_type": "IndexFlatIP",
+        "embedding_device": embedding_device,
+        "gpu_used_for_embedding": gpu_used,
+        "embedding_build_latency_ms": embedding_build_latency_ms,
+        "index_build_latency_ms": index_build_latency_ms,
+        "source_manifest_path_sha256": f"sha256:{_sha256_text(source_manifest.as_posix())}",
+        "source_manifest_copy_sha256": f"sha256:{_sha256_text(manifest_path.as_posix())}",
+        "faiss_row_id_mismatch_count": sum(
+            1
+            for expected, payload in enumerate(payloads)
+            if payload.get("faiss_row_id") is not None and int(payload.get("faiss_row_id")) != expected
+        ),
+        "diagnostic_only": True,
+        "semantic_quality_claim_allowed": False,
+        "gold_fields_used_for_index_build": False,
+        "expected_fields_used_for_index_build": False,
+        "qrels_used_for_index_build": False,
+        "labels_used_for_index_build": False,
+        "raw_local_paths_exposed": False,
+    }
+    write_json(build_path, build)
+    return build
 
 
 class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
@@ -3034,6 +4115,9 @@ class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
         self._bm25_cache: tuple[list[list[str]], Counter[str], float] | None = None
         self._existing_vector_index = None
         self._existing_vector_mode = False
+        self._persisted_bge_m3_vector_mode = False
+        self._python_vector_mode = False
+        self._python_vector_matrix = None
 
     @property
     def config(self) -> dict[str, Any]:
@@ -3044,7 +4128,7 @@ class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
             "requested_backend": self.requested_backend,
             "selected_backend": self._selected_backend_name(),
             "candidate_generation_input_policy": "query_text_only_over_source_owned_corpus",
-            "searchunit_searchview_role": "legacy_baseline_only",
+            "searchunit_searchview_role": "legacy_comparison_debug_only",
             "external_api_calls": False,
         }
 
@@ -3060,6 +4144,12 @@ class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
         report = super().retrieval_backend_report
         if self._vector_ready and not self._gpu_used_for_embedding and self._vector_fallback_reason:
             report["fallback_reason"] = self._vector_fallback_reason
+        if self._python_vector_mode:
+            report["vector_index_kind"] = "python_deterministic_test"
+            report["vector_index_type"] = "in_memory_dot_product"
+        if self._persisted_bge_m3_vector_mode:
+            report["vector_index_kind"] = "faiss"
+            report["vector_index_type"] = "IndexFlatIP"
         report.update(
             {
                 "retrieval_surface": "source_native",
@@ -3076,6 +4166,189 @@ class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
         if self._vector_ready and not self._gpu_used_for_embedding and self._vector_fallback_reason:
             diagnostics["fallback_reason"] = self._vector_fallback_reason
         return diagnostics
+
+    @property
+    def vector_index_audit_report(self) -> dict[str, Any]:
+        if self.requested_backend != "bm25":
+            self._ensure_vector_ready()
+        payloads = self._load_payloads()
+        id_map = list(self._vector_id_map)
+        id_keys = [_clean(payload.get("search_unit_id")) for payload in id_map]
+        duplicate_vector_id_count = len(id_keys) - len(set(key for key in id_keys if key))
+        texts = [_clean(payload.get("bm25_text") or payload.get("embedding_text")) for payload in payloads]
+        text_hashes = [_sha256_text(text) for text in texts]
+        metadata_rows = [
+            payload.get("metadata") if isinstance(payload.get("metadata"), Mapping) else {}
+            for payload in payloads
+        ]
+        index_path = self.loader.search_view_manifest_path.parent / "faiss.index"
+        vector_index_kind = (
+            "python_deterministic_test"
+            if self._python_vector_mode
+            else "faiss"
+            if self._vector_ready
+            else "unavailable"
+        )
+        build_path = self.loader.search_view_manifest_path.parent / "build.json"
+        build: dict[str, Any] = {}
+        provided_units_mode = self._provided_units is not None
+        if build_path.exists() and not provided_units_mode:
+            try:
+                loaded_build = json.loads(build_path.read_text(encoding="utf-8"))
+                if isinstance(loaded_build, Mapping):
+                    build = dict(loaded_build)
+            except Exception:
+                build = {}
+        faiss_index_ntotal = 0
+        if self._python_vector_mode and self._python_vector_matrix is not None:
+            faiss_index_ntotal = int(getattr(self._python_vector_matrix, "shape", [0])[0])
+        elif self._existing_vector_index is not None:
+            faiss_index_ntotal = int(getattr(self._existing_vector_index, "ntotal", 0) or 0)
+        elif self._vector_index is not None:
+            faiss_index_ntotal = int(getattr(self._vector_index, "ntotal", 0) or 0)
+        row_ids: list[int] = []
+        for payload in id_map:
+            value = payload.get("faiss_row_id")
+            if isinstance(value, int):
+                row_ids.append(value)
+            elif str(value).isdigit():
+                row_ids.append(int(str(value)))
+        faiss_row_id_available_count = len(row_ids)
+        faiss_row_id_sequential_match_count = sum(1 for expected, actual in enumerate(row_ids) if expected == actual)
+        faiss_row_id_mismatch_count = (
+            faiss_row_id_available_count - faiss_row_id_sequential_match_count
+            if faiss_row_id_available_count
+            else 0
+        )
+        faiss_ntotal_matches_id_map = bool(self._vector_ready and faiss_index_ntotal == len(id_map))
+        build_chunk_count = int(build.get("chunk_count") or 0)
+        build_dim = int(build.get("dimension") or 0)
+        build_count_matches = bool(not build_chunk_count or build_chunk_count == len(payloads))
+        build_dim_matches = bool(not build_dim or build_dim == int(self._vector_dim))
+        index_integrity_passed = (
+            bool(self._vector_ready)
+            and len(id_map) == len(payloads)
+            and duplicate_vector_id_count == 0
+            and all(bool(_clean(payload.get("search_unit_id"))) for payload in id_map)
+            and faiss_ntotal_matches_id_map
+            and build_count_matches
+            and build_dim_matches
+            and faiss_row_id_mismatch_count == 0
+        )
+        bge_m3_selected = "bge-m3" in _clean(self._embedding_model).casefold()
+        status = (
+            "not_connected"
+            if not self._vector_ready
+            else "connected_bge_m3_candidate"
+            if bge_m3_selected and self._gpu_used_for_embedding
+            else "connected_semantic_quality_unproven"
+        )
+        family_distribution = Counter(_clean(payload.get("source_family")) or "unknown" for payload in payloads)
+        kind_distribution = Counter(
+            _clean(metadata.get("retrieval_surface") or payload.get("retrieval_surface") or "source_native")
+            for payload, metadata in zip(payloads, metadata_rows, strict=True)
+        )
+        return {
+            "enabled": True,
+            "status": status,
+            "vector_surface": "source_native",
+            "vector_backend": vector_index_kind,
+            "vector_index_available": bool(self._vector_ready),
+            "vector_index_kind": vector_index_kind,
+            "vector_index_type": "in_memory_dot_product"
+            if self._python_vector_mode
+            else "IndexFlatIP"
+            if self._vector_ready
+            else "unavailable",
+            "vector_index_path_sha256": f"sha256:{_sha256_text(index_path.as_posix())}" if index_path.exists() and not provided_units_mode else "",
+            "vector_index_path_present": index_path.exists() if not self._python_vector_mode and not provided_units_mode else False,
+            "build_json_path_sha256": f"sha256:{_sha256_text(build_path.as_posix())}" if build_path.exists() and not provided_units_mode else "",
+            "build_json_present": build_path.exists() and not provided_units_mode,
+            "build_index_version": _clean(build.get("index_version")),
+            "build_schema_version": _clean(build.get("schema_version")),
+            "build_chunk_count": build_chunk_count,
+            "build_dimension": build_dim,
+            "build_embedding_model": _clean(build.get("embedding_model")),
+            "build_embedding_model_revision": _clean(build.get("embedding_model_revision")),
+            "build_corpus_fingerprint_sha256": _clean(build.get("corpus_fingerprint_sha256")),
+            "build_text_hash_count": int(build.get("text_hash_count") or 0),
+            "embedding_model_revision": _clean(build.get("embedding_model_revision"))
+            or _clean(getattr(self._embedder, "model_revision", ""))
+            or "unavailable",
+            "corpus_fingerprint_sha256": _clean(build.get("corpus_fingerprint_sha256"))
+            or f"sha256:{_sha256_text(json.dumps(text_hashes, sort_keys=True))}",
+            "text_hash_count": int(build.get("text_hash_count") or 0) or len(text_hashes),
+            "faiss_index_ntotal": faiss_index_ntotal,
+            "faiss_ntotal_matches_id_map": faiss_ntotal_matches_id_map,
+            "embedding_model": _clean(self._embedding_model),
+            "embedding_dim": int(self._vector_dim),
+            "embedding_device": _clean(self._embedding_device),
+            "gpu_used_for_embedding": bool(self._gpu_used_for_embedding),
+            "bge_m3_replacement_needed": not (bge_m3_selected and self._gpu_used_for_embedding),
+            "indexed_unit_count": len(id_map),
+            "id_map_count": len(id_map),
+            "source_native_unit_count": len(payloads),
+            "id_map_matches_source_native_units": len(id_map) == len(payloads) if self._vector_ready else False,
+            "missing_id_map_count": max(len(payloads) - len(id_map), 0) if self._vector_ready else len(payloads),
+            "duplicate_vector_id_count": duplicate_vector_id_count,
+            "faiss_row_id_available_count": faiss_row_id_available_count,
+            "faiss_row_id_sequential_match_count": faiss_row_id_sequential_match_count,
+            "faiss_row_id_mismatch_count": faiss_row_id_mismatch_count,
+            "empty_text_unit_count": sum(1 for text in texts if not text),
+            "too_short_text_unit_count": sum(1 for text in texts if 0 < len(text) < 12),
+            "too_long_text_unit_count": sum(1 for text in texts if len(text) > 8000),
+            "text_hash_available_count": sum(1 for metadata in metadata_rows if _clean(metadata.get("source_text_sha256"))),
+            "doc_id_available_count": sum(1 for metadata, payload in zip(metadata_rows, payloads, strict=True) if _clean(metadata.get("source_safe_id") or payload.get("source_family"))),
+            "chunk_id_available_count": sum(1 for payload in payloads if _clean(payload.get("search_unit_id"))),
+            "source_anchor_available_count": sum(
+                1
+                for metadata, payload in zip(metadata_rows, payloads, strict=True)
+                if _clean(payload.get("source_atom_id") or metadata.get("source_atom_id") or payload.get("evidence_bundle_id") or metadata.get("evidence_bundle_id"))
+            ),
+            "source_family_distribution": dict(sorted(family_distribution.items())),
+            "source_kind_distribution": dict(sorted(kind_distribution.items())),
+            "raw_local_paths_exposed": False,
+            "index_integrity_passed": index_integrity_passed,
+            "semantic_quality_claim_allowed": False,
+            "limitations": [
+                "diagnostic hash vectors do not prove semantic retrieval quality"
+                if not bge_m3_selected
+                else "BGE-M3 semantic quality still requires evaluation before official claims",
+                "external VectorDB parity is not configured",
+                "expected fields are diagnostics-only after retrieval",
+            ],
+        }
+
+    def _source_native_vector_invocation_diagnostics(
+        self,
+        *,
+        vector_contexts: Sequence[Mapping[str, Any]],
+        vector_latency_ms: float,
+    ) -> dict[str, Any]:
+        vector_invoked = self.requested_backend != "bm25"
+        hydrated = [
+            row
+            for row in vector_contexts
+            if _clean(row.get("doc_id"))
+            and _clean(row.get("chunk_id"))
+            and _clean(row.get("retrieval_surface")) == "source_native"
+        ]
+        return {
+            "vector_backend_invoked": bool(vector_invoked),
+            "query_embedding_created_or_loaded": bool(vector_invoked and self._vector_ready),
+            "query_embedding_model": _clean(self._embedding_model),
+            "query_embedding_dim": int(self._vector_dim),
+            "vector_top_k_count": len(vector_contexts),
+            "vector_latency_ms": round(float(vector_latency_ms), 6),
+            "vector_candidate_doc_ids": [_clean(row.get("doc_id")) for row in vector_contexts],
+            "vector_candidate_chunk_ids": [_clean(row.get("chunk_id")) for row in vector_contexts],
+            "vector_candidate_scores": [round(float(row.get("score") or 0.0), 6) for row in vector_contexts],
+            "vector_candidate_text_hashes": [_sha256_text(row.get("text")) for row in vector_contexts],
+            "vector_candidate_text_previews": [_redact_absolute_local_paths(_clean(row.get("text"))[:240]) for row in vector_contexts],
+            "vector_hydration_success_count": len(hydrated),
+            "vector_hydration_failure_count": max(len(vector_contexts) - len(hydrated), 0),
+            "vector_candidate_generation_input_policy": "query_text_only_no_gold_qrels_labels_ids_or_baseline_topk",
+        }
 
     def _ensure_vector_ready(self) -> bool:
         if self._vector_attempted:
@@ -3098,7 +4371,37 @@ class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
         if self._provided_units is None and build_path.exists() and index_path.exists():
             try:
                 build = json.loads(build_path.read_text(encoding="utf-8"))
-                if _clean(build.get("embedding_model")) == "codex-diagnostic-hashing-vector-v1":
+                build_model = _clean(build.get("embedding_model"))
+                if "bge-m3" in build_model.casefold():
+                    started = time.perf_counter()
+                    self._existing_vector_index = faiss.read_index(str(index_path))
+                    self._index_load_or_build_latency_ms = round((time.perf_counter() - started) * 1000, 6)
+                    embedder = self.embedding_provider
+                    if embedder is None:
+                        from app.capabilities.rag.embeddings import SentenceTransformerEmbedder, resolve_max_seq_length
+
+                        embedder = SentenceTransformerEmbedder(
+                            model_name=build_model or "BAAI/bge-m3",
+                            max_seq_length=resolve_max_seq_length(
+                                int(os.environ.get("ACTUAL_RAG_EVAL_BGE_M3_MAX_SEQ_LENGTH", "1024"))
+                            ),
+                            batch_size=int(os.environ.get("ACTUAL_RAG_EVAL_BGE_M3_BATCH_SIZE", "32")),
+                            show_progress_bar=False,
+                        )
+                    self._vector_id_map = payloads
+                    self._embedder = embedder
+                    self._vector_dim = int(build.get("dimension") or getattr(embedder, "dimension", 1024) or 1024)
+                    self._embedding_model = build_model or _clean(getattr(embedder, "model_name", "")) or "BAAI/bge-m3"
+                    self._embedding_device = _clean(build.get("embedding_device")) or (
+                        "cuda:0" if bool(self.gpu_preflight.get("torch_cuda_available")) else "cpu"
+                    )
+                    self._gpu_used_for_embedding = bool(build.get("gpu_used_for_embedding")) or "cuda" in self._embedding_device.casefold()
+                    self._persisted_bge_m3_vector_mode = True
+                    self._existing_vector_mode = False
+                    self._vector_ready = True
+                    self._vector_fallback_reason = ""
+                    return True
+                if build_model == "codex-diagnostic-hashing-vector-v1":
                     started = time.perf_counter()
                     self._existing_vector_index = faiss.read_index(str(index_path))
                     self._index_load_or_build_latency_ms = round((time.perf_counter() - started) * 1000, 6)
@@ -3132,6 +4435,19 @@ class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
             vectors = embedder.embed_passages(texts)
             self._embedding_build_latency_ms = round((time.perf_counter() - embed_started) * 1000, 6)
             vectors = np.ascontiguousarray(vectors, dtype=np.float32)
+            if getattr(embedder, "python_only_vector_search", False):
+                self._index_load_or_build_latency_ms = 0.0
+                self._python_vector_mode = True
+                self._python_vector_matrix = vectors
+                self._vector_id_map = payloads
+                self._embedder = embedder
+                self._vector_dim = int(vectors.shape[1])
+                self._embedding_model = _clean(getattr(embedder, "model_name", "")) or "python-only-vector-test-adapter"
+                self._embedding_device = "cpu_python_test_adapter"
+                self._gpu_used_for_embedding = False
+                self._vector_ready = True
+                self._vector_fallback_reason = "python_only_deterministic_test_vector_adapter"
+                return True
             build_started = time.perf_counter()
             index = faiss.IndexFlatIP(int(vectors.shape[1]))
             index.add(vectors)
@@ -3162,19 +4478,46 @@ class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
             return [], 0.0
         started = time.perf_counter()
         try:
-            if self._existing_vector_mode and self._existing_vector_index is not None:
+            if self._python_vector_mode and self._python_vector_matrix is not None:
+                if self._embedder is None:
+                    raise RuntimeError("source_native_python_vector_embedder_not_loaded")
+                query_vectors = self._embedder.embed_queries([query])
+                qvec = np.ascontiguousarray(query_vectors, dtype=np.float32)
+                if qvec.ndim != 2 or qvec.shape[1] != self._vector_dim:
+                    raise RuntimeError("source_native_python_vector_query_dim_mismatch")
+                scores_matrix = self._python_vector_matrix @ qvec[0]
+                order = np.argsort(-scores_matrix)[: min(int(top_k), len(self._vector_id_map))]
+                row_ids = [int(row_id) for row_id in order]
+                score_values = [float(scores_matrix[row_id]) for row_id in row_ids]
+            elif self._persisted_bge_m3_vector_mode and self._existing_vector_index is not None:
+                if self._embedder is None:
+                    raise RuntimeError("source_native_bge_m3_query_embedder_not_loaded")
+                query_vectors = self._embedder.embed_queries([query])
+                qvec = np.ascontiguousarray(query_vectors, dtype=np.float32)
+                scores, ids = self._existing_vector_index.search(qvec, min(int(top_k), len(self._vector_id_map)))
+                row_ids = [int(row_id) for row_id in ids[0]]
+                score_values = [float(score) for score in scores[0]]
+            elif self._existing_vector_mode and self._existing_vector_index is not None:
                 qvec = _diagnostic_hash_vectors([query], dimension=max(self._vector_dim, 1))
                 scores, ids = self._existing_vector_index.search(qvec, min(int(top_k), len(self._vector_id_map)))
+                row_ids = [int(row_id) for row_id in ids[0]]
+                score_values = [float(score) for score in scores[0]]
             else:
                 if self._embedder is None or self._vector_index is None:
                     raise RuntimeError("source_native_vector_index_not_loaded")
                 query_vectors = self._embedder.embed_queries([query])
                 qvec = np.ascontiguousarray(query_vectors, dtype=np.float32)
                 scores, ids = self._vector_index.search(qvec, min(int(top_k), len(self._vector_id_map)))
+                row_ids = [int(row_id) for row_id in ids[0]]
+                score_values = [float(score) for score in scores[0]]
         except Exception as exc:
             self._vector_fallback_reason = f"source_native_vector_query_failed:{type(exc).__name__}: {exc}"
             return [], round((time.perf_counter() - started) * 1000, 6)
-        contexts = [self._context_from_payload(self._vector_id_map[int(row_id)], rank, float(score), "vector") for rank, (row_id, score) in enumerate(zip(ids[0], scores[0]), start=1) if int(row_id) >= 0]
+        contexts = [
+            self._context_from_payload(self._vector_id_map[row_id], rank, score, "vector")
+            for rank, (row_id, score) in enumerate(zip(row_ids, score_values), start=1)
+            if row_id >= 0
+        ]
         self._query_count += 1
         return contexts, round((time.perf_counter() - started) * 1000, 6)
 
@@ -3229,6 +4572,426 @@ class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
             "source_text_sha256": _clean(metadata.get("source_text_sha256")),
         }
 
+    def full_corpus_evidence_candidates(
+        self,
+        item: EvalItem,
+        evidence: ExpectedEvidence,
+        *,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
+        evidence_text = _clean(evidence.text)
+        normalized_evidence = normalize_answer_text(evidence_text)
+        anchors = _evidence_resolution_anchors(item, evidence)
+        required_numeric = _numeric_or_date_anchors(
+            _candidate_anchors(item.expected_answer, *item.expected_answer_aliases, evidence.text)
+        )
+        rows: list[dict[str, Any]] = []
+        for payload in self._load_payloads():
+            context = self._context_from_payload(payload, 0, 0.0, "full_corpus_diagnostic")
+            text = _clean(context.get("text"))
+            normalized_text = normalize_answer_text(text)
+            exact_text = bool(evidence_text and evidence_text in text)
+            normalized_match = bool(normalized_evidence and normalized_evidence in normalized_text)
+            anchor_hits = sorted(anchor for anchor in anchors if _anchor_in_text([anchor], text))
+            missing_numeric = sorted(anchor for anchor in required_numeric if not _anchor_in_text([anchor], text))
+            overlap = _token_overlap_ratio(evidence_text, text)
+            if not exact_text and not normalized_match and not anchor_hits and overlap < 0.2:
+                continue
+            if exact_text:
+                score = 0.98
+            elif normalized_match:
+                score = 0.92
+            elif anchor_hits and not missing_numeric:
+                score = 0.65 + min(len(anchor_hits), 4) * 0.03
+            else:
+                score = max(0.25, overlap)
+            context.update(
+                {
+                    "rank": 0,
+                    "score": round(float(score), 6),
+                    "retrieval_backend": "full_corpus_diagnostic",
+                    "_resolution_source": "full_corpus_source_native",
+                    "full_corpus_review_only": True,
+                    "expected_evidence_used_for_candidate_generation": False,
+                    "expected_evidence_used_for_review_only_resolution": True,
+                    "gold_or_qrels_mutation": False,
+                }
+            )
+            rows.append(context)
+        rows.sort(
+            key=lambda row: (
+                -float(row.get("score") or 0.0),
+                _clean(row.get("doc_id")),
+                _clean(row.get("chunk_id")),
+                _sha256_text(row.get("text")),
+            )
+        )
+        bounded = rows[: max(1, int(top_k))]
+        for rank, row in enumerate(bounded, start=1):
+            row["rank"] = rank
+        return bounded
+
+    def run_item(self, item: EvalItem, *, top_k: int) -> dict[str, Any]:
+        payloads = self._load_payloads()
+        bm25_started = time.perf_counter()
+        bm25_contexts = self._bm25_contexts(item.query, payloads, top_k=top_k)
+        bm25_latency = round((time.perf_counter() - bm25_started) * 1000, 6)
+        if self.requested_backend == "bm25":
+            vector_contexts: list[dict[str, Any]] = []
+            vector_latency = 0.0
+            hybrid_contexts: list[dict[str, Any]] = []
+            hybrid_latency = 0.0
+            if not self._vector_fallback_reason:
+                self._vector_fallback_reason = "vector_backend_not_requested_for_bm25_surface"
+        else:
+            vector_contexts, vector_latency = self._vector_contexts(item.query, top_k=top_k)
+            hybrid_started = time.perf_counter()
+            hybrid_contexts = fuse_hybrid_contexts(bm25_contexts, vector_contexts, top_k=top_k)
+            hybrid_latency = round((time.perf_counter() - hybrid_started) * 1000, 6) + bm25_latency + vector_latency
+        selected_backend = self._selected_backend_name()
+        fallback_selected_contexts = {
+            "bm25": bm25_contexts,
+            "vector": vector_contexts,
+            "hybrid": hybrid_contexts,
+        }.get(selected_backend, bm25_contexts)
+        layered_contexts, layered_report = self._source_native_layered_contexts(
+            item.query,
+            top_k=top_k,
+            selected_backend=selected_backend,
+            payloads=payloads,
+            bm25_contexts=bm25_contexts,
+            vector_contexts=vector_contexts,
+            bm25_latency_ms=bm25_latency,
+            vector_latency_ms=vector_latency,
+        )
+        selected_contexts = layered_contexts or fallback_selected_contexts
+        citations = [_normalize_citation(context) for context in selected_contexts]
+        generated_answer = self.generator.generate(item.query, [_context_to_chunk(context) for context in selected_contexts])
+        output = _item_output(item, generated_answer=generated_answer, contexts=selected_contexts, citations=citations)
+        output["retrieval_backend_comparison"] = _retrieval_backend_comparison(
+            requested_backend=self.requested_backend,
+            selected_backend=selected_backend,
+            bm25_contexts=bm25_contexts,
+            vector_contexts=vector_contexts,
+            hybrid_contexts=hybrid_contexts,
+            selected_contexts=selected_contexts,
+            bm25_latency_ms=bm25_latency,
+            vector_latency_ms=vector_latency,
+            hybrid_latency_ms=hybrid_latency,
+            vector_available=self._vector_ready,
+            vector_fallback_reason=self._vector_fallback_reason,
+        )
+        output["retrieval_backend_comparison"]["source_native_vector_invocation"] = self._source_native_vector_invocation_diagnostics(
+            vector_contexts=vector_contexts,
+            vector_latency_ms=vector_latency,
+        )
+        output["retrieval_backend_comparison"]["post_retrieval_target_diagnostics"] = {
+            "expected_fields_used_for_post_retrieval_diagnostics": item.has_expected_answer or item.has_expected_evidence,
+            "expected_fields_used_for_candidate_generation": False,
+            "gold_fields_used_for_candidate_generation": False,
+            "qrels_used_for_candidate_generation": False,
+            "ids_used_for_candidate_generation": False,
+            "baseline_topk_used_for_candidate_generation": False,
+            "bm25_expected_anchor_retrieved": _contexts_match_expected(item, bm25_contexts),
+            "vector_expected_anchor_retrieved": _contexts_match_expected(item, vector_contexts),
+            "hybrid_expected_anchor_retrieved": _contexts_match_expected(item, hybrid_contexts),
+        }
+        output["source_native_layered_retrieval"] = layered_report
+        output["diagnostic_retrieval_metrics"] = _source_native_diagnostic_retrieval_metrics_for_item(
+            item,
+            bm25_contexts=bm25_contexts,
+            vector_contexts=vector_contexts,
+            hybrid_contexts=hybrid_contexts,
+            selected_contexts=selected_contexts,
+            top_k=top_k,
+        )
+        output["diagnostics"]["retrieval_backend_comparison"] = output["retrieval_backend_comparison"]
+        output["diagnostics"]["source_native_layered_retrieval"] = layered_report
+        output["diagnostics"]["diagnostic_retrieval_metrics"] = output["diagnostic_retrieval_metrics"]
+        return output
+
+    def _source_native_layered_contexts(
+        self,
+        query: str,
+        *,
+        top_k: int,
+        selected_backend: str,
+        payloads: Sequence[Mapping[str, Any]],
+        bm25_contexts: Sequence[Mapping[str, Any]],
+        vector_contexts: Sequence[Mapping[str, Any]],
+        bm25_latency_ms: float,
+        vector_latency_ms: float,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        bounds = dict(SOURCE_NATIVE_LAYERED_RETRIEVAL_BOUNDS)
+        layer_limit = min(int(bounds["max_candidates_per_layer"]), max(int(top_k) * 5, int(top_k), 1))
+        max_backend_calls = int(bounds["max_backend_calls_per_item"])
+        variants = _bounded_source_native_query_variants(query)
+        anchors = _source_native_query_anchor_sets(query)
+        per_layer_candidate_counts = {layer: 0 for layer in SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS}
+        per_layer_latency_ms = {layer: 0.0 for layer in SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS}
+        layer_candidates: dict[str, list[dict[str, Any]]] = {
+            layer: [] for layer in SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS
+        }
+        backend_call_count = 0
+
+        l0_started = time.perf_counter()
+        normalized_query = _source_native_normalized_query(query)
+        per_layer_latency_ms["L0_query_normalization"] = round((time.perf_counter() - l0_started) * 1000, 6)
+        if not normalized_query:
+            report = _empty_source_native_layered_retrieval_report(
+                selected_surface="source_native",
+                selected_backend=selected_backend,
+                fallback_reason="empty_query",
+            )
+            return [], report
+
+        def record(layer: str, contexts: Sequence[Mapping[str, Any]], *, query_variant: str, backend: str) -> None:
+            rows = [
+                _annotate_source_native_layer_context(row, layer=layer, query_variant=query_variant, backend=backend)
+                for row in contexts[:layer_limit]
+            ]
+            layer_candidates[layer].extend(rows)
+            per_layer_candidate_counts[layer] = min(
+                int(bounds["max_candidates_per_layer"]),
+                len({_layered_context_key(row) for row in layer_candidates[layer]}),
+            )
+
+        lexical_variants = variants[: min(3, len(variants))]
+        for variant in lexical_variants:
+            if backend_call_count >= max_backend_calls:
+                break
+            if variant == normalized_query:
+                contexts = list(bm25_contexts)[:layer_limit]
+                latency = bm25_latency_ms
+            else:
+                started = time.perf_counter()
+                contexts = self._bm25_contexts(variant, payloads, top_k=layer_limit)
+                latency = round((time.perf_counter() - started) * 1000, 6)
+            backend_call_count += 1
+            per_layer_latency_ms["L1_lexical_anchor_search"] += latency
+            record("L1_lexical_anchor_search", contexts, query_variant=variant, backend="bm25")
+
+        if self.requested_backend != "bm25" and backend_call_count < max_backend_calls:
+            backend_call_count += 1
+            per_layer_latency_ms["L2_semantic_vector_search"] += vector_latency_ms
+            record(
+                "L2_semantic_vector_search",
+                list(vector_contexts)[:layer_limit],
+                query_variant=normalized_query,
+                backend="vector",
+            )
+
+        variant_layer_inputs = [variant for variant in variants if variant not in lexical_variants]
+        for variant in variant_layer_inputs:
+            if backend_call_count >= max_backend_calls:
+                break
+            started = time.perf_counter()
+            contexts = self._bm25_contexts(variant, payloads, top_k=layer_limit)
+            per_layer_latency_ms["L3_query_variant_search"] += round((time.perf_counter() - started) * 1000, 6)
+            backend_call_count += 1
+            record("L3_query_variant_search", contexts, query_variant=variant, backend="bm25")
+
+        l4_started = time.perf_counter()
+        anchor_values = [*anchors.get("entities", []), *anchors.get("rare", []), *anchors.get("numeric_or_date", [])]
+        seen_l4: set[tuple[str, str, str, str]] = set()
+        structure_rows: list[dict[str, Any]] = []
+        for source_layer in (
+            "L1_lexical_anchor_search",
+            "L2_semantic_vector_search",
+            "L3_query_variant_search",
+        ):
+            for row in layer_candidates[source_layer]:
+                title_section = " ".join([_clean(row.get("title")), _clean(row.get("section"))])
+                normalized_title_section = normalize_answer_text(title_section)
+                if not title_section and not row.get("source_atom_id") and not row.get("evidence_bundle_id"):
+                    continue
+                if anchor_values and normalized_title_section:
+                    if not any(normalize_answer_text(anchor) in normalized_title_section for anchor in anchor_values):
+                        continue
+                key = _layered_context_key(row)
+                if key in seen_l4:
+                    continue
+                seen_l4.add(key)
+                structure_rows.append(
+                    _annotate_source_native_layer_context(
+                        row,
+                        layer="L4_structure_aware_source_native_search",
+                        query_variant="structure_metadata_filter",
+                        backend=_clean(row.get("retrieval_backend")) or selected_backend,
+                    )
+                )
+                if len(structure_rows) >= layer_limit:
+                    break
+            if len(structure_rows) >= layer_limit:
+                break
+        layer_candidates["L4_structure_aware_source_native_search"] = structure_rows
+        per_layer_candidate_counts["L4_structure_aware_source_native_search"] = len(structure_rows)
+        per_layer_latency_ms["L4_structure_aware_source_native_search"] = round((time.perf_counter() - l4_started) * 1000, 6)
+
+        l5_started = time.perf_counter()
+        layer_weights = {
+            "L1_lexical_anchor_search": 1.0,
+            "L2_semantic_vector_search": 1.0,
+            "L3_query_variant_search": 0.8,
+            "L4_structure_aware_source_native_search": 0.6,
+        }
+        fused: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+        for layer, weight in layer_weights.items():
+            for position, row in enumerate(layer_candidates[layer], start=1):
+                key = _layered_context_key(row)
+                if key not in fused:
+                    fused[key] = dict(row)
+                    fused[key]["fusion_score"] = 0.0
+                    fused[key]["layer_provenance"] = []
+                    fused[key]["query_variant_provenance"] = []
+                fused[key]["fusion_score"] = float(fused[key].get("fusion_score") or 0.0) + weight / (60 + position)
+                for provenance in row.get("layer_provenance") or []:
+                    if provenance not in fused[key]["layer_provenance"]:
+                        fused[key]["layer_provenance"].append(provenance)
+                for variant in row.get("query_variant_provenance") or []:
+                    if variant not in fused[key]["query_variant_provenance"]:
+                        fused[key]["query_variant_provenance"].append(variant)
+        merged = sorted(
+            fused.values(),
+            key=lambda row: (
+                -float(row.get("fusion_score") or 0.0),
+                _clean(row.get("doc_id")),
+                _clean(row.get("chunk_id")),
+                _clean(row.get("text")),
+            ),
+        )[: int(bounds["max_merged_candidates"])]
+        for row in merged:
+            if "L5_merge_dedupe" not in row["layer_provenance"]:
+                row["layer_provenance"].append("L5_merge_dedupe")
+            row["retrieval_surface"] = "source_native"
+        layer_candidates["L5_merge_dedupe"] = [dict(row) for row in merged]
+        per_layer_candidate_counts["L5_merge_dedupe"] = len(merged)
+        per_layer_latency_ms["L5_merge_dedupe"] = round((time.perf_counter() - l5_started) * 1000, 6)
+
+        l6_started = time.perf_counter()
+        chunk_to_index = {_clean(payload.get("search_unit_id")): index for index, payload in enumerate(payloads)}
+        expanded: list[dict[str, Any]] = []
+        existing_keys = {_layered_context_key(row) for row in merged}
+        window = int(bounds["max_neighbor_expansion_windows"])
+        for row in merged[: max(int(top_k), 1)]:
+            index = chunk_to_index.get(_clean(row.get("chunk_id")))
+            if index is None:
+                continue
+            for offset in range(-window, window + 1):
+                if offset == 0:
+                    continue
+                neighbor_index = index + offset
+                if neighbor_index < 0 or neighbor_index >= len(payloads):
+                    continue
+                neighbor_payload = payloads[neighbor_index]
+                neighbor = self._context_from_payload(neighbor_payload, 0, 0.0, "neighbor")
+                same_doc = _clean(neighbor.get("doc_id")) == _clean(row.get("doc_id"))
+                same_section = _clean(neighbor.get("section")) and _clean(neighbor.get("section")) == _clean(row.get("section"))
+                same_title = _clean(neighbor.get("title")) and _clean(neighbor.get("title")) == _clean(row.get("title"))
+                if not same_doc or not (same_section or same_title):
+                    continue
+                key = _layered_context_key(neighbor)
+                if key in existing_keys:
+                    continue
+                existing_keys.add(key)
+                neighbor = _annotate_source_native_layer_context(
+                    neighbor,
+                    layer="L6_source_neighbor_expansion",
+                    query_variant="same_doc_section_neighbor",
+                    backend="neighbor",
+                )
+                neighbor["neighbor_expansion_source_chunk_id"] = _clean(row.get("chunk_id"))
+                expanded.append(neighbor)
+                if len(expanded) >= layer_limit:
+                    break
+            if len(expanded) >= layer_limit:
+                break
+        layer_candidates["L6_source_neighbor_expansion"] = expanded
+        per_layer_candidate_counts["L6_source_neighbor_expansion"] = len(expanded)
+        per_layer_latency_ms["L6_source_neighbor_expansion"] = round((time.perf_counter() - l6_started) * 1000, 6)
+
+        l7_started = time.perf_counter()
+        rerank_pool: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+        for row in [*merged, *expanded]:
+            key = _layered_context_key(row)
+            if key not in rerank_pool:
+                rerank_pool[key] = dict(row)
+            else:
+                for provenance in row.get("layer_provenance") or []:
+                    if provenance not in rerank_pool[key].setdefault("layer_provenance", []):
+                        rerank_pool[key]["layer_provenance"].append(provenance)
+        reranked: list[dict[str, Any]] = []
+        for row in rerank_pool.values():
+            score, diagnostics = _source_native_anchor_rerank_score(row, query=query, anchors=anchors)
+            context = dict(row)
+            context["anchor_aware_rerank_score"] = round(float(score), 6)
+            context["anchor_aware_diagnostics"] = diagnostics
+            context["score"] = round(float(score), 6)
+            context["retrieval_backend"] = selected_backend
+            context["retrieval_surface"] = "source_native"
+            if "L7_anchor_aware_reranking_diagnostics" not in context.setdefault("layer_provenance", []):
+                context["layer_provenance"].append("L7_anchor_aware_reranking_diagnostics")
+            reranked.append(context)
+        reranked.sort(
+            key=lambda row: (
+                -float(row.get("anchor_aware_rerank_score") or 0.0),
+                _clean(row.get("doc_id")),
+                _clean(row.get("chunk_id")),
+                _clean(row.get("text")),
+            )
+        )
+        final_contexts: list[dict[str, Any]] = []
+        for rank, row in enumerate(reranked[: max(int(top_k), 0)], start=1):
+            context = dict(row)
+            context["rank"] = rank
+            context["layer_provenance"] = sorted(set(context.get("layer_provenance") or []))
+            context["query_variant_provenance"] = sorted(set(context.get("query_variant_provenance") or []))
+            final_contexts.append(context)
+        layer_candidates["L7_anchor_aware_reranking_diagnostics"] = final_contexts
+        per_layer_candidate_counts["L7_anchor_aware_reranking_diagnostics"] = len(final_contexts)
+        per_layer_latency_ms["L7_anchor_aware_reranking_diagnostics"] = round((time.perf_counter() - l7_started) * 1000, 6)
+
+        report = {
+            "enabled": True,
+            "planner": "bounded_deterministic_source_native_layered_retrieval_v1",
+            "selected_surface": "source_native",
+            "selected_backend": selected_backend,
+            "layers": list(SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS),
+            "query_variants": variants,
+            "query_variant_count": len(variants),
+            "backend_call_count": backend_call_count,
+            "per_layer_candidate_counts": per_layer_candidate_counts,
+            "per_layer_latency_ms": {key: round(float(value), 6) for key, value in per_layer_latency_ms.items()},
+            "merge_policy": "rrf_v1",
+            "rerank_policy": "anchor_aware_diagnostic_rerank_v1",
+            "final_candidate_count": len(final_contexts),
+            "bounds": bounds,
+            "anchor_diagnostics": {
+                "entity_anchor_count": len(anchors.get("entities", [])),
+                "numeric_or_date_anchor_count": len(anchors.get("numeric_or_date", [])),
+                "rare_anchor_count": len(anchors.get("rare", [])),
+                "required_numeric_date_anchor_coverage": bool(
+                    not anchors.get("numeric_or_date")
+                    or any(
+                        set(anchors.get("numeric_or_date", []))
+                        & set((row.get("anchor_aware_diagnostics") or {}).get("numeric_or_date_anchor_hits") or [])
+                        for row in final_contexts
+                    )
+                ),
+            },
+            "gold_fields_used_for_candidate_generation": False,
+            "expected_fields_used_for_candidate_generation": False,
+            "qrels_used_for_candidate_generation": False,
+            "answerability_labels_used_for_candidate_generation": False,
+            "ids_used_for_candidate_generation": False,
+            "baseline_topk_used_for_candidate_generation": False,
+            "searchunit_searchview_used_as_candidate_surface": False,
+            "legacy_searchunit_comparison_enabled": False,
+            "source_native_units_only": True,
+            "fallback_reason": _clean(self._vector_fallback_reason) if selected_backend in {"vector", "hybrid"} else "",
+        }
+        return final_contexts, report
+
     def presence_probe(self, item: EvalItem) -> dict[str, Any]:
         evidence_texts = [_clean(evidence.text) for evidence in item.expected_evidence if _clean(evidence.text)]
         anchors = sorted(_candidate_anchors(item.expected_answer, *item.expected_answer_aliases, *evidence_texts))
@@ -3269,6 +5032,357 @@ def _contexts_match_expected(item: EvalItem, contexts: Sequence[Mapping[str, Any
     return False
 
 
+def _context_matches_evidence_indices(item: EvalItem, context: Mapping[str, Any]) -> set[int]:
+    matched: set[int] = set()
+    for index, evidence in enumerate(_required_evidence(item)):
+        anchors = _evidence_match_anchors(item, evidence)
+        if _evidence_matches_row(evidence, context) or _weak_evidence_matches_row(
+            evidence,
+            context,
+            anchors=anchors,
+        ):
+            matched.add(index)
+    return matched
+
+
+def _diagnostic_ndcg_at_k(relevances: Sequence[int], *, k: int, ideal_relevant_count: int) -> float | None:
+    if ideal_relevant_count <= 0:
+        return None
+    cutoff = max(0, int(k))
+    if cutoff == 0:
+        return 0.0
+    dcg = 0.0
+    for rank, rel in enumerate(list(relevances)[:cutoff], start=1):
+        if rel:
+            dcg += 1.0 / math.log2(rank + 1)
+    ideal_hits = min(int(ideal_relevant_count), cutoff)
+    idcg = sum(1.0 / math.log2(rank + 1) for rank in range(1, ideal_hits + 1))
+    if idcg <= 0.0:
+        return 0.0
+    return round(dcg / idcg, 6)
+
+
+def _dedupe_contexts_for_diagnostics(contexts: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    deduped: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for context in contexts:
+        if not isinstance(context, Mapping):
+            continue
+        key = (
+            _clean(context.get("doc_id")),
+            _clean(context.get("chunk_id")),
+            _sha256_text(context.get("text")),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(dict(context))
+    return deduped
+
+
+@dataclass(frozen=True)
+class _MmrDiagnosticCandidate:
+    row: Mapping[str, Any]
+    doc_id: str
+    title: str
+    score: float
+    rerank_score: float | None = None
+
+
+def _mmr_select_contexts(
+    contexts: Sequence[Mapping[str, Any]],
+    *,
+    top_k: int,
+    lambda_val: float = SOURCE_NATIVE_MMR_DIAGNOSTIC_LAMBDA,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    candidates = [
+        _MmrDiagnosticCandidate(
+            row=dict(context),
+            doc_id=_clean(context.get("doc_id")),
+            title=_clean(context.get("title") or context.get("section")),
+            score=float(context.get("fusion_score") or context.get("score") or 0.0),
+            rerank_score=float(context.get("rerank_score")) if context.get("rerank_score") is not None else None,
+        )
+        for context in _dedupe_contexts_for_diagnostics(contexts)
+    ]
+    if not candidates:
+        return [], {
+            "mmr_enabled": True,
+            "mmr_lambda": float(lambda_val),
+            "candidate_pool_k": 0,
+            "selected_k": 0,
+            "selection_strategy": "mmr_score_fallback_doc_title_diversity",
+            "fallback_reason": "empty_candidate_pool",
+        }
+    try:
+        from ai.eval.harness.wide_retrieval_helpers import mmr_select_score_fallback
+
+        selected = mmr_select_score_fallback(
+            candidates,
+            top_k=top_k,
+            lambda_val=lambda_val,
+            title_provider=lambda candidate: candidate.title,
+        )
+        rows = [dict(candidate.row) for candidate in selected]
+        fallback_reason = ""
+    except Exception as exc:
+        rows = [dict(candidate.row) for candidate in candidates[: max(int(top_k), 0)]]
+        fallback_reason = f"mmr_selector_unavailable:{type(exc).__name__}: {exc}"
+    for rank, row in enumerate(rows, start=1):
+        row["rank"] = rank
+        row["retrieval_backend"] = "mmr_selected"
+        row["mmr_diagnostic_selected"] = True
+    before_doc_ratio = _duplicate_ratio([candidate.doc_id for candidate in candidates[: max(int(top_k), 1)]])
+    after_doc_ratio = _duplicate_ratio([_clean(row.get("doc_id")) for row in rows])
+    return rows, {
+        "mmr_enabled": True,
+        "mmr_lambda": float(lambda_val),
+        "candidate_pool_k": len(candidates),
+        "selected_k": len(rows),
+        "selection_strategy": "mmr_score_fallback_doc_title_diversity",
+        "doc_id_penalty_applied": True,
+        "title_penalty_applied": True,
+        "pre_mmr_duplicate_doc_ratio@k": before_doc_ratio,
+        "post_mmr_duplicate_doc_ratio@k": after_doc_ratio,
+        "unique_doc_count_delta@k": len({_clean(row.get("doc_id")) for row in rows if _clean(row.get("doc_id"))})
+        - len({candidate.doc_id for candidate in candidates[: max(int(top_k), 1)] if candidate.doc_id}),
+        "fallback_reason": fallback_reason,
+    }
+
+
+def _duplicate_ratio(values: Sequence[str]) -> float:
+    normalized = [_clean(value).casefold() for value in values if _clean(value)]
+    if not normalized:
+        return 0.0
+    return round(1.0 - (len(set(normalized)) / len(normalized)), 6)
+
+
+def _ranking_diagnostic_metrics(
+    item: EvalItem,
+    contexts: Sequence[Mapping[str, Any]],
+    *,
+    top_k_values: Sequence[int],
+    extra: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    required = _required_evidence(item)
+    metrics: dict[str, Any] = {
+        "eligible": bool(required),
+        "denominator_reason": "rows_with_expected_evidence_for_post_retrieval_diagnostics_only"
+        if required
+        else "missing_expected_evidence",
+        "candidate_count": len([context for context in contexts if isinstance(context, Mapping)]),
+        "selected_chunk_ids": [_clean(context.get("chunk_id")) for context in contexts if isinstance(context, Mapping)],
+        "first_relevant_rank": None,
+        "relevant_expected_evidence_count": 0,
+        "diagnostic_only": True,
+        "official_metric": False,
+    }
+    if extra:
+        metrics.update(dict(extra))
+    for k in top_k_values:
+        metrics[f"hit@{k}"] = None
+        metrics[f"ndcg@{k}"] = None
+    if not required:
+        return metrics
+    seen_evidence: set[int] = set()
+    relevances: list[int] = []
+    for rank, context in enumerate(contexts, start=1):
+        if not isinstance(context, Mapping):
+            relevances.append(0)
+            continue
+        matched = _context_matches_evidence_indices(item, context)
+        if matched and metrics["first_relevant_rank"] is None:
+            metrics["first_relevant_rank"] = rank
+        new_matches = matched - seen_evidence
+        relevances.append(1 if new_matches else 0)
+        seen_evidence.update(matched)
+    metrics["relevant_expected_evidence_count"] = len(seen_evidence)
+    for k in top_k_values:
+        cutoff = max(int(k), 0)
+        hit = 1.0 if any(relevances[:cutoff]) else 0.0
+        metrics[f"hit@{k}"] = hit
+        metrics[f"ndcg@{k}"] = _diagnostic_ndcg_at_k(
+            relevances,
+            k=k,
+            ideal_relevant_count=len(required),
+        )
+    return metrics
+
+
+def _source_native_diagnostic_retrieval_metrics_for_item(
+    item: EvalItem,
+    *,
+    bm25_contexts: Sequence[Mapping[str, Any]],
+    vector_contexts: Sequence[Mapping[str, Any]],
+    hybrid_contexts: Sequence[Mapping[str, Any]],
+    selected_contexts: Sequence[Mapping[str, Any]],
+    top_k: int,
+) -> dict[str, Any]:
+    top_k_values = top_k_values_for(top_k)
+    mmr_pool = _dedupe_contexts_for_diagnostics(
+        [
+            *list(hybrid_contexts),
+            *list(selected_contexts),
+            *list(vector_contexts),
+            *list(bm25_contexts),
+        ]
+    )
+    mmr_contexts, mmr_report = _mmr_select_contexts(
+        mmr_pool,
+        top_k=top_k,
+        lambda_val=SOURCE_NATIVE_MMR_DIAGNOSTIC_LAMBDA,
+    )
+    rankings = {
+        "bm25": _ranking_diagnostic_metrics(item, bm25_contexts, top_k_values=top_k_values),
+        "vector": _ranking_diagnostic_metrics(item, vector_contexts, top_k_values=top_k_values),
+        "hybrid": _ranking_diagnostic_metrics(item, hybrid_contexts, top_k_values=top_k_values),
+        "selected": _ranking_diagnostic_metrics(item, selected_contexts, top_k_values=top_k_values),
+        "mmr_selected": _ranking_diagnostic_metrics(
+            item,
+            mmr_contexts,
+            top_k_values=top_k_values,
+            extra=mmr_report,
+        ),
+    }
+    return {
+        **rankings,
+        "enabled": True,
+        "diagnostic_only": True,
+        "official_metric": False,
+        "metric_policy": "diagnostic_only_not_official",
+        "denominator_policy": "rows_with_expected_evidence_for_post_retrieval_diagnostics_only",
+        "candidate_generation_input_policy": "query_text_only_no_gold_qrels_labels_ids_or_baseline_topk",
+        "gold_fields_used_for_candidate_generation": False,
+        "expected_fields_used_for_candidate_generation": False,
+        "qrels_used_for_candidate_generation": False,
+        "ids_used_for_candidate_generation": False,
+        "baseline_topk_used_for_candidate_generation": False,
+        "post_retrieval_expected_evidence_diagnostics": bool(item.has_expected_evidence),
+    }
+
+
+def build_diagnostic_retrieval_metrics_report(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    top_k: int,
+) -> dict[str, Any]:
+    top_k_values = top_k_values_for(top_k)
+    ranking_names = ("bm25", "vector", "hybrid", "selected", "mmr_selected")
+    rankings: dict[str, dict[str, Any]] = {}
+    for name in ranking_names:
+        denominators = 0
+        sums: dict[str, float] = {f"hit@{k}": 0.0 for k in top_k_values}
+        sums.update({f"ndcg@{k}": 0.0 for k in top_k_values})
+        candidate_counts: list[int] = []
+        mmr_template: dict[str, Any] = {}
+        for row in rows:
+            item_metrics = row.get("diagnostic_retrieval_metrics") if isinstance(row, Mapping) else {}
+            metric = item_metrics.get(name) if isinstance(item_metrics, Mapping) else {}
+            if not isinstance(metric, Mapping) or not metric.get("eligible"):
+                continue
+            denominators += 1
+            candidate_counts.append(int(metric.get("candidate_count") or 0))
+            if name == "mmr_selected":
+                mmr_template = {
+                    "mmr_enabled": bool(metric.get("mmr_enabled")),
+                    "mmr_lambda": metric.get("mmr_lambda"),
+                    "selection_strategy": metric.get("selection_strategy"),
+                    "candidate_pool_k_max": max(
+                        int(mmr_template.get("candidate_pool_k_max") or 0),
+                        int(metric.get("candidate_pool_k") or 0),
+                    ),
+                    "selected_k_max": max(
+                        int(mmr_template.get("selected_k_max") or 0),
+                        int(metric.get("selected_k") or 0),
+                    ),
+                }
+            for key in sums:
+                value = metric.get(key)
+                if value is not None:
+                    sums[key] += float(value)
+        aggregate = {
+            "eligible_item_count": denominators,
+            "denominator": denominators,
+            "candidate_count_avg": None
+            if not candidate_counts
+            else round(sum(candidate_counts) / len(candidate_counts), 6),
+            "diagnostic_only": True,
+            "official_metric": False,
+        }
+        for key, value in sums.items():
+            aggregate[key] = None if denominators == 0 else round(value / denominators, 6)
+        aggregate.update(mmr_template)
+        rankings[name] = aggregate
+    return {
+        "enabled": True,
+        "metric_policy": "diagnostic_only_not_official",
+        "denominator_policy": "rows_with_expected_evidence_for_post_retrieval_diagnostics_only",
+        "candidate_generation_input_policy": "query_text_only_no_gold_qrels_labels_ids_or_baseline_topk",
+        "diagnostic_only": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "semantic_quality_claim_allowed": False,
+        "gold_fields_used_for_candidate_generation": False,
+        "expected_fields_used_for_candidate_generation": False,
+        "qrels_used_for_candidate_generation": False,
+        "ids_used_for_candidate_generation": False,
+        "baseline_topk_used_for_candidate_generation": False,
+        "mrr_or_reciprocal_rank_reported": False,
+        "mmr_is_selection_strategy_not_reciprocal_rank": True,
+        "rankings": rankings,
+    }
+
+
+def build_semantic_quality_samples_report(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    max_samples: int = 8,
+) -> dict[str, Any]:
+    samples: list[dict[str, Any]] = []
+    for row in rows:
+        if len(samples) >= max_samples:
+            break
+        if not isinstance(row, Mapping):
+            continue
+        contexts = [context for context in _as_list(row.get("retrieved_contexts")) if isinstance(context, Mapping)]
+        sample = {
+            "id": _clean(row.get("id")),
+            "query": _clean(row.get("query")),
+            "answerability": _clean(row.get("answerability")),
+            "generated_answer_excerpt": _redact_absolute_local_paths(_clean(row.get("generated_answer"))[:600]),
+            "failure_labels": list(row.get("failure_labels") or [])[:12],
+            "judge_result": row.get("metric_results", {}).get("judged_answer_correctness_provisional")
+            if isinstance(row.get("metric_results"), Mapping)
+            else None,
+            "diagnostic_retrieval_metrics": row.get("diagnostic_retrieval_metrics")
+            if isinstance(row.get("diagnostic_retrieval_metrics"), Mapping)
+            else {},
+            "retrieved_contexts": [
+                {
+                    "rank": context.get("rank"),
+                    "doc_id": _clean(context.get("doc_id")),
+                    "chunk_id": _clean(context.get("chunk_id")),
+                    "source_family": _clean(context.get("source_family")),
+                    "retrieval_backend": _clean(context.get("retrieval_backend")),
+                    "score": context.get("score"),
+                    "text_sha256": _clean(context.get("source_text_sha256")) or _sha256_text(context.get("text")),
+                    "text_preview": _redact_absolute_local_paths(_clean(context.get("text"))[:240]),
+                }
+                for context in contexts[:3]
+            ],
+        }
+        samples.append(sample)
+    return {
+        "enabled": True,
+        "sample_policy": "bounded_query_response_context_examples_no_raw_prompt_or_full_raw_response",
+        "semantic_quality_claim_allowed": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "sample_count": len(samples),
+        "samples": samples,
+    }
+
+
 def _surface_output_summary(item: EvalItem, output: Mapping[str, Any], presence: Mapping[str, Any], surface: str) -> dict[str, Any]:
     contexts = [dict(context) for context in _as_list(output.get("retrieved_contexts")) if isinstance(context, Mapping)]
     families = Counter(_clean(context.get("source_family")) or "unknown" for context in contexts)
@@ -3302,6 +5416,23 @@ def _surface_output_summary(item: EvalItem, output: Mapping[str, Any], presence:
     }
 
 
+def _disabled_surface_output_summary(surface: str, reason: str) -> dict[str, Any]:
+    return {
+        "surface": surface,
+        "comparison_enabled": False,
+        "candidate_count": None,
+        "retrieval_empty": None,
+        "latency_ms": {},
+        "source_family_distribution": {},
+        "top_k_previews": [],
+        "expected_evidence_in_corpus_exact": None,
+        "expected_evidence_in_corpus_normalized": None,
+        "expected_anchor_in_corpus": None,
+        "expected_evidence_retrieved": None,
+        "fallback_reason": reason,
+    }
+
+
 class SurfaceComparingRagAdapter:
     """Runs source-native retrieval beside the legacy SearchUnit/SearchView baseline."""
 
@@ -3312,13 +5443,19 @@ class SurfaceComparingRagAdapter:
         requested_backend: str = "auto",
         source_adapter: SourceNativeHybridAdapter,
         searchunit_adapter: RepoCurrentHybridAdapter,
+        legacy_surface_comparison: bool = False,
     ) -> None:
         self.requested_surface = _clean(requested_surface).replace("_", "-").lower() or "auto"
         if self.requested_surface not in {"auto", "source-native", "source-atom", "evidence-bundle", "searchunit-searchview"}:
             raise DatasetSchemaError(f"unsupported retrieval surface: {requested_surface}")
+        if self.requested_surface == "searchunit-searchview" and not legacy_surface_comparison:
+            raise DatasetSchemaError(
+                "retrieval_surface=searchunit-searchview is legacy/debug only; pass legacy_surface_comparison=True"
+            )
         self.requested_backend = requested_backend
         self.source_adapter = source_adapter
         self.searchunit_adapter = searchunit_adapter
+        self.legacy_surface_comparison = bool(legacy_surface_comparison)
         self._last_surface_comparisons: list[dict[str, Any]] = []
 
     @property
@@ -3327,12 +5464,14 @@ class SurfaceComparingRagAdapter:
             return "searchunit_searchview"
         if self.source_available:
             return "source_native"
-        return "searchunit_searchview"
+        return "unavailable"
 
     @property
     def source_available(self) -> bool:
         try:
             return bool(self.source_adapter._load_payloads())
+        except DatasetSchemaError:
+            raise
         except Exception:
             return False
 
@@ -3344,14 +5483,37 @@ class SurfaceComparingRagAdapter:
             "selected_surface": self.selected_surface,
             "requested_backend": self.requested_backend,
             "source_native": self.source_adapter.config,
-            "searchunit_searchview": self.searchunit_adapter.config,
+            "searchunit_searchview": {
+                **self.searchunit_adapter.config,
+                "role": "legacy_comparison_debug_only",
+                "candidate_surface_enabled": self.selected_surface == "searchunit_searchview",
+                "legacy_comparison_enabled": self.legacy_surface_comparison,
+            },
             "candidate_generation_input_policy": "query_text_only; expected fields diagnostics_only_after_retrieval",
         }
 
     @property
     def retrieval_backend_report(self) -> dict[str, Any]:
-        selected = self.source_adapter if self.selected_surface == "source_native" else self.searchunit_adapter
-        return dict(selected.retrieval_backend_report)
+        if self.selected_surface == "source_native":
+            return dict(self.source_adapter.retrieval_backend_report)
+        if self.selected_surface == "searchunit_searchview":
+            return dict(self.searchunit_adapter.retrieval_backend_report)
+        return {
+            "requested": self.requested_backend,
+            "selected": "unavailable",
+            "bm25_enabled": False,
+            "vector_enabled": False,
+            "hybrid_enabled": False,
+            "embedding_model": "",
+            "embedding_device": "unavailable",
+            "gpu_used_for_embedding": False,
+            "vector_index_kind": "unavailable",
+            "vector_index_type": "unavailable",
+            "vector_dim": 0,
+            "indexed_unit_count": 0,
+            "query_count": 0,
+            "fallback_reason": "source_native_unavailable_auto_fallback_to_searchunit_disabled",
+        }
 
     @property
     def retrieval_surface_report(self) -> dict[str, Any]:
@@ -3362,15 +5524,43 @@ class SurfaceComparingRagAdapter:
             "requested": self.requested_surface.replace("-", "_"),
             "selected": self.selected_surface,
             "source_native_available": self.source_available,
+            "source_native_unit_count": len(self.source_adapter._load_payloads()) if self.source_available else 0,
             "source_native_selected": self.selected_surface == "source_native",
-            "searchunit_searchview_role": "legacy_baseline",
+            "searchunit_searchview_role": "legacy_comparison_debug_only",
+            "searchunit_searchview_candidate_surface_enabled": self.selected_surface == "searchunit_searchview",
+            "legacy_surface_comparison_enabled": self.legacy_surface_comparison,
+            "auto_fallback_to_searchunit_searchview": False,
             "fallback_reason": fallback,
         }
 
     @property
     def backend_diagnostics(self) -> dict[str, Any]:
-        selected = self.source_adapter if self.selected_surface == "source_native" else self.searchunit_adapter
-        return dict(selected.backend_diagnostics)
+        if self.selected_surface == "source_native":
+            return dict(self.source_adapter.backend_diagnostics)
+        if self.selected_surface == "searchunit_searchview":
+            return dict(self.searchunit_adapter.backend_diagnostics)
+        return {
+            "embedding_build_latency_ms": 0.0,
+            "index_load_or_build_latency_ms": 0.0,
+            "vector_index_available": False,
+            "gpu_used_for_embedding": False,
+            "fallback_reason": "source_native_unavailable_auto_fallback_to_searchunit_disabled",
+        }
+
+    @property
+    def vector_index_audit_report(self) -> dict[str, Any]:
+        if self.selected_surface == "source_native":
+            return dict(self.source_adapter.vector_index_audit_report)
+        return {
+            "enabled": False,
+            "status": "not_source_native_vector_surface",
+            "vector_surface": self.selected_surface,
+            "semantic_quality_claim_allowed": False,
+            "index_integrity_passed": False,
+            "query_invocation_passed": False,
+            "hydration_passed": False,
+            "hybrid_comparison_available": False,
+        }
 
     @property
     def retrieval_surface_decision(self) -> dict[str, Any]:
@@ -3395,22 +5585,33 @@ class SurfaceComparingRagAdapter:
             "demotion_reason": reason if demoted else "",
             "source_native_available": self.source_available,
             "source_native_selected": self.selected_surface == "source_native",
-            "fallback_reason": "" if self.source_available else "source_native_unavailable",
+            "fallback_reason": "" if self.source_available else "source_native_unavailable_auto_fallback_to_searchunit_disabled",
             "recommendation": recommendation,
         }
 
     def run_item(self, item: EvalItem, *, top_k: int) -> dict[str, Any]:
-        searchunit_output = self.searchunit_adapter.run_item(item, top_k=top_k)
-        source_output = self.source_adapter.run_item(item, top_k=top_k) if self.source_available else _pipeline_error_output(item, "source_native_unavailable")
+        source_output = self.source_adapter.run_item(item, top_k=top_k) if self.source_available else _pipeline_error_output(item, "source_native_unavailable_auto_fallback_to_searchunit_disabled")
+        searchunit_output: dict[str, Any] | None = None
+        if self.selected_surface == "searchunit_searchview" or self.legacy_surface_comparison:
+            searchunit_output = self.searchunit_adapter.run_item(item, top_k=top_k)
         selected_output = source_output if self.selected_surface == "source_native" else searchunit_output
+        if selected_output is None:
+            selected_output = _pipeline_error_output(item, "source_native_unavailable_auto_fallback_to_searchunit_disabled")
         output = dict(selected_output)
         output["retrieved_contexts"] = [dict(context) for context in _as_list(selected_output.get("retrieved_contexts"))]
         output["citations"] = [dict(citation) for citation in _as_list(selected_output.get("citations"))]
         output["retrieval_backend_comparison"] = selected_output.get("retrieval_backend_comparison")
         source_presence = self.source_adapter.presence_probe(item) if self.source_available else {}
-        searchunit_presence = self._searchunit_presence_probe(item)
         source_summary = _surface_output_summary(item, source_output, source_presence, "source_native")
-        searchunit_summary = _surface_output_summary(item, searchunit_output, searchunit_presence, "searchunit_searchview")
+        if searchunit_output is not None:
+            searchunit_presence = self._searchunit_presence_probe(item)
+            searchunit_summary = _surface_output_summary(item, searchunit_output, searchunit_presence, "searchunit_searchview")
+            searchunit_summary["comparison_enabled"] = True
+        else:
+            searchunit_summary = _disabled_surface_output_summary(
+                "searchunit_searchview",
+                "legacy_surface_comparison_not_requested",
+            )
         comparison = {
             "searchunit_searchview": searchunit_summary,
             "source_native": source_summary,
@@ -3422,9 +5623,21 @@ class SurfaceComparingRagAdapter:
                 "candidate_count": len(output["retrieved_contexts"]),
                 "fallback_reason": self.retrieval_surface_report.get("fallback_reason"),
             },
-            "source_native_beats_searchunit": bool(source_summary["expected_evidence_retrieved"] and not searchunit_summary["expected_evidence_retrieved"]),
-            "searchunit_beats_source_native": bool(searchunit_summary["expected_evidence_retrieved"] and not source_summary["expected_evidence_retrieved"]),
-            "both_surfaces_fail": not source_summary["expected_evidence_retrieved"] and not searchunit_summary["expected_evidence_retrieved"],
+            "source_native_beats_searchunit": bool(
+                searchunit_summary.get("comparison_enabled")
+                and source_summary["expected_evidence_retrieved"]
+                and not searchunit_summary["expected_evidence_retrieved"]
+            ),
+            "searchunit_beats_source_native": bool(
+                searchunit_summary.get("comparison_enabled")
+                and searchunit_summary["expected_evidence_retrieved"]
+                and not source_summary["expected_evidence_retrieved"]
+            ),
+            "both_surfaces_fail": bool(
+                searchunit_summary.get("comparison_enabled")
+                and not source_summary["expected_evidence_retrieved"]
+                and not searchunit_summary["expected_evidence_retrieved"]
+            ),
         }
         self._last_surface_comparisons.append(comparison)
         output["retrieval_surface_comparison"] = comparison
@@ -3434,7 +5647,26 @@ class SurfaceComparingRagAdapter:
     def evidence_candidates(self, query: str, *, top_k: int) -> list[dict[str, Any]]:
         if self.selected_surface == "source_native":
             return self.source_adapter.evidence_candidates(query, top_k=top_k)
-        return self.searchunit_adapter.evidence_candidates(query, top_k=top_k)
+        if self.selected_surface == "searchunit_searchview" and self.legacy_surface_comparison:
+            return self.searchunit_adapter.evidence_candidates(query, top_k=top_k)
+        return []
+
+    def full_corpus_evidence_candidates(
+        self,
+        item: EvalItem,
+        evidence: ExpectedEvidence,
+        *,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
+        if self.selected_surface == "source_native" and self.source_available:
+            method = getattr(self.source_adapter, "full_corpus_evidence_candidates", None)
+            if callable(method):
+                return [
+                    dict(candidate)
+                    for candidate in method(item, evidence, top_k=top_k)
+                    if isinstance(candidate, Mapping)
+                ]
+        return []
 
     def _searchunit_presence_probe(self, item: EvalItem) -> dict[str, Any]:
         evidence_texts = [_clean(evidence.text) for evidence in item.expected_evidence if _clean(evidence.text)]
@@ -3544,6 +5776,10 @@ def dataset_slug_for_path(path: Path | str) -> str:
     return (slug[:48].strip("_") or "dataset")
 
 
+def _summary_dataset_slug(summary: Mapping[str, Any]) -> str:
+    return _clean(summary.get("dataset_slug")) or dataset_slug_for_path(_clean(summary.get("dataset_path")))
+
+
 def _run_id_timestamp(generated_at: str | None = None) -> str:
     value = _clean(generated_at)
     if value:
@@ -3602,11 +5838,19 @@ def validate_actual_rag_guardrails(summary: Mapping[str, Any]) -> None:
             raise DatasetSchemaError(f"{run_id}: {key} must be {expected!r}, got {summary.get(key)!r}")
     optional_false_top_level = (
         "gold_fields_used_for_candidate_generation",
+        "expected_fields_used_for_candidate_generation",
+        "qrels_used_for_candidate_generation",
+        "answerability_labels_used_for_candidate_generation",
+        "ids_used_for_candidate_generation",
         "query_id_used_for_candidate_generation",
         "row_id_used_for_candidate_generation",
         "target_id_used_for_candidate_generation",
         "baseline_topk_used_for_candidate_generation",
         "retriever_oracle_shortcut_used",
+        "gate_uses_expected_fields",
+        "gate_uses_gold_fields",
+        "gate_uses_legacy_fields",
+        "evidence_gate_retrieval_loop_triggered",
     )
     for key in optional_false_top_level:
         if key in summary and summary.get(key) is not False:
@@ -3637,6 +5881,73 @@ def validate_actual_rag_guardrails(summary: Mapping[str, Any]) -> None:
     for key in optional_false_top_level:
         if key in guardrails and guardrails.get(key) is not False:
             raise DatasetSchemaError(f"{run_id}: guardrails.{key} must be False, got {guardrails.get(key)!r}")
+    layered = summary.get("source_native_layered_retrieval")
+    if isinstance(layered, Mapping) and layered.get("enabled"):
+        for key in (
+            "gold_fields_used_for_candidate_generation",
+            "expected_fields_used_for_candidate_generation",
+            "qrels_used_for_candidate_generation",
+            "answerability_labels_used_for_candidate_generation",
+            "ids_used_for_candidate_generation",
+            "baseline_topk_used_for_candidate_generation",
+            "searchunit_searchview_used_as_candidate_surface",
+        ):
+            if layered.get(key) is not False:
+                raise DatasetSchemaError(f"{run_id}: source_native_layered_retrieval.{key} must be False")
+        if layered.get("source_native_units_only") is not True:
+            raise DatasetSchemaError(f"{run_id}: source_native_layered_retrieval.source_native_units_only must be True")
+    vector_audit = summary.get("vector_index_audit")
+    if isinstance(vector_audit, Mapping) and vector_audit.get("enabled"):
+        if vector_audit.get("semantic_quality_claim_allowed") is not False:
+            raise DatasetSchemaError(f"{run_id}: vector_index_audit.semantic_quality_claim_allowed must be False")
+        target_presence = vector_audit.get("target_presence_diagnostics")
+        if isinstance(target_presence, Mapping):
+            for key in (
+                "gold_fields_used_for_candidate_generation",
+                "expected_fields_used_for_candidate_generation",
+                "qrels_used_for_candidate_generation",
+                "ids_used_for_candidate_generation",
+                "baseline_topk_used_for_candidate_generation",
+            ):
+                if target_presence.get(key) is not False:
+                    raise DatasetSchemaError(f"{run_id}: vector_index_audit.target_presence_diagnostics.{key} must be False")
+    retrieval_metrics = summary.get("diagnostic_retrieval_metrics")
+    if isinstance(retrieval_metrics, Mapping) and retrieval_metrics.get("enabled"):
+        if retrieval_metrics.get("official_metric") is not False:
+            raise DatasetSchemaError(f"{run_id}: diagnostic_retrieval_metrics.official_metric must be False")
+        if retrieval_metrics.get("semantic_quality_claim_allowed") is not False:
+            raise DatasetSchemaError(
+                f"{run_id}: diagnostic_retrieval_metrics.semantic_quality_claim_allowed must be False"
+            )
+        for key in (
+            "gold_fields_used_for_candidate_generation",
+            "expected_fields_used_for_candidate_generation",
+            "qrels_used_for_candidate_generation",
+            "ids_used_for_candidate_generation",
+            "baseline_topk_used_for_candidate_generation",
+        ):
+            if retrieval_metrics.get(key) is not False:
+                raise DatasetSchemaError(f"{run_id}: diagnostic_retrieval_metrics.{key} must be False")
+        if retrieval_metrics.get("mrr_or_reciprocal_rank_reported") is not False:
+            raise DatasetSchemaError(f"{run_id}: diagnostic_retrieval_metrics must not report MRR")
+    semantic_samples = summary.get("semantic_quality_samples")
+    if isinstance(semantic_samples, Mapping) and semantic_samples.get("enabled"):
+        if semantic_samples.get("semantic_quality_claim_allowed") is not False:
+            raise DatasetSchemaError(f"{run_id}: semantic_quality_samples.semantic_quality_claim_allowed must be False")
+        if semantic_samples.get("raw_prompt_payload_written") is not False:
+            raise DatasetSchemaError(f"{run_id}: semantic_quality_samples.raw_prompt_payload_written must be False")
+        if semantic_samples.get("raw_response_payload_written") is not False:
+            raise DatasetSchemaError(f"{run_id}: semantic_quality_samples.raw_response_payload_written must be False")
+    evidence_gate = summary.get("evidence_gate")
+    if isinstance(evidence_gate, Mapping):
+        gate_guardrails = evidence_gate.get("guardrail_status")
+        if not isinstance(gate_guardrails, Mapping):
+            raise DatasetSchemaError(f"{run_id}: evidence_gate.guardrail_status must be present")
+        for key in ("gate_uses_expected_fields", "gate_uses_gold_fields", "gate_uses_legacy_fields", "retrieval_loop_triggered"):
+            if gate_guardrails.get(key) is not False:
+                raise DatasetSchemaError(f"{run_id}: evidence_gate.guardrail_status.{key} must be False")
+        if isinstance(semantic_samples, Mapping) and semantic_samples.get("raw_response_payload_written") is not False:
+            raise DatasetSchemaError(f"{run_id}: semantic_quality_samples.raw_response_payload_written must be False")
 
 
 def _compact_metric(metric: Any) -> dict[str, Any]:
@@ -3891,6 +6202,16 @@ def _evidence_resolution_summary(summary: Mapping[str, Any]) -> dict[str, Any]:
         "expected_evidence_resolution_medium_confidence_count",
         "expected_evidence_resolution_low_confidence_count",
         "expected_evidence_resolution_review_only_count",
+        "expected_evidence_full_corpus_candidate_count",
+        "expected_evidence_full_corpus_high_confidence_count",
+        "expected_evidence_full_corpus_medium_confidence_count",
+        "expected_evidence_full_corpus_low_confidence_count",
+        "expected_evidence_full_corpus_review_only_count",
+        "expected_evidence_full_corpus_resolved_candidate_count",
+        "expected_evidence_full_corpus_collision_count",
+        "expected_evidence_full_corpus_unresolved_count",
+        "gold_or_qrels_mutation",
+        "human_decision_fields_filled_by_codex",
     ]
     metric_names = [
         "resolved_evidence_available_rate",
@@ -3901,6 +6222,15 @@ def _evidence_resolution_summary(summary: Mapping[str, Any]) -> dict[str, Any]:
     ]
     return {
         "enabled": bool(diagnostics.get("expected_evidence_resolution_enabled")),
+        "scope": diagnostics.get("expected_evidence_resolution_scope"),
+        "full_corpus_candidate_count": diagnostics.get("expected_evidence_full_corpus_candidate_count", 0),
+        "full_corpus_resolved_candidate_count": diagnostics.get(
+            "expected_evidence_full_corpus_resolved_candidate_count",
+            0,
+        ),
+        "full_corpus_collision_count": diagnostics.get("expected_evidence_full_corpus_collision_count", 0),
+        "gold_or_qrels_mutation": bool(diagnostics.get("gold_or_qrels_mutation")),
+        "human_decision_fields_filled_by_codex": bool(diagnostics.get("human_decision_fields_filled_by_codex")),
         **{key: diagnostics.get(key) for key in keys if key in diagnostics},
         "artifact_paths": {
             "evidence_resolution_candidates_jsonl": _artifact_path(summary, "evidence_resolution_candidates_jsonl"),
@@ -3962,7 +6292,7 @@ def build_registry_event(summary: Mapping[str, Any]) -> dict[str, Any]:
         "run_id": summary.get("run_id"),
         "generated_at": summary.get("generated_at"),
         "dataset_path": summary.get("dataset_path"),
-        "dataset_slug": dataset_slug_for_path(_clean(summary.get("dataset_path"))),
+        "dataset_slug": _summary_dataset_slug(summary),
         "output_dir": summary.get("output_dir"),
         "summary_json": _artifact_path(summary, "summary_json"),
         "markdown_report": _artifact_path(summary, "markdown_report"),
@@ -4023,6 +6353,8 @@ def build_registry_event(summary: Mapping[str, Any]) -> dict[str, Any]:
         "retrieval_backend": summary.get("retrieval_backend"),
         "retrieval_surface": summary.get("retrieval_surface"),
         "retrieval_surface_decision": summary.get("retrieval_surface_decision"),
+        "surface_migration": summary.get("surface_migration"),
+        "surface_deprecation": summary.get("surface_deprecation"),
         "backend_comparison": summary.get("backend_comparison"),
         "surface_comparison": summary.get("surface_comparison"),
         "gpu_preflight": summary.get("gpu_preflight"),
@@ -4068,7 +6400,7 @@ def _latest_pointer_payload(summary: Mapping[str, Any]) -> dict[str, Any]:
         "run_id": summary.get("run_id"),
         "generated_at": summary.get("generated_at"),
         "dataset_path": summary.get("dataset_path"),
-        "dataset_slug": dataset_slug_for_path(_clean(summary.get("dataset_path"))),
+        "dataset_slug": _summary_dataset_slug(summary),
         "run_kind": summary.get("run_kind"),
         "output_dir": summary.get("output_dir"),
         "summary_json": _artifact_path(summary, "summary_json"),
@@ -4149,7 +6481,7 @@ def append_actual_rag_status_event(
         "run_id": summary.get("run_id"),
         "generated_at": summary.get("generated_at"),
         "dataset_path": summary.get("dataset_path"),
-        "dataset_slug": dataset_slug_for_path(_clean(summary.get("dataset_path"))),
+        "dataset_slug": _summary_dataset_slug(summary),
         "output_dir": summary.get("output_dir"),
         "total_item_count": summary.get("total_item_count"),
         "strict_metrics": _metrics_subset(
@@ -4188,6 +6520,8 @@ def append_actual_rag_status_event(
         "retrieval_backend": summary.get("retrieval_backend"),
         "retrieval_surface": summary.get("retrieval_surface"),
         "retrieval_surface_decision": summary.get("retrieval_surface_decision"),
+        "surface_migration": summary.get("surface_migration"),
+        "surface_deprecation": summary.get("surface_deprecation"),
         "backend_comparison": summary.get("backend_comparison"),
         "surface_comparison": summary.get("surface_comparison"),
         "gpu_preflight": summary.get("gpu_preflight"),
@@ -4352,13 +6686,13 @@ def write_report_index(*, report_root: Path | str = REPORT_ROOT) -> Path:
 def _evidence_resolution_config(
     *,
     enabled: bool = True,
-    scope: str = "retrieved-only",
+    scope: str = "full-corpus",
     max_candidates: int = 5,
     min_score: float = 0.35,
     count_medium: bool = False,
 ) -> EvidenceResolutionConfig:
-    normalized_scope = _clean(scope) or "retrieved-only"
-    if normalized_scope not in {"retrieved-only", "index-candidate-lookup", "both"}:
+    normalized_scope = _clean(scope) or "full-corpus"
+    if normalized_scope not in {"retrieved-only", "index-candidate-lookup", "both", "full-corpus", "full-corpus-review-only"}:
         raise DatasetSchemaError(f"unsupported evidence resolution scope: {scope}")
     return EvidenceResolutionConfig(
         enabled=bool(enabled),
@@ -4369,6 +6703,14 @@ def _evidence_resolution_config(
     )
 
 
+def _adapter_is_weaviate_lane(adapter: Any) -> bool:
+    if isinstance(adapter, WeaviateSourceAtomAdapter):
+        return True
+    selected = _clean(getattr(adapter, "selected_backend", "")).casefold()
+    requested = _clean(getattr(adapter, "requested_backend", "")).replace("-", "_").casefold()
+    return selected.startswith("weaviate_") or requested.startswith("weaviate_")
+
+
 def _resolution_index_candidates(
     adapter: Any,
     item: EvalItem,
@@ -4376,16 +6718,30 @@ def _resolution_index_candidates(
     *,
     config: EvidenceResolutionConfig,
 ) -> tuple[list[dict[str, Any]], list[str]]:
-    if config.scope not in {"index-candidate-lookup", "both"}:
+    candidates: list[dict[str, Any]] = []
+    limitations: list[str] = []
+    if config.scope in {"index-candidate-lookup", "both"}:
+        if not hasattr(adapter, "evidence_candidates"):
+            limitations.append("index_candidate_lookup_unavailable")
+        else:
+            try:
+                candidates.extend(adapter.evidence_candidates(item.query, top_k=config.max_candidates))
+            except Exception as exc:
+                if _adapter_is_weaviate_lane(adapter):
+                    raise
+                limitations.append(f"index_candidate_lookup_error:{type(exc).__name__}")
+    if config.scope in {"full-corpus", "full-corpus-review-only"}:
+        method = getattr(adapter, "full_corpus_evidence_candidates", None)
+        if not callable(method):
+            limitations.append("full_corpus_source_native_lookup_unavailable")
+        else:
+            try:
+                candidates.extend(method(item, evidence, top_k=config.max_candidates))
+            except Exception as exc:
+                limitations.append(f"full_corpus_source_native_lookup_error:{type(exc).__name__}")
+    if config.scope not in {"index-candidate-lookup", "both", "full-corpus", "full-corpus-review-only"}:
         return [], []
-    if not hasattr(adapter, "evidence_candidates"):
-        return [], ["index_candidate_lookup_unavailable"]
-    query = item.query
-    try:
-        candidates = adapter.evidence_candidates(query, top_k=config.max_candidates)
-    except Exception as exc:
-        return [], [f"index_candidate_lookup_error:{type(exc).__name__}"]
-    return [dict(candidate) for candidate in candidates if isinstance(candidate, Mapping)], []
+    return [dict(candidate) for candidate in candidates if isinstance(candidate, Mapping)], limitations
 
 
 def apply_expected_evidence_resolution(
@@ -4549,6 +6905,10 @@ HUMAN_EVIDENCE_MAPPING_FIELDS = (
     "human_accepted_doc_id",
     "human_accepted_chunk_id",
     "human_evidence_sufficient",
+    "human_accept",
+    "human_reject_reason",
+    "human_expected_answer_override",
+    "human_expected_evidence_override",
     "human_answerability_label",
     "human_relevance_label",
     "human_notes",
@@ -4559,6 +6919,7 @@ HUMAN_EVIDENCE_MAPPING_FIELDS = (
 EVIDENCE_MAPPING_PACKET_FIELDS = (
     "run_id",
     "item_id",
+    "query_id",
     "query",
     "expected_answer",
     "expected_answer_aliases",
@@ -4574,16 +6935,24 @@ EVIDENCE_MAPPING_PACKET_FIELDS = (
     "candidate_source_title_or_safe_display_name",
     "candidate_score",
     "candidate_confidence",
+    "match_type",
+    "match_reasons",
     "candidate_match_reasons",
     "candidate_text_preview",
+    "candidate_text_hash",
     "candidate_full_text_hash",
+    "anchor_hits",
     "candidate_anchor_hits",
+    "missing_numeric_or_date_anchors",
     "candidate_missing_numeric_or_date_anchors",
     "candidate_generic_overlap_terms",
     "candidate_non_generic_anchor_overlap_terms",
+    "collision_warning",
     "retrieval_rank_if_present",
     "candidate_source",
+    "candidate_source_atom_id",
     "source_atom_id",
+    "candidate_evidence_bundle_id",
     "search_unit_id",
     "search_view_id",
     "registry_source_identity_hash",
@@ -4858,6 +7227,7 @@ def build_evidence_mapping_packet(
                 base = {
                     "run_id": summary.get("run_id"),
                     "item_id": item_id,
+                    "query_id": item_id,
                     "query": row.get("query"),
                     "expected_answer": row.get("expected_answer"),
                     "expected_answer_aliases": list(row.get("expected_answer_aliases") or []),
@@ -4873,16 +7243,24 @@ def build_evidence_mapping_packet(
                     "candidate_source_title_or_safe_display_name": "",
                     "candidate_score": "",
                     "candidate_confidence": "",
+                    "match_type": "",
+                    "match_reasons": [],
                     "candidate_match_reasons": [],
                     "candidate_text_preview": "",
+                    "candidate_text_hash": "",
                     "candidate_full_text_hash": "",
+                    "anchor_hits": [],
                     "candidate_anchor_hits": [],
+                    "missing_numeric_or_date_anchors": [],
                     "candidate_missing_numeric_or_date_anchors": [],
                     "candidate_generic_overlap_terms": [],
                     "candidate_non_generic_anchor_overlap_terms": [],
+                    "collision_warning": "",
                     "retrieval_rank_if_present": "",
                     "candidate_source": "",
+                    "candidate_source_atom_id": "",
                     "source_atom_id": "",
+                    "candidate_evidence_bundle_id": "",
                     "search_unit_id": "",
                     "search_view_id": "",
                     "registry_source_identity_hash": "",
@@ -4938,6 +7316,7 @@ def build_evidence_mapping_packet(
                 packet = {
                     "run_id": summary.get("run_id"),
                     "item_id": item_id,
+                    "query_id": item_id,
                     "query": row.get("query"),
                     "expected_answer": row.get("expected_answer"),
                     "expected_answer_aliases": list(row.get("expected_answer_aliases") or []),
@@ -4953,16 +7332,24 @@ def build_evidence_mapping_packet(
                     "candidate_source_title_or_safe_display_name": metadata.get("candidate_source_title_or_safe_display_name") or "",
                     "candidate_score": candidate.get("score"),
                     "candidate_confidence": candidate.get("confidence"),
+                    "match_type": candidate.get("match_type") or "",
+                    "match_reasons": match_reasons,
                     "candidate_match_reasons": match_reasons,
                     "candidate_text_preview": candidate.get("text_preview") or "",
+                    "candidate_text_hash": candidate.get("candidate_text_hash") or candidate.get("candidate_full_text_hash") or _sha256_text(candidate.get("text_preview")),
                     "candidate_full_text_hash": candidate.get("candidate_full_text_hash") or _sha256_text(candidate.get("text_preview")),
+                    "anchor_hits": anchor_hits,
                     "candidate_anchor_hits": anchor_hits,
+                    "missing_numeric_or_date_anchors": missing_numeric,
                     "candidate_missing_numeric_or_date_anchors": missing_numeric,
                     "candidate_generic_overlap_terms": generic_terms,
                     "candidate_non_generic_anchor_overlap_terms": non_generic_terms,
+                    "collision_warning": candidate.get("collision_warning") or "",
                     "retrieval_rank_if_present": _retrieval_rank_for_candidate(row, candidate),
                     "candidate_source": candidate.get("source") or "",
-                    "source_atom_id": metadata.get("source_atom_id") or "",
+                    "candidate_source_atom_id": metadata.get("source_atom_id") or candidate.get("source_atom_id") or "",
+                    "source_atom_id": metadata.get("source_atom_id") or candidate.get("source_atom_id") or "",
+                    "candidate_evidence_bundle_id": candidate.get("evidence_bundle_id") or "",
                     "search_unit_id": metadata.get("search_unit_id") or candidate_chunk_id,
                     "search_view_id": metadata.get("search_view_id") or "",
                     "registry_source_identity_hash": metadata.get("registry_source_identity_hash") or "",
@@ -5160,7 +7547,7 @@ def build_gpu_preflight() -> dict[str, Any]:
         "torch_available": False,
         "torch_cuda_available": False,
         "torch_cuda_device_count": 0,
-        "sentence_transformers_available": importlib.util.find_spec("sentence_transformers") is not None,
+        "sentence_transformers_available": False,
         "bge_m3_model": "BAAI/bge-m3",
         "bge_m3_cache_path": "",
         "bge_m3_cache_available": False,
@@ -5169,6 +7556,32 @@ def build_gpu_preflight() -> dict[str, Any]:
         "faiss_version": "",
         "fallback_reason": "",
     }
+    try:
+        availability_probe = subprocess.run(
+            [
+                sys.executable,
+                "-X",
+                "utf8",
+                "-c",
+                (
+                    "import importlib.util, json\n"
+                    "print(json.dumps({'sentence_transformers_available': "
+                    "importlib.util.find_spec('sentence_transformers') is not None}))\n"
+                ),
+            ],
+            text=True,
+            capture_output=True,
+            timeout=20,
+            check=False,
+        )
+        if availability_probe.stdout.strip():
+            availability = json.loads(availability_probe.stdout.strip().splitlines()[-1])
+            preflight["sentence_transformers_available"] = bool(
+                availability.get("sentence_transformers_available")
+            )
+    except Exception as exc:
+        preflight["sentence_transformers_error"] = f"{type(exc).__name__}: {exc}"
+
     try:
         import faiss  # type: ignore
 
@@ -5204,24 +7617,50 @@ def build_gpu_preflight() -> dict[str, Any]:
         preflight["nvidia_smi_error"] = f"{type(exc).__name__}: {exc}"
 
     try:
-        import torch  # type: ignore
-
-        preflight["torch_available"] = True
-        cuda_available = bool(torch.cuda.is_available())
-        preflight["torch_cuda_available"] = cuda_available
-        preflight["cuda_available"] = cuda_available
-        if cuda_available:
-            count = int(torch.cuda.device_count())
-            preflight["torch_cuda_device_count"] = count
-            preflight["gpu_available"] = count > 0
-            preflight["device"] = "cuda:0" if count > 0 else "cpu"
-            if count > 0:
-                preflight["device_name"] = _clean(torch.cuda.get_device_name(0))
+        probe = subprocess.run(
+            [
+                sys.executable,
+                "-X",
+                "utf8",
+                "-c",
+                (
+                    "import json\n"
+                    "try:\n"
+                    " import torch\n"
+                    " cuda=bool(torch.cuda.is_available())\n"
+                    " count=int(torch.cuda.device_count()) if cuda else 0\n"
+                    " name=torch.cuda.get_device_name(0) if count else ''\n"
+                    " print(json.dumps({'torch_available': True, 'torch_cuda_available': cuda, "
+                    "'torch_cuda_device_count': count, 'device_name': name}))\n"
+                    "except Exception as exc:\n"
+                    " print(json.dumps({'torch_available': False, 'torch_error': type(exc).__name__ + ': ' + str(exc)}))\n"
+                ),
+            ],
+            text=True,
+            capture_output=True,
+            timeout=20,
+            check=False,
+        )
+        if probe.stdout.strip():
+            torch_probe = json.loads(probe.stdout.strip().splitlines()[-1])
+            preflight["torch_available"] = bool(torch_probe.get("torch_available"))
+            preflight["torch_cuda_available"] = bool(torch_probe.get("torch_cuda_available"))
+            preflight["cuda_available"] = bool(torch_probe.get("torch_cuda_available"))
+            preflight["torch_cuda_device_count"] = int(torch_probe.get("torch_cuda_device_count") or 0)
+            preflight["gpu_available"] = preflight["torch_cuda_device_count"] > 0
+            preflight["device"] = "cuda:0" if preflight["gpu_available"] else "cpu"
+            if _clean(torch_probe.get("device_name")):
+                preflight["device_name"] = _clean(torch_probe.get("device_name"))
+            if _clean(torch_probe.get("torch_error")):
+                preflight["torch_error"] = _clean(torch_probe.get("torch_error"))
+        elif probe.stderr.strip():
+            preflight["torch_error"] = probe.stderr.strip()[:400]
     except Exception as exc:
         preflight["torch_error"] = f"{type(exc).__name__}: {exc}"
 
     cache_root = Path(os.environ.get("HF_HOME") or Path.home() / ".cache" / "huggingface") / "hub" / "models--BAAI--bge-m3"
-    preflight["bge_m3_cache_path"] = cache_root.as_posix()
+    preflight["bge_m3_cache_path"] = _report_path_value(cache_root)
+    preflight["bge_m3_cache_path_sha256"] = f"sha256:{_sha256_text(cache_root.as_posix())}"
     preflight["bge_m3_cache_available"] = cache_root.exists()
     if preflight["gpu_available"] and preflight["cuda_available"]:
         preflight["fallback_reason"] = ""
@@ -5235,6 +7674,18 @@ def build_gpu_preflight() -> dict[str, Any]:
 
 
 def discover_external_vector_db() -> dict[str, Any]:
+    vector_db = _clean(os.environ.get("RAG_VECTOR_DB") or os.environ.get("ACTUAL_RAG_EVAL_VECTOR_DB")).casefold()
+    if vector_db == "weaviate" or _clean(os.environ.get("WEAVIATE_URL")):
+        config = WeaviateSourceAtomConfig.from_env()
+        return config.external_vector_db_report(
+            invoked=False,
+            reachable=False,
+            fallback_reason=(
+                "production_or_ambiguous_namespace_blocked"
+                if config.production_namespace
+                else "weaviate_adapter_not_invoked_yet"
+            ),
+        )
     namespace = _clean(
         os.environ.get("ACTUAL_RAG_EVAL_VECTOR_NAMESPACE")
         or os.environ.get("RAG_VECTOR_NAMESPACE")
@@ -5361,31 +7812,43 @@ def build_surface_comparison_metrics(raw_outputs: Sequence[Mapping[str, Any]], t
         return value if isinstance(value, Mapping) else {}
 
     source_rows = [surface("source_native", comparison) for comparison in comparisons]
-    searchunit_rows = [surface("searchunit_searchview", comparison) for comparison in comparisons]
+    searchunit_rows = [
+        row
+        for row in (surface("searchunit_searchview", comparison) for comparison in comparisons)
+        if row.get("comparison_enabled") is not False
+    ]
     source_retrieved = sum(1 for row in source_rows if row.get("expected_evidence_retrieved"))
     searchunit_retrieved = sum(1 for row in searchunit_rows if row.get("expected_evidence_retrieved"))
+    searchunit_denominator = len(searchunit_rows)
+
+    def _rate_or_none(numerator: int, denom: int) -> float | None:
+        if denom <= 0:
+            return None
+        return round(numerator / denom, 6)
+
     metrics = {
         "surface_comparison_available": bool(comparisons),
         "surface_comparison_row_count": len(comparisons),
+        "searchunit_surface_comparison_row_count": searchunit_denominator,
         "source_native_retrieval_empty_rate": round(
             sum(1 for row in source_rows if row.get("retrieval_empty")) / denominator,
             6,
         ),
-        "searchunit_retrieval_empty_rate": round(
-            sum(1 for row in searchunit_rows if row.get("retrieval_empty")) / denominator,
-            6,
+        "searchunit_retrieval_empty_rate": _rate_or_none(
+            sum(1 for row in searchunit_rows if row.get("retrieval_empty")),
+            searchunit_denominator,
         ),
         "source_native_expected_anchor_recall@k_diagnostic": round(source_retrieved / denominator, 6),
-        "searchunit_expected_anchor_recall@k_diagnostic": round(searchunit_retrieved / denominator, 6),
+        "searchunit_expected_anchor_recall@k_diagnostic": _rate_or_none(searchunit_retrieved, searchunit_denominator),
         f"source_native_expected_anchor_recall@{top_k}_diagnostic": round(source_retrieved / denominator, 6),
-        f"searchunit_expected_anchor_recall@{top_k}_diagnostic": round(searchunit_retrieved / denominator, 6),
+        f"searchunit_expected_anchor_recall@{top_k}_diagnostic": _rate_or_none(searchunit_retrieved, searchunit_denominator),
         "source_native_expected_evidence_text_presence_rate": round(
             sum(1 for row in source_rows if row.get("expected_evidence_in_corpus_normalized")) / denominator,
             6,
         ),
-        "searchunit_expected_evidence_text_presence_rate": round(
-            sum(1 for row in searchunit_rows if row.get("expected_evidence_in_corpus_normalized")) / denominator,
-            6,
+        "searchunit_expected_evidence_text_presence_rate": _rate_or_none(
+            sum(1 for row in searchunit_rows if row.get("expected_evidence_in_corpus_normalized")),
+            searchunit_denominator,
         ),
         "expected_evidence_exact_present_in_source_native_count": sum(
             1 for row in source_rows if row.get("expected_evidence_in_corpus_exact")
@@ -5416,7 +7879,8 @@ def build_surface_comparison_metrics(raw_outputs: Sequence[Mapping[str, Any]], t
 def add_surface_metrics(summary: dict[str, Any], surface_metrics: Mapping[str, Any], *, top_k: int) -> None:
     summary["diagnostic_metrics"].update(surface_metrics)
     source_num = int(surface_metrics.get(f"source_native_expected_anchor_recall@{top_k}_diagnostic") is not None and round(float(surface_metrics.get(f"source_native_expected_anchor_recall@{top_k}_diagnostic") or 0) * int(surface_metrics.get("surface_comparison_row_count") or 0)))
-    search_num = int(surface_metrics.get(f"searchunit_expected_anchor_recall@{top_k}_diagnostic") is not None and round(float(surface_metrics.get(f"searchunit_expected_anchor_recall@{top_k}_diagnostic") or 0) * int(surface_metrics.get("surface_comparison_row_count") or 0)))
+    search_denominator = int(surface_metrics.get("searchunit_surface_comparison_row_count") or 0)
+    search_num = int(surface_metrics.get(f"searchunit_expected_anchor_recall@{top_k}_diagnostic") is not None and round(float(surface_metrics.get(f"searchunit_expected_anchor_recall@{top_k}_diagnostic") or 0) * search_denominator))
     denominator = int(surface_metrics.get("surface_comparison_row_count") or 0)
     for name, numerator, tier in (
         ("source_native_resolved_evidence_available_rate_provisional", int(surface_metrics.get("expected_evidence_normalized_present_in_source_native_count") or 0), "provisional"),
@@ -5427,12 +7891,310 @@ def add_surface_metrics(summary: dict[str, Any], surface_metrics: Mapping[str, A
     ):
         metric = _metric_template(name, "surface comparison diagnostics; non-official", tier=tier)
         metric["numerator"] = numerator
-        metric["denominator"] = denominator
+        metric["denominator"] = search_denominator if name.startswith("searchunit_") else denominator
         metric = _finish_metric(metric)
         if tier == "provisional":
             summary["provisional_metrics"][name] = metric
         else:
             summary.setdefault("diagnostic_metric_details", {})[name] = metric
+
+
+def build_surface_migration_report(
+    *,
+    retrieval_surface_report: Mapping[str, Any],
+    retrieval_backend_report: Mapping[str, Any],
+    surface_comparison: Mapping[str, Any],
+    legacy_surface_comparison: bool,
+) -> dict[str, Any]:
+    selected_surface = _clean(retrieval_surface_report.get("selected")) or "unknown"
+    selected_backend = _clean(retrieval_backend_report.get("selected")) or "unknown"
+    source_available = bool(retrieval_surface_report.get("source_native_available"))
+    present_not_retrieved = int(surface_comparison.get("source_native_target_span_present_but_not_retrieved_count") or 0)
+    absent = int(surface_comparison.get("source_native_target_span_absent_count") or 0)
+    remaining_target = "source_native_ranking_query_formulation"
+    statement = (
+        "remaining failures are source-native ranking/query formulation misses; "
+        "SearchUnit/SearchView repair is not the target"
+    )
+    basis_keys = [
+        "source_native_expected_evidence_text_presence_rate",
+        "searchunit_expected_evidence_text_presence_rate",
+        "expected_evidence_normalized_present_in_source_native_count",
+        "source_native_target_span_absent_count",
+        "searchunit_target_span_absent_count",
+        "source_native_beats_searchunit_count",
+        "searchunit_beats_source_native_count",
+        "both_surfaces_fail_count",
+    ]
+    return {
+        "run_key": "actual_rag_eval_source_native_surface_hard_switch_nonprod",
+        "selected_surface": selected_surface,
+        "selected_backend": selected_backend,
+        "source_native_available": source_available,
+        "source_native_unit_count": int(retrieval_surface_report.get("source_native_unit_count") or 0),
+        "hard_switched": bool(
+            selected_surface == "source_native"
+            and source_available
+            and not bool(retrieval_surface_report.get("auto_fallback_to_searchunit_searchview"))
+        ),
+        "searchunit_searchview_candidate_surface_enabled": bool(
+            retrieval_surface_report.get("searchunit_searchview_candidate_surface_enabled")
+        ),
+        "searchunit_searchview_role": "legacy_comparison_debug_only",
+        "legacy_comparison_enabled": bool(legacy_surface_comparison),
+        "auto_fallback_to_searchunit_searchview": bool(
+            retrieval_surface_report.get("auto_fallback_to_searchunit_searchview")
+        ),
+        "deprecation_decision": "demote_from_routine_actual_rag_candidate_surface",
+        "deprecation_basis": {key: surface_comparison.get(key) for key in basis_keys},
+        "remaining_failure_statement": statement,
+        "remaining_failure_target": remaining_target,
+        "remaining_surface_bottleneck": remaining_target,
+        "source_native_corpus_coverage_note": (
+            "source_native_target_span_absent_count is diagnostic context only for this hard-switch; "
+            "it does not re-enable SearchUnit/SearchView as a routine candidate surface"
+            if absent > 0
+            else ""
+        ),
+        "source_native_present_not_retrieved_count": present_not_retrieved,
+    }
+
+
+def build_source_native_layered_retrieval_report(
+    *,
+    raw_outputs: Sequence[Mapping[str, Any]],
+    retrieval_surface_report: Mapping[str, Any],
+    retrieval_backend_report: Mapping[str, Any],
+    legacy_surface_comparison: bool,
+) -> dict[str, Any]:
+    selected_surface = _clean(retrieval_surface_report.get("selected")) or "unknown"
+    selected_backend = _clean(retrieval_backend_report.get("selected")) or "unknown"
+    rows = [
+        output.get("source_native_layered_retrieval")
+        for output in raw_outputs
+        if isinstance(output.get("source_native_layered_retrieval"), Mapping)
+    ]
+    enabled_rows = [dict(row) for row in rows if bool(row.get("enabled"))]
+    if selected_surface != "source_native" or not enabled_rows:
+        return _empty_source_native_layered_retrieval_report(
+            selected_surface=selected_surface,
+            selected_backend=selected_backend,
+            legacy_surface_comparison=legacy_surface_comparison,
+            fallback_reason="source_native_layered_retrieval_not_run",
+        )
+
+    def max_int(field: str) -> int:
+        return max(int(row.get(field) or 0) for row in enabled_rows)
+
+    per_layer_candidate_counts = {
+        layer: max(
+            int(((row.get("per_layer_candidate_counts") or {}).get(layer)) or 0)
+            for row in enabled_rows
+        )
+        for layer in SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS
+    }
+    per_layer_latency_ms = {
+        layer: max(
+            float(((row.get("per_layer_latency_ms") or {}).get(layer)) or 0.0)
+            for row in enabled_rows
+        )
+        for layer in SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS
+    }
+    first_variants = next((list(row.get("query_variants") or []) for row in enabled_rows if row.get("query_variants")), [])
+    report = {
+        "enabled": True,
+        "planner": "bounded_deterministic_source_native_layered_retrieval_v1",
+        "selected_surface": selected_surface,
+        "selected_backend": selected_backend,
+        "layers": list(SOURCE_NATIVE_LAYERED_RETRIEVAL_LAYERS),
+        "query_variants": first_variants,
+        "query_variant_count": max_int("query_variant_count"),
+        "backend_call_count": max_int("backend_call_count"),
+        "item_count": len(enabled_rows),
+        "per_layer_candidate_counts": per_layer_candidate_counts,
+        "per_layer_candidate_count_policy": "max_per_item",
+        "per_layer_latency_ms": {key: round(float(value), 6) for key, value in per_layer_latency_ms.items()},
+        "per_layer_latency_policy": "max_per_item_ms",
+        "merge_policy": "rrf_v1",
+        "rerank_policy": "anchor_aware_diagnostic_rerank_v1",
+        "final_candidate_count": max_int("final_candidate_count"),
+        "final_candidate_count_policy": "max_per_item",
+        "bounds": dict(SOURCE_NATIVE_LAYERED_RETRIEVAL_BOUNDS),
+        "gold_fields_used_for_candidate_generation": any(
+            bool(row.get("gold_fields_used_for_candidate_generation")) for row in enabled_rows
+        ),
+        "expected_fields_used_for_candidate_generation": any(
+            bool(row.get("expected_fields_used_for_candidate_generation")) for row in enabled_rows
+        ),
+        "qrels_used_for_candidate_generation": any(bool(row.get("qrels_used_for_candidate_generation")) for row in enabled_rows),
+        "answerability_labels_used_for_candidate_generation": any(
+            bool(row.get("answerability_labels_used_for_candidate_generation")) for row in enabled_rows
+        ),
+        "ids_used_for_candidate_generation": any(bool(row.get("ids_used_for_candidate_generation")) for row in enabled_rows),
+        "baseline_topk_used_for_candidate_generation": any(
+            bool(row.get("baseline_topk_used_for_candidate_generation")) for row in enabled_rows
+        ),
+        "searchunit_searchview_used_as_candidate_surface": any(
+            bool(row.get("searchunit_searchview_used_as_candidate_surface")) for row in enabled_rows
+        ),
+        "legacy_searchunit_comparison_enabled": bool(legacy_surface_comparison),
+        "source_native_units_only": all(bool(row.get("source_native_units_only")) for row in enabled_rows),
+        "diagnostic_hash_faiss_fallback_recorded": any(
+            "diagnostic_hash" in _clean(row.get("fallback_reason")) for row in enabled_rows
+        ),
+        "fallback_reasons": sorted(
+            {
+                _clean(row.get("fallback_reason"))
+                for row in enabled_rows
+                if _clean(row.get("fallback_reason"))
+            }
+        ),
+    }
+    return report
+
+
+def build_vector_index_audit_report(
+    *,
+    raw_outputs: Sequence[Mapping[str, Any]],
+    adapter: Any,
+    retrieval_surface_report: Mapping[str, Any],
+    retrieval_backend_report: Mapping[str, Any],
+    backend_comparison: Mapping[str, Any],
+    external_vector_db: Mapping[str, Any],
+) -> dict[str, Any]:
+    base = (
+        dict(adapter.vector_index_audit_report)
+        if isinstance(getattr(adapter, "vector_index_audit_report", None), Mapping)
+        else {
+            "enabled": False,
+            "status": "adapter_did_not_report_vector_index_audit",
+            "vector_surface": _clean(retrieval_surface_report.get("selected")) or "unknown",
+            "semantic_quality_claim_allowed": False,
+        }
+    )
+    comparisons = [
+        output.get("retrieval_backend_comparison")
+        for output in raw_outputs
+        if isinstance(output.get("retrieval_backend_comparison"), Mapping)
+    ]
+    vector_invocations = [
+        comparison.get("source_native_vector_invocation")
+        for comparison in comparisons
+        if isinstance(comparison.get("source_native_vector_invocation"), Mapping)
+    ]
+    target_rows = [
+        comparison.get("post_retrieval_target_diagnostics")
+        for comparison in comparisons
+        if isinstance(comparison.get("post_retrieval_target_diagnostics"), Mapping)
+    ]
+
+    surface_comparisons = [
+        output.get("retrieval_surface_comparison")
+        for output in raw_outputs
+        if isinstance(output.get("retrieval_surface_comparison"), Mapping)
+    ]
+    source_presence = [
+        bool(((comparison.get("source_native") or {}).get("expected_evidence_in_corpus_normalized")))
+        for comparison in surface_comparisons
+        if isinstance(comparison.get("source_native"), Mapping)
+    ]
+    denominator = max(len(target_rows), 1)
+    bm25_hits = sum(1 for row in target_rows if row.get("bm25_expected_anchor_retrieved"))
+    vector_hits = sum(1 for row in target_rows if row.get("vector_expected_anchor_retrieved"))
+    hybrid_hits = sum(1 for row in target_rows if row.get("hybrid_expected_anchor_retrieved"))
+
+    def present_not_retrieved_count(field: str) -> int:
+        return sum(
+            1
+            for present, row in zip(source_presence, target_rows, strict=False)
+            if present and not bool(row.get(field))
+        )
+
+    vector_invoked_rows = sum(1 for row in vector_invocations if row.get("vector_backend_invoked"))
+    vector_created_rows = sum(1 for row in vector_invocations if row.get("query_embedding_created_or_loaded"))
+    vector_hydration_failures = sum(int(row.get("vector_hydration_failure_count") or 0) for row in vector_invocations)
+    vector_hydration_successes = sum(int(row.get("vector_hydration_success_count") or 0) for row in vector_invocations)
+    vector_candidate_count = sum(int(row.get("vector_top_k_count") or 0) for row in vector_invocations)
+    query_invocation_passed = bool(vector_invocations and vector_invoked_rows == len(vector_invocations) and vector_created_rows == len(vector_invocations))
+    hydration_passed = bool(vector_invocations and vector_candidate_count > 0 and vector_hydration_failures == 0)
+
+    def avg_comparison(field: str) -> float:
+        values = [float(comparison.get(field) or 0.0) for comparison in comparisons]
+        return _average(values)
+
+    target_presence = {
+        "expected_fields_used_for_candidate_generation": False,
+        "gold_fields_used_for_candidate_generation": False,
+        "qrels_used_for_candidate_generation": False,
+        "ids_used_for_candidate_generation": False,
+        "baseline_topk_used_for_candidate_generation": False,
+        "expected_fields_used_for_post_retrieval_diagnostics": any(
+            bool(row.get("expected_fields_used_for_post_retrieval_diagnostics")) for row in target_rows
+        ),
+        "bm25_expected_anchor_recall@k_diagnostic": round(bm25_hits / denominator, 6),
+        "vector_expected_anchor_recall@k_diagnostic": round(vector_hits / denominator, 6),
+        "hybrid_expected_anchor_recall@k_diagnostic": round(hybrid_hits / denominator, 6),
+        "bm25_target_span_present_but_not_retrieved_count": present_not_retrieved_count("bm25_expected_anchor_retrieved"),
+        "vector_target_span_present_but_not_retrieved_count": present_not_retrieved_count("vector_expected_anchor_retrieved"),
+        "hybrid_target_span_present_but_not_retrieved_count": present_not_retrieved_count("hybrid_expected_anchor_retrieved"),
+    }
+    base.update(
+        {
+            "external_vector_db_configured": bool(external_vector_db.get("configured")),
+            "external_vector_db_invoked": bool(external_vector_db.get("invoked")),
+            "external_vector_db_reachable": bool(external_vector_db.get("reachable")),
+            "embedding_model": _clean(base.get("embedding_model") or retrieval_backend_report.get("embedding_model")),
+            "embedding_dim": int(base.get("embedding_dim") or retrieval_backend_report.get("vector_dim") or 0),
+            "embedding_device": _clean(base.get("embedding_device") or retrieval_backend_report.get("embedding_device")),
+            "gpu_used_for_embedding": bool(base.get("gpu_used_for_embedding") or retrieval_backend_report.get("gpu_used_for_embedding")),
+            "index_integrity_passed": bool(base.get("index_integrity_passed")),
+            "query_invocation_passed": query_invocation_passed,
+            "hydration_passed": hydration_passed,
+            "hybrid_comparison_available": bool(backend_comparison.get("comparison_available")),
+            "semantic_quality_claim_allowed": False,
+            "query_invocation_summary": {
+                "item_count": len(vector_invocations),
+                "vector_backend_invoked_count": vector_invoked_rows,
+                "query_embedding_created_or_loaded_count": vector_created_rows,
+                "vector_candidate_count": vector_candidate_count,
+                "vector_hydration_success_count": vector_hydration_successes,
+                "vector_hydration_failure_count": vector_hydration_failures,
+            },
+            "bm25_vector_hybrid_comparison": {
+                "comparison_available": bool(backend_comparison.get("comparison_available")),
+                "bm25_candidate_count_avg": backend_comparison.get("bm25_candidate_count_avg"),
+                "vector_candidate_count_avg": backend_comparison.get("vector_candidate_count_avg"),
+                "hybrid_candidate_count_avg": backend_comparison.get("hybrid_candidate_count_avg"),
+                "bm25_vector_topk_overlap_avg": backend_comparison.get("bm25_vector_topk_overlap_avg"),
+                "bm25_only_candidate_count_avg": avg_comparison("bm25_only_candidate_count"),
+                "vector_only_candidate_count_avg": avg_comparison("vector_only_candidate_count"),
+                "hybrid_contains_vector_only_candidate_count_avg": avg_comparison("hybrid_contains_vector_only_candidate_count"),
+                "hybrid_contains_bm25_only_candidate_count_avg": avg_comparison("hybrid_contains_bm25_only_candidate_count"),
+                "vector_contribution_to_hybrid_topk_count_avg": avg_comparison("vector_contribution_to_hybrid_topk_count"),
+                "bm25_contribution_to_hybrid_topk_count_avg": avg_comparison("bm25_contribution_to_hybrid_topk_count"),
+                "vector_contribution_to_selected_topk_count_avg": avg_comparison("vector_contribution_to_selected_topk_count"),
+                "bm25_contribution_to_selected_topk_count_avg": avg_comparison("bm25_contribution_to_selected_topk_count"),
+                "bm25_retrieval_empty_rate": backend_comparison.get("bm25_retrieval_empty_rate"),
+                "vector_retrieval_empty_rate": backend_comparison.get("vector_retrieval_empty_rate"),
+                "hybrid_retrieval_empty_rate": backend_comparison.get("hybrid_retrieval_empty_rate"),
+            },
+            "target_presence_diagnostics": target_presence,
+        }
+    )
+    return base
+
+
+def build_final_rag_target_report() -> dict[str, Any]:
+    return {
+        "retrieval_surface": "source_native",
+        "evidence_truth": "SourceAtom/EvidenceBundle",
+        "candidate_generators": ["bm25", "vector", "hybrid", "bounded_layered_multi_search_future"],
+        "vector_role": "candidate_generation_only",
+        "bm25_role": "lexical_anchor_candidate_generation",
+        "agentic_layer_role": "bounded_query_planning_and_evidence_validation_after_index_audit",
+        "searchunit_searchview_role": "legacy_comparison_debug_only",
+        "final_answer_policy": "use_validated_evidence_context_only; fail_closed_or_abstain_when_evidence_is_insufficient",
+    }
 
 
 def write_human_review_packet_csv(output_dir: Path, packet_rows: Sequence[Mapping[str, Any]]) -> tuple[Path, int]:
@@ -5451,12 +8213,335 @@ def write_human_review_packet_csv(output_dir: Path, packet_rows: Sequence[Mappin
     return path, len(packet_rows)
 
 
+MACHINE_MAPPING_RECOMMENDATIONS = frozenset(
+    {
+        "likely_accept",
+        "possible_match",
+        "review_needed",
+        "likely_reject",
+    }
+)
+HUMAN_DECISION_INPUT_FIELDS = (
+    "human_mapping_decision",
+    "human_accepted_doc_id",
+    "human_accepted_chunk_id",
+    "human_evidence_sufficient",
+    "human_accept",
+    "human_reject_reason",
+    "human_expected_answer_override",
+    "human_expected_evidence_override",
+    "human_answerability_label",
+    "human_relevance_label",
+    "human_notes",
+)
+MACHINE_RECOMMENDATION_REJECT_FIELDS = (
+    "human_mapping_decision",
+    "human_evidence_sufficient",
+    "human_accept",
+    "human_answerability_label",
+    "human_relevance_label",
+)
+ACCEPT_DECISIONS = frozenset({"accept", "accepted", "approve", "approved", "yes", "y", "true", "1", "use"})
+REJECT_DECISIONS = frozenset({"reject", "rejected", "no", "n", "false", "0"})
+
+
+def _strict_denominator_snapshot(items: Sequence[EvalItem]) -> dict[str, Any]:
+    return {
+        "strict_answer_denominator": sum(1 for item in items if item.answerability == "answerable" and item.has_expected_answer),
+        "strict_evidence_denominator": sum(1 for item in items if item.answerability == "answerable" and item.has_expected_evidence),
+        "strict_e2e_denominator": sum(
+            1
+            for item in items
+            if item.answerability == "answerable" and item.has_expected_answer and item.has_expected_evidence
+        ),
+        "answerable_count": sum(1 for item in items if item.answerability == "answerable"),
+        "unanswerable_count": sum(1 for item in items if item.answerability == "unanswerable"),
+        "unknown_answerability_count": sum(1 for item in items if item.answerability == "unknown"),
+        "expected_evidence_id_complete_count": sum(
+            1
+            for item in items
+            for evidence in item.expected_evidence
+            if bool(evidence.doc_id and evidence.chunk_id)
+        ),
+        "expected_evidence_row_count": sum(len(item.expected_evidence) for item in items),
+    }
+
+
+def _denominator_change_report(before: Mapping[str, Any], after: Mapping[str, Any]) -> dict[str, Any]:
+    keys = sorted({*before.keys(), *after.keys()})
+    return {
+        key: {
+            "before": before.get(key, 0),
+            "after": after.get(key, 0),
+            "delta": (after.get(key, 0) or 0) - (before.get(key, 0) or 0),
+        }
+        for key in keys
+    }
+
+
+def refresh_metric_tiers(summary: dict[str, Any]) -> None:
+    summary["metric_tiers"] = {
+        "strict": list((summary.get("strict_metrics") or {}).keys()),
+        "provisional": list((summary.get("provisional_metrics") or {}).keys()),
+        "inferred_answerable": list((summary.get("inferred_answerable_metrics") or {}).keys()),
+        "diagnostic": [
+            *(summary.get("diagnostic_metrics") or {}).keys(),
+            *(summary.get("diagnostic_metric_details") or {}).keys(),
+        ],
+    }
+
+
+def _is_accept_decision(value: Any) -> bool:
+    return _clean(value).casefold() in ACCEPT_DECISIONS
+
+
+def _is_reject_decision(value: Any) -> bool:
+    return _clean(value).casefold() in REJECT_DECISIONS
+
+
+def _reviewed_row_query_id(row: Mapping[str, Any]) -> str:
+    return _clean(row.get("query_id") or row.get("item_id") or row.get("id"))
+
+
+def _reviewed_row_evidence_index(row: Mapping[str, Any]) -> int:
+    raw = _clean(row.get("expected_evidence_index") or row.get("expected_evidence_idx"))
+    if not raw:
+        return 0
+    try:
+        index = int(raw)
+    except ValueError as exc:
+        raise DatasetSchemaError(f"reviewed evidence mapping has invalid expected_evidence_index: {raw}") from exc
+    if index < 0:
+        raise DatasetSchemaError(f"reviewed evidence mapping has negative expected_evidence_index: {raw}")
+    return index
+
+
+def _explicit_human_field_values(row: Mapping[str, Any]) -> dict[str, str]:
+    return {field: _clean(row.get(field)) for field in HUMAN_DECISION_INPUT_FIELDS if _clean(row.get(field))}
+
+
+def _validate_reviewed_mapping_row(row: Mapping[str, Any], *, row_number: int) -> dict[str, str]:
+    human_values = _explicit_human_field_values(row)
+    if not human_values:
+        return {}
+    machine = _clean(row.get("machine_recommendation")).casefold()
+    for field in MACHINE_RECOMMENDATION_REJECT_FIELDS:
+        value = _clean(row.get(field)).casefold()
+        if value and (value in MACHINE_MAPPING_RECOMMENDATIONS or (machine and value == machine)):
+            raise DatasetSchemaError(
+                f"reviewed evidence mapping row {row_number}: machine recommendation value cannot be used as a human decision"
+            )
+    query_id = _reviewed_row_query_id(row)
+    if not query_id:
+        raise DatasetSchemaError(f"reviewed evidence mapping row {row_number}: missing query_id")
+    answerability = _clean(row.get("human_answerability_label")).casefold()
+    if answerability and answerability not in ANSWERABILITY_VALUES:
+        raise DatasetSchemaError(
+            f"reviewed evidence mapping row {row_number}: human_answerability_label must be one of {sorted(ANSWERABILITY_VALUES)}"
+        )
+    accepted = _is_accept_decision(row.get("human_accept")) or _is_accept_decision(row.get("human_mapping_decision"))
+    if accepted:
+        doc_id = _clean(row.get("human_accepted_doc_id") or row.get("candidate_doc_id"))
+        chunk_id = _clean(row.get("human_accepted_chunk_id") or row.get("candidate_chunk_id"))
+        evidence_override = _clean(row.get("human_expected_evidence_override"))
+        answer_override = _clean(row.get("human_expected_answer_override"))
+        if not (doc_id or chunk_id or evidence_override or answer_override):
+            raise DatasetSchemaError(
+                f"reviewed evidence mapping row {row_number}: accepted mapping requires candidate IDs or explicit human override"
+            )
+    return human_values
+
+
+def _read_reviewed_evidence_mapping_csv(path: Path) -> tuple[list[dict[str, Any]], int]:
+    if not path.exists():
+        raise DatasetSchemaError(f"reviewed evidence mapping CSV not found: {path}")
+    with path.open(encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames:
+            raise DatasetSchemaError(f"reviewed evidence mapping CSV has no header: {path}")
+        rows = [dict(row) for row in reader]
+    reviewed_rows: list[dict[str, Any]] = []
+    for index, row in enumerate(rows, start=2):
+        human_values = _validate_reviewed_mapping_row(row, row_number=index)
+        if human_values:
+            copied = dict(row)
+            copied["_human_values"] = human_values
+            copied["_row_number"] = index
+            reviewed_rows.append(copied)
+    if not reviewed_rows:
+        raise DatasetSchemaError("reviewed evidence mapping CSV requires at least one explicit human decision field")
+    return reviewed_rows, len(rows)
+
+
+def _empty_reviewed_mapping_summary(path: Path | None = None) -> dict[str, Any]:
+    return {
+        "enabled": bool(path),
+        "input_path": path.as_posix() if path else "",
+        "applied": False,
+        "row_count": 0,
+        "source_row_count": 0,
+        "accepted_mapping_count": 0,
+        "rejected_mapping_count": 0,
+        "answerability_label_applied_count": 0,
+        "expected_answer_override_count": 0,
+        "expected_evidence_text_override_count": 0,
+        "machine_recommendation_treated_as_gold": False,
+        "gold_or_qrels_mutation": False,
+        "human_decision_fields_filled_by_codex": False,
+        "changes": [],
+        "rejections": [],
+        "guardrails": {
+            "original_dataset_overwritten": False,
+            "gold_mutation": False,
+            "qrels_mutation": False,
+            "label_mutation": False,
+            "expected_fields_used_for_candidate_generation": False,
+            "machine_recommendation_not_gold": True,
+        },
+    }
+
+
+def apply_reviewed_evidence_mapping(
+    items: Sequence[EvalItem],
+    *,
+    reviewed_mapping_csv: Path | None,
+) -> tuple[list[EvalItem], dict[str, Any]]:
+    if reviewed_mapping_csv is None:
+        return list(items), _empty_reviewed_mapping_summary(None)
+    reviewed_rows, source_row_count = _read_reviewed_evidence_mapping_csv(reviewed_mapping_csv)
+    by_id = {item.id: item for item in items}
+    derived = {item.id: item for item in items}
+    changes: list[dict[str, Any]] = []
+    rejections: list[dict[str, Any]] = []
+    accepted_count = 0
+    rejected_count = 0
+    answerability_count = 0
+    answer_override_count = 0
+    evidence_override_count = 0
+    for row in reviewed_rows:
+        query_id = _reviewed_row_query_id(row)
+        item = derived.get(query_id)
+        if item is None:
+            raise DatasetSchemaError(f"reviewed evidence mapping row {row.get('_row_number')}: unknown query_id {query_id}")
+        evidence_index = _reviewed_row_evidence_index(row)
+        change_types: list[str] = []
+        reason: list[str] = []
+        expected_evidence = list(item.expected_evidence)
+        accepted = _is_accept_decision(row.get("human_accept")) or _is_accept_decision(row.get("human_mapping_decision"))
+        rejected = _is_reject_decision(row.get("human_accept")) or _is_reject_decision(row.get("human_mapping_decision"))
+        answerability = _clean(row.get("human_answerability_label")).casefold()
+        expected_answer_override = _clean(row.get("human_expected_answer_override"))
+        expected_evidence_override = _clean(row.get("human_expected_evidence_override"))
+        candidate_doc_id = _clean(row.get("human_accepted_doc_id") or row.get("candidate_doc_id"))
+        candidate_chunk_id = _clean(row.get("human_accepted_chunk_id") or row.get("candidate_chunk_id"))
+        if rejected and not accepted:
+            rejected_count += 1
+            rejections.append(
+                {
+                    "query_id": query_id,
+                    "expected_evidence_index": evidence_index,
+                    "reason": _clean(row.get("human_reject_reason")) or "human_rejected_mapping",
+                    "candidate_doc_id": candidate_doc_id,
+                    "candidate_chunk_id": candidate_chunk_id,
+                }
+            )
+        if accepted:
+            if evidence_index >= len(expected_evidence):
+                raise DatasetSchemaError(
+                    f"reviewed evidence mapping row {row.get('_row_number')}: expected_evidence_index out of range"
+                )
+            existing = expected_evidence[evidence_index]
+            expected_evidence[evidence_index] = ExpectedEvidence(
+                doc_id=candidate_doc_id or existing.doc_id,
+                chunk_id=candidate_chunk_id or existing.chunk_id,
+                text=expected_evidence_override or existing.text or _clean(row.get("expected_evidence_text")),
+                required=existing.required,
+            )
+            accepted_count += 1
+            change_types.append("expected_evidence_id_mapping_applied")
+            reason.append("human_accept")
+            if expected_evidence_override:
+                evidence_override_count += 1
+                change_types.append("expected_evidence_text_override_applied")
+        if expected_answer_override:
+            answer_override_count += 1
+            change_types.append("expected_answer_override_applied")
+        if answerability:
+            answerability_count += 1
+            change_types.append("answerability_label_applied")
+        if not change_types:
+            continue
+        source_row = dict(item.source_row)
+        prior_changes = list(source_row.get("reviewed_mapping_change_types") or [])
+        source_row.update(
+            {
+                "reviewed_mapping_applied": True,
+                "reviewed_mapping_input_path": reviewed_mapping_csv.as_posix(),
+                "reviewed_mapping_change_types": sorted(set([*prior_changes, *change_types])),
+            }
+        )
+        derived[query_id] = replace(
+            item,
+            answerability=answerability or item.answerability,
+            expected_answer=expected_answer_override or item.expected_answer,
+            expected_evidence=tuple(expected_evidence),
+            has_answerability_label=bool(answerability) or item.has_answerability_label,
+            source_row=source_row,
+        )
+        changes.append(
+            {
+                "query_id": query_id,
+                "expected_evidence_index": evidence_index,
+                "candidate_doc_id": candidate_doc_id,
+                "candidate_chunk_id": candidate_chunk_id,
+                "candidate_text_hash": _clean(row.get("candidate_text_hash") or row.get("candidate_full_text_hash")),
+                "change_types": sorted(set(change_types)),
+                "reason": "; ".join(reason) or "explicit_human_reviewed_mapping_input",
+                "human_notes": _clean(row.get("human_notes")),
+            }
+        )
+    summary = _empty_reviewed_mapping_summary(reviewed_mapping_csv)
+    summary.update(
+        {
+            "applied": bool(changes),
+            "row_count": len(reviewed_rows),
+            "source_row_count": source_row_count,
+            "accepted_mapping_count": accepted_count,
+            "rejected_mapping_count": rejected_count,
+            "answerability_label_applied_count": answerability_count,
+            "expected_answer_override_count": answer_override_count,
+            "expected_evidence_text_override_count": evidence_override_count,
+            "changes": changes,
+            "rejections": rejections,
+        }
+    )
+    return [derived[item.id] if item.id in derived else by_id[item.id] for item in items], summary
+
+
+def write_reviewed_mapping_patch_artifact(output_dir: Path, reviewed_mapping: Mapping[str, Any]) -> Path:
+    path = output_dir / "reviewed_evidence_mapping_patch.json"
+    payload = {
+        "schema_version": "actual_rag_eval.reviewed_evidence_mapping_patch.v1",
+        "input_path": reviewed_mapping.get("input_path", ""),
+        "row_count": reviewed_mapping.get("row_count", 0),
+        "accepted_mapping_count": reviewed_mapping.get("accepted_mapping_count", 0),
+        "answerability_label_applied_count": reviewed_mapping.get("answerability_label_applied_count", 0),
+        "gold_or_qrels_mutation": False,
+        "machine_recommendation_treated_as_gold": False,
+        "changes": reviewed_mapping.get("changes") or [],
+        "rejections": reviewed_mapping.get("rejections") or [],
+    }
+    write_json(path, payload)
+    return path
+
+
 def _artifact_contract(
     *,
     output_mode: str,
     report_path: Path,
     legacy_written: bool,
     human_review_packet_path: Path | None,
+    reviewed_mapping_patch_path: Path | None = None,
 ) -> dict[str, Any]:
     return {
         "output_mode": output_mode,
@@ -5465,9 +8550,2504 @@ def _artifact_contract(
         "legacy_sidecars_written": bool(legacy_written),
         "human_review_packet_exception": bool(human_review_packet_path),
         "human_review_packet_path": human_review_packet_path.as_posix() if human_review_packet_path else "",
-        "routine_run_file_policy": "report.json_only_unless_legacy_or_human_review_packet_requested",
+        "reviewed_mapping_patch_exception": bool(reviewed_mapping_patch_path),
+        "reviewed_mapping_patch_path": reviewed_mapping_patch_path.as_posix() if reviewed_mapping_patch_path else "",
+        "routine_run_file_policy": "report.json_only_unless_legacy_human_review_packet_or_reviewed_mapping_input_requested",
         "legacy_artifacts_allowed_only_by_output_mode": True,
     }
+
+
+def _source_native_legacy_cleanup_inventory() -> list[dict[str, Any]]:
+    return [
+        {
+            "category": "searchunit_searchview_runtime_reference",
+            "subject": "SurfaceComparingRagAdapter, RepoCurrentBm25Adapter, RepoCurrentHybridAdapter",
+            "classification": "EXPLICIT_LEGACY_DEBUG_KEEP",
+            "decision": "keep_fenced",
+            "rationale": "SearchUnit/SearchView remains available only behind explicit legacy/debug comparison paths.",
+        },
+        {
+            "category": "searchunit_searchview_runtime_reference",
+            "subject": "SourceNativeCorpusLoader, SourceNativeHybridAdapter",
+            "classification": "ACTIVE_SOURCE_NATIVE_KEEP",
+            "decision": "keep_routine",
+            "rationale": "SourceAtom/EvidenceBundle-backed source-native units are the routine actual-RAG surface when available.",
+        },
+        {
+            "category": "searchunit_searchview_test_reference",
+            "subject": "ai/tests/test_actual_rag_eval_metric_generation.py",
+            "classification": "EXPLICIT_LEGACY_DEBUG_KEEP",
+            "decision": "keep_focused_contract_tests",
+            "rationale": "Tests keep the legacy/debug fence observable without restoring SearchUnit/SearchView as a routine candidate surface.",
+        },
+        {
+            "category": "searchunit_searchview_docs_reference",
+            "subject": "docs/rag-ingestion-progress.md; docs/rag-ingestion-measurements.md; docs/rag-ingestion-triage.md; ai/eval/README.md; ai/scripts/README.md",
+            "classification": "DOCS_ONLY_UPDATE",
+            "decision": "compact_stale_wording",
+            "rationale": "Docs should state source-native routine behavior and SearchUnit/SearchView legacy-only role.",
+        },
+        {
+            "category": "actual_rag_sidecar_writer",
+            "subject": "output_mode=legacy|both sidecar writer block",
+            "classification": "EXPLICIT_LEGACY_DEBUG_KEEP",
+            "decision": "fence_by_output_mode",
+            "rationale": "Routine output-mode single writes report.json only; old JSONL/Markdown/evidence sidecars require explicit legacy mode.",
+        },
+        {
+            "category": "legacy_report_writer",
+            "subject": "rag_eval_items.jsonl, rag_eval_summary.json, rag_eval_report.md",
+            "classification": "EXPLICIT_LEGACY_DEBUG_KEEP",
+            "decision": "legacy_mode_only",
+            "rationale": "Historical report shape is retained for explicit legacy compatibility and excluded from routine single output.",
+        },
+        {
+            "category": "legacy_cli_alias",
+            "subject": "--legacy-surface-comparison; --retrieval-surface searchunit-searchview",
+            "classification": "EXPLICIT_LEGACY_COMPARISON_KEEP",
+            "decision": "keep_explicit_check_only",
+            "rationale": "The legacy comparison flag is the intentional opt-in boundary for SearchUnit/SearchView diagnostics.",
+        },
+        {
+            "category": "legacy_cli_alias",
+            "subject": "--retrieval-surface searchunit-searchview without --legacy-surface-comparison",
+            "classification": "DEPRECATE_FAIL_CLOSED",
+            "decision": "fail_closed",
+            "rationale": "SearchUnit/SearchView cannot be selected silently as a routine actual-RAG surface.",
+        },
+        {
+            "category": "stale_generated_ignored_artifact",
+            "subject": "ai/eval/reports/rag-ingestion/** and reports/rag_eval/**",
+            "classification": "REVIEW_MANUAL_HOLD",
+            "decision": "hold_unless_unreferenced",
+            "rationale": "Ignored generated diagnostics may still be registry-, latest-, docs-, or test-readable.",
+        },
+        {
+            "category": "transient_cache_build_artifact",
+            "subject": ".pytest_cache; __pycache__; temporary fixture directories",
+            "classification": "SAFE_TRANSIENT_DELETE",
+            "decision": "delete_when_present_after_path_check",
+            "rationale": "Caches and temporary fixture directories are regenerable and not diagnostic evidence.",
+        },
+        {
+            "category": "routine_generated_sidecar",
+            "subject": "CSV/JSONL/Markdown/evidence sidecars in output-mode single",
+            "classification": "SAFE_GENERATED_DELETE",
+            "decision": "delete_if_created_by_routine_single_run",
+            "rationale": "Routine actual-RAG single output has a one-file report.json contract.",
+        },
+        {
+            "category": "protected_namespace_reference",
+            "subject": "ai/eval/eval_queries; ai/eval/source_registry; ai/eval/indexes; gold/qrels/labels/answerability/expected/denominator/current",
+            "classification": "PROTECTED_HOLD",
+            "decision": "do_not_modify",
+            "rationale": "Cleanup must not mutate source truth, gold policy, qrels, labels, answerability, expected fields, denominators, indexes, or current.",
+        },
+    ]
+
+
+def _classification_counts(entries: Sequence[Mapping[str, Any]]) -> dict[str, int]:
+    counts = {classification: 0 for classification in SOURCE_NATIVE_LEGACY_CLEANUP_CLASSIFICATIONS}
+    for entry in entries:
+        classification = _clean(entry.get("classification"))
+        if classification:
+            counts[classification] = counts.get(classification, 0) + 1
+    return counts
+
+
+def build_source_native_legacy_cleanup_sections(summary: Mapping[str, Any]) -> dict[str, Any]:
+    retrieval_surface = summary.get("retrieval_surface")
+    if not isinstance(retrieval_surface, Mapping):
+        retrieval_surface = {}
+    artifact_contract = summary.get("artifact_contract")
+    if not isinstance(artifact_contract, Mapping):
+        artifact_contract = {}
+    selected_surface = _clean(retrieval_surface.get("selected"))
+    auto_fallback = bool(retrieval_surface.get("auto_fallback_to_searchunit_searchview"))
+    routine_candidate_surface_enabled = False
+    source_native_hard_switch_preserved = (
+        selected_surface == "source_native"
+        and bool(retrieval_surface.get("source_native_available", selected_surface == "source_native"))
+        and not auto_fallback
+        and not routine_candidate_surface_enabled
+    )
+    legacy_sidecars_written = bool(artifact_contract.get("legacy_sidecars_written"))
+    human_review_packet_written = bool(artifact_contract.get("human_review_packet_exception"))
+    reviewed_mapping_patch_written = bool(artifact_contract.get("reviewed_mapping_patch_exception"))
+    output_mode = _clean(artifact_contract.get("output_mode"))
+    return {
+        "legacy_cleanup": {
+            "enabled": True,
+            "searchunit_searchview_routine_candidate_surface_enabled": routine_candidate_surface_enabled,
+            "searchunit_searchview_role": "explicit_legacy_comparison_debug_only",
+            "auto_fallback_to_searchunit_searchview": False,
+            "source_native_hard_switch_preserved": source_native_hard_switch_preserved,
+        },
+        "artifact_cleanup": {
+            "output_mode_single_report_json_only": output_mode == "single"
+            and not legacy_sidecars_written
+            and not human_review_packet_written
+            and not reviewed_mapping_patch_written,
+            "legacy_sidecars_routine_disabled": True,
+            "human_review_packet_exception_preserved": True,
+            "reviewed_mapping_patch_exception_preserved": True,
+            "raw_prompt_payload_written": bool(summary.get("raw_prompt_payload_written")),
+            "raw_response_payload_written": bool(summary.get("raw_response_payload_written")),
+            "legacy_sidecars_written_in_this_run": legacy_sidecars_written,
+            "human_review_packet_written_in_this_run": human_review_packet_written,
+            "reviewed_mapping_patch_written_in_this_run": reviewed_mapping_patch_written,
+        },
+        "runner_alias_cleanup": {
+            "current_moved": False,
+            "aliases_removed": [],
+            "aliases_deprecated_fail_closed": [
+                "--retrieval-surface searchunit-searchview without --legacy-surface-comparison",
+            ],
+            "aliases_kept_check_only": [
+                "--legacy-surface-comparison",
+                "--retrieval-surface searchunit-searchview",
+                "--output-mode legacy",
+                "--output-mode both",
+            ],
+            "manual_hold_aliases": [
+                "--write-evidence-mapping-packet",
+                "--index current",
+            ],
+        },
+    }
+
+
+def _cleanup_guardrails_from_summary(summary: Mapping[str, Any]) -> dict[str, Any]:
+    source_guardrails = summary.get("guardrails")
+    guardrails = dict(source_guardrails) if isinstance(source_guardrails, Mapping) else {}
+    guardrails.update(
+        {
+            "non_production": True,
+            "gold_mutation": False,
+            "qrels_mutation": False,
+            "label_mutation": False,
+            "answerability_label_mutation": False,
+            "expected_answer_mutation": False,
+            "expected_evidence_mutation": False,
+            "denominator_mutation": False,
+            "retriever_ranking_improvement": False,
+            "official_metric": False,
+            "promotion_evidence": False,
+            "product_success_evidence_allowed": False,
+            "live_readiness_claim": False,
+            "current_moved": False,
+            "protected_namespaces_touched": [],
+            "raw_prompt_payload_written": False,
+            "raw_response_payload_written": False,
+            "gold_or_qrels_mutation": False,
+            "human_decision_fields_filled_by_codex": False,
+            "gold_fields_used_for_candidate_generation": False,
+            "expected_fields_used_for_candidate_generation": False,
+            "qrels_used_for_candidate_generation": False,
+            "answerability_labels_used_for_candidate_generation": False,
+            "ids_used_for_candidate_generation": False,
+            "query_id_used_for_candidate_generation": False,
+            "row_id_used_for_candidate_generation": False,
+            "target_id_used_for_candidate_generation": False,
+            "baseline_topk_used_for_candidate_generation": False,
+            "retriever_oracle_shortcut_used": False,
+        }
+    )
+    return guardrails
+
+
+def build_source_native_legacy_cleanup_report(
+    *,
+    routine_summary: Mapping[str, Any],
+    changed_files: Sequence[str] = (),
+    deleted_files: Sequence[str] = (),
+    explicitly_held_files: Sequence[str] = (),
+    temporary_files_removed: Sequence[str] = (),
+    generated_at: str | None = None,
+) -> dict[str, Any]:
+    validate_actual_rag_guardrails(routine_summary)
+    sections = build_source_native_legacy_cleanup_sections(routine_summary)
+    inventory = _source_native_legacy_cleanup_inventory()
+    classification_counts = _classification_counts(inventory)
+    guardrails = _cleanup_guardrails_from_summary(routine_summary)
+    routine_artifact_contract = routine_summary.get("artifact_contract")
+    if not isinstance(routine_artifact_contract, Mapping):
+        routine_artifact_contract = {}
+    report = {
+        "schema_version": "actual_rag_eval.source_native_legacy_cleanup.v1",
+        "run_id": SOURCE_NATIVE_LEGACY_CLEANUP_RUN_ID,
+        "generated_at": generated_at or utc_now_iso(),
+        "non_production": True,
+        "cleanup_scope": "source_native_actual_rag_legacy_searchunit_searchview_cleanup_nonprod",
+        "routine_run_id": _clean(routine_summary.get("run_id")),
+        "routine_artifact_contract": dict(routine_artifact_contract),
+        "inventory": inventory,
+        "classification_counts": classification_counts,
+        "cleanup_decisions": {
+            "changed_files": sorted(_clean(path) for path in changed_files if _clean(path)),
+            "deletions": sorted(_clean(path) for path in deleted_files if _clean(path)),
+            "explicit_holds": sorted(_clean(path) for path in explicitly_held_files if _clean(path)),
+            "temporary_files_removed": sorted(_clean(path) for path in temporary_files_removed if _clean(path)),
+            "generated_artifacts_deleted": [],
+            "protected_holds": [
+                "ai/eval/eval_queries",
+                "ai/eval/source_registry",
+                "ai/eval/indexes",
+                "gold/qrels/labels/answerability/expected/denominator/current",
+                "reports/rag_eval/latest*.json",
+                "reports/rag_eval/runs.jsonl",
+                "ai/eval/reports/rag-ingestion/status.jsonl",
+            ],
+        },
+        "holds": {
+            "explicit_legacy_debug": [
+                entry["subject"]
+                for entry in inventory
+                if entry.get("classification") in {"EXPLICIT_LEGACY_DEBUG_KEEP", "EXPLICIT_LEGACY_COMPARISON_KEEP"}
+            ],
+            "protected": [
+                entry["subject"] for entry in inventory if entry.get("classification") == "PROTECTED_HOLD"
+            ],
+            "manual_review": [
+                entry["subject"] for entry in inventory if entry.get("classification") == "REVIEW_MANUAL_HOLD"
+            ],
+        },
+        "protected_namespace_checks": {
+            "protected_namespaces_touched": [],
+            "gold_qrels_labels_answerability_expected_denominator_current_untouched": True,
+            "source_registry_untouched": True,
+            "source_native_indexes_untouched_by_cleanup": True,
+            "production_config_untouched": True,
+        },
+        "remaining_debt": [
+            "source_native_ranking_query_formulation",
+            "bge_m3_artifacts_held_read_only_future_remeasurement_when_explicitly_opened_or_not_current",
+            "extractive_v1_answer_generation_replacement",
+        ],
+        "official_metric_input_rows": 0,
+        "official_metric_input_rows_created": 0,
+        "official_metric_input_rows_consumed": 0,
+        "protected_namespaces_touched": [],
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "guardrails": guardrails,
+    }
+    report.update(sections)
+    validate_actual_rag_guardrails(report)
+    return report
+
+
+def write_source_native_legacy_cleanup_report(
+    report_path: Path | str = SOURCE_NATIVE_LEGACY_CLEANUP_REPORT_PATH,
+    *,
+    routine_summary: Mapping[str, Any],
+    changed_files: Sequence[str] = (),
+    deleted_files: Sequence[str] = (),
+    explicitly_held_files: Sequence[str] = (),
+    temporary_files_removed: Sequence[str] = (),
+    generated_at: str | None = None,
+) -> dict[str, Any]:
+    report = build_source_native_legacy_cleanup_report(
+        routine_summary=routine_summary,
+        changed_files=changed_files,
+        deleted_files=deleted_files,
+        explicitly_held_files=explicitly_held_files,
+        temporary_files_removed=temporary_files_removed,
+        generated_at=generated_at,
+    )
+    write_json(Path(report_path), report)
+    return report
+
+
+QUALITY_GATE_REPORT_SCHEMA_VERSION = "actual_rag_eval.legacy_real_rag_quality_gate.v1"
+
+
+def _query_id(row: Mapping[str, Any]) -> str:
+    return _clean(row.get("id") or row.get("query_id") or row.get("queryId"))
+
+
+def _contexts_from_row(row: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [dict(context) for context in _as_list(row.get("retrieved_contexts")) if isinstance(context, Mapping)]
+
+
+def _citations_from_row(row: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [dict(citation) for citation in _as_list(row.get("citations")) if isinstance(citation, Mapping)]
+
+
+def _context_identity(row: Mapping[str, Any]) -> str:
+    for key in (
+        "evidence_bundle_id",
+        "source_atom_id",
+        "search_unit_id",
+        "search_view_id",
+        "chunk_id",
+        "doc_id",
+    ):
+        value = _clean(row.get(key))
+        if value:
+            return value
+    text_hash = _clean(row.get("source_text_sha256") or row.get("text_sha256")) or _sha256_text(row.get("text"))
+    return f"text_sha256:{text_hash}" if text_hash else ""
+
+
+def _legacy_context_identity(row: Mapping[str, Any]) -> str:
+    for key in ("search_unit_id", "search_view_id", "chunk_id", "doc_id", "source_atom_id", "evidence_bundle_id"):
+        value = _clean(row.get(key))
+        if value:
+            return value
+    return _context_identity(row)
+
+
+def _context_id_list(rows: Sequence[Mapping[str, Any]]) -> list[str]:
+    seen: set[str] = set()
+    ids: list[str] = []
+    for row in rows:
+        identity = _context_identity(row)
+        if identity and identity not in seen:
+            ids.append(identity)
+            seen.add(identity)
+    return ids
+
+
+def _legacy_context_id_list(rows: Sequence[Mapping[str, Any]]) -> list[str]:
+    seen: set[str] = set()
+    ids: list[str] = []
+    for row in rows:
+        identity = _legacy_context_identity(row)
+        if identity and identity not in seen:
+            ids.append(identity)
+            seen.add(identity)
+    return ids
+
+
+def _field_id_list(rows: Sequence[Mapping[str, Any]], field: str) -> list[str]:
+    seen: set[str] = set()
+    ids: list[str] = []
+    for row in rows:
+        value = _clean(row.get(field))
+        if value and value not in seen:
+            ids.append(value)
+            seen.add(value)
+    return ids
+
+
+def _doc_ids(rows: Sequence[Mapping[str, Any]]) -> set[str]:
+    return {_clean(row.get("doc_id") or row.get("docId") or row.get("document_id")) for row in rows if _clean(row.get("doc_id") or row.get("docId") or row.get("document_id"))}
+
+
+def _text_hashes(rows: Sequence[Mapping[str, Any]]) -> list[str]:
+    seen: set[str] = set()
+    hashes: list[str] = []
+    for row in rows:
+        digest = _clean(row.get("source_text_sha256") or row.get("text_sha256")) or _sha256_text(row.get("text"))
+        if digest and digest not in seen:
+            hashes.append(digest)
+            seen.add(digest)
+    return hashes
+
+
+def _gate_row_text(row: Mapping[str, Any]) -> str:
+    return _clean(
+        row.get("text")
+        or row.get("citation_text")
+        or row.get("display_text")
+        or row.get("embedding_text")
+        or row.get("bm25_text")
+    )
+
+
+def _gate_row_hash(row: Mapping[str, Any]) -> str:
+    return _clean(
+        row.get("source_text_sha256")
+        or row.get("text_sha256")
+        or row.get("cited_text_hash")
+        or row.get("full_text_hash")
+    ) or _sha256_text(_gate_row_text(row))
+
+
+def _gate_answer_surface(answer: str) -> str:
+    text = _clean(answer)
+    marker = "**Short answer:**"
+    if marker in text:
+        text = text.split(marker, 1)[1]
+        for stop_marker in ("**Supporting passages:**", "**Sources:**", "\n\nSupporting passages:", "\n\nSources:"):
+            if stop_marker in text:
+                text = text.split(stop_marker, 1)[0]
+        return _clean(text)
+    return text
+
+
+def _gate_anchor_variants(anchor: str) -> set[str]:
+    normalized = normalize_answer_text(anchor)
+    if not normalized:
+        return set()
+    variants = {normalized}
+    if re.fullmatch(r"[가-힣]+", normalized):
+        for suffix in sorted(KOREAN_GENERIC_SUFFIXES, key=len, reverse=True):
+            if normalized.endswith(suffix) and len(normalized) > len(suffix) + 1:
+                variants.add(normalized[: -len(suffix)])
+    return {variant for variant in variants if variant}
+
+
+def _gate_query_focus_anchors(query: str) -> set[str]:
+    stopwords = _anchor_stopwords() | {
+        normalize_answer_text(value) for value in EVIDENCE_GATE_QUERY_INTENT_STOPWORDS
+    }
+    anchors: set[str] = set()
+    for anchor in _candidate_anchors(query):
+        normalized_anchor = normalize_answer_text(anchor)
+        if not normalized_anchor or _is_generic_anchor(normalized_anchor, stopwords):
+            continue
+        variants = [
+            variant
+            for variant in _gate_anchor_variants(anchor)
+            if variant and not _is_generic_anchor(variant, stopwords) and (re.search(r"\d", variant) or len(variant) >= 2)
+        ]
+        if not variants:
+            continue
+        anchors.add(sorted(variants, key=len)[0])
+    return anchors
+
+
+def _gate_answer_anchors(query: str, answer: str) -> dict[str, Any]:
+    answer_anchors = _candidate_anchors(answer)
+    query_anchors = _candidate_anchors(query)
+    numeric = _numeric_or_date_anchors(answer_anchors)
+    entity_like: set[str] = set()
+    for token in re.findall(r"[A-Za-z][A-Za-z0-9_-]*|[가-힣]{2,}", answer or ""):
+        normalized = normalize_answer_text(token)
+        if not normalized or normalized not in answer_anchors or normalized in numeric:
+            continue
+        if token[:1].isupper() or re.search(r"[가-힣]", token):
+            entity_like.add(normalized)
+    entity = {anchor for anchor in entity_like if anchor not in query_anchors}
+    return {
+        "answer": answer_anchors,
+        "query": query_anchors,
+        "numeric_or_date": numeric,
+        "entity": entity,
+    }
+
+
+def _gate_anchor_hits(anchors: Iterable[str], texts: Sequence[str]) -> set[str]:
+    anchor_set = {anchor for anchor in anchors if anchor}
+    return {anchor for anchor in anchor_set if any(_anchor_in_text([anchor], text) for text in texts)}
+
+
+def _gate_coverage(anchors: Iterable[str], hits: Iterable[str]) -> float:
+    anchor_set = {anchor for anchor in anchors if anchor}
+    if not anchor_set:
+        return 1.0
+    return round(len(set(hits) & anchor_set) / max(1, len(anchor_set)), 6)
+
+
+def _gate_rows_match(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    source_identity_keys = ("evidence_bundle_id", "source_atom_id")
+    left_source_ids = {_clean(left.get(key)) for key in source_identity_keys if _clean(left.get(key))}
+    right_source_ids = {_clean(right.get(key)) for key in source_identity_keys if _clean(right.get(key))}
+    if left_source_ids and right_source_ids and not (left_source_ids & right_source_ids):
+        return False
+    for key in (*source_identity_keys, "chunk_id", "search_unit_id", "search_view_id"):
+        left_value = _clean(left.get(key))
+        right_value = _clean(right.get(key))
+        if left_value and right_value and left_value == right_value:
+            return True
+    left_doc = _clean(left.get("doc_id") or left.get("docId") or left.get("document_id"))
+    right_doc = _clean(right.get("doc_id") or right.get("docId") or right.get("document_id"))
+    left_chunk = _clean(left.get("chunk_id") or left.get("chunkId"))
+    right_chunk = _clean(right.get("chunk_id") or right.get("chunkId"))
+    if left_doc and right_doc and left_doc == right_doc:
+        if not left_chunk and not right_chunk:
+            return True
+        if left_chunk and right_chunk and left_chunk == right_chunk:
+            return True
+    left_hash = _gate_row_hash(left)
+    right_hash = _gate_row_hash(right)
+    return bool(left_hash and right_hash and left_hash == right_hash)
+
+
+def _gate_select_evidence(
+    *,
+    query: str,
+    answer: str,
+    contexts: Sequence[Mapping[str, Any]],
+    citations: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    anchors = _gate_answer_anchors(query, answer)
+    answer_anchors = set(anchors["answer"])
+    numeric = set(anchors["numeric_or_date"])
+    entity = set(anchors["entity"])
+    selected: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for context in contexts:
+        text = _gate_row_text(context)
+        text_hits = _gate_anchor_hits(answer_anchors, [text])
+        numeric_ok = not numeric or bool(text_hits & numeric)
+        entity_ok = not entity or bool(text_hits & entity)
+        required_anchor_ok = numeric_ok and entity_ok
+        answer_overlap = _token_overlap_ratio(answer, text)
+        query_overlap = _token_overlap_ratio(query, text)
+        if text_hits and (
+            required_anchor_ok
+            or (not numeric and not entity and (answer_overlap >= 0.35 or query_overlap >= 0.35))
+        ):
+            identity = _context_identity(context)
+            if identity and identity not in seen:
+                selected.append(dict(context))
+                seen.add(identity)
+    return selected
+
+
+def _gate_citation_validation(
+    *,
+    citation: Mapping[str, Any],
+    citation_index: int,
+    retrieved_contexts: Sequence[Mapping[str, Any]],
+    selected_evidence: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    retrieved_target = next((context for context in retrieved_contexts if _gate_rows_match(citation, context)), None)
+    selected_target = next((context for context in selected_evidence if _gate_rows_match(citation, context)), None)
+    target = selected_target or retrieved_target
+    citation_text = _gate_row_text(citation)
+    target_text = _gate_row_text(target or {}) if isinstance(target, Mapping) else ""
+    target_exists = bool(target)
+    in_retrieved = bool(retrieved_target)
+    in_selected = bool(selected_target)
+    text_supported = False
+    if citation_text and target_text:
+        text_supported = bool(
+            normalize_answer_text(citation_text) in normalize_answer_text(target_text)
+            or _token_overlap_ratio(citation_text, target_text) >= 0.55
+            or _anchor_requirements_satisfied(_candidate_anchors(citation_text), target_text)
+        )
+    elif target_exists and not citation_text:
+        text_supported = True
+
+    if not citation_text and not any(_clean(citation.get(key)) for key in ("doc_id", "chunk_id", "source_atom_id", "evidence_bundle_id")):
+        status = "not_comparable"
+        reason = "citation_missing_target_and_text"
+    elif in_selected and text_supported:
+        status = "supported"
+        reason = ""
+    elif in_selected and not text_supported:
+        status = "unsupported_text"
+        reason = "citation_text_not_supported_by_selected_evidence"
+    elif in_retrieved and not in_selected:
+        status = "retrieved_context_only_diagnostic"
+        reason = "citation_target_not_in_selected_evidence"
+    elif target_exists:
+        status = "wrong_target"
+        reason = "citation_target_not_selected"
+    else:
+        status = "missing_target"
+        reason = "citation_target_not_found"
+
+    return {
+        "citation_index": citation_index,
+        "cited_doc_id": _clean(citation.get("doc_id") or citation.get("docId") or citation.get("document_id")),
+        "cited_chunk_id": _clean(citation.get("chunk_id") or citation.get("chunkId")),
+        "cited_source_atom_id": _clean(citation.get("source_atom_id")),
+        "cited_evidence_bundle_id": _clean(citation.get("evidence_bundle_id")),
+        "cited_text_hash": _gate_row_hash(citation),
+        "citation_target_exists": target_exists,
+        "citation_target_in_retrieved_contexts": in_retrieved,
+        "citation_target_in_selected_evidence": in_selected,
+        "citation_text_supported_by_target": text_supported,
+        "citation_support_status": status,
+        "citation_rejection_reason": reason,
+    }
+
+
+def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]:
+    query = _clean(row.get("query"))
+    answer = _gate_answer_surface(_clean(row.get("generated_answer")))
+    contexts = _contexts_from_row(row)
+    citations = _citations_from_row(row)
+    selected = _gate_select_evidence(query=query, answer=answer, contexts=contexts, citations=citations)
+    selected_texts = [_gate_row_text(context) for context in selected if _gate_row_text(context)]
+    anchors = _gate_answer_anchors(query, answer)
+    answer_anchors = set(anchors["answer"])
+    numeric_anchors = set(anchors["numeric_or_date"])
+    entity_anchors = set(anchors["entity"])
+    query_focus_anchors = _gate_query_focus_anchors(query)
+    query_focus_texts = [answer, *selected_texts]
+    answer_hits = _gate_anchor_hits(answer_anchors, selected_texts)
+    numeric_hits = _gate_anchor_hits(numeric_anchors, selected_texts)
+    entity_hits = _gate_anchor_hits(entity_anchors, selected_texts)
+    query_focus_hits = _gate_anchor_hits(query_focus_anchors, query_focus_texts)
+    missing_answer_anchors = sorted(answer_anchors - answer_hits)
+    missing_numeric = sorted(numeric_anchors - numeric_hits)
+    missing_entity = sorted(entity_anchors - entity_hits)
+    missing_query_focus = sorted(query_focus_anchors - query_focus_hits)
+    query_anchor_coverage = _gate_coverage(query_focus_anchors, query_focus_hits)
+    missing_required_query_focus = bool(
+        query_focus_anchors
+        and (
+            not query_focus_hits
+            or (
+                len(query_focus_anchors) > 1
+                and query_anchor_coverage < EVIDENCE_GATE_MIN_QUERY_ANCHOR_COVERAGE
+            )
+        )
+    )
+    unsupported_answer_anchors = sorted(set(missing_numeric) | set(missing_entity) | (set(missing_query_focus) if missing_required_query_focus else set()))
+    citation_validations = [
+        _gate_citation_validation(
+            citation=citation,
+            citation_index=index,
+            retrieved_contexts=contexts,
+            selected_evidence=selected,
+        )
+        for index, citation in enumerate(citations, start=1)
+    ]
+    supported_citations = [row for row in citation_validations if row["citation_support_status"] == "supported"]
+    retrieved_context_only_citations = [
+        row for row in citation_validations if row["citation_support_status"] == "retrieved_context_only_diagnostic"
+    ]
+    validation_reasons: list[str] = []
+    conflicting_reasons: list[str] = []
+    if not answer:
+        validation_reasons.append("missing_generated_answer")
+    if not contexts:
+        validation_reasons.append("no_retrieved_evidence_candidates")
+    if not selected:
+        validation_reasons.append("no_selected_evidence")
+    if missing_numeric:
+        validation_reasons.append("missing_numeric_or_date_anchor")
+    if missing_entity:
+        validation_reasons.append("missing_entity_anchor")
+    if missing_required_query_focus:
+        validation_reasons.append("missing_query_anchor")
+    if citations and not supported_citations:
+        validation_reasons.append("citation_unsupported")
+    selected_norm = " ".join(normalize_answer_text(text) for text in selected_texts)
+    for anchor in numeric_anchors:
+        if anchor and anchor not in selected_norm and re.search(r"\d", selected_norm):
+            conflicting_reasons.append(f"numeric_or_date_anchor_conflict:{anchor}")
+    if conflicting_reasons:
+        validation_reasons.append("conflicting_evidence")
+
+    citation_below_threshold = bool(citations and not supported_citations)
+    if not contexts:
+        status = "insufficient"
+    elif conflicting_reasons:
+        status = "conflicting"
+    elif not selected or missing_numeric or missing_entity or missing_required_query_focus or citation_below_threshold:
+        status = "insufficient"
+    elif not answer_anchors and answer and selected:
+        status = "sufficient"
+    elif _gate_coverage(answer_anchors, answer_hits) >= 0.65:
+        status = "sufficient"
+    else:
+        status = "insufficient"
+        if "missing_answer_anchors" not in validation_reasons:
+            validation_reasons.append("missing_answer_anchors")
+
+    return {
+        "evidence_package_status": status,
+        "evidence_support_score": _gate_coverage(answer_anchors, answer_hits),
+        "answer_anchor_coverage": _gate_coverage(answer_anchors, answer_hits),
+        "query_anchor_coverage": query_anchor_coverage,
+        "numeric_or_date_anchor_coverage": _gate_coverage(numeric_anchors, numeric_hits),
+        "entity_anchor_coverage": _gate_coverage(entity_anchors, entity_hits),
+        "selected_evidence_count": len(selected),
+        "rejected_evidence_count": max(0, len(contexts) - len(selected)),
+        "missing_answer_anchors": missing_answer_anchors,
+        "missing_query_anchors": missing_query_focus,
+        "unsupported_answer_anchors": unsupported_answer_anchors,
+        "conflicting_evidence_reasons": conflicting_reasons,
+        "validation_reasons": sorted(set(validation_reasons)),
+        "validator_version": EVIDENCE_GATE_VALIDATOR_VERSION,
+        "retrieved_evidence_candidates": [dict(context) for context in contexts],
+        "selected_evidence": selected,
+        "citation_targets": [dict(citation) for citation in citations],
+        "evidence_text_hashes": _text_hashes([*contexts, *citations]),
+        "citation_validations": citation_validations,
+        "citation_supported_count": len(supported_citations),
+        "citation_retrieved_context_only_diagnostic_count": len(retrieved_context_only_citations),
+        "citation_wrong_target_count": sum(1 for row in citation_validations if row["citation_support_status"] == "wrong_target"),
+        "citation_missing_target_count": sum(1 for row in citation_validations if row["citation_support_status"] == "missing_target"),
+        "citation_unsupported_text_count": sum(1 for row in citation_validations if row["citation_support_status"] == "unsupported_text"),
+        "validator_uses_expected_fields": False,
+        "validator_uses_gold_fields": False,
+        "validator_uses_legacy_fields": False,
+    }
+
+
+def _evidence_gate_decision(validation: Mapping[str, Any], *, answer: str) -> tuple[str, str]:
+    status = _clean(validation.get("evidence_package_status"))
+    reasons = set(_as_list(validation.get("validation_reasons")))
+    if not answer:
+        return "not_comparable", "missing_generated_answer"
+    if status == "sufficient":
+        return "allow_answer", ""
+    if status == "conflicting":
+        return "block_unsupported_answer", "conflicting_evidence"
+    if "missing_numeric_or_date_anchor" in reasons:
+        return "block_unsupported_answer", "missing_numeric_or_date_anchor"
+    if "missing_entity_anchor" in reasons:
+        return "block_unsupported_answer", "missing_entity_anchor"
+    if "missing_query_anchor" in reasons:
+        return "block_unsupported_answer", "insufficient_evidence"
+    if "citation_unsupported" in reasons:
+        return "block_unsupported_answer", "citation_unsupported"
+    if status == "unresolved":
+        return "block_unsupported_answer", "unresolved_evidence_package"
+    return "block_unsupported_answer", "insufficient_evidence"
+
+
+def _apply_evidence_gate_to_row(row: Mapping[str, Any], *, mode: str) -> dict[str, Any]:
+    normalized_mode = _clean(mode).lower() or "off"
+    output = dict(row)
+    original_answer = _clean(output.get("generated_answer"))
+    output[INTERNAL_PRE_GATE_ANSWER_KEY] = original_answer
+    validation = validate_evidence_package_for_gate(output)
+    decision, reason = _evidence_gate_decision(validation, answer=original_answer)
+    modified = False
+    if normalized_mode == "off":
+        decision = "allow_answer" if original_answer else "not_comparable"
+        reason = ""
+    blocked_decision = decision == "block_unsupported_answer"
+    would_block_unsupported = normalized_mode == "diagnostic" and blocked_decision
+    unsupported_blocked = normalized_mode == "enforce" and blocked_decision
+    if normalized_mode == "enforce" and blocked_decision and not abstains(original_answer):
+        output["generated_answer"] = BOUNDED_EVIDENCE_ABSTENTION_ANSWER
+        modified = True
+    gated_answer = _clean(output.get("generated_answer"))
+    failure_labels = set(output.get("failure_labels") or [])
+    status = _clean(validation.get("evidence_package_status"))
+    if normalized_mode == "off":
+        failure_labels.add("gate_policy_not_applicable")
+    elif status == "sufficient" and decision == "allow_answer":
+        failure_labels.add("supported_answer_allowed")
+    elif status == "sufficient" and modified:
+        failure_labels.add("sufficient_evidence_over_abstain")
+    elif status == "conflicting":
+        failure_labels.add("evidence_package_conflicting")
+    elif status == "unresolved":
+        failure_labels.add("evidence_package_unresolved")
+    elif status == "insufficient":
+        failure_labels.add("evidence_package_insufficient")
+    if blocked_decision and normalized_mode != "off":
+        failure_labels.add("answer_unsupported_by_evidence")
+    if modified:
+        failure_labels.add("abstained_due_to_insufficient_evidence")
+    if any(row.get("citation_support_status") == "retrieved_context_only_diagnostic" for row in validation["citation_validations"]):
+        failure_labels.add("citation_retrieved_context_only_diagnostic")
+    if any(row.get("citation_support_status") in {"wrong_target", "missing_target", "unsupported_text"} for row in validation["citation_validations"]):
+        failure_labels.add("citation_unsupported_by_evidence")
+    gate = {
+        **validation,
+        "evidence_gate_mode": normalized_mode,
+        "answer_gate_decision": decision,
+        "answer_modified_by_gate": modified,
+        "original_generated_answer_hash": _sha256_text(original_answer),
+        "gated_answer_hash": _sha256_text(gated_answer),
+        "abstention_reason": reason,
+        "would_block_unsupported_answer": would_block_unsupported,
+        "unsupported_answer_blocked": unsupported_blocked,
+        "retrieval_loop_triggered": False,
+        "gate_uses_expected_fields": False,
+        "gate_uses_gold_fields": False,
+        "gate_uses_legacy_fields": False,
+    }
+    output.update(
+        {
+            "evidence_gate_mode": normalized_mode,
+            "answer_gate_decision": decision,
+            "answer_modified_by_gate": modified,
+            "original_generated_answer_hash": gate["original_generated_answer_hash"],
+            "gated_answer_hash": gate["gated_answer_hash"],
+            "abstention_reason": reason,
+            "would_block_unsupported_answer": would_block_unsupported,
+            "unsupported_answer_blocked": unsupported_blocked,
+            "retrieval_loop_triggered": False,
+            "gate_uses_expected_fields": False,
+            "gate_uses_gold_fields": False,
+            "gate_uses_legacy_fields": False,
+            "evidence_gate": gate,
+            "failure_labels": sorted(failure_labels),
+        }
+    )
+    return output
+
+
+def build_evidence_gate_summary(rows: Sequence[Mapping[str, Any]], *, mode: str) -> dict[str, Any]:
+    normalized_mode = _clean(mode).lower() or "off"
+    item_count = len(rows)
+    gates = [row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {} for row in rows]
+    unsupported_before = sum(1 for gate in gates if gate.get("answer_gate_decision") in {"block_unsupported_answer", "abstain"})
+    unsupported_after = sum(
+        1
+        for row, gate in zip(rows, gates)
+        if gate.get("answer_gate_decision") in {"block_unsupported_answer", "abstain"}
+        and not (normalized_mode == "enforce" and abstains(_clean(row.get("generated_answer"))))
+    )
+    status_counts = Counter(_clean(gate.get("evidence_package_status")) for gate in gates)
+    allowed = sum(1 for gate in gates if gate.get("answer_gate_decision") == "allow_answer")
+    abstained = sum(1 for row in rows if row.get("answer_modified_by_gate") and abstains(_clean(row.get("generated_answer"))))
+    actual_blocked_count = sum(1 for gate in gates if gate.get("unsupported_answer_blocked"))
+    would_block_count = sum(1 for gate in gates if gate.get("would_block_unsupported_answer"))
+    sufficient_allowed = sum(
+        1
+        for gate in gates
+        if gate.get("evidence_package_status") == "sufficient" and gate.get("answer_gate_decision") == "allow_answer"
+    )
+    over_abstain = sum(
+        1
+        for row, gate in zip(rows, gates)
+        if gate.get("evidence_package_status") == "sufficient" and row.get("answer_modified_by_gate")
+    )
+    return {
+        "evidence_gate_mode": normalized_mode,
+        "validator_version": EVIDENCE_GATE_VALIDATOR_VERSION,
+        "item_count": item_count,
+        "sufficient_evidence_package_count": status_counts.get("sufficient", 0),
+        "insufficient_evidence_package_count": status_counts.get("insufficient", 0),
+        "conflicting_evidence_package_count": status_counts.get("conflicting", 0),
+        "unresolved_evidence_package_count": status_counts.get("unresolved", 0),
+        "allowed_answer_count": allowed,
+        "abstained_count": abstained,
+        "unsupported_answer_blocked_count": actual_blocked_count,
+        "would_abstain_count": would_block_count if normalized_mode == "diagnostic" else 0,
+        "would_block_unsupported_answer_count": would_block_count if normalized_mode == "diagnostic" else 0,
+        "citation_supported_count": sum(int(gate.get("citation_supported_count") or 0) for gate in gates),
+        "citation_retrieved_context_only_diagnostic_count": sum(
+            int(gate.get("citation_retrieved_context_only_diagnostic_count") or 0) for gate in gates
+        ),
+        "citation_wrong_target_count": sum(int(gate.get("citation_wrong_target_count") or 0) for gate in gates),
+        "citation_missing_target_count": sum(int(gate.get("citation_missing_target_count") or 0) for gate in gates),
+        "citation_unsupported_text_count": sum(int(gate.get("citation_unsupported_text_count") or 0) for gate in gates),
+        "unsupported_answer_rate_before_gate": None if item_count == 0 else round(unsupported_before / item_count, 6),
+        "unsupported_answer_rate_after_gate": None if item_count == 0 else round(unsupported_after / item_count, 6),
+        "insufficient_evidence_abstained_count": sum(
+            1
+            for row, gate in zip(rows, gates)
+            if gate.get("evidence_package_status") == "insufficient" and row.get("answer_modified_by_gate")
+        ),
+        "sufficient_evidence_allowed_count": sufficient_allowed,
+        "sufficient_evidence_over_abstain_count": over_abstain,
+        "gate_policy_not_applicable_count": sum(
+            1
+            for row in rows
+            if normalized_mode == "off" or "gate_policy_not_applicable" in set(row.get("failure_labels") or [])
+        ),
+        "guardrail_status": {
+            "gate_uses_expected_fields": False,
+            "gate_uses_gold_fields": False,
+            "gate_uses_legacy_fields": False,
+            "retrieval_loop_triggered": False,
+        },
+    }
+
+
+def apply_evidence_gate_to_outputs(
+    raw_outputs: Sequence[Mapping[str, Any]],
+    *,
+    mode: str = "off",
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    normalized_mode = _clean(mode).lower() or "off"
+    if normalized_mode not in {"off", "diagnostic", "enforce"}:
+        raise DatasetSchemaError(f"unsupported evidence gate mode: {mode}")
+    rows = [_apply_evidence_gate_to_row(row, mode=normalized_mode) for row in raw_outputs]
+    return rows, build_evidence_gate_summary(rows, mode=normalized_mode)
+
+
+def _answer_matches_expected_deterministic(answer: str, item: EvalItem) -> bool:
+    if answer_correct(answer, expected_answer=item.expected_answer, aliases=item.expected_answer_aliases):
+        return True
+    answer_norm = normalize_answer_text(answer)
+    expected_values = [item.expected_answer, *item.expected_answer_aliases]
+    expected_norms = [normalize_answer_text(value) for value in expected_values if normalize_answer_text(value)]
+    if any(expected_norm and expected_norm in answer_norm for expected_norm in expected_norms):
+        return True
+    if any(answer_norm and answer_norm in expected_norm for expected_norm in expected_norms):
+        return True
+    anchors = _candidate_anchors(*expected_values)
+    if anchors and _anchor_requirements_satisfied(anchors, answer):
+        numeric_anchors = _numeric_or_date_anchors(anchors)
+        non_numeric = anchors - numeric_anchors
+        return bool(numeric_anchors or non_numeric)
+    return False
+
+
+def _answers_equivalent_deterministic(left: str, right: str, item: EvalItem) -> bool:
+    left_norm = normalize_answer_text(left)
+    right_norm = normalize_answer_text(right)
+    if left_norm and left_norm == right_norm:
+        return True
+    if left_norm and right_norm and (left_norm in right_norm or right_norm in left_norm):
+        return True
+    if _answer_matches_expected_deterministic(left, item) and _answer_matches_expected_deterministic(right, item):
+        return True
+    if abstains(left) and abstains(right):
+        return True
+    anchors = _candidate_anchors(item.expected_answer, *item.expected_answer_aliases)
+    return bool(anchors and _anchor_requirements_satisfied(anchors, left) and _anchor_requirements_satisfied(anchors, right))
+
+
+def _required_evidence_missing(item: EvalItem, rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    missing: list[dict[str, Any]] = []
+    for evidence in _required_evidence(item):
+        anchors = _evidence_match_anchors(item, evidence)
+        if any(_evidence_matches_row(evidence, row) or _weak_evidence_matches_row(evidence, row, anchors=anchors) for row in rows):
+            continue
+        missing.append(evidence.to_dict())
+    return missing
+
+
+def _support_status(item: EvalItem, contexts: Sequence[Mapping[str, Any]], citations: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    context_hit = bool(item.has_expected_evidence and not _required_evidence_missing(item, contexts))
+    citation_hit = bool(item.has_expected_evidence and citations and not _required_evidence_missing(item, citations))
+    citation_points_to_context = False
+    if citations and contexts:
+        for citation in citations:
+            citation_key = _context_key(citation)[:2]
+            if any(citation_key == _context_key(context)[:2] and any(citation_key) for context in contexts):
+                citation_points_to_context = True
+                break
+            citation_text = _clean(citation.get("text"))
+            if citation_text and any(
+                _weak_evidence_matches_row(
+                    ExpectedEvidence(text=citation_text),
+                    context,
+                    anchors=_candidate_anchors(citation_text),
+                )
+                for context in contexts
+            ):
+                citation_points_to_context = True
+                break
+    return {
+        "expected_evidence_hit": context_hit,
+        "citation_expected_evidence_hit": citation_hit,
+        "citation_points_to_retrieved_context": citation_points_to_context,
+        "supported": bool(context_hit or citation_hit),
+    }
+
+
+def _evidence_package_for_item(item: EvalItem, real_row: Mapping[str, Any]) -> dict[str, Any]:
+    contexts = _contexts_from_row(real_row)
+    citations = _citations_from_row(real_row)
+    citation_ids = set(_context_id_list(citations))
+    selected = [
+        dict(context)
+        for context in contexts
+        if _context_identity(context) in citation_ids
+        or any(
+            _evidence_matches_row(evidence, context)
+            or _weak_evidence_matches_row(evidence, context, anchors=_evidence_match_anchors(item, evidence))
+            for evidence in _required_evidence(item)
+        )
+    ]
+    resolution = real_row.get("expected_evidence_resolution") if isinstance(real_row.get("expected_evidence_resolution"), Mapping) else {}
+    low_confidence: list[dict[str, Any]] = []
+    unresolved = False
+    for resolution_row in _as_list(resolution.get("rows")):
+        if not isinstance(resolution_row, Mapping):
+            continue
+        if not resolution_row.get("resolved"):
+            unresolved = True
+        for candidate in _as_list(resolution_row.get("candidates")):
+            if isinstance(candidate, Mapping) and _clean(candidate.get("confidence")) in {"low", "medium"}:
+                low_confidence.append(dict(candidate))
+    missing = _required_evidence_missing(item, [*contexts, *citations])
+    support = _support_status(item, contexts, citations)
+    if not item.has_expected_evidence:
+        status = "not_comparable"
+    elif support["supported"] and not missing:
+        status = "sufficient"
+    elif missing:
+        status = "insufficient"
+    elif unresolved:
+        status = "unresolved"
+    elif contexts:
+        status = "conflicting"
+    else:
+        status = "insufficient"
+    return {
+        "retrieved_evidence_candidates": contexts,
+        "selected_evidence": selected,
+        "citation_targets": citations,
+        "evidence_text_hashes": _text_hashes([*contexts, *citations]),
+        "rejected_or_low_confidence_evidence": low_confidence,
+        "missing_required_evidence": missing,
+        "evidence_package_status": status,
+        "support": support,
+    }
+
+
+def _diagnostic_critic_for_item(
+    *,
+    real_supported: bool,
+    citation_supported_by_evidence: bool,
+    citation_points_to_retrieved_context: bool,
+    evidence_package_status: str,
+    real_matches_expected: bool,
+    real_answer: str,
+) -> dict[str, Any]:
+    evidence_sufficient = evidence_package_status == "sufficient"
+    should_abstain = bool((not real_matches_expected or not real_supported or not evidence_sufficient) and not abstains(real_answer))
+    if evidence_sufficient and real_matches_expected and real_supported:
+        reason = ""
+    elif not evidence_sufficient:
+        reason = "evidence_package_not_sufficient"
+    elif not real_matches_expected:
+        reason = "answer_not_deterministically_supported_by_gold"
+    else:
+        reason = "citation_or_answer_support_incomplete"
+    return {
+        "answer_supported_by_evidence": bool(real_supported),
+        "citation_supported_by_evidence": bool(citation_supported_by_evidence),
+        "citation_points_to_retrieved_context_diagnostic_only": bool(citation_points_to_retrieved_context),
+        "evidence_sufficient": evidence_sufficient,
+        "needs_more_retrieval": not evidence_sufficient,
+        "should_abstain": should_abstain,
+        "critic_rejection_reason": reason,
+        "critic_result_tier": "diagnostic",
+        "retrieval_loop_triggered": False,
+    }
+
+
+def _quality_gate_guardrail_status(real_report: Mapping[str, Any]) -> dict[str, Any]:
+    guardrails = real_report.get("guardrails") if isinstance(real_report.get("guardrails"), Mapping) else {}
+    retrieval_surface = real_report.get("retrieval_surface") if isinstance(real_report.get("retrieval_surface"), Mapping) else {}
+    layered = real_report.get("source_native_layered_retrieval") if isinstance(real_report.get("source_native_layered_retrieval"), Mapping) else {}
+    evidence_gate = real_report.get("evidence_gate") if isinstance(real_report.get("evidence_gate"), Mapping) else {}
+    evidence_gate_guardrails = (
+        evidence_gate.get("guardrail_status")
+        if isinstance(evidence_gate.get("guardrail_status"), Mapping)
+        else {}
+    )
+    expected_fields_closed = not any(
+        bool(guardrails.get(key) or real_report.get(key) or layered.get(key))
+        for key in (
+            "expected_fields_used_for_candidate_generation",
+            "gold_fields_used_for_candidate_generation",
+            "qrels_used_for_candidate_generation",
+            "answerability_labels_used_for_candidate_generation",
+            "ids_used_for_candidate_generation",
+            "baseline_topk_used_for_candidate_generation",
+        )
+    )
+    gate_enforcement_closed = not any(
+        bool(evidence_gate_guardrails.get(key) or real_report.get(key) or guardrails.get(key))
+        for key in (
+            "gate_uses_expected_fields",
+            "gate_uses_gold_fields",
+            "gate_uses_legacy_fields",
+            "retrieval_loop_triggered",
+            "evidence_gate_retrieval_loop_triggered",
+        )
+    )
+    source_native_selected = bool(
+        retrieval_surface.get("selected") == "source_native"
+        or retrieval_surface.get("source_native_selected")
+        or layered.get("selected_surface") == "source_native"
+    )
+    source_native_units_only = bool(
+        layered.get("source_native_units_only") is True
+        or (
+            source_native_selected
+            and not bool(retrieval_surface.get("searchunit_searchview_candidate_surface_enabled"))
+            and not bool(retrieval_surface.get("auto_fallback_to_searchunit_searchview"))
+        )
+    )
+    searchunit_searchview_used = bool(
+        retrieval_surface.get("searchunit_searchview_candidate_surface_enabled")
+        or retrieval_surface.get("auto_fallback_to_searchunit_searchview")
+        or retrieval_surface.get("legacy_surface_comparison_enabled")
+        or real_report.get("searchunit_searchview_candidate_surface_enabled")
+        or real_report.get("auto_fallback_to_searchunit_searchview")
+        or real_report.get("legacy_surface_comparison_enabled")
+        or guardrails.get("searchunit_searchview_candidate_surface_enabled")
+        or guardrails.get("auto_fallback_to_searchunit_searchview")
+        or guardrails.get("legacy_surface_comparison_enabled")
+    )
+    status = {
+        "gold_qrels_labels_not_mutated": not any(
+            bool(guardrails.get(key) or real_report.get(key))
+            for key in (
+                "gold_mutation",
+                "qrels_mutation",
+                "label_mutation",
+                "answerability_label_mutation",
+                "expected_answer_mutation",
+                "expected_evidence_mutation",
+                "denominator_mutation",
+                "gold_or_qrels_mutation",
+            )
+        ),
+        "expected_fields_not_used_for_candidate_generation": expected_fields_closed,
+        "expected_gold_legacy_not_used_for_evidence_gate_enforcement": gate_enforcement_closed,
+        "legacy_outputs_not_used_for_candidate_generation": not bool(
+            guardrails.get("baseline_topk_used_for_candidate_generation")
+            or real_report.get("baseline_topk_used_for_candidate_generation")
+            or layered.get("baseline_topk_used_for_candidate_generation")
+        ),
+        "searchunit_searchview_not_used_in_real_rag_lane": not searchunit_searchview_used,
+        "source_native_selected": source_native_selected,
+        "source_native_units_only": source_native_units_only,
+        "production_namespace_untouched": not bool(guardrails.get("protected_namespaces_touched") or real_report.get("protected_namespaces_touched")),
+        "raw_prompt_response_payloads_not_written": not bool(
+            guardrails.get("raw_prompt_payload_written")
+            or guardrails.get("raw_response_payload_written")
+            or real_report.get("raw_prompt_payload_written")
+            or real_report.get("raw_response_payload_written")
+        ),
+        "official_metric_closed": not bool(guardrails.get("official_metric") or real_report.get("official_metric")),
+    }
+    violations = [key for key, value in status.items() if value is not True]
+    status["valid"] = not violations
+    status["violations"] = violations
+    return status
+
+
+def _answer_delta_category(
+    *,
+    legacy_answer: str,
+    real_answer: str,
+    item: EvalItem,
+    legacy_matches_expected: bool,
+    real_matches_expected: bool,
+    same_support: bool,
+    different_support_but_valid: bool,
+    baseline_missing: bool,
+) -> str:
+    if baseline_missing:
+        return "not_comparable_missing_baseline"
+    if not bool(getattr(item, "has_expected_answer", bool(_clean(getattr(item, "expected_answer", ""))))):
+        return "not_comparable_missing_gold"
+    if abstains(real_answer) and not abstains(legacy_answer):
+        return "real_abstained_legacy_answered"
+    if abstains(legacy_answer) and not abstains(real_answer):
+        return "legacy_abstained_real_answered"
+    exact_same = _clean(legacy_answer) == _clean(real_answer) and bool(_clean(real_answer))
+    normalized_same = normalize_answer_text(legacy_answer) == normalize_answer_text(real_answer) and bool(normalize_answer_text(real_answer))
+    equivalent = _answers_equivalent_deterministic(legacy_answer, real_answer, item)
+    if exact_same or normalized_same:
+        return "same_answer_same_support" if same_support else "same_answer_different_support"
+    if equivalent:
+        if legacy_matches_expected and real_matches_expected and not same_support and not different_support_but_valid:
+            return "both_correct_different_wording"
+        return "equivalent_answer_same_support" if same_support else "equivalent_answer_different_support"
+    if legacy_matches_expected and not real_matches_expected:
+        return "legacy_correct_real_wrong"
+    if real_matches_expected and not legacy_matches_expected:
+        return "legacy_wrong_real_correct"
+    if legacy_matches_expected and real_matches_expected:
+        return "both_correct_different_wording"
+    return "both_wrong_same" if normalized_same else "both_wrong_different"
+
+
+def _delta_category_for_support(
+    *,
+    legacy_supported: bool,
+    real_supported: bool,
+    same_support: bool,
+    baseline_missing: bool,
+    missing_gold: bool,
+) -> str:
+    if baseline_missing:
+        return "not_comparable_missing_baseline"
+    if missing_gold:
+        return "not_comparable_missing_gold"
+    if legacy_supported and real_supported and same_support:
+        return "same_support"
+    if legacy_supported and real_supported:
+        return "different_support_but_valid"
+    if legacy_supported and not real_supported:
+        return "legacy_supported_real_unsupported"
+    if real_supported and not legacy_supported:
+        return "legacy_unsupported_real_supported"
+    return "both_unsupported"
+
+
+def build_legacy_real_rag_quality_gate_report(
+    *,
+    gold_items: Sequence[EvalItem],
+    existing_gold_set_path: Path | str,
+    legacy_baseline_report: Mapping[str, Any],
+    legacy_baseline_path: Path | str,
+    real_rag_report: Mapping[str, Any],
+    real_rag_report_path: Path | str,
+    generated_at: str | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    legacy_items = [
+        dict(row)
+        for row in _as_list(legacy_baseline_report.get("items"))
+        if isinstance(row, Mapping)
+    ]
+    real_items = [
+        dict(row)
+        for row in _as_list(real_rag_report.get("items"))
+        if isinstance(row, Mapping)
+    ]
+    legacy_by_id = {_query_id(row): row for row in legacy_items}
+    real_by_id = {_query_id(row): row for row in real_items}
+    guardrail_status = _quality_gate_guardrail_status(real_rag_report)
+    rows: list[dict[str, Any]] = []
+    not_comparable_reasons: Counter[str] = Counter()
+    for item in gold_items:
+        legacy_row = legacy_by_id.get(item.id, {})
+        real_row = real_by_id.get(item.id, {})
+        legacy_contexts = _contexts_from_row(legacy_row)
+        real_contexts = _contexts_from_row(real_row)
+        legacy_citations = _citations_from_row(legacy_row)
+        real_citations = _citations_from_row(real_row)
+        real_gate = real_row.get("evidence_gate") if isinstance(real_row.get("evidence_gate"), Mapping) else {}
+        legacy_answer = _clean(legacy_row.get("generated_answer"))
+        real_answer = _clean(real_row.get("generated_answer"))
+        real_answer_before_gate = _clean(real_row.get(INTERNAL_PRE_GATE_ANSWER_KEY)) or real_answer
+        baseline_missing = not bool(legacy_row)
+        real_missing = not bool(real_row)
+        evidence_package = _evidence_package_for_item(item, real_row)
+        legacy_support = _support_status(item, legacy_contexts, legacy_citations)
+        real_support = evidence_package["support"]
+        legacy_matches_expected = _answer_matches_expected_deterministic(legacy_answer, item)
+        real_matches_expected_before_gate = _answer_matches_expected_deterministic(real_answer_before_gate, item)
+        real_matches_expected = _answer_matches_expected_deterministic(real_answer, item)
+        legacy_doc_ids = _doc_ids([*legacy_contexts, *legacy_citations])
+        real_doc_ids = _doc_ids([*real_contexts, *real_citations])
+        source_atom_overlap = bool(
+            set(_field_id_list([*legacy_contexts, *legacy_citations], "source_atom_id"))
+            & set(_field_id_list([*real_contexts, *real_citations], "source_atom_id"))
+        )
+        evidence_bundle_overlap = bool(
+            set(_field_id_list([*legacy_contexts, *legacy_citations], "evidence_bundle_id"))
+            & set(_field_id_list([*real_contexts, *real_citations], "evidence_bundle_id"))
+        )
+        text_hash_overlap = bool(set(_text_hashes([*legacy_contexts, *legacy_citations])) & set(_text_hashes([*real_contexts, *real_citations])))
+        normalized_text_overlap = bool(
+            {
+                normalize_answer_text(_clean(row.get("text")))
+                for row in [*legacy_contexts, *legacy_citations]
+                if normalize_answer_text(_clean(row.get("text")))
+            }
+            & {
+                normalize_answer_text(_clean(row.get("text")))
+                for row in [*real_contexts, *real_citations]
+                if normalize_answer_text(_clean(row.get("text")))
+            }
+        )
+        same_support = bool(
+            legacy_support["supported"]
+            and real_support["supported"]
+            and (legacy_doc_ids & real_doc_ids or source_atom_overlap or evidence_bundle_overlap or text_hash_overlap or normalized_text_overlap)
+        )
+        different_support_but_valid = bool(legacy_support["supported"] and real_support["supported"] and not same_support)
+        answer_delta = _answer_delta_category(
+            legacy_answer=legacy_answer,
+            real_answer=real_answer,
+            item=item,
+            legacy_matches_expected=legacy_matches_expected,
+            real_matches_expected=real_matches_expected,
+            same_support=same_support,
+            different_support_but_valid=different_support_but_valid,
+            baseline_missing=baseline_missing,
+        )
+        answer_delta_before_gate = _answer_delta_category(
+            legacy_answer=legacy_answer,
+            real_answer=real_answer_before_gate,
+            item=item,
+            legacy_matches_expected=legacy_matches_expected,
+            real_matches_expected=real_matches_expected_before_gate,
+            same_support=same_support,
+            different_support_but_valid=different_support_but_valid,
+            baseline_missing=baseline_missing,
+        )
+        if real_missing:
+            answer_delta = "not_comparable_missing_baseline"
+            answer_delta_before_gate = "not_comparable_missing_baseline"
+        evidence_delta = _delta_category_for_support(
+            legacy_supported=bool(legacy_support["supported"]),
+            real_supported=bool(real_support["supported"]),
+            same_support=same_support,
+            baseline_missing=baseline_missing or real_missing,
+            missing_gold=not item.has_expected_evidence,
+        )
+        citation_delta = _delta_category_for_support(
+            legacy_supported=bool(legacy_support["citation_expected_evidence_hit"]),
+            real_supported=bool(real_support["citation_expected_evidence_hit"]),
+            same_support=same_support,
+            baseline_missing=baseline_missing or real_missing,
+            missing_gold=not item.has_expected_evidence,
+        )
+        if answer_delta.startswith("not_comparable"):
+            not_comparable_reasons[answer_delta] += 1
+        critic = _diagnostic_critic_for_item(
+            real_supported=bool(real_support["supported"]),
+            citation_supported_by_evidence=bool(real_support["citation_expected_evidence_hit"]),
+            citation_points_to_retrieved_context=bool(real_support["citation_points_to_retrieved_context"]),
+            evidence_package_status=evidence_package["evidence_package_status"],
+            real_matches_expected=real_matches_expected,
+            real_answer=real_answer,
+        )
+        rows.append(
+            {
+                "query_id": item.id,
+                "query": item.query,
+                "expected_answer": item.expected_answer,
+                "expected_answer_aliases": list(item.expected_answer_aliases),
+                "expected_evidence": [evidence.to_dict() for evidence in item.expected_evidence],
+                "answerability_label": item.answerability if item.has_answerability_label else "",
+                "legacy_answer": legacy_answer,
+                "real_rag_answer": real_answer,
+                "legacy_citations": legacy_citations,
+                "real_rag_citations": real_citations,
+                "legacy_retrieved_context_ids": _legacy_context_id_list(legacy_contexts),
+                "real_rag_source_atom_ids": _field_id_list(real_contexts, "source_atom_id"),
+                "real_rag_evidence_bundle_ids": _field_id_list(real_contexts, "evidence_bundle_id"),
+                "legacy_failure_labels": list(legacy_row.get("failure_labels") or []),
+                "real_rag_failure_labels": list(real_row.get("failure_labels") or []),
+                "retrieved_evidence_candidates": evidence_package["retrieved_evidence_candidates"],
+                "selected_evidence": evidence_package["selected_evidence"],
+                "citation_targets": evidence_package["citation_targets"],
+                "evidence_text_hashes": evidence_package["evidence_text_hashes"],
+                "rejected_or_low_confidence_evidence": evidence_package["rejected_or_low_confidence_evidence"],
+                "missing_required_evidence": evidence_package["missing_required_evidence"],
+                "evidence_package_status": evidence_package["evidence_package_status"],
+                "answer_exact_same": _clean(legacy_answer) == _clean(real_answer) and bool(_clean(real_answer)),
+                "answer_normalized_same": normalize_answer_text(legacy_answer) == normalize_answer_text(real_answer) and bool(normalize_answer_text(real_answer)),
+                "answer_equivalent_deterministic": _answers_equivalent_deterministic(legacy_answer, real_answer, item),
+                "legacy_matches_expected": legacy_matches_expected,
+                "real_rag_matches_expected": real_matches_expected,
+                "answer_delta_category": answer_delta,
+                "evidence_delta_category": evidence_delta,
+                "citation_delta_category": citation_delta,
+                "doc_id_overlap": sorted(legacy_doc_ids & real_doc_ids),
+                "source_atom_id_overlap": source_atom_overlap,
+                "evidence_bundle_id_overlap": evidence_bundle_overlap,
+                "text_hash_overlap": text_hash_overlap,
+                "normalized_evidence_text_overlap": normalized_text_overlap,
+                "expected_evidence_hit_in_legacy_topk": bool(legacy_support["expected_evidence_hit"]),
+                "expected_evidence_hit_in_real_rag_topk": bool(real_support["expected_evidence_hit"]),
+                "citation_points_to_expected_or_resolved_evidence": bool(real_support["citation_expected_evidence_hit"]),
+                "citation_points_to_retrieved_context_diagnostic_only": bool(real_support["citation_points_to_retrieved_context"]),
+                "real_rag_supported": bool(real_support["supported"]),
+                "legacy_supported": bool(legacy_support["supported"]),
+                "same_support": same_support,
+                "different_support_but_valid": different_support_but_valid,
+                "unsupported_same_answer": bool(
+                    (normalize_answer_text(legacy_answer) == normalize_answer_text(real_answer) or _answers_equivalent_deterministic(legacy_answer, real_answer, item))
+                    and not real_support["supported"]
+                ),
+                "diagnostic_critic": critic,
+                "evidence_validator": dict(real_gate),
+                "evidence_support_score": real_gate.get("evidence_support_score"),
+                "answer_anchor_coverage": real_gate.get("answer_anchor_coverage"),
+                "query_anchor_coverage": real_gate.get("query_anchor_coverage"),
+                "numeric_or_date_anchor_coverage": real_gate.get("numeric_or_date_anchor_coverage"),
+                "entity_anchor_coverage": real_gate.get("entity_anchor_coverage"),
+                "selected_evidence_count": int(real_gate.get("selected_evidence_count") or 0),
+                "rejected_evidence_count": int(real_gate.get("rejected_evidence_count") or 0),
+                "missing_answer_anchors": list(real_gate.get("missing_answer_anchors") or []),
+                "missing_query_anchors": list(real_gate.get("missing_query_anchors") or []),
+                "unsupported_answer_anchors": list(real_gate.get("unsupported_answer_anchors") or []),
+                "conflicting_evidence_reasons": list(real_gate.get("conflicting_evidence_reasons") or []),
+                "validation_reasons": list(real_gate.get("validation_reasons") or []),
+                "validator_version": _clean(real_gate.get("validator_version") or real_rag_report.get("validator_version")),
+                "citation_validations": list(real_gate.get("citation_validations") or []),
+                "evidence_gate_mode": _clean(real_row.get("evidence_gate_mode") or real_gate.get("evidence_gate_mode") or real_rag_report.get("evidence_gate_mode") or "off"),
+                "answer_gate_decision": _clean(real_row.get("answer_gate_decision") or real_gate.get("answer_gate_decision") or "not_comparable"),
+                "answer_modified_by_gate": bool(real_row.get("answer_modified_by_gate") or real_gate.get("answer_modified_by_gate")),
+                "original_generated_answer_hash": _clean(real_row.get("original_generated_answer_hash") or real_gate.get("original_generated_answer_hash")),
+                "gated_answer_hash": _clean(real_row.get("gated_answer_hash") or real_gate.get("gated_answer_hash")),
+                "abstention_reason": _clean(real_row.get("abstention_reason") or real_gate.get("abstention_reason")),
+                "would_block_unsupported_answer": bool(
+                    real_row.get("would_block_unsupported_answer") or real_gate.get("would_block_unsupported_answer")
+                ),
+                "unsupported_answer_blocked": bool(real_row.get("unsupported_answer_blocked") or real_gate.get("unsupported_answer_blocked")),
+                "retrieval_loop_triggered": bool(real_row.get("retrieval_loop_triggered") or real_gate.get("retrieval_loop_triggered")),
+                "gate_uses_expected_fields": bool(real_row.get("gate_uses_expected_fields") or real_gate.get("gate_uses_expected_fields")),
+                "gate_uses_gold_fields": bool(real_row.get("gate_uses_gold_fields") or real_gate.get("gate_uses_gold_fields")),
+                "gate_uses_legacy_fields": bool(real_row.get("gate_uses_legacy_fields") or real_gate.get("gate_uses_legacy_fields")),
+                "expected_answer_match_before_gate": (
+                    real_row.get("expected_answer_match_before_gate")
+                    if "expected_answer_match_before_gate" in real_row
+                    else real_matches_expected_before_gate
+                ),
+                "expected_answer_match_after_gate": (
+                    real_row.get("expected_answer_match_after_gate")
+                    if "expected_answer_match_after_gate" in real_row
+                    else real_matches_expected
+                ),
+                "expected_evidence_match_before_gate": (
+                    real_row.get("expected_evidence_match_before_gate")
+                    if "expected_evidence_match_before_gate" in real_row
+                    else bool(real_support["expected_evidence_hit"])
+                ),
+                "expected_evidence_match_after_gate": (
+                    real_row.get("expected_evidence_match_after_gate")
+                    if "expected_evidence_match_after_gate" in real_row
+                    else bool(real_support["expected_evidence_hit"])
+                ),
+                "legacy_real_answer_delta_before_gate": answer_delta_before_gate,
+                "legacy_real_answer_delta_after_gate": answer_delta,
+                "real_rag_supported_before_gate": (
+                    real_row.get("real_rag_supported_before_gate")
+                    if "real_rag_supported_before_gate" in real_row
+                    else bool(real_gate.get("evidence_package_status") == "sufficient" and not abstains(real_answer_before_gate))
+                ),
+                "real_rag_supported_after_gate": bool(real_support["supported"] and not abstains(real_answer)),
+                "e2e_success_after_gate_provisional": (
+                    real_row.get("e2e_success_after_gate_provisional")
+                    if "e2e_success_after_gate_provisional" in real_row
+                    else bool(real_matches_expected and real_support["supported"] and not abstains(real_answer))
+                ),
+                "abstention_correctness_diagnostic_or_strict_when_labels_available": (
+                    real_row.get("abstention_correctness_diagnostic_or_strict_when_labels_available")
+                    if "abstention_correctness_diagnostic_or_strict_when_labels_available" in real_row
+                    else (
+                        abstains(real_answer)
+                        if item.answerability == "unanswerable"
+                        else (not abstains(real_answer) if item.answerability == "answerable" else "diagnostic_only_unknown_answerability")
+                    )
+                ),
+                "candidate_generation_input_policy": "query_text_only",
+                "legacy_baseline_replayed_not_executed": True,
+            }
+        )
+    counts = Counter(row["answer_delta_category"] for row in rows)
+    evidence_package_counts = Counter(row["evidence_package_status"] for row in rows)
+    evidence_gate_summary = (
+        real_rag_report.get("evidence_gate")
+        if isinstance(real_rag_report.get("evidence_gate"), Mapping)
+        else {}
+    )
+    comparable_count = len(rows) - sum(1 for row in rows if _clean(row.get("answer_delta_category")).startswith("not_comparable"))
+    report = {
+        "schema_version": QUALITY_GATE_REPORT_SCHEMA_VERSION,
+        "generated_at": generated_at or utc_now_iso(),
+        "non_production": True,
+        "quality_gate_scope": "legacy_free_real_rag_source_native_parity_nonprod",
+        "existing_gold_set_path": Path(existing_gold_set_path).as_posix(),
+        "gold_set_item_count": len(gold_items),
+        "gold_set_schema_version": _clean(real_rag_report.get("gold_set_schema_version") or legacy_baseline_report.get("gold_set_schema_version")),
+        "gold_set_selection_rationale": "existing actual-RAG text-gold dataset reused from the requested dataset/latest actual-RAG coverage; no new gold rows created",
+        "gold_mutation": False,
+        "evidence_gate_mode": _clean(evidence_gate_summary.get("evidence_gate_mode") or real_rag_report.get("evidence_gate_mode") or "off"),
+        "validator_version": _clean(evidence_gate_summary.get("validator_version") or real_rag_report.get("validator_version")),
+        "legacy_baseline_path": Path(legacy_baseline_path).as_posix(),
+        "legacy_baseline_run_id": _clean(legacy_baseline_report.get("run_id")),
+        "legacy_baseline_item_count": len(legacy_items),
+        "legacy_baseline_replayed_not_executed": True,
+        "real_rag_report_path": Path(real_rag_report_path).as_posix(),
+        "real_rag_run_id": _clean(real_rag_report.get("run_id")),
+        "real_rag_selected_surface": _clean((real_rag_report.get("retrieval_surface") or {}).get("selected")) if isinstance(real_rag_report.get("retrieval_surface"), Mapping) else "",
+        "selected_surface": "source_native",
+        "source_native_units_only": bool(guardrail_status["source_native_units_only"]),
+        "candidate_generation_input_policy": "query_text_only",
+        "item_count": len(rows),
+        "comparable_item_count": comparable_count,
+        "exact_same_answer_count": sum(1 for row in rows if row["answer_exact_same"]),
+        "normalized_same_answer_count": sum(1 for row in rows if row["answer_normalized_same"]),
+        "equivalent_answer_count": sum(1 for row in rows if row["answer_equivalent_deterministic"]),
+        "same_answer_same_support_count": counts.get("same_answer_same_support", 0),
+        "same_answer_different_support_count": counts.get("same_answer_different_support", 0),
+        "legacy_correct_real_wrong_count": counts.get("legacy_correct_real_wrong", 0),
+        "legacy_wrong_real_correct_count": counts.get("legacy_wrong_real_correct", 0),
+        "both_correct_count": sum(
+            1 for row in rows if row["legacy_matches_expected"] and row["real_rag_matches_expected"]
+        ),
+        "both_wrong_count": sum(
+            1 for row in rows if not row["legacy_matches_expected"] and not row["real_rag_matches_expected"]
+        ),
+        "unsupported_same_answer_count": sum(1 for row in rows if row["unsupported_same_answer"]),
+        "real_rag_supported_count": sum(1 for row in rows if row["real_rag_supported"]),
+        "legacy_supported_count": sum(1 for row in rows if row["legacy_supported"]),
+        "not_comparable_count": len(rows) - comparable_count,
+        "not_comparable_reasons": dict(sorted(not_comparable_reasons.items())),
+        "answer_delta_category_counts": dict(sorted(counts.items())),
+        "evidence_package_status_counts": dict(sorted(evidence_package_counts.items())),
+        "sufficient_evidence_package_count": int(evidence_gate_summary.get("sufficient_evidence_package_count") or evidence_package_counts.get("sufficient", 0)),
+        "insufficient_evidence_package_count": int(evidence_gate_summary.get("insufficient_evidence_package_count") or evidence_package_counts.get("insufficient", 0)),
+        "conflicting_evidence_package_count": int(evidence_gate_summary.get("conflicting_evidence_package_count") or evidence_package_counts.get("conflicting", 0)),
+        "unresolved_evidence_package_count": int(evidence_gate_summary.get("unresolved_evidence_package_count") or evidence_package_counts.get("unresolved", 0)),
+        "allowed_answer_count": int(evidence_gate_summary.get("allowed_answer_count") or 0),
+        "abstained_count": int(evidence_gate_summary.get("abstained_count") or 0),
+        "unsupported_answer_blocked_count": int(evidence_gate_summary.get("unsupported_answer_blocked_count") or 0),
+        "would_abstain_count": int(evidence_gate_summary.get("would_abstain_count") or 0),
+        "would_block_unsupported_answer_count": int(evidence_gate_summary.get("would_block_unsupported_answer_count") or 0),
+        "citation_supported_count": int(evidence_gate_summary.get("citation_supported_count") or 0),
+        "citation_retrieved_context_only_diagnostic_count": int(evidence_gate_summary.get("citation_retrieved_context_only_diagnostic_count") or 0),
+        "citation_wrong_target_count": int(evidence_gate_summary.get("citation_wrong_target_count") or 0),
+        "citation_missing_target_count": int(evidence_gate_summary.get("citation_missing_target_count") or 0),
+        "citation_unsupported_text_count": int(evidence_gate_summary.get("citation_unsupported_text_count") or 0),
+        "unsupported_answer_rate_before_gate": evidence_gate_summary.get("unsupported_answer_rate_before_gate"),
+        "unsupported_answer_rate_after_gate": evidence_gate_summary.get("unsupported_answer_rate_after_gate"),
+        "insufficient_evidence_abstained_count": int(evidence_gate_summary.get("insufficient_evidence_abstained_count") or 0),
+        "sufficient_evidence_allowed_count": int(evidence_gate_summary.get("sufficient_evidence_allowed_count") or 0),
+        "sufficient_evidence_over_abstain_count": int(evidence_gate_summary.get("sufficient_evidence_over_abstain_count") or 0),
+        "guardrail_status": guardrail_status,
+        "guardrails": {
+            "gold_mutation": False,
+            "qrels_mutation": False,
+            "label_mutation": False,
+            "expected_answer_mutation": False,
+            "expected_evidence_mutation": False,
+            "legacy_outputs_used_for_candidate_generation": False,
+            "searchunit_searchview_used_in_real_rag_lane": False,
+            "raw_prompt_payload_written": False,
+            "raw_response_payload_written": False,
+            "official_metric": False,
+            "protected_namespaces_touched": [],
+        },
+        "diagnostic_critic_summary": {
+            "critic_result_tier": "diagnostic",
+            "retrieval_loop_triggered": False,
+            "answer_supported_by_evidence_count": sum(1 for row in rows if row["diagnostic_critic"]["answer_supported_by_evidence"]),
+            "citation_supported_by_evidence_count": sum(1 for row in rows if row["diagnostic_critic"]["citation_supported_by_evidence"]),
+            "citation_points_to_expected_or_resolved_evidence_count": sum(
+                1 for row in rows if row["citation_points_to_expected_or_resolved_evidence"]
+            ),
+            "citation_points_to_retrieved_context_diagnostic_only_count": sum(
+                1 for row in rows if row["citation_points_to_retrieved_context_diagnostic_only"]
+            ),
+            "evidence_sufficient_count": sum(1 for row in rows if row["diagnostic_critic"]["evidence_sufficient"]),
+            "needs_more_retrieval_count": sum(1 for row in rows if row["diagnostic_critic"]["needs_more_retrieval"]),
+            "should_abstain_count": sum(1 for row in rows if row["diagnostic_critic"]["should_abstain"]),
+        },
+    }
+    return report, rows
+
+
+def resolve_quality_gate_baseline_report(
+    quality_gate_baseline: Path | str,
+    *,
+    dataset_path: Path | str,
+    gold_items: Sequence[EvalItem] | None = None,
+    report_root: Path | str = REPORT_ROOT,
+) -> tuple[dict[str, Any], Path]:
+    target = _clean(quality_gate_baseline)
+    if not target:
+        raise DatasetSchemaError("quality gate baseline path is required")
+    if target != "auto":
+        path = Path(target)
+        if not path.exists():
+            raise DatasetSchemaError(f"quality gate baseline does not exist: {target}")
+        return _load_summary_from_pointer_or_path(path), path
+
+    dataset_value = _report_path_value(dataset_path)
+    target_query_ids = {item.id for item in gold_items or []}
+    root = Path(report_root)
+    candidates: list[tuple[int, int, str, str, Path]] = []
+    for path in root.glob("*/report.json"):
+        try:
+            payload = _read_json_file(path)
+        except Exception:
+            continue
+        if _clean(payload.get("dataset_path")) != dataset_value:
+            continue
+        config = payload.get("index_retrieval_config") if isinstance(payload.get("index_retrieval_config"), Mapping) else {}
+        retrieval_surface = payload.get("retrieval_surface") if isinstance(payload.get("retrieval_surface"), Mapping) else {}
+        adapter = json.dumps(config, ensure_ascii=False, sort_keys=True).casefold()
+        selected_surface = _clean(retrieval_surface.get("selected")).casefold()
+        score = 0
+        if "searchunit" in adapter or "searchview" in adapter:
+            score += 100
+        if not selected_surface:
+            score += 50
+        if selected_surface in {"searchunit_searchview", "searchunit-searchview"}:
+            score += 50
+        if selected_surface == "source_native":
+            score -= 25
+        if "single_vector_final" in path.as_posix():
+            score += 10
+        item_count = int(payload.get("total_item_count") or len(_as_list(payload.get("items"))) or 0)
+        if item_count > 0:
+            score += 1
+        coverage_score = 0
+        if target_query_ids:
+            candidate_query_ids = {
+                _query_id(row)
+                for row in _as_list(payload.get("items"))
+                if isinstance(row, Mapping) and _query_id(row)
+            }
+            if candidate_query_ids == target_query_ids:
+                coverage_score = 1000
+            elif len(candidate_query_ids & target_query_ids) == len(target_query_ids):
+                coverage_score = 500
+            elif item_count == len(target_query_ids):
+                coverage_score = 100
+        if score > 0:
+            candidates.append((coverage_score, score, _clean(payload.get("run_id")), path.as_posix(), path))
+    if not candidates:
+        raise DatasetSchemaError(f"quality gate baseline auto discovery found no same-dataset legacy report for {dataset_value}")
+    _coverage, _score, _run_id, _path_value, selected = sorted(
+        candidates,
+        key=lambda row: (row[0], row[1], row[2], row[3]),
+        reverse=True,
+    )[0]
+    return _load_summary_from_pointer_or_path(selected), selected
+
+
+def write_legacy_real_rag_quality_gate_artifacts(
+    *,
+    output_dir: Path | str,
+    gold_items: Sequence[EvalItem],
+    existing_gold_set_path: Path | str,
+    legacy_baseline_report: Mapping[str, Any],
+    legacy_baseline_path: Path | str,
+    real_rag_report: Mapping[str, Any],
+    real_rag_report_path: Path | str,
+    generated_at: str | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, str]]:
+    output = Path(output_dir)
+    report, rows = build_legacy_real_rag_quality_gate_report(
+        gold_items=gold_items,
+        existing_gold_set_path=existing_gold_set_path,
+        legacy_baseline_report=legacy_baseline_report,
+        legacy_baseline_path=legacy_baseline_path,
+        real_rag_report=real_rag_report,
+        real_rag_report_path=real_rag_report_path,
+        generated_at=generated_at,
+    )
+    report_path = output / "legacy_real_rag_quality_gate_report.json"
+    items_path = output / "legacy_real_rag_quality_gate_items.jsonl"
+    report["artifact_paths"] = {
+        "legacy_real_rag_quality_gate_report_json": report_path.as_posix(),
+        "legacy_real_rag_quality_gate_items_jsonl": items_path.as_posix(),
+    }
+    write_json(report_path, report)
+    write_jsonl(items_path, rows)
+    return report, rows, report["artifact_paths"]
+
+
+WEAVIATE_ROUTE_AB_REPORT_FILENAME = "route_selected_hybrid_evidence_store_ab_report.json"
+WEAVIATE_ROUTE_AB_ITEMS_FILENAME = "route_selected_hybrid_evidence_store_ab_items.jsonl"
+WEAVIATE_ROUTE_AB_MODE_ALIASES = {
+    "text": "text_only",
+    "text_only": "text_only",
+    "text-only": "text_only",
+    "mixed": "mixed_pool",
+    "mixed_pool": "mixed_pool",
+    "mixed-pool": "mixed_pool",
+    "routed": "route_selected",
+    "route_selected": "route_selected",
+    "route-selected": "route_selected",
+}
+
+
+def _parse_weaviate_route_ab_modes(value: str | Sequence[str] | None) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        raw_values = [part.strip() for part in value.split(",")]
+    else:
+        raw_values = [str(part).strip() for part in value]
+    modes: list[str] = []
+    for raw in raw_values:
+        if not raw:
+            continue
+        normalized = WEAVIATE_ROUTE_AB_MODE_ALIASES.get(raw.replace("_", "-").casefold())
+        if normalized is None:
+            normalized = WEAVIATE_ROUTE_AB_MODE_ALIASES.get(raw.replace("-", "_").casefold())
+        if normalized is None:
+            raise DatasetSchemaError(f"unsupported weaviate route A/B mode: {raw}")
+        if normalized not in modes:
+            modes.append(normalized)
+    return modes
+
+
+def _metric_score(summary: Mapping[str, Any], tier: str, name: str) -> Any:
+    metrics = summary.get(tier)
+    if not isinstance(metrics, Mapping):
+        return None
+    metric = metrics.get(name)
+    if not isinstance(metric, Mapping):
+        return None
+    return metric.get("score")
+
+
+def _metric_count(summary: Mapping[str, Any], tier: str, name: str, field: str) -> int | None:
+    metrics = summary.get(tier)
+    if not isinstance(metrics, Mapping):
+        return None
+    metric = metrics.get(name)
+    if not isinstance(metric, Mapping):
+        return None
+    value = metric.get(field)
+    return int(value) if isinstance(value, int) else None
+
+
+def _retrieved_contexts(row: Mapping[str, Any]) -> list[dict[str, Any]]:
+    return [dict(context) for context in row.get("retrieved_contexts") or [] if isinstance(context, Mapping)]
+
+
+def _distribution(rows: Sequence[Mapping[str, Any]], field: str) -> dict[str, int]:
+    counter: Counter[str] = Counter()
+    for row in rows:
+        for context in _retrieved_contexts(row):
+            value = _clean(context.get(field)) or "unknown"
+            counter[value] += 1
+    return dict(sorted(counter.items()))
+
+
+def _duplicate_pressure(rows: Sequence[Mapping[str, Any]], field: str) -> tuple[int, int, float]:
+    total = 0
+    duplicates = 0
+    for row in rows:
+        seen: set[str] = set()
+        for context in _retrieved_contexts(row):
+            value = _clean(context.get(field))
+            if not value:
+                continue
+            total += 1
+            if value in seen:
+                duplicates += 1
+            seen.add(value)
+    return duplicates, total, round(float(duplicates) / float(total), 6) if total else 0.0
+
+
+def _planned_filter_for_row(row: Mapping[str, Any]) -> tuple[list[str], list[str]]:
+    plan = row.get("weaviate_route_plan") if isinstance(row.get("weaviate_route_plan"), Mapping) else None
+    if (
+        not plan
+        or _clean(plan.get("selected_route")) in {"full_index", "mixed_pool"}
+        or not plan.get("selected_source_family_filter")
+    ):
+        plan = plan_weaviate_retrieval_route(_clean(row.get("query")))
+    return (
+        [_clean(value) for value in plan.get("selected_source_family_filter") or [] if _clean(value)],
+        [_clean(value) for value in plan.get("selected_granularity_filter") or [] if _clean(value)],
+    )
+
+
+def _wrong_route_counts(rows: Sequence[Mapping[str, Any]]) -> tuple[int, int, int]:
+    wrong_family = 0
+    wrong_granularity = 0
+    pollution = 0
+    for row in rows:
+        family_filter, granularity_filter = _planned_filter_for_row(row)
+        for context in _retrieved_contexts(row):
+            source_family = _clean(context.get("source_family"))
+            granularity = _clean(context.get("granularity"))
+            if len(family_filter) == 1 and source_family and source_family != family_filter[0]:
+                wrong_family += 1
+                pollution += 1
+            if granularity_filter and granularity and granularity not in set(granularity_filter):
+                wrong_granularity += 1
+    return wrong_family, wrong_granularity, pollution
+
+
+def _row_metric_passed(row: Mapping[str, Any], metric_name: str) -> bool | None:
+    metrics = row.get("metric_results") if isinstance(row.get("metric_results"), Mapping) else {}
+    value = metrics.get(metric_name)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, Mapping) and isinstance(value.get("passed"), bool):
+        return bool(value.get("passed"))
+    return None
+
+
+def _text_route_degradation_count(
+    reference_rows: Sequence[Sequence[Mapping[str, Any]]],
+    candidate_rows: Sequence[Mapping[str, Any]],
+    *,
+    metric_name: str = "weak_evidence_match_recall@10",
+) -> int:
+    reference_pass_by_id: dict[str, bool] = {}
+    for rows in reference_rows:
+        for row in rows:
+            row_id = _clean(row.get("id"))
+            if not row_id:
+                continue
+            reference_pass_by_id[row_id] = reference_pass_by_id.get(row_id, False) or (
+                _row_metric_passed(row, metric_name) is True
+            )
+    degradation = 0
+    for row in candidate_rows:
+        row_id = _clean(row.get("id"))
+        if row_id and reference_pass_by_id.get(row_id) and _row_metric_passed(row, metric_name) is not True:
+            degradation += 1
+    return degradation
+
+
+def _metric_score_not_lower(candidate: Any, references: Sequence[Any]) -> bool:
+    if not isinstance(candidate, (int, float)):
+        return True
+    for reference in references:
+        if isinstance(reference, (int, float)) and float(candidate) + 1e-9 < float(reference):
+            return False
+    return True
+
+
+def _guardrail_status_for_weaviate_lane(summary: Mapping[str, Any]) -> dict[str, Any]:
+    required_false = {
+        "python_local_corpus_scan_used_for_candidate_generation": False,
+        "source_native_layered_retrieval_used_for_candidate_generation": False,
+        "diagnostic_hash_vector_used": False,
+        "faiss_used_for_active_retrieval": False,
+        "searchunit_searchview_used_as_candidate_surface": False,
+        "gold_or_qrels_mutation": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+    }
+    violations = [
+        key
+        for key, expected in required_false.items()
+        if summary.get(key) != expected
+    ]
+    external = summary.get("external_vector_db") if isinstance(summary.get("external_vector_db"), Mapping) else {}
+    if summary.get("active_retrieval_service_boundary") != "weaviate":
+        violations.append("active_retrieval_service_boundary")
+    if external.get("invoked") is not True:
+        violations.append("external_vector_db.invoked")
+    return {
+        "valid": not violations,
+        "violations": violations,
+        "active_retrieval_service_boundary": summary.get("active_retrieval_service_boundary"),
+        "external_vector_db_invoked": external.get("invoked"),
+        **required_false,
+    }
+
+
+def _weaviate_ab_lane_summary(
+    *,
+    lane_id: str,
+    route_mode: str,
+    dataset_source: str,
+    summary: Mapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    diagnostics = summary.get("diagnostic_metrics") if isinstance(summary.get("diagnostic_metrics"), Mapping) else {}
+    backend = summary.get("backend_comparison") if isinstance(summary.get("backend_comparison"), Mapping) else {}
+    gate = summary.get("legacy_real_rag_quality_gate") if isinstance(summary.get("legacy_real_rag_quality_gate"), Mapping) else {}
+    evidence_status = gate.get("evidence_package_status_counts") if isinstance(gate.get("evidence_package_status_counts"), Mapping) else {}
+    wrong_family, wrong_granularity, pollution = _wrong_route_counts(rows)
+    duplicate_count, duplicate_total, duplicate_rate = _duplicate_pressure(rows, "text_sha256")
+    same_doc_duplicate_count, same_doc_total, same_doc_duplicate_rate = _duplicate_pressure(rows, "doc_id")
+    filter_policy = summary.get("weaviate_filter_policy") if isinstance(summary.get("weaviate_filter_policy"), Mapping) else {}
+    route_planner_version = ""
+    for row in rows:
+        plan = row.get("weaviate_route_plan") if isinstance(row.get("weaviate_route_plan"), Mapping) else {}
+        if _clean(plan.get("route_planner_version")):
+            route_planner_version = _clean(plan.get("route_planner_version"))
+            break
+    return {
+        "lane_id": lane_id,
+        "route_mode": route_mode,
+        "dataset_source": dataset_source,
+        "item_count": int(summary.get("total_item_count") or len(rows)),
+        "active_retrieval_service_boundary": summary.get("active_retrieval_service_boundary"),
+        "external_vector_db": dict(summary.get("external_vector_db") or {}),
+        "weaviate_filter_sent": bool(summary.get("weaviate_filter_sent")),
+        "weaviate_filter_policy": dict(filter_policy),
+        "weaviate_post_processing": dict(summary.get("weaviate_post_processing") or {})
+        if isinstance(summary.get("weaviate_post_processing"), Mapping)
+        else {},
+        "base_filter_sent": bool(filter_policy.get("base_filter_sent")),
+        "route_filter_requested": bool(filter_policy.get("route_filter_requested")),
+        "route_filter_sent": bool(filter_policy.get("route_filter_sent")),
+        "source_family_filter_sent": bool(filter_policy.get("source_family_filter_sent")),
+        "granularity_filter_sent": bool(filter_policy.get("granularity_filter_sent")),
+        "retrieval_route_filter_sent": bool(filter_policy.get("retrieval_route_filter_sent")),
+        "route_planner_version": route_planner_version,
+        "mixed_pool_diagnostic_only": lane_id == "lane_c_mixed_pool",
+        "retrieval_empty_rate": diagnostics.get("retrieval_empty_rate"),
+        "weak_evidence_match_recall@10": _metric_score(summary, "provisional_metrics", "weak_evidence_match_recall@10"),
+        "weak_evidence_match_recall@10_numerator": _metric_count(summary, "provisional_metrics", "weak_evidence_match_recall@10", "numerator"),
+        "weak_evidence_match_recall@10_denominator": _metric_count(summary, "provisional_metrics", "weak_evidence_match_recall@10", "denominator"),
+        "target_span_present_but_not_retrieved_count": diagnostics.get("source_native_target_span_present_but_not_retrieved_count"),
+        "evidence_package_sufficient_count": evidence_status.get("sufficient"),
+        "evidence_package_insufficient_count": evidence_status.get("insufficient"),
+        "wrong_source_family_count": wrong_family,
+        "wrong_granularity_count": wrong_granularity,
+        "duplicate_result_count": duplicate_count,
+        "duplicate_result_total": duplicate_total,
+        "duplicate_result_rate": duplicate_rate,
+        "same_doc_duplicate_count": same_doc_duplicate_count,
+        "same_doc_duplicate_total": same_doc_total,
+        "same_doc_duplicate_rate": same_doc_duplicate_rate,
+        "mixed_pool_pollution_count": pollution,
+        "text_route_degradation_count": 0,
+        "vector_candidate_count_avg": backend.get("vector_candidate_count_avg"),
+        "bm25_candidate_count_avg": backend.get("bm25_candidate_count_avg"),
+        "hybrid_candidate_count_avg": backend.get("hybrid_candidate_count_avg"),
+        "bm25_vector_overlap_avg": backend.get("bm25_vector_topk_overlap_avg"),
+        "source_family_distribution": _distribution(rows, "source_family"),
+        "granularity_distribution": _distribution(rows, "granularity"),
+        "weaviate_query_latency_ms_p50": summary.get("weaviate_query_latency_ms_p50") or backend.get("hybrid_latency_ms_p50"),
+        "weaviate_query_latency_ms_p95": summary.get("weaviate_query_latency_ms_p95") or backend.get("hybrid_latency_ms_p95"),
+        "weaviate_query_count_per_item": summary.get("weaviate_query_count_per_item"),
+        "weaviate_schema_version": summary.get("weaviate_schema_version"),
+        "schema_version_source_atom": summary.get("schema_version_source_atom") or summary.get("weaviate_schema_version"),
+        "index_object_count": summary.get("index_object_count") or summary.get("weaviate_indexed_object_count"),
+        "vectorized_object_count": summary.get("vectorized_object_count") or summary.get("weaviate_indexed_object_count"),
+        "metadata_only_object_count": int(summary.get("metadata_only_object_count") or 0),
+        "vectorized_object_ratio": summary.get("vectorized_object_ratio") or (1.0 if summary.get("weaviate_indexed_object_count") else 0.0),
+        "vectorized_by_granularity": dict(summary.get("vectorized_by_granularity") or {})
+        if isinstance(summary.get("vectorized_by_granularity"), Mapping)
+        else {},
+        "metadata_only_by_granularity": dict(summary.get("metadata_only_by_granularity") or {})
+        if isinstance(summary.get("metadata_only_by_granularity"), Mapping)
+        else {},
+        "metadata_only_by_source_family": dict(summary.get("metadata_only_by_source_family") or {})
+        if isinstance(summary.get("metadata_only_by_source_family"), Mapping)
+        else {},
+        "current_index_vectorizes_all_source_atoms": bool(summary.get("current_index_vectorizes_all_source_atoms", True)),
+        "index_time_metadata_only_supported": bool(summary.get("index_time_metadata_only_supported")),
+        "schema_index_v2_rebuild_required_for_metadata_only_policy": bool(
+            summary.get("schema_index_v2_rebuild_required_for_metadata_only_policy")
+        ),
+        "guardrail_status": _guardrail_status_for_weaviate_lane(summary),
+    }
+
+
+def _ab_item_rows(
+    *,
+    lane_id: str,
+    rows: Sequence[Mapping[str, Any]],
+    dataset_role: str = "text_regression",
+) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    for row in rows:
+        contexts = _retrieved_contexts(row)
+        result.append(
+            {
+                "lane_id": lane_id,
+                "dataset_role": dataset_role,
+                "id": _clean(row.get("id")),
+                "query": _clean(row.get("query")),
+                "source_track": _clean(row.get("source_track") or (row.get("source_row") or {}).get("track")),
+                "weaviate_route_plan": dict(row.get("weaviate_route_plan") or {}),
+                "weaviate_filter_policy": dict(row.get("weaviate_filter_policy") or {}),
+                "weaviate_filter_sent": bool(row.get("weaviate_filter_sent")),
+                "retrieved_context_count": len(contexts),
+                "top_contexts": [
+                    {
+                        "rank": context.get("rank"),
+                        "doc_id": _clean(context.get("doc_id")),
+                        "chunk_id": _clean(context.get("chunk_id")),
+                        "source_family": _clean(context.get("source_family")),
+                        "granularity": _clean(context.get("granularity")),
+                        "retrieval_route": _clean(context.get("retrieval_route")),
+                        "text_sha256": _clean(context.get("text_sha256") or context.get("source_text_sha256")),
+                    }
+                    for context in contexts[:10]
+                ],
+                "failure_labels": list(row.get("failure_labels") or []),
+                "canonical_failure_labels": list(row.get("canonical_failure_labels") or []),
+                "metric_results": dict(row.get("metric_results") or {}),
+                "post_filter_removed_count": int(row.get("post_filter_removed_count") or 0),
+                "weaviate_post_processing": dict(row.get("weaviate_post_processing") or {})
+                if isinstance(row.get("weaviate_post_processing"), Mapping)
+                else {},
+            }
+        )
+    return result
+
+
+def _closed_lane_summary(
+    *,
+    lane_run_id: str,
+    raw_outputs: Sequence[Mapping[str, Any]],
+    scored_rows: Sequence[Mapping[str, Any]],
+    adapter: Any,
+    backend_comparison: Mapping[str, Any],
+    active_path_report: Mapping[str, Any],
+    external_vector_db: Mapping[str, Any],
+) -> dict[str, Any]:
+    retrieval_backend_report = (
+        dict(adapter.retrieval_backend_report)
+        if isinstance(getattr(adapter, "retrieval_backend_report", None), Mapping)
+        else {}
+    )
+    return {
+        **dict(active_path_report),
+        "run_id": lane_run_id,
+        "total_item_count": len(scored_rows),
+        "items": list(scored_rows),
+        "backend_comparison": dict(backend_comparison),
+        "retrieval_backend": retrieval_backend_report,
+        "external_vector_db": dict(external_vector_db),
+        "official_metric_input_rows": 0,
+        "official_metric_input_rows_created": 0,
+        "official_metric_input_rows_consumed": 0,
+        "protected_namespaces_touched": [],
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "gold_or_qrels_mutation": False,
+        "guardrails": {
+            "non_production": True,
+            "gold_mutation": False,
+            "qrels_mutation": False,
+            "label_mutation": False,
+            "answerability_label_mutation": False,
+            "expected_answer_mutation": False,
+            "expected_evidence_mutation": False,
+            "denominator_mutation": False,
+            "retriever_ranking_improvement": False,
+            "official_metric": False,
+            "promotion_evidence": False,
+            "product_success_evidence_allowed": False,
+            "live_readiness_claim": False,
+        },
+    }
+
+
+def _run_weaviate_route_ab_lane(
+    *,
+    lane_run_id: str,
+    route_mode: str,
+    items: Sequence[EvalItem],
+    top_k: int,
+    judge_adapter: Any,
+    provisional_require_citations: bool,
+    evidence_gate_mode: str,
+    lane_factory: Callable[[str], Any],
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    adapter = lane_factory(route_mode)
+    validate_ready = getattr(adapter, "validate_ready_for_run", None)
+    if callable(validate_ready):
+        validate_ready()
+    try:
+        raw_outputs = [adapter.run_item(item, top_k=top_k) for item in items]
+        raw_outputs, _evidence_gate_summary = apply_evidence_gate_to_outputs(raw_outputs, mode=evidence_gate_mode)
+        summary, scored_rows = score_rag_eval_items(
+            items,
+            raw_outputs,
+            top_k_values=top_k_values_for(top_k),
+            judge_adapter=judge_adapter,
+            provisional_require_citations=provisional_require_citations,
+        )
+        backend_comparison = build_backend_comparison_metrics(raw_outputs, adapter)
+        summary["diagnostic_metrics"].update(backend_comparison)
+        active_path_report = (
+            dict(adapter.active_path_report)
+            if isinstance(getattr(adapter, "active_path_report", None), Mapping)
+            else {}
+        )
+        external_vector_db = (
+            dict(adapter.external_vector_db_report)
+            if isinstance(getattr(adapter, "external_vector_db_report", None), Mapping)
+            else {}
+        )
+        summary.update(
+            _closed_lane_summary(
+                lane_run_id=lane_run_id,
+                raw_outputs=raw_outputs,
+                scored_rows=scored_rows,
+                adapter=adapter,
+                backend_comparison=backend_comparison,
+                active_path_report=active_path_report,
+                external_vector_db=external_vector_db,
+            )
+        )
+        return summary, [_public_report_row(row) for row in scored_rows]
+    finally:
+        close_adapter = getattr(adapter, "close", None)
+        if callable(close_adapter):
+            close_adapter()
+
+
+def _load_weaviate_mixed_route_diagnostic_items(path: Path) -> list[EvalItem]:
+    items: list[EvalItem] = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if not isinstance(row, Mapping):
+                continue
+            query = _clean(row.get("question_ko") or row.get("query") or row.get("question"))
+            if not query:
+                continue
+            evidence_note = _clean(row.get("supporting_evidence_note"))
+            expected_evidence = (ExpectedEvidence(text=evidence_note),) if evidence_note else ()
+            track = _clean(row.get("track"))
+            items.append(
+                EvalItem(
+                    id=f"mixed_route_row_{line_number:04d}",
+                    query=query,
+                    answerability="unknown",
+                    expected_answer=_clean(row.get("expected_answer_ko")),
+                    expected_evidence=expected_evidence,
+                    tags=(track,) if track else (),
+                    source_row={
+                        "track": track,
+                        "mixed_route_packet_line": line_number,
+                    },
+                )
+            )
+    return items
+
+
+def _should_run_mixed_route_diagnostic(dataset_path: Path) -> bool:
+    return dataset_path.name == "gold_queries_text_namu_v2_1_question_gold_v2.csv"
+
+
+def write_weaviate_route_ab_artifacts(
+    *,
+    output_dir: Path,
+    suite_run_id: str,
+    generated_at: str,
+    dataset_path: Path,
+    baseline_summary: Mapping[str, Any],
+    baseline_rows: Sequence[Mapping[str, Any]],
+    items: Sequence[EvalItem],
+    modes: Sequence[str],
+    top_k: int,
+    judge_adapter: Any,
+    provisional_require_citations: bool,
+    evidence_gate_mode: str,
+    lane_factory: Callable[[str], Any],
+) -> dict[str, str]:
+    lane_specs = [
+        ("lane_a_full_index", "full_index"),
+        *[
+            (
+                "lane_b_text_only" if mode == "text_only" else "lane_c_mixed_pool" if mode == "mixed_pool" else "lane_d_route_selected",
+                mode,
+            )
+            for mode in modes
+        ],
+    ]
+    lanes: dict[str, dict[str, Any]] = {}
+    lane_public_rows: dict[str, list[dict[str, Any]]] = {}
+    item_rows: list[dict[str, Any]] = []
+    public_baseline_rows = [_public_report_row(row) for row in baseline_rows]
+    lane_public_rows["lane_a_full_index"] = public_baseline_rows
+    lanes["lane_a_full_index"] = _weaviate_ab_lane_summary(
+        lane_id="lane_a_full_index",
+        route_mode="full_index",
+        dataset_source=dataset_path.as_posix(),
+        summary=baseline_summary,
+        rows=public_baseline_rows,
+    )
+    item_rows.extend(_ab_item_rows(lane_id="lane_a_full_index", rows=public_baseline_rows))
+    for lane_id, route_mode in lane_specs[1:]:
+        lane_summary, lane_rows = _run_weaviate_route_ab_lane(
+            lane_run_id=f"{suite_run_id}_{route_mode}",
+            route_mode=route_mode,
+            items=items,
+            top_k=top_k,
+            judge_adapter=judge_adapter,
+            provisional_require_citations=provisional_require_citations,
+            evidence_gate_mode=evidence_gate_mode,
+            lane_factory=lane_factory,
+        )
+        lanes[lane_id] = _weaviate_ab_lane_summary(
+            lane_id=lane_id,
+            route_mode=route_mode,
+            dataset_source=dataset_path.as_posix(),
+            summary=lane_summary,
+            rows=lane_rows,
+        )
+        lane_public_rows[lane_id] = list(lane_rows)
+        item_rows.extend(_ab_item_rows(lane_id=lane_id, rows=lane_rows))
+
+    mixed_route_path = ROOT / "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl"
+    mixed_route_available = mixed_route_path.exists()
+    mixed_route_unavailable_reason = "" if mixed_route_available else "mixed_route_packet_missing"
+    mixed_route_diagnostic: dict[str, Any] = {
+        "available": mixed_route_available,
+        "executed": False,
+        "dataset_path": mixed_route_path.as_posix(),
+        "item_count": 0,
+        "lanes": {},
+        "unavailable_reason": mixed_route_unavailable_reason,
+        "candidate_generation_uses_gold_fields": False,
+        "candidate_generation_uses_expected_fields": False,
+        "candidate_generation_uses_qrels": False,
+        "candidate_generation_uses_labels": False,
+        "candidate_generation_uses_query_ids": False,
+    }
+    if mixed_route_available and _should_run_mixed_route_diagnostic(dataset_path):
+        try:
+            mixed_items = _load_weaviate_mixed_route_diagnostic_items(mixed_route_path)
+            mixed_route_diagnostic["item_count"] = len(mixed_items)
+            for route_mode, lane_id in (
+                ("mixed_pool", "lane_c_mixed_pool"),
+                ("route_selected", "lane_d_route_selected"),
+            ):
+                if route_mode not in modes:
+                    continue
+                mixed_summary, mixed_rows = _run_weaviate_route_ab_lane(
+                    lane_run_id=f"{suite_run_id}_mixed_route_diagnostic_{route_mode}",
+                    route_mode=route_mode,
+                    items=mixed_items,
+                    top_k=top_k,
+                    judge_adapter=judge_adapter,
+                    provisional_require_citations=provisional_require_citations,
+                    evidence_gate_mode=evidence_gate_mode,
+                    lane_factory=lane_factory,
+                )
+                mixed_route_diagnostic["lanes"][lane_id] = _weaviate_ab_lane_summary(
+                    lane_id=lane_id,
+                    route_mode=route_mode,
+                    dataset_source=mixed_route_path.as_posix(),
+                    summary=mixed_summary,
+                    rows=mixed_rows,
+                )
+                item_rows.extend(
+                    _ab_item_rows(
+                        lane_id=lane_id,
+                        rows=mixed_rows,
+                        dataset_role="mixed_route_diagnostic",
+                    )
+                )
+            mixed_route_diagnostic["executed"] = bool(mixed_route_diagnostic["lanes"])
+            mixed_route_diagnostic["unavailable_reason"] = (
+                "" if mixed_route_diagnostic["executed"] else "requested_modes_exclude_mixed_or_routed"
+            )
+        except Exception as exc:
+            mixed_route_diagnostic["executed"] = False
+            mixed_route_diagnostic["unavailable_reason"] = (
+                f"mixed_route_diagnostic_failed:{type(exc).__name__}:{exc}"
+            )
+
+    guardrail_violations: list[str] = []
+    for lane_id, lane in lanes.items():
+        lane_guard = lane.get("guardrail_status") if isinstance(lane.get("guardrail_status"), Mapping) else {}
+        for violation in lane_guard.get("violations") or []:
+            guardrail_violations.append(f"{lane_id}:{violation}")
+
+    lane_b = lanes.get("lane_b_text_only", {})
+    lane_c = lanes.get("lane_c_mixed_pool", {})
+    lane_d = lanes.get("lane_d_route_selected", {})
+    text_route_degradation_count = (
+        _text_route_degradation_count(
+            [
+                lane_public_rows.get("lane_a_full_index", []),
+                lane_public_rows.get("lane_b_text_only", []),
+            ],
+            lane_public_rows.get("lane_d_route_selected", []),
+        )
+        if lane_d
+        else 0
+    )
+    if lane_d:
+        lane_d["text_route_degradation_count"] = text_route_degradation_count
+    baseline_p95 = float(lanes["lane_a_full_index"].get("weaviate_query_latency_ms_p95") or 0.0)
+    route_p95 = float(lane_d.get("weaviate_query_latency_ms_p95") or 0.0) if lane_d else 0.0
+    route_duplicate_ok = float(lane_d.get("duplicate_result_rate") or 0.0) <= float(lane_c.get("duplicate_result_rate") or 0.0) + 0.2 if lane_d and lane_c else False
+    route_pollution_ok = int(lane_d.get("wrong_source_family_count") or 0) <= int(lane_c.get("wrong_source_family_count") or 0) if lane_d and lane_c else False
+    latency_ok = not baseline_p95 or route_p95 <= max(1.0, baseline_p95 * 2)
+    route_metadata_policy_ok = (
+        bool(lane_d)
+        and _clean(lane_d.get("schema_version_source_atom") or lane_d.get("weaviate_schema_version")) == "weaviate_source_atom_v2"
+        and not bool(lane_d.get("schema_index_v2_rebuild_required_for_metadata_only_policy"))
+        and int(lane_d.get("metadata_only_object_count") or 0) > 0
+        and int(lane_d.get("vectorized_object_count") or 0) < int(lane_d.get("index_object_count") or 0)
+        and bool(lane_d.get("index_time_metadata_only_supported"))
+        and not bool(lane_d.get("current_index_vectorizes_all_source_atoms"))
+    )
+    route_selected_filter_ok = (
+        bool(lane_d)
+        and bool(lane_d.get("route_filter_sent"))
+        and bool(lane_d.get("source_family_filter_sent"))
+        and bool(lane_d.get("granularity_filter_sent"))
+        and bool(lane_d.get("retrieval_route_filter_sent"))
+    )
+    mixed_lanes = mixed_route_diagnostic.get("lanes") if isinstance(mixed_route_diagnostic.get("lanes"), Mapping) else {}
+    mixed_lane_c = mixed_lanes.get("lane_c_mixed_pool") if isinstance(mixed_lanes.get("lane_c_mixed_pool"), Mapping) else {}
+    mixed_lane_d = mixed_lanes.get("lane_d_route_selected") if isinstance(mixed_lanes.get("lane_d_route_selected"), Mapping) else {}
+    mixed_route_executed = bool(mixed_route_diagnostic.get("executed") and mixed_lane_c and mixed_lane_d)
+    mixed_c_weak = mixed_lane_c.get("weak_evidence_match_recall@10") if mixed_route_executed else None
+    mixed_d_weak = mixed_lane_d.get("weak_evidence_match_recall@10") if mixed_route_executed else None
+    mixed_d_denominator = int(mixed_lane_d.get("weak_evidence_match_recall@10_denominator") or 0) if mixed_route_executed else 0
+    mixed_weak_allowed_drop = round(1.0 / float(mixed_d_denominator), 6) if mixed_d_denominator else 0.0
+    mixed_weak_delta = (
+        round(float(mixed_d_weak) - float(mixed_c_weak), 6)
+        if isinstance(mixed_c_weak, (int, float)) and isinstance(mixed_d_weak, (int, float))
+        else None
+    )
+    mixed_same_doc_delta = (
+        round(float(mixed_lane_d.get("same_doc_duplicate_rate") or 0.0) - float(mixed_lane_c.get("same_doc_duplicate_rate") or 0.0), 6)
+        if mixed_route_executed
+        else None
+    )
+    mixed_duplicate_delta = (
+        round(float(mixed_lane_d.get("duplicate_result_rate") or 0.0) - float(mixed_lane_c.get("duplicate_result_rate") or 0.0), 6)
+        if mixed_route_executed
+        else None
+    )
+    mixed_diagnostic_weak_ok = (
+        not mixed_route_executed
+        or mixed_weak_delta is None
+        or mixed_weak_delta >= -mixed_weak_allowed_drop
+    )
+    mixed_diagnostic_duplicate_ok = (
+        not mixed_route_executed
+        or (
+            (mixed_duplicate_delta is None or mixed_duplicate_delta <= 0.1)
+            and (mixed_same_doc_delta is None or mixed_same_doc_delta <= 0.1)
+        )
+    )
+    mixed_diagnostic_quality_ok = bool(mixed_diagnostic_weak_ok and mixed_diagnostic_duplicate_ok)
+    text_degradation_ok = (
+        text_route_degradation_count == 0
+        and _metric_score_not_lower(
+            lane_d.get("weak_evidence_match_recall@10") if lane_d else None,
+            [
+                lane_a.get("weak_evidence_match_recall@10")
+                for lane_a in (lanes.get("lane_a_full_index", {}), lane_b)
+            ],
+        )
+    )
+    promotion_blockers: list[str] = []
+    if lane_d and not route_metadata_policy_ok:
+        promotion_blockers.append("route_selected_metadata_only_policy_not_proven")
+    if lane_d and not route_selected_filter_ok:
+        promotion_blockers.append("route_selected_weaviate_route_filters_not_all_sent")
+    if lane_d and not text_degradation_ok:
+        promotion_blockers.append("text_route_degradation")
+    if lane_d and not route_pollution_ok:
+        promotion_blockers.append("wrong_source_family_not_reduced_vs_mixed_pool")
+    if lane_d and not route_duplicate_ok:
+        promotion_blockers.append("primary_text_duplicate_pressure_increased")
+    if lane_d and not latency_ok:
+        promotion_blockers.append("route_selected_latency_exceeds_gate")
+    if mixed_route_executed and not mixed_diagnostic_weak_ok:
+        promotion_blockers.append("mixed_route_weak_evidence_match_recall_regression")
+    if mixed_route_executed and not mixed_diagnostic_duplicate_ok:
+        promotion_blockers.append("mixed_route_duplicate_pressure_regression")
+    if mixed_route_available and _should_run_mixed_route_diagnostic(dataset_path) and any(
+        mode in {"mixed_pool", "route_selected"} for mode in modes
+    ):
+        unavailable_reason = _clean(mixed_route_diagnostic.get("unavailable_reason"))
+        if not mixed_route_diagnostic.get("executed") or unavailable_reason.startswith("mixed_route_diagnostic_failed"):
+            guardrail_violations.append(
+                f"mixed_route_dataset_diagnostic:{unavailable_reason or 'not_executed'}"
+            )
+    if guardrail_violations:
+        recommendation = "invalid_due_to_guardrail_violation"
+    elif lane_d and lane_d.get("weaviate_filter_policy", {}).get("schema_index_v2_rebuild_required"):
+        recommendation = "rebuild_schema_v2_required"
+    elif lane_d and not route_metadata_policy_ok:
+        recommendation = "rebuild_schema_v2_required"
+    elif lane_d and not route_selected_filter_ok:
+        recommendation = "rebuild_schema_v2_required"
+    elif lane_d and not mixed_diagnostic_quality_ok:
+        recommendation = "keep_current_weaviate_full_index"
+    elif lane_d and route_metadata_policy_ok and route_selected_filter_ok and route_pollution_ok and route_duplicate_ok and latency_ok and text_degradation_ok and mixed_diagnostic_quality_ok:
+        recommendation = "promote_route_selected_nonprod_default"
+    elif lane_d and not latency_ok:
+        recommendation = "defer_due_to_latency"
+    elif lane_d and not route_pollution_ok:
+        recommendation = "defer_due_to_pollution"
+    else:
+        recommendation = "keep_current_weaviate_full_index"
+
+    report = {
+        "schema_version": "actual_rag_eval.weaviate_route_selected_hybrid_evidence_store_ab.v1",
+        "run_id": suite_run_id,
+        "generated_at": generated_at,
+        "non_production": True,
+        "candidate_generation_input_policy": WEAVIATE_CANDIDATE_INPUT_POLICY,
+        "datasets": {
+            "text_regression_dataset_path": dataset_path.as_posix(),
+            "mixed_route_dataset_path": mixed_route_path.as_posix(),
+            "mixed_route_dataset_available": mixed_route_available,
+            "mixed_route_dataset_unavailable_reason": mixed_route_unavailable_reason,
+            "gold_mutation": False,
+        },
+        "vectorization_policy": {
+            "vectorized_by_default": ["paragraph", "heading_context_block", "table_summary", "table_row", "caption"],
+            "metadata_only_by_default": ["cell", "page_marker", "empty_fragment", "repeated_header_footer", "metadata_only", "local_path_source_trace_fields"],
+            "title_query_property_policy": "source_owned_metadata_searchable_not_evidence_truth",
+            "route_selected_metadata_only_policy_proven": route_metadata_policy_ok if lane_d else None,
+            "route_selected_schema_version": lane_d.get("weaviate_schema_version") if lane_d else "",
+            "route_selected_metadata_only_object_count": lane_d.get("metadata_only_object_count") if lane_d else None,
+            "route_selected_vectorized_object_count": lane_d.get("vectorized_object_count") if lane_d else None,
+            "route_selected_index_object_count": lane_d.get("index_object_count") if lane_d else None,
+            "route_selected_all_route_filters_sent": route_selected_filter_ok if lane_d else None,
+        },
+        "lanes": lanes,
+        "mixed_route_dataset_diagnostic": mixed_route_diagnostic,
+        "text_degradation_result": {
+            "lane_a_weak_evidence_match_recall@10": lanes["lane_a_full_index"].get("weak_evidence_match_recall@10"),
+            "lane_b_weak_evidence_match_recall@10": lane_b.get("weak_evidence_match_recall@10"),
+            "lane_d_weak_evidence_match_recall@10": lane_d.get("weak_evidence_match_recall@10"),
+            "text_route_degradation_count": text_route_degradation_count,
+            "text_route_degradation_ok": text_degradation_ok if lane_d else None,
+        },
+        "mixed_pool_pollution_result": {
+            "lane_c_mixed_pool_pollution_count": lane_c.get("mixed_pool_pollution_count"),
+            "lane_d_wrong_source_family_count": lane_d.get("wrong_source_family_count") if lane_d else None,
+            "mixed_route_dataset_executed": mixed_route_diagnostic.get("executed"),
+            "mixed_route_lane_c_mixed_pool_pollution_count": (
+                (mixed_route_diagnostic.get("lanes") or {}).get("lane_c_mixed_pool", {}).get("mixed_pool_pollution_count")
+                if isinstance(mixed_route_diagnostic.get("lanes"), Mapping)
+                else None
+            ),
+            "mixed_route_lane_d_wrong_source_family_count": (
+                (mixed_route_diagnostic.get("lanes") or {}).get("lane_d_route_selected", {}).get("wrong_source_family_count")
+                if isinstance(mixed_route_diagnostic.get("lanes"), Mapping)
+                else None
+            ),
+            "mixed_route_weak_evidence_match_recall_delta": mixed_weak_delta,
+            "mixed_route_weak_evidence_allowed_drop": mixed_weak_allowed_drop if mixed_route_executed else None,
+            "mixed_route_same_doc_duplicate_rate_delta": mixed_same_doc_delta,
+            "mixed_route_duplicate_result_rate_delta": mixed_duplicate_delta,
+            "mixed_route_diagnostic_weak_ok": mixed_diagnostic_weak_ok if mixed_route_executed else None,
+            "mixed_route_diagnostic_duplicate_ok": mixed_diagnostic_duplicate_ok if mixed_route_executed else None,
+            "mixed_route_diagnostic_quality_ok": mixed_diagnostic_quality_ok if mixed_route_executed else None,
+        },
+        "route_selected_recovery_result": {
+            "wrong_source_family_count_decreased_vs_mixed": route_pollution_ok,
+            "duplicate_pressure_materially_increased": not route_duplicate_ok if lane_d and lane_c else None,
+            "metadata_only_policy_proven": route_metadata_policy_ok if lane_d else None,
+            "all_route_filters_sent": route_selected_filter_ok if lane_d else None,
+            "mixed_route_diagnostic_quality_ok": mixed_diagnostic_quality_ok if mixed_route_executed else None,
+        },
+        "latency_comparison": {
+            "lane_a_p95": baseline_p95,
+            "lane_d_p95": route_p95 if lane_d else None,
+            "route_selected_within_2x_lane_a": latency_ok if lane_d else None,
+        },
+        "guardrail_status": {
+            "valid": not guardrail_violations,
+            "violations": guardrail_violations,
+            "weaviate_invoked": all(
+                (lane.get("external_vector_db") or {}).get("invoked") is True for lane in lanes.values()
+            ),
+            "gold_mutation": False,
+            "raw_prompt_payload_written": False,
+            "raw_response_payload_written": False,
+        },
+        "recommendation": recommendation,
+        "promotion_blockers": promotion_blockers,
+    }
+    output_dir.mkdir(parents=True, exist_ok=True)
+    report_path = output_dir / WEAVIATE_ROUTE_AB_REPORT_FILENAME
+    items_path = output_dir / WEAVIATE_ROUTE_AB_ITEMS_FILENAME
+    write_json(report_path, report)
+    write_jsonl(items_path, item_rows)
+    return {
+        "route_selected_hybrid_evidence_store_ab_report_json": report_path.as_posix(),
+        "route_selected_hybrid_evidence_store_ab_items_jsonl": items_path.as_posix(),
+    }
+
+
+def refresh_weaviate_route_ab_quality_gate_counts(summary: MutableMapping[str, Any]) -> None:
+    artifact_paths = summary.get("artifact_paths") if isinstance(summary.get("artifact_paths"), Mapping) else {}
+    report_path_text = _clean(artifact_paths.get("route_selected_hybrid_evidence_store_ab_report_json"))
+    if not report_path_text:
+        return
+    gate = summary.get("legacy_real_rag_quality_gate") if isinstance(summary.get("legacy_real_rag_quality_gate"), Mapping) else {}
+    counts = gate.get("evidence_package_status_counts") if isinstance(gate.get("evidence_package_status_counts"), Mapping) else {}
+    if not counts:
+        return
+    report_path = Path(report_path_text)
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return
+    if not isinstance(report, MutableMapping):
+        return
+    lanes = report.get("lanes") if isinstance(report.get("lanes"), MutableMapping) else {}
+    lane_a = lanes.get("lane_a_full_index") if isinstance(lanes.get("lane_a_full_index"), MutableMapping) else {}
+    lane_a["evidence_package_sufficient_count"] = counts.get("sufficient")
+    lane_a["evidence_package_insufficient_count"] = counts.get("insufficient")
+    report["quality_gate"] = {
+        "available": True,
+        "applied_to_primary_lane": "lane_a_full_index",
+        "evidence_package_status_counts": dict(counts),
+        "legacy_baseline_replayed_not_executed": bool(gate.get("legacy_baseline_replayed_not_executed")),
+    }
+    write_json(report_path, report)
 
 
 def run_eval_from_paths(
@@ -5497,19 +11077,27 @@ def run_eval_from_paths(
     append_registry: bool = False,
     write_latest: bool = False,
     resolve_expected_evidence: bool = True,
-    evidence_resolution_scope: str = "retrieved-only",
+    evidence_resolution_scope: str = "full-corpus",
     max_evidence_candidates: int = 5,
     min_evidence_resolution_score: float = 0.35,
     count_medium_evidence_resolution: bool = False,
     write_evidence_mapping_packet: bool = False,
     write_human_review_packet: bool = False,
+    reviewed_evidence_mapping_csv: Path | str | None = None,
     output_mode: str = "single",
     retrieval_surface: str = "auto",
     retrieval_backend: str = "auto",
+    legacy_surface_comparison: bool = False,
     retrieval_adapter: Any | None = None,
     source_native_units: Sequence[Mapping[str, Any]] | None = None,
     searchunit_units: Sequence[Mapping[str, Any]] | None = None,
     source_native_embedding_provider: Any | None = None,
+    source_native_index_dir: Path | str | None = None,
+    source_native_index_build: Mapping[str, Any] | None = None,
+    quality_gate_baseline_path: Path | str | None = None,
+    evidence_gate_mode: str = "off",
+    weaviate_route_ab_mode: str | Sequence[str] | None = None,
+    weaviate_route_ab_lane_factory: Callable[[str], Any] | None = None,
 ) -> RagEvalBundle:
     dataset = Path(dataset_path)
     output = Path(output_dir)
@@ -5517,16 +11105,33 @@ def run_eval_from_paths(
     if normalized_output_mode not in {"single", "legacy", "both"}:
         raise DatasetSchemaError(f"unsupported output mode: {output_mode}")
     normalized_retrieval_backend = _clean(retrieval_backend).lower() or "auto"
-    if normalized_retrieval_backend not in {"auto", "bm25", "vector", "hybrid"}:
+    if normalized_retrieval_backend not in set(RAG_RETRIEVAL_BACKEND_CHOICES):
         raise DatasetSchemaError(f"unsupported retrieval backend: {retrieval_backend}")
+    weaviate_backend_requested = normalized_retrieval_backend in WEAVIATE_BACKEND_ALIASES
     normalized_retrieval_surface = _clean(retrieval_surface).replace("_", "-").lower() or "auto"
     if normalized_retrieval_surface not in {"auto", "searchunit-searchview", "source-native", "source-atom", "evidence-bundle"}:
         raise DatasetSchemaError(f"unsupported retrieval surface: {retrieval_surface}")
+    normalized_evidence_gate_mode = _clean(evidence_gate_mode).lower() or "off"
+    if normalized_evidence_gate_mode not in {"off", "diagnostic", "enforce"}:
+        raise DatasetSchemaError(f"unsupported evidence gate mode: {evidence_gate_mode}")
+    if normalized_retrieval_surface == "searchunit-searchview" and not legacy_surface_comparison:
+        raise DatasetSchemaError(
+            "retrieval_surface=searchunit-searchview is legacy/debug only; pass --legacy-surface-comparison"
+        )
     if _output_dir_has_artifacts(output):
         raise DatasetSchemaError(f"{output}: already contains actual RAG eval artifacts")
     items = load_eval_dataset(dataset)
+    denominator_before_reviewed_mapping = _strict_denominator_snapshot(items)
     gpu_preflight = build_gpu_preflight()
     external_vector_db = discover_external_vector_db()
+    source_native_loader = (
+        SourceNativeCorpusLoader(
+            search_view_manifest_path=Path(source_native_index_dir) / "search_view_manifest.jsonl",
+            source_atom_registry_path=SOURCE_NATIVE_SOURCE_REGISTRY_PATH,
+        )
+        if source_native_index_dir is not None
+        else None
+    )
     if retrieval_adapter is not None:
         adapter = retrieval_adapter
         if hasattr(adapter, "requested_backend"):
@@ -5536,18 +11141,26 @@ def run_eval_from_paths(
                 pass
     elif context_jsonl_path:
         adapter = JsonlContextAdapter(context_jsonl_path, requested_backend=normalized_retrieval_backend)
+    elif weaviate_backend_requested:
+        adapter = build_default_weaviate_adapter(requested_backend=normalized_retrieval_backend)
     else:
         source_adapter = SourceNativeHybridAdapter(
             ROOT,
             requested_backend=normalized_retrieval_backend,
+            loader=source_native_loader,
             units=source_native_units,
             embedding_provider=source_native_embedding_provider,
             gpu_preflight=gpu_preflight,
             external_vector_db=external_vector_db,
         )
+        searchunit_backend = (
+            normalized_retrieval_backend
+            if normalized_retrieval_surface == "searchunit-searchview"
+            else "bm25"
+        )
         searchunit_adapter = RepoCurrentHybridAdapter(
             ROOT,
-            requested_backend=normalized_retrieval_backend,
+            requested_backend=searchunit_backend,
             payloads=searchunit_units,
             gpu_preflight=gpu_preflight,
             external_vector_db=external_vector_db,
@@ -5557,7 +11170,21 @@ def run_eval_from_paths(
             requested_backend=normalized_retrieval_backend,
             source_adapter=source_adapter,
             searchunit_adapter=searchunit_adapter,
+            legacy_surface_comparison=legacy_surface_comparison,
         )
+    adapter_is_weaviate_lane = weaviate_backend_requested or isinstance(adapter, WeaviateSourceAtomAdapter)
+    validate_ready = getattr(adapter, "validate_ready_for_run", None)
+    if callable(validate_ready):
+        try:
+            validate_ready()
+        except Exception:
+            close_adapter = getattr(adapter, "close", None)
+            if callable(close_adapter):
+                close_adapter()
+            raise
+    adapter_external_vector_db = getattr(adapter, "external_vector_db_report", None)
+    if isinstance(adapter_external_vector_db, Mapping):
+        external_vector_db = dict(adapter_external_vector_db)
     generated_at = generated_at or utc_now_iso()
     run_id = run_id or make_actual_rag_run_id(dataset, generated_at=generated_at, report_root=report_root)
     judge_adapter = build_judge_adapter(
@@ -5577,7 +11204,26 @@ def run_eval_from_paths(
         try:
             raw_outputs.append(adapter.run_item(item, top_k=top_k))
         except Exception as exc:  # keep row-level pipeline failures inspectable
+            if adapter_is_weaviate_lane:
+                close_adapter = getattr(adapter, "close", None)
+                if callable(close_adapter):
+                    close_adapter()
+                raise
             raw_outputs.append(_pipeline_error_output(item, f"{type(exc).__name__}: {exc}"))
+    raw_outputs, evidence_gate_summary = apply_evidence_gate_to_outputs(
+        raw_outputs,
+        mode=normalized_evidence_gate_mode,
+    )
+    reviewed_mapping_path = Path(reviewed_evidence_mapping_csv) if reviewed_evidence_mapping_csv is not None else None
+    items, reviewed_mapping = apply_reviewed_evidence_mapping(
+        items,
+        reviewed_mapping_csv=reviewed_mapping_path,
+    )
+    denominator_after_reviewed_mapping = _strict_denominator_snapshot(items)
+    denominator_changes = _denominator_change_report(
+        denominator_before_reviewed_mapping,
+        denominator_after_reviewed_mapping,
+    )
     evidence_config = _evidence_resolution_config(
         enabled=resolve_expected_evidence,
         scope=evidence_resolution_scope,
@@ -5602,6 +11248,9 @@ def run_eval_from_paths(
         provisional_require_citations=provisional_require_citations,
     )
     elapsed_ms = round((time.perf_counter() - started) * 1000, 3)
+    adapter_external_vector_db = getattr(adapter, "external_vector_db_report", None)
+    if isinstance(adapter_external_vector_db, Mapping):
+        external_vector_db = dict(adapter_external_vector_db)
     backend_comparison = build_backend_comparison_metrics(raw_outputs, adapter)
     summary["diagnostic_metrics"].update(backend_comparison)
     surface_comparison = build_surface_comparison_metrics(raw_outputs, top_k)
@@ -5641,7 +11290,11 @@ def run_eval_from_paths(
             "selected": "precomputed_context" if context_jsonl_path else "unknown",
             "source_native_available": False,
             "source_native_selected": False,
-            "searchunit_searchview_role": "legacy_baseline",
+            "source_native_unit_count": 0,
+            "searchunit_searchview_role": "legacy_comparison_debug_only",
+            "searchunit_searchview_candidate_surface_enabled": False,
+            "legacy_surface_comparison_enabled": False,
+            "auto_fallback_to_searchunit_searchview": False,
             "fallback_reason": "adapter_did_not_report_surface",
         }
     )
@@ -5658,6 +11311,35 @@ def run_eval_from_paths(
             "recommendation": "surface_comparison_unavailable",
         }
     )
+    surface_migration = build_surface_migration_report(
+        retrieval_surface_report=retrieval_surface_report,
+        retrieval_backend_report=retrieval_backend_report,
+        surface_comparison=surface_comparison,
+        legacy_surface_comparison=legacy_surface_comparison,
+    )
+    source_native_layered_retrieval = build_source_native_layered_retrieval_report(
+        raw_outputs=raw_outputs,
+        retrieval_surface_report=retrieval_surface_report,
+        retrieval_backend_report=retrieval_backend_report,
+        legacy_surface_comparison=legacy_surface_comparison,
+    )
+    vector_index_audit = build_vector_index_audit_report(
+        raw_outputs=raw_outputs,
+        adapter=adapter,
+        retrieval_surface_report=retrieval_surface_report,
+        retrieval_backend_report=retrieval_backend_report,
+        backend_comparison=backend_comparison,
+        external_vector_db=external_vector_db,
+    )
+    summary["diagnostic_metrics"].update(vector_index_audit.get("target_presence_diagnostics") or {})
+    diagnostic_retrieval_metrics = build_diagnostic_retrieval_metrics_report(scored_rows, top_k=top_k)
+    semantic_quality_samples = build_semantic_quality_samples_report(scored_rows)
+    for ranking_name, ranking_metrics in (diagnostic_retrieval_metrics.get("rankings") or {}).items():
+        if not isinstance(ranking_metrics, Mapping):
+            continue
+        for metric_name, metric_value in ranking_metrics.items():
+            if metric_name.startswith(("hit@", "ndcg@")):
+                summary["diagnostic_metrics"][f"{ranking_name}_{metric_name}_diagnostic"] = metric_value
     generator_config = {
         "provider": "extractive-v1",
         "generator_provider": "extractive-v1",
@@ -5669,25 +11351,55 @@ def run_eval_from_paths(
         "expected_answer_used_for_generation": False,
         "expected_evidence_used_for_generation": False,
     }
+    active_path_report = (
+        dict(adapter.active_path_report)
+        if isinstance(getattr(adapter, "active_path_report", None), Mapping)
+        else {
+            "active_retrieval_backend": _clean(retrieval_backend_report.get("selected")),
+            "active_retrieval_service_boundary": "python_source_native"
+            if retrieval_surface_report.get("selected") == "source_native"
+            else _clean(retrieval_surface_report.get("selected")) or "unknown",
+            "python_local_corpus_scan_used_for_candidate_generation": retrieval_surface_report.get("selected") == "source_native",
+            "source_native_layered_retrieval_used_for_candidate_generation": bool(source_native_layered_retrieval.get("enabled")),
+            "diagnostic_hash_vector_used": "diagnostic" in _clean(retrieval_backend_report.get("embedding_model")).casefold(),
+            "faiss_used_for_active_retrieval": _clean(retrieval_backend_report.get("vector_index_kind")) == "faiss",
+            "searchunit_searchview_used_as_candidate_surface": bool(
+                retrieval_surface_report.get("searchunit_searchview_candidate_surface_enabled")
+            ),
+            "candidate_generation_input_policy": "query_text_only_no_gold_qrels_labels_ids_or_baseline_topk",
+        }
+    )
     summary.update(
         {
+            **active_path_report,
             "run_id": run_id,
             "generated_at": generated_at,
-            "command": command,
-            "dataset_path": dataset.as_posix(),
+            "command": _redact_absolute_local_paths(command),
+            "dataset_path": _report_path_value(dataset),
             "dataset_slug": dataset_slug_for_path(dataset),
-            "output_dir": output.as_posix(),
+            "output_dir": _report_path_value(output),
             "index": index,
             "index_retrieval_config": adapter.config,
             "retrieval_backend": retrieval_backend_report,
             "retrieval_surface": retrieval_surface_report,
             "retrieval_surface_decision": retrieval_surface_decision,
+            "surface_migration": surface_migration,
+            "surface_deprecation": surface_migration,
+            "source_native_layered_retrieval": source_native_layered_retrieval,
+            "vector_index_audit": vector_index_audit,
+            "final_rag_target": build_final_rag_target_report(),
             "gpu_preflight": gpu_preflight,
             "external_vector_db": external_vector_db,
             "backend_comparison": backend_comparison,
             "surface_comparison": surface_comparison,
+            "diagnostic_retrieval_metrics": diagnostic_retrieval_metrics,
+            "semantic_quality_samples": semantic_quality_samples,
+            "source_native_index_build": dict(source_native_index_build or {}),
             "generator_config": generator_config,
             "generator_model_config": generator_config,
+            "evidence_gate": evidence_gate_summary,
+            "evidence_gate_mode": evidence_gate_summary["evidence_gate_mode"],
+            "validator_version": evidence_gate_summary["validator_version"],
             "top_k": top_k,
             "top_k_values": list(top_k_values),
             "judge_mode": judge_mode,
@@ -5712,6 +11424,11 @@ def run_eval_from_paths(
                 "gold_or_qrels_mutation": False,
                 "single_review_artifact_format": "csv",
             },
+            "reviewed_mapping": dict(reviewed_mapping),
+            "reviewed_mapping_input_path": reviewed_mapping.get("input_path", ""),
+            "reviewed_mapping_applied": bool(reviewed_mapping.get("applied")),
+            "reviewed_mapping_row_count": int(reviewed_mapping.get("row_count") or 0),
+            "denominator_changes": denominator_changes,
             "elapsed_ms": elapsed_ms,
             "non_production": True,
             "official_metric_input_rows": 0,
@@ -5720,12 +11437,22 @@ def run_eval_from_paths(
             "protected_namespaces_touched": [],
             "raw_prompt_payload_written": False,
             "raw_response_payload_written": False,
+            "gold_or_qrels_mutation": False,
+            "human_decision_fields_filled_by_codex": False,
             "gold_fields_used_for_candidate_generation": False,
             "query_id_used_for_candidate_generation": False,
             "row_id_used_for_candidate_generation": False,
             "target_id_used_for_candidate_generation": False,
             "baseline_topk_used_for_candidate_generation": False,
+            "expected_fields_used_for_candidate_generation": False,
+            "qrels_used_for_candidate_generation": False,
+            "answerability_labels_used_for_candidate_generation": False,
+            "ids_used_for_candidate_generation": False,
             "retriever_oracle_shortcut_used": False,
+            "gate_uses_expected_fields": False,
+            "gate_uses_gold_fields": False,
+            "gate_uses_legacy_fields": False,
+            "evidence_gate_retrieval_loop_triggered": False,
             "guardrails": {
                 "non_production": True,
                 "gold_mutation": False,
@@ -5751,11 +11478,19 @@ def run_eval_from_paths(
                 "row_id_used_for_candidate_generation": False,
                 "target_id_used_for_candidate_generation": False,
                 "baseline_topk_used_for_candidate_generation": False,
+                "expected_fields_used_for_candidate_generation": False,
+                "qrels_used_for_candidate_generation": False,
+                "answerability_labels_used_for_candidate_generation": False,
+                "ids_used_for_candidate_generation": False,
                 "retriever_oracle_shortcut_used": False,
+                "gate_uses_expected_fields": False,
+                "gate_uses_gold_fields": False,
+                "gate_uses_legacy_fields": False,
+                "evidence_gate_retrieval_loop_triggered": False,
             },
             "assumptions": [
                 "actual RAG eval remains non-production diagnostic infrastructure",
-                "SearchUnit/SearchView text is candidate-only retrieval input",
+                "SearchUnit/SearchView remains explicit legacy comparison/debug only for actual-RAG source-native runs",
                 "SourceAtom/EvidenceBundle remains the evidence truth surface",
                 "missing GPU/vector dependencies are recorded as fallback reasons rather than silently ignored",
             ],
@@ -5774,6 +11509,11 @@ def run_eval_from_paths(
     )
 
     report_path = output / "report.json"
+    reviewed_mapping_patch_path = (
+        output / "reviewed_evidence_mapping_patch.json"
+        if reviewed_mapping.get("enabled")
+        else None
+    )
     legacy_items_path = output / "rag_eval_items.jsonl"
     legacy_summary_path = output / "rag_eval_summary.json"
     legacy_markdown_path = output / "rag_eval_report.md"
@@ -5786,6 +11526,8 @@ def run_eval_from_paths(
         "items_jsonl": legacy_items_path.as_posix() if legacy_mode else "",
         "summary_json": report_path.as_posix() if single_mode else legacy_summary_path.as_posix(),
         "markdown_report": legacy_markdown_path.as_posix() if legacy_mode else "",
+        "legacy_real_rag_quality_gate_report_json": "",
+        "legacy_real_rag_quality_gate_items_jsonl": "",
         "evidence_resolution_candidates_jsonl": (output / "evidence_resolution_candidates.jsonl").as_posix() if legacy_mode else "",
         "evidence_resolution_review_md": (output / "evidence_resolution_review.md").as_posix() if legacy_mode else "",
         "evidence_mapping_review_packet_csv": (output / "evidence_mapping_review_packet.csv").as_posix()
@@ -5801,6 +11543,7 @@ def run_eval_from_paths(
         if legacy_mapping_packet_requested
         else "",
         "human_review_packet_csv": (output / "human_review_packet.csv").as_posix() if human_packet_requested else "",
+        "reviewed_evidence_mapping_patch_json": reviewed_mapping_patch_path.as_posix() if reviewed_mapping_patch_path else "",
     }
     packet_rows, packet_summary = build_evidence_mapping_packet(
         summary=summary,
@@ -5809,6 +11552,18 @@ def run_eval_from_paths(
         enabled=bool(human_packet_requested or legacy_mapping_packet_requested),
     )
     _apply_mapping_packet_summary(summary, packet_summary)
+    summary["diagnostic_metrics"].update(
+        {
+            "reviewed_mapping_input_path": reviewed_mapping.get("input_path", ""),
+            "reviewed_mapping_applied": bool(reviewed_mapping.get("applied")),
+            "reviewed_mapping_row_count": int(reviewed_mapping.get("row_count") or 0),
+            "reviewed_mapping_accepted_mapping_count": int(reviewed_mapping.get("accepted_mapping_count") or 0),
+            "reviewed_mapping_answerability_label_applied_count": int(
+                reviewed_mapping.get("answerability_label_applied_count") or 0
+            ),
+            "reviewed_mapping_machine_recommendation_treated_as_gold": False,
+        }
+    )
     evidence_candidates = evidence_resolution_candidate_rows(scored_rows)
     human_review_packet_path: Path | None = None
     if human_packet_requested:
@@ -5826,13 +11581,53 @@ def run_eval_from_paths(
         "gold_qrels_labels_mutated": False,
     }
     summary["evidence_resolution"] = _evidence_resolution_summary(summary)
+    summary["expected_evidence_resolution"] = dict(summary["evidence_resolution"])
     summary["evidence_mapping_packet"] = _evidence_mapping_packet_summary(summary)
     summary["artifact_contract"] = _artifact_contract(
         output_mode=normalized_output_mode,
         report_path=report_path,
         legacy_written=legacy_mode,
         human_review_packet_path=human_review_packet_path,
+        reviewed_mapping_patch_path=reviewed_mapping_patch_path,
     )
+    route_ab_modes = _parse_weaviate_route_ab_modes(weaviate_route_ab_mode)
+    if route_ab_modes:
+        if not adapter_is_weaviate_lane:
+            raise DatasetSchemaError("weaviate route A/B mode requires a Weaviate retrieval backend")
+        def default_route_ab_lane_factory(route_mode: str) -> WeaviateSourceAtomAdapter:
+            return build_default_weaviate_adapter(
+                requested_backend=normalized_retrieval_backend,
+                retrieval_route_mode=route_mode,
+            )
+
+        route_ab_paths = write_weaviate_route_ab_artifacts(
+            output_dir=output,
+            suite_run_id=run_id,
+            generated_at=generated_at,
+            dataset_path=dataset,
+            baseline_summary=summary,
+            baseline_rows=scored_rows,
+            items=items,
+            modes=route_ab_modes,
+            top_k=top_k,
+            judge_adapter=judge_adapter,
+            provisional_require_citations=provisional_require_citations,
+            evidence_gate_mode=normalized_evidence_gate_mode,
+            lane_factory=weaviate_route_ab_lane_factory or default_route_ab_lane_factory,
+        )
+        summary["artifact_paths"].update(route_ab_paths)
+        summary["artifact_contract"]["route_ab_sidecar_exception"] = True
+        summary["artifact_contract"]["route_ab_artifacts_allowed_only_by_weaviate_route_ab_mode"] = True
+    else:
+        summary["artifact_paths"].update(
+            {
+                "route_selected_hybrid_evidence_store_ab_report_json": "",
+                "route_selected_hybrid_evidence_store_ab_items_jsonl": "",
+            }
+        )
+        summary["artifact_contract"]["route_ab_sidecar_exception"] = False
+        summary["artifact_contract"]["route_ab_artifacts_allowed_only_by_weaviate_route_ab_mode"] = True
+    summary.update(build_source_native_legacy_cleanup_sections(summary))
     if comparison_summary is not None:
         validate_actual_rag_guardrails(comparison_summary)
         summary["comparison"] = build_run_comparison(
@@ -5842,18 +11637,69 @@ def run_eval_from_paths(
         )
     summary["items"] = scored_rows
     summary["evidence_resolution_candidates"] = evidence_candidates
+    if quality_gate_baseline_path is not None and _clean(quality_gate_baseline_path):
+        legacy_baseline_report, resolved_baseline_path = resolve_quality_gate_baseline_report(
+            quality_gate_baseline_path,
+            dataset_path=dataset,
+            gold_items=items,
+            report_root=report_root,
+        )
+        quality_gate_report, quality_gate_rows, quality_gate_paths = write_legacy_real_rag_quality_gate_artifacts(
+            output_dir=output,
+            gold_items=items,
+            existing_gold_set_path=dataset,
+            legacy_baseline_report=legacy_baseline_report,
+            legacy_baseline_path=resolved_baseline_path,
+            real_rag_report=summary,
+            real_rag_report_path=report_path,
+            generated_at=generated_at,
+        )
+        summary["artifact_paths"].update(quality_gate_paths)
+        summary["artifact_contract"]["quality_gate_sidecars_written"] = True
+        summary["artifact_contract"]["quality_gate_sidecar_exception"] = True
+        summary["artifact_contract"]["quality_gate_artifacts_allowed_only_by_quality_gate_baseline"] = True
+        summary["legacy_real_rag_quality_gate"] = {
+            "enabled": True,
+            "schema_version": quality_gate_report["schema_version"],
+            "report_json": quality_gate_paths["legacy_real_rag_quality_gate_report_json"],
+            "items_jsonl": quality_gate_paths["legacy_real_rag_quality_gate_items_jsonl"],
+            "legacy_baseline_path": quality_gate_report["legacy_baseline_path"],
+            "legacy_baseline_run_id": quality_gate_report["legacy_baseline_run_id"],
+            "legacy_baseline_replayed_not_executed": True,
+            "item_count": quality_gate_report["item_count"],
+            "comparable_item_count": quality_gate_report["comparable_item_count"],
+            "answer_delta_category_counts": dict(quality_gate_report["answer_delta_category_counts"]),
+            "evidence_package_status_counts": dict(quality_gate_report["evidence_package_status_counts"]),
+            "guardrail_status": dict(quality_gate_report["guardrail_status"]),
+            "diagnostic_critic_summary": dict(quality_gate_report["diagnostic_critic_summary"]),
+            "row_count": len(quality_gate_rows),
+        }
+    else:
+        summary["legacy_real_rag_quality_gate"] = {
+            "enabled": False,
+            "reason": "quality_gate_baseline_path_not_supplied",
+        }
+    refresh_weaviate_route_ab_quality_gate_counts(summary)
+    public_scored_rows = [_public_report_row(row) for row in scored_rows]
+    summary["items"] = public_scored_rows
+    refresh_metric_tiers(summary)
     validate_actual_rag_guardrails(summary)
     output.mkdir(parents=True, exist_ok=True)
+    if reviewed_mapping_patch_path is not None:
+        reviewed_mapping_patch_path = write_reviewed_mapping_patch_artifact(output, reviewed_mapping)
+        summary["reviewed_mapping"]["patch_path"] = reviewed_mapping_patch_path.as_posix()
+        summary["artifact_paths"]["reviewed_evidence_mapping_patch_json"] = reviewed_mapping_patch_path.as_posix()
+        summary["artifact_contract"]["reviewed_mapping_patch_path"] = reviewed_mapping_patch_path.as_posix()
     if single_mode:
         write_json(report_path, summary)
     if legacy_mode:
         legacy_summary = dict(summary)
         legacy_summary.pop("items", None)
         legacy_summary.pop("evidence_resolution_candidates", None)
-        write_jsonl(legacy_items_path, scored_rows)
-        write_evidence_resolution_artifacts(output_dir=output, summary=legacy_summary, rows=scored_rows)
+        write_jsonl(legacy_items_path, public_scored_rows)
+        write_evidence_resolution_artifacts(output_dir=output, summary=legacy_summary, rows=public_scored_rows)
         write_json(legacy_summary_path, legacy_summary)
-        legacy_markdown_path.write_text(render_markdown_report(legacy_summary, scored_rows), encoding="utf-8")
+        legacy_markdown_path.write_text(render_markdown_report(legacy_summary, public_scored_rows), encoding="utf-8")
     if legacy_mapping_packet_requested:
         write_evidence_mapping_packet_artifacts(
             output_dir=output,
@@ -5868,6 +11714,9 @@ def run_eval_from_paths(
     if write_latest:
         write_latest_pointers(summary, report_root=report_root)
         write_report_index(report_root=report_root)
+    close_adapter = getattr(adapter, "close", None)
+    if callable(close_adapter):
+        close_adapter()
     summary_path = report_path if single_mode else legacy_summary_path
     items_path = report_path if single_mode else legacy_items_path
     markdown_path = report_path if single_mode else legacy_markdown_path
@@ -6220,12 +12069,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional deterministic per-item RAG output/context JSONL for smoke tests or precomputed runs",
     )
     parser.add_argument("--output-mode", default="single", choices=["single", "legacy", "both"])
-    parser.add_argument("--retrieval-backend", default="auto", choices=["bm25", "vector", "hybrid", "auto"])
+    parser.add_argument("--retrieval-backend", default="auto", choices=list(RAG_RETRIEVAL_BACKEND_CHOICES))
     parser.add_argument(
         "--retrieval-surface",
         default="auto",
         choices=["auto", "searchunit-searchview", "source-native", "source-atom", "evidence-bundle"],
         help="Retrieval corpus surface; auto prefers SourceAtom/EvidenceBundle source-native units when available.",
+    )
+    parser.add_argument(
+        "--legacy-surface-comparison",
+        action="store_true",
+        help="Run SearchUnit/SearchView as an explicit legacy diagnostic comparison; it is not a routine auto candidate surface.",
+    )
+    parser.add_argument(
+        "--source-native-index-dir",
+        default="",
+        help="Optional source-native index directory containing search_view_manifest.jsonl, build.json, and faiss.index.",
+    )
+    parser.add_argument(
+        "--build-source-native-bge-m3-index",
+        action="store_true",
+        help="Build the additive non-production source-native BGE-M3 FAISS index before running evaluation.",
+    )
+    parser.add_argument(
+        "--force-source-native-bge-m3-index-rebuild",
+        action="store_true",
+        help="Rebuild the additive non-production source-native BGE-M3 FAISS index even when artifacts already exist.",
     )
     parser.add_argument("--use-fake-vector-adapter", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--use-fake-source-native-fixture", action="store_true", help=argparse.SUPPRESS)
@@ -6253,7 +12122,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--resolve-expected-evidence",
         action="store_true",
         default=True,
-        help="Run diagnostic expected-evidence resolution; enabled by default for retrieved contexts.",
+        help="Run diagnostic expected-evidence resolution; enabled by default for source-native full-corpus review-only lookup.",
     )
     parser.add_argument(
         "--no-resolve-expected-evidence",
@@ -6263,8 +12132,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--evidence-resolution-scope",
-        default="retrieved-only",
-        choices=["retrieved-only", "index-candidate-lookup", "both"],
+        default="full-corpus",
+        choices=["retrieved-only", "index-candidate-lookup", "both", "full-corpus", "full-corpus-review-only"],
         help="Candidate source for expected-evidence resolution diagnostics.",
     )
     parser.add_argument("--max-evidence-candidates", type=int, default=5)
@@ -6285,9 +12154,33 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write exactly one additional human review CSV packet with blank human-owned fields.",
     )
     parser.add_argument(
+        "--reviewed-evidence-mapping-csv",
+        default="",
+        help="Explicit human-reviewed evidence mapping CSV to apply as a run-local derived overlay; never overwrites the dataset.",
+    )
+    parser.add_argument(
         "--compare-to",
         default="",
         help="Compare this run to a summary JSON/run directory, or to 'latest'/'previous'.",
+    )
+    parser.add_argument(
+        "--quality-gate-baseline",
+        default="",
+        help="Frozen legacy SearchUnit/SearchView report path, run directory, or 'auto' for post-run quality-gate parity artifacts.",
+    )
+    parser.add_argument(
+        "--evidence-gate-mode",
+        default="off",
+        choices=["off", "diagnostic", "enforce"],
+        help="Bounded SourceAtom/EvidenceBundle evidence gate: off preserves answers, diagnostic reports decisions, enforce abstains unsupported answers.",
+    )
+    parser.add_argument(
+        "--weaviate-route-ab-mode",
+        default="",
+        help=(
+            "Explicit non-production Weaviate route A/B comparison modes, comma-separated: "
+            "text,mixed,routed. Writes route-selected comparison sidecars only when set."
+        ),
     )
     parser.add_argument(
         "--write-latest",
@@ -6332,6 +12225,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     source_native_units: list[dict[str, Any]] | None = None
     searchunit_units: list[dict[str, Any]] | None = None
     source_native_embedding_provider: Any | None = None
+    source_native_index_dir_for_run: Path | None = Path(args.source_native_index_dir) if _clean(args.source_native_index_dir) else None
+    source_native_index_build: dict[str, Any] | None = None
     if args.use_fake_source_native_fixture:
         source_native_units = [
             {
@@ -6361,6 +12256,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         ]
         source_native_embedding_provider = FakeDeterministicEmbeddingProvider()
     try:
+        if args.build_source_native_bge_m3_index:
+            target_index_dir = source_native_index_dir_for_run or SOURCE_NATIVE_BGE_M3_INDEX_DIR
+            source_native_index_build = build_source_native_bge_m3_index_artifact(
+                index_dir=target_index_dir,
+                force=args.force_source_native_bge_m3_index_rebuild,
+                gpu_preflight=build_gpu_preflight(),
+            )
+            source_native_index_dir_for_run = target_index_dir
         comparison_summary, comparison_target = resolve_comparison_summary(
             args.compare_to,
             dataset_path=Path(args.dataset),
@@ -6397,12 +12300,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             count_medium_evidence_resolution=args.count_medium_evidence_resolution,
             write_evidence_mapping_packet=args.write_evidence_mapping_packet,
             write_human_review_packet=args.write_human_review_packet,
+            reviewed_evidence_mapping_csv=Path(args.reviewed_evidence_mapping_csv)
+            if _clean(args.reviewed_evidence_mapping_csv)
+            else None,
             output_mode=args.output_mode,
             retrieval_surface=args.retrieval_surface,
             retrieval_backend=args.retrieval_backend,
+            legacy_surface_comparison=args.legacy_surface_comparison,
             source_native_units=source_native_units,
             searchunit_units=searchunit_units,
             source_native_embedding_provider=source_native_embedding_provider,
+            source_native_index_dir=source_native_index_dir_for_run,
+            source_native_index_build=source_native_index_build,
+            quality_gate_baseline_path=args.quality_gate_baseline,
+            evidence_gate_mode=args.evidence_gate_mode,
+            weaviate_route_ab_mode=args.weaviate_route_ab_mode,
             retrieval_adapter=FakeVectorAdapter(requested_backend=args.retrieval_backend)
             if args.use_fake_vector_adapter
             else None,
@@ -6430,6 +12342,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "retrieval_backend": bundle.summary.get("retrieval_backend"),
                 "retrieval_surface": bundle.summary.get("retrieval_surface"),
                 "retrieval_surface_decision": bundle.summary.get("retrieval_surface_decision"),
+                "surface_migration": bundle.summary.get("surface_migration"),
+                "source_native_index_build": bundle.summary.get("source_native_index_build"),
+                "evidence_gate": bundle.summary.get("evidence_gate"),
+                "legacy_real_rag_quality_gate_report_json": _artifact_path(
+                    bundle.summary,
+                    "legacy_real_rag_quality_gate_report_json",
+                ),
+                "legacy_real_rag_quality_gate_items_jsonl": _artifact_path(
+                    bundle.summary,
+                    "legacy_real_rag_quality_gate_items_jsonl",
+                ),
                 "registry_jsonl": (report_root / REGISTRY_FILENAME).as_posix() if args.append_registry else "",
                 "latest_json": (report_root / "latest.json").as_posix() if args.write_latest else "",
                 "status_jsonl": str(Path(args.status_jsonl)) if args.append_registry else "",

@@ -5,6 +5,7 @@ from __future__ import annotations
 # unless they are explicitly part of the exact current acceptance nodeid set below.
 _BASE_NON_CURRENT_RAG_TEST_FILES = frozenset(
     {
+        "ai/tests/test_actual_rag_eval_metric_generation.py",
         "ai/tests/test_experiment_dependency_cleanup_contract.py",
         "ai/tests/test_agentops_portfolio_runtime_contract.py",
         "ai/tests/test_fastapi_phase1_diagnostic_rag_route_v1.py",
@@ -139,6 +140,23 @@ CURRENT_RAG_TEST_NODEIDS = frozenset(
         "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_boundaries_and_protected_surfaces_stay_closed",
         "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_single_primary_report_status_docs_and_hash_contract",
         "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_protected_namespace_git_status_is_clean_for_v69",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_legacy_real_rag_quality_gate_report_scores_answer_evidence_and_critic",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_evidence_gate_diagnostic_computes_decision_without_mutating_answer",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_evidence_gate_enforce_abstains_unsupported_numeric_and_entity_anchors",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_evidence_gate_enforce_abstains_conflicting_numeric_date_evidence",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_evidence_gate_enforce_blocks_off_topic_answer_missing_query_anchors_without_gold",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_citation_validator_requires_selected_evidence_not_retrieved_context_only",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_citation_validator_rejects_same_doc_chunk_with_different_source_identity",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_run_eval_preserves_citation_source_identity_for_evidence_gate",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_evidence_gate_handles_empty_rows_and_invalid_mode",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_evidence_gate_ignores_expected_evidence_resolution_for_enforcement",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_evidence_gate_does_not_use_title_or_workbook_metadata_as_support",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_validate_actual_rag_guardrails_rejects_semantic_raw_response_without_evidence_gate",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_validate_actual_rag_guardrails_accepts_evidence_gate_without_semantic_samples",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_evidence_gate_summary_is_embedded_in_quality_gate_report",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_quality_gate_baseline_auto_selects_exact_query_id_coverage",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_run_eval_writes_legacy_real_rag_quality_gate_artifacts_without_using_baseline_for_candidates",
+        "ai/tests/test_actual_rag_eval_metric_generation.py::test_run_eval_enforce_evidence_gate_before_quality_gate_artifacts_and_preserves_single_output_policy",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_v70_registers_explicitly_and_v64_recovery_is_current",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_source_v63_e2e_architecture_is_hash_locked_and_closed",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_report_bundle_writes_single_report_status_docs_and_plan",
@@ -167,6 +185,7 @@ NON_CURRENT_RAG_TEST_FILES = (
         "ai/tests/test_rag_diagnostic_status_sync.py",
         "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py",
         "ai/tests/test_rag_v61_true_rag_corpus_expansion_and_metric_split_hardening_contract.py",
+        "ai/tests/test_rag_v691_retrieval_smoke_pre_review_packet_nonprod_contract.py",
     }
 ) - CURRENT_RAG_TEST_FILES
 

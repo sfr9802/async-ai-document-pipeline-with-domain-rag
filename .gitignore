@@ -210,6 +210,8 @@ archive/
 !docs/rag-ingestion-progress.md
 !docs/rag-ingestion-measurements.md
 !docs/rag-ingestion-triage.md
+!docs/rag_eval/
+!docs/rag_eval/*.md
 !docs/codex-goals/rag-v7-e2e-evaluation-plan.md
 ai/eval/reports/rag-ingestion/**/*.json
 ai/eval/reports/rag-ingestion/**/*.jsonl

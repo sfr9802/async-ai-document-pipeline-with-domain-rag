@@ -3,8 +3,8 @@
 `ai/scripts/` is the canonical home for worker-owned smoke, ingestion,
 readiness, eval, dataset, and report-generation commands.
 
-Run commands from `ai/` unless a script documents another working
-directory:
+Most worker scripts can run from `ai/` unless a script documents another
+working directory:
 
 ```bash
 cd ai
@@ -15,6 +15,9 @@ python scripts/operational/e2e_smoke.py
 ## Actual RAG Eval CLI
 
 `rag_actual_eval.py` runs the pragmatic actual-RAG evaluation loop:
+The `python -m ai.scripts.rag_actual_eval` examples below are repo-root
+commands. If you are already in `ai/`, use `python -m scripts.rag_actual_eval`
+and `eval/...` paths instead.
 
 ```bash
 python -X utf8 -m ai.scripts.rag_actual_eval \
@@ -27,7 +30,8 @@ python -X utf8 -m ai.scripts.rag_actual_eval \
   --output-mode single \
   --judge-mode heuristic \
   --resolve-expected-evidence \
-  --evidence-resolution-scope both \
+  --evidence-resolution-scope full-corpus-review-only \
+  --quality-gate-baseline auto \
   --append-registry \
   --write-latest \
   --compare-to previous
@@ -45,30 +49,39 @@ Use `--output-mode legacy` only for compatibility/debugging when the older
 sidecar set is explicitly needed. `--output-mode both` is transition-only.
 
 Use `--retrieval-surface auto` for the current diagnostic lane. Auto prefers
-SourceAtom/EvidenceBundle-backed source-native units and keeps
-SearchUnit/SearchView as a legacy baseline for comparison. `report.json`
-contains the selected surface, fallback reason, source-native vs
-SearchUnit/SearchView comparison, source presence probes, GPU/vector
-diagnostics, and BM25/vector/hybrid backend comparison in the same file.
-Expected answers, expected evidence, qrels, row IDs, query IDs, target IDs, and
-baseline top-k are excluded from candidate generation; expected evidence is used
-only after retrieval for diagnostics.
+SourceAtom/EvidenceBundle-backed source-native units and runs bounded
+deterministic layered retrieval over source-native units only. SearchUnit/
+SearchView is no longer a routine actual-RAG candidate surface; it remains
+available only as explicit legacy/debug comparison with
+`--legacy-surface-comparison`. `report.json` contains the selected surface,
+fallback reason, source-native layered retrieval diagnostics, source presence
+probes, GPU/vector diagnostics, source-native Hit@K/nDCG diagnostics, MMR
+selection diagnostics, and BM25/vector/hybrid backend comparison in the same
+file. MMR is recorded as the `mmr_selected` selection strategy, not as MRR or
+reciprocal-rank. Expected answers, expected evidence, qrels, row IDs, query
+IDs, target IDs, and baseline top-k are excluded from candidate generation;
+expected evidence is used only after retrieval or in explicit full-corpus
+diagnostic evidence-resolution mode.
 
 Use `--write-human-review-packet` when a human review packet is explicitly
 needed. Single mode then writes exactly one extra file:
 
 - `human_review_packet.csv`
 
-Expected-evidence resolution is deterministic and non-mutating. Retrieved-only
-resolution is enabled by default; `--evidence-resolution-scope both` adds
-repo-local current-index candidate lookup when available. That lookup is
-query-text-only and must not use expected answers, expected evidence, aliases,
-qrels, row IDs, query IDs, target IDs, or baseline top-k as candidate-generation
-input. It is recorded as diagnostic candidate lookup only and must not alter
-the RAG retrieval results, answer generation inputs, gold files, qrels, or
-official denominators. Medium-confidence mappings count as resolved only with
-`--count-medium-evidence-resolution`; low-confidence candidates are written for
-review inside `report.json` but do not count as resolved.
+Expected-evidence resolution is deterministic and non-mutating. The CLI default
+scope is `full-corpus`; current evidence-gate runs pass
+`--evidence-resolution-scope full-corpus-review-only` explicitly. That mode
+searches the full SourceAtom/EvidenceBundle corpus without mixing retrieved
+contexts into the resolver candidate pool. `retrieved-only` keeps the older
+retrieved-context diagnostic behavior, while `index-candidate-lookup` and
+`both` are explicit legacy diagnostics. Expected answers, expected evidence,
+aliases, qrels, row IDs, query IDs, target IDs, or baseline top-k must not be
+candidate-generation input. Resolution is recorded as diagnostic lookup only
+and must not alter the RAG retrieval results, answer generation inputs, gold
+files, qrels, or official denominators. Medium-confidence mappings count as
+resolved only with `--count-medium-evidence-resolution`; low-confidence
+candidates are written for review inside `report.json` but do not count as
+resolved.
 
 `--write-human-review-packet` turns resolver candidates into a source-owned
 human review CSV. Packet rows include current source metadata when available,
@@ -77,6 +90,33 @@ priorities, and blank human-owned decision fields. The machine recommendation
 fields are not gold mappings, qrels, answerability labels, or official metrics.
 This packet is only for diagnostic review and must not be used to tune retriever
 ranking or claim product/live readiness.
+
+Use `--reviewed-evidence-mapping-csv <path>` only after a separate human-owned
+review file exists. The runner reads explicit human decision fields, rejects
+blank human decision rows, rejects machine recommendations used as human
+decisions, creates a run-local derived overlay plus
+`reviewed_evidence_mapping_patch.json`, and records `reviewed_mapping_*` and
+`denominator_changes` in `report.json`. It does not overwrite the eval dataset,
+gold, qrels, labels, expected fields, source registry, or production namespaces.
+
+Use `--quality-gate-baseline <report-or-run-dir>` or
+`--quality-gate-baseline auto` only for explicit legacy-free parity gates. The
+fresh real-RAG run still uses source-native query-text-only retrieval first; the
+frozen SearchUnit/SearchView report is loaded afterward for comparison and is
+marked `legacy_baseline_replayed_not_executed=true`. The command writes
+`legacy_real_rag_quality_gate_report.json` and
+`legacy_real_rag_quality_gate_items.jsonl` beside `report.json` with item-level
+answer parity, evidence package status, citation support, diagnostic critic
+fields, failure labels, not-comparable reasons, and guardrail status.
+
+Use `--evidence-gate-mode off|diagnostic|enforce` to run the bounded
+evidence/citation gate over production-available fields only. Diagnostic mode
+computes `answer_gate_decision`, selected-evidence citation validation, anchor
+coverage, and would-abstain counts without changing generated answers. Enforce
+mode abstains with `제공된 근거만으로는 답할 수 없습니다.` when selected
+SourceAtom/EvidenceBundle evidence or citation support is insufficient. The gate
+does not read expected answers, expected evidence, qrels, labels, legacy output,
+row IDs, or target IDs for enforcement, and it never starts a retrieval loop.
 
 `--append-registry` appends `reports/rag_eval/runs.jsonl` and a compact
 `actual_rag_eval_run` event to `ai/eval/reports/rag-ingestion/status.jsonl`.
@@ -90,7 +130,8 @@ destination.
 
 The report separates strict headline metrics, provisional RAG metrics,
 inferred-answerable metrics, diagnostic consistency metrics, and scalar
-diagnostics. Provisional E2E requires the provisional answer judge to pass and
+diagnostics. Strict answer, evidence, citation, and E2E denominators require
+human-owned answerability labels. Provisional E2E requires the provisional answer judge to pass and
 weak/strict evidence at the configured top-k; text-only weak evidence matching
 requires non-generic anchors and all numeric/date anchors from the gold signal.
 The separate `e2e_rag_success_resolved_evidence_provisional` variant also
@@ -107,12 +148,140 @@ also require strict citation pass.
 
 Retrieval backends are selected with `--retrieval-backend bm25|vector|hybrid|auto`.
 `auto` prefers hybrid when the local vector path is available. The current
-local vector path embeds source-derived SearchUnit/SearchView text with
-`BAAI/bge-m3`, uses CUDA for embedding when available, builds a non-production
-in-memory FAISS `IndexFlatIP`, and records GPU/vector proof or fallback reason
-inside `report.json`. This local FAISS path is not an external production
-VectorDB. External VectorDB use remains optional and must be explicitly
-non-production.
+source-native vector path prefers the additive non-production BGE-M3 FAISS
+`IndexFlatIP` when present and keeps the older
+`codex-diagnostic-hashing-vector-v1` FAISS index as diagnostic fallback only.
+Build or refresh the BGE-M3 index with `--build-source-native-bge-m3-index`;
+embedding uses CUDA when available, while persisted search uses local CPU FAISS.
+This local FAISS path is not an external production VectorDB. External VectorDB
+use remains optional and must be explicitly non-production.
+
+For the Weaviate SourceAtom service-boundary lane, start the local nonprod
+service from repo root:
+
+```bash
+docker compose -f docker-compose.weaviate.yml up -d
+```
+
+Then index SourceAtom/EvidenceBundle source-native units into Weaviate with
+local BAAI/bge-m3 vectors:
+
+```bash
+RAG_VECTOR_DB=weaviate \
+WEAVIATE_URL=http://localhost:8080 \
+WEAVIATE_GRPC_PORT=50051 \
+WEAVIATE_COLLECTION_SOURCE_ATOM=SourceAtomNonprod \
+WEAVIATE_NAMESPACE=actual_rag_eval_nonprod \
+WEAVIATE_USE_LOCAL_DOCKER=true \
+EMBEDDING_MODEL=BAAI/bge-m3 \
+EMBEDDING_DEVICE=auto \
+python -X utf8 -m ai.scripts.rag_weaviate_source_atom_index
+```
+
+The index command writes
+`reports/rag_eval/weaviate_source_atom_index_manifest_nonprod/index_manifest.json`
+and refuses to silently index zero records. The active non-production indexing
+path streams SourceAtom/EvidenceBundle units through local sentence-transformers
+`BAAI/bge-m3`, checkpoints every successful upsert batch, and can resume without
+embedding or upserting already completed SourceAtom IDs:
+
+```bash
+python -X utf8 -m ai.scripts.rag_weaviate_source_atom_index \
+  --batch-size 64 \
+  --manifest-path reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_streaming_full/index_manifest.json \
+  --checkpoint-path reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_streaming_full/index_checkpoint.json
+```
+
+Use `--reset-checkpoint` only for an intentional fresh non-production rebuild.
+The CLI rejects the old `source-native-faiss-bge-m3` vector-transfer shortcut;
+FAISS remains diagnostic/offline comparison only and is not an active Weaviate
+indexing or retrieval dependency. Successful streaming manifests must record
+`index_vector_source=streaming-bge-m3`, `embedding_source=sentence_transformers_bge_m3_streaming`,
+`faiss_used_for_index_seed=false`, and `faiss_used_for_active_retrieval=false`.
+
+For the route-selected store candidate, build the explicit v2 non-production
+collection so route taxonomy fields, safe structural locator metadata, and the
+metadata-only vectorization policy are materialized in Weaviate:
+
+```bash
+python -X utf8 -m ai.scripts.rag_weaviate_source_atom_index \
+  --schema-version weaviate_source_atom_v2 \
+  --weaviate-collection-name SourceAtomNonprodRouteSelectedV2 \
+  --batch-size 64 \
+  --manifest-path reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_route_selected_v2/index_manifest.json \
+  --checkpoint-path reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_route_selected_v2/index_checkpoint.json
+```
+
+The v2 policy vectorizes paragraphs, heading-context blocks, table rows,
+table summaries, and captions. Cells, page blocks, metadata-only records, empty
+fragments, repeated headers/footers, and local path/source trace fields are not
+vectorized by default. Source-owned workbook/sheet/cell-range/page/bbox locator
+metadata is stored as filterable context, not blindly treated as semantic
+evidence text. Existing v1 indexes are historical full-index baselines; do not
+rewrite them to make v2 claims.
+
+The active Weaviate eval backend is:
+
+```bash
+RAG_VECTOR_DB=weaviate \
+WEAVIATE_URL=http://localhost:8080 \
+WEAVIATE_GRPC_PORT=50051 \
+WEAVIATE_COLLECTION_SOURCE_ATOM=SourceAtomNonprod \
+WEAVIATE_NAMESPACE=actual_rag_eval_nonprod \
+WEAVIATE_INDEX_MANIFEST_PATH=reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_streaming_full/index_manifest.json \
+EMBEDDING_MODEL=BAAI/bge-m3 \
+EMBEDDING_DEVICE=auto \
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv \
+  --retrieval-surface source-native \
+  --retrieval-backend weaviate-hybrid \
+  --output-mode single \
+  --evidence-resolution-scope full-corpus-review-only \
+  --quality-gate-baseline auto \
+  --run-id actual_rag_eval_text_gold_weaviate_hybrid_streaming_bge_m3_nonprod_20260612 \
+  --append-registry \
+  --write-latest
+```
+
+In this lane, metadata filters are sent to Weaviate, candidates are hydrated
+from Weaviate result payloads, and local source-native layered retrieval,
+diagnostic hash vectors, FAISS, local corpus scans, and SearchUnit/SearchView
+candidate surfaces are forbidden. If Weaviate is unavailable or a query fails,
+the run fails or is invalid with an explicit fallback reason; it must not
+complete by falling back to the local Python retrieval path.
+
+For route-selected non-production A/B comparison, keep the default path
+unchanged and select the v2 non-production collection only for the explicit
+A/B run:
+
+```bash
+RAG_VECTOR_DB=weaviate \
+WEAVIATE_URL=http://localhost:8080 \
+WEAVIATE_GRPC_PORT=50051 \
+WEAVIATE_COLLECTION_SOURCE_ATOM=SourceAtomNonprodRouteSelectedV2 \
+WEAVIATE_NAMESPACE=actual_rag_eval_nonprod \
+WEAVIATE_SCHEMA_VERSION=weaviate_source_atom_v2 \
+WEAVIATE_INDEX_MANIFEST_PATH=reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_route_selected_v2/index_manifest.json \
+python -X utf8 -m ai.scripts.rag_actual_eval \
+  --dataset ai/eval/eval_queries/gold_queries_text_namu_v2_1_question_gold_v2.csv \
+  --retrieval-surface source-native \
+  --retrieval-backend weaviate-hybrid \
+  --weaviate-route-ab-mode text,mixed,routed \
+  --output-mode single \
+  --evidence-resolution-scope full-corpus-review-only \
+  --quality-gate-baseline auto \
+  --run-id actual_rag_eval_weaviate_route_selected_hybrid_store_ab_nonprod_route_v2_cellcap_sanitized_20260612 \
+  --append-registry \
+  --write-latest
+```
+
+This writes the normal `report.json` plus
+`route_selected_hybrid_evidence_store_ab_report.json` and
+`route_selected_hybrid_evidence_store_ab_items.jsonl`. The sidecar includes the
+six-row TEXT regression lanes plus mixed-route diagnostic rows from the existing
+29-row v5_5 packet. Routine single-output runs without
+`--weaviate-route-ab-mode` still write only `report.json` unless another
+explicit sidecar mode such as the quality gate is requested.
 
 <!-- v4_diagnostic_runtime_locator_and_finetune_readiness_inventory:start -->
 ## v4 RAG Diagnostic Runtime/Locator/Fine-Tuning Readiness Inventory
